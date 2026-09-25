@@ -530,7 +530,8 @@
         "event",
         "result",
         "error",
-        "input"
+        "input",
+        "params"
       ]
     },
     "MutationIR": {
@@ -901,12 +902,19 @@
             "null"
           ]
         },
+        "route": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "root": {
           "$ref": "#/definitions/ViewNode"
         }
       },
       "required": [
         "machine",
+        "route",
         "root"
       ],
       "additionalProperties": false

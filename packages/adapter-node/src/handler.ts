@@ -3,7 +3,16 @@ import { planRoute } from '@tenon/compiler'
 import type { BuildResult, Json } from '@tenon/core/ir'
 import { createDataRuntime, type ResolverSet } from '@tenon/data'
 import type { EffectResponse, Result } from '@tenon/runtime-client'
-import { clientBundle, fnsModule, renderPage, renderToString } from '@tenon/runtime-server'
+import {
+  clientBundle,
+  fnsModule,
+  matcher,
+  pageEntries,
+  renderPage,
+  renderToString,
+  robotsTxt,
+  sitemapXml,
+} from '@tenon/runtime-server'
 
 export interface NodeAdapterOptions {
   build: BuildResult
@@ -14,6 +23,7 @@ export interface NodeAdapterOptions {
 
 interface CachedPage {
   html: string
+  status: number
   at: number
   ttl: number
   tags: Set<string>
@@ -39,7 +49,7 @@ export function createHandler({
 }: NodeAdapterOptions): Handler {
   const data = createDataRuntime({ build, resolvers, now })
   const { ir } = build
-  const routes = new Map(Object.entries(ir.routes).map(([id, r]) => [r.path, id]))
+  const match = matcher(build)
   const queries = Object.values(ir.features).flatMap((f) => Object.keys(f.queries).map((q) => `${f.id}.${q}`))
   const cache = new Map<string, CachedPage>()
   const fns = fnsModule(build)
@@ -51,10 +61,10 @@ export function createHandler({
     return seconds.length ? Math.min(...seconds) * 1000 : Number.POSITIVE_INFINITY
   }
 
-  const generate = async (route: string) => {
+  const generate = async (path: string, route: string, params: Json) => {
     const at = now()
-    const { html, tags } = await renderToString({ build, data, route })
-    cache.set(route, { html, at, ttl: ttlOf(route), tags, regenerating: null })
+    const { html, tags, status } = await renderToString({ build, data, route, params })
+    cache.set(path, { html, status, at, ttl: ttlOf(route), tags, regenerating: null })
   }
 
   const revalidate = (tags: string[]) => {
@@ -95,43 +105,59 @@ export function createHandler({
     response.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body))
   }
 
-  const page = async (route: string, request: IncomingMessage, response: ServerResponse) => {
+  const page = async (
+    path: string,
+    route: string,
+    params: Json,
+    request: IncomingMessage,
+    response: ServerResponse,
+  ) => {
     const headers = { 'content-type': 'text/html; charset=utf-8' }
+    const head = request.method === 'HEAD'
     if (planRoute(ir, route).plan.cacheable) {
-      let cached = cache.get(route)
+      let cached = cache.get(path)
       let state = 'hit'
       if (!cached) {
-        await generate(route)
-        cached = cache.get(route)!
+        await generate(path, route, params)
+        cached = cache.get(path)!
         state = 'miss'
       } else if (now() - cached.at >= cached.ttl) {
         state = 'stale'
         const current = cached
-        current.regenerating ??= generate(route).catch(() => {
+        current.regenerating ??= generate(path, route, params).catch(() => {
           current.regenerating = null
         })
       }
-      response.writeHead(200, { ...headers, 'x-tenon-cache': state }).end(cached.html)
+      response.writeHead(cached.status, { ...headers, 'x-tenon-cache': state })
+      response.end(head ? undefined : cached.html)
       return
     }
-    response.writeHead(200, { ...headers, 'x-tenon-cache': 'bypass' })
-    for await (const chunk of renderPage({ build, data, route, session: session(request) }).chunks)
-      response.write(chunk)
+    const rendered = await renderPage({ build, data, route, params, session: session(request) })
+    response.writeHead(rendered.status, { ...headers, 'x-tenon-cache': 'bypass' })
+    if (!head) for await (const chunk of rendered.chunks) response.write(chunk)
     response.end()
   }
+
+  const text = (response: ServerResponse, type: string, body: string, head: boolean) =>
+    void response.writeHead(200, { 'content-type': type }).end(head ? undefined : body)
 
   const handler = (async (request, response) => {
     const url = new URL(request.url ?? '/', 'http://localhost')
     try {
       if (request.method === 'POST' && url.pathname === '/_tenon/effect')
         return await effect(request, response)
-      if (url.pathname === '/_tenon/client.js')
-        return void response.writeHead(200, { 'content-type': 'text/javascript' }).end(clientBundle())
-      if (url.pathname === '/_tenon/fns.js')
-        return void response.writeHead(200, { 'content-type': 'text/javascript' }).end(fns)
-      const route = routes.get(url.pathname)
-      if (request.method === 'GET' && route && ir.pages[route]) return await page(route, request, response)
-      response.writeHead(404, { 'content-type': 'text/plain' }).end('Not found')
+      const head = request.method === 'HEAD'
+      if (request.method !== 'GET' && !head)
+        return void response.writeHead(405, { 'content-type': 'text/plain', allow: 'GET, HEAD, POST' }).end()
+      if (url.pathname === '/_tenon/client.js') return text(response, 'text/javascript', clientBundle(), head)
+      if (url.pathname === '/_tenon/fns.js') return text(response, 'text/javascript', fns, head)
+      if (url.pathname === '/robots.txt')
+        return text(response, 'text/plain; charset=utf-8', robotsTxt(build), head)
+      if (url.pathname === '/sitemap.xml')
+        return text(response, 'application/xml', sitemapXml(build, await pageEntries(build, data)), head)
+      const found = match(url.pathname)
+      if (found) return await page(url.pathname, found.route, found.params, request, response)
+      response.writeHead(404, { 'content-type': 'text/plain' }).end(head ? undefined : 'Not found')
     } catch (error) {
       if (!response.headersSent) response.writeHead(500, { 'content-type': 'text/plain' })
       response.end(error instanceof Error ? error.message : String(error))

@@ -18,6 +18,7 @@ export type DeclKind =
   | 'contract'
   | 'feature'
   | 'project'
+  | 'page'
   | 'adapter'
 
 export interface DeclInfo<K extends DeclKind = DeclKind, D = unknown> {

@@ -4,6 +4,8 @@ import type { Expr, Ref, Val } from '../model/expr.ts'
 import type { QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
 import type { MachineDecl, UnexpectedError } from './machine.ts'
+import { page } from './page.ts'
+import type { RouteDecl } from './route.ts'
 
 export const SEND = Symbol.for('tenon.send')
 
@@ -93,6 +95,7 @@ export type NodeDef =
 
 export interface ViewDef {
   machine: MachineDecl | null
+  route: RouteDecl | null
   render: (scope: any) => unknown
 }
 
@@ -100,9 +103,10 @@ export interface ViewDecl extends Decl<'view'> {}
 
 export type When<S extends string> = (states: S[], children: Child[]) => NodeDecl
 
-export interface ViewScope<C, S extends string> {
+export interface ViewScope<C, S extends string, P> {
   ctx: Ref<C>
   when: When<S>
+  params: Ref<P>
 }
 
 const node = (def: NodeDef): NodeDecl => brand({}, 'node', def)
@@ -116,13 +120,22 @@ type QueryErrors<E> = {
   [K in keyof E | 'Unexpected']: (error: Ref<K extends keyof E ? E[K] : UnexpectedError>) => NodeDecl
 }
 
-function view<C, S extends string>(config: {
+function view<C, S extends string, P = null>(config: {
   machine: MachineDecl<C, S>
-  render: (scope: ViewScope<C, S>) => NodeDecl
+  route: RouteDecl<P> | null
+  render: (scope: ViewScope<C, S, P>) => NodeDecl
 }): ViewDecl
-function view(config: { machine: null; render: () => NodeDecl }): ViewDecl
+function view<P = null>(config: {
+  machine: null
+  route: RouteDecl<P> | null
+  render: (scope: { params: Ref<P> }) => NodeDecl
+}): ViewDecl
 function view(config: ViewDef): ViewDecl {
-  return brand({}, 'view', { machine: config.machine, render: config.render } satisfies ViewDef)
+  return brand({}, 'view', {
+    machine: config.machine,
+    route: config.route,
+    render: config.render,
+  } satisfies ViewDef)
 }
 
 const elements = Object.fromEntries(
@@ -144,6 +157,7 @@ export const ui = Object.freeze({
     branches: { ready: (data: Ref<O>) => NodeDecl; pending: NodeDecl | null; failed: QueryErrors<E> },
   ): NodeDecl => node({ kind: 'query', query, input, ...branches }),
   embed: (view: ViewDecl): NodeDecl => node({ kind: 'embed', view }),
+  page,
 })
 
 export const sendOf = (value: unknown): Send[typeof SEND] | null =>

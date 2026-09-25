@@ -1,8 +1,10 @@
 import { ui } from '@tenon/core'
+import { post } from '../../routes.ts'
 import { getPost, listPosts, postPath } from './effects.ts'
 
 export const PostList = ui.view({
   machine: null,
+  route: null,
   render: () =>
     ui.section({ class: 'space-y-6' }, [
       ui.h1({ class: 'text-3xl font-bold' }, ['Tenon Blog']),
@@ -27,28 +29,25 @@ export const PostList = ui.view({
     ]),
 })
 
-const article = (slug: string) =>
-  ui.view({
-    machine: null,
-    render: () =>
-      ui.query(
-        getPost,
-        { slug },
-        {
-          ready: (post) =>
-            ui.article({ class: 'prose' }, [
-              ui.h1({}, [post.title]),
-              ui.p({ class: 'text-sm' }, ['By ', post.author, ' · ', post.publishedAt]),
-              ui.each(post.body, 'text', (paragraph) => ui.p({}, [paragraph.text])),
-            ]),
-          pending: null,
-          failed: {
-            NotFound: () => ui.p({ role: 'alert' }, ['Post not found']),
-            Unexpected: () => ui.p({ role: 'alert' }, ['Post unavailable']),
-          },
+export const Article = ui.view({
+  machine: null,
+  route: post,
+  render: ({ params }) =>
+    ui.query(
+      getPost,
+      { slug: params.slug },
+      {
+        ready: (post) =>
+          ui.article({ class: 'prose' }, [
+            ui.h1({}, [post.title]),
+            ui.p({ class: 'text-sm' }, ['By ', post.author, ' · ', post.publishedAt]),
+            ui.each(post.body, 'text', (paragraph) => ui.p({}, [paragraph.text])),
+          ]),
+        pending: null,
+        failed: {
+          NotFound: () => ui.p({ role: 'alert' }, ['Post not found']),
+          Unexpected: () => ui.p({ role: 'alert' }, ['Post unavailable']),
         },
-      ),
-  })
-
-export const HelloTenon = article('hello-tenon')
-export const IslandsExplained = article('islands-explained')
+      },
+    ),
+})

@@ -131,6 +131,20 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     return (feature?.queries[symbol]?.tags ?? []).some((t) => invalidated.has(t.tag))
   }
   const regions: RegionPlan[] = [shell]
+  if (page.head.query) {
+    const { feature: owner, symbol } = resolve(ir, page.head.query.ref)
+    const q = owner?.queries[symbol]
+    if (q)
+      regions.push({
+        id: 'head',
+        parent: 'shell',
+        query: page.head.query.ref,
+        scope: q.scope,
+        ...combine(shell, own(q)),
+        reactive: false,
+        pointer: join('', 'pages', route, 'head'),
+      })
+  }
   const nodes: NodePlan[] = []
   const islands: string[] = []
   const issues: PlanIssue[] = []

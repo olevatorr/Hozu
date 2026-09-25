@@ -1,5 +1,5 @@
 import { route } from '@tenon/core'
+import { z } from 'zod'
 
-export const home = route({ path: '/' })
-export const helloTenon = route({ path: '/posts/hello-tenon' })
-export const islandsExplained = route({ path: '/posts/islands-explained' })
+export const home = route({ path: '/', params: null })
+export const post = route({ path: '/posts/:slug', params: z.object({ slug: z.string() }) })

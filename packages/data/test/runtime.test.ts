@@ -136,6 +136,7 @@ describe('resolver wiring', () => {
   const p = project({
     schema: zodAdapter,
     session: null,
+    site: null,
     routes: {},
     pages: [],
     features: [

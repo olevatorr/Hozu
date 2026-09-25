@@ -7,7 +7,6 @@ export { event } from './builders/event.ts'
 export type {
   FeatureConfig,
   FeatureDecl,
-  PageConfig,
   ProjectConfig,
   ProjectDecl,
 } from './builders/feature.ts'
@@ -26,6 +25,7 @@ export type {
 export { invoke, machine, on } from './builders/machine.ts'
 export type { Condition } from './builders/op.ts'
 export { op } from './builders/op.ts'
+export type { HeadFields, PageDecl } from './builders/page.ts'
 export type { RouteDecl } from './builders/route.ts'
 export { route } from './builders/route.ts'
 export type { TagDecl, TagUse } from './builders/tag.ts'

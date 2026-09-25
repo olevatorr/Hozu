@@ -6,6 +6,7 @@ import { z } from 'zod'
 const p = project({
   schema: zodAdapter,
   session: z.object({ userId: z.string() }),
+  site: null,
   routes: {},
   pages: [],
   features: [],

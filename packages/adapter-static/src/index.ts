@@ -3,7 +3,14 @@ import { dirname, join } from 'node:path'
 import { planRoute } from '@tenon/compiler'
 import type { BuildResult } from '@tenon/core/ir'
 import { createDataRuntime, type ResolverSet } from '@tenon/data'
-import { clientBundle, fnsModule, renderToString } from '@tenon/runtime-server'
+import {
+  clientBundle,
+  fnsModule,
+  pageEntries,
+  renderToString,
+  robotsTxt,
+  sitemapXml,
+} from '@tenon/runtime-server'
 
 export interface StaticExportOptions {
   build: BuildResult
@@ -25,19 +32,34 @@ export async function exportStatic({ build, resolvers, outDir }: StaticExportOpt
   const data = createDataRuntime({ build, resolvers })
   const result: StaticExport = { written: [], skipped: [] }
   let js = false
-  for (const route of Object.keys(build.ir.pages).sort()) {
+  const entries = await pageEntries(build, data)
+  for (const [route, page] of Object.entries(build.ir.pages).sort(([a], [b]) => a.localeCompare(b))) {
     const { plan } = planRoute(build.ir, route)
     const dynamic = plan.regions.filter((r) => r.mode === 'request')
     if (dynamic.length) {
       result.skipped.push({ route, reason: `per-request regions: ${dynamic.map((r) => r.query).join(', ')}` })
       continue
     }
-    const { html } = await renderToString({ build, data, route })
-    const file = join(outDir, plan.path.replace(/^\//, ''), 'index.html')
-    await write(file, html)
-    result.written.push(file)
-    js ||= plan.js
+    const list = entries.filter((e) => e.route === route)
+    if (!list.length && build.ir.routes[route]?.params && !page.entries) {
+      result.skipped.push({ route, reason: 'parameterized route without entries (TN025)' })
+      continue
+    }
+    for (const entry of list) {
+      const { html, status } = await renderToString({ build, data, route, params: entry.params })
+      if (status !== 200) {
+        result.skipped.push({ route: entry.path, reason: `status ${status}` })
+        continue
+      }
+      const file = join(outDir, entry.path.replace(/^\//, ''), 'index.html')
+      await write(file, html)
+      result.written.push(file)
+      js ||= plan.js
+    }
   }
+  await write(join(outDir, 'robots.txt'), robotsTxt(build))
+  await write(join(outDir, 'sitemap.xml'), sitemapXml(build, entries))
+  result.written.push(join(outDir, 'robots.txt'), join(outDir, 'sitemap.xml'))
   if (js) {
     await write(join(outDir, '_tenon/client.js'), clientBundle())
     await write(join(outDir, '_tenon/fns.js'), fnsModule(build))

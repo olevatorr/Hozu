@@ -1,0 +1,25 @@
+{
+  "name": "bench-frameworks",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "run": "node run.ts"
+  },
+  "dependencies": {
+    "@tenon/core": "workspace:*",
+    "@tenon/data": "workspace:*",
+    "@tenon/runtime-client": "workspace:*",
+    "@tenon/runtime-server": "workspace:*",
+    "@tenon/schema-zod": "workspace:*",
+    "@vue/server-renderer": "3.5.43",
+    "esbuild": "0.28.2",
+    "playwright-core": "1.63.0",
+    "preact": "10.29.8",
+    "preact-render-to-string": "6.7.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "svelte": "5.57.1",
+    "vue": "3.5.43",
+    "zod": "4.6.5"
+  }
+}

@@ -5,6 +5,7 @@ import { Save, savedMachine, Unsave } from './machine.ts'
 
 export const ReadingList = ui.view({
   machine: savedMachine,
+  route: null,
   render: ({ ctx, when }) =>
     ui.aside({ class: 'border p-4' }, [
       ui.h2({}, ['Your reading list']),

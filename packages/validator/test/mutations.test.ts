@@ -329,8 +329,36 @@ describe('A2 rendering judgement codes', () => {
     expect(found.map((d) => [d.location.pointer, d.message])).toEqual([
       ['/pages/home/assert', 'Page "home" asserts cacheable but derives cart.getCart → request'],
     ])
-    expect(found[0]!.location.source?.file).toMatch(/examples\/cart\/routes\.ts$/)
+    expect(found[0]!.location.source?.file).toMatch(/examples\/cart\/tenon\.config\.ts$/)
     expect(found[0]!.fix?.patch).toBeNull()
+  })
+})
+
+describe('A2 route judgement codes', () => {
+  it('TN024 — path placeholders differ from the params schema', async () => {
+    const { buildProject } = await import('@tenon/core/ir')
+    const blog = buildProject((await import('../../../examples/blog/tenon.config.ts')).default)
+    const ir = structuredClone(blog.ir)
+    ir.routes.post!.path = '/posts/:id'
+    const found = validate(ir, { sources: blog.sources }).filter((d) => d.code === 'TN024')
+    expect(found.map((d) => d.location.pointer)).toEqual(['/routes/post/params'])
+    expect(found[0]!.location.source?.file).toMatch(/examples\/blog\/routes\.ts$/)
+  })
+
+  it('TN024 — a view bound to another route; TN025 — a parameterized page without entries', async () => {
+    const { buildProject } = await import('@tenon/core/ir')
+    const blog = buildProject((await import('../../../examples/blog/tenon.config.ts')).default)
+    const ir = structuredClone(blog.ir)
+    ir.pages.home!.views.push('posts.Article')
+    ir.pages.post!.entries = null
+    const found = validate(ir, { sources: blog.sources }).filter(
+      (d) => d.code === 'TN024' || d.code === 'TN025',
+    )
+    expect(found.map((d) => [d.code, d.location.pointer, d.severity])).toEqual([
+      ['TN024', '/pages/home/views/2', 'error'],
+      ['TN025', '/pages/post/entries', 'warning'],
+    ])
+    expect(found[1]!.fix?.snippet).toContain('entries:')
   })
 })
 

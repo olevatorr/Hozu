@@ -4,19 +4,45 @@ export type JsonSchema = { [key: string]: Json }
 
 export interface ProjectIR {
   irVersion: 1
+  site: SiteIR | null
   session: JsonSchema | null
   routes: Record<string, RouteIR>
   pages: Record<string, PageIR>
   features: Record<string, FeatureIR>
 }
 
+export interface SiteIR {
+  url: string
+  name: string
+  lang: string
+}
+
 export interface PageIR {
   views: string[]
   assert: 'static' | 'cacheable' | null
+  head: HeadIR
+  entries: EntriesIR | null
+}
+
+export interface HeadIR {
+  query: { ref: string; input: ValueExpr } | null
+  title: ValueExpr
+  description: ValueExpr
+  type: 'website' | 'article'
+  image: ValueExpr
+  published: ValueExpr
+  noindex: boolean
+}
+
+export interface EntriesIR {
+  query: string
+  input: ValueExpr
+  params: ValueExpr
 }
 
 export interface RouteIR {
   path: string
+  params: JsonSchema | null
 }
 
 export interface FeatureIR {
@@ -125,7 +151,7 @@ export interface TransitionIR {
   navigate: string | null
 }
 
-export type RefSource = 'context' | 'event' | 'result' | 'error' | 'input'
+export type RefSource = 'context' | 'event' | 'result' | 'error' | 'input' | 'params'
 
 export type ValueExpr =
   | { ref: RefSource; path: string[] }
@@ -148,6 +174,7 @@ export type GuardExpr =
 
 export interface ViewIR {
   machine: string | null
+  route: string | null
   root: ViewNode
 }
 

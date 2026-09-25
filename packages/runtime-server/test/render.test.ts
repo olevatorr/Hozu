@@ -49,8 +49,9 @@ describe('server rendering', () => {
   it('machine-less pages contain no script at all', async () => {
     const data = createDataRuntime({ build, resolvers: createResolvers() })
     const { html } = await renderToString({ build, data, route: 'orderPlaced' })
-    expect(html).not.toContain('<script')
+    expect(html).not.toMatch(/<script(?! type="application\/ld\+json")/)
     expect(html).not.toContain('<t-i')
+    expect(html).toContain('<meta name="robots" content="noindex">')
   })
 
   it('streams in order: the shell is flushed before per-request data resolves', async () => {
@@ -64,7 +65,7 @@ describe('server rendering', () => {
       run: async (ref, input, s) =>
         ref === 'cart.getCart' ? gate.then(() => real.run(ref, input, s)) : real.run(ref, input, s),
     }
-    const chunks = renderPage({ build, data, route: 'home', session }).chunks[Symbol.asyncIterator]()
+    const chunks = (await renderPage({ build, data, route: 'home', session })).chunks[Symbol.asyncIterator]()
     let before = ''
     for (;;) {
       const next = await Promise.race([

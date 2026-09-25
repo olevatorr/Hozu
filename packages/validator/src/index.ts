@@ -8,6 +8,7 @@ import { unhandledEvents, viewEvents } from './rules/events.ts'
 import { paths } from './rules/paths.ts'
 import { featureLinks, references, routes } from './rules/refs.ts'
 import { rendering } from './rules/rendering.ts'
+import { routeParams } from './rules/routes.ts'
 import { deadEnds, reachability, shadowing, stateNames } from './rules/states.ts'
 
 export type { Drift, LockEntry, Lockfile } from './contracts/lock.ts'
@@ -32,6 +33,7 @@ const rules = [
   invalidations,
   sessions,
   rendering,
+  routeParams,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>

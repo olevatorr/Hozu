@@ -14,6 +14,7 @@ export interface PagePayload {
   features: Record<string, MachineIR | null>
   nodes: Record<string, ViewNode>
   fns: string | null
+  params: Json
 }
 
 export interface EffectResponse {
@@ -56,6 +57,7 @@ export async function hydrate(
       createApp(doc, {
         machine: machine ? compileMachine({ id, machine } as FeatureIR, fns) : null,
         payload: shared,
+        params: payload.params,
         fns,
         onInvoke: async (effect, input) => {
           const { result, refreshed } = await transport(effect, input, [...shared.data.keys()])

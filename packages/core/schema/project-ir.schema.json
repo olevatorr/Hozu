@@ -9,6 +9,16 @@
           "type": "number",
           "const": 1
         },
+        "site": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SiteIR"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "session": {
           "anyOf": [
             {
@@ -40,10 +50,31 @@
       },
       "required": [
         "irVersion",
+        "site",
         "session",
         "routes",
         "pages",
         "features"
+      ],
+      "additionalProperties": false
+    },
+    "SiteIR": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "lang": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "name",
+        "lang"
       ],
       "additionalProperties": false
     },
@@ -86,10 +117,21 @@
       "properties": {
         "path": {
           "type": "string"
+        },
+        "params": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/JsonSchema"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
-        "path"
+        "path",
+        "params"
       ],
       "additionalProperties": false
     },
@@ -112,11 +154,207 @@
             "cacheable",
             null
           ]
+        },
+        "head": {
+          "$ref": "#/definitions/HeadIR"
+        },
+        "entries": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EntriesIR"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
         "views",
-        "assert"
+        "assert",
+        "head",
+        "entries"
+      ],
+      "additionalProperties": false
+    },
+    "HeadIR": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "ref": {
+                  "type": "string"
+                },
+                "input": {
+                  "$ref": "#/definitions/ValueExpr"
+                }
+              },
+              "required": [
+                "ref",
+                "input"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "title": {
+          "$ref": "#/definitions/ValueExpr"
+        },
+        "description": {
+          "$ref": "#/definitions/ValueExpr"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "website",
+            "article"
+          ]
+        },
+        "image": {
+          "$ref": "#/definitions/ValueExpr"
+        },
+        "published": {
+          "$ref": "#/definitions/ValueExpr"
+        },
+        "noindex": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "query",
+        "title",
+        "description",
+        "type",
+        "image",
+        "published",
+        "noindex"
+      ],
+      "additionalProperties": false
+    },
+    "ValueExpr": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "$ref": "#/definitions/RefSource"
+            },
+            "path": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "ref",
+            "path"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "const": "binding"
+            },
+            "depth": {
+              "type": "number"
+            },
+            "path": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "ref",
+            "depth",
+            "path"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literal": {
+              "$ref": "#/definitions/Json"
+            }
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "object": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/ValueExpr"
+              }
+            }
+          },
+          "required": [
+            "object"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "fn": {
+              "type": "string"
+            },
+            "arg": {
+              "$ref": "#/definitions/ValueExpr"
+            }
+          },
+          "required": [
+            "fn",
+            "arg"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "RefSource": {
+      "type": "string",
+      "enum": [
+        "context",
+        "event",
+        "result",
+        "error",
+        "input",
+        "params"
+      ]
+    },
+    "EntriesIR": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "input": {
+          "$ref": "#/definitions/ValueExpr"
+        },
+        "params": {
+          "$ref": "#/definitions/ValueExpr"
+        }
+      },
+      "required": [
+        "query",
+        "input",
+        "params"
       ],
       "additionalProperties": false
     },
@@ -441,106 +679,6 @@
         "param"
       ],
       "additionalProperties": false
-    },
-    "ValueExpr": {
-      "anyOf": [
-        {
-          "type": "object",
-          "properties": {
-            "ref": {
-              "$ref": "#/definitions/RefSource"
-            },
-            "path": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "required": [
-            "ref",
-            "path"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "ref": {
-              "type": "string",
-              "const": "binding"
-            },
-            "depth": {
-              "type": "number"
-            },
-            "path": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "required": [
-            "ref",
-            "depth",
-            "path"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "literal": {
-              "$ref": "#/definitions/Json"
-            }
-          },
-          "required": [
-            "literal"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "object": {
-              "type": "object",
-              "additionalProperties": {
-                "$ref": "#/definitions/ValueExpr"
-              }
-            }
-          },
-          "required": [
-            "object"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "fn": {
-              "type": "string"
-            },
-            "arg": {
-              "$ref": "#/definitions/ValueExpr"
-            }
-          },
-          "required": [
-            "fn",
-            "arg"
-          ],
-          "additionalProperties": false
-        }
-      ]
-    },
-    "RefSource": {
-      "type": "string",
-      "enum": [
-        "context",
-        "event",
-        "result",
-        "error",
-        "input"
-      ]
     },
     "MutationIR": {
       "type": "object",
@@ -910,12 +1048,19 @@
             "null"
           ]
         },
+        "route": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "root": {
           "$ref": "#/definitions/ViewNode"
         }
       },
       "required": [
         "machine",
+        "route",
         "root"
       ],
       "additionalProperties": false

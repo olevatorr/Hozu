@@ -54,6 +54,8 @@ Did-you-mean suggestions use edit distance over the candidates in scope.
 | TN021 | missing-resolver | data runtime (ADR 0005) |
 | TN022 | user-data-in-cacheable-region | validator (ADR 0006) |
 | TN023 | render-assertion-violated | validator (ADR 0006) |
+| TN024 | route-mismatch | validator (ADR 0008) |
+| TN025 | undiscoverable-page (warning) | validator (ADR 0008) |
 
 ## CLI
 - `tenon validate [feature] [--json] [--config <path>]` → `{ ok, hash, summary: { errors, warnings }, diagnostics }`;

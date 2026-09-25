@@ -148,7 +148,20 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
         'A view may only bind to its own feature machine; other features are reached through exports.',
       )
   }
-  const render = () => (d.machine ? d.render({ ctx: refProxy('context', 0), when }) : d.render({}))
+  let route: string | null = null
+  if (d.route) {
+    route = scope.project.routes.get(d.route) ?? '?'
+    if (route === '?')
+      scope.report(
+        'TN007',
+        at(p, 'route'),
+        'View is bound to a route missing from project({ routes })',
+        'Register the route.',
+      )
+  }
+  const params = refProxy('params', 0)
+  const render = () =>
+    d.machine ? d.render({ ctx: refProxy('context', 0), when, params }) : d.render({ params })
   const root = scope.attempt(at(p, 'root'), render, null)
-  return { machine, root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0) }
+  return { machine, route, root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0) }
 }

@@ -1,4 +1,4 @@
-import { contract, event, invoke, machine, mutation, on, op, ui } from '@tenon/core'
+import { contract, event, invoke, machine, mutation, on, op, query, route, ui } from '@tenon/core'
 import { z } from 'zod'
 
 const Item = z.object({ sku: z.string(), qty: z.number() })
@@ -102,6 +102,7 @@ machine({
 
 ui.view({
   machine: ok,
+  route: null,
   render: ({ ctx, when }) =>
     ui.div({}, [
       // @ts-expect-error unknown state in when()
@@ -120,4 +121,40 @@ contract(ok, {
   given: { state: 'waiting', context: { items: [], note: null } },
   when: [],
   expect: { state: 'idle', context: null, effects: null },
+})
+
+const slugRoute = route({ path: '/items/:slug', params: z.object({ slug: z.string() }) })
+const itemQuery = query({
+  input: z.object({ slug: z.string() }),
+  output: Item,
+  errors: {},
+  scope: 'public',
+  freshness: 'static',
+  tags: () => [],
+})
+
+ui.view({
+  machine: null,
+  route: slugRoute,
+  // @ts-expect-error unknown route param
+  render: ({ params }) => ui.p({}, [params.slg]),
+})
+
+ui.page(slugRoute, {
+  views: [],
+  assert: null,
+  head: {
+    query: itemQuery,
+    input: (params) => ({ slug: params.slug }),
+    render: (item) => ({
+      // @ts-expect-error head fields read typed query data
+      title: item.name,
+      description: item.sku,
+      type: 'article',
+      image: null,
+      published: null,
+      noindex: false,
+    }),
+  },
+  entries: null,
 })

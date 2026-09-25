@@ -62,6 +62,7 @@ export function syntheticProject(features: number, states = 30, events = 10) {
     const source = previous?.rows ?? rows
     const View = ui.view({
       machine: m,
+      route: null,
       render: ({ ctx, when }) =>
         ui.section({ class: 'grid' }, [
           ui.h2({}, ['Feature ', f]),
@@ -97,5 +98,5 @@ export function syntheticProject(features: number, states = 30, events = 10) {
     decls.push(decl)
     previous = { feature: decl, rows }
   }
-  return project({ schema: zodAdapter, session: null, routes: {}, pages: [], features: decls })
+  return project({ schema: zodAdapter, session: null, site: null, routes: {}, pages: [], features: decls })
 }

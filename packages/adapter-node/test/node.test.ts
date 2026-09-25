@@ -76,3 +76,23 @@ describe('node adapter', () => {
     expect((await app.call('GET', '/nope')).status).toBe(404)
   })
 })
+
+describe('crawler endpoints', () => {
+  it('answers HEAD without a body, rejects other methods, and serves robots/sitemap', async () => {
+    const app = start()
+    close = app.close
+    const head = await app.call('HEAD', '/order/placed')
+    expect([head.status, head.body, head.headers['content-type']]).toEqual([
+      200,
+      '',
+      'text/html; charset=utf-8',
+    ])
+    expect((await app.call('PUT', '/')).status).toBe(405)
+    expect((await app.call('GET', '/robots.txt')).body).toBe(
+      'User-agent: *\nAllow: /\nDisallow: /order/placed\nSitemap: https://cart.tenon.dev/sitemap.xml\n',
+    )
+    expect((await app.call('GET', '/sitemap.xml')).body).toContain(
+      '<url><loc>https://cart.tenon.dev/</loc></url></urlset>',
+    )
+  })
+})

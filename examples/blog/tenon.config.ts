@@ -1,20 +1,53 @@
-import { project } from '@tenon/core'
+import { project, ui } from '@tenon/core'
 import { zodAdapter } from '@tenon/schema-zod'
 import { z } from 'zod'
+import { getPost, listPosts } from './features/posts/effects.ts'
 import { posts } from './features/posts/feature.ts'
-import { HelloTenon, IslandsExplained, PostList } from './features/posts/views.ts'
+import { Article, PostList } from './features/posts/views.ts'
 import { saved } from './features/saved/feature.ts'
 import { ReadingList } from './features/saved/views.ts'
-import { helloTenon, home, islandsExplained } from './routes.ts'
+import { home, post } from './routes.ts'
 
 export default project({
   schema: zodAdapter,
   session: z.object({ userId: z.string() }),
-  routes: { home, helloTenon, islandsExplained },
+  site: { url: 'https://blog.tenon.dev', name: 'Tenon Blog', lang: 'en' },
+  routes: { home, post },
   pages: [
-    { route: home, views: [PostList, ReadingList], assert: null },
-    { route: helloTenon, views: [HelloTenon], assert: 'static' },
-    { route: islandsExplained, views: [IslandsExplained], assert: 'static' },
+    ui.page(home, {
+      views: [PostList, ReadingList],
+      assert: null,
+      head: {
+        query: null,
+        input: null,
+        render: () => ({
+          title: 'Tenon Blog — notes on AI-first frontends',
+          description: 'Articles about building verifiable, AI-friendly web apps with Tenon.',
+          type: 'website',
+          image: null,
+          published: null,
+          noindex: false,
+        }),
+      },
+      entries: null,
+    }),
+    ui.page(post, {
+      views: [Article],
+      assert: 'static',
+      head: {
+        query: getPost,
+        input: (params) => ({ slug: params.slug }),
+        render: (article) => ({
+          title: article.title,
+          description: article.excerpt,
+          type: 'article',
+          image: null,
+          published: article.publishedAt,
+          noindex: false,
+        }),
+      },
+      entries: { query: listPosts, input: {}, params: (summary) => ({ slug: summary.slug }) },
+    }),
   ],
   features: [posts, saved],
 })

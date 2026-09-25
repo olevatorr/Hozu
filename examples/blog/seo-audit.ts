@@ -90,8 +90,15 @@ for (const path of ['/', '/posts/hello-tenon', '/posts/islands-explained']) {
     broken.length === 0,
     hrefs.length ? `${hrefs.length} links, broken: ${broken.join(', ') || 'none'}` : 'no links',
   )
-  const scripts = html.match(/<script\b/g)?.length ?? 0
-  check(path, 'JavaScript shipped', true, scripts ? `${scripts} script tags` : '0 bytes')
+  const scripts = [...html.matchAll(/<script\b([^>]*)>/g)].filter(
+    (m) => !/application\/(ld\+)?json/.test(m[1]!),
+  ).length
+  check(path, 'JavaScript shipped', true, scripts ? `${scripts} executable script tags` : '0 bytes')
+  check(
+    path,
+    'canonical URL = site URL + path',
+    html.includes(`<link rel="canonical" href="https://blog.tenon.dev${path}">`),
+  )
   check(
     path,
     'user-specific content not in cacheable HTML',
@@ -100,15 +107,41 @@ for (const path of ['/', '/posts/hello-tenon', '/posts/islands-explained']) {
   )
 }
 const missing = await call('GET', '/posts/does-not-exist')
-check('/posts/does-not-exist', 'unknown URL → 404', missing.status === 404, `${missing.status}`)
-check('/robots.txt', 'robots.txt served', (await call('GET', '/robots.txt')).status === 200)
-check('/sitemap.xml', 'sitemap.xml served', (await call('GET', '/sitemap.xml')).status === 200)
+check(
+  '/posts/does-not-exist',
+  'unknown post → 404 (derived from getPost NotFound)',
+  missing.status === 404,
+  `${missing.status}`,
+)
+check(
+  '/posts/does-not-exist',
+  '404 page is noindex and has no canonical',
+  missing.body.includes('content="noindex"') && !missing.body.includes('rel="canonical"'),
+)
+check('/nope', 'unknown route → 404', (await call('GET', '/nope')).status === 404)
+const robots = await call('GET', '/robots.txt')
+check(
+  '/robots.txt',
+  'robots.txt served with Sitemap line',
+  robots.status === 200 && robots.body.includes('Sitemap: https://blog.tenon.dev/sitemap.xml'),
+)
+const sitemap = await call('GET', '/sitemap.xml')
+const locs = [...sitemap.body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
+check(
+  '/sitemap.xml',
+  'sitemap lists every public page (entries expanded)',
+  sitemap.status === 200 && locs.length === 3,
+  locs.join(' '),
+)
 server.close()
 
 const width = Math.max(...results.map((r) => r.check.length))
 let page = ''
 for (const r of results) {
-  if (r.page !== page) console.log(`\n${(page = r.page)}`)
+  if (r.page !== page) {
+    page = r.page
+    console.log(`\n${page}`)
+  }
   console.log(`  ${r.ok ? '✔' : '✖'} ${r.check.padEnd(width)}  ${r.detail}`)
 }
 const failed = results.filter((r) => !r.ok).length

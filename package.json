@@ -14,7 +14,8 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "schema": "node scripts/gen-schemas.ts",
-    "gate": "pnpm lint && pnpm typecheck && pnpm test && pnpm bench"
+    "gate": "pnpm lint && pnpm typecheck && pnpm test && pnpm bench",
+    "bench:frameworks": "pnpm build && pnpm --filter bench-frameworks run run"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

@@ -1,6 +1,6 @@
 import { feature } from '@tenon/core'
 import { getPost, listPosts, postPath, postsTag, postTag } from './effects.ts'
-import { HelloTenon, IslandsExplained, PostList } from './views.ts'
+import { Article, PostList } from './views.ts'
 
 export const posts = feature({
   id: 'posts',
@@ -15,7 +15,7 @@ export const posts = feature({
   mutations: {},
   fns: { postPath },
   machine: null,
-  views: { PostList, HelloTenon, IslandsExplained },
+  views: { PostList, Article },
   contracts: {},
   exports: { events: [], queries: [listPosts], mutations: [], tags: [], fns: [], views: [PostList] },
 })

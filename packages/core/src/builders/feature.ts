@@ -6,6 +6,7 @@ import type { MutationDecl, QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
 import type { FnDecl } from './fn.ts'
 import type { MachineDecl } from './machine.ts'
+import type { PageDecl } from './page.ts'
 import type { RouteDecl } from './route.ts'
 import type { TagDecl } from './tag.ts'
 import type { ViewDecl } from './ui.ts'
@@ -39,17 +40,12 @@ export interface FeatureDecl extends Decl<'feature'> {
 export const feature = (config: FeatureConfig): FeatureDecl =>
   brand({ id: config.id }, 'feature', { ...config })
 
-export interface PageConfig {
-  route: RouteDecl
-  views: ViewDecl[]
-  assert: 'static' | 'cacheable' | null
-}
-
 export interface ProjectConfig {
   schema: SchemaAdapter
   session: Schema | null
   routes: Record<string, RouteDecl>
-  pages: PageConfig[]
+  site: { url: string; name: string; lang: string } | null
+  pages: PageDecl[]
   features: FeatureDecl[]
 }
 

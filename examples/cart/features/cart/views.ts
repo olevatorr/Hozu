@@ -6,6 +6,7 @@ import { cartMachine } from './machine.ts'
 
 export const CartPanel = ui.view({
   machine: cartMachine,
+  route: null,
   render: ({ ctx, when }) =>
     ui.section({ class: 'grid gap-6' }, [
       ui.h2({}, ['Cart']),

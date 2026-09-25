@@ -105,7 +105,11 @@ export function walkView(
   visit: (site: NodeSite) => void,
 ) {
   const bound = view.machine === feature.id && feature.machine !== null
-  const env: Env = bound ? contextEnv(feature) : { feature, sources: {}, bindings: [] }
+  const base: Env = bound ? contextEnv(feature) : { feature, sources: {}, bindings: [] }
+  const env: Env =
+    view.route && view.route !== '?'
+      ? { ...base, sources: { ...base.sources, params: ir.routes[view.route]?.params ?? null } }
+      : base
   const all = bound ? Object.keys(feature.machine!.states) : null
   const walk = (node: ViewNode, pointer: At, visible: string[] | null, env: Env) => {
     visit({ node, pointer, visible, env })

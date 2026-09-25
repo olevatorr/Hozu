@@ -8,7 +8,7 @@
     "lib": ["es2023", "dom"]
   },
   "include": ["packages/*/test", "packages/*/scripts", "examples/*/**/*.ts", "bench", "scripts"],
-  "exclude": ["**/node_modules", "**/dist"],
+  "exclude": ["**/dist", "**/node_modules", "bench/frameworks"],
   "references": [
     {
       "path": "packages/core"

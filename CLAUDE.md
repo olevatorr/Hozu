@@ -48,7 +48,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   DOM runtime, no VDOM, replace-hydration of islands, ADR 0006/0007),
   `@tenon/cli`, `@tenon/adapter-node` (ISR page cache + tag revalidation), `@tenon/adapter-static`
 - Every `@tenon/*` package except `@tenon/schema-zod` has zero third-party runtime dependencies.
-- Routes render via `project({ pages: [{ route, views, assert }] })`; `assert` is validated, never obeyed.
+- Routes: `route({ path: '/posts/:slug', params: schema | null })`; pages: `project({ site, pages: [ui.page(route,
+  { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
+  published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head
+  query derives the HTTP status. `assert` is validated, never obeyed (ADR 0008).
 - `fn()` implementations used on the client are shipped by source text (`/_tenon/fns.js`): they must be
   self-contained (no free variables beyond JS globals) — ADR 0007 D5.
 - Query/mutation implementations live in server modules via `resolvers(project, implement => [...])`, bound by
@@ -58,8 +61,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 ## Commands
 - `pnpm gate` — lint + typecheck + test + bench; must be green at the end of every phase (ADR 0001)
 - `pnpm test` · `pnpm typecheck` · `pnpm lint` · `pnpm bench`
+- `pnpm bench:frameworks` — React/Vue/Preact/Svelte comparison (docs/benchmarks); not part of the gate
 - `pnpm schema` — regenerate the JSON Schemas from the IR / CLI types (a test fails if stale)
 - `pnpm --filter example-cart validate|inspect|graph|explain|plan|simulate|demo|client|serve|export`
+- `pnpm --filter example-blog validate|plan|seo` — SEO audit against adapter-node
 - `tenon validate --update-lock` — accept behavior changes into `tenon.lock.json` (only when clean)
 
 ## CLI (agent-facing, all support --json)

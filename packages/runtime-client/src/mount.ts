@@ -23,6 +23,7 @@ export interface AppOptions {
   machine: CompiledMachine | null
   payload: Payload | Store
   fns?: Record<string, (input: never) => unknown>
+  params?: Json
   snapshot?: Snapshot
   onInvoke?: (effect: string, input: Json) => Promise<Result>
   onNavigate?: (route: string) => void
@@ -86,6 +87,7 @@ export function createApp(doc: Document, options: AppOptions): App {
     }
     if ('fn' in v) return (fns[v.fn] as (x: Json) => Json)(value(v.arg, scope))
     if (v.ref === 'binding') return getIn(scope[v.depth], v.path)
+    if (v.ref === 'params') return getIn(options.params ?? null, v.path)
     return v.ref === 'context' ? getIn(snapshot?.context, v.path) : null
   }
 

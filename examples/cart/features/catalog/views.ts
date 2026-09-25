@@ -3,6 +3,7 @@ import { listProducts } from './effects.ts'
 
 export const ProductGrid = ui.view({
   machine: null,
+  route: null,
   render: () =>
     ui.section({ class: 'grid gap-4' }, [
       ui.h2({}, ['Products']),

@@ -3,13 +3,14 @@ import type { RouteDef } from '../builders/route.ts'
 import { join, resolveSource } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
 import type { Diagnostic, SourceIndex } from '../ir/diagnostic.ts'
-import type { FeatureIR, JsonSchema, PageIR, ProjectIR, RouteIR } from '../ir/types.ts'
+import type { FeatureIR, JsonSchema, ProjectIR, RouteIR } from '../ir/types.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
 import { toCheck } from '../schema/check.ts'
 import { isStandardSchema } from '../schema/standard.ts'
 import { withCapture } from '../source/capture.ts'
 import { buildFeature } from './feature.ts'
+import { buildPages } from './page.ts'
 import { IDENTIFIER, ProjectScope } from './scope.ts'
 
 export interface BuildResult {
@@ -84,15 +85,20 @@ function register(scope: ProjectScope, id: string, config: FeatureConfig) {
   if (config.machine) claim(config.machine, 'machine', 'machine', join(base, 'machine'))
 }
 
-function buildSession(scope: ProjectScope, schema: unknown): JsonSchema | null {
+function projectSchema(
+  scope: ProjectScope,
+  schema: unknown,
+  pointer: string,
+  key: string,
+): JsonSchema | null {
   if (schema === null || schema === undefined) return null
   if (!isStandardSchema(schema)) {
     scope.report(
       'TN014',
       null,
-      '/session',
-      'project({ session }) must be a schema or null',
-      'The session shape is declared with the project schema adapter.',
+      pointer,
+      'Expected a schema or null',
+      'Project-level schemas use the project schema adapter.',
     )
     return null
   }
@@ -103,14 +109,14 @@ function buildSession(scope: ProjectScope, schema: unknown): JsonSchema | null {
     scope.report(
       'TN012',
       null,
-      '/session',
-      `Session schema from "${vendor}" but the project adapter is "${adapter.vendor}"`,
+      pointer,
+      `Schema from "${vendor}" but the project adapter is "${adapter.vendor}"`,
       'One canonical schema form per project.',
     )
     return null
   }
   const check = toCheck(schema)
-  if (check) scope.bindings.checks['#session'] = check
+  if (check) scope.bindings.checks[key] = check
   return adapter.toJsonSchema(schema)
 }
 
@@ -140,7 +146,7 @@ function build(project: unknown, tracking: boolean): BuildResult {
       'Use an adapter such as zodAdapter from @tenon/schema-zod.',
     )
 
-  const session = buildSession(scope, config.session)
+  const session = projectSchema(scope, config.session, '/session', '#session')
   const routes: Record<string, RouteIR> = {}
   for (const [id, route] of Object.entries(config.routes ?? {})) {
     const p = join('', 'routes', id)
@@ -156,7 +162,11 @@ function build(project: unknown, tracking: boolean): BuildResult {
       continue
     }
     scope.routes.set(route, id)
-    routes[id] = { path: defOf<RouteDef>(route).path }
+    const def = defOf<RouteDef>(route)
+    routes[id] = {
+      path: def.path,
+      params: projectSchema(scope, def.params, join(p, 'params'), `#route:${id}`),
+    }
   }
 
   const configs: [string, FeatureConfig][] = []
@@ -201,48 +211,16 @@ function build(project: unknown, tracking: boolean): BuildResult {
   const features: Record<string, FeatureIR> = {}
   for (const [id, fc] of configs) features[id] = buildFeature(scope, id, fc)
 
-  const pages: Record<string, PageIR> = {}
-  for (const [i, page] of (config.pages ?? []).entries()) {
-    const p = join('', 'pages', i)
-    const id = scope.routes.get(page.route)
-    if (!id) {
-      scope.report(
-        'TN007',
-        null,
-        p,
-        'Page route is not registered in project({ routes })',
-        'Pages render registered routes.',
-      )
-      continue
-    }
-    if (pages[id]) {
-      scope.report(
-        'TN013',
-        null,
-        join('', 'pages', id),
-        `Route "${id}" is rendered by two pages`,
-        'Each route has exactly one page.',
-      )
-      continue
-    }
-    const views = page.views.map((v) => {
-      const owner = scope.owners.get(v)
-      if (owner?.kind === 'view') return `${owner.feature}.${owner.symbol}`
-      scope.report(
-        'TN007',
-        null,
-        join('', 'pages', id, 'views'),
-        'Page view is not declared in any feature',
-        'Register the view in a feature views record.',
-      )
-      return '?'
-    })
-    const assert = page.assert === 'static' || page.assert === 'cacheable' ? page.assert : null
-    pages[id] = { views, assert }
-    scope.mark(join('', 'pages', id), page.route)
-  }
+  const pages = buildPages(scope, config.pages ?? [])
 
-  const ir: ProjectIR = { irVersion: 1, session, routes, pages, features }
+  const site = config.site
+    ? {
+        url: String(config.site.url).replace(/\/$/, ''),
+        name: String(config.site.name),
+        lang: String(config.site.lang),
+      }
+    : null
+  const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, features }
   for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
   return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }
 }
