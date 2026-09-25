@@ -15,7 +15,8 @@
     "format": "biome format --write .",
     "schema": "node scripts/gen-schemas.ts",
     "gate": "pnpm lint && pnpm typecheck && pnpm test && pnpm bench",
-    "bench:frameworks": "pnpm build && pnpm --filter bench-frameworks run run"
+    "bench:frameworks": "pnpm build && pnpm --filter bench-frameworks run run",
+    "bench:parity": "pnpm build && pnpm --filter bench-parity build:nuxt && pnpm --filter bench-parity run run"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

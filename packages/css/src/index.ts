@@ -34,6 +34,12 @@ export function selectorClasses(css: string): Set<string> {
   return out
 }
 
+const foldDivisions = (css: string) =>
+  css.replace(/calc\((-?\d*\.?\d+)\s*\/\s*(-?\d*\.?\d+)\)/g, (all, a: string, b: string) => {
+    const x = Number(a) / Number(b)
+    return Number.isFinite(x) ? String(Number(x.toFixed(5))).replace(/^0\./, '.') : all
+  })
+
 const resolveCss = async (id: string) =>
   id === 'tailwindcss' || id.startsWith('tailwindcss/')
     ? require.resolve(id === 'tailwindcss' ? 'tailwindcss/index.css' : id)
@@ -65,7 +71,7 @@ export async function compileStyles(
       assets[href] = file
       return `url(${quote}${href}${quote})`
     })
-  const css = minify ? optimize(raw, { minify: true }).code : raw
+  const css = minify ? foldDivisions(optimize(raw, { minify: true }).code) : raw
   const known = selectorClasses(raw)
   const unknown = new Map<string, string | null>()
   const missing = [...candidates].filter((c) => !known.has(c) && !markers.test(c)).sort()

@@ -164,8 +164,9 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     if (hydrate && !inIsland) islands.push(node.id)
     const island = inIsland || hydrate
     nodes.push({ id: node.id, region: region.id, mode: region.mode, hydrate })
+    const inner = node.kind === 'widget' && !inIsland ? false : island
     const children = (list: ViewNode[], base: string, t = tainted) =>
-      list.forEach((c, i) => walk(feature, c, join(base, 'children', i), region, t, island))
+      list.forEach((c, i) => walk(feature, c, join(base, 'children', i), region, t, inner))
     switch (node.kind) {
       case 'el':
       case 'when':

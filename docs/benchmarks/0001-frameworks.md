@@ -56,3 +56,20 @@ Second optimization pass (same day):
   is nothing to escape.
 - HTML 35.8 → 32.8 KB (2.7 → 2.1 KB gzipped): island scope is pruned by **path**, not only by depth. An Add button
   that reads `p.sku` ships `{ sku }`, not the whole product. The projection shape is memoized per island node.
+
+Third run (after ADR 0009 / 0010, same day). JS is now measured as the entry plus its statically imported chunks,
+because Tenon loads motion, widget, live and upload code only on pages that use them:
+
+| Framework | SSR renders/s | HTML raw (gzip) | JS min (gzip) | Hydrate ms | Interactive at ms | 200 clicks ms |
+|---|---|---|---|---|---|---|
+| React 19.3.0 | 1,179 | 13.4 KB (1.6) | 218.1 KB (67.7) | 115.3 | 297.8 | 249.1 |
+| Vue 3.5.43 | 5,328 | 12.6 KB (1.5) | 77.1 KB (30.9) | 33.0 | 104.2 | 133.3 |
+| Preact 10.29.8 | 10,209 | 12.6 KB (1.5) | 12.9 KB (5.4) | 22.2 | 93.6 | 304.9 |
+| Svelte 5.57.1 | 54,388 | 12.6 KB (1.6) | 49.5 KB (18.7) | 17.3 | 70.2 | 25.2 |
+| **Tenon** | **13,702** | 18.6 KB (1.8) | 17.0 KB (7.1) | 15.0 | 103.0 | **16.0** |
+
+- SSR went from 10.9k to 13.7k renders/s, and HTML from 32.8 to 18.6 KB: no `data-t` ids and no `<t-i>` wrappers.
+  Hydration now adopts the server DOM through comment markers.
+- Initial JS grew from 4.1 to 7.1 KB gzipped. The runtime now covers the full DOM vocabulary, keyed moves,
+  `if`/`html`/`window` nodes and client query fetching. It is still the second smallest after Preact.
+- "Interactive at" moved from 58 to 103 ms. This metric swings the most between runs (Svelte went from 96 to 70).

@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { extname, join } from 'node:path'
@@ -116,9 +116,13 @@ for (const fw of frameworks) {
   const html = await fw.ssr()
   mkdirSync(join(out, fw.name), { recursive: true })
   writeFileSync(join(out, fw.name, 'index.html'), html)
+  const entry = join(here, `.entry-${fw.name}.ts`)
+  writeFileSync(entry, fw.client)
   const js = await bundle({
-    stdin: { contents: fw.client, resolveDir: here, loader: 'ts' },
+    entryPoints: { app: entry },
+    outdir: join(out, fw.name),
     bundle: true,
+    splitting: true,
     minify: true,
     format: 'esm',
     platform: 'browser',
@@ -126,8 +130,21 @@ for (const fw of frameworks) {
     define: { 'process.env.NODE_ENV': '"production"' },
     write: false,
   })
-  const code = js.outputFiles[0]!.contents
-  writeFileSync(join(out, fw.name, 'app.js'), code)
+  rmSync(entry)
+  const files = new Map(js.outputFiles.map((f) => [f.path.slice(f.path.lastIndexOf('/') + 1), f.contents]))
+  for (const [name, contents] of files) writeFileSync(join(out, fw.name, name), contents)
+  const initial = (name: string, seen = new Set<string>()): Uint8Array[] => {
+    if (seen.has(name)) return []
+    seen.add(name)
+    const contents = files.get(name)!
+    const deps = [
+      ...Buffer.from(contents)
+        .toString()
+        .matchAll(/from"\.\/(chunk-[A-Z0-9]+\.js)"/g),
+    ].map((m) => m[1]!)
+    return [contents, ...deps.flatMap((d) => initial(d, seen))]
+  }
+  const code = Buffer.concat(initial('app.js'))
   rows.push({
     name: fw.name,
     version: fw.version,
@@ -135,7 +152,7 @@ for (const fw of frameworks) {
     htmlBytes: Buffer.byteLength(html),
     htmlGzip: gzipSync(html).length,
     jsBytes: code.length,
-    jsGzip: gzipSync(code).length,
+    jsGzip: initial('app.js').reduce((sum, c) => sum + gzipSync(c).length, 0),
     hydrateMs: 0,
     interactiveMs: 0,
     clicksMs: 0,

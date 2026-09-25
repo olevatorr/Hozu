@@ -185,7 +185,9 @@ export function compileNode(n: ViewNode, island: boolean, c: Compile, sep = fals
         r.widget(ref)
         return ''
       }
-      return seq([use, `<${tag}`, classAndStyleFrag(n, fns), '>', ...children(n.children), `</${tag}>`])
+      const own = island && c.islands.has(n.id)
+      const kids = n.children.map((x, i) => compileNode(x, !own && island, c, separated(n.children, i)))
+      return seq([use, `<${tag}`, classAndStyleFrag(n, fns), '>', ...kids, `</${tag}>`])
     }
     default:
       return ''

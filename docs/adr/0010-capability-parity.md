@@ -1,6 +1,6 @@
 # ADR 0010 — Capability parity with mainstream frameworks
 
-- Status: accepted (the user asked that everything mainstream frameworks can do, Tenon can do)
+- Status: accepted (the user asked that Tenon can do everything mainstream frameworks can); G1–G13 implemented and tested
 - Scope: capabilities of Nuxt 4, Next.js 16 and SvelteKit 2 that an application actually uses. Visual parity is
   ADR 0009; this ADR is about what an app can *express*.
 
@@ -50,3 +50,14 @@ prerender, code-split client libraries, dev server with CSS hot swap, typed data
 - **G11** `/_tenon/live` is a server-sent-events stream of invalidated tags. The client refetches the live queries
   on the page that match those tags.
 - Open items 16–18 are listed so the gap is visible; each needs its own ADR before code.
+
+## Implementation notes
+- The `if` node stores its branches as `ifTrue` / `ifFalse`: an IR object with a `then` property would be treated as a
+  thenable by `await`.
+- User-scoped resolvers see `session: Session | null`. Anonymous callers share the `user:null` partition, so
+  resolvers can answer `Unauthorized` (G5/G6) instead of the framework failing with Unexpected.
+- The client runtime is code-split. Motion, widget mounting, the live stream and upload encoding load only when a
+  page's payload needs them, so the initial JS stays at 7.0 KB gzipped (P7 now counts the entry plus static
+  chunks).
+- A wrapper widget that is an island root keeps its children outside the island. Only their own islands
+  hydrate, so a page-wide wrapper (smooth scrolling) no longer ships the whole view.

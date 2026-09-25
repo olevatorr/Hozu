@@ -1,4 +1,4 @@
-import { fn, query, tag } from '@tenon/core'
+import { query, tag } from '@tenon/core'
 import { z } from 'zod'
 import { NoInput, Post, SlugInput, Summary } from './schemas.ts'
 
@@ -22,5 +22,3 @@ export const getPost = query({
   freshness: 'static',
   tags: (input) => [postTag(input.slug)],
 })
-
-export const postPath = fn({ input: z.string(), output: z.string(), impl: (slug) => `/posts/${slug}` })

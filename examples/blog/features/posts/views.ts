@@ -1,6 +1,6 @@
 import { ui } from '@tenon/core'
 import { post } from '../../routes.ts'
-import { getPost, listPosts, postPath } from './effects.ts'
+import { getPost, listPosts } from './effects.ts'
 
 export const PostList = ui.view({
   machine: null,
@@ -14,7 +14,7 @@ export const PostList = ui.view({
         {
           ready: (posts) =>
             ui.ul({ class: 'grid gap-6 sm:grid-cols-2' }, [
-              ui.each(posts, 'slug', (post) =>
+              ui.each(posts, 'slug', (entry) =>
                 ui.li(
                   {
                     class:
@@ -24,15 +24,15 @@ export const PostList = ui.view({
                     ui.h2({ class: 'text-xl font-semibold group-hover:text-brand-700' }, [
                       ui.a(
                         {
-                          href: postPath(post.slug),
+                          href: ui.link(post, { slug: entry.slug }),
                           class: 'focus-visible:outline-2 focus-visible:outline-brand-600',
                         },
-                        [post.title],
+                        [entry.title],
                       ),
                     ]),
-                    ui.p({ class: 'mt-2 text-gray-600 dark:text-gray-300' }, [post.excerpt]),
+                    ui.p({ class: 'mt-2 text-gray-600 dark:text-gray-300' }, [entry.excerpt]),
                     ui.small({ class: 'mt-4 block text-xs uppercase tracking-wide text-gray-500' }, [
-                      post.publishedAt,
+                      entry.publishedAt,
                     ]),
                   ],
                 ),

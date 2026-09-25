@@ -1,0 +1,61 @@
+{
+  "features": {
+    "site": {
+      "ready/on/site.AddTodo/0": {
+        "behavior": "83da65dec2939e82",
+        "contracts": {
+          "interactions": "b9730b984add547c"
+        }
+      },
+      "ready/on/site.Draft/0": {
+        "behavior": "d0dc08d9e138f769",
+        "contracts": {
+          "interactions": "b9730b984add547c"
+        }
+      },
+      "ready/on/site.RemoveTodo/0": {
+        "behavior": "b7566cf27043e458",
+        "contracts": {
+          "interactions": "b9730b984add547c"
+        }
+      },
+      "ready/on/site.SelectMetric/0": {
+        "behavior": "da72c37c8b2064ba",
+        "contracts": {
+          "interactions": "b9730b984add547c"
+        }
+      },
+      "ready/on/site.SelectMetric/1": {
+        "behavior": "8693d1639deb4cb6",
+        "contracts": {
+          "interactions": "b9730b984add547c"
+        }
+      },
+      "ready/on/site.SelectTab/0": {
+        "behavior": "83bd5e333912620b",
+        "contracts": {
+          "interactions": "b9730b984add547c"
+        }
+      },
+      "ready/on/site.Shuffle/0": {
+        "behavior": "43c83fef7cc9b105",
+        "contracts": {
+          "interactions": "b9730b984add547c"
+        }
+      },
+      "ready/on/site.SlideChanged/0": {
+        "behavior": "7bfc7f11e0fc4867",
+        "contracts": {
+          "interactions": "b9730b984add547c"
+        }
+      },
+      "ready/on/site.ToggleSpin/0": {
+        "behavior": "7bdbbd41067626cc",
+        "contracts": {
+          "interactions": "b9730b984add547c"
+        }
+      }
+    }
+  },
+  "version": 1
+}

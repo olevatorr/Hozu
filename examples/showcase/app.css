@@ -1,0 +1,48 @@
+@import "tailwindcss";
+@import "swiper/css";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@view-transition {
+  navigation: auto;
+}
+
+.site-header {
+  view-transition-name: site-header;
+}
+
+.panel {
+  @apply absolute inset-x-0 top-0 max-w-prose text-lg text-slate-700 dark:text-slate-300;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.list-enter-active,
+.list-leave-active,
+.list-move {
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(-12px);
+}
+.list-leave-active {
+  position: absolute;
+  inset-inline: 0;
+}

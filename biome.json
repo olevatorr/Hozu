@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/schema/*.json", "!**/__snapshots__"]
+    "includes": ["**", "!**/schema/*.json", "!**/__snapshots__", "!**/*.vue", "!**/*.svelte"]
   },
   "formatter": {
     "enabled": true,

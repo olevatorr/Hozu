@@ -15,7 +15,7 @@ import {
   type WidgetIR,
 } from '@tenon/core/ir'
 import type { DataRuntime } from '@tenon/data'
-import { compileGuard, type Getter, getIn, pathOf } from '@tenon/machine'
+import { compileGuard, type Getter, pathOf } from '@tenon/machine'
 import type { IslandRef, PagePayload, Result } from '@tenon/runtime-client'
 import { attrText, text } from '@tenon/runtime-client'
 import {
@@ -123,7 +123,7 @@ export async function renderPage({
     const index = payload.islands.length
     const ref: IslandRef = { feature: scope.feature.id, node: n.id, scope: pruneScope(n, scope.bindings) }
     payload.islands.push(ref)
-    payload.nodes[n.id] = n
+    payload.nodes[n.id] = n.kind === 'widget' ? { ...n, children: [] } : n
     payload.features[scope.feature.id] ??= (scope.feature.machine as MachineIR | null) ?? null
     void index
     return '<!--i-->'
@@ -220,8 +220,9 @@ export async function renderPage({
         const tag = n.kind === 'el' ? n.tag : (widgets[n.widget]?.tag ?? 'div')
         if (n.kind === 'widget') runtime.widget(n.widget)
         buffer += n.kind === 'el' ? element(n, scope) : `<${tag}${classAndStyle(n, (v) => value(v, scope))}>`
+        const inner = n.kind === 'widget' && islandIds.has(n.id) ? false : island
         for (let i = 0; i < n.children.length; i++)
-          await render(n.children[i]!, scope, island, separated(n.children, i))
+          await render(n.children[i]!, scope, inner, separated(n.children, i))
         buffer += `</${tag}>`
         return
       }

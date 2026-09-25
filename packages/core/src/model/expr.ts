@@ -42,7 +42,7 @@ type ValObject<T> = [T] extends [readonly unknown[]]
     ? { readonly [K in keyof T]: Val<T[K]> }
     : never
 
-export type Val<T> = T | Expr<T> | ValObject<NonNullable<T>>
+export type Val<T> = T | Expr<T> | ValObject<NonNullable<T>> | ([T] extends [boolean] ? Guard : never)
 
 export interface Guard {
   readonly [GUARD]: RawGuard

@@ -49,11 +49,19 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `@tenon/cli`, `@tenon/adapter-node` (ISR page cache + tag revalidation), `@tenon/adapter-static`,
   `@tenon/css` (Tailwind v4 bound, compiled from the IR's class candidates, TN026, ADR 0009),
   `@tenon/dev` (dev server: CSS hot swap, reload on code changes)
-- Every `@tenon/*` package except `@tenon/schema-zod` and `@tenon/css` has zero third-party runtime dependencies.
+- Every `@tenon/*` package except `@tenon/schema-zod`, `@tenon/css` (Tailwind) and `@tenon/bundle` (esbuild) has zero
+  third-party runtime dependencies.
 - Views: every HTML/SVG element with per-tag typed attributes, all DOM events, `ui.dom.*` event fields (TN027),
   `class` (static) + `toggle` (guarded class groups) + `vars` (CSS custom properties). No `style`, no free
   functions. Stylesheets: `project({ styles })` Tailwind entry + `feature({ styles })`; classes must produce CSS
-  (TN026), hooks use `data-*`.
+  (TN026), hooks use `data-*`. `when`/`ui.if`/`ui.each` take an optional motion name (enter/leave/move classes).
+  Also `ui.if`, `ui.link(route, params)`, `ui.window`/`ui.document`, `ui.html` (TN030 for untrusted values),
+  `ui.asset(url)` (TN028 for img without dimensions).
+- Widgets (ADR 0009): `ui.widget({ tag, props, events, client, load, wraps })` in `feature({ widgets })`,
+  `ui.use(W, { props, on, class }, children)`, client module `export default implement<typeof W>(setup)` from
+  `@tenon/core/widget` (type-only import of the declaration). Bundled by `@tenon/bundle` (esbuild), TN029.
+- Server capabilities (ADR 0010): client fetch of new query keys, live queries over SSE, `head.redirects`,
+  `sessionCookie` + `setSession`, `project({ notFound })`, `site.icon` / `themeColor`, uploads via `ctx.file`.
 - Routes: `route({ path: '/posts/:slug', params: schema | null })`; pages: `project({ site, pages: [ui.page(route,
   { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head
@@ -68,10 +76,12 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `pnpm gate` — lint + typecheck + test + bench; must be green at the end of every phase (ADR 0001)
 - `pnpm test` · `pnpm typecheck` · `pnpm lint` · `pnpm bench`
 - `pnpm bench:frameworks` — React/Vue/Preact/Svelte comparison (docs/benchmarks); not part of the gate
+- `pnpm bench:parity` — screenshot parity of `examples/showcase` against a Nuxt reference (docs/benchmarks/0002)
 - `pnpm schema` — regenerate the JSON Schemas from the IR / CLI types (a test fails if stale)
 - `pnpm --filter example-cart validate|inspect|graph|explain|plan|simulate|demo|client|serve|export`
 - `pnpm --filter example-blog validate|plan|seo|serve|dev` — SEO audit against adapter-node
 - `pnpm --filter example-cart dev` — dev server with CSS hot swap
+- `pnpm --filter example-showcase validate|serve|dev` — every presentation capability and widget library
 - `tenon validate --update-lock` — accept behavior changes into `tenon.lock.json` (only when clean)
 
 ## CLI (agent-facing, all support --json)
