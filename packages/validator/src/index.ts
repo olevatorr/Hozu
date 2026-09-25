@@ -7,11 +7,13 @@ import { invalidations, sessions } from './rules/data.ts'
 import { domFields } from './rules/dom.ts'
 import { declaredErrors } from './rules/errors.ts'
 import { unhandledEvents, viewEvents } from './rules/events.ts'
+import { imageDimensions } from './rules/images.ts'
 import { paths } from './rules/paths.ts'
 import { featureLinks, references, routes } from './rules/refs.ts'
 import { rendering } from './rules/rendering.ts'
 import { routeParams } from './rules/routes.ts'
 import { deadEnds, reachability, shadowing, stateNames } from './rules/states.ts'
+import { widgetEvents } from './rules/widgets.ts'
 
 export type { Drift, LockEntry, Lockfile } from './contracts/lock.ts'
 export type { ContractRun, Failure } from './contracts/run.ts'
@@ -38,6 +40,8 @@ const rules = [
   routeParams,
   domFields,
   classNames,
+  widgetEvents,
+  imageDimensions,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>
@@ -59,7 +63,12 @@ export interface Verification {
 }
 
 export function verify(ir: ProjectIR, options: ValidateOptions = {}): Verification {
-  const ctx = new Ctx(ir, options.sources ?? {}, options.unknownClasses ?? null)
+  const ctx = new Ctx(
+    ir,
+    options.sources ?? {},
+    options.unknownClasses ?? null,
+    options.bindings?.assets ?? {},
+  )
   for (const rule of rules) rule(ctx)
   const lock = options.bindings ? verifyContracts(ctx, options.bindings, options.lock ?? null) : null
   const out = options.feature

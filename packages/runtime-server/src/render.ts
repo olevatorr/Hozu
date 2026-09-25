@@ -11,6 +11,7 @@ import {
   type TagExprIR,
   type ValueExpr,
   type ViewNode,
+  type WidgetIR,
 } from '@tenon/core/ir'
 import type { DataRuntime } from '@tenon/data'
 import { type Getter, getIn } from '@tenon/machine'
@@ -34,11 +35,20 @@ export interface Assets {
   client: string
   fns: string | null
   styles: string | null
+  preload: string[]
+  widgets: Record<string, string>
 }
 
 export interface Stylesheet {
   href: string
   css: string
+  assets: Record<string, string>
+  preload: string[]
+}
+
+export interface WidgetBundle {
+  urls: Record<string, string>
+  files: Record<string, string>
 }
 
 export interface RenderOptions {
@@ -64,13 +74,22 @@ export async function renderPage({
   route,
   params = null,
   session,
-  assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: null },
+  assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: null, preload: [], widgets: {} },
 }: RenderOptions): Promise<RenderedPage> {
   const { ir, bindings } = build
   const plan = planOf(ir, route)
   const islandIds = new Set(plan.islands)
   const tags = new Set<string>()
-  const payload: PagePayload = { islands: [], data: [], features: {}, nodes: {}, fns: null, params }
+  const payload: PagePayload = {
+    islands: [],
+    data: [],
+    features: {},
+    nodes: {},
+    fns: null,
+    params,
+    widgets: {},
+  }
+  const widgets = widgetsOf(ir)
   const fns = bindings.fns as Record<string, (x: Json) => Json>
   const getters = gettersFor(fns)
 
@@ -130,6 +149,7 @@ export async function renderPage({
         break
       case 'el':
       case 'when':
+      case 'widget':
         result = n.children.some(suspends)
         break
       case 'each':
@@ -147,13 +167,21 @@ export async function renderPage({
     return result
   }
 
-  const runtime: Runtime = { open, embed: (view) => embedded({ kind: 'embed', id: '', view }) }
+  const runtime: Runtime = {
+    open,
+    embed: (view) => embedded({ kind: 'embed', id: '', view }),
+    widget: (ref) => {
+      const w = widgets[ref]
+      const url = assets.widgets[ref]
+      if (w && url) payload.widgets[ref] ??= { url, tag: w.tag, load: w.load, wraps: w.wraps }
+    },
+  }
   const compiled = compiledFor(plan, islandIds)
   const sync = (n: ViewNode, scope: Scope, island: boolean, sep = false): string => {
     const cache = island ? compiled.inside : compiled.outside
     let frag = cache.get(n)
     if (frag === undefined) {
-      frag = compileNode(n, island, islandIds, fns, sep)
+      frag = compileNode(n, island, { islands: islandIds, fns, widgets }, sep)
       cache.set(n, frag)
     }
     return run(frag, scope, runtime)
@@ -179,11 +207,15 @@ export async function renderPage({
     const [o, c] = island ? [OPEN, CLOSE] : ['', '']
     switch (n.kind) {
       case 'el':
-        buffer += element(n, scope)
+      case 'widget': {
+        const tag = n.kind === 'el' ? n.tag : (widgets[n.widget]?.tag ?? 'div')
+        if (n.kind === 'widget') runtime.widget(n.widget)
+        buffer += n.kind === 'el' ? element(n, scope) : `<${tag}${classAndStyle(n, (v) => value(v, scope))}>`
         for (let i = 0; i < n.children.length; i++)
           await render(n.children[i]!, scope, island, separated(n.children, i))
-        buffer += `</${n.tag}>`
+        buffer += `</${tag}>`
         return
+      }
       case 'when':
         buffer += o
         if (scope.state !== null && n.states.includes(scope.state))
@@ -246,7 +278,7 @@ export async function renderPage({
     if (!result.ok) status = result.error === 'Unexpected' ? 500 : 404
     headScope = { ...empty, bindings: [result.ok ? result.value : null] }
   }
-  const head = headHtml(ir, page.head, (v) => value(v, headScope), path, status, assets.styles)
+  const head = headHtml(ir, page.head, (v) => value(v, headScope), path, status, assets)
 
   void (async () => {
     try {
@@ -282,6 +314,18 @@ const gettersFor = (fns: object) => {
     getterCache.set(fns, g)
   }
   return g
+}
+
+const widgetMemo = new WeakMap<ProjectIR, Record<string, WidgetIR>>()
+function widgetsOf(ir: ProjectIR): Record<string, WidgetIR> {
+  let hit = widgetMemo.get(ir)
+  if (!hit) {
+    hit = {}
+    for (const f of Object.values(ir.features))
+      for (const [sym, w] of Object.entries(f.widgets ?? {})) hit[`${f.id}.${sym}`] = w
+    widgetMemo.set(ir, hit)
+  }
+  return hit
 }
 
 const plans = new WeakMap<ProjectIR, Map<string, RoutePlan>>()
@@ -333,6 +377,12 @@ function bindingUses(n: ViewNode): Uses {
     switch (x.kind) {
       case 'text':
         valueUses(x.value, out)
+        return
+      case 'widget':
+        valueUses(x.props, out)
+        for (const m of [x.toggle, x.vars]) for (const k in m) valueUses(m[k]!, out)
+        for (const k in x.on) valueUses(x.on[k]!.payload, out)
+        for (const c of x.children) walk(c)
         return
       case 'el':
         for (const m of [x.attrs, x.toggle, x.vars]) for (const k in m) valueUses(m[k]!, out)
@@ -474,7 +524,7 @@ function headHtml(
   value: (v: ValueExpr) => Json,
   path: string,
   status: number,
-  styles: string | null,
+  { styles, preload }: Assets,
 ): string {
   const str = (v: ValueExpr) => {
     const x = value(v)
@@ -498,6 +548,9 @@ function headHtml(
   return [
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    ...preload.map(
+      (href) => `<link rel="preload" href="${escapeHtml(href)}" as="font" type="font/woff2" crossorigin>`,
+    ),
     styles ? `<link rel="stylesheet" href="${escapeHtml(styles)}">` : '',
     SPECULATION,
     `<title>${escapeHtml(title)}</title>`,

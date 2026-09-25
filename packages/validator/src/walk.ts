@@ -119,6 +119,7 @@ export function walkView(
     })
     switch (node.kind) {
       case 'el':
+      case 'widget':
         node.children.forEach((c, i) => walk(c, at(pointer, 'children', i), visible, env))
         return
       case 'when': {

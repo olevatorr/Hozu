@@ -10,9 +10,15 @@ function collectViewEdges(node: ViewNode, from: string, edges: GraphEdge[], node
   }
   switch (node.kind) {
     case 'el':
+    case 'widget':
       for (const send of Object.values(node.on)) {
         add(`event:${send.event}`, 'event', send.event)
-        edges.push({ from, to: `event:${send.event}`, kind: 'send', label: node.tag })
+        edges.push({
+          from,
+          to: `event:${send.event}`,
+          kind: 'send',
+          label: node.kind === 'el' ? node.tag : node.widget,
+        })
       }
       for (const child of node.children) collectViewEdges(child, from, edges, nodes)
       return

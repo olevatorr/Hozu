@@ -30,6 +30,7 @@ export default project({
     feature({
       id: 'dice',
       styles: [],
+      widgets: {},
       intent: { summary: 'Reads Math.random inside a recorder', invariants: [] },
       imports: [],
       tags: {},

@@ -5,6 +5,8 @@ export interface Bindings {
   checks: Record<string, Check>
   refs: Map<object, string>
   styles: StyleFiles
+  widgets: Record<string, string>
+  assets: Record<string, { file: string; width: number | null; height: number | null }>
 }
 
 export interface StyleFiles {

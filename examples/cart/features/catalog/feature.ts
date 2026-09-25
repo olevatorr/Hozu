@@ -5,6 +5,7 @@ import { ProductGrid } from './views.ts'
 export const catalog = feature({
   id: 'catalog',
   styles: [],
+  widgets: {},
   intent: {
     summary: 'Public product catalog. Read-only, cacheable, ships no JavaScript.',
     invariants: ['Only public data', 'No machine: every node is static or revalidated'],

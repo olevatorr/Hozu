@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+import { assetOf } from '../builders/asset.ts'
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import { type At, at, join, resolveAt } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
@@ -18,6 +20,14 @@ export interface Owner {
 
 export const IDENTIFIER = /^[A-Za-z][A-Za-z0-9_]*$/
 
+export const filePath = (url: unknown): string | null =>
+  typeof url === 'object' &&
+  url !== null &&
+  (url as URL).protocol === 'file:' &&
+  typeof (url as URL).href === 'string'
+    ? fileURLToPath((url as URL).href)
+    : null
+
 export { type At, at, resolveAt }
 
 const registryOf: Partial<Record<DeclKind, string>> = {
@@ -28,6 +38,7 @@ const registryOf: Partial<Record<DeclKind, string>> = {
   tag: 'tags',
   view: 'views',
   contract: 'contracts',
+  widget: 'widgets',
   machine: 'machine',
   route: 'routes',
 }
@@ -45,6 +56,8 @@ export class ProjectScope {
     checks: {},
     refs: new Map(),
     styles: { entry: null, features: {} },
+    widgets: {},
+    assets: {},
   }
   readonly tracking: boolean
 
@@ -219,6 +232,11 @@ export class FeatureScope {
 
   value(v: unknown, pointer: At): ValueExpr {
     if (guardOf(v)) return { test: this.guard(v, pointer) }
+    const file = assetOf(v)
+    if (file) {
+      this.project.bindings.assets[file.href] = { file: file.file, width: file.width, height: file.height }
+      return { literal: file.href }
+    }
     const expr = exprOf(v)
     if (expr) {
       if (expr.kind === 'call')

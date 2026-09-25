@@ -1,15 +1,19 @@
+import { existsSync, readFileSync } from 'node:fs'
 import type { MutationDef, QueryDef } from '../builders/effects.ts'
 import type { EventDef } from '../builders/event.ts'
 import type { FeatureConfig } from '../builders/feature.ts'
 import type { FnDef } from '../builders/fn.ts'
 import { type TagDef, tagUseOf } from '../builders/tag.ts'
-import type { ExportsIR, FeatureIR, Freshness, QueryIR, TagExprIR } from '../ir/types.ts'
+import type { WidgetDef } from '../builders/widget.ts'
+import { sha256 } from '../canonical/hash.ts'
+import { htmlTags } from '../ir/dom-data.ts'
+import type { ExportsIR, FeatureIR, Freshness, QueryIR, TagExprIR, WidgetIR } from '../ir/types.ts'
 import { type Decl, defOf } from '../model/decl.ts'
 import { RecorderError, refProxy } from '../model/expr.ts'
 import type { Schema } from '../schema/standard.ts'
 import { buildContract } from './contract.ts'
 import { buildMachine } from './machine.ts'
-import { type At, at, FeatureScope, type ProjectScope } from './scope.ts'
+import { type At, at, FeatureScope, filePath, type ProjectScope } from './scope.ts'
 import { buildView } from './view.ts'
 
 const exportKeys = ['events', 'queries', 'mutations', 'tags', 'fns', 'views'] as const
@@ -67,6 +71,43 @@ function bindEffect(
   scope.bind(`${ref}#input`, d.input)
   scope.bind(`${ref}#output`, d.output)
   for (const [name, schema] of Object.entries(d.errors ?? {})) scope.bind(`${ref}#error:${name}`, schema)
+}
+
+const loads = new Set(['eager', 'visible', 'idle'])
+const tags = new Set<string>(htmlTags)
+
+function buildWidget(scope: FeatureScope, sym: string, d: WidgetDef): WidgetIR {
+  const p = scope.at('widgets', sym)
+  let sourceHash = ''
+  const file = filePath(d.client)
+  if (!file || !existsSync(file))
+    scope.report(
+      'TN029',
+      at(p, 'client'),
+      file ? `Widget module ${file} does not exist` : 'Widget client must be a file URL',
+      "Declare it with new URL('./my-widget.client.ts', import.meta.url) and default-export implement<typeof MyWidget>(…).",
+    )
+  else {
+    scope.project.bindings.widgets[`${scope.id}.${sym}`] = file
+    sourceHash = sha256(readFileSync(file, 'utf8')).slice(0, 16)
+  }
+  if (!tags.has(d.tag))
+    scope.report(
+      'TN014',
+      at(p, 'tag'),
+      `Widget host "${d.tag}" is not an HTML element`,
+      'Use an element such as div.',
+    )
+  if (!loads.has(d.load))
+    scope.report('TN014', at(p, 'load'), `Invalid load "${d.load}"`, "Use 'eager', 'visible' or 'idle'.")
+  return {
+    tag: d.tag,
+    props: scope.schema(d.props, at(p, 'props')),
+    events: mapRecord(d.events, (name, schema) => scope.schema(schema, at(p, 'events', name))),
+    load: loads.has(d.load) ? d.load : 'visible',
+    wraps: d.wraps === true,
+    sourceHash,
+  }
 }
 
 export function buildFeature(project: ProjectScope, id: string, config: FeatureConfig): FeatureIR {
@@ -175,6 +216,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureC
       }
     }),
     machine,
+    widgets: mapRecord(config.widgets, (sym, w) => buildWidget(scope, sym, defOf<WidgetDef>(w))),
     views: mapRecord(config.views, (sym, v) => buildView(scope, sym, v)),
     contracts: mapRecord(config.contracts, (sym, c) => buildContract(scope, sym, c)),
   }

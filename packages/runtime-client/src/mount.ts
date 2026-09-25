@@ -4,6 +4,7 @@ import {
   type CompiledMachine,
   compileValue,
   type Env,
+  equal,
   type Getter,
   getIn,
   type Input,
@@ -32,7 +33,28 @@ export interface AppOptions {
   snapshot?: Snapshot
   onInvoke?: (effect: string, input: Json) => Promise<Result>
   onNavigate?: (route: string) => void
+  widgets?: Record<string, WidgetRef>
+  loadWidget?: (url: string) => Promise<WidgetSetup>
 }
+
+export interface WidgetRef {
+  url: string
+  tag: string
+  load: 'eager' | 'visible' | 'idle'
+  wraps: boolean
+}
+
+interface WidgetInstance {
+  update?(props: unknown): void
+  destroy?(): void
+}
+
+export type WidgetSetup = (context: {
+  el: HTMLElement
+  props: unknown
+  emit(event: string, detail: unknown): void
+  signal: AbortSignal
+}) => WidgetInstance | undefined
 
 export interface MountOptions extends AppOptions {
   view: ViewIR
@@ -133,6 +155,7 @@ export function createApp(doc: Document, options: AppOptions): App {
   let first: Step | null = machine ? (options.snapshot ? null : init(machine)) : null
   let snapshot: Snapshot | null = options.snapshot ?? first?.snapshot ?? null
   const root: Block = []
+  const mounted = new Set<{ el: Element; stop: () => void }>()
   const getters = new WeakMap<ValueExpr, Getter>()
 
   const value = (v: ValueExpr, scope: Json[], dom?: Env['dom']): Json => {
@@ -220,29 +243,7 @@ export function createApp(doc: Document, options: AppOptions): App {
             else if (el.getAttribute(name) !== s) el.setAttribute(name, s)
           })
         }
-        const toggles = Object.entries(node.toggle)
-        if (toggles.length) {
-          const cls = () => {
-            const active: string[] = []
-            for (const [c, v] of toggles) if (value(v, scope) === true) active.push(c)
-            return classText(node.class, active)
-          }
-          let last = cls()
-          if (el.getAttribute('class') !== last) el.setAttribute('class', last)
-          if (toggles.some(([, v]) => reads(v)))
-            block.push(() => {
-              const next = cls()
-              if (next === last) return
-              last = next
-              el.setAttribute('class', next)
-            })
-        }
-        for (const name in node.vars)
-          bind(block, node.vars[name]!, scope, (x) => {
-            const style = (el as HTMLElement).style
-            if (x === null || x === '') style.removeProperty(name)
-            else if (style.getPropertyValue(name) !== text(x)) style.setProperty(name, text(x))
-          })
+        styling(el, node, scope, block)
         for (const event in node.on) {
           const send = node.on[event]!
           el.addEventListener(
@@ -297,9 +298,116 @@ export function createApp(doc: Document, options: AppOptions): App {
       case 'each':
         each(node, scope, c, block, ns)
         return
+      case 'widget':
+        widget(node, scope, c, block)
+        return
       default:
         skip(c)
     }
+  }
+
+  const styling = (
+    el: Element,
+    node: Extract<ViewNode, { kind: 'el' | 'widget' }>,
+    scope: Json[],
+    block: Block,
+  ) => {
+    const toggles = Object.entries(node.toggle)
+    if (toggles.length) {
+      const cls = () => {
+        const active: string[] = []
+        for (const [c, v] of toggles) if (value(v, scope) === true) active.push(c)
+        return classText(node.class, active)
+      }
+      let last = cls()
+      if (el.getAttribute('class') !== last) el.setAttribute('class', last)
+      if (toggles.some(([, v]) => reads(v)))
+        block.push(() => {
+          const next = cls()
+          if (next === last) return
+          last = next
+          el.setAttribute('class', next)
+        })
+    }
+    for (const name in node.vars)
+      bind(block, node.vars[name]!, scope, (x) => {
+        const style = (el as HTMLElement).style
+        if (x === null || x === '') style.removeProperty(name)
+        else if (style.getPropertyValue(name) !== text(x)) style.setProperty(name, text(x))
+      })
+  }
+
+  const widget = (node: Extract<ViewNode, { kind: 'widget' }>, scope: Json[], c: Cursor, block: Block) => {
+    const ref = options.widgets?.[node.widget]
+    const tag = ref?.tag ?? 'div'
+    let el: HTMLElement
+    const claimed = c.claim && c.next?.nodeType === 1 && (c.next as Element).localName === tag
+    if (claimed) {
+      el = c.next as HTMLElement
+      c.next = el.nextSibling
+    } else {
+      el = doc.createElement(tag)
+      if (node.class) el.setAttribute('class', node.class)
+      c.parent.insertBefore(el, c.next)
+    }
+    styling(el, node, scope, block)
+    if (!claimed || ref?.wraps) {
+      const inner: Cursor = { parent: el, next: claimed ? el.firstChild : null, claim: claimed }
+      for (const child of node.children) render(child, scope, inner, block, null)
+    }
+    if (!ref || !options.loadWidget) return
+    const load = options.loadWidget
+    const controller = new AbortController()
+    let props = value(node.props, scope)
+    let instance: WidgetInstance | undefined
+    const emit = (name: string, detail: unknown) => {
+      const send = node.on[name]
+      if (send)
+        dispatch({
+          type: 'event',
+          event: send.event,
+          payload: value(send.payload, scope, (f) => (f === 'detail' ? (detail as Json) : null)),
+        })
+    }
+    const start = () =>
+      void load(ref.url).then((setup) => {
+        if (!controller.signal.aborted)
+          instance = setup({ el, props, emit, signal: controller.signal }) ?? undefined
+      })
+    const win = doc.defaultView as (Window & typeof globalThis) | null
+    if (ref.load === 'eager' || !win) start()
+    else if (ref.load === 'idle') (win.requestIdleCallback ?? win.setTimeout)(start)
+    else if (!win.IntersectionObserver) start()
+    else {
+      const io = new win.IntersectionObserver((entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return
+        io.disconnect()
+        start()
+      })
+      io.observe(el)
+      controller.signal.addEventListener('abort', () => io.disconnect())
+    }
+    block.push(() => {
+      const next = value(node.props, scope)
+      if (equal(next, props)) return
+      props = next
+      instance?.update?.(next)
+    })
+    mounted.add({
+      el,
+      stop: () => {
+        controller.abort()
+        instance?.destroy?.()
+      },
+    })
+  }
+
+  const sweep = () => {
+    for (const m of mounted)
+      if (!m.el.isConnected) {
+        m.stop()
+        mounted.delete(m)
+      }
   }
 
   const region = (
@@ -436,13 +544,14 @@ export function createApp(doc: Document, options: AppOptions): App {
     if (!step.taken) return
     snapshot = step.snapshot
     for (const u of root) u()
+    sweep()
     effects(step)
   }
 
   return {
     attach(parent, before, node, scope, claim) {
       const c: Cursor = { parent, next: before, claim }
-      const ns = parent instanceof Element && parent.namespaceURI === SVG_NS ? SVG_NS : null
+      const ns = (parent as Element).namespaceURI === SVG_NS ? SVG_NS : null
       const [a, b] = span(c, () => render(node, scope, c, root, ns))
       if (a && b) ranges.push([a, b])
     },
@@ -452,12 +561,15 @@ export function createApp(doc: Document, options: AppOptions): App {
     },
     sync: () => {
       for (const u of root) u()
+      sweep()
     },
     dispatch,
     snapshot: () => snapshot,
     destroy: () => {
       for (const t of timers) clearTimeout(t)
       timers.clear()
+      for (const m of mounted) m.stop()
+      mounted.clear()
       root.length = 0
       for (const [a, b] of ranges) for (const n of range(a, b)) (n as ChildNode).remove()
       ranges.length = 0

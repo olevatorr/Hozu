@@ -10,6 +10,7 @@ const Context = z.object({ n: z.number(), label: z.string() })
 const base = {
   intent: { summary: 'fixture', invariants: [] },
   styles: [],
+  widgets: {},
   imports: [],
   tags: {},
   events: {},
@@ -158,6 +159,31 @@ describe('builder diagnostics', () => {
       ['Attribute "style" is not allowed on <p>', 'Style lives in CSS: use class for static styling.'],
       ['Attribute "value" is not allowed on <select>', expect.stringMatching(/option\(\{ selected/)],
       ['Attribute "href" is not allowed on <circle>', expect.stringMatching(/Allowed on <circle>/)],
+    ])
+  })
+
+  it('TN029 — widget module that does not exist', () => {
+    const Ghost = ui.widget({
+      tag: 'div',
+      props: z.object({}),
+      events: {},
+      client: new URL('./missing.client.ts', import.meta.url),
+      load: 'visible',
+      wraps: false,
+    })
+    const found = buildProject(
+      project({
+        schema: zodAdapter,
+        styles: null,
+        session: null,
+        site: null,
+        routes: {},
+        pages: [],
+        features: [feature({ ...base, id: 'f', widgets: { Ghost } })],
+      }),
+    ).diagnostics.filter((d) => d.code === 'TN029')
+    expect(found.map((d) => [d.location.pointer, d.message])).toEqual([
+      ['/features/f/widgets/Ghost/client', expect.stringMatching(/missing\.client\.ts does not exist$/)],
     ])
   })
 

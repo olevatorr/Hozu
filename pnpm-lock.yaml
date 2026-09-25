@@ -17,6 +17,9 @@ importers:
       '@tenon/adapter-static':
         specifier: workspace:*
         version: link:packages/adapter-static
+      '@tenon/bundle':
+        specifier: workspace:*
+        version: link:packages/bundle
       '@tenon/cli':
         specifier: workspace:*
         version: link:packages/cli
@@ -239,6 +242,15 @@ importers:
       '@tenon/runtime-server':
         specifier: workspace:*
         version: link:../runtime-server
+
+  packages/bundle:
+    dependencies:
+      '@tenon/core':
+        specifier: workspace:*
+        version: link:../core
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
 
   packages/cli:
     dependencies:

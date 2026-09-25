@@ -1,4 +1,3 @@
-import { fileURLToPath } from 'node:url'
 import type { FeatureConfig, ProjectConfig } from '../builders/feature.ts'
 import type { RouteDef } from '../builders/route.ts'
 import { join, resolveSource } from '../canonical/pointer.ts'
@@ -12,7 +11,7 @@ import { isStandardSchema } from '../schema/standard.ts'
 import { withCapture } from '../source/capture.ts'
 import { buildFeature } from './feature.ts'
 import { buildPages } from './page.ts'
-import { IDENTIFIER, ProjectScope } from './scope.ts'
+import { filePath, IDENTIFIER, ProjectScope } from './scope.ts'
 
 export interface BuildResult {
   ir: ProjectIR
@@ -35,6 +34,7 @@ const registries: [keyof FeatureConfig, DeclKind][] = [
   ['mutations', 'mutation'],
   ['fns', 'fn'],
   ['views', 'view'],
+  ['widgets', 'widget'],
   ['contracts', 'contract'],
 ]
 
@@ -213,7 +213,8 @@ function build(project: unknown, tracking: boolean): BuildResult {
   for (const [id, fc] of configs) features[id] = buildFeature(scope, id, fc)
 
   const file = (url: unknown, feature: string | null, pointer: string): string | null => {
-    if (url instanceof URL && url.protocol === 'file:') return fileURLToPath(url)
+    const path = filePath(url)
+    if (path) return path
     scope.report(
       'TN014',
       feature,

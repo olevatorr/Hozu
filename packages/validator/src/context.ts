@@ -1,5 +1,6 @@
 import {
   type At,
+  type Bindings,
   codes,
   type Diagnostic,
   type DiagnosticCode,
@@ -15,11 +16,18 @@ export class Ctx {
   readonly sources: SourceIndex
   readonly diagnostics: Diagnostic[] = []
   readonly unknownClasses: Map<string, string | null> | null
+  readonly assets: Bindings['assets']
 
-  constructor(ir: ProjectIR, sources: SourceIndex, unknownClasses: Map<string, string | null> | null = null) {
+  constructor(
+    ir: ProjectIR,
+    sources: SourceIndex,
+    unknownClasses: Map<string, string | null> | null = null,
+    assets: Bindings['assets'] = {},
+  ) {
     this.ir = ir
     this.sources = sources
     this.unknownClasses = unknownClasses
+    this.assets = assets
   }
 
   report(

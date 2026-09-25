@@ -42,6 +42,9 @@
     },
     {
       "path": "packages/dev"
+    },
+    {
+      "path": "packages/bundle"
     }
   ]
 }

@@ -80,6 +80,7 @@ export function hydrates(node: ViewNode): boolean {
     case 'text':
       return readsContext(node.value)
     case 'when':
+    case 'widget':
       return true
     case 'each':
       return readsContext(node.source)
@@ -157,6 +158,7 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     switch (node.kind) {
       case 'el':
       case 'when':
+      case 'widget':
         children(node.children, pointer)
         return
       case 'each': {

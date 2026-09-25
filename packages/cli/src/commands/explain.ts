@@ -38,6 +38,7 @@ function sendsIn(feature: FeatureIR, state: string): ExplainSend[] {
     if (!visible) return
     switch (node.kind) {
       case 'el':
+      case 'widget':
         for (const send of Object.values(node.on))
           out.push({
             view,

@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { planRoute } from '@tenon/compiler'
 import type { BuildResult } from '@tenon/core/ir'
@@ -11,6 +11,7 @@ import {
   robotsTxt,
   type Stylesheet,
   sitemapXml,
+  type WidgetBundle,
 } from '@tenon/runtime-server'
 
 export interface StaticExportOptions {
@@ -18,6 +19,7 @@ export interface StaticExportOptions {
   resolvers: ResolverSet
   outDir: string
   styles?: Stylesheet | null
+  widgets?: WidgetBundle | null
 }
 
 export interface StaticExport {
@@ -35,8 +37,15 @@ export async function exportStatic({
   resolvers,
   outDir,
   styles = null,
+  widgets = null,
 }: StaticExportOptions): Promise<StaticExport> {
-  const assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: styles?.href ?? null }
+  const assets = {
+    client: '/_tenon/client.js',
+    fns: '/_tenon/fns.js',
+    styles: styles?.href ?? null,
+    preload: styles?.preload ?? [],
+    widgets: widgets?.urls ?? {},
+  }
   const data = createDataRuntime({ build, resolvers })
   const result: StaticExport = { written: [], skipped: [] }
   let js = false
@@ -68,6 +77,19 @@ export async function exportStatic({
   await write(join(outDir, 'robots.txt'), robotsTxt(build))
   await write(join(outDir, 'sitemap.xml'), sitemapXml(build, entries))
   result.written.push(join(outDir, 'robots.txt'), join(outDir, 'sitemap.xml'))
+  const files: Record<string, string> = { ...styles?.assets }
+  for (const [href, a] of Object.entries(build.bindings.assets)) files[href] = a.file
+  for (const [href, source] of Object.entries(files)) {
+    const file = join(outDir, href.replace(/^\//, ''))
+    await mkdir(dirname(file), { recursive: true })
+    await copyFile(source, file)
+    result.written.push(file)
+  }
+  for (const [href, code] of Object.entries(widgets?.files ?? {})) {
+    const file = join(outDir, href.replace(/^\//, ''))
+    await write(file, code)
+    result.written.push(file)
+  }
   if (styles) {
     const file = join(outDir, styles.href.replace(/^\//, ''))
     await write(file, styles.css)

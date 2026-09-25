@@ -1,6 +1,6 @@
 import type { FeatureIR, Json, MachineIR, ViewNode } from '@tenon/core/ir'
 import { compileMachine } from '@tenon/machine'
-import { type App, createApp, type Result, type Store } from './mount.ts'
+import { type App, createApp, type Result, type Store, type WidgetRef, type WidgetSetup } from './mount.ts'
 
 export interface IslandRef {
   feature: string
@@ -15,6 +15,7 @@ export interface PagePayload {
   nodes: Record<string, ViewNode>
   fns: string | null
   params: Json
+  widgets: Record<string, WidgetRef>
 }
 
 export interface EffectResponse {
@@ -36,14 +37,18 @@ export const fetchTransport: Transport = async (effect, input, keys) => {
 export interface HydrateOptions {
   transport?: Transport
   loadFns?: (url: string) => Promise<Record<string, never>>
+  loadWidget?: (url: string) => Promise<WidgetSetup>
 }
+
+const importWidget = async (url: string) =>
+  ((await import(/* @vite-ignore */ url)) as { default: WidgetSetup }).default
 
 const importFns = async (url: string) =>
   ((await import(/* @vite-ignore */ url)) as { fns: Record<string, never> }).fns
 
 export async function hydrate(
   doc: Document,
-  { transport = fetchTransport, loadFns = importFns }: HydrateOptions = {},
+  { transport = fetchTransport, loadFns = importFns, loadWidget = importWidget }: HydrateOptions = {},
 ): Promise<Map<string, App>> {
   const apps = new Map<string, App>()
   const script = doc.getElementById('tenon-payload')
@@ -59,6 +64,8 @@ export async function hydrate(
         payload: shared,
         params: payload.params,
         fns,
+        widgets: payload.widgets,
+        loadWidget,
         onInvoke: async (effect, input) => {
           const { result, refreshed } = await transport(effect, input, [...shared.data.keys()])
           for (const [key, value] of refreshed) {

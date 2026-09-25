@@ -84,6 +84,7 @@ export function syntheticProject(features: number, states = 30, events = 10) {
     const decl = feature({
       id: `f${f}`,
       styles: [],
+      widgets: {},
       intent: { summary: `Synthetic feature ${f}`, invariants: [] },
       imports: previous ? [previous.feature] : [],
       tags: {},

@@ -48,7 +48,9 @@ export const domField =
         return fileList((t?.files as FileList | undefined) ?? (e as DragEvent).dataTransfer?.files)
       case 'form': {
         const out: Record<string, string> = {}
-        for (const [k, v] of new FormData(e.target as HTMLFormElement))
+        const form = e.target as HTMLFormElement
+        const win = form.ownerDocument.defaultView as (Window & typeof globalThis) | null
+        for (const [k, v] of new (win?.FormData ?? FormData)(form))
           out[k] = typeof v === 'string' ? v : v.name
         return out
       }

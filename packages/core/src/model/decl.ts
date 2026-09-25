@@ -20,6 +20,7 @@ export type DeclKind =
   | 'project'
   | 'page'
   | 'adapter'
+  | 'widget'
 
 export interface DeclInfo<K extends DeclKind = DeclKind, D = unknown> {
   readonly kind: K

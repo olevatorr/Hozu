@@ -1,8 +1,8 @@
 import type { ExportsIR, FeatureIR, ProjectIR } from '@tenon/core/ir'
 
-export type RefKind = 'event' | 'query' | 'mutation' | 'effect' | 'tag' | 'fn' | 'view'
+export type RefKind = 'event' | 'query' | 'mutation' | 'effect' | 'tag' | 'fn' | 'view' | 'widget'
 
-export type Registry = 'events' | 'queries' | 'mutations' | 'tags' | 'fns' | 'views'
+export type Registry = 'events' | 'queries' | 'mutations' | 'tags' | 'fns' | 'views' | 'widgets'
 
 export const registriesOf: Record<RefKind, Registry[]> = {
   event: ['events'],
@@ -12,6 +12,7 @@ export const registriesOf: Record<RefKind, Registry[]> = {
   tag: ['tags'],
   fn: ['fns'],
   view: ['views'],
+  widget: ['widgets'],
 }
 
 export interface Resolved {
@@ -56,7 +57,8 @@ export function candidatesFor(ir: ProjectIR, from: FeatureIR, kind: RefKind): st
     for (const symbol of Object.keys(from[registry])) out.push(`${from.id}.${symbol}`)
     for (const fid of from.imports) {
       const other = ir.features[fid]
-      if (other) for (const symbol of other.exports[registry as keyof ExportsIR]) out.push(`${fid}.${symbol}`)
+      if (other)
+        for (const symbol of other.exports[registry as keyof ExportsIR] ?? []) out.push(`${fid}.${symbol}`)
     }
   }
   return out

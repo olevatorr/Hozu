@@ -17,6 +17,10 @@
     "./canonical": {
       "types": "./dist/canonical/stringify.d.ts",
       "default": "./dist/canonical/stringify.js"
+    },
+    "./widget": {
+      "types": "./dist/widget.d.ts",
+      "default": "./dist/widget.js"
     }
   },
   "files": [

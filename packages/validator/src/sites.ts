@@ -79,15 +79,26 @@ export function refSites(ir: ProjectIR): RefSite[] {
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer }) => {
         switch (node.kind) {
-          case 'el':
+          case 'widget':
+          case 'el': {
+            if (node.kind === 'widget') {
+              add(node.widget, at(pointer, 'widget'), 'widget')
+              if (hasRefs(node.props)) valueRefs(node.props, at(pointer, 'props'), fnRef)
+            }
             for (const [dom, send] of Object.entries(node.on)) {
               add(send.event, at(pointer, 'on', dom, 'event'), 'event')
               if (hasRefs(send.payload)) valueRefs(send.payload, at(pointer, 'on', dom, 'payload'), fnRef)
             }
-            for (const key of ['attrs', 'toggle', 'vars'] as const)
-              for (const [name, v] of Object.entries(node[key]))
+            const maps: [string, Record<string, ValueExpr>][] = [
+              ['toggle', node.toggle],
+              ['vars', node.vars],
+            ]
+            if (node.kind === 'el') maps.push(['attrs', node.attrs])
+            for (const [key, map] of maps)
+              for (const [name, v] of Object.entries(map))
                 if (hasRefs(v)) valueRefs(v, at(pointer, key, name), fnRef)
             return
+          }
           case 'text':
             if (hasRefs(node.value)) valueRefs(node.value, at(pointer, 'value'), fnRef)
             return

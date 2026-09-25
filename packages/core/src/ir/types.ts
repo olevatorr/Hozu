@@ -58,7 +58,17 @@ export interface FeatureIR {
   fns: Record<string, FnIR>
   machine: MachineIR | null
   views: Record<string, ViewIR>
+  widgets: Record<string, WidgetIR>
   contracts: Record<string, ContractIR>
+}
+
+export interface WidgetIR {
+  tag: string
+  props: string
+  events: Record<string, string>
+  load: 'eager' | 'visible' | 'idle'
+  wraps: boolean
+  sourceHash: string
 }
 
 export interface IntentIR {
@@ -186,7 +196,7 @@ export interface SendIR {
   payload: ValueExpr
 }
 
-export type ViewNode = ElementNode | TextNode | WhenNode | EachNode | QueryNode | EmbedNode
+export type ViewNode = ElementNode | TextNode | WhenNode | EachNode | QueryNode | EmbedNode | WidgetNode
 
 export interface ElementNode {
   id: string
@@ -196,6 +206,18 @@ export interface ElementNode {
   toggle: Record<string, ValueExpr>
   vars: Record<string, ValueExpr>
   attrs: Record<string, ValueExpr>
+  on: Record<string, SendIR>
+  children: ViewNode[]
+}
+
+export interface WidgetNode {
+  id: string
+  kind: 'widget'
+  widget: string
+  class: string | null
+  toggle: Record<string, ValueExpr>
+  vars: Record<string, ValueExpr>
+  props: ValueExpr
   on: Record<string, SendIR>
   children: ViewNode[]
 }

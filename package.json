@@ -7,7 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev && node packages/runtime-client/scripts/bundle.ts",
+    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev packages/bundle && node packages/runtime-client/scripts/bundle.ts",
     "typecheck": "tsc -b tsconfig.json",
     "test": "pnpm build && vitest run",
     "bench": "pnpm build && node bench/run.ts",
@@ -43,6 +43,7 @@
     "ts-json-schema-generator": "2.9.0",
     "typescript": "7.0.2",
     "vitest": "5.0.1",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "@tenon/bundle": "workspace:*"
   }
 }

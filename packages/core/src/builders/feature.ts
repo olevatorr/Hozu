@@ -10,6 +10,7 @@ import type { PageDecl } from './page.ts'
 import type { RouteDecl } from './route.ts'
 import type { TagDecl } from './tag.ts'
 import type { ViewDecl } from './ui.ts'
+import type { WidgetDecl } from './widget.ts'
 
 export interface FeatureConfig {
   id: string
@@ -23,6 +24,7 @@ export interface FeatureConfig {
   fns: Record<string, FnDecl>
   machine: MachineDecl | null
   views: Record<string, ViewDecl>
+  widgets: Record<string, WidgetDecl>
   contracts: Record<string, ContractDecl>
   exports: {
     events: EventDecl<any>[]

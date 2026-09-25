@@ -70,6 +70,16 @@ export function references(ctx: Ctx) {
       )
       continue
     }
+    if (kind === 'widget') {
+      ctx.report(
+        'TN006',
+        f.id,
+        pointer,
+        `"${f.id}" uses widget ${ref} owned by "${owner.id}"`,
+        'Widgets are private to their feature; share them through an exported view.',
+      )
+      continue
+    }
     const registry = resolved.registry as keyof ExportsIR
     const imported = f.imports.includes(owner.id)
     const exported = owner.exports[registry].includes(resolved.symbol)

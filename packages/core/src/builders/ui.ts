@@ -9,12 +9,14 @@ import {
 import type { DomEvent, DomFields } from '../ir/events.ts'
 import { brand, type Decl } from '../model/decl.ts'
 import { createRef, type Expr, type Guard, type Ref, refProxy, type Val } from '../model/expr.ts'
+import { type Asset, asset } from './asset.ts'
 import type { TagProps } from './dom-props.ts'
 import type { QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
 import type { MachineDecl, UnexpectedError } from './machine.ts'
 import { page } from './page.ts'
 import type { RouteDecl } from './route.ts'
+import { type WidgetDecl, widget } from './widget.ts'
 
 export const SEND = Symbol.for('tenon.send')
 
@@ -35,7 +37,7 @@ export interface NodeDecl extends Decl<'node'> {}
 
 export type Child = NodeDecl | string | number | Expr<string | number | null>
 
-export type AttrValue = Val<string | number | boolean | null> | Guard
+export type AttrValue = Val<string | number | boolean | null> | Guard | Asset
 
 export type Props<T extends Tag = Tag> = TagProps[T] & {
   class?: string
@@ -59,6 +61,15 @@ export type NodeDef =
       failed: Record<string, (error: any) => unknown>
     }
   | { kind: 'embed'; view: ViewDecl }
+  | { kind: 'widget'; widget: WidgetDecl; options: WidgetUse<any, any>; children: readonly unknown[] }
+
+export interface WidgetUse<P, E> {
+  props: Val<P>
+  on: { [K in keyof E]?: (detail: Ref<E[K]>) => Send }
+  class?: string
+  toggle?: Record<string, Guard | Val<boolean>>
+  vars?: Record<`--${string}`, Val<string | number | null>>
+}
 
 export interface ViewDef {
   machine: MachineDecl | null
@@ -143,6 +154,10 @@ export const ui = Object.freeze({
     branches: { ready: (data: Ref<O>) => NodeDecl; pending: NodeDecl | null; failed: QueryErrors<E> },
   ): NodeDecl => node({ kind: 'query', query, input, ...branches }),
   embed: (view: ViewDecl): NodeDecl => node({ kind: 'embed', view }),
+  widget,
+  asset,
+  use: <P, E>(w: WidgetDecl<P, E>, options: WidgetUse<P, E>, children: Child[]): NodeDecl =>
+    node({ kind: 'widget', widget: w, options, children }),
   page,
 })
 

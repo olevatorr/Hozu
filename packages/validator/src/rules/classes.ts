@@ -30,7 +30,7 @@ export function classNames(ctx: Ctx) {
             )
           return
         }
-        if (node.kind !== 'el') return
+        if (node.kind !== 'el' && node.kind !== 'widget') return
         const lists: [string, At, (fixed: string) => Patch][] = []
         if (node.class)
           lists.push([

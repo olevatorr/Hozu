@@ -1,3 +1,4 @@
+export type { Asset } from './builders/asset.ts'
 export type { ContractDecl, EffectCall, Step } from './builders/contract.ts'
 export { contract } from './builders/contract.ts'
 export type { EffectDecl, Freshness, MutationDecl, QueryDecl, Scope } from './builders/effects.ts'
@@ -31,17 +32,23 @@ export { route } from './builders/route.ts'
 export type { TagDecl, TagUse } from './builders/tag.ts'
 export { tag } from './builders/tag.ts'
 export type {
+  AttrValue,
   Child,
+  DomRef,
   HtmlAttr,
   HtmlTag,
   NodeDecl,
   Props,
   Send,
+  SvgTag,
+  Tag,
   ViewDecl,
   ViewScope,
   When,
+  WidgetUse,
 } from './builders/ui.ts'
 export { ui } from './builders/ui.ts'
+export type { WidgetDecl, WidgetLoad } from './builders/widget.ts'
 export type { Assign, Call, Expr, Guard, Ref, Val } from './model/expr.ts'
 export type { SchemaAdapter, SchemaAdapterDef } from './schema/adapter.ts'
 export { defineSchemaAdapter } from './schema/adapter.ts'

@@ -3,7 +3,7 @@ import { htmlGlobalAttrs, svgGlobalAttrs, svgTags, tagAttrs, voidTags } from '..
 import { domEvents } from '../ir/events.ts'
 import type { SendIR, ValueExpr, ViewIR, ViewNode } from '../ir/types.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
-import { exprOf, refProxy } from '../model/expr.ts'
+import { createRef, exprOf, refProxy } from '../model/expr.ts'
 import { type At, at, type FeatureScope } from './scope.ts'
 
 const eventSet = new Set<string>(domEvents)
@@ -42,36 +42,9 @@ function element(
     )
   for (const [key, value] of Object.entries(d.props ?? {})) {
     if (value === undefined) continue
-    if (key === 'class') {
-      if (typeof value === 'string') cls = value
-      else
-        scope.report(
-          'TN014',
-          at(p, 'class'),
-          'class must be a static string',
-          'Dynamic classes would make render output depend on runtime values.',
-        )
-    } else if (key === 'toggle' || key === 'vars') {
-      for (const [name, v] of Object.entries(value as object)) {
-        const tp = at(p, key, name)
-        if (key === 'toggle' ? !/\S/.test(name) : !/^--[A-Za-z0-9_-]+$/.test(name)) {
-          scope.report(
-            'TN014',
-            tp,
-            key === 'toggle' ? 'toggle keys are class lists' : `CSS variable "${name}" must look like --name`,
-            key === 'toggle'
-              ? 'Each key is one or more classes switched on while its condition holds.'
-              : 'vars binds CSS custom properties only; CSS decides how they are used.',
-          )
-          continue
-        }
-        const out = key === 'toggle' ? toggle : vars
-        out[key === 'toggle' ? name.trim().split(/\s+/).join(' ') : name] = scope.attempt(
-          tp,
-          () => scope.value(v, p),
-          { literal: null },
-        )
-      }
+    if (key === 'class' || key === 'toggle' || key === 'vars') {
+      if (key === 'class') cls = classOf(scope, value, p)
+      else styling(scope, key, value, key === 'toggle' ? toggle : vars, p)
     } else if (key === 'on') {
       for (const [event, send] of Object.entries(value as object)) {
         const ep = at(p, 'on', event)
@@ -119,6 +92,93 @@ function element(
     node(scope, c, `${id}/${i}`, at(p, 'children', i), depth),
   )
   return { id, kind: 'el', tag: d.tag, class: cls, toggle, vars, attrs, on, children }
+}
+
+function classOf(scope: FeatureScope, value: unknown, p: At): string | null {
+  if (typeof value === 'string') return value
+  scope.report(
+    'TN014',
+    at(p, 'class'),
+    'class must be a static string',
+    'Dynamic classes would make render output depend on runtime values.',
+  )
+  return null
+}
+
+function styling(
+  scope: FeatureScope,
+  key: 'toggle' | 'vars',
+  value: unknown,
+  out: Record<string, ValueExpr>,
+  p: At,
+) {
+  for (const [name, v] of Object.entries((value ?? {}) as object)) {
+    const tp = at(p, key, name)
+    if (key === 'toggle' ? !/\S/.test(name) : !/^--[A-Za-z0-9_-]+$/.test(name)) {
+      scope.report(
+        'TN014',
+        tp,
+        key === 'toggle' ? 'toggle keys are class lists' : `CSS variable "${name}" must look like --name`,
+        key === 'toggle'
+          ? 'Each key is one or more classes switched on while its condition holds.'
+          : 'vars binds CSS custom properties only; CSS decides how they are used.',
+      )
+      continue
+    }
+    out[key === 'toggle' ? name.trim().split(/\s+/).join(' ') : name] = scope.attempt(
+      tp,
+      () => scope.value(v, p),
+      { literal: null },
+    )
+  }
+}
+
+function widgetNode(
+  scope: FeatureScope,
+  d: Extract<NodeDef, { kind: 'widget' }>,
+  id: string,
+  p: At,
+  depth: number,
+): ViewNode {
+  const o = d.options ?? ({} as typeof d.options)
+  const toggle: Record<string, ValueExpr> = {}
+  const vars: Record<string, ValueExpr> = {}
+  styling(scope, 'toggle', o.toggle, toggle, p)
+  styling(scope, 'vars', o.vars, vars, p)
+  const on: Record<string, SendIR> = {}
+  for (const [name, handler] of Object.entries((o.on ?? {}) as Record<string, unknown>)) {
+    const ep = at(p, 'on', name)
+    const s =
+      typeof handler === 'function'
+        ? scope.attempt(ep, () => sendOf(handler(createRef('dom', 0, ['detail']))), null)
+        : null
+    if (!s) {
+      scope.report(
+        'TN014',
+        ep,
+        'Widget handlers must be (detail) => ui.send(Event, payload)',
+        'Views cannot run arbitrary functions.',
+      )
+      continue
+    }
+    on[name] = {
+      event: scope.ref(s.event, ['event'], ep),
+      payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
+    }
+  }
+  return {
+    id,
+    kind: 'widget',
+    widget: scope.ref(d.widget, ['widget'], at(p, 'widget')),
+    class: o.class === undefined ? null : classOf(scope, o.class, p),
+    toggle,
+    vars,
+    props: scope.attempt(at(p, 'props'), () => scope.value(o.props, p), { literal: null }),
+    on,
+    children: (Array.isArray(d.children) ? d.children : []).map((c, i) =>
+      node(scope, c, `${id}/${i}`, at(p, 'children', i), depth),
+    ),
+  }
 }
 
 function motionOf(scope: FeatureScope, motion: unknown, p: At): string | null {
@@ -184,6 +244,8 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
       }
       case 'embed':
         return { id, kind: 'embed', view: scope.ref(d.view, ['view'], at(p, 'view')) }
+      case 'widget':
+        return widgetNode(scope, d, id, p, depth)
     }
   }
   if (typeof value === 'string' || typeof value === 'number')

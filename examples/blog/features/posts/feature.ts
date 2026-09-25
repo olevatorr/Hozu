@@ -5,6 +5,7 @@ import { Article, PostList } from './views.ts'
 export const posts = feature({
   id: 'posts',
   styles: [],
+  widgets: {},
   intent: {
     summary: 'Public blog posts: the index and one page per article. Fully cacheable, ships no JavaScript.',
     invariants: ['Only public data', 'Articles are static until their tag is revalidated'],

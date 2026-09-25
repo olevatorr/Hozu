@@ -187,6 +187,14 @@ export function paths(ctx: Ctx) {
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer, env }) => {
         switch (node.kind) {
+          case 'widget':
+            checkValue(ctx, env, node.props, at(pointer, 'props'))
+            for (const key of ['toggle', 'vars'] as const)
+              for (const [name, v] of Object.entries(node[key]))
+                checkValue(ctx, env, v, at(pointer, key, name))
+            for (const [event, send] of Object.entries(node.on))
+              checkValue(ctx, env, send.payload, at(pointer, 'on', event, 'payload'))
+            return
           case 'el':
             for (const key of ['attrs', 'toggle', 'vars'] as const)
               for (const [name, v] of Object.entries(node[key]))

@@ -1,4 +1,11 @@
-import { type FeatureIR, type Json, type ValueExpr, type ViewNode, voidTags } from '@tenon/core/ir'
+import {
+  type FeatureIR,
+  type Json,
+  type ValueExpr,
+  type ViewNode,
+  voidTags,
+  type WidgetIR,
+} from '@tenon/core/ir'
 import { compileValue, type Fns, type Getter } from '@tenon/machine'
 import { attrText, classText, styleText, text } from '@tenon/runtime-client'
 import { escapeHtml } from './escape.ts'
@@ -14,6 +21,13 @@ export interface Scope {
 export interface Runtime {
   open(n: ViewNode, scope: Scope): string
   embed(view: string): { root: ViewNode; scope: Scope } | null
+  widget(ref: string): void
+}
+
+export interface Compile {
+  islands: Set<string>
+  fns: Fns
+  widgets: Record<string, WidgetIR>
 }
 
 export type Frag = string | ((scope: Scope, r: Runtime) => string)
@@ -33,7 +47,7 @@ const attr = (name: string, x: Json) => {
   return s === null ? '' : s === '' ? ` ${name}` : ` ${name}="${escapeHtml(s)}"`
 }
 
-type El = Extract<ViewNode, { kind: 'el' }>
+type El = Pick<Extract<ViewNode, { kind: 'el' }>, 'class' | 'toggle' | 'vars'>
 
 const classAttr = (c: string) => (c ? ` class="${escapeHtml(c)}"` : '')
 const styleAttr = (s: string) => (s ? ` style="${escapeHtml(s)}"` : '')
@@ -83,11 +97,11 @@ export const run = (f: Frag, s: Scope, r: Runtime) => (typeof f === 'string' ? f
 
 export const separated = (list: ViewNode[], i: number) => list[i + 1]?.kind === 'text'
 
-export function compileNode(n: ViewNode, island: boolean, islands: Set<string>, fns: Fns, sep = false): Frag {
-  const children = (list: ViewNode[]) =>
-    list.map((c, i) => compileNode(c, island, islands, fns, separated(list, i)))
-  if (!island && islands.has(n.id)) {
-    const inner = compileNode(n, true, islands, fns, sep)
+export function compileNode(n: ViewNode, island: boolean, c: Compile, sep = false): Frag {
+  const { fns } = c
+  const children = (list: ViewNode[]) => list.map((x, i) => compileNode(x, island, c, separated(list, i)))
+  if (!island && c.islands.has(n.id)) {
+    const inner = compileNode(n, true, c, sep)
     return (s, r) => r.open(n, s) + run(inner, s, r)
   }
   const wrap = (body: Frag): Frag => (island ? seq([OPEN, body, CLOSE]) : body)
@@ -127,7 +141,7 @@ export function compileNode(n: ViewNode, island: boolean, islands: Set<string>, 
       return wrap((s, r) => (s.state !== null && states.includes(s.state) ? run(body, s, r) : ''))
     }
     case 'each': {
-      const item = compileNode(n.item, island, islands, fns, true)
+      const item = compileNode(n.item, island, c, true)
       const source = expr(n.source, fns)
       return wrap((s, r) => {
         const items = source(s)
@@ -145,11 +159,20 @@ export function compileNode(n: ViewNode, island: boolean, islands: Set<string>, 
         if (!e) return ''
         let f = cache.get(e.root)
         if (f === undefined) {
-          f = compileNode(e.root, island, islands, fns)
+          f = compileNode(e.root, island, c)
           cache.set(e.root, f)
         }
         return run(f, e.scope, r)
       })
+    }
+    case 'widget': {
+      const tag = c.widgets[n.widget]?.tag ?? 'div'
+      const ref = n.widget
+      const use: Frag = (_, r) => {
+        r.widget(ref)
+        return ''
+      }
+      return seq([use, `<${tag}`, classAndStyleFrag(n, fns), '>', ...children(n.children), `</${tag}>`])
     }
     default:
       return ''

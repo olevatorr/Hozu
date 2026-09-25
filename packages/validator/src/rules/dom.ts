@@ -50,6 +50,22 @@ export function domFields(ctx: Ctx) {
             },
           )
         switch (node.kind) {
+          case 'widget':
+            domRefs(node.props, at(pointer, 'props'), outside)
+            for (const key of ['toggle', 'vars'] as const)
+              for (const [name, v] of Object.entries(node[key])) domRefs(v, at(pointer, key, name), outside)
+            for (const [event, send] of Object.entries(node.on))
+              domRefs(send.payload, at(pointer, 'on', event, 'payload'), (field, p) => {
+                if (field !== 'detail')
+                  ctx.report(
+                    'TN027',
+                    f.id,
+                    p,
+                    `Widget event "${event}" carries only its detail`,
+                    'Read the widget event payload through the handler argument: (detail) => ui.send(…, { x: detail.x }).',
+                  )
+              })
+            return
           case 'el':
             for (const key of ['attrs', 'toggle', 'vars'] as const)
               for (const [name, v] of Object.entries(node[key])) domRefs(v, at(pointer, key, name), outside)

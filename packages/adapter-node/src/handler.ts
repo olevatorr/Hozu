@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { extname } from 'node:path'
 import { planRoute } from '@tenon/compiler'
 import type { BuildResult, Json } from '@tenon/core/ir'
 import { createDataRuntime, type ResolverSet } from '@tenon/data'
@@ -13,6 +15,7 @@ import {
   robotsTxt,
   type Stylesheet,
   sitemapXml,
+  type WidgetBundle,
 } from '@tenon/runtime-server'
 
 export interface NodeAdapterOptions {
@@ -21,6 +24,7 @@ export interface NodeAdapterOptions {
   session?: (request: IncomingMessage) => unknown
   now?: () => number
   styles?: Stylesheet | null
+  widgets?: WidgetBundle | null
 }
 
 interface CachedPage {
@@ -37,6 +41,26 @@ export interface Handler {
   revalidate(tags: string[]): number
 }
 
+const mime: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.ttf': 'font/ttf',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mp3': 'audio/mpeg',
+  '.json': 'application/json',
+  '.glb': 'model/gltf-binary',
+  '.gltf': 'model/gltf+json',
+}
+
 const readBody = async (request: IncomingMessage) => {
   let body = ''
   for await (const chunk of request) body += chunk
@@ -49,8 +73,15 @@ export function createHandler({
   session = () => null,
   now = Date.now,
   styles = null,
+  widgets = null,
 }: NodeAdapterOptions): Handler {
-  const assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: styles?.href ?? null }
+  const assets = {
+    client: '/_tenon/client.js',
+    fns: '/_tenon/fns.js',
+    styles: styles?.href ?? null,
+    preload: styles?.preload ?? [],
+    widgets: widgets?.urls ?? {},
+  }
   const data = createDataRuntime({ build, resolvers, now })
   const { ir } = build
   const match = matcher(build)
@@ -142,6 +173,20 @@ export function createHandler({
     response.end()
   }
 
+  const files: Record<string, string> = { ...styles?.assets }
+  for (const [href, a] of Object.entries(build.bindings.assets)) files[href] = a.file
+  const loaded = new Map<string, Buffer>()
+  const asset = (href: string) => {
+    const file = files[href]
+    if (!file) return null
+    let body = loaded.get(href)
+    if (!body) {
+      body = readFileSync(file)
+      loaded.set(href, body)
+    }
+    return body
+  }
+
   const text = (response: ServerResponse, type: string, body: string, head: boolean) =>
     void response.writeHead(200, { 'content-type': type }).end(head ? undefined : body)
 
@@ -155,6 +200,22 @@ export function createHandler({
         return void response.writeHead(405, { 'content-type': 'text/plain', allow: 'GET, HEAD, POST' }).end()
       if (url.pathname === '/_tenon/client.js') return text(response, 'text/javascript', clientBundle(), head)
       if (url.pathname === '/_tenon/fns.js') return text(response, 'text/javascript', fns, head)
+      const file = url.pathname.startsWith('/_tenon/a/') ? asset(url.pathname) : null
+      if (file)
+        return void response
+          .writeHead(200, {
+            'content-type': mime[extname(url.pathname)] ?? 'application/octet-stream',
+            'cache-control': 'public, max-age=31536000, immutable',
+          })
+          .end(head ? undefined : file)
+      const script = widgets?.files[url.pathname]
+      if (script !== undefined)
+        return void response
+          .writeHead(200, {
+            'content-type': 'text/javascript',
+            'cache-control': 'public, max-age=31536000, immutable',
+          })
+          .end(head ? undefined : script)
       if (styles && url.pathname === styles.href)
         return void response
           .writeHead(200, {

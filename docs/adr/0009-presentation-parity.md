@@ -234,3 +234,25 @@ Arbitrary functions as views, a free `style` object, global stores, `<script>` i
   of JavaScript. Browsers without support fall back to normal navigation.
 - Not covered: UI state that persists across pages (for example audio that keeps playing through navigation).
   This is listed for the capability-parity ADR.
+
+### 5d: widgets and assets
+- Declaration: `ui.widget({ tag, props, events, client, load, wraps })`, registered in `feature({ widgets })` and
+  private to that feature (TN006 elsewhere; share a widget through an exported view). Use:
+  `ui.use(W, { props, on: { picked: (detail) => ui.send(Select, { id: detail.id }) }, class, toggle, vars }, children)`.
+  Widget event handlers take the typed `detail` as an argument, because one global `ui.dom` cannot type each
+  widget's events.
+- Client module: `export default implement<typeof W>(({ el, props, emit, signal }) => ({ update, destroy }))` from
+  `@tenon/core/widget`, with a **type-only** import of the declaration, so no schema library or builder code reaches
+  the browser.
+- Runtime: the host is claimed from server HTML. Leaf widgets keep their server fallback until the module replaces
+  it. Wrapper widgets hydrate their Tenon children normally. Load strategy: `eager`, `idle` or `visible`
+  (IntersectionObserver). Props are compared structurally before calling `update`. `emit` dispatches the mapped
+  machine event, so TN005 and contracts cover it. A widget whose host leaves the DOM is destroyed on the next sync.
+- `@tenon/bundle` bundles widget modules with esbuild (code splitting, so libraries shared by several widgets
+  are loaded once) into `/_tenon/w/*`. A missing default export is TN029. The IR stores each module's source
+  hash; its file path lives in bindings.
+- Assets: `ui.asset(new URL('./hero.png', import.meta.url))` gives a content-hashed `/_tenon/a/…` URL, and the
+  image size is read from the file header (PNG, JPEG, GIF, WebP, SVG). `<img>` without width/height is TN028;
+  the patch fills in the real dimensions. Local `url()` references in CSS (fonts, images) are hashed as well, and
+  woff2 fonts get `<link rel="preload">` automatically. Adapters serve all assets with immutable caching; the
+  static export copies them.

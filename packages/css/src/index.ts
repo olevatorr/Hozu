@@ -1,4 +1,6 @@
+import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import { extname, resolve } from 'node:path'
 import { __unstable__loadDesignSystem, compile, optimize } from '@tailwindcss/node'
 import { type BuildResult, classCandidates, sha256 } from '@tenon/core/ir'
 import { closest } from '@tenon/validator'
@@ -6,6 +8,8 @@ import { closest } from '@tenon/validator'
 export interface CompiledStyles {
   css: string
   href: string
+  assets: Record<string, string>
+  preload: string[]
   files: string[]
   candidates: Set<string>
   unknown: Map<string, string | null>
@@ -47,9 +51,20 @@ export async function compileStyles(
     base,
     onDependency: (path) => files.add(path),
     customCssResolver: resolveCss,
+    shouldRewriteUrls: true,
   })
   const candidates = classCandidates(build.ir)
-  const raw = compiler.build([...candidates])
+  const assets: Record<string, string> = {}
+  const raw = compiler
+    .build([...candidates])
+    .replace(/url\((['"]?)([^'")]+)\1\)/g, (all, quote: string, url: string) => {
+      if (/^(data:|https?:|\/\/|#|\/_tenon\/)/.test(url)) return all
+      const file = resolve(base, url.split(/[?#]/)[0]!)
+      if (!existsSync(file)) return all
+      const href = `/_tenon/a/${sha256(readFileSync(file).toString('base64')).slice(0, 16)}${extname(file).toLowerCase()}`
+      assets[href] = file
+      return `url(${quote}${href}${quote})`
+    })
   const css = minify ? optimize(raw, { minify: true }).code : raw
   const known = selectorClasses(raw)
   const unknown = new Map<string, string | null>()
@@ -77,6 +92,8 @@ export async function compileStyles(
   return {
     css,
     href: `/_tenon/styles.${sha256(css).slice(0, 12)}.css`,
+    assets,
+    preload: Object.keys(assets).filter((href) => href.endsWith('.woff2')),
     files: [...files],
     candidates,
     unknown,

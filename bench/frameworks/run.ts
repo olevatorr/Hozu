@@ -74,7 +74,7 @@ const frameworks: { name: string; version: string; ssr: () => Promise<string> | 
           build: tenonBuild,
           data: tenonData,
           route: 'home',
-          assets: { client: '/tenon/app.js', fns: null, styles: null },
+          assets: { client: '/tenon/app.js', fns: null, styles: null, preload: [], widgets: {} },
         })
       ).html,
     client: tenonClient,
