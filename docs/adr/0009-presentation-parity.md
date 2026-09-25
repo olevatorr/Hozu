@@ -218,3 +218,19 @@ Arbitrary functions as views, a free `style` object, global stores, `<script>` i
   (class candidates + every CSS file involved) in `node_modules/.cache/tenon`, so cold validation stays under the
   P3 budget.
 - Class names are for styling. Script hooks use `data-*` attributes, so a class without CSS is always a mistake.
+
+### 5c: motion and page transitions
+- `when(states, children, motion?)` and `ui.each(source, key, item, motion?)` take an optional motion name. The
+  runtime applies `<name>-enter-from/-active/-to`, `-leave-*` and `-move` (FLIP), waits for the computed transition or
+  animation duration, and respects `prefers-reduced-motion`. There is no motion on first render or hydration.
+- A motion with no CSS at all is TN026. Missing optional classes (for example `-move`) are fine.
+- A refreshed query result now **patches the rendered branch in place** when the branch is unchanged, and
+  bindings that read `each`/`query` values are reactive. A mutation response no longer rebuilds the list, so
+  enter/leave/move, focus and element identity survive server-pushed updates. This was found by the real-browser
+  test.
+- **Page transitions need no client router.** Every page carries a Speculation Rules block (JSON, not executable
+  JS) that prerenders same-origin links on hover, and cross-document View Transitions come from one line of CSS
+  (`@view-transition { navigation: auto; }`) plus `view-transition-name`. Machine-less pages keep shipping 0 bytes
+  of JavaScript. Browsers without support fall back to normal navigation.
+- Not covered: UI state that persists across pages (for example audio that keeps playing through navigation).
+  This is listed for the capability-parity ADR.

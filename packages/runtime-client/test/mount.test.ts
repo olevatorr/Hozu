@@ -78,6 +78,8 @@ describe('client runtime', () => {
     expect(app.snapshot()?.state).toBe('error')
     vi.advanceTimersByTime(5000)
     expect(app.snapshot()?.state).toBe('idle')
+    expect(root.querySelector('p[role="alert"]')?.className).toBe('fade-leave-from fade-leave-active')
+    vi.advanceTimersByTime(100)
     expect(texts(root, 'p[role="alert"]')).toEqual([])
     app.destroy()
     expect(root.childNodes).toHaveLength(0)

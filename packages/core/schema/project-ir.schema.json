@@ -1216,6 +1216,12 @@
             "type": "string"
           }
         },
+        "motion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "children": {
           "type": "array",
           "items": {
@@ -1227,6 +1233,7 @@
         "id",
         "kind",
         "states",
+        "motion",
         "children"
       ],
       "additionalProperties": false
@@ -1247,6 +1254,12 @@
         "key": {
           "type": "string"
         },
+        "motion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "item": {
           "$ref": "#/definitions/ViewNode"
         }
@@ -1256,6 +1269,7 @@
         "kind",
         "source",
         "key",
+        "motion",
         "item"
       ],
       "additionalProperties": false

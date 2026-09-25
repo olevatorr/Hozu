@@ -49,5 +49,13 @@ describe('end-to-end hydration', () => {
       before.filter((e) => e.tagName === 'H2' || e.tagName === 'SECTION').every((e) => e.isConnected),
     ).toBe(true)
     expect(checkout.isConnected).toBe(false)
+
+    const list = document.querySelector('ul.divide-y')!
+    const line = list.querySelector('li')!
+    ;[...document.querySelectorAll('button')].find((b) => b.textContent === 'Add')!.click()
+    await settle()
+    expect(document.querySelector('ul.divide-y')).toBe(list)
+    expect(list.querySelector('li')).toBe(line)
+    expect(line.textContent).toContain('Mug × 2')
   })
 })

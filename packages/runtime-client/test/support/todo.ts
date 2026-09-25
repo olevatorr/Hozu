@@ -58,11 +58,15 @@ const Todo = ui.view({
       ]),
       ui.textarea({ name: 'notes', value: ctx.draft }),
       ui.ul({}, [
-        ui.each(ctx.items, 'id', (item) =>
-          ui.li({ 'data-id': item.id }, [
-            item.title,
-            ui.button({ type: 'button', on: { click: ui.send(Remove, { id: item.id }) } }, ['×']),
-          ]),
+        ui.each(
+          ctx.items,
+          'id',
+          (item) =>
+            ui.li({ 'data-id': item.id }, [
+              item.title,
+              ui.button({ type: 'button', on: { click: ui.send(Remove, { id: item.id }) } }, ['×']),
+            ]),
+          'list',
         ),
       ]),
       ui.button({ type: 'button', on: { click: ui.send(Reverse, {}) } }, ['Reverse']),

@@ -16,6 +16,7 @@ const require = createRequire(import.meta.url)
 export { classCandidates }
 
 const markers = /^(group|peer)(\/[\w-]+)?$/
+const motion = /-(enter-from|enter-active|enter-to|leave-from|leave-active|leave-to|move)$/
 
 const unescapeCss = (id: string) =>
   id.replace(/\\([0-9a-fA-F]{1,6}\s?|.)/g, (_, e: string) =>
@@ -53,10 +54,20 @@ export async function compileStyles(
   const known = selectorClasses(raw)
   const unknown = new Map<string, string | null>()
   const missing = [...candidates].filter((c) => !known.has(c) && !markers.test(c)).sort()
-  if (missing.length) {
+  const motions = new Map<string, number>()
+  for (const c of missing) {
+    const m = motion.exec(c)
+    if (m) motions.set(c.slice(0, m.index), (motions.get(c.slice(0, m.index)) ?? 0) + 1)
+  }
+  for (const c of missing) {
+    const m = motion.exec(c)
+    if (m && motions.get(c.slice(0, m.index)) === 7) unknown.set(c, null)
+  }
+  const typos = missing.filter((c) => !motion.test(c))
+  if (typos.length) {
     const ds = await __unstable__loadDesignSystem(source, { base })
     const vocabulary = [...new Set([...ds.getClassList().map(([name]) => name), ...known])]
-    for (const c of missing) {
+    for (const c of typos) {
       const cut = c.lastIndexOf(':')
       const variant = cut > 0 && !c.slice(0, cut).includes('[') ? c.slice(0, cut + 1) : ''
       const guess = closest(c.slice(variant.length), vocabulary)

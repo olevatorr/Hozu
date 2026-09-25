@@ -9,7 +9,7 @@ import { home, orderPlaced } from './routes.ts'
 
 export default project({
   schema: zodAdapter,
-  styles: null,
+  styles: new URL('./app.css', import.meta.url),
   session: z.object({ userId: z.string() }),
   site: { url: 'https://cart.tenon.dev', name: 'Tenon Cart', lang: 'en' },
   routes: { home, orderPlaced },

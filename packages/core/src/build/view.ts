@@ -121,6 +121,18 @@ function element(
   return { id, kind: 'el', tag: d.tag, class: cls, toggle, vars, attrs, on, children }
 }
 
+function motionOf(scope: FeatureScope, motion: unknown, p: At): string | null {
+  if (motion === null || motion === undefined) return null
+  if (typeof motion === 'string' && /^[a-z][a-z0-9-]*$/.test(motion)) return motion
+  scope.report(
+    'TN014',
+    p,
+    'motion must be a lowercase name such as "fade"',
+    'The name prefixes the enter/leave/move classes defined in CSS (fade-enter-active, …).',
+  )
+  return null
+}
+
 function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: number): ViewNode {
   const info = infoOf(value)
   if (info?.kind === 'node') {
@@ -143,6 +155,7 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
           id,
           kind: 'when',
           states: [...new Set(d.states.map(String))].sort(),
+          motion: motionOf(scope, d.motion, at(p, 'motion')),
           children: d.children.map((c, i) => node(scope, c, `${id}/${i}`, at(p, 'children', i), depth)),
         }
       case 'each':
@@ -151,6 +164,7 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
           kind: 'each',
           source: scope.attempt(at(p, 'source'), () => scope.value(d.source, p), { literal: [] }),
           key: String(d.key),
+          motion: motionOf(scope, d.motion, at(p, 'motion')),
           item: branch(d.item, `${id}/item`, at(p, 'item')),
         }
       case 'query': {

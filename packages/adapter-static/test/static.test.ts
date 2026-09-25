@@ -23,7 +23,7 @@ describe('static export', () => {
     expect(result.skipped).toEqual([{ route: 'home', reason: 'per-request regions: cart.getCart' }])
     const html = await readFile(join(outDir, 'order/placed/index.html'), 'utf8')
     expect(html).toContain('T-shirt')
-    expect(html).not.toMatch(/<script(?! type="application\/ld\+json")/)
+    expect(html).not.toMatch(/<script(?! type="(application\/ld\+json|speculationrules)")/)
   })
 })
 

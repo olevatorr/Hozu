@@ -53,7 +53,10 @@ describe('server rendering', () => {
   it('machine-less pages contain no script at all', async () => {
     const data = createDataRuntime({ build, resolvers: createResolvers() })
     const { html } = await renderToString({ build, data, route: 'orderPlaced' })
-    expect(html).not.toMatch(/<script(?! type="application\/ld\+json")/)
+    expect(html).not.toMatch(/<script(?! type="(application\/ld\+json|speculationrules)")/)
+    expect(html).toContain(
+      '<script type="speculationrules">{"prerender":[{"where":{"and":[{"href_matches":"/*"}',
+    )
     expect(html).not.toContain('<!--i-->')
     expect(html).toContain('<meta name="robots" content="noindex">')
   })

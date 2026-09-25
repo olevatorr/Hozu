@@ -17,20 +17,25 @@ export const CartPanel = ui.view({
           ready: (cart) =>
             ui.div({}, [
               ui.ul({ class: 'divide-y' }, [
-                ui.each(cart.items, 'sku', (item) =>
-                  ui.li({ class: 'flex justify-between' }, [
-                    item.name,
-                    ' × ',
-                    item.qty,
-                    when(
-                      ['idle'],
-                      [
-                        ui.button({ type: 'button', on: { click: ui.send(RemoveItem, { sku: item.sku }) } }, [
-                          'Remove',
-                        ]),
-                      ],
-                    ),
-                  ]),
+                ui.each(
+                  cart.items,
+                  'sku',
+                  (item) =>
+                    ui.li({ class: 'flex justify-between' }, [
+                      item.name,
+                      ' × ',
+                      item.qty,
+                      when(
+                        ['idle'],
+                        [
+                          ui.button(
+                            { type: 'button', on: { click: ui.send(RemoveItem, { sku: item.sku }) } },
+                            ['Remove'],
+                          ),
+                        ],
+                      ),
+                    ]),
+                  'list',
                 ),
               ]),
               ui.p({ class: 'font-bold' }, ['Total: $', cartTotal(cart.items)]),
@@ -105,6 +110,7 @@ export const CartPanel = ui.view({
           ui.p({ role: 'alert' }, [ctx.error]),
           ui.button({ type: 'button', on: { click: ui.send(Dismiss, {}) } }, ['Dismiss']),
         ],
+        'fade',
       ),
       when(['idle'], [ui.button({ type: 'button', on: { click: ui.send(Checkout, {}) } }, ['Checkout'])]),
       when(['placed'], [ui.p({}, ['Order ', ctx.orderId, ' placed'])]),

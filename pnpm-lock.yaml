@@ -68,6 +68,9 @@ importers:
       html-element-attributes:
         specifier: ^3.5.0
         version: 3.5.0
+      playwright-core:
+        specifier: 1.63.0
+        version: 1.63.0
       svg-element-attributes:
         specifier: ^2.2.0
         version: 2.2.0

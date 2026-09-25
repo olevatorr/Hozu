@@ -1,4 +1,4 @@
-import { type At, at, type Fix, resolveAt } from '@tenon/core/ir'
+import { type At, at, type Fix, motionClasses, resolveAt } from '@tenon/core/ir'
 import type { Ctx } from '../context.ts'
 import { didYouMean } from '../suggest.ts'
 import { walkView } from '../walk.ts'
@@ -14,6 +14,22 @@ export function classNames(ctx: Ctx) {
   for (const f of Object.values(ir.features))
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer }) => {
+        if ((node.kind === 'when' || node.kind === 'each') && node.motion) {
+          if (motionClasses(node.motion).every((c) => unknown.has(c)))
+            ctx.report(
+              'TN026',
+              f.id,
+              at(pointer, 'motion'),
+              `Motion "${node.motion}" has no CSS`,
+              `Define at least ${node.motion}-enter-active / ${node.motion}-leave-active (and optionally -from, -to, -move) in a stylesheet.`,
+              {
+                summary: `Add transition classes for "${node.motion}"`,
+                snippet: `.${node.motion}-enter-active, .${node.motion}-leave-active { transition: opacity 200ms; }\n.${node.motion}-enter-from, .${node.motion}-leave-to { opacity: 0; }`,
+                patch: null,
+              },
+            )
+          return
+        }
         if (node.kind !== 'el') return
         const lists: [string, At, (fixed: string) => Patch][] = []
         if (node.class)

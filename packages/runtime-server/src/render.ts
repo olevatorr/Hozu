@@ -459,6 +459,15 @@ export function pathOf(pattern: string, params: Json): string {
   )
 }
 
+const SPECULATION = `<script type="speculationrules">${JSON.stringify({
+  prerender: [
+    {
+      where: { and: [{ href_matches: '/*' }, { not: { href_matches: '/_tenon/*' } }] },
+      eagerness: 'moderate',
+    },
+  ],
+})}</script>`
+
 function headHtml(
   ir: ProjectIR,
   h: HeadIR,
@@ -490,6 +499,7 @@ function headHtml(
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     styles ? `<link rel="stylesheet" href="${escapeHtml(styles)}">` : '',
+    SPECULATION,
     `<title>${escapeHtml(title)}</title>`,
     meta('name', 'description', description),
     h.noindex || status !== 200 ? '<meta name="robots" content="noindex">' : '',

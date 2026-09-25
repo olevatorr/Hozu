@@ -48,8 +48,8 @@ export type Props<T extends Tag = Tag> = TagProps[T] & {
 
 export type NodeDef =
   | { kind: 'el'; tag: string; props: Record<string, unknown>; children: readonly unknown[] }
-  | { kind: 'when'; states: readonly string[]; children: readonly unknown[] }
-  | { kind: 'each'; source: unknown; key: string; item: (item: any) => unknown }
+  | { kind: 'when'; states: readonly string[]; children: readonly unknown[]; motion: unknown }
+  | { kind: 'each'; source: unknown; key: string; item: (item: any) => unknown; motion: unknown }
   | {
       kind: 'query'
       query: QueryDecl
@@ -68,7 +68,7 @@ export interface ViewDef {
 
 export interface ViewDecl extends Decl<'view'> {}
 
-export type When<S extends string> = (states: S[], children: Child[]) => NodeDecl
+export type When<S extends string> = (states: S[], children: Child[], motion?: string) => NodeDecl
 
 export interface ViewScope<C, S extends string, P> {
   ctx: Ref<C>
@@ -78,8 +78,8 @@ export interface ViewScope<C, S extends string, P> {
 
 const node = (def: NodeDef): NodeDecl => brand({}, 'node', def)
 
-export const when = (states: readonly string[], children: readonly unknown[]): NodeDecl =>
-  node({ kind: 'when', states, children })
+export const when = (states: readonly string[], children: readonly unknown[], motion?: string): NodeDecl =>
+  node({ kind: 'when', states, children, motion: motion ?? null })
 
 type Elements = {
   [T in Tag]: T extends VoidTag | 'textarea'
@@ -131,8 +131,12 @@ export const ui = Object.freeze({
   view,
   dom,
   send: <P>(event: EventDecl<P>, payload: Val<P>): Send => Object.freeze({ [SEND]: { event, payload } }),
-  each: <T>(source: Expr<readonly T[]>, key: keyof T & string, item: (item: Ref<T>) => NodeDecl): NodeDecl =>
-    node({ kind: 'each', source, key, item }),
+  each: <T>(
+    source: Expr<readonly T[]>,
+    key: keyof T & string,
+    item: (item: Ref<T>) => NodeDecl,
+    motion?: string,
+  ): NodeDecl => node({ kind: 'each', source, key, item, motion: motion ?? null }),
   query: <I, O, E>(
     query: QueryDecl<I, O, E>,
     input: Val<I>,

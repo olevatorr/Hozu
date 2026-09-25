@@ -2,6 +2,11 @@ import type { ProjectIR, ViewNode } from './types.ts'
 
 const classesOf = (value: string) => value.split(/\s+/).filter(Boolean)
 
+export const motionClasses = (name: string) =>
+  ['enter-from', 'enter-active', 'enter-to', 'leave-from', 'leave-active', 'leave-to', 'move'].map(
+    (s) => `${name}-${s}`,
+  )
+
 export function classCandidates(ir: ProjectIR): Set<string> {
   const out = new Set<string>()
   const walk = (n: ViewNode) => {
@@ -12,9 +17,11 @@ export function classCandidates(ir: ProjectIR): Set<string> {
         n.children.forEach(walk)
         return
       case 'when':
+        if (n.motion) for (const c of motionClasses(n.motion)) out.add(c)
         n.children.forEach(walk)
         return
       case 'each':
+        if (n.motion) for (const c of motionClasses(n.motion)) out.add(c)
         walk(n.item)
         return
       case 'query':

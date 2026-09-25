@@ -13,6 +13,7 @@ import {
   transition,
 } from '@tenon/machine'
 import { attrText, classText, domField, passive, properties, SVG_NS, text } from './dom.ts'
+import { enter, flip, leave, reduced } from './motion.ts'
 
 export type Result = { ok: true; value: Json } | { ok: false; error: string; data: Json }
 
@@ -81,7 +82,7 @@ const guardReads = (g: GuardExpr): boolean => {
 
 const reads = (v: ValueExpr): boolean =>
   'ref' in v
-    ? v.ref === 'context'
+    ? v.ref === 'context' || v.ref === 'binding'
     : 'object' in v
       ? Object.values(v.object).some(reads)
       : 'fn' in v
@@ -126,7 +127,7 @@ function clear(start: Node, end: Node) {
 
 export function createApp(doc: Document, options: AppOptions): App {
   const { machine, fns = {}, params = null } = options
-  const { data: payload, versions } = store(options.payload)
+  const { data: payload } = store(options.payload)
   const ranges: [Node, Node][] = []
   const timers = new Set<ReturnType<typeof setTimeout>>()
   let first: Step | null = machine ? (options.snapshot ? null : init(machine)) : null
@@ -261,25 +262,35 @@ export function createApp(doc: Document, options: AppOptions): App {
       }
       case 'when': {
         const visible = () => (snapshot ? node.states.includes(snapshot.state) : false)
-        region(c, block, visible, (cc, inner) => {
-          if (visible()) for (const child of node.children) render(child, scope, cc, inner, ns)
-        })
+        region(
+          c,
+          block,
+          visible,
+          (cc, inner) => {
+            if (visible()) for (const child of node.children) render(child, scope, cc, inner, ns)
+          },
+          node.motion,
+        )
         return
       }
       case 'query': {
+        let bound: Json[] = scope
         const key = () => {
           const k = payloadKey(node.query, value(node.input, scope))
-          return `${k}#${versions.get(k) ?? 0}`
+          const r = payload.get(k)
+          if (r && bound !== scope) bound[bound.length - 1] = r.ok ? r.value : r.data
+          return `${k}|${!r ? '' : r.ok ? 'ready' : node.failed[r.error] ? r.error : 'Unexpected'}`
         }
         region(c, block, key, (cc, inner) => {
           const result = payload.get(payloadKey(node.query, value(node.input, scope)))
+          bound = scope
           if (!result) {
             if (node.pending) render(node.pending, scope, cc, inner, ns)
-          } else if (result.ok) render(node.ready, [...scope, result.value], cc, inner, ns)
-          else {
-            const branch = node.failed[result.error] ?? node.failed.Unexpected
-            if (branch) render(branch, [...scope, result.data], cc, inner, ns)
+            return
           }
+          const branch = result.ok ? node.ready : (node.failed[result.error] ?? node.failed.Unexpected)
+          bound = [...scope, result.ok ? result.value : result.data]
+          if (branch) render(branch, bound, cc, inner, ns)
         })
         return
       }
@@ -291,7 +302,13 @@ export function createApp(doc: Document, options: AppOptions): App {
     }
   }
 
-  const region = (c: Cursor, block: Block, key: () => unknown, fill: (c: Cursor, inner: Block) => void) => {
+  const region = (
+    c: Cursor,
+    block: Block,
+    key: () => unknown,
+    fill: (c: Cursor, inner: Block) => void,
+    motion: string | null = null,
+  ) => {
     const start = marker(c, '[')
     let current = key()
     let inner: Block = []
@@ -304,9 +321,17 @@ export function createApp(doc: Document, options: AppOptions): App {
         return
       }
       current = next
-      clear(start, end)
       inner = []
-      fill({ parent: end.parentNode!, next: end, claim: false }, inner)
+      if (!motion || reduced(doc)) {
+        clear(start, end)
+        fill({ parent: end.parentNode!, next: end, claim: false }, inner)
+        return
+      }
+      leave(start.nextSibling === end ? [] : range(start.nextSibling!, end.previousSibling!), motion)
+      const [a, b] = span({ parent: end.parentNode!, next: end, claim: false }, () =>
+        fill({ parent: end.parentNode!, next: end, claim: false }, inner),
+      )
+      if (a && b && a !== end) enter(range(a, b), motion)
     })
   }
 
@@ -335,7 +360,16 @@ export function createApp(doc: Document, options: AppOptions): App {
     let items = list().map((x) => make(x, c))
     const end = marker(c, ']')
     block.push(() => {
+      const motion = node.motion && !reduced(doc) ? node.motion : null
+      const rects = motion
+        ? new Map(
+            items.flatMap((i) =>
+              i.first.nodeType === 1 ? [[i, (i.first as Element).getBoundingClientRect()]] : [],
+            ),
+          )
+        : null
       const old = new Map(items.map((i) => [i.key, i]))
+      const fresh = new Set<Item>()
       const next: Item[] = []
       for (const x of list()) {
         const k = keyOf(x)
@@ -348,9 +382,15 @@ export function createApp(doc: Document, options: AppOptions): App {
           }
           for (const u of hit.block) u()
           next.push(hit)
-        } else next.push(make(x, { parent: doc.createDocumentFragment(), next: null, claim: false }))
+        } else {
+          const item = make(x, { parent: doc.createDocumentFragment(), next: null, claim: false })
+          fresh.add(item)
+          next.push(item)
+        }
       }
-      for (const gone of old.values()) for (const n of range(gone.first, gone.last)) (n as ChildNode).remove()
+      for (const gone of old.values())
+        if (motion) leave(range(gone.first, gone.last), motion)
+        else for (const n of range(gone.first, gone.last)) (n as ChildNode).remove()
       const parent = end.parentNode!
       let at: Node = start.nextSibling ?? end
       for (const item of next) {
@@ -358,6 +398,13 @@ export function createApp(doc: Document, options: AppOptions): App {
         else for (const n of range(item.first, item.last)) parent.insertBefore(n, at)
       }
       items = next
+      if (!motion) return
+      for (const item of next)
+        if (fresh.has(item)) enter(range(item.first, item.last), motion)
+        else {
+          const before = rects?.get(item)
+          if (before) flip(item.first as HTMLElement, before, motion)
+        }
     })
   }
 

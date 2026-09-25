@@ -210,6 +210,7 @@ export interface WhenNode {
   id: string
   kind: 'when'
   states: string[]
+  motion: string | null
   children: ViewNode[]
 }
 
@@ -218,6 +219,7 @@ export interface EachNode {
   kind: 'each'
   source: ValueExpr
   key: string
+  motion: string | null
   item: ViewNode
 }
 

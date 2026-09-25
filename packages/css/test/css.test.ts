@@ -41,6 +41,23 @@ describe('styles', () => {
     ])
   })
 
+  it('TN026 — a motion name without any CSS', async () => {
+    const build = buildProject(cart, { sources: true })
+    const ir = structuredClone(build.ir)
+    const json = JSON.stringify(ir).replace('"motion":"list"', '"motion":"slide"')
+    const mutated = JSON.parse(json) as typeof ir
+    const styles = await compileStyles({ ...build, ir: mutated })
+    const found = validate(mutated, { sources: build.sources, unknownClasses: styles.unknown }).filter(
+      (d) => d.code === 'TN026',
+    )
+    expect(found.map((d) => d.message)).toEqual(['Motion "slide" has no CSS'])
+    expect(found[0]!.fix?.snippet).toContain('.slide-enter-active')
+    const clean = await compileStyles(build)
+    expect(validate(build.ir, { unknownClasses: clean.unknown }).filter((d) => d.code === 'TN026')).toEqual(
+      [],
+    )
+  })
+
   it('reads class selectors back from generated CSS, including escaped Tailwind names', () => {
     expect([
       ...selectorClasses(

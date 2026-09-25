@@ -95,7 +95,7 @@ for (const path of ['/', '/posts/hello-tenon', '/posts/islands-explained']) {
     hrefs.length ? `${hrefs.length} links, broken: ${broken.join(', ') || 'none'}` : 'no links',
   )
   const scripts = [...html.matchAll(/<script\b([^>]*)>/g)].filter(
-    (m) => !/application\/(ld\+)?json/.test(m[1]!),
+    (m) => !/application\/(ld\+)?json|speculationrules/.test(m[1]!),
   ).length
   check(path, 'JavaScript shipped', true, scripts ? `${scripts} executable script tags` : '0 bytes')
   check(path, 'stylesheet linked in <head>', html.includes(`<link rel="stylesheet" href="${styles.href}">`))

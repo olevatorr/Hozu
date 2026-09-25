@@ -24,7 +24,9 @@
     "@tenon/cli": "workspace:*",
     "@tenon/compiler": "workspace:*",
     "@tenon/core": "workspace:*",
+    "@tenon/css": "workspace:*",
     "@tenon/data": "workspace:*",
+    "@tenon/dev": "workspace:*",
     "@tenon/machine": "workspace:*",
     "@tenon/runtime-client": "workspace:*",
     "@tenon/runtime-server": "workspace:*",
@@ -36,12 +38,11 @@
     "fast-check": "4.10.2",
     "happy-dom": "20.14.5",
     "html-element-attributes": "^3.5.0",
+    "playwright-core": "1.63.0",
     "svg-element-attributes": "^2.2.0",
     "ts-json-schema-generator": "2.9.0",
     "typescript": "7.0.2",
     "vitest": "5.0.1",
-    "zod": "4.6.5",
-    "@tenon/css": "workspace:*",
-    "@tenon/dev": "workspace:*"
+    "zod": "4.6.5"
   }
 }

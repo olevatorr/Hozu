@@ -77,7 +77,7 @@ describe('DOM vocabulary and adoption hydration', () => {
     expect(q('p').textContent).toBe('Last key: k')
   })
 
-  it('submits form data and keyed lists add, remove and move nodes without recreating them', () => {
+  it('submits form data and keyed lists add, remove and move nodes without recreating them', async () => {
     const [alpha, beta] = [...document.querySelectorAll('li')]
     type(q<HTMLInputElement>('input[name="title"]'), 'Gamma')
     q<HTMLFormElement>('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
@@ -90,8 +90,30 @@ describe('DOM vocabulary and adoption hydration', () => {
     expect(a2).toBe(alpha)
     expect(b2).toBe(beta)
     ;(beta!.querySelector('button') as HTMLButtonElement).click()
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 0))))
     expect(ids()).toEqual(['Gamma', 'a'])
     expect(beta!.isConnected).toBe(false)
     expect(alpha!.isConnected).toBe(true)
+  })
+})
+
+describe('motion', () => {
+  const frames = () =>
+    new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 0))))
+
+  it('runs enter and leave classes on keyed items and removes leaving nodes after the transition', async () => {
+    type(q<HTMLInputElement>('input[name="title"]'), 'Gamma')
+    q<HTMLFormElement>('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    const gamma = q<HTMLLIElement>('li[data-id="Gamma"]')
+    expect(gamma.className).toBe('list-enter-from list-enter-active')
+    await frames()
+    expect(gamma.className).toBe('')
+    const alpha = q<HTMLLIElement>('li[data-id="a"]')
+    ;(alpha.querySelector('button') as HTMLButtonElement).click()
+    expect(alpha.isConnected).toBe(true)
+    expect(alpha.className).toBe('list-leave-from list-leave-active')
+    await frames()
+    expect(alpha.isConnected).toBe(false)
+    expect(ids()).toEqual(['b', 'Gamma'])
   })
 })

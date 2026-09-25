@@ -79,6 +79,7 @@ export function viewEvents(ctx: Ctx) {
                         id: `${node.id}~when`,
                         kind: 'when',
                         states: allowed,
+                        motion: null,
                         children: [node],
                       } as unknown as Json,
                     },
