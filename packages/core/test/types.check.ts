@@ -123,7 +123,7 @@ contract(ok, {
   expect: { state: 'idle', context: null, effects: null },
 })
 
-const slugRoute = route({ path: '/items/:slug', params: z.object({ slug: z.string() }) })
+const slugRoute = route({ path: '/items/:slug', params: z.object({ slug: z.string() }), search: null })
 const itemQuery = query({
   input: z.object({ slug: z.string() }),
   output: Item,

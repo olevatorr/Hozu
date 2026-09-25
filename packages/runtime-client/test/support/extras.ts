@@ -15,8 +15,8 @@ export const note = query({
   tags: () => [],
 })
 
-const home = route({ path: '/', params: null })
-const item = route({ path: '/items/:id', params: z.object({ id: z.string() }) })
+const home = route({ path: '/', params: null, search: null })
+const item = route({ path: '/items/:id', params: z.object({ id: z.string() }), search: null })
 
 const extras = machine({
   context: z.object({ draft: z.string(), tags: z.array(z.string()), width: z.number() }),

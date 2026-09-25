@@ -8,7 +8,6 @@ export const BookmarkKey = z.object({ id: z.string() })
 export const NewBookmark = z.object({ title: z.string(), kind: Kind })
 export const NoInput = z.object({})
 export const Context = z.object({
-  show: Show,
   draft: z.string(),
   kind: Kind,
   target: z.string(),

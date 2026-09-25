@@ -92,7 +92,7 @@ export const covers = [
   }),
 ]
 
-export const home = route({ path: '/', params: null })
+export const home = route({ path: '/', params: null, search: null })
 
 export const todoFeature = feature({
   id: 'todo',

@@ -40,4 +40,6 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   TN032: { name: 'untyped-internal-link', severity: 'error' },
   TN033: { name: 'unchecked-dom-text', severity: 'error' },
   TN034: { name: 'conflicting-ignore', severity: 'error' },
+  TN035: { name: 'invalid-search-schema', severity: 'error' },
+  TN036: { name: 'form-not-server-runnable', severity: 'warning' },
 }

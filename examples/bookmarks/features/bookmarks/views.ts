@@ -1,7 +1,7 @@
 import { op, ui } from '@tenon/core'
 import { bookmarkPage, home } from '../../routes.ts'
 import { getBookmark, isEmpty, listBookmarks, visible } from './effects.ts'
-import { Add, Draft, PickKind, SetShow, ToggleRead } from './events.ts'
+import { Add, Draft, PickKind, ToggleRead } from './events.ts'
 import { bookmarksMachine } from './machine.ts'
 
 const kinds = ['article', 'video', 'podcast'] as const
@@ -12,8 +12,8 @@ const shows = [
 
 export const Board = ui.view({
   machine: bookmarksMachine,
-  route: null,
-  render: ({ ctx }) =>
+  route: home,
+  render: ({ ctx, search }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [
       ui.h1({ class: 'text-3xl font-bold' }, ['Bookmarks']),
       ui.form({ class: 'flex gap-2', on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } }, [
@@ -38,15 +38,15 @@ export const Board = ui.view({
         ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
       ]),
       ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
-      ui.div(
-        { class: 'flex gap-2' },
+      ui.nav(
+        { class: 'flex gap-2', 'aria-label': 'Show' },
         shows.map((s) =>
-          ui.button(
+          ui.a(
             {
-              type: 'button',
-              'aria-pressed': op.eq(ctx.show, s.value),
-              class: 'rounded-full border px-3 py-1 aria-pressed:bg-indigo-600 aria-pressed:text-white',
-              on: { click: ui.send(SetShow, { show: s.value }) },
+              href: ui.link(home, null, { show: s.value }),
+              'aria-current': op.eq(search.show, s.value),
+              class:
+                'rounded-full border px-3 py-1 aria-[current=true]:bg-indigo-600 aria-[current=true]:text-white',
             },
             [s.label],
           ),
@@ -58,11 +58,11 @@ export const Board = ui.view({
         {
           ready: (items) =>
             ui.if(
-              isEmpty({ items, show: ctx.show }),
+              isEmpty({ items, show: search.show }),
               [ui.p({ class: 'text-slate-500' }, ['No bookmarks'])],
               [
                 ui.ul({ class: 'divide-y rounded border' }, [
-                  ui.each(visible({ items, show: ctx.show }), 'id', (b) =>
+                  ui.each(visible({ items, show: search.show }), 'id', (b) =>
                     ui.li({ class: 'flex items-center gap-3 px-4 py-3' }, [
                       ui.a({ href: ui.link(bookmarkPage, { id: b.id }), class: 'flex-1 underline' }, [
                         b.title,
@@ -110,6 +110,6 @@ export const Detail = ui.view({
           },
         },
       ),
-      ui.a({ href: ui.link(home, null), class: 'underline' }, ['Back']),
+      ui.a({ href: ui.link(home, null, null), class: 'underline' }, ['Back']),
     ]),
 })

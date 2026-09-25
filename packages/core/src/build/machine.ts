@@ -18,19 +18,6 @@ function assign(scope: FeatureScope, a: unknown, p: At): AssignOp {
   return raw.op === 'removeWhere' ? { op: raw.op, path, key: raw.key, value } : { op: raw.op, path, value }
 }
 
-export function routeRef(scope: FeatureScope, route: unknown, p: At): string {
-  const id = scope.project.routes.get(route as object)
-  if (id) return id
-  scope.report(
-    'TN007',
-    p,
-    'Navigation target is not a registered route',
-    'Routes are identities; they must be listed in project({ routes }).',
-    { summary: 'Add the route to project({ routes })', snippet: 'routes: { myRoute }', patch: null },
-  )
-  return '?'
-}
-
 function transition(
   scope: FeatureScope,
   t: TransitionConfig<string, any>,
@@ -49,7 +36,17 @@ function transition(
           return ops.map((a, i) => assign(scope, a, at(p, 'assign', i)))
         }, [])
       : [],
-    navigate: t.navigate ? routeRef(scope, t.navigate, at(p, 'navigate')) : null,
+    navigate: t.navigate
+      ? scope.attempt(
+          at(p, 'navigate'),
+          () => {
+            const v = scope.value(t.navigate!(arg), at(p, 'navigate'))
+            if (!('link' in v)) throw new RecorderError('navigate must return ui.link(route, params, search)')
+            return v
+          },
+          null,
+        )
+      : null,
   }
 }
 

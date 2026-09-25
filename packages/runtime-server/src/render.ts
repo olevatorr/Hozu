@@ -9,6 +9,7 @@ import {
   type Json,
   type MachineIR,
   type ProjectIR,
+  routeTable,
   type TagExprIR,
   type ValueExpr,
   type ViewNode,
@@ -57,6 +58,7 @@ export interface RenderOptions {
   data: DataRuntime
   route: string
   params?: Json
+  search?: Json
   session?: unknown
   assets?: Assets
 }
@@ -75,6 +77,7 @@ export async function renderPage({
   data,
   route,
   params = null,
+  search = null,
   session,
   assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: null, preload: [], widgets: {} },
 }: RenderOptions): Promise<RenderedPage> {
@@ -89,6 +92,7 @@ export async function renderPage({
     nodes: {},
     fns: null,
     params,
+    search,
     widgets: {},
     routes: {},
     live: {},
@@ -116,6 +120,7 @@ export async function renderPage({
     state: bound ? (feature.machine?.initial ?? null) : null,
     bindings: [],
     params,
+    search,
     routes,
   })
 
@@ -287,13 +292,14 @@ export async function renderPage({
   }
 
   const page = ir.pages[route]!
-  const path = pathOf(ir.routes[route]?.path ?? '/', params)
+  const path = pathOf(routes[route] ?? '/', params, search)
   const empty: Scope = {
     feature: { id: '' } as FeatureIR,
     context: null,
     state: null,
     bindings: [],
     params,
+    search,
     routes,
   }
   let status = 200
@@ -355,7 +361,7 @@ const routeMemo = new WeakMap<ProjectIR, Record<string, string>>()
 function routesOf(ir: ProjectIR): Record<string, string> {
   let hit = routeMemo.get(ir)
   if (!hit) {
-    hit = Object.fromEntries(Object.entries(ir.routes).map(([id, r]) => [id, r.path]))
+    hit = routeTable(ir)
     routeMemo.set(ir, hit)
   }
   return hit

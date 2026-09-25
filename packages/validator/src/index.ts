@@ -14,7 +14,7 @@ import { literals } from './rules/literals.ts'
 import { paths } from './rules/paths.ts'
 import { featureLinks, references, routes } from './rules/refs.ts'
 import { rendering } from './rules/rendering.ts'
-import { routeParams } from './rules/routes.ts'
+import { routeParams, searchSchemas } from './rules/routes.ts'
 import { deadEnds, reachability, shadowing, stateNames } from './rules/states.ts'
 import { domText } from './rules/text.ts'
 import { widgetEvents } from './rules/widgets.ts'
@@ -42,6 +42,7 @@ const rules = [
   sessions,
   rendering,
   routeParams,
+  searchSchemas,
   domFields,
   classNames,
   widgetEvents,

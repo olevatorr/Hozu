@@ -1,4 +1,4 @@
-import { invoke, machine, on, op } from '@tenon/core'
+import { invoke, machine, on, op, ui } from '@tenon/core'
 import { orderPlaced } from '../../routes.ts'
 import { addItem, checkout, removeItem } from './effects.ts'
 import { AddItem, Checkout, Dismiss, RemoveItem, SetQuantity } from './events.ts'
@@ -52,7 +52,7 @@ export const cartMachine = machine({
           {
             target: 'placed',
             assign: (order) => [op.set(ctx.orderId, order.orderId)],
-            navigate: orderPlaced,
+            navigate: () => ui.link(orderPlaced, null),
           },
         ],
         failed: {

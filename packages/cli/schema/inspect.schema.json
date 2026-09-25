@@ -548,11 +548,15 @@
             },
             "params": {
               "$ref": "#/definitions/ValueExpr"
+            },
+            "search": {
+              "$ref": "#/definitions/ValueExpr"
             }
           },
           "required": [
             "link",
-            "params"
+            "params",
+            "search"
           ],
           "additionalProperties": false
         }
@@ -567,6 +571,7 @@
         "error",
         "input",
         "params",
+        "search",
         "dom"
       ]
     },
@@ -813,9 +818,13 @@
           }
         },
         "navigate": {
-          "type": [
-            "string",
-            "null"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ValueExpr"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
@@ -1578,20 +1587,36 @@
       "additionalProperties": false
     },
     "EffectCallIR": {
-      "type": "object",
-      "properties": {
-        "effect": {
-          "type": "string"
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "effect": {
+              "type": "string"
+            },
+            "input": {
+              "$ref": "#/definitions/Json"
+            }
+          },
+          "required": [
+            "effect",
+            "input"
+          ],
+          "additionalProperties": false
         },
-        "input": {
-          "$ref": "#/definitions/Json"
+        {
+          "type": "object",
+          "properties": {
+            "navigate": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "navigate"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "effect",
-        "input"
-      ],
-      "additionalProperties": false
+      ]
     }
   }
 }

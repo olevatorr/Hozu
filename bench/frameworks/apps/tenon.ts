@@ -50,7 +50,7 @@ const Page = ui.view({
       ui.p({}, ['Cart: ', ctx.count, ' items']),
     ]),
 })
-const home = route({ path: '/', params: null })
+const home = route({ path: '/', params: null, search: null })
 const shop = feature({
   id: 'shop',
   styles: [],

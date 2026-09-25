@@ -33,10 +33,11 @@ export interface AppOptions {
   payload: Payload | Store
   fns?: Record<string, (input: never) => unknown>
   params?: Json
+  search?: Json
   snapshot?: Snapshot
   onInvoke?: (effect: string, input: Json) => Promise<Result>
   onQuery?: (query: string, input: Json) => Promise<Result>
-  onNavigate?: (route: string) => void
+  onNavigate?: (url: string) => void
   widgets?: Record<string, WidgetRef>
   routes?: Record<string, string>
   motion?: Motion | undefined
@@ -150,7 +151,7 @@ function clear(start: Node, end: Node) {
 }
 
 export function createApp(doc: Document, options: AppOptions): App {
-  const { machine, fns = {}, params = null, routes = {}, motion: m } = options
+  const { machine, fns = {}, params = null, search = null, routes = {}, motion: m } = options
   const { data: payload } = store(options.payload)
   const ranges: [Node, Node][] = []
   const timers = new Set<ReturnType<typeof setTimeout>>()
@@ -170,6 +171,7 @@ export function createApp(doc: Document, options: AppOptions): App {
       context: snapshot?.context ?? null,
       bindings: scope,
       params,
+      search,
       routes,
       ...(dom ? { dom } : {}),
     })
@@ -566,7 +568,7 @@ export function createApp(doc: Document, options: AppOptions): App {
 
   const effects = (step: Step) => {
     for (const e of step.effects) {
-      if (e.type === 'navigate') options.onNavigate?.(e.route)
+      if (e.type === 'navigate') options.onNavigate?.(e.url)
       else if (e.type === 'timer') {
         const t = setTimeout(() => {
           timers.delete(t)

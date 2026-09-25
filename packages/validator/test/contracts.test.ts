@@ -1,4 +1,4 @@
-import type { DiagnosticCode, ProjectIR } from '@tenon/core/ir'
+import type { DiagnosticCode, ProjectIR, ValueExpr } from '@tenon/core/ir'
 import { compileMachine } from '@tenon/machine'
 import { type Lockfile, runContract, verify } from '@tenon/validator'
 import { describe, expect, it } from 'vitest'
@@ -109,21 +109,28 @@ describe('Phase 1 behavior catalog', () => {
     expect(d.fix?.snippet).toContain('placeholders')
   })
 
+  const raiseLimit = (ir: ProjectIR) => {
+    const guard = cart(ir).machine!.states.idle!.on['cart.SetQuantity']![0]!.guard as {
+      args: { right: ValueExpr }[]
+    }
+    guard.args[1]!.right = { literal: 50 }
+  }
+
   it('TN018 — behavior changed while every contract still passes', () => {
     const baseline = run(cartIR()).lock!
     const ir = cartIR()
-    cart(ir).machine!.states.error!.on['cart.Dismiss']![0]!.navigate = 'home'
+    raiseLimit(ir)
     const { diagnostics } = run(ir, baseline)
     expect(diagnostics.map((d) => d.code)).toEqual(['TN018'])
-    expect(diagnostics[0]!.location.pointer).toBe('/features/cart/machine/states/error/on/cart.Dismiss/0')
-    expect(diagnostics[0]!.cause).toContain('dismissesError')
+    expect(diagnostics[0]!.location.pointer).toBe('/features/cart/machine/states/idle/on/cart.SetQuantity/0')
+    expect(diagnostics[0]!.cause).toContain('setsQuantity')
   })
 
   it('TN018 is satisfied once a covering contract changes', () => {
     const baseline = run(cartIR()).lock!
     const ir = cartIR()
-    cart(ir).machine!.states.error!.on['cart.Dismiss']![0]!.navigate = 'home'
-    cart(ir).contracts.dismissesError!.expect.effects = null
+    raiseLimit(ir)
+    cart(ir).contracts.setsQuantity!.expect.effects = null
     expect(run(ir, baseline).diagnostics).toEqual([])
   })
 

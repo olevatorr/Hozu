@@ -168,6 +168,7 @@ function build(project: unknown, tracking: boolean): BuildResult {
     routes[id] = {
       path: def.path,
       params: projectSchema(scope, def.params, join(p, 'params'), `#route:${id}`),
+      search: projectSchema(scope, def.search ?? null, join(p, 'search'), `#search:${id}`),
     }
   }
 

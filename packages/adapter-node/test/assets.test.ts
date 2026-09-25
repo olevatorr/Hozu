@@ -32,7 +32,7 @@ writeFileSync(
 )
 const url = (f: string) => pathToFileURL(join(dir, f))
 
-const home = route({ path: '/', params: null })
+const home = route({ path: '/', params: null, search: null })
 const Page = ui.view({
   machine: null,
   route: null,

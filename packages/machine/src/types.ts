@@ -15,7 +15,7 @@ export type Input =
 export type Effect =
   | { type: 'invoke'; entry: number; effect: string; input: Json }
   | { type: 'timer'; entry: number; ms: number }
-  | { type: 'navigate'; route: string }
+  | { type: 'navigate'; url: string }
 
 export interface Step {
   snapshot: Snapshot
@@ -32,6 +32,7 @@ export interface Env {
   result?: Json
   error?: Json
   params?: Json
+  search?: Json
   bindings?: Json[]
   dom?: (field: string) => Json
   routes?: Record<string, string>
@@ -46,7 +47,7 @@ export interface CompiledTransition {
   guard: Test | null
   target: number
   assign: Update[]
-  navigate: string | null
+  navigate: Getter | null
 }
 
 export interface CompiledState {

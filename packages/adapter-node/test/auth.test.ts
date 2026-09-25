@@ -31,10 +31,10 @@ const login = mutation({
 })
 const logout = mutation({ input: z.object({}), output: z.object({}), errors: {}, invalidates: () => [] })
 
-const home = route({ path: '/', params: null })
-const signIn = route({ path: '/login', params: null })
-const account = route({ path: '/account', params: null })
-const missing = route({ path: '/404', params: null })
+const home = route({ path: '/', params: null, search: null })
+const signIn = route({ path: '/login', params: null, search: null })
+const account = route({ path: '/account', params: null, search: null })
+const missing = route({ path: '/404', params: null, search: null })
 
 const Account = ui.view({
   machine: null,

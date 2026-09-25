@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { extname } from 'node:path'
 import { planRoute } from '@tenon/compiler'
-import type { BuildResult, Json } from '@tenon/core/ir'
+import { type BuildResult, type Json, routeTable } from '@tenon/core/ir'
 import { createDataRuntime, type ResolverSet } from '@tenon/data'
 import type { EffectResponse, Result } from '@tenon/runtime-client'
 import {
@@ -10,6 +10,8 @@ import {
   fnsModule,
   matcher,
   pageEntries,
+  parseSearch,
+  pathOf,
   renderPage,
   renderToString,
   robotsTxt,
@@ -103,6 +105,7 @@ export function createHandler({
   const data = createDataRuntime({ build, resolvers, now })
   const { ir } = build
   const match = matcher(build)
+  const table = routeTable(ir)
   const queries = Object.values(ir.features).flatMap((f) => Object.keys(f.queries).map((q) => `${f.id}.${q}`))
   const cache = new Map<string, CachedPage>()
   const fns = fnsModule(build)
@@ -114,9 +117,16 @@ export function createHandler({
     return seconds.length ? Math.min(...seconds) * 1000 : Number.POSITIVE_INFINITY
   }
 
-  const generate = async (path: string, route: string, params: Json) => {
+  const generate = async (path: string, route: string, params: Json, search: Json) => {
     const at = now()
-    const { html, tags, status, redirect } = await renderToString({ build, data, route, params, assets })
+    const { html, tags, status, redirect } = await renderToString({
+      build,
+      data,
+      route,
+      params,
+      search,
+      assets,
+    })
     cache.set(path, { html, status, redirect, at, ttl: ttlOf(route), tags, regenerating: null })
   }
 
@@ -170,6 +180,7 @@ export function createHandler({
     path: string,
     route: string,
     params: Json,
+    search: Json,
     request: IncomingMessage,
     response: ServerResponse,
     missing = false,
@@ -181,13 +192,13 @@ export function createHandler({
       let cached = cache.get(path)
       let state = 'hit'
       if (!cached) {
-        await generate(path, route, params)
+        await generate(path, route, params, search)
         cached = cache.get(path)!
         state = 'miss'
       } else if (now() - cached.at >= cached.ttl) {
         state = 'stale'
         const current = cached
-        current.regenerating ??= generate(path, route, params).catch(() => {
+        current.regenerating ??= generate(path, route, params, search).catch(() => {
           current.regenerating = null
         })
       }
@@ -196,7 +207,15 @@ export function createHandler({
       response.end(head ? undefined : cached.html)
       return
     }
-    const rendered = await renderPage({ build, data, route, params, session: session(request), assets })
+    const rendered = await renderPage({
+      build,
+      data,
+      route,
+      params,
+      search,
+      session: session(request),
+      assets,
+    })
     if (rendered.redirect) return void response.writeHead(303, { location: rendered.redirect }).end()
     response.writeHead(statusOf(rendered.status), { ...headers, 'x-tenon-cache': 'bypass' })
     if (!head) for await (const chunk of rendered.chunks) response.write(chunk)
@@ -275,8 +294,12 @@ export function createHandler({
       if (url.pathname === '/sitemap.xml')
         return text(response, 'application/xml', sitemapXml(build, await pageEntries(build, data)), head)
       const found = match(url.pathname)
-      if (found) return await page(url.pathname, found.route, found.params, request, response)
-      if (ir.notFound) return await page(`#404`, ir.notFound, null, request, response, true)
+      if (found) {
+        const search = parseSearch(ir.routes[found.route]?.search ?? null, url.searchParams)
+        const key = pathOf(table[found.route] ?? url.pathname, found.params, search)
+        return await page(key, found.route, found.params, search, request, response)
+      }
+      if (ir.notFound) return await page(`#404`, ir.notFound, null, null, request, response, true)
       response.writeHead(404, { 'content-type': 'text/plain' }).end(head ? undefined : 'Not found')
     } catch (error) {
       if (!response.headersSent) response.writeHead(500, { 'content-type': 'text/plain' })

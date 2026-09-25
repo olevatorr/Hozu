@@ -46,7 +46,7 @@ export const placesOrder = contract(cartMachine, {
   expect: {
     state: 'placed',
     context: { ...idle, orderId: 'o-1' },
-    effects: [{ effect: checkout, input: {} }],
+    effects: [{ effect: checkout, input: {} }, { navigate: '/order/placed' }],
   },
 })
 

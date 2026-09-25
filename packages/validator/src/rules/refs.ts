@@ -155,9 +155,10 @@ export function routes(ctx: Ctx) {
   const names = Object.keys(ctx.ir.routes)
   for (const f of Object.values(ctx.ir.features))
     for (const site of transitionsOf(f)) {
-      const navigate = site.transition.navigate
+      const link = site.transition.navigate
+      const navigate = link && 'link' in link ? link.link : null
       if (navigate === null || navigate === '?' || Object.hasOwn(ctx.ir.routes, navigate)) continue
-      const p = site.at('navigate')
+      const p = site.at('navigate', 'link')
       const guess = closest(navigate, names)
       ctx.report(
         'TN007',

@@ -4,7 +4,7 @@ import type { Infer, Schema } from '../schema/standard.ts'
 import type { EffectDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
 import type { Condition } from './op.ts'
-import type { RouteDecl } from './route.ts'
+import type { Href } from './ui.ts'
 
 export interface UnexpectedError {
   message: string
@@ -14,7 +14,7 @@ export interface TransitionConfig<T extends string, A> {
   target: T
   guard?: (arg: A) => Condition
   assign?: (arg: A) => Assign[]
-  navigate?: RouteDecl
+  navigate?: (arg: A) => Href
 }
 
 export interface AfterConfig<T extends string> extends TransitionConfig<T, void> {

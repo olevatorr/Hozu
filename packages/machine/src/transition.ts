@@ -39,7 +39,7 @@ function fire(
     let context = snapshot.context
     for (const update of t.assign) context = update(context, env)
     const entry = snapshot.entry + 1
-    const effects: Effect[] = t.navigate === null ? [] : [{ type: 'navigate', route: t.navigate }]
+    const effects: Effect[] = t.navigate === null ? [] : [{ type: 'navigate', url: String(t.navigate(env)) }]
     enterEffects(machine, t.target, context, entry, effects)
     return { snapshot: { state: machine.states[t.target]!.name, context, entry }, effects, taken: t.id }
   }

@@ -42,10 +42,14 @@ export function buildContract(scope: FeatureScope, symbol: string, decl: Decl): 
         effects:
           d.expect.effects === null
             ? null
-            : d.expect.effects.map((e, i) => ({
-                effect: scope.ref(e.effect, ['query', 'mutation'], at(p, 'expect', 'effects', i)),
-                input: scope.json(e.input),
-              })),
+            : d.expect.effects.map((e, i) =>
+                'navigate' in e
+                  ? { navigate: String(e.navigate) }
+                  : {
+                      effect: scope.ref(e.effect, ['query', 'mutation'], at(p, 'expect', 'effects', i)),
+                      input: scope.json(e.input),
+                    },
+              ),
       },
     }),
     fallback,

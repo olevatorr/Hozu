@@ -195,7 +195,11 @@ const catalog: Mutation[] = [
     name: 'navigation to an unknown route',
     code: 'TN007',
     mutate: (ir) => {
-      states(ir).checkingOut!.invoke!.done[0]!.navigate = 'orderPlace'
+      states(ir).checkingOut!.invoke!.done[0]!.navigate = {
+        link: 'orderPlace',
+        params: { literal: null },
+        search: { literal: null },
+      }
     },
   },
   {
@@ -317,6 +321,13 @@ const catalog: Mutation[] = [
     code: 'TN034',
     mutate: (ir) => {
       states(ir).idle!.ignore.push('cart.AddItem')
+    },
+  },
+  {
+    name: 'search param without a default',
+    code: 'TN035',
+    mutate: (ir) => {
+      ir.routes.home!.search = { type: 'object', properties: { page: { type: 'integer' } } }
     },
   },
   {
@@ -465,7 +476,7 @@ describe('A2 mistake catalog', () => {
     const found = validate(ir, { sources }).filter((d) => d.code === code)
     expect(found.length, `expected ${code}`).toBeGreaterThan(0)
     for (const d of found) {
-      expect(d.location.pointer).toMatch(/^\/(features|pages)\//)
+      expect(d.location.pointer).toMatch(/^\/(features|pages|routes)\//)
       expect(d.location.source?.file).toMatch(/examples\/cart\/.+\.ts$/)
       expect(d.location.source?.line).toBeGreaterThan(0)
       expect(d.fix?.patch?.length, `${code} at ${d.location.pointer} needs a patch`).toBeGreaterThan(0)

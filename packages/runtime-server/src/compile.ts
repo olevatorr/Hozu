@@ -16,6 +16,7 @@ export interface Scope {
   state: string | null
   bindings: Json[]
   params: Json
+  search: Json
   routes: Record<string, string>
 }
 

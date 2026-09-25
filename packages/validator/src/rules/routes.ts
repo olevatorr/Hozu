@@ -94,3 +94,64 @@ export function routeParams(ctx: Ctx) {
       )
   }
 }
+
+const scalar = (s: JsonSchema): boolean => {
+  if (Array.isArray(s.enum) || 'const' in s) return true
+  for (const k of ['anyOf', 'oneOf'] as const)
+    if (Array.isArray(s[k])) return (s[k] as JsonSchema[]).every((v) => v.type === 'null' || scalar(v))
+  const types = typeof s.type === 'string' ? [s.type] : Array.isArray(s.type) ? (s.type as string[]) : []
+  return (
+    types.length > 0 && types.every((t) => ['string', 'number', 'integer', 'boolean', 'null'].includes(t))
+  )
+}
+
+const optional = (s: JsonSchema): boolean =>
+  'default' in s ||
+  (Array.isArray(s.type) && s.type.includes('null')) ||
+  (['anyOf', 'oneOf'] as const).some(
+    (k) => Array.isArray(s[k]) && (s[k] as JsonSchema[]).some((v) => v.type === 'null'),
+  )
+
+export function searchSchemas(ctx: Ctx) {
+  for (const [id, route] of Object.entries(ctx.ir.routes)) {
+    const s = route.search
+    if (!s) continue
+    const props = (s.properties ?? {}) as Record<string, JsonSchema>
+    if (s.type !== 'object' || !Object.keys(props).length) {
+      ctx.report(
+        'TN035',
+        null,
+        join('', 'routes', id, 'search'),
+        `Route "${id}" declares a search schema that is not a flat object`,
+        'A query string is a flat list of named values.',
+        { summary: 'Use z.object({ key: scalar.default(…) }) or search: null', snippet: null, patch: null },
+      )
+      continue
+    }
+    for (const [key, p] of Object.entries(props)) {
+      const pointer = join('', 'routes', id, 'search', 'properties', key)
+      if (!scalar(p))
+        ctx.report(
+          'TN035',
+          null,
+          pointer,
+          `Search param "${key}" of route "${id}" is not a string, number, boolean or enum`,
+          'Query string values are single scalars.',
+          { summary: `Make "${key}" a scalar or an enum`, snippet: null, patch: null },
+        )
+      else if (!optional(p))
+        ctx.report(
+          'TN035',
+          null,
+          pointer,
+          `Search param "${key}" of route "${id}" has no default`,
+          'A URL may omit any search param, so each one needs a default (or null).',
+          {
+            summary: `Give "${key}" a default with .default(…), or make it nullable`,
+            snippet: `${key}: <schema>.default(…)`,
+            patch: [{ op: 'replace', path: pointer, value: { anyOf: [p, { type: 'null' }] } }],
+          },
+        )
+    }
+  }
+}

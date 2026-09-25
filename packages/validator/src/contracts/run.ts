@@ -89,6 +89,7 @@ export function runContract(
       fired = new Set()
       for (const e of step.effects)
         if (e.type === 'invoke') invokes.push({ effect: e.effect, input: e.input })
+        else if (e.type === 'navigate') invokes.push({ navigate: e.url })
     }
     const pending = (effect: string, i: number) => {
       const invoke = stateOf(snapshot).invoke
@@ -159,7 +160,7 @@ export function runContract(
       stop(
         'TN015',
         ['expect', 'effects'],
-        'Invoked effects differ from the expectation',
+        'Effects (invokes and navigation) differ from the expectation',
         `Expected ${show(expect.effects)}, got ${show(invokes)}. ${path}`,
       )
     return { taken, failure: null }

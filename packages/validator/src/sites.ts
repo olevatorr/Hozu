@@ -23,7 +23,10 @@ export function valueRefs(value: ValueExpr, pointer: At, out: (ref: string, poin
   } else if ('object' in value) {
     for (const [k, v] of Object.entries(value.object)) valueRefs(v, at(pointer, 'object', k), out)
   } else if ('test' in value) guardRefs(value.test, at(pointer, 'test'), out)
-  else if ('link' in value) valueRefs(value.params, at(pointer, 'params'), out)
+  else if ('link' in value) {
+    valueRefs(value.params, at(pointer, 'params'), out)
+    valueRefs(value.search, at(pointer, 'search'), out)
+  }
 }
 
 export function guardRefs(guard: GuardExpr, pointer: At, out: (ref: string, pointer: At) => void) {
@@ -78,6 +81,8 @@ export function refSites(ir: ProjectIR): RefSite[] {
       site.transition.assign.forEach(
         (a, i) => hasRefs(a.value) && valueRefs(a.value, site.at('assign', i, 'value'), fnRef),
       )
+      const nav = site.transition.navigate
+      if (nav && hasRefs(nav)) valueRefs(nav, site.at('navigate'), fnRef)
     }
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer }) => {
@@ -136,8 +141,10 @@ export function refSites(ir: ProjectIR): RefSite[] {
         else if ('done' in step) add(step.done, at(p, 'done'), 'effect')
         else if ('failed' in step) add(step.failed, at(p, 'failed'), 'effect')
       })
-      c.expect.effects?.forEach((e, i) =>
-        add(e.effect, featurePointer(f.id, 'contracts', cid, 'expect', 'effects', i, 'effect'), 'effect'),
+      c.expect.effects?.forEach(
+        (e, i) =>
+          'effect' in e &&
+          add(e.effect, featurePointer(f.id, 'contracts', cid, 'expect', 'effects', i, 'effect'), 'effect'),
       )
     }
   }

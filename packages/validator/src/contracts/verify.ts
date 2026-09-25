@@ -1,4 +1,4 @@
-import { type Bindings, type FeatureIR, join } from '@tenon/core/ir'
+import { type Bindings, type FeatureIR, join, routeTable } from '@tenon/core/ir'
 import { type CompiledMachine, compileMachine } from '@tenon/machine'
 import type { Ctx } from '../context.ts'
 import { type Coverage, drift, type Lockfile, lockOf } from './lock.ts'
@@ -10,7 +10,7 @@ const transitionPointer = (feature: string, id: string) =>
 
 function compile(ctx: Ctx, feature: FeatureIR, bindings: Bindings): CompiledMachine | null {
   try {
-    return compileMachine(feature, bindings.fns)
+    return compileMachine(feature, bindings.fns, routeTable(ctx.ir))
   } catch (error) {
     ctx.report(
       'TN015',

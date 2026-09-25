@@ -20,9 +20,9 @@
         }
       },
       "checkingOut/invoke/done/0": {
-        "behavior": "a9026b84f3aa938a",
+        "behavior": "9e4bf4e776def1b5",
         "contracts": {
-          "placesOrder": "3a8837e8433bef54"
+          "placesOrder": "60a087c9e1d2211d"
         }
       },
       "checkingOut/invoke/failed/PaymentDeclined/0": {
@@ -64,9 +64,9 @@
         }
       },
       "idle/on/cart.Checkout/0": {
-        "behavior": "8ad0af2f2d90cb32",
+        "behavior": "ae752587bca4e86f",
         "contracts": {
-          "placesOrder": "3a8837e8433bef54"
+          "placesOrder": "60a087c9e1d2211d"
         }
       },
       "idle/on/cart.RemoveItem/0": {

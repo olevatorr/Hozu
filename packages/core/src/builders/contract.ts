@@ -9,10 +9,7 @@ export type Step =
   | { failed: EffectDecl; error: string; data: unknown }
   | { elapse: number }
 
-export interface EffectCall {
-  effect: EffectDecl
-  input: unknown
-}
+export type EffectCall = { effect: EffectDecl; input: unknown } | { navigate: string }
 
 export interface ContractDef {
   machine: MachineDecl

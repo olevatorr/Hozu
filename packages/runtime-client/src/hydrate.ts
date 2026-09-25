@@ -16,6 +16,7 @@ export interface PagePayload {
   nodes: Record<string, ViewNode>
   fns: string | null
   params: Json
+  search: Json
   widgets: Record<string, WidgetRef>
   routes: Record<string, string>
   live: Record<string, LiveQuery>
@@ -104,9 +105,10 @@ export async function hydrate(
     apps.set(
       id,
       createApp(doc, {
-        machine: machine ? compileMachine({ id, machine } as FeatureIR, fns) : null,
+        machine: machine ? compileMachine({ id, machine } as FeatureIR, fns, payload.routes) : null,
         payload: shared,
         params: payload.params,
+        search: payload.search,
         fns,
         widgets: payload.widgets,
         routes: payload.routes,
@@ -123,8 +125,7 @@ export async function hydrate(
           if (refreshed.length) for (const app of apps.values()) app.sync()
           return result
         },
-        onNavigate: (route) =>
-          doc.defaultView?.dispatchEvent(new CustomEvent('tenon:navigate', { detail: route })),
+        onNavigate: (url) => doc.defaultView?.location.assign(url),
       }),
     )
   const markers: Comment[] = []

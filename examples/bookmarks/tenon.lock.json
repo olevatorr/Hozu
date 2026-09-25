@@ -2,69 +2,63 @@
   "features": {
     "bookmarks": {
       "adding/invoke/done/0": {
-        "behavior": "e0eb2a3405dfc35d",
+        "behavior": "afe929fa589b1dfc",
         "contracts": {
-          "addsBookmark": "d6c55a1c317680c8"
+          "addsBookmark": "381bbf33613d22de"
         }
       },
       "adding/invoke/failed/Duplicate/0": {
         "behavior": "511792f991e45d85",
         "contracts": {
-          "rejectsDuplicate": "5c93087713d15c75"
+          "rejectsDuplicate": "06a59dba7d8ece6a"
         }
       },
       "adding/invoke/failed/Unexpected/0": {
         "behavior": "6606d67832662c72",
         "contracts": {
-          "addFails": "98ce97acbe4021d2"
+          "addFails": "0c89681a7a8e9e3c"
         }
       },
       "idle/on/bookmarks.Add/0": {
-        "behavior": "8a23ad0f3264c95c",
+        "behavior": "0bd8cfaf708d1afd",
         "contracts": {
-          "addsBookmark": "d6c55a1c317680c8"
+          "addsBookmark": "381bbf33613d22de"
         }
       },
       "idle/on/bookmarks.Draft/0": {
         "behavior": "87006650bba9254c",
         "contracts": {
-          "typesDraft": "0f2d8d942c170c93"
+          "typesDraft": "11806d671418dda2"
         }
       },
       "idle/on/bookmarks.PickKind/0": {
         "behavior": "5d2178ba5d083462",
         "contracts": {
-          "picksKind": "23b24b5e8284701b"
-        }
-      },
-      "idle/on/bookmarks.SetShow/0": {
-        "behavior": "2b956e22d691d2f1",
-        "contracts": {
-          "showsUnread": "ddc9e162c7df4a78"
+          "picksKind": "c0f07818dde4b3f7"
         }
       },
       "idle/on/bookmarks.ToggleRead/0": {
         "behavior": "279030126191b3b4",
         "contracts": {
-          "togglesRead": "4737b0a74aa4333f"
+          "togglesRead": "762ae80d45277c0b"
         }
       },
       "toggling/invoke/done/0": {
         "behavior": "49f254475f7985d1",
         "contracts": {
-          "togglesRead": "4737b0a74aa4333f"
+          "togglesRead": "762ae80d45277c0b"
         }
       },
       "toggling/invoke/failed/NotFound/0": {
         "behavior": "7630795452b08180",
         "contracts": {
-          "toggleMissing": "defc174271a4402d"
+          "toggleMissing": "847a5d10b16373f2"
         }
       },
       "toggling/invoke/failed/Unexpected/0": {
         "behavior": "57a2233b096a690e",
         "contracts": {
-          "toggleFails": "c468cdff81f7e2e3"
+          "toggleFails": "c3467aff7d992d0e"
         }
       }
     }

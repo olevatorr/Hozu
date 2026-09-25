@@ -63,7 +63,7 @@ const Panel = ui.view({
     ]),
 })
 
-const home = route({ path: '/', params: null })
+const home = route({ path: '/', params: null, search: null })
 
 export default project({
   schema: zodAdapter,

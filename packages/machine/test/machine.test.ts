@@ -1,5 +1,5 @@
 import { event, feature, fn, machine, on, op, project } from '@tenon/core'
-import { buildProject } from '@tenon/core/ir'
+import { buildProject, routeTable } from '@tenon/core/ir'
 import { compileMachine, enter, init, type Snapshot, transition } from '@tenon/machine'
 import { zodAdapter } from '@tenon/schema-zod'
 import { describe, expect, it } from 'vitest'
@@ -7,7 +7,7 @@ import { z } from 'zod'
 import cartProject from '../../../examples/cart/tenon.config.ts'
 
 const built = buildProject(cartProject)
-const cart = compileMachine(built.ir.features.cart!, built.bindings.fns)
+const cart = compileMachine(built.ir.features.cart!, built.bindings.fns, routeTable(built.ir))
 const idle = { pending: { sku: '', qty: 1 }, error: null, orderId: null }
 
 describe('compiled cart machine', () => {
@@ -82,7 +82,7 @@ describe('compiled cart machine', () => {
     })
     const paying = enter(cart, 'checkingOut', idle, 5).snapshot
     const placed = transition(cart, paying, { type: 'done', entry: 5, result: { orderId: 'o-9' } })
-    expect(placed.effects).toEqual([{ type: 'navigate', route: 'orderPlaced' }])
+    expect(placed.effects).toEqual([{ type: 'navigate', url: '/order/placed' }])
     expect(placed.snapshot).toMatchObject({ state: 'placed', context: { orderId: 'o-9' } })
     expect(
       transition(cart, placed.snapshot, {

@@ -72,9 +72,14 @@ export function skeleton(ir: ProjectIR, feature: FeatureIR, id: string): string 
   }
   const target = t?.target ?? state
   const entered = m.states[target]?.invoke
-  const effects = entered
-    ? `[{ effect: ${local(entered.effect)}, input: ${ts(example(effectSchemas(ir, entered.effect)?.input ?? null))} }]`
-    : '[]'
+  const calls: string[] = []
+  if (t?.navigate && 'link' in t.navigate)
+    calls.push(`{ navigate: '${ir.routes[t.navigate.link]?.path ?? '/'}' }`)
+  if (entered)
+    calls.push(
+      `{ effect: ${local(entered.effect)}, input: ${ts(example(effectSchemas(ir, entered.effect)?.input ?? null))} }`,
+    )
+  const effects = `[${calls.join(', ')}]`
   const assigned = (t?.assign ?? []).map((a) => a.path.join('.'))
   const context = ts(m.initialContext)
   return [

@@ -247,12 +247,12 @@ describe('builder diagnostics', () => {
 
   it('TN007 — navigation to a route missing from the project', () => {
     const Ping = event({ payload: Payload })
-    const away = route({ path: '/away', params: null })
+    const away = route({ path: '/away', params: null, search: null })
     const m = machine({
       context: Context,
       initialContext: { n: 0, label: '' },
       initial: 'idle',
-      states: () => ({ idle: { on: [on(Ping, { target: 'idle', navigate: away })] } }),
+      states: () => ({ idle: { on: [on(Ping, { target: 'idle', navigate: () => ui.link(away, null) })] } }),
     })
     expectBuildError(
       project({
@@ -266,7 +266,7 @@ describe('builder diagnostics', () => {
         features: [feature({ ...base, id: 'f', events: { Ping }, machine: m })],
       }),
       'TN007',
-      /not a registered route/,
+      /missing from project\(\{ routes \}\)/,
     )
   })
 

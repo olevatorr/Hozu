@@ -19,7 +19,10 @@ function domRefs(v: ValueExpr, pointer: At, visit: Visit) {
   } else if ('object' in v) for (const k in v.object) domRefs(v.object[k]!, at(pointer, 'object', k), visit)
   else if ('fn' in v) domRefs(v.arg, at(pointer, 'arg'), visit)
   else if ('test' in v) guardDomRefs(v.test, at(pointer, 'test'), visit)
-  else if ('link' in v) domRefs(v.params, at(pointer, 'params'), visit)
+  else if ('link' in v) {
+    domRefs(v.params, at(pointer, 'params'), visit)
+    domRefs(v.search, at(pointer, 'search'), visit)
+  }
 }
 
 function guardDomRefs(g: GuardExpr, pointer: At, visit: Visit) {

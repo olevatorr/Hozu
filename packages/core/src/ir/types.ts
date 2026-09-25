@@ -47,6 +47,7 @@ export interface EntriesIR {
 export interface RouteIR {
   path: string
   params: JsonSchema | null
+  search: JsonSchema | null
 }
 
 export interface FeatureIR {
@@ -163,10 +164,10 @@ export interface TransitionIR {
   guard: GuardExpr | null
   target: string
   assign: AssignOp[]
-  navigate: string | null
+  navigate: ValueExpr | null
 }
 
-export type RefSource = 'context' | 'event' | 'result' | 'error' | 'input' | 'params' | 'dom'
+export type RefSource = 'context' | 'event' | 'result' | 'error' | 'input' | 'params' | 'search' | 'dom'
 
 export type ValueExpr =
   | { ref: RefSource; path: string[] }
@@ -175,7 +176,7 @@ export type ValueExpr =
   | { object: Record<string, ValueExpr> }
   | { fn: string; arg: ValueExpr }
   | { test: GuardExpr }
-  | { link: string; params: ValueExpr }
+  | { link: string; params: ValueExpr; search: ValueExpr }
 
 export type AssignOp =
   | { op: 'set' | 'append' | 'inc'; path: string[]; value: ValueExpr }
@@ -317,7 +318,4 @@ export interface ExpectIR {
   effects: EffectCallIR[] | null
 }
 
-export interface EffectCallIR {
-  effect: string
-  input: Json
-}
+export type EffectCallIR = { effect: string; input: Json } | { navigate: string }

@@ -54,7 +54,7 @@ function report(ctx: Ctx, feature: string, pointer: At, href: string) {
               {
                 op: 'replace',
                 path: resolveAt(pointer),
-                value: { link: match.id, params: { literal: match.params } },
+                value: { link: match.id, params: { literal: match.params }, search: { literal: null } },
               },
             ]
           : null,

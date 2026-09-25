@@ -35,6 +35,7 @@ export type {
   AttrValue,
   Child,
   DomRef,
+  Href,
   HtmlAttr,
   HtmlTag,
   NodeDecl,

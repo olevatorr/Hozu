@@ -17,7 +17,7 @@ function transitionsOf(feature: FeatureIR, coveredBy: (id: string) => string[]):
       trigger,
       guard: t.guard ? renderGuard(t.guard) : null,
       assign: t.assign.map(renderAssign),
-      navigate: t.navigate,
+      navigate: t.navigate && 'link' in t.navigate ? t.navigate.link : null,
       coveredBy: coveredBy(id),
     })
   for (const [name, s] of Object.entries(feature.machine?.states ?? {})) {

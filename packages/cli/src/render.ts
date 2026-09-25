@@ -11,7 +11,7 @@ export function renderValue(v: ValueExpr): string {
       .join(', ')} }`
   if ('fn' in v) return `${local(v.fn)}(${renderValue(v.arg)})`
   if ('test' in v) return `(${renderGuard(v.test)})`
-  if ('link' in v) return `link(${local(v.link)}, ${renderValue(v.params)})`
+  if ('link' in v) return `link(${local(v.link)}, ${renderValue(v.params)}, ${renderValue(v.search)})`
   if (v.ref === 'binding') return `item${v.depth}${suffix(v.path)}`
   return `${v.ref}${suffix(v.path)}`
 }

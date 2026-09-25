@@ -335,8 +335,9 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
       )
   }
   const params = refProxy('params', 0)
+  const search = refProxy('search', 0)
   const render = () =>
-    d.machine ? d.render({ ctx: refProxy('context', 0), when, params }) : d.render({ params })
+    d.machine ? d.render({ ctx: refProxy('context', 0), when, params, search }) : d.render({ params, search })
   const root = scope.attempt(at(p, 'root'), render, null)
   return { machine, route, root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0) }
 }

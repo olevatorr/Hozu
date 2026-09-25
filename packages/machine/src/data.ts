@@ -38,8 +38,19 @@ export function equal(a: Json | undefined, b: Json | undefined): boolean {
   return true
 }
 
-export const pathOf = (pattern: string, params: Json | undefined): string =>
-  pattern.replace(/:([A-Za-z][A-Za-z0-9_]*)/g, (_, key: string) => {
+export const pathOf = (pattern: string, params: Json | undefined, search?: Json): string => {
+  const [route = '', defaults = ''] = pattern.split('?')
+  const path = route.replace(/:([A-Za-z][A-Za-z0-9_]*)/g, (_, key: string) => {
     const x = getIn(params, [key])
     return encodeURIComponent(x === null || typeof x === 'object' ? '' : String(x))
   })
+  const skip = defaults.split('&')
+  let q = ''
+  if (search && typeof search === 'object')
+    for (const key of Object.keys(search).sort()) {
+      const x = (search as Record<string, Json>)[key]
+      const pair = `${encodeURIComponent(key)}=${encodeURIComponent(String(x))}`
+      if (x !== null && typeof x !== 'object' && !skip.includes(pair)) q += `${q && '&'}${pair}`
+    }
+  return q ? `${path}?${q}` : path
+}

@@ -36,7 +36,8 @@ export function compileValue(v: ValueExpr, fns: Fns): Getter {
   if ('link' in v) {
     const id = v.link
     const params = compileValue(v.params, fns)
-    return (env) => pathOf(env.routes?.[id] ?? '', params(env))
+    const search = compileValue(v.search, fns)
+    return (env) => pathOf(env.routes?.[id] ?? '', params(env), search(env))
   }
   if ('test' in v) {
     const test = guard(v.test, fns)
@@ -51,7 +52,7 @@ export function compileValue(v: ValueExpr, fns: Fns): Getter {
     const [field, ...rest] = path
     return (env) => (env.dom && field ? getIn(env.dom(field), rest) : null)
   }
-  const ref = v.ref as 'context' | 'input' | 'event' | 'result' | 'error' | 'params'
+  const ref = v.ref as 'context' | 'input' | 'event' | 'result' | 'error' | 'params' | 'search'
   if (path.length === 0) return (env) => env[ref] ?? null
   return (env) => getIn(env[ref], path)
 }
@@ -137,7 +138,16 @@ function assign(a: AssignOp, fns: Fns): Update {
   }
 }
 
-export function compileMachine(feature: FeatureIR, fns: Fns = {}): CompiledMachine {
+const navigateTo =
+  (url: Getter, routes: Record<string, string>): Getter =>
+  (env) =>
+    url({ ...env, routes })
+
+export function compileMachine(
+  feature: FeatureIR,
+  fns: Fns = {},
+  routes: Record<string, string> = {},
+): CompiledMachine {
   const m = feature.machine
   if (!m) throw new CompileError(`Feature ${feature.id} has no machine`)
   const names = Object.keys(m.states)
@@ -155,7 +165,7 @@ export function compileMachine(feature: FeatureIR, fns: Fns = {}): CompiledMachi
       guard: t.guard ? guard(t.guard, fns) : null,
       target: indexOf(t.target),
       assign: t.assign.map((a) => assign(a, fns)),
-      navigate: t.navigate,
+      navigate: t.navigate ? navigateTo(compileValue(t.navigate, fns), routes) : null,
     }
   }
   const states: CompiledState[] = names.map((name) => {

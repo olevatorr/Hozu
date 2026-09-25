@@ -15,7 +15,7 @@ const upload = mutation({
   errors: {},
   invalidates: () => [],
 })
-const home = route({ path: '/', params: null })
+const home = route({ path: '/', params: null, search: null })
 const Home = ui.view({ machine: null, route: null, render: () => ui.p({}, ['Upload']) })
 const site = project({
   schema: zodAdapter,

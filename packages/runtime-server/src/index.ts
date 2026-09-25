@@ -6,3 +6,4 @@ export type { Assets, RenderedPage, RenderOptions, Stylesheet, WidgetBundle } fr
 export { fnsModule, pathOf, renderPage, renderToString } from './render.ts'
 export type { Match } from './routing.ts'
 export { matcher } from './routing.ts'
+export { parseSearch } from './search.ts'

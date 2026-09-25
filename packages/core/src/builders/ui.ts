@@ -22,7 +22,15 @@ import { type WidgetDecl, widget } from './widget.ts'
 export const SEND = Symbol.for('tenon.send')
 export const LINK = Symbol.for('tenon.link')
 
-export const linkOf = (value: unknown): { route: unknown; params: unknown } | null =>
+declare const HREF: unique symbol
+
+export interface Href extends Expr<string> {
+  readonly [HREF]: true
+}
+
+type SearchArg<S> = [S] extends [null] ? [] : [search: NoInfer<Val<Partial<S>>> | null]
+
+export const linkOf = (value: unknown): { route: unknown; params: unknown; search: unknown } | null =>
   typeof value === 'object' && value !== null ? ((value as Record<symbol, never>)[LINK] ?? null) : null
 
 export type HtmlTag = (typeof htmlTags)[number]
@@ -89,10 +97,11 @@ export interface ViewDecl extends Decl<'view'> {}
 
 export type When<S extends string> = (states: S[], children: Child[], motion?: string) => NodeDecl
 
-export interface ViewScope<C, S extends string, P> {
+export interface ViewScope<C, S extends string, P, Q = null> {
   ctx: Ref<C>
   when: When<S>
   params: Ref<P>
+  search: Ref<Q>
 }
 
 const node = (def: NodeDef): NodeDecl => brand({}, 'node', def)
@@ -110,15 +119,15 @@ type QueryErrors<E> = {
   [K in keyof E | 'Unexpected']: (error: Ref<K extends keyof E ? E[K] : UnexpectedError>) => NodeDecl
 }
 
-function view<C, S extends string, P = null>(config: {
+function view<C, S extends string, P = null, Q = null>(config: {
   machine: MachineDecl<C, S>
-  route: RouteDecl<P> | null
-  render: (scope: ViewScope<C, S, P>) => NodeDecl
+  route: RouteDecl<P, Q> | null
+  render: (scope: ViewScope<C, S, P, Q>) => NodeDecl
 }): ViewDecl
-function view<P = null>(config: {
+function view<P = null, Q = null>(config: {
   machine: null
-  route: RouteDecl<P> | null
-  render: (scope: { params: Ref<P> }) => NodeDecl
+  route: RouteDecl<P, Q> | null
+  render: (scope: { params: Ref<P>; search: Ref<Q> }) => NodeDecl
 }): ViewDecl
 function view(config: ViewDef): ViewDecl {
   return brand({}, 'view', {
@@ -176,8 +185,8 @@ export const ui = Object.freeze({
     node({ kind: 'global', target: 'window', on: options.on }),
   document: (options: { on: { [E in DomEvent]?: Send } }): NodeDecl =>
     node({ kind: 'global', target: 'document', on: options.on }),
-  link: <P>(route: RouteDecl<P>, params: NoInfer<Val<P>>): Expr<string> =>
-    Object.freeze({ [LINK]: { route, params } }) as unknown as Expr<string>,
+  link: <P, S>(route: RouteDecl<P, S>, params: NoInfer<Val<P>>, ...search: SearchArg<S>): Href =>
+    Object.freeze({ [LINK]: { route, params, search: search[0] ?? null } }) as unknown as Href,
   use: <P, E>(w: WidgetDecl<P, E>, options: NoInfer<WidgetUse<P, E>>, children: Child[]): NodeDecl =>
     node({ kind: 'widget', widget: w, options, children }),
   page,

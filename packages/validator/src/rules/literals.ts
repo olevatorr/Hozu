@@ -78,16 +78,26 @@ function checkValue(
 }
 
 function checkLinks(ctx: Ctx, env: Env, value: ValueExpr, pointer: At) {
-  if ('link' in value)
+  if ('link' in value) {
+    const r = ctx.ir.routes[value.link]
     checkValue(
       ctx,
       env.feature.id,
       value.params,
-      ctx.ir.routes[value.link]?.params ?? null,
+      r?.params ?? null,
       at(pointer, 'params'),
       `params of ${value.link}`,
     )
-  else if ('object' in value)
+    if (!('literal' in value.search && value.search.literal === null))
+      checkValue(
+        ctx,
+        env.feature.id,
+        value.search,
+        r?.search ?? null,
+        at(pointer, 'search'),
+        `search of ${value.link}`,
+      )
+  } else if ('object' in value)
     for (const [k, v] of Object.entries(value.object)) checkLinks(ctx, env, v, at(pointer, 'object', k))
   else if ('fn' in value) checkLinks(ctx, env, value.arg, at(pointer, 'arg'))
 }
@@ -153,6 +163,7 @@ export function literals(ctx: Ctx) {
         const env = triggerEnv(ctx, f, site)
         const t = site.transition
         if (t.guard) checkGuard(ctx, env, t.guard, site.at('guard'))
+        if (t.navigate) checkLinks(ctx, env, t.navigate, site.at('navigate'))
         t.assign.forEach((a, i) => {
           if (!('literal' in a.value) && !('object' in a.value)) return
           const target = resolvePath(context, a.path)

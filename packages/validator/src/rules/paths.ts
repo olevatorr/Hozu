@@ -54,6 +54,7 @@ function checkValue(ctx: Ctx, env: Env, value: ValueExpr, pointer: At) {
   }
   if ('link' in value) {
     checkValue(ctx, env, value.params, at(pointer, 'params'))
+    checkValue(ctx, env, value.search, at(pointer, 'search'))
     return
   }
   if (!('ref' in value) || value.ref === 'dom') return
@@ -170,6 +171,7 @@ export function paths(ctx: Ctx) {
         const t = site.transition
         if (t.guard) checkGuard(ctx, env, t.guard, site.at('guard'))
         t.assign.forEach((a, i) => checkAssign(ctx, env, a, site.at('assign', i)))
+        if (t.navigate) checkValue(ctx, env, t.navigate, site.at('navigate'))
       }
     }
     for (const [vid, view] of Object.entries(f.views))

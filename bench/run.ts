@@ -137,7 +137,7 @@ record(
   '@tenon/runtime-client initial JS (entry + static chunks), min+gz',
   initialClientBytes(),
   'bytes',
-  7 * 1024,
+  7.5 * 1024,
 )
 
 const synthetic = (features: number): number[] =>

@@ -246,6 +246,7 @@ export class FeatureScope {
       return {
         link: route ?? '?',
         params: link.params === null ? { literal: null } : this.value(link.params, pointer),
+        search: link.search === null ? { literal: null } : this.value(link.search, pointer),
       }
     }
     const file = assetOf(v)
