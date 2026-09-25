@@ -1,0 +1,19 @@
+{
+  "name": "example-blog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "tenon validate",
+    "plan": "tenon plan home",
+    "seo": "node seo-audit.ts"
+  },
+  "dependencies": {
+    "@tenon/adapter-node": "workspace:*",
+    "@tenon/adapter-static": "workspace:*",
+    "@tenon/cli": "workspace:*",
+    "@tenon/core": "workspace:*",
+    "@tenon/data": "workspace:*",
+    "@tenon/schema-zod": "workspace:*",
+    "zod": "4.6.5"
+  }
+}
