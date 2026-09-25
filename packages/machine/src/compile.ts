@@ -15,13 +15,13 @@ export class CompileError extends Error {
   override name = 'CompileError'
 }
 
-function value(v: ValueExpr, fns: Fns): Getter {
+export function compileValue(v: ValueExpr, fns: Fns): Getter {
   if ('literal' in v) {
     const literal = v.literal
     return () => literal
   }
   if ('object' in v) {
-    const entries = Object.entries(v.object).map(([k, x]) => [k, value(x, fns)] as const)
+    const entries = Object.entries(v.object).map(([k, x]) => [k, compileValue(x, fns)] as const)
     return (env) => {
       const out: { [key: string]: Json } = {}
       for (const [k, get] of entries) out[k] = get(env)
@@ -31,7 +31,7 @@ function value(v: ValueExpr, fns: Fns): Getter {
   if ('fn' in v) {
     const impl = fns[v.fn] as ((input: Json) => Json) | undefined
     if (!impl) throw new CompileError(`No implementation bound for fn ${v.fn}`)
-    const arg = value(v.arg, fns)
+    const arg = compileValue(v.arg, fns)
     return (env) => impl(arg(env))
   }
   if (v.ref === 'binding') throw new CompileError('View bindings cannot be used inside a machine')
@@ -57,12 +57,12 @@ function guard(g: GuardExpr, fns: Fns): Test {
       return (env) => !arg(env)
     }
     case 'fn': {
-      const call = value({ fn: g.fn, arg: g.arg }, fns)
+      const call = compileValue({ fn: g.fn, arg: g.arg }, fns)
       return (env) => call(env) === true
     }
     default: {
-      const l = value(g.left, fns)
-      const r = value(g.right, fns)
+      const l = compileValue(g.left, fns)
+      const r = compileValue(g.right, fns)
       switch (g.op) {
         case 'eq':
           return (env) => equal(l(env), r(env))
@@ -83,7 +83,7 @@ function guard(g: GuardExpr, fns: Fns): Test {
 
 function assign(a: AssignOp, fns: Fns): Update {
   const { path } = a
-  const v = value(a.value, fns)
+  const v = compileValue(a.value, fns)
   switch (a.op) {
     case 'set':
       return (ctx, env) => setIn(ctx, path, v({ ...env, context: ctx }))
@@ -158,7 +158,7 @@ export function compileMachine(feature: FeatureIR, fns: Fns = {}): CompiledMachi
       on,
       invoke: invoke && {
         effect: invoke.effect,
-        input: value(invoke.input, fns),
+        input: compileValue(invoke.input, fns),
         done: invoke.done.map((t, i) => compile(t, `${name}/invoke/done/${i}`)),
         failed: new Map(
           Object.entries(invoke.failed).map(([error, list]) => [

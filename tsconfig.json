@@ -11,6 +11,9 @@
       "path": "packages/machine"
     },
     {
+      "path": "packages/data"
+    },
+    {
       "path": "packages/validator"
     },
     {

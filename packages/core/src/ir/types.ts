@@ -4,6 +4,7 @@ export type JsonSchema = { [key: string]: Json }
 
 export interface ProjectIR {
   irVersion: 1
+  session: JsonSchema | null
   routes: Record<string, RouteIR>
   features: Record<string, FeatureIR>
 }

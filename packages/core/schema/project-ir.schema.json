@@ -9,6 +9,16 @@
           "type": "number",
           "const": 1
         },
+        "session": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/JsonSchema"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "routes": {
           "type": "object",
           "additionalProperties": {
@@ -24,10 +34,45 @@
       },
       "required": [
         "irVersion",
+        "session",
         "routes",
         "features"
       ],
       "additionalProperties": false
+    },
+    "JsonSchema": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/Json"
+      }
+    },
+    "Json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Json"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Json"
+          }
+        }
+      ]
     },
     "RouteIR": {
       "type": "object",
@@ -203,40 +248,6 @@
         "views"
       ],
       "additionalProperties": false
-    },
-    "JsonSchema": {
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/definitions/Json"
-      }
-    },
-    "Json": {
-      "anyOf": [
-        {
-          "type": "null"
-        },
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "number"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Json"
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/Json"
-          }
-        }
-      ]
     },
     "TagIR": {
       "type": "object",

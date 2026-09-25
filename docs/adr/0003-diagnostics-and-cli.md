@@ -49,6 +49,9 @@ Did-you-mean suggestions use edit distance over the candidates in scope.
 | TN016 | uncovered-transition | contracts (ADR 0004) |
 | TN017 | invalid-contract-data | contracts (ADR 0004) |
 | TN018 | behavior-changed-without-contract | contracts (ADR 0004) |
+| TN019 | ineffective-invalidation (warning) | validator (ADR 0005) |
+| TN020 | user-scope-without-session | validator (ADR 0005) |
+| TN021 | missing-resolver | data runtime (ADR 0005) |
 
 ## CLI
 - `tenon validate [feature] [--json] [--config <path>]` → `{ ok, hash, summary: { errors, warnings }, diagnostics }`;
@@ -59,6 +62,8 @@ Did-you-mean suggestions use edit distance over the candidates in scope.
   (`missing | checked | updated | skipped`); `--update-lock` rewrites `tenon.lock.json` only when clean.
 - `tenon explain <feature>.<state> [--json]` → transitions in/out rendered as pseudo-code, covering contracts,
   the invoke with its errors, and the events visible views can send in that state.
+- `tenon impact <feature>.<symbol> [--json]` → tags, affected queries (`exact` / `param-dependent`), the
+  mutations that invalidate it, and every state/view node that uses it (ADR 0005 D5).
 - `tenon inspect <feature> [--json]` → `{ feature, hash, summary, ir }`.
 - `tenon graph <feature> [--json]` → `{ feature, nodes, edges }`; text mode prints Mermaid `stateDiagram-v2`.
 - Argument parsing with `node:util` `parseArgs`; config is loaded with native `import()` (ADR 0002 D9).

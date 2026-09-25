@@ -2,6 +2,7 @@ import type { Bindings, Diagnostic, ProjectIR, SourceIndex } from '@tenon/core/i
 import { Ctx } from './context.ts'
 import type { Lockfile } from './contracts/lock.ts'
 import { verifyContracts } from './contracts/verify.ts'
+import { invalidations, sessions } from './rules/data.ts'
 import { declaredErrors } from './rules/errors.ts'
 import { unhandledEvents, viewEvents } from './rules/events.ts'
 import { paths } from './rules/paths.ts'
@@ -11,6 +12,8 @@ import { deadEnds, reachability, shadowing, stateNames } from './rules/states.ts
 export type { Drift, LockEntry, Lockfile } from './contracts/lock.ts'
 export type { ContractRun, Failure } from './contracts/run.ts'
 export { runContract } from './contracts/run.ts'
+export type { Impact, ImpactKind, ImpactQuery, ImpactUse } from './impact.ts'
+export { impact, UnknownSymbolError } from './impact.ts'
 export { closest, distance } from './suggest.ts'
 
 const rules = [
@@ -25,6 +28,8 @@ const rules = [
   paths,
   shadowing,
   deadEnds,
+  invalidations,
+  sessions,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>

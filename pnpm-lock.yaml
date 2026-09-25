@@ -17,6 +17,9 @@ importers:
       '@tenon/core':
         specifier: workspace:*
         version: link:packages/core
+      '@tenon/data':
+        specifier: workspace:*
+        version: link:packages/data
       '@tenon/machine':
         specifier: workspace:*
         version: link:packages/machine
@@ -56,6 +59,9 @@ importers:
       '@tenon/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@tenon/data':
+        specifier: workspace:*
+        version: link:../../packages/data
       '@tenon/machine':
         specifier: workspace:*
         version: link:../../packages/machine
@@ -79,6 +85,15 @@ importers:
         version: link:../validator
 
   packages/core: {}
+
+  packages/data:
+    dependencies:
+      '@tenon/core':
+        specifier: workspace:*
+        version: link:../core
+      '@tenon/machine':
+        specifier: workspace:*
+        version: link:../machine
 
   packages/machine:
     dependencies:

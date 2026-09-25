@@ -9,6 +9,7 @@ export default defineConfig({
       { find: /^@tenon\/core\/ir$/, replacement: `${src('core')}ir.ts` },
       { find: /^@tenon\/core$/, replacement: `${src('core')}index.ts` },
       { find: /^@tenon\/schema-zod$/, replacement: `${src('schema-zod')}index.ts` },
+      { find: /^@tenon\/data$/, replacement: `${src('data')}index.ts` },
       { find: /^@tenon\/machine$/, replacement: `${src('machine')}index.ts` },
       { find: /^@tenon\/validator$/, replacement: `${src('validator')}index.ts` },
     ],

@@ -42,21 +42,28 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `@tenon/schema-zod` is the default, Valibot via adapter). The IR stores JSON Schema.
 - Packages are published under the @tenon/ scope:
   `@tenon/core` (IR types + builders; tooling at `@tenon/core/ir`), `@tenon/schema-zod`,
-  `@tenon/machine` (isomorphic compiled interpreter, ADR 0004), `@tenon/validator`, `@tenon/compiler`, `@tenon/runtime-server`, `@tenon/runtime-client`,
+  `@tenon/machine` (isomorphic compiled interpreter, ADR 0004), `@tenon/data` (resolvers, cache,
+  tags, dedup, ADR 0005), `@tenon/validator`, `@tenon/compiler`, `@tenon/runtime-server`, `@tenon/runtime-client`,
   `@tenon/cli`, `@tenon/adapter-node`, `@tenon/adapter-static`
-- `@tenon/core`, `@tenon/machine`, `@tenon/validator`, `@tenon/cli` have zero third-party runtime dependencies.
+- `@tenon/core`, `@tenon/machine`, `@tenon/data`, `@tenon/validator`, `@tenon/cli` have zero third-party runtime dependencies.
+- Query/mutation implementations live in server modules via `resolvers(project, implement => [...])`, bound by
+  declaration identity. `project({ session })` declares the identity; public resolvers never see it (ADR 0005).
 - Minimal comments. Small modules organized by functionality.
 
 ## Commands
 - `pnpm gate` — lint + typecheck + test + bench; must be green at the end of every phase (ADR 0001)
 - `pnpm test` · `pnpm typecheck` · `pnpm lint` · `pnpm bench`
 - `pnpm schema` — regenerate the JSON Schemas from the IR / CLI types (a test fails if stale)
-- `pnpm --filter example-cart validate|inspect|graph|explain|simulate`
+- `pnpm --filter example-cart validate|inspect|graph|explain|simulate|demo`
 - `tenon validate --update-lock` — accept behavior changes into `tenon.lock.json` (only when clean)
 
 ## CLI (agent-facing, all support --json)
 `tenon inspect <feature>` · `tenon validate [feature]` · `tenon impact <feature>.<symbol>`
 `tenon graph <feature>` · `tenon plan <route>` · `tenon explain <feature>.<state>`
+
+## Cost rules
+- Do not add CI workflows, scheduled jobs, or any paid/external service without explicit approval.
+- Run `pnpm bench` / `pnpm gate` once at the end of a phase; report unstable metrics instead of re-running them.
 
 ## Workflow rules
 - Work phase by phase. Do not start the next phase without my approval.

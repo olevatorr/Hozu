@@ -1,6 +1,7 @@
 import { parseArgs } from 'node:util'
 import { describeExplain, runExplain } from './commands/explain.ts'
 import { mermaid, runGraph } from './commands/graph.ts'
+import { describeImpact, runImpact } from './commands/impact.ts'
 import { runInspect } from './commands/inspect.ts'
 import { runValidate } from './commands/validate.ts'
 import { TenonCliError } from './errors.ts'
@@ -14,6 +15,7 @@ Commands:
   inspect <feature>         Print a feature's canonical IR and summary
   graph <feature>           Print a feature's state/effect/view graph (Mermaid, or --json)
   explain <feature>.<state> Explain a state: transitions, guards, effects, covering contracts
+  impact <feature>.<symbol> What a query, mutation, tag, event, fn or view affects
 
 Options:
   --json               Machine-readable output (schemas in @tenon/cli/schema)
@@ -46,7 +48,7 @@ export async function main(
       out(usage)
       return command || values.help ? 0 : 2
     }
-    const commands = ['validate', 'inspect', 'graph', 'explain']
+    const commands = ['validate', 'inspect', 'graph', 'explain', 'impact']
     if (!commands.includes(command))
       throw new TenonCliError('usage', `Unknown command "${command}"`, commands)
     const loaded = await load(values.config, cwd)
@@ -71,6 +73,11 @@ export async function main(
           ? json(result)
           : `${json({ feature: result.feature, hash: result.hash, summary: result.summary })}`,
       )
+      return 0
+    }
+    if (command === 'impact') {
+      const result = runImpact(loaded, target)
+      out(asJson ? json(result) : describeImpact(result))
       return 0
     }
     if (command === 'explain') {

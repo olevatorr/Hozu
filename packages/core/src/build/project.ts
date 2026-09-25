@@ -6,6 +6,8 @@ import type { Diagnostic, SourceIndex } from '../ir/diagnostic.ts'
 import type { FeatureIR, JsonSchema, ProjectIR, RouteIR } from '../ir/types.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
+import { toCheck } from '../schema/check.ts'
+import { isStandardSchema } from '../schema/standard.ts'
 import { withCapture } from '../source/capture.ts'
 import { buildFeature } from './feature.ts'
 import { IDENTIFIER, ProjectScope } from './scope.ts'
@@ -74,11 +76,42 @@ function register(scope: ProjectScope, id: string, config: FeatureConfig) {
       return
     }
     scope.owners.set(decl, { feature: id, symbol, kind })
+    scope.bindings.refs.set(decl, `${id}.${symbol}`)
   }
   for (const [key, kind] of registries)
     for (const [symbol, decl] of Object.entries((config[key] ?? {}) as Record<string, object>))
       claim(decl, symbol, kind, join(base, key, symbol))
   if (config.machine) claim(config.machine, 'machine', 'machine', join(base, 'machine'))
+}
+
+function buildSession(scope: ProjectScope, schema: unknown): JsonSchema | null {
+  if (schema === null || schema === undefined) return null
+  if (!isStandardSchema(schema)) {
+    scope.report(
+      'TN014',
+      null,
+      '/session',
+      'project({ session }) must be a schema or null',
+      'The session shape is declared with the project schema adapter.',
+    )
+    return null
+  }
+  const adapter = scope.adapter
+  if (!adapter) return null
+  const vendor = schema['~standard'].vendor
+  if (vendor !== adapter.vendor) {
+    scope.report(
+      'TN012',
+      null,
+      '/session',
+      `Session schema from "${vendor}" but the project adapter is "${adapter.vendor}"`,
+      'One canonical schema form per project.',
+    )
+    return null
+  }
+  const check = toCheck(schema)
+  if (check) scope.bindings.checks['#session'] = check
+  return adapter.toJsonSchema(schema)
 }
 
 export interface BuildOptions {
@@ -107,6 +140,7 @@ function build(project: unknown, tracking: boolean): BuildResult {
       'Use an adapter such as zodAdapter from @tenon/schema-zod.',
     )
 
+  const session = buildSession(scope, config.session)
   const routes: Record<string, RouteIR> = {}
   for (const [id, route] of Object.entries(config.routes ?? {})) {
     const p = join('', 'routes', id)
@@ -167,7 +201,7 @@ function build(project: unknown, tracking: boolean): BuildResult {
   const features: Record<string, FeatureIR> = {}
   for (const [id, fc] of configs) features[id] = buildFeature(scope, id, fc)
 
-  const ir: ProjectIR = { irVersion: 1, routes, features }
+  const ir: ProjectIR = { irVersion: 1, session, routes, features }
   for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
   return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }
 }

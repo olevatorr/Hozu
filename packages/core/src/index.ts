@@ -1,6 +1,6 @@
 export type { ContractDecl, EffectCall, Step } from './builders/contract.ts'
 export { contract } from './builders/contract.ts'
-export type { EffectDecl, Freshness, MutationDecl, QueryDecl } from './builders/effects.ts'
+export type { EffectDecl, Freshness, MutationDecl, QueryDecl, Scope } from './builders/effects.ts'
 export { mutation, query } from './builders/effects.ts'
 export type { EventDecl } from './builders/event.ts'
 export { event } from './builders/event.ts'

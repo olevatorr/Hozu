@@ -7,11 +7,13 @@
     "inspect": "tenon inspect cart",
     "graph": "tenon graph cart",
     "explain": "tenon explain cart.idle",
-    "simulate": "node simulate.ts"
+    "simulate": "node simulate.ts",
+    "demo": "node demo.ts"
   },
   "dependencies": {
     "@tenon/cli": "workspace:*",
     "@tenon/core": "workspace:*",
+    "@tenon/data": "workspace:*",
     "@tenon/machine": "workspace:*",
     "@tenon/schema-zod": "workspace:*",
     "zod": "4.6.5"

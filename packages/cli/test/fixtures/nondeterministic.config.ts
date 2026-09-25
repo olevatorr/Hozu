@@ -21,6 +21,7 @@ const rolls = contract(dice, {
 
 export default project({
   schema: zodAdapter,
+  session: null,
   routes: {},
   features: [
     feature({

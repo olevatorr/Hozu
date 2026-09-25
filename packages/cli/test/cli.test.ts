@@ -96,6 +96,29 @@ describe('A5 CLI contract', () => {
     expect(JSON.parse(stdout).error.suggestions).toEqual(['cart.idle'])
   })
 
+  it('impact --json matches its schema', async () => {
+    const { code, stdout } = await run(['impact', 'cart.addItem', '--json'])
+    const out = JSON.parse(stdout)
+    expect(code).toBe(0)
+    expectSchema('impact', out)
+    expect(out).toMatchObject({
+      target: 'cart.addItem',
+      kind: 'mutation',
+      tags: ['cart.cartTag'],
+      queries: [{ ref: 'cart.getCart', tag: 'cart.cartTag', precision: 'exact' }],
+      features: ['cart'],
+    })
+    expect(out.uses.map((u: { via: string }) => u.via)).toEqual([
+      '"adding" invokes cart.addItem',
+      'cart.CartPanel/1 reads cart.getCart',
+    ])
+    const text = (await run(['impact', 'cart.getCart'])).stdout
+    expect(text).toContain('invalidated by: cart.addItem, cart.checkout, cart.removeItem')
+    const unknown = await run(['impact', 'cart.addItm', '--json'])
+    expect(unknown.code).toBe(2)
+    expect(JSON.parse(unknown.stdout).error.suggestions).toEqual(['cart.addItem'])
+  })
+
   it('unknown features fail with suggestions', async () => {
     const { code, stdout } = await run(['inspect', 'crt', '--json'])
     expect(code).toBe(2)

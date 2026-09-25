@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
 import { buildProject } from '@tenon/core/ir'
+import { createDataRuntime } from '@tenon/data'
 import { compileMachine, init, transition } from '@tenon/machine'
 import { validate, verify } from '@tenon/validator'
 
@@ -70,7 +71,7 @@ const throughput = time(
   2,
 )
 record(
-  'P1',
+  'P5',
   'machine transitions per second (cart, guard + assign)',
   ((2 * rounds) / throughput) * 1000,
   '/s',
@@ -79,7 +80,7 @@ record(
 results.at(-1)!.ok = results.at(-1)!.value >= 1_000_000
 results.at(-1)!.budget = 1_000_000
 record(
-  'P1',
+  'P5',
   'contracts: verify(cart) with 11 contracts, median of 50',
   time(() => verify(built.ir, { bindings: built.bindings }), 50, 5),
   'ms',
@@ -96,6 +97,27 @@ record(
   'bytes',
   null,
 )
+
+const { createResolvers } = await import(join(cartDir, 'server.ts'))
+const { getProduct } = await import(join(cartDir, 'features/catalog/effects.ts'))
+const data = createDataRuntime({ build: built, resolvers: createResolvers() })
+const reads = 200_000
+await data.query(getProduct, { sku: 'mug' })
+const readSamples: number[] = []
+for (let round = 0; round < 7; round++) {
+  const t0 = performance.now()
+  for (let i = 0; i < reads; i++) await data.query(getProduct, { sku: 'mug' })
+  if (round >= 2) readSamples.push(performance.now() - t0)
+}
+record(
+  'P6',
+  'cached query reads per second (static, public)',
+  (reads / median(readSamples)) * 1000,
+  '/s',
+  null,
+)
+results.at(-1)!.budget = 1_000_000
+results.at(-1)!.ok = results.at(-1)!.value >= 1_000_000
 
 const synthetic = (features: number): number[] =>
   [0, 1, 2].flatMap(() => {

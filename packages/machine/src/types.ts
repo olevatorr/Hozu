@@ -26,7 +26,8 @@ export interface Step {
 export type Fns = Record<string, (input: never) => unknown>
 
 export interface Env {
-  context: Json
+  context?: Json
+  input?: Json
   event?: Json
   result?: Json
   error?: Json

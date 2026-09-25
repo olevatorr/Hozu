@@ -24,4 +24,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   TN016: { name: 'uncovered-transition', severity: 'error' },
   TN017: { name: 'invalid-contract-data', severity: 'error' },
   TN018: { name: 'behavior-changed-without-contract', severity: 'error' },
+  TN019: { name: 'ineffective-invalidation', severity: 'warning' },
+  TN020: { name: 'user-scope-without-session', severity: 'error' },
+  TN021: { name: 'missing-resolver', severity: 'error' },
 }

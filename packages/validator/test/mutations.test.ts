@@ -259,6 +259,14 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'mutation invalidates a tag no query carries',
+    code: 'TN019',
+    mutate: (ir) => {
+      ir.features.catalog!.queries.listProducts!.tags = []
+      ir.features.cart!.mutations.checkout!.invalidates.push({ tag: 'catalog.catalogTag', param: null })
+    },
+  },
+  {
     name: 'state with no way out',
     code: 'TN010',
     mutate: (ir) => {
@@ -267,6 +275,17 @@ const catalog: Mutation[] = [
     },
   },
 ]
+
+describe('A2 judgement codes', () => {
+  it('TN020 — user-scoped query without a project session has a location but no patch', () => {
+    const ir = cartIR()
+    ir.session = null
+    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'TN020')
+    expect(found.map((d) => d.location.pointer)).toEqual(['/features/cart/queries/getCart/scope'])
+    expect(found[0]!.location.source?.file).toMatch(/examples\/cart\/.+\.ts$/)
+    expect(found[0]!.fix?.patch).toBeNull()
+  })
+})
 
 describe('A2 mistake catalog', () => {
   it('has at least 20 IR-level mistakes and the fixture is clean', () => {

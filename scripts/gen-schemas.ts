@@ -30,6 +30,11 @@ export const targets = [
     type: 'ExplainOutput',
     out: 'packages/cli/schema/explain.schema.json',
   },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'ImpactOutput',
+    out: 'packages/cli/schema/impact.schema.json',
+  },
 ]
 
 export function generate(target: (typeof targets)[number]): string {

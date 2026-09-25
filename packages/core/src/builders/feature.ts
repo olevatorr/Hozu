@@ -1,5 +1,6 @@
-import { brand, type Decl } from '../model/decl.ts'
+import { brand, type Decl, type Typed } from '../model/decl.ts'
 import type { SchemaAdapter } from '../schema/adapter.ts'
+import type { Infer, Schema } from '../schema/standard.ts'
 import type { ContractDecl } from './contract.ts'
 import type { MutationDecl, QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
@@ -40,10 +41,13 @@ export const feature = (config: FeatureConfig): FeatureDecl =>
 
 export interface ProjectConfig {
   schema: SchemaAdapter
+  session: Schema | null
   routes: Record<string, RouteDecl>
   features: FeatureDecl[]
 }
 
-export interface ProjectDecl extends Decl<'project'> {}
+export interface ProjectDecl<Session = unknown> extends Decl<'project'>, Typed<{ session: Session }> {}
 
-export const project = (config: ProjectConfig): ProjectDecl => brand({}, 'project', { ...config })
+export const project = <S extends Schema | null>(
+  config: Omit<ProjectConfig, 'session'> & { session: S },
+): ProjectDecl<S extends Schema ? Infer<S> : null> => brand({}, 'project', { ...config })
