@@ -1,0 +1,91 @@
+{
+  "features": {
+    "tasks": {
+      "adding/invoke/done/0": {
+        "behavior": "170f7afe0ca84f49",
+        "contracts": {
+          "addsTask": "d0bf842ad02b7501"
+        }
+      },
+      "adding/invoke/failed/Duplicate/0": {
+        "behavior": "fa931adf13e44418",
+        "contracts": {
+          "rejectsDuplicate": "18f253306f3f6258"
+        }
+      },
+      "adding/invoke/failed/Invalid/0": {
+        "behavior": "9be7d54e8e182298",
+        "contracts": {
+          "rejectsInvalid": "6d15167c2839bff4"
+        }
+      },
+      "adding/invoke/failed/Unexpected/0": {
+        "behavior": "6606d67832662c72",
+        "contracts": {
+          "addFails": "1ed5e881de36414b"
+        }
+      },
+      "clearing/invoke/done/0": {
+        "behavior": "3a0a768ed95dcbe0",
+        "contracts": {
+          "clearsDone": "c607bce70df9f672"
+        }
+      },
+      "clearing/invoke/failed/Unexpected/0": {
+        "behavior": "0f2f0fb11a153b4a",
+        "contracts": {
+          "clearFails": "6e08bca20c668b80"
+        }
+      },
+      "idle/on/tasks.Add/0": {
+        "behavior": "c3874d21fe1356b1",
+        "contracts": {
+          "addsTask": "d0bf842ad02b7501"
+        }
+      },
+      "idle/on/tasks.ClearDone/0": {
+        "behavior": "c80ae579dea172b9",
+        "contracts": {
+          "clearsDone": "c607bce70df9f672"
+        }
+      },
+      "idle/on/tasks.Draft/0": {
+        "behavior": "1bf8a242e4e428fe",
+        "contracts": {
+          "typesDraft": "f87ec9ddd6ac4b35"
+        }
+      },
+      "idle/on/tasks.SetShow/0": {
+        "behavior": "accdaafa6d7b598a",
+        "contracts": {
+          "showsDone": "909ba2b551e4044f"
+        }
+      },
+      "idle/on/tasks.Toggle/0": {
+        "behavior": "e0d07094a3016415",
+        "contracts": {
+          "togglesTask": "8aa81c092f9323b5"
+        }
+      },
+      "toggling/invoke/done/0": {
+        "behavior": "49f254475f7985d1",
+        "contracts": {
+          "togglesTask": "8aa81c092f9323b5"
+        }
+      },
+      "toggling/invoke/failed/NotFound/0": {
+        "behavior": "7630795452b08180",
+        "contracts": {
+          "toggleMissing": "a8d4852d36704052"
+        }
+      },
+      "toggling/invoke/failed/Unexpected/0": {
+        "behavior": "57a2233b096a690e",
+        "contracts": {
+          "toggleFails": "397438dd3e6330b6"
+        }
+      }
+    }
+  },
+  "version": 1
+}

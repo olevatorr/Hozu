@@ -1,5 +1,5 @@
-export const PRIORITIES = ['low', 'normal', 'high'] as const
-export type Priority = (typeof PRIORITIES)[number]
+export const priorities = ['low', 'normal', 'high'] as const
+export type Priority = (typeof priorities)[number]
 
 export interface Task {
   id: string

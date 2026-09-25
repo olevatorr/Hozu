@@ -143,7 +143,9 @@ export const Board = ui.view({
   - `ui.dom.value`: text. It may go into an enum field only from a `<select>` whose literal option values are
     all members (TN033).
   - `ui.dom.form('name')`: a named field of the submitted form (use it on `submit`; the browser runs required /
-    minlength checks first).
+    minlength checks first). It may go into an enum field when that name belongs to a `<select>` (or radio
+    inputs) inside the form whose literal option values are all members, so one `submit` can carry a title and
+    a priority together.
   - `ui.dom.valueAsNumber` (number | null), `ui.dom.checked`.
   - `ui.dom.key`, and similar fields that depend on the event.
 - **Structure**:
