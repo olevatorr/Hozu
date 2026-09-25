@@ -4,10 +4,17 @@ export interface CliError {
   error: { code: 'usage' | 'config' | 'unknown-feature'; message: string; suggestions: string[] }
 }
 
+export interface Coverage {
+  covered: number
+  total: number
+}
+
 export interface ValidateOutput {
   ok: boolean
   hash: string
   summary: { errors: number; warnings: number }
+  coverage: Record<string, Coverage>
+  lock: 'missing' | 'checked' | 'updated' | 'skipped'
   diagnostics: Diagnostic[]
 }
 
@@ -63,4 +70,33 @@ export interface GraphOutput {
   feature: string
   nodes: GraphNode[]
   edges: GraphEdge[]
+}
+
+export interface ExplainTransition {
+  id: string
+  from: string
+  to: string
+  trigger: string
+  guard: string | null
+  assign: string[]
+  navigate: string | null
+  coveredBy: string[]
+}
+
+export interface ExplainSend {
+  view: string
+  node: string
+  event: string
+  handled: boolean
+}
+
+export interface ExplainOutput {
+  feature: string
+  state: string
+  initial: boolean
+  final: boolean
+  invoke: { effect: string; input: string; errors: string[] } | null
+  outgoing: ExplainTransition[]
+  incoming: ExplainTransition[]
+  sends: ExplainSend[]
 }

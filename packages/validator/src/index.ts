@@ -1,11 +1,16 @@
-import type { Diagnostic, ProjectIR, SourceIndex } from '@tenon/core/ir'
+import type { Bindings, Diagnostic, ProjectIR, SourceIndex } from '@tenon/core/ir'
 import { Ctx } from './context.ts'
+import type { Lockfile } from './contracts/lock.ts'
+import { verifyContracts } from './contracts/verify.ts'
 import { declaredErrors } from './rules/errors.ts'
 import { unhandledEvents, viewEvents } from './rules/events.ts'
 import { paths } from './rules/paths.ts'
 import { featureLinks, references, routes } from './rules/refs.ts'
 import { deadEnds, reachability, shadowing, stateNames } from './rules/states.ts'
 
+export type { Drift, LockEntry, Lockfile } from './contracts/lock.ts'
+export type { ContractRun, Failure } from './contracts/run.ts'
+export { runContract } from './contracts/run.ts'
 export { closest, distance } from './suggest.ts'
 
 const rules = [
@@ -30,13 +35,24 @@ const order = (a: Diagnostic, b: Diagnostic) =>
 export interface ValidateOptions {
   sources?: SourceIndex
   feature?: string
+  bindings?: Bindings
+  lock?: Lockfile | null
 }
 
-export function validate(ir: ProjectIR, options: ValidateOptions = {}): Diagnostic[] {
+export interface Verification {
+  diagnostics: Diagnostic[]
+  lock: Lockfile | null
+}
+
+export function verify(ir: ProjectIR, options: ValidateOptions = {}): Verification {
   const ctx = new Ctx(ir, options.sources ?? {})
   for (const rule of rules) rule(ctx)
+  const lock = options.bindings ? verifyContracts(ctx, options.bindings, options.lock ?? null) : null
   const out = options.feature
     ? ctx.diagnostics.filter((d) => d.location.feature === options.feature)
     : ctx.diagnostics
-  return out.sort(order)
+  return { diagnostics: out.sort(order), lock }
 }
+
+export const validate = (ir: ProjectIR, options: ValidateOptions = {}): Diagnostic[] =>
+  verify(ir, options).diagnostics

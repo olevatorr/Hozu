@@ -45,12 +45,20 @@ Did-you-mean suggestions use edit distance over the candidates in scope.
 | TN012 | schema-adapter-mismatch | build |
 | TN013 | duplicate-declaration | build |
 | TN014 | invalid-builder-output | build |
+| TN015 | contract-failed | contracts (ADR 0004) |
+| TN016 | uncovered-transition | contracts (ADR 0004) |
+| TN017 | invalid-contract-data | contracts (ADR 0004) |
+| TN018 | behavior-changed-without-contract | contracts (ADR 0004) |
 
 ## CLI
 - `tenon validate [feature] [--json] [--config <path>]` → `{ ok, hash, summary: { errors, warnings }, diagnostics }`;
   exit 1 on any error, 2 on usage/config errors (`{ error: { code, message, suggestions } }`). Builds twice without
   source capture and compares hashes (`TN011`, located at the first differing pointer); only if there are
   diagnostics does it rebuild with capture to attach `file:line:column`.
+- Since Phase 1, `validate` also runs contracts and reports `coverage` per feature and the `lock` state
+  (`missing | checked | updated | skipped`); `--update-lock` rewrites `tenon.lock.json` only when clean.
+- `tenon explain <feature>.<state> [--json]` → transitions in/out rendered as pseudo-code, covering contracts,
+  the invoke with its errors, and the events visible views can send in that state.
 - `tenon inspect <feature> [--json]` → `{ feature, hash, summary, ir }`.
 - `tenon graph <feature> [--json]` → `{ feature, nodes, edges }`; text mode prints Mermaid `stateDiagram-v2`.
 - Argument parsing with `node:util` `parseArgs`; config is loaded with native `import()` (ADR 0002 D9).

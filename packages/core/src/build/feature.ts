@@ -59,6 +59,16 @@ function errors(scope: FeatureScope, record: Record<string, Schema>, p: At): Rec
   })
 }
 
+function bindEffect(
+  scope: FeatureScope,
+  ref: string,
+  d: { input: Schema; output: Schema; errors: Record<string, Schema> },
+) {
+  scope.bind(`${ref}#input`, d.input)
+  scope.bind(`${ref}#output`, d.output)
+  for (const [name, schema] of Object.entries(d.errors ?? {})) scope.bind(`${ref}#error:${name}`, schema)
+}
+
 export function buildFeature(project: ProjectScope, id: string, config: FeatureConfig): FeatureIR {
   const scope = new FeatureScope(project, id)
   if (typeof config.intent?.summary !== 'string' || !config.intent.summary.trim())
@@ -119,12 +129,15 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureC
       const param = defOf<TagDef>(t).param
       return { param: param === null ? null : scope.schema(param, scope.at('tags', sym, 'param')) }
     }),
-    events: mapRecord(config.events, (sym, e) => ({
-      payload: scope.schema(defOf<EventDef>(e).payload, scope.at('events', sym, 'payload')),
-    })),
+    events: mapRecord(config.events, (sym, e) => {
+      const payload = defOf<EventDef>(e).payload
+      scope.bind(`${id}.${sym}#payload`, payload)
+      return { payload: scope.schema(payload, scope.at('events', sym, 'payload')) }
+    }),
     queries: mapRecord(config.queries, (sym, q): QueryIR => {
       const d = defOf<QueryDef>(q)
       const p = scope.at('queries', sym)
+      bindEffect(scope, `${id}.${sym}`, d)
       if (d.scope !== 'public' && d.scope !== 'user')
         scope.report(
           'TN014',
@@ -144,6 +157,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureC
     mutations: mapRecord(config.mutations, (sym, m) => {
       const d = defOf<MutationDef>(m)
       const p = scope.at('mutations', sym)
+      bindEffect(scope, `${id}.${sym}`, d)
       return {
         input: scope.schema(d.input, at(p, 'input')),
         output: scope.schema(d.output, at(p, 'output')),
@@ -153,6 +167,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureC
     }),
     fns: mapRecord(config.fns, (sym, f) => {
       const d = defOf<FnDef>(f)
+      project.bindings.fns[`${id}.${sym}`] = d.impl
       return {
         input: scope.schema(d.input, scope.at('fns', sym, 'input')),
         output: scope.schema(d.output, scope.at('fns', sym, 'output')),

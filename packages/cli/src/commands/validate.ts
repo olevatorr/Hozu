@@ -1,8 +1,11 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join as joinPath } from 'node:path'
 import { codes, type Diagnostic, hashJson, type Json, join, resolveSource } from '@tenon/core/ir'
-import { validate } from '@tenon/validator'
-import type { ValidateOutput } from '../contract.ts'
+import { type Lockfile, verify } from '@tenon/validator'
+import type { Coverage, ValidateOutput } from '../contract.ts'
+import { TenonCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
-import { relativize } from '../output.ts'
+import { json, relativize } from '../output.ts'
 
 function firstDifference(a: Json, b: Json, pointer = ''): string | null {
   if (a === b) return null
@@ -26,11 +29,28 @@ function firstDifference(a: Json, b: Json, pointer = ''): string | null {
   return null
 }
 
-export function runValidate(loaded: Loaded, feature: string | undefined, cwd: string): ValidateOutput {
+function readLock(path: string): Lockfile | null {
+  if (!existsSync(path)) return null
+  try {
+    return JSON.parse(readFileSync(path, 'utf8')) as Lockfile
+  } catch (error) {
+    throw new TenonCliError('config', `Cannot read ${path}: ${(error as Error).message}`)
+  }
+}
+
+export function runValidate(
+  loaded: Loaded,
+  feature: string | undefined,
+  cwd: string,
+  updateLock = false,
+): ValidateOutput {
   const first = loaded.build(false)
   const second = loaded.build(false)
   const hash = hashJson(first.ir)
-  let diagnostics: Diagnostic[] = [...first.diagnostics, ...validate(first.ir)]
+  const lockPath = joinPath(dirname(loaded.path), 'tenon.lock.json')
+  const previous = readLock(lockPath)
+  const verified = verify(first.ir, { bindings: first.bindings, lock: previous })
+  let diagnostics: Diagnostic[] = [...first.diagnostics, ...verified.diagnostics]
   if (hash !== hashJson(second.ir)) {
     const pointer = firstDifference(first.ir as unknown as Json, second.ir as unknown as Json) ?? ''
     const featureId = pointer.startsWith('/features/') ? (pointer.split('/')[2] ?? null) : null
@@ -55,12 +75,29 @@ export function runValidate(loaded: Loaded, feature: string | undefined, cwd: st
       location: { ...d.location, source: resolveSource(traced.sources, d.location.pointer) },
     }))
   }
+  const clean = !diagnostics.some((d) => d.severity === 'error')
+  let lock: ValidateOutput['lock'] = previous ? 'checked' : 'missing'
+  if (updateLock) {
+    lock = clean && verified.lock ? 'updated' : 'skipped'
+    if (lock === 'updated') writeFileSync(lockPath, json(verified.lock))
+  }
+  const coverage: Record<string, Coverage> = {}
+  for (const [fid, entries] of Object.entries(verified.lock?.features ?? {})) {
+    if (feature && fid !== feature) continue
+    const list = Object.values(entries)
+    coverage[fid] = {
+      covered: list.filter((e) => Object.keys(e.contracts).length > 0).length,
+      total: list.length,
+    }
+  }
   const selected = feature ? diagnostics.filter((d) => d.location.feature === feature) : diagnostics
   const errors = selected.filter((d) => d.severity === 'error').length
   return {
     ok: errors === 0,
     hash,
     summary: { errors, warnings: selected.length - errors },
+    coverage,
+    lock,
     diagnostics: relativize(selected, cwd),
   }
 }

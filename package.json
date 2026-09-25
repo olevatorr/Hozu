@@ -7,7 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "build": "tsc -b packages/core packages/schema-zod packages/validator packages/cli",
+    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/validator packages/cli",
     "typecheck": "tsc -b tsconfig.json",
     "test": "pnpm build && vitest run",
     "bench": "pnpm build && node bench/run.ts",
@@ -17,11 +17,12 @@
     "gate": "pnpm lint && pnpm typecheck && pnpm test && pnpm bench"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.14",
     "@tenon/cli": "workspace:*",
     "@tenon/core": "workspace:*",
+    "@tenon/machine": "workspace:*",
     "@tenon/schema-zod": "workspace:*",
     "@tenon/validator": "workspace:*",
-    "@biomejs/biome": "2.5.14",
     "@types/node": "22.20.4",
     "ajv": "8.20.0",
     "fast-check": "4.10.2",

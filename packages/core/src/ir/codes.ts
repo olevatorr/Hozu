@@ -20,4 +20,8 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   TN012: { name: 'schema-adapter-mismatch', severity: 'error' },
   TN013: { name: 'duplicate-declaration', severity: 'error' },
   TN014: { name: 'invalid-builder-output', severity: 'error' },
+  TN015: { name: 'contract-failed', severity: 'error' },
+  TN016: { name: 'uncovered-transition', severity: 'error' },
+  TN017: { name: 'invalid-contract-data', severity: 'error' },
+  TN018: { name: 'behavior-changed-without-contract', severity: 'error' },
 }

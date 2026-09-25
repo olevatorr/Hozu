@@ -52,7 +52,7 @@ describe('IR JSON Schema', () => {
 })
 
 describe('P4 dependencies', () => {
-  it.each(['core', 'validator', 'cli'])('@tenon/%s has no third-party runtime dependencies', (pkg) => {
+  it.each(['core', 'machine', 'validator', 'cli'])('@tenon/%s has no third-party runtime dependencies', (pkg) => {
     const manifest = JSON.parse(read(`packages/${pkg}/package.json`))
     const deps = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies })
     expect(deps.filter((d) => !d.startsWith('@tenon/'))).toEqual([])

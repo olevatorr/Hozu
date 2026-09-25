@@ -1,4 +1,5 @@
 import { parseArgs } from 'node:util'
+import { describeExplain, runExplain } from './commands/explain.ts'
 import { mermaid, runGraph } from './commands/graph.ts'
 import { runInspect } from './commands/inspect.ts'
 import { runValidate } from './commands/validate.ts'
@@ -9,13 +10,15 @@ import { human, json } from './output.ts'
 const usage = `Usage: tenon <command> [options]
 
 Commands:
-  validate [feature]   Build the IR and report diagnostics (exit 1 on errors)
-  inspect <feature>    Print a feature's canonical IR and summary
-  graph <feature>      Print a feature's state/effect/view graph (Mermaid, or --json)
+  validate [feature]        Build the IR, run contracts, report diagnostics (exit 1 on errors)
+  inspect <feature>         Print a feature's canonical IR and summary
+  graph <feature>           Print a feature's state/effect/view graph (Mermaid, or --json)
+  explain <feature>.<state> Explain a state: transitions, guards, effects, covering contracts
 
 Options:
   --json               Machine-readable output (schemas in @tenon/cli/schema)
   --config <path>      Config file (default: tenon.config.ts)
+  --update-lock        validate: rewrite tenon.lock.json when there are no errors
   -h, --help           Show this help
 `
 
@@ -33,6 +36,7 @@ export async function main(
       options: {
         json: { type: 'boolean', default: false },
         config: { type: 'string' },
+        'update-lock': { type: 'boolean', default: false },
         help: { type: 'boolean', short: 'h' },
       },
     })
@@ -42,17 +46,20 @@ export async function main(
       out(usage)
       return command || values.help ? 0 : 2
     }
-    const commands = ['validate', 'inspect', 'graph']
+    const commands = ['validate', 'inspect', 'graph', 'explain']
     if (!commands.includes(command))
       throw new TenonCliError('usage', `Unknown command "${command}"`, commands)
     const loaded = await load(values.config, cwd)
     if (command === 'validate') {
-      const result = runValidate(loaded, target, cwd)
+      const result = runValidate(loaded, target, cwd, values['update-lock'] === true)
       if (asJson) out(json(result))
       else {
         for (const d of result.diagnostics) out(`${human(d)}\n\n`)
+        const coverage = Object.entries(result.coverage)
+          .map(([f, c]) => `${f} ${c.covered}/${c.total}`)
+          .join(', ')
         out(
-          `${result.ok ? '✔' : '✖'} ${result.summary.errors} errors, ${result.summary.warnings} warnings (ir ${result.hash.slice(0, 12)})\n`,
+          `${result.ok ? '✔' : '✖'} ${result.summary.errors} errors, ${result.summary.warnings} warnings · contracts cover ${coverage || 'n/a'} · lock ${result.lock} (ir ${result.hash.slice(0, 12)})\n`,
         )
       }
       return result.ok ? 0 : 1
@@ -64,6 +71,11 @@ export async function main(
           ? json(result)
           : `${json({ feature: result.feature, hash: result.hash, summary: result.summary })}`,
       )
+      return 0
+    }
+    if (command === 'explain') {
+      const result = runExplain(loaded, target)
+      out(asJson ? json(result) : describeExplain(result))
       return 0
     }
     const graph = runGraph(loaded, target)

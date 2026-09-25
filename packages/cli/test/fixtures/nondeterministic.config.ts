@@ -1,4 +1,4 @@
-import { event, feature, machine, on, op, project } from '@tenon/core'
+import { contract, event, feature, machine, on, op, project } from '@tenon/core'
 import { zodAdapter } from '@tenon/schema-zod'
 import { z } from 'zod'
 
@@ -11,6 +11,12 @@ const dice = machine({
   states: ({ ctx }) => ({
     idle: { on: [on(Roll, { target: 'idle', assign: () => [op.set(ctx.last, Math.random())] })] },
   }),
+})
+
+const rolls = contract(dice, {
+  given: { state: 'idle', context: { last: 0 } },
+  when: [{ send: Roll, payload: { n: 1 } }],
+  expect: { state: 'idle', context: null, effects: [] },
 })
 
 export default project({
@@ -28,7 +34,7 @@ export default project({
       fns: {},
       machine: dice,
       views: {},
-      contracts: {},
+      contracts: { rolls },
       exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
     }),
   ],

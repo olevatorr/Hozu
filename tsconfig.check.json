@@ -16,6 +16,9 @@
       "path": "packages/schema-zod"
     },
     {
+      "path": "packages/machine"
+    },
+    {
       "path": "packages/validator"
     },
     {

@@ -32,7 +32,13 @@ describe('A5 CLI contract', () => {
     const { code, stdout } = await run(['validate', '--json'])
     const out = JSON.parse(stdout)
     expect(code).toBe(0)
-    expect(out).toMatchObject({ ok: true, summary: { errors: 0, warnings: 0 }, diagnostics: [] })
+    expect(out).toMatchObject({
+      ok: true,
+      summary: { errors: 0, warnings: 0 },
+      coverage: { cart: { covered: 14, total: 14 } },
+      lock: 'checked',
+      diagnostics: [],
+    })
     expectSchema('validate', out)
   })
 
@@ -59,6 +65,37 @@ describe('A5 CLI contract', () => {
     expect(text).toContain('placed --> [*]')
   })
 
+  it('explain --json matches its schema and lists covering contracts', async () => {
+    const { code, stdout } = await run(['explain', 'cart.idle', '--json'])
+    const out = JSON.parse(stdout)
+    expect(code).toBe(0)
+    expectSchema('explain', out)
+    expect(out).toMatchObject({ feature: 'cart', state: 'idle', initial: true, final: false, invoke: null })
+    expect(out.outgoing[0]).toEqual({
+      id: 'idle/on/cart.AddItem/0',
+      from: 'idle',
+      to: 'adding',
+      trigger: 'on AddItem',
+      guard: 'event.qty <= 10',
+      assign: ['context.pending = event'],
+      navigate: null,
+      coveredBy: ['addFailsUnexpectedly', 'addsItem', 'rejectsOutOfStock'],
+    })
+    expect(out.sends.map((s: { event: string }) => s.event)).toEqual([
+      'cart.RemoveItem',
+      'cart.AddItem',
+      'cart.Checkout',
+    ])
+    const text = (await run(['explain', 'cart.adding'])).stdout
+    expect(text).toContain('invoke: cart.addItem(context.pending)  errors: OutOfStock, Unexpected')
+  })
+
+  it('explain suggests the closest state', async () => {
+    const { code, stdout } = await run(['explain', 'cart.idel', '--json'])
+    expect(code).toBe(2)
+    expect(JSON.parse(stdout).error.suggestions).toEqual(['cart.idle'])
+  })
+
   it('unknown features fail with suggestions', async () => {
     const { code, stdout } = await run(['inspect', 'crt', '--json'])
     expect(code).toBe(2)
@@ -77,6 +114,7 @@ describe('A5 CLI contract', () => {
     const out = JSON.parse(stdout)
     expect(code).toBe(1)
     expectSchema('validate', out)
+    expect(out.lock).toBe('missing')
     expect(out.diagnostics).toHaveLength(1)
     expect(out.diagnostics[0]).toMatchObject({
       code: 'TN011',

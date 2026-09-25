@@ -47,22 +47,31 @@ function step(s: JsonSchema, segment: string): Step {
   return { ok: false, candidates: [] }
 }
 
-const memo = new WeakMap<JsonSchema, Map<string, PathResult>>()
+interface Trie {
+  result?: PathResult
+  next?: Map<string, Trie>
+}
+
+const memo = new WeakMap<JsonSchema, Trie>()
 
 export function resolvePath(root: JsonSchema | null, path: readonly string[]): PathResult {
   if (!root || path.length === 0) return { ok: true, schema: root }
-  let cache = memo.get(root)
-  if (!cache) {
-    cache = new Map()
-    memo.set(root, cache)
+  let node = memo.get(root)
+  if (!node) {
+    node = {}
+    memo.set(root, node)
   }
-  const key = path.join('\u0000')
-  let result = cache.get(key)
-  if (!result) {
-    result = walkPath(root, path)
-    cache.set(key, result)
+  for (const segment of path) {
+    node.next ??= new Map()
+    let child = node.next.get(segment)
+    if (!child) {
+      child = {}
+      node.next.set(segment, child)
+    }
+    node = child
   }
-  return result
+  node.result ??= walkPath(root, path)
+  return node.result
 }
 
 function walkPath(root: JsonSchema, path: readonly string[]): PathResult {

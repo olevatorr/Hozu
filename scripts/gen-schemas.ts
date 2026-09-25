@@ -25,6 +25,11 @@ export const targets = [
     type: 'GraphOutput',
     out: 'packages/cli/schema/graph.schema.json',
   },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'ExplainOutput',
+    out: 'packages/cli/schema/explain.schema.json',
+  },
 ]
 
 export function generate(target: (typeof targets)[number]): string {

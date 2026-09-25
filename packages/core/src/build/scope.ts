@@ -1,11 +1,13 @@
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import { type At, at, join, resolveAt } from '../canonical/pointer.ts'
+import type { Bindings } from '../ir/bindings.ts'
 import { codes } from '../ir/codes.ts'
 import type { Diagnostic, DiagnosticCode, Fix, SourceIndex } from '../ir/diagnostic.ts'
 import type { Json, JsonSchema, ValueExpr } from '../ir/types.ts'
 import { type DeclKind, infoOf } from '../model/decl.ts'
 import { exprOf, RecorderError } from '../model/expr.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
+import { toCheck } from '../schema/check.ts'
 import { isStandardSchema } from '../schema/standard.ts'
 
 export interface Owner {
@@ -38,6 +40,7 @@ export class ProjectScope {
   readonly routes = new Map<object, string>()
   readonly schemaCache = new Map<object, { json: JsonSchema; hash: string }>()
   adapter: SchemaAdapterDef | null = null
+  readonly bindings: Bindings = { fns: {}, checks: {} }
   readonly tracking: boolean
 
   constructor(tracking: boolean) {
@@ -233,6 +236,11 @@ export class FeatureScope {
     const out = this.value(v, '')
     if (!isLiteral(out)) throw new RecorderError('Expected plain JSON data without references')
     return out.literal
+  }
+
+  bind(key: string, schema: unknown) {
+    const check = toCheck(schema)
+    if (check) this.project.bindings.checks[key] = check
   }
 
   fingerprint(source: string): string {

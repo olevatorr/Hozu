@@ -66,6 +66,8 @@ export const on = <P, const T extends string>(
 
 type TargetOf<L> = L extends readonly { target: infer T extends string }[] ? T : never
 
+type Known<T extends string> = string extends T ? never : T
+
 export const invoke = <
   I,
   O,
@@ -75,7 +77,7 @@ export const invoke = <
 >(
   effect: EffectDecl<I, O, E>,
   config: { input: Val<I>; done: D; failed: F },
-): InvokeDecl<TargetOf<D> | { [K in keyof F]: TargetOf<F[K]> }[keyof F]> =>
+): InvokeDecl<Known<TargetOf<D> | { [K in keyof F]: TargetOf<F[K]> }[keyof F]>> =>
   brand({}, 'invoke', { effect, ...config } as unknown as InvokeDef)
 
 export const machine = <CS extends Schema, S extends string>(config: {

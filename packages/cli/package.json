@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@tenon/core": "workspace:*",
-    "@tenon/validator": "workspace:*"
+    "@tenon/validator": "workspace:*",
+    "@tenon/machine": "workspace:*"
   }
 }

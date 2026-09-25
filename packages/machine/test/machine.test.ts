@@ -1,0 +1,180 @@
+import { event, feature, fn, machine, on, op, project } from '@tenon/core'
+import { buildProject } from '@tenon/core/ir'
+import { compileMachine, enter, init, type Snapshot, transition } from '@tenon/machine'
+import { zodAdapter } from '@tenon/schema-zod'
+import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
+import cartProject from '../../../examples/cart/tenon.config.ts'
+
+const built = buildProject(cartProject)
+const cart = compileMachine(built.ir.features.cart!, built.bindings.fns)
+const idle = { pending: { sku: '', qty: 1 }, error: null, orderId: null }
+
+describe('compiled cart machine', () => {
+  it('starts in the initial state without effects', () => {
+    expect(init(cart)).toEqual({
+      snapshot: { state: 'idle', context: idle, entry: 1 },
+      effects: [],
+      taken: null,
+    })
+    expect(cart.transitions).toHaveLength(14)
+  })
+
+  it('fires the first transition whose guard passes and emits the invoke as data', () => {
+    const start = init(cart).snapshot
+    const step = transition(cart, start, {
+      type: 'event',
+      event: 'cart.AddItem',
+      payload: { sku: 'mug', qty: 2 },
+    })
+    expect(step.taken).toBe('idle/on/cart.AddItem/0')
+    expect(step.snapshot).toEqual({
+      state: 'adding',
+      context: { ...idle, pending: { sku: 'mug', qty: 2 } },
+      entry: 2,
+    })
+    expect(step.effects).toEqual([
+      { type: 'invoke', entry: 2, effect: 'cart.addItem', input: { sku: 'mug', qty: 2 } },
+    ])
+    expect(start.context).toEqual(idle)
+
+    const tooMany = transition(cart, start, {
+      type: 'event',
+      event: 'cart.AddItem',
+      payload: { sku: 'mug', qty: 11 },
+    })
+    expect(tooMany.taken).toBe('idle/on/cart.AddItem/1')
+    expect(tooMany.snapshot.state).toBe('error')
+    expect(tooMany.effects).toEqual([{ type: 'timer', entry: 2, ms: 5000 }])
+  })
+
+  it('ignores unhandled events and stale effect results', () => {
+    const start = init(cart).snapshot
+    expect(transition(cart, start, { type: 'event', event: 'cart.Dismiss', payload: {} }).taken).toBeNull()
+    const adding = transition(cart, start, {
+      type: 'event',
+      event: 'cart.AddItem',
+      payload: { sku: 'a', qty: 1 },
+    }).snapshot
+    expect(transition(cart, adding, { type: 'done', entry: 1, result: { items: [] } })).toEqual({
+      snapshot: adding,
+      effects: [],
+      taken: null,
+    })
+    expect(transition(cart, adding, { type: 'done', entry: 2, result: { items: [] } }).snapshot.state).toBe(
+      'idle',
+    )
+  })
+
+  it('routes undeclared errors to Unexpected', () => {
+    const adding = enter(cart, 'adding', idle, 7).snapshot
+    const step = transition(cart, adding, { type: 'failed', entry: 7, error: 'Timeout', data: null })
+    expect(step.taken).toBe('adding/invoke/failed/Unexpected/0')
+    expect(step.snapshot.context).toMatchObject({ error: 'Timeout' })
+  })
+
+  it('fires timers, navigates, and freezes in final states', () => {
+    const error = enter(cart, 'error', { ...idle, error: 'x' }, 3).snapshot
+    expect(transition(cart, error, { type: 'timer', entry: 3, ms: 5000 }).snapshot).toEqual({
+      state: 'idle',
+      context: idle,
+      entry: 4,
+    })
+    const paying = enter(cart, 'checkingOut', idle, 5).snapshot
+    const placed = transition(cart, paying, { type: 'done', entry: 5, result: { orderId: 'o-9' } })
+    expect(placed.effects).toEqual([{ type: 'navigate', route: 'orderPlaced' }])
+    expect(placed.snapshot).toMatchObject({ state: 'placed', context: { orderId: 'o-9' } })
+    expect(
+      transition(cart, placed.snapshot, {
+        type: 'event',
+        event: 'cart.AddItem',
+        payload: { sku: 'a', qty: 1 },
+      }).taken,
+    ).toBeNull()
+  })
+})
+
+describe('assign ops and fn bindings', () => {
+  const Ping = event({ payload: z.object({ sku: z.string(), n: z.number() }) })
+  const Drop = event({ payload: z.object({ sku: z.string() }) })
+  const total = fn({
+    input: z.array(z.object({ sku: z.string(), n: z.number() })),
+    output: z.number(),
+    impl: (xs) => xs.reduce((s, x) => s + x.n, 0),
+  })
+  const isBig = fn({ input: z.number(), output: z.boolean(), impl: (n) => n > 100 })
+  const m = machine({
+    context: z.object({
+      items: z.array(z.object({ sku: z.string(), n: z.number() })),
+      count: z.number(),
+      sum: z.number(),
+    }),
+    initialContext: { items: [], count: 0, sum: 0 },
+    initial: 'open',
+    states: ({ ctx }) => ({
+      open: {
+        on: [
+          on(Ping, { target: 'closed', guard: (p) => isBig(p.n) }),
+          on(Ping, {
+            target: 'open',
+            assign: (p) => [op.append(ctx.items, p), op.inc(ctx.count, 1), op.set(ctx.sum, total(ctx.items))],
+          }),
+          on(Drop, { target: 'open', assign: (p) => [op.removeWhere(ctx.items, 'sku', p.sku)] }),
+        ],
+      },
+      closed: { final: true },
+    }),
+  })
+  const f = feature({
+    id: 'f',
+    intent: { summary: 'ops fixture', invariants: [] },
+    imports: [],
+    tags: {},
+    events: { Ping, Drop },
+    queries: {},
+    mutations: {},
+    fns: { total, isBig },
+    machine: m,
+    views: {},
+    contracts: {},
+    exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
+  })
+  const b = buildProject(project({ schema: zodAdapter, routes: {}, features: [f] }))
+  const compiled = compileMachine(b.ir.features.f!, b.bindings.fns)
+
+  it('applies assigns sequentially with copy-on-write', () => {
+    let s: Snapshot = init(compiled).snapshot
+    for (const [sku, n] of [
+      ['a', 1],
+      ['b', 2],
+      ['a', 3],
+    ] as const)
+      s = transition(compiled, s, { type: 'event', event: 'f.Ping', payload: { sku, n } }).snapshot
+    expect(s.context).toEqual({
+      items: [
+        { sku: 'a', n: 1 },
+        { sku: 'b', n: 2 },
+        { sku: 'a', n: 3 },
+      ],
+      count: 3,
+      sum: 6,
+    })
+    const dropped = transition(compiled, s, { type: 'event', event: 'f.Drop', payload: { sku: 'a' } })
+    expect(dropped.snapshot.context).toEqual({ items: [{ sku: 'b', n: 2 }], count: 3, sum: 6 })
+    expect((s.context as { items: unknown[] }).items).toHaveLength(3)
+  })
+
+  it('evaluates fn guards', () => {
+    const step = transition(compiled, init(compiled).snapshot, {
+      type: 'event',
+      event: 'f.Ping',
+      payload: { sku: 'x', n: 500 },
+    })
+    expect(step.taken).toBe('open/on/f.Ping/0')
+    expect(step.snapshot.state).toBe('closed')
+  })
+
+  it('refuses to compile without fn implementations', () => {
+    expect(() => compileMachine(b.ir.features.f!, {})).toThrow(/No implementation bound for fn f\.isBig/)
+  })
+})

@@ -1,6 +1,7 @@
 import type { FeatureConfig, ProjectConfig } from '../builders/feature.ts'
 import type { RouteDef } from '../builders/route.ts'
 import { join, resolveSource } from '../canonical/pointer.ts'
+import type { Bindings } from '../ir/bindings.ts'
 import type { Diagnostic, SourceIndex } from '../ir/diagnostic.ts'
 import type { FeatureIR, JsonSchema, ProjectIR, RouteIR } from '../ir/types.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
@@ -11,6 +12,7 @@ import { IDENTIFIER, ProjectScope } from './scope.ts'
 
 export interface BuildResult {
   ir: ProjectIR
+  bindings: Bindings
   sources: SourceIndex
   diagnostics: Diagnostic[]
 }
@@ -167,5 +169,5 @@ function build(project: unknown, tracking: boolean): BuildResult {
 
   const ir: ProjectIR = { irVersion: 1, routes, features }
   for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
-  return { ir, sources: scope.sources, diagnostics: scope.diagnostics }
+  return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }
 }

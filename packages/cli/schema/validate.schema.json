@@ -27,6 +27,21 @@
           ],
           "additionalProperties": false
         },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Coverage"
+          }
+        },
+        "lock": {
+          "type": "string",
+          "enum": [
+            "missing",
+            "checked",
+            "updated",
+            "skipped"
+          ]
+        },
         "diagnostics": {
           "type": "array",
           "items": {
@@ -38,7 +53,25 @@
         "ok",
         "hash",
         "summary",
+        "coverage",
+        "lock",
         "diagnostics"
+      ],
+      "additionalProperties": false
+    },
+    "Coverage": {
+      "type": "object",
+      "properties": {
+        "covered": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "covered",
+        "total"
       ],
       "additionalProperties": false
     },
@@ -97,7 +130,11 @@
         "TN011",
         "TN012",
         "TN013",
-        "TN014"
+        "TN014",
+        "TN015",
+        "TN016",
+        "TN017",
+        "TN018"
       ]
     },
     "Severity": {

@@ -2,9 +2,10 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { gzipSync } from 'node:zlib'
 import { buildProject } from '@tenon/core/ir'
-import { validate } from '@tenon/validator'
-import { syntheticProject } from './synthetic.ts'
+import { compileMachine, init, transition } from '@tenon/machine'
+import { validate, verify } from '@tenon/validator'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const cartDir = join(root, 'examples/cart')
@@ -53,23 +54,72 @@ record(
   2,
 )
 
-const synthetic = (features: number) => {
-  const project = syntheticProject(features)
-  return samples(
-    () => {
-      const r = buildProject(project, { sources: false })
-      if (r.diagnostics.length) throw new Error(`synthetic build: ${r.diagnostics[0]!.message}`)
-      const d = validate(r.ir)
-      if (d.length) throw new Error(`synthetic validate: ${d[0]!.code} ${d[0]!.message}`)
-    },
-    7,
-    2,
-  )
-}
-const half = synthetic(500)
-const full = synthetic(1000)
-record('P2', 'build + validate, 1000 features × 30 states × 10 events', median(full), 'ms', 500)
-record('P2', 'scaling 1000 / 500 features (best of 7)', Math.min(...full) / Math.min(...half), '×', 2.2)
+const machine = compileMachine(built.ir.features.cart!, built.bindings.fns)
+const start = init(machine).snapshot
+const add = { type: 'event', event: 'cart.AddItem', payload: { sku: 'mug', qty: 2 } } as const
+const rounds = 200_000
+const throughput = time(
+  () => {
+    let s = start
+    for (let i = 0; i < rounds; i++) {
+      s = transition(machine, s, add).snapshot
+      s = transition(machine, s, { type: 'done', entry: s.entry, result: { items: [] } }).snapshot
+    }
+  },
+  5,
+  2,
+)
+record(
+  'P1',
+  'machine transitions per second (cart, guard + assign)',
+  ((2 * rounds) / throughput) * 1000,
+  '/s',
+  null,
+)
+results.at(-1)!.ok = results.at(-1)!.value >= 1_000_000
+results.at(-1)!.budget = 1_000_000
+record(
+  'P1',
+  'contracts: verify(cart) with 11 contracts, median of 50',
+  time(() => verify(built.ir, { bindings: built.bindings }), 50, 5),
+  'ms',
+  null,
+)
+const machineDist = join(root, 'packages/machine/dist')
+const machineJs = readdirSync(machineDist)
+  .filter((f) => f.endsWith('.js'))
+  .map((f) => readFileSync(join(machineDist, f)))
+record(
+  'A6',
+  '@tenon/machine dist gzip (unminified)',
+  gzipSync(Buffer.concat(machineJs)).length,
+  'bytes',
+  null,
+)
+
+const synthetic = (features: number): number[] =>
+  [0, 1, 2].flatMap(() => {
+    const r = spawnSync(process.execPath, [join(root, 'bench/p2.ts'), String(features)], { encoding: 'utf8' })
+    if (r.status !== 0) throw new Error(`bench/p2.ts ${features}: ${r.stderr}`)
+    return JSON.parse(r.stdout) as number[]
+  })
+const sizes = [250, 500, 750, 1000]
+const runs = sizes.map(synthetic)
+const points = sizes.map((n, i) => [Math.log(n), Math.log(Math.min(...runs[i]!))] as const)
+const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length
+const mx = mean(points.map(([x]) => x))
+const my = mean(points.map(([, y]) => y))
+const slope =
+  points.reduce((sum, [x, y]) => sum + (x - mx) * (y - my), 0) /
+  points.reduce((sum, [x]) => sum + (x - mx) ** 2, 0)
+record(
+  'P2',
+  'build + validate, 1000 features × 30 states × 10 events',
+  Math.exp(points.at(-1)![1]),
+  'ms',
+  500,
+)
+record('P2', 'scaling exponent, best times at 250–1000 features (1.14 ≙ 2× → 2.2×)', slope, '', 1.14)
 
 const bin = join(root, 'packages/cli/bin/tenon.js')
 const cold: number[] = []
@@ -104,6 +154,6 @@ record('A6', 'examples/cart source size', bytes(cartDir), 'bytes', null)
 const width = Math.max(...results.map((r) => r.metric.length))
 for (const r of results)
   console.log(
-    `${r.ok ? '✔' : '✖'} ${r.id}  ${r.metric.padEnd(width)}  ${String(r.value).padStart(10)} ${r.unit.padEnd(5)} ${r.budget === null ? '(report)' : `budget ≤ ${r.budget}`}`,
+    `${r.ok ? '✔' : '✖'} ${r.id}  ${r.metric.padEnd(width)}  ${String(Math.round(r.value * 1000) / 1000).padStart(12)} ${r.unit.padEnd(5)} ${r.budget === null ? '(report)' : r.unit === '/s' ? `budget ≥ ${r.budget}` : `budget ≤ ${r.budget}`}`,
   )
 if (results.some((r) => !r.ok)) process.exitCode = 1

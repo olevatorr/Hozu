@@ -74,7 +74,6 @@ machine({
   initial: 'idle',
   states: () => ({
     idle: {
-      // @ts-expect-error an invalid failed map also widens the invoke targets
       invoke: invoke(save, {
         input: { sku: 'a', qty: 1 },
         done: [{ target: 'idle' }],

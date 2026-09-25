@@ -42,16 +42,17 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `@tenon/schema-zod` is the default, Valibot via adapter). The IR stores JSON Schema.
 - Packages are published under the @tenon/ scope:
   `@tenon/core` (IR types + builders; tooling at `@tenon/core/ir`), `@tenon/schema-zod`,
-  `@tenon/validator`, `@tenon/compiler`, `@tenon/runtime-server`, `@tenon/runtime-client`,
+  `@tenon/machine` (isomorphic compiled interpreter, ADR 0004), `@tenon/validator`, `@tenon/compiler`, `@tenon/runtime-server`, `@tenon/runtime-client`,
   `@tenon/cli`, `@tenon/adapter-node`, `@tenon/adapter-static`
-- `@tenon/core`, `@tenon/validator`, `@tenon/cli` have zero third-party runtime dependencies.
+- `@tenon/core`, `@tenon/machine`, `@tenon/validator`, `@tenon/cli` have zero third-party runtime dependencies.
 - Minimal comments. Small modules organized by functionality.
 
 ## Commands
 - `pnpm gate` — lint + typecheck + test + bench; must be green at the end of every phase (ADR 0001)
 - `pnpm test` · `pnpm typecheck` · `pnpm lint` · `pnpm bench`
 - `pnpm schema` — regenerate the JSON Schemas from the IR / CLI types (a test fails if stale)
-- `pnpm --filter example-cart validate|inspect|graph`
+- `pnpm --filter example-cart validate|inspect|graph|explain|simulate`
+- `tenon validate --update-lock` — accept behavior changes into `tenon.lock.json` (only when clean)
 
 ## CLI (agent-facing, all support --json)
 `tenon inspect <feature>` · `tenon validate [feature]` · `tenon impact <feature>.<symbol>`
@@ -62,4 +63,6 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - Before each phase, write `docs/adr/NNNN-*.md` with options, trade-offs, and your decision.
 - Every phase ends with passing tests and a runnable example in `examples/`.
 - A new diagnostic code needs a registry entry, a rule, a fix, and a mistake-catalog case.
+- Every machine transition must be covered by a contract (TN016); change behavior only together with a
+  contract (TN018). Never edit a contract just to match observed behavior without deciding intent.
 - If a principle blocks a practical need, stop and raise it. Do not quietly bend it.

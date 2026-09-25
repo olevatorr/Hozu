@@ -10,6 +10,11 @@ export interface RefSite {
   key: boolean
 }
 
+export const hasRefs = (value: ValueExpr): boolean => 'fn' in value || 'object' in value
+
+export const guardHasRefs = (guard: GuardExpr): boolean =>
+  'left' in guard ? hasRefs(guard.left) || hasRefs(guard.right) : true
+
 export function valueRefs(value: ValueExpr, pointer: At, out: (ref: string, pointer: At) => void) {
   if ('fn' in value) {
     out(value.fn, at(pointer, 'fn'))
@@ -48,25 +53,28 @@ export function refSites(ir: ProjectIR): RefSite[] {
       q.tags.forEach((t, i) => {
         const p = featurePointer(f.id, 'queries', sym, 'tags', i)
         add(t.tag, at(p, 'tag'), 'tag')
-        if (t.param) valueRefs(t.param, at(p, 'param'), fnRef)
+        if (t.param && hasRefs(t.param)) valueRefs(t.param, at(p, 'param'), fnRef)
       })
     for (const [sym, m] of Object.entries(f.mutations))
       m.invalidates.forEach((t, i) => {
         const p = featurePointer(f.id, 'mutations', sym, 'invalidates', i)
         add(t.tag, at(p, 'tag'), 'tag')
-        if (t.param) valueRefs(t.param, at(p, 'param'), fnRef)
+        if (t.param && hasRefs(t.param)) valueRefs(t.param, at(p, 'param'), fnRef)
       })
     for (const [state, s] of Object.entries(f.machine?.states ?? {})) {
       const base = featurePointer(f.id, 'machine', 'states', state)
       for (const event of Object.keys(s.on)) add(event, at(base, 'on', event), 'event', true)
       if (s.invoke) {
         add(s.invoke.effect, at(base, 'invoke', 'effect'), 'effect')
-        valueRefs(s.invoke.input, at(base, 'invoke', 'input'), fnRef)
+        if (hasRefs(s.invoke.input)) valueRefs(s.invoke.input, at(base, 'invoke', 'input'), fnRef)
       }
     }
     for (const site of transitionsOf(f)) {
-      if (site.transition.guard) guardRefs(site.transition.guard, site.at('guard'), fnRef)
-      site.transition.assign.forEach((a, i) => valueRefs(a.value, site.at('assign', i, 'value'), fnRef))
+      if (site.transition.guard && guardHasRefs(site.transition.guard))
+        guardRefs(site.transition.guard, site.at('guard'), fnRef)
+      site.transition.assign.forEach(
+        (a, i) => hasRefs(a.value) && valueRefs(a.value, site.at('assign', i, 'value'), fnRef),
+      )
     }
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer }) => {
@@ -74,20 +82,20 @@ export function refSites(ir: ProjectIR): RefSite[] {
           case 'el':
             for (const [dom, send] of Object.entries(node.on)) {
               add(send.event, at(pointer, 'on', dom, 'event'), 'event')
-              valueRefs(send.payload, at(pointer, 'on', dom, 'payload'), fnRef)
+              if (hasRefs(send.payload)) valueRefs(send.payload, at(pointer, 'on', dom, 'payload'), fnRef)
             }
             for (const [attr, v] of Object.entries(node.attrs))
-              valueRefs(v, at(pointer, 'attrs', attr), fnRef)
+              if (hasRefs(v)) valueRefs(v, at(pointer, 'attrs', attr), fnRef)
             return
           case 'text':
-            valueRefs(node.value, at(pointer, 'value'), fnRef)
+            if (hasRefs(node.value)) valueRefs(node.value, at(pointer, 'value'), fnRef)
             return
           case 'each':
-            valueRefs(node.source, at(pointer, 'source'), fnRef)
+            if (hasRefs(node.source)) valueRefs(node.source, at(pointer, 'source'), fnRef)
             return
           case 'query':
             add(node.query, at(pointer, 'query'), 'query')
-            valueRefs(node.input, at(pointer, 'input'), fnRef)
+            if (hasRefs(node.input)) valueRefs(node.input, at(pointer, 'input'), fnRef)
             return
           case 'embed':
             add(node.view, at(pointer, 'view'), 'view')

@@ -1,6 +1,18 @@
 import { feature } from '@tenon/core'
 import { catalog } from '../catalog/feature.ts'
-import { addsItem, errorAutoDismisses, placesOrder, rejectsOutOfStock } from './contracts.ts'
+import {
+  addFailsUnexpectedly,
+  addsItem,
+  checkoutFails,
+  dismissesError,
+  errorAutoDismisses,
+  paymentDeclined,
+  placesOrder,
+  rejectsOutOfStock,
+  rejectsTooMany,
+  removeFails,
+  removesItem,
+} from './contracts.ts'
 import { addItem, cartTag, cartTotal, checkout, getCart, removeItem } from './effects.ts'
 import { AddItem, Checkout, Dismiss, RemoveItem } from './events.ts'
 import { cartMachine } from './machine.ts'
@@ -24,6 +36,18 @@ export const cart = feature({
   fns: { cartTotal },
   machine: cartMachine,
   views: { CartPanel },
-  contracts: { addsItem, rejectsOutOfStock, errorAutoDismisses, placesOrder },
+  contracts: {
+    addFailsUnexpectedly,
+    addsItem,
+    checkoutFails,
+    dismissesError,
+    errorAutoDismisses,
+    paymentDeclined,
+    placesOrder,
+    rejectsOutOfStock,
+    rejectsTooMany,
+    removeFails,
+    removesItem,
+  },
   exports: { events: [AddItem], queries: [], mutations: [], tags: [cartTag], fns: [], views: [CartPanel] },
 })

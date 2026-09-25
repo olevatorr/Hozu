@@ -1,0 +1,158 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/ExplainOutput",
+  "definitions": {
+    "ExplainOutput": {
+      "type": "object",
+      "properties": {
+        "feature": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "initial": {
+          "type": "boolean"
+        },
+        "final": {
+          "type": "boolean"
+        },
+        "invoke": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "effect": {
+                  "type": "string"
+                },
+                "input": {
+                  "type": "string"
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "effect",
+                "input",
+                "errors"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outgoing": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExplainTransition"
+          }
+        },
+        "incoming": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExplainTransition"
+          }
+        },
+        "sends": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExplainSend"
+          }
+        }
+      },
+      "required": [
+        "feature",
+        "state",
+        "initial",
+        "final",
+        "invoke",
+        "outgoing",
+        "incoming",
+        "sends"
+      ],
+      "additionalProperties": false
+    },
+    "ExplainTransition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "trigger": {
+          "type": "string"
+        },
+        "guard": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "assign": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "navigate": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "coveredBy": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to",
+        "trigger",
+        "guard",
+        "assign",
+        "navigate",
+        "coveredBy"
+      ],
+      "additionalProperties": false
+    },
+    "ExplainSend": {
+      "type": "object",
+      "properties": {
+        "view": {
+          "type": "string"
+        },
+        "node": {
+          "type": "string"
+        },
+        "event": {
+          "type": "string"
+        },
+        "handled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "view",
+        "node",
+        "event",
+        "handled"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

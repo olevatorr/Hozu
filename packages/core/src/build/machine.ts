@@ -146,6 +146,7 @@ export function buildMachine(scope: FeatureScope, decl: Decl | null): MachineIR 
     states[name] = state(scope, config, at(p, 'states', name))
   }
   scope.stateNames = Object.keys(states)
+  scope.bind(`${scope.id}#context`, d.context)
   return {
     context: scope.schema(d.context, at(p, 'context')),
     initialContext: scope.attempt(at(p, 'initialContext'), () => scope.json(d.initialContext), {}),

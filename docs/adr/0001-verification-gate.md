@@ -32,12 +32,12 @@ Option 3. An LLM eval may be added later as a non-gating report.
 | Id | Metric | Budget |
 |---|---|---|
 | P1 | `validate(cart)` warm | < 2 ms |
-| P2 | Synthetic 1000 features × 30 states × 10 events: build (no source capture) + validate, median of 7 | < 500 ms; 2× input ≤ 2.2× time (best of 7) |
+| P2 | Synthetic 1000 features × 30 states × 10 events: build (no source capture) + validate, median | < 500 ms; scaling exponent ≤ 1.14 (≙ 2× input → ≤ 2.2× time) |
 | P3 | `tenon validate --json` cold start on cart, median of 10 | < 300 ms |
-| P4 | Runtime dependencies of `@tenon/core`, `@tenon/validator`, `@tenon/cli` | 0 (workspace packages excluded) |
+| P4 | Runtime dependencies of `@tenon/core`, `@tenon/machine`, `@tenon/validator`, `@tenon/cli` | 0 (workspace packages excluded) |
+| P5 | Compiled machine transitions per second (cart: guard + assign) | ≥ 1 000 000 |
 
-Budgets recorded now, enforced when the phase lands:
-Phase 1 transition ≥ 1M/s · Phase 3/4 `runtime-client` ≤ 5 KB min+gz, 0 bytes JS for machine-less pages,
+Budgets recorded now, enforced when the phase lands: Phase 3/4 `runtime-client` ≤ 5 KB min+gz, 0 bytes JS for machine-less pages,
 0 client fetches after hydration.
 
 ## Measured at the end of Phase 0
@@ -50,6 +50,19 @@ Node 22.22, Linux container, `pnpm bench`:
 | P3 | ~205–230 ms |
 | A4 | 31 525 instantiations (TypeScript 7) |
 | A6 | 12 384 bytes |
+
+### Phase 1
+| Id | Result |
+|---|---|
+| P5 | ~11.7–13.5 M transitions/s |
+| P5 (report) | all 11 cart contracts: 0.6 ms |
+| A6 (report) | `@tenon/machine` dist, gzip, unminified: 2.7 KB |
+| P2 | ~340–400 ms; scaling exponent 1.04–1.13 |
+
+P2 methodology (changed in Phase 1, budget meaning unchanged): each size (250, 500, 750, 1000 features) runs in
+3 fresh processes; the exponent is the log-log regression slope of the best times, the absolute budget uses the
+median at 1000. A single 1000/500 ratio proved too noisy on a shared 4-vCPU host (±15% per point). The exponent is
+the closest-to-budget metric; if it fails, investigate GC/old-space growth before touching the budget.
 
 Source capture (a V8 stack walk per builder call, ~4 µs) was the dominant build cost. Builds therefore skip it by
 default in tooling, and the CLI rebuilds with capture only when there are diagnostics to locate (ADR 0003).

@@ -17,6 +17,9 @@ importers:
       '@tenon/core':
         specifier: workspace:*
         version: link:packages/core
+      '@tenon/machine':
+        specifier: workspace:*
+        version: link:packages/machine
       '@tenon/schema-zod':
         specifier: workspace:*
         version: link:packages/schema-zod
@@ -53,6 +56,9 @@ importers:
       '@tenon/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@tenon/machine':
+        specifier: workspace:*
+        version: link:../../packages/machine
       '@tenon/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
@@ -65,11 +71,20 @@ importers:
       '@tenon/core':
         specifier: workspace:*
         version: link:../core
+      '@tenon/machine':
+        specifier: workspace:*
+        version: link:../machine
       '@tenon/validator':
         specifier: workspace:*
         version: link:../validator
 
   packages/core: {}
+
+  packages/machine:
+    dependencies:
+      '@tenon/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/schema-zod:
     dependencies:
