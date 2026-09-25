@@ -35,4 +35,5 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   TN027: { name: 'invalid-dom-field', severity: 'error' },
   TN028: { name: 'image-without-dimensions', severity: 'error' },
   TN029: { name: 'widget-boundary-mismatch', severity: 'error' },
+  TN030: { name: 'unsafe-html', severity: 'error' },
 }

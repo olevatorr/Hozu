@@ -37,3 +37,9 @@ export function equal(a: Json | undefined, b: Json | undefined): boolean {
   for (const k of ka) if (!Object.hasOwn(b, k) || !equal(a[k], (b as Obj)[k])) return false
   return true
 }
+
+export const pathOf = (pattern: string, params: Json | undefined): string =>
+  pattern.replace(/:([A-Za-z][A-Za-z0-9_]*)/g, (_, key: string) => {
+    const x = getIn(params, [key])
+    return encodeURIComponent(x === null || typeof x === 'object' ? '' : String(x))
+  })

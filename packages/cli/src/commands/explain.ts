@@ -37,8 +37,12 @@ function sendsIn(feature: FeatureIR, state: string): ExplainSend[] {
   const walk = (node: ViewNode, view: string, visible: boolean) => {
     if (!visible) return
     switch (node.kind) {
+      case 'if':
+        for (const c of [...node.then, ...node.else]) walk(c, view, visible)
+        return
       case 'el':
       case 'widget':
+      case 'global':
         for (const send of Object.values(node.on))
           out.push({
             view,
@@ -46,7 +50,7 @@ function sendsIn(feature: FeatureIR, state: string): ExplainSend[] {
             event: send.event,
             handled: Boolean(states[state]!.on[send.event]?.length),
           })
-        for (const c of node.children) walk(c, view, visible)
+        if (node.kind !== 'global') for (const c of node.children) walk(c, view, visible)
         return
       case 'when':
         for (const c of node.children) walk(c, view, node.states.includes(state))

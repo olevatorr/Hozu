@@ -336,6 +336,22 @@
             "test"
           ],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "link": {
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/ValueExpr"
+            }
+          },
+          "required": [
+            "link",
+            "params"
+          ],
+          "additionalProperties": false
         }
       ]
     },
@@ -1097,6 +1113,9 @@
           "$ref": "#/definitions/WhenNode"
         },
         {
+          "$ref": "#/definitions/IfNode"
+        },
+        {
           "$ref": "#/definitions/EachNode"
         },
         {
@@ -1107,6 +1126,12 @@
         },
         {
           "$ref": "#/definitions/WidgetNode"
+        },
+        {
+          "$ref": "#/definitions/GlobalNode"
+        },
+        {
+          "$ref": "#/definitions/HtmlNode"
         }
       ]
     },
@@ -1248,6 +1273,48 @@
       ],
       "additionalProperties": false
     },
+    "IfNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "if"
+        },
+        "test": {
+          "$ref": "#/definitions/GuardExpr"
+        },
+        "motion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "then": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ViewNode"
+          }
+        },
+        "else": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ViewNode"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "test",
+        "motion",
+        "then",
+        "else"
+      ],
+      "additionalProperties": false
+    },
     "EachNode": {
       "type": "object",
       "properties": {
@@ -1262,7 +1329,10 @@
           "$ref": "#/definitions/ValueExpr"
         },
         "key": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "motion": {
           "type": [
@@ -1409,6 +1479,59 @@
         "props",
         "on",
         "children"
+      ],
+      "additionalProperties": false
+    },
+    "GlobalNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "global"
+        },
+        "target": {
+          "type": "string",
+          "enum": [
+            "window",
+            "document"
+          ]
+        },
+        "on": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/SendIR"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "target",
+        "on"
+      ],
+      "additionalProperties": false
+    },
+    "HtmlNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "html"
+        },
+        "value": {
+          "$ref": "#/definitions/ValueExpr"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "value"
       ],
       "additionalProperties": false
     },

@@ -10,6 +10,7 @@ export function anyRef(v: ValueExpr, test: (ref: RefExpr) => boolean): boolean {
   }
   if ('fn' in v) return anyRef(v.arg, test)
   if ('test' in v) return anyGuardRef(v.test, test)
+  if ('link' in v) return anyRef(v.params, test)
   return false
 }
 
@@ -29,6 +30,13 @@ export function anyGuardRef(g: GuardExpr, test: (ref: RefExpr) => boolean): bool
 
 export function eachRef(v: ValueExpr, visit: (ref: RefExpr) => void) {
   anyRef(v, (r) => {
+    visit(r)
+    return false
+  })
+}
+
+export function eachGuardRef(g: GuardExpr, visit: (ref: RefExpr) => void) {
+  anyGuardRef(g, (r) => {
     visit(r)
     return false
   })

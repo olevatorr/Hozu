@@ -43,7 +43,7 @@ export function viewEvents(ctx: Ctx) {
   for (const f of Object.values(ctx.ir.features))
     for (const [vid, view] of Object.entries(f.views))
       walkView(ctx.ir, f, vid, view, ({ node, pointer, visible }) => {
-        if (node.kind !== 'el' && node.kind !== 'widget') return
+        if (node.kind !== 'el' && node.kind !== 'widget' && node.kind !== 'global') return
         for (const [dom, send] of Object.entries(node.on)) {
           const r = resolveRef(ctx.ir, send.event, 'event')
           const m = r?.feature.machine

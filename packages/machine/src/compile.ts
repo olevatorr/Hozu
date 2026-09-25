@@ -1,5 +1,5 @@
 import type { AssignOp, FeatureIR, GuardExpr, Json, TransitionIR, ValueExpr } from '@tenon/core/ir'
-import { equal, getIn, setIn } from './data.ts'
+import { equal, getIn, pathOf, setIn } from './data.ts'
 import type {
   CompiledMachine,
   CompiledState,
@@ -32,6 +32,11 @@ export function compileValue(v: ValueExpr, fns: Fns): Getter {
     if (!impl) throw new CompileError(`No implementation bound for fn ${v.fn}`)
     const arg = compileValue(v.arg, fns)
     return (env) => impl(arg(env))
+  }
+  if ('link' in v) {
+    const id = v.link
+    const params = compileValue(v.params, fns)
+    return (env) => pathOf(env.routes?.[id] ?? '', params(env))
   }
   if ('test' in v) {
     const test = guard(v.test, fns)

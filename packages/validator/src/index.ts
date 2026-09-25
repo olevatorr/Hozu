@@ -7,6 +7,7 @@ import { invalidations, sessions } from './rules/data.ts'
 import { domFields } from './rules/dom.ts'
 import { declaredErrors } from './rules/errors.ts'
 import { unhandledEvents, viewEvents } from './rules/events.ts'
+import { unsafeHtml } from './rules/html.ts'
 import { imageDimensions } from './rules/images.ts'
 import { paths } from './rules/paths.ts'
 import { featureLinks, references, routes } from './rules/refs.ts'
@@ -42,6 +43,7 @@ const rules = [
   classNames,
   widgetEvents,
   imageDimensions,
+  unsafeHtml,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>

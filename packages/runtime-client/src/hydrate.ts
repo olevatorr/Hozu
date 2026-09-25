@@ -16,6 +16,7 @@ export interface PagePayload {
   fns: string | null
   params: Json
   widgets: Record<string, WidgetRef>
+  routes: Record<string, string>
 }
 
 export interface EffectResponse {
@@ -65,6 +66,7 @@ export async function hydrate(
         params: payload.params,
         fns,
         widgets: payload.widgets,
+        routes: payload.routes,
         loadWidget,
         onInvoke: async (effect, input) => {
           const { result, refreshed } = await transport(effect, input, [...shared.data.keys()])

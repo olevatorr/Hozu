@@ -21,6 +21,11 @@ export function classCandidates(ir: ProjectIR): Set<string> {
         if (n.motion) for (const c of motionClasses(n.motion)) out.add(c)
         n.children.forEach(walk)
         return
+      case 'if':
+        if (n.motion) for (const c of motionClasses(n.motion)) out.add(c)
+        n.then.forEach(walk)
+        n.else.forEach(walk)
+        return
       case 'each':
         if (n.motion) for (const c of motionClasses(n.motion)) out.add(c)
         walk(n.item)

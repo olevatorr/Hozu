@@ -10,7 +10,8 @@ export interface RefSite {
   key: boolean
 }
 
-export const hasRefs = (value: ValueExpr): boolean => 'fn' in value || 'object' in value || 'test' in value
+export const hasRefs = (value: ValueExpr): boolean =>
+  'fn' in value || 'object' in value || 'test' in value || 'link' in value
 
 export const guardHasRefs = (guard: GuardExpr): boolean =>
   'left' in guard ? hasRefs(guard.left) || hasRefs(guard.right) : true
@@ -22,6 +23,7 @@ export function valueRefs(value: ValueExpr, pointer: At, out: (ref: string, poin
   } else if ('object' in value) {
     for (const [k, v] of Object.entries(value.object)) valueRefs(v, at(pointer, 'object', k), out)
   } else if ('test' in value) guardRefs(value.test, at(pointer, 'test'), out)
+  else if ('link' in value) valueRefs(value.params, at(pointer, 'params'), out)
 }
 
 export function guardRefs(guard: GuardExpr, pointer: At, out: (ref: string, pointer: At) => void) {
@@ -100,7 +102,17 @@ export function refSites(ir: ProjectIR): RefSite[] {
             return
           }
           case 'text':
+          case 'html':
             if (hasRefs(node.value)) valueRefs(node.value, at(pointer, 'value'), fnRef)
+            return
+          case 'if':
+            guardRefs(node.test, at(pointer, 'test'), fnRef)
+            return
+          case 'global':
+            for (const [dom, send] of Object.entries(node.on)) {
+              add(send.event, at(pointer, 'on', dom, 'event'), 'event')
+              if (hasRefs(send.payload)) valueRefs(send.payload, at(pointer, 'on', dom, 'payload'), fnRef)
+            }
             return
           case 'each':
             if (hasRefs(node.source)) valueRefs(node.source, at(pointer, 'source'), fnRef)

@@ -34,6 +34,7 @@ export interface Env {
   params?: Json
   bindings?: Json[]
   dom?: (field: string) => Json
+  routes?: Record<string, string>
 }
 
 export type Getter = (env: Env) => Json

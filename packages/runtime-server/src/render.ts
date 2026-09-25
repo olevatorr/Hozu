@@ -2,6 +2,7 @@ import { planRoute, type RoutePlan } from '@tenon/compiler'
 import {
   type BuildResult,
   canonicalStringify,
+  eachGuardRef,
   eachRef,
   type FeatureIR,
   type HeadIR,
@@ -14,7 +15,7 @@ import {
   type WidgetIR,
 } from '@tenon/core/ir'
 import type { DataRuntime } from '@tenon/data'
-import { type Getter, getIn } from '@tenon/machine'
+import { compileGuard, type Getter, getIn } from '@tenon/machine'
 import type { IslandRef, PagePayload, Result } from '@tenon/runtime-client'
 import { attrText, text } from '@tenon/runtime-client'
 import {
@@ -88,6 +89,7 @@ export async function renderPage({
     fns: null,
     params,
     widgets: {},
+    routes: {},
   }
   const widgets = widgetsOf(ir)
   const fns = bindings.fns as Record<string, (x: Json) => Json>
@@ -105,12 +107,14 @@ export async function renderPage({
   const tagKeys = (list: TagExprIR[], input: Json, scope: Scope) =>
     list.map((t) => (t.param ? `${t.tag}(${canonicalStringify(value(t.param, scope, input))})` : t.tag))
 
+  const routes = routesOf(ir)
   const featureScope = (feature: FeatureIR, bound: boolean): Scope => ({
     feature,
     context: bound ? (feature.machine?.initialContext ?? null) : null,
     state: bound ? (feature.machine?.initial ?? null) : null,
     bindings: [],
     params,
+    routes,
   })
 
   const open = (n: ViewNode, scope: Scope) => {
@@ -151,6 +155,9 @@ export async function renderPage({
       case 'when':
       case 'widget':
         result = n.children.some(suspends)
+        break
+      case 'if':
+        result = n.then.some(suspends) || n.else.some(suspends)
         break
       case 'each':
         result = suspends(n.item)
@@ -216,6 +223,13 @@ export async function renderPage({
         buffer += `</${tag}>`
         return
       }
+      case 'if': {
+        buffer += o
+        const branch = compileGuard(n.test, fns)(scope) ? n.then : n.else
+        for (let i = 0; i < branch.length; i++) await render(branch[i]!, scope, island, separated(branch, i))
+        buffer += c
+        return
+      }
       case 'when':
         buffer += o
         if (scope.state !== null && n.states.includes(scope.state))
@@ -266,7 +280,14 @@ export async function renderPage({
 
   const page = ir.pages[route]!
   const path = pathOf(ir.routes[route]?.path ?? '/', params)
-  const empty: Scope = { feature: { id: '' } as FeatureIR, context: null, state: null, bindings: [], params }
+  const empty: Scope = {
+    feature: { id: '' } as FeatureIR,
+    context: null,
+    state: null,
+    bindings: [],
+    params,
+    routes,
+  }
   let status = 200
   let headScope = empty
   if (page.head.query) {
@@ -292,6 +313,7 @@ export async function renderPage({
       }
       if (payload.islands.length) {
         payload.fns = Object.keys(bindings.fns).length ? assets.fns : null
+        payload.routes = routes
         buffer += `<script type="application/json" id="tenon-payload">${scriptJson(payload)}</script>`
         buffer += `<script type="module" src="${escapeHtml(assets.client)}"></script>`
       }
@@ -314,6 +336,16 @@ const gettersFor = (fns: object) => {
     getterCache.set(fns, g)
   }
   return g
+}
+
+const routeMemo = new WeakMap<ProjectIR, Record<string, string>>()
+function routesOf(ir: ProjectIR): Record<string, string> {
+  let hit = routeMemo.get(ir)
+  if (!hit) {
+    hit = Object.fromEntries(Object.entries(ir.routes).map(([id, r]) => [id, r.path]))
+    routeMemo.set(ir, hit)
+  }
+  return hit
 }
 
 const widgetMemo = new WeakMap<ProjectIR, Record<string, WidgetIR>>()
@@ -377,6 +409,16 @@ function bindingUses(n: ViewNode): Uses {
     switch (x.kind) {
       case 'text':
         valueUses(x.value, out)
+        return
+      case 'if':
+        eachGuardRef(x.test, (r) => valueUses(r, out))
+        for (const c of [...x.then, ...x.else]) walk(c)
+        return
+      case 'html':
+        valueUses(x.value, out)
+        return
+      case 'global':
+        for (const k in x.on) valueUses(x.on[k]!.payload, out)
         return
       case 'widget':
         valueUses(x.props, out)

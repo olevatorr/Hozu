@@ -1,4 +1,12 @@
-import { type At, at, eventFields, type GuardExpr, resolveAt, type ValueExpr } from '@tenon/core/ir'
+import {
+  type At,
+  at,
+  eventFields,
+  type GuardExpr,
+  resolveAt,
+  type SendIR,
+  type ValueExpr,
+} from '@tenon/core/ir'
 import type { Ctx } from '../context.ts'
 import { closest, didYouMean } from '../suggest.ts'
 import { walkView } from '../walk.ts'
@@ -11,6 +19,7 @@ function domRefs(v: ValueExpr, pointer: At, visit: Visit) {
   } else if ('object' in v) for (const k in v.object) domRefs(v.object[k]!, at(pointer, 'object', k), visit)
   else if ('fn' in v) domRefs(v.arg, at(pointer, 'arg'), visit)
   else if ('test' in v) guardDomRefs(v.test, at(pointer, 'test'), visit)
+  else if ('link' in v) domRefs(v.params, at(pointer, 'params'), visit)
 }
 
 function guardDomRefs(g: GuardExpr, pointer: At, visit: Visit) {
@@ -49,6 +58,29 @@ export function domFields(ctx: Ctx) {
               patch: null,
             },
           )
+        const fieldsFor = (on: Record<string, SendIR>, pointer: At) => {
+          for (const [event, send] of Object.entries(on)) {
+            const allowed: readonly string[] = eventFields[event as keyof typeof eventFields] ?? []
+            domRefs(send.payload, at(pointer, 'on', event, 'payload'), (field, p) => {
+              if (allowed.includes(field)) return
+              const guess = closest(field, allowed)
+              ctx.report(
+                'TN027',
+                f.id,
+                p,
+                `"${event}" events have no DOM field "${field}".${didYouMean(guess)}`,
+                allowed.length
+                  ? `Fields available on ${event}: ${allowed.join(', ')}.`
+                  : `${event} events carry no DOM fields.`,
+                {
+                  summary: guess ? `Read ui.dom.${guess}` : 'Remove the DOM field from the payload',
+                  snippet: null,
+                  patch: guess ? [{ op: 'replace', path: resolveAt(p), value: guess }] : null,
+                },
+              )
+            })
+          }
+        }
         switch (node.kind) {
           case 'widget':
             domRefs(node.props, at(pointer, 'props'), outside)
@@ -69,30 +101,17 @@ export function domFields(ctx: Ctx) {
           case 'el':
             for (const key of ['attrs', 'toggle', 'vars'] as const)
               for (const [name, v] of Object.entries(node[key])) domRefs(v, at(pointer, key, name), outside)
-            for (const [event, send] of Object.entries(node.on)) {
-              const allowed: readonly string[] = eventFields[event as keyof typeof eventFields] ?? []
-              domRefs(send.payload, at(pointer, 'on', event, 'payload'), (field, p) => {
-                if (allowed.includes(field)) return
-                const guess = closest(field, allowed)
-                ctx.report(
-                  'TN027',
-                  f.id,
-                  p,
-                  `"${event}" events have no DOM field "${field}".${didYouMean(guess)}`,
-                  allowed.length
-                    ? `Fields available on ${event}: ${allowed.join(', ')}.`
-                    : `${event} events carry no DOM fields.`,
-                  {
-                    summary: guess ? `Read ui.dom.${guess}` : 'Remove the DOM field from the payload',
-                    snippet: null,
-                    patch: guess ? [{ op: 'replace', path: resolveAt(p), value: guess }] : null,
-                  },
-                )
-              })
-            }
+            fieldsFor(node.on, pointer)
             return
           case 'text':
+          case 'html':
             domRefs(node.value, at(pointer, 'value'), outside)
+            return
+          case 'if':
+            guardDomRefs(node.test, at(pointer, 'test'), outside)
+            return
+          case 'global':
+            fieldsFor(node.on, pointer)
             return
           case 'each':
             domRefs(node.source, at(pointer, 'source'), outside)

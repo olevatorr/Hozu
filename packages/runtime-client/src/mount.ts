@@ -34,6 +34,7 @@ export interface AppOptions {
   onInvoke?: (effect: string, input: Json) => Promise<Result>
   onNavigate?: (route: string) => void
   widgets?: Record<string, WidgetRef>
+  routes?: Record<string, string>
   loadWidget?: (url: string) => Promise<WidgetSetup>
 }
 
@@ -148,14 +149,14 @@ function clear(start: Node, end: Node) {
 }
 
 export function createApp(doc: Document, options: AppOptions): App {
-  const { machine, fns = {}, params = null } = options
+  const { machine, fns = {}, params = null, routes = {} } = options
   const { data: payload } = store(options.payload)
   const ranges: [Node, Node][] = []
   const timers = new Set<ReturnType<typeof setTimeout>>()
   let first: Step | null = machine ? (options.snapshot ? null : init(machine)) : null
   let snapshot: Snapshot | null = options.snapshot ?? first?.snapshot ?? null
   const root: Block = []
-  const mounted = new Set<{ el: Element; stop: () => void }>()
+  const mounted = new Set<{ el: Node; stop: () => void }>()
   const getters = new WeakMap<ValueExpr, Getter>()
 
   const value = (v: ValueExpr, scope: Json[], dom?: Env['dom']): Json => {
@@ -164,7 +165,13 @@ export function createApp(doc: Document, options: AppOptions): App {
       get = compileValue(v, fns)
       getters.set(v, get)
     }
-    return get({ context: snapshot?.context ?? null, bindings: scope, params, ...(dom ? { dom } : {}) })
+    return get({
+      context: snapshot?.context ?? null,
+      bindings: scope,
+      params,
+      routes,
+      ...(dom ? { dom } : {}),
+    })
   }
 
   const bind = (block: Block, v: ValueExpr, scope: Json[], apply: (x: Json) => void) => {
@@ -301,6 +308,55 @@ export function createApp(doc: Document, options: AppOptions): App {
       case 'widget':
         widget(node, scope, c, block)
         return
+      case 'if': {
+        const test = () => value({ test: node.test }, scope) === true
+        region(
+          c,
+          block,
+          test,
+          (cc, inner) => {
+            const branch = test() ? node.then : node.else
+            for (const child of branch) render(child, scope, cc, inner, ns)
+          },
+          node.motion,
+        )
+        return
+      }
+      case 'html': {
+        const start = marker(c, '[')
+        let end: Node
+        if (c.claim) {
+          while (c.next && !isComment(c.next, ']')) c.next = c.next.nextSibling
+          end = c.next ?? c.parent.appendChild(doc.createComment(']'))
+          c.next = end.nextSibling
+        } else end = marker(c, ']')
+        let last = c.claim ? text(value(node.value, scope)) : null
+        bind(block, node.value, scope, (x) => {
+          const html = text(x)
+          if (html === last) return
+          last = html
+          clear(start, end)
+          const t = doc.createElement('template')
+          t.innerHTML = html
+          end.parentNode!.insertBefore(t.content, end)
+        })
+        return
+      }
+      case 'global': {
+        const anchor = marker(c, 'g')
+        const target: EventTarget = node.target === 'window' ? (doc.defaultView as EventTarget) : doc
+        const stops: (() => void)[] = []
+        for (const event in node.on) {
+          const send = node.on[event]!
+          const listener = (e: Event) =>
+            dispatch({ type: 'event', event: send.event, payload: value(send.payload, scope, domField(e)) })
+          const opts = passive.has(event) ? { passive: true } : undefined
+          target.addEventListener(event, listener, opts)
+          stops.push(() => target.removeEventListener(event, listener))
+        }
+        mounted.add({ el: anchor, stop: () => stops.forEach((s) => s()) })
+        return
+      }
       default:
         skip(c)
     }
@@ -452,7 +508,7 @@ export function createApp(doc: Document, options: AppOptions): App {
   ) => {
     const start = marker(c, '[')
     const keyOf = (x: Json) => {
-      const k = getIn(x, [node.key])
+      const k = node.key === null ? x : getIn(x, [node.key])
       return typeof k === 'string' ? `s${k}` : JSON.stringify(k)
     }
     const list = () => {

@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import { assetOf } from '../builders/asset.ts'
+import { linkOf } from '../builders/ui.ts'
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import { type At, at, join, resolveAt } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
@@ -232,6 +233,21 @@ export class FeatureScope {
 
   value(v: unknown, pointer: At): ValueExpr {
     if (guardOf(v)) return { test: this.guard(v, pointer) }
+    const link = linkOf(v)
+    if (link) {
+      const route = this.project.routes.get(link.route as object)
+      if (!route)
+        this.report(
+          'TN007',
+          pointer,
+          'ui.link targets a route missing from project({ routes })',
+          'Routes are identities; register the route.',
+        )
+      return {
+        link: route ?? '?',
+        params: link.params === null ? { literal: null } : this.value(link.params, pointer),
+      }
+    }
     const file = assetOf(v)
     if (file) {
       this.project.bindings.assets[file.href] = { file: file.file, width: file.width, height: file.height }

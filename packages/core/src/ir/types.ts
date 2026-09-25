@@ -170,6 +170,7 @@ export type ValueExpr =
   | { object: Record<string, ValueExpr> }
   | { fn: string; arg: ValueExpr }
   | { test: GuardExpr }
+  | { link: string; params: ValueExpr }
 
 export type AssignOp =
   | { op: 'set' | 'append' | 'inc'; path: string[]; value: ValueExpr }
@@ -196,7 +197,17 @@ export interface SendIR {
   payload: ValueExpr
 }
 
-export type ViewNode = ElementNode | TextNode | WhenNode | EachNode | QueryNode | EmbedNode | WidgetNode
+export type ViewNode =
+  | ElementNode
+  | TextNode
+  | WhenNode
+  | IfNode
+  | EachNode
+  | QueryNode
+  | EmbedNode
+  | WidgetNode
+  | GlobalNode
+  | HtmlNode
 
 export interface ElementNode {
   id: string
@@ -236,11 +247,33 @@ export interface WhenNode {
   children: ViewNode[]
 }
 
+export interface IfNode {
+  id: string
+  kind: 'if'
+  test: GuardExpr
+  motion: string | null
+  then: ViewNode[]
+  else: ViewNode[]
+}
+
+export interface GlobalNode {
+  id: string
+  kind: 'global'
+  target: 'window' | 'document'
+  on: Record<string, SendIR>
+}
+
+export interface HtmlNode {
+  id: string
+  kind: 'html'
+  value: ValueExpr
+}
+
 export interface EachNode {
   id: string
   kind: 'each'
   source: ValueExpr
-  key: string
+  key: string | null
   motion: string | null
   item: ViewNode
 }

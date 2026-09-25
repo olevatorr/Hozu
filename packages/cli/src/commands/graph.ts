@@ -9,18 +9,23 @@ function collectViewEdges(node: ViewNode, from: string, edges: GraphEdge[], node
     if (!nodes.has(id)) nodes.set(id, { id, kind, label, initial: false, final: false })
   }
   switch (node.kind) {
+    case 'if':
+      for (const child of [...node.then, ...node.else]) collectViewEdges(child, from, edges, nodes)
+      return
     case 'el':
     case 'widget':
+    case 'global':
       for (const send of Object.values(node.on)) {
         add(`event:${send.event}`, 'event', send.event)
         edges.push({
           from,
           to: `event:${send.event}`,
           kind: 'send',
-          label: node.kind === 'el' ? node.tag : node.widget,
+          label: node.kind === 'el' ? node.tag : node.kind === 'widget' ? node.widget : node.target,
         })
       }
-      for (const child of node.children) collectViewEdges(child, from, edges, nodes)
+      if (node.kind !== 'global')
+        for (const child of node.children) collectViewEdges(child, from, edges, nodes)
       return
     case 'when':
       for (const child of node.children) collectViewEdges(child, from, edges, nodes)

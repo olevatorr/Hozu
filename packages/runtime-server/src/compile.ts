@@ -6,7 +6,7 @@ import {
   voidTags,
   type WidgetIR,
 } from '@tenon/core/ir'
-import { compileValue, type Fns, type Getter } from '@tenon/machine'
+import { compileGuard, compileValue, type Fns, type Getter } from '@tenon/machine'
 import { attrText, classText, styleText, text } from '@tenon/runtime-client'
 import { escapeHtml } from './escape.ts'
 
@@ -16,6 +16,7 @@ export interface Scope {
   state: string | null
   bindings: Json[]
   params: Json
+  routes: Record<string, string>
 }
 
 export interface Runtime {
@@ -165,6 +166,18 @@ export function compileNode(n: ViewNode, island: boolean, c: Compile, sep = fals
         return run(f, e.scope, r)
       })
     }
+    case 'if': {
+      const test = compileGuard(n.test, fns)
+      const yes = seq(children(n.then))
+      const no = seq(children(n.else))
+      return wrap((s, r) => run(test(s) ? yes : no, s, r))
+    }
+    case 'html': {
+      const get = expr(n.value, fns)
+      return wrap((s) => text(get(s)))
+    }
+    case 'global':
+      return '<!--g-->'
     case 'widget': {
       const tag = c.widgets[n.widget]?.tag ?? 'div'
       const ref = n.widget

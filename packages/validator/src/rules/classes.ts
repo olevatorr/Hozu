@@ -14,7 +14,7 @@ export function classNames(ctx: Ctx) {
   for (const f of Object.values(ir.features))
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer }) => {
-        if ((node.kind === 'when' || node.kind === 'each') && node.motion) {
+        if ((node.kind === 'when' || node.kind === 'each' || node.kind === 'if') && node.motion) {
           if (motionClasses(node.motion).every((c) => unknown.has(c)))
             ctx.report(
               'TN026',

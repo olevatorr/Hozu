@@ -223,7 +223,7 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
           id,
           kind: 'each',
           source: scope.attempt(at(p, 'source'), () => scope.value(d.source, p), { literal: [] }),
-          key: String(d.key),
+          key: d.key === null ? null : String(d.key),
           motion: motionOf(scope, d.motion, at(p, 'motion')),
           item: branch(d.item, `${id}/item`, at(p, 'item')),
         }
@@ -246,6 +246,51 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
         return { id, kind: 'embed', view: scope.ref(d.view, ['view'], at(p, 'view')) }
       case 'widget':
         return widgetNode(scope, d, id, p, depth)
+      case 'if': {
+        const list = (items: readonly unknown[], key: string) =>
+          (Array.isArray(items) ? items : []).map((c, i) =>
+            node(scope, c, `${id}/${key}/${i}`, at(p, key, i), depth),
+          )
+        return {
+          id,
+          kind: 'if',
+          test: scope.attempt(at(p, 'test'), () => scope.guard(d.test, at(p, 'test')), {
+            op: 'eq',
+            left: { literal: true },
+            right: { literal: true },
+          }),
+          motion: motionOf(scope, d.motion, at(p, 'motion')),
+          then: list(d.then, 'then'),
+          else: list(d.otherwise, 'else'),
+        }
+      }
+      case 'html':
+        return {
+          id,
+          kind: 'html',
+          value: scope.attempt(at(p, 'value'), () => scope.value(d.value, p), { literal: null }),
+        }
+      case 'global': {
+        const on: Record<string, SendIR> = {}
+        for (const [event, send] of Object.entries(d.on ?? {})) {
+          const ep = at(p, 'on', event)
+          const s = sendOf(send)
+          if (!eventSet.has(event) || !s) {
+            scope.report(
+              'TN014',
+              ep,
+              s ? `DOM event "${event}" is not supported` : 'on handlers must be ui.send(Event, payload)',
+              s ? `Supported: ${domEvents.join(', ')}.` : 'Views cannot run arbitrary functions.',
+            )
+            continue
+          }
+          on[event] = {
+            event: scope.ref(s.event, ['event'], ep),
+            payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
+          }
+        }
+        return { id, kind: 'global', target: d.target, on }
+      }
     }
   }
   if (typeof value === 'string' || typeof value === 'number')

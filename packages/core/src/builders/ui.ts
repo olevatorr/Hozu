@@ -14,11 +14,16 @@ import type { TagProps } from './dom-props.ts'
 import type { QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
 import type { MachineDecl, UnexpectedError } from './machine.ts'
+import type { Condition } from './op.ts'
 import { page } from './page.ts'
 import type { RouteDecl } from './route.ts'
 import { type WidgetDecl, widget } from './widget.ts'
 
 export const SEND = Symbol.for('tenon.send')
+export const LINK = Symbol.for('tenon.link')
+
+export const linkOf = (value: unknown): { route: unknown; params: unknown } | null =>
+  typeof value === 'object' && value !== null ? ((value as Record<symbol, never>)[LINK] ?? null) : null
 
 export type HtmlTag = (typeof htmlTags)[number]
 export type SvgTag = (typeof svgTags)[number]
@@ -51,7 +56,7 @@ export type Props<T extends Tag = Tag> = TagProps[T] & {
 export type NodeDef =
   | { kind: 'el'; tag: string; props: Record<string, unknown>; children: readonly unknown[] }
   | { kind: 'when'; states: readonly string[]; children: readonly unknown[]; motion: unknown }
-  | { kind: 'each'; source: unknown; key: string; item: (item: any) => unknown; motion: unknown }
+  | { kind: 'each'; source: unknown; key: string | null; item: (item: any) => unknown; motion: unknown }
   | {
       kind: 'query'
       query: QueryDecl
@@ -61,6 +66,9 @@ export type NodeDef =
       failed: Record<string, (error: any) => unknown>
     }
   | { kind: 'embed'; view: ViewDecl }
+  | { kind: 'if'; test: unknown; then: readonly unknown[]; otherwise: readonly unknown[]; motion: unknown }
+  | { kind: 'html'; value: unknown }
+  | { kind: 'global'; target: 'window' | 'document'; on: Record<string, unknown> }
   | { kind: 'widget'; widget: WidgetDecl; options: WidgetUse<any, any>; children: readonly unknown[] }
 
 export interface WidgetUse<P, E> {
@@ -144,7 +152,7 @@ export const ui = Object.freeze({
   send: <P>(event: EventDecl<P>, payload: Val<P>): Send => Object.freeze({ [SEND]: { event, payload } }),
   each: <T>(
     source: Expr<readonly T[]>,
-    key: keyof T & string,
+    key: [T] extends [object] ? keyof T & string : null,
     item: (item: Ref<T>) => NodeDecl,
     motion?: string,
   ): NodeDecl => node({ kind: 'each', source, key, item, motion: motion ?? null }),
@@ -156,6 +164,15 @@ export const ui = Object.freeze({
   embed: (view: ViewDecl): NodeDecl => node({ kind: 'embed', view }),
   widget,
   asset,
+  if: (test: Condition, then: Child[], otherwise: Child[], motion?: string): NodeDecl =>
+    node({ kind: 'if', test, then, otherwise, motion: motion ?? null }),
+  html: (value: Val<string | null>): NodeDecl => node({ kind: 'html', value }),
+  window: (options: { on: { [E in DomEvent]?: Send } }): NodeDecl =>
+    node({ kind: 'global', target: 'window', on: options.on }),
+  document: (options: { on: { [E in DomEvent]?: Send } }): NodeDecl =>
+    node({ kind: 'global', target: 'document', on: options.on }),
+  link: <P>(route: RouteDecl<P>, params: Val<P>): Expr<string> =>
+    Object.freeze({ [LINK]: { route, params } }) as unknown as Expr<string>,
   use: <P, E>(w: WidgetDecl<P, E>, options: WidgetUse<P, E>, children: Child[]): NodeDecl =>
     node({ kind: 'widget', widget: w, options, children }),
   page,

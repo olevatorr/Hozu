@@ -35,6 +35,11 @@ export interface DomFields {
   paused: boolean
   volume: number
   muted: boolean
+  scrollX: number
+  scrollY: number
+  innerWidth: number
+  innerHeight: number
+  visibilityState: string
 }
 
 export type DomField = keyof DomFields
@@ -53,7 +58,9 @@ const pointer = [
 const pointerEvents = [...pointer, 'pointerType'] as const
 const input = ['value', 'checked', 'valueAsNumber', 'files'] as const
 const key = [...modifiers, 'key', 'code', 'repeat', 'value'] as const
+const viewport = ['scrollX', 'scrollY', 'innerWidth', 'innerHeight'] as const
 const scroll = [
+  ...viewport,
   'scrollTop',
   'scrollLeft',
   'scrollHeight',
@@ -131,6 +138,11 @@ export const eventFields = {
   animationiteration: none,
   transitionstart: none,
   transitionend: none,
+  resize: viewport,
+  visibilitychange: ['visibilityState'],
+  online: none,
+  offline: none,
+  hashchange: none,
   copy: none,
   cut: none,
   paste: none,

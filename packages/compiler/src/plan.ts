@@ -1,4 +1,5 @@
 import {
+  anyGuardRef,
   anyRef,
   type FeatureIR,
   join,
@@ -81,7 +82,12 @@ export function hydrates(node: ViewNode): boolean {
       return readsContext(node.value)
     case 'when':
     case 'widget':
+    case 'global':
       return true
+    case 'if':
+      return anyGuardRef(node.test, (r) => r.ref === 'context')
+    case 'html':
+      return readsContext(node.value)
     case 'each':
       return readsContext(node.source)
     case 'query':
@@ -160,6 +166,10 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
       case 'when':
       case 'widget':
         children(node.children, pointer)
+        return
+      case 'if':
+        node.then.forEach((c, i) => walk(feature, c, join(pointer, 'then', i), region, tainted, island))
+        node.else.forEach((c, i) => walk(feature, c, join(pointer, 'else', i), region, tainted, island))
         return
       case 'each': {
         const t = [...tainted, readsBinding(node.source, tainted)]

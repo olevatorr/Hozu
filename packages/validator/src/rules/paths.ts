@@ -53,6 +53,10 @@ function checkValue(ctx: Ctx, env: Env, value: ValueExpr, pointer: At) {
     checkGuard(ctx, env, value.test, at(pointer, 'test'))
     return
   }
+  if ('link' in value) {
+    checkValue(ctx, env, value.params, at(pointer, 'params'))
+    return
+  }
   if (!('ref' in value) || value.ref === 'dom') return
   if (value.ref === 'binding') {
     if (value.depth < env.bindings.length)
@@ -203,10 +207,19 @@ export function paths(ctx: Ctx) {
               checkValue(ctx, env, send.payload, at(pointer, 'on', dom, 'payload'))
             return
           case 'text':
+          case 'html':
             checkValue(ctx, env, node.value, at(pointer, 'value'))
+            return
+          case 'if':
+            checkGuard(ctx, env, node.test, at(pointer, 'test'))
+            return
+          case 'global':
+            for (const [event, send] of Object.entries(node.on))
+              checkValue(ctx, env, send.payload, at(pointer, 'on', event, 'payload'))
             return
           case 'each': {
             checkValue(ctx, env, node.source, at(pointer, 'source'))
+            if (node.key === null) return
             const item = itemsOf(valueSchema(ir, env, node.source))
             const r = resolvePath(item, [node.key])
             if (!r.ok) {
