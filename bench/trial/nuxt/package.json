@@ -1,0 +1,20 @@
+{
+  "name": "trial-nuxt",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "start": "node .output/server/index.mjs",
+    "typecheck": "nuxt typecheck"
+  },
+  "devDependencies": {
+    "nuxt": "4.5.2",
+    "vue": "3.5.43",
+    "vue-router": "^4",
+    "vue-tsc": "^3",
+    "typescript": "^5.9",
+    "tailwindcss": "4.3.3",
+    "@tailwindcss/vite": "4.3.3"
+  }
+}

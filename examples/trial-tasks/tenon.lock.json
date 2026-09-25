@@ -1,0 +1,109 @@
+{
+  "features": {
+    "tasks": {
+      "adding/invoke/done/0": {
+        "behavior": "9a4fd7cc5fb32b68",
+        "contracts": {
+          "addsTask": "9acb8ff87788f8d8"
+        }
+      },
+      "adding/invoke/failed/Duplicate/0": {
+        "behavior": "fa931adf13e44418",
+        "contracts": {
+          "rejectsDuplicate": "a0b410c957495a69"
+        }
+      },
+      "adding/invoke/failed/InvalidTitle/0": {
+        "behavior": "2526498d2677e0db",
+        "contracts": {
+          "rejectsInvalidTitle": "7e6079a1391df0bd"
+        }
+      },
+      "adding/invoke/failed/Unexpected/0": {
+        "behavior": "6606d67832662c72",
+        "contracts": {
+          "addFails": "aa07529392bc8b7c"
+        }
+      },
+      "clearing/invoke/done/0": {
+        "behavior": "3a0a768ed95dcbe0",
+        "contracts": {
+          "clearsDone": "476b3d0c0c4bd0a2"
+        }
+      },
+      "clearing/invoke/failed/Unexpected/0": {
+        "behavior": "0f2f0fb11a153b4a",
+        "contracts": {
+          "clearFails": "817aeda9b26b10b3"
+        }
+      },
+      "idle/on/tasks.AddTask/0": {
+        "behavior": "e6c88ddebd4ecef8",
+        "contracts": {
+          "addsTask": "9acb8ff87788f8d8"
+        }
+      },
+      "idle/on/tasks.ClearDone/0": {
+        "behavior": "c80ae579dea172b9",
+        "contracts": {
+          "clearsDone": "476b3d0c0c4bd0a2"
+        }
+      },
+      "idle/on/tasks.Draft/0": {
+        "behavior": "1bf8a242e4e428fe",
+        "contracts": {
+          "typesDraft": "e38e16e042713eba"
+        }
+      },
+      "idle/on/tasks.SetFilter/0": {
+        "behavior": "a6b0eeaf38993d46",
+        "contracts": {
+          "filtersTasks": "acc829e0306c3aed"
+        }
+      },
+      "idle/on/tasks.SetPriority/0": {
+        "behavior": "72c9880142cadad2",
+        "contracts": {
+          "setsLowPriority": "415c6cc8093db25c"
+        }
+      },
+      "idle/on/tasks.SetPriority/1": {
+        "behavior": "e13526c4c37cebcc",
+        "contracts": {
+          "setsHighPriority": "7113a28eaf536c3b"
+        }
+      },
+      "idle/on/tasks.SetPriority/2": {
+        "behavior": "5045ecd2467cf113",
+        "contracts": {
+          "setsNormalPriority": "40e033f5171bb2ad"
+        }
+      },
+      "idle/on/tasks.ToggleTask/0": {
+        "behavior": "8d6688e2aab9dc7a",
+        "contracts": {
+          "togglesTask": "9ac928cf4ff05357"
+        }
+      },
+      "toggling/invoke/done/0": {
+        "behavior": "49f254475f7985d1",
+        "contracts": {
+          "togglesTask": "9ac928cf4ff05357"
+        }
+      },
+      "toggling/invoke/failed/NotFound/0": {
+        "behavior": "d67b7134444d037a",
+        "contracts": {
+          "toggleMissing": "f54f4ebed1312008"
+        }
+      },
+      "toggling/invoke/failed/Unexpected/0": {
+        "behavior": "57a2233b096a690e",
+        "contracts": {
+          "toggleFails": "b09516c9192e1dbc"
+        }
+      }
+    }
+  },
+  "version": 1
+}

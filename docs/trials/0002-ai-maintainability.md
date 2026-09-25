@@ -115,3 +115,10 @@ Re-running the same injection:
 
 Caveat: these twelve mistakes were known when the fix was written. Step 2 (the fresh-agent trial) is the test
 that was not tuned for this result.
+
+## Correction after review
+The injected mistakes were modelled on human typing errors, and AI agents rarely make those. The checks from
+step 1 still matter, because they catch *any* value outside the schema: an invented enum member, React/Vue
+attribute names such as `className`, a guessed route path, or a stale field name. But they do not measure AI
+failure modes. Trial 0003 replaced this proxy with fresh agents building a real app. In that trial no agent
+produced an out-of-schema literal.

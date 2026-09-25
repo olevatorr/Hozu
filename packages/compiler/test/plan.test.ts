@@ -32,6 +32,27 @@ describe('render plans', () => {
     expect(plan.nodes.every((n) => !n.hydrate)).toBe(true)
   })
 
+  it('a machine-less view of a feature with a machine stays static unless a bound view shares the page', () => {
+    const doc = ir()
+    doc.features.cart!.views.Summary = {
+      machine: null,
+      route: null,
+      root: {
+        id: 'cart.Summary/0',
+        kind: 'query',
+        query: 'cart.getCart',
+        input: { literal: {} },
+        ready: { id: 'cart.Summary/0/ready', kind: 'text', value: { literal: 'ok' } },
+        pending: null,
+        failed: {},
+      },
+    }
+    doc.pages.orderPlaced!.views = ['cart.Summary']
+    expect(planRoute(doc, 'orderPlaced').plan).toMatchObject({ js: false, islands: [] })
+    doc.pages.orderPlaced!.views = ['cart.Summary', 'cart.CartPanel']
+    expect(planRoute(doc, 'orderPlaced').plan.islands).toContain('cart.Summary/0')
+  })
+
   it('nested regions take the more dynamic mode and the shorter interval', () => {
     const doc = ir()
     doc.features.catalog!.queries.getProduct!.freshness = { kind: 'swr', seconds: 10 }

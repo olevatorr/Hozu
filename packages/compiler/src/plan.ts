@@ -117,8 +117,9 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
   }
   const invalidated = new Set<string>()
   for (const ref of page.views) {
-    const { feature } = resolve(ir, ref)
-    for (const s of Object.values(feature?.machine?.states ?? {})) {
+    const { feature, symbol } = resolve(ir, ref)
+    if (!feature?.views[symbol]?.machine) continue
+    for (const s of Object.values(feature.machine?.states ?? {})) {
       if (!s.invoke) continue
       const { feature: owner, symbol } = resolve(ir, s.invoke.effect)
       for (const t of owner?.mutations[symbol]?.invalidates ?? []) invalidated.add(t.tag)
