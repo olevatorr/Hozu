@@ -7,6 +7,7 @@ import { ReadingList } from './views.ts'
 
 export const saved = feature({
   id: 'saved',
+  styles: [new URL('./saved.css', import.meta.url)],
   intent: {
     summary: 'Signed-in reading list: save and remove posts.',
     invariants: ['Reading lists are private to each user', 'At most 20 saved posts'],

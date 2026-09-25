@@ -23,6 +23,9 @@
       "path": "packages/cli"
     },
     {
+      "path": "packages/css"
+    },
+    {
       "path": "packages/runtime-client"
     },
     {
@@ -36,6 +39,9 @@
     },
     {
       "path": "tsconfig.check.json"
+    },
+    {
+      "path": "packages/dev"
     }
   ]
 }

@@ -11,6 +11,7 @@ import {
   renderPage,
   renderToString,
   robotsTxt,
+  type Stylesheet,
   sitemapXml,
 } from '@tenon/runtime-server'
 
@@ -19,6 +20,7 @@ export interface NodeAdapterOptions {
   resolvers: ResolverSet
   session?: (request: IncomingMessage) => unknown
   now?: () => number
+  styles?: Stylesheet | null
 }
 
 interface CachedPage {
@@ -46,7 +48,9 @@ export function createHandler({
   resolvers,
   session = () => null,
   now = Date.now,
+  styles = null,
 }: NodeAdapterOptions): Handler {
+  const assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: styles?.href ?? null }
   const data = createDataRuntime({ build, resolvers, now })
   const { ir } = build
   const match = matcher(build)
@@ -63,7 +67,7 @@ export function createHandler({
 
   const generate = async (path: string, route: string, params: Json) => {
     const at = now()
-    const { html, tags, status } = await renderToString({ build, data, route, params })
+    const { html, tags, status } = await renderToString({ build, data, route, params, assets })
     cache.set(path, { html, status, at, ttl: ttlOf(route), tags, regenerating: null })
   }
 
@@ -132,7 +136,7 @@ export function createHandler({
       response.end(head ? undefined : cached.html)
       return
     }
-    const rendered = await renderPage({ build, data, route, params, session: session(request) })
+    const rendered = await renderPage({ build, data, route, params, session: session(request), assets })
     response.writeHead(rendered.status, { ...headers, 'x-tenon-cache': 'bypass' })
     if (!head) for await (const chunk of rendered.chunks) response.write(chunk)
     response.end()
@@ -151,6 +155,13 @@ export function createHandler({
         return void response.writeHead(405, { 'content-type': 'text/plain', allow: 'GET, HEAD, POST' }).end()
       if (url.pathname === '/_tenon/client.js') return text(response, 'text/javascript', clientBundle(), head)
       if (url.pathname === '/_tenon/fns.js') return text(response, 'text/javascript', fns, head)
+      if (styles && url.pathname === styles.href)
+        return void response
+          .writeHead(200, {
+            'content-type': 'text/css',
+            'cache-control': 'public, max-age=31536000, immutable',
+          })
+          .end(head ? undefined : styles.css)
       if (url.pathname === '/robots.txt')
         return text(response, 'text/plain; charset=utf-8', robotsTxt(build), head)
       if (url.pathname === '/sitemap.xml')

@@ -55,6 +55,7 @@ function reorderCart(rand: Rand): ProjectDecl {
   }
   return project({
     schema: config.schema,
+    styles: null,
     session: config.session,
     site: config.site,
     routes: shuffleRecord(config.routes, rand),
@@ -130,6 +131,7 @@ function freshProject(rand: Rand): ProjectDecl {
   })
   const f = feature({
     id: 'fresh',
+    styles: [],
     intent: { summary: 'Determinism fixture', invariants: [] },
     imports: [],
     tags: {},
@@ -149,7 +151,15 @@ function freshProject(rand: Rand): ProjectDecl {
       views: [],
     },
   })
-  return project({ schema: zodAdapter, session: null, site: null, routes: {}, pages: [], features: [f] })
+  return project({
+    schema: zodAdapter,
+    styles: null,
+    session: null,
+    site: null,
+    routes: {},
+    pages: [],
+    features: [f],
+  })
 }
 
 describe('A1 determinism', () => {

@@ -166,7 +166,10 @@ ui.view({
   route: null,
   render: () =>
     ui.form({ on: { submit: ui.send(Typed, { text: ui.dom.form('title'), n: null }) } }, [
-      ui.input({ name: 'title', on: { input: ui.send(Typed, { text: ui.dom.value, n: ui.dom.valueAsNumber }) } }),
+      ui.input({
+        name: 'title',
+        on: { input: ui.send(Typed, { text: ui.dom.value, n: ui.dom.valueAsNumber }) },
+      }),
       // @ts-expect-error attribute not defined for the tag
       ui.a({ href: '/', disabled: true }, []),
       // @ts-expect-error void elements take no children

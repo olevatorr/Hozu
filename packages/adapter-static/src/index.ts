@@ -9,6 +9,7 @@ import {
   pageEntries,
   renderToString,
   robotsTxt,
+  type Stylesheet,
   sitemapXml,
 } from '@tenon/runtime-server'
 
@@ -16,6 +17,7 @@ export interface StaticExportOptions {
   build: BuildResult
   resolvers: ResolverSet
   outDir: string
+  styles?: Stylesheet | null
 }
 
 export interface StaticExport {
@@ -28,7 +30,13 @@ const write = async (file: string, content: string) => {
   await writeFile(file, content)
 }
 
-export async function exportStatic({ build, resolvers, outDir }: StaticExportOptions): Promise<StaticExport> {
+export async function exportStatic({
+  build,
+  resolvers,
+  outDir,
+  styles = null,
+}: StaticExportOptions): Promise<StaticExport> {
+  const assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: styles?.href ?? null }
   const data = createDataRuntime({ build, resolvers })
   const result: StaticExport = { written: [], skipped: [] }
   let js = false
@@ -46,7 +54,7 @@ export async function exportStatic({ build, resolvers, outDir }: StaticExportOpt
       continue
     }
     for (const entry of list) {
-      const { html, status } = await renderToString({ build, data, route, params: entry.params })
+      const { html, status } = await renderToString({ build, data, route, params: entry.params, assets })
       if (status !== 200) {
         result.skipped.push({ route: entry.path, reason: `status ${status}` })
         continue
@@ -60,6 +68,11 @@ export async function exportStatic({ build, resolvers, outDir }: StaticExportOpt
   await write(join(outDir, 'robots.txt'), robotsTxt(build))
   await write(join(outDir, 'sitemap.xml'), sitemapXml(build, entries))
   result.written.push(join(outDir, 'robots.txt'), join(outDir, 'sitemap.xml'))
+  if (styles) {
+    const file = join(outDir, styles.href.replace(/^\//, ''))
+    await write(file, styles.css)
+    result.written.push(file)
+  }
   if (js) {
     await write(join(outDir, '_tenon/client.js'), clientBundle())
     await write(join(outDir, '_tenon/fns.js'), fnsModule(build))

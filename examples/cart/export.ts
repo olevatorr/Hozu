@@ -1,10 +1,13 @@
 import { exportStatic } from '@tenon/adapter-static'
 import { buildProject } from '@tenon/core/ir'
+import { compileStyles } from '@tenon/css'
 import { createResolvers } from './server.ts'
 import project from './tenon.config.ts'
 
+const build = buildProject(project, { sources: false })
 const result = await exportStatic({
-  build: buildProject(project, { sources: false }),
+  build,
+  styles: await compileStyles(build),
   resolvers: createResolvers(),
   outDir: 'dist-static',
 })

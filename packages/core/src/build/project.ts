@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import type { FeatureConfig, ProjectConfig } from '../builders/feature.ts'
 import type { RouteDef } from '../builders/route.ts'
 import { join, resolveSource } from '../canonical/pointer.ts'
@@ -210,6 +211,23 @@ function build(project: unknown, tracking: boolean): BuildResult {
 
   const features: Record<string, FeatureIR> = {}
   for (const [id, fc] of configs) features[id] = buildFeature(scope, id, fc)
+
+  const file = (url: unknown, feature: string | null, pointer: string): string | null => {
+    if (url instanceof URL && url.protocol === 'file:') return fileURLToPath(url)
+    scope.report(
+      'TN014',
+      feature,
+      pointer,
+      'Stylesheets must be file URLs',
+      "Declare them with new URL('./file.css', import.meta.url).",
+    )
+    return null
+  }
+  scope.bindings.styles.entry = config.styles == null ? null : file(config.styles, null, '/styles')
+  for (const [id, fc] of configs)
+    scope.bindings.styles.features[id] = (fc.styles ?? []).flatMap(
+      (u, i) => file(u, id, join('', 'features', id, 'styles', i)) ?? [],
+    )
 
   const pages = buildPages(scope, config.pages ?? [])
 

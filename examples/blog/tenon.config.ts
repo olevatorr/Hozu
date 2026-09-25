@@ -10,6 +10,7 @@ import { home, post } from './routes.ts'
 
 export default project({
   schema: zodAdapter,
+  styles: new URL('./app.css', import.meta.url),
   session: z.object({ userId: z.string() }),
   site: { url: 'https://blog.tenon.dev', name: 'Tenon Blog', lang: 'en' },
   routes: { home, post },

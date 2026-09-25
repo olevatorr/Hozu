@@ -1,0 +1,22 @@
+{
+  "name": "@tenon/css",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tailwindcss/node": "4.3.3",
+    "@tenon/core": "workspace:*",
+    "@tenon/validator": "workspace:*",
+    "tailwindcss": "4.3.3"
+  }
+}

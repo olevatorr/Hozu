@@ -84,8 +84,9 @@ export function refSites(ir: ProjectIR): RefSite[] {
               add(send.event, at(pointer, 'on', dom, 'event'), 'event')
               if (hasRefs(send.payload)) valueRefs(send.payload, at(pointer, 'on', dom, 'payload'), fnRef)
             }
-            for (const [attr, v] of Object.entries(node.attrs))
-              if (hasRefs(v)) valueRefs(v, at(pointer, 'attrs', attr), fnRef)
+            for (const key of ['attrs', 'toggle', 'vars'] as const)
+              for (const [name, v] of Object.entries(node[key]))
+                if (hasRefs(v)) valueRefs(v, at(pointer, key, name), fnRef)
             return
           case 'text':
             if (hasRefs(node.value)) valueRefs(node.value, at(pointer, 'value'), fnRef)

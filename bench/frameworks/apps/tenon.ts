@@ -53,6 +53,7 @@ const Page = ui.view({
 const home = route({ path: '/', params: null })
 const shop = feature({
   id: 'shop',
+  styles: [],
   intent: { summary: 'Benchmark page', invariants: [] },
   imports: [],
   tags: {},
@@ -75,6 +76,7 @@ const headFields = {
 } as const
 export const benchProject = project({
   schema: zodAdapter,
+  styles: null,
   session: null,
   site: null,
   routes: { home },

@@ -2,6 +2,7 @@ import { request } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { createServer } from '@tenon/adapter-node'
 import { buildProject } from '@tenon/core/ir'
+import { compileStyles } from '@tenon/css'
 import { createResolvers } from './server.ts'
 import project from './tenon.config.ts'
 
@@ -11,8 +12,11 @@ interface Res {
   body: string
 }
 
+const build = buildProject(project, { sources: false })
+const styles = await compileStyles(build)
 const server = createServer({
-  build: buildProject(project, { sources: false }),
+  build,
+  styles,
   resolvers: createResolvers(),
   session: () => ({ userId: 'crawler' }),
 })
@@ -94,6 +98,7 @@ for (const path of ['/', '/posts/hello-tenon', '/posts/islands-explained']) {
     (m) => !/application\/(ld\+)?json/.test(m[1]!),
   ).length
   check(path, 'JavaScript shipped', true, scripts ? `${scripts} executable script tags` : '0 bytes')
+  check(path, 'stylesheet linked in <head>', html.includes(`<link rel="stylesheet" href="${styles.href}">`))
   check(
     path,
     'canonical URL = site URL + path',
@@ -106,6 +111,15 @@ for (const path of ['/', '/posts/hello-tenon', '/posts/islands-explained']) {
     String(res.headers['x-tenon-cache']),
   )
 }
+const css = await call('GET', styles.href)
+check(
+  styles.href,
+  'stylesheet served with an immutable cache',
+  css.status === 200 &&
+    String(css.headers['cache-control']).includes('immutable') &&
+    css.body.includes('.prose'),
+  `${(css.body.length / 1024).toFixed(1)} KB`,
+)
 const missing = await call('GET', '/posts/does-not-exist')
 check(
   '/posts/does-not-exist',

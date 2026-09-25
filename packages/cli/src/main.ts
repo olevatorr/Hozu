@@ -55,7 +55,7 @@ export async function main(
       throw new TenonCliError('usage', `Unknown command "${command}"`, commands)
     const loaded = await load(values.config, cwd)
     if (command === 'validate') {
-      const result = runValidate(loaded, target, cwd, values['update-lock'] === true)
+      const result = await runValidate(loaded, target, cwd, values['update-lock'] === true)
       if (asJson) out(json(result))
       else {
         for (const d of result.diagnostics) out(`${human(d)}\n\n`)
@@ -63,7 +63,7 @@ export async function main(
           .map(([f, c]) => `${f} ${c.covered}/${c.total}`)
           .join(', ')
         out(
-          `${result.ok ? '✔' : '✖'} ${result.summary.errors} errors, ${result.summary.warnings} warnings · contracts cover ${coverage || 'n/a'} · lock ${result.lock} (ir ${result.hash.slice(0, 12)})\n`,
+          `${result.ok ? '✔' : '✖'} ${result.summary.errors} errors, ${result.summary.warnings} warnings · contracts cover ${coverage || 'n/a'} · styles ${result.styles} · lock ${result.lock} (ir ${result.hash.slice(0, 12)})\n`,
         )
       }
       return result.ok ? 0 : 1

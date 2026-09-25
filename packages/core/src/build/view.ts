@@ -29,6 +29,8 @@ function element(
   depth: number,
 ): ViewNode {
   let cls: string | null = null
+  const toggle: Record<string, ValueExpr> = {}
+  const vars: Record<string, ValueExpr> = {}
   const attrs: Record<string, ValueExpr> = {}
   const on: Record<string, SendIR> = {}
   if (!allowed.has(d.tag))
@@ -49,6 +51,27 @@ function element(
           'class must be a static string',
           'Dynamic classes would make render output depend on runtime values.',
         )
+    } else if (key === 'toggle' || key === 'vars') {
+      for (const [name, v] of Object.entries(value as object)) {
+        const tp = at(p, key, name)
+        if (key === 'toggle' ? !/\S/.test(name) : !/^--[A-Za-z0-9_-]+$/.test(name)) {
+          scope.report(
+            'TN014',
+            tp,
+            key === 'toggle' ? 'toggle keys are class lists' : `CSS variable "${name}" must look like --name`,
+            key === 'toggle'
+              ? 'Each key is one or more classes switched on while its condition holds.'
+              : 'vars binds CSS custom properties only; CSS decides how they are used.',
+          )
+          continue
+        }
+        const out = key === 'toggle' ? toggle : vars
+        out[key === 'toggle' ? name.trim().split(/\s+/).join(' ') : name] = scope.attempt(
+          tp,
+          () => scope.value(v, p),
+          { literal: null },
+        )
+      }
     } else if (key === 'on') {
       for (const [event, send] of Object.entries(value as object)) {
         const ep = at(p, 'on', event)
@@ -95,7 +118,7 @@ function element(
   const children = (Array.isArray(d.children) ? d.children : []).map((c, i) =>
     node(scope, c, `${id}/${i}`, at(p, 'children', i), depth),
   )
-  return { id, kind: 'el', tag: d.tag, class: cls, attrs, on, children }
+  return { id, kind: 'el', tag: d.tag, class: cls, toggle, vars, attrs, on, children }
 }
 
 function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: number): ViewNode {

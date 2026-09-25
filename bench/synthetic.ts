@@ -83,6 +83,7 @@ export function syntheticProject(features: number, states = 30, events = 10) {
     const eventRecord = Object.fromEntries(evs.map((e, i) => [`E${i}`, e]))
     const decl = feature({
       id: `f${f}`,
+      styles: [],
       intent: { summary: `Synthetic feature ${f}`, invariants: [] },
       imports: previous ? [previous.feature] : [],
       tags: {},
@@ -98,5 +99,13 @@ export function syntheticProject(features: number, states = 30, events = 10) {
     decls.push(decl)
     previous = { feature: decl, rows }
   }
-  return project({ schema: zodAdapter, session: null, site: null, routes: {}, pages: [], features: decls })
+  return project({
+    schema: zodAdapter,
+    styles: null,
+    session: null,
+    site: null,
+    routes: {},
+    pages: [],
+    features: decls,
+  })
 }

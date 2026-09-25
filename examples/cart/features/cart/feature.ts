@@ -21,6 +21,7 @@ import { CartPanel } from './views.ts'
 
 export const cart = feature({
   id: 'cart',
+  styles: [],
   intent: {
     summary: 'Signed-in shopping cart: add and remove items, then check out.',
     invariants: [

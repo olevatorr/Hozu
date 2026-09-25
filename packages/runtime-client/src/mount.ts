@@ -12,7 +12,7 @@ import {
   type Step,
   transition,
 } from '@tenon/machine'
-import { attrText, domField, passive, properties, SVG_NS, text } from './dom.ts'
+import { attrText, classText, domField, passive, properties, SVG_NS, text } from './dom.ts'
 
 export type Result = { ok: true; value: Json } | { ok: false; error: string; data: Json }
 
@@ -219,6 +219,29 @@ export function createApp(doc: Document, options: AppOptions): App {
             else if (el.getAttribute(name) !== s) el.setAttribute(name, s)
           })
         }
+        const toggles = Object.entries(node.toggle)
+        if (toggles.length) {
+          const cls = () => {
+            const active: string[] = []
+            for (const [c, v] of toggles) if (value(v, scope) === true) active.push(c)
+            return classText(node.class, active)
+          }
+          let last = cls()
+          if (el.getAttribute('class') !== last) el.setAttribute('class', last)
+          if (toggles.some(([, v]) => reads(v)))
+            block.push(() => {
+              const next = cls()
+              if (next === last) return
+              last = next
+              el.setAttribute('class', next)
+            })
+        }
+        for (const name in node.vars)
+          bind(block, node.vars[name]!, scope, (x) => {
+            const style = (el as HTMLElement).style
+            if (x === null || x === '') style.removeProperty(name)
+            else if (style.getPropertyValue(name) !== text(x)) style.setProperty(name, text(x))
+          })
         for (const event in node.on) {
           const send = node.on[event]!
           el.addEventListener(

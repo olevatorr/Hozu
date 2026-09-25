@@ -62,3 +62,13 @@ export const domField =
       }
     }
   }
+
+export const classText = (base: string | null, active: string[]) =>
+  base ? (active.length ? `${base} ${active.join(' ')}` : base) : active.join(' ')
+
+export const styleText = (vars: [string, Json][]) => {
+  let out = ''
+  for (const [name, x] of vars)
+    if (x !== null && x !== undefined && x !== '') out += `${out ? ';' : ''}${name}:${text(x)}`
+  return out
+}

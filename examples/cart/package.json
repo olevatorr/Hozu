@@ -12,7 +12,8 @@
     "plan": "tenon plan home",
     "client": "node client.ts",
     "serve": "node serve.ts",
-    "export": "node export.ts"
+    "export": "node export.ts",
+    "dev": "tenon-dev serve.ts"
   },
   "dependencies": {
     "@tenon/adapter-node": "workspace:*",
@@ -23,6 +24,8 @@
     "@tenon/machine": "workspace:*",
     "@tenon/runtime-client": "workspace:*",
     "@tenon/schema-zod": "workspace:*",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "@tenon/css": "workspace:*",
+    "@tenon/dev": "workspace:*"
   }
 }

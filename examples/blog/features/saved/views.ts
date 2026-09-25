@@ -7,8 +7,8 @@ export const ReadingList = ui.view({
   machine: savedMachine,
   route: null,
   render: ({ ctx, when }) =>
-    ui.aside({ class: 'border p-4' }, [
-      ui.h2({}, ['Your reading list']),
+    ui.aside({ class: 'reading-list mx-auto mt-8 max-w-2xl' }, [
+      ui.h2({ class: 'text-lg font-semibold' }, ['Your reading list']),
       ui.query(
         savedPosts,
         {},
@@ -21,16 +21,27 @@ export const ReadingList = ui.view({
                 ready: (posts) =>
                   ui.ul({}, [
                     ui.each(posts, 'slug', (post) =>
-                      ui.li({}, [
-                        post.title,
+                      ui.li({ class: 'flex items-center gap-2 py-1' }, [
+                        ui.span({ class: 'flex-1' }, [post.title]),
                         when(
                           ['idle'],
                           [
-                            ui.button({ type: 'button', on: { click: ui.send(Save, { slug: post.slug }) } }, [
-                              'Save',
-                            ]),
                             ui.button(
-                              { type: 'button', on: { click: ui.send(Unsave, { slug: post.slug }) } },
+                              {
+                                type: 'button',
+                                class:
+                                  'rounded-md bg-brand-600 px-2 py-0.5 text-xs text-white hover:bg-brand-700',
+                                on: { click: ui.send(Save, { slug: post.slug }) },
+                              },
+                              ['Save'],
+                            ),
+                            ui.button(
+                              {
+                                type: 'button',
+                                class:
+                                  'rounded-md border px-2 py-0.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800',
+                                on: { click: ui.send(Unsave, { slug: post.slug }) },
+                              },
                               ['Remove'],
                             ),
                           ],

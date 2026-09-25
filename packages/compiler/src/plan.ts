@@ -73,7 +73,10 @@ const readsBinding = (v: ValueExpr, tainted: boolean[]): boolean =>
 export function hydrates(node: ViewNode): boolean {
   switch (node.kind) {
     case 'el':
-      return Object.keys(node.on).length > 0 || Object.values(node.attrs).some(readsContext)
+      return (
+        Object.keys(node.on).length > 0 ||
+        [node.attrs, node.toggle, node.vars].some((m) => Object.values(m).some(readsContext))
+      )
     case 'text':
       return readsContext(node.value)
     case 'when':

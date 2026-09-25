@@ -6,6 +6,7 @@ import type { Coverage, ValidateOutput } from '../contract.ts'
 import { TenonCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { json, relativize } from '../output.ts'
+import { unknownClasses } from '../styles.ts'
 
 function firstDifference(a: Json, b: Json, pointer = ''): string | null {
   if (a === b) return null
@@ -38,18 +39,19 @@ function readLock(path: string): Lockfile | null {
   }
 }
 
-export function runValidate(
+export async function runValidate(
   loaded: Loaded,
   feature: string | undefined,
   cwd: string,
   updateLock = false,
-): ValidateOutput {
+): Promise<ValidateOutput> {
   const first = loaded.build(false)
   const second = loaded.build(false)
   const hash = hashJson(first.ir)
   const lockPath = joinPath(dirname(loaded.path), 'tenon.lock.json')
   const previous = readLock(lockPath)
-  const verified = verify(first.ir, { bindings: first.bindings, lock: previous })
+  const unknown = await unknownClasses(loaded.path, first)
+  const verified = verify(first.ir, { bindings: first.bindings, lock: previous, unknownClasses: unknown })
   let diagnostics: Diagnostic[] = [...first.diagnostics, ...verified.diagnostics]
   if (hash !== hashJson(second.ir)) {
     const pointer = firstDifference(first.ir as unknown as Json, second.ir as unknown as Json) ?? ''
@@ -98,6 +100,7 @@ export function runValidate(
     summary: { errors, warnings: selected.length - errors },
     coverage,
     lock,
+    styles: unknown ? 'checked' : 'unavailable',
     diagnostics: relativize(selected, cwd),
   }
 }

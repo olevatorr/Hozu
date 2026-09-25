@@ -39,6 +39,8 @@ export type AttrValue = Val<string | number | boolean | null> | Guard
 
 export type Props<T extends Tag = Tag> = TagProps[T] & {
   class?: string
+  toggle?: Record<string, Guard | Val<boolean>>
+  vars?: Record<`--${string}`, Val<string | number | null>>
   on?: { [E in DomEvent]?: Send }
   [data: `data-${string}`]: AttrValue | undefined
   [aria: `aria-${string}`]: AttrValue | undefined

@@ -92,6 +92,7 @@ export const home = route({ path: '/', params: null })
 
 export const todoFeature = feature({
   id: 'todo',
+  styles: [],
   intent: { summary: 'Client runtime fixture', invariants: [] },
   imports: [],
   tags: {},
@@ -107,6 +108,7 @@ export const todoFeature = feature({
 
 export default project({
   schema: zodAdapter,
+  styles: null,
   session: null,
   site: null,
   routes: { home },

@@ -1,4 +1,4 @@
-import { ui } from '@tenon/core'
+import { op, ui } from '@tenon/core'
 import { listProducts } from '../catalog/effects.ts'
 import { cartTotal, getCart } from './effects.ts'
 import { AddItem, Checkout, Dismiss, RemoveItem, SetQuantity } from './events.ts'
@@ -42,17 +42,32 @@ export const CartPanel = ui.view({
       when(
         ['idle'],
         [
-          ui.label({ class: 'flex gap-2' }, [
-            'Quantity',
-            ui.input({
-              type: 'number',
-              name: 'qty',
-              min: 1,
-              max: MAX_QTY,
-              value: ctx.pending.qty,
-              on: { input: ui.send(SetQuantity, { qty: ui.dom.valueAsNumber }) },
-            }),
-          ]),
+          ui.label(
+            {
+              class: 'flex items-center gap-2',
+              toggle: { 'font-semibold text-red-600': op.gte(ctx.pending.qty, MAX_QTY) },
+            },
+            [
+              'Quantity',
+              ui.input({
+                type: 'number',
+                name: 'qty',
+                min: 1,
+                max: MAX_QTY,
+                value: ctx.pending.qty,
+                on: { input: ui.send(SetQuantity, { qty: ui.dom.valueAsNumber }) },
+              }),
+              ui.span({ class: 'h-1 w-24 rounded bg-gray-200' }, [
+                ui.span(
+                  {
+                    class: 'block h-1 w-[calc(var(--qty)*10%)] rounded bg-blue-600 transition-all',
+                    vars: { '--qty': ctx.pending.qty },
+                  },
+                  [],
+                ),
+              ]),
+            ],
+          ),
         ],
       ),
       ui.query(

@@ -193,6 +193,8 @@ export interface ElementNode {
   kind: 'el'
   tag: string
   class: string | null
+  toggle: Record<string, ValueExpr>
+  vars: Record<string, ValueExpr>
   attrs: Record<string, ValueExpr>
   on: Record<string, SendIR>
   children: ViewNode[]

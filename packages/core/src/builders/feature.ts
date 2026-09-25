@@ -14,6 +14,7 @@ import type { ViewDecl } from './ui.ts'
 export interface FeatureConfig {
   id: string
   intent: { summary: string; invariants: string[] }
+  styles: URL[]
   imports: FeatureDecl[]
   tags: Record<string, TagDecl<any>>
   events: Record<string, EventDecl<any>>
@@ -45,6 +46,7 @@ export interface ProjectConfig {
   session: Schema | null
   routes: Record<string, RouteDecl>
   site: { url: string; name: string; lang: string } | null
+  styles: URL | null
   pages: PageDecl[]
   features: FeatureDecl[]
 }

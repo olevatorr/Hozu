@@ -135,6 +135,7 @@ describe('resolver wiring', () => {
   })
   const p = project({
     schema: zodAdapter,
+    styles: null,
     session: null,
     site: null,
     routes: {},
@@ -142,6 +143,7 @@ describe('resolver wiring', () => {
     features: [
       feature({
         id: 'f',
+        styles: [],
         intent: { summary: 'wiring fixture', invariants: [] },
         imports: [],
         tags: { pingTag },

@@ -1,6 +1,6 @@
 # ADR 0009 — Presentation parity: full DOM vocabulary, styling, motion, widgets
 
-- Status: **proposed** (awaiting approval; nothing implemented)
+- Status: accepted (2026-09-25; the user approved all steps and allowed binding Tailwind directly). Amendments below.
 - Trigger: sites built with Tenon are for people. Anything a Nuxt/Vite + Tailwind site can show (CSS, responsive
   layout, hover/focus states, transitions, scroll effects, three.js, GSAP, Lenis, Swiper, Chart.js, p5) must look
   and feel identical. Tenon's advantage is for the author (an AI): fewer tokens to read, invalid programs hard to
@@ -190,3 +190,31 @@ invalid-dom-field, TN028 image-without-dimensions, TN029 widget-boundary-mismatc
 
 ## Out of scope (still)
 Arbitrary functions as views, a free `style` object, global stores, `<script>` in views, runtime CSS-in-JS.
+
+## Amendments during implementation
+
+### 5a
+- `ui.dom.form('name')` instead of `ui.dom.form.name`: under `noUncheckedIndexedAccess` a record field reads as
+  `Ref | undefined`, which would force a non-null assertion on every form field.
+- `textarea` takes no children (its content is the `value` attribute), like void elements.
+- Per-tag props are generated interfaces (`builders/dom-props.ts`), not mapped types: type instantiations for the
+  cart dropped from 56.3k to 47.7k, back under the A4 budget.
+- Empty dynamic texts have no server text node; hydration inserts an empty one. Text separators (`<!---->`) are
+  emitted only between two text nodes inside an island.
+
+### 5b: Tailwind is bound, no adapter layer, no Vite
+- The user allowed binding Tailwind directly with performance first. `@tenon/css` compiles Tailwind v4
+  (`@tailwindcss/node`) from **exactly the class candidates in the IR**, with no file scanning. The output
+  selectors give the set of valid classes (TN026) with no second pass. Compile + build + minify takes ~35 ms.
+- **One stylesheet per site** (`/_tenon/styles.<hash>.css`, immutable cache), not per page as D3.1 said: atomic
+  CSS is small, and one cached file beats a different file per page. Feature `styles` are still declared per
+  feature and imported after the project entry.
+- Style files live in build bindings (`bindings.styles`), not in the canonical IR, so IR hashes stay
+  machine-independent.
+- D7 changes from Vite to **esbuild + `@tenon/dev`** (no third-party dependencies): the dev server runs the app,
+  proxies it, hot-swaps stylesheets on `.css` changes (page state is kept) and reloads on code changes. Tailwind
+  already includes Lightning CSS; esbuild (5d) bundles widgets.
+- `tenon validate` checks classes when `@tenon/css` is installed in the project. It keeps a content-keyed cache
+  (class candidates + every CSS file involved) in `node_modules/.cache/tenon`, so cold validation stays under the
+  P3 budget.
+- Class names are for styling. Script hooks use `data-*` attributes, so a class without CSS is always a mistake.

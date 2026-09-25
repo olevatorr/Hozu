@@ -973,6 +973,18 @@
             "null"
           ]
         },
+        "toggle": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ValueExpr"
+          }
+        },
+        "vars": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ValueExpr"
+          }
+        },
         "attrs": {
           "type": "object",
           "additionalProperties": {
@@ -997,6 +1009,8 @@
         "kind",
         "tag",
         "class",
+        "toggle",
+        "vars",
         "attrs",
         "on",
         "children"

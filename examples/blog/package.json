@@ -5,15 +5,20 @@
   "scripts": {
     "validate": "tenon validate",
     "plan": "tenon plan home",
-    "seo": "node seo-audit.ts"
+    "seo": "node seo-audit.ts",
+    "dev": "tenon-dev serve.ts",
+    "serve": "node serve.ts"
   },
   "dependencies": {
+    "@tailwindcss/typography": "0.5.20",
     "@tenon/adapter-node": "workspace:*",
     "@tenon/adapter-static": "workspace:*",
     "@tenon/cli": "workspace:*",
     "@tenon/core": "workspace:*",
+    "@tenon/css": "workspace:*",
     "@tenon/data": "workspace:*",
     "@tenon/schema-zod": "workspace:*",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "@tenon/dev": "workspace:*"
   }
 }

@@ -51,8 +51,8 @@ export function domFields(ctx: Ctx) {
           )
         switch (node.kind) {
           case 'el':
-            for (const [attr, v] of Object.entries(node.attrs))
-              domRefs(v, at(pointer, 'attrs', attr), outside)
+            for (const key of ['attrs', 'toggle', 'vars'] as const)
+              for (const [name, v] of Object.entries(node[key])) domRefs(v, at(pointer, key, name), outside)
             for (const [event, send] of Object.entries(node.on)) {
               const allowed: readonly string[] = eventFields[event as keyof typeof eventFields] ?? []
               domRefs(send.payload, at(pointer, 'on', event, 'payload'), (field, p) => {

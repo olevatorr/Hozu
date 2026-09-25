@@ -1,6 +1,6 @@
 import { type FeatureIR, type Json, type ValueExpr, type ViewNode, voidTags } from '@tenon/core/ir'
 import { compileValue, type Fns, type Getter } from '@tenon/machine'
-import { attrText, text } from '@tenon/runtime-client'
+import { attrText, classText, styleText, text } from '@tenon/runtime-client'
 import { escapeHtml } from './escape.ts'
 
 export interface Scope {
@@ -31,6 +31,35 @@ export const expr = (v: ValueExpr, fns: Fns): Getter => compileValue(v, fns)
 const attr = (name: string, x: Json) => {
   const s = attrText(name, x)
   return s === null ? '' : s === '' ? ` ${name}` : ` ${name}="${escapeHtml(s)}"`
+}
+
+type El = Extract<ViewNode, { kind: 'el' }>
+
+const classAttr = (c: string) => (c ? ` class="${escapeHtml(c)}"` : '')
+const styleAttr = (s: string) => (s ? ` style="${escapeHtml(s)}"` : '')
+
+export function classAndStyle(n: El, value: (v: ValueExpr) => Json): string {
+  const active: string[] = []
+  for (const c in n.toggle) if (value(n.toggle[c]!) === true) active.push(c)
+  return (
+    classAttr(classText(n.class, active)) +
+    styleAttr(styleText(Object.entries(n.vars).map(([k, v]) => [k, value(v)])))
+  )
+}
+
+function classAndStyleFrag(n: El, fns: Fns): Frag {
+  const toggles = Object.entries(n.toggle).map(([c, v]) => [c, expr(v, fns)] as const)
+  const vars = Object.entries(n.vars).map(([k, v]) => [k, expr(v, fns)] as const)
+  const base = n.class
+  const cls: Frag = toggles.length
+    ? (s) => {
+        const active: string[] = []
+        for (const [c, get] of toggles) if (get(s) === true) active.push(c)
+        return classAttr(classText(base, active))
+      }
+    : classAttr(base ?? '')
+  const style: Frag = vars.length ? (s) => styleAttr(styleText(vars.map(([k, get]) => [k, get(s)]))) : ''
+  return seq([cls, style])
 }
 
 function seq(parts: Frag[]): Frag {
@@ -70,7 +99,7 @@ export function compileNode(n: ViewNode, island: boolean, islands: Set<string>, 
       return (s) => escapeHtml(text(get(s))) + tail
     }
     case 'el': {
-      const parts: Frag[] = [`<${n.tag}${n.class ? ` class="${escapeHtml(n.class)}"` : ''}`]
+      const parts: Frag[] = [`<${n.tag}`, classAndStyleFrag(n, fns)]
       let content: Frag | null = null
       for (const [name, v] of Object.entries(n.attrs)) {
         if (n.tag === 'textarea' && name === 'value') {

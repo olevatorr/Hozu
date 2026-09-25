@@ -83,6 +83,20 @@ describe('client runtime', () => {
     expect(root.childNodes).toHaveLength(0)
   })
 
+  it('toggles class groups and binds CSS variables from context', () => {
+    const root = document.createElement('div')
+    const app = mount(root, { view: cart.views.CartPanel!, machine, payload, fns: bindings.fns })
+    const label = root.querySelector('label')!
+    const bar = root.querySelector('span > span') as HTMLElement
+    expect(label.className).toBe('flex items-center gap-2')
+    expect(bar.style.getPropertyValue('--qty')).toBe('1')
+    app.dispatch({ type: 'event', event: 'cart.SetQuantity', payload: { qty: 10 } })
+    expect(label.className).toBe('flex items-center gap-2 font-semibold text-red-600')
+    expect(bar.style.getPropertyValue('--qty')).toBe('10')
+    app.dispatch({ type: 'event', event: 'cart.SetQuantity', payload: { qty: 4 } })
+    expect(label.className).toBe('flex items-center gap-2')
+  })
+
   it('renders machine-less views statically and shows pending for missing payload', () => {
     const root = document.createElement('div')
     mount(root, { view: ir.features.catalog!.views.ProductGrid!, machine: null, payload: new Map() })

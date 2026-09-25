@@ -21,6 +21,7 @@ const rolls = contract(dice, {
 
 export default project({
   schema: zodAdapter,
+  styles: null,
   session: null,
   site: null,
   routes: {},
@@ -28,6 +29,7 @@ export default project({
   features: [
     feature({
       id: 'dice',
+      styles: [],
       intent: { summary: 'Reads Math.random inside a recorder', invariants: [] },
       imports: [],
       tags: {},

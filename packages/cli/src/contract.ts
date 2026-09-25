@@ -17,6 +17,7 @@ export interface ValidateOutput {
   summary: { errors: number; warnings: number }
   coverage: Record<string, Coverage>
   lock: 'missing' | 'checked' | 'updated' | 'skipped'
+  styles: 'checked' | 'unavailable'
   diagnostics: Diagnostic[]
 }
 

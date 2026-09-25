@@ -40,7 +40,12 @@ export class ProjectScope {
   readonly routes = new Map<object, string>()
   readonly schemaCache = new Map<object, { json: JsonSchema; hash: string }>()
   adapter: SchemaAdapterDef | null = null
-  readonly bindings: Bindings = { fns: {}, checks: {}, refs: new Map() }
+  readonly bindings: Bindings = {
+    fns: {},
+    checks: {},
+    refs: new Map(),
+    styles: { entry: null, features: {} },
+  }
   readonly tracking: boolean
 
   constructor(tracking: boolean) {

@@ -46,8 +46,14 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   tags, dedup, ADR 0005), `@tenon/validator`, `@tenon/compiler` (render plans, ADR 0006),
   `@tenon/runtime-server` (in-order streaming SSR, ADR 0007), `@tenon/runtime-client` (own fine-grained
   DOM runtime, no VDOM, replace-hydration of islands, ADR 0006/0007),
-  `@tenon/cli`, `@tenon/adapter-node` (ISR page cache + tag revalidation), `@tenon/adapter-static`
-- Every `@tenon/*` package except `@tenon/schema-zod` has zero third-party runtime dependencies.
+  `@tenon/cli`, `@tenon/adapter-node` (ISR page cache + tag revalidation), `@tenon/adapter-static`,
+  `@tenon/css` (Tailwind v4 bound, compiled from the IR's class candidates, TN026, ADR 0009),
+  `@tenon/dev` (dev server: CSS hot swap, reload on code changes)
+- Every `@tenon/*` package except `@tenon/schema-zod` and `@tenon/css` has zero third-party runtime dependencies.
+- Views: every HTML/SVG element with per-tag typed attributes, all DOM events, `ui.dom.*` event fields (TN027),
+  `class` (static) + `toggle` (guarded class groups) + `vars` (CSS custom properties). No `style`, no free
+  functions. Stylesheets: `project({ styles })` Tailwind entry + `feature({ styles })`; classes must produce CSS
+  (TN026), hooks use `data-*`.
 - Routes: `route({ path: '/posts/:slug', params: schema | null })`; pages: `project({ site, pages: [ui.page(route,
   { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head
@@ -64,7 +70,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `pnpm bench:frameworks` — React/Vue/Preact/Svelte comparison (docs/benchmarks); not part of the gate
 - `pnpm schema` — regenerate the JSON Schemas from the IR / CLI types (a test fails if stale)
 - `pnpm --filter example-cart validate|inspect|graph|explain|plan|simulate|demo|client|serve|export`
-- `pnpm --filter example-blog validate|plan|seo` — SEO audit against adapter-node
+- `pnpm --filter example-blog validate|plan|seo|serve|dev` — SEO audit against adapter-node
+- `pnpm --filter example-cart dev` — dev server with CSS hot swap
 - `tenon validate --update-lock` — accept behavior changes into `tenon.lock.json` (only when clean)
 
 ## CLI (agent-facing, all support --json)

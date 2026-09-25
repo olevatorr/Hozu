@@ -18,6 +18,7 @@ import type { IslandRef, PagePayload, Result } from '@tenon/runtime-client'
 import { attrText, text } from '@tenon/runtime-client'
 import {
   CLOSE,
+  classAndStyle,
   compileNode,
   expr,
   type Frag,
@@ -32,6 +33,12 @@ import { escapeHtml, scriptJson } from './escape.ts'
 export interface Assets {
   client: string
   fns: string | null
+  styles: string | null
+}
+
+export interface Stylesheet {
+  href: string
+  css: string
 }
 
 export interface RenderOptions {
@@ -57,7 +64,7 @@ export async function renderPage({
   route,
   params = null,
   session,
-  assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js' },
+  assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: null },
 }: RenderOptions): Promise<RenderedPage> {
   const { ir, bindings } = build
   const plan = planOf(ir, route)
@@ -98,7 +105,7 @@ export async function renderPage({
   }
 
   const element = (n: Extract<ViewNode, { kind: 'el' }>, scope: Scope) => {
-    let attrs = n.class ? ` class="${escapeHtml(n.class)}"` : ''
+    let attrs = classAndStyle(n, (v) => value(v, scope))
     for (const name in n.attrs) {
       const x = attrText(name, value(n.attrs[name]!, scope))
       if (x !== null) attrs += x === '' ? ` ${name}` : ` ${name}="${escapeHtml(x)}"`
@@ -239,7 +246,7 @@ export async function renderPage({
     if (!result.ok) status = result.error === 'Unexpected' ? 500 : 404
     headScope = { ...empty, bindings: [result.ok ? result.value : null] }
   }
-  const head = headHtml(ir, page.head, (v) => value(v, headScope), path, status)
+  const head = headHtml(ir, page.head, (v) => value(v, headScope), path, status, assets.styles)
 
   void (async () => {
     try {
@@ -328,7 +335,7 @@ function bindingUses(n: ViewNode): Uses {
         valueUses(x.value, out)
         return
       case 'el':
-        for (const k in x.attrs) valueUses(x.attrs[k]!, out)
+        for (const m of [x.attrs, x.toggle, x.vars]) for (const k in m) valueUses(m[k]!, out)
         for (const k in x.on) valueUses(x.on[k]!.payload, out)
         for (const c of x.children) walk(c)
         return
@@ -458,6 +465,7 @@ function headHtml(
   value: (v: ValueExpr) => Json,
   path: string,
   status: number,
+  styles: string | null,
 ): string {
   const str = (v: ValueExpr) => {
     const x = value(v)
@@ -481,6 +489,7 @@ function headHtml(
   return [
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    styles ? `<link rel="stylesheet" href="${escapeHtml(styles)}">` : '',
     `<title>${escapeHtml(title)}</title>`,
     meta('name', 'description', description),
     h.noindex || status !== 200 ? '<meta name="robots" content="noindex">' : '',

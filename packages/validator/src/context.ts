@@ -14,10 +14,12 @@ export class Ctx {
   readonly ir: ProjectIR
   readonly sources: SourceIndex
   readonly diagnostics: Diagnostic[] = []
+  readonly unknownClasses: Map<string, string | null> | null
 
-  constructor(ir: ProjectIR, sources: SourceIndex) {
+  constructor(ir: ProjectIR, sources: SourceIndex, unknownClasses: Map<string, string | null> | null = null) {
     this.ir = ir
     this.sources = sources
+    this.unknownClasses = unknownClasses
   }
 
   report(
