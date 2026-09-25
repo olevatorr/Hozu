@@ -1,6 +1,6 @@
 import type { BuildResult, Json, ValueExpr } from '@tenon/core/ir'
 import type { DataRuntime } from '@tenon/data'
-import { getIn } from '@tenon/machine'
+import { compileValue } from '@tenon/machine'
 import { escapeHtml } from './escape.ts'
 import { pathOf } from './render.ts'
 
@@ -10,16 +10,8 @@ export interface PageEntry {
   path: string
 }
 
-const evaluate = (v: ValueExpr, item: Json, fns: Record<string, (x: Json) => Json>): Json => {
-  if ('literal' in v) return v.literal
-  if ('object' in v) {
-    const out: Record<string, Json> = {}
-    for (const k in v.object) out[k] = evaluate(v.object[k]!, item, fns)
-    return out
-  }
-  if ('fn' in v) return fns[v.fn]!(evaluate(v.arg, item, fns))
-  return v.ref === 'binding' ? getIn(item, v.path) : null
-}
+const evaluate = (v: ValueExpr, item: Json, fns: Record<string, (x: Json) => Json>): Json =>
+  compileValue(v, fns)({ bindings: [item] })
 
 export async function pageEntries(build: BuildResult, data: DataRuntime): Promise<PageEntry[]> {
   const { ir } = build

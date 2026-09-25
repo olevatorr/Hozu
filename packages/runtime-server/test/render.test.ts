@@ -17,29 +17,33 @@ describe('server rendering', () => {
   it('renders islands, reactive regions and a payload with only what islands need', async () => {
     const data = createDataRuntime({ build, resolvers: createResolvers() })
     const { html, tags, plan } = await renderToString({ build, data, route: 'home', session })
-    expect(html).toContain('<h2 data-t="catalog.ProductGrid/0">Products</h2>')
-    expect(html).toContain('<t-i data-i="0" style="display:contents"><!--cart.CartPanel/1-->')
+    expect(html).toContain('<section class="grid gap-4"><h2>Products</h2>')
+    expect(html).toContain('<h2>Cart</h2><!--i--><!--[--><div><ul class="divide-y"><!--[-->')
+    expect(html).toContain('<li>Mug<!--i--><!--[--><button type="button">Add</button><!--]--></li>')
+    expect(html).not.toContain('data-t=')
     expect([...tags].sort()).toEqual(['cart.cartTag', 'catalog.catalogTag'])
     const payload = payloadOf(html)
-    const item = 'cart.CartPanel/2/ready/0/item/1'
+    const item = 'cart.CartPanel/3/ready/0/item/1'
     expect(plan.islands).toEqual([
       'cart.CartPanel/1',
+      'cart.CartPanel/2',
       item,
-      'cart.CartPanel/3',
       'cart.CartPanel/4',
       'cart.CartPanel/5',
       'cart.CartPanel/6',
+      'cart.CartPanel/7',
     ])
     expect(payload.islands.map((i) => i.node)).toEqual([
       'cart.CartPanel/1',
+      'cart.CartPanel/2',
       item,
       item,
-      'cart.CartPanel/3',
       'cart.CartPanel/4',
       'cart.CartPanel/5',
       'cart.CartPanel/6',
+      'cart.CartPanel/7',
     ])
-    expect(payload.islands[2]!.scope[1]).toEqual({ sku: 'tee' })
+    expect(payload.islands[3]!.scope[1]).toEqual({ sku: 'tee' })
     expect(payload.data.map(([k]) => k)).toEqual(['cart.getCart{}'])
     expect(Object.keys(payload.features)).toEqual(['cart'])
     expect(payload.fns).toBe('/_tenon/fns.js')
@@ -50,7 +54,7 @@ describe('server rendering', () => {
     const data = createDataRuntime({ build, resolvers: createResolvers() })
     const { html } = await renderToString({ build, data, route: 'orderPlaced' })
     expect(html).not.toMatch(/<script(?! type="application\/ld\+json")/)
-    expect(html).not.toContain('<t-i')
+    expect(html).not.toContain('<!--i-->')
     expect(html).toContain('<meta name="robots" content="noindex">')
   })
 

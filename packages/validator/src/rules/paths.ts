@@ -49,7 +49,11 @@ function checkValue(ctx: Ctx, env: Env, value: ValueExpr, pointer: At) {
     checkValue(ctx, env, value.arg, at(pointer, 'arg'))
     return
   }
-  if (!('ref' in value)) return
+  if ('test' in value) {
+    checkGuard(ctx, env, value.test, at(pointer, 'test'))
+    return
+  }
+  if (!('ref' in value) || value.ref === 'dom') return
   if (value.ref === 'binding') {
     if (value.depth < env.bindings.length)
       checkPath(ctx, env, env.bindings[value.depth]!, value.path, pointer, 'the binding')

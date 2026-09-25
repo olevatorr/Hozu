@@ -35,7 +35,7 @@ describe('A5 CLI contract', () => {
     expect(out).toMatchObject({
       ok: true,
       summary: { errors: 0, warnings: 0 },
-      coverage: { cart: { covered: 14, total: 14 } },
+      coverage: { cart: { covered: 15, total: 15 } },
       lock: 'checked',
       diagnostics: [],
     })
@@ -47,7 +47,7 @@ describe('A5 CLI contract', () => {
     const catalogOut = JSON.parse((await run(['inspect', 'catalog', '--json'])).stdout)
     expectSchema('inspect', cartOut)
     expectSchema('inspect', catalogOut)
-    expect(cartOut.summary).toMatchObject({ states: 6, events: 4, hydrates: true, imports: ['catalog'] })
+    expect(cartOut.summary).toMatchObject({ states: 6, events: 5, hydrates: true, imports: ['catalog'] })
     expect(catalogOut.summary).toMatchObject({ states: 0, hydrates: false })
   })
 
@@ -83,6 +83,7 @@ describe('A5 CLI contract', () => {
     })
     expect(out.sends.map((s: { event: string }) => s.event)).toEqual([
       'cart.RemoveItem',
+      'cart.SetQuantity',
       'cart.AddItem',
       'cart.Checkout',
     ])

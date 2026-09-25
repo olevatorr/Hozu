@@ -13,7 +13,7 @@ describe('render plans', () => {
       ['shell', 'static', null],
       ['catalog.ProductGrid/1', 'isr', 60],
       ['cart.CartPanel/1', 'request', null],
-      ['cart.CartPanel/2', 'isr', 60],
+      ['cart.CartPanel/3', 'isr', 60],
     ])
     expect(plan.js).toBe(true)
     expect(plan.cacheable).toBe(false)

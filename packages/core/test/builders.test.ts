@@ -103,6 +103,37 @@ describe('builder diagnostics', () => {
     )
   })
 
+  it('TN014 — attributes are checked per tag; style and select value point to the canonical form', () => {
+    const V = ui.view({
+      machine: null,
+      route: null,
+      render: () =>
+        ui.div({}, [
+          ui.a({ href: '/', 'aria-current': 'page', 'data-x': 1, disabled: true } as never, ['x']),
+          ui.p({ style: 'color: red' } as never, []),
+          ui.select({ value: 'a' } as never, [ui.option({ value: 'a', selected: true }, ['A'])]),
+          ui.circle({ cx: 1, fill: 'red', href: '#' } as never, []),
+          ui.svg({ viewBox: '0 0 1 1' }, []),
+        ]),
+    })
+    const messages = buildProject(
+      project({
+        schema: zodAdapter,
+        session: null,
+        site: null,
+        routes: {},
+        pages: [],
+        features: [feature({ ...base, id: 'f', views: { V } })],
+      }),
+    ).diagnostics.map((d) => [d.message, d.cause])
+    expect(messages).toEqual([
+      ['Attribute "disabled" is not allowed on <a>', expect.stringMatching(/^Allowed on <a>: .*href/)],
+      ['Attribute "style" is not allowed on <p>', 'Style lives in CSS: use class for static styling.'],
+      ['Attribute "value" is not allowed on <select>', expect.stringMatching(/option\(\{ selected/)],
+      ['Attribute "href" is not allowed on <circle>', expect.stringMatching(/Allowed on <circle>/)],
+    ])
+  })
+
   it('TN012 — schema from another vendor', () => {
     const foreign = { '~standard': { version: 1, vendor: 'valibot', validate: () => ({ value: {} }) } }
     const Ping = event({ payload: foreign as never })

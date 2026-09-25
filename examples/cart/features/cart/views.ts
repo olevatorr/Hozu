@@ -1,8 +1,8 @@
 import { ui } from '@tenon/core'
 import { listProducts } from '../catalog/effects.ts'
 import { cartTotal, getCart } from './effects.ts'
-import { AddItem, Checkout, Dismiss, RemoveItem } from './events.ts'
-import { cartMachine } from './machine.ts'
+import { AddItem, Checkout, Dismiss, RemoveItem, SetQuantity } from './events.ts'
+import { cartMachine, MAX_QTY } from './machine.ts'
 
 export const CartPanel = ui.view({
   machine: cartMachine,
@@ -39,6 +39,22 @@ export const CartPanel = ui.view({
           failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Could not load your cart']) },
         },
       ),
+      when(
+        ['idle'],
+        [
+          ui.label({ class: 'flex gap-2' }, [
+            'Quantity',
+            ui.input({
+              type: 'number',
+              name: 'qty',
+              min: 1,
+              max: MAX_QTY,
+              value: ctx.pending.qty,
+              on: { input: ui.send(SetQuantity, { qty: ui.dom.valueAsNumber }) },
+            }),
+          ]),
+        ],
+      ),
       ui.query(
         listProducts,
         {},
@@ -52,7 +68,10 @@ export const CartPanel = ui.view({
                     ['idle'],
                     [
                       ui.button(
-                        { type: 'button', on: { click: ui.send(AddItem, { sku: product.sku, qty: 1 }) } },
+                        {
+                          type: 'button',
+                          on: { click: ui.send(AddItem, { sku: product.sku, qty: ctx.pending.qty }) },
+                        },
                         ['Add'],
                       ),
                     ],

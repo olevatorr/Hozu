@@ -81,7 +81,7 @@ describe('Phase 1 behavior catalog', () => {
     const { diagnostics, lock } = run(cartIR())
     expect(diagnostics).toEqual([])
     const entries = Object.values(lock!.features.cart!)
-    expect(entries).toHaveLength(14)
+    expect(entries).toHaveLength(15)
     expect(entries.every((e) => Object.keys(e.contracts).length > 0)).toBe(true)
   })
 

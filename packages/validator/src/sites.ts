@@ -10,7 +10,7 @@ export interface RefSite {
   key: boolean
 }
 
-export const hasRefs = (value: ValueExpr): boolean => 'fn' in value || 'object' in value
+export const hasRefs = (value: ValueExpr): boolean => 'fn' in value || 'object' in value || 'test' in value
 
 export const guardHasRefs = (guard: GuardExpr): boolean =>
   'left' in guard ? hasRefs(guard.left) || hasRefs(guard.right) : true
@@ -21,7 +21,7 @@ export function valueRefs(value: ValueExpr, pointer: At, out: (ref: string, poin
     valueRefs(value.arg, at(pointer, 'arg'), out)
   } else if ('object' in value) {
     for (const [k, v] of Object.entries(value.object)) valueRefs(v, at(pointer, 'object', k), out)
-  }
+  } else if ('test' in value) guardRefs(value.test, at(pointer, 'test'), out)
 }
 
 export function guardRefs(guard: GuardExpr, pointer: At, out: (ref: string, pointer: At) => void) {

@@ -10,6 +10,7 @@ export function renderValue(v: ValueExpr): string {
       .map(([k, x]) => `${k}: ${renderValue(x)}`)
       .join(', ')} }`
   if ('fn' in v) return `${local(v.fn)}(${renderValue(v.arg)})`
+  if ('test' in v) return `(${renderGuard(v.test)})`
   if (v.ref === 'binding') return `item${v.depth}${suffix(v.path)}`
   return `${v.ref}${suffix(v.path)}`
 }

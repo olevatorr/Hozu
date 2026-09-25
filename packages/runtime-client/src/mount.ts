@@ -1,7 +1,10 @@
 import { canonicalStringify } from '@tenon/core/canonical'
-import type { Json, ValueExpr, ViewIR, ViewNode } from '@tenon/core/ir'
+import type { GuardExpr, Json, ValueExpr, ViewIR, ViewNode } from '@tenon/core/ir'
 import {
   type CompiledMachine,
+  compileValue,
+  type Env,
+  type Getter,
   getIn,
   type Input,
   init,
@@ -9,6 +12,7 @@ import {
   type Step,
   transition,
 } from '@tenon/machine'
+import { attrText, domField, passive, properties, SVG_NS, text } from './dom.ts'
 
 export type Result = { ok: true; value: Json } | { ok: false; error: string; data: Json }
 
@@ -34,7 +38,7 @@ export interface MountOptions extends AppOptions {
 }
 
 export interface App {
-  attach(target: Element, node: ViewNode, scope: Json[]): void
+  attach(parent: Node, before: Node | null, node: ViewNode, scope: Json[], claim: boolean): void
   start(): void
   sync(): void
   dispatch(input: Input): void
@@ -46,15 +50,43 @@ export type Mounted = Omit<App, 'attach' | 'start'>
 
 type Block = (() => void)[]
 
-const text = (v: Json) =>
-  v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v)
+interface Cursor {
+  parent: Node
+  next: Node | null
+  claim: boolean
+}
+
+interface Item {
+  key: string
+  value: Json
+  scope: Json[]
+  block: Block
+  first: Node
+  last: Node
+}
+
+const guardReads = (g: GuardExpr): boolean => {
+  switch (g.op) {
+    case 'and':
+    case 'or':
+      return g.args.some(guardReads)
+    case 'not':
+      return guardReads(g.arg)
+    case 'fn':
+      return reads(g.arg)
+    default:
+      return reads(g.left) || reads(g.right)
+  }
+}
 
 const reads = (v: ValueExpr): boolean =>
   'ref' in v
     ? v.ref === 'context'
     : 'object' in v
       ? Object.values(v.object).some(reads)
-      : 'fn' in v && reads(v.arg)
+      : 'fn' in v
+        ? reads(v.arg)
+        : 'test' in v && guardReads(v.test)
 
 export const payloadKey = (query: string, input: Json) => query + canonicalStringify(input)
 
@@ -63,32 +95,52 @@ export const store = (payload: Payload | Store): Store =>
 
 export function mount(target: Element, options: MountOptions): Mounted {
   const app = createApp(target.ownerDocument, options)
-  app.attach(target, options.view.root, [])
+  app.attach(target, null, options.view.root, [], false)
   app.start()
   return app
 }
 
+const isComment = (n: Node | null, data: string): n is Comment =>
+  n !== null && n.nodeType === 8 && (n as Comment).data === data
+
+function range(first: Node, last: Node): Node[] {
+  const out: Node[] = [first]
+  let n: Node | null = first
+  while (n !== last) {
+    n = n.nextSibling
+    if (!n) break
+    out.push(n)
+  }
+  return out
+}
+
+function span(c: Cursor, run: () => void): [Node | null, Node | null] {
+  const prev = c.next ? c.next.previousSibling : c.parent.lastChild
+  run()
+  return [prev ? prev.nextSibling : c.parent.firstChild, c.next ? c.next.previousSibling : c.parent.lastChild]
+}
+
+function clear(start: Node, end: Node) {
+  while (start.nextSibling && start.nextSibling !== end) start.nextSibling.remove()
+}
+
 export function createApp(doc: Document, options: AppOptions): App {
-  const { machine, fns = {} } = options
+  const { machine, fns = {}, params = null } = options
   const { data: payload, versions } = store(options.payload)
-  const targets: Element[] = []
+  const ranges: [Node, Node][] = []
   const timers = new Set<ReturnType<typeof setTimeout>>()
   let first: Step | null = machine ? (options.snapshot ? null : init(machine)) : null
   let snapshot: Snapshot | null = options.snapshot ?? first?.snapshot ?? null
   const root: Block = []
-  let queue: (() => void)[] = []
+  const getters = new WeakMap<ValueExpr, Getter>()
 
-  const value = (v: ValueExpr, scope: Json[]): Json => {
-    if ('literal' in v) return v.literal
-    if ('object' in v) {
-      const out: Record<string, Json> = {}
-      for (const k in v.object) out[k] = value(v.object[k]!, scope)
-      return out
+  const value = (v: ValueExpr, scope: Json[], dom?: Env['dom']): Json => {
+    let get = getters.get(v)
+    if (!get) {
+      get = compileValue(v, fns)
+      getters.set(v, get)
     }
-    if ('fn' in v) return (fns[v.fn] as (x: Json) => Json)(value(v.arg, scope))
-    if (v.ref === 'binding') return getIn(scope[v.depth], v.path)
-    if (v.ref === 'params') return getIn(options.params ?? null, v.path)
-    return v.ref === 'context' ? getIn(snapshot?.context, v.path) : null
+    return get({ context: snapshot?.context ?? null, bindings: scope, params, ...(dom ? { dom } : {}) })
   }
 
   const bind = (block: Block, v: ValueExpr, scope: Json[], apply: (x: Json) => void) => {
@@ -103,104 +155,187 @@ export function createApp(doc: Document, options: AppOptions): App {
       })
   }
 
-  const region = (
-    block: Block,
-    parent: Node,
-    id: string,
-    fill: (into: DocumentFragment, inner: Block) => void,
-    key: () => unknown,
-  ) => {
-    const start = parent.appendChild(doc.createComment(id))
-    const end = parent.appendChild(doc.createComment(`/${id}`))
+  const marker = (c: Cursor, data: string): Comment => {
+    if (c.claim && isComment(c.next, data)) {
+      const m = c.next
+      c.next = m.nextSibling
+      return m
+    }
+    return c.parent.insertBefore(doc.createComment(data), c.next)
+  }
+
+  const skip = (c: Cursor) => {
+    if (!c.claim || !isComment(c.next, '[')) return
+    let depth = 0
+    while (c.next) {
+      const n: Node = c.next
+      c.next = n.nextSibling
+      if (isComment(n, '[')) depth++
+      else if (isComment(n, ']') && --depth === 0) return
+    }
+  }
+
+  const render = (node: ViewNode, scope: Json[], c: Cursor, block: Block, ns: string | null): void => {
+    switch (node.kind) {
+      case 'text': {
+        let t: Text
+        if (c.claim && c.next?.nodeType === 3) {
+          t = c.next as Text
+          c.next = t.nextSibling
+        } else t = c.parent.insertBefore(doc.createTextNode(''), c.next)
+        if (c.claim && isComment(c.next, '')) c.next = c.next.nextSibling
+        bind(block, node.value, scope, (x) => {
+          const s = text(x)
+          if (t.data !== s) t.data = s
+        })
+        return
+      }
+      case 'el': {
+        const tag = node.tag
+        const space = tag === 'svg' ? SVG_NS : ns
+        let el: Element
+        const claimed = c.claim && c.next?.nodeType === 1 && (c.next as Element).localName === tag
+        if (claimed) {
+          el = c.next as Element
+          c.next = el.nextSibling
+        } else {
+          el = space ? doc.createElementNS(space, tag) : doc.createElement(tag)
+          if (node.class) el.setAttribute('class', node.class)
+          c.parent.insertBefore(el, c.next)
+        }
+        for (const name in node.attrs) {
+          const v = node.attrs[name]!
+          const prop = properties.has(name) && name in el
+          if (claimed && !reads(v)) continue
+          bind(block, v, scope, (x) => {
+            if (prop) {
+              const p = el as unknown as Record<string, unknown>
+              const next = name === 'value' ? text(x) : x === true
+              if (p[name] !== next) p[name] = next
+              return
+            }
+            const s = attrText(name, x)
+            if (s === null) el.removeAttribute(name)
+            else if (el.getAttribute(name) !== s) el.setAttribute(name, s)
+          })
+        }
+        for (const event in node.on) {
+          const send = node.on[event]!
+          el.addEventListener(
+            event,
+            (e) => {
+              if (event === 'submit') e.preventDefault()
+              dispatch({ type: 'event', event: send.event, payload: value(send.payload, scope, domField(e)) })
+            },
+            passive.has(event) ? { passive: true } : undefined,
+          )
+        }
+        if (tag === 'textarea') return
+        const inner: Cursor = { parent: el, next: claimed ? el.firstChild : null, claim: claimed }
+        const childNs = tag === 'foreignObject' ? null : space
+        for (const child of node.children) render(child, scope, inner, block, childNs)
+        return
+      }
+      case 'when': {
+        const visible = () => (snapshot ? node.states.includes(snapshot.state) : false)
+        region(c, block, visible, (cc, inner) => {
+          if (visible()) for (const child of node.children) render(child, scope, cc, inner, ns)
+        })
+        return
+      }
+      case 'query': {
+        const key = () => {
+          const k = payloadKey(node.query, value(node.input, scope))
+          return `${k}#${versions.get(k) ?? 0}`
+        }
+        region(c, block, key, (cc, inner) => {
+          const result = payload.get(payloadKey(node.query, value(node.input, scope)))
+          if (!result) {
+            if (node.pending) render(node.pending, scope, cc, inner, ns)
+          } else if (result.ok) render(node.ready, [...scope, result.value], cc, inner, ns)
+          else {
+            const branch = node.failed[result.error] ?? node.failed.Unexpected
+            if (branch) render(branch, [...scope, result.data], cc, inner, ns)
+          }
+        })
+        return
+      }
+      case 'each':
+        each(node, scope, c, block, ns)
+        return
+      default:
+        skip(c)
+    }
+  }
+
+  const region = (c: Cursor, block: Block, key: () => unknown, fill: (c: Cursor, inner: Block) => void) => {
+    const start = marker(c, '[')
+    let current = key()
     let inner: Block = []
-    let current: unknown = {}
-    const sync = () => {
+    fill(c, inner)
+    const end = marker(c, ']')
+    block.push(() => {
       const next = key()
       if (next === current) {
         for (const u of inner) u()
         return
       }
       current = next
-      while (start.nextSibling && start.nextSibling !== end) start.nextSibling.remove()
+      clear(start, end)
       inner = []
-      const outer = queue
-      queue = []
-      const frag = doc.createDocumentFragment()
-      fill(frag, inner)
-      end.before(frag)
-      const nested = queue
-      queue = outer
-      for (const n of nested) n()
-    }
-    block.push(sync)
-    queue.push(sync)
+      fill({ parent: end.parentNode!, next: end, claim: false }, inner)
+    })
   }
 
-  const render = (node: ViewNode, scope: Json[], parent: Node, block: Block): void => {
-    switch (node.kind) {
-      case 'text': {
-        const t = doc.createTextNode('')
-        bind(block, node.value, scope, (x) => {
-          t.data = text(x)
-        })
-        parent.appendChild(t)
-        return
-      }
-      case 'el': {
-        const el = doc.createElement(node.tag)
-        el.setAttribute('data-t', node.id)
-        if (node.class) el.className = node.class
-        for (const [name, v] of Object.entries(node.attrs))
-          bind(block, v, scope, (x) =>
-            x === null || x === false
-              ? el.removeAttribute(name)
-              : el.setAttribute(name, x === true ? '' : text(x)),
-          )
-        for (const [dom, send] of Object.entries(node.on))
-          el.addEventListener(dom, (e) => {
-            if (dom === 'submit') e.preventDefault()
-            dispatch({ type: 'event', event: send.event, payload: value(send.payload, scope) })
-          })
-        for (const c of node.children) render(c, scope, el, block)
-        parent.appendChild(el)
-        return
-      }
-      case 'when': {
-        const fill = (into: DocumentFragment, inner: Block) => {
-          if (snapshot && node.states.includes(snapshot.state))
-            for (const c of node.children) render(c, scope, into, inner)
-        }
-        region(block, parent, node.id, fill, () => (snapshot ? node.states.includes(snapshot.state) : false))
-        return
-      }
-      case 'each': {
-        const fill = (into: DocumentFragment, inner: Block) => {
-          const items = value(node.source, scope)
-          if (Array.isArray(items)) for (const item of items) render(node.item, [...scope, item], into, inner)
-        }
-        region(block, parent, node.id, fill, () => value(node.source, scope))
-        return
-      }
-      case 'query': {
-        const fill = (into: DocumentFragment, inner: Block) => {
-          const result = payload.get(payloadKey(node.query, value(node.input, scope)))
-          if (!result) {
-            if (node.pending) render(node.pending, scope, into, inner)
-          } else if (result.ok) render(node.ready, [...scope, result.value], into, inner)
-          else {
-            const branch = node.failed[result.error] ?? node.failed.Unexpected
-            if (branch) render(branch, [...scope, result.data], into, inner)
-          }
-        }
-        region(block, parent, node.id, fill, () => {
-          const key = payloadKey(node.query, value(node.input, scope))
-          return `${key}#${versions.get(key) ?? 0}`
-        })
-        return
-      }
-      default:
-        parent.appendChild(doc.createComment(`embed ${node.view}`))
+  const each = (
+    node: Extract<ViewNode, { kind: 'each' }>,
+    scope: Json[],
+    c: Cursor,
+    block: Block,
+    ns: string | null,
+  ) => {
+    const start = marker(c, '[')
+    const keyOf = (x: Json) => {
+      const k = getIn(x, [node.key])
+      return typeof k === 'string' ? `s${k}` : JSON.stringify(k)
     }
+    const list = () => {
+      const x = value(node.source, scope)
+      return Array.isArray(x) ? x : []
+    }
+    const make = (x: Json, cc: Cursor): Item => {
+      const s = [...scope, x]
+      const b: Block = []
+      const [firstNode, lastNode] = span(cc, () => render(node.item, s, cc, b, ns))
+      return { key: keyOf(x), value: x, scope: s, block: b, first: firstNode!, last: lastNode! }
+    }
+    let items = list().map((x) => make(x, c))
+    const end = marker(c, ']')
+    block.push(() => {
+      const old = new Map(items.map((i) => [i.key, i]))
+      const next: Item[] = []
+      for (const x of list()) {
+        const k = keyOf(x)
+        const hit = old.get(k)
+        if (hit) {
+          old.delete(k)
+          if (hit.value !== x) {
+            hit.value = x
+            hit.scope[hit.scope.length - 1] = x
+          }
+          for (const u of hit.block) u()
+          next.push(hit)
+        } else next.push(make(x, { parent: doc.createDocumentFragment(), next: null, claim: false }))
+      }
+      for (const gone of old.values()) for (const n of range(gone.first, gone.last)) (n as ChildNode).remove()
+      const parent = end.parentNode!
+      let at: Node = start.nextSibling ?? end
+      for (const item of next) {
+        if (item.first === at) at = item.last.nextSibling ?? end
+        else for (const n of range(item.first, item.last)) parent.insertBefore(n, at)
+      }
+      items = next
+    })
   }
 
   const effects = (step: Step) => {
@@ -234,17 +369,12 @@ export function createApp(doc: Document, options: AppOptions): App {
     effects(step)
   }
 
-  const flush = () => {
-    const pending = queue
-    queue = []
-    for (const sync of pending) sync()
-  }
-
   return {
-    attach(target, node, scope) {
-      targets.push(target)
-      render(node, scope, target, root)
-      flush()
+    attach(parent, before, node, scope, claim) {
+      const c: Cursor = { parent, next: before, claim }
+      const ns = parent instanceof Element && parent.namespaceURI === SVG_NS ? SVG_NS : null
+      const [a, b] = span(c, () => render(node, scope, c, root, ns))
+      if (a && b) ranges.push([a, b])
     },
     start() {
       if (first) effects(first)
@@ -259,7 +389,8 @@ export function createApp(doc: Document, options: AppOptions): App {
       for (const t of timers) clearTimeout(t)
       timers.clear()
       root.length = 0
-      for (const t of targets) t.replaceChildren()
+      for (const [a, b] of ranges) for (const n of range(a, b)) (n as ChildNode).remove()
+      ranges.length = 0
     },
   }
 }

@@ -36,8 +36,8 @@ describe('node adapter', () => {
     const bob = await app.call('GET', '/', undefined, 'bob')
     expect(ada.headers['x-tenon-cache']).toBe('bypass')
     expect(ada.headers['transfer-encoding']).toBe('chunked')
-    expect(ada.body).toContain('Total: $12')
-    expect(bob.body).toContain('Total: $0')
+    expect(ada.body).toContain('Total: $<!---->12')
+    expect(bob.body).toContain('Total: $<!---->0')
   })
 
   it('effects return the result plus server-pushed data for invalidated payload keys', async () => {

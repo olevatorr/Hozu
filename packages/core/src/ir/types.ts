@@ -151,7 +151,7 @@ export interface TransitionIR {
   navigate: string | null
 }
 
-export type RefSource = 'context' | 'event' | 'result' | 'error' | 'input' | 'params'
+export type RefSource = 'context' | 'event' | 'result' | 'error' | 'input' | 'params' | 'dom'
 
 export type ValueExpr =
   | { ref: RefSource; path: string[] }
@@ -159,6 +159,7 @@ export type ValueExpr =
   | { literal: Json }
   | { object: Record<string, ValueExpr> }
   | { fn: string; arg: ValueExpr }
+  | { test: GuardExpr }
 
 export type AssignOp =
   | { op: 'set' | 'append' | 'inc'; path: string[]; value: ValueExpr }
@@ -178,7 +179,7 @@ export interface ViewIR {
   root: ViewNode
 }
 
-export type DomEvent = 'click' | 'submit'
+export type { DomEvent, DomField, DomFields } from './events.ts'
 
 export interface SendIR {
   event: string

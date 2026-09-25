@@ -110,6 +110,17 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'DOM field that the event does not carry',
+    code: 'TN027',
+    mutate: (ir) => {
+      const { node } = findNode(cart(ir), 'CartPanel', (n) => n.kind === 'el' && n.tag === 'input')
+      ;(node as ElementNode).on.input = {
+        event: 'cart.SetQuantity',
+        payload: { object: { qty: { ref: 'dom', path: ['valueAsNumbr'] } } },
+      }
+    },
+  },
+  {
     name: 'foreign view sends an event it cannot observe',
     code: 'TN005',
     mutate: (ir) => {
@@ -295,6 +306,15 @@ describe('A2 judgement codes', () => {
 })
 
 describe('A2 rendering judgement codes', () => {
+  it('TN027 — DOM fields read outside an event handler', () => {
+    const ir = cartIR()
+    const { node } = findNode(cart(ir), 'CartPanel', (n) => n.kind === 'el' && n.tag === 'input')
+    ;(node as ElementNode).attrs.value = { ref: 'dom', path: ['value'] }
+    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'TN027')
+    expect(found.map((d) => d.message)).toEqual(['ui.dom.value is read outside an event handler'])
+    expect(found[0]!.fix?.patch).toBeNull()
+  })
+
   it('TN022 — a public cached query keyed by user data', () => {
     const ir = cartIR()
     const { node } = findNode(cart(ir), 'CartPanel', (n) => n.kind === 'query' && n.query === 'cart.getCart')

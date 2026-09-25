@@ -4,7 +4,6 @@ import type {
   CompiledMachine,
   CompiledState,
   CompiledTransition,
-  Env,
   Fns,
   Getter,
   Test,
@@ -34,13 +33,29 @@ export function compileValue(v: ValueExpr, fns: Fns): Getter {
     const arg = compileValue(v.arg, fns)
     return (env) => impl(arg(env))
   }
-  if (v.ref === 'binding') throw new CompileError('View bindings cannot be used inside a machine')
-  const { ref, path } = v
-  if (path.length === 0) return (env) => env[ref as keyof Env] ?? null
-  return (env) => getIn(env[ref as keyof Env], path)
+  if ('test' in v) {
+    const test = guard(v.test, fns)
+    return (env) => test(env)
+  }
+  const { path } = v
+  if (v.ref === 'binding') {
+    const depth = v.depth
+    return path.length ? (env) => getIn(env.bindings?.[depth], path) : (env) => env.bindings?.[depth] ?? null
+  }
+  if (v.ref === 'dom') {
+    const [field, ...rest] = path
+    return (env) => (env.dom && field ? getIn(env.dom(field), rest) : null)
+  }
+  const ref = v.ref as 'context' | 'input' | 'event' | 'result' | 'error' | 'params'
+  if (path.length === 0) return (env) => env[ref] ?? null
+  return (env) => getIn(env[ref], path)
 }
 
 const numeric = (x: Json) => (typeof x === 'number' || typeof x === 'string' ? x : Number.NaN)
+
+export function compileGuard(g: GuardExpr, fns: Fns): Test {
+  return guard(g, fns)
+}
 
 function guard(g: GuardExpr, fns: Fns): Test {
   switch (g.op) {

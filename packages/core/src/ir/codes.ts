@@ -31,4 +31,8 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   TN023: { name: 'render-assertion-violated', severity: 'error' },
   TN024: { name: 'route-mismatch', severity: 'error' },
   TN025: { name: 'undiscoverable-page', severity: 'warning' },
+  TN026: { name: 'unknown-class', severity: 'error' },
+  TN027: { name: 'invalid-dom-field', severity: 'error' },
+  TN028: { name: 'image-without-dimensions', severity: 'error' },
+  TN029: { name: 'widget-boundary-mismatch', severity: 'error' },
 }

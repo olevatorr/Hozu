@@ -3,6 +3,7 @@ import { Ctx } from './context.ts'
 import type { Lockfile } from './contracts/lock.ts'
 import { verifyContracts } from './contracts/verify.ts'
 import { invalidations, sessions } from './rules/data.ts'
+import { domFields } from './rules/dom.ts'
 import { declaredErrors } from './rules/errors.ts'
 import { unhandledEvents, viewEvents } from './rules/events.ts'
 import { paths } from './rules/paths.ts'
@@ -34,6 +35,7 @@ const rules = [
   sessions,
   rendering,
   routeParams,
+  domFields,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>

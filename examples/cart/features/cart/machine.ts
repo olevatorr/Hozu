@@ -1,7 +1,7 @@
 import { invoke, machine, on, op } from '@tenon/core'
 import { orderPlaced } from '../../routes.ts'
 import { addItem, checkout, removeItem } from './effects.ts'
-import { AddItem, Checkout, Dismiss, RemoveItem } from './events.ts'
+import { AddItem, Checkout, Dismiss, RemoveItem, SetQuantity } from './events.ts'
 import { Context } from './schemas.ts'
 
 export const MAX_QTY = 10
@@ -21,6 +21,11 @@ export const cartMachine = machine({
         on(AddItem, { target: 'error', assign: () => [op.set(ctx.error, `At most ${MAX_QTY} per item`)] }),
         on(RemoveItem, { target: 'removing', assign: (item) => [op.set(ctx.pending.sku, item.sku)] }),
         on(Checkout, { target: 'checkingOut' }),
+        on(SetQuantity, {
+          target: 'idle',
+          guard: (q) => op.and(op.gte(q.qty, 1), op.lte(q.qty, MAX_QTY)),
+          assign: (q) => [op.set(ctx.pending.qty, q.qty)],
+        }),
       ],
     },
     adding: {

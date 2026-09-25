@@ -1,3 +1,4 @@
+export { attrText, domField, SVG_NS, text } from './dom.ts'
 export type { EffectResponse, HydrateOptions, IslandRef, PagePayload, Transport } from './hydrate.ts'
 export { fetchTransport, hydrate } from './hydrate.ts'
 export type { App, AppOptions, Mounted, MountOptions, Payload, Result, Store } from './mount.ts'

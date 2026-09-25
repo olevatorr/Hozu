@@ -1,5 +1,6 @@
-import type { FeatureIR, Json, ValueExpr, ViewNode } from '@tenon/core/ir'
-import { getIn } from '@tenon/machine'
+import { type FeatureIR, type Json, type ValueExpr, type ViewNode, voidTags } from '@tenon/core/ir'
+import { compileValue, type Fns, type Getter } from '@tenon/machine'
+import { attrText, text } from '@tenon/runtime-client'
 import { escapeHtml } from './escape.ts'
 
 export interface Scope {
@@ -7,54 +8,29 @@ export interface Scope {
   context: Json
   state: string | null
   bindings: Json[]
+  params: Json
 }
 
 export interface Runtime {
-  params: Json
-  fns: Record<string, (x: Json) => Json>
   open(n: ViewNode, scope: Scope): string
   embed(view: string): { root: ViewNode; scope: Scope } | null
 }
 
 export type Frag = string | ((scope: Scope, r: Runtime) => string)
-type Get = (scope: Scope, r: Runtime) => Json
 
-const voids = new Set(['img'])
+const voids = new Set<string>(voidTags)
 
-export const text = (v: Json) =>
-  v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v)
+export const SEP = '<!---->'
+export const OPEN = '<!--[-->'
+export const CLOSE = '<!--]-->'
 
-export function expr(v: ValueExpr): Get {
-  if ('literal' in v) {
-    const literal = v.literal
-    return () => literal
-  }
-  if ('object' in v) {
-    const entries = Object.entries(v.object).map(([k, x]) => [k, expr(x)] as const)
-    return (s, r) => {
-      const out: Record<string, Json> = {}
-      for (const [k, get] of entries) out[k] = get(s, r)
-      return out
-    }
-  }
-  if ('fn' in v) {
-    const arg = expr(v.arg)
-    const ref = v.fn
-    return (s, r) => r.fns[ref]!(arg(s, r))
-  }
-  const path = v.path
-  switch (v.ref) {
-    case 'binding': {
-      const depth = v.depth
-      return path.length ? (s) => getIn(s.bindings[depth], path) : (s) => s.bindings[depth] ?? null
-    }
-    case 'context':
-      return (s) => getIn(s.context, path)
-    case 'params':
-      return (_, r) => getIn(r.params, path)
-    default:
-      return () => null
-  }
+export { text }
+
+export const expr = (v: ValueExpr, fns: Fns): Getter => compileValue(v, fns)
+
+const attr = (name: string, x: Json) => {
+  const s = attrText(name, x)
+  return s === null ? '' : s === '' ? ` ${name}` : ` ${name}="${escapeHtml(s)}"`
 }
 
 function seq(parts: Frag[]): Frag {
@@ -74,84 +50,79 @@ function seq(parts: Frag[]): Frag {
   }
 }
 
-const run = (f: Frag, s: Scope, r: Runtime) => (typeof f === 'string' ? f : f(s, r))
+export const run = (f: Frag, s: Scope, r: Runtime) => (typeof f === 'string' ? f : f(s, r))
 
-export function compileNode(n: ViewNode, island: boolean, islands: Set<string>): Frag {
+export const separated = (list: ViewNode[], i: number) => list[i + 1]?.kind === 'text'
+
+export function compileNode(n: ViewNode, island: boolean, islands: Set<string>, fns: Fns, sep = false): Frag {
+  const children = (list: ViewNode[]) =>
+    list.map((c, i) => compileNode(c, island, islands, fns, separated(list, i)))
   if (!island && islands.has(n.id)) {
-    const inner = compileNode(n, true, islands)
-    return (s, r) => `${r.open(n, s)}${run(inner, s, r)}</t-i>`
+    const inner = compileNode(n, true, islands, fns, sep)
+    return (s, r) => r.open(n, s) + run(inner, s, r)
   }
+  const wrap = (body: Frag): Frag => (island ? seq([OPEN, body, CLOSE]) : body)
   switch (n.kind) {
     case 'text': {
-      if ('literal' in n.value) return escapeHtml(text(n.value.literal))
-      const get = expr(n.value)
-      return (s, r) => escapeHtml(text(get(s, r)))
+      const tail = island && sep ? SEP : ''
+      if ('literal' in n.value) return escapeHtml(text(n.value.literal)) + tail
+      const get = expr(n.value, fns)
+      return (s) => escapeHtml(text(get(s))) + tail
     }
     case 'el': {
-      const parts: Frag[] = [
-        `<${n.tag} data-t="${escapeHtml(n.id)}"${n.class ? ` class="${escapeHtml(n.class)}"` : ''}`,
-      ]
+      const parts: Frag[] = [`<${n.tag}${n.class ? ` class="${escapeHtml(n.class)}"` : ''}`]
+      let content: Frag | null = null
       for (const [name, v] of Object.entries(n.attrs)) {
-        if ('literal' in v) {
-          const x = v.literal
-          if (x !== null && x !== false)
-            parts.push(x === true ? ` ${name}` : ` ${name}="${escapeHtml(text(x))}"`)
+        if (n.tag === 'textarea' && name === 'value') {
+          const get = expr(v, fns)
+          content = 'literal' in v ? escapeHtml(text(v.literal)) : (s) => escapeHtml(text(get(s)))
           continue
         }
-        const get = expr(v)
-        parts.push((s, r) => {
-          const x = get(s, r)
-          return x === null || x === false
-            ? ''
-            : x === true
-              ? ` ${name}`
-              : ` ${name}="${escapeHtml(text(x))}"`
-        })
+        if ('literal' in v) {
+          parts.push(attr(name, v.literal))
+          continue
+        }
+        const get = expr(v, fns)
+        parts.push((s) => attr(name, get(s)))
       }
       parts.push('>')
       if (voids.has(n.tag)) return seq(parts)
-      for (const c of n.children) parts.push(compileNode(c, island, islands))
+      if (content !== null) parts.push(content)
+      else parts.push(...children(n.children))
       parts.push(`</${n.tag}>`)
       return seq(parts)
     }
     case 'when': {
-      const body = seq(n.children.map((c) => compileNode(c, island, islands)))
+      const body = seq(children(n.children))
       const states = n.states
-      const open = `<!--${n.id}-->`
-      const close = `<!--/${n.id}-->`
-      return (s, r) =>
-        s.state !== null && states.includes(s.state) ? open + run(body, s, r) + close : open + close
+      return wrap((s, r) => (s.state !== null && states.includes(s.state) ? run(body, s, r) : ''))
     }
     case 'each': {
-      const item = compileNode(n.item, island, islands)
-      const source = expr(n.source)
-      const open = `<!--${n.id}-->`
-      const close = `<!--/${n.id}-->`
-      return (s, r) => {
-        const items = source(s, r)
-        let out = open
+      const item = compileNode(n.item, island, islands, fns, true)
+      const source = expr(n.source, fns)
+      return wrap((s, r) => {
+        const items = source(s)
+        let out = ''
         if (Array.isArray(items))
           for (const x of items) out += run(item, { ...s, bindings: [...s.bindings, x] }, r)
-        return out + close
-      }
+        return out
+      })
     }
     case 'embed': {
       const view = n.view
       const cache = new WeakMap<ViewNode, Frag>()
-      return (_, r) => {
+      return wrap((_, r) => {
         const e = r.embed(view)
         if (!e) return ''
         let f = cache.get(e.root)
         if (f === undefined) {
-          f = compileNode(e.root, island, islands)
+          f = compileNode(e.root, island, islands, fns)
           cache.set(e.root, f)
         }
         return run(f, e.scope, r)
-      }
+      })
     }
     default:
       return ''
   }
 }
-
-export { run }

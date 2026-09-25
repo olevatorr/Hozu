@@ -38,7 +38,7 @@ describe('client runtime', () => {
     ])
     expect(root.querySelector('p.font-bold')?.textContent).toBe('Total: $24')
     expect(button(root, 'Checkout')).toBeDefined()
-    expect(root.querySelector('[data-t="cart.CartPanel/0"]')?.tagName).toBe('H2')
+    expect(root.querySelector('h2')?.textContent).toBe('Cart')
   })
 
   it('dispatches events, runs invokes through the host, and updates only affected regions', async () => {

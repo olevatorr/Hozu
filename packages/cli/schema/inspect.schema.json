@@ -520,6 +520,18 @@
             "arg"
           ],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "test": {
+              "$ref": "#/definitions/GuardExpr"
+            }
+          },
+          "required": [
+            "test"
+          ],
+          "additionalProperties": false
         }
       ]
     },
@@ -531,7 +543,104 @@
         "result",
         "error",
         "input",
-        "params"
+        "params",
+        "dom"
+      ]
+    },
+    "GuardExpr": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "$ref": "#/definitions/CompareOp"
+            },
+            "left": {
+              "$ref": "#/definitions/ValueExpr"
+            },
+            "right": {
+              "$ref": "#/definitions/ValueExpr"
+            }
+          },
+          "required": [
+            "op",
+            "left",
+            "right"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "enum": [
+                "and",
+                "or"
+              ]
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/GuardExpr"
+              }
+            }
+          },
+          "required": [
+            "op",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "not"
+            },
+            "arg": {
+              "$ref": "#/definitions/GuardExpr"
+            }
+          },
+          "required": [
+            "op",
+            "arg"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "fn"
+            },
+            "fn": {
+              "type": "string"
+            },
+            "arg": {
+              "$ref": "#/definitions/ValueExpr"
+            }
+          },
+          "required": [
+            "op",
+            "fn",
+            "arg"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "CompareOp": {
+      "type": "string",
+      "enum": [
+        "eq",
+        "neq",
+        "lt",
+        "lte",
+        "gt",
+        "gte"
       ]
     },
     "MutationIR": {
@@ -687,102 +796,6 @@
         "navigate"
       ],
       "additionalProperties": false
-    },
-    "GuardExpr": {
-      "anyOf": [
-        {
-          "type": "object",
-          "properties": {
-            "op": {
-              "$ref": "#/definitions/CompareOp"
-            },
-            "left": {
-              "$ref": "#/definitions/ValueExpr"
-            },
-            "right": {
-              "$ref": "#/definitions/ValueExpr"
-            }
-          },
-          "required": [
-            "op",
-            "left",
-            "right"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "op": {
-              "type": "string",
-              "enum": [
-                "and",
-                "or"
-              ]
-            },
-            "args": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/GuardExpr"
-              }
-            }
-          },
-          "required": [
-            "op",
-            "args"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "op": {
-              "type": "string",
-              "const": "not"
-            },
-            "arg": {
-              "$ref": "#/definitions/GuardExpr"
-            }
-          },
-          "required": [
-            "op",
-            "arg"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "op": {
-              "type": "string",
-              "const": "fn"
-            },
-            "fn": {
-              "type": "string"
-            },
-            "arg": {
-              "$ref": "#/definitions/ValueExpr"
-            }
-          },
-          "required": [
-            "op",
-            "fn",
-            "arg"
-          ],
-          "additionalProperties": false
-        }
-      ]
-    },
-    "CompareOp": {
-      "type": "string",
-      "enum": [
-        "eq",
-        "neq",
-        "lt",
-        "lte",
-        "gt",
-        "gte"
-      ]
     },
     "AssignOp": {
       "anyOf": [

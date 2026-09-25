@@ -1,11 +1,25 @@
-import { domEvents, htmlAttrs, type NodeDef, sendOf, type ViewDef, when } from '../builders/ui.ts'
+import { type NodeDef, sendOf, type ViewDef, when } from '../builders/ui.ts'
+import { htmlGlobalAttrs, svgGlobalAttrs, svgTags, tagAttrs, voidTags } from '../ir/dom-data.ts'
+import { domEvents } from '../ir/events.ts'
 import type { SendIR, ValueExpr, ViewIR, ViewNode } from '../ir/types.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
 import { exprOf, refProxy } from '../model/expr.ts'
 import { type At, at, type FeatureScope } from './scope.ts'
 
-const attrSet = new Set<string>(htmlAttrs)
 const eventSet = new Set<string>(domEvents)
+const svgSet = new Set<string>(svgTags)
+const voidSet = new Set<string>(voidTags)
+const htmlGlobal = new Set<string>(htmlGlobalAttrs)
+const svgGlobal = new Set<string>(svgGlobalAttrs)
+const allowed = new Map<string, Set<string>>(
+  Object.entries(tagAttrs).map(([tag, list]) => [tag, new Set<string>(list)]),
+)
+
+const attrAllowed = (tag: string, name: string) =>
+  name.startsWith('aria-') ||
+  /^data-[a-z0-9-]+$/.test(name) ||
+  (svgSet.has(tag) ? svgGlobal : htmlGlobal).has(name) ||
+  allowed.get(tag)?.has(name) === true
 
 function element(
   scope: FeatureScope,
@@ -17,6 +31,13 @@ function element(
   let cls: string | null = null
   const attrs: Record<string, ValueExpr> = {}
   const on: Record<string, SendIR> = {}
+  if (!allowed.has(d.tag))
+    scope.report(
+      'TN014',
+      at(p, 'tag'),
+      `Element "${d.tag}" is not supported`,
+      'Use a standard HTML or SVG element.',
+    )
   for (const [key, value] of Object.entries(d.props ?? {})) {
     if (value === undefined) continue
     if (key === 'class') {
@@ -52,18 +73,28 @@ function element(
             payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
           }
       }
-    } else if (attrSet.has(key)) {
+    } else if (attrAllowed(d.tag, key)) {
       attrs[key] = scope.attempt(at(p, 'attrs', key), () => scope.value(value, p), { literal: null })
     } else {
       scope.report(
         'TN014',
         at(p, 'attrs', key),
-        `Attribute "${key}" is not allowed`,
-        `Allowed attributes: ${htmlAttrs.join(', ')}.`,
+        `Attribute "${key}" is not allowed on <${d.tag}>`,
+        key === 'style'
+          ? 'Style lives in CSS: use class for static styling.'
+          : key === 'value' && d.tag === 'select'
+            ? 'Select the option instead: option({ selected: op.eq(…) }).'
+            : `Allowed on <${d.tag}>: ${[...(allowed.get(d.tag) ?? [])].join(', ') || 'global attributes only'}, aria-*, data-*.`,
       )
     }
   }
-  const children = d.children.map((c, i) => node(scope, c, `${id}/${i}`, at(p, 'children', i), depth))
+  if (!Array.isArray(d.children))
+    scope.report('TN014', at(p, 'children'), `<${d.tag}> needs a children array`, 'Pass [] when it has none.')
+  else if (voidSet.has(d.tag) && d.children.length)
+    scope.report('TN014', at(p, 'children'), `<${d.tag}> cannot have children`, 'It is a void element.')
+  const children = (Array.isArray(d.children) ? d.children : []).map((c, i) =>
+    node(scope, c, `${id}/${i}`, at(p, 'children', i), depth),
+  )
   return { id, kind: 'el', tag: d.tag, class: cls, attrs, on, children }
 }
 

@@ -3,9 +3,9 @@ import { type At, at, join, resolveAt } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
 import { codes } from '../ir/codes.ts'
 import type { Diagnostic, DiagnosticCode, Fix, SourceIndex } from '../ir/diagnostic.ts'
-import type { Json, JsonSchema, ValueExpr } from '../ir/types.ts'
+import type { GuardExpr, Json, JsonSchema, ValueExpr } from '../ir/types.ts'
 import { type DeclKind, infoOf } from '../model/decl.ts'
-import { exprOf, RecorderError } from '../model/expr.ts'
+import { exprOf, guardOf, RecorderError } from '../model/expr.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
 import { toCheck } from '../schema/check.ts'
 import { isStandardSchema } from '../schema/standard.ts'
@@ -198,7 +198,22 @@ export class FeatureScope {
     return key
   }
 
+  guard(g: unknown, p: At): GuardExpr {
+    const raw = guardOf(g)
+    if (raw) {
+      if (raw.op === 'and' || raw.op === 'or')
+        return { op: raw.op, args: raw.args.map((a) => this.guard(a, p)) }
+      if (raw.op === 'not') return { op: 'not', arg: this.guard(raw.arg, p) }
+      if ('left' in raw) return { op: raw.op, left: this.value(raw.left, p), right: this.value(raw.right, p) }
+    }
+    const expr = exprOf(g)
+    if (expr?.kind === 'call')
+      return { op: 'fn', fn: this.ref(expr.fn, ['fn'], p), arg: this.value(expr.arg, p) }
+    throw new RecorderError('A guard must be an op.* comparison or a boolean fn() call')
+  }
+
   value(v: unknown, pointer: At): ValueExpr {
+    if (guardOf(v)) return { test: this.guard(v, pointer) }
     const expr = exprOf(v)
     if (expr) {
       if (expr.kind === 'call')

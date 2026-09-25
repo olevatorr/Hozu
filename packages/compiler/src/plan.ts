@@ -1,4 +1,5 @@
 import {
+  anyRef,
   type FeatureIR,
   join,
   type ProjectIR,
@@ -64,23 +65,10 @@ function combine(parent: RegionPlan, child: { mode: Mode; seconds: number | null
   return { mode, seconds }
 }
 
-export const readsContext = (v: ValueExpr): boolean =>
-  'ref' in v
-    ? v.ref === 'context'
-    : 'object' in v
-      ? Object.values(v.object).some(readsContext)
-      : 'fn' in v
-        ? readsContext(v.arg)
-        : false
+export const readsContext = (v: ValueExpr): boolean => anyRef(v, (r) => r.ref === 'context')
 
 const readsBinding = (v: ValueExpr, tainted: boolean[]): boolean =>
-  'ref' in v
-    ? v.ref === 'binding' && tainted[v.depth] === true
-    : 'object' in v
-      ? Object.values(v.object).some((x) => readsBinding(x, tainted))
-      : 'fn' in v
-        ? readsBinding(v.arg, tainted)
-        : false
+  anyRef(v, (r) => r.ref === 'binding' && tainted[r.depth] === true)
 
 export function hydrates(node: ViewNode): boolean {
   switch (node.kind) {

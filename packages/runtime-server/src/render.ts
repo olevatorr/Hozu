@@ -2,6 +2,7 @@ import { planRoute, type RoutePlan } from '@tenon/compiler'
 import {
   type BuildResult,
   canonicalStringify,
+  eachRef,
   type FeatureIR,
   type HeadIR,
   type Json,
@@ -12,9 +13,20 @@ import {
   type ViewNode,
 } from '@tenon/core/ir'
 import type { DataRuntime } from '@tenon/data'
-import { getIn } from '@tenon/machine'
+import { type Getter, getIn } from '@tenon/machine'
 import type { IslandRef, PagePayload, Result } from '@tenon/runtime-client'
-import { compileNode, type Frag, type Runtime, run, type Scope, text } from './compile.ts'
+import { attrText, text } from '@tenon/runtime-client'
+import {
+  CLOSE,
+  compileNode,
+  expr,
+  type Frag,
+  OPEN,
+  type Runtime,
+  run,
+  type Scope,
+  separated,
+} from './compile.ts'
 import { escapeHtml, scriptJson } from './escape.ts'
 
 export interface Assets {
@@ -53,19 +65,15 @@ export async function renderPage({
   const tags = new Set<string>()
   const payload: PagePayload = { islands: [], data: [], features: {}, nodes: {}, fns: null, params }
   const fns = bindings.fns as Record<string, (x: Json) => Json>
+  const getters = gettersFor(fns)
 
   const value = (v: ValueExpr, scope: Scope, input?: Json): Json => {
-    if ('literal' in v) return v.literal
-    if ('object' in v) {
-      const out: Record<string, Json> = {}
-      for (const k in v.object) out[k] = value(v.object[k]!, scope, input)
-      return out
+    let get = getters.get(v)
+    if (!get) {
+      get = expr(v, fns)
+      getters.set(v, get)
     }
-    if ('fn' in v) return fns[v.fn]!(value(v.arg, scope, input))
-    if (v.ref === 'binding') return getIn(scope.bindings[v.depth], v.path)
-    if (v.ref === 'context') return getIn(scope.context, v.path)
-    if (v.ref === 'params') return getIn(params, v.path)
-    return v.ref === 'input' ? getIn(input ?? null, v.path) : null
+    return get(input === undefined ? scope : { ...scope, input })
   }
 
   const tagKeys = (list: TagExprIR[], input: Json, scope: Scope) =>
@@ -76,6 +84,7 @@ export async function renderPage({
     context: bound ? (feature.machine?.initialContext ?? null) : null,
     state: bound ? (feature.machine?.initial ?? null) : null,
     bindings: [],
+    params,
   })
 
   const open = (n: ViewNode, scope: Scope) => {
@@ -84,15 +93,15 @@ export async function renderPage({
     payload.islands.push(ref)
     payload.nodes[n.id] = n
     payload.features[scope.feature.id] ??= (scope.feature.machine as MachineIR | null) ?? null
-    return `<t-i data-i="${index}" style="display:contents">`
+    void index
+    return '<!--i-->'
   }
 
   const element = (n: Extract<ViewNode, { kind: 'el' }>, scope: Scope) => {
-    let attrs = ` data-t="${escapeHtml(n.id)}"${n.class ? ` class="${escapeHtml(n.class)}"` : ''}`
+    let attrs = n.class ? ` class="${escapeHtml(n.class)}"` : ''
     for (const name in n.attrs) {
-      const x = value(n.attrs[name]!, scope)
-      if (x === null || x === false) continue
-      attrs += x === true ? ` ${name}` : ` ${name}="${escapeHtml(text(x))}"`
+      const x = attrText(name, value(n.attrs[name]!, scope))
+      if (x !== null) attrs += x === '' ? ` ${name}` : ` ${name}="${escapeHtml(x)}"`
     }
     return `<${n.tag}${attrs}>`
   }
@@ -131,13 +140,13 @@ export async function renderPage({
     return result
   }
 
-  const runtime: Runtime = { params, fns, open, embed: (view) => embedded({ kind: 'embed', id: '', view }) }
+  const runtime: Runtime = { open, embed: (view) => embedded({ kind: 'embed', id: '', view }) }
   const compiled = compiledFor(plan, islandIds)
-  const sync = (n: ViewNode, scope: Scope, island: boolean): string => {
+  const sync = (n: ViewNode, scope: Scope, island: boolean, sep = false): string => {
     const cache = island ? compiled.inside : compiled.outside
     let frag = cache.get(n)
     if (frag === undefined) {
-      frag = compileNode(n, island, islandIds)
+      frag = compileNode(n, island, islandIds, fns, sep)
       cache.set(n, frag)
     }
     return run(frag, scope, runtime)
@@ -150,45 +159,49 @@ export async function renderPage({
     buffer = ''
   }
 
-  const render = async (n: ViewNode, scope: Scope, island: boolean): Promise<void> => {
+  const render = async (n: ViewNode, scope: Scope, island: boolean, sep = false): Promise<void> => {
     if (!suspends(n)) {
-      buffer += sync(n, scope, island)
+      buffer += sync(n, scope, island, sep)
       return
     }
     if (!island && islandIds.has(n.id)) {
       buffer += open(n, scope)
       await render(n, scope, true)
-      buffer += '</t-i>'
       return
     }
+    const [o, c] = island ? [OPEN, CLOSE] : ['', '']
     switch (n.kind) {
       case 'el':
         buffer += element(n, scope)
-        for (const c of n.children) await render(c, scope, island)
+        for (let i = 0; i < n.children.length; i++)
+          await render(n.children[i]!, scope, island, separated(n.children, i))
         buffer += `</${n.tag}>`
         return
       case 'when':
-        buffer += `<!--${n.id}-->`
+        buffer += o
         if (scope.state !== null && n.states.includes(scope.state))
-          for (const c of n.children) await render(c, scope, island)
-        buffer += `<!--/${n.id}-->`
+          for (let i = 0; i < n.children.length; i++)
+            await render(n.children[i]!, scope, island, separated(n.children, i))
+        buffer += c
         return
       case 'each': {
-        buffer += `<!--${n.id}-->`
+        buffer += o
         const items = value(n.source, scope)
         if (Array.isArray(items))
           for (const item of items)
-            await render(n.item, { ...scope, bindings: [...scope.bindings, item] }, island)
-        buffer += `<!--/${n.id}-->`
+            await render(n.item, { ...scope, bindings: [...scope.bindings, item] }, island, true)
+        buffer += c
         return
       }
       case 'embed': {
         const e = embedded(n)
+        buffer += o
         if (e) await render(e.root, e.scope, island)
+        buffer += c
         return
       }
       case 'query': {
-        buffer += `<!--${n.id}-->`
+        buffer += o
         const input = value(n.input, scope)
         const dot = n.query.indexOf('.')
         const q = ir.features[n.query.slice(0, dot)]?.queries[n.query.slice(dot + 1)]
@@ -204,17 +217,17 @@ export async function renderPage({
             { ...scope, bindings: [...scope.bindings, result.ok ? result.value : result.data] },
             island,
           )
-        buffer += `<!--/${n.id}-->`
+        buffer += c
         return
       }
       default:
-        buffer += sync(n, scope, island)
+        buffer += sync(n, scope, island, sep)
     }
   }
 
   const page = ir.pages[route]!
   const path = pathOf(ir.routes[route]?.path ?? '/', params)
-  const empty: Scope = { feature: { id: '' } as FeatureIR, context: null, state: null, bindings: [] }
+  const empty: Scope = { feature: { id: '' } as FeatureIR, context: null, state: null, bindings: [], params }
   let status = 200
   let headScope = empty
   if (page.head.query) {
@@ -254,6 +267,16 @@ export async function renderPage({
   return { plan, status, path, chunks: out, tags }
 }
 
+const getterCache = new WeakMap<object, WeakMap<ValueExpr, Getter>>()
+const gettersFor = (fns: object) => {
+  let g = getterCache.get(fns)
+  if (!g) {
+    g = new WeakMap()
+    getterCache.set(fns, g)
+  }
+  return g
+}
+
 const plans = new WeakMap<ProjectIR, Map<string, RoutePlan>>()
 const compiledPlans = new WeakMap<
   RoutePlan,
@@ -287,15 +310,13 @@ function planOf(ir: ProjectIR, route: string): RoutePlan {
 
 type Uses = Map<number, string[][]>
 
-const valueUses = (v: ValueExpr, out: Uses) => {
-  if ('ref' in v) {
-    if (v.ref !== 'binding') return
-    const paths = out.get(v.depth)
-    if (paths) paths.push(v.path)
-    else out.set(v.depth, [v.path])
-  } else if ('object' in v) for (const k in v.object) valueUses(v.object[k]!, out)
-  else if ('fn' in v) valueUses(v.arg, out)
-}
+const valueUses = (v: ValueExpr, out: Uses) =>
+  eachRef(v, (r) => {
+    if (r.ref !== 'binding') return
+    const paths = out.get(r.depth)
+    if (paths) paths.push(r.path)
+    else out.set(r.depth, [r.path])
+  })
 
 function bindingUses(n: ViewNode): Uses {
   const hit = usesMemo.get(n)

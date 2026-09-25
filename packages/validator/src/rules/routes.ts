@@ -1,4 +1,4 @@
-import { type JsonSchema, join, type ValueExpr } from '@tenon/core/ir'
+import { anyRef, type JsonSchema, join, type ValueExpr } from '@tenon/core/ir'
 import type { Ctx } from '../context.ts'
 import { resolveRef } from '../resolve.ts'
 
@@ -10,14 +10,7 @@ const keysOf = (schema: JsonSchema | null) =>
     ? Object.keys(schema.properties).sort()
     : []
 
-const readsParams = (v: ValueExpr): boolean =>
-  'ref' in v
-    ? v.ref === 'params'
-    : 'object' in v
-      ? Object.values(v.object).some(readsParams)
-      : 'fn' in v
-        ? readsParams(v.arg)
-        : false
+const readsParams = (v: ValueExpr): boolean => anyRef(v, (r) => r.ref === 'params')
 
 export function routeParams(ctx: Ctx) {
   const { ir } = ctx

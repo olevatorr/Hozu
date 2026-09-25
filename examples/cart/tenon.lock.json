@@ -75,6 +75,12 @@
           "removesItem": "097e12321afb306e"
         }
       },
+      "idle/on/cart.SetQuantity/0": {
+        "behavior": "0f714296a4146742",
+        "contracts": {
+          "setsQuantity": "9db490ef6b09c941"
+        }
+      },
       "removing/invoke/done/0": {
         "behavior": "e54a61bbf262f9f9",
         "contracts": {

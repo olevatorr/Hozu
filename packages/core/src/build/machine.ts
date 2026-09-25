@@ -1,22 +1,10 @@
 import type { InvokeDef, MachineDef, OnDef, StateConfig, TransitionConfig } from '../builders/machine.ts'
 import type { AssignOp, GuardExpr, InvokeIR, MachineIR, StateIR, TransitionIR } from '../ir/types.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
-import { assignOf, exprOf, guardOf, RecorderError, refProxy } from '../model/expr.ts'
+import { assignOf, exprOf, RecorderError, refProxy } from '../model/expr.ts'
 import { type At, at, type FeatureScope, IDENTIFIER } from './scope.ts'
 
-function guard(scope: FeatureScope, g: unknown, p: At): GuardExpr {
-  const raw = guardOf(g)
-  if (raw) {
-    if (raw.op === 'and' || raw.op === 'or')
-      return { op: raw.op, args: raw.args.map((a) => guard(scope, a, p)) }
-    if (raw.op === 'not') return { op: 'not', arg: guard(scope, raw.arg, p) }
-    if ('left' in raw) return { op: raw.op, left: scope.value(raw.left, p), right: scope.value(raw.right, p) }
-  }
-  const expr = exprOf(g)
-  if (expr?.kind === 'call')
-    return { op: 'fn', fn: scope.ref(expr.fn, ['fn'], p), arg: scope.value(expr.arg, p) }
-  throw new RecorderError('A guard must be an op.* comparison or a boolean fn() call')
-}
+const guard = (scope: FeatureScope, g: unknown, p: At): GuardExpr => scope.guard(g, p)
 
 function assign(scope: FeatureScope, a: unknown, p: At): AssignOp {
   const raw = assignOf(a)

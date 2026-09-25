@@ -35,6 +35,8 @@
     "esbuild": "0.28.2",
     "fast-check": "4.10.2",
     "happy-dom": "20.14.5",
+    "html-element-attributes": "^3.5.0",
+    "svg-element-attributes": "^2.2.0",
     "ts-json-schema-generator": "2.9.0",
     "typescript": "7.0.2",
     "vitest": "5.0.1",

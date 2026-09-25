@@ -64,7 +64,7 @@ const misuse = (path: readonly string[]) => () => {
 
 const roots = new Map<string, unknown>()
 
-function createRef(ref: RefSource | 'binding', depth: number, path: readonly string[]): any {
+export function createRef(ref: RefSource | 'binding', depth: number, path: readonly string[]): any {
   const expr: RawExpr = { kind: 'ref', ref, depth, path }
   const children = new Map<string, unknown>()
   return new Proxy(Object.create(null), {

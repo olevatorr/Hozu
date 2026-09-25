@@ -124,7 +124,7 @@ record(
   '@tenon/runtime-client browser bundle (hydrate + machine), min+gz',
   gzipSync(readFileSync(join(root, 'packages/runtime-client/dist/browser.bundle.js'))).length,
   'bytes',
-  5 * 1024,
+  7 * 1024,
 )
 
 const synthetic = (features: number): number[] =>

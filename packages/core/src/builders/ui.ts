@@ -1,6 +1,15 @@
-import type { DomEvent } from '../ir/types.ts'
+import {
+  type htmlGlobalAttrs,
+  htmlTags,
+  type svgGlobalAttrs,
+  svgTags,
+  type tagAttrs,
+  voidTags,
+} from '../ir/dom-data.ts'
+import type { DomEvent, DomFields } from '../ir/events.ts'
 import { brand, type Decl } from '../model/decl.ts'
-import type { Expr, Ref, Val } from '../model/expr.ts'
+import { createRef, type Expr, type Guard, type Ref, refProxy, type Val } from '../model/expr.ts'
+import type { TagProps } from './dom-props.ts'
 import type { QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
 import type { MachineDecl, UnexpectedError } from './machine.ts'
@@ -9,62 +18,14 @@ import type { RouteDecl } from './route.ts'
 
 export const SEND = Symbol.for('tenon.send')
 
-export const htmlTags = [
-  'a',
-  'article',
-  'aside',
-  'button',
-  'div',
-  'em',
-  'footer',
-  'form',
-  'h1',
-  'h2',
-  'h3',
-  'h4',
-  'header',
-  'img',
-  'label',
-  'li',
-  'main',
-  'nav',
-  'ol',
-  'p',
-  'section',
-  'small',
-  'span',
-  'strong',
-  'table',
-  'tbody',
-  'td',
-  'th',
-  'thead',
-  'tr',
-  'ul',
-] as const
-
-export const htmlAttrs = [
-  'alt',
-  'aria-hidden',
-  'aria-label',
-  'aria-live',
-  'colspan',
-  'disabled',
-  'for',
-  'href',
-  'id',
-  'name',
-  'role',
-  'rowspan',
-  'src',
-  'title',
-  'type',
-] as const
-
-export const domEvents = ['click', 'submit'] as const satisfies readonly DomEvent[]
-
 export type HtmlTag = (typeof htmlTags)[number]
-export type HtmlAttr = (typeof htmlAttrs)[number]
+export type SvgTag = (typeof svgTags)[number]
+export type Tag = HtmlTag | SvgTag
+type VoidTag = (typeof voidTags)[number]
+type GlobalAttr<T extends Tag> = T extends SvgTag
+  ? (typeof svgGlobalAttrs)[number]
+  : (typeof htmlGlobalAttrs)[number]
+export type HtmlAttr<T extends Tag = Tag> = (typeof tagAttrs)[T][number] | GlobalAttr<T>
 
 export interface Send {
   readonly [SEND]: { event: EventDecl; payload: unknown }
@@ -74,13 +35,17 @@ export interface NodeDecl extends Decl<'node'> {}
 
 export type Child = NodeDecl | string | number | Expr<string | number | null>
 
-export type Props = {
+export type AttrValue = Val<string | number | boolean | null> | Guard
+
+export type Props<T extends Tag = Tag> = TagProps[T] & {
   class?: string
   on?: { [E in DomEvent]?: Send }
-} & { [A in HtmlAttr]?: Val<string | number | boolean | null> }
+  [data: `data-${string}`]: AttrValue | undefined
+  [aria: `aria-${string}`]: AttrValue | undefined
+}
 
 export type NodeDef =
-  | { kind: 'el'; tag: string; props: Props; children: readonly unknown[] }
+  | { kind: 'el'; tag: string; props: Record<string, unknown>; children: readonly unknown[] }
   | { kind: 'when'; states: readonly string[]; children: readonly unknown[] }
   | { kind: 'each'; source: unknown; key: string; item: (item: any) => unknown }
   | {
@@ -114,7 +79,11 @@ const node = (def: NodeDef): NodeDecl => brand({}, 'node', def)
 export const when = (states: readonly string[], children: readonly unknown[]): NodeDecl =>
   node({ kind: 'when', states, children })
 
-type Elements = { [T in HtmlTag]: (props: Props, children: Child[]) => NodeDecl }
+type Elements = {
+  [T in Tag]: T extends VoidTag | 'textarea'
+    ? (props: Props<T>) => NodeDecl
+    : (props: Props<T>, children: Child[]) => NodeDecl
+}
 
 type QueryErrors<E> = {
   [K in keyof E | 'Unexpected']: (error: Ref<K extends keyof E ? E[K] : UnexpectedError>) => NodeDecl
@@ -138,16 +107,27 @@ function view(config: ViewDef): ViewDecl {
   } satisfies ViewDef)
 }
 
+const voids = new Set<string>([...voidTags, 'textarea'])
+
 const elements = Object.fromEntries(
-  htmlTags.map((tag) => [
+  [...htmlTags, ...svgTags].map((tag) => [
     tag,
-    (props: Props, children: Child[]) => node({ kind: 'el', tag, props, children }),
+    voids.has(tag)
+      ? (props: Record<string, unknown>) => node({ kind: 'el', tag, props, children: [] })
+      : (props: Record<string, unknown>, children: Child[]) => node({ kind: 'el', tag, props, children }),
   ]),
 ) as Elements
+
+export type DomRef = Omit<Ref<DomFields>, 'form'> & { form: (name: string) => Ref<string> }
+
+const domRoot = refProxy('dom', 0)
+const form = (name: string): Ref<string> => createRef('dom', 0, ['form', name])
+const dom: DomRef = new Proxy(domRoot, { get: (t, k) => (k === 'form' ? form : Reflect.get(t, k)) })
 
 export const ui = Object.freeze({
   ...elements,
   view,
+  dom,
   send: <P>(event: EventDecl<P>, payload: Val<P>): Send => Object.freeze({ [SEND]: { event, payload } }),
   each: <T>(source: Expr<readonly T[]>, key: keyof T & string, item: (item: Ref<T>) => NodeDecl): NodeDecl =>
     node({ kind: 'each', source, key, item }),

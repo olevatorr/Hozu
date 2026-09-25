@@ -1,6 +1,6 @@
 import { contract } from '@tenon/core'
 import { addItem, checkout, removeItem } from './effects.ts'
-import { AddItem, Checkout, Dismiss, RemoveItem } from './events.ts'
+import { AddItem, Checkout, Dismiss, RemoveItem, SetQuantity } from './events.ts'
 import { cartMachine } from './machine.ts'
 
 const idle = { pending: { sku: '', qty: 1 }, error: null, orderId: null }
@@ -104,4 +104,14 @@ export const dismissesError = contract(cartMachine, {
   given: { state: 'error', context: { ...idle, error: 'Out of stock' } },
   when: [{ send: Dismiss, payload: {} }],
   expect: { state: 'idle', context: idle, effects: [] },
+})
+
+export const setsQuantity = contract(cartMachine, {
+  given: { state: 'idle', context: idle },
+  when: [
+    { send: SetQuantity, payload: { qty: 3 } },
+    { send: SetQuantity, payload: { qty: 0 } },
+    { send: SetQuantity, payload: { qty: null } },
+  ],
+  expect: { state: 'idle', context: { ...idle, pending: { sku: '', qty: 3 } }, effects: [] },
 })

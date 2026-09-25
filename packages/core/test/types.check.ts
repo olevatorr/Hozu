@@ -158,3 +158,24 @@ ui.page(slugRoute, {
   },
   entries: null,
 })
+
+const Typed = event({ payload: z.object({ text: z.string(), n: z.number().nullable() }) })
+
+ui.view({
+  machine: null,
+  route: null,
+  render: () =>
+    ui.form({ on: { submit: ui.send(Typed, { text: ui.dom.form('title'), n: null }) } }, [
+      ui.input({ name: 'title', on: { input: ui.send(Typed, { text: ui.dom.value, n: ui.dom.valueAsNumber }) } }),
+      // @ts-expect-error attribute not defined for the tag
+      ui.a({ href: '/', disabled: true }, []),
+      // @ts-expect-error void elements take no children
+      ui.img({ src: '/a.png', alt: '' }, []),
+      // @ts-expect-error unknown DOM event
+      ui.button({ on: { tap: ui.send(Typed, { text: '', n: null }) } }, []),
+      // @ts-expect-error DOM field type must match the payload
+      ui.input({ on: { input: ui.send(Typed, { text: ui.dom.checked, n: null }) } }),
+      ui.svg({ viewBox: '0 0 1 1' }, [ui.path({ d: 'M0 0', 'stroke-width': 2 }, [])]),
+      ui.button({ 'aria-pressed': op.eq(ui.dom.value, 'x'), 'data-state': 'open' }, []),
+    ]),
+})

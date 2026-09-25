@@ -72,12 +72,15 @@ export async function hydrate(
           doc.defaultView?.dispatchEvent(new CustomEvent('tenon:navigate', { detail: route })),
       }),
     )
+  const markers: Comment[] = []
+  const walker = doc.createTreeWalker(doc.body ?? doc, 128)
+  while (walker.nextNode())
+    if ((walker.currentNode as Comment).data === 'i') markers.push(walker.currentNode as Comment)
   payload.islands.forEach((island, i) => {
-    const host = doc.querySelector(`t-i[data-i="${i}"]`)
+    const at = markers[i]
     const node = payload.nodes[island.node]
-    if (!host || !node) return
-    host.replaceChildren()
-    apps.get(island.feature)?.attach(host, node, island.scope)
+    if (!at?.parentNode || !node) return
+    apps.get(island.feature)?.attach(at.parentNode, at.nextSibling, node, island.scope, true)
   })
   for (const app of apps.values()) app.start()
   return apps

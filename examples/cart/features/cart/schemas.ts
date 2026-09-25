@@ -4,6 +4,7 @@ export const Line = z.object({ sku: z.string(), qty: z.number().int().positive()
 export const Item = z.object({ sku: z.string(), name: z.string(), price: z.number(), qty: z.number().int() })
 export const Cart = z.object({ items: z.array(Item) })
 export const SkuOnly = z.object({ sku: z.string() })
+export const Quantity = z.object({ qty: z.number().nullable() })
 export const NoInput = z.object({})
 export const Context = z.object({
   pending: Line,

@@ -17,7 +17,7 @@ describe('compiled cart machine', () => {
       effects: [],
       taken: null,
     })
-    expect(cart.transitions).toHaveLength(14)
+    expect(cart.transitions).toHaveLength(15)
   })
 
   it('fires the first transition whose guard passes and emits the invoke as data', () => {

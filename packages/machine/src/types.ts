@@ -31,6 +31,9 @@ export interface Env {
   event?: Json
   result?: Json
   error?: Json
+  params?: Json
+  bindings?: Json[]
+  dom?: (field: string) => Json
 }
 
 export type Getter = (env: Env) => Json
