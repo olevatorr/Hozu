@@ -1,0 +1,28 @@
+{
+  "name": "@tenon/cli",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "tenon": "./bin/tenon.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema/*": "./schema/*"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "schema"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "dependencies": {
+    "@tenon/core": "workspace:*",
+    "@tenon/validator": "workspace:*"
+  }
+}

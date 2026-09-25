@@ -1,0 +1,1272 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/ProjectIR",
+  "definitions": {
+    "ProjectIR": {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "type": "number",
+          "const": 1
+        },
+        "routes": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/RouteIR"
+          }
+        },
+        "features": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/FeatureIR"
+          }
+        }
+      },
+      "required": [
+        "irVersion",
+        "routes",
+        "features"
+      ],
+      "additionalProperties": false
+    },
+    "RouteIR": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "FeatureIR": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "intent": {
+          "$ref": "#/definitions/IntentIR"
+        },
+        "imports": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exports": {
+          "$ref": "#/definitions/ExportsIR"
+        },
+        "schemas": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/JsonSchema"
+          }
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/TagIR"
+          }
+        },
+        "events": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/EventIR"
+          }
+        },
+        "queries": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/QueryIR"
+          }
+        },
+        "mutations": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/MutationIR"
+          }
+        },
+        "fns": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/FnIR"
+          }
+        },
+        "machine": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/MachineIR"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "views": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ViewIR"
+          }
+        },
+        "contracts": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ContractIR"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "intent",
+        "imports",
+        "exports",
+        "schemas",
+        "tags",
+        "events",
+        "queries",
+        "mutations",
+        "fns",
+        "machine",
+        "views",
+        "contracts"
+      ],
+      "additionalProperties": false
+    },
+    "IntentIR": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "summary",
+        "invariants"
+      ],
+      "additionalProperties": false
+    },
+    "ExportsIR": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "queries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mutations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "views": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "events",
+        "queries",
+        "mutations",
+        "tags",
+        "fns",
+        "views"
+      ],
+      "additionalProperties": false
+    },
+    "JsonSchema": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/Json"
+      }
+    },
+    "Json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Json"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Json"
+          }
+        }
+      ]
+    },
+    "TagIR": {
+      "type": "object",
+      "properties": {
+        "param": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "param"
+      ],
+      "additionalProperties": false
+    },
+    "EventIR": {
+      "type": "object",
+      "properties": {
+        "payload": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "QueryIR": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string"
+        },
+        "output": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "scope": {
+          "$ref": "#/definitions/Scope"
+        },
+        "freshness": {
+          "$ref": "#/definitions/Freshness"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TagExprIR"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "output",
+        "errors",
+        "scope",
+        "freshness",
+        "tags"
+      ],
+      "additionalProperties": false
+    },
+    "Scope": {
+      "type": "string",
+      "enum": [
+        "public",
+        "user"
+      ]
+    },
+    "Freshness": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "static"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "revalidate"
+            },
+            "seconds": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "seconds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "swr"
+            },
+            "seconds": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "seconds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "live"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TagExprIR": {
+      "type": "object",
+      "properties": {
+        "tag": {
+          "type": "string"
+        },
+        "param": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ValueExpr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "tag",
+        "param"
+      ],
+      "additionalProperties": false
+    },
+    "ValueExpr": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "$ref": "#/definitions/RefSource"
+            },
+            "path": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "ref",
+            "path"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "const": "binding"
+            },
+            "depth": {
+              "type": "number"
+            },
+            "path": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "ref",
+            "depth",
+            "path"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literal": {
+              "$ref": "#/definitions/Json"
+            }
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "object": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/ValueExpr"
+              }
+            }
+          },
+          "required": [
+            "object"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "fn": {
+              "type": "string"
+            },
+            "arg": {
+              "$ref": "#/definitions/ValueExpr"
+            }
+          },
+          "required": [
+            "fn",
+            "arg"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "RefSource": {
+      "type": "string",
+      "enum": [
+        "context",
+        "event",
+        "result",
+        "error",
+        "input"
+      ]
+    },
+    "MutationIR": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string"
+        },
+        "output": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "invalidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TagExprIR"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "output",
+        "errors",
+        "invalidates"
+      ],
+      "additionalProperties": false
+    },
+    "FnIR": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string"
+        },
+        "output": {
+          "type": "string"
+        },
+        "sourceHash": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "output",
+        "sourceHash"
+      ],
+      "additionalProperties": false
+    },
+    "MachineIR": {
+      "type": "object",
+      "properties": {
+        "context": {
+          "type": "string"
+        },
+        "initialContext": {
+          "$ref": "#/definitions/Json"
+        },
+        "initial": {
+          "type": "string"
+        },
+        "states": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/StateIR"
+          }
+        }
+      },
+      "required": [
+        "context",
+        "initialContext",
+        "initial",
+        "states"
+      ],
+      "additionalProperties": false
+    },
+    "StateIR": {
+      "type": "object",
+      "properties": {
+        "final": {
+          "type": "boolean"
+        },
+        "on": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/TransitionIR"
+            }
+          }
+        },
+        "invoke": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/InvokeIR"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "after": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AfterIR"
+          }
+        }
+      },
+      "required": [
+        "final",
+        "on",
+        "invoke",
+        "after"
+      ],
+      "additionalProperties": false
+    },
+    "TransitionIR": {
+      "type": "object",
+      "properties": {
+        "guard": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GuardExpr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
+        "assign": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssignOp"
+          }
+        },
+        "navigate": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "guard",
+        "target",
+        "assign",
+        "navigate"
+      ],
+      "additionalProperties": false
+    },
+    "GuardExpr": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "$ref": "#/definitions/CompareOp"
+            },
+            "left": {
+              "$ref": "#/definitions/ValueExpr"
+            },
+            "right": {
+              "$ref": "#/definitions/ValueExpr"
+            }
+          },
+          "required": [
+            "op",
+            "left",
+            "right"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "enum": [
+                "and",
+                "or"
+              ]
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/GuardExpr"
+              }
+            }
+          },
+          "required": [
+            "op",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "not"
+            },
+            "arg": {
+              "$ref": "#/definitions/GuardExpr"
+            }
+          },
+          "required": [
+            "op",
+            "arg"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "fn"
+            },
+            "fn": {
+              "type": "string"
+            },
+            "arg": {
+              "$ref": "#/definitions/ValueExpr"
+            }
+          },
+          "required": [
+            "op",
+            "fn",
+            "arg"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "CompareOp": {
+      "type": "string",
+      "enum": [
+        "eq",
+        "neq",
+        "lt",
+        "lte",
+        "gt",
+        "gte"
+      ]
+    },
+    "AssignOp": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "enum": [
+                "set",
+                "append",
+                "inc"
+              ]
+            },
+            "path": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "value": {
+              "$ref": "#/definitions/ValueExpr"
+            }
+          },
+          "required": [
+            "op",
+            "path",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "removeWhere"
+            },
+            "path": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "key": {
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/ValueExpr"
+            }
+          },
+          "required": [
+            "op",
+            "path",
+            "key",
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "InvokeIR": {
+      "type": "object",
+      "properties": {
+        "effect": {
+          "type": "string"
+        },
+        "input": {
+          "$ref": "#/definitions/ValueExpr"
+        },
+        "done": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TransitionIR"
+          }
+        },
+        "failed": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/TransitionIR"
+            }
+          }
+        }
+      },
+      "required": [
+        "effect",
+        "input",
+        "done",
+        "failed"
+      ],
+      "additionalProperties": false
+    },
+    "AfterIR": {
+      "type": "object",
+      "properties": {
+        "ms": {
+          "type": "number"
+        },
+        "transition": {
+          "$ref": "#/definitions/TransitionIR"
+        }
+      },
+      "required": [
+        "ms",
+        "transition"
+      ],
+      "additionalProperties": false
+    },
+    "ViewIR": {
+      "type": "object",
+      "properties": {
+        "machine": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "root": {
+          "$ref": "#/definitions/ViewNode"
+        }
+      },
+      "required": [
+        "machine",
+        "root"
+      ],
+      "additionalProperties": false
+    },
+    "ViewNode": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ElementNode"
+        },
+        {
+          "$ref": "#/definitions/TextNode"
+        },
+        {
+          "$ref": "#/definitions/WhenNode"
+        },
+        {
+          "$ref": "#/definitions/EachNode"
+        },
+        {
+          "$ref": "#/definitions/QueryNode"
+        },
+        {
+          "$ref": "#/definitions/EmbedNode"
+        }
+      ]
+    },
+    "ElementNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "el"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "class": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attrs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ValueExpr"
+          }
+        },
+        "on": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/SendIR"
+          }
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ViewNode"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "tag",
+        "class",
+        "attrs",
+        "on",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "SendIR": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/definitions/ValueExpr"
+        }
+      },
+      "required": [
+        "event",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "TextNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "text"
+        },
+        "value": {
+          "$ref": "#/definitions/ValueExpr"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "WhenNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "when"
+        },
+        "states": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ViewNode"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "states",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "EachNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "each"
+        },
+        "source": {
+          "$ref": "#/definitions/ValueExpr"
+        },
+        "key": {
+          "type": "string"
+        },
+        "item": {
+          "$ref": "#/definitions/ViewNode"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "source",
+        "key",
+        "item"
+      ],
+      "additionalProperties": false
+    },
+    "QueryNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "query"
+        },
+        "query": {
+          "type": "string"
+        },
+        "input": {
+          "$ref": "#/definitions/ValueExpr"
+        },
+        "ready": {
+          "$ref": "#/definitions/ViewNode"
+        },
+        "pending": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ViewNode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "failed": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ViewNode"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "query",
+        "input",
+        "ready",
+        "pending",
+        "failed"
+      ],
+      "additionalProperties": false
+    },
+    "EmbedNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "embed"
+        },
+        "view": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "view"
+      ],
+      "additionalProperties": false
+    },
+    "ContractIR": {
+      "type": "object",
+      "properties": {
+        "given": {
+          "type": "object",
+          "properties": {
+            "state": {
+              "type": "string"
+            },
+            "context": {
+              "$ref": "#/definitions/Json"
+            }
+          },
+          "required": [
+            "state",
+            "context"
+          ],
+          "additionalProperties": false
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StepIR"
+          }
+        },
+        "expect": {
+          "$ref": "#/definitions/ExpectIR"
+        }
+      },
+      "required": [
+        "given",
+        "when",
+        "expect"
+      ],
+      "additionalProperties": false
+    },
+    "StepIR": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "send": {
+              "type": "string"
+            },
+            "payload": {
+              "$ref": "#/definitions/Json"
+            }
+          },
+          "required": [
+            "send",
+            "payload"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "done": {
+              "type": "string"
+            },
+            "result": {
+              "$ref": "#/definitions/Json"
+            }
+          },
+          "required": [
+            "done",
+            "result"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "failed": {
+              "type": "string"
+            },
+            "error": {
+              "type": "string"
+            },
+            "data": {
+              "$ref": "#/definitions/Json"
+            }
+          },
+          "required": [
+            "failed",
+            "error",
+            "data"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "elapse": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "elapse"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ExpectIR": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string"
+        },
+        "context": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Json"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "effects": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EffectCallIR"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "state",
+        "context",
+        "effects"
+      ],
+      "additionalProperties": false
+    },
+    "EffectCallIR": {
+      "type": "object",
+      "properties": {
+        "effect": {
+          "type": "string"
+        },
+        "input": {
+          "$ref": "#/definitions/Json"
+        }
+      },
+      "required": [
+        "effect",
+        "input"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

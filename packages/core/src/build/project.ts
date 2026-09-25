@@ -1,0 +1,171 @@
+import type { FeatureConfig, ProjectConfig } from '../builders/feature.ts'
+import type { RouteDef } from '../builders/route.ts'
+import { join, resolveSource } from '../canonical/pointer.ts'
+import type { Diagnostic, SourceIndex } from '../ir/diagnostic.ts'
+import type { FeatureIR, JsonSchema, ProjectIR, RouteIR } from '../ir/types.ts'
+import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
+import type { SchemaAdapterDef } from '../schema/adapter.ts'
+import { withCapture } from '../source/capture.ts'
+import { buildFeature } from './feature.ts'
+import { IDENTIFIER, ProjectScope } from './scope.ts'
+
+export interface BuildResult {
+  ir: ProjectIR
+  sources: SourceIndex
+  diagnostics: Diagnostic[]
+}
+
+export const UNEXPECTED_ERROR_SCHEMA: JsonSchema = {
+  type: 'object',
+  properties: { message: { type: 'string' } },
+  required: ['message'],
+  additionalProperties: false,
+}
+
+const registries: [keyof FeatureConfig, DeclKind][] = [
+  ['tags', 'tag'],
+  ['events', 'event'],
+  ['queries', 'query'],
+  ['mutations', 'mutation'],
+  ['fns', 'fn'],
+  ['views', 'view'],
+  ['contracts', 'contract'],
+]
+
+function register(scope: ProjectScope, id: string, config: FeatureConfig) {
+  const base = join('', 'features', id)
+  const claim = (decl: object, symbol: string, kind: DeclKind, pointer: string) => {
+    scope.mark(pointer, decl)
+    if (!IDENTIFIER.test(symbol))
+      scope.report(
+        'TN014',
+        id,
+        pointer,
+        `Name "${symbol}" is not an identifier`,
+        'Names must match /^[A-Za-z][A-Za-z0-9_]*$/.',
+      )
+    const info = infoOf(decl)
+    if (info?.kind !== kind) {
+      scope.report(
+        'TN014',
+        id,
+        pointer,
+        `Expected a ${kind} declaration`,
+        `Got ${info?.kind ?? typeof decl}.`,
+      )
+      return
+    }
+    const existing = scope.owners.get(decl)
+    if (existing) {
+      scope.report(
+        'TN013',
+        id,
+        pointer,
+        `This ${kind} is already declared as ${existing.feature}.${existing.symbol}`,
+        'Every declaration identity is registered exactly once; other features reach it through exports and imports.',
+        {
+          summary: `Remove it here and import ${existing.feature} instead`,
+          snippet: `imports: [${existing.feature}]`,
+          patch: null,
+        },
+      )
+      return
+    }
+    scope.owners.set(decl, { feature: id, symbol, kind })
+  }
+  for (const [key, kind] of registries)
+    for (const [symbol, decl] of Object.entries((config[key] ?? {}) as Record<string, object>))
+      claim(decl, symbol, kind, join(base, key, symbol))
+  if (config.machine) claim(config.machine, 'machine', 'machine', join(base, 'machine'))
+}
+
+export interface BuildOptions {
+  sources?: boolean
+}
+
+export function buildProject(project: unknown, options: BuildOptions = {}): BuildResult {
+  const sources = options.sources ?? true
+  return withCapture(sources, () => build(project, sources))
+}
+
+function build(project: unknown, tracking: boolean): BuildResult {
+  const info = infoOf(project)
+  if (info?.kind !== 'project')
+    throw new TypeError('Expected a project() declaration as the default export of tenon.config.ts')
+  const config = info.def as ProjectConfig
+  const scope = new ProjectScope(tracking)
+  const adapter = infoOf(config.schema)
+  if (adapter?.kind === 'adapter') scope.adapter = adapter.def as SchemaAdapterDef
+  else
+    scope.report(
+      'TN012',
+      null,
+      '/schema',
+      'project({ schema }) must be a schema adapter',
+      'Use an adapter such as zodAdapter from @tenon/schema-zod.',
+    )
+
+  const routes: Record<string, RouteIR> = {}
+  for (const [id, route] of Object.entries(config.routes ?? {})) {
+    const p = join('', 'routes', id)
+    scope.mark(p, route)
+    if (scope.routes.has(route)) {
+      scope.report(
+        'TN013',
+        null,
+        p,
+        `Route is already registered as ${scope.routes.get(route)}`,
+        'Each route identity is registered once.',
+      )
+      continue
+    }
+    scope.routes.set(route, id)
+    routes[id] = { path: defOf<RouteDef>(route).path }
+  }
+
+  const configs: [string, FeatureConfig][] = []
+  for (const [i, f] of (config.features ?? []).entries()) {
+    const fi = infoOf(f)
+    if (fi?.kind !== 'feature') {
+      scope.report(
+        'TN014',
+        null,
+        join('', 'features', i),
+        'features must contain feature() declarations',
+        'Unknown value in project({ features }).',
+      )
+      continue
+    }
+    const fc = fi.def as FeatureConfig
+    const p = join('', 'features', fc.id)
+    scope.mark(p, f)
+    if (!IDENTIFIER.test(fc.id))
+      scope.report(
+        'TN014',
+        fc.id,
+        p,
+        `Feature id "${fc.id}" is not an identifier`,
+        'Ids must match /^[A-Za-z][A-Za-z0-9_]*$/.',
+      )
+    if (configs.some(([id]) => id === fc.id)) {
+      scope.report(
+        'TN013',
+        fc.id,
+        p,
+        `Feature id "${fc.id}" is declared twice`,
+        'Feature ids are unique within a project.',
+      )
+      continue
+    }
+    scope.features.set(f, fc.id)
+    configs.push([fc.id, fc])
+  }
+  for (const [id, fc] of configs) register(scope, id, fc)
+
+  const features: Record<string, FeatureIR> = {}
+  for (const [id, fc] of configs) features[id] = buildFeature(scope, id, fc)
+
+  const ir: ProjectIR = { irVersion: 1, routes, features }
+  for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
+  return { ir, sources: scope.sources, diagnostics: scope.diagnostics }
+}

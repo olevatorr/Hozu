@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": false
+  },
+  "include": ["packages/*/test", "packages/*/scripts", "examples/*/**/*.ts", "bench", "scripts"],
+  "exclude": ["**/node_modules", "**/dist"],
+  "references": [
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/schema-zod"
+    },
+    {
+      "path": "packages/validator"
+    },
+    {
+      "path": "packages/cli"
+    }
+  ]
+}

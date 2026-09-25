@@ -1,0 +1,23 @@
+import type { DiagnosticCode, Severity } from './diagnostic.ts'
+
+export interface CodeInfo {
+  name: string
+  severity: Severity
+}
+
+export const codes: Record<DiagnosticCode, CodeInfo> = {
+  TN001: { name: 'unreachable-state', severity: 'error' },
+  TN002: { name: 'unhandled-event', severity: 'error' },
+  TN003: { name: 'undeclared-effect', severity: 'error' },
+  TN004: { name: 'unhandled-declared-error', severity: 'error' },
+  TN005: { name: 'illegal-view-event', severity: 'error' },
+  TN006: { name: 'boundary-violation', severity: 'error' },
+  TN007: { name: 'dangling-reference', severity: 'error' },
+  TN008: { name: 'invalid-reference-path', severity: 'error' },
+  TN009: { name: 'shadowed-transition', severity: 'error' },
+  TN010: { name: 'dead-end-state', severity: 'warning' },
+  TN011: { name: 'nondeterministic-build', severity: 'error' },
+  TN012: { name: 'schema-adapter-mismatch', severity: 'error' },
+  TN013: { name: 'duplicate-declaration', severity: 'error' },
+  TN014: { name: 'invalid-builder-output', severity: 'error' },
+}

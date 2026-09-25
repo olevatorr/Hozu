@@ -1,0 +1,267 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/ValidateOutput",
+  "definitions": {
+    "ValidateOutput": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "hash": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "errors": {
+              "type": "number"
+            },
+            "warnings": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "errors",
+            "warnings"
+          ],
+          "additionalProperties": false
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Diagnostic"
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "hash",
+        "summary",
+        "diagnostics"
+      ],
+      "additionalProperties": false
+    },
+    "Diagnostic": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "$ref": "#/definitions/DiagnosticCode"
+        },
+        "severity": {
+          "$ref": "#/definitions/Severity"
+        },
+        "message": {
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/definitions/Location"
+        },
+        "cause": {
+          "type": "string"
+        },
+        "fix": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Fix"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "location",
+        "cause",
+        "fix"
+      ],
+      "additionalProperties": false
+    },
+    "DiagnosticCode": {
+      "type": "string",
+      "enum": [
+        "TN001",
+        "TN002",
+        "TN003",
+        "TN004",
+        "TN005",
+        "TN006",
+        "TN007",
+        "TN008",
+        "TN009",
+        "TN010",
+        "TN011",
+        "TN012",
+        "TN013",
+        "TN014"
+      ]
+    },
+    "Severity": {
+      "type": "string",
+      "enum": [
+        "error",
+        "warning"
+      ]
+    },
+    "Location": {
+      "type": "object",
+      "properties": {
+        "feature": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pointer": {
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SourceLoc"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "feature",
+        "pointer",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "SourceLoc": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "line": {
+          "type": "number"
+        },
+        "column": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "file",
+        "line",
+        "column"
+      ],
+      "additionalProperties": false
+    },
+    "Fix": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "snippet": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "patch": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/JsonPatchOp"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "summary",
+        "snippet",
+        "patch"
+      ],
+      "additionalProperties": false
+    },
+    "JsonPatchOp": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "enum": [
+                "add",
+                "replace"
+              ]
+            },
+            "path": {
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/Json"
+            }
+          },
+          "required": [
+            "op",
+            "path",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "remove"
+            },
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "op",
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Json"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Json"
+          }
+        }
+      ]
+    }
+  }
+}

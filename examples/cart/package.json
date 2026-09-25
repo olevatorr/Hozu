@@ -1,0 +1,16 @@
+{
+  "name": "example-cart",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "tenon validate",
+    "inspect": "tenon inspect cart",
+    "graph": "tenon graph cart"
+  },
+  "dependencies": {
+    "@tenon/cli": "workspace:*",
+    "@tenon/core": "workspace:*",
+    "@tenon/schema-zod": "workspace:*",
+    "zod": "4.6.5"
+  }
+}

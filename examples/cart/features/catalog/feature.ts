@@ -1,0 +1,28 @@
+import { feature } from '@tenon/core'
+import { catalogTag, getProduct, listProducts, productTag } from './effects.ts'
+import { ProductGrid } from './views.ts'
+
+export const catalog = feature({
+  id: 'catalog',
+  intent: {
+    summary: 'Public product catalog. Read-only, cacheable, ships no JavaScript.',
+    invariants: ['Only public data', 'No machine: every node is static or revalidated'],
+  },
+  imports: [],
+  tags: { catalogTag, productTag },
+  events: {},
+  queries: { listProducts, getProduct },
+  mutations: {},
+  fns: {},
+  machine: null,
+  views: { ProductGrid },
+  contracts: {},
+  exports: {
+    events: [],
+    queries: [listProducts],
+    mutations: [],
+    tags: [catalogTag],
+    fns: [],
+    views: [ProductGrid],
+  },
+})

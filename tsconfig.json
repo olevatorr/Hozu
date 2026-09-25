@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/schema-zod" },
+    { "path": "packages/validator" },
+    { "path": "packages/cli" },
+    { "path": "tsconfig.check.json" }
+  ]
+}
