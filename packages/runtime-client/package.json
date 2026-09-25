@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/validator",
+  "name": "@tenon/runtime-client",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -15,6 +15,6 @@
   ],
   "dependencies": {
     "@tenon/core": "workspace:*",
-    "@tenon/compiler": "workspace:*"
+    "@tenon/machine": "workspace:*"
   }
 }

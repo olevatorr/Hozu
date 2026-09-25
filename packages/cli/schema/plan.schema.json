@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/PlanOutput",
+  "definitions": {
+    "PlanOutput": {
+      "$ref": "#/definitions/RoutePlan"
+    },
+    "RoutePlan": {
+      "type": "object",
+      "properties": {
+        "route": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "views": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assert": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "static",
+            "cacheable",
+            null
+          ]
+        },
+        "cacheable": {
+          "type": "boolean"
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RegionPlan"
+          }
+        },
+        "islands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "js": {
+          "type": "boolean"
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodePlan"
+          }
+        }
+      },
+      "required": [
+        "route",
+        "path",
+        "views",
+        "assert",
+        "cacheable",
+        "regions",
+        "islands",
+        "js",
+        "nodes"
+      ],
+      "additionalProperties": false
+    },
+    "RegionPlan": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "parent": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "query": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scope": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "public",
+            "user",
+            null
+          ]
+        },
+        "mode": {
+          "$ref": "#/definitions/Mode"
+        },
+        "seconds": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "pointer": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "parent",
+        "query",
+        "scope",
+        "mode",
+        "seconds",
+        "pointer"
+      ],
+      "additionalProperties": false
+    },
+    "Mode": {
+      "type": "string",
+      "enum": [
+        "static",
+        "isr",
+        "swr",
+        "request"
+      ]
+    },
+    "NodePlan": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/definitions/Mode"
+        },
+        "hydrate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "region",
+        "mode",
+        "hydrate"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -14,10 +14,16 @@
       "path": "packages/data"
     },
     {
+      "path": "packages/compiler"
+    },
+    {
       "path": "packages/validator"
     },
     {
       "path": "packages/cli"
+    },
+    {
+      "path": "packages/runtime-client"
     },
     {
       "path": "tsconfig.check.json"

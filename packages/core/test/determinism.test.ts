@@ -57,6 +57,7 @@ function reorderCart(rand: Rand): ProjectDecl {
     schema: config.schema,
     session: config.session,
     routes: shuffleRecord(config.routes, rand),
+    pages: config.pages,
     features: shuffle(
       originals.map((f) => clones.get(f)!),
       rand,
@@ -146,7 +147,7 @@ function freshProject(rand: Rand): ProjectDecl {
       views: [],
     },
   })
-  return project({ schema: zodAdapter, session: null, routes: {}, features: [f] })
+  return project({ schema: zodAdapter, session: null, routes: {}, pages: [], features: [f] })
 }
 
 describe('A1 determinism', () => {

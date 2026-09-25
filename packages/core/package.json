@@ -13,7 +13,11 @@
       "types": "./dist/ir.d.ts",
       "default": "./dist/ir.js"
     },
-    "./schema/*": "./schema/*"
+    "./schema/*": "./schema/*",
+    "./canonical": {
+      "types": "./dist/canonical/stringify.d.ts",
+      "default": "./dist/canonical/stringify.js"
+    }
   },
   "files": [
     "dist",

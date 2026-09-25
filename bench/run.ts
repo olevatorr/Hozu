@@ -7,6 +7,7 @@ import { buildProject } from '@tenon/core/ir'
 import { createDataRuntime } from '@tenon/data'
 import { compileMachine, init, transition } from '@tenon/machine'
 import { validate, verify } from '@tenon/validator'
+import { build as bundle } from 'esbuild'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const cartDir = join(root, 'examples/cart')
@@ -118,6 +119,22 @@ record(
 )
 results.at(-1)!.budget = 1_000_000
 results.at(-1)!.ok = results.at(-1)!.value >= 1_000_000
+
+const client = await bundle({
+  entryPoints: [join(root, 'packages/runtime-client/dist/index.js')],
+  bundle: true,
+  minify: true,
+  format: 'esm',
+  platform: 'browser',
+  write: false,
+})
+record(
+  'P7',
+  '@tenon/runtime-client bundle (incl. machine), min+gz',
+  gzipSync(client.outputFiles[0]!.contents).length,
+  'bytes',
+  5 * 1024,
+)
 
 const synthetic = (features: number): number[] =>
   [0, 1, 2].flatMap(() => {

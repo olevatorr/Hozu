@@ -3,6 +3,7 @@ import { describeExplain, runExplain } from './commands/explain.ts'
 import { mermaid, runGraph } from './commands/graph.ts'
 import { describeImpact, runImpact } from './commands/impact.ts'
 import { runInspect } from './commands/inspect.ts'
+import { describePlan, runPlan } from './commands/plan.ts'
 import { runValidate } from './commands/validate.ts'
 import { TenonCliError } from './errors.ts'
 import { load } from './load.ts'
@@ -16,6 +17,7 @@ Commands:
   graph <feature>           Print a feature's state/effect/view graph (Mermaid, or --json)
   explain <feature>.<state> Explain a state: transitions, guards, effects, covering contracts
   impact <feature>.<symbol> What a query, mutation, tag, event, fn or view affects
+  plan <route>              Derived render plan: regions, cache modes, hydration islands
 
 Options:
   --json               Machine-readable output (schemas in @tenon/cli/schema)
@@ -48,7 +50,7 @@ export async function main(
       out(usage)
       return command || values.help ? 0 : 2
     }
-    const commands = ['validate', 'inspect', 'graph', 'explain', 'impact']
+    const commands = ['validate', 'inspect', 'graph', 'explain', 'impact', 'plan']
     if (!commands.includes(command))
       throw new TenonCliError('usage', `Unknown command "${command}"`, commands)
     const loaded = await load(values.config, cwd)
@@ -73,6 +75,11 @@ export async function main(
           ? json(result)
           : `${json({ feature: result.feature, hash: result.hash, summary: result.summary })}`,
       )
+      return 0
+    }
+    if (command === 'plan') {
+      const result = runPlan(loaded, target)
+      out(asJson ? json(result) : describePlan(result))
       return 0
     }
     if (command === 'impact') {

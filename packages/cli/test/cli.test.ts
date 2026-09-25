@@ -119,6 +119,17 @@ describe('A5 CLI contract', () => {
     expect(JSON.parse(unknown.stdout).error.suggestions).toEqual(['cart.addItem'])
   })
 
+  it('plan --json matches its schema; machine-less pages ship no JS', async () => {
+    const home = JSON.parse((await run(['plan', 'home', '--json'])).stdout)
+    expectSchema('plan', home)
+    expect(home).toMatchObject({ route: 'home', path: '/', js: true, cacheable: false })
+    const placed = JSON.parse((await run(['plan', 'orderPlaced', '--json'])).stdout)
+    expect(placed).toMatchObject({ js: false, islands: [], cacheable: true, assert: 'cacheable' })
+    expect((await run(['plan', 'orderPlacd', '--json'])).stdout).toContain(
+      '"suggestions": [\n      "orderPlaced"',
+    )
+  })
+
   it('unknown features fail with suggestions', async () => {
     const { code, stdout } = await run(['inspect', 'crt', '--json'])
     expect(code).toBe(2)

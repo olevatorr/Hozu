@@ -267,6 +267,13 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'page renders a view that does not exist',
+    code: 'TN007',
+    mutate: (ir) => {
+      ir.pages.home!.views.push('cart.Ghost')
+    },
+  },
+  {
     name: 'state with no way out',
     code: 'TN010',
     mutate: (ir) => {
@@ -287,6 +294,46 @@ describe('A2 judgement codes', () => {
   })
 })
 
+describe('A2 rendering judgement codes', () => {
+  it('TN022 — a public cached query keyed by user data', () => {
+    const ir = cartIR()
+    const { node } = findNode(cart(ir), 'CartPanel', (n) => n.kind === 'query' && n.query === 'cart.getCart')
+    const ready = (node as QueryNode).ready as ElementNode
+    ready.children.push({
+      id: 'cart.CartPanel/1/ready/2',
+      kind: 'query',
+      query: 'catalog.listProducts',
+      input: { object: { sku: { ref: 'binding', depth: 0, path: ['items', '0', 'sku'] } } },
+      ready: { id: 'cart.CartPanel/1/ready/2/ready', kind: 'text', value: { literal: '' } },
+      pending: null,
+      failed: {
+        Unexpected: {
+          id: 'cart.CartPanel/1/ready/2/failed/Unexpected',
+          kind: 'text',
+          value: { literal: '' },
+        },
+      },
+    })
+    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'TN022')
+    expect(found.map((d) => d.location.pointer)).toEqual([
+      '/features/cart/views/CartPanel/root/children/1/ready/children/2/input',
+    ])
+    expect(found[0]!.location.source?.file).toMatch(/examples\/cart\/.+\.ts$/)
+    expect(found[0]!.fix?.patch).toBeNull()
+  })
+
+  it('TN023 — a page asserts cacheable but renders per-request data', () => {
+    const ir = cartIR()
+    ir.pages.home!.assert = 'cacheable'
+    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'TN023')
+    expect(found.map((d) => [d.location.pointer, d.message])).toEqual([
+      ['/pages/home/assert', 'Page "home" asserts cacheable but derives cart.getCart → request'],
+    ])
+    expect(found[0]!.location.source?.file).toMatch(/examples\/cart\/routes\.ts$/)
+    expect(found[0]!.fix?.patch).toBeNull()
+  })
+})
+
 describe('A2 mistake catalog', () => {
   it('has at least 20 IR-level mistakes and the fixture is clean', () => {
     expect(catalog.length).toBeGreaterThanOrEqual(20)
@@ -302,7 +349,7 @@ describe('A2 mistake catalog', () => {
     const found = validate(ir, { sources }).filter((d) => d.code === code)
     expect(found.length, `expected ${code}`).toBeGreaterThan(0)
     for (const d of found) {
-      expect(d.location.pointer).toMatch(/^\/features\//)
+      expect(d.location.pointer).toMatch(/^\/(features|pages)\//)
       expect(d.location.source?.file).toMatch(/examples\/cart\/.+\.ts$/)
       expect(d.location.source?.line).toBeGreaterThan(0)
       expect(d.fix?.patch?.length, `${code} at ${d.location.pointer} needs a patch`).toBeGreaterThan(0)

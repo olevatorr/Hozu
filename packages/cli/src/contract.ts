@@ -1,3 +1,4 @@
+import type { RoutePlan } from '@tenon/compiler'
 import type { Diagnostic, ExportsIR, FeatureIR } from '@tenon/core/ir'
 import type { Impact } from '@tenon/validator'
 
@@ -103,3 +104,5 @@ export interface ExplainOutput {
 }
 
 export type ImpactOutput = Impact
+
+export type PlanOutput = RoutePlan

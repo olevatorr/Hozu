@@ -27,4 +27,6 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   TN019: { name: 'ineffective-invalidation', severity: 'warning' },
   TN020: { name: 'user-scope-without-session', severity: 'error' },
   TN021: { name: 'missing-resolver', severity: 'error' },
+  TN022: { name: 'user-data-in-cacheable-region', severity: 'error' },
+  TN023: { name: 'render-assertion-violated', severity: 'error' },
 }

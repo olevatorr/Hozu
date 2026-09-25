@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/validator",
+  "name": "@tenon/compiler",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -14,7 +14,6 @@
     "dist"
   ],
   "dependencies": {
-    "@tenon/core": "workspace:*",
-    "@tenon/compiler": "workspace:*"
+    "@tenon/core": "workspace:*"
   }
 }

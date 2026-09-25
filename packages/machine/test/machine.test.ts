@@ -139,7 +139,7 @@ describe('assign ops and fn bindings', () => {
     contracts: {},
     exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
   })
-  const b = buildProject(project({ schema: zodAdapter, session: null, routes: {}, features: [f] }))
+  const b = buildProject(project({ schema: zodAdapter, session: null, routes: {}, pages: [], features: [f] }))
   const compiled = compileMachine(b.ir.features.f!, b.bindings.fns)
 
   it('applies assigns sequentially with copy-on-write', () => {

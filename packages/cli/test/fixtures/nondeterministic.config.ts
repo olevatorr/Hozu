@@ -23,6 +23,7 @@ export default project({
   schema: zodAdapter,
   session: null,
   routes: {},
+  pages: [],
   features: [
     feature({
       id: 'dice',

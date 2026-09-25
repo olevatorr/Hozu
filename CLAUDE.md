@@ -43,9 +43,11 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - Packages are published under the @tenon/ scope:
   `@tenon/core` (IR types + builders; tooling at `@tenon/core/ir`), `@tenon/schema-zod`,
   `@tenon/machine` (isomorphic compiled interpreter, ADR 0004), `@tenon/data` (resolvers, cache,
-  tags, dedup, ADR 0005), `@tenon/validator`, `@tenon/compiler`, `@tenon/runtime-server`, `@tenon/runtime-client`,
+  tags, dedup, ADR 0005), `@tenon/validator`, `@tenon/compiler` (render plans, ADR 0006),
+  `@tenon/runtime-server`, `@tenon/runtime-client` (own fine-grained DOM runtime, no VDOM, ADR 0006),
   `@tenon/cli`, `@tenon/adapter-node`, `@tenon/adapter-static`
-- `@tenon/core`, `@tenon/machine`, `@tenon/data`, `@tenon/validator`, `@tenon/cli` have zero third-party runtime dependencies.
+- Every `@tenon/*` package except `@tenon/schema-zod` has zero third-party runtime dependencies.
+- Routes render via `project({ pages: [{ route, views, assert }] })`; `assert` is validated, never obeyed.
 - Query/mutation implementations live in server modules via `resolvers(project, implement => [...])`, bound by
   declaration identity. `project({ session })` declares the identity; public resolvers never see it (ADR 0005).
 - Minimal comments. Small modules organized by functionality.
@@ -54,7 +56,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `pnpm gate` — lint + typecheck + test + bench; must be green at the end of every phase (ADR 0001)
 - `pnpm test` · `pnpm typecheck` · `pnpm lint` · `pnpm bench`
 - `pnpm schema` — regenerate the JSON Schemas from the IR / CLI types (a test fails if stale)
-- `pnpm --filter example-cart validate|inspect|graph|explain|simulate|demo`
+- `pnpm --filter example-cart validate|inspect|graph|explain|plan|simulate|demo|client`
 - `tenon validate --update-lock` — accept behavior changes into `tenon.lock.json` (only when clean)
 
 ## CLI (agent-facing, all support --json)

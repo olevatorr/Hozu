@@ -137,6 +137,7 @@ describe('resolver wiring', () => {
     schema: zodAdapter,
     session: null,
     routes: {},
+    pages: [],
     features: [
       feature({
         id: 'f',

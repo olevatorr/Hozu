@@ -6,7 +6,13 @@ export interface ProjectIR {
   irVersion: 1
   session: JsonSchema | null
   routes: Record<string, RouteIR>
+  pages: Record<string, PageIR>
   features: Record<string, FeatureIR>
+}
+
+export interface PageIR {
+  views: string[]
+  assert: 'static' | 'cacheable' | null
 }
 
 export interface RouteIR {

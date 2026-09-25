@@ -39,10 +39,17 @@ export interface FeatureDecl extends Decl<'feature'> {
 export const feature = (config: FeatureConfig): FeatureDecl =>
   brand({ id: config.id }, 'feature', { ...config })
 
+export interface PageConfig {
+  route: RouteDecl
+  views: ViewDecl[]
+  assert: 'static' | 'cacheable' | null
+}
+
 export interface ProjectConfig {
   schema: SchemaAdapter
   session: Schema | null
   routes: Record<string, RouteDecl>
+  pages: PageConfig[]
   features: FeatureDecl[]
 }
 

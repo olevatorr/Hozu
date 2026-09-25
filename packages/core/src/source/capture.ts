@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import type { SourceLoc } from '../ir/diagnostic.ts'
 
 const coreUrl = new URL('../', import.meta.url).href
-const corePath = fileURLToPath(coreUrl)
+const corePath = coreUrl.startsWith('file:') ? fileURLToPath(coreUrl) : coreUrl
 
 type CallSite = {
   getFileName(): string | null

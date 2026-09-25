@@ -7,7 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/validator packages/cli",
+    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/cli",
     "typecheck": "tsc -b tsconfig.json",
     "test": "pnpm build && vitest run",
     "bench": "pnpm build && node bench/run.ts",
@@ -19,14 +19,18 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@tenon/cli": "workspace:*",
+    "@tenon/compiler": "workspace:*",
     "@tenon/core": "workspace:*",
     "@tenon/data": "workspace:*",
     "@tenon/machine": "workspace:*",
+    "@tenon/runtime-client": "workspace:*",
     "@tenon/schema-zod": "workspace:*",
     "@tenon/validator": "workspace:*",
     "@types/node": "22.20.4",
     "ajv": "8.20.0",
+    "esbuild": "0.28.2",
     "fast-check": "4.10.2",
+    "happy-dom": "20.14.5",
     "ts-json-schema-generator": "2.9.0",
     "typescript": "7.0.2",
     "vitest": "5.0.1",

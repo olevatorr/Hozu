@@ -1,0 +1,31 @@
+import { planRoute } from '@tenon/compiler'
+import { closest } from '@tenon/validator'
+import type { PlanOutput } from '../contract.ts'
+import { TenonCliError } from '../errors.ts'
+import type { Loaded } from '../load.ts'
+
+export function runPlan(loaded: Loaded, route: string | undefined): PlanOutput {
+  const { ir } = loaded.build()
+  const routes = Object.keys(ir.pages)
+  if (!route) throw new TenonCliError('usage', 'Missing <route> argument', routes)
+  if (!ir.pages[route]) {
+    const guess = closest(route, routes)
+    throw new TenonCliError('unknown-feature', `No page renders route "${route}"`, guess ? [guess] : routes)
+  }
+  return planRoute(ir, route).plan
+}
+
+export function describePlan(plan: PlanOutput): string {
+  const width = Math.max(...plan.regions.map((r) => r.id.length))
+  return [
+    `${plan.route}  ${plan.path}  · js: ${plan.js ? `${plan.islands.length} islands` : 'none (0 bytes)'} · cacheable: ${plan.cacheable ? 'yes' : 'no'}${plan.assert ? ` · asserts ${plan.assert}` : ''}`,
+    'regions:',
+    ...plan.regions.map(
+      (r) =>
+        `  ${r.id.padEnd(width)}  ${r.mode}${r.seconds === null ? '' : ` ${r.seconds}s`}${r.query ? `  ${r.query} (${r.scope})` : ''}`,
+    ),
+    'islands:',
+    ...(plan.islands.length ? plan.islands.map((i) => `  ${i}`) : ['  (none)']),
+    '',
+  ].join('\n')
+}

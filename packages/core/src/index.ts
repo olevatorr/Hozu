@@ -4,7 +4,13 @@ export type { EffectDecl, Freshness, MutationDecl, QueryDecl, Scope } from './bu
 export { mutation, query } from './builders/effects.ts'
 export type { EventDecl } from './builders/event.ts'
 export { event } from './builders/event.ts'
-export type { FeatureConfig, FeatureDecl, ProjectConfig, ProjectDecl } from './builders/feature.ts'
+export type {
+  FeatureConfig,
+  FeatureDecl,
+  PageConfig,
+  ProjectConfig,
+  ProjectDecl,
+} from './builders/feature.ts'
 export { feature, project } from './builders/feature.ts'
 export type { FnDecl } from './builders/fn.ts'
 export { fn } from './builders/fn.ts'

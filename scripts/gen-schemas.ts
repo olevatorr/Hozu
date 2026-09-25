@@ -35,6 +35,11 @@ export const targets = [
     type: 'ImpactOutput',
     out: 'packages/cli/schema/impact.schema.json',
   },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'PlanOutput',
+    out: 'packages/cli/schema/plan.schema.json',
+  },
 ]
 
 export function generate(target: (typeof targets)[number]): string {

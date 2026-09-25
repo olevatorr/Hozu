@@ -3,7 +3,7 @@ import type { RouteDef } from '../builders/route.ts'
 import { join, resolveSource } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
 import type { Diagnostic, SourceIndex } from '../ir/diagnostic.ts'
-import type { FeatureIR, JsonSchema, ProjectIR, RouteIR } from '../ir/types.ts'
+import type { FeatureIR, JsonSchema, PageIR, ProjectIR, RouteIR } from '../ir/types.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
 import { toCheck } from '../schema/check.ts'
@@ -201,7 +201,48 @@ function build(project: unknown, tracking: boolean): BuildResult {
   const features: Record<string, FeatureIR> = {}
   for (const [id, fc] of configs) features[id] = buildFeature(scope, id, fc)
 
-  const ir: ProjectIR = { irVersion: 1, session, routes, features }
+  const pages: Record<string, PageIR> = {}
+  for (const [i, page] of (config.pages ?? []).entries()) {
+    const p = join('', 'pages', i)
+    const id = scope.routes.get(page.route)
+    if (!id) {
+      scope.report(
+        'TN007',
+        null,
+        p,
+        'Page route is not registered in project({ routes })',
+        'Pages render registered routes.',
+      )
+      continue
+    }
+    if (pages[id]) {
+      scope.report(
+        'TN013',
+        null,
+        join('', 'pages', id),
+        `Route "${id}" is rendered by two pages`,
+        'Each route has exactly one page.',
+      )
+      continue
+    }
+    const views = page.views.map((v) => {
+      const owner = scope.owners.get(v)
+      if (owner?.kind === 'view') return `${owner.feature}.${owner.symbol}`
+      scope.report(
+        'TN007',
+        null,
+        join('', 'pages', id, 'views'),
+        'Page view is not declared in any feature',
+        'Register the view in a feature views record.',
+      )
+      return '?'
+    })
+    const assert = page.assert === 'static' || page.assert === 'cacheable' ? page.assert : null
+    pages[id] = { views, assert }
+    scope.mark(join('', 'pages', id), page.route)
+  }
+
+  const ir: ProjectIR = { irVersion: 1, session, routes, pages, features }
   for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
   return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }
 }

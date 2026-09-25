@@ -25,6 +25,12 @@
             "$ref": "#/definitions/RouteIR"
           }
         },
+        "pages": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PageIR"
+          }
+        },
         "features": {
           "type": "object",
           "additionalProperties": {
@@ -36,6 +42,7 @@
         "irVersion",
         "session",
         "routes",
+        "pages",
         "features"
       ],
       "additionalProperties": false
@@ -83,6 +90,33 @@
       },
       "required": [
         "path"
+      ],
+      "additionalProperties": false
+    },
+    "PageIR": {
+      "type": "object",
+      "properties": {
+        "views": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assert": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "static",
+            "cacheable",
+            null
+          ]
+        }
+      },
+      "required": [
+        "views",
+        "assert"
       ],
       "additionalProperties": false
     },

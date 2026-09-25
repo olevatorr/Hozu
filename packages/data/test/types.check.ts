@@ -3,7 +3,13 @@ import { resolvers } from '@tenon/data'
 import { zodAdapter } from '@tenon/schema-zod'
 import { z } from 'zod'
 
-const p = project({ schema: zodAdapter, session: z.object({ userId: z.string() }), routes: {}, features: [] })
+const p = project({
+  schema: zodAdapter,
+  session: z.object({ userId: z.string() }),
+  routes: {},
+  pages: [],
+  features: [],
+})
 const pub = query({
   input: z.object({}),
   output: z.string(),

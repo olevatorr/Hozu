@@ -24,6 +24,7 @@
   "dependencies": {
     "@tenon/core": "workspace:*",
     "@tenon/validator": "workspace:*",
-    "@tenon/machine": "workspace:*"
+    "@tenon/machine": "workspace:*",
+    "@tenon/compiler": "workspace:*"
   }
 }

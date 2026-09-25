@@ -8,13 +8,16 @@
     "graph": "tenon graph cart",
     "explain": "tenon explain cart.idle",
     "simulate": "node simulate.ts",
-    "demo": "node demo.ts"
+    "demo": "node demo.ts",
+    "plan": "tenon plan home",
+    "client": "node client.ts"
   },
   "dependencies": {
     "@tenon/cli": "workspace:*",
     "@tenon/core": "workspace:*",
     "@tenon/data": "workspace:*",
     "@tenon/machine": "workspace:*",
+    "@tenon/runtime-client": "workspace:*",
     "@tenon/schema-zod": "workspace:*",
     "zod": "4.6.5"
   }

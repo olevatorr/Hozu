@@ -97,5 +97,5 @@ export function syntheticProject(features: number, states = 30, events = 10) {
     decls.push(decl)
     previous = { feature: decl, rows }
   }
-  return project({ schema: zodAdapter, session: null, routes: {}, features: decls })
+  return project({ schema: zodAdapter, session: null, routes: {}, pages: [], features: decls })
 }
