@@ -14,6 +14,7 @@ import {
 import type { DataRuntime } from '@tenon/data'
 import { getIn } from '@tenon/machine'
 import type { IslandRef, PagePayload, Result } from '@tenon/runtime-client'
+import { compileNode, type Frag, type Runtime, run, type Scope, text } from './compile.ts'
 import { escapeHtml, scriptJson } from './escape.ts'
 
 export interface Assets {
@@ -36,18 +37,6 @@ export interface RenderedPage {
   path: string
   chunks: AsyncIterable<string>
   tags: Set<string>
-}
-
-const voids = new Set(['img'])
-
-const text = (v: Json) =>
-  v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v)
-
-interface Scope {
-  feature: FeatureIR
-  context: Json
-  state: string | null
-  bindings: Json[]
 }
 
 export async function renderPage({
@@ -142,38 +131,16 @@ export async function renderPage({
     return result
   }
 
+  const runtime: Runtime = { params, fns, open, embed: (view) => embedded({ kind: 'embed', id: '', view }) }
+  const compiled = compiledFor(plan, islandIds)
   const sync = (n: ViewNode, scope: Scope, island: boolean): string => {
-    if (!island && islandIds.has(n.id)) return `${open(n, scope)}${sync(n, scope, true)}</t-i>`
-    switch (n.kind) {
-      case 'text':
-        return escapeHtml(text(value(n.value, scope)))
-      case 'el': {
-        let html = element(n, scope)
-        if (voids.has(n.tag)) return html
-        for (const c of n.children) html += sync(c, scope, island)
-        return `${html}</${n.tag}>`
-      }
-      case 'when': {
-        let html = `<!--${n.id}-->`
-        if (scope.state !== null && n.states.includes(scope.state))
-          for (const c of n.children) html += sync(c, scope, island)
-        return `${html}<!--/${n.id}-->`
-      }
-      case 'each': {
-        let html = `<!--${n.id}-->`
-        const items = value(n.source, scope)
-        if (Array.isArray(items))
-          for (const item of items)
-            html += sync(n.item, { ...scope, bindings: [...scope.bindings, item] }, island)
-        return `${html}<!--/${n.id}-->`
-      }
-      case 'embed': {
-        const e = embedded(n)
-        return e ? sync(e.root, e.scope, island) : ''
-      }
-      default:
-        return ''
+    const cache = island ? compiled.inside : compiled.outside
+    let frag = cache.get(n)
+    if (frag === undefined) {
+      frag = compileNode(n, island, islandIds)
+      cache.set(n, frag)
     }
+    return run(frag, scope, runtime)
   }
 
   let buffer = ''
@@ -288,8 +255,21 @@ export async function renderPage({
 }
 
 const plans = new WeakMap<ProjectIR, Map<string, RoutePlan>>()
+const compiledPlans = new WeakMap<
+  RoutePlan,
+  { inside: WeakMap<ViewNode, Frag>; outside: WeakMap<ViewNode, Frag> }
+>()
+
+function compiledFor(plan: RoutePlan, _islands: Set<string>) {
+  let c = compiledPlans.get(plan)
+  if (!c) {
+    c = { inside: new WeakMap(), outside: new WeakMap() }
+    compiledPlans.set(plan, c)
+  }
+  return c
+}
 const suspendMemo = new WeakMap<ViewNode, boolean>()
-const depthMemo = new WeakMap<ViewNode, Set<number>>()
+const usesMemo = new WeakMap<ViewNode, Uses>()
 
 function planOf(ir: ProjectIR, route: string): RoutePlan {
   let byRoute = plans.get(ir)
@@ -305,36 +285,41 @@ function planOf(ir: ProjectIR, route: string): RoutePlan {
   return plan
 }
 
-const valueDepths = (v: ValueExpr, out: Set<number>) => {
+type Uses = Map<number, string[][]>
+
+const valueUses = (v: ValueExpr, out: Uses) => {
   if ('ref' in v) {
-    if (v.ref === 'binding') out.add(v.depth)
-  } else if ('object' in v) for (const k in v.object) valueDepths(v.object[k]!, out)
-  else if ('fn' in v) valueDepths(v.arg, out)
+    if (v.ref !== 'binding') return
+    const paths = out.get(v.depth)
+    if (paths) paths.push(v.path)
+    else out.set(v.depth, [v.path])
+  } else if ('object' in v) for (const k in v.object) valueUses(v.object[k]!, out)
+  else if ('fn' in v) valueUses(v.arg, out)
 }
 
-function bindingDepths(n: ViewNode): Set<number> {
-  const hit = depthMemo.get(n)
+function bindingUses(n: ViewNode): Uses {
+  const hit = usesMemo.get(n)
   if (hit) return hit
-  const out = new Set<number>()
+  const out: Uses = new Map()
   const walk = (x: ViewNode) => {
     switch (x.kind) {
       case 'text':
-        valueDepths(x.value, out)
+        valueUses(x.value, out)
         return
       case 'el':
-        for (const k in x.attrs) valueDepths(x.attrs[k]!, out)
-        for (const k in x.on) valueDepths(x.on[k]!.payload, out)
+        for (const k in x.attrs) valueUses(x.attrs[k]!, out)
+        for (const k in x.on) valueUses(x.on[k]!.payload, out)
         for (const c of x.children) walk(c)
         return
       case 'when':
         for (const c of x.children) walk(c)
         return
       case 'each':
-        valueDepths(x.source, out)
+        valueUses(x.source, out)
         walk(x.item)
         return
       case 'query':
-        valueDepths(x.input, out)
+        valueUses(x.input, out)
         walk(x.ready)
         if (x.pending) walk(x.pending)
         for (const k in x.failed) walk(x.failed[k]!)
@@ -344,13 +329,57 @@ function bindingDepths(n: ViewNode): Set<number> {
     }
   }
   walk(n)
-  depthMemo.set(n, out)
+  usesMemo.set(n, out)
   return out
 }
 
+type Shape = true | Map<string, Shape>
+
+const shapeOf = (paths: string[][]): Shape => {
+  const root = new Map<string, Shape>()
+  for (const path of paths) {
+    let at: Map<string, Shape> = root
+    for (let i = 0; i < path.length; i++) {
+      const next = at.get(path[i]!)
+      if (next === true) break
+      if (i === path.length - 1) at.set(path[i]!, true)
+      else if (next) at = next
+      else {
+        const child = new Map<string, Shape>()
+        at.set(path[i]!, child)
+        at = child
+      }
+    }
+    if (path.length === 0) return true
+  }
+  return root
+}
+
+const project = (value: Json, shape: Shape): Json => {
+  if (shape === true || typeof value !== 'object' || value === null || Array.isArray(value)) return value
+  const out: { [k: string]: Json } = {}
+  for (const [k, s] of shape) if (k in value) out[k] = project(value[k]!, s)
+  return out
+}
+
+const shapesMemo = new WeakMap<ViewNode, (Shape | null)[]>()
+
 const pruneScope = (n: ViewNode, bindings: Json[]): Json[] => {
-  const used = bindingDepths(n)
-  return bindings.map((b, i) => (used.has(i) ? b : null))
+  let shapes = shapesMemo.get(n)
+  if (!shapes) {
+    const uses = bindingUses(n)
+    shapes = bindings.map((_, i) => {
+      const paths = uses.get(i)
+      return paths ? shapeOf(paths) : null
+    })
+    shapesMemo.set(n, shapes)
+  }
+  const out: Json[] = []
+  for (let i = 0; i < bindings.length; i++) {
+    const shape = shapes[i]
+    out.push(shape ? project(bindings[i]!, shape) : null)
+  }
+  return out
 }
 
 interface Channel extends AsyncIterable<string> {
