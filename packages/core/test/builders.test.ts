@@ -42,6 +42,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        http: null,
         notFound: null,
         error: null,
         session: null,
@@ -62,6 +63,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        http: null,
         notFound: null,
         error: null,
         session: null,
@@ -92,6 +94,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        http: null,
         notFound: null,
         error: null,
         session: null,
@@ -121,6 +124,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        http: null,
         notFound: null,
         error: null,
         session: null,
@@ -155,6 +159,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        http: null,
         notFound: null,
         error: null,
         session: null,
@@ -185,6 +190,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        http: null,
         notFound: null,
         error: null,
         session: null,
@@ -207,6 +213,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        http: null,
         notFound: null,
         error: null,
         session: null,
@@ -240,6 +247,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        http: null,
         notFound: null,
         error: null,
         session: null,
@@ -266,6 +274,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        http: null,
         notFound: null,
         error: null,
         session: null,
@@ -292,6 +301,7 @@ describe('builder diagnostics', () => {
         project({
           schema: zodAdapter,
           styles: null,
+          http: null,
           notFound: null,
           error: null,
           session: null,
@@ -327,6 +337,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        http: null,
         notFound: null,
         error: null,
         session: null,

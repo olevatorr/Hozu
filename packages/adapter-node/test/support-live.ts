@@ -63,6 +63,7 @@ const home = route({ path: '/', params: null, search: null })
 export const site = project({
   schema: zodAdapter,
   styles: null,
+  http: null,
   notFound: null,
   error: null,
   session: null,

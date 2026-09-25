@@ -52,6 +52,7 @@ export class ProjectScope {
   readonly routes = new Map<object, string>()
   readonly schemaCache = new Map<object, { json: JsonSchema; hash: string }>()
   adapter: SchemaAdapterDef | null = null
+  basePath = ''
   readonly bindings: Bindings = {
     fns: {},
     checks: {},
@@ -252,7 +253,7 @@ export class FeatureScope {
     const file = assetOf(v)
     if (file) {
       this.project.bindings.assets[file.href] = { file: file.file, width: file.width, height: file.height }
-      return { literal: file.href }
+      return { literal: this.project.basePath + file.href }
     }
     const expr = exprOf(v)
     if (expr) {

@@ -14,6 +14,7 @@ export type {
 export { feature, project } from './builders/feature.ts'
 export type { FnDecl } from './builders/fn.ts'
 export { fn } from './builders/fn.ts'
+export type { ExternalUrl, HttpConfig, PathParams, Redirects } from './builders/http.ts'
 export type {
   AfterConfig,
   InvokeDecl,

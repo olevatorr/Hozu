@@ -19,7 +19,15 @@ export function routeTable(ir: ProjectIR): Record<string, string> {
       .filter(([, v]) => v !== null && typeof v !== 'object')
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
       .join('&')
-    out[id] = q ? `${r.path}?${q}` : r.path
+    const path = publicPath(ir, r.path)
+    out[id] = q ? `${path}?${q}` : path
   }
   return out
+}
+
+export function publicPath(ir: ProjectIR, path: string): string {
+  const { basePath, trailingSlash } = ir.http
+  const bare = path === '/' ? '' : path.replace(/\/$/, '')
+  if (trailingSlash === 'always') return `${basePath}${bare}/`
+  return `${basePath}${bare}` || '/'
 }

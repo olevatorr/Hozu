@@ -67,9 +67,9 @@ export async function compileStyles(
       if (/^(data:|https?:|\/\/|#|\/_tenon\/)/.test(url)) return all
       const file = resolve(base, url.split(/[?#]/)[0]!)
       if (!existsSync(file)) return all
-      const href = `/_tenon/a/${sha256(readFileSync(file).toString('base64')).slice(0, 16)}${extname(file).toLowerCase()}`
-      assets[href] = file
-      return `url(${quote}${href}${quote})`
+      const name = `${sha256(readFileSync(file).toString('base64')).slice(0, 16)}${extname(file).toLowerCase()}`
+      assets[`/_tenon/a/${name}`] = file
+      return `url(${quote}a/${name}${quote})`
     })
   const css = minify ? foldDivisions(optimize(raw, { minify: true }).code) : raw
   const known = selectorClasses(raw)

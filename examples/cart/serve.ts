@@ -13,5 +13,5 @@ createServer({
   build,
   styles: await compileStyles(build),
   resolvers: createResolvers(),
-  session: (request) => ({ userId: user(request.headers.cookie) }),
+  session: (request) => ({ userId: user(request.headers.get('cookie') ?? undefined) }),
 }).listen(port, () => console.log(`Tenon cart on http://localhost:${port}`))

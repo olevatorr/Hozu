@@ -53,6 +53,9 @@
             "null"
           ]
         },
+        "http": {
+          "$ref": "#/definitions/HttpIR"
+        },
         "features": {
           "type": "object",
           "additionalProperties": {
@@ -68,6 +71,7 @@
         "pages",
         "notFound",
         "error",
+        "http",
         "features"
       ],
       "additionalProperties": false
@@ -531,6 +535,90 @@
         "query",
         "input",
         "params"
+      ],
+      "additionalProperties": false
+    },
+    "HttpIR": {
+      "type": "object",
+      "properties": {
+        "basePath": {
+          "type": "string"
+        },
+        "trailingSlash": {
+          "type": "string",
+          "enum": [
+            "never",
+            "always"
+          ]
+        },
+        "redirects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RedirectIR"
+          }
+        },
+        "headers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HeaderRuleIR"
+          }
+        }
+      },
+      "required": [
+        "basePath",
+        "trailingSlash",
+        "redirects",
+        "headers"
+      ],
+      "additionalProperties": false
+    },
+    "RedirectIR": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "$ref": "#/definitions/ValueExpr"
+        },
+        "permanent": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "permanent"
+      ],
+      "additionalProperties": false
+    },
+    "HeaderRuleIR": {
+      "type": "object",
+      "properties": {
+        "routes": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "const": "all"
+            }
+          ]
+        },
+        "set": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "routes",
+        "set"
       ],
       "additionalProperties": false
     },

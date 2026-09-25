@@ -17,7 +17,7 @@ export function start(options: Partial<NodeAdapterOptions> = {}) {
   const server = createServer({
     build,
     resolvers: createResolvers(),
-    session: (req) => ({ userId: String(req.headers['x-user'] ?? 'guest') }),
+    session: (req) => ({ userId: req.headers.get('x-user') ?? 'guest' }),
     ...options,
   })
   const ready = new Promise<Server>((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)))

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto'
 import { planRoute, type RoutePlan, softTargets } from '@tenon/compiler'
 import {
   type BuildResult,
@@ -607,9 +606,15 @@ function speculationRules(ir: ProjectIR, route: string): string {
   return rules
 }
 
-export function inlineScriptHashes(ir: ProjectIR): string[] {
+export async function inlineScriptHashes(ir: ProjectIR): Promise<string[]> {
   const rules = new Set(Object.keys(ir.pages).map((route) => speculationRules(ir, route)))
-  return [...rules].map((r) => `sha256-${createHash('sha256').update(r).digest('base64')}`)
+  const digest = async (text: string) =>
+    btoa(
+      String.fromCharCode(
+        ...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))),
+      ),
+    )
+  return Promise.all([...rules].map(async (r) => `sha256-${await digest(r)}`))
 }
 
 function headHtml(

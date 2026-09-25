@@ -6,7 +6,7 @@ import { defOf, infoOf } from '../model/decl.ts'
 import { RecorderError, refProxy } from '../model/expr.ts'
 import { type At, FeatureScope, type ProjectScope } from './scope.ts'
 
-class PageScope extends FeatureScope {
+export class PageScope extends FeatureScope {
   override report(code: DiagnosticCode, pointer: At, message: string, cause: string, fix: Fix | null = null) {
     this.project.report(code, null, pointer, message, cause, fix)
   }

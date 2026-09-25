@@ -145,6 +145,7 @@ describe('assign ops and fn bindings', () => {
     project({
       schema: zodAdapter,
       styles: null,
+      http: null,
       notFound: null,
       error: null,
       session: null,

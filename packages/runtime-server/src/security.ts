@@ -1,15 +1,13 @@
-import type { IncomingMessage } from 'node:http'
-
 export type CspSources = Partial<
   Record<'script' | 'style' | 'img' | 'connect' | 'font' | 'frame' | 'media', string[]>
 >
 
-export const crossSite = (request: IncomingMessage): boolean => {
-  if (request.headers['sec-fetch-site'] === 'cross-site') return true
-  const origin = request.headers.origin
+export const crossSite = (request: Request): boolean => {
+  if (request.headers.get('sec-fetch-site') === 'cross-site') return true
+  const origin = request.headers.get('origin')
   if (!origin) return false
   try {
-    return new URL(origin).host !== request.headers.host
+    return new URL(origin).host !== new URL(request.url).host
   } catch {
     return true
   }

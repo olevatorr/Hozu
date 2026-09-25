@@ -9,10 +9,15 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./browser/*": "./dist/browser/*"
+    "./browser/*": "./dist/browser/*",
+    "./files": {
+      "types": "./files.d.ts",
+      "default": "./dist/files.js"
+    }
   },
   "files": [
-    "dist"
+    "dist",
+    "files.d.ts"
   ],
   "dependencies": {
     "@tenon/core": "workspace:*",

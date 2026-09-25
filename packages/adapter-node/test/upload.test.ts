@@ -20,6 +20,7 @@ const Home = ui.view({ machine: null, route: null, render: () => ui.p({}, ['Uplo
 const site = project({
   schema: zodAdapter,
   styles: null,
+  http: null,
   notFound: null,
   error: null,
   session: null,
@@ -81,7 +82,7 @@ describe('file uploads (G10)', () => {
     const realFetch = globalThis.fetch
     const spy = vi
       .spyOn(globalThis, 'fetch')
-      .mockImplementation((url, init) => realFetch(`${base}${url}`, init))
+      .mockImplementation((url, init) => realFetch(`${base}/_tenon/${String(url).split('/').pop()}`, init))
     try {
       const file = new File(['hello tenon'], 'note.txt', { type: 'text/plain' })
       const [meta] = domField({ target: { files: [file] } } as unknown as Event)('files') as [

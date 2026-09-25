@@ -331,6 +331,31 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'redirect that hides a page',
+    code: 'TN037',
+    mutate: (ir) => {
+      ir.http.redirects.push({
+        from: '/products/:id',
+        to: { literal: 'https://shop.example' },
+        permanent: true,
+      })
+    },
+  },
+  {
+    name: 'header the framework derives',
+    code: 'TN038',
+    mutate: (ir) => {
+      ir.http.headers.push({ routes: 'all', set: { 'cache-control': 'no-store' } })
+    },
+  },
+  {
+    name: 'base path with a trailing slash',
+    code: 'TN039',
+    mutate: (ir) => {
+      ir.http.basePath = '/shop/'
+    },
+  },
+  {
     name: 'state with no way out',
     code: 'TN010',
     mutate: (ir) => {
@@ -476,7 +501,7 @@ describe('A2 mistake catalog', () => {
     const found = validate(ir, { sources }).filter((d) => d.code === code)
     expect(found.length, `expected ${code}`).toBeGreaterThan(0)
     for (const d of found) {
-      expect(d.location.pointer).toMatch(/^\/(features|pages|routes)\//)
+      expect(d.location.pointer).toMatch(/^\/(features|pages|routes|http)\//)
       expect(d.location.source?.file).toMatch(/examples\/cart\/.+\.ts$/)
       expect(d.location.source?.line).toBeGreaterThan(0)
       expect(d.fix?.patch?.length, `${code} at ${d.location.pointer} needs a patch`).toBeGreaterThan(0)

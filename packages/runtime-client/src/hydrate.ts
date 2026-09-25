@@ -48,10 +48,12 @@ export interface EffectResponse {
 
 export type Transport = (effect: string, input: Json, keys: string[]) => Promise<EffectResponse>
 
+const endpoint = (name: string) => new URL(name, import.meta.url)
+
 export const fetchTransport: Transport = async (effect, input, keys) => {
   const json = JSON.stringify({ effect, input, keys })
   const body = uploads.size ? await (await import('./uploads.ts')).encode(json, input, uploads) : json
-  const response = await fetch('/_tenon/effect', {
+  const response = await fetch(endpoint('effect'), {
     method: 'POST',
     headers: typeof body === 'string' ? { 'content-type': 'application/json' } : {},
     body,
@@ -62,7 +64,7 @@ export const fetchTransport: Transport = async (effect, input, keys) => {
 export type QueryTransport = (query: string, input: Json) => Promise<Result>
 
 export const fetchQuery: QueryTransport = async (query, input) => {
-  const response = await fetch('/_tenon/query', {
+  const response = await fetch(endpoint('query'), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ query, input }),

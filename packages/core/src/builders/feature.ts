@@ -6,6 +6,7 @@ import type { ContractDecl } from './contract.ts'
 import type { MutationDecl, QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
 import type { FnDecl } from './fn.ts'
+import type { HttpConfig } from './http.ts'
 import type { MachineDecl } from './machine.ts'
 import type { PageDecl } from './page.ts'
 import type { RouteDecl } from './route.ts'
@@ -54,10 +55,11 @@ export interface ProjectConfig {
   error: RouteDecl | null
   pages: PageDecl[]
   features: FeatureDecl[]
+  http: HttpConfig | null
 }
 
 export interface ProjectDecl<Session = unknown> extends Decl<'project'>, Typed<{ session: Session }> {}
 
-export const project = <S extends Schema | null>(
-  config: Omit<ProjectConfig, 'session'> & { session: S },
+export const project = <S extends Schema | null, R = Record<string, never>>(
+  config: Omit<ProjectConfig, 'session' | 'http'> & { session: S; http: HttpConfig<R> | null },
 ): ProjectDecl<S extends Schema ? Infer<S> : null> => brand({}, 'project', { ...config })

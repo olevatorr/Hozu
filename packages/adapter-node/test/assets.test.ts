@@ -45,6 +45,7 @@ const Page = ui.view({
 const site = project({
   schema: zodAdapter,
   styles: url('app.css'),
+  http: null,
   notFound: null,
   error: null,
   session: null,
@@ -111,7 +112,7 @@ describe('assets', () => {
     const styles = await compileStyles(build, { base: dir })
     const font = styles.preload[0]!
     expect(font).toMatch(/^\/_tenon\/a\/[0-9a-f]{16}\.woff2$/)
-    expect(styles.css).toContain(`url(${font})`)
+    expect(styles.css).toContain(`url(${font.replace('/_tenon/', '')})`)
     const server = createServer({ build, styles, resolvers: resolvers(site, () => []) })
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()))
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`

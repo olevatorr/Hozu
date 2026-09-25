@@ -3,10 +3,11 @@ import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { createServer, sessionCookie } from '@tenon/adapter-node'
+import { createServer } from '@tenon/adapter-node'
 import { feature, mutation, project, query, route, ui } from '@tenon/core'
 import { buildProject } from '@tenon/core/ir'
 import { resolvers } from '@tenon/data'
+import { sessionCookie } from '@tenon/runtime-server'
 import { zodAdapter } from '@tenon/schema-zod'
 import { validate } from '@tenon/validator'
 import { describe, expect, it } from 'vitest'
@@ -69,6 +70,7 @@ const head = (title: string) => ({
 const site = project({
   schema: zodAdapter,
   styles: null,
+  http: null,
   notFound: missing,
   error: null,
   session: z.object({ user: z.string() }),

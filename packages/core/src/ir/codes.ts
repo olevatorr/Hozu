@@ -42,4 +42,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   TN034: { name: 'conflicting-ignore', severity: 'error' },
   TN035: { name: 'invalid-search-schema', severity: 'error' },
   TN036: { name: 'form-not-server-runnable', severity: 'warning' },
+  TN037: { name: 'invalid-redirect', severity: 'error' },
+  TN038: { name: 'reserved-header', severity: 'error' },
+  TN039: { name: 'invalid-base-path', severity: 'error' },
 }

@@ -69,6 +69,7 @@ const board = (options: { busyIgnores: boolean; select: string[]; field: 'enum' 
     project({
       schema: zodAdapter,
       styles: null,
+      http: null,
       notFound: null,
       error: null,
       session: null,

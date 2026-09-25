@@ -11,6 +11,7 @@ import { toCheck } from '../schema/check.ts'
 import { isStandardSchema } from '../schema/standard.ts'
 import { withCapture } from '../source/capture.ts'
 import { buildFeature } from './feature.ts'
+import { buildHttp } from './http.ts'
 import { buildPages } from './page.ts'
 import { filePath, IDENTIFIER, ProjectScope } from './scope.ts'
 
@@ -148,6 +149,7 @@ function build(project: unknown, tracking: boolean): BuildResult {
       'Use an adapter such as zodAdapter from @tenon/schema-zod.',
     )
 
+  scope.basePath = typeof config.http?.basePath === 'string' ? config.http.basePath : ''
   const session = projectSchema(scope, config.session, '/session', '#session')
   const routes: Record<string, RouteIR> = {}
   for (const [id, route] of Object.entries(config.routes ?? {})) {
@@ -239,7 +241,7 @@ function build(project: unknown, tracking: boolean): BuildResult {
         url: String(config.site.url).replace(/\/$/, ''),
         name: String(config.site.name),
         lang: String(config.site.lang),
-        icon: assetOf(config.site.icon)?.href ?? null,
+        icon: assetOf(config.site.icon) ? scope.basePath + assetOf(config.site.icon)!.href : null,
         themeColor: config.site.themeColor ?? null,
       }
     : null
@@ -263,7 +265,9 @@ function build(project: unknown, tracking: boolean): BuildResult {
       'error is not a registered route',
       'Register it in project({ routes }).',
     )
-  const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, notFound, error, features }
+  scope.mark('/http', project)
+  const http = buildHttp(scope, config.http)
+  const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, notFound, error, http, features }
   for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
   return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }
 }

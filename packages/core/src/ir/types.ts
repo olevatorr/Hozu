@@ -10,7 +10,26 @@ export interface ProjectIR {
   pages: Record<string, PageIR>
   notFound: string | null
   error: string | null
+  http: HttpIR
   features: Record<string, FeatureIR>
+}
+
+export interface HttpIR {
+  basePath: string
+  trailingSlash: 'never' | 'always'
+  redirects: RedirectIR[]
+  headers: HeaderRuleIR[]
+}
+
+export interface RedirectIR {
+  from: string
+  to: ValueExpr
+  permanent: boolean
+}
+
+export interface HeaderRuleIR {
+  routes: string[] | 'all'
+  set: Record<string, string>
 }
 
 export interface SiteIR {

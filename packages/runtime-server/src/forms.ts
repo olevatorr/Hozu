@@ -138,18 +138,12 @@ export async function runForm(options: {
   return outcome
 }
 
-export function formFields(
-  body: string,
-  type: string,
-): Record<string, string> | Promise<Record<string, string>> {
-  const collect = (entries: Iterable<[string, unknown]>) => {
-    const out: Record<string, string> = {}
-    for (const [k, v] of entries) if (k !== FORM_FIELD && !(k in out)) out[k] = typeof v === 'string' ? v : ''
-    return out
-  }
-  if (type.startsWith('multipart/form-data'))
-    return new Response(body, { headers: { 'content-type': type } })
-      .formData()
-      .then((f) => collect(f as unknown as Iterable<[string, unknown]>))
-  return collect(new URLSearchParams(body))
+export async function formFields(request: Request): Promise<Record<string, string>> {
+  const out: Record<string, string> = {}
+  const type = request.headers.get('content-type') ?? ''
+  const entries: Iterable<[string, unknown]> = type.startsWith('multipart/form-data')
+    ? ((await request.formData()) as unknown as Iterable<[string, unknown]>)
+    : new URLSearchParams(await request.text())
+  for (const [k, v] of entries) if (k !== FORM_FIELD && !(k in out)) out[k] = typeof v === 'string' ? v : ''
+  return out
 }

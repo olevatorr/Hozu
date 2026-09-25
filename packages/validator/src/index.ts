@@ -9,6 +9,7 @@ import { declaredErrors } from './rules/errors.ts'
 import { conflictingIgnores, unhandledEvents, viewEvents } from './rules/events.ts'
 import { progressiveForms } from './rules/forms.ts'
 import { unsafeHtml } from './rules/html.ts'
+import { httpRules } from './rules/http.ts'
 import { imageDimensions } from './rules/images.ts'
 import { internalLinks } from './rules/links.ts'
 import { literals } from './rules/literals.ts'
@@ -54,6 +55,7 @@ const rules = [
   conflictingIgnores,
   domText,
   progressiveForms,
+  httpRules,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>

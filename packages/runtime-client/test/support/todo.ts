@@ -114,6 +114,7 @@ export const todoFeature = feature({
 export default project({
   schema: zodAdapter,
   styles: null,
+  http: null,
   notFound: null,
   error: null,
   session: null,

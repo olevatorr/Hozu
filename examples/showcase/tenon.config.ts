@@ -21,6 +21,7 @@ const head = (title: string, description: string) => ({
 export default project({
   schema: zodAdapter,
   styles: new URL('./app.css', import.meta.url),
+  http: null,
   notFound: null,
   error: null,
   session: null,

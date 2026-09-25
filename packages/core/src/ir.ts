@@ -21,5 +21,5 @@ export {
 export { domEvents, eventFields, passiveEvents } from './ir/events.ts'
 export { FORM_FIELD, formRunnable } from './ir/forms.ts'
 export { anyGuardRef, anyRef, eachGuardRef, eachRef, type RefExpr } from './ir/refs.ts'
-export { routeTable, searchDefaults } from './ir/routes.ts'
+export { publicPath, routeTable, searchDefaults } from './ir/routes.ts'
 export type * from './ir/types.ts'

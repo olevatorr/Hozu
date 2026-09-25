@@ -30,3 +30,6 @@ around the rule.
 | TN034 | a state both handles and ignores an event | remove it from one of the two |
 | TN035 | search schema is not a flat object of scalars with defaults | `z.object({ key: scalar.default(…) })` |
 | TN036 | (warning) a form needs JavaScript | read its values with `ui.dom.form('name')` |
+| TN037 | a redirect is not a path, hides a page or another redirect, or targets an unknown route | change or remove the `from` key; point `to` at `ui.link(...)` |
+| TN038 | `http.headers` sets a header the framework owns, or an invalid name/value | remove it (`cache-control` is derived; CSP is `createServer({ csp })`) |
+| TN039 | `basePath` is not `''` or `/segment[/segment…]` | e.g. `'/shop'`, no trailing slash |

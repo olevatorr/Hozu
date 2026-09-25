@@ -32,6 +32,7 @@ describe('search params (ADR 0014)', () => {
   it('builds one canonical URL: sorted keys, defaults and nulls left out', () => {
     const table = routeTable({
       routes: { list: { path: '/items/:cat', params: null, search: schema } },
+      http: { basePath: '', trailingSlash: 'never', redirects: [], headers: [] },
     } as never)
     expect(table.list).toBe('/items/:cat?show=all&page=1&exact=false')
     expect(pathOf(table.list!, { cat: 'a b' }, { show: 'all', page: 1, q: null, exact: false })).toBe(

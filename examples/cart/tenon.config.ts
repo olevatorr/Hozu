@@ -11,6 +11,7 @@ import { home, orderPlaced, product } from './routes.ts'
 export default project({
   schema: zodAdapter,
   styles: new URL('./app.css', import.meta.url),
+  http: null,
   notFound: null,
   error: null,
   session: z.object({ userId: z.string() }),

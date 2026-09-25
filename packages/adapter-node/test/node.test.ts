@@ -19,7 +19,7 @@ describe('node adapter', () => {
     expect(await cache()).toBe('stale')
     await new Promise((r) => setTimeout(r, 10))
     expect(await cache()).toBe('hit')
-    expect(app.server.revalidate(['catalog.catalogTag'])).toBe(1)
+    expect(await app.server.revalidate(['catalog.catalogTag'])).toBe(1)
     expect(await cache()).toBe('miss')
   })
 
