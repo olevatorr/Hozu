@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "composite": true, "rootDir": "src", "outDir": "dist" },
+  "include": ["src"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../machine" },
+    { "path": "../data" },
+    { "path": "../compiler" },
+    { "path": "../runtime-client" }
+  ]
+}

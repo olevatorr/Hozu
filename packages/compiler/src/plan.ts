@@ -16,6 +16,7 @@ export interface RegionPlan {
   scope: 'public' | 'user' | null
   mode: Mode
   seconds: number | null
+  reactive: boolean
   pointer: string
 }
 
@@ -113,7 +114,21 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     scope: null,
     mode: 'static',
     seconds: null,
+    reactive: false,
     pointer: join('', 'pages', route),
+  }
+  const invalidated = new Set<string>()
+  for (const ref of page.views) {
+    const { feature } = resolve(ir, ref)
+    for (const s of Object.values(feature?.machine?.states ?? {})) {
+      if (!s.invoke) continue
+      const { feature: owner, symbol } = resolve(ir, s.invoke.effect)
+      for (const t of owner?.mutations[symbol]?.invalidates ?? []) invalidated.add(t.tag)
+    }
+  }
+  const reactiveQuery = (ref: string) => {
+    const { feature, symbol } = resolve(ir, ref)
+    return (feature?.queries[symbol]?.tags ?? []).some((t) => invalidated.has(t.tag))
   }
   const regions: RegionPlan[] = [shell]
   const nodes: NodePlan[] = []
@@ -128,7 +143,7 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     tainted: boolean[],
     inIsland: boolean,
   ) => {
-    const hydrate = hydrates(node)
+    const hydrate = hydrates(node) || (node.kind === 'query' && reactiveQuery(node.query))
     if (hydrate && !inIsland) islands.push(node.id)
     const island = inIsland || hydrate
     nodes.push({ id: node.id, region: region.id, mode: region.mode, hydrate })
@@ -163,6 +178,7 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
           query: node.query,
           scope: q.scope,
           ...combined,
+          reactive: reactiveQuery(node.query),
           pointer,
         }
         regions.push(child)

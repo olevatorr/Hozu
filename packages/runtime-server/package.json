@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/runtime-client",
+  "name": "@tenon/runtime-server",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -8,14 +8,16 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./browser": "./dist/browser.bundle.js"
+    }
   },
   "files": [
     "dist"
   ],
   "dependencies": {
+    "@tenon/compiler": "workspace:*",
     "@tenon/core": "workspace:*",
-    "@tenon/machine": "workspace:*"
+    "@tenon/data": "workspace:*",
+    "@tenon/machine": "workspace:*",
+    "@tenon/runtime-client": "workspace:*"
   }
 }

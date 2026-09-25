@@ -14,21 +14,34 @@ export type Result = { ok: true; value: Json } | { ok: false; error: string; dat
 
 export type Payload = Map<string, Result>
 
-export interface MountOptions {
-  view: ViewIR
+export interface Store {
+  data: Payload
+  versions: Map<string, number>
+}
+
+export interface AppOptions {
   machine: CompiledMachine | null
-  payload: Payload
+  payload: Payload | Store
   fns?: Record<string, (input: never) => unknown>
   snapshot?: Snapshot
   onInvoke?: (effect: string, input: Json) => Promise<Result>
   onNavigate?: (route: string) => void
 }
 
-export interface Mounted {
+export interface MountOptions extends AppOptions {
+  view: ViewIR
+}
+
+export interface App {
+  attach(target: Element, node: ViewNode, scope: Json[]): void
+  start(): void
+  sync(): void
   dispatch(input: Input): void
   snapshot(): Snapshot | null
   destroy(): void
 }
+
+export type Mounted = Omit<App, 'attach' | 'start'>
 
 type Block = (() => void)[]
 
@@ -44,9 +57,20 @@ const reads = (v: ValueExpr): boolean =>
 
 export const payloadKey = (query: string, input: Json) => query + canonicalStringify(input)
 
+export const store = (payload: Payload | Store): Store =>
+  payload instanceof Map ? { data: payload, versions: new Map() } : payload
+
 export function mount(target: Element, options: MountOptions): Mounted {
-  const { machine, payload, fns = {} } = options
-  const doc = target.ownerDocument
+  const app = createApp(target.ownerDocument, options)
+  app.attach(target, options.view.root, [])
+  app.start()
+  return app
+}
+
+export function createApp(doc: Document, options: AppOptions): App {
+  const { machine, fns = {} } = options
+  const { data: payload, versions } = store(options.payload)
+  const targets: Element[] = []
   const timers = new Set<ReturnType<typeof setTimeout>>()
   let first: Step | null = machine ? (options.snapshot ? null : init(machine)) : null
   let snapshot: Snapshot | null = options.snapshot ?? first?.snapshot ?? null
@@ -166,7 +190,10 @@ export function mount(target: Element, options: MountOptions): Mounted {
             if (branch) render(branch, [...scope, result.data], into, inner)
           }
         }
-        region(block, parent, node.id, fill, () => payloadKey(node.query, value(node.input, scope)))
+        region(block, parent, node.id, fill, () => {
+          const key = payloadKey(node.query, value(node.input, scope))
+          return `${key}#${versions.get(key) ?? 0}`
+        })
         return
       }
       default:
@@ -205,21 +232,32 @@ export function mount(target: Element, options: MountOptions): Mounted {
     effects(step)
   }
 
-  render(options.view.root, [], target, root)
-  const initial = queue
-  queue = []
-  for (const sync of initial) sync()
-  if (first) effects(first)
-  first = null
+  const flush = () => {
+    const pending = queue
+    queue = []
+    for (const sync of pending) sync()
+  }
 
   return {
+    attach(target, node, scope) {
+      targets.push(target)
+      render(node, scope, target, root)
+      flush()
+    },
+    start() {
+      if (first) effects(first)
+      first = null
+    },
+    sync: () => {
+      for (const u of root) u()
+    },
     dispatch,
     snapshot: () => snapshot,
     destroy: () => {
       for (const t of timers) clearTimeout(t)
       timers.clear()
       root.length = 0
-      target.replaceChildren()
+      for (const t of targets) t.replaceChildren()
     },
   }
 }

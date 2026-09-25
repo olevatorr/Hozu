@@ -7,7 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/cli",
+    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli && node packages/runtime-client/scripts/bundle.ts",
     "typecheck": "tsc -b tsconfig.json",
     "test": "pnpm build && vitest run",
     "bench": "pnpm build && node bench/run.ts",
@@ -18,12 +18,15 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
+    "@tenon/adapter-node": "workspace:*",
+    "@tenon/adapter-static": "workspace:*",
     "@tenon/cli": "workspace:*",
     "@tenon/compiler": "workspace:*",
     "@tenon/core": "workspace:*",
     "@tenon/data": "workspace:*",
     "@tenon/machine": "workspace:*",
     "@tenon/runtime-client": "workspace:*",
+    "@tenon/runtime-server": "workspace:*",
     "@tenon/schema-zod": "workspace:*",
     "@tenon/validator": "workspace:*",
     "@types/node": "22.20.4",

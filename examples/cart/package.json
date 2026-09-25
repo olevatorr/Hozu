@@ -10,9 +10,13 @@
     "simulate": "node simulate.ts",
     "demo": "node demo.ts",
     "plan": "tenon plan home",
-    "client": "node client.ts"
+    "client": "node client.ts",
+    "serve": "node serve.ts",
+    "export": "node export.ts"
   },
   "dependencies": {
+    "@tenon/adapter-node": "workspace:*",
+    "@tenon/adapter-static": "workspace:*",
     "@tenon/cli": "workspace:*",
     "@tenon/core": "workspace:*",
     "@tenon/data": "workspace:*",

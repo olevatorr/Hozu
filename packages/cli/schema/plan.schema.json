@@ -107,6 +107,9 @@
             "null"
           ]
         },
+        "reactive": {
+          "type": "boolean"
+        },
         "pointer": {
           "type": "string"
         }
@@ -118,6 +121,7 @@
         "scope",
         "mode",
         "seconds",
+        "reactive",
         "pointer"
       ],
       "additionalProperties": false

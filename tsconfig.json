@@ -26,6 +26,15 @@
       "path": "packages/runtime-client"
     },
     {
+      "path": "packages/runtime-server"
+    },
+    {
+      "path": "packages/adapter-node"
+    },
+    {
+      "path": "packages/adapter-static"
+    },
+    {
       "path": "tsconfig.check.json"
     }
   ]

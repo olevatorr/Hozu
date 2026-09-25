@@ -37,10 +37,10 @@ Option 3. An LLM eval may be added later as a non-gating report.
 | P4 | Runtime dependencies of every `@tenon/*` package except `@tenon/schema-zod` | 0 (workspace packages excluded) |
 | P5 | Compiled machine transitions per second (cart: guard + assign) | ≥ 1 000 000 |
 | P6 | Cached query reads per second through `@tenon/data` (awaited, static, public) | ≥ 1 000 000 |
-| P7 | `@tenon/runtime-client` bundled with `@tenon/machine`, esbuild minified, gzip | ≤ 5 KB |
+| P7 | `@tenon/runtime-client` browser bundle (`hydrate` + `@tenon/machine`), esbuild minified, gzip | ≤ 5 KB |
 
 Machine-less pages ship 0 bytes of JS: asserted on the render plan (`js: false`) by tests since Phase 3.
-Recorded for Phase 4: 0 client fetches after hydration.
+0 client fetches after hydration: asserted end-to-end (SSR → hydrate → mutation) by tests since Phase 4.
 
 ## Measured at the end of Phase 0
 Node 22.22, Linux container, `pnpm bench`:
@@ -74,6 +74,13 @@ Node 22.22, Linux container, `pnpm bench`:
 | P7 | 2 282 bytes min+gz (runtime-client + machine) |
 | P2 | 331 ms; scaling exponent 1.09 |
 | A4 | 44 215 instantiations: the example now type-checks DOM code (`lib: dom`); 12% headroom left |
+
+### Phase 4
+| Id | Result |
+|---|---|
+| P7 | 4 148 bytes min+gz: the browser bundle now includes `compileMachine` (hydration compiles machines on the client); 19% headroom |
+| P2 | 355 ms; scaling exponent 1.09 |
+| A4 | 46 588 instantiations; 7% headroom |
 
 P2 methodology (changed in Phase 1, budget meaning unchanged): each size (250, 500, 750, 1000 features) runs in
 3 fresh processes; the exponent is the log-log regression slope of the best times, the absolute budget uses the

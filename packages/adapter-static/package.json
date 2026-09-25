@@ -1,21 +1,22 @@
 {
-  "name": "@tenon/runtime-client",
+  "name": "@tenon/adapter-static",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
-  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./browser": "./dist/browser.bundle.js"
+    }
   },
   "files": [
     "dist"
   ],
   "dependencies": {
+    "@tenon/compiler": "workspace:*",
     "@tenon/core": "workspace:*",
-    "@tenon/machine": "workspace:*"
+    "@tenon/data": "workspace:*",
+    "@tenon/runtime-client": "workspace:*",
+    "@tenon/runtime-server": "workspace:*"
   }
 }
