@@ -46,8 +46,8 @@ export function unsafeHtml(ctx: Ctx) {
             kids(n.children, 'children')
             return
           case 'if':
-            kids(n.then, 'then')
-            kids(n.else, 'else')
+            kids(n.ifTrue, 'ifTrue')
+            kids(n.ifFalse, 'ifFalse')
             return
           case 'each':
             walk(n.item, at(pointer, 'item'), [...tainted, untrusted(n.source, tainted)])

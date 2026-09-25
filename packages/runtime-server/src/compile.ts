@@ -168,8 +168,8 @@ export function compileNode(n: ViewNode, island: boolean, c: Compile, sep = fals
     }
     case 'if': {
       const test = compileGuard(n.test, fns)
-      const yes = seq(children(n.then))
-      const no = seq(children(n.else))
+      const yes = seq(children(n.ifTrue))
+      const no = seq(children(n.ifFalse))
       return wrap((s, r) => run(test(s) ? yes : no, s, r))
     }
     case 'html': {

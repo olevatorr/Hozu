@@ -168,8 +168,8 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
         children(node.children, pointer)
         return
       case 'if':
-        node.then.forEach((c, i) => walk(feature, c, join(pointer, 'then', i), region, tainted, island))
-        node.else.forEach((c, i) => walk(feature, c, join(pointer, 'else', i), region, tainted, island))
+        node.ifTrue.forEach((c, i) => walk(feature, c, join(pointer, 'ifTrue', i), region, tainted, island))
+        node.ifFalse.forEach((c, i) => walk(feature, c, join(pointer, 'ifFalse', i), region, tainted, island))
         return
       case 'each': {
         const t = [...tainted, readsBinding(node.source, tainted)]

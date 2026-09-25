@@ -38,7 +38,7 @@ function sendsIn(feature: FeatureIR, state: string): ExplainSend[] {
     if (!visible) return
     switch (node.kind) {
       case 'if':
-        for (const c of [...node.then, ...node.else]) walk(c, view, visible)
+        for (const c of [...node.ifTrue, ...node.ifFalse]) walk(c, view, visible)
         return
       case 'el':
       case 'widget':

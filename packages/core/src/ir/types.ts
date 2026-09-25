@@ -252,8 +252,8 @@ export interface IfNode {
   kind: 'if'
   test: GuardExpr
   motion: string | null
-  then: ViewNode[]
-  else: ViewNode[]
+  ifTrue: ViewNode[]
+  ifFalse: ViewNode[]
 }
 
 export interface GlobalNode {

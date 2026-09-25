@@ -260,8 +260,8 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
             right: { literal: true },
           }),
           motion: motionOf(scope, d.motion, at(p, 'motion')),
-          then: list(d.then, 'then'),
-          else: list(d.otherwise, 'else'),
+          ifTrue: list(d.ifTrue, 'ifTrue'),
+          ifFalse: list(d.ifFalse, 'ifFalse'),
         }
       }
       case 'html':

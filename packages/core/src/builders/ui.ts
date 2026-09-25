@@ -66,7 +66,7 @@ export type NodeDef =
       failed: Record<string, (error: any) => unknown>
     }
   | { kind: 'embed'; view: ViewDecl }
-  | { kind: 'if'; test: unknown; then: readonly unknown[]; otherwise: readonly unknown[]; motion: unknown }
+  | { kind: 'if'; test: unknown; ifTrue: readonly unknown[]; ifFalse: readonly unknown[]; motion: unknown }
   | { kind: 'html'; value: unknown }
   | { kind: 'global'; target: 'window' | 'document'; on: Record<string, unknown> }
   | { kind: 'widget'; widget: WidgetDecl; options: WidgetUse<any, any>; children: readonly unknown[] }
@@ -165,7 +165,7 @@ export const ui = Object.freeze({
   widget,
   asset,
   if: (test: Condition, then: Child[], otherwise: Child[], motion?: string): NodeDecl =>
-    node({ kind: 'if', test, then, otherwise, motion: motion ?? null }),
+    node({ kind: 'if', test, ifTrue: then, ifFalse: otherwise, motion: motion ?? null }),
   html: (value: Val<string | null>): NodeDecl => node({ kind: 'html', value }),
   window: (options: { on: { [E in DomEvent]?: Send } }): NodeDecl =>
     node({ kind: 'global', target: 'window', on: options.on }),

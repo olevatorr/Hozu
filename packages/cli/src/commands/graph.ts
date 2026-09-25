@@ -10,7 +10,7 @@ function collectViewEdges(node: ViewNode, from: string, edges: GraphEdge[], node
   }
   switch (node.kind) {
     case 'if':
-      for (const child of [...node.then, ...node.else]) collectViewEdges(child, from, edges, nodes)
+      for (const child of [...node.ifTrue, ...node.ifFalse]) collectViewEdges(child, from, edges, nodes)
       return
     case 'el':
     case 'widget':

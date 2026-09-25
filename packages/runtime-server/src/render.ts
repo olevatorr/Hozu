@@ -157,7 +157,7 @@ export async function renderPage({
         result = n.children.some(suspends)
         break
       case 'if':
-        result = n.then.some(suspends) || n.else.some(suspends)
+        result = n.ifTrue.some(suspends) || n.ifFalse.some(suspends)
         break
       case 'each':
         result = suspends(n.item)
@@ -225,7 +225,7 @@ export async function renderPage({
       }
       case 'if': {
         buffer += o
-        const branch = compileGuard(n.test, fns)(scope) ? n.then : n.else
+        const branch = compileGuard(n.test, fns)(scope) ? n.ifTrue : n.ifFalse
         for (let i = 0; i < branch.length; i++) await render(branch[i]!, scope, island, separated(branch, i))
         buffer += c
         return
@@ -412,7 +412,7 @@ function bindingUses(n: ViewNode): Uses {
         return
       case 'if':
         eachGuardRef(x.test, (r) => valueUses(r, out))
-        for (const c of [...x.then, ...x.else]) walk(c)
+        for (const c of [...x.ifTrue, ...x.ifFalse]) walk(c)
         return
       case 'html':
         valueUses(x.value, out)

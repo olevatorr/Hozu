@@ -123,8 +123,8 @@ export function walkView(
         node.children.forEach((c, i) => walk(c, at(pointer, 'children', i), visible, env))
         return
       case 'if':
-        node.then.forEach((c, i) => walk(c, at(pointer, 'then', i), visible, env))
-        node.else.forEach((c, i) => walk(c, at(pointer, 'else', i), visible, env))
+        node.ifTrue.forEach((c, i) => walk(c, at(pointer, 'ifTrue', i), visible, env))
+        node.ifFalse.forEach((c, i) => walk(c, at(pointer, 'ifFalse', i), visible, env))
         return
       case 'when': {
         const narrowed = visible ? visible.filter((s) => node.states.includes(s)) : null

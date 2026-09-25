@@ -315,7 +315,7 @@ export function createApp(doc: Document, options: AppOptions): App {
           block,
           test,
           (cc, inner) => {
-            const branch = test() ? node.then : node.else
+            const branch = test() ? node.ifTrue : node.ifFalse
             for (const child of branch) render(child, scope, cc, inner, ns)
           },
           node.motion,

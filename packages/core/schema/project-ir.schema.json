@@ -1292,13 +1292,13 @@
             "null"
           ]
         },
-        "then": {
+        "ifTrue": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/ViewNode"
           }
         },
-        "else": {
+        "ifFalse": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/ViewNode"
@@ -1310,8 +1310,8 @@
         "kind",
         "test",
         "motion",
-        "then",
-        "else"
+        "ifTrue",
+        "ifFalse"
       ],
       "additionalProperties": false
     },
