@@ -20,7 +20,7 @@ for (let i = 0; i < 100; i++) {
   }
 }
 const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  executablePath: process.env.CHROMIUM_PATH,
 })
 const page = await browser.newPage()
 const errors = []

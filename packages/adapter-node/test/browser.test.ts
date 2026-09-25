@@ -5,7 +5,7 @@ import { chromium } from 'playwright-core'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { build, start } from './support.ts'
 
-const chrome = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
+const chrome = process.env.CHROMIUM_PATH ?? chromium.executablePath()
 let app: ReturnType<typeof start>
 let url = ''
 

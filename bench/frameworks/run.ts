@@ -175,7 +175,7 @@ await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()))
 const { port } = server.address() as AddressInfo
 
 const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  executablePath: process.env.CHROMIUM_PATH,
 })
 const RUNS = 10
 const CLICKS = 200

@@ -26,7 +26,7 @@ const [tenon, nuxt] = await Promise.all([
 ])
 
 const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  executablePath: process.env.CHROMIUM_PATH,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--font-render-hinting=none'],
 })
 
