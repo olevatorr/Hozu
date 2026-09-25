@@ -59,6 +59,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `ui.asset(url)` (TN028 for img without dimensions).
   Literals are checked against their schema (TN031); enumerated attributes (`type`, `method`, `loading`…) are typed.
   Internal links are `ui.link` only: a string `href` starting with `/` is TN032 (ADR 0012).
+- Agent guide: the `tenon` skill (`.claude/skills/tenon/SKILL.md`) is the authoring reference; `examples/bookmarks` is its
+  verified reference app. Keep both in sync with any API change. Busy states declare `ignore: [Event]` (TN005, TN034);
+  `ui.dom.value` / `ui.dom.form(name)` may feed enum fields only from literal `<select>`/radio options (TN033) (ADR 0013).
 - Widgets (ADR 0009): `ui.widget({ tag, props, events, client, load, wraps })` in `feature({ widgets })`,
   `ui.use(W, { props, on, class }, children)`, client module `export default implement<typeof W>(setup)` from
   `@tenon/core/widget` (type-only import of the declaration). Bundled by `@tenon/bundle` (esbuild), TN029.
@@ -84,6 +87,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `pnpm --filter example-blog validate|plan|seo|serve|dev` — SEO audit against adapter-node
 - `pnpm --filter example-cart dev` — dev server with CSS hot swap
 - `pnpm --filter example-showcase validate|serve|dev` — every presentation capability and widget library
+- `node bench/trial/accept.mjs <name> <dir> <entry> <port> [1|2]` — hidden acceptance of the AI trial app (docs/trials/0003)
 - `tenon validate --update-lock` — accept behavior changes into `tenon.lock.json` (only when clean)
 
 ## CLI (agent-facing, all support --json)

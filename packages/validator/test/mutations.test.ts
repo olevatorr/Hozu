@@ -65,6 +65,7 @@ const catalog: Mutation[] = [
       states(ir).limbo = {
         final: false,
         on: {},
+        ignore: [],
         invoke: null,
         after: [{ ms: 10, transition: { guard: null, target: 'idle', assign: [], navigate: null } }],
       }
@@ -309,6 +310,13 @@ const catalog: Mutation[] = [
         on: {},
         children: [],
       })
+    },
+  },
+  {
+    name: 'state both handles and ignores an event',
+    code: 'TN034',
+    mutate: (ir) => {
+      states(ir).idle!.ignore.push('cart.AddItem')
     },
   },
   {

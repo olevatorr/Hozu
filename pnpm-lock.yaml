@@ -222,6 +222,30 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
+  examples/bookmarks:
+    dependencies:
+      '@tenon/adapter-node':
+        specifier: workspace:*
+        version: link:../../packages/adapter-node
+      '@tenon/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@tenon/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@tenon/css':
+        specifier: workspace:*
+        version: link:../../packages/css
+      '@tenon/data':
+        specifier: workspace:*
+        version: link:../../packages/data
+      '@tenon/schema-zod':
+        specifier: workspace:*
+        version: link:../../packages/schema-zod
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+
   examples/cart:
     dependencies:
       '@tenon/adapter-node':

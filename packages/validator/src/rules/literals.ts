@@ -150,7 +150,7 @@ export function literals(ctx: Ctx) {
             `input of ${s.invoke.effect}`,
           )
       for (const site of transitionsOf(f)) {
-        const env = triggerEnv(ctx, f, site.trigger)
+        const env = triggerEnv(ctx, f, site)
         const t = site.transition
         if (t.guard) checkGuard(ctx, env, t.guard, site.at('guard'))
         t.assign.forEach((a, i) => {

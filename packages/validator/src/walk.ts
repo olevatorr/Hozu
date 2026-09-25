@@ -25,6 +25,7 @@ export class TransitionSite {
   readonly trigger: Trigger
   readonly index: number
   readonly transition: TransitionIR
+  readonly envKey: string
 
   constructor(feature: string, state: string, trigger: Trigger, index: number, transition: TransitionIR) {
     this.feature = feature
@@ -32,6 +33,12 @@ export class TransitionSite {
     this.trigger = trigger
     this.index = index
     this.transition = transition
+    this.envKey =
+      trigger.kind === 'on'
+        ? `${feature}|on|${trigger.event}`
+        : trigger.kind === 'after'
+          ? `${feature}|after`
+          : `${feature}|${trigger.kind}|${trigger.effect}|${trigger.kind === 'failed' ? trigger.error : ''}`
   }
 
   get pointer(): string {

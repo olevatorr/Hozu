@@ -166,7 +166,7 @@ export function paths(ctx: Ctx) {
             featurePointer(f.id, 'machine', 'states', state, 'invoke', 'input'),
           )
       for (const site of transitionsOf(f)) {
-        const env = triggerEnv(ctx, f, site.trigger)
+        const env = triggerEnv(ctx, f, site)
         const t = site.transition
         if (t.guard) checkGuard(ctx, env, t.guard, site.at('guard'))
         t.assign.forEach((a, i) => checkAssign(ctx, env, a, site.at('assign', i)))

@@ -59,14 +59,10 @@ type Trigger =
 export function triggerEnv(
   ctx: { ir: ProjectIR; envs: Map<string, Env> },
   feature: FeatureIR,
-  trigger: Trigger,
+  site: { trigger: Trigger; envKey: string },
 ): Env {
-  const key =
-    trigger.kind === 'on'
-      ? `${feature.id}|on|${trigger.event}`
-      : trigger.kind === 'after'
-        ? `${feature.id}|after`
-        : `${feature.id}|${trigger.kind}|${trigger.effect}|${trigger.kind === 'failed' ? trigger.error : ''}`
+  const key = site.envKey
+  const trigger = site.trigger
   let env = ctx.envs.get(key)
   if (env) return env
   const base = contextEnv(feature)

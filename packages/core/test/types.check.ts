@@ -180,6 +180,6 @@ ui.view({
       // @ts-expect-error DOM field type must match the payload
       ui.input({ on: { input: ui.send(Typed, { text: ui.dom.checked, n: null }) } }),
       ui.svg({ viewBox: '0 0 1 1' }, [ui.path({ d: 'M0 0', 'stroke-width': 2 }, [])]),
-      ui.button({ 'aria-pressed': op.eq(ui.dom.value, 'x'), 'data-state': 'open' }, []),
+      ui.button({ 'aria-pressed': op.eq(ui.dom.key, 'x'), 'data-state': 'open' }, []),
     ]),
 })

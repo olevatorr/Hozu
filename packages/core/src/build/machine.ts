@@ -99,9 +99,11 @@ function state(scope: FeatureScope, config: StateConfig<string>, p: At): StateIR
     list.push(transition(scope, d.transition, refProxy('event', 0), tp))
   }
   const after = [...(config.after ?? [])].sort((a, b) => a.ms - b.ms)
+  const ignore = (config.ignore ?? []).map((e, i) => scope.ref(e, ['event'], at(p, 'ignore', i)))
   return {
     final: config.final === true,
     on,
+    ignore: [...new Set(ignore)].sort(),
     invoke: config.invoke ? invoke(scope, config.invoke, at(p, 'invoke')) : null,
     after: after.map((a, i) => {
       if (!Number.isInteger(a.ms) || a.ms < 0)

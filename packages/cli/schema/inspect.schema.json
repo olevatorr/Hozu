@@ -758,6 +758,12 @@
             }
           }
         },
+        "ignore": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "invoke": {
           "anyOf": [
             {
@@ -778,6 +784,7 @@
       "required": [
         "final",
         "on",
+        "ignore",
         "invoke",
         "after"
       ],

@@ -139,10 +139,14 @@ const elements = Object.fromEntries(
   ]),
 ) as Elements
 
-export type DomRef = Omit<Ref<DomFields>, 'form'> & { form: (name: string) => Ref<string> }
+export type DomText = Expr<never>
+export type DomRef = Omit<Ref<DomFields>, 'form' | 'value'> & {
+  value: DomText
+  form: (name: string) => DomText
+}
 
 const domRoot = refProxy('dom', 0)
-const form = (name: string): Ref<string> => createRef('dom', 0, ['form', name])
+const form = (name: string): DomText => createRef('dom', 0, ['form', name])
 const dom: DomRef = new Proxy(domRoot, { get: (t, k) => (k === 'form' ? form : Reflect.get(t, k)) })
 
 export const ui = Object.freeze({

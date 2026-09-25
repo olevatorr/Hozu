@@ -38,4 +38,6 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   TN030: { name: 'unsafe-html', severity: 'error' },
   TN031: { name: 'invalid-literal', severity: 'error' },
   TN032: { name: 'untyped-internal-link', severity: 'error' },
+  TN033: { name: 'unchecked-dom-text', severity: 'error' },
+  TN034: { name: 'conflicting-ignore', severity: 'error' },
 }

@@ -66,6 +66,7 @@ export function refSites(ir: ProjectIR): RefSite[] {
     for (const [state, s] of Object.entries(f.machine?.states ?? {})) {
       const base = featurePointer(f.id, 'machine', 'states', state)
       for (const event of Object.keys(s.on)) add(event, at(base, 'on', event), 'event', true)
+      s.ignore.forEach((event, i) => add(event, at(base, 'ignore', i), 'event', false))
       if (s.invoke) {
         add(s.invoke.effect, at(base, 'invoke', 'effect'), 'effect')
         if (hasRefs(s.invoke.input)) valueRefs(s.invoke.input, at(base, 'invoke', 'input'), fnRef)

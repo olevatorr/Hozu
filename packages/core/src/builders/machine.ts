@@ -39,6 +39,7 @@ export interface InvokeDecl<T extends string = string> extends Decl<'invoke'>, T
 
 export interface StateConfig<S extends string> {
   on?: OnDecl<S>[]
+  ignore?: EventDecl<any>[]
   invoke?: InvokeDecl<S>
   after?: AfterConfig<S>[]
   final?: boolean

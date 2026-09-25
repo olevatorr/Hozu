@@ -26,19 +26,23 @@ export const splitRef = (ref: string): [string, string] => {
   return dot < 0 ? [ref, ''] : [ref.slice(0, dot), ref.slice(dot + 1)]
 }
 
-const memo = new WeakMap<ProjectIR, Map<string, Resolved | null>>()
+const memo = new WeakMap<ProjectIR, Partial<Record<RefKind, Map<string, Resolved | null>>>>()
 
 export function resolveRef(ir: ProjectIR, ref: string, kind: RefKind): Resolved | null {
-  let cache = memo.get(ir)
+  let byKind = memo.get(ir)
+  if (!byKind) {
+    byKind = {}
+    memo.set(ir, byKind)
+  }
+  let cache = byKind[kind]
   if (!cache) {
     cache = new Map()
-    memo.set(ir, cache)
+    byKind[kind] = cache
   }
-  const key = `${kind}|${ref}`
-  const hit = cache.get(key)
+  const hit = cache.get(ref)
   if (hit !== undefined) return hit
   const resolved = lookup(ir, ref, kind)
-  cache.set(key, resolved)
+  cache.set(ref, resolved)
   return resolved
 }
 

@@ -142,6 +142,7 @@ export interface MachineIR {
 export interface StateIR {
   final: boolean
   on: Record<string, TransitionIR[]>
+  ignore: string[]
   invoke: InvokeIR | null
   after: AfterIR[]
 }

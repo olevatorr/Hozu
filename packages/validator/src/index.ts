@@ -6,7 +6,7 @@ import { classNames } from './rules/classes.ts'
 import { invalidations, sessions } from './rules/data.ts'
 import { domFields } from './rules/dom.ts'
 import { declaredErrors } from './rules/errors.ts'
-import { unhandledEvents, viewEvents } from './rules/events.ts'
+import { conflictingIgnores, unhandledEvents, viewEvents } from './rules/events.ts'
 import { unsafeHtml } from './rules/html.ts'
 import { imageDimensions } from './rules/images.ts'
 import { internalLinks } from './rules/links.ts'
@@ -16,6 +16,7 @@ import { featureLinks, references, routes } from './rules/refs.ts'
 import { rendering } from './rules/rendering.ts'
 import { routeParams } from './rules/routes.ts'
 import { deadEnds, reachability, shadowing, stateNames } from './rules/states.ts'
+import { domText } from './rules/text.ts'
 import { widgetEvents } from './rules/widgets.ts'
 
 export type { Drift, LockEntry, Lockfile } from './contracts/lock.ts'
@@ -48,6 +49,8 @@ const rules = [
   unsafeHtml,
   literals,
   internalLinks,
+  conflictingIgnores,
+  domText,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>

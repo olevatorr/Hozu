@@ -27,5 +27,6 @@ export function human(d: Diagnostic): string {
     `  cause: ${d.cause}`,
   ]
   if (d.fix) lines.push(`  fix: ${d.fix.summary}${d.fix.patch ? ' (patch available with --json)' : ''}`)
+  if (d.fix?.snippet) lines.push(d.fix.snippet.replace(/^/gm, '    '))
   return lines.join('\n')
 }

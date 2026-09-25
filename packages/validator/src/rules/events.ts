@@ -52,13 +52,11 @@ export function viewEvents(ctx: Ctx) {
           const shown = own ? visible : Object.keys(m.states)
           const handling = new Set(
             Object.entries(m.states)
-              .filter(([, s]) => s.on[send.event]?.length)
+              .filter(([, s]) => s.on[send.event]?.length || s.ignore.includes(send.event))
               .map(([n]) => n),
           )
           const missing = shown.filter((s) => !handling.has(s))
           if (!missing.length) continue
-          const allowed = shown.filter((s) => handling.has(s))
-          const wrap = own && allowed.length > 0
           ctx.report(
             'TN005',
             f.id,
@@ -67,23 +65,15 @@ export function viewEvents(ctx: Ctx) {
             own
               ? 'A node may only send an event when every state in which it is visible handles that event.'
               : `The sender cannot observe the state of ${r.feature.id}, so every one of its states must handle ${send.event}.`,
-            wrap
+            own
               ? {
-                  summary: `Wrap the node in when([${allowed.map((s) => `'${s}'`).join(', ')}], …)`,
-                  snippet: `when([${allowed.map((s) => `'${s}'`).join(', ')}], [/* node */])`,
-                  patch: [
-                    {
-                      op: 'replace',
-                      path: resolveAt(pointer),
-                      value: {
-                        id: `${node.id}~when`,
-                        kind: 'when',
-                        states: allowed,
-                        motion: null,
-                        children: [node],
-                      } as unknown as Json,
-                    },
-                  ],
+                  summary: `Ignore ${send.event} in ${missing.join(', ')} (ignore: [${send.event.split('.')[1]}]), or show the node only in the states that handle it`,
+                  snippet: `ignore: [${send.event.split('.')[1]}]`,
+                  patch: missing.map((s) => ({
+                    op: 'add' as const,
+                    path: resolveAt(featurePointer(r.feature.id, 'machine', 'states', s, 'ignore', '-')),
+                    value: send.event,
+                  })),
                 }
               : {
                   summary: `Handle ${send.event} in ${missing.join(', ')}, or stop sending it from here`,
@@ -92,5 +82,27 @@ export function viewEvents(ctx: Ctx) {
                 },
           )
         }
+      })
+}
+
+export function conflictingIgnores(ctx: Ctx) {
+  for (const f of Object.values(ctx.ir.features))
+    for (const [name, s] of Object.entries(f.machine?.states ?? {}))
+      s.ignore.forEach((event, i) => {
+        if (!s.on[event]?.length) return
+        ctx.report(
+          'TN034',
+          f.id,
+          featurePointer(f.id, 'machine', 'states', name, 'ignore', i),
+          `State "${name}" both handles and ignores ${event}`,
+          'An ignored event is dropped; a handled one takes a transition. A state must choose one.',
+          {
+            summary: `Remove ${event} from ignore`,
+            snippet: null,
+            patch: [
+              { op: 'remove', path: resolveAt(featurePointer(f.id, 'machine', 'states', name, 'ignore', i)) },
+            ],
+          },
+        )
       })
 }
