@@ -128,6 +128,10 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     const { feature, symbol } = resolve(ir, ref)
     return (feature?.queries[symbol]?.tags ?? []).some((t) => invalidated.has(t.tag))
   }
+  const liveQuery = (ref: string) => {
+    const { feature, symbol } = resolve(ir, ref)
+    return feature?.queries[symbol]?.freshness.kind === 'live'
+  }
   const regions: RegionPlan[] = [shell]
   if (page.head.query) {
     const { feature: owner, symbol } = resolve(ir, page.head.query.ref)
@@ -155,7 +159,8 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     tainted: boolean[],
     inIsland: boolean,
   ) => {
-    const hydrate = hydrates(node) || (node.kind === 'query' && reactiveQuery(node.query))
+    const hydrate =
+      hydrates(node) || (node.kind === 'query' && (reactiveQuery(node.query) || liveQuery(node.query)))
     if (hydrate && !inIsland) islands.push(node.id)
     const island = inIsland || hydrate
     nodes.push({ id: node.id, region: region.id, mode: region.mode, hydrate })

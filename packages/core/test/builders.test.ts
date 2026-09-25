@@ -42,6 +42,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        notFound: null,
         session: null,
         site: null,
         routes: {},
@@ -60,6 +61,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        notFound: null,
         session: null,
         site: null,
         routes: {},
@@ -88,6 +90,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        notFound: null,
         session: null,
         site: null,
         routes: {},
@@ -115,6 +118,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        notFound: null,
         session: null,
         site: null,
         routes: {},
@@ -147,6 +151,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        notFound: null,
         session: null,
         site: null,
         routes: {},
@@ -175,6 +180,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        notFound: null,
         session: null,
         site: null,
         routes: {},
@@ -195,6 +201,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        notFound: null,
         session: null,
         site: null,
         routes: {},
@@ -226,6 +233,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        notFound: null,
         session: null,
         site: null,
         routes: {},
@@ -250,6 +258,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        notFound: null,
         session: null,
         site: null,
         routes: {},
@@ -274,6 +283,7 @@ describe('builder diagnostics', () => {
         project({
           schema: zodAdapter,
           styles: null,
+          notFound: null,
           session: null,
           site: null,
           routes: {},
@@ -307,6 +317,7 @@ describe('builder diagnostics', () => {
       project({
         schema: zodAdapter,
         styles: null,
+        notFound: null,
         session: null,
         site: null,
         routes: {},

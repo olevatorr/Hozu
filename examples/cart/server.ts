@@ -8,6 +8,8 @@ interface Line {
   qty: number
 }
 
+const who = (session: { userId: string } | null) => session?.userId ?? 'guest'
+
 export function createResolvers() {
   const products = [
     { sku: 'mug', name: 'Mug', price: 12 },
@@ -36,30 +38,29 @@ export function createResolvers() {
       getProduct,
       ({ sku }, { fail }) => products.find((p) => p.sku === sku) ?? fail('NotFound', { sku }),
     ),
-    implement(getCart, (_, { session }) => cartOf(session.userId)),
+    implement(getCart, (_, { session }) => cartOf(who(session))),
     implement(addItem, ({ sku, qty }, { session, fail }) => {
       const available = stock.get(sku) ?? 0
       if (available < qty) return fail('OutOfStock', { sku, available })
       stock.set(sku, available - qty)
-      const lines = carts.get(session.userId) ?? []
+      const lines = carts.get(who(session)) ?? []
       const line = lines.find((l) => l.sku === sku)
       carts.set(
-        session.userId,
+        who(session),
         line ? lines.map((l) => (l === line ? { sku, qty: l.qty + qty } : l)) : [...lines, { sku, qty }],
       )
-      return cartOf(session.userId)
+      return cartOf(who(session))
     }),
     implement(removeItem, ({ sku }, { session }) => {
       carts.set(
-        session.userId,
-        (carts.get(session.userId) ?? []).filter((l) => l.sku !== sku),
+        who(session),
+        (carts.get(who(session)) ?? []).filter((l) => l.sku !== sku),
       )
-      return cartOf(session.userId)
+      return cartOf(who(session))
     }),
     implement(checkout, (_, { session, fail }) => {
-      if (!(carts.get(session.userId) ?? []).length)
-        return fail('PaymentDeclined', { reason: 'Cart is empty' })
-      carts.delete(session.userId)
+      if (!(carts.get(who(session)) ?? []).length) return fail('PaymentDeclined', { reason: 'Cart is empty' })
+      carts.delete(who(session))
       return { orderId: `order-${++orders}` }
     }),
   ])

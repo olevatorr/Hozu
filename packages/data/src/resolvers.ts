@@ -13,15 +13,32 @@ export type Fail<E> = <K extends keyof E & string>(error: K, data: E[K]) => Fail
 type Out<O, E> = O | Failure<E> | Promise<O | Failure<E>>
 
 export type QueryContext<Sc extends Scope, Session, E> = Sc extends 'user'
-  ? { session: Session; fail: Fail<E> }
+  ? { session: Session | null; fail: Fail<E> }
   : { fail: Fail<E> }
 
 export interface MutationContext<Session, E> {
-  session: Session
+  session: Session | null
   fail: Fail<E>
+  setSession(value: Session | null): void
+  file(token: string): Promise<Upload | null>
 }
 
-export type Run = (input: unknown, ctx: { session: unknown; fail: Fail<any> }) => unknown
+export interface Upload {
+  name: string
+  type: string
+  size: number
+  bytes: Uint8Array
+}
+
+export type Run = (
+  input: unknown,
+  ctx: {
+    session: unknown
+    fail: Fail<any>
+    setSession(value: unknown): void
+    file(token: string): Promise<Upload | null>
+  },
+) => unknown
 
 export interface Implementation {
   readonly [IMPLEMENTATION]: { decl: object; run: Run }

@@ -28,9 +28,30 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
         ),
       }
     : null
+  const redirects: Record<string, string> = {}
+  for (const [error, route] of Object.entries(d.redirects ?? {})) {
+    const id = scope.project.routes.get(route as object)
+    const rp = join(p, 'redirects', error)
+    if (!id)
+      scope.report(
+        'TN007',
+        rp,
+        'Redirect target is not a registered route',
+        'Register it in project({ routes }).',
+      )
+    else if (defOf<{ params: unknown }>(route).params !== null)
+      scope.report(
+        'TN024',
+        rp,
+        `Redirect target "${id}" has params`,
+        'Redirects go to routes without params.',
+      )
+    else redirects[error] = id
+  }
   const fields = scope.attempt(join(p, 'render'), () => d.render(refProxy('binding', 0), params), null)
   if (!fields)
     return {
+      redirects,
       query,
       title: empty,
       description: empty,
@@ -42,6 +63,7 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
   const v = (key: string, x: unknown) =>
     scope.attempt(join(p, key), () => scope.value(x, join(p, key)), empty)
   return {
+    redirects,
     query,
     title: v('title', fields.title),
     description: v('description', fields.description),

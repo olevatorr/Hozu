@@ -47,7 +47,7 @@ describe('cart data runtime', () => {
     expect(await pending).toEqual({ ok: true, value: { items: [] } })
   })
 
-  it('isolates user partitions and requires a session for user-scoped queries', async () => {
+  it('isolates user partitions; anonymous callers share their own partition', async () => {
     const { data } = setup()
     await data.mutate(addItem, { sku: 'mug', qty: 1 }, ada)
     expect(await data.query(getCart, {}, ada)).toMatchObject({
@@ -55,11 +55,7 @@ describe('cart data runtime', () => {
       value: { items: [{ sku: 'mug', qty: 1 }] },
     })
     expect(await data.query(getCart, {}, bob)).toEqual({ ok: true, value: { items: [] } })
-    expect(await data.query(getCart, {})).toEqual({
-      ok: false,
-      error: 'Unexpected',
-      data: { message: 'cart.getCart is user-scoped and requires a session' },
-    })
+    expect(await data.query(getCart, {})).toEqual({ ok: true, value: { items: [] } })
   })
 
   it('mutations invalidate by tag in the caller partition only', async () => {
@@ -136,6 +132,7 @@ describe('resolver wiring', () => {
   const p = project({
     schema: zodAdapter,
     styles: null,
+    notFound: null,
     session: null,
     site: null,
     routes: {},

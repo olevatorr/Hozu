@@ -119,10 +119,23 @@ record(
 results.at(-1)!.budget = 1_000_000
 results.at(-1)!.ok = results.at(-1)!.value >= 1_000_000
 
+function initialClientBytes(): number {
+  const dir = join(root, 'packages/runtime-client/dist/browser')
+  const seen = new Set<string>()
+  const visit = (file: string): number => {
+    if (seen.has(file)) return 0
+    seen.add(file)
+    const code = readFileSync(join(dir, file), 'utf8')
+    const deps = [...code.matchAll(/from"\.\/(chunk-[A-Z0-9]+\.js)"/g)].map((m) => m[1]!)
+    return gzipSync(code).length + deps.reduce((sum, d) => sum + visit(d), 0)
+  }
+  return visit('client.js')
+}
+
 record(
   'P7',
-  '@tenon/runtime-client browser bundle (hydrate + machine), min+gz',
-  gzipSync(readFileSync(join(root, 'packages/runtime-client/dist/browser.bundle.js'))).length,
+  '@tenon/runtime-client initial JS (entry + static chunks), min+gz',
+  initialClientBytes(),
   'bytes',
   7 * 1024,
 )

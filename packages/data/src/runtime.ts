@@ -47,10 +47,22 @@ export interface DataRuntimeOptions {
   now?: () => number
 }
 
+export interface FileLike {
+  name: string
+  type: string
+  size: number
+  arrayBuffer(): Promise<ArrayBuffer>
+}
+
 export interface DataRuntime {
   query<I, O, E>(decl: QueryDecl<I, O, E, any>, input: I, session?: unknown): Promise<Result<O, E>>
   mutate<I, O, E>(decl: MutationDecl<I, O, E>, input: I, session?: unknown): Promise<MutationResult<O, E>>
-  run(ref: string, input: Json, session?: unknown): Promise<Result | MutationResult>
+  run(
+    ref: string,
+    input: Json,
+    session?: unknown,
+    files?: Map<string, FileLike>,
+  ): Promise<Result | MutationResult>
   invalidate(tags: string[], session?: unknown): number
   stats(): Stats
 }
@@ -145,11 +157,25 @@ export function createDataRuntime({ build, resolvers, now = Date.now }: DataRunt
 
   const check = (key: string, value: unknown): string[] | null => bindings.checks[key]?.(value) ?? null
 
-  async function execute(effect: Effect, input: Json, session: unknown): Promise<Result> {
+  async function execute(
+    effect: Effect,
+    input: Json,
+    session: unknown,
+    setSession: (value: unknown) => void = () => {
+      throw new Error('Only mutations can set the session')
+    },
+    files: Map<string, FileLike> = new Map(),
+  ): Promise<Result> {
     stats.fetches++
     let out: unknown
+    const file = async (token: string) => {
+      const f = files.get(token)
+      return f
+        ? { name: f.name, type: f.type, size: f.size, bytes: new Uint8Array(await f.arrayBuffer()) }
+        : null
+    }
     try {
-      out = await effect.run(input, { session, fail })
+      out = await effect.run(input, { session, fail, setSession, file })
     } catch (error) {
       return unexpected(error instanceof Error ? error.message : String(error))
     }
@@ -177,10 +203,8 @@ export function createDataRuntime({ build, resolvers, now = Date.now }: DataRunt
     if (!effect) return unexpected(`Unknown effect ${ref}`)
     let partition = 'public'
     if (effect.scope === 'user') {
-      if (session === undefined || session === null) {
-        if (effect.kind === 'query') return unexpected(`${ref} is user-scoped and requires a session`)
-        partition = 'user:null'
-      } else {
+      if (session === undefined || session === null) partition = 'user:null'
+      else {
         partition = `user:${canonicalStringify(session)}`
         if (!sessions.has(partition)) {
           const issues = check('#session', session)
@@ -227,20 +251,22 @@ export function createDataRuntime({ build, resolvers, now = Date.now }: DataRunt
       return entry.inflight
     }
     const started = now()
-    entry.inflight = execute(effect, input, effect.scope === 'user' ? session : undefined).then((result) => {
-      entry.inflight = null
-      if (result.ok) {
-        entry.value = result
-        entry.at = started
-        entry.stale = false
-        index(
-          partition,
-          entry,
-          effect.tags.map((t) => t(input)),
-        )
-      }
-      return result
-    })
+    entry.inflight = execute(effect, input, effect.scope === 'user' ? (session ?? null) : undefined).then(
+      (result) => {
+        entry.inflight = null
+        if (result.ok) {
+          entry.value = result
+          entry.at = started
+          entry.stale = false
+          index(
+            partition,
+            entry,
+            effect.tags.map((t) => t(input)),
+          )
+        }
+        return result
+      },
+    )
     return entry.inflight
   }
 
@@ -257,8 +283,8 @@ export function createDataRuntime({ build, resolvers, now = Date.now }: DataRunt
         stats.deduped++
         return flight
       }
-      const next = execute(effect, input, effect.scope === 'user' ? session : undefined).finally(() =>
-        live.delete(`${partition}|${key}`),
+      const next = execute(effect, input, effect.scope === 'user' ? (session ?? null) : undefined).finally(
+        () => live.delete(`${partition}|${key}`),
       )
       live.set(`${partition}|${key}`, next)
       return next
@@ -305,16 +331,34 @@ export function createDataRuntime({ build, resolvers, now = Date.now }: DataRunt
     return count
   }
 
-  async function run(ref: string, input: Json, session?: unknown): Promise<Result | MutationResult> {
+  async function run(
+    ref: string,
+    input: Json,
+    session?: unknown,
+    files: Map<string, FileLike> = new Map(),
+  ): Promise<Result | MutationResult> {
     const prepared = prepare(ref, input, session)
     if ('ok' in prepared) return prepared
     const { effect, partition, key } = prepared
     if (effect.kind === 'query') return read(effect, partition, key, input, session)
-    const result = await execute(effect, input, session ?? null)
-    if (!result.ok) return { ...result, invalidated: [] }
+    let next: { value: unknown } | null = null
+    const result = await execute(
+      effect,
+      input,
+      session ?? null,
+      (value) => {
+        const issues = value === null ? null : check('#session', value)
+        if (issues) throw new Error(`Invalid session: ${issues.join('; ')}`)
+        next = { value }
+      },
+      files,
+    )
+    const written = next as { value: unknown } | null
+    const extra = written ? { session: written.value as Json } : {}
+    if (!result.ok) return { ...result, invalidated: [], ...extra }
     const tags = [...new Set(effect.tags.map((t) => t(input)))]
     invalidate(tags, partition === 'public' ? ['public'] : ['public', partition])
-    return { ...result, invalidated: tags }
+    return { ...result, invalidated: tags, ...extra }
   }
 
   const refOf = (decl: object) => {

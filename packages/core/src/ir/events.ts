@@ -2,7 +2,7 @@ export interface DomFields {
   value: string
   checked: boolean
   valueAsNumber: number | null
-  files: { name: string; size: number; type: string }[]
+  files: { name: string; size: number; type: string; token: string }[]
   form: (name: string) => string
   key: string
   code: string

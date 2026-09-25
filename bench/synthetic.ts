@@ -103,6 +103,7 @@ export function syntheticProject(features: number, states = 30, events = 10) {
   return project({
     schema: zodAdapter,
     styles: null,
+    notFound: null,
     session: null,
     site: null,
     routes: {},

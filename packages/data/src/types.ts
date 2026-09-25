@@ -7,7 +7,10 @@ export type Result<O = Json, E = Record<string, Json>> =
   | { [K in keyof E & string]: { ok: false; error: K; data: E[K] } }[keyof E & string]
   | Unexpected
 
-export type MutationResult<O = Json, E = Record<string, Json>> = Result<O, E> & { invalidated: string[] }
+export type MutationResult<O = Json, E = Record<string, Json>> = Result<O, E> & {
+  invalidated: string[]
+  session?: Json
+}
 
 export interface Stats {
   entries: number

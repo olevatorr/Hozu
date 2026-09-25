@@ -63,6 +63,7 @@ const Page = ui.view({
 })
 
 const head = {
+  redirects: null,
   query: null,
   input: null,
   render: () => ({
@@ -78,6 +79,7 @@ const head = {
 const site = project({
   schema: zodAdapter,
   styles: null,
+  notFound: null,
   session: null,
   site: null,
   routes: { home, item },

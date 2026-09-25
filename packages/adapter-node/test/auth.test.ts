@@ -1,0 +1,192 @@
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import type { AddressInfo } from 'node:net'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+import { createServer, sessionCookie } from '@tenon/adapter-node'
+import { feature, mutation, project, query, route, ui } from '@tenon/core'
+import { buildProject } from '@tenon/core/ir'
+import { resolvers } from '@tenon/data'
+import { zodAdapter } from '@tenon/schema-zod'
+import { validate } from '@tenon/validator'
+import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
+
+const dir = mkdtempSync(join(tmpdir(), 'tenon-auth-'))
+writeFileSync(join(dir, 'icon.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"></svg>')
+
+const me = query({
+  input: z.object({}),
+  output: z.object({ user: z.string() }),
+  errors: { Unauthorized: z.object({}) },
+  scope: 'user',
+  freshness: 'live',
+  tags: () => [],
+})
+const login = mutation({
+  input: z.object({ name: z.string() }),
+  output: z.object({}),
+  errors: {},
+  invalidates: () => [],
+})
+const logout = mutation({ input: z.object({}), output: z.object({}), errors: {}, invalidates: () => [] })
+
+const home = route({ path: '/', params: null })
+const signIn = route({ path: '/login', params: null })
+const account = route({ path: '/account', params: null })
+const missing = route({ path: '/404', params: null })
+
+const Account = ui.view({
+  machine: null,
+  route: null,
+  render: () =>
+    ui.query(
+      me,
+      {},
+      {
+        ready: (m) => ui.h1({}, ['Hello ', m.user]),
+        pending: null,
+        failed: { Unauthorized: () => ui.p({}, ['Sign in']), Unexpected: () => ui.p({}, ['Error']) },
+      },
+    ),
+})
+const Plain = (text: string) => ui.view({ machine: null, route: null, render: () => ui.h1({}, [text]) })
+const [Home, Login, NotFound] = [Plain('Home'), Plain('Login'), Plain('Nothing here')]
+const head = (title: string) => ({
+  redirects: null,
+  query: null,
+  input: null,
+  render: () => ({
+    title,
+    description: title,
+    type: 'website' as const,
+    image: null,
+    published: null,
+    noindex: false,
+  }),
+})
+
+const site = project({
+  schema: zodAdapter,
+  styles: null,
+  notFound: missing,
+  session: z.object({ user: z.string() }),
+  site: {
+    url: 'https://auth.example',
+    name: 'Auth',
+    lang: 'en',
+    icon: ui.asset(pathToFileURL(join(dir, 'icon.svg'))),
+    themeColor: '#4f46e5',
+  },
+  routes: { home, signIn, account, missing },
+  pages: [
+    ui.page(home, { views: [Home], assert: null, head: head('Home'), entries: null }),
+    ui.page(signIn, { views: [Login], assert: null, head: head('Login'), entries: null }),
+    ui.page(missing, {
+      views: [NotFound],
+      assert: null,
+      head: { ...head('Not found'), render: () => ({ ...head('Not found').render(), noindex: true }) },
+      entries: null,
+    }),
+    ui.page(account, {
+      views: [Account],
+      assert: null,
+      head: {
+        query: me,
+        input: () => ({}),
+        render: (m) => ({
+          title: m.user,
+          description: 'Account',
+          type: 'website',
+          image: null,
+          published: null,
+          noindex: true,
+        }),
+        redirects: { Unauthorized: signIn },
+      },
+      entries: null,
+    }),
+  ],
+  features: [
+    feature({
+      id: 'auth',
+      styles: [],
+      widgets: {},
+      intent: { summary: 'Session fixture', invariants: [] },
+      imports: [],
+      tags: {},
+      events: {},
+      queries: { me },
+      mutations: { login, logout },
+      fns: {},
+      machine: null,
+      views: { Account, Home, Login, NotFound },
+      contracts: {},
+      exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
+    }),
+  ],
+})
+
+const impl = resolvers(site, (implement) => [
+  implement(me, (_, { session, fail }) => (session ? { user: session.user } : fail('Unauthorized', {}))),
+  implement(login, ({ name }, { setSession }) => {
+    setSession({ user: name })
+    return {}
+  }),
+  implement(logout, (_, { setSession }) => {
+    setSession(null)
+    return {}
+  }),
+])
+
+describe('redirects, sessions, custom 404, icon (G5, G6, G7, G12)', () => {
+  it('works end to end over HTTP', async () => {
+    const build = buildProject(site)
+    expect(validate(build.ir, { bindings: build.bindings }).filter((d) => d.severity === 'error')).toEqual([])
+    const server = createServer({
+      build,
+      resolvers: impl,
+      session: sessionCookie({ name: 'sid', secret: 'x'.repeat(32), secure: false }),
+    })
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()))
+    const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+    const get = (path: string, cookie = '') =>
+      fetch(`${base}${path}`, { redirect: 'manual', headers: { cookie } })
+    const effect = (name: string, input: unknown, cookie = '') =>
+      fetch(`${base}/_tenon/effect`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', cookie },
+        body: JSON.stringify({ effect: `auth.${name}`, input, keys: [] }),
+      })
+    try {
+      const anonymous = await get('/account')
+      expect(anonymous.status).toBe(303)
+      expect(anonymous.headers.get('location')).toBe('/login')
+
+      const signed = await effect('login', { name: 'ada' })
+      const cookie = signed.headers.get('set-cookie')!
+      expect(cookie).toMatch(/^sid=[\w-]+\.[\w-]+; Path=\/; HttpOnly; SameSite=Lax; Max-Age=2592000$/)
+      expect(await signed.json()).toEqual({ result: { ok: true, value: {} }, refreshed: [] })
+      const session = cookie.split(';')[0]!
+      const page = await get('/account', session)
+      expect(page.status).toBe(200)
+      const text = await page.text()
+      expect(text).toContain('<h1>Hello <!---->ada</h1>')
+
+      const forged = session.replace(/\.[\w-]+$/, '.AAAA')
+      expect((await get('/account', forged)).status).toBe(303)
+
+      const out = await effect('logout', {}, session)
+      expect(out.headers.get('set-cookie')).toBe('sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0')
+
+      const lost = await get('/nowhere')
+      expect(lost.status).toBe(404)
+      const body = await lost.text()
+      expect(body).toContain('<h1>Nothing here</h1>')
+      expect(body).toContain('<meta name="theme-color" content="#4f46e5">')
+      expect(body).toMatch(/<link rel="icon" href="\/_tenon\/a\/[0-9a-f]{16}\.svg">/)
+    } finally {
+      server.close()
+    }
+  })
+})

@@ -1,6 +1,7 @@
 import { brand, type Decl, type Typed } from '../model/decl.ts'
 import type { SchemaAdapter } from '../schema/adapter.ts'
 import type { Infer, Schema } from '../schema/standard.ts'
+import type { Asset } from './asset.ts'
 import type { ContractDecl } from './contract.ts'
 import type { MutationDecl, QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
@@ -47,8 +48,9 @@ export interface ProjectConfig {
   schema: SchemaAdapter
   session: Schema | null
   routes: Record<string, RouteDecl>
-  site: { url: string; name: string; lang: string } | null
+  site: { url: string; name: string; lang: string; icon: Asset | null; themeColor: string | null } | null
   styles: URL | null
+  notFound: RouteDecl | null
   pages: PageDecl[]
   features: FeatureDecl[]
 }

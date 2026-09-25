@@ -1,3 +1,4 @@
+import { assetOf } from '../builders/asset.ts'
 import type { FeatureConfig, ProjectConfig } from '../builders/feature.ts'
 import type { RouteDef } from '../builders/route.ts'
 import { join, resolveSource } from '../canonical/pointer.ts'
@@ -237,9 +238,22 @@ function build(project: unknown, tracking: boolean): BuildResult {
         url: String(config.site.url).replace(/\/$/, ''),
         name: String(config.site.name),
         lang: String(config.site.lang),
+        icon: assetOf(config.site.icon)?.href ?? null,
+        themeColor: config.site.themeColor ?? null,
       }
     : null
-  const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, features }
+  const icon = assetOf(config.site?.icon)
+  if (icon) scope.bindings.assets[icon.href] = { file: icon.file, width: icon.width, height: icon.height }
+  const notFound = config.notFound ? (scope.routes.get(config.notFound) ?? null) : null
+  if (config.notFound && !notFound)
+    scope.report(
+      'TN007',
+      null,
+      '/notFound',
+      'notFound is not a registered route',
+      'Register it in project({ routes }).',
+    )
+  const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, notFound, features }
   for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
   return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }
 }

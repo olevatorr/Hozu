@@ -68,6 +68,7 @@ const home = route({ path: '/', params: null })
 export default project({
   schema: zodAdapter,
   styles: null,
+  notFound: null,
   session: null,
   site: null,
   routes: { home },
@@ -76,6 +77,7 @@ export default project({
       views: [Panel],
       assert: null,
       head: {
+        redirects: null,
         query: null,
         input: null,
         render: () => ({

@@ -1,9 +1,19 @@
 export { attrText, classText, domField, SVG_NS, styleText, text } from './dom.ts'
-export type { EffectResponse, HydrateOptions, IslandRef, PagePayload, Transport } from './hydrate.ts'
-export { fetchTransport, hydrate } from './hydrate.ts'
+export type {
+  EffectResponse,
+  HydrateOptions,
+  IslandRef,
+  LiveQuery,
+  PagePayload,
+  QueryTransport,
+  Transport,
+} from './hydrate.ts'
+export { fetchQuery, fetchTransport, hydrate } from './hydrate.ts'
+export * as motion from './motion.ts'
 export type {
   App,
   AppOptions,
+  Motion,
   Mounted,
   MountOptions,
   Payload,

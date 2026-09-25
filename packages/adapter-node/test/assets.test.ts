@@ -45,6 +45,7 @@ const Page = ui.view({
 const site = project({
   schema: zodAdapter,
   styles: url('app.css'),
+  notFound: null,
   session: null,
   site: null,
   routes: { home },
@@ -53,6 +54,7 @@ const site = project({
       views: [Page],
       assert: null,
       head: {
+        redirects: null,
         query: null,
         input: null,
         render: () => ({

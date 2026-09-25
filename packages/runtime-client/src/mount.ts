@@ -14,7 +14,10 @@ import {
   transition,
 } from '@tenon/machine'
 import { attrText, classText, domField, passive, properties, SVG_NS, text } from './dom.ts'
-import { enter, flip, leave, reduced } from './motion.ts'
+
+export type Motion = typeof import('./motion.ts')
+
+import type { WidgetHost } from './widget.ts'
 
 export type Result = { ok: true; value: Json } | { ok: false; error: string; data: Json }
 
@@ -32,9 +35,12 @@ export interface AppOptions {
   params?: Json
   snapshot?: Snapshot
   onInvoke?: (effect: string, input: Json) => Promise<Result>
+  onQuery?: (query: string, input: Json) => Promise<Result>
   onNavigate?: (route: string) => void
   widgets?: Record<string, WidgetRef>
   routes?: Record<string, string>
+  motion?: Motion | undefined
+  mountWidget?: ((host: WidgetHost) => void) | undefined
   loadWidget?: (url: string) => Promise<WidgetSetup>
 }
 
@@ -45,17 +51,12 @@ export interface WidgetRef {
   wraps: boolean
 }
 
-interface WidgetInstance {
-  update?(props: unknown): void
-  destroy?(): void
-}
-
 export type WidgetSetup = (context: {
   el: HTMLElement
   props: unknown
   emit(event: string, detail: unknown): void
   signal: AbortSignal
-}) => WidgetInstance | undefined
+}) => { update?(props: unknown): void; destroy?(): void } | undefined
 
 export interface MountOptions extends AppOptions {
   view: ViewIR
@@ -149,7 +150,7 @@ function clear(start: Node, end: Node) {
 }
 
 export function createApp(doc: Document, options: AppOptions): App {
-  const { machine, fns = {}, params = null, routes = {} } = options
+  const { machine, fns = {}, params = null, routes = {}, motion: m } = options
   const { data: payload } = store(options.payload)
   const ranges: [Node, Node][] = []
   const timers = new Set<ReturnType<typeof setTimeout>>()
@@ -290,9 +291,12 @@ export function createApp(doc: Document, options: AppOptions): App {
           return `${k}|${!r ? '' : r.ok ? 'ready' : node.failed[r.error] ? r.error : 'Unexpected'}`
         }
         region(c, block, key, (cc, inner) => {
-          const result = payload.get(payloadKey(node.query, value(node.input, scope)))
+          const input = value(node.input, scope)
+          const k = payloadKey(node.query, input)
+          const result = payload.get(k)
           bound = scope
           if (!result) {
+            if (!cc.claim) request(k, node.query, input)
             if (node.pending) render(node.pending, scope, cc, inner, ns)
             return
           }
@@ -411,50 +415,38 @@ export function createApp(doc: Document, options: AppOptions): App {
       const inner: Cursor = { parent: el, next: claimed ? el.firstChild : null, claim: claimed }
       for (const child of node.children) render(child, scope, inner, block, null)
     }
-    if (!ref || !options.loadWidget) return
-    const load = options.loadWidget
-    const controller = new AbortController()
-    let props = value(node.props, scope)
-    let instance: WidgetInstance | undefined
-    const emit = (name: string, detail: unknown) => {
-      const send = node.on[name]
-      if (send)
-        dispatch({
-          type: 'event',
-          event: send.event,
-          payload: value(send.payload, scope, (f) => (f === 'detail' ? (detail as Json) : null)),
-        })
-    }
-    const start = () =>
-      void load(ref.url).then((setup) => {
-        if (!controller.signal.aborted)
-          instance = setup({ el, props, emit, signal: controller.signal }) ?? undefined
-      })
-    const win = doc.defaultView as (Window & typeof globalThis) | null
-    if (ref.load === 'eager' || !win) start()
-    else if (ref.load === 'idle') (win.requestIdleCallback ?? win.setTimeout)(start)
-    else if (!win.IntersectionObserver) start()
-    else {
-      const io = new win.IntersectionObserver((entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return
-        io.disconnect()
-        start()
-      })
-      io.observe(el)
-      controller.signal.addEventListener('abort', () => io.disconnect())
-    }
-    block.push(() => {
-      const next = value(node.props, scope)
-      if (equal(next, props)) return
-      props = next
-      instance?.update?.(next)
-    })
-    mounted.add({
+    if (!ref || !options.loadWidget || !options.mountWidget) return
+    options.mountWidget({
       el,
-      stop: () => {
-        controller.abort()
-        instance?.destroy?.()
+      ref,
+      name: node.widget,
+      doc,
+      props: () => value(node.props, scope),
+      emit: (name, detail) => {
+        const send = node.on[name]
+        if (send)
+          dispatch({
+            type: 'event',
+            event: send.event,
+            payload: value(send.payload, scope, (f) => (f === 'detail' ? (detail as Json) : null)),
+          })
       },
+      load: options.loadWidget,
+      watch: (update) => block.push(update),
+      own: (stop) => mounted.add({ el, stop }),
+      same: equal,
+    })
+  }
+
+  const fetching = new Set<string>()
+  const request = (key: string, query: string, input: Json) => {
+    if (!options.onQuery || fetching.has(key)) return
+    fetching.add(key)
+    void options.onQuery(query, input).then((result) => {
+      fetching.delete(key)
+      payload.set(key, result)
+      for (const u of root) u()
+      sweep()
     })
   }
 
@@ -486,16 +478,16 @@ export function createApp(doc: Document, options: AppOptions): App {
       }
       current = next
       inner = []
-      if (!motion || reduced(doc)) {
+      if (!motion || !m || m.reduced(doc)) {
         clear(start, end)
         fill({ parent: end.parentNode!, next: end, claim: false }, inner)
         return
       }
-      leave(start.nextSibling === end ? [] : range(start.nextSibling!, end.previousSibling!), motion)
+      m.leave(start.nextSibling === end ? [] : range(start.nextSibling!, end.previousSibling!), motion)
       const [a, b] = span({ parent: end.parentNode!, next: end, claim: false }, () =>
         fill({ parent: end.parentNode!, next: end, claim: false }, inner),
       )
-      if (a && b && a !== end) enter(range(a, b), motion)
+      if (a && b && a !== end) m.enter(range(a, b), motion)
     })
   }
 
@@ -524,7 +516,7 @@ export function createApp(doc: Document, options: AppOptions): App {
     let items = list().map((x) => make(x, c))
     const end = marker(c, ']')
     block.push(() => {
-      const motion = node.motion && !reduced(doc) ? node.motion : null
+      const motion = node.motion && m && !m.reduced(doc) ? node.motion : null
       const rects = motion
         ? new Map(
             items.flatMap((i) =>
@@ -553,7 +545,7 @@ export function createApp(doc: Document, options: AppOptions): App {
         }
       }
       for (const gone of old.values())
-        if (motion) leave(range(gone.first, gone.last), motion)
+        if (motion) m!.leave(range(gone.first, gone.last), motion)
         else for (const n of range(gone.first, gone.last)) (n as ChildNode).remove()
       const parent = end.parentNode!
       let at: Node = start.nextSibling ?? end
@@ -564,10 +556,10 @@ export function createApp(doc: Document, options: AppOptions): App {
       items = next
       if (!motion) return
       for (const item of next)
-        if (fresh.has(item)) enter(range(item.first, item.last), motion)
+        if (fresh.has(item)) m!.enter(range(item.first, item.last), motion)
         else {
           const before = rects?.get(item)
-          if (before) flip(item.first as HTMLElement, before, motion)
+          if (before) m!.flip(item.first as HTMLElement, before, motion)
         }
     })
   }

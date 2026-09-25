@@ -17,11 +17,12 @@ import {
   sitemapXml,
   type WidgetBundle,
 } from '@tenon/runtime-server'
+import type { SessionStore } from './session.ts'
 
 export interface NodeAdapterOptions {
   build: BuildResult
   resolvers: ResolverSet
-  session?: (request: IncomingMessage) => unknown
+  session?: ((request: IncomingMessage) => unknown) | SessionStore
   now?: () => number
   styles?: Stylesheet | null
   widgets?: WidgetBundle | null
@@ -30,6 +31,7 @@ export interface NodeAdapterOptions {
 interface CachedPage {
   html: string
   status: number
+  redirect: string | null
   at: number
   ttl: number
   tags: Set<string>
@@ -61,20 +63,36 @@ const mime: Record<string, string> = {
   '.gltf': 'model/gltf+json',
 }
 
-const readBody = async (request: IncomingMessage) => {
-  let body = ''
-  for await (const chunk of request) body += chunk
-  return body
+const readBytes = async (request: IncomingMessage) => {
+  const chunks: Buffer[] = []
+  for await (const chunk of request) chunks.push(chunk as Buffer)
+  return Buffer.concat(chunks)
+}
+
+const readBody = async (request: IncomingMessage) => (await readBytes(request)).toString('utf8')
+
+const readEffect = async (request: IncomingMessage) => {
+  const type = request.headers['content-type'] ?? ''
+  if (!type.startsWith('multipart/form-data'))
+    return { body: await readBody(request), files: new Map<string, File>() }
+  const form = await new Response(await readBytes(request), { headers: { 'content-type': type } }).formData()
+  const files = new Map<string, File>()
+  for (const [key, value] of form) if (typeof value !== 'string') files.set(key, value)
+  return { body: String(form.get('request') ?? '{}'), files }
 }
 
 export function createHandler({
   build,
   resolvers,
-  session = () => null,
+  session: sessionOption = () => null,
   now = Date.now,
   styles = null,
   widgets = null,
 }: NodeAdapterOptions): Handler {
+  const store = typeof sessionOption === 'function' ? null : sessionOption
+  const session = store
+    ? (request: IncomingMessage) => store.read(request)
+    : (sessionOption as (r: IncomingMessage) => unknown)
   const assets = {
     client: '/_tenon/client.js',
     fns: '/_tenon/fns.js',
@@ -98,11 +116,13 @@ export function createHandler({
 
   const generate = async (path: string, route: string, params: Json) => {
     const at = now()
-    const { html, tags, status } = await renderToString({ build, data, route, params, assets })
-    cache.set(path, { html, status, at, ttl: ttlOf(route), tags, regenerating: null })
+    const { html, tags, status, redirect } = await renderToString({ build, data, route, params, assets })
+    cache.set(path, { html, status, redirect, at, ttl: ttlOf(route), tags, regenerating: null })
   }
 
+  const listeners = new Set<ServerResponse>()
   const revalidate = (tags: string[]) => {
+    if (tags.length) for (const res of listeners) res.write(`data: ${JSON.stringify(tags)}\n\n`)
     let count = 0
     for (const [route, page] of cache)
       if (tags.some((t) => page.tags.has(t))) {
@@ -114,13 +134,18 @@ export function createHandler({
   }
 
   const effect = async (request: IncomingMessage, response: ServerResponse) => {
-    const { effect, input, keys } = JSON.parse(await readBody(request)) as {
+    const request_ = await readEffect(request)
+    const files = request_.files
+    const { effect, input, keys } = JSON.parse(request_.body) as {
       effect: string
       input: Json
       keys: string[]
     }
     const who = session(request)
-    const result = (await data.run(effect, input, who)) as Result & { invalidated?: string[] }
+    const result = (await data.run(effect, input, who, files)) as Result & {
+      invalidated?: string[]
+      session?: unknown
+    }
     const invalidated = result.invalidated ?? []
     if (invalidated.length) revalidate(invalidated)
     const refreshed: [string, Result][] = []
@@ -135,7 +160,8 @@ export function createHandler({
             (await data.run(ref, JSON.parse(key.slice(ref.length)) as Json, who)) as Result,
           ])
       }
-    const { invalidated: _, ...plain } = result
+    if (store && 'session' in result) store.write(response, result.session)
+    const { invalidated: _, session: __, ...plain } = result as typeof result & { session?: unknown }
     const body: EffectResponse = { result: plain as Result, refreshed }
     response.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body))
   }
@@ -146,9 +172,11 @@ export function createHandler({
     params: Json,
     request: IncomingMessage,
     response: ServerResponse,
+    missing = false,
   ) => {
     const headers = { 'content-type': 'text/html; charset=utf-8' }
     const head = request.method === 'HEAD'
+    const statusOf = (s: number) => (missing ? 404 : s)
     if (planRoute(ir, route).plan.cacheable) {
       let cached = cache.get(path)
       let state = 'hit'
@@ -163,12 +191,14 @@ export function createHandler({
           current.regenerating = null
         })
       }
-      response.writeHead(cached.status, { ...headers, 'x-tenon-cache': state })
+      if (cached.redirect) return void response.writeHead(303, { location: cached.redirect }).end()
+      response.writeHead(statusOf(cached.status), { ...headers, 'x-tenon-cache': state })
       response.end(head ? undefined : cached.html)
       return
     }
     const rendered = await renderPage({ build, data, route, params, session: session(request), assets })
-    response.writeHead(rendered.status, { ...headers, 'x-tenon-cache': 'bypass' })
+    if (rendered.redirect) return void response.writeHead(303, { location: rendered.redirect }).end()
+    response.writeHead(statusOf(rendered.status), { ...headers, 'x-tenon-cache': 'bypass' })
     if (!head) for await (const chunk of rendered.chunks) response.write(chunk)
     response.end()
   }
@@ -195,10 +225,27 @@ export function createHandler({
     try {
       if (request.method === 'POST' && url.pathname === '/_tenon/effect')
         return await effect(request, response)
+      if (request.method === 'POST' && url.pathname === '/_tenon/query') {
+        const { query, input } = JSON.parse(await readBody(request)) as { query: string; input: Json }
+        if (!queries.includes(query))
+          return void response.writeHead(400, { 'content-type': 'text/plain' }).end('Unknown query')
+        const result = await data.run(query, input, session(request))
+        return void response
+          .writeHead(200, { 'content-type': 'application/json' })
+          .end(JSON.stringify(result))
+      }
+      if (url.pathname === '/_tenon/live') {
+        response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' })
+        response.write(': live\n\n')
+        listeners.add(response)
+        request.on('close', () => listeners.delete(response))
+        return
+      }
       const head = request.method === 'HEAD'
       if (request.method !== 'GET' && !head)
         return void response.writeHead(405, { 'content-type': 'text/plain', allow: 'GET, HEAD, POST' }).end()
-      if (url.pathname === '/_tenon/client.js') return text(response, 'text/javascript', clientBundle(), head)
+      const client = clientBundle()[url.pathname]
+      if (client !== undefined) return text(response, 'text/javascript', client, head)
       if (url.pathname === '/_tenon/fns.js') return text(response, 'text/javascript', fns, head)
       const file = url.pathname.startsWith('/_tenon/a/') ? asset(url.pathname) : null
       if (file)
@@ -229,6 +276,7 @@ export function createHandler({
         return text(response, 'application/xml', sitemapXml(build, await pageEntries(build, data)), head)
       const found = match(url.pathname)
       if (found) return await page(url.pathname, found.route, found.params, request, response)
+      if (ir.notFound) return await page(`#404`, ir.notFound, null, request, response, true)
       response.writeHead(404, { 'content-type': 'text/plain' }).end(head ? undefined : 'Not found')
     } catch (error) {
       if (!response.headersSent) response.writeHead(500, { 'content-type': 'text/plain' })

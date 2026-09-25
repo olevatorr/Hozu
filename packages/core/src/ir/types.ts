@@ -8,6 +8,7 @@ export interface ProjectIR {
   session: JsonSchema | null
   routes: Record<string, RouteIR>
   pages: Record<string, PageIR>
+  notFound: string | null
   features: Record<string, FeatureIR>
 }
 
@@ -15,6 +16,8 @@ export interface SiteIR {
   url: string
   name: string
   lang: string
+  icon: string | null
+  themeColor: string | null
 }
 
 export interface PageIR {
@@ -32,6 +35,7 @@ export interface HeadIR {
   image: ValueExpr
   published: ValueExpr
   noindex: boolean
+  redirects: Record<string, string>
 }
 
 export interface EntriesIR {

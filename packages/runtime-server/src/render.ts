@@ -15,7 +15,7 @@ import {
   type WidgetIR,
 } from '@tenon/core/ir'
 import type { DataRuntime } from '@tenon/data'
-import { compileGuard, type Getter, getIn } from '@tenon/machine'
+import { compileGuard, type Getter, getIn, pathOf } from '@tenon/machine'
 import type { IslandRef, PagePayload, Result } from '@tenon/runtime-client'
 import { attrText, text } from '@tenon/runtime-client'
 import {
@@ -67,6 +67,7 @@ export interface RenderedPage {
   path: string
   chunks: AsyncIterable<string>
   tags: Set<string>
+  redirect: string | null
 }
 
 export async function renderPage({
@@ -90,6 +91,7 @@ export async function renderPage({
     params,
     widgets: {},
     routes: {},
+    live: {},
   }
   const widgets = widgetsOf(ir)
   const fns = bindings.fns as Record<string, (x: Json) => Json>
@@ -262,7 +264,12 @@ export async function renderPage({
         flush()
         const result = (await pending) as Result
         if (q) for (const t of tagKeys(q.tags, input, scope)) tags.add(t)
-        if (island) payload.data.push([n.query + canonicalStringify(input), result])
+        if (island) {
+          const key = n.query + canonicalStringify(input)
+          payload.data.push([key, result])
+          if (q?.freshness.kind === 'live')
+            payload.live[key] = { query: n.query, input, tags: tagKeys(q.tags, input, scope) }
+        }
         const branch = result.ok ? n.ready : (n.failed[result.error] ?? n.failed.Unexpected)
         if (branch)
           await render(
@@ -289,6 +296,7 @@ export async function renderPage({
     routes,
   }
   let status = 200
+  let redirect: string | null = null
   let headScope = empty
   if (page.head.query) {
     const input = value(page.head.query.input, empty)
@@ -296,7 +304,11 @@ export async function renderPage({
     const dot = page.head.query.ref.indexOf('.')
     const q = ir.features[page.head.query.ref.slice(0, dot)]?.queries[page.head.query.ref.slice(dot + 1)]
     if (q) for (const t of tagKeys(q.tags, input, empty)) tags.add(t)
-    if (!result.ok) status = result.error === 'Unexpected' ? 500 : 404
+    if (!result.ok) {
+      const target = page.head.redirects[result.error]
+      if (target) redirect = pathOf(ir.routes[target]?.path ?? '/', null)
+      status = redirect ? 303 : result.error === 'Unexpected' ? 500 : 404
+    }
     headScope = { ...empty, bindings: [result.ok ? result.value : null] }
   }
   const head = headHtml(ir, page.head, (v) => value(v, headScope), path, status, assets)
@@ -325,7 +337,7 @@ export async function renderPage({
     }
   })()
 
-  return { plan, status, path, chunks: out, tags }
+  return { plan, status, path, chunks: out, tags, redirect }
 }
 
 const getterCache = new WeakMap<object, WeakMap<ValueExpr, Getter>>()
@@ -545,11 +557,7 @@ function channel(): Channel {
   }
 }
 
-export function pathOf(pattern: string, params: Json): string {
-  return pattern.replace(/:([A-Za-z][A-Za-z0-9_]*)/g, (_, key: string) =>
-    encodeURIComponent(text(getIn(params, [key]))),
-  )
-}
+export { pathOf }
 
 const SPECULATION = `<script type="speculationrules">${JSON.stringify({
   prerender: [
@@ -590,6 +598,8 @@ function headHtml(
   return [
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    ir.site?.themeColor ? `<meta name="theme-color" content="${escapeHtml(ir.site.themeColor)}">` : '',
+    ir.site?.icon ? `<link rel="icon" href="${escapeHtml(ir.site.icon)}">` : '',
     ...preload.map(
       (href) => `<link rel="preload" href="${escapeHtml(href)}" as="font" type="font/woff2" crossorigin>`,
     ),
@@ -610,13 +620,25 @@ function headHtml(
   ].join('')
 }
 
-export async function renderToString(
-  options: RenderOptions,
-): Promise<{ html: string; plan: RoutePlan; tags: Set<string>; status: number; path: string }> {
+export async function renderToString(options: RenderOptions): Promise<{
+  html: string
+  plan: RoutePlan
+  tags: Set<string>
+  status: number
+  path: string
+  redirect: string | null
+}> {
   const page = await renderPage(options)
   let html = ''
   for await (const chunk of page.chunks) html += chunk
-  return { html, plan: page.plan, tags: page.tags, status: page.status, path: page.path }
+  return {
+    html,
+    plan: page.plan,
+    tags: page.tags,
+    status: page.status,
+    path: page.path,
+    redirect: page.redirect,
+  }
 }
 
 export function fnsModule(build: BuildResult): string {

@@ -41,6 +41,12 @@
             "$ref": "#/definitions/PageIR"
           }
         },
+        "notFound": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "features": {
           "type": "object",
           "additionalProperties": {
@@ -54,6 +60,7 @@
         "session",
         "routes",
         "pages",
+        "notFound",
         "features"
       ],
       "additionalProperties": false
@@ -69,12 +76,26 @@
         },
         "lang": {
           "type": "string"
+        },
+        "icon": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "themeColor": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
         "url",
         "name",
-        "lang"
+        "lang",
+        "icon",
+        "themeColor"
       ],
       "additionalProperties": false
     },
@@ -224,6 +245,12 @@
         },
         "noindex": {
           "type": "boolean"
+        },
+        "redirects": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
       "required": [
@@ -233,7 +260,8 @@
         "type",
         "image",
         "published",
-        "noindex"
+        "noindex",
+        "redirects"
       ],
       "additionalProperties": false
     },

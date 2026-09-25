@@ -10,14 +10,16 @@ import { home, orderPlaced } from './routes.ts'
 export default project({
   schema: zodAdapter,
   styles: new URL('./app.css', import.meta.url),
+  notFound: null,
   session: z.object({ userId: z.string() }),
-  site: { url: 'https://cart.tenon.dev', name: 'Tenon Cart', lang: 'en' },
+  site: { url: 'https://cart.tenon.dev', name: 'Tenon Cart', lang: 'en', icon: null, themeColor: null },
   routes: { home, orderPlaced },
   pages: [
     ui.page(home, {
       views: [ProductGrid, CartPanel],
       assert: null,
       head: {
+        redirects: null,
         query: null,
         input: null,
         render: () => ({
@@ -35,6 +37,7 @@ export default project({
       views: [ProductGrid],
       assert: 'cacheable',
       head: {
+        redirects: null,
         query: null,
         input: null,
         render: () => ({

@@ -30,8 +30,16 @@ export const passive = new Set([
 
 const num = (x: unknown): Json => (typeof x === 'number' && !Number.isNaN(x) ? x : null)
 
+export const uploads = new Map<string, File>()
+
 const fileList = (files: FileList | null | undefined): Json =>
-  files ? [...files].map((f) => ({ name: f.name, size: f.size, type: f.type })) : []
+  files
+    ? [...files].map((f) => {
+        const token = `u${uploads.size + 1}`
+        uploads.set(token, f)
+        return { name: f.name, size: f.size, type: f.type, token }
+      })
+    : []
 
 export const domField =
   (e: Event) =>

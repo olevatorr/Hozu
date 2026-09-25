@@ -6,6 +6,7 @@ import { z } from 'zod'
 const p = project({
   schema: zodAdapter,
   styles: null,
+  notFound: null,
   session: z.object({ userId: z.string() }),
   site: null,
   routes: {},
@@ -30,7 +31,7 @@ const mine = query({
 })
 
 resolvers(p, (implement) => [
-  implement(mine, (_, { session }) => session.userId),
+  implement(mine, (_, { session }) => session?.userId ?? ''),
   // @ts-expect-error public resolvers never see the session
   implement(pub, (_, { session }) => String(session)),
   // @ts-expect-error undeclared error name

@@ -78,6 +78,7 @@ const headFields = {
 export const benchProject = project({
   schema: zodAdapter,
   styles: null,
+  notFound: null,
   session: null,
   site: null,
   routes: { home },

@@ -114,6 +114,7 @@ export const todoFeature = feature({
 export default project({
   schema: zodAdapter,
   styles: null,
+  notFound: null,
   session: null,
   site: null,
   routes: { home },
@@ -122,6 +123,7 @@ export default project({
       views: [Todo],
       assert: null,
       head: {
+        redirects: null,
         query: null,
         input: null,
         render: () => ({

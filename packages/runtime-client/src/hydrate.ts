@@ -1,5 +1,6 @@
 import type { FeatureIR, Json, MachineIR, ViewNode } from '@tenon/core/ir'
 import { compileMachine } from '@tenon/machine'
+import { uploads } from './dom.ts'
 import { type App, createApp, type Result, type Store, type WidgetRef, type WidgetSetup } from './mount.ts'
 
 export interface IslandRef {
@@ -17,6 +18,13 @@ export interface PagePayload {
   params: Json
   widgets: Record<string, WidgetRef>
   routes: Record<string, string>
+  live: Record<string, LiveQuery>
+}
+
+export interface LiveQuery {
+  query: string
+  input: Json
+  tags: string[]
 }
 
 export interface EffectResponse {
@@ -27,16 +35,31 @@ export interface EffectResponse {
 export type Transport = (effect: string, input: Json, keys: string[]) => Promise<EffectResponse>
 
 export const fetchTransport: Transport = async (effect, input, keys) => {
+  const json = JSON.stringify({ effect, input, keys })
+  const body = uploads.size ? await (await import('./uploads.ts')).encode(json, input, uploads) : json
   const response = await fetch('/_tenon/effect', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ effect, input, keys }),
+    headers: typeof body === 'string' ? { 'content-type': 'application/json' } : {},
+    body,
   })
   return (await response.json()) as EffectResponse
 }
 
+export type QueryTransport = (query: string, input: Json) => Promise<Result>
+
+export const fetchQuery: QueryTransport = async (query, input) => {
+  const response = await fetch('/_tenon/query', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ query, input }),
+  })
+  return (await response.json()) as Result
+}
+
 export interface HydrateOptions {
   transport?: Transport
+  query?: QueryTransport
+  live?: (onTags: (tags: string[]) => void) => void
   loadFns?: (url: string) => Promise<Record<string, never>>
   loadWidget?: (url: string) => Promise<WidgetSetup>
 }
@@ -49,14 +72,34 @@ const importFns = async (url: string) =>
 
 export async function hydrate(
   doc: Document,
-  { transport = fetchTransport, loadFns = importFns, loadWidget = importWidget }: HydrateOptions = {},
+  {
+    transport = fetchTransport,
+    query = fetchQuery,
+    live,
+    loadFns = importFns,
+    loadWidget = importWidget,
+  }: HydrateOptions = {},
 ): Promise<Map<string, App>> {
   const apps = new Map<string, App>()
   const script = doc.getElementById('tenon-payload')
   if (!script?.textContent) return apps
   const payload = JSON.parse(script.textContent) as PagePayload
+  const motion = script.textContent.includes('"motion":"') ? await import('./motion.ts') : undefined
+  const mountWidget = Object.keys(payload.widgets).length
+    ? (await import('./widget.ts')).mountWidget
+    : undefined
   const fns = payload.fns ? await loadFns(payload.fns) : {}
   const shared: Store = { data: new Map(payload.data), versions: new Map() }
+  const inflight = new Map<string, Promise<Result>>()
+  const onQuery = (q: string, input: Json) => {
+    const key = q + JSON.stringify(input)
+    let pending = inflight.get(key)
+    if (!pending) {
+      pending = query(q, input).finally(() => inflight.delete(key))
+      inflight.set(key, pending)
+    }
+    return pending
+  }
   for (const [id, machine] of Object.entries(payload.features))
     apps.set(
       id,
@@ -67,7 +110,10 @@ export async function hydrate(
         fns,
         widgets: payload.widgets,
         routes: payload.routes,
+        motion,
+        mountWidget,
         loadWidget,
+        onQuery,
         onInvoke: async (effect, input) => {
           const { result, refreshed } = await transport(effect, input, [...shared.data.keys()])
           for (const [key, value] of refreshed) {
@@ -92,5 +138,12 @@ export async function hydrate(
     apps.get(island.feature)?.attach(at.parentNode, at.nextSibling, node, island.scope, true)
   })
   for (const app of apps.values()) app.start()
+  const liveKeys = Object.entries(payload.live ?? {})
+  if (liveKeys.length)
+    (live ?? (await import('./live.ts')).liveStream(doc))(async (tags) => {
+      const stale = liveKeys.filter(([, l]) => l.tags.some((t) => tags.includes(t)))
+      for (const [key, l] of stale) shared.data.set(key, await query(l.query, l.input))
+      if (stale.length) for (const app of apps.values()) app.sync()
+    })
   return apps
 }

@@ -74,6 +74,11 @@ export async function exportStatic({
       js ||= plan.js
     }
   }
+  if (build.ir.notFound) {
+    const { html } = await renderToString({ build, data, route: build.ir.notFound, params: null, assets })
+    await write(join(outDir, '404.html'), html)
+    result.written.push(join(outDir, '404.html'))
+  }
   await write(join(outDir, 'robots.txt'), robotsTxt(build))
   await write(join(outDir, 'sitemap.xml'), sitemapXml(build, entries))
   result.written.push(join(outDir, 'robots.txt'), join(outDir, 'sitemap.xml'))
@@ -96,7 +101,7 @@ export async function exportStatic({
     result.written.push(file)
   }
   if (js) {
-    await write(join(outDir, '_tenon/client.js'), clientBundle())
+    for (const [href, code] of Object.entries(clientBundle())) await write(join(outDir, href.slice(1)), code)
     await write(join(outDir, '_tenon/fns.js'), fnsModule(build))
     result.written.push(join(outDir, '_tenon/client.js'), join(outDir, '_tenon/fns.js'))
   }

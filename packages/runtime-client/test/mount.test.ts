@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { buildProject } from '@tenon/core/ir'
 import { compileMachine } from '@tenon/machine'
-import { mount, type Payload, payloadKey, type Result } from '@tenon/runtime-client'
+import { motion, mount, type Payload, payloadKey, type Result } from '@tenon/runtime-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import cartProject from '../../../examples/cart/tenon.config.ts'
 
@@ -68,6 +68,7 @@ describe('client runtime', () => {
       machine,
       payload,
       fns: bindings.fns,
+      motion,
       snapshot: {
         state: 'idle',
         context: { pending: { sku: '', qty: 1 }, error: null, orderId: null },

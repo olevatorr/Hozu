@@ -9,7 +9,7 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./browser": "./dist/browser.bundle.js"
+    "./browser/*": "./dist/browser/*"
   },
   "files": [
     "dist"

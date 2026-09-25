@@ -144,6 +144,7 @@ ui.page(slugRoute, {
   views: [],
   assert: null,
   head: {
+    redirects: null,
     query: itemQuery,
     input: (params) => ({ slug: params.slug }),
     render: (item) => ({

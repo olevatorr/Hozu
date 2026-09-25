@@ -25,6 +25,8 @@ const posts = [
   },
 ]
 
+const who = (session: { userId: string } | null) => session?.userId ?? 'guest'
+
 export function createResolvers() {
   const lists = new Map<string, string[]>()
   return resolvers(project, (implement) => [
@@ -33,17 +35,17 @@ export function createResolvers() {
       getPost,
       ({ slug }, { fail }) => posts.find((p) => p.slug === slug) ?? fail('NotFound', { slug }),
     ),
-    implement(savedPosts, (_, { session }) => lists.get(session.userId) ?? []),
+    implement(savedPosts, (_, { session }) => lists.get(who(session)) ?? []),
     implement(savePost, ({ slug }, { session, fail }) => {
-      const list = lists.get(session.userId) ?? []
+      const list = lists.get(who(session)) ?? []
       if (list.length >= 20) return fail('LimitReached', { limit: 20 })
       const next = list.includes(slug) ? list : [...list, slug]
-      lists.set(session.userId, next)
+      lists.set(who(session), next)
       return next
     }),
     implement(unsavePost, ({ slug }, { session }) => {
-      const next = (lists.get(session.userId) ?? []).filter((s) => s !== slug)
-      lists.set(session.userId, next)
+      const next = (lists.get(who(session)) ?? []).filter((s) => s !== slug)
+      lists.set(who(session), next)
       return next
     }),
   ])

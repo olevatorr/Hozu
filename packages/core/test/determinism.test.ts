@@ -56,6 +56,7 @@ function reorderCart(rand: Rand): ProjectDecl {
   return project({
     schema: config.schema,
     styles: null,
+    notFound: null,
     session: config.session,
     site: config.site,
     routes: shuffleRecord(config.routes, rand),
@@ -155,6 +156,7 @@ function freshProject(rand: Rand): ProjectDecl {
   return project({
     schema: zodAdapter,
     styles: null,
+    notFound: null,
     session: null,
     site: null,
     routes: {},
