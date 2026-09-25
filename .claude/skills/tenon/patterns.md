@@ -33,3 +33,9 @@ Each pattern is used in `examples/bookmarks`.
 - **Go to what was just created**: `done: [{ target: 'idle', navigate: (r) => ui.link(itemPage, { id: r.id }, null) }]`.
 - **No-JS form**: every value the submit needs is a named field read with `ui.dom.form('name')`; the server runs the
   machine for a native post. Per-item actions without JS: wrap the button in its own small form.
+- **UI that survives following a link** (a cart, a player, a chat box; used in `examples/cart`): list the same
+  view with a machine on every page that should keep it, in the same order, e.g. `views: [ProductGrid, CartPanel]`
+  and `views: [ProductDetail, CartPanel]`. Links between those pages then swap only the other views; the kept view's
+  DOM and machine state stay. Nothing to declare: a view is kept only if it never reads `params`/`search` (neither
+  in its tree nor in its machine). `tenon plan <route>` lists what is kept per target route. Style the loading
+  state with `html[data-tenon-navigating]`.

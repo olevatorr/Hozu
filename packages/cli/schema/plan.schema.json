@@ -3,9 +3,6 @@
   "$ref": "#/definitions/PlanOutput",
   "definitions": {
     "PlanOutput": {
-      "$ref": "#/definitions/RoutePlan"
-    },
-    "RoutePlan": {
       "type": "object",
       "properties": {
         "route": {
@@ -54,18 +51,35 @@
           "items": {
             "$ref": "#/definitions/NodePlan"
           }
+        },
+        "persistent": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "soft": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       },
       "required": [
-        "route",
-        "path",
-        "views",
         "assert",
         "cacheable",
-        "regions",
         "islands",
         "js",
-        "nodes"
+        "nodes",
+        "path",
+        "persistent",
+        "regions",
+        "route",
+        "soft",
+        "views"
       ],
       "additionalProperties": false
     },

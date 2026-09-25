@@ -106,4 +106,6 @@ export interface ExplainOutput {
 
 export type ImpactOutput = Impact
 
-export type PlanOutput = RoutePlan
+export interface PlanOutput extends RoutePlan {
+  soft: Record<string, string[]>
+}

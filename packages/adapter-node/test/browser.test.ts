@@ -63,4 +63,44 @@ describe.skipIf(!existsSync(chrome))('in Chromium', () => {
       await browser.close()
     }
   }, 30_000)
+
+  it('soft navigation keeps the cart island alive, restores scroll and never refetches (ADR 0015)', async () => {
+    const browser = await chromium.launch({ executablePath: chrome })
+    try {
+      const page = await browser.newPage({ viewport: { width: 800, height: 400 } })
+      const requests: string[] = []
+      page.on('request', (r) => requests.push(`${r.resourceType()} ${new URL(r.url()).pathname}`))
+      await page.goto(url)
+      await page.waitForFunction(() => document.querySelector('input[name="qty"]') !== null)
+      await page.waitForLoadState('networkidle')
+      await page.fill('input[name="qty"]', '5')
+      await page.evaluate(() => {
+        ;(window as unknown as { __alive: boolean }).__alive = true
+        document.body.style.minHeight = '3000px'
+        window.scrollTo(0, 900)
+      })
+      requests.length = 0
+
+      await page.evaluate(() => (document.querySelector('a[href="/products/mug"]') as HTMLElement).click())
+      await page.waitForFunction(() => document.querySelector('h2')?.textContent === 'Mug — $12')
+      expect(await page.evaluate(() => window.scrollY)).toBe(0)
+      expect(await page.evaluate(() => (window as unknown as { __alive?: boolean }).__alive)).toBe(true)
+      expect(await page.title()).toBe('Mug')
+      expect(new URL(page.url()).pathname).toBe('/products/mug')
+      expect(await page.inputValue('input[name="qty"]')).toBe('5')
+      expect(await page.evaluate(() => document.querySelector('div[aria-live]')?.textContent)).toBe('Mug')
+      expect(requests).toEqual(['fetch /products/mug'])
+
+      await page.evaluate(() => window.scrollTo(0, 0))
+      await page.goBack()
+      await page.waitForFunction(() => document.querySelector('h2')?.textContent === 'Products')
+      await page.waitForFunction(() => window.scrollY > 0)
+      expect(await page.evaluate(() => window.scrollY)).toBe(900)
+      expect(await page.evaluate(() => (window as unknown as { __alive?: boolean }).__alive)).toBe(true)
+      expect(await page.inputValue('input[name="qty"]')).toBe('5')
+      expect(requests.filter((r) => r.includes('/_tenon/query'))).toEqual([])
+    } finally {
+      await browser.close()
+    }
+  }, 30_000)
 })

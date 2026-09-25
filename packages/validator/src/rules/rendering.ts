@@ -3,6 +3,7 @@ import { join } from '@tenon/core/ir'
 import type { Ctx } from '../context.ts'
 
 export function rendering(ctx: Ctx) {
+  const reported = new Set<string>()
   for (const [route, page] of Object.entries(ctx.ir.pages)) {
     if (!Object.hasOwn(ctx.ir.routes, route))
       ctx.report(
@@ -33,7 +34,10 @@ export function rendering(ctx: Ctx) {
         },
       )
     })
-    for (const issue of planRoute(ctx.ir, route).issues)
+    for (const issue of planRoute(ctx.ir, route).issues) {
+      const key = `${issue.code} ${issue.pointer}`
+      if (reported.has(key)) continue
+      reported.add(key)
       ctx.report(issue.code, issue.feature, issue.pointer, issue.message, issue.cause, {
         summary:
           issue.code === 'TN022'
@@ -42,5 +46,6 @@ export function rendering(ctx: Ctx) {
         snippet: null,
         patch: null,
       })
+    }
   }
 }

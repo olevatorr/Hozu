@@ -113,7 +113,9 @@ export function createHandler({
   const secure: Record<string, string> = {
     'x-content-type-options': 'nosniff',
     'referrer-policy': 'strict-origin-when-cross-origin',
-    ...(csp === false ? {} : { 'content-security-policy': contentSecurityPolicy(csp, inlineScriptHashes) }),
+    ...(csp === false
+      ? {}
+      : { 'content-security-policy': contentSecurityPolicy(csp, inlineScriptHashes(build.ir)) }),
   }
   const { ir } = build
   const match = matcher(build)

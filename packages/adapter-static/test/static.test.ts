@@ -20,7 +20,10 @@ describe('static export', () => {
       join(outDir, 'robots.txt'),
       join(outDir, 'sitemap.xml'),
     ])
-    expect(result.skipped).toEqual([{ route: 'home', reason: 'per-request regions: cart.getCart' }])
+    expect(result.skipped).toEqual([
+      { route: 'home', reason: 'per-request regions: cart.getCart' },
+      { route: 'product', reason: 'per-request regions: cart.getCart' },
+    ])
     const html = await readFile(join(outDir, 'order/placed/index.html'), 'utf8')
     expect(html).toContain('T-shirt')
     expect(html).not.toMatch(/<script(?! type="(application\/ld\+json|speculationrules)")/)

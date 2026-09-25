@@ -73,6 +73,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   Forms whose submit reads only `ui.dom.form(name)`/context/params/search also work without JS: the server runs the
   machine for a native post (TN036 warns otherwise). `project({ notFound, error })`; adapter-node sends CSP (script
   hashes), nosniff and rejects cross-site POSTs; `createServer({ onError, csp })` (ADR 0014).
+- Soft navigation (ADR 0015): a view with an island that is listed on both pages and never reads `params`/`search`
+  keeps its DOM and machine across a link (derived, `tenon plan` shows it; Navigation API, lazy `navigate.js`
+  chunk, budget P8). Pages without such views keep document navigation + prerender.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

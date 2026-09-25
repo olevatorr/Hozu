@@ -6,7 +6,7 @@ const dist = (file: string) => fileURLToPath(new URL(`../dist/${file}`, import.m
 
 rmSync(dist('browser'), { recursive: true, force: true })
 await build({
-  entryPoints: { client: dist('browser.js') },
+  entryPoints: { client: dist('browser.js'), navigate: dist('navigate.js') },
   outdir: dist('browser'),
   entryNames: '[name]',
   chunkNames: 'chunk-[hash]',

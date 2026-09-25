@@ -1,6 +1,6 @@
 import { feature } from '@tenon/core'
 import { catalogTag, getProduct, listProducts, productTag } from './effects.ts'
-import { ProductGrid } from './views.ts'
+import { ProductDetail, ProductGrid } from './views.ts'
 
 export const catalog = feature({
   id: 'catalog',
@@ -17,7 +17,7 @@ export const catalog = feature({
   mutations: {},
   fns: {},
   machine: null,
-  views: { ProductGrid },
+  views: { ProductGrid, ProductDetail },
   contracts: {},
   exports: {
     events: [],

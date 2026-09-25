@@ -89,4 +89,14 @@ describe('server rendering', () => {
     for (let n = await chunks.next(); !n.done; n = await chunks.next()) rest += n.value
     expect(rest).toContain('cart.CartPanel/1/ready')
   })
+
+  it('marks view boundaries and sends the soft navigation table only where a view persists', async () => {
+    const data = createDataRuntime({ build, resolvers: createResolvers() })
+    const home = (await renderToString({ build, data, route: 'home', session })).html
+    expect(home).toContain('<body><!--v:catalog.ProductGrid--><section')
+    expect(home).toContain('<!--/v--><!--v:cart.CartPanel--><section')
+    expect(payloadOf(home).soft).toEqual({ home: ['cart.CartPanel'], product: ['cart.CartPanel'] })
+    const placed = (await renderToString({ build, data, route: 'orderPlaced', session })).html
+    expect(placed).not.toContain('<!--v:')
+  })
 })

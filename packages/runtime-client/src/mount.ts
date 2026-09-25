@@ -151,13 +151,14 @@ function clear(start: Node, end: Node) {
 }
 
 export function createApp(doc: Document, options: AppOptions): App {
-  const { machine, fns = {}, params = null, search = null, routes = {}, motion: m } = options
+  const { machine, fns = {}, params = null, search = null, routes = {} } = options
   const { data: payload } = store(options.payload)
   const ranges: [Node, Node][] = []
   const timers = new Set<ReturnType<typeof setTimeout>>()
   let first: Step | null = machine ? (options.snapshot ? null : init(machine)) : null
   let snapshot: Snapshot | null = options.snapshot ?? first?.snapshot ?? null
   const root: Block = []
+  const detached = new Set<() => void>()
   const mounted = new Set<{ el: Node; stop: () => void }>()
   const getters = new WeakMap<ValueExpr, Getter>()
 
@@ -453,6 +454,7 @@ export function createApp(doc: Document, options: AppOptions): App {
   }
 
   const sweep = () => {
+    for (let i = root.length - 1; i >= 0; i--) if (detached.delete(root[i]!)) root.splice(i, 1)
     for (const m of mounted)
       if (!m.el.isConnected) {
         m.stop()
@@ -480,6 +482,7 @@ export function createApp(doc: Document, options: AppOptions): App {
       }
       current = next
       inner = []
+      const m = options.motion
       if (!motion || !m || m.reduced(doc)) {
         clear(start, end)
         fill({ parent: end.parentNode!, next: end, claim: false }, inner)
@@ -518,6 +521,7 @@ export function createApp(doc: Document, options: AppOptions): App {
     let items = list().map((x) => make(x, c))
     const end = marker(c, ']')
     block.push(() => {
+      const m = options.motion
       const motion = node.motion && m && !m.reduced(doc) ? node.motion : null
       const rects = motion
         ? new Map(
@@ -602,8 +606,15 @@ export function createApp(doc: Document, options: AppOptions): App {
     attach(parent, before, node, scope, claim) {
       const c: Cursor = { parent, next: before, claim }
       const ns = (parent as Element).namespaceURI === SVG_NS ? SVG_NS : null
-      const [a, b] = span(c, () => render(node, scope, c, root, ns))
+      const block: Block = []
+      const [a, b] = span(c, () => render(node, scope, c, block, ns))
       if (a && b) ranges.push([a, b])
+      const connected = a?.isConnected === true
+      const update = () => {
+        if (connected && !a.isConnected) detached.add(update)
+        else for (const u of block) u()
+      }
+      root.push(update)
     },
     start() {
       if (first) effects(first)

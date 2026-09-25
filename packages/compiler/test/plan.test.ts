@@ -1,4 +1,4 @@
-import { planRoute } from '@tenon/compiler'
+import { planRoute, softTargets } from '@tenon/compiler'
 import { buildProject, type QueryNode } from '@tenon/core/ir'
 import { describe, expect, it } from 'vitest'
 import cartProject from '../../../examples/cart/tenon.config.ts'
@@ -69,5 +69,29 @@ describe('render plans', () => {
     })
     const inner = planRoute(doc, 'orderPlaced').plan.regions.find((r) => r.id === 'inner')!
     expect([inner.mode, inner.seconds, inner.parent]).toEqual(['swr', 10, 'catalog.ProductGrid/1'])
+  })
+
+  it('derives persistent views and soft navigation targets from the pages (ADR 0015)', () => {
+    const doc = ir()
+    expect(planRoute(doc, 'home').plan.persistent).toEqual(['cart.CartPanel'])
+    expect(planRoute(doc, 'product').plan.persistent).toEqual(['cart.CartPanel'])
+    expect(softTargets(doc, 'home')).toEqual({ home: ['cart.CartPanel'], product: ['cart.CartPanel'] })
+    expect(softTargets(doc, 'orderPlaced')).toEqual({})
+  })
+
+  it('a view that reads params, search or a route-reading machine is never kept', () => {
+    const doc = ir()
+    const cartQuery = (doc.features.cart!.views.CartPanel!.root as { children: QueryNode[] }).children[1]!
+    cartQuery.input = { object: { sku: { ref: 'params', path: ['sku'] } } }
+    expect(planRoute(doc, 'home').plan.persistent).toEqual([])
+    expect(softTargets(doc, 'home')).toEqual({})
+    const viaMachine = ir()
+    const idle = viaMachine.features.cart!.machine!.states.idle!
+    Object.values(idle.on)[0]![0]!.assign.push({
+      op: 'set',
+      path: ['error'],
+      value: { ref: 'search', path: ['q'] },
+    })
+    expect(planRoute(viaMachine, 'home').plan.persistent).toEqual([])
   })
 })

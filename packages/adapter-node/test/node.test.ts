@@ -92,7 +92,7 @@ describe('crawler endpoints', () => {
       'User-agent: *\nAllow: /\nDisallow: /order/placed\nSitemap: https://cart.tenon.dev/sitemap.xml\n',
     )
     expect((await app.call('GET', '/sitemap.xml')).body).toContain(
-      '<url><loc>https://cart.tenon.dev/</loc></url></urlset>',
+      '<url><loc>https://cart.tenon.dev/</loc></url><url><loc>https://cart.tenon.dev/products/mug</loc></url>',
     )
   })
 })

@@ -3,9 +3,10 @@ import { zodAdapter } from '@tenon/schema-zod'
 import { z } from 'zod'
 import { cart } from './features/cart/feature.ts'
 import { CartPanel } from './features/cart/views.ts'
+import { getProduct, listProducts } from './features/catalog/effects.ts'
 import { catalog } from './features/catalog/feature.ts'
-import { ProductGrid } from './features/catalog/views.ts'
-import { home, orderPlaced } from './routes.ts'
+import { ProductDetail, ProductGrid } from './features/catalog/views.ts'
+import { home, orderPlaced, product } from './routes.ts'
 
 export default project({
   schema: zodAdapter,
@@ -14,7 +15,7 @@ export default project({
   error: null,
   session: z.object({ userId: z.string() }),
   site: { url: 'https://cart.tenon.dev', name: 'Tenon Cart', lang: 'en', icon: null, themeColor: null },
-  routes: { home, orderPlaced },
+  routes: { home, orderPlaced, product },
   pages: [
     ui.page(home, {
       views: [ProductGrid, CartPanel],
@@ -33,6 +34,24 @@ export default project({
         }),
       },
       entries: null,
+    }),
+    ui.page(product, {
+      views: [ProductDetail, CartPanel],
+      assert: null,
+      head: {
+        redirects: null,
+        query: getProduct,
+        input: (params) => ({ sku: params.sku }),
+        render: (item) => ({
+          title: item.name,
+          description: item.name,
+          type: 'website',
+          image: null,
+          published: null,
+          noindex: false,
+        }),
+      },
+      entries: { query: listProducts, input: {}, params: (item) => ({ sku: item.sku }) },
     }),
     ui.page(orderPlaced, {
       views: [ProductGrid],
