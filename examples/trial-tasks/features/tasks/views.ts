@@ -48,7 +48,7 @@ export const Board = ui.view({
                 class:
                   'rounded-lg border border-slate-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none',
               },
-              priorities.map((p) => ui.option({ value: p, selected: op.eq(ctx.priority, p) }, [p])),
+              priorities.map((p) => ui.option({ value: p, selected: p === 'normal' }, [p])),
             ),
           ]),
           ui.button(
@@ -128,7 +128,6 @@ export const Board = ui.view({
                         ui.span(
                           {
                             class: 'rounded-full px-2 py-0.5 text-xs font-medium',
-                            'data-priority': t.priority,
                             toggle: {
                               'bg-slate-100 text-slate-600': op.eq(t.priority, 'low'),
                               'bg-sky-100 text-sky-700': op.eq(t.priority, 'normal'),

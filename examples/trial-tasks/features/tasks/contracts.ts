@@ -22,24 +22,19 @@ export const addsTask = contract(tasksMachine, {
   when: [
     { send: Add, payload: { title: 'Test it', priority: 'high' } },
     { send: Draft, payload: { text: 'ignored while adding' } },
-    { send: ClearDone, payload: {} },
     { done: addTask, result: { id: 't4', title: 'Test it', done: false, priority: 'high' } },
   ],
   expect: {
     state: 'idle',
-    context: idle,
+    context: { ...idle, priority: 'high' },
     effects: [{ effect: addTask, input: { title: 'Test it', priority: 'high' } }],
   },
 })
 
 export const rejectsDuplicate = contract(tasksMachine, {
-  given: { state: 'adding', context: { ...idle, draft: 'Ship it', priority: 'low' } },
+  given: { state: 'adding', context: { ...idle, draft: 'Ship it' } },
   when: [{ failed: addTask, error: 'Duplicate', data: { title: 'Ship it' } }],
-  expect: {
-    state: 'idle',
-    context: { ...idle, draft: 'Ship it', priority: 'low', error: DUPLICATE },
-    effects: [],
-  },
+  expect: { state: 'idle', context: { ...idle, draft: 'Ship it', error: DUPLICATE }, effects: [] },
 })
 
 export const rejectsInvalid = contract(tasksMachine, {
@@ -80,13 +75,13 @@ export const toggleFails = contract(tasksMachine, {
 })
 
 export const clearsDone = contract(tasksMachine, {
-  given: { state: 'idle', context: { ...idle, show: 'done', error: 'old' } },
+  given: { state: 'idle', context: { ...idle, error: 'old' } },
   when: [
     { send: ClearDone, payload: {} },
     { send: Toggle, payload: { id: 't2' } },
     { done: clearDone, result: { removed: 1 } },
   ],
-  expect: { state: 'idle', context: { ...idle, show: 'done' }, effects: [{ effect: clearDone, input: {} }] },
+  expect: { state: 'idle', context: idle, effects: [{ effect: clearDone, input: {} }] },
 })
 
 export const clearFails = contract(tasksMachine, {

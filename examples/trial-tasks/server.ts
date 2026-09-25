@@ -1,13 +1,12 @@
 import { resolvers } from '@tenon/data'
 import { addTask, clearDone, getTask, listTasks, toggleTask } from './features/tasks/effects.ts'
-import type { Task } from './features/tasks/schemas.ts'
 import project from './tenon.config.ts'
 
 export function createResolvers() {
-  const items: Task[] = [
-    { id: 't1', title: 'Write the spec', done: true, priority: 'normal' },
-    { id: 't2', title: 'Build the app', done: false, priority: 'normal' },
-    { id: 't3', title: 'Ship it', done: false, priority: 'normal' },
+  const items: { id: string; title: string; done: boolean; priority: 'low' | 'normal' | 'high' }[] = [
+    { id: 't1', title: 'Write the spec', done: true, priority: 'normal' as const },
+    { id: 't2', title: 'Build the app', done: false, priority: 'normal' as const },
+    { id: 't3', title: 'Ship it', done: false, priority: 'normal' as const },
   ]
   let seq = items.length
   return resolvers(project, (implement) => [
@@ -25,16 +24,16 @@ export function createResolvers() {
       items.unshift(t)
       return { ...t }
     }),
+    implement(clearDone, () => {
+      const before = items.length
+      for (let i = items.length - 1; i >= 0; i--) if (items[i]?.done) items.splice(i, 1)
+      return { removed: before - items.length }
+    }),
     implement(toggleTask, ({ id }, { fail }) => {
       const t = items.find((x) => x.id === id)
       if (!t) return fail('NotFound', { id })
       t.done = !t.done
       return { ...t }
-    }),
-    implement(clearDone, () => {
-      const before = items.length
-      for (let i = items.length - 1; i >= 0; i--) if (items[i]!.done) items.splice(i, 1)
-      return { removed: before - items.length }
     }),
   ])
 }

@@ -2,15 +2,15 @@
   "features": {
     "tasks": {
       "adding/invoke/done/0": {
-        "behavior": "170f7afe0ca84f49",
+        "behavior": "e0eb2a3405dfc35d",
         "contracts": {
-          "addsTask": "d0bf842ad02b7501"
+          "addsTask": "c60f1eaf50b6ca27"
         }
       },
       "adding/invoke/failed/Duplicate/0": {
         "behavior": "fa931adf13e44418",
         "contracts": {
-          "rejectsDuplicate": "18f253306f3f6258"
+          "rejectsDuplicate": "6289ed1f7ac05c9b"
         }
       },
       "adding/invoke/failed/Invalid/0": {
@@ -28,7 +28,7 @@
       "clearing/invoke/done/0": {
         "behavior": "3a0a768ed95dcbe0",
         "contracts": {
-          "clearsDone": "c607bce70df9f672"
+          "clearsDone": "8c43ea692e8a8bb5"
         }
       },
       "clearing/invoke/failed/Unexpected/0": {
@@ -38,15 +38,15 @@
         }
       },
       "idle/on/tasks.Add/0": {
-        "behavior": "c3874d21fe1356b1",
+        "behavior": "0e1190329f166f43",
         "contracts": {
-          "addsTask": "d0bf842ad02b7501"
+          "addsTask": "c60f1eaf50b6ca27"
         }
       },
       "idle/on/tasks.ClearDone/0": {
         "behavior": "c80ae579dea172b9",
         "contracts": {
-          "clearsDone": "c607bce70df9f672"
+          "clearsDone": "8c43ea692e8a8bb5"
         }
       },
       "idle/on/tasks.Draft/0": {

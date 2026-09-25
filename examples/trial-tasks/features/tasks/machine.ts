@@ -31,7 +31,7 @@ export const tasksMachine = machine({
       ignore: [SetShow, Draft, Add, Toggle, ClearDone],
       invoke: invoke(addTask, {
         input: { title: ctx.draft, priority: ctx.priority },
-        done: [{ target: 'idle', assign: () => [op.set(ctx.draft, ''), op.set(ctx.priority, 'normal')] }],
+        done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')] }],
         failed: {
           Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] }],
           Invalid: [{ target: 'idle', assign: () => [op.set(ctx.error, INVALID)] }],

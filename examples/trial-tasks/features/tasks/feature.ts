@@ -11,7 +11,7 @@ export const tasks = feature({
   widgets: {},
   intent: {
     summary:
-      'A task board: add tasks, toggle them done or open, give them a priority, clear done tasks, filter by status, one page each.',
+      'A task board: add tasks with a priority, toggle them done or open, clear done tasks, filter by status, one page each.',
     invariants: ['Titles are unique, case-insensitive, 3 to 80 characters', 'New tasks are listed first'],
   },
   imports: [],

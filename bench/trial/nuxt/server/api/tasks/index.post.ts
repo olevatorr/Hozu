@@ -1,4 +1,4 @@
-import { type Priority, priorities } from '#shared/types/task'
+import { PRIORITIES, type Priority } from '#shared/types/task'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ title?: unknown; priority?: unknown }>(event)
@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Title must be 3–80 characters' })
   }
   const raw = body?.priority ?? 'normal'
-  if (!priorities.includes(raw as Priority)) {
+  if (!PRIORITIES.includes(raw as Priority)) {
     throw createError({ statusCode: 400, message: 'Priority must be low, normal or high' })
   }
   const result = addTask(title, raw as Priority)

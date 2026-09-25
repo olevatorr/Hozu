@@ -15,4 +15,3 @@ export const Context = z.object({
   target: z.string(),
   error: z.string().nullable(),
 })
-export type Task = z.infer<typeof Task>

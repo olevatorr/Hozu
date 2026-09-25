@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { priorities, type Priority, type Task } from '#shared/types/task'
+import { PRIORITIES, type Priority, type Task } from '#shared/types/task'
 
 type Filter = 'all' | 'open' | 'done'
 const filters: { value: Filter; label: string }[] = [
@@ -38,13 +38,13 @@ async function add() {
   }
 }
 
-const badge: Record<Priority, string> = {
+const priorityClass: Record<Priority, string> = {
   low: 'bg-slate-100 text-slate-600',
   normal: 'bg-sky-100 text-sky-700',
   high: 'bg-rose-100 text-rose-700',
 }
 
-async function clearDone() {
+async function clearDoneTasks() {
   await $fetch('/api/tasks/clear-done', { method: 'POST' })
   await refresh()
 }
@@ -82,7 +82,7 @@ async function toggle(task: Task) {
           name="priority"
           class="rounded-lg border border-slate-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
         >
-          <option v-for="p in priorities" :key="p" :value="p">{{ p }}</option>
+          <option v-for="p in PRIORITIES" :key="p" :value="p">{{ p }}</option>
         </select>
       </div>
       <button
@@ -105,18 +105,21 @@ async function toggle(task: Task) {
       <button
         type="button"
         class="ml-auto rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
-        @click="clearDone"
+        @click="clearDoneTasks"
       >Clear done</button>
     </div>
 
     <ul v-if="visible.length" class="mt-4 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white shadow-sm">
       <li v-for="task in visible" :key="task.id" class="flex items-center gap-3 px-4 py-3">
         <NuxtLink :to="`/tasks/${task.id}`" class="flex-1 font-medium text-slate-800 hover:text-indigo-600">{{ task.title }}</NuxtLink>
-        <span class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="badge[task.priority]">{{ task.priority }}</span>
         <span
           class="rounded-full px-2 py-0.5 text-xs font-semibold"
           :class="task.done ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
         >{{ task.done ? 'done' : 'open' }}</span>
+        <span
+          class="rounded-full px-2 py-0.5 text-xs font-semibold"
+          :class="priorityClass[task.priority]"
+        >{{ task.priority }}</span>
         <button
           type="button"
           class="rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-700 hover:bg-slate-100"
