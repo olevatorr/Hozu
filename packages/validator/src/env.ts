@@ -49,3 +49,38 @@ export function valueSchema(ir: ProjectIR, env: Env, value: ValueExpr): JsonSche
 export function contextEnv(feature: FeatureIR): Env {
   return { feature, sources: { context: schemaIn(feature, feature.machine?.context) }, bindings: [] }
 }
+
+type Trigger =
+  | { kind: 'on'; event: string }
+  | { kind: 'done'; effect: string }
+  | { kind: 'failed'; effect: string; error: string }
+  | { kind: 'after'; ms: number }
+
+export function triggerEnv(
+  ctx: { ir: ProjectIR; envs: Map<string, Env> },
+  feature: FeatureIR,
+  trigger: Trigger,
+): Env {
+  const key =
+    trigger.kind === 'on'
+      ? `${feature.id}|on|${trigger.event}`
+      : trigger.kind === 'after'
+        ? `${feature.id}|after`
+        : `${feature.id}|${trigger.kind}|${trigger.effect}|${trigger.kind === 'failed' ? trigger.error : ''}`
+  let env = ctx.envs.get(key)
+  if (env) return env
+  const base = contextEnv(feature)
+  const sources = { ...base.sources }
+  if (trigger.kind === 'on') sources.event = eventSchema(ctx.ir, trigger.event)
+  else if (trigger.kind === 'done') sources.result = effectSchemas(ctx.ir, trigger.effect)?.output ?? null
+  else if (trigger.kind === 'failed')
+    sources.error = effectSchemas(ctx.ir, trigger.effect)?.error(trigger.error) ?? null
+  env = { ...base, sources }
+  ctx.envs.set(key, env)
+  return env
+}
+
+export function eventSchema(ir: ProjectIR, ref: string): JsonSchema | null {
+  const r = resolveRef(ir, ref, 'event')
+  return r ? schemaIn(r.feature, r.feature.events[r.symbol]!.payload) : null
+}

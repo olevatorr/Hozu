@@ -149,7 +149,8 @@ export const ui = Object.freeze({
   ...elements,
   view,
   dom,
-  send: <P>(event: EventDecl<P>, payload: Val<P>): Send => Object.freeze({ [SEND]: { event, payload } }),
+  send: <P>(event: EventDecl<P>, payload: NoInfer<Val<P>>): Send =>
+    Object.freeze({ [SEND]: { event, payload } }),
   each: <T>(
     source: Expr<readonly T[]>,
     key: [T] extends [object] ? keyof T & string : null,
@@ -158,7 +159,7 @@ export const ui = Object.freeze({
   ): NodeDecl => node({ kind: 'each', source, key, item, motion: motion ?? null }),
   query: <I, O, E>(
     query: QueryDecl<I, O, E>,
-    input: Val<I>,
+    input: NoInfer<Val<I>>,
     branches: { ready: (data: Ref<O>) => NodeDecl; pending: NodeDecl | null; failed: QueryErrors<E> },
   ): NodeDecl => node({ kind: 'query', query, input, ...branches }),
   embed: (view: ViewDecl): NodeDecl => node({ kind: 'embed', view }),
@@ -171,9 +172,9 @@ export const ui = Object.freeze({
     node({ kind: 'global', target: 'window', on: options.on }),
   document: (options: { on: { [E in DomEvent]?: Send } }): NodeDecl =>
     node({ kind: 'global', target: 'document', on: options.on }),
-  link: <P>(route: RouteDecl<P>, params: Val<P>): Expr<string> =>
+  link: <P>(route: RouteDecl<P>, params: NoInfer<Val<P>>): Expr<string> =>
     Object.freeze({ [LINK]: { route, params } }) as unknown as Expr<string>,
-  use: <P, E>(w: WidgetDecl<P, E>, options: WidgetUse<P, E>, children: Child[]): NodeDecl =>
+  use: <P, E>(w: WidgetDecl<P, E>, options: NoInfer<WidgetUse<P, E>>, children: Child[]): NodeDecl =>
     node({ kind: 'widget', widget: w, options, children }),
   page,
 })

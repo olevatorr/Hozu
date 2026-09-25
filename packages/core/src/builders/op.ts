@@ -17,14 +17,15 @@ const guard = (raw: Guard[typeof GUARD]): Guard => Object.freeze({ [GUARD]: raw 
 const assign = (raw: Assign[typeof ASSIGN]): Assign => Object.freeze({ [ASSIGN]: raw })
 const compare =
   (op: CompareOp) =>
-  <T extends Comparable>(left: Val<T>, right: Val<T>): Guard =>
+  <T extends Comparable>(left: Val<T>, right: NoInfer<Val<T>>): Guard =>
     guard({ op, left, right })
 
 export const op = Object.freeze({
-  set: <T>(target: Ref<T>, value: Val<T>): Assign => assign({ op: 'set', target, value }),
-  append: <T>(target: Ref<T[]>, value: Val<T>): Assign => assign({ op: 'append', target, value }),
+  set: <T>(target: Ref<T>, value: NoInfer<Val<T> | Expr<NonNullable<T> | null>>): Assign =>
+    assign({ op: 'set', target, value }),
+  append: <T>(target: Ref<T[]>, value: NoInfer<Val<T>>): Assign => assign({ op: 'append', target, value }),
   inc: (target: Ref<number>, by: Val<number>): Assign => assign({ op: 'inc', target, value: by }),
-  removeWhere: <T, K extends keyof T & string>(target: Ref<T[]>, key: K, value: Val<T[K]>): Assign =>
+  removeWhere: <T, K extends keyof T & string>(target: Ref<T[]>, key: K, value: NoInfer<Val<T[K]>>): Assign =>
     assign({ op: 'removeWhere', target, key, value }),
   eq: compare('eq'),
   neq: compare('neq'),

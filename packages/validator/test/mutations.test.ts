@@ -285,6 +285,33 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'misspelled enumerated attribute value',
+    code: 'TN031',
+    mutate: (ir) => {
+      const { node } = findNode(cart(ir), 'CartPanel', isButton('Checkout'))
+      ;(node as ElementNode).attrs.type = { literal: 'buton' }
+    },
+  },
+  {
+    name: 'internal link written as a string',
+    code: 'TN032',
+    mutate: (ir) => {
+      const { node } = findNode(cart(ir), 'CartPanel', isButton('Checkout'))
+      const button = node as ElementNode
+      button.children.push({
+        id: `${button.id}/9`,
+        kind: 'el',
+        tag: 'a',
+        class: null,
+        toggle: {},
+        vars: {},
+        attrs: { href: { literal: '/order/placed' } },
+        on: {},
+        children: [],
+      })
+    },
+  },
+  {
     name: 'state with no way out',
     code: 'TN010',
     mutate: (ir) => {
@@ -351,6 +378,39 @@ describe('A2 rendering judgement codes', () => {
     ])
     expect(found[0]!.location.source?.file).toMatch(/examples\/cart\/tenon\.config\.ts$/)
     expect(found[0]!.fix?.patch).toBeNull()
+  })
+})
+
+describe('A2 literal judgement codes', () => {
+  it('TN031 — a guard compares a number with a string; TN032 — a link to no route', () => {
+    const ir = cartIR()
+    const guard = states(ir).idle!.on['cart.SetQuantity']![0]!.guard as {
+      args: { right: { literal: unknown } }[]
+    }
+    guard.args[0]!.right = { literal: '1' }
+    const { node } = findNode(cart(ir), 'CartPanel', isButton('Checkout'))
+    ;(node as ElementNode).children.push({
+      id: 'x',
+      kind: 'el',
+      tag: 'a',
+      class: null,
+      toggle: {},
+      vars: {},
+      attrs: { href: { literal: '/order/plcaed' } },
+      on: {},
+      children: [],
+    })
+    const found = validate(ir, { sources: cartBuild().sources }).filter(
+      (d) => d.code === 'TN031' || d.code === 'TN032',
+    )
+    expect(found.map((d) => [d.code, d.message, d.cause])).toEqual([
+      ['TN031', '"1" is not a valid value for the compared value.', 'Expected number | null.'],
+      [
+        'TN032',
+        'No route matches the internal link "/order/plcaed". Did you mean "/order/placed"?',
+        'Internal paths are typed references to a route, so a renamed or missing route is caught. Files use ui.asset.',
+      ],
+    ])
   })
 })
 

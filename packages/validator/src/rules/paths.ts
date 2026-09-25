@@ -9,11 +9,10 @@ import {
   type ValueExpr,
 } from '@tenon/core/ir'
 import type { Ctx } from '../context.ts'
-import { contextEnv, type Env, effectSchemas, schemaIn, valueSchema } from '../env.ts'
-import { resolveRef } from '../resolve.ts'
+import { contextEnv, type Env, schemaIn, triggerEnv, valueSchema } from '../env.ts'
 import { itemsOf, resolvePath } from '../schema.ts'
 import { closest, didYouMean } from '../suggest.ts'
-import { featurePointer, type Trigger, transitionsOf, walkView } from '../walk.ts'
+import { featurePointer, transitionsOf, walkView } from '../walk.ts'
 
 function checkPath(
   ctx: Ctx,
@@ -166,23 +165,8 @@ export function paths(ctx: Ctx) {
             s.invoke.input,
             featurePointer(f.id, 'machine', 'states', state, 'invoke', 'input'),
           )
-      const envs = new Map<Trigger, Env>()
-      const envFor = (trigger: Trigger): Env => {
-        let env = envs.get(trigger)
-        if (env) return env
-        const sources = { ...base.sources }
-        if (trigger.kind === 'on') {
-          const r = resolveRef(ir, trigger.event, 'event')
-          sources.event = r ? schemaIn(r.feature, r.feature.events[r.symbol]!.payload) : null
-        } else if (trigger.kind === 'done') sources.result = effectSchemas(ir, trigger.effect)?.output ?? null
-        else if (trigger.kind === 'failed')
-          sources.error = effectSchemas(ir, trigger.effect)?.error(trigger.error) ?? null
-        env = { ...base, sources }
-        envs.set(trigger, env)
-        return env
-      }
       for (const site of transitionsOf(f)) {
-        const env = envFor(site.trigger)
+        const env = triggerEnv(ctx, f, site.trigger)
         const t = site.transition
         if (t.guard) checkGuard(ctx, env, t.guard, site.at('guard'))
         t.assign.forEach((a, i) => checkAssign(ctx, env, a, site.at('assign', i)))

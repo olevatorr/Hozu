@@ -9,7 +9,15 @@ export { classCandidates, motionClasses } from './ir/classes.ts'
 export type { CodeInfo } from './ir/codes.ts'
 export { codes } from './ir/codes.ts'
 export type * from './ir/diagnostic.ts'
-export { htmlGlobalAttrs, htmlTags, svgGlobalAttrs, svgTags, tagAttrs, voidTags } from './ir/dom-data.ts'
+export {
+  attrValues,
+  htmlGlobalAttrs,
+  htmlTags,
+  svgGlobalAttrs,
+  svgTags,
+  tagAttrs,
+  voidTags,
+} from './ir/dom-data.ts'
 export { domEvents, eventFields, passiveEvents } from './ir/events.ts'
 export { anyGuardRef, anyRef, eachGuardRef, eachRef, type RefExpr } from './ir/refs.ts'
 export type * from './ir/types.ts'

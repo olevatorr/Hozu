@@ -57,6 +57,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   (TN026), hooks use `data-*`. `when`/`ui.if`/`ui.each` take an optional motion name (enter/leave/move classes).
   Also `ui.if`, `ui.link(route, params)`, `ui.window`/`ui.document`, `ui.html` (TN030 for untrusted values),
   `ui.asset(url)` (TN028 for img without dimensions).
+  Literals are checked against their schema (TN031); enumerated attributes (`type`, `method`, `loading`…) are typed.
+  Internal links are `ui.link` only: a string `href` starting with `/` is TN032 (ADR 0012).
 - Widgets (ADR 0009): `ui.widget({ tag, props, events, client, load, wraps })` in `feature({ widgets })`,
   `ui.use(W, { props, on, class }, children)`, client module `export default implement<typeof W>(setup)` from
   `@tenon/core/widget` (type-only import of the declaration). Bundled by `@tenon/bundle` (esbuild), TN029.

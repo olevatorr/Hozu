@@ -10,6 +10,7 @@ import {
   resolveSource,
   type SourceIndex,
 } from '@tenon/core/ir'
+import type { Env } from './env.ts'
 
 export class Ctx {
   readonly ir: ProjectIR
@@ -17,6 +18,7 @@ export class Ctx {
   readonly diagnostics: Diagnostic[] = []
   readonly unknownClasses: Map<string, string | null> | null
   readonly assets: Bindings['assets']
+  readonly envs = new Map<string, Env>()
 
   constructor(
     ir: ProjectIR,

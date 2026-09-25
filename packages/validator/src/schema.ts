@@ -94,3 +94,60 @@ export function itemsOf(s: JsonSchema | null): JsonSchema | null {
       for (const v of s[k] as Json[]) if (obj(v) && itemsOf(obj(v))) return itemsOf(obj(v))
   return null
 }
+
+export interface Mismatch {
+  path: string[]
+  expected: string
+  options: string[]
+}
+
+const typeOfJson = (v: Json) =>
+  v === null ? 'null' : Array.isArray(v) ? 'array' : Number.isInteger(v) ? 'integer' : typeof v
+
+const typeMatches = (t: string, v: Json) =>
+  t === typeOfJson(v) || (t === 'number' && typeof v === 'number') || (t === 'integer' && Number.isInteger(v))
+
+export function mismatch(s: JsonSchema | null, v: Json, path: string[] = []): Mismatch | null {
+  if (!s || '$ref' in s) return null
+  for (const k of ['anyOf', 'oneOf'] as const)
+    if (Array.isArray(s[k])) {
+      const found = (s[k] as Json[]).map((x) => mismatch(obj(x), v, path))
+      if (found.some((m) => m === null)) return null
+      return {
+        path,
+        expected: found.map((m) => m!.expected).join(' | '),
+        options: found.flatMap((m) => (m!.path.length === path.length ? m!.options : [])),
+      }
+    }
+  if (Array.isArray(s.allOf))
+    for (const x of s.allOf as Json[]) {
+      const m = mismatch(obj(x), v, path)
+      if (m) return m
+    }
+  if ('const' in s && JSON.stringify(s.const) !== JSON.stringify(v))
+    return { path, expected: JSON.stringify(s.const), options: typeof s.const === 'string' ? [s.const] : [] }
+  if (Array.isArray(s.enum) && !s.enum.some((e) => JSON.stringify(e) === JSON.stringify(v))) {
+    const options = s.enum.filter((e): e is string => typeof e === 'string')
+    return { path, expected: s.enum.map((e) => JSON.stringify(e)).join(' | '), options }
+  }
+  const t = types(s)
+  if (t.length && !t.some((x) => typeMatches(x, v))) return { path, expected: t.join(' | '), options: [] }
+  if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+    const properties = obj(s.properties) ?? {}
+    for (const [k, x] of Object.entries(v)) {
+      const p = obj(properties[k]) ?? obj(s.additionalProperties)
+      if (!p && s.additionalProperties === false && !(k in properties))
+        return { path: [...path, k], expected: 'no such property', options: Object.keys(properties) }
+      const m = mismatch(p, x, [...path, k])
+      if (m) return m
+    }
+  }
+  if (Array.isArray(v)) {
+    const items = obj(s.items)
+    for (let i = 0; i < v.length; i++) {
+      const m = mismatch(items, v[i]!, [...path, String(i)])
+      if (m) return m
+    }
+  }
+  return null
+}

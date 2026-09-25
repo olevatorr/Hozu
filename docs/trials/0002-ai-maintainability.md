@@ -92,3 +92,26 @@ Learning cost: Nuxt is in every model's training data. Tenon is not, so each ses
    - This spends model tokens, so it needs approval.
 3. Reduce syntax overhead only if (2) shows it matters. Candidates are shorter builders for text-only elements,
    decided by an ADR.
+
+## Follow-up: step 1 done (ADR 0012)
+- Builders no longer widen generic types from literals (`NoInfer`).
+- Enumerated attributes are typed.
+- Two new rules:
+  - **TN031** checks every literal against its schema.
+  - **TN032** requires `ui.link` for internal paths.
+
+Re-running the same injection:
+
+| | Tenon | Nuxt |
+|---|---|---|
+| Mistakes caught | **12 / 12** | 5 / 12 |
+
+| # | Caught now by |
+|---|---|
+| M1 | TS2345 + TN031 |
+| M2 | TS2345 + TN031 |
+| M6 | TN032 |
+| M12 | TS2820 + TN031 |
+
+Caveat: these twelve mistakes were known when the fix was written. Step 2 (the fresh-agent trial) is the test
+that was not tuned for this result.

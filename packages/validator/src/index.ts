@@ -9,6 +9,8 @@ import { declaredErrors } from './rules/errors.ts'
 import { unhandledEvents, viewEvents } from './rules/events.ts'
 import { unsafeHtml } from './rules/html.ts'
 import { imageDimensions } from './rules/images.ts'
+import { internalLinks } from './rules/links.ts'
+import { literals } from './rules/literals.ts'
 import { paths } from './rules/paths.ts'
 import { featureLinks, references, routes } from './rules/refs.ts'
 import { rendering } from './rules/rendering.ts'
@@ -44,6 +46,8 @@ const rules = [
   widgetEvents,
   imageDimensions,
   unsafeHtml,
+  literals,
+  internalLinks,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>

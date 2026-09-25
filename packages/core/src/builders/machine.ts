@@ -76,7 +76,7 @@ export const invoke = <
   const F extends ErrorTransitions<E, string>,
 >(
   effect: EffectDecl<I, O, E>,
-  config: { input: Val<I>; done: D; failed: F },
+  config: { input: NoInfer<Val<I>>; done: D; failed: F },
 ): InvokeDecl<Known<TargetOf<D> | { [K in keyof F]: TargetOf<F[K]> }[keyof F]>> =>
   brand({}, 'invoke', { effect, ...config } as unknown as InvokeDef)
 
