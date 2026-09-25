@@ -70,6 +70,7 @@ const board = (options: { busyIgnores: boolean; select: string[]; field: 'enum' 
       schema: zodAdapter,
       styles: null,
       notFound: null,
+      error: null,
       session: null,
       site: null,
       routes: {},
@@ -113,5 +114,27 @@ describe('ADR 0013 ergonomics', () => {
     const b = board({ busyIgnores: true, select: ['low'], field: 'enum' })
     b.ir.features.board!.machine!.states.busy!.ignore.push('board.Save')
     expect(codes(b, ['TN034'])).toEqual([['TN034', 'State "busy" both handles and ignores board.Save']])
+  })
+})
+
+describe('ADR 0014 judgement codes', () => {
+  it('TN036 — a form whose payload the server cannot evaluate; TN035 — search without defaults', async () => {
+    const { buildProject: build } = await import('@tenon/core/ir')
+    const b = build((await import('../../../examples/bookmarks/tenon.config.ts')).default)
+    const ir = structuredClone(b.ir)
+    const form = (
+      ir.features.bookmarks!.views.Board!.root as {
+        children: { tag?: string; on?: Record<string, { payload: unknown }> }[]
+      }
+    ).children.find((c) => c.tag === 'form')!
+    form.on!.submit!.payload = {
+      object: { title: { ref: 'dom', path: ['value'] }, kind: { literal: 'video' } },
+    }
+    ir.routes.home!.search = { type: 'object', properties: { show: { type: 'string' } } }
+    const found = validate(ir, { sources: b.sources }).filter((d) => d.code === 'TN036' || d.code === 'TN035')
+    expect(found.map((d) => [d.code, d.severity, d.location.pointer])).toEqual([
+      ['TN035', 'error', '/routes/home/search/properties/show'],
+      ['TN036', 'warning', '/features/bookmarks/views/Board/root/children/1/on/submit/payload'],
+    ])
   })
 })

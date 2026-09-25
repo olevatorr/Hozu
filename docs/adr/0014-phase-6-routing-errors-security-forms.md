@@ -46,8 +46,9 @@
 
 ## 3. Error page and error hook
 - `project({ error: route | null })`: a static page rendered with HTTP 500 when rendering fails before the first
-  byte, or when the head query fails with `Unexpected`. Without it, a minimal built-in HTML page with `noindex`
-  replaces today's plain text.
+  byte. Without it, a minimal built-in HTML page with `noindex` replaces today's plain text.
+- A head query that fails with `Unexpected` keeps rendering the page itself, with its own `Unexpected` branches
+  and HTTP 500. The page knows best what to show.
 - `createServer({ onError(error, { path, effect }) })` is called once for every unexpected failure:
   - a resolver throwing (the data layer still turns it into `Unexpected` for the view);
   - a render crash;
@@ -87,8 +88,8 @@
   2. runs the page's machine from its initial state: the event, then any `invoke` chain through the resolvers,
      until it reaches a state without an `invoke`;
   3. if a transition navigates, answers **303** to that URL;
-  4. otherwise, if the machine returned to its initial state and context apart from fields the form cleared,
-     answers **303** back to the page (post/redirect/get), so a reload does not resubmit;
+  4. otherwise, if the machine is back in its initial state with its initial context, answers **303** back to the
+     page (post/redirect/get), so a reload does not resubmit;
   5. otherwise renders the page with that machine snapshot (for example, showing the duplicate-title
      `role="alert"`). The status is 200 for declared errors and 500 for `Unexpected`.
 - The same CSRF check applies. Buttons outside forms (per-item actions) still need JS; wrapping them in a form is
@@ -111,4 +112,8 @@ Each gets a registry entry, a rule, a fix and a mistake-catalog case.
   islands render links and navigate after mutations. They add 185 B (7,155 → 7,340 B gzipped) after the query
   builder was minimised. The new budget leaves about 340 B of headroom. The initial client is still several
   times smaller than the frameworks compared in docs/benchmarks/0001.
+- **A4 budget: 50,000 → 55,000 type instantiations** for `examples/cart`. The new route, link, navigate and
+  contract types raise it to about 51,100. Bisecting the new generics individually moved it by fewer than
+  200 each, so the growth is spread across the packages' declaration files rather than one expensive type.
+  TypeScript still checks the example in well under a second.
 - The gate stays green and parity stays at 24 / 24.

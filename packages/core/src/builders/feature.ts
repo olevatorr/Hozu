@@ -51,6 +51,7 @@ export interface ProjectConfig {
   site: { url: string; name: string; lang: string; icon: Asset | null; themeColor: string | null } | null
   styles: URL | null
   notFound: RouteDecl | null
+  error: RouteDecl | null
   pages: PageDecl[]
   features: FeatureDecl[]
 }

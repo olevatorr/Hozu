@@ -115,6 +115,7 @@ export default project({
   schema: zodAdapter,
   styles: null,
   notFound: null,
+  error: null,
   session: null,
   site: null,
   routes: { home },

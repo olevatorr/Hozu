@@ -1,4 +1,4 @@
-import { at, type Json, resolveAt } from '@tenon/core/ir'
+import { at, resolveAt } from '@tenon/core/ir'
 import type { Ctx } from '../context.ts'
 import { resolveRef } from '../resolve.ts'
 import { featurePointer, walkView } from '../walk.ts'

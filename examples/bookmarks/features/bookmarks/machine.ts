@@ -1,7 +1,7 @@
 import { invoke, machine, on, op, ui } from '@tenon/core'
 import { bookmarkPage } from '../../routes.ts'
 import { addBookmark, toggleRead } from './effects.ts'
-import { Add, Draft, PickKind, ToggleRead } from './events.ts'
+import { Add, Draft, ToggleRead } from './events.ts'
 import { Context } from './schemas.ts'
 
 export const DUPLICATE = 'This bookmark already exists'
@@ -14,13 +14,15 @@ export const bookmarksMachine = machine({
     idle: {
       on: [
         on(Draft, { target: 'idle', assign: (e) => [op.set(ctx.draft, e.text)] }),
-        on(PickKind, { target: 'idle', assign: (e) => [op.set(ctx.kind, e.kind)] }),
-        on(Add, { target: 'adding', assign: (e) => [op.set(ctx.draft, e.title), op.set(ctx.error, null)] }),
+        on(Add, {
+          target: 'adding',
+          assign: (e) => [op.set(ctx.draft, e.title), op.set(ctx.kind, e.kind), op.set(ctx.error, null)],
+        }),
         on(ToggleRead, { target: 'toggling', assign: (e) => [op.set(ctx.target, e.id)] }),
       ],
     },
     adding: {
-      ignore: [Draft, PickKind, Add, ToggleRead],
+      ignore: [Draft, Add, ToggleRead],
       invoke: invoke(addBookmark, {
         input: { title: ctx.draft, kind: ctx.kind },
         done: [
@@ -37,7 +39,7 @@ export const bookmarksMachine = machine({
       }),
     },
     toggling: {
-      ignore: [Draft, PickKind, Add, ToggleRead],
+      ignore: [Draft, Add, ToggleRead],
       invoke: invoke(toggleRead, {
         input: { id: ctx.target },
         done: [{ target: 'idle' }],

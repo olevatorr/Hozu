@@ -65,8 +65,9 @@ the table at the end.
 ## Declarations
 ```ts
 // routes.ts
-export const home = route({ path: '/', params: null })
-export const itemPage = route({ path: '/items/:id', params: z.object({ id: z.string() }) })
+export const home = route({ path: '/', params: null, search: z.object({ show: Show.default('all') }) })
+export const itemPage = route({ path: '/items/:id', params: z.object({ id: z.string() }), search: null })
+// search: a flat object of scalars/enums, each with a default or nullable (TN035); null = no query string
 
 // events.ts: payloads are zod objects
 export const Add = event({ payload: z.object({ title: z.string() }) })
@@ -96,7 +97,7 @@ would otherwise write JS logic.
 ```ts
 export const m = machine({
   context: Context,                                        // zod object
-  initialContext: { show: 'all', draft: '', error: null },
+  initialContext: { show: 'all', draft: '', error: null },           // (show here is UI-only state; URL filters use search)
   initial: 'idle',
   states: ({ ctx }) => ({
     idle: {
@@ -110,7 +111,8 @@ export const m = machine({
       ignore: [SetShow, Add],                              // explicitly dropped while busy (see Patterns)
       invoke: invoke(addItem, {                            // runs on entering the state
         input: { title: ctx.draft },
-        done: [{ target: 'idle', assign: (r) => [op.set(ctx.draft, '')] }],     // r = result
+        done: [{ target: 'idle', assign: (r) => [op.set(ctx.draft, '')],        // r = result
+                 navigate: (r) => ui.link(itemPage, { id: r.id }, null) }],    // optional: go to a typed URL
         failed: {                                          // every declared error + Unexpected, all required
           Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, 'Already exists')] }],
           Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
@@ -125,14 +127,15 @@ export const m = machine({
 - Guards: `op.eq`, `op.neq`, `op.lt`, `op.lte`, `op.gt`, `op.gte`, `op.and(...)`, `op.or(...)`, `op.not(g)`, or a
   `fn` returning a boolean. Put the reference on the left: `op.eq(ctx.tab, 'design')`.
 - A transition to the *same* state re-enters it and re-runs its `invoke`. That is why busy states use `ignore`.
-- A transition may also `navigate: route` (a route without params).
+- `navigate: (arg) => ui.link(route, params, search)` on any transition sends the browser to that URL (contracts
+  see it as a `{ navigate: '/items/i9' }` effect).
 
 ## Views
 ```ts
 export const Board = ui.view({
   machine: m,              // or null: no events, no ctx, 0 JS
-  route: null,             // or a route: render gets { params }
-  render: ({ ctx, when, params }) => ui.main({ class: 'mx-auto max-w-xl' }, [ /* children */ ]),
+  route: null,             // or a route: render gets { params, search } typed by the route
+  render: ({ ctx, when, params, search }) => ui.main({ class: 'mx-auto max-w-xl' }, [ /* children */ ]),
 })
 ```
 - **Elements**: `ui.<tag>(attrs, children)`. Void tags (`input`, `img`…) take only attrs. Children are nodes,
@@ -166,8 +169,16 @@ export const Board = ui.view({
   ```
   Server-fetched data is streamed into the HTML and never refetched. After a mutation, queries whose tags it
   invalidates refresh in place.
-- **Links**: `ui.a({ href: ui.link(itemPage, { id: item.id }) }, [...])`. Internal paths are never strings
-  (TN032). Use `ui.link(home, null)` for routes without params.
+- **Links**: `ui.link(route, params, search)`; the third argument exists only when the route declares `search`
+  (`null` = all defaults). `ui.a({ href: ui.link(itemPage, { id: item.id }) }, [...])`,
+  `ui.a({ href: ui.link(home, null, { show: 'unread' }) }, ['Unread'])`. Internal paths are never strings (TN032).
+  URLs are canonical: keys sorted, defaults left out. Changing `search` is a navigation (a plain link), so filters
+  that belong in the URL are links, not machine state.
+- **Forms work without JavaScript** when the submit payload reads only `ui.dom.form('name')`, literals, context,
+  params and search (otherwise TN036 warns). The server runs the same machine and mutation, then redirects (on
+  `navigate`, or when the machine is back where it started) or re-renders the page showing the result (for example
+  an error alert). Put every value the submit needs in named fields: a `<select name="kind">` instead of a
+  separate change event.
 - Also available:
   - `ui.html(value)`: trusted HTML from query data only (TN030).
   - `ui.asset(new URL('./x.png', import.meta.url))` for files.
@@ -192,9 +203,9 @@ ui.page(itemPage, {
 For a page without data use `head: { redirects: null, query: null, input: null, render: () => ({ ... }) }` and
 `entries: null`.
 
-Project: `project({ schema: zodAdapter, styles: new URL('./app.css', import.meta.url), notFound: null,
+Project: `project({ schema: zodAdapter, styles: new URL('./app.css', import.meta.url), notFound: null, error: null,
 session: null, site: { url, name, lang, icon: null, themeColor: null }, routes: { home, itemPage }, pages: [...],
-features: [items] })`.
+features: [items] })`. `notFound` / `error` may name a route to render for 404 / 500.
 
 ## Server (server.ts)
 ```ts
@@ -214,6 +225,9 @@ export function createResolvers() {
 }
 ```
 User-scoped resolvers also receive `session`. Mutations can call `setSession(value)` (see `examples/blog`).
+`createServer({ build, styles, resolvers, onError?, csp? })`: `onError(error, { effect | path })` receives every
+unexpected failure; a strict CSP, `nosniff` and a cross-site POST check are on by default (`csp` adds sources, e.g.
+`{ script: ['https://analytics.example'] }`, or `false`).
 
 To test a mutation with curl:
 `curl -X POST localhost:4700/_tenon/effect -H 'content-type: application/json' -d '{"effect":"items.addItem","input":{"title":"x"},"keys":[]}'`.
@@ -229,7 +243,7 @@ export const adds = contract(m, {
     { done: addItem, result: { id: 'i9', title: 'A' } },                     // the effect succeeds
   ],                                                                         // or { failed: addItem, error: 'Duplicate', data: {...} }
   expect: { state: 'idle', context: idle, effects: [{ effect: addItem, input: { title: 'A' } }] },
-})
+})                                                                           // navigation is an effect too: { navigate: '/items/i9' }
 ```
 Register them as `contracts: { ...contracts }` (with `import * as contracts from './contracts.ts'`).
 - Cover each `on`, `done`, `failed` and `after` once.

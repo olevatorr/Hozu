@@ -11,6 +11,7 @@ export default project({
   schema: zodAdapter,
   styles: new URL('./app.css', import.meta.url),
   notFound: null,
+  error: null,
   session: z.object({ userId: z.string() }),
   site: { url: 'https://cart.tenon.dev', name: 'Tenon Cart', lang: 'en', icon: null, themeColor: null },
   routes: { home, orderPlaced },

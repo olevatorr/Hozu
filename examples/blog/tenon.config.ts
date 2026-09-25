@@ -12,6 +12,7 @@ export default project({
   schema: zodAdapter,
   styles: new URL('./app.css', import.meta.url),
   notFound: null,
+  error: null,
   session: z.object({ userId: z.string() }),
   site: { url: 'https://blog.tenon.dev', name: 'Tenon Blog', lang: 'en', icon: null, themeColor: null },
   routes: { home, post },

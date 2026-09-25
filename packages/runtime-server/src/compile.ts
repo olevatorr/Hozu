@@ -1,5 +1,7 @@
 import {
   type FeatureIR,
+  FORM_FIELD,
+  formRunnable,
   type Json,
   type ValueExpr,
   type ViewNode,
@@ -18,6 +20,7 @@ export interface Scope {
   params: Json
   search: Json
   routes: Record<string, string>
+  url: string
 }
 
 export interface Runtime {
@@ -129,6 +132,13 @@ export function compileNode(n: ViewNode, island: boolean, c: Compile, sep = fals
         }
         const get = expr(v, fns)
         parts.push((s) => attr(name, get(s)))
+      }
+      const submit = n.tag === 'form' ? n.on.submit : undefined
+      if (submit && !('method' in n.attrs) && formRunnable(submit.payload)) {
+        const id = encodeURIComponent(n.id)
+        parts.push(' method="post"', (s) =>
+          attr('action', `${s.url}${s.url.includes('?') ? '&' : '?'}${FORM_FIELD}=${id}`),
+        )
       }
       parts.push('>')
       if (voids.has(n.tag)) return seq(parts)

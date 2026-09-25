@@ -70,6 +70,7 @@ const site = project({
   schema: zodAdapter,
   styles: null,
   notFound: missing,
+  error: null,
   session: z.object({ user: z.string() }),
   site: {
     url: 'https://auth.example',

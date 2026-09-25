@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { planRoute, type RoutePlan } from '@tenon/compiler'
 import {
   type BuildResult,
@@ -16,7 +17,7 @@ import {
   type WidgetIR,
 } from '@tenon/core/ir'
 import type { DataRuntime } from '@tenon/data'
-import { compileGuard, type Getter, pathOf } from '@tenon/machine'
+import { compileGuard, type Getter, pathOf, type Snapshot } from '@tenon/machine'
 import type { IslandRef, PagePayload, Result } from '@tenon/runtime-client'
 import { attrText, text } from '@tenon/runtime-client'
 import {
@@ -59,6 +60,7 @@ export interface RenderOptions {
   route: string
   params?: Json
   search?: Json
+  snapshots?: Record<string, Snapshot>
   session?: unknown
   assets?: Assets
 }
@@ -78,6 +80,7 @@ export async function renderPage({
   route,
   params = null,
   search = null,
+  snapshots = {},
   session,
   assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: null, preload: [], widgets: {} },
 }: RenderOptions): Promise<RenderedPage> {
@@ -114,15 +117,21 @@ export async function renderPage({
     list.map((t) => (t.param ? `${t.tag}(${canonicalStringify(value(t.param, scope, input))})` : t.tag))
 
   const routes = routesOf(ir)
-  const featureScope = (feature: FeatureIR, bound: boolean): Scope => ({
-    feature,
-    context: bound ? (feature.machine?.initialContext ?? null) : null,
-    state: bound ? (feature.machine?.initial ?? null) : null,
-    bindings: [],
-    params,
-    search,
-    routes,
-  })
+  const url = pathOf(routes[route] ?? '/', params, search)
+  const featureScope = (feature: FeatureIR, bound: boolean): Scope => {
+    const snap = bound ? snapshots[feature.id] : undefined
+    if (snap) payload.snapshots = { ...payload.snapshots, [feature.id]: snap }
+    return {
+      feature,
+      context: bound ? (snap?.context ?? feature.machine?.initialContext ?? null) : null,
+      state: bound ? (snap?.state ?? feature.machine?.initial ?? null) : null,
+      bindings: [],
+      params,
+      search,
+      routes,
+      url,
+    }
+  }
 
   const open = (n: ViewNode, scope: Scope) => {
     const index = payload.islands.length
@@ -292,7 +301,7 @@ export async function renderPage({
   }
 
   const page = ir.pages[route]!
-  const path = pathOf(routes[route] ?? '/', params, search)
+  const path = url
   const empty: Scope = {
     feature: { id: '' } as FeatureIR,
     context: null,
@@ -301,6 +310,7 @@ export async function renderPage({
     params,
     search,
     routes,
+    url,
   }
   let status = 200
   let redirect: string | null = null
@@ -566,14 +576,19 @@ function channel(): Channel {
 
 export { pathOf }
 
-const SPECULATION = `<script type="speculationrules">${JSON.stringify({
+const SPECULATION_RULES = JSON.stringify({
   prerender: [
     {
       where: { and: [{ href_matches: '/*' }, { not: { href_matches: '/_tenon/*' } }] },
       eagerness: 'moderate',
     },
   ],
-})}</script>`
+})
+const SPECULATION = `<script type="speculationrules">${SPECULATION_RULES}</script>`
+
+export const inlineScriptHashes = [
+  `sha256-${createHash('sha256').update(SPECULATION_RULES).digest('base64')}`,
+]
 
 function headHtml(
   ir: ProjectIR,

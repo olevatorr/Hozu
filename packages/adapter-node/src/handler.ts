@@ -2,12 +2,13 @@ import { readFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { extname } from 'node:path'
 import { planRoute } from '@tenon/compiler'
-import { type BuildResult, type Json, routeTable } from '@tenon/core/ir'
-import { createDataRuntime, type ResolverSet } from '@tenon/data'
+import { type BuildResult, FORM_FIELD, type Json, routeTable } from '@tenon/core/ir'
+import { createDataRuntime, type OnError, type ResolverSet } from '@tenon/data'
 import type { EffectResponse, Result } from '@tenon/runtime-client'
 import {
   clientBundle,
   fnsModule,
+  inlineScriptHashes,
   matcher,
   pageEntries,
   parseSearch,
@@ -19,6 +20,8 @@ import {
   sitemapXml,
   type WidgetBundle,
 } from '@tenon/runtime-server'
+import { formFields, formNode, runForm } from './forms.ts'
+import { type CspSources, contentSecurityPolicy, crossSite, ERROR_HTML } from './security.ts'
 import type { SessionStore } from './session.ts'
 
 export interface NodeAdapterOptions {
@@ -28,6 +31,8 @@ export interface NodeAdapterOptions {
   now?: () => number
   styles?: Stylesheet | null
   widgets?: WidgetBundle | null
+  onError?: OnError
+  csp?: CspSources | false
 }
 
 interface CachedPage {
@@ -90,6 +95,8 @@ export function createHandler({
   now = Date.now,
   styles = null,
   widgets = null,
+  onError = (error, info) => console.error('[tenon]', info, error),
+  csp = {},
 }: NodeAdapterOptions): Handler {
   const store = typeof sessionOption === 'function' ? null : sessionOption
   const session = store
@@ -102,7 +109,12 @@ export function createHandler({
     preload: styles?.preload ?? [],
     widgets: widgets?.urls ?? {},
   }
-  const data = createDataRuntime({ build, resolvers, now })
+  const data = createDataRuntime({ build, resolvers, now, onError })
+  const secure: Record<string, string> = {
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'strict-origin-when-cross-origin',
+    ...(csp === false ? {} : { 'content-security-policy': contentSecurityPolicy(csp, inlineScriptHashes) }),
+  }
   const { ir } = build
   const match = matcher(build)
   const table = routeTable(ir)
@@ -185,7 +197,7 @@ export function createHandler({
     response: ServerResponse,
     missing = false,
   ) => {
-    const headers = { 'content-type': 'text/html; charset=utf-8' }
+    const headers = { 'content-type': 'text/html; charset=utf-8', ...secure }
     const head = request.method === 'HEAD'
     const statusOf = (s: number) => (missing ? 404 : s)
     if (planRoute(ir, route).plan.cacheable) {
@@ -222,6 +234,53 @@ export function createHandler({
     response.end()
   }
 
+  const formPost = async (request: IncomingMessage, response: ServerResponse, url: URL) => {
+    const id = url.searchParams.get(FORM_FIELD)
+    const found = match(url.pathname)
+    const form = id ? formNode(build, id) : null
+    if (!found || !form)
+      return void response.writeHead(405, { 'content-type': 'text/plain', allow: 'GET, HEAD' }).end()
+    const query = new URLSearchParams(url.searchParams)
+    query.delete(FORM_FIELD)
+    const search = parseSearch(ir.routes[found.route]?.search ?? null, query)
+    const fields = await formFields(await readBody(request), request.headers['content-type'] ?? '')
+    const who = session(request)
+    const outcome = await runForm({
+      build,
+      data,
+      routes: table,
+      form,
+      fields,
+      params: found.params,
+      search,
+      session: who,
+    })
+    if (!outcome)
+      return void response.writeHead(405, { 'content-type': 'text/plain', allow: 'GET, HEAD' }).end()
+    if (outcome.invalidated.length) revalidate(outcome.invalidated)
+    if (store && outcome.session) store.write(response, outcome.session.value)
+    const back = pathOf(table[found.route] ?? url.pathname, found.params, search)
+    const target = outcome.navigate ?? (outcome.unchanged ? back : null)
+    if (target) return void response.writeHead(303, { location: target }).end()
+    const rendered = await renderPage({
+      build,
+      data,
+      route: found.route,
+      params: found.params,
+      search,
+      snapshots: outcome.snapshots,
+      session: who,
+      assets,
+    })
+    response.writeHead(outcome.unexpected ? 500 : rendered.status, {
+      'content-type': 'text/html; charset=utf-8',
+      'cache-control': 'no-store',
+      ...secure,
+    })
+    for await (const chunk of rendered.chunks) response.write(chunk)
+    response.end()
+  }
+
   const files: Record<string, string> = { ...styles?.assets }
   for (const [href, a] of Object.entries(build.bindings.assets)) files[href] = a.file
   const loaded = new Map<string, Buffer>()
@@ -242,6 +301,12 @@ export function createHandler({
   const handler = (async (request, response) => {
     const url = new URL(request.url ?? '/', 'http://localhost')
     try {
+      if (request.method === 'POST' && crossSite(request))
+        return void response
+          .writeHead(403, { 'content-type': 'text/plain' })
+          .end('Cross-site request rejected')
+      if (request.method === 'POST' && !url.pathname.startsWith('/_tenon/'))
+        return await formPost(request, response, url)
       if (request.method === 'POST' && url.pathname === '/_tenon/effect')
         return await effect(request, response)
       if (request.method === 'POST' && url.pathname === '/_tenon/query') {
@@ -302,8 +367,18 @@ export function createHandler({
       if (ir.notFound) return await page(`#404`, ir.notFound, null, null, request, response, true)
       response.writeHead(404, { 'content-type': 'text/plain' }).end(head ? undefined : 'Not found')
     } catch (error) {
-      if (!response.headersSent) response.writeHead(500, { 'content-type': 'text/plain' })
-      response.end(error instanceof Error ? error.message : String(error))
+      onError(error, { path: url.pathname })
+      if (response.headersSent) return void response.end()
+      if (url.pathname.startsWith('/_tenon/'))
+        return void response.writeHead(500, { 'content-type': 'text/plain' }).end('Internal error')
+      let html = ERROR_HTML
+      if (ir.error)
+        try {
+          html = (await renderToString({ build, data, route: ir.error, assets })).html
+        } catch (again) {
+          onError(again, { path: url.pathname })
+        }
+      response.writeHead(500, { 'content-type': 'text/html; charset=utf-8', ...secure }).end(html)
     }
   }) as Handler
   handler.revalidate = revalidate

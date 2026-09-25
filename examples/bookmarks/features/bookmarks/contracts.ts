@@ -1,6 +1,6 @@
 import { contract } from '@tenon/core'
 import { addBookmark, toggleRead } from './effects.ts'
-import { Add, Draft, PickKind, ToggleRead } from './events.ts'
+import { Add, Draft, ToggleRead } from './events.ts'
 import { bookmarksMachine, DUPLICATE } from './machine.ts'
 
 const idle = { draft: '', kind: 'article', target: '', error: null } as const
@@ -11,16 +11,10 @@ export const typesDraft = contract(bookmarksMachine, {
   expect: { state: 'idle', context: { ...idle, draft: 'Tenon' }, effects: [] },
 })
 
-export const picksKind = contract(bookmarksMachine, {
-  given: { state: 'idle', context: idle },
-  when: [{ send: PickKind, payload: { kind: 'video' } }],
-  expect: { state: 'idle', context: { ...idle, kind: 'video' }, effects: [] },
-})
-
 export const addsBookmark = contract(bookmarksMachine, {
-  given: { state: 'idle', context: { ...idle, kind: 'podcast' } },
+  given: { state: 'idle', context: idle },
   when: [
-    { send: Add, payload: { title: 'Tenon talk' } },
+    { send: Add, payload: { title: 'Tenon talk', kind: 'podcast' } },
     { send: Draft, payload: { text: 'ignored while adding' } },
     { done: addBookmark, result: { id: 'b3', title: 'Tenon talk', kind: 'podcast', read: false } },
   ],

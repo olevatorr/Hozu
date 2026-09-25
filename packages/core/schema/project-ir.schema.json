@@ -47,6 +47,12 @@
             "null"
           ]
         },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "features": {
           "type": "object",
           "additionalProperties": {
@@ -61,6 +67,7 @@
         "routes",
         "pages",
         "notFound",
+        "error",
         "features"
       ],
       "additionalProperties": false

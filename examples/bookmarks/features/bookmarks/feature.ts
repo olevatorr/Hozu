@@ -9,7 +9,7 @@ import {
   toggleRead,
   visible,
 } from './effects.ts'
-import { Add, Draft, PickKind, ToggleRead } from './events.ts'
+import { Add, Draft, ToggleRead } from './events.ts'
 import { bookmarksMachine } from './machine.ts'
 import { Board, Detail } from './views.ts'
 
@@ -24,7 +24,7 @@ export const bookmarks = feature({
   },
   imports: [],
   tags: { bookmarksTag },
-  events: { Draft, PickKind, Add, ToggleRead },
+  events: { Draft, Add, ToggleRead },
   queries: { listBookmarks, getBookmark },
   mutations: { addBookmark, toggleRead },
   fns: { visible, isEmpty },

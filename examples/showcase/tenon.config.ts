@@ -22,6 +22,7 @@ export default project({
   schema: zodAdapter,
   styles: new URL('./app.css', import.meta.url),
   notFound: null,
+  error: null,
   session: null,
   site: {
     url: 'https://showcase.tenon.dev',

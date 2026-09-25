@@ -67,7 +67,13 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `@tenon/core/widget` (type-only import of the declaration). Bundled by `@tenon/bundle` (esbuild), TN029.
 - Server capabilities (ADR 0010): client fetch of new query keys, live queries over SSE, `head.redirects`,
   `sessionCookie` + `setSession`, `project({ notFound })`, `site.icon` / `themeColor`, uploads via `ctx.file`.
-- Routes: `route({ path: '/posts/:slug', params: schema | null })`; pages: `project({ site, pages: [ui.page(route,
+- Routes: `route({ path: '/posts/:slug', params: schema | null, search: schema | null })` (search: flat scalars with
+  defaults, TN035; canonical URLs, ISR keyed by canonical URL); `ui.link(route, params, search?)` is the only internal
+  URL form, also for `navigate: (arg) => ui.link(...)` on transitions (contracts expect `{ navigate: url }`).
+  Forms whose submit reads only `ui.dom.form(name)`/context/params/search also work without JS: the server runs the
+  machine for a native post (TN036 warns otherwise). `project({ notFound, error })`; adapter-node sends CSP (script
+  hashes), nosniff and rejects cross-site POSTs; `createServer({ onError, csp })` (ADR 0014).
+- Pages: `project({ site, pages: [ui.page(route,
   { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head
   query derives the HTTP status. `assert` is validated, never obeyed (ADR 0008).

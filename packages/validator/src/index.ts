@@ -7,6 +7,7 @@ import { invalidations, sessions } from './rules/data.ts'
 import { domFields } from './rules/dom.ts'
 import { declaredErrors } from './rules/errors.ts'
 import { conflictingIgnores, unhandledEvents, viewEvents } from './rules/events.ts'
+import { progressiveForms } from './rules/forms.ts'
 import { unsafeHtml } from './rules/html.ts'
 import { imageDimensions } from './rules/images.ts'
 import { internalLinks } from './rules/links.ts'
@@ -52,6 +53,7 @@ const rules = [
   internalLinks,
   conflictingIgnores,
   domText,
+  progressiveForms,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>

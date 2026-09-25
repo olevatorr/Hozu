@@ -41,10 +41,18 @@ interface Entry {
   inflight: Promise<Result> | null
 }
 
+export interface ErrorInfo {
+  effect?: string
+  path?: string
+}
+
+export type OnError = (error: unknown, info: ErrorInfo) => void
+
 export interface DataRuntimeOptions {
   build: BuildResult
   resolvers: ResolverSet
   now?: () => number
+  onError?: OnError
 }
 
 export interface FileLike {
@@ -72,7 +80,12 @@ const unexpected = (message: string): Result => ({ ok: false, error: 'Unexpected
 const tagKey = (tag: TagExprIR, get: Getter | null) => (input: Json) =>
   get ? `${tag.tag}(${canonicalStringify(get({ input }))})` : tag.tag
 
-export function createDataRuntime({ build, resolvers, now = Date.now }: DataRuntimeOptions): DataRuntime {
+export function createDataRuntime({
+  build,
+  resolvers,
+  now = Date.now,
+  onError = () => {},
+}: DataRuntimeOptions): DataRuntime {
   const { ir, bindings } = build
   const effects = new Map<string, Effect>()
   const problems: Diagnostic[] = []
@@ -174,21 +187,26 @@ export function createDataRuntime({ build, resolvers, now = Date.now }: DataRunt
         ? { name: f.name, type: f.type, size: f.size, bytes: new Uint8Array(await f.arrayBuffer()) }
         : null
     }
+    const report = (error: unknown) => {
+      onError(error, { effect: effect.ref })
+      return unexpected(error instanceof Error ? error.message : String(error))
+    }
     try {
       out = await effect.run(input, { session, fail, setSession, file })
     } catch (error) {
-      return unexpected(error instanceof Error ? error.message : String(error))
+      return report(error)
     }
     const failure = failureOf(out)
     if (failure) {
       if (!effect.errors.has(failure.error))
-        return unexpected(`Undeclared error "${failure.error}" from ${effect.ref}`)
+        return report(new Error(`Undeclared error "${failure.error}" from ${effect.ref}`))
       const issues = check(`${effect.ref}#error:${failure.error}`, failure.data)
-      if (issues) return unexpected(`Invalid ${failure.error} data from ${effect.ref}: ${issues.join('; ')}`)
+      if (issues)
+        return report(new Error(`Invalid ${failure.error} data from ${effect.ref}: ${issues.join('; ')}`))
       return { ok: false, error: failure.error, data: failure.data as Json }
     }
     const issues = check(`${effect.ref}#output`, out)
-    if (issues) return unexpected(`Invalid output from ${effect.ref}: ${issues.join('; ')}`)
+    if (issues) return report(new Error(`Invalid output from ${effect.ref}: ${issues.join('; ')}`))
     return { ok: true, value: out as Json }
   }
 

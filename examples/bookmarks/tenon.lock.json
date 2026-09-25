@@ -4,7 +4,7 @@
       "adding/invoke/done/0": {
         "behavior": "afe929fa589b1dfc",
         "contracts": {
-          "addsBookmark": "381bbf33613d22de"
+          "addsBookmark": "30f9c39a17173c88"
         }
       },
       "adding/invoke/failed/Duplicate/0": {
@@ -20,21 +20,15 @@
         }
       },
       "idle/on/bookmarks.Add/0": {
-        "behavior": "0bd8cfaf708d1afd",
+        "behavior": "c615f50db807c8fe",
         "contracts": {
-          "addsBookmark": "381bbf33613d22de"
+          "addsBookmark": "30f9c39a17173c88"
         }
       },
       "idle/on/bookmarks.Draft/0": {
         "behavior": "87006650bba9254c",
         "contracts": {
           "typesDraft": "11806d671418dda2"
-        }
-      },
-      "idle/on/bookmarks.PickKind/0": {
-        "behavior": "5d2178ba5d083462",
-        "contracts": {
-          "picksKind": "c0f07818dde4b3f7"
         }
       },
       "idle/on/bookmarks.ToggleRead/0": {

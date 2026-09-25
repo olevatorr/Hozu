@@ -28,3 +28,5 @@ around the rule.
 | TN032 | internal link written as a string | `ui.link(route, params)` |
 | TN033 | DOM text into an enum, number or boolean field | a `<select>` with enum options / `valueAsNumber` / `checked` |
 | TN034 | a state both handles and ignores an event | remove it from one of the two |
+| TN035 | search schema is not a flat object of scalars with defaults | `z.object({ key: scalar.default(…) })` |
+| TN036 | (warning) a form needs JavaScript | read its values with `ui.dom.form('name')` |

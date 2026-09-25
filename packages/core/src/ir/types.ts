@@ -9,6 +9,7 @@ export interface ProjectIR {
   routes: Record<string, RouteIR>
   pages: Record<string, PageIR>
   notFound: string | null
+  error: string | null
   features: Record<string, FeatureIR>
 }
 

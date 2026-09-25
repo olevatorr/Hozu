@@ -1,7 +1,7 @@
 import { op, ui } from '@tenon/core'
 import { bookmarkPage, home } from '../../routes.ts'
 import { getBookmark, isEmpty, listBookmarks, visible } from './effects.ts'
-import { Add, Draft, PickKind, ToggleRead } from './events.ts'
+import { Add, Draft, ToggleRead } from './events.ts'
 import { bookmarksMachine } from './machine.ts'
 
 const kinds = ['article', 'video', 'podcast'] as const
@@ -16,27 +16,29 @@ export const Board = ui.view({
   render: ({ ctx, search }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [
       ui.h1({ class: 'text-3xl font-bold' }, ['Bookmarks']),
-      ui.form({ class: 'flex gap-2', on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } }, [
-        ui.label({ for: 'title', class: 'sr-only' }, ['Title']),
-        ui.input({
-          id: 'title',
-          name: 'title',
-          required: true,
-          minlength: 2,
-          value: ctx.draft,
-          class: 'flex-1 rounded border px-3 py-2',
-          on: { input: ui.send(Draft, { text: ui.dom.value }) },
-        }),
-        ui.select(
-          {
-            'aria-label': 'Kind',
-            class: 'rounded border px-2',
-            on: { change: ui.send(PickKind, { kind: ui.dom.value }) },
-          },
-          kinds.map((k) => ui.option({ value: k, selected: op.eq(ctx.kind, k) }, [k])),
-        ),
-        ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
-      ]),
+      ui.form(
+        {
+          class: 'flex gap-2',
+          on: { submit: ui.send(Add, { title: ui.dom.form('title'), kind: ui.dom.form('kind') }) },
+        },
+        [
+          ui.label({ for: 'title', class: 'sr-only' }, ['Title']),
+          ui.input({
+            id: 'title',
+            name: 'title',
+            required: true,
+            minlength: 2,
+            value: ctx.draft,
+            class: 'flex-1 rounded border px-3 py-2',
+            on: { input: ui.send(Draft, { text: ui.dom.value }) },
+          }),
+          ui.select(
+            { name: 'kind', 'aria-label': 'Kind', class: 'rounded border px-2' },
+            kinds.map((k) => ui.option({ value: k, selected: op.eq(ctx.kind, k) }, [k])),
+          ),
+          ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
+        ],
+      ),
       ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
       ui.nav(
         { class: 'flex gap-2', 'aria-label': 'Show' },

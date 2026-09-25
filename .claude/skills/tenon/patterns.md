@@ -27,3 +27,9 @@ Each pattern is used in `examples/bookmarks`.
 - **Refresh after a mutation**: tag the query, and list the tag in the mutation's `invalidates`. A mutation can
   read only its input for tag params; use a list-wide tag when it affects many items.
 
+- **Filter in the URL** (shareable, works without JS): declare `search` on the route, render the options as
+  `ui.link(home, null, { show: s.value })` links with `'aria-current': op.eq(search.show, s.value)`, and filter with
+  `fn`s over `search.show`. Only use machine context for filters that should not survive a reload.
+- **Go to what was just created**: `done: [{ target: 'idle', navigate: (r) => ui.link(itemPage, { id: r.id }, null) }]`.
+- **No-JS form**: every value the submit needs is a named field read with `ui.dom.form('name')`; the server runs the
+  machine for a native post. Per-item actions without JS: wrap the button in its own small form.

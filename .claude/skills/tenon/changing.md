@@ -13,7 +13,8 @@ Keep the loop short: read once, edit everything, check once, verify once.
 | New data field (e.g. `priority`) | `schemas.ts` (domain schema and input schemas) → `server.ts` (seed data, store it) → `views.ts` (show it) → the detail view if there is one. If the user picks it in a form: a `<select name="…">` inside the form, sent with the submit as `ui.dom.form('…')` (TN033 checks the options), plus the matching field in the event payload and the mutation input. |
 | New server action (e.g. "clear done") | `effects.ts`: a `mutation` with `invalidates` → `feature.ts` (register it) → `events.ts`: an event → `machine.ts`: `on(Event)` into a new busy state that `invoke`s the mutation, with `done` and every `failed` handled, and the same `ignore` list as the other busy states → `views.ts`: the control → `server.ts`: `implement(...)` it. |
 | New UI-only state (a filter, a tab) | `schemas.ts` (context field and its enum) → `machine.ts` (initial context, an `on` that `op.set`s it; add the event to every busy state's `ignore`) → `views.ts`. |
-| New page | `routes.ts` → a view with `route` → `ui.page(...)` in `tenon.config.ts` (with `head` and `entries`). |
+| New page | `routes.ts` (`params`, `search`) → a view with `route` → `ui.page(...)` in `tenon.config.ts` (with `head` and `entries`). |
+| New filter / sort / page number that should be in the URL | the route's `search` schema (with a default) → links with `ui.link(route, params, { key: value })` → read `search.key` in the view. No machine change. |
 
 Whenever the machine changes:
 - Update the contracts: add the new context field to the shared `given` / `expect` constants, and add one

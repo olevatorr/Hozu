@@ -1,5 +1,5 @@
 import type { FeatureIR, Json, MachineIR, ViewNode } from '@tenon/core/ir'
-import { compileMachine } from '@tenon/machine'
+import { compileMachine, type Snapshot } from '@tenon/machine'
 import { uploads } from './dom.ts'
 import { type App, createApp, type Result, type Store, type WidgetRef, type WidgetSetup } from './mount.ts'
 
@@ -17,6 +17,7 @@ export interface PagePayload {
   fns: string | null
   params: Json
   search: Json
+  snapshots?: Record<string, Snapshot>
   widgets: Record<string, WidgetRef>
   routes: Record<string, string>
   live: Record<string, LiveQuery>
@@ -109,6 +110,7 @@ export async function hydrate(
         payload: shared,
         params: payload.params,
         search: payload.search,
+        ...(payload.snapshots?.[id] ? { snapshot: payload.snapshots[id] } : {}),
         fns,
         widgets: payload.widgets,
         routes: payload.routes,

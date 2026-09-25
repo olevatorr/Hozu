@@ -183,7 +183,7 @@ record(
   'type instantiations for examples/cart',
   Number(/Instantiations:\s+(\d+)/.exec(diag)?.[1] ?? Number.NaN),
   '',
-  50_000,
+  55_000,
 )
 
 const bytes = (dir: string): number =>

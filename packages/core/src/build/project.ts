@@ -254,7 +254,16 @@ function build(project: unknown, tracking: boolean): BuildResult {
       'notFound is not a registered route',
       'Register it in project({ routes }).',
     )
-  const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, notFound, features }
+  const error = config.error ? (scope.routes.get(config.error) ?? null) : null
+  if (config.error && !error)
+    scope.report(
+      'TN007',
+      null,
+      '/error',
+      'error is not a registered route',
+      'Register it in project({ routes }).',
+    )
+  const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, notFound, error, features }
   for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
   return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }
 }
