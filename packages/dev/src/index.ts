@@ -1,7 +1,8 @@
 import { type ChildProcess, spawn } from 'node:child_process'
-import { type FSWatcher, watch } from 'node:fs'
+import { type FSWatcher, statSync, watch } from 'node:fs'
 import { createServer, request, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import { join } from 'node:path'
 import { devClient } from './client.ts'
 
 export interface DevOptions {
@@ -72,8 +73,16 @@ export async function dev({
     log(`${cssOnly ? 'css' : 'reload'}: ${files.join(', ')}`)
     send(cssOnly ? 'css' : 'reload')
   }
+  const since = performance.timeOrigin + performance.now()
+  const untouched = (file: string) => {
+    try {
+      return statSync(join(cwd, file)).mtimeMs < since
+    } catch {
+      return false
+    }
+  }
   const watcher: FSWatcher = watch(cwd, { recursive: true }, (_, file) => {
-    if (!file || ignored.test(file) || !/\.(ts|css|json)$/.test(file)) return
+    if (!file || ignored.test(file) || !/\.(ts|css|json)$/.test(file) || untouched(file)) return
     pending.add(file)
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => void flush(), debounce)
