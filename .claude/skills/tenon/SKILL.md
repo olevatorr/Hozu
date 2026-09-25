@@ -5,9 +5,13 @@ description: Build or change an app with the Tenon framework (packages @tenon/*,
 
 # Tenon authoring guide
 
-Tenon is not in your training data. This guide is the whole authoring surface. The canonical example app is
-`examples/bookmarks`, which uses every pattern below: copy its shape. Do not read `packages/*/src` unless this
-guide is missing something you need.
+Tenon is not in your training data. This guide is the whole authoring surface. Do not read `packages/*/src`.
+
+**What to read:**
+- **Changing an existing app:** read `changing.md` (next to this file) first. Then read only the app's own files,
+  and look up the API below as needed.
+- **Building a new app:** read this file and `patterns.md`, then copy the shape of `examples/bookmarks`.
+- **A diagnostic you do not understand:** `diagnostics.md`.
 
 ## Mental model (read this once)
 - The app is **data**. TypeScript builders record an IR; the validator checks it; the server renders it; only
@@ -227,58 +231,7 @@ export const adds = contract(m, {
   expect: { state: 'idle', context: idle, effects: [{ effect: addItem, input: { title: 'A' } }] },
 })
 ```
-Register them as `contracts: { ...contracts }` (with `import * as contracts from './contracts.ts'`). TN016 lists
-every uncovered transition and gives a skeleton. Cover each `on`, `done`, `failed` and `after` once.
-
-## Patterns
-- **Form with a server-side error**:
-  - `ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } }, [label, input, button])`.
-  - The machine goes to `adding`, which invokes the mutation. `failed.Duplicate` sets `ctx.error`.
-  - Show the error with `ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert' }, [ctx.error])], [])`.
-  - To clear the input after success, bind `value: ctx.draft` and reset `draft` in `done`.
-- **Busy states (a mutation in flight)**: render every control **once**. In each busy state, `ignore` the events
-  those controls send. Do not duplicate controls under `when`. Handling them there would re-enter the busy state
-  instead, and TN005 would reject leaving them unhandled.
-- **Filtering and empty state**: `ui.each(visible({ items, show: ctx.show }), 'id', …)` and
-  `ui.if(isEmpty({ items, show: ctx.show }), [ui.p({}, ['No items'])], [ui.ul(...)])`, both using `fn`s.
-- **Toggle buttons** (`aria-pressed`): `'aria-pressed': op.eq(ctx.show, s.value)` plus
-  `on: { click: ui.send(SetShow, { show: s.value }) }` for each option of a constant list.
-- **Per-item action**:
-  - `ui.send(ToggleRead, { id: item.id })` → a `toggling` state that stores `ctx.target` and invokes the mutation
-    with `{ id: ctx.target }`.
-  - Label text by data: `ui.if(op.eq(item.read, true), ['Mark unread'], ['Mark read'])`.
-- **Select bound to an enum**:
-  `ui.select({ 'aria-label': 'Kind', on: { change: ui.send(PickKind, { kind: ui.dom.value }) } }, kinds.map((k) => ui.option({ value: k, selected: op.eq(ctx.kind, k) }, [k])))`,
-  where the event payload is `{ kind: Kind }`, the zod enum.
-- **Detail page with a 404**: a view with `route: itemPage`, `machine: null`,
-  `ui.query(getItem, { id: params.id }, { ready, pending: null, failed: { NotFound: () => ..., Unexpected: () => ... } })`,
-  plus `head.query: getItem`.
-- **Refresh after a mutation**: tag the query, and list the tag in the mutation's `invalidates`. A mutation can
-  read only its input for tag params; use a list-wide tag when it affects many items.
-
-## Diagnostics (fix → rule)
-| Code | Meaning | Usual fix |
-|---|---|---|
-| TN001 | state unreachable | add a transition to it or delete it |
-| TN002 | event handled nowhere | handle it in a state or remove it |
-| TN003 / TN007 | unknown effect / reference | declare it, or fix the name (the patch suggests one) |
-| TN004 | a declared error is not handled | add every `failed` key, plus `Unexpected`, in `invoke` and `ui.query` |
-| TN005 | a node sends an event in a state that does not handle it | `ignore: [Event]` in that state, or show the node only via `when` |
-| TN006 | crossing a feature boundary | import the feature and use its `exports` |
-| TN008 | a path does not exist in the schema | fix the property name |
-| TN009 | a guardless transition shadows later ones | put guarded transitions first |
-| TN014 | wrong builder output | follow the builder signature |
-| TN015 / TN017 | a contract fails / contract data does not match its schema | fix the machine or the contract (decide the intended behaviour first) |
-| TN016 | a transition without a contract | add the contract from the snippet |
-| TN018 | behaviour changed without a contract change | update the contracts, then `--update-lock` |
-| TN021 | a query or mutation without a resolver | `implement(...)` it in server.ts |
-| TN022 | user data in a cacheable region | keep `scope: 'user'` queries out of cached pages |
-| TN024 / TN025 | route params mismatch / page with params but no `entries` | align them / add `entries` |
-| TN026 | a class produces no CSS | fix the Tailwind class |
-| TN027 | a DOM field used outside an event, or wrong for this event | read `ui.dom.*` only in `ui.send` payloads |
-| TN028 | `img` without width/height | add both |
-| TN030 | `ui.html` of untrusted data | render text instead |
-| TN031 | a literal not allowed by its schema | use an allowed value (the patch suggests one) |
-| TN032 | internal link written as a string | `ui.link(route, params)` |
-| TN033 | DOM text into an enum, number or boolean field | a `<select>` with enum options / `valueAsNumber` / `checked` |
-| TN034 | a state both handles and ignores an event | remove it from one of the two |
+Register them as `contracts: { ...contracts }` (with `import * as contracts from './contracts.ts'`).
+- Cover each `on`, `done`, `failed` and `after` once.
+- TN016 prints a ready contract for every uncovered transition. It fills in the initial context, example
+  payloads, the target state and the effect it starts. Paste it, then set the values the transition assigns.

@@ -20,3 +20,23 @@
   - TN034 conflicting-ignore
 - The trial app is rebuilt from the blank scaffold by fresh agents that are pointed at the skill. The Nuxt arm is
   re-run too, to measure run-to-run variance.
+
+## Iteration 2: the change path (after trial 0004)
+Trial 0004 met the build target (0.82× Nuxt) but missed the change target (1.62×). The user chose to iterate
+once on the change path.
+
+- **The skill is split by task.**
+  - `SKILL.md` is the core API.
+  - `changing.md` is new: what to read, where each kind of change goes, and the check / verify loop.
+  - `patterns.md` and `diagnostics.md` are read only when needed.
+
+  A change agent reads the core and `changing.md` instead of everything.
+- **TN016 prints a ready contract instead of a skeleton.** It is filled from the *declarations*:
+  - the initial context;
+  - schema-derived example payloads, results and error data;
+  - the transition's declared target;
+  - the effect the target state invokes.
+
+  Assigned context paths are listed for the author to decide. The machine is not run to fill in expected
+  values, because that would turn contracts into snapshots of observed behaviour (CLAUDE.md: never edit a
+  contract just to match observed behaviour).

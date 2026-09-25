@@ -96,14 +96,17 @@ describe('Phase 1 behavior catalog', () => {
     expect(d.fix?.patch).toBeNull()
   })
 
-  it('TN016 suggests a contract skeleton', () => {
+  it('TN016 suggests a contract filled from the declarations', () => {
     const ir = cartIR()
     cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [
       { guard: null, target: 'idle', assign: [], navigate: null },
     ]
     const d = run(ir).diagnostics.find((x) => x.code === 'TN016')!
     expect(d.fix?.snippet).toContain("given: { state: 'idle'")
-    expect(d.fix?.snippet).toContain('{ send: Dismiss, payload: /* … */ }')
+    expect(d.fix?.snippet).toContain('{ send: Dismiss, payload: {} }')
+    expect(d.fix?.snippet).toContain("expect: { state: 'idle'")
+    expect(d.fix?.snippet).toContain('effects: []')
+    expect(d.fix?.snippet).toContain('placeholders')
   })
 
   it('TN018 — behavior changed while every contract still passes', () => {

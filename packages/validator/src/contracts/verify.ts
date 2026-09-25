@@ -1,27 +1,12 @@
 import { type Bindings, type FeatureIR, join } from '@tenon/core/ir'
 import { type CompiledMachine, compileMachine } from '@tenon/machine'
 import type { Ctx } from '../context.ts'
-import { splitRef } from '../resolve.ts'
 import { type Coverage, drift, type Lockfile, lockOf } from './lock.ts'
 import { runContract } from './run.ts'
+import { skeleton } from './skeleton.ts'
 
 const transitionPointer = (feature: string, id: string) =>
   join('', 'features', feature, 'machine', 'states', ...id.split('/'))
-
-function skeleton(feature: FeatureIR, id: string): string {
-  const [state, kind, key, ...rest] = id.split('/')
-  const s = feature.machine!.states[state!]!
-  const local = (ref: string) => splitRef(ref)[1]
-  const step =
-    kind === 'on'
-      ? `{ send: ${local(key!)}, payload: /* … */ }`
-      : kind === 'after'
-        ? `{ elapse: ${s.after[Number(key)]!.ms} }`
-        : key === 'done'
-          ? `{ done: ${local(s.invoke!.effect)}, result: /* … */ }`
-          : `{ failed: ${local(s.invoke!.effect)}, error: '${rest[0]}', data: /* … */ }`
-  return `contract(machine, {\n  given: { state: '${state}', context: /* … */ },\n  when: [${step}],\n  expect: { state: /* … */, context: null, effects: null },\n})`
-}
 
 function compile(ctx: Ctx, feature: FeatureIR, bindings: Bindings): CompiledMachine | null {
   try {
@@ -78,7 +63,7 @@ export function verifyContracts(ctx: Ctx, bindings: Bindings, lock: Lockfile | n
           'Every transition must be exercised by at least one contract (ADR 0004).',
           {
             summary: `Add a contract that fires ${id}`,
-            snippet: skeleton(feature, id),
+            snippet: skeleton(ctx.ir, feature, id),
             patch: null,
           },
         )
