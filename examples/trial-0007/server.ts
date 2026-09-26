@@ -18,7 +18,8 @@ export function createResolvers() {
     }),
     implement(addTask, ({ title, priority }, { fail }) => {
       const clean = title.trim()
-      if (tasks.some((t) => t.title.toLowerCase() === clean.toLowerCase())) return fail('Duplicate', { title: clean })
+      if (tasks.some((t) => t.title.toLowerCase() === clean.toLowerCase()))
+        return fail('Duplicate', { title: clean })
       const t = { id: `t${++seq}`, title: clean, done: false, priority }
       tasks.unshift(t)
       return { ...t }

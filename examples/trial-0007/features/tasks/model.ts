@@ -88,7 +88,11 @@ export const tasksMachine = machine({
         on(SetShow, { target: 'idle', assign: (e) => [op.set(ctx.show, e.show)] }),
         on(Add, {
           target: 'adding',
-          assign: (e) => [op.set(ctx.draft, e.title), op.set(ctx.priority, e.priority), op.set(ctx.error, null)],
+          assign: (e) => [
+            op.set(ctx.draft, e.title),
+            op.set(ctx.priority, e.priority),
+            op.set(ctx.error, null),
+          ],
         }),
         on(ClearDone, { target: 'clearing', assign: () => [op.set(ctx.error, null)] }),
         on(Toggle, { target: 'toggling', assign: (e) => [op.set(ctx.target, e.id)] }),
