@@ -4,6 +4,7 @@ import { extname, resolve } from 'node:path'
 import { __unstable__loadDesignSystem, compile, optimize } from '@tailwindcss/node'
 import { type BuildResult, classCandidates, sha256 } from '@tenon/core/ir'
 import { closest } from '@tenon/validator'
+import { withFallbacks } from './fonts.ts'
 
 export interface CompiledStyles {
   css: string
@@ -71,7 +72,8 @@ export async function compileStyles(
       assets[`/_tenon/a/${name}`] = file
       return `url(${quote}a/${name}${quote})`
     })
-  const css = minify ? foldDivisions(optimize(raw, { minify: true }).code) : raw
+  const fonted = withFallbacks(raw, assets, (file) => readFileSync(file))
+  const css = minify ? foldDivisions(optimize(fonted, { minify: true }).code) : fonted
   const known = selectorClasses(raw)
   const unknown = new Map<string, string | null>()
   const missing = [...candidates].filter((c) => !known.has(c) && !markers.test(c)).sort()
@@ -105,3 +107,5 @@ export async function compileStyles(
     unknown,
   }
 }
+
+export { type FontMetrics, fallbackFace, fontMetrics } from './fonts.ts'

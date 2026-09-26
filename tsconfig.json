@@ -29,6 +29,9 @@
       "path": "packages/image"
     },
     {
+      "path": "packages/content"
+    },
+    {
       "path": "packages/runtime-client"
     },
     {

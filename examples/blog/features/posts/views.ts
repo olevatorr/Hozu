@@ -77,7 +77,7 @@ export const Article = ui.view({
                 date: ui.format.date(post.publishedAt, { dateStyle: 'long' }),
               }),
             ]),
-            ui.each(post.body, 'text', (paragraph) => ui.p({}, [paragraph.text])),
+            ui.div({}, [ui.html(post.html)]),
           ]),
         pending: null,
         failed: {

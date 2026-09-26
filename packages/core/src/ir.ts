@@ -26,3 +26,5 @@ export { anyGuardRef, anyRef, eachGuardRef, eachRef, type RefExpr } from './ir/r
 export type { RouteKey, RouteModifier } from './ir/routes.ts'
 export { localeOf, publicPath, routeParams, routePattern, routeTable, searchDefaults } from './ir/routes.ts'
 export type * from './ir/types.ts'
+export type { Parse } from './schema/check.ts'
+export { toParse } from './schema/check.ts'
