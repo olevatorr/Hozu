@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { type BuildResult, buildProject, type ProjectIR } from '@tenon/core/ir'
-import { closest } from '@tenon/validator'
+import { type BuildResult, buildProject, type ProjectIR } from '@tenonkit/core/ir'
+import { closest } from '@tenonkit/validator'
 import { TenonCliError } from './errors.ts'
 
 export interface Loaded {

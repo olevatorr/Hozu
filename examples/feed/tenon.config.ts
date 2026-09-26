@@ -1,5 +1,5 @@
-import { project, ui } from '@tenon/core'
-import { zodAdapter } from '@tenon/schema-zod'
+import { project, ui } from '@tenonkit/core'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import { listTags, listYears } from './features/feed/effects.ts'
 import { feed } from './features/feed/feature.ts'
 import { Archive, Feed, TagList } from './features/feed/views.ts'

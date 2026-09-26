@@ -1,4 +1,4 @@
-import { type At, at, type ProjectIR, resolveAt, routeParams, routePattern } from '@tenon/core/ir'
+import { type At, at, type ProjectIR, resolveAt, routeParams, routePattern } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { closest, didYouMean } from '../suggest.ts'
 import { walkView } from '../walk.ts'

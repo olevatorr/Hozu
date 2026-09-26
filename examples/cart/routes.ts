@@ -1,4 +1,4 @@
-import { route } from '@tenon/core'
+import { route } from '@tenonkit/core'
 import { ProductKey } from './features/catalog/schemas.ts'
 
 export const home = route({ path: '/', params: null, search: null })

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { hydrate } from '@tenon/runtime-client'
+import { hydrate } from '@tenonkit/runtime-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { build, start } from './support.ts'
 

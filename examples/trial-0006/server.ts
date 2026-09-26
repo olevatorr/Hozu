@@ -1,4 +1,4 @@
-import { resolvers } from '@tenon/data'
+import { resolvers } from '@tenonkit/data'
 import { addTask, clearDone, getTask, listTasks, toggleTask } from './features/tasks/effects.ts'
 import project from './tenon.config.ts'
 

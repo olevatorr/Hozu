@@ -1,4 +1,4 @@
-import { implement } from '@tenon/core/widget'
+import { implement } from '@tenonkit/core/widget'
 import Lenis from 'lenis'
 import type { Smooth } from '../widgets.ts'
 

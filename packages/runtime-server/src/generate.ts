@@ -1,4 +1,4 @@
-import { planRoute } from '@tenon/compiler'
+import { planRoute } from '@tenonkit/compiler'
 import {
   type BuildResult,
   FORM_FIELD,
@@ -10,8 +10,8 @@ import {
   type ViewNode,
   voidTags,
   type WidgetIR,
-} from '@tenon/core/ir'
-import { attrText, text } from '@tenon/runtime-client'
+} from '@tenonkit/core/ir'
+import { attrText, text } from '@tenonkit/runtime-client'
 import { escapeHtml } from './escape.ts'
 import { responsive, type Variants } from './images.ts'
 import { bindingUses, type Shape, shapeOf } from './shape.ts'

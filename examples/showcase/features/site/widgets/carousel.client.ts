@@ -1,4 +1,4 @@
-import { implement } from '@tenon/core/widget'
+import { implement } from '@tenonkit/core/widget'
 import Swiper from 'swiper'
 import { carousel } from '../../../utils/swiper.ts'
 import type { Carousel } from '../widgets.ts'

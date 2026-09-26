@@ -1,4 +1,4 @@
-import { contract } from '@tenon/core'
+import { contract } from '@tenonkit/core'
 import { More } from './events.ts'
 import { feedMachine } from './machine.ts'
 

@@ -1,5 +1,5 @@
-import { loadCollection } from '@tenon/content'
-import { resolvers } from '@tenon/data'
+import { loadCollection } from '@tenonkit/content'
+import { resolvers } from '@tenonkit/data'
 import { getPost, listPosts } from './features/posts/effects.ts'
 import { Frontmatter } from './features/posts/schemas.ts'
 import { savedPosts, savePost, unsavePost } from './features/saved/effects.ts'

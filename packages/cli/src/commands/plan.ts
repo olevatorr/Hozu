@@ -1,5 +1,5 @@
-import { planRoute, softTargets } from '@tenon/compiler'
-import { closest } from '@tenon/validator'
+import { planRoute, softTargets } from '@tenonkit/compiler'
+import { closest } from '@tenonkit/validator'
 import type { PlanOutput } from '../contract.ts'
 import { TenonCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'

@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/runtime-client",
+  "name": "@tenonkit/runtime-client",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -21,7 +21,7 @@
     "files.d.ts"
   ],
   "dependencies": {
-    "@tenon/core": "workspace:*",
-    "@tenon/machine": "workspace:*"
+    "@tenonkit/core": "workspace:*",
+    "@tenonkit/machine": "workspace:*"
   }
 }

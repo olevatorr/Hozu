@@ -1,5 +1,5 @@
 import { relative } from 'node:path'
-import { canonicalStringify, type Diagnostic } from '@tenon/core/ir'
+import { canonicalStringify, type Diagnostic } from '@tenonkit/core/ir'
 
 export const json = (value: unknown): string =>
   `${JSON.stringify(JSON.parse(canonicalStringify(value)), null, 2)}\n`

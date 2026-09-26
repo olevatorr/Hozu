@@ -1,5 +1,5 @@
-import { buildProject } from '@tenon/core/ir'
-import { validate } from '@tenon/validator'
+import { buildProject } from '@tenonkit/core/ir'
+import { validate } from '@tenonkit/validator'
 import { syntheticProject } from './synthetic.ts'
 
 const features = Number(process.argv[2] ?? 1000)

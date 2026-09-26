@@ -5,7 +5,7 @@ import {
   join,
   type ProjectIR,
   type ViewNode,
-} from '@tenon/core/ir'
+} from '@tenonkit/core/ir'
 import cartProject from '../../../../examples/cart/tenon.config.ts'
 
 let cached: BuildResult | undefined

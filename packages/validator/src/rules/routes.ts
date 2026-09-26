@@ -1,4 +1,4 @@
-import { anyRef, type JsonSchema, join, routePattern, type ValueExpr } from '@tenon/core/ir'
+import { anyRef, type JsonSchema, join, routePattern, type ValueExpr } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { resolveRef } from '../resolve.ts'
 

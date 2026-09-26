@@ -1,5 +1,5 @@
-import type { DiagnosticCode, ElementNode, ProjectIR, QueryNode, TextNode, WhenNode } from '@tenon/core/ir'
-import { validate } from '@tenon/validator'
+import type { DiagnosticCode, ElementNode, ProjectIR, QueryNode, TextNode, WhenNode } from '@tenonkit/core/ir'
+import { validate } from '@tenonkit/validator'
 import { describe, expect, it } from 'vitest'
 import { cartBuild, cartIR, findNode, nodeAt } from './support/cart.ts'
 import { applyPatch } from './support/patch.ts'
@@ -506,7 +506,7 @@ describe('A2 literal judgement codes', () => {
 
 describe('A2 route judgement codes', () => {
   it('TN024 — path placeholders differ from the params schema', async () => {
-    const { buildProject } = await import('@tenon/core/ir')
+    const { buildProject } = await import('@tenonkit/core/ir')
     const blog = buildProject((await import('../../../examples/blog/tenon.config.ts')).default)
     const ir = structuredClone(blog.ir)
     ir.routes.post!.path = '/posts/:id'
@@ -516,7 +516,7 @@ describe('A2 route judgement codes', () => {
   })
 
   it('TN024 — a view bound to another route; TN025 — a parameterized page without entries', async () => {
-    const { buildProject } = await import('@tenon/core/ir')
+    const { buildProject } = await import('@tenonkit/core/ir')
     const blog = buildProject((await import('../../../examples/blog/tenon.config.ts')).default)
     const ir = structuredClone(blog.ir)
     ir.pages.home!.views.push('posts.Article')

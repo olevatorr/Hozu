@@ -1,4 +1,4 @@
-import type { BuildResult } from '@tenon/core/ir'
+import type { BuildResult } from '@tenonkit/core/ir'
 import { clientBundle } from './assets.ts'
 import { type Assets, fnsModule, type Stylesheet, type WidgetBundle } from './render.ts'
 

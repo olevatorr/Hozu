@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/data",
+  "name": "@tenonkit/data",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -14,7 +14,7 @@
     "dist"
   ],
   "dependencies": {
-    "@tenon/core": "workspace:*",
-    "@tenon/machine": "workspace:*"
+    "@tenonkit/core": "workspace:*",
+    "@tenonkit/machine": "workspace:*"
   }
 }

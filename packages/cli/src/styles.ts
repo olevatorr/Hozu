@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { type BuildResult, classCandidates, sha256 } from '@tenon/core/ir'
+import { type BuildResult, classCandidates, sha256 } from '@tenonkit/core/ir'
 
 interface CssModule {
   compileStyles(
@@ -33,7 +33,7 @@ export async function unknownClasses(configPath: string, build: BuildResult) {
   if (cached && cached.key === keyOf(build, cached.files)) return new Map(cached.unknown)
   let css: CssModule
   try {
-    css = (await import(pathToFileURL(createRequire(configPath).resolve('@tenon/css')).href)) as CssModule
+    css = (await import(pathToFileURL(createRequire(configPath).resolve('@tenonkit/css')).href)) as CssModule
   } catch {
     return null
   }

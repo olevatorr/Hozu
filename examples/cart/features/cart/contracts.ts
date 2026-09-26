@@ -1,4 +1,4 @@
-import { contract } from '@tenon/core'
+import { contract } from '@tenonkit/core'
 import { addItem, checkout, removeItem } from './effects.ts'
 import { AddItem, Checkout, Dismiss, RemoveItem, SetQuantity } from './events.ts'
 import { cartMachine } from './machine.ts'

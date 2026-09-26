@@ -1,4 +1,4 @@
-import { type FeatureIR, hashJson, type Json, type ProjectIR, type ValueExpr } from '@tenon/core/ir'
+import { type FeatureIR, hashJson, type Json, type ProjectIR, type ValueExpr } from '@tenonkit/core/ir'
 import { resolveRef } from '../resolve.ts'
 import { guardRefs, valueRefs } from '../sites.ts'
 

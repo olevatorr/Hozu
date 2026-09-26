@@ -1,4 +1,4 @@
-import type { FeatureIR, ViewNode } from '@tenon/core/ir'
+import type { FeatureIR, ViewNode } from '@tenonkit/core/ir'
 import type { GraphEdge, GraphNode, GraphOutput } from '../contract.ts'
 import { type Loaded, requireFeature } from '../load.ts'
 

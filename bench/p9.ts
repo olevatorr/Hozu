@@ -1,7 +1,7 @@
 import { Agent, request } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { createServer } from '@tenon/adapter-node'
-import { buildProject } from '@tenon/core/ir'
+import { createServer } from '@tenonkit/adapter-node'
+import { buildProject } from '@tenonkit/core/ir'
 import { createResolvers } from '../examples/cart/server.ts'
 import project from '../examples/cart/tenon.config.ts'
 

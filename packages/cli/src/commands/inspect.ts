@@ -1,4 +1,4 @@
-import { hashJson } from '@tenon/core/ir'
+import { hashJson } from '@tenonkit/core/ir'
 import type { InspectOutput } from '../contract.ts'
 import { type Loaded, requireFeature } from '../load.ts'
 

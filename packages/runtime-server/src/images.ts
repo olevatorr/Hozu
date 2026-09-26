@@ -1,4 +1,4 @@
-import type { ImageVariant, ViewNode } from '@tenon/core/ir'
+import type { ImageVariant, ViewNode } from '@tenonkit/core/ir'
 
 export type Variants = Record<string, ImageVariant[]>
 

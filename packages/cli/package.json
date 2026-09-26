@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/cli",
+  "name": "@tenonkit/cli",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -22,9 +22,9 @@
     "node": ">=22.18"
   },
   "dependencies": {
-    "@tenon/core": "workspace:*",
-    "@tenon/validator": "workspace:*",
-    "@tenon/machine": "workspace:*",
-    "@tenon/compiler": "workspace:*"
+    "@tenonkit/core": "workspace:*",
+    "@tenonkit/validator": "workspace:*",
+    "@tenonkit/machine": "workspace:*",
+    "@tenonkit/compiler": "workspace:*"
   }
 }

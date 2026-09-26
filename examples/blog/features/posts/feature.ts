@@ -1,4 +1,4 @@
-import { feature } from '@tenon/core'
+import { feature } from '@tenonkit/core'
 import { getPost, listPosts, postsTag, postTag } from './effects.ts'
 import { text } from './messages.ts'
 import { Article, Offline, PostList } from './views.ts'

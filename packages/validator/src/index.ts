@@ -1,4 +1,4 @@
-import type { Bindings, Diagnostic, ProjectIR, SourceIndex } from '@tenon/core/ir'
+import type { Bindings, Diagnostic, ProjectIR, SourceIndex } from '@tenonkit/core/ir'
 import { Ctx } from './context.ts'
 import type { Lockfile } from './contracts/lock.ts'
 import { verifyContracts } from './contracts/verify.ts'

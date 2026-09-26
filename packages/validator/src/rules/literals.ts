@@ -7,7 +7,7 @@ import {
   type JsonSchema,
   resolveAt,
   type ValueExpr,
-} from '@tenon/core/ir'
+} from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import {
   contextEnv,

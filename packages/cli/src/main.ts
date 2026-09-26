@@ -22,7 +22,7 @@ Commands:
   build                     Write dist/public (static files) and dist/manifest.json for deployment
 
 Options:
-  --json               Machine-readable output (schemas in @tenon/cli/schema)
+  --json               Machine-readable output (schemas in @tenonkit/cli/schema)
   --config <path>      Config file (default: tenon.config.ts)
   --update-lock        validate: rewrite tenon.lock.json when there are no errors
   --out <dir>          build: output directory (default: dist)

@@ -1,4 +1,4 @@
-import { fn, mutation, query, tag } from '@tenon/core'
+import { fn, mutation, query, tag } from '@tenonkit/core'
 import { z } from 'zod'
 import { Cart, Item, Line, NoInput, SkuOnly } from './schemas.ts'
 

@@ -11,16 +11,16 @@
   },
   "dependencies": {
     "@tailwindcss/typography": "0.5.20",
-    "@tenon/adapter-node": "workspace:*",
-    "@tenon/adapter-static": "workspace:*",
-    "@tenon/cli": "workspace:*",
-    "@tenon/content": "workspace:*",
-    "@tenon/core": "workspace:*",
-    "@tenon/css": "workspace:*",
-    "@tenon/data": "workspace:*",
-    "@tenon/dev": "workspace:*",
-    "@tenon/image": "workspace:*",
-    "@tenon/schema-zod": "workspace:*",
+    "@tenonkit/adapter-node": "workspace:*",
+    "@tenonkit/adapter-static": "workspace:*",
+    "@tenonkit/cli": "workspace:*",
+    "@tenonkit/content": "workspace:*",
+    "@tenonkit/core": "workspace:*",
+    "@tenonkit/css": "workspace:*",
+    "@tenonkit/data": "workspace:*",
+    "@tenonkit/dev": "workspace:*",
+    "@tenonkit/image": "workspace:*",
+    "@tenonkit/schema-zod": "workspace:*",
     "zod": "4.6.5"
   }
 }

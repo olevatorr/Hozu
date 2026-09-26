@@ -1,4 +1,4 @@
-import { invoke, machine, on, op } from '@tenon/core'
+import { invoke, machine, on, op } from '@tenonkit/core'
 import { addTask, clearDone, toggleTask } from './effects.ts'
 import { Add, ClearDone, Draft, SetShow, Toggle } from './events.ts'
 import { Context } from './schemas.ts'

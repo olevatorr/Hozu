@@ -1,5 +1,5 @@
 import { relative } from 'node:path'
-import { type BuildResult, codes, type Diagnostic, join } from '@tenon/core/ir'
+import { type BuildResult, codes, type Diagnostic, join } from '@tenonkit/core/ir'
 import { build } from 'esbuild'
 
 export interface WidgetBundle {

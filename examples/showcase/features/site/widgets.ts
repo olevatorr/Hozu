@@ -1,4 +1,4 @@
-import { ui } from '@tenon/core'
+import { ui } from '@tenonkit/core'
 import { z } from 'zod'
 
 export const Globe = ui.widget({

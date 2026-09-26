@@ -1,6 +1,6 @@
 import type { AddressInfo } from 'node:net'
-import { createServer } from '@tenon/adapter-node'
-import { buildProject } from '@tenon/core/ir'
+import { createServer } from '@tenonkit/adapter-node'
+import { buildProject } from '@tenonkit/core/ir'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createResolvers } from '../../../examples/bookmarks/server.ts'
 import project from '../../../examples/bookmarks/tenon.config.ts'

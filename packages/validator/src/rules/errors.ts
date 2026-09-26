@@ -1,4 +1,4 @@
-import { at, type Json, resolveAt, type TransitionIR, type ViewNode } from '@tenon/core/ir'
+import { at, type Json, resolveAt, type TransitionIR, type ViewNode } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { effectSchemas } from '../env.ts'
 import { resolveRef } from '../resolve.ts'

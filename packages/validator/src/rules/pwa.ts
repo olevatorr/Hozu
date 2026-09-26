@@ -1,5 +1,5 @@
-import { planRoute } from '@tenon/compiler'
-import { join } from '@tenon/core/ir'
+import { planRoute } from '@tenonkit/compiler'
+import { join } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 
 export function offlinePage(ctx: Ctx) {

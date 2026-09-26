@@ -1,4 +1,4 @@
-import { planRoute } from '@tenon/compiler'
+import { planRoute } from '@tenonkit/compiler'
 import {
   type BuildResult,
   FORM_FIELD,
@@ -10,10 +10,10 @@ import {
   routeParams,
   routePattern,
   routeTable,
-} from '@tenon/core/ir'
-import { createDataRuntime, type OnError, type ResolverSet } from '@tenon/data'
-import { compileValue } from '@tenon/machine'
-import type { EffectResponse, Result } from '@tenon/runtime-client'
+} from '@tenonkit/core/ir'
+import { createDataRuntime, type OnError, type ResolverSet } from '@tenonkit/data'
+import { compileValue } from '@tenonkit/machine'
+import type { EffectResponse, Result } from '@tenonkit/runtime-client'
 import { clientBundle } from './assets.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'

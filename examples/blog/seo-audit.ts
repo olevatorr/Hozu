@@ -1,8 +1,8 @@
 import { request } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { createServer } from '@tenon/adapter-node'
-import { buildProject } from '@tenon/core/ir'
-import { compileStyles } from '@tenon/css'
+import { createServer } from '@tenonkit/adapter-node'
+import { buildProject } from '@tenonkit/core/ir'
+import { compileStyles } from '@tenonkit/css'
 import { createResolvers } from './server.ts'
 import project from './tenon.config.ts'
 

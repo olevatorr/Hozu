@@ -1,5 +1,5 @@
-import type { FeatureIR, TransitionIR, ViewNode } from '@tenon/core/ir'
-import { closest, verify } from '@tenon/validator'
+import type { FeatureIR, TransitionIR, ViewNode } from '@tenonkit/core/ir'
+import { closest, verify } from '@tenonkit/validator'
 import type { ExplainOutput, ExplainSend, ExplainTransition } from '../contract.ts'
 import { TenonCliError } from '../errors.ts'
 import { type Loaded, requireFeature } from '../load.ts'

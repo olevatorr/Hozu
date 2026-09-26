@@ -1,4 +1,4 @@
-import { files } from '@tenon/runtime-client/files'
+import { files } from '@tenonkit/runtime-client/files'
 
 const bundle = Object.fromEntries(Object.entries(files).map(([name, code]) => [`/_tenon/${name}`, code]))
 

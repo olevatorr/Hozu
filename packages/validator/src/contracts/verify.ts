@@ -1,5 +1,5 @@
-import { type Bindings, type FeatureIR, join, routeTable } from '@tenon/core/ir'
-import { type CompiledMachine, compileMachine } from '@tenon/machine'
+import { type Bindings, type FeatureIR, join, routeTable } from '@tenonkit/core/ir'
+import { type CompiledMachine, compileMachine } from '@tenonkit/machine'
 import type { Ctx } from '../context.ts'
 import { type Coverage, drift, type Lockfile, lockOf } from './lock.ts'
 import { runContract } from './run.ts'

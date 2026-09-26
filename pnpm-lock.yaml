@@ -11,55 +11,55 @@ importers:
       '@biomejs/biome':
         specifier: 2.5.14
         version: 2.5.14
-      '@tenon/adapter-node':
+      '@tenonkit/adapter-node':
         specifier: workspace:*
         version: link:packages/adapter-node
-      '@tenon/adapter-static':
+      '@tenonkit/adapter-static':
         specifier: workspace:*
         version: link:packages/adapter-static
-      '@tenon/bundle':
+      '@tenonkit/bundle':
         specifier: workspace:*
         version: link:packages/bundle
-      '@tenon/cli':
+      '@tenonkit/cli':
         specifier: workspace:*
         version: link:packages/cli
-      '@tenon/compiler':
+      '@tenonkit/compiler':
         specifier: workspace:*
         version: link:packages/compiler
-      '@tenon/content':
+      '@tenonkit/content':
         specifier: workspace:*
         version: link:packages/content
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:packages/core
-      '@tenon/css':
+      '@tenonkit/css':
         specifier: workspace:*
         version: link:packages/css
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:packages/data
-      '@tenon/dev':
+      '@tenonkit/dev':
         specifier: workspace:*
         version: link:packages/dev
-      '@tenon/image':
+      '@tenonkit/image':
         specifier: workspace:*
         version: link:packages/image
-      '@tenon/machine':
+      '@tenonkit/machine':
         specifier: workspace:*
         version: link:packages/machine
-      '@tenon/runtime-client':
+      '@tenonkit/runtime-client':
         specifier: workspace:*
         version: link:packages/runtime-client
-      '@tenon/runtime-server':
+      '@tenonkit/runtime-server':
         specifier: workspace:*
         version: link:packages/runtime-server
-      '@tenon/schema-zod':
+      '@tenonkit/schema-zod':
         specifier: workspace:*
         version: link:packages/schema-zod
-      '@tenon/testing':
+      '@tenonkit/testing':
         specifier: workspace:*
         version: link:packages/testing
-      '@tenon/validator':
+      '@tenonkit/validator':
         specifier: workspace:*
         version: link:packages/validator
       '@types/node':
@@ -101,19 +101,19 @@ importers:
 
   bench/frameworks:
     dependencies:
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@tenon/runtime-client':
+      '@tenonkit/runtime-client':
         specifier: workspace:*
         version: link:../../packages/runtime-client
-      '@tenon/runtime-server':
+      '@tenonkit/runtime-server':
         specifier: workspace:*
         version: link:../../packages/runtime-server
-      '@tenon/schema-zod':
+      '@tenonkit/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
       '@vue/server-renderer':
@@ -155,7 +155,7 @@ importers:
       '@tailwindcss/vite':
         specifier: 4.3.3
         version: 4.3.3(vite@8.3.1(@types/node@22.20.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../../packages/core
       chart.js:
@@ -203,34 +203,34 @@ importers:
       '@tailwindcss/typography':
         specifier: 0.5.20
         version: 0.5.20(tailwindcss@4.3.3)
-      '@tenon/adapter-node':
+      '@tenonkit/adapter-node':
         specifier: workspace:*
         version: link:../../packages/adapter-node
-      '@tenon/adapter-static':
+      '@tenonkit/adapter-static':
         specifier: workspace:*
         version: link:../../packages/adapter-static
-      '@tenon/cli':
+      '@tenonkit/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@tenon/content':
+      '@tenonkit/content':
         specifier: workspace:*
         version: link:../../packages/content
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@tenon/css':
+      '@tenonkit/css':
         specifier: workspace:*
         version: link:../../packages/css
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@tenon/dev':
+      '@tenonkit/dev':
         specifier: workspace:*
         version: link:../../packages/dev
-      '@tenon/image':
+      '@tenonkit/image':
         specifier: workspace:*
         version: link:../../packages/image
-      '@tenon/schema-zod':
+      '@tenonkit/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
       zod:
@@ -239,22 +239,22 @@ importers:
 
   examples/bookmarks:
     dependencies:
-      '@tenon/adapter-node':
+      '@tenonkit/adapter-node':
         specifier: workspace:*
         version: link:../../packages/adapter-node
-      '@tenon/cli':
+      '@tenonkit/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@tenon/css':
+      '@tenonkit/css':
         specifier: workspace:*
         version: link:../../packages/css
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@tenon/schema-zod':
+      '@tenonkit/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
       zod:
@@ -263,34 +263,34 @@ importers:
 
   examples/cart:
     dependencies:
-      '@tenon/adapter-node':
+      '@tenonkit/adapter-node':
         specifier: workspace:*
         version: link:../../packages/adapter-node
-      '@tenon/adapter-static':
+      '@tenonkit/adapter-static':
         specifier: workspace:*
         version: link:../../packages/adapter-static
-      '@tenon/cli':
+      '@tenonkit/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@tenon/css':
+      '@tenonkit/css':
         specifier: workspace:*
         version: link:../../packages/css
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@tenon/dev':
+      '@tenonkit/dev':
         specifier: workspace:*
         version: link:../../packages/dev
-      '@tenon/machine':
+      '@tenonkit/machine':
         specifier: workspace:*
         version: link:../../packages/machine
-      '@tenon/runtime-client':
+      '@tenonkit/runtime-client':
         specifier: workspace:*
         version: link:../../packages/runtime-client
-      '@tenon/schema-zod':
+      '@tenonkit/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
       zod:
@@ -299,22 +299,22 @@ importers:
 
   examples/feed:
     dependencies:
-      '@tenon/adapter-node':
+      '@tenonkit/adapter-node':
         specifier: workspace:*
         version: link:../../packages/adapter-node
-      '@tenon/cli':
+      '@tenonkit/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@tenon/css':
+      '@tenonkit/css':
         specifier: workspace:*
         version: link:../../packages/css
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@tenon/schema-zod':
+      '@tenonkit/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
       zod:
@@ -323,28 +323,28 @@ importers:
 
   examples/showcase:
     dependencies:
-      '@tenon/adapter-node':
+      '@tenonkit/adapter-node':
         specifier: workspace:*
         version: link:../../packages/adapter-node
-      '@tenon/bundle':
+      '@tenonkit/bundle':
         specifier: workspace:*
         version: link:../../packages/bundle
-      '@tenon/cli':
+      '@tenonkit/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@tenon/css':
+      '@tenonkit/css':
         specifier: workspace:*
         version: link:../../packages/css
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@tenon/dev':
+      '@tenonkit/dev':
         specifier: workspace:*
         version: link:../../packages/dev
-      '@tenon/schema-zod':
+      '@tenonkit/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
       chart.js:
@@ -381,22 +381,22 @@ importers:
 
   examples/trial-0006:
     dependencies:
-      '@tenon/adapter-node':
+      '@tenonkit/adapter-node':
         specifier: workspace:*
         version: link:../../packages/adapter-node
-      '@tenon/cli':
+      '@tenonkit/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@tenon/css':
+      '@tenonkit/css':
         specifier: workspace:*
         version: link:../../packages/css
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@tenon/schema-zod':
+      '@tenonkit/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
       zod:
@@ -405,22 +405,22 @@ importers:
 
   examples/trial-0007:
     dependencies:
-      '@tenon/adapter-node':
+      '@tenonkit/adapter-node':
         specifier: workspace:*
         version: link:../../packages/adapter-node
-      '@tenon/cli':
+      '@tenonkit/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@tenon/css':
+      '@tenonkit/css':
         specifier: workspace:*
         version: link:../../packages/css
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@tenon/schema-zod':
+      '@tenonkit/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
       zod:
@@ -429,22 +429,22 @@ importers:
 
   examples/trial-tasks:
     dependencies:
-      '@tenon/adapter-node':
+      '@tenonkit/adapter-node':
         specifier: workspace:*
         version: link:../../packages/adapter-node
-      '@tenon/cli':
+      '@tenonkit/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@tenon/css':
+      '@tenonkit/css':
         specifier: workspace:*
         version: link:../../packages/css
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@tenon/schema-zod':
+      '@tenonkit/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
       zod:
@@ -453,43 +453,43 @@ importers:
 
   packages/adapter-node:
     dependencies:
-      '@tenon/compiler':
+      '@tenonkit/compiler':
         specifier: workspace:*
         version: link:../compiler
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../data
-      '@tenon/runtime-client':
+      '@tenonkit/runtime-client':
         specifier: workspace:*
         version: link:../runtime-client
-      '@tenon/runtime-server':
+      '@tenonkit/runtime-server':
         specifier: workspace:*
         version: link:../runtime-server
 
   packages/adapter-static:
     dependencies:
-      '@tenon/compiler':
+      '@tenonkit/compiler':
         specifier: workspace:*
         version: link:../compiler
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../data
-      '@tenon/runtime-client':
+      '@tenonkit/runtime-client':
         specifier: workspace:*
         version: link:../runtime-client
-      '@tenon/runtime-server':
+      '@tenonkit/runtime-server':
         specifier: workspace:*
         version: link:../runtime-server
 
   packages/bundle:
     dependencies:
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
       esbuild:
@@ -498,28 +498,28 @@ importers:
 
   packages/cli:
     dependencies:
-      '@tenon/compiler':
+      '@tenonkit/compiler':
         specifier: workspace:*
         version: link:../compiler
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
-      '@tenon/machine':
+      '@tenonkit/machine':
         specifier: workspace:*
         version: link:../machine
-      '@tenon/validator':
+      '@tenonkit/validator':
         specifier: workspace:*
         version: link:../validator
 
   packages/compiler:
     dependencies:
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
 
   packages/content:
     dependencies:
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
       marked:
@@ -536,10 +536,10 @@ importers:
       '@tailwindcss/node':
         specifier: 4.3.3
         version: 4.3.3
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
-      '@tenon/validator':
+      '@tenonkit/validator':
         specifier: workspace:*
         version: link:../validator
       tailwindcss:
@@ -548,22 +548,22 @@ importers:
 
   packages/data:
     dependencies:
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
-      '@tenon/machine':
+      '@tenonkit/machine':
         specifier: workspace:*
         version: link:../machine
 
   packages/dev:
     dependencies:
-      '@tenon/runtime-client':
+      '@tenonkit/runtime-client':
         specifier: workspace:*
         version: link:../runtime-client
 
   packages/image:
     dependencies:
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
       sharp:
@@ -572,40 +572,40 @@ importers:
 
   packages/machine:
     dependencies:
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
 
   packages/runtime-client:
     dependencies:
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
-      '@tenon/machine':
+      '@tenonkit/machine':
         specifier: workspace:*
         version: link:../machine
 
   packages/runtime-server:
     dependencies:
-      '@tenon/compiler':
+      '@tenonkit/compiler':
         specifier: workspace:*
         version: link:../compiler
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
-      '@tenon/data':
+      '@tenonkit/data':
         specifier: workspace:*
         version: link:../data
-      '@tenon/machine':
+      '@tenonkit/machine':
         specifier: workspace:*
         version: link:../machine
-      '@tenon/runtime-client':
+      '@tenonkit/runtime-client':
         specifier: workspace:*
         version: link:../runtime-client
 
   packages/schema-zod:
     dependencies:
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -615,19 +615,19 @@ importers:
 
   packages/testing:
     dependencies:
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
-      '@tenon/runtime-server':
+      '@tenonkit/runtime-server':
         specifier: workspace:*
         version: link:../runtime-server
 
   packages/validator:
     dependencies:
-      '@tenon/compiler':
+      '@tenonkit/compiler':
         specifier: workspace:*
         version: link:../compiler
-      '@tenon/core':
+      '@tenonkit/core':
         specifier: workspace:*
         version: link:../core
 

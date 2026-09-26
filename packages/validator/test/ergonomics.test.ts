@@ -1,7 +1,7 @@
-import { event, feature, machine, on, op, project, ui } from '@tenon/core'
-import { buildProject } from '@tenon/core/ir'
-import { zodAdapter } from '@tenon/schema-zod'
-import { validate } from '@tenon/validator'
+import { event, feature, machine, on, op, project, ui } from '@tenonkit/core'
+import { buildProject } from '@tenonkit/core/ir'
+import { zodAdapter } from '@tenonkit/schema-zod'
+import { validate } from '@tenonkit/validator'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
@@ -95,7 +95,7 @@ describe('ADR 0013 ergonomics', () => {
 
 describe('ADR 0014 judgement codes', () => {
   it('TN036 — a form whose payload the server cannot evaluate; TN035 — search without defaults', async () => {
-    const { buildProject: build } = await import('@tenon/core/ir')
+    const { buildProject: build } = await import('@tenonkit/core/ir')
     const b = build((await import('../../../examples/bookmarks/tenon.config.ts')).default)
     const ir = structuredClone(b.ir)
     const form = (

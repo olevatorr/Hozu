@@ -1,5 +1,5 @@
-import { buildProject } from '@tenon/core/ir'
-import { compileMachine, type Effect, type Input, init, transition } from '@tenon/machine'
+import { buildProject } from '@tenonkit/core/ir'
+import { compileMachine, type Effect, type Input, init, transition } from '@tenonkit/machine'
 import project from './tenon.config.ts'
 
 const { ir, bindings } = buildProject(project, { sources: false })

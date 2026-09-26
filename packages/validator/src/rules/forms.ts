@@ -1,4 +1,4 @@
-import { at, formRunnable } from '@tenon/core/ir'
+import { at, formRunnable } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { walkView } from '../walk.ts'
 

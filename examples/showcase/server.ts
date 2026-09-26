@@ -1,4 +1,4 @@
-import { resolvers } from '@tenon/data'
+import { resolvers } from '@tenonkit/data'
 import { slides, stats } from './features/site/effects.ts'
 import project from './tenon.config.ts'
 

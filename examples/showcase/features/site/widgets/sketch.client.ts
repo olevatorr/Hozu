@@ -1,4 +1,4 @@
-import { implement } from '@tenon/core/widget'
+import { implement } from '@tenonkit/core/widget'
 import p5 from 'p5'
 import type { Sketch } from '../widgets.ts'
 

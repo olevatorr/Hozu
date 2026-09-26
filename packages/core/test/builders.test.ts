@@ -1,6 +1,6 @@
-import { event, feature, invoke, machine, mutation, on, op, project, route, ui } from '@tenon/core'
-import { buildProject, type DiagnosticCode } from '@tenon/core/ir'
-import { zodAdapter } from '@tenon/schema-zod'
+import { event, feature, invoke, machine, mutation, on, op, project, route, ui } from '@tenonkit/core'
+import { buildProject, type DiagnosticCode } from '@tenonkit/core/ir'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 

@@ -1,4 +1,4 @@
-import { ui } from '@tenon/core'
+import { ui } from '@tenonkit/core'
 import { listPosts } from '../posts/effects.ts'
 import { savedPosts } from './effects.ts'
 import { Save, savedMachine, Unsave } from './machine.ts'

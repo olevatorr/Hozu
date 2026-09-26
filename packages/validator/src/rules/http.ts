@@ -1,4 +1,4 @@
-import { join, routePattern } from '@tenon/core/ir'
+import { join, routePattern } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 
 const RESERVED = new Set([

@@ -227,7 +227,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       null,
       '/schema',
       'project({ schema }) must be a schema adapter',
-      'Use an adapter such as zodAdapter from @tenon/schema-zod.',
+      'Use an adapter such as zodAdapter from @tenonkit/schema-zod.',
     )
 
   scope.basePath = typeof config.http?.basePath === 'string' ? config.http.basePath : ''

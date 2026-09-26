@@ -1,5 +1,5 @@
-import { buildProject } from '@tenon/core/ir'
-import { testApp } from '@tenon/testing'
+import { buildProject } from '@tenonkit/core/ir'
+import { testApp } from '@tenonkit/testing'
 import { describe, expect, it } from 'vitest'
 import { createResolvers } from '../../../examples/blog/server.ts'
 import project from '../../../examples/blog/tenon.config.ts'
@@ -71,7 +71,7 @@ describe('PWA and offline (ADR 0021)', () => {
   })
 })
 
-describe('@tenon/testing (ADR 0021)', () => {
+describe('@tenonkit/testing (ADR 0021)', () => {
   it('returns visible text, the payload and native form posts', async () => {
     const page = await app().get('/zh-TW')
     expect(page.text).toContain('Tenon 部落格')

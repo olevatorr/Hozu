@@ -39,19 +39,19 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - Node ≥ 22.18: `tenon.config.ts` is loaded with native type stripping, so authored code is
   erasable-syntax TS with explicit `.ts` relative imports
 - Schemas: Standard Schema compatible, exactly one adapter per project (`project({ schema })`;
-  `@tenon/schema-zod` is the default, Valibot via adapter). The IR stores JSON Schema.
-- Packages are published under the @tenon/ scope:
-  `@tenon/core` (IR types + builders; tooling at `@tenon/core/ir`), `@tenon/schema-zod`,
-  `@tenon/machine` (isomorphic compiled interpreter, ADR 0004), `@tenon/data` (resolvers, cache,
-  tags, dedup, ADR 0005), `@tenon/validator`, `@tenon/compiler` (render plans, ADR 0006),
-  `@tenon/runtime-server` (in-order streaming SSR + the web-standard handler, ADR 0007/0016), `@tenon/runtime-client` (own fine-grained
+  `@tenonkit/schema-zod` is the default, Valibot via adapter). The IR stores JSON Schema.
+- Packages are published under the @tenonkit/ scope:
+  `@tenonkit/core` (IR types + builders; tooling at `@tenonkit/core/ir`), `@tenonkit/schema-zod`,
+  `@tenonkit/machine` (isomorphic compiled interpreter, ADR 0004), `@tenonkit/data` (resolvers, cache,
+  tags, dedup, ADR 0005), `@tenonkit/validator`, `@tenonkit/compiler` (render plans, ADR 0006),
+  `@tenonkit/runtime-server` (in-order streaming SSR + the web-standard handler, ADR 0007/0016), `@tenonkit/runtime-client` (own fine-grained
   DOM runtime, no VDOM, replace-hydration of islands, ADR 0006/0007),
-  `@tenon/cli`, `@tenon/adapter-node` (ISR page cache + tag revalidation), `@tenon/adapter-static`,
-  `@tenon/css` (Tailwind v4 bound, compiled from the IR's class candidates, TN026, ADR 0009),
-  `@tenon/dev` (dev server: CSS hot swap, reload on code changes), `@tenon/image` (optional WebP srcset, ADR 0017),
-  `@tenon/content` (Markdown collections, ADR 0020), `@tenon/testing` (render assertions, ADR 0021)
-- Every `@tenon/*` package except `@tenon/schema-zod`, `@tenon/css` (Tailwind), `@tenon/bundle` (esbuild),
-  `@tenon/image` (sharp) and `@tenon/content` (marked, yaml) has zero third-party runtime dependencies.
+  `@tenonkit/cli`, `@tenonkit/adapter-node` (ISR page cache + tag revalidation), `@tenonkit/adapter-static`,
+  `@tenonkit/css` (Tailwind v4 bound, compiled from the IR's class candidates, TN026, ADR 0009),
+  `@tenonkit/dev` (dev server: CSS hot swap, reload on code changes), `@tenonkit/image` (optional WebP srcset, ADR 0017),
+  `@tenonkit/content` (Markdown collections, ADR 0020), `@tenonkit/testing` (render assertions, ADR 0021)
+- Every `@tenonkit/*` package except `@tenonkit/schema-zod`, `@tenonkit/css` (Tailwind), `@tenonkit/bundle` (esbuild),
+  `@tenonkit/image` (sharp) and `@tenonkit/content` (marked, yaml) has zero third-party runtime dependencies.
 - Views: every HTML/SVG element with per-tag typed attributes, all DOM events, `ui.dom.*` event fields (TN027),
   `class` (static) + `toggle` (guarded class groups) + `vars` (CSS custom properties). No `style`, no free
   functions. Stylesheets: `project({ styles })` Tailwind entry + `feature({ styles })`; classes must produce CSS
@@ -65,7 +65,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `ui.dom.value` / `ui.dom.form(name)` may feed enum fields only from literal `<select>`/radio options (TN033) (ADR 0013).
 - Widgets (ADR 0009): `ui.widget({ tag, props, events, client, load, wraps })` in the feature's `declarations`,
   `ui.use(W, { props, on, class }, children)`, client module `export default implement<typeof W>(setup)` from
-  `@tenon/core/widget` (type-only import of the declaration). Bundled by `@tenon/bundle` (esbuild), TN029.
+  `@tenonkit/core/widget` (type-only import of the declaration). Bundled by `@tenonkit/bundle` (esbuild), TN029.
 - Server capabilities (ADR 0010): client fetch of new query keys, live queries over SSE, `head.redirects`,
   `sessionCookie` + `setSession`, `project({ notFound })`, `site.icon` / `themeColor`, uploads via `ctx.file`.
 - Routes: `route({ path: '/posts/:slug', params: schema | null, search: schema | null })` (search: flat scalars with
@@ -77,8 +77,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - Soft navigation (ADR 0015): a view with an island that is listed on both pages and never reads `params`/`search`
   keeps its DOM and machine across a link (derived, `tenon plan` shows it; Navigation API, lazy `navigate.js`
   chunk, budget P8). Pages without such views keep document navigation + prerender.
-- HTTP (ADR 0016): the server is `createHandler(options).fetch(Request): Response` in `@tenon/runtime-server`
-  (no `node:*` in the runtime import graph; `@tenon/adapter-node` is a bridge + `publicDir`). `project({ http })`:
+- HTTP (ADR 0016): the server is `createHandler(options).fetch(Request): Response` in `@tenonkit/runtime-server`
+  (no `node:*` in the runtime import graph; `@tenonkit/adapter-node` is a bridge + `publicDir`). `project({ http })`:
   `basePath`, `trailingSlash` (308 to the canonical form), `redirects` keyed by path (TN037), per-route `headers`
   (TN038, TN039); no rewrites. `tenon build` writes `dist/public` + `dist/manifest.json`, and
   `buildProject(project, { manifest })` needs no file system (edge; `examples/cart/edge.ts`, checked in a web-only
@@ -87,7 +87,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   Accept-Language); `ui.messages(base, {...})` in the feature's `declarations`, `ui.format.*` (Intl),
   `locale` ref, `ui.alternate(l)`; hreflang/og:locale/sitemap derived. Messages and formats are lowered on the server
   for the page locale (islands get only its strings; helpers live in `fns.js`, P7 unchanged). TN040–TN042.
-- Images (ADR 0017): optional `@tenon/image` (build-time, sharp) → `optimizeImages(build)` makes WebP widths for raster
+- Images (ADR 0017): optional `@tenonkit/image` (build-time, sharp) → `optimizeImages(build)` makes WebP widths for raster
   `<img src={ui.asset}>`; the renderer adds `srcset`/`sizes` (IR unchanged). `tenon build` uses it when the project
   can resolve it; otherwise images are served as-is.
 - Route grammar (ADR 0018): URLPattern modifiers `:x?` (nullable), `:x+`/`:x*` (string[]), one parser
@@ -98,13 +98,13 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   in views, lowered for islands); every mutation has the framework error `Invalid` `{ message, fields }` (schema
   failures and `fail('Invalid', …)`), optional in `failed`, reserved as a declared name (TN014). Optimistic UI =
   render the in-flight value in the busy state. P7 budget 8 KiB; P2 exponent over 250–2000, 5 interleaved rounds.
-- Phase 8b (ADR 0020): `@tenon/css` adds size-adjusted local fallback faces for local font files (metrics from
-  head/hhea/OS/2, node:zlib only); `@tenon/content` (marked + yaml, server-side) = Markdown collections returned by
-  query resolvers; `@tenon/dev` serves a development client bundle (`globalThis.__TENON_DEV__`) that restores machine
+- Phase 8b (ADR 0020): `@tenonkit/css` adds size-adjusted local fallback faces for local font files (metrics from
+  head/hhea/OS/2, node:zlib only); `@tenonkit/content` (marked + yaml, server-side) = Markdown collections returned by
+  query resolvers; `@tenonkit/dev` serves a development client bundle (`globalThis.__TENON_DEV__`) that restores machine
   snapshots across code reloads when the machine IR is unchanged (production bundle strips it).
 - Tier 4 (ADR 0021): preview mode (`createHandler({ preview: { secret } })`, signed cookie, `ctx.preview`, no cache,
   noindex); `ui.og({ title, subtitle })` → `/_tenon/og.png` rendered by an injected `og` (`ogImage` from
-  `@tenon/image`); derived web manifest + opt-in `site.offline` service worker (TN043); `@tenon/testing`
+  `@tenonkit/image`); derived web manifest + opt-in `site.offline` service worker (TN043); `@tenonkit/testing`
   (`testApp(...).get/post` → `{ status, headers, html, text, payload }`).
 - Authoring surface (ADR 0022): absent values are omitted (optional, no `null` spelling; behaviour-deciding fields
   such as query `scope`/`freshness`, `initialContext`/`initial` and route `params`/`search` stay required).
@@ -117,7 +117,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `<head>` modulepreloads `client.js` (+ `fns.js` when bound) only on pages with islands. `bench/frameworks` bundles
   the Tenon row with the production module graph and `__TENON_DEV__ = false`.
 - Rendering (ADR 0024): server HTML comes from generated JavaScript source (`generateRender(build, images)` in
-  `@tenon/runtime-server`, one function per route × non-suspending node × island × separator), the only render path.
+  `@tenonkit/runtime-server`, one function per route × non-suspending node × island × separator), the only render path.
   Node imports it as a `data:` module at startup; `tenon build` writes `dist/server/render.js`, which edge entries
   pass as `createHandler({ render })` (no eval on the edge). `ui.query` streaming stays interpreted. All IR strings are
   embedded with `JSON.stringify`.

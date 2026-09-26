@@ -1,4 +1,4 @@
-import type { Json } from '@tenon/core/ir'
+import type { Json } from '@tenonkit/core/ir'
 import type { CompiledMachine, CompiledTransition, Effect, Env, Input, Snapshot, Step } from './types.ts'
 
 function enterEffects(

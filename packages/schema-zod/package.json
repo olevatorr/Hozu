@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/schema-zod",
+  "name": "@tenonkit/schema-zod",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -14,7 +14,7 @@
     "dist"
   ],
   "dependencies": {
-    "@tenon/core": "workspace:*"
+    "@tenonkit/core": "workspace:*"
   },
   "peerDependencies": {
     "zod": "^4.0.0"

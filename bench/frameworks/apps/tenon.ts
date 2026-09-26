@@ -1,6 +1,6 @@
-import { event, feature, machine, on, op, project, query, route, ui } from '@tenon/core'
-import { resolvers } from '@tenon/data'
-import { zodAdapter } from '@tenon/schema-zod'
+import { event, feature, machine, on, op, project, query, route, ui } from '@tenonkit/core'
+import { resolvers } from '@tenonkit/data'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import { z } from 'zod'
 import { products } from './data.ts'
 

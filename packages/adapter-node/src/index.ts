@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { createServer as http, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import { join, normalize } from 'node:path'
 import { Readable } from 'node:stream'
-import { contentType, createHandler, type Handler, type HandlerOptions } from '@tenon/runtime-server'
+import { contentType, createHandler, type Handler, type HandlerOptions } from '@tenonkit/runtime-server'
 
 export interface NodeAdapterOptions extends Omit<HandlerOptions, 'readFile'> {
   publicDir?: string

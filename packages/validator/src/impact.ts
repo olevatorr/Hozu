@@ -1,4 +1,4 @@
-import { type ProjectIR, resolveAt, type TagExprIR } from '@tenon/core/ir'
+import { type ProjectIR, resolveAt, type TagExprIR } from '@tenonkit/core/ir'
 import { guardRefs, valueRefs } from './sites.ts'
 import { closest } from './suggest.ts'
 import { transitionsOf, walkView } from './walk.ts'

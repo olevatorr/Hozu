@@ -1,4 +1,4 @@
-import type { MutationDecl, ProjectDecl, QueryDecl, Scope } from '@tenon/core'
+import type { MutationDecl, ProjectDecl, QueryDecl, Scope } from '@tenonkit/core'
 
 export const FAIL = Symbol.for('tenon.fail')
 const IMPLEMENTATION = Symbol.for('tenon.implementation')

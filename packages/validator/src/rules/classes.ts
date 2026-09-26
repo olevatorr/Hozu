@@ -1,4 +1,4 @@
-import { type At, at, type Fix, motionClasses, resolveAt } from '@tenon/core/ir'
+import { type At, at, type Fix, motionClasses, resolveAt } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { didYouMean } from '../suggest.ts'
 import { walkView } from '../walk.ts'

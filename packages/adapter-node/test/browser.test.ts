@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import type { AddressInfo } from 'node:net'
-import { compileStyles } from '@tenon/css'
+import { compileStyles } from '@tenonkit/css'
 import { chromium } from 'playwright-core'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { build, start } from './support.ts'

@@ -54,7 +54,7 @@ Every mutation also has the framework error `Invalid` = `{ message, fields }`: o
 - `project({ session: z.object({ user: z.string() }) })` declares the identity. Queries with `scope: 'user'` and
   mutations receive `session`; public resolvers never do.
 - `createServer({ session: (request) => value })`, or `sessionCookie({ name, secret })` from
-  `@tenon/runtime-server` for a signed cookie. Mutations can call `setSession(value)` (see `examples/blog`).
+  `@tenonkit/runtime-server` for a signed cookie. Mutations can call `setSession(value)` (see `examples/blog`).
 
 ## Languages (i18n)
 - `site: { lang: 'en', locales: ['en', 'zh-TW'], … }`: every URL gets a locale prefix (`/en/posts/a`). Routes and
@@ -93,7 +93,7 @@ There are no rewrites: one URL has one owner.
 
 ## Server options
 `createServer({ build, styles, resolvers, session?, onError?, csp?, images?, og?, preview? })` from
-`@tenon/adapter-node`.
+`@tenonkit/adapter-node`.
 - `onError(error, { effect | path })` receives every unexpected failure.
 - A strict CSP, `nosniff` and a cross-site POST check are on by default (`csp` adds sources, e.g.
   `{ script: ['https://analytics.example'] }`, or `false`).
@@ -101,14 +101,14 @@ There are no rewrites: one URL has one owner.
   `curl -X POST localhost:4700/_tenon/effect -H 'content-type: application/json' -d '{"effect":"items.addItem","input":{"title":"x"},"keys":[]}'`.
 
 ## Content, images, share images, fonts
-- **Markdown:** `@tenon/content` turns `content/posts/*.md` (YAML front matter checked by a schema) into
+- **Markdown:** `@tenonkit/content` turns `content/posts/*.md` (YAML front matter checked by a schema) into
   `{ slug, data, html, headings }`: `const posts = await loadCollection({ dir: new URL('./content/posts/', import.meta.url), schema })`
   in `server.ts`, returned from ordinary query resolvers; render the body with `ui.html(post.html)`.
 - **Images:** `ui.img({ src: ui.asset(new URL('./hero.jpg', import.meta.url)), alt, width, height })` (TN028 without
-  dimensions). With `@tenon/image` installed, pass `images: await optimizeImages(build)` to `createServer` (and
+  dimensions). With `@tenonkit/image` installed, pass `images: await optimizeImages(build)` to `createServer` (and
   `tenon build` does it itself): raster assets get WebP `srcset` widths and `sizes`.
 - **Share images:** `head.render` → `image: ui.og({ title, subtitle })` renders a 1200×630 card; pass
-  `og: ogImage` (from `@tenon/image`) to `createServer`.
+  `og: ogImage` (from `@tenonkit/image`) to `createServer`.
 - **Fonts:** a local `@font-face` gets a size-matched `"<Family> Fallback"` automatically.
 
 ## Preview (drafts)
@@ -121,13 +121,13 @@ A web app manifest is derived from `site` (`name`, `themeColor`, `icon`). `site.
 shown when the network is down; a service worker is generated (TN043: no params, no per-request data).
 
 ## Testing rendered pages
-`const app = testApp({ build, resolvers })` from `@tenon/testing`; `await app.get('/')` gives
+`const app = testApp({ build, resolvers })` from `@tenonkit/testing`; `await app.get('/')` gives
 `{ status, headers, html, text, payload }`; `app.post(path, fields)` submits a native form.
 
 ## Deployment
 `tenon build` writes `dist/public/` (static files for any host or CDN) and `dist/manifest.json`. On Node:
 `createServer({ build: buildProject(project, { manifest }), manifest, publicDir: 'dist/public', … })`. On Bun, Deno,
 Cloudflare Workers or Vercel the server is `createHandler({ build, manifest, resolvers, render })` from
-`@tenon/runtime-server` with `export default { fetch: handler.fetch }`, where
+`@tenonkit/runtime-server` with `export default { fetch: handler.fetch }`, where
 `import * as render from './dist/server/render.js'` is the page code `tenon build` generates (edge runtimes cannot
 generate it at startup; see `examples/cart/edge.ts`). Page cache and tag revalidation are per instance.

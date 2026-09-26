@@ -1,6 +1,6 @@
-import { contract, event, feature, invoke, machine, mutation, on, op, project } from '@tenon/core'
-import { buildProject } from '@tenon/core/ir'
-import { zodAdapter } from '@tenon/schema-zod'
+import { contract, event, feature, invoke, machine, mutation, on, op, project } from '@tenonkit/core'
+import { buildProject } from '@tenonkit/core/ir'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 

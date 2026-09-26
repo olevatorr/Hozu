@@ -8,7 +8,7 @@ import {
   type TransitionIR,
   type ValueExpr,
   type ViewNode,
-} from '@tenon/core/ir'
+} from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { walkView } from '../walk.ts'
 

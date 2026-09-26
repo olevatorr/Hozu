@@ -1,5 +1,5 @@
-import { routeTable } from '@tenon/core/ir'
-import { parseSearch, pathOf } from '@tenon/runtime-server'
+import { routeTable } from '@tenonkit/core/ir'
+import { parseSearch, pathOf } from '@tenonkit/runtime-server'
 import { describe, expect, it } from 'vitest'
 
 const schema = {

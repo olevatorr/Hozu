@@ -1,4 +1,4 @@
-import { impact, UnknownSymbolError } from '@tenon/validator'
+import { impact, UnknownSymbolError } from '@tenonkit/validator'
 import type { ImpactOutput } from '../contract.ts'
 import { TenonCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'

@@ -1,8 +1,8 @@
 import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { planRoute } from '@tenon/compiler'
-import type { BuildResult, ImageSet } from '@tenon/core/ir'
-import { createDataRuntime, type ResolverSet } from '@tenon/data'
+import { planRoute } from '@tenonkit/compiler'
+import type { BuildResult, ImageSet } from '@tenonkit/core/ir'
+import { createDataRuntime, type ResolverSet } from '@tenonkit/data'
 import {
   pageEntries,
   publicAssets,
@@ -12,7 +12,7 @@ import {
   sitemapXml,
   staticFiles,
   type WidgetBundle,
-} from '@tenon/runtime-server'
+} from '@tenonkit/runtime-server'
 
 export interface StaticExportOptions {
   build: BuildResult

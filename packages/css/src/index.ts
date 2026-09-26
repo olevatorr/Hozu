@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { extname, resolve } from 'node:path'
 import { __unstable__loadDesignSystem, compile, optimize } from '@tailwindcss/node'
-import { type BuildResult, classCandidates, sha256 } from '@tenon/core/ir'
-import { closest } from '@tenon/validator'
+import { type BuildResult, classCandidates, sha256 } from '@tenonkit/core/ir'
+import { closest } from '@tenonkit/validator'
 import { withFallbacks } from './fonts.ts'
 
 export interface CompiledStyles {

@@ -6,7 +6,7 @@ import {
   resolveAt,
   type SendIR,
   type ValueExpr,
-} from '@tenon/core/ir'
+} from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { closest, didYouMean } from '../suggest.ts'
 import { walkView } from '../walk.ts'

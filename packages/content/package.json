@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/content",
+  "name": "@tenonkit/content",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -14,7 +14,7 @@
     "dist"
   ],
   "dependencies": {
-    "@tenon/core": "workspace:*",
+    "@tenonkit/core": "workspace:*",
     "marked": "18.0.14",
     "yaml": "2.9.1"
   }

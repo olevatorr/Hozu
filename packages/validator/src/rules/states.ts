@@ -1,4 +1,4 @@
-import { type At, at, resolveAt } from '@tenon/core/ir'
+import { type At, at, resolveAt } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { closest, didYouMean } from '../suggest.ts'
 import { featurePointer, transitionsOf, walkView } from '../walk.ts'

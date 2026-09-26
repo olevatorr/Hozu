@@ -1,4 +1,4 @@
-import { fn, mutation, query, tag } from '@tenon/core'
+import { fn, mutation, query, tag } from '@tenonkit/core'
 import { z } from 'zod'
 import { Cleared, NewTask, NoInput, Show, Task, TaskKey, Tasks } from './schemas.ts'
 

@@ -4,7 +4,7 @@ import {
   type JsonSchema,
   type ProjectIR,
   UNEXPECTED_ERROR_SCHEMA,
-} from '@tenon/core/ir'
+} from '@tenonkit/core/ir'
 import { effectSchemas, eventSchema } from '../env.ts'
 import { splitRef } from '../resolve.ts'
 

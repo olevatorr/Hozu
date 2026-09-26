@@ -3,11 +3,11 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
-import { buildProject } from '@tenon/core/ir'
-import { createDataRuntime } from '@tenon/data'
-import { compileMachine, init, transition } from '@tenon/machine'
-import { generateRender } from '@tenon/runtime-server'
-import { validate, verify } from '@tenon/validator'
+import { buildProject } from '@tenonkit/core/ir'
+import { createDataRuntime } from '@tenonkit/data'
+import { compileMachine, init, transition } from '@tenonkit/machine'
+import { generateRender } from '@tenonkit/runtime-server'
+import { validate, verify } from '@tenonkit/validator'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const cartDir = join(root, 'examples/cart')
@@ -93,7 +93,7 @@ const machineJs = readdirSync(machineDist)
   .map((f) => readFileSync(join(machineDist, f)))
 record(
   'A6',
-  '@tenon/machine dist gzip (unminified)',
+  '@tenonkit/machine dist gzip (unminified)',
   gzipSync(Buffer.concat(machineJs)).length,
   'bytes',
   null,
@@ -144,7 +144,7 @@ function initialClientBytes(): number {
 
 record(
   'P7',
-  '@tenon/runtime-client initial JS (entry + static chunks), min+gz',
+  '@tenonkit/runtime-client initial JS (entry + static chunks), min+gz',
   initialClientBytes(),
   'bytes',
   8 * 1024,
@@ -152,7 +152,7 @@ record(
 
 record(
   'P8',
-  '@tenon/runtime-client soft-navigation chunk beyond the initial JS, min+gz',
+  '@tenonkit/runtime-client soft-navigation chunk beyond the initial JS, min+gz',
   clientBytes('navigate.js'),
   'bytes',
   3 * 1024,

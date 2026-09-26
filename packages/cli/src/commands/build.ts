@@ -2,7 +2,7 @@ import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { type BuildResult, hashJson, type ImageSet, type Manifest } from '@tenon/core/ir'
+import { type BuildResult, hashJson, type ImageSet, type Manifest } from '@tenonkit/core/ir'
 import type { BuildOutput } from '../contract.ts'
 import { TenonCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
@@ -50,18 +50,20 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
   const base = dirname(loaded.path)
   const styles = build.bindings.styles.entry
     ? await (
-        await from<{ compileStyles(b: BuildResult, o: { base: string }): Promise<Stylesheet> }>('@tenon/css')
+        await from<{ compileStyles(b: BuildResult, o: { base: string }): Promise<Stylesheet> }>(
+          '@tenonkit/css',
+        )
       ).compileStyles(build, { base })
     : null
   const widgets = Object.keys(build.bindings.widgets).length
-    ? await (await from<{ bundleWidgets(b: BuildResult): Promise<Widgets> }>('@tenon/bundle')).bundleWidgets(
-        build,
-      )
+    ? await (
+        await from<{ bundleWidgets(b: BuildResult): Promise<Widgets> }>('@tenonkit/bundle')
+      ).bundleWidgets(build)
     : null
-  const images = await optional<{ optimizeImages(b: BuildResult): Promise<ImageSet> }>('@tenon/image').then(
-    (m) => (m ? m.optimizeImages(build) : null),
-  )
-  const server = await from<ServerModule>('@tenon/runtime-server')
+  const images = await optional<{ optimizeImages(b: BuildResult): Promise<ImageSet> }>(
+    '@tenonkit/image',
+  ).then((m) => (m ? m.optimizeImages(build) : null))
+  const server = await from<ServerModule>('@tenonkit/runtime-server')
   const dir = resolve(cwd, out ?? 'dist')
   const files: string[] = []
   for (const f of server.staticFiles(build, { styles, widgets, client: true })) {

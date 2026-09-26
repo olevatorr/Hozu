@@ -1,5 +1,5 @@
-import type { Check, ContractIR, EffectCallIR, Json } from '@tenon/core/ir'
-import { type CompiledMachine, enter, equal, type Snapshot, type Step, transition } from '@tenon/machine'
+import type { Check, ContractIR, EffectCallIR, Json } from '@tenonkit/core/ir'
+import { type CompiledMachine, enter, equal, type Snapshot, type Step, transition } from '@tenonkit/machine'
 
 export interface Failure {
   code: 'TN015' | 'TN017'

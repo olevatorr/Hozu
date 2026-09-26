@@ -1,5 +1,5 @@
-import { buildProject, type Manifest } from '@tenon/core/ir'
-import { createHandler, type RenderModule } from '@tenon/runtime-server'
+import { buildProject, type Manifest } from '@tenonkit/core/ir'
+import { createHandler, type RenderModule } from '@tenonkit/runtime-server'
 import { createResolvers } from './server.ts'
 import project from './tenon.config.ts'
 

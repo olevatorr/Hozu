@@ -1,4 +1,4 @@
-import { mutation, query, tag } from '@tenon/core'
+import { mutation, query, tag } from '@tenonkit/core'
 import { z } from 'zod'
 
 export const savedTag = tag({ param: null })

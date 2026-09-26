@@ -5,8 +5,8 @@ import {
   type ProjectIR,
   type ValueExpr,
   type ViewNode,
-} from '@tenon/core/ir'
-import { getIn } from '@tenon/machine'
+} from '@tenonkit/core/ir'
+import { getIn } from '@tenonkit/machine'
 
 export interface Lowering {
   locale: string

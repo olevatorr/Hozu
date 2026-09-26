@@ -1,4 +1,4 @@
-import { resolveAt } from '@tenon/core/ir'
+import { resolveAt } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { featurePointer } from '../walk.ts'
 

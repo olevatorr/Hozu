@@ -1,4 +1,4 @@
-import type { MutationDecl, QueryDecl } from '@tenon/core'
+import type { MutationDecl, QueryDecl } from '@tenonkit/core'
 import {
   type BuildResult,
   canonicalStringify,
@@ -9,8 +9,8 @@ import {
   join,
   resolveSource,
   type TagExprIR,
-} from '@tenon/core/ir'
-import { compileValue, type Getter } from '@tenon/machine'
+} from '@tenonkit/core/ir'
+import { compileValue, type Getter } from '@tenonkit/machine'
 import { fail, failureOf, implementationOf, type ResolverSet, type Run, resolverSetOf } from './resolvers.ts'
 import type { MutationResult, Result, Stats } from './types.ts'
 

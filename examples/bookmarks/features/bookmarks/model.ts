@@ -1,4 +1,4 @@
-import { event, fn, invoke, machine, mutation, on, op, query, tag, ui } from '@tenon/core'
+import { event, fn, invoke, machine, mutation, on, op, query, tag, ui } from '@tenonkit/core'
 import { z } from 'zod'
 import { bookmarkPage, Show } from '../../routes.ts'
 

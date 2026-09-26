@@ -1,7 +1,7 @@
-import { createServer } from '@tenon/adapter-node'
-import { buildProject } from '@tenon/core/ir'
-import { compileStyles } from '@tenon/css'
-import { ogImage, optimizeImages } from '@tenon/image'
+import { createServer } from '@tenonkit/adapter-node'
+import { buildProject } from '@tenonkit/core/ir'
+import { compileStyles } from '@tenonkit/css'
+import { ogImage, optimizeImages } from '@tenonkit/image'
 import { createResolvers } from './server.ts'
 import project from './tenon.config.ts'
 

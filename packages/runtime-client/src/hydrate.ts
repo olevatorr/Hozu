@@ -1,5 +1,5 @@
-import type { FeatureIR, Json, MachineIR, ViewNode } from '@tenon/core/ir'
-import { compileMachine, type Snapshot } from '@tenon/machine'
+import type { FeatureIR, Json, MachineIR, ViewNode } from '@tenonkit/core/ir'
+import { compileMachine, type Snapshot } from '@tenonkit/machine'
 import { uploads } from './dom.ts'
 import {
   type App,

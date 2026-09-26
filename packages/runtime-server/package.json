@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/runtime-server",
+  "name": "@tenonkit/runtime-server",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -14,10 +14,10 @@
     "dist"
   ],
   "dependencies": {
-    "@tenon/compiler": "workspace:*",
-    "@tenon/core": "workspace:*",
-    "@tenon/data": "workspace:*",
-    "@tenon/machine": "workspace:*",
-    "@tenon/runtime-client": "workspace:*"
+    "@tenonkit/compiler": "workspace:*",
+    "@tenonkit/core": "workspace:*",
+    "@tenonkit/data": "workspace:*",
+    "@tenonkit/machine": "workspace:*",
+    "@tenonkit/runtime-client": "workspace:*"
   }
 }

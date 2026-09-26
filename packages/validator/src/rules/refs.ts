@@ -1,4 +1,4 @@
-import { type At, at, type ExportsIR, type JsonPatchOp, parsePointer, resolveAt } from '@tenon/core/ir'
+import { type At, at, type ExportsIR, type JsonPatchOp, parsePointer, resolveAt } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { candidatesFor, registriesOf, resolveRef, splitRef } from '../resolve.ts'
 import { refSites } from '../sites.ts'

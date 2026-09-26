@@ -7,7 +7,7 @@ import {
   type QueryIR,
   type ValueExpr,
   type ViewNode,
-} from '@tenon/core/ir'
+} from '@tenonkit/core/ir'
 
 export type Mode = 'static' | 'isr' | 'swr' | 'request'
 

@@ -1,4 +1,4 @@
-import { op, ui } from '@tenon/core'
+import { op, ui } from '@tenonkit/core'
 import { about, home } from '../../routes.ts'
 import { pick, slideLabel, slides, stats } from './effects.ts'
 import {

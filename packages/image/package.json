@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/image",
+  "name": "@tenonkit/image",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -14,7 +14,7 @@
     "dist"
   ],
   "dependencies": {
-    "@tenon/core": "workspace:*",
+    "@tenonkit/core": "workspace:*",
     "sharp": "0.35.4"
   }
 }

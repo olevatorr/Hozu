@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/css",
+  "name": "@tenonkit/css",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -15,8 +15,8 @@
   ],
   "dependencies": {
     "@tailwindcss/node": "4.3.3",
-    "@tenon/core": "workspace:*",
-    "@tenon/validator": "workspace:*",
+    "@tenonkit/core": "workspace:*",
+    "@tenonkit/validator": "workspace:*",
     "tailwindcss": "4.3.3"
   }
 }

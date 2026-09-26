@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
-import * as core from '@tenon/core'
-import { buildProject } from '@tenon/core/ir'
+import * as core from '@tenonkit/core'
+import { buildProject } from '@tenonkit/core/ir'
 import { Ajv } from 'ajv'
 import { describe, expect, it } from 'vitest'
 import cartProject from '../../../examples/cart/tenon.config.ts'
@@ -53,11 +53,11 @@ describe('IR JSON Schema', () => {
 
 describe('P4 dependencies', () => {
   it.each(['core', 'machine', 'data', 'compiler', 'runtime-client', 'validator', 'cli', 'dev'])(
-    '@tenon/%s has no third-party runtime dependencies',
+    '@tenonkit/%s has no third-party runtime dependencies',
     (pkg) => {
       const manifest = JSON.parse(read(`packages/${pkg}/package.json`))
       const deps = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies })
-      expect(deps.filter((d) => !d.startsWith('@tenon/'))).toEqual([])
+      expect(deps.filter((d) => !d.startsWith('@tenonkit/'))).toEqual([])
     },
   )
 })

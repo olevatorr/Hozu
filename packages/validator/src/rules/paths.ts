@@ -7,7 +7,7 @@ import {
   type RefSource,
   resolveAt,
   type ValueExpr,
-} from '@tenon/core/ir'
+} from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { contextEnv, type Env, schemaIn, triggerEnv, valueSchema } from '../env.ts'
 import { itemsOf, resolvePath } from '../schema.ts'

@@ -1,4 +1,4 @@
-import { resolvers } from '@tenon/data'
+import { resolvers } from '@tenonkit/data'
 import { byTag, byYear, listPage, listTags, listYears } from './features/feed/effects.ts'
 import project from './tenon.config.ts'
 

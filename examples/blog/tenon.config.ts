@@ -1,5 +1,5 @@
-import { project, ui } from '@tenon/core'
-import { zodAdapter } from '@tenon/schema-zod'
+import { project, ui } from '@tenonkit/core'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import { z } from 'zod'
 import { getPost, listPosts } from './features/posts/effects.ts'
 import { posts } from './features/posts/feature.ts'

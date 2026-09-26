@@ -1,4 +1,4 @@
-import { at, resolveAt } from '@tenon/core/ir'
+import { at, resolveAt } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { resolveRef } from '../resolve.ts'
 import { closest, didYouMean } from '../suggest.ts'

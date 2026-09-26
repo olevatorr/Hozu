@@ -16,16 +16,16 @@
     "dev": "tenon-dev serve.ts"
   },
   "dependencies": {
-    "@tenon/adapter-node": "workspace:*",
-    "@tenon/adapter-static": "workspace:*",
-    "@tenon/cli": "workspace:*",
-    "@tenon/core": "workspace:*",
-    "@tenon/data": "workspace:*",
-    "@tenon/machine": "workspace:*",
-    "@tenon/runtime-client": "workspace:*",
-    "@tenon/schema-zod": "workspace:*",
+    "@tenonkit/adapter-node": "workspace:*",
+    "@tenonkit/adapter-static": "workspace:*",
+    "@tenonkit/cli": "workspace:*",
+    "@tenonkit/core": "workspace:*",
+    "@tenonkit/data": "workspace:*",
+    "@tenonkit/machine": "workspace:*",
+    "@tenonkit/runtime-client": "workspace:*",
+    "@tenonkit/schema-zod": "workspace:*",
     "zod": "4.6.5",
-    "@tenon/css": "workspace:*",
-    "@tenon/dev": "workspace:*"
+    "@tenonkit/css": "workspace:*",
+    "@tenonkit/dev": "workspace:*"
   }
 }

@@ -1,4 +1,4 @@
-import { query, tag } from '@tenon/core'
+import { query, tag } from '@tenonkit/core'
 import { z } from 'zod'
 import { Item, Page } from './schemas.ts'
 

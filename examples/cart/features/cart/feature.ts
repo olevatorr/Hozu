@@ -1,4 +1,4 @@
-import { feature } from '@tenon/core'
+import { feature } from '@tenonkit/core'
 import { catalog } from '../catalog/feature.ts'
 import {
   addFailsUnexpectedly,

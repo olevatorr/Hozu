@@ -1,4 +1,4 @@
-import { type ProjectIR, publicPath } from '@tenon/core/ir'
+import { type ProjectIR, publicPath } from '@tenonkit/core/ir'
 
 const iconType = (href: string) =>
   href.endsWith('.svg')

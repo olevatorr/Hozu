@@ -1,4 +1,4 @@
-import { op, ui } from '@tenon/core'
+import { op, ui } from '@tenonkit/core'
 import { archive, home, tag } from '../../routes.ts'
 import { byTag, byYear, listPage } from './effects.ts'
 import { More } from './events.ts'

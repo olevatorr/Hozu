@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
-import { buildProject } from '@tenon/core/ir'
-import { compileMachine } from '@tenon/machine'
-import { motion, mount, type Payload, payloadKey, type Result } from '@tenon/runtime-client'
+import { buildProject } from '@tenonkit/core/ir'
+import { compileMachine } from '@tenonkit/machine'
+import { motion, mount, type Payload, payloadKey, type Result } from '@tenonkit/runtime-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import cartProject from '../../../examples/cart/tenon.config.ts'
 

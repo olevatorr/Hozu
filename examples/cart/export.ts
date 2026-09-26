@@ -1,6 +1,6 @@
-import { exportStatic } from '@tenon/adapter-static'
-import { buildProject } from '@tenon/core/ir'
-import { compileStyles } from '@tenon/css'
+import { exportStatic } from '@tenonkit/adapter-static'
+import { buildProject } from '@tenonkit/core/ir'
+import { compileStyles } from '@tenonkit/css'
 import { createResolvers } from './server.ts'
 import project from './tenon.config.ts'
 

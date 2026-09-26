@@ -1,5 +1,5 @@
-import type { MachineIR } from '@tenon/core/ir'
-import type { Snapshot } from '@tenon/machine'
+import type { MachineIR } from '@tenonkit/core/ir'
+import type { Snapshot } from '@tenonkit/machine'
 import type { App } from './mount.ts'
 
 const KEY = 'tenon:snapshots'

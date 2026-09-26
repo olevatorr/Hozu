@@ -1,6 +1,6 @@
-import { buildProject, routePattern } from '@tenon/core/ir'
-import { pathOf } from '@tenon/machine'
-import { matcher } from '@tenon/runtime-server'
+import { buildProject, routePattern } from '@tenonkit/core/ir'
+import { pathOf } from '@tenonkit/machine'
+import { matcher } from '@tenonkit/runtime-server'
 import { describe, expect, it } from 'vitest'
 import project from '../../../examples/feed/tenon.config.ts'
 

@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises'
-import type { Infer, Schema } from '@tenon/core'
-import { toParse } from '@tenon/core/ir'
+import type { Infer, Schema } from '@tenonkit/core'
+import { toParse } from '@tenonkit/core/ir'
 import { Marked, type Tokens } from 'marked'
 import { parse as parseYaml } from 'yaml'
 

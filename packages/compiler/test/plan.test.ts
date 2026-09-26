@@ -1,5 +1,5 @@
-import { planRoute, softTargets } from '@tenon/compiler'
-import { buildProject, type QueryNode } from '@tenon/core/ir'
+import { planRoute, softTargets } from '@tenonkit/compiler'
+import { buildProject, type QueryNode } from '@tenonkit/core/ir'
 import { describe, expect, it } from 'vitest'
 import cartProject from '../../../examples/cart/tenon.config.ts'
 

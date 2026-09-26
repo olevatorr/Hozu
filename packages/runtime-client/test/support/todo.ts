@@ -1,5 +1,5 @@
-import { contract, event, feature, fn, machine, on, op, project, route, ui } from '@tenon/core'
-import { zodAdapter } from '@tenon/schema-zod'
+import { contract, event, feature, fn, machine, on, op, project, route, ui } from '@tenonkit/core'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import { z } from 'zod'
 
 const Item = z.object({ id: z.string(), title: z.string() })

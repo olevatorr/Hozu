@@ -1,4 +1,4 @@
-import { event, invoke, machine, on, op } from '@tenon/core'
+import { event, invoke, machine, on, op } from '@tenonkit/core'
 import { z } from 'zod'
 import { savePost, unsavePost } from './effects.ts'
 

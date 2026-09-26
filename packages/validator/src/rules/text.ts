@@ -6,7 +6,7 @@ import {
   type JsonSchema,
   type ValueExpr,
   type ViewNode,
-} from '@tenon/core/ir'
+} from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { eventSchema } from '../env.ts'
 import { resolvePath } from '../schema.ts'

@@ -1,10 +1,10 @@
-import { ContentError, loadCollection, parseCollection } from '@tenon/content'
+import { ContentError, loadCollection, parseCollection } from '@tenonkit/content'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
 const Front = z.object({ title: z.string(), draft: z.boolean().default(false) })
 
-describe('@tenon/content (ADR 0020)', () => {
+describe('@tenonkit/content (ADR 0020)', () => {
   it('parses front matter with the schema, renders GFM and collects heading ids', () => {
     const [entry] = parseCollection({
       files: {

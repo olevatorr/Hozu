@@ -1,6 +1,6 @@
-import { buildProject } from '@tenon/core/ir'
-import { createDataRuntime } from '@tenon/data'
-import { renderToString } from '@tenon/runtime-server'
+import { buildProject } from '@tenonkit/core/ir'
+import { createDataRuntime } from '@tenonkit/data'
+import { renderToString } from '@tenonkit/runtime-server'
 import { benchProject, benchResolvers } from './apps/tenon.ts'
 
 const build = buildProject(benchProject, { sources: false })

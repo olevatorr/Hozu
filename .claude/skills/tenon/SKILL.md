@@ -1,6 +1,6 @@
 ---
 name: tenon
-description: Build or change an app with the Tenon framework (packages @tenon/*, files like tenon.config.ts, features/*/model.ts, views.ts). Use it before writing any Tenon code. It is the complete authoring reference, so you do not need to read the framework source.
+description: Build or change an app with the Tenon framework (packages @tenonkit/*, files like tenon.config.ts, features/*/model.ts, views.ts). Use it before writing any Tenon code. It is the complete authoring reference, so you do not need to read the framework source.
 ---
 
 # Tenon authoring guide

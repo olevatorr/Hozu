@@ -1,5 +1,5 @@
-import type { Json } from '@tenon/core/ir'
-import { createHandler, type HandlerOptions } from '@tenon/runtime-server'
+import type { Json } from '@tenonkit/core/ir'
+import { createHandler, type HandlerOptions } from '@tenonkit/runtime-server'
 
 export interface TestPage {
   status: number

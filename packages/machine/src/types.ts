@@ -1,4 +1,4 @@
-import type { Json } from '@tenon/core/ir'
+import type { Json } from '@tenonkit/core/ir'
 
 export interface Snapshot {
   state: string

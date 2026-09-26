@@ -1,4 +1,4 @@
-import { op, ui } from '@tenon/core'
+import { op, ui } from '@tenonkit/core'
 import { PublicEnv } from '../../env.ts'
 import { listProducts } from '../catalog/effects.ts'
 import { cartTotal, getCart } from './effects.ts'

@@ -1,4 +1,4 @@
-import { planRoute, type RoutePlan, softTargets } from '@tenon/compiler'
+import { planRoute, type RoutePlan, softTargets } from '@tenonkit/compiler'
 import {
   type BuildResult,
   canonicalStringify,
@@ -13,11 +13,11 @@ import {
   type ValueExpr,
   type ViewNode,
   type WidgetIR,
-} from '@tenon/core/ir'
-import type { DataRuntime } from '@tenon/data'
-import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '@tenon/machine'
-import type { PagePayload, Result } from '@tenon/runtime-client'
-import { attrText, text } from '@tenon/runtime-client'
+} from '@tenonkit/core/ir'
+import type { DataRuntime } from '@tenonkit/data'
+import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '@tenonkit/machine'
+import type { PagePayload, Result } from '@tenonkit/runtime-client'
+import { attrText, text } from '@tenonkit/runtime-client'
 import { escapeHtml, scriptJson, scriptSafe } from './escape.ts'
 import { CLOSE, OPEN, renderKey, separated } from './generate.ts'
 import { responsive, type Variants } from './images.ts'

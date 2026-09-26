@@ -8,12 +8,12 @@
     "serve": "node serve.ts"
   },
   "dependencies": {
-    "@tenon/adapter-node": "workspace:*",
-    "@tenon/cli": "workspace:*",
-    "@tenon/core": "workspace:*",
-    "@tenon/css": "workspace:*",
-    "@tenon/data": "workspace:*",
-    "@tenon/schema-zod": "workspace:*",
+    "@tenonkit/adapter-node": "workspace:*",
+    "@tenonkit/cli": "workspace:*",
+    "@tenonkit/core": "workspace:*",
+    "@tenonkit/css": "workspace:*",
+    "@tenonkit/data": "workspace:*",
+    "@tenonkit/schema-zod": "workspace:*",
     "zod": "4.6.5"
   }
 }

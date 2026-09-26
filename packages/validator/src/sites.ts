@@ -1,4 +1,11 @@
-import { type At, at, type FeatureIR, type GuardExpr, type ProjectIR, type ValueExpr } from '@tenon/core/ir'
+import {
+  type At,
+  at,
+  type FeatureIR,
+  type GuardExpr,
+  type ProjectIR,
+  type ValueExpr,
+} from '@tenonkit/core/ir'
 import type { RefKind } from './resolve.ts'
 import { featurePointer, transitionsOf, walkView } from './walk.ts'
 

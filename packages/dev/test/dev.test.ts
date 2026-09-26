@@ -3,7 +3,7 @@ import { get } from 'node:http'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { dev } from '@tenon/dev'
+import { dev } from '@tenonkit/dev'
 import { describe, expect, it } from 'vitest'
 
 const freePort = () =>

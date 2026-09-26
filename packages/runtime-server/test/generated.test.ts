@@ -1,7 +1,7 @@
-import type { ProjectDecl } from '@tenon/core'
-import { buildProject, type Json } from '@tenon/core/ir'
-import { createDataRuntime, resolvers } from '@tenon/data'
-import { pageEntries, renderToString } from '@tenon/runtime-server'
+import type { ProjectDecl } from '@tenonkit/core'
+import { buildProject, type Json } from '@tenonkit/core/ir'
+import { createDataRuntime, resolvers } from '@tenonkit/data'
+import { pageEntries, renderToString } from '@tenonkit/runtime-server'
 import { describe, expect, it } from 'vitest'
 import { escapeHtml } from '../src/escape.ts'
 import type { Variants } from '../src/images.ts'
@@ -39,8 +39,8 @@ describe('generated render functions', () => {
 
 describe('generated source', () => {
   it('embeds IR strings as data, never as code', async () => {
-    const { event, feature, machine, on, op, project, route, ui } = await import('@tenon/core')
-    const { zodAdapter } = await import('@tenon/schema-zod')
+    const { event, feature, machine, on, op, project, route, ui } = await import('@tenonkit/core')
+    const { zodAdapter } = await import('@tenonkit/schema-zod')
     const { z } = await import('zod')
     const hostile = `"'\`\${globalThis.pwned = 1}</script><!--    \\ */`
     const Ping = event({ payload: z.object({ v: z.string() }) })

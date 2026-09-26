@@ -9,7 +9,7 @@ import { devClient } from './client.ts'
 let bundle: string | null = null
 const devBundle = () =>
   (bundle ??= readFileSync(
-    fileURLToPath(import.meta.resolve('@tenon/runtime-client/browser-dev/client.js')),
+    fileURLToPath(import.meta.resolve('@tenonkit/runtime-client/browser-dev/client.js')),
     'utf8',
   ))
 

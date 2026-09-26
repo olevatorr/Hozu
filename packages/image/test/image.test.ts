@@ -4,13 +4,13 @@ import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { createServer } from '@tenon/adapter-node'
-import { feature, project, route, ui } from '@tenon/core'
-import { buildProject, type Manifest } from '@tenon/core/ir'
-import { resolvers } from '@tenon/data'
-import { optimizeImages } from '@tenon/image'
-import { createHandler } from '@tenon/runtime-server'
-import { zodAdapter } from '@tenon/schema-zod'
+import { createServer } from '@tenonkit/adapter-node'
+import { feature, project, route, ui } from '@tenonkit/core'
+import { buildProject, type Manifest } from '@tenonkit/core/ir'
+import { resolvers } from '@tenonkit/data'
+import { optimizeImages } from '@tenonkit/image'
+import { createHandler } from '@tenonkit/runtime-server'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import { chromium } from 'playwright-core'
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
@@ -43,7 +43,7 @@ const site = project({
 const build = buildProject(site, { sources: false })
 const chrome = process.env.CHROMIUM_PATH ?? chromium.executablePath()
 
-describe('@tenon/image (ADR 0017)', () => {
+describe('@tenonkit/image (ADR 0017)', () => {
   it('generates WebP widths up to the intrinsic width for raster <img> assets only', async () => {
     const images = await optimizeImages(build)
     const [hero] = Object.keys(images.variants)
@@ -96,7 +96,7 @@ describe('@tenon/image (ADR 0017)', () => {
     30_000,
   )
 
-  it('tenon build picks @tenon/image up from the project and the manifest carries the variants', async () => {
+  it('tenon build picks @tenonkit/image up from the project and the manifest carries the variants', async () => {
     const blog = fileURLToPath(new URL('../../../examples/blog/', import.meta.url))
     const cli = fileURLToPath(new URL('../../cli/bin/tenon.js', import.meta.url))
     const out = mkdtempSync(join(tmpdir(), 'tenon-blog-dist-'))

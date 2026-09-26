@@ -1,5 +1,5 @@
-import { project, ui } from '@tenon/core'
-import { zodAdapter } from '@tenon/schema-zod'
+import { project, ui } from '@tenonkit/core'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import { z } from 'zod'
 import { PublicEnv, ServerEnv } from './env.ts'
 import { cart } from './features/cart/feature.ts'

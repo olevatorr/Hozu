@@ -1,5 +1,5 @@
-import { contract, event, feature, machine, on, op, project, query, route, ui } from '@tenon/core'
-import { zodAdapter } from '@tenon/schema-zod'
+import { contract, event, feature, machine, on, op, project, query, route, ui } from '@tenonkit/core'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import { z } from 'zod'
 
 const Draft = event({ payload: z.object({ text: z.string() }) })

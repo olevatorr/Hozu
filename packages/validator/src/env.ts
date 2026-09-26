@@ -6,7 +6,7 @@ import {
   type RefSource,
   UNEXPECTED_ERROR_SCHEMA,
   type ValueExpr,
-} from '@tenon/core/ir'
+} from '@tenonkit/core/ir'
 import { resolveRef } from './resolve.ts'
 import { resolvePath } from './schema.ts'
 

@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
-import { buildProject } from '@tenon/core/ir'
-import { createDataRuntime, resolvers } from '@tenon/data'
-import { type App, hydrate } from '@tenon/runtime-client'
-import { renderToString } from '@tenon/runtime-server'
-import { validate } from '@tenon/validator'
+import { buildProject } from '@tenonkit/core/ir'
+import { createDataRuntime, resolvers } from '@tenonkit/data'
+import { type App, hydrate } from '@tenonkit/runtime-client'
+import { renderToString } from '@tenonkit/runtime-server'
+import { validate } from '@tenonkit/validator'
 import { beforeEach, describe, expect, it } from 'vitest'
 import project from './support/todo.ts'
 

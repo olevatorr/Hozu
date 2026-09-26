@@ -1,4 +1,4 @@
-import { type At, anyRef, at, resolveAt, type ValueExpr, type ViewNode } from '@tenon/core/ir'
+import { type At, anyRef, at, resolveAt, type ValueExpr, type ViewNode } from '@tenonkit/core/ir'
 import type { Ctx } from '../context.ts'
 import { featurePointer } from '../walk.ts'
 

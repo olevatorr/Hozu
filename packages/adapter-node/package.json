@@ -1,5 +1,5 @@
 {
-  "name": "@tenon/adapter-node",
+  "name": "@tenonkit/adapter-node",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -13,10 +13,10 @@
     "dist"
   ],
   "dependencies": {
-    "@tenon/compiler": "workspace:*",
-    "@tenon/core": "workspace:*",
-    "@tenon/data": "workspace:*",
-    "@tenon/runtime-client": "workspace:*",
-    "@tenon/runtime-server": "workspace:*"
+    "@tenonkit/compiler": "workspace:*",
+    "@tenonkit/core": "workspace:*",
+    "@tenonkit/data": "workspace:*",
+    "@tenonkit/runtime-client": "workspace:*",
+    "@tenonkit/runtime-server": "workspace:*"
   }
 }

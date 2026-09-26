@@ -1,4 +1,4 @@
-import { contract } from '@tenon/core'
+import { contract } from '@tenonkit/core'
 import {
   AddTodo,
   Draft,

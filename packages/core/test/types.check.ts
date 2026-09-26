@@ -11,8 +11,8 @@ import {
   query,
   route,
   ui,
-} from '@tenon/core'
-import { zodAdapter } from '@tenon/schema-zod'
+} from '@tenonkit/core'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import { z } from 'zod'
 
 const Item = z.object({ sku: z.string(), qty: z.number() })

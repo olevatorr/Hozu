@@ -1,6 +1,17 @@
-import { event, feature, invoke, machine, mutation, on, op, type ProjectDecl, project, ui } from '@tenon/core'
-import { buildProject, hashJson } from '@tenon/core/ir'
-import { zodAdapter } from '@tenon/schema-zod'
+import {
+  event,
+  feature,
+  invoke,
+  machine,
+  mutation,
+  on,
+  op,
+  type ProjectDecl,
+  project,
+  ui,
+} from '@tenonkit/core'
+import { buildProject, hashJson } from '@tenonkit/core/ir'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'

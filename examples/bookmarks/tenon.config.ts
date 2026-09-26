@@ -1,5 +1,5 @@
-import { project, ui } from '@tenon/core'
-import { zodAdapter } from '@tenon/schema-zod'
+import { project, ui } from '@tenonkit/core'
+import { zodAdapter } from '@tenonkit/schema-zod'
 import { getBookmark, listBookmarks } from './features/bookmarks/model.ts'
 import { Board, bookmarks, Detail } from './features/bookmarks/views.ts'
 import { bookmarkPage, home } from './routes.ts'

@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises'
-import type { BuildResult, ImageSet, ProjectIR } from '@tenon/core/ir'
+import type { BuildResult, ImageSet, ProjectIR } from '@tenonkit/core/ir'
 import sharp from 'sharp'
 
 export const WIDTHS = [640, 960, 1280, 1920]

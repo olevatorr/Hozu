@@ -1,4 +1,4 @@
-import { machine, on, op } from '@tenon/core'
+import { machine, on, op } from '@tenonkit/core'
 import { More } from './events.ts'
 import { Context } from './schemas.ts'
 

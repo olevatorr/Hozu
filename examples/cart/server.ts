@@ -1,4 +1,4 @@
-import { resolvers } from '@tenon/data'
+import { resolvers } from '@tenonkit/data'
 import { addItem, checkout, getCart, removeItem } from './features/cart/effects.ts'
 import { getProduct, listProducts } from './features/catalog/effects.ts'
 import project from './tenon.config.ts'

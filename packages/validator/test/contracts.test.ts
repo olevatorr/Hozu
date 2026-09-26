@@ -1,6 +1,6 @@
-import type { DiagnosticCode, ProjectIR, ValueExpr } from '@tenon/core/ir'
-import { compileMachine } from '@tenon/machine'
-import { type Lockfile, runContract, verify } from '@tenon/validator'
+import type { DiagnosticCode, ProjectIR, ValueExpr } from '@tenonkit/core/ir'
+import { compileMachine } from '@tenonkit/machine'
+import { type Lockfile, runContract, verify } from '@tenonkit/validator'
 import { describe, expect, it } from 'vitest'
 import { cartBuild, cartIR } from './support/cart.ts'
 
