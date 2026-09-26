@@ -19,13 +19,20 @@ interface NavigateEvent extends Event {
 const HEAD =
   'title,meta[name=description],meta[name=robots],link[rel=canonical],meta[property],script[type="application/ld+json"]'
 
+const groups: Record<string, string> = { '?': '(?:/[^/]+)?', '+': '(?:/[^/]+)+', '*': '(?:/[^/]+)*' }
+
 const patternOf = (path: string) => {
   let keys = 0
-  const source = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/:[A-Za-z][A-Za-z0-9_]*/g, () => {
-    keys++
-    return '[^/]+'
-  })
-  return { pattern: new RegExp(`^${source}/?$`), keys }
+  const source = path
+    .split(/(\/:[A-Za-z]\w*[?*+]?)/)
+    .map((part, i) => {
+      if (i % 2 === 0) return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const mod = part.at(-1)!
+      keys += mod === '+' || mod === '*' ? 1.01 : 1
+      return groups[mod] ?? '/[^/]+'
+    })
+    .join('')
+  return { pattern: new RegExp(`^${source.replace(/\/$/, '')}/?$`), keys }
 }
 
 export function routeOf(routes: Record<string, string>, pathname: string): string | null {

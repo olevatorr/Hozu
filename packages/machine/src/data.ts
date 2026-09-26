@@ -40,10 +40,14 @@ export function equal(a: Json | undefined, b: Json | undefined): boolean {
 
 export const pathOf = (pattern: string, params: Json | undefined, search?: Json): string => {
   const [route = '', defaults = ''] = pattern.split('?')
-  const path = route.replace(/:([A-Za-z][A-Za-z0-9_]*)/g, (_, key: string) => {
-    const x = getIn(params, [key])
-    return encodeURIComponent(x === null || typeof x === 'object' ? '' : String(x))
-  })
+  const path =
+    route.replace(/\/:([A-Za-z]\w*)[?*+]?/g, (_, key: string) => {
+      const x = getIn(params, [key])
+      return [x ?? []]
+        .flat()
+        .map((s) => `/${encodeURIComponent(String(s))}`)
+        .join('')
+    }) || '/'
   const skip = defaults.split('&')
   let q = ''
   if (search && typeof search === 'object')

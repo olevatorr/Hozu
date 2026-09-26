@@ -383,6 +383,18 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'a multi-segment route param typed as one string',
+    code: 'TN024',
+    mutate: (ir) => {
+      ir.routes.orderPlaced!.path = '/order/:rest+'
+      ir.routes.orderPlaced!.params = {
+        type: 'object',
+        properties: { rest: { type: 'string' } },
+        required: ['rest'],
+      }
+    },
+  },
+  {
     name: 'state with no way out',
     code: 'TN010',
     mutate: (ir) => {

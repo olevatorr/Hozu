@@ -110,7 +110,13 @@ export async function hydrate(
   const widgets: Record<string, WidgetRef> = {}
   const routes: Record<string, string> = {}
   const liveKeys = new Map<string, LiveQuery>()
-  const loaded: { motion?: Motion; mountWidget?: MountWidget; fns?: boolean; live?: boolean } = {}
+  const loaded: {
+    motion?: Motion
+    mountWidget?: MountWidget
+    fns?: boolean
+    live?: boolean
+    visible?: boolean
+  } = {}
   const inflight = new Map<string, Promise<Result>>()
   const onQuery = (q: string, input: Json) => {
     const key = q + JSON.stringify(input)
@@ -134,8 +140,9 @@ export async function hydrate(
     doc,
     apps,
     async mount(payload, markers) {
-      if (!loaded.motion && JSON.stringify(payload.nodes).includes('"motion":"'))
-        loaded.motion = await import('./motion.ts')
+      const nodes = JSON.stringify(payload.nodes)
+      if (!loaded.motion && nodes.includes('"motion":"')) loaded.motion = await import('./motion.ts')
+      if (nodes.includes('"visible":')) void import('./visible.ts').then((m) => m.watch(doc))
       if (!loaded.mountWidget && Object.keys(payload.widgets).length)
         loaded.mountWidget = (await import('./widget.ts')).mountWidget
       if (!loaded.fns && payload.fns) {
@@ -180,7 +187,7 @@ export async function hydrate(
         if (at?.parentNode && node)
           apps.get(island.feature)?.attach(at.parentNode, at.nextSibling, node, island.scope, true)
       })
-      for (const app of apps.values()) if (!created.includes(app)) app.sync()
+      for (const app of apps.values()) app.sync()
       for (const app of created) app.start()
       for (const [key, l] of Object.entries(payload.live ?? {})) liveKeys.set(key, l)
       if (liveKeys.size && !loaded.live) {

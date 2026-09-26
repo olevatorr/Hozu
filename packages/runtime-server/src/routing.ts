@@ -1,4 +1,4 @@
-import type { BuildResult, Json } from '@tenon/core/ir'
+import { type BuildResult, type Json, routeParams, routePattern } from '@tenon/core/ir'
 
 export interface Match {
   route: string
@@ -6,34 +6,26 @@ export interface Match {
 }
 
 export function patternOf(path: string): { keys: string[]; pattern: RegExp } {
-  const keys: string[] = []
-  const source = path
-    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    .replace(/:([A-Za-z][A-Za-z0-9_]*)/g, (_, k: string) => {
-      keys.push(k)
-      return '([^/]+)'
-    })
-    .replace(/\/$/, '')
-  return { keys, pattern: new RegExp(`^${source}/?$`) }
+  const { keys, pattern } = routePattern(path)
+  return { keys: keys.map((k) => k.name), pattern }
 }
 
 export function matcher(build: BuildResult): (pathname: string) => Match | null {
   const table = Object.entries(build.ir.routes)
     .filter(([id]) => build.ir.pages[id])
-    .map(([id, r]) => ({ id, ...patternOf(r.path), hasParams: r.params !== null }))
-    .sort((a, b) => a.keys.length - b.keys.length)
+    .map(([id, r]) => {
+      const { keys, pattern } = routePattern(r.path)
+      const many = keys.filter((k) => k.mod === '+' || k.mod === '*').length
+      return { id, keys, pattern, hasParams: r.params !== null, rank: keys.length * 100 + many }
+    })
+    .sort((a, b) => a.rank - b.rank)
   return (pathname) => {
     for (const { id, keys, pattern, hasParams } of table) {
       const m = pattern.exec(pathname)
       if (!m) continue
       if (!hasParams) return { route: id, params: null }
-      let params: Record<string, string>
-      try {
-        params = Object.fromEntries(keys.map((k, i) => [k, decodeURIComponent(m[i + 1]!)]))
-      } catch {
-        continue
-      }
-      if (build.bindings.checks[`#route:${id}`]?.(params)) continue
+      const params = routeParams(keys, m)
+      if (!params || build.bindings.checks[`#route:${id}`]?.(params)) continue
       return { route: id, params }
     }
     return null

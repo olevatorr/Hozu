@@ -1,0 +1,13 @@
+{
+  "features": {
+    "feed": {
+      "idle/on/feed.More/0": {
+        "behavior": "5be54dc11631b6a3",
+        "contracts": {
+          "loadsNextPage": "c5ddf967f1067bac"
+        }
+      }
+    }
+  },
+  "version": 1
+}

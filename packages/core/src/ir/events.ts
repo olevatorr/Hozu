@@ -73,6 +73,7 @@ const toggle = ['open', 'newState'] as const
 const none = [] as const
 
 export const eventFields = {
+  visible: none,
   click: pointer,
   dblclick: pointer,
   contextmenu: pointer,

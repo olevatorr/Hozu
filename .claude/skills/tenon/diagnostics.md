@@ -19,7 +19,7 @@ around the rule.
 | TN018 | behaviour changed without a contract change | update the contracts, then `--update-lock` |
 | TN021 | a query or mutation without a resolver | `implement(...)` it in server.ts |
 | TN022 | user data in a cacheable region | keep `scope: 'user'` queries out of cached pages |
-| TN024 / TN025 | route params mismatch / page with params but no `entries` | align them / add `entries` |
+| TN024 / TN025 | route params mismatch (keys, or a schema that does not fit `:x?`/`:x+`/`:x*`) / page with params but no `entries` | align them / add `entries` |
 | TN026 | a class produces no CSS | fix the Tailwind class |
 | TN027 | a DOM field used outside an event, or wrong for this event | read `ui.dom.*` only in `ui.send` payloads |
 | TN028 | `img` without width/height | add both |

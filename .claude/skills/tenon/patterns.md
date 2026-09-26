@@ -41,3 +41,9 @@ Each pattern is used in `examples/bookmarks`.
   state with `html[data-tenon-navigating]`.
 - **Two languages** (used in `examples/blog`): `site.locales`, one `ui.messages` per feature, a language switcher of
   `ui.a({ href: ui.alternate('en'), hreflang: 'en', lang: 'en' }, ['English'])` links, and `ui.format.date` for dates.
+- **Load more / infinite scroll** (used in `examples/feed`): context `{ cursors: [null], last: null }`;
+  `ui.each(ctx.cursors, null, (cursor) => ui.query(listPage, { cursor }, { ready: (page) => ... }))`; in the last page
+  (`op.and(op.eq(cursor, ctx.last), op.neq(page.next, null))`) render a button with `on: { click: ui.send(More,
+  { cursor: page.next }) }` and a sentinel `ui.div({ class: 'h-px', on: { visible: ui.send(More, …) } }, [])`.
+  `More` appends the cursor and sets `last`, guarded by `op.and(op.neq(ctx.last, e.cursor), op.neq(e.cursor, null))`
+  so a page loads once. It needs JS; a list that must work without JS pages through `search` links.

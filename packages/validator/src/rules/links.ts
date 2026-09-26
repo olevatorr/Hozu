@@ -1,19 +1,13 @@
-import { type At, at, type ProjectIR, resolveAt } from '@tenon/core/ir'
+import { type At, at, type ProjectIR, resolveAt, routeParams, routePattern } from '@tenon/core/ir'
 import type { Ctx } from '../context.ts'
 import { closest, didYouMean } from '../suggest.ts'
 import { walkView } from '../walk.ts'
 
 function matchRoute(ir: ProjectIR, pathname: string) {
   for (const [id, r] of Object.entries(ir.routes)) {
-    const keys: string[] = []
-    const source = r.path
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      .replace(/:([A-Za-z][A-Za-z0-9_]*)/g, (_, k: string) => {
-        keys.push(k)
-        return '([^/]+)'
-      })
-    const m = new RegExp(`^${source}/?$`).exec(pathname)
-    if (m) return { id, params: keys.length ? Object.fromEntries(keys.map((k, i) => [k, m[i + 1]!])) : null }
+    const { keys, pattern } = routePattern(r.path)
+    const m = pattern.exec(pathname)
+    if (m) return { id, params: keys.length ? routeParams(keys, m) : null }
   }
   return null
 }

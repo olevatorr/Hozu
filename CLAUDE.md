@@ -89,6 +89,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - Images (ADR 0017): optional `@tenon/image` (build-time, sharp) → `optimizeImages(build)` makes WebP widths for raster
   `<img src={ui.asset}>`; the renderer adds `srcset`/`sizes` (IR unchanged). `tenon build` uses it when the project
   can resolve it; otherwise images are served as-is.
+- Route grammar (ADR 0018): URLPattern modifiers `:x?` (nullable), `:x+`/`:x*` (string[]), one parser
+  (`routePattern` in core) for server, validator and speculation rules; TN024 checks the schema per modifier.
+  Load more = machine-held cursors + one `ui.query` per page (pattern, `examples/feed`); framework event `visible`
+  (lazy IntersectionObserver chunk, `data-tenon-visible` added at build).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head
@@ -109,6 +113,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `pnpm --filter example-blog validate|plan|seo|serve|dev` — SEO audit against adapter-node
 - `pnpm --filter example-cart dev` — dev server with CSS hot swap
 - `pnpm --filter example-showcase validate|serve|dev` — every presentation capability and widget library
+- `pnpm --filter example-feed validate|plan|serve` — cursor pagination, infinite scroll, `:x+` / `:x?` routes
 - `node bench/trial/accept.mjs <name> <dir> <entry> <port> [1|2]` — hidden acceptance of the AI trial app (docs/trials/0003)
 - `tenon validate --update-lock` — accept behavior changes into `tenon.lock.json` (only when clean)
 

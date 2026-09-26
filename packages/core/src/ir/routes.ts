@@ -36,3 +36,55 @@ export function publicPath(ir: ProjectIR, path: string, locale: string | null = 
   if (trailingSlash === 'always') return `${basePath}${bare}/`
   return `${basePath}${bare}` || '/'
 }
+
+export type RouteModifier = '' | '?' | '+' | '*'
+
+export interface RouteKey {
+  name: string
+  mod: RouteModifier
+}
+
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const groups: Record<RouteModifier, string> = {
+  '': '/([^/]+)',
+  '?': '(?:/([^/]+))?',
+  '+': '((?:/[^/]+)+)',
+  '*': '((?:/[^/]+)*)',
+}
+
+export function routePattern(path: string): { keys: RouteKey[]; pattern: RegExp; sample: string } {
+  const keys: RouteKey[] = []
+  let source = ''
+  let sample = ''
+  let last = 0
+  for (const m of path.matchAll(/\/:([A-Za-z][A-Za-z0-9_]*)([?*+]?)/g)) {
+    const literal = path.slice(last, m.index)
+    const mod = m[2] as RouteModifier
+    keys.push({ name: m[1]!, mod })
+    source += escapeRegExp(literal) + groups[mod]
+    sample += `${literal}/x`
+    last = m.index + m[0].length
+  }
+  const rest = path.slice(last)
+  return {
+    keys,
+    pattern: new RegExp(`^${(source + escapeRegExp(rest)).replace(/\/$/, '')}/?$`),
+    sample: sample + rest,
+  }
+}
+
+export function routeParams(keys: RouteKey[], match: RegExpExecArray): Record<string, Json> | null {
+  try {
+    return Object.fromEntries(
+      keys.map(({ name, mod }, i) => {
+        const raw = match[i + 1]
+        if (mod === '+' || mod === '*')
+          return [name, raw ? raw.slice(1).split('/').map(decodeURIComponent) : []]
+        return [name, raw === undefined ? null : decodeURIComponent(raw)]
+      }),
+    )
+  } catch {
+    return null
+  }
+}

@@ -91,6 +91,7 @@ function element(
   const children = (Array.isArray(d.children) ? d.children : []).map((c, i) =>
     node(scope, c, `${id}/${i}`, at(p, 'children', i), depth),
   )
+  if (on.visible) attrs['data-tenon-visible'] = { literal: '' }
   return { id, kind: 'el', tag: d.tag, class: cls, toggle, vars, attrs, on, children }
 }
 

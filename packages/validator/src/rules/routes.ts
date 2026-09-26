@@ -1,9 +1,17 @@
-import { anyRef, type JsonSchema, join, type ValueExpr } from '@tenon/core/ir'
+import { anyRef, type JsonSchema, join, routePattern, type ValueExpr } from '@tenon/core/ir'
 import type { Ctx } from '../context.ts'
 import { resolveRef } from '../resolve.ts'
 
 const placeholders = (path: string) =>
-  [...path.matchAll(/:([A-Za-z][A-Za-z0-9_]*)/g)].map((m) => m[1]!).sort()
+  routePattern(path)
+    .keys.map((k) => k.name)
+    .sort()
+
+const nullable = (s: JsonSchema): boolean =>
+  (Array.isArray(s.type) && s.type.includes('null')) ||
+  (['anyOf', 'oneOf'] as const).some(
+    (k) => Array.isArray(s[k]) && (s[k] as JsonSchema[]).some((v) => v.type === 'null'),
+  )
 
 const keysOf = (schema: JsonSchema | null) =>
   schema && typeof schema.properties === 'object' && schema.properties
@@ -30,6 +38,32 @@ export function routeParams(ctx: Ctx) {
           patch: null,
         },
       )
+    const props = (route.params?.properties ?? {}) as Record<string, JsonSchema>
+    for (const { name, mod } of routePattern(route.path).keys) {
+      const p = props[name]
+      if (!p) continue
+      const many = mod === '+' || mod === '*'
+      const wrong = many ? p.type !== 'array' : mod === '?' ? !nullable(p) : p.type === 'array'
+      if (!wrong) continue
+      const pointer = join('', 'routes', id, 'params', 'properties', name)
+      const value = many
+        ? { type: 'array', items: { type: 'string' }, ...(mod === '+' ? { minItems: 1 } : {}) }
+        : mod === '?'
+          ? { anyOf: [p, { type: 'null' }] }
+          : { type: 'string' }
+      ctx.report(
+        'TN024',
+        null,
+        pointer,
+        `Param "${name}" of ${route.path} is ${many ? 'several segments' : mod === '?' ? 'optional' : 'one segment'}, but its schema does not say so`,
+        ':name is a string, :name? a nullable string, :name+ and :name* an array of strings.',
+        {
+          summary: many ? 'z.array(z.string())' : mod === '?' ? 'Add .nullable()' : 'z.string()',
+          snippet: null,
+          patch: [{ op: 'replace', path: pointer, value }],
+        },
+      )
+    }
   }
   for (const [route, page] of Object.entries(ir.pages)) {
     page.views.forEach((ref, i) => {

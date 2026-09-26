@@ -67,6 +67,8 @@ the table at the end.
 // routes.ts
 export const home = route({ path: '/', params: null, search: z.object({ show: Show.default('all') }) })
 export const itemPage = route({ path: '/items/:id', params: z.object({ id: z.string() }), search: null })
+export const docs = route({ path: '/docs/:path+', params: z.object({ path: z.array(z.string()).min(1) }), search: null })
+// :x one segment (string) · :x? optional (nullable string) · :x+ one or more / :x* zero or more (string[]) — TN024
 // search: a flat object of scalars/enums, each with a default or nullable (TN035); null = no query string
 
 // events.ts: payloads are zod objects
@@ -145,7 +147,8 @@ export const Board = ui.view({
   - `class` is a **static** string of Tailwind classes that must exist (TN026).
   - Conditional classes go in `toggle: { 'bg-indigo-600 text-white': op.eq(ctx.tab, t) }`.
   - CSS variables go in `vars: { '--hue': item.hue }`. There is no `style`.
-- **Events**: `on: { click: ui.send(Event, payload) }` (any DOM event name). Payload values can be literals,
+- **Events**: `on: { click: ui.send(Event, payload) }` (any DOM event name, plus `visible`: the element entered the
+  viewport). Payload values can be literals,
   references, or DOM fields read at event time:
   - `ui.dom.value`: text. It may go into an enum field only from a `<select>` whose literal option values are
     all members (TN033).

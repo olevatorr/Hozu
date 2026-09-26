@@ -7,6 +7,8 @@ import {
   type Json,
   type Manifest,
   publicPath,
+  routeParams,
+  routePattern,
   routeTable,
 } from '@tenon/core/ir'
 import { createDataRuntime, type OnError, type ResolverSet } from '@tenon/data'
@@ -25,7 +27,7 @@ import {
   type Stylesheet,
   type WidgetBundle,
 } from './render.ts'
-import { matcher, patternOf } from './routing.ts'
+import { matcher } from './routing.ts'
 import { parseSearch } from './search.ts'
 import { type CspSources, contentSecurityPolicy, crossSite, ERROR_HTML } from './security.ts'
 import type { SessionStore } from './session.ts'
@@ -190,7 +192,7 @@ export function createHandler({
   const fnImpls = build.bindings.fns as Record<string, (x: never) => unknown>
 
   const redirectTable = redirects.map((r) => ({
-    ...patternOf(r.from),
+    ...routePattern(r.from),
     to: compileValue(r.to, fnImpls),
     params: 'link' in r.to ? compileValue(r.to.params, fnImpls) : null,
     target: 'link' in r.to ? r.to.link : null,
@@ -201,12 +203,8 @@ export function createHandler({
     for (const r of redirectTable) {
       const m = r.pattern.exec(path)
       if (!m) continue
-      let params: Record<string, string>
-      try {
-        params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1]!)]))
-      } catch {
-        return null
-      }
+      const params = routeParams(r.keys, m)
+      if (!params) return null
       const env = { params, routes: table }
       if (r.target && r.params && build.bindings.checks[`#route:${r.target}`]?.(r.params(env))) return null
       const to = String(r.to(env))

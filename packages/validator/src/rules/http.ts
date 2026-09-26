@@ -1,4 +1,4 @@
-import { join } from '@tenon/core/ir'
+import { join, routePattern } from '@tenon/core/ir'
 import type { Ctx } from '../context.ts'
 
 const RESERVED = new Set([
@@ -14,17 +14,10 @@ const RESERVED = new Set([
 const TOKEN = /^[a-z0-9!#$%&'*+.^_`|~-]+$/
 const BASE = /^(\/[A-Za-z0-9._~-]+)+$/
 
-const sample = (pattern: string) => pattern.replace(/:[A-Za-z][A-Za-z0-9_]*/g, 'x')
-
-const regex = (pattern: string) =>
-  new RegExp(
-    `^${pattern
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      .replace(/:[A-Za-z][A-Za-z0-9_]*/g, '[^/]+')
-      .replace(/\/$/, '')}/?$`,
-  )
-
-const overlaps = (a: string, b: string) => regex(a).test(sample(b)) || regex(b).test(sample(a))
+const overlaps = (a: string, b: string) => {
+  const [x, y] = [routePattern(a), routePattern(b)]
+  return x.pattern.test(y.sample) || y.pattern.test(x.sample)
+}
 
 export function httpRules(ctx: Ctx) {
   const { http } = ctx.ir
