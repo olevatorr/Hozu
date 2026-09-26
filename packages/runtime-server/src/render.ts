@@ -33,8 +33,11 @@ import {
   separated,
 } from './compile.ts'
 import { escapeHtml, scriptJson, scriptSafe } from './escape.ts'
+import { renderKey } from './generate.ts'
 import { responsive, type Variants } from './images.ts'
 import { type Lowering, localeFns, lowerCached, usesI18n } from './lower.ts'
+import { nodesById, type RenderRuntime, type RenderTable, renderTableFor } from './rendered.ts'
+import { pruneScope } from './shape.ts'
 
 export interface Assets {
   client: string
@@ -68,6 +71,8 @@ export interface RenderOptions {
   locale?: string | null
   images?: Variants | null
   env?: Json
+  render?: RenderTable
+  legacy?: boolean
 }
 
 export interface RenderedPage {
@@ -93,6 +98,8 @@ export async function renderPage({
   locale: requested = null,
   images = null,
   env = NO_ENV,
+  render: generated,
+  legacy = false,
 }: RenderOptions): Promise<RenderedPage> {
   const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
   const { ir, bindings } = build
@@ -166,7 +173,9 @@ export async function renderPage({
     }
   }
 
-  const open = (n: ViewNode, scope: Scope) => {
+  const open = (n: ViewNode, scope: Scope) => island(n, scope, pruneScope(n, scope.bindings))
+
+  const island = (n: ViewNode, scope: Scope, scoped: Json[]) => {
     let index = nodeIndex.get(n.id)
     if (index === undefined) {
       index = payload.ids.push(n.id) - 1
@@ -177,7 +186,6 @@ export async function renderPage({
       if (motion) payload.motion = true
       if (visible) payload.visible = true
     }
-    const scoped = pruneScope(n, scope.bindings)
     let lead = 0
     while (lead < scoped.length && scoped[lead] === null) lead++
     const tail = scoped.slice(lead)
@@ -246,8 +254,20 @@ export async function renderPage({
       if (w && url) payload.widgets[ref] ??= { url, tag: w.tag, load: w.load, wraps: w.wraps }
     },
   }
+  const table = legacy ? null : (generated ?? (await renderTableFor(build, images)))
+  const byId = legacy ? null : nodesById(build, images)
+  const generatedRuntime: RenderRuntime = {
+    island: (id, scope, scoped) => island(byId!.get(id)!, scope, scoped),
+    embed: runtime.embed,
+    widget: runtime.widget,
+  }
   const compiled = compiledFor(plan, fns)
   const sync = (n: ViewNode, scope: Scope, island: boolean, sep = false): string => {
+    if (table) {
+      const fn = table[renderKey(route, n.id, island, sep)]
+      if (!fn) throw new Error(`No generated render function for ${renderKey(route, n.id, island, sep)}`)
+      return fn(scope, generatedRuntime, fns)
+    }
     const cache = island ? compiled.inside : compiled.outside
     let frag = cache.get(n)
     if (frag === undefined) {
@@ -509,7 +529,6 @@ function loadsOf(n: ViewNode) {
   }
   return hit
 }
-const usesMemo = new WeakMap<ViewNode, Uses>()
 
 function planOf(ir: ProjectIR, route: string): RoutePlan {
   let byRoute = plans.get(ir)
@@ -524,99 +543,6 @@ function planOf(ir: ProjectIR, route: string): RoutePlan {
   }
   return plan
 }
-
-type Uses = Map<number, string[][]>
-
-const valueUses = (v: ValueExpr, out: Uses) =>
-  eachRef(v, (r) => {
-    if (r.ref !== 'binding') return
-    const paths = out.get(r.depth)
-    if (paths) paths.push(r.path)
-    else out.set(r.depth, [r.path])
-  })
-
-function bindingUses(n: ViewNode): Uses {
-  const hit = usesMemo.get(n)
-  if (hit) return hit
-  const out: Uses = new Map()
-  const walk = (x: ViewNode) => {
-    switch (x.kind) {
-      case 'text':
-        valueUses(x.value, out)
-        return
-      case 'if':
-        eachGuardRef(x.test, (r) => valueUses(r, out))
-        for (const c of [...x.ifTrue, ...x.ifFalse]) walk(c)
-        return
-      case 'html':
-        valueUses(x.value, out)
-        return
-      case 'global':
-        for (const k in x.on) valueUses(x.on[k]!.payload, out)
-        return
-      case 'widget':
-        valueUses(x.props, out)
-        for (const m of [x.toggle, x.vars]) for (const k in m) valueUses(m[k]!, out)
-        for (const k in x.on) valueUses(x.on[k]!.payload, out)
-        for (const c of x.children) walk(c)
-        return
-      case 'el':
-        for (const m of [x.attrs, x.toggle, x.vars]) for (const k in m) valueUses(m[k]!, out)
-        for (const k in x.on) valueUses(x.on[k]!.payload, out)
-        for (const c of x.children) walk(c)
-        return
-      case 'when':
-        for (const c of x.children) walk(c)
-        return
-      case 'each':
-        valueUses(x.source, out)
-        walk(x.item)
-        return
-      case 'query':
-        valueUses(x.input, out)
-        walk(x.ready)
-        if (x.pending) walk(x.pending)
-        for (const k in x.failed) walk(x.failed[k]!)
-        return
-      default:
-        return
-    }
-  }
-  walk(n)
-  usesMemo.set(n, out)
-  return out
-}
-
-type Shape = true | Map<string, Shape>
-
-const shapeOf = (paths: string[][]): Shape => {
-  const root = new Map<string, Shape>()
-  for (const path of paths) {
-    let at: Map<string, Shape> = root
-    for (let i = 0; i < path.length; i++) {
-      const next = at.get(path[i]!)
-      if (next === true) break
-      if (i === path.length - 1) at.set(path[i]!, true)
-      else if (next) at = next
-      else {
-        const child = new Map<string, Shape>()
-        at.set(path[i]!, child)
-        at = child
-      }
-    }
-    if (path.length === 0) return true
-  }
-  return root
-}
-
-const project = (value: Json, shape: Shape): Json => {
-  if (shape === true || typeof value !== 'object' || value === null || Array.isArray(value)) return value
-  const out: { [k: string]: Json } = {}
-  for (const [k, s] of shape) if (k in value) out[k] = project(value[k]!, s)
-  return out
-}
-
-const shapesMemo = new WeakMap<ViewNode, (Shape | null)[]>()
 
 const jsonMemo = new WeakMap<object, string>()
 
@@ -644,24 +570,6 @@ function payloadJson(payload: PagePayload): string {
     parts.push(`${JSON.stringify(k)}:${json}`)
   }
   return scriptSafe(`{${parts.join(',')}}`)
-}
-
-const pruneScope = (n: ViewNode, bindings: Json[]): Json[] => {
-  let shapes = shapesMemo.get(n)
-  if (!shapes) {
-    const uses = bindingUses(n)
-    shapes = bindings.map((_, i) => {
-      const paths = uses.get(i)
-      return paths ? shapeOf(paths) : null
-    })
-    shapesMemo.set(n, shapes)
-  }
-  const out: Json[] = []
-  for (let i = 0; i < bindings.length; i++) {
-    const shape = shapes[i]
-    out.push(shape ? project(bindings[i]!, shape) : null)
-  }
-  return out
 }
 
 interface Channel extends AsyncIterable<string> {
