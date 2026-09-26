@@ -16,6 +16,18 @@ await build({
   format: 'esm',
   platform: 'browser',
   target: 'es2022',
+  define: { 'globalThis.__TENON_DEV__': 'false' },
+})
+
+rmSync(dist('browser-dev'), { recursive: true, force: true })
+await build({
+  entryPoints: [dist('browser.js')],
+  outfile: dist('browser-dev/client.js'),
+  bundle: true,
+  format: 'esm',
+  platform: 'browser',
+  target: 'es2022',
+  define: { 'globalThis.__TENON_DEV__': 'true' },
 })
 
 const files = Object.fromEntries(

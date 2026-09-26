@@ -504,7 +504,11 @@ importers:
         specifier: workspace:*
         version: link:../machine
 
-  packages/dev: {}
+  packages/dev:
+    dependencies:
+      '@tenon/runtime-client':
+        specifier: workspace:*
+        version: link:../runtime-client
 
   packages/image:
     dependencies:

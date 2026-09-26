@@ -14,6 +14,10 @@ import type { mountWidget } from './widget.ts'
 
 type MountWidget = typeof mountWidget
 
+declare global {
+  var __TENON_DEV__: boolean | undefined
+}
+
 export interface IslandRef {
   feature: string
   node: string
@@ -136,6 +140,9 @@ export async function hydrate(
     if (refreshed.length) for (const app of apps.values()) app.sync()
     return result
   }
+  const dev = globalThis.__TENON_DEV__
+    ? { restore: (await import('./dev.ts')).restore(doc), machines: new Map<string, MachineIR | null>() }
+    : null
   const session: Session = {
     doc,
     apps,
@@ -158,12 +165,14 @@ export async function hydrate(
       const created: App[] = []
       for (const [id, machine] of Object.entries(payload.features)) {
         if (apps.has(id)) continue
+        const snapshot = (globalThis.__TENON_DEV__ && dev?.restore(id, machine)) || payload.snapshots?.[id]
+        if (globalThis.__TENON_DEV__) dev?.machines.set(id, machine)
         const app = createApp(doc, {
           machine: machine ? compileMachine({ id, machine } as FeatureIR, fns, routes) : null,
           payload: shared,
           params: payload.params,
           search: payload.search,
-          ...(payload.snapshots?.[id] ? { snapshot: payload.snapshots[id] } : {}),
+          ...(snapshot ? { snapshot } : {}),
           fns,
           widgets,
           routes,
@@ -206,6 +215,7 @@ export async function hydrate(
   while (walker.nextNode())
     if ((walker.currentNode as Comment).data === 'i') markers.push(walker.currentNode as Comment)
   await session.mount(payload, markers)
+  if (globalThis.__TENON_DEV__ && dev) (await import('./dev.ts')).expose(doc, apps, dev.machines)
   if (payload.soft) void import('./navigate.ts').then((m) => m.soft(session))
   return apps
 }

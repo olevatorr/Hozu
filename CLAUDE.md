@@ -49,8 +49,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `@tenon/cli`, `@tenon/adapter-node` (ISR page cache + tag revalidation), `@tenon/adapter-static`,
   `@tenon/css` (Tailwind v4 bound, compiled from the IR's class candidates, TN026, ADR 0009),
   `@tenon/dev` (dev server: CSS hot swap, reload on code changes), `@tenon/image` (optional WebP srcset, ADR 0017)
-- Every `@tenon/*` package except `@tenon/schema-zod`, `@tenon/css` (Tailwind), `@tenon/bundle` (esbuild) and
-  `@tenon/image` (sharp) has zero third-party runtime dependencies.
+- Every `@tenon/*` package except `@tenon/schema-zod`, `@tenon/css` (Tailwind), `@tenon/bundle` (esbuild),
+  `@tenon/image` (sharp) and `@tenon/content` (marked, yaml) has zero third-party runtime dependencies.
 - Views: every HTML/SVG element with per-tag typed attributes, all DOM events, `ui.dom.*` event fields (TN027),
   `class` (static) + `toggle` (guarded class groups) + `vars` (CSS custom properties). No `style`, no free
   functions. Stylesheets: `project({ styles })` Tailwind entry + `feature({ styles })`; classes must produce CSS
@@ -97,6 +97,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   in views, lowered for islands); every mutation has the framework error `Invalid` `{ message, fields }` (schema
   failures and `fail('Invalid', …)`), optional in `failed`, reserved as a declared name (TN014). Optimistic UI =
   render the in-flight value in the busy state. P7 budget 8 KiB; P2 exponent over 250–2000, 5 interleaved rounds.
+- Phase 8b (ADR 0020): `@tenon/css` adds size-adjusted local fallback faces for local font files (metrics from
+  head/hhea/OS/2, node:zlib only); `@tenon/content` (marked + yaml, server-side) = Markdown collections returned by
+  query resolvers; `@tenon/dev` serves a development client bundle (`globalThis.__TENON_DEV__`) that restores machine
+  snapshots across code reloads when the machine IR is unchanged (production bundle strips it).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

@@ -13,7 +13,8 @@
     "./files": {
       "types": "./files.d.ts",
       "default": "./dist/files.js"
-    }
+    },
+    "./browser-dev/*": "./dist/browser-dev/*"
   },
   "files": [
     "dist",

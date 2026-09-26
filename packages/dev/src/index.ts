@@ -1,9 +1,17 @@
 import { type ChildProcess, spawn } from 'node:child_process'
-import { type FSWatcher, statSync, watch } from 'node:fs'
+import { type FSWatcher, readFileSync, statSync, watch } from 'node:fs'
 import { createServer, request, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { devClient } from './client.ts'
+
+let bundle: string | null = null
+const devBundle = () =>
+  (bundle ??= readFileSync(
+    fileURLToPath(import.meta.resolve('@tenon/runtime-client/browser-dev/client.js')),
+    'utf8',
+  ))
 
 export interface DevOptions {
   entry: string
@@ -101,6 +109,10 @@ export async function dev({
     }
     if (req.url === '/_tenon/dev.js')
       return void res.writeHead(200, { 'content-type': 'text/javascript' }).end(devClient)
+    if (req.url?.split('?')[0]?.endsWith('/_tenon/client.js'))
+      return void res
+        .writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store' })
+        .end(devBundle())
     void ready.then(() => {
       const upstream = request(
         { host: '127.0.0.1', port: appPort, path: req.url, method: req.method, headers: req.headers },

@@ -78,3 +78,17 @@ None new. Invalid front matter is a startup error that names the file, like inva
 - **Reload:** in happy-dom, a stored snapshot is restored when the machine is unchanged and discarded when it
   changed. A dev-server test checks that `/_tenon/client.js` is the development bundle. The production bundle
   contains no `__TENON_DEV__` code (P7).
+
+## Implementation notes
+- **Fonts:** real Arial parses to `unitsPerEm` 2048 and `xAvgCharWidth` 904, and `ascent-override` 90.53%, the value
+  `next/font` uses for Arial. Lightning CSS drops the quotes around `"Inter Fallback"` in the `@font-face` rule,
+  which is valid CSS.
+- **Content:** `@tenon/content` 0.0.0 uses `marked` 18.0.14 and `yaml` 2.9.1. `toParse` (Standard Schema →
+  parsed value or issues) is now exported from `@tenon/core/ir` and shared with the environment (ADR 0019).
+- **Reload:** the development bundle is one file (no code splitting), so its dynamic imports are inlined.
+  - A snapshot in a state with an `invoke` is not restored: the effect would never run again, so the machine
+    would stay busy.
+  - In the production bundle the flag is replaced at each use, so minification removes the code. P7 moved
+    7,674 → 7,676 B. A single `const dev = null` was not enough (+54 B), because esbuild does not fold a constant
+    into later optional chains.
+

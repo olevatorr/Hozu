@@ -39,6 +39,7 @@ describe('dev server', () => {
     writeFileSync(join(dir, 'app.ts'), app)
     const server = await dev({ entry: 'app.ts', cwd: dir, port: 0, appPort: await freePort(), log: () => {} })
     try {
+      expect(await fetchText(`${server.url}/_tenon/client.js`)).toContain('tenon:snapshots')
       const html = await fetchText(`${server.url}/`)
       expect(html).toContain('<link rel="stylesheet" href="/s16.css">')
       expect(html).toContain('<script type="module" src="/_tenon/dev.js"></script></body>')

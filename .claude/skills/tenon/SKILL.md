@@ -277,6 +277,13 @@ User-scoped resolvers also receive `session`. Mutations can call `setSession(val
 - A strict CSP, `nosniff` and a cross-site POST check are on by default (`csp` adds sources, e.g.
   `{ script: ['https://analytics.example'] }`, or `false`).
 
+Markdown content: `@tenon/content` turns `content/posts/*.md` (YAML front matter checked by a schema) into
+`{ slug, data, html, headings }`: `const posts = await loadCollection({ dir: new URL('./content/posts/', import.meta.url),
+schema: Frontmatter })` at the top of `server.ts`, then return them from ordinary query resolvers; render the body
+with `ui.html(post.html)` (see `examples/blog`).
+
+Fonts: a local `@font-face` file in your CSS gets a size-matched `"<Family> Fallback"` automatically; nothing to write.
+
 Images: `ui.img({ src: ui.asset(new URL('./hero.jpg', import.meta.url)), alt, width, height })`. If the project
 installs `@tenon/image` (build-time, uses sharp), pass `images: await optimizeImages(build)` to `createServer` and
 `tenon build` does it on its own: raster `<img>` assets get WebP `srcset` widths and a `sizes` derived from `width`.
