@@ -122,7 +122,8 @@ shown when the network is down; a service worker is generated (HZ043: no params,
 
 ## Testing rendered pages
 `const app = testApp({ build, resolvers })` from `@hozu/testing`; `await app.get('/')` gives
-`{ status, headers, html, text, payload }`; `app.post(path, fields)` submits a native form.
+`{ status, headers, html, text, payload }`; `app.post(path, fields)` submits a native form. In a browser test (Playwright),
+wait for `html[data-hozu-ready]` before clicking: it is set when the page has hydrated.
 
 ## Deployment
 `hozu build` writes `dist/public/` (static files for any host or CDN) and `dist/manifest.json`. On Node:

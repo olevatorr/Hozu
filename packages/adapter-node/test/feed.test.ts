@@ -29,14 +29,9 @@ describe.skipIf(!existsSync(chrome))('feed in Chromium (ADR 0018)', () => {
       await page.evaluate(() => {
         ;(window as unknown as { __alive: boolean }).__alive = true
       })
-      const more = page.getByRole('button', { name: 'Load more' })
-      for (let i = 0; i < 20 && (await items()) < 20; i++) {
-        await more.click()
-        await page
-          .waitForFunction(() => document.querySelectorAll('main li').length >= 20, null, { timeout: 1500 })
-          .catch(() => undefined)
-      }
-      expect(await items()).toBe(20)
+      await page.waitForSelector('html[data-hozu-ready]')
+      await page.getByRole('button', { name: 'Load more' }).click()
+      await page.waitForFunction(() => document.querySelectorAll('main li').length === 20)
       expect(await page.getByRole('button', { name: 'Load more' }).count()).toBe(1)
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
       await page.waitForFunction(() => document.querySelectorAll('main li').length >= 30)

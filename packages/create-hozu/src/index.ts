@@ -106,6 +106,7 @@ export const packageJson = (name: string, version: string) => ({
   },
   devDependencies: {
     '@hozu/cli': `^${version}`,
+    '@hozu/testing': `^${version}`,
     '@types/node': '^22.20.4',
     typescript: '^7.0.2',
   },

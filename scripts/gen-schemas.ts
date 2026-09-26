@@ -50,6 +50,21 @@ export const targets = [
     type: 'SkillOutput',
     out: 'packages/cli/schema/skill.schema.json',
   },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'CheckOutput',
+    out: 'packages/cli/schema/check.schema.json',
+  },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'RequestOutput',
+    out: 'packages/cli/schema/request.schema.json',
+  },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'AddOutput',
+    out: 'packages/cli/schema/add.schema.json',
+  },
 ]
 
 export function generate(target: (typeof targets)[number]): string {

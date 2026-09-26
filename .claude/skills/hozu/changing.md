@@ -26,15 +26,13 @@ Whenever the machine changes:
 
 ## 3. Check (once, after all edits)
 ```
-pnpm exec tsc --noEmit -p . && pnpm exec hozu validate
+pnpm exec hozu check
 ```
-Fix what they report. When the behaviour change is intended and everything is clean, run
-`pnpm exec hozu validate --update-lock`. HZ018 asks for this.
+Fix what it reports. When the behaviour change is intended and everything is clean, run
+`pnpm exec hozu check --update-lock`. HZ018 asks for this.
 
-## 4. Verify (once)
-Start the server with `PORT=4700 node serve.ts & echo $!`, then use one curl script:
-- pages: `curl -s localhost:4700/…`;
-- mutations:
-  `curl -s -X POST localhost:4700/_hozu/effect -H 'content-type: application/json' -d '{"effect":"<feature>.<mutation>","input":{…},"keys":[]}'`.
-
-Stop the server with `kill <pid>`, not `pkill -f` (that kills your own shell).
+## 4. Verify (once, no server needed)
+- Pages: `pnpm exec hozu get / /items/i1` prints status, title, alerts and the visible text.
+- Forms: `pnpm exec hozu post / --field title=A --field kind=video --next /items` fills the form like a browser (other
+  fields keep their defaults), follows the redirect, then requests the next steps in the same process.
+- Chain what must share data: `--next 'POST / title=a'` (fields as `a=1&b=2`), `--next /items/i3`.

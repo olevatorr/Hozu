@@ -42,7 +42,7 @@ describe('create-hozu', () => {
     await createApp(dir, { ...base, agent: 'agents', runner: 'npx' })
     const guide = await readFile(join(dir, 'AGENTS.md'), 'utf8')
     expect(guide).toContain('Read `.agents/skills/hozu/SKILL.md` before writing')
-    expect(guide).toContain('npx hozu validate')
+    expect(guide).toContain('npx hozu check')
     expect(guide).toContain('in this app use `npx …`')
     expect(await has(join(dir, '.agents/skills/hozu/reference.md'))).toBe(true)
     expect(await has(join(dir, 'CLAUDE.md'))).toBe(false)

@@ -119,3 +119,38 @@ export interface BuildOutput {
 export interface SkillOutput {
   written: string[]
 }
+
+export interface TypeIssue {
+  file: string
+  line: number
+  column: number
+  code: string
+  message: string
+}
+
+export interface CheckOutput {
+  ok: boolean
+  types: { ok: boolean; skipped: boolean; errors: TypeIssue[] }
+  validate: ValidateOutput
+}
+
+export interface RequestStep {
+  method: 'GET' | 'POST'
+  path: string
+  status: number
+  location: string | null
+  title: string | null
+  alerts: string[]
+  text: string | null
+  truncated: boolean
+}
+
+export interface RequestOutput {
+  steps: RequestStep[]
+}
+
+export interface AddOutput {
+  created: string[]
+  edited: string[]
+  manual: string[]
+}

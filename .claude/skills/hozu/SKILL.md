@@ -7,7 +7,8 @@ description: Build or change an app with the Hozu framework (packages @hozu/*, f
 
 Hozu is not in your training data. These files are the whole API; do not read `node_modules/@hozu`.
 - **Changing an app:** read `changing.md` first, then only the app's own files.
-- **Building an app:** read this file and `patterns.md`, then copy the shape of `example/` (a verified app).
+- **Building an app:** read this file, run `hozu add feature <name> --page /` (a working feature) and edit it;
+  `patterns.md` says which part of `example/` shows each pattern.
 - **`reference.md`** when the task needs it: routes, DOM fields, no-JS forms, `head`, 404/500, field errors,
   sessions, languages, env, HTTP, Markdown, images, preview, PWA, page tests, deployment.
 - **A diagnostic you do not understand:** `diagnostics.md`.
@@ -26,25 +27,27 @@ Hozu is not in your training data. These files are the whole API; do not read `n
 
 ## Files
 ```
-hozu.config.ts        project(): schema adapter, site, routes, pages, features
-routes.ts              route() declarations
-server.ts              resolvers(project, implement => [...]): query/mutation implementations
-serve.ts               createServer({ build, styles, resolvers }).listen(PORT)
-app.css                @import "tailwindcss";
+hozu.config.ts  project(): schema adapter, site, routes, pages, features
+routes.ts  route() declarations
+server.ts  resolvers(project, implement => [...]): query/mutation implementations
+serve.ts  createServer({ build, styles, resolvers }).listen(PORT)
+app.css  @import "tailwindcss";
 features/<name>/
-  model.ts             schemas, events, query / mutation / tag / fn, the machine
-  views.ts             views, contracts, feature()
+  model.ts  schemas, events, query / mutation / tag / fn, the machine
+  views.ts  views, contracts, feature()
 ```
-Relative imports end in `.ts`. Any other split works too.
+Relative imports end in `.ts`.
 
-## Checks (from the app directory)
+## Commands (from the app directory)
 ```
-pnpm exec tsc --noEmit -p .  # types
-pnpm exec hozu validate  # all rules + contracts; --json adds patches
-pnpm exec hozu validate --update-lock  # accept a clean, intended behaviour change
-PORT=4700 node serve.ts & echo $!  # run it; stop it with kill <pid>, not pkill -f
+pnpm exec hozu check  # after every edit: types, every rule, every contract
+pnpm exec hozu check --update-lock  # accept an intended behaviour change
+pnpm exec hozu add feature items --page /items  # scaffold a working feature and wire it in
+pnpm exec hozu get / /items  # try pages without a server: status, title, alerts, text
+pnpm exec hozu post / --field title=A --next 'POST / title=a' --next /  # submit a form like a browser
 ```
-Each diagnostic has a `file:line`, a cause and a fix: apply the fix, do not work around the rule.
+Each diagnostic has a `file:line`, a cause and a fix: apply the fix, do not work around the rule. Every `get` /
+`post` starts from fresh in-memory data, so chain steps with `--next`. Run `node serve.ts` only to use the app.
 
 ## model.ts
 ```ts
@@ -165,14 +168,9 @@ Every declaration goes in `declarations` once, under its name. Optional: `import
 `exports: [Event, query, …]` (all other features may use), `styles: [new URL('./x.css', import.meta.url)]`.
 
 ## hozu.config.ts
+`project({ schema: zodAdapter, styles, site: { url, name, lang }, routes: { home, itemPage }, pages, features })`;
+`hozu add feature --page` adds static pages. A page with params:
 ```ts
-export default project({
-  schema: zodAdapter,
-  styles: new URL('./app.css', import.meta.url),
-  site: { url: 'http://localhost:3000', name: 'Items', lang: 'en' },
-  routes: { home, itemPage },
-  pages: [
-    ui.page(home, { views: [Board], head: { render: () => ({ title: 'Items', description: 'All items.' }) } }),
     ui.page(itemPage, {
       views: [Detail],
       head: {
@@ -182,9 +180,6 @@ export default project({
       },
       entries: { query: listItems, input: {}, params: (item) => ({ id: item.id }) },  // sitemap
     }),
-  ],
-  features: [items],
-})
 ```
 ```ts
 // routes.ts
@@ -193,10 +188,6 @@ export const itemPage = route({ path: '/items/:id', params: z.object({ id: z.str
 ```
 
 ## server.ts
-```ts
-export const createResolvers = () => resolvers(project, (implement) => [
-  implement(getItem, ({ id }, { fail }) => items.find((i) => i.id === id) ?? fail('NotFound', { id })),
-  implement(addItem, ({ title }, { fail }) => /* … */ fail('Duplicate', { title })),  // → failed.Duplicate
-])
-```
-Input failing its schema returns the error `Invalid` (`{ message, fields }`; see `reference.md`).
+`export const createResolvers = () => resolvers(project, (implement) => [...])`, one
+`implement(getItem, ({ id }, { fail }) => item ?? fail('NotFound', { id }))` per query / mutation. `hozu add feature` puts a feature's resolvers in `features/<name>/server.ts`.
+Input failing its schema returns `Invalid` (`{ message, fields }`; `reference.md`).

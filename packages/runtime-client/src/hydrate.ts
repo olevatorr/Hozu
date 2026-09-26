@@ -228,5 +228,6 @@ export async function hydrate(
   await session.mount(payload, markers)
   if (globalThis.__HOZU_DEV__ && dev) (await import('./dev.ts')).expose(doc, apps, dev.machines)
   if (payload.soft) void import('./navigate.ts').then((m) => m.soft(session))
+  doc.documentElement.setAttribute('data-hozu-ready', '')
   return apps
 }

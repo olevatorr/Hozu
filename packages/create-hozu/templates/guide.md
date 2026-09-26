@@ -7,11 +7,13 @@ A web app built with Hozu (`@hozu/*`). Hozu is not in your training data.
 - Changing existing code: read `__SKILL__/changing.md` first.
 - The files in `__SKILL__/` are the whole API. Do not read the framework source in `node_modules/@hozu`.
 
-## Checks (run after every change)
+## The loop
 ```
-__RUN__ tsc --noEmit -p .
-__RUN__ hozu validate
-__RUN__ hozu validate --update-lock   # only to accept a clean, intended behaviour change
+__RUN__ hozu add feature tasks --page /   # start a feature from working code, then edit it
+__RUN__ hozu check                         # after every change: types, rules, contracts
+__RUN__ hozu check --update-lock           # only to accept a clean, intended behaviour change
+__RUN__ hozu get / /tasks/t1               # try pages without a server
+__RUN__ hozu post / --field title=Ship --next /   # submit a form like a browser
 ```
 __NOTE__
 ## Rules

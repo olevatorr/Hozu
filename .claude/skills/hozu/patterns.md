@@ -1,6 +1,7 @@
 # Hozu patterns
 
-Patterns marked *(example)* are used in `example/`, next to this file.
+Patterns marked *(example)* are used in `example/features/bookmarks/model.ts` and `views.ts`, next to this file;
+read only the part you need.
 
 - **Form with a server-side error** *(example)*:
   - `ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } }, [label, input, button])`.
