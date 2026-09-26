@@ -28,6 +28,7 @@ import {
   type Stylesheet,
   type WidgetBundle,
 } from './render.ts'
+import { instantiate, type RenderModule } from './rendered.ts'
 import { matcher } from './routing.ts'
 import { parseSearch } from './search.ts'
 import { type CspSources, contentSecurityPolicy, crossSite, ERROR_HTML } from './security.ts'
@@ -50,6 +51,7 @@ export interface HandlerOptions {
   env?: Record<string, string | undefined>
   preview?: { secret: string; secure?: boolean }
   og?: ((card: OgCard) => Promise<Uint8Array>) | null
+  render?: RenderModule
 }
 
 export interface OgCard {
@@ -135,7 +137,9 @@ export function createHandler({
   env: rawEnv = {},
   preview,
   og = null,
+  render,
 }: HandlerOptions): Handler {
+  const generated = render ? instantiate(render) : undefined
   const cards = new Map<string, Promise<Uint8Array>>()
   const ogImage = (url: URL) => {
     if (!og) return null
@@ -319,6 +323,7 @@ export function createHandler({
       search,
       assets,
       images: variants,
+      ...(generated ? { render: generated } : {}),
       env: publicEnv,
       locale,
     })
@@ -425,6 +430,7 @@ export function createHandler({
       session: await session(request),
       assets,
       images: variants,
+      ...(generated ? { render: generated } : {}),
       env: publicEnv,
       locale,
     })
@@ -473,6 +479,7 @@ export function createHandler({
       session: who,
       assets,
       images: variants,
+      ...(generated ? { render: generated } : {}),
       env: publicEnv,
       locale,
     })
@@ -621,7 +628,15 @@ export function createHandler({
         if (ir.error)
           try {
             html = (
-              await renderToString({ build, data, route: ir.error, assets, images: variants, env: publicEnv })
+              await renderToString({
+                build,
+                data,
+                route: ir.error,
+                assets,
+                images: variants,
+                env: publicEnv,
+                ...(generated ? { render: generated } : {}),
+              })
             ).html
           } catch (again) {
             onError(again, { path: url.pathname })

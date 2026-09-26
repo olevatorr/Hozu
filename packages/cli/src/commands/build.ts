@@ -20,6 +20,7 @@ interface Widgets {
 }
 
 interface ServerModule {
+  generateRender(build: BuildResult, images: Record<string, { width: number; href: string }[]> | null): string
   staticFiles(
     build: BuildResult,
     options: { styles: Stylesheet | null; widgets: Widgets | null; client: boolean },
@@ -88,6 +89,10 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
     ),
     styles: styles ? { href: styles.href, preload: styles.preload } : null,
   }
+  const renderFile = join(dir, 'server', 'render.js')
+  await mkdir(dirname(renderFile), { recursive: true })
+  await writeFile(renderFile, server.generateRender(build, manifest.images))
+  files.push(renderFile)
   const manifestFile = join(dir, 'manifest.json')
   await writeFile(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`)
   return { out: dir, manifest: manifestFile, files }

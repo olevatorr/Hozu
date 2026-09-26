@@ -1,7 +1,9 @@
-import { buildProject, type Json, type ProjectDecl } from '@tenon/core/ir'
+import type { ProjectDecl } from '@tenon/core'
+import { buildProject, type Json } from '@tenon/core/ir'
 import { createDataRuntime, resolvers } from '@tenon/data'
 import { pageEntries, renderToString } from '@tenon/runtime-server'
 import { describe, expect, it } from 'vitest'
+import { escapeHtml } from '../src/escape.ts'
 import type { Variants } from '../src/images.ts'
 
 const examples = ['blog', 'bookmarks', 'cart', 'feed', 'showcase', 'trial-0006', 'trial-0007', 'trial-tasks']
@@ -11,7 +13,7 @@ const variantsOf = (assets: Record<string, unknown>): Variants =>
 
 describe('generated render functions', () => {
   for (const name of examples)
-    it(`render every page of ${name} exactly like the closure compiler`, async () => {
+    it(`renders every page of ${name}, with and without image variants`, async () => {
       const project = (await import(`../../../examples/${name}/tenon.config.ts`)).default as ProjectDecl
       const { createResolvers } = await import(`../../../examples/${name}/server.ts`)
       const build = buildProject(project, { sources: false })
@@ -19,21 +21,18 @@ describe('generated render functions', () => {
       expect(entries.length).toBeGreaterThan(0)
       for (const images of [null, variantsOf(build.bindings.assets)])
         for (const e of entries) {
-          const render = async (legacy: boolean) => {
-            const data = createDataRuntime({ build, resolvers: createResolvers() })
-            const options = {
-              build,
-              data,
-              route: e.route,
-              params: e.params as Json,
-              session: { userId: 'ada', user: 'ada', name: 'Ada' },
-              locale: e.locale,
-              images,
-              legacy,
-            }
-            return (await renderToString(options)).html
-          }
-          expect(await render(false), `${name} ${e.path} ${images ? 'images' : ''}`).toBe(await render(true))
+          const data = createDataRuntime({ build, resolvers: createResolvers() })
+          const { html, status } = await renderToString({
+            build,
+            data,
+            route: e.route,
+            params: e.params as Json,
+            session: { userId: 'ada', user: 'ada', name: 'Ada' },
+            locale: e.locale,
+            images,
+          })
+          expect(status, `${name} ${e.path}`).toBeLessThan(500)
+          expect(html.endsWith('</html>'), `${name} ${e.path}`).toBe(true)
         }
     })
 })
@@ -71,11 +70,11 @@ describe('generated source', () => {
     })
     const build = buildProject(decl, { sources: false })
     const data = createDataRuntime({ build, resolvers: resolvers(decl, () => []) })
-    const html = async (legacy: boolean) =>
-      (await renderToString({ build, data, route: 'home', legacy })).html
-    const generated = await html(false)
+    const { html } = await renderToString({ build, data, route: 'home' })
     expect((globalThis as { pwned?: number }).pwned).toBeUndefined()
-    expect(generated).toBe(await html(true))
-    expect(generated).toContain('&lt;/script&gt;&lt;!--')
+    const escaped = escapeHtml(hostile)
+    expect(html).toContain(`<main data-x="${escaped}" title="${escaped}">${escaped}`)
+    expect(html).toContain(`<p data-y="${escaped}">${escaped}</p>`)
+    expect(html).toContain(`<button type="button">${escaped}</button>`)
   })
 })

@@ -1,4 +1,4 @@
-import type { BuildResult, FeatureIR, Json, ViewNode } from '@tenon/core/ir'
+import type { BuildResult, FeatureIR, Json, ValueExpr, ViewNode } from '@tenon/core/ir'
 import { equal, getIn, pathOf } from '@tenon/machine'
 import { attrText, classText, styleText, text } from '@tenon/runtime-client'
 import { escapeHtml } from './escape.ts'
@@ -44,14 +44,28 @@ const attr = (name: string, x: Json) => {
   return s === null ? '' : s === '' ? ` ${name}` : ` ${name}="${escapeHtml(s)}"`
 }
 
+const classAttr = (c: string) => (c ? ` class="${escapeHtml(c)}"` : '')
+const styleAttr = (s: string) => (s ? ` style="${escapeHtml(s)}"` : '')
+
+type Styled = Pick<Extract<ViewNode, { kind: 'el' }>, 'class' | 'toggle' | 'vars'>
+
+export function classAndStyle(n: Styled, value: (v: ValueExpr) => Json): string {
+  const active: string[] = []
+  for (const c in n.toggle) if (value(n.toggle[c]!) === true) active.push(c)
+  return (
+    classAttr(classText(n.class, active)) +
+    styleAttr(styleText(Object.entries(n.vars).map(([k, v]) => [k, value(v)])))
+  )
+}
+
 export const helpers = {
   escapeHtml,
   text,
   attr,
   classText,
   styleText,
-  classAttr: (c: string) => (c ? ` class="${escapeHtml(c)}"` : ''),
-  styleAttr: (s: string) => (s ? ` style="${escapeHtml(s)}"` : ''),
+  classAttr,
+  styleAttr,
   getIn,
   equal,
   pathOf,

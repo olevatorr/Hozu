@@ -2,8 +2,6 @@ import { planRoute, type RoutePlan, softTargets } from '@tenon/compiler'
 import {
   type BuildResult,
   canonicalStringify,
-  eachGuardRef,
-  eachRef,
   type FeatureIR,
   type HeadIR,
   type Json,
@@ -17,26 +15,21 @@ import {
   type WidgetIR,
 } from '@tenon/core/ir'
 import type { DataRuntime } from '@tenon/data'
-import { compileGuard, type Getter, pathOf, type Snapshot } from '@tenon/machine'
+import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '@tenon/machine'
 import type { PagePayload, Result } from '@tenon/runtime-client'
 import { attrText, text } from '@tenon/runtime-client'
-import {
-  CLOSE,
-  classAndStyle,
-  compileNode,
-  expr,
-  type Frag,
-  OPEN,
-  type Runtime,
-  run,
-  type Scope,
-  separated,
-} from './compile.ts'
 import { escapeHtml, scriptJson, scriptSafe } from './escape.ts'
-import { renderKey } from './generate.ts'
+import { CLOSE, OPEN, renderKey, separated } from './generate.ts'
 import { responsive, type Variants } from './images.ts'
 import { type Lowering, localeFns, lowerCached, usesI18n } from './lower.ts'
-import { nodesById, type RenderRuntime, type RenderTable, renderTableFor } from './rendered.ts'
+import {
+  classAndStyle,
+  nodesById,
+  type RenderRuntime,
+  type RenderTable,
+  renderTableFor,
+  type Scope,
+} from './rendered.ts'
 import { pruneScope } from './shape.ts'
 
 export interface Assets {
@@ -72,7 +65,6 @@ export interface RenderOptions {
   images?: Variants | null
   env?: Json
   render?: RenderTable
-  legacy?: boolean
 }
 
 export interface RenderedPage {
@@ -99,7 +91,6 @@ export async function renderPage({
   images = null,
   env = NO_ENV,
   render: generated,
-  legacy = false,
 }: RenderOptions): Promise<RenderedPage> {
   const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
   const { ir, bindings } = build
@@ -130,7 +121,7 @@ export async function renderPage({
   const value = (v: ValueExpr, scope: Scope, input?: Json): Json => {
     let get = getters.get(v)
     if (!get) {
-      get = expr(v, fns)
+      get = compileValue(v, fns)
       getters.set(v, get)
     }
     return get(input === undefined ? scope : { ...scope, input })
@@ -245,8 +236,7 @@ export async function renderPage({
     return result
   }
 
-  const runtime: Runtime = {
-    open,
+  const runtime: Pick<RenderRuntime, 'embed' | 'widget'> = {
     embed: (view) => embedded({ kind: 'embed', id: '', view }),
     widget: (ref) => {
       const w = widgets[ref]
@@ -254,27 +244,18 @@ export async function renderPage({
       if (w && url) payload.widgets[ref] ??= { url, tag: w.tag, load: w.load, wraps: w.wraps }
     },
   }
-  const table = legacy ? null : (generated ?? (await renderTableFor(build, images)))
-  const byId = legacy ? null : nodesById(build, images)
+  const table = generated ?? (await renderTableFor(build, images))
+  const byId = nodesById(build, images)
   const generatedRuntime: RenderRuntime = {
-    island: (id, scope, scoped) => island(byId!.get(id)!, scope, scoped),
+    island: (id, scope, scoped) => island(byId.get(id)!, scope, scoped),
     embed: runtime.embed,
     widget: runtime.widget,
   }
-  const compiled = compiledFor(plan, fns)
   const sync = (n: ViewNode, scope: Scope, island: boolean, sep = false): string => {
-    if (table) {
-      const fn = table[renderKey(route, n.id, island, sep)]
-      if (!fn) throw new Error(`No generated render function for ${renderKey(route, n.id, island, sep)}`)
-      return fn(scope, generatedRuntime, fns)
-    }
-    const cache = island ? compiled.inside : compiled.outside
-    let frag = cache.get(n)
-    if (frag === undefined) {
-      frag = compileNode(n, island, { islands: islandIds, fns, widgets }, sep)
-      cache.set(n, frag)
-    }
-    return run(frag, scope, runtime)
+    const key = renderKey(route, n.id, island, sep)
+    const fn = table[key]
+    if (!fn) throw new Error(`No generated render function for ${key}`)
+    return fn(scope, generatedRuntime, fns)
   }
 
   let buffer = ''
@@ -499,24 +480,6 @@ function widgetsOf(ir: ProjectIR): Record<string, WidgetIR> {
 }
 
 const plans = new WeakMap<ProjectIR, Map<string, RoutePlan>>()
-const compiledPlans = new WeakMap<
-  RoutePlan,
-  WeakMap<object, { inside: WeakMap<ViewNode, Frag>; outside: WeakMap<ViewNode, Frag> }>
->()
-
-function compiledFor(plan: RoutePlan, fns: object) {
-  let byFns = compiledPlans.get(plan)
-  if (!byFns) {
-    byFns = new WeakMap()
-    compiledPlans.set(plan, byFns)
-  }
-  let c = byFns.get(fns)
-  if (!c) {
-    c = { inside: new WeakMap(), outside: new WeakMap() }
-    byFns.set(fns, c)
-  }
-  return c
-}
 const suspendMemo = new WeakMap<ViewNode, boolean>()
 const loadsMemo = new WeakMap<ViewNode, { motion: boolean; visible: boolean }>()
 

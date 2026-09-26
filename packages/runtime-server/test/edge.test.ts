@@ -53,7 +53,7 @@ describe('edge build (ADR 0016)', () => {
     const entry = join(out, 'entry.ts')
     writeFileSync(
       entry,
-      `import manifest from './manifest.json' with { type: 'json' }\nimport { createEdge } from '${join(cart, 'edge.ts')}'\nexport default createEdge(manifest)\n`,
+      `import manifest from './manifest.json' with { type: 'json' }\nimport * as render from './server/render.js'\nimport { createEdge } from '${join(cart, 'edge.ts')}'\nexport default createEdge(manifest, render)\n`,
     )
     const result = await build({
       entryPoints: [entry],
@@ -70,7 +70,10 @@ describe('edge build (ADR 0016)', () => {
     expect(Object.keys(result.metafile.inputs).filter((f) => f.startsWith('node:'))).toEqual([])
     const context: Record<string, unknown> = { ...web }
     context.globalThis = context
-    runInContext(result.outputFiles[0]!.text, (await import('node:vm')).createContext(context))
+    runInContext(
+      result.outputFiles[0]!.text,
+      (await import('node:vm')).createContext(context, { codeGeneration: { strings: false, wasm: false } }),
+    )
     const { fetch } = (context.edge as { default: { fetch(r: Request): Promise<Response> } }).default
     expect(context.process).toBeUndefined()
 
@@ -106,7 +109,7 @@ describe('edge build (ADR 0016)', () => {
       const entry = join(out, 'serve.ts')
       writeFileSync(
         entry,
-        `import manifest from './manifest.json' with { type: 'json' }\nimport { createEdge } from '${join(cart, 'edge.ts')}'\nconst server = Bun.serve({ port: 0, fetch: createEdge(manifest).fetch })\nconsole.log(server.port)\n`,
+        `import manifest from './manifest.json' with { type: 'json' }\nimport * as render from './server/render.js'\nimport { createEdge } from '${join(cart, 'edge.ts')}'\nconst server = Bun.serve({ port: 0, fetch: createEdge(manifest, render).fetch })\nconsole.log(server.port)\n`,
       )
       const child = spawn(bun, [entry], { cwd: cart })
       try {
