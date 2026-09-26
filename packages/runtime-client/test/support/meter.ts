@@ -40,7 +40,6 @@ const meter = machine({
 
 const Panel = ui.view({
   machine: meter,
-  route: null,
   render: ({ ctx, when }) =>
     ui.main({}, [
       when(
@@ -67,60 +66,33 @@ const home = route({ path: '/', params: null, search: null })
 
 export default project({
   schema: zodAdapter,
-  styles: null,
-  http: null,
-  env: null,
-  notFound: null,
-  error: null,
-  session: null,
-  site: null,
   routes: { home },
   pages: [
     ui.page(home, {
       views: [Panel],
-      assert: null,
-      head: {
-        redirects: null,
-        query: null,
-        input: null,
-        render: () => ({
-          title: 'Meter',
-          description: 'Widget fixture',
-          type: 'website',
-          image: null,
-          published: null,
-          noindex: false,
-        }),
-      },
-      entries: null,
+      head: { render: () => ({ title: 'Meter', description: 'Widget fixture' }) },
     }),
   ],
   features: [
     feature({
       id: 'meter',
-      styles: [],
-      messages: null,
-      widgets: { Meter, Frame },
-      intent: { summary: 'Widget fixture', invariants: [] },
-      imports: [],
-      tags: {},
-      events: { Picked, Hide },
-      queries: {},
-      mutations: {},
-      fns: {},
-      machine: meter,
-      views: { Panel },
-      contracts: {
+      intent: { summary: 'Widget fixture' },
+      declarations: {
+        Picked,
+        Hide,
+        Meter,
+        Frame,
+        Panel,
         covers: contract(meter, {
           given: { state: 'shown', context: { count: 0 } },
           when: [
             { send: Picked, payload: { n: 2 } },
             { send: Hide, payload: {} },
           ],
-          expect: { state: 'hidden', context: { count: 2 }, effects: [] },
+          expect: { state: 'hidden', changes: { count: 2 } },
         }),
+        meter,
       },
-      exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
     }),
   ],
 })

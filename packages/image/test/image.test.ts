@@ -26,8 +26,6 @@ writeFileSync(join(dir, 'logo.svg'), '<svg xmlns="http://www.w3.org/2000/svg" wi
 
 const home = route({ path: '/', params: null, search: null })
 const Home = ui.view({
-  machine: null,
-  route: null,
   render: () =>
     ui.main({}, [
       ui.img({ src: ui.asset(pathToFileURL(join(dir, 'hero.png'))), alt: 'Hero', width: 1000, height: 500 }),
@@ -36,53 +34,11 @@ const Home = ui.view({
 })
 const site = project({
   schema: zodAdapter,
-  styles: null,
-  http: null,
-  env: null,
-  notFound: null,
-  error: null,
-  session: null,
-  site: null,
   routes: { home },
   pages: [
-    ui.page(home, {
-      views: [Home],
-      assert: null,
-      head: {
-        redirects: null,
-        query: null,
-        input: null,
-        render: () => ({
-          title: 'Images',
-          description: 'Images',
-          type: 'website',
-          image: null,
-          published: null,
-          noindex: false,
-        }),
-      },
-      entries: null,
-    }),
+    ui.page(home, { views: [Home], head: { render: () => ({ title: 'Images', description: 'Images' }) } }),
   ],
-  features: [
-    feature({
-      id: 'site',
-      styles: [],
-      messages: null,
-      widgets: {},
-      intent: { summary: 'Images', invariants: [] },
-      imports: [],
-      tags: {},
-      events: {},
-      queries: {},
-      mutations: {},
-      fns: {},
-      machine: null,
-      views: { Home },
-      contracts: {},
-      exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
-    }),
-  ],
+  features: [feature({ id: 'site', intent: { summary: 'Images' }, declarations: { Home } })],
 })
 const build = buildProject(site, { sources: false })
 const chrome = process.env.CHROMIUM_PATH ?? chromium.executablePath()

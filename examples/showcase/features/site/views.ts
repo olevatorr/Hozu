@@ -44,7 +44,6 @@ const nav = () =>
 
 export const Showcase = ui.view({
   machine: siteMachine,
-  route: null,
   render: ({ ctx }) =>
     ui.use(
       Smooth,
@@ -358,8 +357,6 @@ export const Showcase = ui.view({
 })
 
 export const About = ui.view({
-  machine: null,
-  route: null,
   render: () =>
     ui.div(
       { class: 'min-h-screen bg-slate-50 font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100' },

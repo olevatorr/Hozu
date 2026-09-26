@@ -14,7 +14,6 @@ const priorities = ['low', 'normal', 'high'] as const
 
 export const Board = ui.view({
   machine: tasksMachine,
-  route: null,
   render: ({ ctx }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [
       ui.h1({ class: 'text-3xl font-bold tracking-tight text-slate-900' }, ['Tasks']),
@@ -158,7 +157,6 @@ export const Board = ui.view({
 })
 
 export const Detail = ui.view({
-  machine: null,
   route: taskPage,
   render: ({ params }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-4 px-4 py-12' }, [

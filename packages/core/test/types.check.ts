@@ -1,4 +1,18 @@
-import { contract, event, invoke, machine, mutation, on, op, query, route, ui } from '@tenon/core'
+import {
+  contract,
+  event,
+  feature,
+  invoke,
+  machine,
+  mutation,
+  on,
+  op,
+  project,
+  query,
+  route,
+  ui,
+} from '@tenon/core'
+import { zodAdapter } from '@tenon/schema-zod'
 import { z } from 'zod'
 
 const Item = z.object({ sku: z.string(), qty: z.number() })
@@ -102,7 +116,6 @@ machine({
 
 ui.view({
   machine: ok,
-  route: null,
   render: ({ ctx, when }) =>
     ui.div({}, [
       // @ts-expect-error unknown state in when()
@@ -120,31 +133,26 @@ contract(ok, {
   // @ts-expect-error unknown state in a contract
   given: { state: 'waiting', context: { items: [], note: null } },
   when: [],
-  expect: { state: 'idle', context: null, effects: null },
+  expect: { state: 'idle' },
 })
 
 const slugRoute = route({ path: '/items/:slug', params: z.object({ slug: z.string() }), search: null })
 const itemQuery = query({
   input: z.object({ slug: z.string() }),
   output: Item,
-  errors: {},
   scope: 'public',
   freshness: 'static',
   tags: () => [],
 })
 
 ui.view({
-  machine: null,
-  route: slugRoute,
-  // @ts-expect-error unknown route param
+  route: slugRoute, // @ts-expect-error unknown route param
   render: ({ params }) => ui.p({}, [params.slg]),
 })
 
 ui.page(slugRoute, {
   views: [],
-  assert: null,
   head: {
-    redirects: null,
     query: itemQuery,
     input: (params) => ({ slug: params.slug }),
     render: (item) => ({
@@ -152,19 +160,13 @@ ui.page(slugRoute, {
       title: item.name,
       description: item.sku,
       type: 'article',
-      image: null,
-      published: null,
-      noindex: false,
     }),
   },
-  entries: null,
 })
 
 const Typed = event({ payload: z.object({ text: z.string(), n: z.number().nullable() }) })
 
 ui.view({
-  machine: null,
-  route: null,
   render: () =>
     ui.form({ on: { submit: ui.send(Typed, { text: ui.dom.form('title'), n: null }) } }, [
       ui.input({
@@ -182,4 +184,26 @@ ui.view({
       ui.svg({ viewBox: '0 0 1 1' }, [ui.path({ d: 'M0 0', 'stroke-width': 2 }, [])]),
       ui.button({ 'aria-pressed': op.eq(ui.dom.key, 'x'), 'data-state': 'open' }, []),
     ]),
+})
+
+query({ input: Item, output: Item, scope: 'public', freshness: 'static' })
+
+// @ts-expect-error absent values are omitted, never null
+project({ schema: zodAdapter, http: null, routes: {}, pages: [], features: [] })
+
+// @ts-expect-error declarations are one record, not one record per kind
+feature({ id: 'f', intent: { summary: 'x' }, declarations: {}, events: {} })
+
+contract(ok, {
+  given: { state: 'idle' },
+  when: [],
+  // @ts-expect-error changes name context fields only
+  expect: { state: 'idle', changes: { missing: 1 } },
+})
+
+contract(ok, {
+  given: { state: 'idle' },
+  when: [],
+  // @ts-expect-error the unchecked null form is gone
+  expect: { state: 'idle', effects: null },
 })

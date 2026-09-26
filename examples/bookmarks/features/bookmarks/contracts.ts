@@ -14,7 +14,7 @@ const idle = {
 export const typesDraft = contract(bookmarksMachine, {
   given: { state: 'idle', context: idle },
   when: [{ send: Draft, payload: { text: 'Tenon' } }],
-  expect: { state: 'idle', context: { ...idle, draft: 'Tenon' }, effects: [] },
+  expect: { state: 'idle', changes: { draft: 'Tenon' } },
 })
 
 export const addsBookmark = contract(bookmarksMachine, {
@@ -26,7 +26,7 @@ export const addsBookmark = contract(bookmarksMachine, {
   ],
   expect: {
     state: 'idle',
-    context: { ...idle, kind: 'podcast' },
+    changes: { kind: 'podcast' },
     effects: [
       { effect: addBookmark, input: { title: 'Tenon talk', kind: 'podcast' } },
       { navigate: '/bookmarks/b3' },
@@ -37,7 +37,7 @@ export const addsBookmark = contract(bookmarksMachine, {
 export const rejectsDuplicate = contract(bookmarksMachine, {
   given: { state: 'adding', context: { ...idle, draft: 'Tenon talk' } },
   when: [{ failed: addBookmark, error: 'Duplicate', data: { title: 'Tenon talk' } }],
-  expect: { state: 'idle', context: { ...idle, draft: 'Tenon talk', error: DUPLICATE }, effects: [] },
+  expect: { state: 'idle', changes: { ...idle, draft: 'Tenon talk', error: DUPLICATE } },
 })
 
 export const rejectsInvalidTitle = contract(bookmarksMachine, {
@@ -54,15 +54,14 @@ export const rejectsInvalidTitle = contract(bookmarksMachine, {
   ],
   expect: {
     state: 'idle',
-    context: { ...idle, draft: 'x', fields: { title: 'Use at least 2 characters', kind: null } },
-    effects: [],
+    changes: { ...idle, draft: 'x', fields: { title: 'Use at least 2 characters', kind: null } },
   },
 })
 
 export const addFails = contract(bookmarksMachine, {
   given: { state: 'adding', context: idle },
   when: [{ failed: addBookmark, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', context: { ...idle, error: 'offline' }, effects: [] },
+  expect: { state: 'idle', changes: { error: 'offline' } },
 })
 
 export const togglesRead = contract(bookmarksMachine, {
@@ -73,7 +72,7 @@ export const togglesRead = contract(bookmarksMachine, {
   ],
   expect: {
     state: 'idle',
-    context: { ...idle, target: 'b1' },
+    changes: { target: 'b1' },
     effects: [{ effect: toggleRead, input: { id: 'b1' } }],
   },
 })
@@ -81,11 +80,11 @@ export const togglesRead = contract(bookmarksMachine, {
 export const toggleMissing = contract(bookmarksMachine, {
   given: { state: 'toggling', context: { ...idle, target: 'b9' } },
   when: [{ failed: toggleRead, error: 'NotFound', data: { id: 'b9' } }],
-  expect: { state: 'idle', context: { ...idle, target: 'b9' }, effects: [] },
+  expect: { state: 'idle' },
 })
 
 export const toggleFails = contract(bookmarksMachine, {
   given: { state: 'toggling', context: idle },
   when: [{ failed: toggleRead, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', context: { ...idle, error: 'offline' }, effects: [] },
+  expect: { state: 'idle', changes: { error: 'offline' } },
 })

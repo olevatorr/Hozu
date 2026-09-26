@@ -7,7 +7,6 @@ const Slug = z.object({ slug: z.string() })
 export const savedPosts = query({
   input: z.object({}),
   output: z.array(z.string()),
-  errors: {},
   scope: 'user',
   freshness: 'live',
   tags: () => [savedTag()],
@@ -23,6 +22,5 @@ export const savePost = mutation({
 export const unsavePost = mutation({
   input: Slug,
   output: z.array(z.string()),
-  errors: {},
   invalidates: () => [savedTag()],
 })

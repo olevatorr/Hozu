@@ -127,36 +127,10 @@ describe('assign ops and fn bindings', () => {
   })
   const f = feature({
     id: 'f',
-    styles: [],
-    messages: null,
-    widgets: {},
-    intent: { summary: 'ops fixture', invariants: [] },
-    imports: [],
-    tags: {},
-    events: { Ping, Drop },
-    queries: {},
-    mutations: {},
-    fns: { total, isBig },
-    machine: m,
-    views: {},
-    contracts: {},
-    exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
+    intent: { summary: 'ops fixture' },
+    declarations: { Ping, Drop, total, isBig, m },
   })
-  const b = buildProject(
-    project({
-      schema: zodAdapter,
-      styles: null,
-      http: null,
-      env: null,
-      notFound: null,
-      error: null,
-      session: null,
-      site: null,
-      routes: {},
-      pages: [],
-      features: [f],
-    }),
-  )
+  const b = buildProject(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))
   const compiled = compileMachine(b.ir.features.f!, b.bindings.fns)
 
   it('applies assigns sequentially with copy-on-write', () => {

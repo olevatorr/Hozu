@@ -83,11 +83,11 @@ export function skeleton(ir: ProjectIR, feature: FeatureIR, id: string): string 
   const assigned = (t?.assign ?? []).map((a) => a.path.join('.'))
   const context = ts(m.initialContext)
   return [
-    'contract(machine, {',
+    'contract(machine, { ',
     `  given: { state: '${state}', context: ${context} },`,
     `  when: [${step}],`,
     `  expect: { state: '${target}', context: ${context}, effects: ${effects} },`,
-    '})',
+    ' })',
     assigned.length
       ? `// decide the expected ${assigned.join(', ')}; example values above are placeholders`
       : '// example values above are placeholders',

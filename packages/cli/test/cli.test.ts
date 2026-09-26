@@ -155,7 +155,7 @@ describe('A5 CLI contract', () => {
       code: 'TN011',
       location: {
         feature: 'dice',
-        pointer: '/features/dice/machine/states/idle/on/dice.Roll/0/assign/0/value/literal',
+        pointer: '/features/dice/machine/states/idle/on/dice.Roll/0/guard/right/literal',
       },
     })
   })
@@ -168,7 +168,7 @@ describe('built binary', () => {
     const result = await exec('node', [bin, 'validate', '--config', fixture], { cwd: root }).catch((e) => e)
     expect(result.code).toBe(1)
     expect(result.stdout).toContain(
-      'packages/cli/test/fixtures/nondeterministic.config.ts:12:18  error  TN011',
+      'packages/cli/test/fixtures/nondeterministic.config.ts:14:9  error  TN011',
     )
   })
 })

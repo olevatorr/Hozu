@@ -12,45 +12,18 @@ import { home, offline, post } from './routes.ts'
 export default project({
   schema: zodAdapter,
   styles: new URL('./app.css', import.meta.url),
-  http: null,
-  env: null,
-  notFound: null,
-  error: null,
   session: z.object({ userId: z.string() }),
-  site: {
-    url: 'https://blog.tenon.dev',
-    name: 'Tenon Blog',
-    locales: ['en', 'zh-TW'],
-    offline,
-    lang: 'en',
-    icon: null,
-    themeColor: null,
-  },
+  site: { url: 'https://blog.tenon.dev', name: 'Tenon Blog', locales: ['en', 'zh-TW'], offline, lang: 'en' },
   routes: { home, post, offline },
   pages: [
     ui.page(home, {
       views: [PostList, ReadingList],
-      assert: null,
-      head: {
-        redirects: null,
-        query: null,
-        input: null,
-        render: () => ({
-          title: text.title,
-          description: text.description,
-          type: 'website',
-          image: null,
-          published: null,
-          noindex: false,
-        }),
-      },
-      entries: null,
+      head: { render: () => ({ title: text.title, description: text.description }) },
     }),
     ui.page(post, {
       views: [Article],
       assert: 'static',
       head: {
-        redirects: null,
         query: getPost,
         input: (params) => ({ slug: params.slug }),
         render: (article) => ({
@@ -59,7 +32,6 @@ export default project({
           type: 'article',
           image: ui.og({ title: article.title, subtitle: article.excerpt }),
           published: article.publishedAt,
-          noindex: false,
         }),
       },
       entries: { query: listPosts, input: {}, params: (summary) => ({ slug: summary.slug }) },
@@ -67,20 +39,7 @@ export default project({
     ui.page(offline, {
       views: [Offline],
       assert: 'static',
-      head: {
-        redirects: null,
-        query: null,
-        input: null,
-        render: () => ({
-          title: text.offline,
-          description: text.offlineHint,
-          type: 'website',
-          image: null,
-          published: null,
-          noindex: true,
-        }),
-      },
-      entries: null,
+      head: { render: () => ({ title: text.offline, description: text.offlineHint, noindex: true }) },
     }),
   ],
   features: [posts, saved],

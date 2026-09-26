@@ -12,7 +12,6 @@ const nav = ui.nav({ class: 'flex gap-4 text-sm' }, [
 
 export const Feed = ui.view({
   machine: feedMachine,
-  route: null,
   render: ({ ctx }) =>
     ui.main({ class: 'mx-auto max-w-2xl space-y-4 p-6' }, [
       nav,
@@ -58,7 +57,6 @@ export const Feed = ui.view({
 })
 
 export const TagList = ui.view({
-  machine: null,
   route: tag,
   render: ({ params }) =>
     ui.main({ class: 'mx-auto max-w-2xl space-y-4 p-6' }, [
@@ -79,7 +77,6 @@ export const TagList = ui.view({
 })
 
 export const Archive = ui.view({
-  machine: null,
   route: archive,
   render: ({ params }) =>
     ui.main({ class: 'mx-auto max-w-2xl space-y-4 p-6' }, [

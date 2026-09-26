@@ -7,7 +7,6 @@ export const tasksTag = tag({ param: null })
 export const listTasks = query({
   input: NoInput,
   output: Tasks,
-  errors: {},
   scope: 'public',
   freshness: 'static',
   tags: () => [tasksTag()],
@@ -38,12 +37,7 @@ export const toggleTask = mutation({
   invalidates: () => [tasksTag()],
 })
 
-export const clearDone = mutation({
-  input: NoInput,
-  output: Cleared,
-  errors: {},
-  invalidates: () => [tasksTag()],
-})
+export const clearDone = mutation({ input: NoInput, output: Cleared, invalidates: () => [tasksTag()] })
 
 const Visible = z.object({ items: Tasks, show: Show })
 

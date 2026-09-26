@@ -118,7 +118,6 @@ describe('resolver wiring', () => {
   const read = query({
     input: z.object({}),
     output: z.number(),
-    errors: {},
     scope: 'public',
     freshness: 'live',
     tags: () => [pingTag()],
@@ -131,32 +130,13 @@ describe('resolver wiring', () => {
   })
   const p = project({
     schema: zodAdapter,
-    styles: null,
-    http: null,
-    env: null,
-    notFound: null,
-    error: null,
-    session: null,
-    site: null,
     routes: {},
     pages: [],
     features: [
       feature({
         id: 'f',
-        styles: [],
-        messages: null,
-        widgets: {},
-        intent: { summary: 'wiring fixture', invariants: [] },
-        imports: [],
-        tags: { pingTag },
-        events: { Ping },
-        queries: { read },
-        mutations: { write },
-        fns: {},
-        machine: null,
-        views: {},
-        contracts: {},
-        exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
+        intent: { summary: 'wiring fixture' },
+        declarations: { pingTag, Ping, read, write },
       }),
     ],
   })

@@ -64,13 +64,13 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
       published: { literal: null },
       noindex: false,
     }
-  const v = (key: string, x: unknown) =>
-    scope.attempt(join(p, key), () => scope.value(x, join(p, key)), empty)
+  const v = (key: string, x: unknown, absent: unknown = null) =>
+    scope.attempt(join(p, key), () => scope.value(x === undefined ? absent : x, join(p, key)), empty)
   return {
     redirects,
     query,
     title: v('title', fields.title),
-    description: v('description', fields.description),
+    description: v('description', fields.description, ''),
     type: fields.type === 'article' ? 'article' : 'website',
     image: v('image', fields.image),
     published: v('published', fields.published),

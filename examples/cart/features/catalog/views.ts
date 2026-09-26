@@ -3,8 +3,6 @@ import { home, product } from '../../routes.ts'
 import { getProduct, listProducts } from './effects.ts'
 
 export const ProductGrid = ui.view({
-  machine: null,
-  route: null,
   render: () =>
     ui.section({ class: 'grid gap-4' }, [
       ui.h2({}, ['Products']),
@@ -30,7 +28,6 @@ export const ProductGrid = ui.view({
 })
 
 export const ProductDetail = ui.view({
-  machine: null,
   route: product,
   render: ({ params }) =>
     ui.section({ class: 'grid gap-4' }, [

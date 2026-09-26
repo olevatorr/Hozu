@@ -8,7 +8,6 @@ export const clockTag = tag({ param: null })
 export const search = query({
   input: z.object({ q: z.string() }),
   output: z.array(z.string()),
-  errors: {},
   scope: 'public',
   freshness: 'static',
   tags: () => [],
@@ -16,7 +15,6 @@ export const search = query({
 export const clock = query({
   input: z.object({}),
   output: z.object({ tick: z.number() }),
-  errors: {},
   scope: 'public',
   freshness: 'live',
   tags: () => [clockTag()],
@@ -33,7 +31,6 @@ const finder = machine({
 
 const Finder = ui.view({
   machine: finder,
-  route: null,
   render: ({ ctx }) =>
     ui.main({}, [
       ui.input({ name: 'q', value: ctx.q, on: { input: ui.send(Search, { q: ui.dom.value }) } }),
@@ -62,57 +59,27 @@ const home = route({ path: '/', params: null, search: null })
 
 export const site = project({
   schema: zodAdapter,
-  styles: null,
-  http: null,
-  env: null,
-  notFound: null,
-  error: null,
-  session: null,
-  site: null,
   routes: { home },
   pages: [
-    ui.page(home, {
-      views: [Finder],
-      assert: null,
-      head: {
-        redirects: null,
-        query: null,
-        input: null,
-        render: () => ({
-          title: 'Live',
-          description: 'Fixture',
-          type: 'website',
-          image: null,
-          published: null,
-          noindex: false,
-        }),
-      },
-      entries: null,
-    }),
+    ui.page(home, { views: [Finder], head: { render: () => ({ title: 'Live', description: 'Fixture' }) } }),
   ],
   features: [
     feature({
       id: 'finder',
-      styles: [],
-      messages: null,
-      widgets: {},
-      intent: { summary: 'Client fetch and live fixture', invariants: [] },
-      imports: [],
-      tags: { clockTag },
-      events: { Search },
-      queries: { search, clock },
-      mutations: {},
-      fns: {},
-      machine: finder,
-      views: { Finder },
-      contracts: {
+      intent: { summary: 'Client fetch and live fixture' },
+      declarations: {
+        clockTag,
+        Search,
+        search,
+        clock,
+        Finder,
         covers: contract(finder, {
           given: { state: 'ready', context: { q: '' } },
           when: [{ send: Search, payload: { q: 'x' } }],
-          expect: { state: 'ready', context: { q: 'x' }, effects: [] },
+          expect: { state: 'ready', changes: { q: 'x' } },
         }),
+        finder,
       },
-      exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
     }),
   ],
 })

@@ -7,7 +7,6 @@ export const cartTag = tag({ param: null })
 export const getCart = query({
   input: NoInput,
   output: Cart,
-  errors: {},
   scope: 'user',
   freshness: { swr: 30 },
   tags: () => [cartTag()],
@@ -20,12 +19,7 @@ export const addItem = mutation({
   invalidates: () => [cartTag()],
 })
 
-export const removeItem = mutation({
-  input: SkuOnly,
-  output: Cart,
-  errors: {},
-  invalidates: () => [cartTag()],
-})
+export const removeItem = mutation({ input: SkuOnly, output: Cart, invalidates: () => [cartTag()] })
 
 export const checkout = mutation({
   input: NoInput,

@@ -109,56 +109,15 @@ describe('font fallback metrics (ADR 0020)', () => {
       '@import "tailwindcss";\n@font-face { font-family: Inter; src: url("./inter.woff2") format("woff2"); }\n@theme { --font-sans: Inter, ui-sans-serif, sans-serif; }\n',
     )
     const home = route({ path: '/', params: null, search: null })
-    const Page = ui.view({ machine: null, route: null, render: () => ui.p({ class: 'font-sans' }, ['Hi']) })
+    const Page = ui.view({ render: () => ui.p({ class: 'font-sans' }, ['Hi']) })
     const site = project({
       schema: zodAdapter,
       styles: pathToFileURL(join(dir, 'app.css')),
-      http: null,
-      env: null,
-      notFound: null,
-      error: null,
-      session: null,
-      site: null,
       routes: { home },
       pages: [
-        ui.page(home, {
-          views: [Page],
-          assert: null,
-          head: {
-            redirects: null,
-            query: null,
-            input: null,
-            render: () => ({
-              title: 'Fonts',
-              description: 'Fonts',
-              type: 'website',
-              image: null,
-              published: null,
-              noindex: false,
-            }),
-          },
-          entries: null,
-        }),
+        ui.page(home, { views: [Page], head: { render: () => ({ title: 'Fonts', description: 'Fonts' }) } }),
       ],
-      features: [
-        feature({
-          id: 'site',
-          styles: [],
-          messages: null,
-          widgets: {},
-          intent: { summary: 'Fonts', invariants: [] },
-          imports: [],
-          tags: {},
-          events: {},
-          queries: {},
-          mutations: {},
-          fns: {},
-          machine: null,
-          views: { Page },
-          contracts: {},
-          exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
-        }),
-      ],
+      features: [feature({ id: 'site', intent: { summary: 'Fonts' }, declarations: { Page } })],
     })
     const styles = await compileStyles(buildProject(site, { sources: false }), { base: dir })
     expect(styles.css).toMatch(/font-family:"?Inter Fallback"?;src:local\("?Arial"?\);size-adjust:113\.27%/)

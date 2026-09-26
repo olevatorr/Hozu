@@ -1,5 +1,5 @@
 import type { ContractDef, Step } from '../builders/contract.ts'
-import type { ContractIR, StepIR } from '../ir/types.ts'
+import type { ContractIR, Json, StepIR } from '../ir/types.ts'
 import { type Decl, defOf } from '../model/decl.ts'
 import { type At, at, type FeatureScope } from './scope.ts'
 
@@ -13,6 +13,17 @@ function step(scope: FeatureScope, s: Step, p: At): StepIR {
       data: scope.json(s.data),
     }
   return { elapse: s.elapse }
+}
+
+const plain = (x: unknown): x is Record<string, Json> =>
+  typeof x === 'object' && x !== null && !Array.isArray(x)
+
+function merge(base: Json, changes: Json | undefined): Json {
+  if (changes === undefined) return base
+  if (!plain(base) || !plain(changes)) return changes
+  const out: Record<string, Json> = { ...base }
+  for (const [k, v] of Object.entries(changes)) out[k] = merge(base[k] ?? null, v)
+  return out
 }
 
 export function buildContract(scope: FeatureScope, symbol: string, decl: Decl): ContractIR {
@@ -31,25 +42,24 @@ export function buildContract(scope: FeatureScope, symbol: string, decl: Decl): 
     when: [],
     expect: { state: '?', context: null, effects: null },
   }
+  const initial = (defOf<{ initialContext?: unknown }>(d.machine as Decl) ?? {}).initialContext
+  const given = scope.json(d.given.context === undefined ? (initial ?? null) : d.given.context)
   return scope.attempt(
     p,
     () => ({
-      given: { state: String(d.given.state), context: scope.json(d.given.context) },
+      given: { state: String(d.given.state), context: given },
       when: d.when.map((s, i) => step(scope, s, at(p, 'when', i))),
       expect: {
         state: String(d.expect.state),
-        context: d.expect.context === null ? null : scope.json(d.expect.context),
-        effects:
-          d.expect.effects === null
-            ? null
-            : d.expect.effects.map((e, i) =>
-                'navigate' in e
-                  ? { navigate: String(e.navigate) }
-                  : {
-                      effect: scope.ref(e.effect, ['query', 'mutation'], at(p, 'expect', 'effects', i)),
-                      input: scope.json(e.input),
-                    },
-              ),
+        context: merge(given, d.expect.changes === undefined ? undefined : scope.json(d.expect.changes)),
+        effects: (d.expect.effects ?? []).map((e, i) =>
+          'navigate' in e
+            ? { navigate: String(e.navigate) }
+            : {
+                effect: scope.ref(e.effect, ['query', 'mutation'], at(p, 'expect', 'effects', i)),
+                input: scope.json(e.input),
+              },
+        ),
       },
     }),
     fallback,

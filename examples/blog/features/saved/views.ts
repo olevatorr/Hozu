@@ -6,7 +6,6 @@ import { text } from './messages.ts'
 
 export const ReadingList = ui.view({
   machine: savedMachine,
-  route: null,
   render: ({ ctx, when }) =>
     ui.aside({ class: 'reading-list mx-auto mt-8 max-w-2xl' }, [
       ui.h2({ class: 'text-lg font-semibold' }, [text.heading]),

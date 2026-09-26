@@ -5,7 +5,6 @@ import { Metric, Series, Slide, Stats, Todos } from './schemas.ts'
 export const slides = query({
   input: z.object({}),
   output: z.array(Slide),
-  errors: {},
   scope: 'public',
   freshness: 'static',
   tags: () => [],
@@ -14,7 +13,6 @@ export const slides = query({
 export const stats = query({
   input: z.object({}),
   output: Stats,
-  errors: {},
   scope: 'public',
   freshness: 'static',
   tags: () => [],

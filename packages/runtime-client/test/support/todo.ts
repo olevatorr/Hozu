@@ -41,7 +41,6 @@ const todo = machine({
 
 const Todo = ui.view({
   machine: todo,
-  route: null,
   render: ({ ctx }) =>
     ui.main({}, [
       ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } }, [
@@ -88,7 +87,7 @@ export const covers = [
       { send: Reverse, payload: {} },
       { send: Remove, payload: { id: 'x' } },
     ],
-    expect: { state: 'ready', context: { items: [], draft: '', lastKey: 'Enter' }, effects: [] },
+    expect: { state: 'ready', changes: { items: [], draft: '', lastKey: 'Enter' } },
   }),
 ]
 
@@ -96,50 +95,17 @@ export const home = route({ path: '/', params: null, search: null })
 
 export const todoFeature = feature({
   id: 'todo',
-  styles: [],
-  messages: null,
-  widgets: {},
-  intent: { summary: 'Client runtime fixture', invariants: [] },
-  imports: [],
-  tags: {},
-  events: { Draft, Add, Remove, Reverse, Key },
-  queries: {},
-  mutations: {},
-  fns: { reversed },
-  machine: todo,
-  views: { Todo },
-  contracts: { covers: covers[0]! },
-  exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
+  intent: { summary: 'Client runtime fixture' },
+  declarations: { Draft, Add, Remove, Reverse, Key, reversed, Todo, covers: covers[0]!, todo },
 })
 
 export default project({
   schema: zodAdapter,
-  styles: null,
-  http: null,
-  env: null,
-  notFound: null,
-  error: null,
-  session: null,
-  site: null,
   routes: { home },
   pages: [
     ui.page(home, {
       views: [Todo],
-      assert: null,
-      head: {
-        redirects: null,
-        query: null,
-        input: null,
-        render: () => ({
-          title: 'Todo',
-          description: 'Todo fixture',
-          type: 'website',
-          image: null,
-          published: null,
-          noindex: false,
-        }),
-      },
-      entries: null,
+      head: { render: () => ({ title: 'Todo', description: 'Todo fixture' }) },
     }),
   ],
   features: [todoFeature],

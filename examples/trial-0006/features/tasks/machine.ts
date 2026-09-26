@@ -7,7 +7,14 @@ export const DUPLICATE = 'A task with this title already exists'
 
 export const tasksMachine = machine({
   context: Context,
-  initialContext: { show: 'all', draft: '', priority: 'normal', target: '', error: null, fields: { title: null, priority: null } },
+  initialContext: {
+    show: 'all',
+    draft: '',
+    priority: 'normal',
+    target: '',
+    error: null,
+    fields: { title: null, priority: null },
+  },
   initial: 'idle',
   states: ({ ctx }) => ({
     idle: {

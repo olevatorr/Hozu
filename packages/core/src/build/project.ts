@@ -1,4 +1,4 @@
-import type { FeatureConfig, ProjectConfig } from '../builders/feature.ts'
+import type { FeatureConfig, FeatureParts, ProjectConfig } from '../builders/feature.ts'
 import type { RouteDef } from '../builders/route.ts'
 import { join, resolveSource } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
@@ -39,7 +39,7 @@ export const UNEXPECTED_ERROR_SCHEMA: JsonSchema = {
   additionalProperties: false,
 }
 
-const registries: [keyof FeatureConfig, DeclKind][] = [
+const registries: [keyof FeatureParts, DeclKind][] = [
   ['tags', 'tag'],
   ['events', 'event'],
   ['queries', 'query'],
@@ -50,7 +50,75 @@ const registries: [keyof FeatureConfig, DeclKind][] = [
   ['contracts', 'contract'],
 ]
 
-function register(scope: ProjectScope, id: string, config: FeatureConfig) {
+const kindKeys: Partial<Record<DeclKind, keyof FeatureParts>> = {
+  tag: 'tags',
+  event: 'events',
+  query: 'queries',
+  mutation: 'mutations',
+  fn: 'fns',
+  view: 'views',
+  widget: 'widgets',
+  contract: 'contracts',
+}
+const exportKeys: Partial<Record<DeclKind, keyof FeatureParts['exports']>> = {
+  event: 'events',
+  query: 'queries',
+  mutation: 'mutations',
+  tag: 'tags',
+  fn: 'fns',
+  view: 'views',
+}
+
+function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
+  const id = String(config.id)
+  const base = join('', 'features', id)
+  const records: Record<string, Record<string, unknown>> = {}
+  const parts = {
+    id,
+    intent: { summary: config.intent?.summary, invariants: config.intent?.invariants ?? [] },
+    styles: config.styles ?? [],
+    imports: config.imports ?? [],
+    machine: null,
+    messages: null,
+    exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
+  } as unknown as FeatureParts & Record<string, unknown>
+  for (const key of Object.values(kindKeys)) records[key as string] = {}
+  for (const [name, decl] of Object.entries(config.declarations ?? {})) {
+    const kind = infoOf(decl)?.kind
+    const key = kind ? kindKeys[kind] : undefined
+    const at = join(base, 'declarations', name)
+    if (key) records[key as string]![name] = decl
+    else if (kind === 'machine' || kind === 'messages') {
+      if (parts[kind])
+        scope.report('TN013', id, at, `A feature has one ${kind}`, `"${name}" is a second ${kind}.`)
+      else (parts as Record<string, unknown>)[kind] = decl
+    } else
+      scope.report(
+        'TN014',
+        id,
+        at,
+        `"${name}" is not a declaration`,
+        'declarations holds events, queries, mutations, fns, tags, views, widgets, contracts, one machine and one messages.',
+      )
+  }
+  Object.assign(parts, records)
+  for (const [i, decl] of (config.exports ?? []).entries()) {
+    const kind = infoOf(decl)?.kind
+    const key = kind ? exportKeys[kind] : undefined
+    if (key) (parts.exports[key] as unknown[]).push(decl)
+    else
+      scope.report(
+        'TN014',
+        id,
+        join(base, 'exports', i),
+        'Only events, queries, mutations, tags, fns and views can be exported',
+        `Got ${kind ?? typeof decl}.`,
+      )
+  }
+  return parts
+}
+
+function register(scope: ProjectScope, id: string, config: FeatureParts) {
   const base = join('', 'features', id)
   const claim = (decl: object, symbol: string, kind: DeclKind, pointer: string) => {
     scope.mark(pointer, decl)
@@ -187,7 +255,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     }
   }
 
-  const configs: [string, FeatureConfig][] = []
+  const configs: [string, FeatureParts][] = []
   for (const [i, f] of (config.features ?? []).entries()) {
     const fi = infoOf(f)
     if (fi?.kind !== 'feature') {
@@ -200,7 +268,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       )
       continue
     }
-    const fc = fi.def as FeatureConfig
+    const fc = partsOf(scope, fi.def as FeatureConfig)
     const p = join('', 'features', fc.id)
     scope.mark(p, f)
     if (!IDENTIFIER.test(fc.id))

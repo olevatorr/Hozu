@@ -105,7 +105,6 @@ export const Board = ui.view({
 })
 
 export const Detail = ui.view({
-  machine: null,
   route: bookmarkPage,
   render: ({ params }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-4 px-4 py-12' }, [

@@ -9,8 +9,6 @@ const Languages = ui.nav({ 'aria-label': text.languages, class: 'flex gap-3 text
 ])
 
 export const PostList = ui.view({
-  machine: null,
-  route: null,
   render: () =>
     ui.section({ class: 'mx-auto max-w-2xl space-y-8 px-4 py-12 font-sans' }, [
       Languages,
@@ -60,7 +58,6 @@ export const PostList = ui.view({
 })
 
 export const Article = ui.view({
-  machine: null,
   route: post,
   render: ({ params }) =>
     ui.query(
@@ -89,8 +86,6 @@ export const Article = ui.view({
 })
 
 export const Offline = ui.view({
-  machine: null,
-  route: null,
   render: () =>
     ui.main({ class: 'mx-auto max-w-2xl space-y-4 px-4 py-12' }, [
       ui.h1({ class: 'text-2xl font-bold' }, [text.offline]),

@@ -1,4 +1,4 @@
-import { priorities, type Priority } from '#shared/types/task'
+import { type Priority, priorities } from '#shared/types/task'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ title?: unknown; priority?: unknown }>(event)

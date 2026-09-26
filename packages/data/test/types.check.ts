@@ -5,13 +5,7 @@ import { z } from 'zod'
 
 const p = project({
   schema: zodAdapter,
-  styles: null,
-  http: null,
-  env: null,
-  notFound: null,
-  error: null,
   session: z.object({ userId: z.string() }),
-  site: null,
   routes: {},
   pages: [],
   features: [],
@@ -27,7 +21,6 @@ const pub = query({
 const mine = query({
   input: z.object({}),
   output: z.string(),
-  errors: {},
   scope: 'user',
   freshness: 'live',
   tags: () => [],

@@ -8,13 +8,13 @@ const idle = { show: 'all', draft: '', priority: 'normal', target: '', error: nu
 export const showsDone = contract(tasksMachine, {
   given: { state: 'idle', context: idle },
   when: [{ send: SetShow, payload: { show: 'done' } }],
-  expect: { state: 'idle', context: { ...idle, show: 'done' }, effects: [] },
+  expect: { state: 'idle', changes: { show: 'done' } },
 })
 
 export const typesDraft = contract(tasksMachine, {
   given: { state: 'idle', context: idle },
   when: [{ send: Draft, payload: { text: 'Ship' } }],
-  expect: { state: 'idle', context: { ...idle, draft: 'Ship' }, effects: [] },
+  expect: { state: 'idle', changes: { draft: 'Ship' } },
 })
 
 export const addsTask = contract(tasksMachine, {
@@ -26,7 +26,7 @@ export const addsTask = contract(tasksMachine, {
   ],
   expect: {
     state: 'idle',
-    context: { ...idle, priority: 'high' },
+    changes: { ...idle, priority: 'high' },
     effects: [{ effect: addTask, input: { title: 'Test it', priority: 'high' } }],
   },
 })
@@ -34,7 +34,7 @@ export const addsTask = contract(tasksMachine, {
 export const rejectsDuplicate = contract(tasksMachine, {
   given: { state: 'adding', context: { ...idle, draft: 'Ship it' } },
   when: [{ failed: addTask, error: 'Duplicate', data: { title: 'Ship it' } }],
-  expect: { state: 'idle', context: { ...idle, draft: 'Ship it', error: DUPLICATE }, effects: [] },
+  expect: { state: 'idle', changes: { ...idle, draft: 'Ship it', error: DUPLICATE } },
 })
 
 export const rejectsInvalid = contract(tasksMachine, {
@@ -46,13 +46,13 @@ export const rejectsInvalid = contract(tasksMachine, {
       data: { message: 'Title must be 3–80 characters', fields: { title: 'Title must be 3–80 characters' } },
     },
   ],
-  expect: { state: 'idle', context: { ...idle, draft: 'ab', error: INVALID }, effects: [] },
+  expect: { state: 'idle', changes: { ...idle, draft: 'ab', error: INVALID } },
 })
 
 export const addFails = contract(tasksMachine, {
   given: { state: 'adding', context: idle },
   when: [{ failed: addTask, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', context: { ...idle, error: 'offline' }, effects: [] },
+  expect: { state: 'idle', changes: { error: 'offline' } },
 })
 
 export const togglesTask = contract(tasksMachine, {
@@ -63,7 +63,7 @@ export const togglesTask = contract(tasksMachine, {
   ],
   expect: {
     state: 'idle',
-    context: { ...idle, target: 't2' },
+    changes: { target: 't2' },
     effects: [{ effect: toggleTask, input: { id: 't2' } }],
   },
 })
@@ -71,13 +71,13 @@ export const togglesTask = contract(tasksMachine, {
 export const toggleMissing = contract(tasksMachine, {
   given: { state: 'toggling', context: { ...idle, target: 't9' } },
   when: [{ failed: toggleTask, error: 'NotFound', data: { id: 't9' } }],
-  expect: { state: 'idle', context: { ...idle, target: 't9' }, effects: [] },
+  expect: { state: 'idle' },
 })
 
 export const toggleFails = contract(tasksMachine, {
   given: { state: 'toggling', context: idle },
   when: [{ failed: toggleTask, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', context: { ...idle, error: 'offline' }, effects: [] },
+  expect: { state: 'idle', changes: { error: 'offline' } },
 })
 
 export const clearsDone = contract(tasksMachine, {
@@ -87,11 +87,11 @@ export const clearsDone = contract(tasksMachine, {
     { send: Toggle, payload: { id: 't2' } },
     { done: clearDone, result: { removed: 1 } },
   ],
-  expect: { state: 'idle', context: idle, effects: [{ effect: clearDone, input: {} }] },
+  expect: { state: 'idle', changes: idle, effects: [{ effect: clearDone, input: {} }] },
 })
 
 export const clearFails = contract(tasksMachine, {
   given: { state: 'clearing', context: idle },
   when: [{ failed: clearDone, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', context: { ...idle, error: 'offline' }, effects: [] },
+  expect: { state: 'idle', changes: { error: 'offline' } },
 })

@@ -12,60 +12,15 @@ const FileMeta = z.object({ name: z.string(), size: z.number(), type: z.string()
 const upload = mutation({
   input: z.object({ file: FileMeta }),
   output: z.object({ size: z.number(), text: z.string() }),
-  errors: {},
   invalidates: () => [],
 })
 const home = route({ path: '/', params: null, search: null })
-const Home = ui.view({ machine: null, route: null, render: () => ui.p({}, ['Upload']) })
+const Home = ui.view({ render: () => ui.p({}, ['Upload']) })
 const site = project({
   schema: zodAdapter,
-  styles: null,
-  http: null,
-  env: null,
-  notFound: null,
-  error: null,
-  session: null,
-  site: null,
   routes: { home },
-  pages: [
-    ui.page(home, {
-      views: [Home],
-      assert: null,
-      head: {
-        redirects: null,
-        query: null,
-        input: null,
-        render: () => ({
-          title: 'Up',
-          description: 'Up',
-          type: 'website',
-          image: null,
-          published: null,
-          noindex: false,
-        }),
-      },
-      entries: null,
-    }),
-  ],
-  features: [
-    feature({
-      id: 'up',
-      styles: [],
-      messages: null,
-      widgets: {},
-      intent: { summary: 'Upload fixture', invariants: [] },
-      imports: [],
-      tags: {},
-      events: {},
-      queries: {},
-      mutations: { upload },
-      fns: {},
-      machine: null,
-      views: { Home },
-      contracts: {},
-      exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
-    }),
-  ],
+  pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'Up', description: 'Up' }) } })],
+  features: [feature({ id: 'up', intent: { summary: 'Upload fixture' }, declarations: { upload, Home } })],
 })
 
 describe('file uploads (G10)', () => {

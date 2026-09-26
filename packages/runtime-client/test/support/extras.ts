@@ -9,7 +9,6 @@ const Tag = event({ payload: z.object({ tag: z.string() }) })
 export const note = query({
   input: z.object({}),
   output: z.object({ html: z.string() }),
-  errors: {},
   scope: 'public',
   freshness: 'static',
   tags: () => [],
@@ -35,7 +34,6 @@ const extras = machine({
 
 const Page = ui.view({
   machine: extras,
-  route: null,
   render: ({ ctx }) =>
     ui.main({}, [
       ui.input({ name: 'draft', value: ctx.draft, on: { input: ui.send(Draft, { text: ui.dom.value }) } }),
@@ -63,49 +61,26 @@ const Page = ui.view({
 })
 
 const head = {
-  redirects: null,
-  query: null,
-  input: null,
   render: () => ({
     title: 'Extras',
     description: 'Fixture',
-    type: 'website' as const,
-    image: null,
-    published: null,
-    noindex: false,
   }),
 }
 
 const site = project({
   schema: zodAdapter,
-  styles: null,
-  http: null,
-  env: null,
-  notFound: null,
-  error: null,
-  session: null,
-  site: null,
   routes: { home, item },
-  pages: [
-    ui.page(home, { views: [Page], assert: null, head, entries: null }),
-    ui.page(item, { views: [], assert: null, head, entries: null }),
-  ],
+  pages: [ui.page(home, { views: [Page], head }), ui.page(item, { views: [], head })],
   features: [
     feature({
       id: 'extras',
-      styles: [],
-      messages: null,
-      widgets: {},
-      intent: { summary: 'Capability fixture', invariants: [] },
-      imports: [],
-      tags: {},
-      events: { Draft, Resize, Tag },
-      queries: { note },
-      mutations: {},
-      fns: {},
-      machine: extras,
-      views: { Page },
-      contracts: {
+      intent: { summary: 'Capability fixture' },
+      declarations: {
+        Draft,
+        Resize,
+        Tag,
+        note,
+        Page,
         covers: contract(extras, {
           given: { state: 'ready', context: { draft: '', tags: [], width: 0 } },
           when: [
@@ -113,10 +88,10 @@ const site = project({
             { send: Resize, payload: { width: 800 } },
             { send: Tag, payload: { tag: 'a' } },
           ],
-          expect: { state: 'ready', context: { draft: 'x', tags: ['a'], width: 800 }, effects: [] },
+          expect: { state: 'ready', changes: { draft: 'x', tags: ['a'], width: 800 } },
         }),
+        extras,
       },
-      exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
     }),
   ],
 })

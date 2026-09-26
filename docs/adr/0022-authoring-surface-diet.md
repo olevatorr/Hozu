@@ -1,6 +1,6 @@
 # ADR 0022 — A smaller authoring surface
 
-- Status: proposed
+- Status: accepted
 - Motivation: trial 0006 measured Tenon at **1.67× Nuxt to build and 1.39× to change** the task board, with the
   same model and equal correctness.
   - The app is 2.3× the source of the Nuxt app (21.1 KB vs 9.2 KB).

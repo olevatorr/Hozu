@@ -7,7 +7,6 @@ export const bookmarksTag = tag({ param: null })
 export const listBookmarks = query({
   input: NoInput,
   output: Bookmarks,
-  errors: {},
   scope: 'public',
   freshness: 'static',
   tags: () => [bookmarksTag()],

@@ -21,9 +21,6 @@ import { CartPanel } from './views.ts'
 
 export const cart = feature({
   id: 'cart',
-  styles: [],
-  messages: null,
-  widgets: {},
   intent: {
     summary: 'Signed-in shopping cart: add and remove items, then check out.',
     invariants: [
@@ -33,14 +30,19 @@ export const cart = feature({
     ],
   },
   imports: [catalog],
-  tags: { cartTag },
-  events: { AddItem, RemoveItem, Checkout, Dismiss, SetQuantity },
-  queries: { getCart },
-  mutations: { addItem, removeItem, checkout },
-  fns: { cartTotal },
-  machine: cartMachine,
-  views: { CartPanel },
-  contracts: {
+  declarations: {
+    cartTag,
+    AddItem,
+    RemoveItem,
+    Checkout,
+    Dismiss,
+    SetQuantity,
+    getCart,
+    addItem,
+    removeItem,
+    checkout,
+    cartTotal,
+    CartPanel,
     addFailsUnexpectedly,
     addsItem,
     checkoutFails,
@@ -53,6 +55,7 @@ export const cart = feature({
     removeFails,
     removesItem,
     setsQuantity,
+    cartMachine,
   },
-  exports: { events: [AddItem], queries: [], mutations: [], tags: [cartTag], fns: [], views: [CartPanel] },
+  exports: [AddItem, cartTag, CartPanel],
 })

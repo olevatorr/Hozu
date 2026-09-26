@@ -20,8 +20,8 @@ export type Redirects<R> = {
 }
 
 export interface HttpConfig<R = Record<string, unknown>> {
-  basePath: '' | `/${string}`
-  trailingSlash: 'never' | 'always'
-  redirects: Redirects<R>
-  headers: { routes: RouteDecl<any, any>[] | 'all'; set: Record<string, string> }[]
+  basePath?: `/${string}`
+  trailingSlash?: 'never' | 'always'
+  redirects?: Redirects<R>
+  headers?: { routes: RouteDecl<any, any>[] | 'all'; set: Record<string, string> }[]
 }

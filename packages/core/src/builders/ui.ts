@@ -124,18 +124,18 @@ type QueryErrors<E> = {
 
 function view<C, S extends string, P = null, Q = null>(config: {
   machine: MachineDecl<C, S>
-  route: RouteDecl<P, Q> | null
+  route?: RouteDecl<P, Q>
   render: (scope: ViewScope<C, S, P, Q>) => NodeDecl
 }): ViewDecl
 function view<P = null, Q = null>(config: {
-  machine: null
-  route: RouteDecl<P, Q> | null
+  machine?: never
+  route?: RouteDecl<P, Q>
   render: (scope: { params: Ref<P>; search: Ref<Q>; locale: Ref<string> }) => NodeDecl
 }): ViewDecl
-function view(config: ViewDef): ViewDecl {
+function view(config: Partial<ViewDef> & Pick<ViewDef, 'render'>): ViewDecl {
   return brand({}, 'view', {
-    machine: config.machine,
-    route: config.route,
+    machine: config.machine ?? null,
+    route: config.route ?? null,
     render: config.render,
   } satisfies ViewDef)
 }

@@ -31,7 +31,6 @@ const board = (options: { busyIgnores: boolean; select: string[]; field: 'enum' 
   })
   const View = ui.view({
     machine: m,
-    route: null,
     render: () =>
       ui.div({}, [
         ui.select(
@@ -51,36 +50,10 @@ const board = (options: { busyIgnores: boolean; select: string[]; field: 'enum' 
   })
   const f = feature({
     id: 'board',
-    intent: { summary: 'fixture', invariants: [] },
-    styles: [],
-    messages: null,
-    widgets: {},
-    imports: [],
-    tags: {},
-    events: { Pick, Count, Save },
-    queries: {},
-    mutations: {},
-    fns: {},
-    machine: m,
-    views: { View },
-    contracts: {},
-    exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
+    intent: { summary: 'fixture' },
+    declarations: { Pick, Count, Save, View, m },
   })
-  return buildProject(
-    project({
-      schema: zodAdapter,
-      styles: null,
-      http: null,
-      env: null,
-      notFound: null,
-      error: null,
-      session: null,
-      site: null,
-      routes: {},
-      pages: [],
-      features: [f],
-    }),
-  )
+  return buildProject(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))
 }
 
 const codes = (b: ReturnType<typeof board>, only: string[]) =>

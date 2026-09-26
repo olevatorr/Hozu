@@ -40,28 +40,14 @@ function reorderCart(rand: Rand): ProjectDecl {
   const clones = new Map<object, ReturnType<typeof feature>>()
   for (const f of originals) {
     const c = def<FeatureConfig>(f)
-    const records = ['tags', 'events', 'queries', 'mutations', 'fns', 'views', 'contracts'] as const
-    const next = { ...c } as FeatureConfig
-    for (const key of records)
-      (next as unknown as Record<string, unknown>)[key] = shuffleRecord(
-        c[key] as Record<string, unknown>,
-        rand,
-      )
-    next.exports = Object.fromEntries(
-      shuffle(Object.entries(c.exports), rand).map(([k, list]) => [k, shuffle(list as unknown[], rand)]),
-    ) as unknown as FeatureConfig['exports']
-    next.imports = c.imports.map((i) => clones.get(i) ?? i)
+    const next: FeatureConfig = { ...c, declarations: shuffleRecord(c.declarations, rand) }
+    if (c.exports) next.exports = shuffle(c.exports, rand)
+    if (c.imports) next.imports = c.imports.map((i) => clones.get(i) ?? i)
     clones.set(f, feature(next))
   }
   return project({
-    schema: config.schema,
-    styles: null,
-    http: null,
+    ...config,
     env: config.env as never,
-    notFound: null,
-    error: null,
-    session: config.session,
-    site: config.site,
     routes: shuffleRecord(config.routes, rand),
     pages: config.pages,
     features: shuffle(
@@ -124,7 +110,6 @@ function freshProject(rand: Rand): ProjectDecl {
   })
   const Panel = ui.view({
     machine: m,
-    route: null,
     render: ({ ctx, when }) =>
       ui.div({ class: 'p-2' }, [
         ctx.n,
@@ -135,41 +120,11 @@ function freshProject(rand: Rand): ProjectDecl {
   })
   const f = feature({
     id: 'fresh',
-    styles: [],
-    messages: null,
-    widgets: {},
-    intent: { summary: 'Determinism fixture', invariants: [] },
-    imports: [],
-    tags: {},
-    events: shuffleRecord({ Ping, Pong, Reset }, rand),
-    queries: {},
-    mutations: { save },
-    fns: {},
-    machine: m,
-    views: { Panel },
-    contracts: {},
-    exports: {
-      events: shuffle([Ping, Pong], rand),
-      queries: [],
-      mutations: [],
-      tags: [],
-      fns: [],
-      views: [],
-    },
+    intent: { summary: 'Determinism fixture' },
+    declarations: { ...shuffleRecord({ Ping, Pong, Reset }, rand), save, Panel, m },
+    exports: [...shuffle([Ping, Pong], rand)],
   })
-  return project({
-    schema: zodAdapter,
-    styles: null,
-    http: null,
-    env: null,
-    notFound: null,
-    error: null,
-    session: null,
-    site: null,
-    routes: {},
-    pages: [],
-    features: [f],
-  })
+  return project({ schema: zodAdapter, routes: {}, pages: [], features: [f] })
 }
 
 describe('A1 determinism', () => {

@@ -1,6 +1,6 @@
 import type { MutationDef, QueryDef } from '../builders/effects.ts'
 import type { EventDef } from '../builders/event.ts'
-import type { FeatureConfig } from '../builders/feature.ts'
+import type { FeatureParts } from '../builders/feature.ts'
 import type { FnDef } from '../builders/fn.ts'
 import type { MessagesDef } from '../builders/i18n.ts'
 import { type TagDef, tagUseOf } from '../builders/tag.ts'
@@ -130,7 +130,7 @@ function buildWidget(scope: FeatureScope, sym: string, d: WidgetDef): WidgetIR {
   }
 }
 
-export function buildFeature(project: ProjectScope, id: string, config: FeatureConfig): FeatureIR {
+export function buildFeature(project: ProjectScope, id: string, config: FeatureParts): FeatureIR {
   const scope = new FeatureScope(project, id)
   if (typeof config.intent?.summary !== 'string' || !config.intent.summary.trim())
     scope.report(

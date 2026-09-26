@@ -37,7 +37,7 @@ export const interactions = contract(siteMachine, {
   ],
   expect: {
     state: 'ready',
-    context: {
+    changes: {
       tab: 'ship',
       todos: [{ id: 't2', title: 'B' }],
       draft: '',
@@ -46,6 +46,5 @@ export const interactions = contract(siteMachine, {
       slide: 2,
       spin: false,
     },
-    effects: [],
   },
 })

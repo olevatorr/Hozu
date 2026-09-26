@@ -7,22 +7,7 @@ import { z } from 'zod'
 const Payload = z.object({ n: z.number() })
 const Context = z.object({ n: z.number(), label: z.string() })
 
-const base = {
-  intent: { summary: 'fixture', invariants: [] },
-  styles: [],
-  messages: null,
-  widgets: {},
-  imports: [],
-  tags: {},
-  events: {},
-  queries: {},
-  mutations: {},
-  fns: {},
-  machine: null,
-  views: {},
-  contracts: {},
-  exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
-}
+const base = { intent: { summary: 'fixture' } }
 
 const codesOf = (p: unknown) => buildProject(p).diagnostics.map((d) => d.code)
 
@@ -37,44 +22,20 @@ const expectBuildError = (p: unknown, code: DiagnosticCode, message: RegExp) => 
 describe('builder diagnostics', () => {
   it('TN013 — one identity registered by two features', () => {
     const Ping = event({ payload: Payload })
-    const a = feature({ ...base, id: 'a', events: { Ping } })
-    const b = feature({ ...base, id: 'b', events: { Ping } })
+    const a = feature({ id: 'a', declarations: { Ping }, ...base })
+    const b = feature({ id: 'b', declarations: { Ping }, ...base })
     expectBuildError(
-      project({
-        schema: zodAdapter,
-        styles: null,
-        http: null,
-        env: null,
-        notFound: null,
-        error: null,
-        session: null,
-        site: null,
-        routes: {},
-        pages: [],
-        features: [a, b],
-      }),
+      project({ schema: zodAdapter, routes: {}, pages: [], features: [a, b] }),
       'TN013',
       /already declared as a\.Ping/,
     )
   })
 
   it('TN013 — duplicate feature ids', () => {
-    const a = feature({ ...base, id: 'a' })
-    const b = feature({ ...base, id: 'a' })
+    const a = feature({ id: 'a', declarations: {}, ...base })
+    const b = feature({ id: 'a', declarations: {}, ...base })
     expectBuildError(
-      project({
-        schema: zodAdapter,
-        styles: null,
-        http: null,
-        env: null,
-        notFound: null,
-        error: null,
-        session: null,
-        site: null,
-        routes: {},
-        pages: [],
-        features: [a, b],
-      }),
+      project({ schema: zodAdapter, routes: {}, pages: [], features: [a, b] }),
       'TN013',
       /declared twice/,
     )
@@ -92,21 +53,9 @@ describe('builder diagnostics', () => {
         },
       }),
     })
-    const f = feature({ ...base, id: 'f', events: { Ping }, machine: m })
+    const f = feature({ id: 'f', declarations: { Ping, m }, ...base })
     expectBuildError(
-      project({
-        schema: zodAdapter,
-        styles: null,
-        http: null,
-        env: null,
-        notFound: null,
-        error: null,
-        session: null,
-        site: null,
-        routes: {},
-        pages: [],
-        features: [f],
-      }),
+      project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }),
       'TN014',
       /used as a JavaScript value/,
     )
@@ -121,22 +70,14 @@ describe('builder diagnostics', () => {
     })
     const V = ui.view({
       machine: m,
-      route: null,
       render: ({ ctx }) => ui.div({ class: ctx.label as unknown as string, onclick: 'x' } as never, []),
     })
     const diagnostics = buildProject(
       project({
         schema: zodAdapter,
-        styles: null,
-        http: null,
-        env: null,
-        notFound: null,
-        error: null,
-        session: null,
-        site: null,
         routes: {},
         pages: [],
-        features: [feature({ ...base, id: 'f', machine: m, views: { V } })],
+        features: [feature({ id: 'f', declarations: { V, m }, ...base })],
       }),
     ).diagnostics
     expect(diagnostics.map((d) => d.message)).toEqual(
@@ -149,8 +90,6 @@ describe('builder diagnostics', () => {
 
   it('TN014 — attributes are checked per tag; style and select value point to the canonical form', () => {
     const V = ui.view({
-      machine: null,
-      route: null,
       render: () =>
         ui.div({}, [
           ui.a({ href: '/', 'aria-current': 'page', 'data-x': 1, disabled: true } as never, ['x']),
@@ -163,16 +102,9 @@ describe('builder diagnostics', () => {
     const messages = buildProject(
       project({
         schema: zodAdapter,
-        styles: null,
-        http: null,
-        env: null,
-        notFound: null,
-        error: null,
-        session: null,
-        site: null,
         routes: {},
         pages: [],
-        features: [feature({ ...base, id: 'f', views: { V } })],
+        features: [feature({ id: 'f', declarations: { V }, ...base })],
       }),
     ).diagnostics.map((d) => [d.message, d.cause])
     expect(messages).toEqual([
@@ -195,16 +127,9 @@ describe('builder diagnostics', () => {
     const found = buildProject(
       project({
         schema: zodAdapter,
-        styles: null,
-        http: null,
-        env: null,
-        notFound: null,
-        error: null,
-        session: null,
-        site: null,
         routes: {},
         pages: [],
-        features: [feature({ ...base, id: 'f', widgets: { Ghost } })],
+        features: [feature({ id: 'f', declarations: { Ghost }, ...base })],
       }),
     ).diagnostics.filter((d) => d.code === 'TN029')
     expect(found.map((d) => [d.location.pointer, d.message])).toEqual([
@@ -215,28 +140,16 @@ describe('builder diagnostics', () => {
   it('TN012 — schema from another vendor', () => {
     const foreign = { '~standard': { version: 1, vendor: 'valibot', validate: () => ({ value: {} }) } }
     const Ping = event({ payload: foreign as never })
-    const f = feature({ ...base, id: 'f', events: { Ping } })
+    const f = feature({ id: 'f', declarations: { Ping }, ...base })
     expectBuildError(
-      project({
-        schema: zodAdapter,
-        styles: null,
-        http: null,
-        env: null,
-        notFound: null,
-        error: null,
-        session: null,
-        site: null,
-        routes: {},
-        pages: [],
-        features: [f],
-      }),
+      project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }),
       'TN012',
       /"valibot" but the project adapter is "zod"/,
     )
   })
 
   it('TN003 — invoke of a mutation no feature declares', () => {
-    const save = mutation({ input: Payload, output: Payload, errors: {}, invalidates: () => [] })
+    const save = mutation({ input: Payload, output: Payload, invalidates: () => [] })
     const m = machine({
       context: Context,
       initialContext: { n: 0, label: '' },
@@ -254,16 +167,9 @@ describe('builder diagnostics', () => {
     expectBuildError(
       project({
         schema: zodAdapter,
-        styles: null,
-        http: null,
-        env: null,
-        notFound: null,
-        error: null,
-        session: null,
-        site: null,
         routes: {},
         pages: [],
-        features: [feature({ ...base, id: 'f', machine: m })],
+        features: [feature({ id: 'f', declarations: { m }, ...base })],
       }),
       'TN003',
       /not declared in any feature/,
@@ -282,16 +188,9 @@ describe('builder diagnostics', () => {
     expectBuildError(
       project({
         schema: zodAdapter,
-        styles: null,
-        http: null,
-        env: null,
-        notFound: null,
-        error: null,
-        session: null,
-        site: null,
         routes: {},
         pages: [],
-        features: [feature({ ...base, id: 'f', events: { Ping }, machine: m })],
+        features: [feature({ id: 'f', declarations: { Ping, m }, ...base })],
       }),
       'TN007',
       /missing from project\(\{ routes \}\)/,
@@ -305,24 +204,11 @@ describe('builder diagnostics', () => {
       errors: { Unexpected: Payload },
       invalidates: () => [],
     })
-    const f = feature({ ...base, id: 'f', intent: { summary: ' ', invariants: [] }, mutations: { save } })
-    expect(
-      codesOf(
-        project({
-          schema: zodAdapter,
-          styles: null,
-          http: null,
-          env: null,
-          notFound: null,
-          error: null,
-          session: null,
-          site: null,
-          routes: {},
-          pages: [],
-          features: [f],
-        }),
-      ),
-    ).toEqual(['TN014', 'TN014'])
+    const f = feature({ id: 'f', declarations: { save }, intent: { summary: ' ' } })
+    expect(codesOf(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))).toEqual([
+      'TN014',
+      'TN014',
+    ])
   })
 
   it('records literal-only objects as literals and mixed objects as object expressions', () => {
@@ -347,16 +233,9 @@ describe('builder diagnostics', () => {
     const { ir } = buildProject(
       project({
         schema: zodAdapter,
-        styles: null,
-        http: null,
-        env: null,
-        notFound: null,
-        error: null,
-        session: null,
-        site: null,
         routes: {},
         pages: [],
-        features: [feature({ ...base, id: 'f', events: { Ping }, machine: m })],
+        features: [feature({ id: 'f', declarations: { Ping, m }, ...base })],
       }),
     )
     const [first, second] = ir.features.f!.machine!.states.idle!.on['f.Ping']!

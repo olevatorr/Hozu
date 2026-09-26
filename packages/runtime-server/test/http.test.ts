@@ -10,46 +10,23 @@ import { z } from 'zod'
 const home = route({ path: '/', params: null, search: null })
 const post = route({ path: '/posts/:slug', params: z.object({ slug: z.string().min(2) }), search: null })
 
-const Home = ui.view({
-  machine: null,
-  route: null,
-  render: () => ui.a({ href: ui.link(post, { slug: 'hello' }) }, ['Hello']),
-})
-const Post = ui.view({ machine: null, route: post, render: ({ params }) => ui.h1({}, [params.slug]) })
+const Home = ui.view({ render: () => ui.a({ href: ui.link(post, { slug: 'hello' }) }, ['Hello']) })
+const Post = ui.view({ route: post, render: ({ params }) => ui.h1({}, [params.slug]) })
 
 const head = (title: string) => ({
-  redirects: null,
-  query: null,
-  input: null,
   render: () => ({
     title,
     description: title,
-    type: 'website' as const,
-    image: null,
-    published: null,
-    noindex: false,
   }),
 })
 
 const site = project({
   schema: zodAdapter,
-  styles: null,
-  notFound: null,
-  error: null,
-  session: null,
-  site: {
-    url: 'https://blog.example',
-    name: 'Blog',
-    locales: null,
-    offline: null,
-    lang: 'en',
-    icon: null,
-    themeColor: null,
-  },
+  site: { url: 'https://blog.example', name: 'Blog', lang: 'en' },
   routes: { home, post },
   pages: [
-    ui.page(home, { views: [Home], assert: null, head: head('Home'), entries: null }),
-    ui.page(post, { views: [Post], assert: null, head: head('Post'), entries: null }),
+    ui.page(home, { views: [Home], head: head('Home') }),
+    ui.page(post, { views: [Post], head: head('Post') }),
   ],
   http: {
     basePath: '/shop',
@@ -63,26 +40,7 @@ const site = project({
       { routes: [post], set: { 'x-robots-tag': 'noarchive' } },
     ],
   },
-  env: null,
-  features: [
-    feature({
-      id: 'blog',
-      styles: [],
-      messages: null,
-      widgets: {},
-      intent: { summary: 'Posts', invariants: [] },
-      imports: [],
-      tags: {},
-      events: {},
-      queries: {},
-      mutations: {},
-      fns: {},
-      machine: null,
-      views: { Home, Post },
-      contracts: {},
-      exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
-    }),
-  ],
+  features: [feature({ id: 'blog', intent: { summary: 'Posts' }, declarations: { Home, Post } })],
 })
 
 const build = buildProject(site, { sources: false })

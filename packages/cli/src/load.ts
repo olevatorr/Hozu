@@ -15,7 +15,7 @@ export async function load(config: string | undefined, cwd: string): Promise<Loa
   const path = resolve(cwd, config ?? 'tenon.config.ts')
   if (!existsSync(path))
     throw new TenonCliError('config', `No config found at ${path}`, [
-      'Create tenon.config.ts exporting project({...}) as default, or pass --config <path>',
+      'Create tenon.config.ts exporting project({ ... }) as default, or pass --config <path>',
     ])
   let mod: { default?: unknown }
   try {

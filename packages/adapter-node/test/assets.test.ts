@@ -34,8 +34,6 @@ const url = (f: string) => pathToFileURL(join(dir, f))
 
 const home = route({ path: '/', params: null, search: null })
 const Page = ui.view({
-  machine: null,
-  route: null,
   render: () =>
     ui.main({}, [
       ui.img({ src: ui.asset(url('hero.png')), alt: 'Hero' }),
@@ -45,52 +43,14 @@ const Page = ui.view({
 const site = project({
   schema: zodAdapter,
   styles: url('app.css'),
-  http: null,
-  env: null,
-  notFound: null,
-  error: null,
-  session: null,
-  site: null,
   routes: { home },
   pages: [
     ui.page(home, {
       views: [Page],
-      assert: null,
-      head: {
-        redirects: null,
-        query: null,
-        input: null,
-        render: () => ({
-          title: 'Assets',
-          description: 'Asset fixture',
-          type: 'website',
-          image: null,
-          published: null,
-          noindex: false,
-        }),
-      },
-      entries: null,
+      head: { render: () => ({ title: 'Assets', description: 'Asset fixture' }) },
     }),
   ],
-  features: [
-    feature({
-      id: 'site',
-      styles: [],
-      messages: null,
-      widgets: {},
-      intent: { summary: 'Asset fixture', invariants: [] },
-      imports: [],
-      tags: {},
-      events: {},
-      queries: {},
-      mutations: {},
-      fns: {},
-      machine: null,
-      views: { Page },
-      contracts: {},
-      exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
-    }),
-  ],
+  features: [feature({ id: 'site', intent: { summary: 'Asset fixture' }, declarations: { Page } })],
 })
 
 describe('assets', () => {

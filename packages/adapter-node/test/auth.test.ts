@@ -24,13 +24,8 @@ const me = query({
   freshness: 'live',
   tags: () => [],
 })
-const login = mutation({
-  input: z.object({ name: z.string() }),
-  output: z.object({}),
-  errors: {},
-  invalidates: () => [],
-})
-const logout = mutation({ input: z.object({}), output: z.object({}), errors: {}, invalidates: () => [] })
+const login = mutation({ input: z.object({ name: z.string() }), output: z.object({}), invalidates: () => [] })
+const logout = mutation({ input: z.object({}), output: z.object({}), invalidates: () => [] })
 
 const home = route({ path: '/', params: null, search: null })
 const signIn = route({ path: '/login', params: null, search: null })
@@ -38,8 +33,6 @@ const account = route({ path: '/account', params: null, search: null })
 const missing = route({ path: '/404', params: null, search: null })
 
 const Account = ui.view({
-  machine: null,
-  route: null,
   render: () =>
     ui.query(
       me,
@@ -51,85 +44,49 @@ const Account = ui.view({
       },
     ),
 })
-const Plain = (text: string) => ui.view({ machine: null, route: null, render: () => ui.h1({}, [text]) })
+const Plain = (text: string) => ui.view({ render: () => ui.h1({}, [text]) })
 const [Home, Login, NotFound] = [Plain('Home'), Plain('Login'), Plain('Nothing here')]
 const head = (title: string) => ({
-  redirects: null,
-  query: null,
-  input: null,
   render: () => ({
     title,
     description: title,
-    type: 'website' as const,
-    image: null,
-    published: null,
-    noindex: false,
   }),
 })
 
 const site = project({
   schema: zodAdapter,
-  styles: null,
-  http: null,
-  env: null,
   notFound: missing,
-  error: null,
   session: z.object({ user: z.string() }),
   site: {
     url: 'https://auth.example',
     name: 'Auth',
-    locales: null,
-    offline: null,
     lang: 'en',
     icon: ui.asset(pathToFileURL(join(dir, 'icon.svg'))),
     themeColor: '#4f46e5',
   },
   routes: { home, signIn, account, missing },
   pages: [
-    ui.page(home, { views: [Home], assert: null, head: head('Home'), entries: null }),
-    ui.page(signIn, { views: [Login], assert: null, head: head('Login'), entries: null }),
+    ui.page(home, { views: [Home], head: head('Home') }),
+    ui.page(signIn, { views: [Login], head: head('Login') }),
     ui.page(missing, {
       views: [NotFound],
-      assert: null,
       head: { ...head('Not found'), render: () => ({ ...head('Not found').render(), noindex: true }) },
-      entries: null,
     }),
     ui.page(account, {
       views: [Account],
-      assert: null,
       head: {
         query: me,
         input: () => ({}),
-        render: (m) => ({
-          title: m.user,
-          description: 'Account',
-          type: 'website',
-          image: null,
-          published: null,
-          noindex: true,
-        }),
+        render: (m) => ({ title: m.user, description: 'Account', noindex: true }),
         redirects: { Unauthorized: signIn },
       },
-      entries: null,
     }),
   ],
   features: [
     feature({
       id: 'auth',
-      styles: [],
-      messages: null,
-      widgets: {},
-      intent: { summary: 'Session fixture', invariants: [] },
-      imports: [],
-      tags: {},
-      events: {},
-      queries: { me },
-      mutations: { login, logout },
-      fns: {},
-      machine: null,
-      views: { Account, Home, Login, NotFound },
-      contracts: {},
-      exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
+      intent: { summary: 'Session fixture' },
+      declarations: { me, login, logout, Account, Home, Login, NotFound },
     }),
   ],
 })

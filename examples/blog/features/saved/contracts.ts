@@ -12,7 +12,7 @@ export const savesPost = contract(savedMachine, {
   ],
   expect: {
     state: 'idle',
-    context: { slug: 'hello-tenon', error: null },
+    changes: { slug: 'hello-tenon', error: null },
     effects: [{ effect: savePost, input: { slug: 'hello-tenon' } }],
   },
 })
@@ -23,13 +23,17 @@ export const refusesWhenFull = contract(savedMachine, {
     { send: Save, payload: { slug: 'x' } },
     { failed: savePost, error: 'LimitReached', data: { limit: 20 } },
   ],
-  expect: { state: 'idle', context: { slug: 'x', error: 'Reading list is full' }, effects: null },
+  expect: {
+    state: 'idle',
+    changes: { slug: 'x', error: 'Reading list is full' },
+    effects: [{ effect: savePost, input: { slug: 'x' } }],
+  },
 })
 
 export const saveFails = contract(savedMachine, {
   given: { state: 'saving', context: { slug: 'x', error: null } },
   when: [{ failed: savePost, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', context: { slug: 'x', error: 'offline' }, effects: [] },
+  expect: { state: 'idle', changes: { slug: 'x', error: 'offline' } },
 })
 
 export const removesPost = contract(savedMachine, {
@@ -40,7 +44,7 @@ export const removesPost = contract(savedMachine, {
   ],
   expect: {
     state: 'idle',
-    context: { slug: 'x', error: null },
+    changes: { slug: 'x', error: null },
     effects: [{ effect: unsavePost, input: { slug: 'x' } }],
   },
 })
@@ -48,5 +52,5 @@ export const removesPost = contract(savedMachine, {
 export const removeFails = contract(savedMachine, {
   given: { state: 'removing', context: { slug: 'x', error: null } },
   when: [{ failed: unsavePost, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', context: { slug: 'x', error: 'offline' }, effects: [] },
+  expect: { state: 'idle', changes: { slug: 'x', error: 'offline' } },
 })

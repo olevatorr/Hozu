@@ -8,7 +8,6 @@ const Product = z.object({ sku: z.string(), name: z.string(), price: z.number() 
 const listProducts = query({
   input: z.object({}),
   output: z.array(Product),
-  errors: {},
   scope: 'public',
   freshness: 'static',
   tags: () => [],
@@ -24,7 +23,6 @@ const cart = machine({
 })
 const Page = ui.view({
   machine: cart,
-  route: null,
   render: ({ ctx }) =>
     ui.main({}, [
       ui.h1({}, ['Products']),
@@ -53,20 +51,8 @@ const Page = ui.view({
 const home = route({ path: '/', params: null, search: null })
 const shop = feature({
   id: 'shop',
-  styles: [],
-  messages: null,
-  widgets: {},
-  intent: { summary: 'Benchmark page', invariants: [] },
-  imports: [],
-  tags: {},
-  events: { Add },
-  queries: { listProducts },
-  mutations: {},
-  fns: {},
-  machine: cart,
-  views: { Page },
-  contracts: {},
-  exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
+  intent: { summary: 'Benchmark page' },
+  declarations: { Add, listProducts, Page, cart },
 })
 const headFields = {
   title: 'Products',
@@ -78,22 +64,8 @@ const headFields = {
 } as const
 export const benchProject = project({
   schema: zodAdapter,
-  styles: null,
-  http: null,
-  env: null,
-  notFound: null,
-  error: null,
-  session: null,
-  site: null,
   routes: { home },
-  pages: [
-    ui.page(home, {
-      views: [Page],
-      assert: null,
-      head: { query: null, input: null, render: () => headFields },
-      entries: null,
-    }),
-  ],
+  pages: [ui.page(home, { views: [Page], head: { render: () => headFields } })],
   features: [shop],
 })
 export const benchResolvers = resolvers(benchProject, (implement) => [

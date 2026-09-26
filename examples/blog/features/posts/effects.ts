@@ -8,7 +8,6 @@ export const postTag = tag({ param: z.string() })
 export const listPosts = query({
   input: NoInput,
   output: z.array(Summary),
-  errors: {},
   scope: 'public',
   freshness: { revalidate: 300 },
   tags: () => [postsTag()],

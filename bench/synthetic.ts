@@ -19,21 +19,14 @@ const Rows = z.array(z.object({ id: z.string(), n: z.number() }))
 const NoInput = z.object({})
 
 const rowsQuery = () =>
-  query({ input: NoInput, output: Rows, errors: {}, scope: 'public', freshness: 'static', tags: () => [] })
+  query({ input: NoInput, output: Rows, scope: 'public', freshness: 'static', tags: () => [] })
 
 export function syntheticProject(features: number, states = 30, events = 10) {
   const decls: FeatureDecl[] = []
   let previous: { feature: FeatureDecl; rows: ReturnType<typeof rowsQuery> } | null = null
   for (let f = 0; f < features; f++) {
     const evs: EventDecl<{ n: number }>[] = Array.from({ length: events }, () => event({ payload: Payload }))
-    const rows = query({
-      input: NoInput,
-      output: Rows,
-      errors: {},
-      scope: 'public',
-      freshness: 'static',
-      tags: () => [],
-    })
+    const rows = query({ input: NoInput, output: Rows, scope: 'public', freshness: 'static', tags: () => [] })
     const names = Array.from({ length: states }, (_, s) => `s${s}`)
     const m = machine({
       context: Context,
@@ -62,7 +55,6 @@ export function syntheticProject(features: number, states = 30, events = 10) {
     const source = previous?.rows ?? rows
     const View = ui.view({
       machine: m,
-      route: null,
       render: ({ ctx, when }) =>
         ui.section({ class: 'grid' }, [
           ui.h2({}, ['Feature ', f]),
@@ -83,35 +75,13 @@ export function syntheticProject(features: number, states = 30, events = 10) {
     const eventRecord = Object.fromEntries(evs.map((e, i) => [`E${i}`, e]))
     const decl = feature({
       id: `f${f}`,
-      styles: [],
-      messages: null,
-      widgets: {},
-      intent: { summary: `Synthetic feature ${f}`, invariants: [] },
+      intent: { summary: `Synthetic feature ${f}` },
       imports: previous ? [previous.feature] : [],
-      tags: {},
-      events: eventRecord,
-      queries: { rows },
-      mutations: {},
-      fns: {},
-      machine: m,
-      views: { View },
-      contracts: {},
-      exports: { events: [], queries: [rows], mutations: [], tags: [], fns: [], views: [] },
+      declarations: { ...eventRecord, rows, View, m },
+      exports: [rows],
     })
     decls.push(decl)
     previous = { feature: decl, rows }
   }
-  return project({
-    schema: zodAdapter,
-    styles: null,
-    http: null,
-    env: null,
-    notFound: null,
-    error: null,
-    session: null,
-    site: null,
-    routes: {},
-    pages: [],
-    features: decls,
-  })
+  return project({ schema: zodAdapter, routes: {}, pages: [], features: decls })
 }

@@ -9,44 +9,33 @@ const dice = machine({
   initialContext: { last: 0 },
   initial: 'idle',
   states: ({ ctx }) => ({
-    idle: { on: [on(Roll, { target: 'idle', assign: () => [op.set(ctx.last, Math.random())] })] },
+    idle: {
+      on: [
+        on(Roll, {
+          target: 'idle',
+          guard: (e) => op.gte(e.n, Math.random()),
+          assign: (e) => [op.set(ctx.last, e.n)],
+        }),
+      ],
+    },
   }),
 })
 
 const rolls = contract(dice, {
   given: { state: 'idle', context: { last: 0 } },
   when: [{ send: Roll, payload: { n: 1 } }],
-  expect: { state: 'idle', context: null, effects: [] },
+  expect: { state: 'idle', changes: { last: 1 } },
 })
 
 export default project({
   schema: zodAdapter,
-  styles: null,
-  http: null,
-  env: null,
-  notFound: null,
-  error: null,
-  session: null,
-  site: null,
   routes: {},
   pages: [],
   features: [
     feature({
       id: 'dice',
-      styles: [],
-      messages: null,
-      widgets: {},
-      intent: { summary: 'Reads Math.random inside a recorder', invariants: [] },
-      imports: [],
-      tags: {},
-      events: { Roll },
-      queries: {},
-      mutations: {},
-      fns: {},
-      machine: dice,
-      views: {},
-      contracts: { rolls },
-      exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
+      intent: { summary: 'Reads Math.random inside a recorder' },
+      declarations: { Roll, rolls, dice },
     }),
   ],
 })

@@ -6,24 +6,24 @@ import type { ViewDecl } from './ui.ts'
 
 export interface HeadFields {
   title: Val<string>
-  description: Val<string>
-  type: 'website' | 'article'
-  image: Val<string | null>
-  published: Val<string | null>
-  noindex: boolean
+  description?: Val<string>
+  type?: 'website' | 'article'
+  image?: Val<string | null>
+  published?: Val<string | null>
+  noindex?: boolean
 }
 
 export interface PageDef {
   route: RouteDecl
   views: ViewDecl[]
-  assert: 'static' | 'cacheable' | null
+  assert?: 'static' | 'cacheable'
   head: {
-    query: QueryDecl | null
-    input: ((params: any, locale: any) => unknown) | null
+    query?: QueryDecl
+    input?: (params: any, locale: any) => unknown
     render: (data: any, params: any, locale: any) => HeadFields
-    redirects: Record<string, RouteDecl> | null
+    redirects?: Record<string, RouteDecl>
   }
-  entries: { query: QueryDecl; input: unknown; params: (item: any) => unknown } | null
+  entries?: { query: QueryDecl; input: unknown; params: (item: any) => unknown }
 }
 
 export interface PageDecl extends Decl<'page'> {}
@@ -32,13 +32,13 @@ export const page = <P, I = never, O = never, E = never, EI = never, EO = never,
   route: RouteDecl<P>,
   config: {
     views: ViewDecl[]
-    assert: 'static' | 'cacheable' | null
+    assert?: 'static' | 'cacheable'
     head: {
-      query: QueryDecl<I, O, E, any> | null
-      input: ((params: Ref<P>, locale: Ref<string>) => Val<I>) | null
+      query?: QueryDecl<I, O, E, any>
+      input?: (params: Ref<P>, locale: Ref<string>) => Val<I>
       render: (data: Ref<O>, params: Ref<P>, locale: Ref<string>) => HeadFields
-      redirects: { [K in keyof E]?: RouteDecl<null> } | null
+      redirects?: { [K in keyof E]?: RouteDecl<null> }
     }
-    entries: { query: QueryDecl<EI, EO[], EE, any>; input: Val<EI>; params: (item: Ref<EO>) => Val<P> } | null
+    entries?: { query: QueryDecl<EI, EO[], EE, any>; input: Val<EI>; params: (item: Ref<EO>) => Val<P> }
   },
 ): PageDecl => brand({}, 'page', { route, ...config } as PageDef)

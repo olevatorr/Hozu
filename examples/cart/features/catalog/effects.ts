@@ -8,7 +8,6 @@ export const productTag = tag({ param: z.string() })
 export const listProducts = query({
   input: NoInput,
   output: z.array(Product),
-  errors: {},
   scope: 'public',
   freshness: { revalidate: 60 },
   tags: () => [catalogTag()],

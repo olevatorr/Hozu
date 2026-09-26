@@ -44,19 +44,29 @@ export interface MutationDecl<I = any, O = any, E = any>
 
 export type EffectDecl<I = any, O = any, E = any> = QueryDecl<I, O, E> | MutationDecl<I, O, E>
 
-export const query = <I extends Schema, O extends Schema, E extends ErrorSchemas, Sc extends Scope>(config: {
+export const query = <
+  I extends Schema,
+  O extends Schema,
+  Sc extends Scope,
+  E extends ErrorSchemas = Record<never, never>,
+>(config: {
   input: I
   output: O
-  errors: E
+  errors?: E
   scope: Sc
   freshness: Freshness
-  tags: (input: Ref<Infer<I>>) => TagUse[]
-}): QueryDecl<Infer<I>, Infer<O>, ErrorTypes<E>, Sc> => brand({}, 'query', { ...config } satisfies QueryDef)
+  tags?: (input: Ref<Infer<I>>) => TagUse[]
+}): QueryDecl<Infer<I>, Infer<O>, ErrorTypes<E>, Sc> =>
+  brand({}, 'query', { errors: {}, tags: () => [], ...config } as QueryDef)
 
-export const mutation = <I extends Schema, O extends Schema, E extends ErrorSchemas>(config: {
+export const mutation = <
+  I extends Schema,
+  O extends Schema,
+  E extends ErrorSchemas = Record<never, never>,
+>(config: {
   input: I
   output: O
-  errors: E
-  invalidates: (input: Ref<Infer<I>>) => TagUse[]
+  errors?: E
+  invalidates?: (input: Ref<Infer<I>>) => TagUse[]
 }): MutationDecl<Infer<I>, Infer<O>, ErrorTypes<E>> =>
-  brand({}, 'mutation', { ...config } satisfies MutationDef)
+  brand({}, 'mutation', { errors: {}, invalidates: () => [], ...config } as MutationDef)

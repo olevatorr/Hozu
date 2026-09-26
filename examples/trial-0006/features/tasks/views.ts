@@ -14,12 +14,14 @@ const priorities = ['low', 'normal', 'high'] as const
 
 export const Board = ui.view({
   machine: tasksMachine,
-  route: null,
   render: ({ ctx, when }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [
       ui.h1({ class: 'text-3xl font-bold tracking-tight text-slate-900' }, ['Tasks']),
       ui.form(
-        { class: 'flex gap-2', on: { submit: ui.send(Add, { title: ui.dom.form('title'), priority: ui.dom.form('priority') }) } },
+        {
+          class: 'flex gap-2',
+          on: { submit: ui.send(Add, { title: ui.dom.form('title'), priority: ui.dom.form('priority') }) },
+        },
         [
           ui.label({ for: 'title', class: 'sr-only' }, ['New task']),
           ui.input({
@@ -42,14 +44,16 @@ export const Board = ui.view({
             {
               id: 'priority',
               name: 'priority',
-              class: 'rounded-lg border border-slate-300 px-2 py-2 shadow-sm focus:border-indigo-500 focus:outline-none',
+              class:
+                'rounded-lg border border-slate-300 px-2 py-2 shadow-sm focus:border-indigo-500 focus:outline-none',
             },
             priorities.map((p) => ui.option({ value: p, selected: op.eq(ctx.priority, p) }, [p])),
           ),
           ui.button(
             {
               type: 'submit',
-              class: 'rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-indigo-500',
+              class:
+                'rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-indigo-500',
             },
             ['Add'],
           ),
@@ -101,46 +105,54 @@ export const Board = ui.view({
               isEmpty({ items, show: ctx.show }),
               [ui.p({ class: 'text-slate-500' }, ['No tasks'])],
               [
-                ui.ul({ class: 'divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white shadow-sm' }, [
-                  ui.each(visible({ items, show: ctx.show }), 'id', (t) =>
-                    ui.li({ class: 'flex items-center gap-3 px-4 py-3' }, [
-                      ui.a(
-                        { href: ui.link(taskPage, { id: t.id }), class: 'flex-1 text-slate-800 hover:underline' },
-                        [t.title],
-                      ),
-                      ui.span(
-                        {
-                          class: 'rounded-full px-2 py-0.5 text-xs',
-                          toggle: {
-                            'bg-emerald-100 text-emerald-800': op.eq(t.done, true),
-                            'bg-amber-100 text-amber-800': op.eq(t.done, false),
+                ui.ul(
+                  {
+                    class: 'divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white shadow-sm',
+                  },
+                  [
+                    ui.each(visible({ items, show: ctx.show }), 'id', (t) =>
+                      ui.li({ class: 'flex items-center gap-3 px-4 py-3' }, [
+                        ui.a(
+                          {
+                            href: ui.link(taskPage, { id: t.id }),
+                            class: 'flex-1 text-slate-800 hover:underline',
                           },
-                        },
-                        [ui.if(op.eq(t.done, true), ['done'], ['open'])],
-                      ),
-                      ui.span(
-                        {
-                          class: 'rounded-full px-2 py-0.5 text-xs',
-                          'data-priority': t.priority,
-                          toggle: {
-                            'bg-slate-100 text-slate-600': op.eq(t.priority, 'low'),
-                            'bg-sky-100 text-sky-800': op.eq(t.priority, 'normal'),
-                            'bg-rose-100 text-rose-800': op.eq(t.priority, 'high'),
+                          [t.title],
+                        ),
+                        ui.span(
+                          {
+                            class: 'rounded-full px-2 py-0.5 text-xs',
+                            toggle: {
+                              'bg-emerald-100 text-emerald-800': op.eq(t.done, true),
+                              'bg-amber-100 text-amber-800': op.eq(t.done, false),
+                            },
                           },
-                        },
-                        [t.priority],
-                      ),
-                      ui.button(
-                        {
-                          type: 'button',
-                          class: 'rounded-md border border-slate-300 px-2 py-1 text-sm hover:bg-slate-50',
-                          on: { click: ui.send(Toggle, { id: t.id }) },
-                        },
-                        [ui.if(op.eq(t.done, true), ['Mark open'], ['Mark done'])],
-                      ),
-                    ]),
-                  ),
-                ]),
+                          [ui.if(op.eq(t.done, true), ['done'], ['open'])],
+                        ),
+                        ui.span(
+                          {
+                            class: 'rounded-full px-2 py-0.5 text-xs',
+                            'data-priority': t.priority,
+                            toggle: {
+                              'bg-slate-100 text-slate-600': op.eq(t.priority, 'low'),
+                              'bg-sky-100 text-sky-800': op.eq(t.priority, 'normal'),
+                              'bg-rose-100 text-rose-800': op.eq(t.priority, 'high'),
+                            },
+                          },
+                          [t.priority],
+                        ),
+                        ui.button(
+                          {
+                            type: 'button',
+                            class: 'rounded-md border border-slate-300 px-2 py-1 text-sm hover:bg-slate-50',
+                            on: { click: ui.send(Toggle, { id: t.id }) },
+                          },
+                          [ui.if(op.eq(t.done, true), ['Mark open'], ['Mark done'])],
+                        ),
+                      ]),
+                    ),
+                  ],
+                ),
               ],
             ),
           pending: ui.p({}, ['Loading…']),
@@ -151,7 +163,6 @@ export const Board = ui.view({
 })
 
 export const Detail = ui.view({
-  machine: null,
   route: taskPage,
   render: ({ params }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-4 px-4 py-12' }, [
@@ -162,7 +173,9 @@ export const Detail = ui.view({
           ready: (t) =>
             ui.article({ class: 'space-y-2' }, [
               ui.h1({ class: 'text-3xl font-bold tracking-tight text-slate-900' }, [t.title]),
-              ui.p({ class: 'text-slate-600' }, [ui.if(op.eq(t.done, true), ['Status: done'], ['Status: open'])]),
+              ui.p({ class: 'text-slate-600' }, [
+                ui.if(op.eq(t.done, true), ['Status: done'], ['Status: open']),
+              ]),
               ui.p({ class: 'text-slate-600' }, ['Priority: ', t.priority]),
             ]),
           pending: null,

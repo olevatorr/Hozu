@@ -15,7 +15,7 @@ import type { TagDecl } from './tag.ts'
 import type { ViewDecl } from './ui.ts'
 import type { WidgetDecl } from './widget.ts'
 
-export interface FeatureConfig {
+export interface FeatureParts {
   id: string
   intent: { summary: string; invariants: string[] }
   styles: URL[]
@@ -44,40 +44,51 @@ export interface FeatureDecl extends Decl<'feature'> {
   readonly id: string
 }
 
+export interface FeatureConfig {
+  id: string
+  intent: { summary: string; invariants?: string[] }
+  declarations: Record<string, Decl>
+  imports?: FeatureDecl[]
+  exports?: Decl[]
+  styles?: URL[]
+}
+
 export const feature = (config: FeatureConfig): FeatureDecl =>
   brand({ id: config.id }, 'feature', { ...config })
 
 export interface ProjectConfig {
   schema: SchemaAdapter
-  session: Schema | null
+  session?: Schema
   routes: Record<string, RouteDecl>
-  site: {
+  site?: {
     url: string
     name: string
     lang: string
-    locales: string[] | null
-    offline: RouteDecl | null
-    icon: Asset | null
-    themeColor: string | null
-  } | null
-  styles: URL | null
-  notFound: RouteDecl | null
-  error: RouteDecl | null
+    locales?: string[]
+    offline?: RouteDecl
+    icon?: Asset
+    themeColor?: string
+  }
+  styles?: URL
+  notFound?: RouteDecl
+  error?: RouteDecl
   pages: PageDecl[]
   features: FeatureDecl[]
-  http: HttpConfig | null
-  env: { server: Schema | null; public: Schema | null } | null
+  http?: HttpConfig
+  env?: { server?: Schema; public?: Schema }
 }
 
 export interface ProjectDecl<Session = unknown, Env = unknown>
   extends Decl<'project'>,
     Typed<{ session: Session; env: Env }> {}
 
-export const project = <S extends Schema | null, R = Record<string, never>, ES extends Schema | null = null>(
+export const project = <S extends Schema = never, R = Record<string, never>, ES extends Schema = never>(
   config: Omit<ProjectConfig, 'session' | 'http' | 'env'> & {
-    session: S
-    http: HttpConfig<R> | null
-    env: { server: ES; public: Schema | null } | null
+    session?: S
+    http?: HttpConfig<R>
+    env?: { server?: ES; public?: Schema }
   },
-): ProjectDecl<S extends Schema ? Infer<S> : null, ES extends Schema ? Infer<ES> : Record<string, never>> =>
-  brand({}, 'project', { ...config })
+): ProjectDecl<
+  [S] extends [never] ? null : Infer<S>,
+  [ES] extends [never] ? Record<string, never> : Infer<ES>
+> => brand({}, 'project', { ...config })

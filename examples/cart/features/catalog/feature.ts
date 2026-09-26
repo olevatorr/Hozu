@@ -4,28 +4,10 @@ import { ProductDetail, ProductGrid } from './views.ts'
 
 export const catalog = feature({
   id: 'catalog',
-  styles: [],
-  messages: null,
-  widgets: {},
   intent: {
     summary: 'Public product catalog. Read-only, cacheable, ships no JavaScript.',
     invariants: ['Only public data', 'No machine: every node is static or revalidated'],
   },
-  imports: [],
-  tags: { catalogTag, productTag },
-  events: {},
-  queries: { listProducts, getProduct },
-  mutations: {},
-  fns: {},
-  machine: null,
-  views: { ProductGrid, ProductDetail },
-  contracts: {},
-  exports: {
-    events: [],
-    queries: [listProducts],
-    mutations: [],
-    tags: [catalogTag],
-    fns: [],
-    views: [ProductGrid],
-  },
+  declarations: { catalogTag, productTag, listProducts, getProduct, ProductGrid, ProductDetail },
+  exports: [listProducts, catalogTag, ProductGrid],
 })
