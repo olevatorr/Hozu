@@ -6,6 +6,7 @@ import { gzipSync } from 'node:zlib'
 import { buildProject } from '@tenon/core/ir'
 import { createDataRuntime } from '@tenon/data'
 import { compileMachine, init, transition } from '@tenon/machine'
+import { generateRender } from '@tenon/runtime-server'
 import { validate, verify } from '@tenon/validator'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
@@ -97,6 +98,15 @@ record(
   'bytes',
   null,
 )
+
+record(
+  'P10',
+  'render code generation for examples/cart, median of 20',
+  time(() => generateRender(built), 20, 3),
+  'ms',
+  null,
+)
+record('A6', 'generated render code for examples/cart', generateRender(built).length, 'bytes', null)
 
 const { createResolvers } = await import(join(cartDir, 'server.ts'))
 const { getProduct } = await import(join(cartDir, 'features/catalog/effects.ts'))

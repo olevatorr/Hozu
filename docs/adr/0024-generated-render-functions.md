@@ -1,6 +1,6 @@
 # ADR 0024 — Render functions generated as JavaScript source
 
-- Status: proposed
+- Status: accepted
 - Motivation: after ADR 0023, SSR renders 35 k pages/s in the framework benchmark; Svelte renders 94 k. ADR 0023
   names generated render functions as the next lever, and requires them to be edge-safe.
 
@@ -86,3 +86,38 @@ Also: the gate stays green, parity stays 24/24, and the IR and lock files do not
 - **Principle 2:** an edge server imports its generated module explicitly.
 - **Principle 8:** the render plan decides what is generated, as it decides what hydrates.
 - **Authoring surface:** unchanged, so the AI trials are unaffected.
+
+## Implementation notes
+- **Modules:**
+  - `generate.ts` (the generator);
+  - `rendered.ts` (helpers passed to generated code, the loader, the node table for island registration);
+  - `shape.ts` (scope projection, shared by the generator and the interpreter).
+- **Keys:** functions are keyed `route|node|island separator`. The generator finds them by walking every branch,
+  the same way the interpreter walks the ones it takes. A missing key is a thrown error, never a fallback.
+- **Island scopes:** generated code writes the island scope projection per node (`h.project` with a hoisted shape).
+  The interpreter keeps `pruneScope` for islands that contain a query.
+- **Loading:** Node imports the source as a URL-encoded `data:` module. A runtime that cannot, gets
+  `RenderModuleError` naming `tenon build` and `createHandler({ render })`.
+  - The edge test runs its vm with `codeGeneration: { strings: false }`, so the edge path provably needs no eval.
+  - `examples/cart/edge.ts` takes the module as a parameter; the entry imports `./server/render.js`.
+- **Equivalence:**
+  - Before deleting the closure compiler, a differential test rendered every page of all eight examples, in every
+    locale, with and without image variants. Both ways gave byte-identical HTML and payload.
+  - The injection test also compared both ways.
+  - `compile.ts` was then deleted. The test now checks that every page of every example renders through generated
+    code, and that hostile IR strings come out escaped and inert.
+
+## Results
+| | Target | Result |
+|---|---|---|
+| SSR, framework benchmark | ≥ 50,000 renders/s | **52,617** (from 35,259; `ssr-only.ts` alone: 55 k). Second after Svelte (94 k) |
+| HTML | byte-identical | yes (12,223 bytes on the benchmark page; the differential test on every example) |
+| P7 / P8 | unchanged | 7,754 B / 1,873 B |
+| P10 generation for `examples/cart` | report | 0.126 ms; 11.3 KB of source |
+| P9 (adapter-node, cart home) | report | 12.2 k req/s, unchanged |
+
+- **Why P9 did not move:** the cart home spends its time in HTTP handling, the data runtime and streaming, not in
+  the HTML fragments the generator replaced. The framework benchmark isolates rendering.
+- **Parity:** 24/24 identical.
+- **Gate:** green. The first run stopped at lint (import order in `bench/run.ts`, which this phase edited) before
+  any measurement; it was fixed and the gate run once more.

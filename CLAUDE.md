@@ -116,6 +116,11 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `[node, lead, ...scopeTails]` in marker order (feature = node id prefix); node/machine JSON is cached per object.
   `<head>` modulepreloads `client.js` (+ `fns.js` when bound) only on pages with islands. `bench/frameworks` bundles
   the Tenon row with the production module graph and `__TENON_DEV__ = false`.
+- Rendering (ADR 0024): server HTML comes from generated JavaScript source (`generateRender(build, images)` in
+  `@tenon/runtime-server`, one function per route × non-suspending node × island × separator), the only render path.
+  Node imports it as a `data:` module at startup; `tenon build` writes `dist/server/render.js`, which edge entries
+  pass as `createHandler({ render })` (no eval on the edge). `ui.query` streaming stays interpreted. All IR strings are
+  embedded with `JSON.stringify`.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

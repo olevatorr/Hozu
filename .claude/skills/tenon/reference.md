@@ -127,6 +127,7 @@ shown when the network is down; a service worker is generated (TN043: no params,
 ## Deployment
 `tenon build` writes `dist/public/` (static files for any host or CDN) and `dist/manifest.json`. On Node:
 `createServer({ build: buildProject(project, { manifest }), manifest, publicDir: 'dist/public', … })`. On Bun, Deno,
-Cloudflare Workers or Vercel the server is `createHandler({ build, manifest, resolvers })` from
-`@tenon/runtime-server` with `export default { fetch: handler.fetch }` (see `examples/cart/edge.ts`). Page cache and
-tag revalidation are per instance.
+Cloudflare Workers or Vercel the server is `createHandler({ build, manifest, resolvers, render })` from
+`@tenon/runtime-server` with `export default { fetch: handler.fetch }`, where
+`import * as render from './dist/server/render.js'` is the page code `tenon build` generates (edge runtimes cannot
+generate it at startup; see `examples/cart/edge.ts`). Page cache and tag revalidation are per instance.

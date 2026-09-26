@@ -120,3 +120,17 @@ What the numbers show:
   - without that head, at maximum compression, the page is 1.53 KB, against 1.43 KB for Vue.
 - **SSR** is 35.3 k renders/s, from 22.0 k. It is second after Svelte, which stays 2.7× ahead.
 - **Initial JS** is 7.5 KB gzipped (the production bundle), still second after Preact.
+
+## Sixth run: after ADR 0024 (2026-09-26, same machine)
+| Framework | SSR renders/s | HTML (gz) | JS min (gz) | Hydrate ms (4× CPU) | Interactive at ms | 200 clicks ms |
+|---|---|---|---|---|---|---|
+| React 19.3.0 | 2,533 | 13.4 KB (1.6) | 218.1 KB (67.7) | 62.5 | 123.7 | 80.1 |
+| Vue 3.5.43 | 12,409 | 12.6 KB (1.5) | 77.1 KB (30.9) | 12.4 | 34.0 | 42.4 |
+| Preact 10.29.8 | 22,416 | 12.6 KB (1.5) | 12.9 KB (5.4) | 7.8 | 26.7 | 84.8 |
+| Svelte 5.57.1 | 94,194 | 12.6 KB (1.6) | 49.5 KB (18.7) | 7.0 | 30.4 | 8.7 |
+| **Tenon** | **52,617** | 12.1 KB (1.8) | 18.0 KB (7.5) | 7.4 | 27.8 | 10.6 |
+
+Server HTML now comes from generated JavaScript source (ADR 0024).
+- **SSR** rose from 35.3 k to 52.6 k renders/s. That is second, 2.3× Preact, with Svelte 1.8× ahead.
+- The other columns are unchanged, as expected: the generator is server-only and the HTML is byte-identical.
+- **Interactive at** (27.8 ms) is within 1.1 ms of Preact, the fastest this run. It stays ahead of Svelte.
