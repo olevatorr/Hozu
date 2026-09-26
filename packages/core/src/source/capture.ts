@@ -1,8 +1,8 @@
-import { fileURLToPath } from 'node:url'
 import type { SourceLoc } from '../ir/diagnostic.ts'
+import { fileUrlToPath } from '../platform.ts'
 
 const coreUrl = new URL('../', import.meta.url).href
-const corePath = coreUrl.startsWith('file:') ? fileURLToPath(coreUrl) : coreUrl
+const corePath = coreUrl.startsWith('file:') ? fileUrlToPath(coreUrl) : coreUrl
 
 type CallSite = {
   getFileName(): string | null
@@ -16,7 +16,7 @@ const paths = new Map<string, string>()
 const toPath = (raw: string): string => {
   let path = paths.get(raw)
   if (path === undefined) {
-    path = raw.startsWith('file://') ? fileURLToPath(raw) : raw
+    path = raw.startsWith('file://') ? fileUrlToPath(raw) : raw
     paths.set(raw, path)
   }
   return path

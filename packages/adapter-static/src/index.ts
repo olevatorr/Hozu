@@ -4,13 +4,13 @@ import { planRoute } from '@tenon/compiler'
 import type { BuildResult } from '@tenon/core/ir'
 import { createDataRuntime, type ResolverSet } from '@tenon/data'
 import {
-  clientBundle,
-  fnsModule,
   pageEntries,
+  publicAssets,
   renderToString,
   robotsTxt,
   type Stylesheet,
   sitemapXml,
+  staticFiles,
   type WidgetBundle,
 } from '@tenon/runtime-server'
 
@@ -39,13 +39,7 @@ export async function exportStatic({
   styles = null,
   widgets = null,
 }: StaticExportOptions): Promise<StaticExport> {
-  const assets = {
-    client: '/_tenon/client.js',
-    fns: '/_tenon/fns.js',
-    styles: styles?.href ?? null,
-    preload: styles?.preload ?? [],
-    widgets: widgets?.urls ?? {},
-  }
+  const assets = publicAssets(build.ir.http.basePath, styles, widgets?.urls ?? {})
   const data = createDataRuntime({ build, resolvers })
   const result: StaticExport = { written: [], skipped: [] }
   let js = false
@@ -82,28 +76,12 @@ export async function exportStatic({
   await write(join(outDir, 'robots.txt'), robotsTxt(build))
   await write(join(outDir, 'sitemap.xml'), sitemapXml(build, entries))
   result.written.push(join(outDir, 'robots.txt'), join(outDir, 'sitemap.xml'))
-  const files: Record<string, string> = { ...styles?.assets }
-  for (const [href, a] of Object.entries(build.bindings.assets)) files[href] = a.file
-  for (const [href, source] of Object.entries(files)) {
-    const file = join(outDir, href.replace(/^\//, ''))
+  for (const f of staticFiles(build, { styles, widgets, client: js })) {
+    const file = join(outDir, f.path.replace(/^\//, ''))
     await mkdir(dirname(file), { recursive: true })
-    await copyFile(source, file)
+    if (f.file) await copyFile(f.file, file)
+    else await writeFile(file, f.text ?? '')
     result.written.push(file)
-  }
-  for (const [href, code] of Object.entries(widgets?.files ?? {})) {
-    const file = join(outDir, href.replace(/^\//, ''))
-    await write(file, code)
-    result.written.push(file)
-  }
-  if (styles) {
-    const file = join(outDir, styles.href.replace(/^\//, ''))
-    await write(file, styles.css)
-    result.written.push(file)
-  }
-  if (js) {
-    for (const [href, code] of Object.entries(clientBundle())) await write(join(outDir, href.slice(1)), code)
-    await write(join(outDir, '_tenon/fns.js'), fnsModule(build))
-    result.written.push(join(outDir, '_tenon/client.js'), join(outDir, '_tenon/fns.js'))
   }
   return result
 }

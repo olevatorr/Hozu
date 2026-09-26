@@ -6,7 +6,8 @@ export interface Bindings {
   refs: Map<object, string>
   styles: StyleFiles
   widgets: Record<string, string>
-  assets: Record<string, { file: string; width: number | null; height: number | null }>
+  assets: Record<string, { file: string | null; width: number | null; height: number | null }>
+  assetOrder: { name: string; href: string; width: number | null; height: number | null }[]
 }
 
 export interface StyleFiles {

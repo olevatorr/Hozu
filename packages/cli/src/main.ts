@@ -1,4 +1,5 @@
 import { parseArgs } from 'node:util'
+import { runBuild } from './commands/build.ts'
 import { describeExplain, runExplain } from './commands/explain.ts'
 import { mermaid, runGraph } from './commands/graph.ts'
 import { describeImpact, runImpact } from './commands/impact.ts'
@@ -18,11 +19,13 @@ Commands:
   explain <feature>.<state> Explain a state: transitions, guards, effects, covering contracts
   impact <feature>.<symbol> What a query, mutation, tag, event, fn or view affects
   plan <route>              Derived render plan: regions, cache modes, hydration islands
+  build                     Write dist/public (static files) and dist/manifest.json for deployment
 
 Options:
   --json               Machine-readable output (schemas in @tenon/cli/schema)
   --config <path>      Config file (default: tenon.config.ts)
   --update-lock        validate: rewrite tenon.lock.json when there are no errors
+  --out <dir>          build: output directory (default: dist)
   -h, --help           Show this help
 `
 
@@ -41,6 +44,7 @@ export async function main(
         json: { type: 'boolean', default: false },
         config: { type: 'string' },
         'update-lock': { type: 'boolean', default: false },
+        out: { type: 'string' },
         help: { type: 'boolean', short: 'h' },
       },
     })
@@ -50,7 +54,7 @@ export async function main(
       out(usage)
       return command || values.help ? 0 : 2
     }
-    const commands = ['validate', 'inspect', 'graph', 'explain', 'impact', 'plan']
+    const commands = ['validate', 'inspect', 'graph', 'explain', 'impact', 'plan', 'build']
     if (!commands.includes(command))
       throw new TenonCliError('usage', `Unknown command "${command}"`, commands)
     const loaded = await load(values.config, cwd)
@@ -75,6 +79,11 @@ export async function main(
           ? json(result)
           : `${json({ feature: result.feature, hash: result.hash, summary: result.summary })}`,
       )
+      return 0
+    }
+    if (command === 'build') {
+      const result = await runBuild(loaded, values.out, cwd)
+      out(asJson ? json(result) : `✔ wrote ${result.files.length} static files and ${result.manifest}\n`)
       return 0
     }
     if (command === 'plan') {

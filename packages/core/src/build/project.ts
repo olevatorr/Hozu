@@ -1,4 +1,3 @@
-import { assetOf } from '../builders/asset.ts'
 import type { FeatureConfig, ProjectConfig } from '../builders/feature.ts'
 import type { RouteDef } from '../builders/route.ts'
 import { join, resolveSource } from '../canonical/pointer.ts'
@@ -12,6 +11,7 @@ import { isStandardSchema } from '../schema/standard.ts'
 import { withCapture } from '../source/capture.ts'
 import { buildFeature } from './feature.ts'
 import { buildHttp } from './http.ts'
+import type { Manifest } from './manifest.ts'
 import { buildPages } from './page.ts'
 import { filePath, IDENTIFIER, ProjectScope } from './scope.ts'
 
@@ -125,19 +125,21 @@ function projectSchema(
 
 export interface BuildOptions {
   sources?: boolean
+  manifest?: Manifest
 }
 
 export function buildProject(project: unknown, options: BuildOptions = {}): BuildResult {
   const sources = options.sources ?? true
-  return withCapture(sources, () => build(project, sources))
+  return withCapture(sources, () => build(project, sources, options.manifest ?? null))
 }
 
-function build(project: unknown, tracking: boolean): BuildResult {
+function build(project: unknown, tracking: boolean, manifest: Manifest | null): BuildResult {
   const info = infoOf(project)
   if (info?.kind !== 'project')
     throw new TypeError('Expected a project() declaration as the default export of tenon.config.ts')
   const config = info.def as ProjectConfig
   const scope = new ProjectScope(tracking)
+  scope.manifest = manifest
   const adapter = infoOf(config.schema)
   if (adapter?.kind === 'adapter') scope.adapter = adapter.def as SchemaAdapterDef
   else
@@ -241,12 +243,10 @@ function build(project: unknown, tracking: boolean): BuildResult {
         url: String(config.site.url).replace(/\/$/, ''),
         name: String(config.site.name),
         lang: String(config.site.lang),
-        icon: assetOf(config.site.icon) ? scope.basePath + assetOf(config.site.icon)!.href : null,
+        icon: scope.asset(config.site.icon)?.href ?? null,
         themeColor: config.site.themeColor ?? null,
       }
     : null
-  const icon = assetOf(config.site?.icon)
-  if (icon) scope.bindings.assets[icon.href] = { file: icon.file, width: icon.width, height: icon.height }
   const notFound = config.notFound ? (scope.routes.get(config.notFound) ?? null) : null
   if (config.notFound && !notFound)
     scope.report(
@@ -268,6 +268,7 @@ function build(project: unknown, tracking: boolean): BuildResult {
   scope.mark('/http', project)
   const http = buildHttp(scope, config.http)
   const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, notFound, error, http, features }
+  scope.bindings.assetOrder = scope.assetList
   for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
   return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }
 }

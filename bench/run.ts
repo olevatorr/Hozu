@@ -148,6 +148,16 @@ record(
   3 * 1024,
 )
 
+const p9 = spawnSync(process.execPath, [join(root, 'bench/p9.ts')], { encoding: 'utf8' })
+if (p9.status !== 0) throw new Error(`bench/p9.ts: ${p9.stderr}`)
+record(
+  'P9',
+  'adapter-node requests per second, cart home (per-request render), 16 connections, median of 3',
+  median(JSON.parse(p9.stdout) as number[]),
+  '/s',
+  null,
+)
+
 const synthetic = (features: number): number[] =>
   [0, 1, 2].flatMap(() => {
     const r = spawnSync(process.execPath, [join(root, 'bench/p2.ts'), String(features)], { encoding: 'utf8' })

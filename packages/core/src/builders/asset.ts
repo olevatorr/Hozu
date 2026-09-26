@@ -1,18 +1,16 @@
-import { readFileSync } from 'node:fs'
-import { extname } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { sha256 } from '../canonical/hash.ts'
+import { fileUrlToPath, readFile } from '../platform.ts'
 
 export const ASSET = Symbol.for('tenon.asset')
 
 export interface AssetFile {
-  file: string
+  file: string | null
   width: number | null
   height: number | null
 }
 
 export interface Asset {
-  readonly [ASSET]: AssetFile & { href: string }
+  readonly [ASSET]: { url: string }
 }
 
 const be16 = (b: Buffer, i: number) => b.readUInt16BE(i)
@@ -52,13 +50,18 @@ export function imageSize(b: Buffer): [number, number] | null {
   return null
 }
 
-export function asset(url: URL): Asset {
-  const file = fileURLToPath(url.href)
-  const content = readFileSync(file)
-  const size = imageSize(content)
-  const href = `/_tenon/a/${sha256(content.toString('base64')).slice(0, 16)}${extname(file).toLowerCase()}`
-  return Object.freeze({ [ASSET]: { href, file, width: size?.[0] ?? null, height: size?.[1] ?? null } })
-}
+export const asset = (url: URL): Asset => Object.freeze({ [ASSET]: { url: url.href } })
 
-export const assetOf = (value: unknown): (AssetFile & { href: string }) | null =>
-  typeof value === 'object' && value !== null ? ((value as Partial<Asset>)[ASSET] ?? null) : null
+export const assetUrl = (value: unknown): string | null =>
+  typeof value === 'object' && value !== null ? ((value as Partial<Asset>)[ASSET]?.url ?? null) : null
+
+export const assetName = (url: string): string => decodeURIComponent(url.slice(url.lastIndexOf('/') + 1))
+
+export function readAsset(url: string): AssetFile & { href: string } {
+  const file = fileUrlToPath(url)
+  const content = readFile(file) as Buffer
+  const size = imageSize(content)
+  const ext = /\.[^./]+$/.exec(file)?.[0].toLowerCase() ?? ''
+  const href = `/_tenon/a/${sha256(content.toString('base64')).slice(0, 16)}${ext}`
+  return { href, file, width: size?.[0] ?? null, height: size?.[1] ?? null }
+}

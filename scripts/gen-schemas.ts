@@ -40,6 +40,11 @@ export const targets = [
     type: 'PlanOutput',
     out: 'packages/cli/schema/plan.schema.json',
   },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'BuildOutput',
+    out: 'packages/cli/schema/build.schema.json',
+  },
 ]
 
 export function generate(target: (typeof targets)[number]): string {

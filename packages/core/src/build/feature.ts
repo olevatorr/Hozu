@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from 'node:fs'
 import type { MutationDef, QueryDef } from '../builders/effects.ts'
 import type { EventDef } from '../builders/event.ts'
 import type { FeatureConfig } from '../builders/feature.ts'
@@ -10,6 +9,7 @@ import { htmlTags } from '../ir/dom-data.ts'
 import type { ExportsIR, FeatureIR, Freshness, QueryIR, TagExprIR, WidgetIR } from '../ir/types.ts'
 import { type Decl, defOf } from '../model/decl.ts'
 import { RecorderError, refProxy } from '../model/expr.ts'
+import { builtin } from '../platform.ts'
 import type { Schema } from '../schema/standard.ts'
 import { buildContract } from './contract.ts'
 import { buildMachine } from './machine.ts'
@@ -79,8 +79,12 @@ const tags = new Set<string>(htmlTags)
 function buildWidget(scope: FeatureScope, sym: string, d: WidgetDef): WidgetIR {
   const p = scope.at('widgets', sym)
   let sourceHash = ''
+  const ref = `${scope.id}.${sym}`
+  const listed = scope.project.manifest?.widgets[ref]
+  const fs = builtin('node:fs')
   const file = filePath(d.client)
-  if (!file || !existsSync(file))
+  if (listed) sourceHash = listed.hash
+  else if (!file || !fs?.existsSync(file))
     scope.report(
       'TN029',
       at(p, 'client'),
@@ -88,8 +92,8 @@ function buildWidget(scope: FeatureScope, sym: string, d: WidgetDef): WidgetIR {
       "Declare it with new URL('./my-widget.client.ts', import.meta.url) and default-export implement<typeof MyWidget>(…).",
     )
   else {
-    scope.project.bindings.widgets[`${scope.id}.${sym}`] = file
-    sourceHash = sha256(readFileSync(file, 'utf8')).slice(0, 16)
+    scope.project.bindings.widgets[ref] = file
+    sourceHash = sha256(fs.readFileSync(file, 'utf8')).slice(0, 16)
   }
   if (!tags.has(d.tag))
     scope.report(

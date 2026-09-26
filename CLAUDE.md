@@ -44,7 +44,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `@tenon/core` (IR types + builders; tooling at `@tenon/core/ir`), `@tenon/schema-zod`,
   `@tenon/machine` (isomorphic compiled interpreter, ADR 0004), `@tenon/data` (resolvers, cache,
   tags, dedup, ADR 0005), `@tenon/validator`, `@tenon/compiler` (render plans, ADR 0006),
-  `@tenon/runtime-server` (in-order streaming SSR, ADR 0007), `@tenon/runtime-client` (own fine-grained
+  `@tenon/runtime-server` (in-order streaming SSR + the web-standard handler, ADR 0007/0016), `@tenon/runtime-client` (own fine-grained
   DOM runtime, no VDOM, replace-hydration of islands, ADR 0006/0007),
   `@tenon/cli`, `@tenon/adapter-node` (ISR page cache + tag revalidation), `@tenon/adapter-static`,
   `@tenon/css` (Tailwind v4 bound, compiled from the IR's class candidates, TN026, ADR 0009),
@@ -76,6 +76,12 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - Soft navigation (ADR 0015): a view with an island that is listed on both pages and never reads `params`/`search`
   keeps its DOM and machine across a link (derived, `tenon plan` shows it; Navigation API, lazy `navigate.js`
   chunk, budget P8). Pages without such views keep document navigation + prerender.
+- HTTP (ADR 0016): the server is `createHandler(options).fetch(Request): Response` in `@tenon/runtime-server`
+  (no `node:*` in the runtime import graph; `@tenon/adapter-node` is a bridge + `publicDir`). `project({ http })`:
+  `basePath`, `trailingSlash` (308 to the canonical form), `redirects` keyed by path (TN037), per-route `headers`
+  (TN038, TN039); no rewrites. `tenon build` writes `dist/public` + `dist/manifest.json`, and
+  `buildProject(project, { manifest })` needs no file system (edge; `examples/cart/edge.ts`, checked in a web-only
+  vm and on Bun). Budget P9 (req/s through adapter-node) is report-only.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

@@ -3,7 +3,7 @@ import type { Diagnostic, ExportsIR, FeatureIR } from '@tenon/core/ir'
 import type { Impact } from '@tenon/validator'
 
 export interface CliError {
-  error: { code: 'usage' | 'config' | 'unknown-feature'; message: string; suggestions: string[] }
+  error: { code: 'usage' | 'config' | 'unknown-feature' | 'build'; message: string; suggestions: string[] }
 }
 
 export interface Coverage {
@@ -108,4 +108,10 @@ export type ImpactOutput = Impact
 
 export interface PlanOutput extends RoutePlan {
   soft: Record<string, string[]>
+}
+
+export interface BuildOutput {
+  out: string
+  manifest: string
+  files: string[]
 }

@@ -38,7 +38,7 @@ Tenon is not in your training data. This guide is the whole authoring surface. D
 tenon.config.ts          project(): schema adapter, site, routes, pages, features
 routes.ts                route() declarations
 server.ts                resolvers(project, implement => [...]): query/mutation implementations
-serve.ts                 createServer({ build, styles, resolvers }).listen(PORT)
+serve.ts                 createServer({ build, styles, resolvers }).listen(PORT)   (Node; edge.ts for other runtimes)
 app.css                  @import "tailwindcss";
 features/<name>/
   schemas.ts             zod schemas (domain types, the machine context)
@@ -205,7 +205,21 @@ For a page without data use `head: { redirects: null, query: null, input: null, 
 
 Project: `project({ schema: zodAdapter, styles: new URL('./app.css', import.meta.url), notFound: null, error: null,
 session: null, site: { url, name, lang, icon: null, themeColor: null }, routes: { home, itemPage }, pages: [...],
-features: [items] })`. `notFound` / `error` may name a route to render for 404 / 500.
+http: null, features: [items] })`. `notFound` / `error` may name a route to render for 404 / 500.
+
+`http: null` serves the site at `/` with no trailing slashes (`/about/` answers 308 → `/about`). Otherwise:
+```ts
+http: {
+  basePath: '',                        // or '/shop': every URL and /_tenon/* move under it (TN039)
+  trailingSlash: 'never',              // or 'always'; the other form answers 308
+  redirects: {                         // keyed by the old path; never a path a page owns (TN037)
+    '/blog/:slug': { to: (p) => ui.link(post, { slug: p.slug }), permanent: true },   // 308
+    '/docs': { to: 'https://docs.example.com', permanent: false },                     // 307
+  },
+  headers: [{ routes: 'all', set: { 'permissions-policy': 'camera=()' } }],   // or routes: [post]; not cache-control etc. (TN038)
+},
+```
+There are no rewrites: one URL has one owner.
 
 ## Server (server.ts)
 ```ts
@@ -225,9 +239,18 @@ export function createResolvers() {
 }
 ```
 User-scoped resolvers also receive `session`. Mutations can call `setSession(value)` (see `examples/blog`).
-`createServer({ build, styles, resolvers, onError?, csp? })`: `onError(error, { effect | path })` receives every
-unexpected failure; a strict CSP, `nosniff` and a cross-site POST check are on by default (`csp` adds sources, e.g.
-`{ script: ['https://analytics.example'] }`, or `false`).
+`createServer({ build, styles, resolvers, session?, onError?, csp? })` (from `@tenon/adapter-node`):
+- `session: (request) => value` receives a web `Request` (`request.headers.get('cookie')`), or use
+  `sessionCookie({ name, secret })` from `@tenon/runtime-server` for a signed cookie.
+- `onError(error, { effect | path })` receives every unexpected failure.
+- A strict CSP, `nosniff` and a cross-site POST check are on by default (`csp` adds sources, e.g.
+  `{ script: ['https://analytics.example'] }`, or `false`).
+
+Deploying: `tenon build` writes `dist/public/` (static files for any host/CDN) and `dist/manifest.json`. On Node pass
+`createServer({ build: buildProject(project, { manifest }), manifest, publicDir: 'dist/public', ... })`. On Bun,
+Deno, Cloudflare Workers or Vercel the whole server is `createHandler({ build, manifest, resolvers })` from
+`@tenon/runtime-server` and `export default { fetch: handler.fetch }` (see `examples/cart/edge.ts`). Page cache and
+tag revalidation are per instance.
 
 To test a mutation with curl:
 `curl -X POST localhost:4700/_tenon/effect -H 'content-type: application/json' -d '{"effect":"items.addItem","input":{"title":"x"},"keys":[]}'`.

@@ -1,5 +1,4 @@
-import { fileURLToPath } from 'node:url'
-import { assetOf } from '../builders/asset.ts'
+import { assetName, assetUrl, readAsset } from '../builders/asset.ts'
 import { linkOf } from '../builders/ui.ts'
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import { type At, at, join, resolveAt } from '../canonical/pointer.ts'
@@ -9,9 +8,11 @@ import type { Diagnostic, DiagnosticCode, Fix, SourceIndex } from '../ir/diagnos
 import type { GuardExpr, Json, JsonSchema, ValueExpr } from '../ir/types.ts'
 import { type DeclKind, infoOf } from '../model/decl.ts'
 import { exprOf, guardOf, RecorderError } from '../model/expr.ts'
+import { fileUrlToPath } from '../platform.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
 import { toCheck } from '../schema/check.ts'
 import { isStandardSchema } from '../schema/standard.ts'
+import type { Manifest, ManifestAsset } from './manifest.ts'
 
 export interface Owner {
   feature: string
@@ -26,7 +27,7 @@ export const filePath = (url: unknown): string | null =>
   url !== null &&
   (url as URL).protocol === 'file:' &&
   typeof (url as URL).href === 'string'
-    ? fileURLToPath((url as URL).href)
+    ? fileUrlToPath((url as URL).href)
     : null
 
 export { type At, at, resolveAt }
@@ -53,6 +54,9 @@ export class ProjectScope {
   readonly schemaCache = new Map<object, { json: JsonSchema; hash: string }>()
   adapter: SchemaAdapterDef | null = null
   basePath = ''
+  manifest: Manifest | null = null
+  readonly assetList: ManifestAsset[] = []
+  readonly resolved = new WeakMap<object, ManifestAsset>()
   readonly bindings: Bindings = {
     fns: {},
     checks: {},
@@ -60,6 +64,7 @@ export class ProjectScope {
     styles: { entry: null, features: {} },
     widgets: {},
     assets: {},
+    assetOrder: [],
   }
   readonly tracking: boolean
 
@@ -83,6 +88,24 @@ export class ProjectScope {
       cause,
       fix,
     })
+  }
+
+  asset(value: unknown): ManifestAsset | null {
+    const url = assetUrl(value)
+    if (!url) return null
+    let hit = this.resolved.get(value as object)
+    if (hit) return hit
+    const name = assetName(url)
+    const listed = this.manifest?.assets[this.assetList.length]
+    if (this.manifest && listed?.name !== name)
+      throw new Error(`Asset ${name} is not in the manifest in this position; run \`tenon build\` again`)
+    const file = listed ? null : readAsset(url)
+    const href = this.basePath + (listed?.href ?? file!.href)
+    hit = { name, href, width: listed?.width ?? file!.width, height: listed?.height ?? file!.height }
+    this.resolved.set(value as object, hit)
+    this.assetList.push({ ...hit, href: listed?.href ?? file!.href })
+    this.bindings.assets[href] = { file: file?.file ?? null, width: hit.width, height: hit.height }
+    return hit
   }
 
   mark(pointer: At, value: unknown) {
@@ -250,11 +273,8 @@ export class FeatureScope {
         search: link.search === null ? { literal: null } : this.value(link.search, pointer),
       }
     }
-    const file = assetOf(v)
-    if (file) {
-      this.project.bindings.assets[file.href] = { file: file.file, width: file.width, height: file.height }
-      return { literal: this.project.basePath + file.href }
-    }
+    const file = this.project.asset(v)
+    if (file) return { literal: file.href }
     const expr = exprOf(v)
     if (expr) {
       if (expr.kind === 'call')

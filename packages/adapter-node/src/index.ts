@@ -1,9 +1,12 @@
 import { readFile } from 'node:fs/promises'
 import { createServer as http, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
+import { join, normalize } from 'node:path'
 import { Readable } from 'node:stream'
-import { createHandler, type Handler, type HandlerOptions } from '@tenon/runtime-server'
+import { contentType, createHandler, type Handler, type HandlerOptions } from '@tenon/runtime-server'
 
-export type NodeAdapterOptions = Omit<HandlerOptions, 'readFile'>
+export interface NodeAdapterOptions extends Omit<HandlerOptions, 'readFile'> {
+  publicDir?: string
+}
 
 export function toRequest(request: IncomingMessage): Request {
   const headers = new Headers()
@@ -38,8 +41,28 @@ export async function send(response: ServerResponse, answer: Response): Promise<
 }
 
 export function createServer(options: NodeAdapterOptions): Server & Pick<Handler, 'revalidate'> {
-  const handler = createHandler({ ...options, readFile: (file) => readFile(file) })
+  const { publicDir, ...rest } = options
+  const handler = createHandler({ ...rest, readFile: (file) => readFile(file) })
+  const prefix = `${options.build.ir.http.basePath}/_tenon/`
+  const serveStatic = async (request: IncomingMessage, response: ServerResponse) => {
+    const path = normalize(decodeURIComponent(new URL(request.url ?? '/', 'http://x').pathname))
+    if (!publicDir || !path.startsWith(prefix) || (request.method !== 'GET' && request.method !== 'HEAD'))
+      return false
+    try {
+      const body = await readFile(join(publicDir, path))
+      const hashed = /\/_tenon\/(a|w)\/|\/_tenon\/styles\./.test(path)
+      response.writeHead(200, {
+        'content-type': contentType(path),
+        'cache-control': hashed ? 'public, max-age=31536000, immutable' : 'no-cache',
+      })
+      response.end(request.method === 'HEAD' ? undefined : body)
+      return true
+    } catch {
+      return false
+    }
+  }
   const server = http(async (request, response) => {
+    if (await serveStatic(request, response)) return
     let answer: Response
     try {
       answer = await handler.fetch(toRequest(request))

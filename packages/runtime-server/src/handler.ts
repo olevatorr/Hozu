@@ -1,5 +1,13 @@
 import { planRoute } from '@tenon/compiler'
-import { type BuildResult, FORM_FIELD, type Json, publicPath, routeTable } from '@tenon/core/ir'
+import {
+  type BuildResult,
+  FORM_FIELD,
+  hashJson,
+  type Json,
+  type Manifest,
+  publicPath,
+  routeTable,
+} from '@tenon/core/ir'
 import { createDataRuntime, type OnError, type ResolverSet } from '@tenon/data'
 import { compileValue } from '@tenon/machine'
 import type { EffectResponse, Result } from '@tenon/runtime-client'
@@ -20,6 +28,7 @@ import { matcher, patternOf } from './routing.ts'
 import { parseSearch } from './search.ts'
 import { type CspSources, contentSecurityPolicy, crossSite, ERROR_HTML } from './security.ts'
 import type { SessionStore } from './session.ts'
+import { publicAssets } from './static.ts'
 
 export interface HandlerOptions {
   build: BuildResult
@@ -32,6 +41,7 @@ export interface HandlerOptions {
   csp?: CspSources | false
   cache?: PageCache
   readFile?: (file: string) => Promise<Uint8Array>
+  manifest?: Manifest
 }
 
 export interface Handler {
@@ -60,6 +70,9 @@ const mime: Record<string, string> = {
 }
 
 const extension = (path: string) => /\.[^./]+$/.exec(path)?.[0].toLowerCase() ?? ''
+
+export const contentType = (path: string): string =>
+  ({ '.js': 'text/javascript', '.css': 'text/css', ...mime })[extension(path)] ?? 'application/octet-stream'
 const encoder = new TextEncoder()
 const IMMUTABLE = 'public, max-age=31536000, immutable'
 
@@ -102,20 +115,23 @@ export function createHandler({
   csp = {},
   cache = memoryCache(),
   readFile,
+  manifest,
 }: HandlerOptions): Handler {
+  if (manifest && manifest.irHash !== hashJson(build.ir))
+    throw new Error('The build manifest does not match this project; run `tenon build` again')
   const store = typeof sessionOption === 'function' ? null : sessionOption
   const session = store
     ? (request: Request) => store.read(request)
     : async (request: Request) => (sessionOption as (r: Request) => unknown)(request)
   const { ir } = build
   const { basePath, redirects, headers: headerRules } = ir.http
-  const assets = {
-    client: `${basePath}/_tenon/client.js`,
-    fns: `${basePath}/_tenon/fns.js`,
-    styles: styles ? basePath + styles.href : null,
-    preload: (styles?.preload ?? []).map((href) => basePath + href),
-    widgets: Object.fromEntries(Object.entries(widgets?.urls ?? {}).map(([k, v]) => [k, basePath + v])),
-  }
+  const assets = manifest
+    ? publicAssets(
+        basePath,
+        manifest.styles,
+        Object.fromEntries(Object.entries(manifest.widgets).map(([k, w]) => [k, w.url])),
+      )
+    : publicAssets(basePath, styles, widgets?.urls ?? {})
   const data = createDataRuntime({ build, resolvers, now, onError })
   const base: Record<string, string> = {
     'x-content-type-options': 'nosniff',
@@ -346,8 +362,9 @@ export function createHandler({
     )
   }
 
-  const files: Record<string, string> = { ...styles?.assets }
-  for (const [href, a] of Object.entries(build.bindings.assets)) files[href] = a.file
+  const files: Record<string, string> = {}
+  for (const [href, file] of Object.entries(styles?.assets ?? {})) files[basePath + href] = file
+  for (const [href, a] of Object.entries(build.bindings.assets)) if (a.file) files[href] = a.file
   const loaded = new Map<string, Promise<Uint8Array>>()
   const asset = (href: string) => {
     const file = files[href]
@@ -402,7 +419,7 @@ export function createHandler({
     const client = clientBundle()[path]
     if (client !== undefined) return text('text/javascript', client, head)
     if (path === '/_tenon/fns.js') return text('text/javascript', fns, head)
-    const file = path.startsWith('/_tenon/a/') ? asset(path) : null
+    const file = path.startsWith('/_tenon/a/') ? asset(basePath + path) : null
     if (file)
       return new Response(head ? null : ((await file) as ConstructorParameters<typeof Response>[0]), {
         headers: {
