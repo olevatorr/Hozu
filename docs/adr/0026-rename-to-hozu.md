@@ -65,3 +65,4 @@ Rejected names and why:
 - **Rehearsal:** repeated with the 18 packed tarballs. `create-hozu --agent both` created the app. `tsc`,
   `hozu validate`, `hozu build` (with `dist/server/render.js`), `hozu skill` and `hozu plan` passed, and the server
   answered with the page.
+- **Parity:** 24/24 identical after the rename.
