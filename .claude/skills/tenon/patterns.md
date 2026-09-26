@@ -21,7 +21,7 @@ Each pattern is used in `examples/bookmarks`.
 - **Select bound to an enum**:
   `ui.select({ 'aria-label': 'Kind', on: { change: ui.send(PickKind, { kind: ui.dom.value }) } }, kinds.map((k) => ui.option({ value: k, selected: op.eq(ctx.kind, k) }, [k])))`,
   where the event payload is `{ kind: Kind }`, the zod enum.
-- **Detail page with a 404**: a view with `route: itemPage`, `machine: null`,
+- **Detail page with a 404**: a view with `route: itemPage` and no machine,
   `ui.query(getItem, { id: params.id }, { ready, pending: null, failed: { NotFound: () => ..., Unexpected: () => ... } })`,
   plus `head.query: getItem`.
 - **Refresh after a mutation**: tag the query, and list the tag in the mutation's `invalidates`. A mutation can
@@ -30,7 +30,7 @@ Each pattern is used in `examples/bookmarks`.
 - **Filter in the URL** (shareable, works without JS): declare `search` on the route, render the options as
   `ui.link(home, null, { show: s.value })` links with `'aria-current': op.eq(search.show, s.value)`, and filter with
   `fn`s over `search.show`. Only use machine context for filters that should not survive a reload.
-- **Go to what was just created**: `done: [{ target: 'idle', navigate: (r) => ui.link(itemPage, { id: r.id }, null) }]`.
+- **Go to what was just created**: `done: [{ target: 'idle', navigate: (r) => ui.link(itemPage, { id: r.id }) }]`.
 - **No-JS form**: every value the submit needs is a named field read with `ui.dom.form('name')`; the server runs the
   machine for a native post. Per-item actions without JS: wrap the button in its own small form.
 - **UI that survives following a link** (a cart, a player, a chat box; used in `examples/cart`): list the same

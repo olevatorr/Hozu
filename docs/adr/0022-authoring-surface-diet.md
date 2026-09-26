@@ -106,3 +106,34 @@ In the trial app's contracts, most expectations shrink from a full context to on
   - app source ≤ 1.6× Nuxt.
 
   If a target is missed, the report says so and says which part of the surface is still expensive.
+
+## Implementation notes
+- **Migration:** a brace-aware codemod rewrote every `project`, `ui.page`, `ui.view`, `query` / `mutation`,
+  `feature` and `contract` call in examples, tests and benchmarks. Six contracts used the old unchecked forms
+  (`context: null` / `effects: null`) and were migrated by hand:
+  - the example ones now state their effects explicitly;
+  - the TN011 fixture moves its `Math.random()` into a guard, so its contract can state the result.
+- **The IR is unchanged:** every committed lock file still checks.
+- **Diagnostics:** TN016 now prints a contract without `given.context`, with `changes` listing only the assigned
+  fields, and with `effects` only when there are any. The fixes of TN003/TN007 and the messages about machines and
+  messages name `declarations`.
+- **Tests:** new core tests cover the `changes` merge, the default `given.context`, classification by kind, and
+  TN013/TN014 for `declarations`. Type checks cover the rejected old spellings.
+- **Skill:**
+  - `SKILL.md` is 10.0 KB (from 20.2 KB); `reference.md` (8.7 KB) holds everything past the core;
+  - `examples/bookmarks` is two feature files (`model.ts`, `views.ts`), and `Show` moved to `routes.ts` to avoid
+    an import cycle.
+- **Source size:**
+
+  | App | Before | After |
+  |---|---|---|
+  | bookmarks, rewritten by hand | 17.1 KB | 14.8 KB (−14%) |
+  | cart, migrated mechanically | 30.4 KB | 29.2 KB (−4%) |
+  | trial-0006 app, migrated mechanically | 21.1 KB | 20.5 KB (−3%) |
+
+  A mechanical migration keeps full `given` contexts and repeated constants. The saving depends on writing in the
+  new style, which the trial re-run measures.
+- **Gate:** green.
+  - A4 56,636 (from 57,192);
+  - P7 7,676 B and P8 1,863 B, unchanged;
+  - P2 exponent 1.124.

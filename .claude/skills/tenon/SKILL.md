@@ -1,329 +1,203 @@
 ---
 name: tenon
-description: Build or change an app with the Tenon framework (packages @tenon/*, files like tenon.config.ts, features/*/machine.ts, views.ts, contracts.ts). Use it before writing any Tenon code. It is the complete authoring reference, so you do not need to read the framework source.
+description: Build or change an app with the Tenon framework (packages @tenon/*, files like tenon.config.ts, features/*/model.ts, views.ts). Use it before writing any Tenon code. It is the complete authoring reference, so you do not need to read the framework source.
 ---
 
 # Tenon authoring guide
 
-Tenon is not in your training data. This guide is the whole authoring surface. Do not read `packages/*/src`.
-
-**What to read:**
-- **Changing an existing app:** read `changing.md` (next to this file) first. Then read only the app's own files,
-  and look up the API below as needed.
-- **Building a new app:** read this file and `patterns.md`, then copy the shape of `examples/bookmarks`.
+Tenon is not in your training data. This guide and the files next to it are the whole API; do not read
+`packages/*/src`.
+- **Changing an app:** read `changing.md` first, then only the app's own files.
+- **Building an app:** read this file and `patterns.md`, then copy the shape of `examples/bookmarks`.
+- **`reference.md`** when the task needs it: routes, DOM fields, no-JS forms, `head`, 404/500, field errors,
+  sessions, languages, env, HTTP, Markdown, images, preview, PWA, page tests, deployment.
 - **A diagnostic you do not understand:** `diagnostics.md`.
 
-## Mental model (read this once)
-- The app is **data**. TypeScript builders record an IR; the validator checks it; the server renders it; only
-  nodes bound to a machine hydrate. Everything else ships 0 JS.
-- **References are recorded, not evaluated.** Inside `render`, `states`, `assign` and `guard`, values such as
-  `ctx.x`, `item.title` and `params.id` are placeholders. Never use `if`, `?:`, `&&`, `.filter()`, `.map()`,
-  `===` or template strings on them. Use instead:
-  - `op.*` for comparisons and updates;
-  - `ui.if` / `ui.each` for structure;
-  - `fn()` for any other computation.
+## Mental model
+- The app is **data**: builders record an IR that is validated, then rendered. Only machine views ship JS.
+- **References are recorded, not evaluated.** In `render`, `states`, `assign` and `guard`, `ctx.x`, `item.title`,
+  `params.id` are placeholders: never use `if`, `?:`, `&&`, `.filter()`, `.map()`, `===` or template strings on
+  them. Use `op.*` for comparisons and updates, `ui.if` / `ui.each` for structure, and a `fn()` for anything else.
+  Plain JS on *constants* is fine: `['a', 'b'].map((k) => ui.option(...))`.
+- **Side effects only through `query` / `mutation`.** Queries render with `ui.query`; a mutation runs when the
+  feature's one machine *enters* a state whose `invoke` calls it, and returns as `done` / `failed`.
+- **Every transition needs a contract.** A behaviour change without a contract change is an error.
+- **Absent means absent.** Optional fields are omitted, never `null`. Only `route({ params, search })` and
+  `ui.link(route, params, search)` spell "none" as `null`.
 
-  Plain JS on *constants* is fine, for example `['a','b'].map(k => ui.option(...))`.
-- **Side effects happen only through declared `query` / `mutation`.**
-  - Queries render with `ui.query` in views.
-  - Mutations run by *entering a machine state* whose `invoke` calls them.
-  - Results come back as `done` / `failed` transitions.
-- **UI state lives in one machine per feature** (flat states + a typed context). Views send events with
-  `ui.send(Event, payload)`.
-- **Every transition needs a contract** (given / when / expect). A behaviour change without a contract change
-  is an error.
-
-## Files (one feature)
+## Files
 ```
-tenon.config.ts          project(): schema adapter, site, routes, pages, features
-routes.ts                route() declarations
-server.ts                resolvers(project, implement => [...]): query/mutation implementations
-serve.ts                 createServer({ build, styles, resolvers }).listen(PORT)   (Node; edge.ts for other runtimes)
-app.css                  @import "tailwindcss";
+tenon.config.ts        project(): schema adapter, site, routes, pages, features
+routes.ts              route() declarations
+server.ts              resolvers(project, implement => [...]): query/mutation implementations
+serve.ts               createServer({ build, styles, resolvers }).listen(PORT)
+app.css                @import "tailwindcss";
 features/<name>/
-  schemas.ts             zod schemas (domain types, the machine context)
-  events.ts              event({ payload })
-  effects.ts             query / mutation / tag / fn
-  machine.ts             machine({ context, initialContext, initial, states })
-  views.ts               ui.view(...)
-  contracts.ts           contract(machine, { given, when, expect })
-  feature.ts             feature({ id, events, queries, mutations, tags, fns, machine, views, contracts, ... })
+  model.ts             schemas, events, query / mutation / tag / fn, the machine
+  views.ts             views, contracts, feature()
 ```
-Relative imports end in `.ts`. Every declaration is registered in `feature({...})` under a key, and the key is
-its name.
+Relative imports end in `.ts`. Any other split works too.
 
-## Checks (run from the app directory)
+## Checks (from the app directory)
 ```
-pnpm exec tsc --noEmit -p .              # types
-pnpm exec tenon validate                 # all rules + contracts; --json adds patches
-pnpm exec tenon validate --update-lock   # accept a clean, intended behaviour change
-PORT=4700 node serve.ts                  # run it (stop it by PID, not `pkill -f`)
+pnpm exec tsc --noEmit -p .  # types
+pnpm exec tenon validate  # all rules + contracts; --json adds patches
+pnpm exec tenon validate --update-lock  # accept a clean, intended behaviour change
+PORT=4700 node serve.ts & echo $!  # run it; stop it with kill <pid>, not pkill -f
 ```
-Each diagnostic has a code, a `file:line`, a cause and a fix. Apply the fix; do not work around the rule. See
-the table at the end.
+Each diagnostic has a `file:line`, a cause and a fix: apply the fix, do not work around the rule.
 
-## Declarations
+## model.ts
 ```ts
-// routes.ts
-export const home = route({ path: '/', params: null, search: z.object({ show: Show.default('all') }) })
-export const itemPage = route({ path: '/items/:id', params: z.object({ id: z.string() }), search: null })
-export const docs = route({ path: '/docs/:path+', params: z.object({ path: z.array(z.string()).min(1) }), search: null })
-// :x one segment (string) · :x? optional (nullable string) · :x+ one or more / :x* zero or more (string[]) — TN024
-// search: a flat object of scalars/enums, each with a default or nullable (TN035); null = no query string
-
-// events.ts: payloads are zod objects
+export const Item = z.object({ id: z.string(), title: z.string(), read: z.boolean() })
 export const Add = event({ payload: z.object({ title: z.string() }) })
 
-// effects.ts
-export const itemsTag = tag({ param: null })              // or tag({ param: z.string() }) → itemsTag(x)
+export const itemsTag = tag({ param: null })  // or tag({ param: z.string() }) → itemsTag(x)
 export const listItems = query({
-  input: z.object({}), output: Items, errors: {},          // errors: { Name: schema } are declared failures
-  scope: 'public',                                         // 'user' = per-session data (needs project session)
-  freshness: 'static',                                     // | { revalidate: s } | { swr: s } | 'live'
-  tags: () => [itemsTag()],                                // (input) => [...]
+  input: z.object({}), output: z.array(Item),
+  scope: 'public',  // 'user' = per-session data (needs project session)
+  freshness: 'static',  // | { revalidate: s } | { swr: s } | 'live'
+  tags: () => [itemsTag()],  // optional; (input) => [...]
 })
+export const getItem = query({ input: Key, output: Item, errors: { NotFound: Key }, … })
 export const addItem = mutation({
-  input: NewItem, output: Item,
-  errors: { Duplicate: z.object({ title: z.string() }) },
-  invalidates: () => [itemsTag()],                         // (input) => [...]; refreshes queries with these tags
+  input: z.object({ title: z.string().min(2, 'Use at least 2 characters') }), output: Item,
+  errors: { Duplicate: z.object({ title: z.string() }) },  // optional: declared failures
+  invalidates: () => [itemsTag()],  // refreshes queries with these tags
 })
-export const visible = fn({                                // pure JS, self-contained: no imports or closures
-  input: z.object({ items: Items, show: Show }), output: Items,
-  impl: ({ items, show }) => items.filter((i) => show === 'all' || !i.read),
+export const unread = fn({  // pure JS, self-contained: no imports or closures
+  input: z.object({ items: z.array(Item) }), output: z.array(Item),
+  impl: ({ items }) => items.filter((i) => !i.read),
 })
-```
-Calling `visible({ items, show: ctx.show })` inside a view or machine records the call. Use a `fn` whenever you
-would otherwise write JS logic.
 
-## Machine
-```ts
 export const m = machine({
-  context: Context,                                        // zod object
-  initialContext: { show: 'all', draft: '', error: null },           // (show here is UI-only state; URL filters use search)
+  context: z.object({ draft: z.string(), error: z.string().nullable() }),
+  initialContext: { draft: '', error: null },
   initial: 'idle',
   states: ({ ctx }) => ({
     idle: {
       on: [
-        on(SetShow, { target: 'idle', assign: (e) => [op.set(ctx.show, e.show)] }),
-        on(Add, { target: 'adding', assign: (e) => [op.set(ctx.draft, e.title), op.set(ctx.error, null)] }),
-        on(Save, { target: 'saving', guard: (e) => op.gte(e.count, 1) }),   // first matching guard wins
+        on(Draft, { target: 'idle', assign: (e) => [op.set(ctx.draft, e.text)] }),
+        on(Add, { target: 'adding', guard: (e) => op.neq(e.title, ''),  // first matching guard wins
+                  assign: (e) => [op.set(ctx.draft, e.title), op.set(ctx.error, null)] }),
       ],
     },
     adding: {
-      ignore: [SetShow, Add],                              // explicitly dropped while busy (see Patterns)
-      invoke: invoke(addItem, {                            // runs on entering the state
+      ignore: [Draft, Add],  // events dropped while busy (TN005)
+      invoke: invoke(addItem, {  // runs on entering the state
         input: { title: ctx.draft },
-        done: [{ target: 'idle', assign: (r) => [op.set(ctx.draft, '')],        // r = result
-                 navigate: (r) => ui.link(itemPage, { id: r.id }, null) }],    // optional: go to a typed URL
-        failed: {                                          // every declared error + Unexpected, all required
+        done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')],
+                 navigate: (r) => ui.link(itemPage, { id: r.id }) }],  // optional
+        failed: {  // every declared error + Unexpected
           Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, 'Already exists')] }],
           Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
         },
       }),
     },
-    flash: { after: [{ ms: 3000, target: 'idle' }] },     // timers; `final: true` for terminal states
+    flash: { after: [{ ms: 3000, target: 'idle' }] },  // timers; `final: true` for terminal states
   }),
 })
 ```
-- `op.set(target, value)`, `op.append(list, item)`, `op.inc(n, by)`, `op.removeWhere(list, 'key', value)`.
-- Guards: `op.eq`, `op.neq`, `op.lt`, `op.lte`, `op.gt`, `op.gte`, `op.and(...)`, `op.or(...)`, `op.not(g)`, or a
-  `fn` returning a boolean. Put the reference on the left: `op.eq(ctx.tab, 'design')`.
-- A transition to the *same* state re-enters it and re-runs its `invoke`. That is why busy states use `ignore`.
-- `navigate: (arg) => ui.link(route, params, search)` on any transition sends the browser to that URL (contracts
-  see it as a `{ navigate: '/items/i9' }` effect).
+- `op.set`, `op.append(list, item)`, `op.inc(n, by)`, `op.removeWhere(list, 'key', value)`.
+- Guards: `op.eq / neq / lt / lte / gt / gte`, `op.and(...)`, `op.or(...)`, `op.not(g)`, or a boolean `fn`. The
+  reference goes on the left: `op.eq(ctx.tab, 'design')`.
+- A transition to the same state re-enters it and re-runs its `invoke`; busy states `ignore` instead.
 
-## Views
+## views.ts
 ```ts
 export const Board = ui.view({
-  machine: m,              // or null: no events, no ctx, 0 JS
-  route: null,             // or a route: render gets { params, search } typed by the route
-  render: ({ ctx, when, params, search }) => ui.main({ class: 'mx-auto max-w-xl' }, [ /* children */ ]),
+  machine: m,  // optional: without it, no ctx / when / events, 0 JS
+  route: home,  // optional: render gets { params, search } typed by the route
+  render: ({ ctx, when, search }) =>
+    ui.main({ class: 'mx-auto max-w-xl' }, [
+      ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } }, [
+        ui.input({ name: 'title', required: true, value: ctx.draft,
+                   on: { input: ui.send(Draft, { text: ui.dom.value }) } }),
+        ui.button({ type: 'submit' }, ['Add']),
+      ]),
+      ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert' }, [ctx.error])], []),
+      when(['adding'], [ui.p({ 'aria-busy': 'true' }, ['Adding…'])]),
+      ui.query(listItems, {}, {
+        ready: (items) => ui.ul({}, [ui.each(items, 'id', (i) =>
+          ui.li({}, [ui.a({ href: ui.link(itemPage, { id: i.id }) }, [i.title])]))]),
+        pending: ui.p({}, ['Loading…']),  // or null
+        failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },
+      }),
+    ]),
 })
 ```
-- **Elements**: `ui.<tag>(attrs, children)`. Void tags (`input`, `img`…) take only attrs. Children are nodes,
-  strings, numbers or references.
-- **Attributes**: HTML names in lower case (`for`, `minlength`, `readonly`, `aria-pressed`, `data-x`). Values
-  are literals, references or guards: `'aria-pressed': op.eq(ctx.show, 'all')`.
-  - `class` is a **static** string of Tailwind classes that must exist (TN026).
-  - Conditional classes go in `toggle: { 'bg-indigo-600 text-white': op.eq(ctx.tab, t) }`.
-  - CSS variables go in `vars: { '--hue': item.hue }`. There is no `style`.
-- **Events**: `on: { click: ui.send(Event, payload) }` (any DOM event name, plus `visible`: the element entered the
-  viewport). Payload values can be literals,
-  references, or DOM fields read at event time:
-  - `ui.dom.value`: text. It may go into an enum field only from a `<select>` whose literal option values are
-    all members (TN033).
-  - `ui.dom.form('name')`: a named field of the submitted form (use it on `submit`; the browser runs required /
-    minlength checks first). It may go into an enum field when that name belongs to a `<select>` (or radio
-    inputs) inside the form whose literal option values are all members, so one `submit` can carry a title and
-    a priority together.
-  - `ui.dom.valueAsNumber` (number | null), `ui.dom.checked`.
-  - `ui.dom.key`, and similar fields that depend on the event.
-- **Structure**:
-  - `when(['idle', 'error'], [...])` shows children only in those machine states.
-  - `ui.if(guard, [then…], [else…])` renders on data.
-  - `ui.each(list, 'id', (item) => node)` iterates; use `key: null` for lists of primitives.
-- **Data**:
-  ```ts
-  ui.query(listItems, {}, {
-    ready: (items) => ...,
-    pending: ui.p({}, ['Loading…']),    // or null
-    failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },   // every declared error + Unexpected
-  })
-  ```
-  Server-fetched data is streamed into the HTML and never refetched. After a mutation, queries whose tags it
-  invalidates refresh in place.
-- **Links**: `ui.link(route, params, search)`; the third argument exists only when the route declares `search`
-  (`null` = all defaults). `ui.a({ href: ui.link(itemPage, { id: item.id }) }, [...])`,
-  `ui.a({ href: ui.link(home, null, { show: 'unread' }) }, ['Unread'])`. Internal paths are never strings (TN032).
-  URLs are canonical: keys sorted, defaults left out. Changing `search` is a navigation (a plain link), so filters
-  that belong in the URL are links, not machine state.
-- **Forms work without JavaScript** when the submit payload reads only `ui.dom.form('name')`, literals, context,
-  params and search (otherwise TN036 warns). The server runs the same machine and mutation, then redirects (on
-  `navigate`, or when the machine is back where it started) or re-renders the page showing the result (for example
-  an error alert). Put every value the submit needs in named fields: a `<select name="kind">` instead of a
-  separate change event.
-- Also available:
-  - `ui.html(value)`: trusted HTML from query data only (TN030).
-  - `ui.asset(new URL('./x.png', import.meta.url))` for files.
-  - `ui.window({ on })` / `ui.document({ on })` for global listeners.
-  - Widgets (`ui.widget` / `ui.use`) for third-party DOM libraries.
+- `ui.<tag>(attrs, children)`; attribute values are literals, references or guards.
+- `class` is a static string of Tailwind classes that must exist (TN026). Conditional classes:
+  `toggle: { 'bg-indigo-600 text-white': op.eq(ctx.tab, t) }`. CSS variables: `vars: { '--hue': item.hue }`.
+- Events: `on: { click: ui.send(Event, payload) }`. Payload fields: literals, references, `ui.dom.value`,
+  `ui.dom.form('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`.
+- `ui.each(list, 'id', (item) => node)` (key `null` for primitives).
+- Links: `ui.link(route, params, search)`, never a string path (TN032). The third argument exists only when the
+  route declares `search` (`null` = all defaults). Filters that belong in the URL are `search` links, not context.
+- A form whose submit reads only `ui.dom.form(...)`, literals, context, params and search also works without JS.
 
-## Pages and project (tenon.config.ts)
+### Contracts
 ```ts
-ui.page(itemPage, {
-  views: [Detail],
-  assert: null,
-  head: {
-    redirects: null,
-    query: getItem,                                        // its failure sets the HTTP status (NotFound → 404)
-    input: (params) => ({ id: params.id }),
-    render: (item) => ({ title: item.title, description: item.title, type: 'article',
-                         image: null, published: null, noindex: false }),
-  },
-  entries: { query: listItems, input: {}, params: (item) => ({ id: item.id }) },   // for the sitemap
-})
-```
-For a page without data use `head: { redirects: null, query: null, input: null, render: () => ({ ... }) }` and
-`entries: null`.
-
-Project: `project({ schema: zodAdapter, styles: new URL('./app.css', import.meta.url), notFound: null, error: null,
-session: null, site: { url, name, lang, icon: null, themeColor: null }, routes: { home, itemPage }, pages: [...],
-http: null, env: null, features: [items] })`. `notFound` / `error` may name a route to render for 404 / 500.
-`site.locales: null` for one language; see "Languages" below. `site.offline: route | null`: a static page shown when the
-network is down (a service worker is generated; TN043). A web app manifest is derived from `site`.
-
-`http: null` serves the site at `/` with no trailing slashes (`/about/` answers 308 → `/about`). Otherwise:
-```ts
-http: {
-  basePath: '',                        // or '/shop': every URL and /_tenon/* move under it (TN039)
-  trailingSlash: 'never',              // or 'always'; the other form answers 308
-  redirects: {                         // keyed by the old path; never a path a page owns (TN037)
-    '/blog/:slug': { to: (p) => ui.link(post, { slug: p.slug }), permanent: true },   // 308
-    '/docs': { to: 'https://docs.example.com', permanent: false },                     // 307
-  },
-  headers: [{ routes: 'all', set: { 'permissions-policy': 'camera=()' } }],   // or routes: [post]; not cache-control etc. (TN038)
-},
-```
-There are no rewrites: one URL has one owner.
-
-## Languages (i18n)
-- `site: { lang: 'en', locales: ['en', 'zh-TW'], ... }`: every URL gets a locale prefix (`/en/posts/a`). Routes and
-  `ui.link` stay locale-free; links stay in the current locale. `/` and old locale-less URLs redirect by
-  `Accept-Language`. `<html lang>`, hreflang, og:locale and the sitemap are derived.
-- Text: `export const text = ui.messages('en', { en: { saved: '{count} saved' }, 'zh-TW': { saved: '已儲存 {count} 筆' } })`,
-  registered as `feature({ messages: text })` (`messages: null` otherwise). Use `text.title` or
-  `text.saved({ count: items.length })` in views and `head.render`. Every locale needs every key with the same
-  `{placeholders}` (TN040). Plurals: `'{n, plural, =0 {none} one {# item} other {# items}}'`; `select` also works.
-- Machines never hold translated text (TN041): store a code in context (`'duplicate'`) and pick the message in the
-  view with `ui.if`.
-- `ui.format.number(x, { style: 'currency', currency: 'EUR' })`, `ui.format.date(x, { dateStyle: 'medium' })`,
-  `ui.format.relative(n, 'day')`, `ui.format.list(xs)`.
-- `locale` is in every view scope (`render: ({ locale }) =>`) and the second argument of `head.input`, e.g. for a
-  query input `{ slug: params.slug, locale }`. `ui.alternate('zh-TW')` is the current page in another locale.
-
-## Environment
-`env: { server: z.object({ DB_URL: z.string() }), public: z.object({ SUPPORT_EMAIL: z.string().email() }) }` in
-`project`. Both are parsed when the server starts (defaults and `z.coerce` apply; a missing value stops startup).
-Resolvers get `ctx.env` (server values). Views read public values with `ui.env(PublicEnv).SUPPORT_EMAIL`; server values
-never reach a view. Machines cannot read env (TN041).
-
-## Server (server.ts)
-```ts
-export function createResolvers() {
-  const items = [/* in-memory seed */]
-  return resolvers(project, (implement) => [
-    implement(listItems, () => items.map((i) => ({ ...i }))),
-    implement(getItem, ({ id }, { fail }) => items.find((i) => i.id === id) ?? fail('NotFound', { id })),
-    implement(addItem, ({ title }, { fail }) => {
-      if (items.some((i) => i.title.toLowerCase() === title.trim().toLowerCase()))
-        return fail('Duplicate', { title })                // a declared error → the machine's failed.Duplicate
-      const item = { id: `i${items.length + 1}`, title: title.trim() }
-      items.unshift(item)
-      return { ...item }
-    }),
-  ])
-}
-```
-Every mutation also has the framework error `Invalid` = `{ message, fields }`, where `fields` has one key per top-level
-input field (`string | null`). It is returned when the input fails its schema (put limits there:
-`z.string().min(2, 'Use at least 2 characters')`), and a resolver can return it:
-`fail('Invalid', { message, fields: { title: 'Already taken' } })`. `failed.Invalid` is optional (without it,
-`Unexpected` handles it); with it, `assign: (e) => [op.set(ctx.fields, e.fields)]` and show `ctx.fields.title` under the
-input. Never declare an error named `Invalid` or `Unexpected` yourself (TN014).
-User-scoped resolvers also receive `session`. Mutations can call `setSession(value)` (see `examples/blog`).
-`createServer({ build, styles, resolvers, session?, onError?, csp? })` (from `@tenon/adapter-node`):
-- `session: (request) => value` receives a web `Request` (`request.headers.get('cookie')`), or use
-  `sessionCookie({ name, secret })` from `@tenon/runtime-server` for a signed cookie.
-- `onError(error, { effect | path })` receives every unexpected failure.
-- A strict CSP, `nosniff` and a cross-site POST check are on by default (`csp` adds sources, e.g.
-  `{ script: ['https://analytics.example'] }`, or `false`).
-
-Markdown content: `@tenon/content` turns `content/posts/*.md` (YAML front matter checked by a schema) into
-`{ slug, data, html, headings }`: `const posts = await loadCollection({ dir: new URL('./content/posts/', import.meta.url),
-schema: Frontmatter })` at the top of `server.ts`, then return them from ordinary query resolvers; render the body
-with `ui.html(post.html)` (see `examples/blog`).
-
-Share images: `head.image: ui.og({ title: post.title, subtitle: post.excerpt })` renders a 1200×630 card; pass
-`og: ogImage` (from `@tenon/image`) to `createServer`.
-
-Drafts: `createServer({ preview: { secret } })`; `GET /_tenon/preview?secret=…&path=/posts/a` turns preview on (a
-signed cookie), `/_tenon/preview/exit` turns it off. Resolvers get `ctx.preview` (return drafts only then); preview
-responses are never cached and are noindex.
-
-Tests of rendered pages: `const app = testApp({ build, resolvers })` from `@tenon/testing`;
-`const page = await app.get('/')` gives `{ status, headers, html, text, payload }`; `app.post(path, fields)` submits a
-native form.
-
-Fonts: a local `@font-face` file in your CSS gets a size-matched `"<Family> Fallback"` automatically; nothing to write.
-
-Images: `ui.img({ src: ui.asset(new URL('./hero.jpg', import.meta.url)), alt, width, height })`. If the project
-installs `@tenon/image` (build-time, uses sharp), pass `images: await optimizeImages(build)` to `createServer` and
-`tenon build` does it on its own: raster `<img>` assets get WebP `srcset` widths and a `sizes` derived from `width`.
-Without it, images are served as they are.
-
-Deploying: `tenon build` writes `dist/public/` (static files for any host/CDN) and `dist/manifest.json`. On Node pass
-`createServer({ build: buildProject(project, { manifest }), manifest, publicDir: 'dist/public', ... })`. On Bun,
-Deno, Cloudflare Workers or Vercel the whole server is `createHandler({ build, manifest, resolvers })` from
-`@tenon/runtime-server` and `export default { fetch: handler.fetch }` (see `examples/cart/edge.ts`). Page cache and
-tag revalidation are per instance.
-
-To test a mutation with curl:
-`curl -X POST localhost:4700/_tenon/effect -H 'content-type: application/json' -d '{"effect":"items.addItem","input":{"title":"x"},"keys":[]}'`.
-Pages are plain `GET`s.
-
-## Contracts (contracts.ts)
-```ts
-const idle = { show: 'all', draft: '', error: null } as const
 export const adds = contract(m, {
-  given: { state: 'idle', context: idle },
+  given: { state: 'idle' },  // context: optional, defaults to initialContext
   when: [
-    { send: Add, payload: { title: 'A' } },                                  // an event
-    { done: addItem, result: { id: 'i9', title: 'A' } },                     // the effect succeeds
-  ],                                                                         // or { failed: addItem, error: 'Duplicate', data: {...} }
-  expect: { state: 'idle', context: idle, effects: [{ effect: addItem, input: { title: 'A' } }] },
-})                                                                           // navigation is an effect too: { navigate: '/items/i9' }
+    { send: Add, payload: { title: 'A' } },
+    { done: addItem, result: { id: 'i9', title: 'A', read: false } },
+  ],  // or { failed: addItem, error: 'Duplicate', data } / { elapse: ms }
+  expect: {
+    state: 'idle',
+    changes: { error: null },  // only what changes; every other field must stay equal
+    effects: [{ effect: addItem, input: { title: 'A' } }, { navigate: '/items/i9' }],  // optional: none
+  },
+})
 ```
-Register them as `contracts: { ...contracts }` (with `import * as contracts from './contracts.ts'`).
-- Cover each `on`, `done`, `failed` and `after` once.
-- TN016 prints a ready contract for every uncovered transition. It fills in the initial context, example
-  payloads, the target state and the effect it starts. Paste it, then set the values the transition assigns.
+Cover each `on`, `done`, `failed` and `after` once. `given.context` sets up a full context; nested objects in
+`changes` are patches too, arrays are replaced. TN016 prints each missing contract ready to paste.
+
+### Feature
+```ts
+export const items = feature({
+  id: 'items',
+  intent: { summary: 'A reading list', invariants: ['Titles are unique'] },  // invariants optional
+  declarations: { Add, Draft, itemsTag, listItems, getItem, addItem, unread, m, Board, Detail, adds },
+})
+```
+Every declaration goes in `declarations` once, under its name. Optional: `imports: [otherFeature]`,
+`exports: [Event, query, …]` (all other features may use), `styles: [new URL('./x.css', import.meta.url)]`.
+
+## tenon.config.ts
+```ts
+export default project({
+  schema: zodAdapter,
+  styles: new URL('./app.css', import.meta.url),
+  site: { url: 'http://localhost:3000', name: 'Items', lang: 'en' },
+  routes: { home, itemPage },
+  pages: [
+    ui.page(home, { views: [Board], head: { render: () => ({ title: 'Items', description: 'All items.' }) } }),
+    ui.page(itemPage, {
+      views: [Detail],
+      head: {
+        query: getItem,  // its failure sets the status (NotFound → 404)
+        input: (params) => ({ id: params.id }),
+        render: (item) => ({ title: item.title, description: item.title, type: 'article' }),
+      },
+      entries: { query: listItems, input: {}, params: (item) => ({ id: item.id }) },  // sitemap
+    }),
+  ],
+  features: [items],
+})
+```
+```ts
+// routes.ts
+export const home = route({ path: '/', params: null, search: z.object({ show: Show.default('all') }) })
+export const itemPage = route({ path: '/items/:id', params: z.object({ id: z.string() }), search: null })
+```
+
+## server.ts
+```ts
+export const createResolvers = () => resolvers(project, (implement) => [
+  implement(getItem, ({ id }, { fail }) => items.find((i) => i.id === id) ?? fail('NotFound', { id })),
+  implement(addItem, ({ title }, { fail }) => /* … */ fail('Duplicate', { title })),  // → failed.Duplicate
+])
+```
+Input failing its schema returns the error `Invalid` (`{ message, fields }`; see `reference.md`).

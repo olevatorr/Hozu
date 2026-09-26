@@ -60,10 +60,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `ui.asset(url)` (TN028 for img without dimensions).
   Literals are checked against their schema (TN031); enumerated attributes (`type`, `method`, `loading`…) are typed.
   Internal links are `ui.link` only: a string `href` starting with `/` is TN032 (ADR 0012).
-- Agent guide: the `tenon` skill (`.claude/skills/tenon/`: `SKILL.md` core API, `changing.md`, `patterns.md`,
-  `diagnostics.md`) is the authoring reference; `examples/bookmarks` is its verified reference app. Keep both in sync with any API change. Busy states declare `ignore: [Event]` (TN005, TN034);
+- Agent guide: the `tenon` skill (`.claude/skills/tenon/`: `SKILL.md` core API ≤ 10 KB, `reference.md` for
+  everything beyond the core, `changing.md`, `patterns.md`, `diagnostics.md`) is the authoring reference; `examples/bookmarks` is its verified reference app. Keep both in sync with any API change. Busy states declare `ignore: [Event]` (TN005, TN034);
   `ui.dom.value` / `ui.dom.form(name)` may feed enum fields only from literal `<select>`/radio options (TN033) (ADR 0013).
-- Widgets (ADR 0009): `ui.widget({ tag, props, events, client, load, wraps })` in `feature({ widgets })`,
+- Widgets (ADR 0009): `ui.widget({ tag, props, events, client, load, wraps })` in the feature's `declarations`,
   `ui.use(W, { props, on, class }, children)`, client module `export default implement<typeof W>(setup)` from
   `@tenon/core/widget` (type-only import of the declaration). Bundled by `@tenon/bundle` (esbuild), TN029.
 - Server capabilities (ADR 0010): client fetch of new query keys, live queries over SSE, `head.redirects`,
@@ -84,7 +84,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `buildProject(project, { manifest })` needs no file system (edge; `examples/cart/edge.ts`, checked in a web-only
   vm and on Bun). Budget P9 (req/s through adapter-node) is report-only.
 - i18n (ADR 0017): `site.locales` prefixes every URL with its locale (`/`, locale-less page URLs negotiate by
-  Accept-Language); `ui.messages(base, {...})` registered as `feature({ messages })`, `ui.format.*` (Intl),
+  Accept-Language); `ui.messages(base, {...})` in the feature's `declarations`, `ui.format.*` (Intl),
   `locale` ref, `ui.alternate(l)`; hreflang/og:locale/sitemap derived. Messages and formats are lowered on the server
   for the page locale (islands get only its strings; helpers live in `fns.js`, P7 unchanged). TN040–TN042.
 - Images (ADR 0017): optional `@tenon/image` (build-time, sharp) → `optimizeImages(build)` makes WebP widths for raster
@@ -106,8 +106,14 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   noindex); `ui.og({ title, subtitle })` → `/_tenon/og.png` rendered by an injected `og` (`ogImage` from
   `@tenon/image`); derived web manifest + opt-in `site.offline` service worker (TN043); `@tenon/testing`
   (`testApp(...).get/post` → `{ status, headers, html, text, payload }`).
+- Authoring surface (ADR 0022): absent values are omitted (optional, no `null` spelling; behaviour-deciding fields
+  such as query `scope`/`freshness`, `initialContext`/`initial` and route `params`/`search` stay required).
+  `feature({ id, intent, declarations, imports?, exports?, styles? })` sorts declarations by their brand (a second
+  machine is TN013, a non-declaration TN014); `exports` is a flat list. Contracts: `given.context` defaults to
+  `initialContext`, `expect.changes` is a deep patch (unmentioned fields must stay equal, arrays replace),
+  `expect.effects` defaults to none. The IR is unchanged. Recommended feature layout: `model.ts` + `views.ts`.
 - Pages: `project({ site, pages: [ui.page(route,
-  { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
+  { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head
   query derives the HTTP status. `assert` is validated, never obeyed (ADR 0008).
 - `fn()` implementations used on the client are shipped by source text (`/_tenon/fns.js`): they must be

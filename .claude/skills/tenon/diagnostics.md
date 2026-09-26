@@ -7,7 +7,7 @@ around the rule.
 |---|---|---|
 | TN001 | state unreachable | add a transition to it or delete it |
 | TN002 | event handled nowhere | handle it in a state or remove it |
-| TN003 / TN007 | unknown effect / reference | declare it, or fix the name (the patch suggests one) |
+| TN003 / TN007 | unknown effect / reference | add it to `feature({ declarations })`, or fix the name (the patch suggests one) |
 | TN004 | a declared error is not handled | add every `failed` key, plus `Unexpected`, in `invoke` and `ui.query` |
 | TN005 | a node sends an event in a state that does not handle it | `ignore: [Event]` in that state, or show the node only via `when` |
 | TN006 | crossing a feature boundary | import the feature and use its `exports` |
@@ -35,5 +35,5 @@ around the rule.
 | TN039 | `basePath` is not `''` or `/segment[/segment…]` | e.g. `'/shop'`, no trailing slash |
 | TN040 | a locale lacks a message, or uses other `{placeholders}` | add/translate the key in that locale |
 | TN041 | a machine uses a message, `ui.format` or `locale` | store a code in context; choose the message in the view |
-| TN043 | `site.offline` has params, no page, or per-request data | point it at a static page, or `offline: null` |
+| TN043 | `site.offline` has params, no page, or per-request data | point it at a static page, or remove `offline` |
 | TN042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |
