@@ -1,6 +1,6 @@
 import { fn, mutation, query, tag } from '@tenon/core'
 import { z } from 'zod'
-import { NewTask, NoInput, Show, Task, TaskKey, Tasks } from './schemas.ts'
+import { Cleared, NewTask, NoInput, Show, Task, TaskKey, Tasks } from './schemas.ts'
 
 export const tasksTag = tag({ param: null })
 
@@ -33,6 +33,13 @@ export const toggleTask = mutation({
   input: TaskKey,
   output: Task,
   errors: { NotFound: TaskKey },
+  invalidates: () => [tasksTag()],
+})
+
+export const clearDone = mutation({
+  input: NoInput,
+  output: Cleared,
+  errors: {},
   invalidates: () => [tasksTag()],
 })
 

@@ -1,13 +1,13 @@
 import { invoke, machine, on, op } from '@tenon/core'
-import { addTask, toggleTask } from './effects.ts'
-import { Add, Draft, SetShow, Toggle } from './events.ts'
+import { addTask, clearDone, toggleTask } from './effects.ts'
+import { Add, ClearDone, Draft, SetShow, Toggle } from './events.ts'
 import { Context } from './schemas.ts'
 
 export const DUPLICATE = 'A task with this title already exists'
 
 export const tasksMachine = machine({
   context: Context,
-  initialContext: { show: 'all', draft: '', target: '', error: null, fields: { title: null } },
+  initialContext: { show: 'all', draft: '', priority: 'normal', target: '', error: null, fields: { title: null, priority: null } },
   initial: 'idle',
   states: ({ ctx }) => ({
     idle: {
@@ -18,18 +18,20 @@ export const tasksMachine = machine({
           target: 'adding',
           assign: (e) => [
             op.set(ctx.draft, e.title),
+            op.set(ctx.priority, e.priority),
             op.set(ctx.error, null),
-            op.set(ctx.fields, { title: null }),
+            op.set(ctx.fields, { title: null, priority: null }),
           ],
         }),
         on(Toggle, { target: 'toggling', assign: (e) => [op.set(ctx.target, e.id)] }),
+        on(ClearDone, { target: 'clearing', assign: () => [op.set(ctx.error, null)] }),
       ],
     },
     adding: {
-      ignore: [Draft, SetShow, Add, Toggle],
+      ignore: [Draft, SetShow, Add, Toggle, ClearDone],
       invoke: invoke(addTask, {
-        input: { title: ctx.draft },
-        done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')] }],
+        input: { title: ctx.draft, priority: ctx.priority },
+        done: [{ target: 'idle', assign: () => [op.set(ctx.draft, ''), op.set(ctx.priority, 'normal')] }],
         failed: {
           Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] }],
           Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] }],
@@ -38,12 +40,22 @@ export const tasksMachine = machine({
       }),
     },
     toggling: {
-      ignore: [Draft, SetShow, Add, Toggle],
+      ignore: [Draft, SetShow, Add, Toggle, ClearDone],
       invoke: invoke(toggleTask, {
         input: { id: ctx.target },
         done: [{ target: 'idle' }],
         failed: {
           NotFound: [{ target: 'idle' }],
+          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+        },
+      }),
+    },
+    clearing: {
+      ignore: [Draft, SetShow, Add, Toggle, ClearDone],
+      invoke: invoke(clearDone, {
+        input: {},
+        done: [{ target: 'idle' }],
+        failed: {
           Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
         },
       }),
