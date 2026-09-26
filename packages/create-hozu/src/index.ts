@@ -91,7 +91,7 @@ export const packageJson = (name: string, version: string) => ({
   private: true,
   type: 'module',
   scripts: {
-    check: 'tsc --noEmit -p . && hozu validate',
+    check: 'hozu check',
     start: 'node serve.ts',
     build: 'hozu build',
   },

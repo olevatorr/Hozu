@@ -8,8 +8,9 @@
 - **`hozu get <path>...`:** requests pages in-process, with no server. It prints the status, title, every
   `role="alert"` text and the visible text (capped at 1,500 characters).
 - **`hozu post <path> --field name=value [--next <step>]...`:** fills the page's form like a browser, posts it,
-  follows the redirect, then runs the next steps in the same process. A step is `'/path'`, `'GET /path'` or
-  `'POST /path a=1&b=2'`.
+  follows the redirect, then runs the next steps in the same process.
+  - A step is `'/path'`, `'GET /path'`, `'POST /path a=1&b=2'` or `'POST /path @Button label'`.
+  - `--button <label>` picks a form by its submit button, for action forms without fields.
 - **`hozu add feature <name> [--page <path>]`:** scaffolds a working feature and wires it into `hozu.config.ts`,
   `server.ts` and, with `--page`, `routes.ts`:
   - a list query and an add mutation;
@@ -21,7 +22,8 @@
 ### Other changes
 - **The skill and the app guide teach this loop:** `add` → edit → `check` → `get` / `post`. `patterns.md` points
   at the part of the example each pattern uses.
-- **`create-hozu` apps** also depend on `@hozu/testing`, which `get` / `post` use.
+- **`create-hozu` apps** also depend on `@hozu/testing`, which `get` / `post` use. Their `check` script is
+  `hozu check`.
 - **`<html data-hozu-ready>`** is set once the page has hydrated, for browser tests.
 
 ## 0.1.0 — first public release

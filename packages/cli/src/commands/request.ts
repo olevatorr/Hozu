@@ -43,6 +43,7 @@ const plain = (html: string) =>
 interface Form {
   action: string
   fields: Record<string, string>
+  buttons: string[]
 }
 
 export function formsOf(html: string, at: string): Form[] {
@@ -72,7 +73,14 @@ export function formsOf(html: string, at: string): Form[] {
       const name = attrsOf(t[1]!).name
       if (name) fields[name] = decode(t[2]!)
     }
-    forms.push({ action: attrs.action || at, fields })
+    const buttons: string[] = []
+    for (const b of body.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g))
+      if ((attrsOf(b[1]!).type ?? 'submit') === 'submit') buttons.push(plain(b[2]!))
+    for (const i of body.matchAll(/<input\b([^>]*)>/g)) {
+      const a = attrsOf(i[1]!)
+      if (a.type === 'submit') buttons.push(a.value ?? 'Submit')
+    }
+    forms.push({ action: attrs.action || at, fields, buttons })
   }
   return forms
 }
@@ -92,6 +100,7 @@ export interface RequestOptions {
   paths: string[]
   fields: string[]
   next: string[]
+  button: string | undefined
   session: string | undefined
   full: boolean
 }
@@ -177,18 +186,31 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
     }
     return given
   }
-  const post = async (path: string, given: Record<string, string>) => {
+  const post = async (path: string, given: Record<string, string>, button: string | undefined) => {
     const page = await app.get(path, init())
     remember(page)
     const forms = formsOf(page.html, path)
-    const form = forms.find((f) => Object.keys(given).every((k) => k in f.fields))
+    const label = button?.trim().toLowerCase()
+    const form = forms.find(
+      (f) =>
+        Object.keys(given).every((k) => k in f.fields) &&
+        (label === undefined || f.buttons.some((b) => b.toLowerCase() === label)),
+    )
     if (!form)
       throw new HozuCliError(
         'usage',
         forms.length
-          ? `No form on ${path} has the fields ${Object.keys(given).join(', ')}`
+          ? `No form on ${path} has ${[
+              Object.keys(given).length ? `the fields ${Object.keys(given).join(', ')}` : '',
+              label ? `a "${button}" button` : '',
+            ]
+              .filter(Boolean)
+              .join(' and ')}`
           : `${path} has no form that posts`,
-        forms.map((f) => `form fields: ${Object.keys(f.fields).join(', ') || '(none)'}`),
+        forms.map(
+          (f) =>
+            `form fields: ${Object.keys(f.fields).join(', ') || '(none)'} · buttons: ${f.buttons.join(', ') || '(none)'}`,
+        ),
       )
     const posted = await app.post(form.action, { ...form.fields, ...given }, init())
     remember(posted)
@@ -202,12 +224,18 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
   }
   const [path] = options.paths
   if (!path) throw new HozuCliError('usage', 'hozu post needs a path', ['hozu post / --field title=Ship'])
-  await post(path, fieldsOf(options.fields))
+  await post(path, fieldsOf(options.fields), options.button)
   for (const next of options.next) {
     const m = /^(GET|POST)\s+(\S+)\s*(.*)$/.exec(next.trim())
     if (!m) await get(next.trim())
     else if (m[1] === 'GET') await get(m[2]!)
-    else await post(m[2]!, fieldsOf(m[3] ? m[3].split('&') : []))
+    else {
+      const rest = m[3]!.trim()
+      const [fields, button] = rest.startsWith('@')
+        ? ['', rest.slice(1)]
+        : (rest.split('@') as [string, string?])
+      await post(m[2]!, fieldsOf(fields.trim() ? fields.trim().split('&') : []), button?.trim())
+    }
   }
   return { steps }
 }

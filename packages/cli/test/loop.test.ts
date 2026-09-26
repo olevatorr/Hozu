@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { Ajv } from 'ajv'
 import { createApp } from 'create-hozu'
 import { afterAll, describe, expect, it } from 'vitest'
+import { formsOf } from '../src/commands/request.ts'
 import { main } from '../src/main.ts'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
@@ -94,5 +95,18 @@ describe('the agent loop (ADR 0027)', () => {
     expect(check.out.types.errors[0]).toMatchObject({ file: 'broken.ts', line: 1, code: 'TS2322' })
     expect((await run(['add', 'feature', 'Bad'], app)).code).toBe(2)
     expect((await run(['post', '/', '--field', 'nope=1'], app)).code).toBe(2)
+  })
+
+  it('reads forms like a browser: defaults, selected options and submit buttons', () => {
+    const html = `
+      <form method="post" action="/?__hozu=a"><input name="title" value="x"><select name="kind"><option value="a">A</option><option value="b" selected>B</option></select><button type="submit">Add</button></form>
+      <form method="post" action="/?__hozu=b"><input type="hidden" name="id" value="t1"><button>Mark done</button></form>
+      <form method="post" action="/?__hozu=c"><button type="submit">Clear done</button><button type="button">Cancel</button></form>
+      <form action="/search"><input name="q"></form>`
+    expect(formsOf(html, '/')).toEqual([
+      { action: '/?__hozu=a', fields: { title: 'x', kind: 'b' }, buttons: ['Add'] },
+      { action: '/?__hozu=b', fields: { id: 't1' }, buttons: ['Mark done'] },
+      { action: '/?__hozu=c', fields: {}, buttons: ['Clear done'] },
+    ])
   })
 })

@@ -36,3 +36,5 @@ Fix what it reports. When the behaviour change is intended and everything is cle
 - Forms: `pnpm exec hozu post / --field title=A --field kind=video --next /items` fills the form like a browser (other
   fields keep their defaults), follows the redirect, then requests the next steps in the same process.
 - Chain what must share data: `--next 'POST / title=a'` (fields as `a=1&b=2`), `--next /items/i3`.
+- A form with only a button (an action such as "Clear done"): `--button 'Clear done'`, or `--next 'POST / @Clear done'`.
+  One form per item: `--field id=t2` picks the item's form.

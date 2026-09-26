@@ -115,3 +115,8 @@ The next trial runs **Claude Code itself in the app directory** (`claude -p`), w
   The loop worked. The cost is in reading before writing. Two defects were found:
   - `hozu post` cannot select a form that only has a submit button;
   - the template's `check` script is stale.
+- **Fixed before publishing 0.2.0:**
+  - `hozu post --button <label>` and `'POST <path> @Label'` steps select a form by its submit button;
+  - the template's `check` script is `hozu check`.
+
+  The gate is green, with 259 tests.

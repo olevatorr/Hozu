@@ -37,7 +37,8 @@ Options:
   --out <dir>          build: output directory (default: dist)
   --agent <agent>      skill: claude, agents or both (default: the folders that exist)
   --field <name=value> post: a form field (repeatable); other fields keep their defaults
-  --next <step>        post: next '<path>', 'GET <path>' or 'POST <path> a=1&b=2', same process (repeatable)
+  --button <label>     post: the form whose submit button reads <label> (for forms without fields)
+  --next <step>        post: next '<path>', 'GET <path>', 'POST <path> a=1&b=2' or 'POST <path> @Label' (repeatable)
   --session <json>     get/post: the session value for user-scoped queries
   --full               get/post: print the whole visible text
   --page <path>        add feature: also add a route and a page at this path
@@ -66,6 +67,7 @@ export async function main(
         session: { type: 'string' },
         full: { type: 'boolean', default: false },
         page: { type: 'string' },
+        button: { type: 'string' },
         help: { type: 'boolean', short: 'h' },
       },
     })
@@ -126,6 +128,7 @@ export async function main(
         paths: positionals.slice(1),
         fields: values.field ?? [],
         next: values.next ?? [],
+        button: values.button,
         session: values.session,
         full: values.full === true,
       })
