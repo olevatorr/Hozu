@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.2.0 — a cheaper loop for agents
+
+### Commands
+- **`hozu check`:** type-checks the app with its own TypeScript and runs every rule and contract. One command and
+  one summary line; `--json` follows `check.schema.json`.
+- **`hozu get <path>...`:** requests pages in-process, with no server. It prints the status, title, every
+  `role="alert"` text and the visible text (capped at 1,500 characters).
+- **`hozu post <path> --field name=value [--next <step>]...`:** fills the page's form like a browser, posts it,
+  follows the redirect, then runs the next steps in the same process. A step is `'/path'`, `'GET /path'` or
+  `'POST /path a=1&b=2'`.
+- **`hozu add feature <name> [--page <path>]`:** scaffolds a working feature and wires it into `hozu.config.ts`,
+  `server.ts` and, with `--page`, `routes.ts`:
+  - a list query and an add mutation;
+  - a machine with a busy state;
+  - a no-JS form with field errors;
+  - the contracts;
+  - in-memory resolvers.
+
+### Other changes
+- **The skill and the app guide teach this loop:** `add` → edit → `check` → `get` / `post`. `patterns.md` points
+  at the part of the example each pattern uses.
+- **`create-hozu` apps** also depend on `@hozu/testing`, which `get` / `post` use.
+- **`<html data-hozu-ready>`** is set once the page has hydrated, for browser tests.
+
 ## 0.1.0 — first public release
 
 All packages are published under `@hozu/*`, plus [`create-hozu`](https://www.npmjs.com/package/create-hozu).

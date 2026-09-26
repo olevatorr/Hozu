@@ -97,3 +97,21 @@ The next trial runs **Claude Code itself in the app directory** (`claude -p`), w
     after the redirect, `--next` sees it;
   - `add feature` on a fresh `create-hozu` app, with and without `--page`, then `check` is clean;
   - schemas for the new JSON outputs.
+
+## Results
+- **Gate:** green on the first run; 258 tests, P7 7,772 B (`data-hozu-ready` adds 18 B). Parity 24/24.
+- **Implementation notes:**
+  - **`--next`, not `--then`:** `hozu post` takes further steps as `--next`, because a parsed option object with a
+    `then` property is thenable (Biome's `noThenProperty`).
+  - **`data-hozu-ready`:** `<html>` gets it once hydration completes, and `reference.md` documents it for browser
+    tests. It replaced a retry loop in the Chromium feed test, which had itself raced: a slow first load plus a
+    second click loaded two pages.
+- **Trial 0009** (`docs/trials/0009-claude-code-in-the-app.md`), Claude Code in the app directory, with Nuxt
+  re-run the same way:
+  - build **2.05×** (target ≤ 1.3×, missed);
+  - change **2.34×** (target ≤ 1.1×, missed);
+  - correctness equal.
+
+  The loop worked. The cost is in reading before writing. Two defects were found:
+  - `hozu post` cannot select a form that only has a submit button;
+  - the template's `check` script is stale.
