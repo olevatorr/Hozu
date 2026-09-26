@@ -2,12 +2,14 @@ import { event, fn, invoke, machine, mutation, on, op, query, tag } from '@tenon
 import { z } from 'zod'
 
 export const Show = z.enum(['all', 'open', 'done'])
-export const Task = z.object({ id: z.string(), title: z.string(), done: z.boolean() })
+export const Priority = z.enum(['low', 'normal', 'high'])
+export const Task = z.object({ id: z.string(), title: z.string(), done: z.boolean(), priority: Priority })
 const Tasks = z.array(Task)
 const TaskKey = z.object({ id: z.string() })
 
 export const Draft = event({ payload: z.object({ text: z.string() }) })
-export const Add = event({ payload: z.object({ title: z.string() }) })
+export const Add = event({ payload: z.object({ title: z.string(), priority: Priority }) })
+export const ClearDone = event({ payload: z.object({}) })
 export const Toggle = event({ payload: TaskKey })
 export const SetShow = event({ payload: z.object({ show: Show }) })
 
@@ -33,6 +35,7 @@ export const getTask = query({
 export const addTask = mutation({
   input: z.object({
     title: z.string().trim().min(3, 'Use at least 3 characters').max(80, 'Use at most 80 characters'),
+    priority: Priority,
   }),
   output: Task,
   errors: { Duplicate: z.object({ title: z.string() }) },
@@ -43,6 +46,12 @@ export const toggleTask = mutation({
   input: TaskKey,
   output: Task,
   errors: { NotFound: TaskKey },
+  invalidates: () => [tasksTag()],
+})
+
+export const clearDone = mutation({
+  input: z.object({}),
+  output: z.object({ removed: z.number() }),
   invalidates: () => [tasksTag()],
 })
 
@@ -66,10 +75,11 @@ export const tasksMachine = machine({
   context: z.object({
     draft: z.string(),
     show: Show,
+    priority: Priority,
     target: z.string(),
     error: z.string().nullable(),
   }),
-  initialContext: { draft: '', show: 'all', target: '', error: null },
+  initialContext: { draft: '', show: 'all', priority: 'normal', target: '', error: null },
   initial: 'idle',
   states: ({ ctx }) => ({
     idle: {
@@ -78,15 +88,16 @@ export const tasksMachine = machine({
         on(SetShow, { target: 'idle', assign: (e) => [op.set(ctx.show, e.show)] }),
         on(Add, {
           target: 'adding',
-          assign: (e) => [op.set(ctx.draft, e.title), op.set(ctx.error, null)],
+          assign: (e) => [op.set(ctx.draft, e.title), op.set(ctx.priority, e.priority), op.set(ctx.error, null)],
         }),
+        on(ClearDone, { target: 'clearing', assign: () => [op.set(ctx.error, null)] }),
         on(Toggle, { target: 'toggling', assign: (e) => [op.set(ctx.target, e.id)] }),
       ],
     },
     adding: {
-      ignore: [Draft, Add, Toggle, SetShow],
+      ignore: [Draft, Add, Toggle, SetShow, ClearDone],
       invoke: invoke(addTask, {
-        input: { title: ctx.draft },
+        input: { title: ctx.draft, priority: ctx.priority },
         done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')] }],
         failed: {
           Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] }],
@@ -96,12 +107,22 @@ export const tasksMachine = machine({
       }),
     },
     toggling: {
-      ignore: [Draft, Add, Toggle, SetShow],
+      ignore: [Draft, Add, Toggle, SetShow, ClearDone],
       invoke: invoke(toggleTask, {
         input: { id: ctx.target },
         done: [{ target: 'idle' }],
         failed: {
           NotFound: [{ target: 'idle' }],
+          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+        },
+      }),
+    },
+    clearing: {
+      ignore: [Draft, Add, Toggle, SetShow, ClearDone],
+      invoke: invoke(clearDone, {
+        input: {},
+        done: [{ target: 'idle' }],
+        failed: {
           Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
         },
       }),

@@ -3,6 +3,8 @@ import { home, taskPage } from '../../routes.ts'
 import {
   Add,
   addTask,
+  ClearDone,
+  clearDone,
   DUPLICATE,
   Draft,
   getTask,
@@ -15,6 +17,8 @@ import {
   toggleTask,
   visible,
 } from './model.ts'
+
+const priorities = ['low', 'normal', 'high'] as const
 
 const shows = [
   { value: 'all', label: 'All' },
@@ -29,7 +33,7 @@ export const Board = ui.view({
     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [
       ui.h1({ class: 'text-3xl font-bold tracking-tight text-slate-900' }, ['Tasks']),
       ui.form(
-        { class: 'flex gap-2', on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } },
+        { class: 'flex gap-2', on: { submit: ui.send(Add, { title: ui.dom.form('title'), priority: ui.dom.form('priority') }) } },
         [
           ui.label({ for: 'title', class: 'sr-only' }, ['New task']),
           ui.input({
@@ -44,6 +48,15 @@ export const Board = ui.view({
             class: 'flex-1 rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none',
             on: { input: ui.send(Draft, { text: ui.dom.value }) },
           }),
+          ui.label({ for: 'priority', class: 'sr-only' }, ['Priority']),
+          ui.select(
+            {
+              id: 'priority',
+              name: 'priority',
+              class: 'rounded-lg border border-slate-300 px-2 py-2 shadow-sm',
+            },
+            priorities.map((p) => ui.option({ value: p, selected: p === 'normal' }, [p])),
+          ),
           ui.button(
             { type: 'submit', class: 'rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700' },
             ['Add'],
@@ -70,6 +83,14 @@ export const Board = ui.view({
           ),
         ),
       ),
+      ui.button(
+        {
+          type: 'button',
+          class: 'rounded-md border border-slate-300 px-3 py-1 text-sm hover:bg-slate-50',
+          on: { click: ui.send(ClearDone, {}) },
+        },
+        ['Clear done'],
+      ),
       ui.query(
         listTasks,
         {},
@@ -94,6 +115,10 @@ export const Board = ui.view({
                           },
                         },
                         [ui.if(op.eq(t.done, true), ['done'], ['open'])],
+                      ),
+                      ui.span(
+                        { class: 'rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700' },
+                        [t.priority],
                       ),
                       ui.button(
                         {
@@ -127,6 +152,7 @@ export const Detail = ui.view({
             ui.article({ class: 'space-y-2' }, [
               ui.h1({ class: 'text-3xl font-bold tracking-tight text-slate-900' }, [t.title]),
               ui.p({ class: 'text-slate-600' }, [ui.if(op.eq(t.done, true), ['Status: done'], ['Status: open'])]),
+              ui.p({ class: 'text-slate-600' }, ['Priority: ', t.priority]),
             ]),
           pending: null,
           failed: {
@@ -154,13 +180,14 @@ export const setsFilter = contract(tasksMachine, {
 export const addsTask = contract(tasksMachine, {
   given: { state: 'idle' },
   when: [
-    { send: Add, payload: { title: 'Test it' } },
+    { send: Add, payload: { title: 'Test it', priority: 'high' } },
     { send: Draft, payload: { text: 'ignored while adding' } },
-    { done: addTask, result: { id: 't4', title: 'Test it', done: false } },
+    { done: addTask, result: { id: 't4', title: 'Test it', done: false, priority: 'high' } },
   ],
   expect: {
     state: 'idle',
-    effects: [{ effect: addTask, input: { title: 'Test it' } }],
+    changes: { priority: 'high' },
+    effects: [{ effect: addTask, input: { title: 'Test it', priority: 'high' } }],
   },
 })
 
@@ -192,7 +219,7 @@ export const togglesTask = contract(tasksMachine, {
   given: { state: 'idle' },
   when: [
     { send: Toggle, payload: { id: 't2' } },
-    { done: toggleTask, result: { id: 't2', title: 'Build the app', done: true } },
+    { done: toggleTask, result: { id: 't2', title: 'Build the app', done: true, priority: 'normal' } },
   ],
   expect: {
     state: 'idle',
@@ -213,6 +240,22 @@ export const toggleFails = contract(tasksMachine, {
   expect: { state: 'idle', changes: { error: 'offline' } },
 })
 
+export const clearsDone = contract(tasksMachine, {
+  given: { state: 'idle' },
+  when: [
+    { send: ClearDone, payload: {} },
+    { send: Toggle, payload: { id: 't2' } },
+    { done: clearDone, result: { removed: 1 } },
+  ],
+  expect: { state: 'idle', effects: [{ effect: clearDone, input: {} }] },
+})
+
+export const clearFails = contract(tasksMachine, {
+  given: { state: 'clearing' },
+  when: [{ failed: clearDone, error: 'Unexpected', data: { message: 'offline' } }],
+  expect: { state: 'idle', changes: { error: 'offline' } },
+})
+
 export const tasks = feature({
   id: 'tasks',
   intent: {
@@ -225,10 +268,12 @@ export const tasks = feature({
     Add,
     Toggle,
     SetShow,
+    ClearDone,
     listTasks,
     getTask,
     addTask,
     toggleTask,
+    clearDone,
     visible,
     isEmpty,
     tasksMachine,
@@ -243,5 +288,7 @@ export const tasks = feature({
     togglesTask,
     toggleMissing,
     toggleFails,
+    clearsDone,
+    clearFails,
   },
 })

@@ -137,3 +137,8 @@ In the trial app's contracts, most expectations shrink from a full context to on
   - A4 56,636 (from 57,192);
   - P7 7,676 B and P8 1,863 B, unchanged;
   - P2 exponent 1.124.
+- **Trial 0007** (`docs/trials/0007-after-adr-0022.md`):
+  - change **1.07×** Nuxt (target met; trial 0006: 1.39×);
+  - build **1.75×** (target missed; 1.67×);
+  - source **1.86×** (target missed; 2.30×).
+  - Correctness is equal. The remaining build cost is the fixed reading cost of a first contact.
