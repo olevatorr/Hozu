@@ -57,7 +57,12 @@ describe('P4 dependencies', () => {
     (pkg) => {
       const manifest = JSON.parse(read(`packages/${pkg}/package.json`))
       const deps = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies })
-      expect(deps.filter((d) => !d.startsWith('@tenonkit/'))).toEqual([])
+      expect(deps.filter((d) => !d.startsWith('@tenonkit/') && d !== 'create-tenon')).toEqual([])
     },
   )
+
+  it('create-tenon has no runtime dependencies', () => {
+    const manifest = JSON.parse(read('packages/create-tenon/package.json'))
+    expect(manifest.dependencies ?? {}).toEqual({})
+  })
 })

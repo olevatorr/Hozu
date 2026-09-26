@@ -58,7 +58,7 @@ export async function main(argv: string[]): Promise<number> {
     const install =
       runner === 'npx' ? 'npm install' : runner === 'bunx' ? 'bun install' : `${runner.split(' ')[0]} install`
     process.stdout.write(
-      `\nCreated ${basename(target)} for ${agent === 'both' ? 'Claude Code and other agents' : agent === 'claude' ? 'Claude Code' : 'other agents'}.\n\n  cd ${dir}\n  ${install}\n  ${runner === 'pnpm exec' ? 'pnpm' : runner === 'npx' ? 'npm run' : runner.split(' ')[0]} start\n\n`,
+      `\nCreated ${basename(target)} for ${agent === 'both' ? 'Claude Code and other agents' : agent === 'claude' ? 'Claude Code' : 'other agents'}.\n\n  cd ${dir}\n  ${install}\n  ${runner === 'pnpm exec' ? 'pnpm' : runner === 'npx' ? 'npm' : runner.split(' ')[0]} start\n\n`,
     )
     return 0
   } catch (error) {

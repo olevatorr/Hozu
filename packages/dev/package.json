@@ -1,9 +1,28 @@
 {
   "name": "@tenonkit/dev",
-  "version": "0.0.0",
-  "type": "module",
+  "version": "0.1.0",
+  "description": "Tenon development server: CSS hot swap and state-keeping reloads",
+  "keywords": [
+    "tenon",
+    "framework",
+    "ai",
+    "agents",
+    "ssr",
+    "islands",
+    "typescript"
+  ],
+  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/dev#readme",
+  "bugs": {
+    "url": "https://github.com/olevatorr/Tenon/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "directory": "packages/dev"
+  },
   "license": "MIT",
-  "sideEffects": false,
+  "author": "olevatorr",
+  "type": "module",
   "bin": {
     "tenon-dev": "./dist/bin.js"
   },
@@ -16,7 +35,14 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@tenonkit/runtime-client": "workspace:*"
-  }
+  },
+  "sideEffects": false
 }

@@ -1,9 +1,28 @@
 {
   "name": "@tenonkit/runtime-client",
-  "version": "0.0.0",
-  "type": "module",
+  "version": "0.1.0",
+  "description": "Tenon client runtime: fine-grained DOM islands, no virtual DOM, about 7.5 KB gzipped",
+  "keywords": [
+    "tenon",
+    "framework",
+    "ai",
+    "agents",
+    "ssr",
+    "islands",
+    "typescript"
+  ],
+  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/runtime-client#readme",
+  "bugs": {
+    "url": "https://github.com/olevatorr/Tenon/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "directory": "packages/runtime-client"
+  },
   "license": "MIT",
-  "sideEffects": false,
+  "author": "olevatorr",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -20,8 +39,15 @@
     "dist",
     "files.d.ts"
   ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@tenonkit/core": "workspace:*",
     "@tenonkit/machine": "workspace:*"
-  }
+  },
+  "sideEffects": false
 }

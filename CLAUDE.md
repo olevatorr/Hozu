@@ -61,7 +61,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   Literals are checked against their schema (TN031); enumerated attributes (`type`, `method`, `loading`…) are typed.
   Internal links are `ui.link` only: a string `href` starting with `/` is TN032 (ADR 0012).
 - Agent guide: the `tenon` skill (`.claude/skills/tenon/`: `SKILL.md` core API ≤ 10 KB, `reference.md` for
-  everything beyond the core, `changing.md`, `patterns.md`, `diagnostics.md`) is the authoring reference; `examples/bookmarks` is its verified reference app. Keep both in sync with any API change. Busy states declare `ignore: [Event]` (TN005, TN034);
+  everything beyond the core, `changing.md`, `patterns.md`, `diagnostics.md`, and `example/` = a generated copy of
+  `examples/bookmarks`) is the authoring reference; it ships in `create-tenon` and is written into apps by
+  `create-tenon --agent claude|agents|both` and `tenon skill`. `pnpm skill` regenerates `example/` and `AGENTS.md`
+  (from this file); a test fails when they are stale; `examples/bookmarks` is its verified reference app. Keep both in sync with any API change. Busy states declare `ignore: [Event]` (TN005, TN034);
   `ui.dom.value` / `ui.dom.form(name)` may feed enum fields only from literal `<select>`/radio options (TN033) (ADR 0013).
 - Widgets (ADR 0009): `ui.widget({ tag, props, events, client, load, wraps })` in the feature's `declarations`,
   `ui.use(W, { props, on, class }, children)`, client module `export default implement<typeof W>(setup)` from
@@ -121,6 +124,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   Node imports it as a `data:` module at startup; `tenon build` writes `dist/server/render.js`, which edge entries
   pass as `createHandler({ render })` (no eval on the edge). `ui.query` streaming stays interpreted. All IR strings are
   embedded with `JSON.stringify`.
+- Release (ADR 0025): npm scope `@tenonkit/*` (old ADRs say `@tenon/`), plus unscoped `create-tenon`; the binary
+  stays `tenon`. Publishing is manual with the owner's 2FA code: `pnpm -r pack` rehearsal first, no CI.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

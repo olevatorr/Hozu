@@ -1,9 +1,28 @@
 {
   "name": "@tenonkit/schema-zod",
-  "version": "0.0.0",
-  "type": "module",
+  "version": "0.1.0",
+  "description": "Zod adapter for Tenon schemas (Standard Schema, stored as JSON Schema in the IR)",
+  "keywords": [
+    "tenon",
+    "framework",
+    "ai",
+    "agents",
+    "ssr",
+    "islands",
+    "typescript"
+  ],
+  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/schema-zod#readme",
+  "bugs": {
+    "url": "https://github.com/olevatorr/Tenon/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "directory": "packages/schema-zod"
+  },
   "license": "MIT",
-  "sideEffects": false,
+  "author": "olevatorr",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -13,6 +32,12 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@tenonkit/core": "workspace:*"
   },
@@ -21,5 +46,6 @@
   },
   "devDependencies": {
     "zod": "4.6.5"
-  }
+  },
+  "sideEffects": false
 }

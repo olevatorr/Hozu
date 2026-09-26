@@ -1,9 +1,28 @@
 {
   "name": "@tenonkit/css",
-  "version": "0.0.0",
-  "type": "module",
+  "version": "0.1.0",
+  "description": "Tailwind CSS v4 for Tenon, compiled from the classes the IR declares",
+  "keywords": [
+    "tenon",
+    "framework",
+    "ai",
+    "agents",
+    "ssr",
+    "islands",
+    "typescript"
+  ],
+  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/css#readme",
+  "bugs": {
+    "url": "https://github.com/olevatorr/Tenon/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "directory": "packages/css"
+  },
   "license": "MIT",
-  "sideEffects": false,
+  "author": "olevatorr",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -13,10 +32,17 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@tailwindcss/node": "4.3.3",
     "@tenonkit/core": "workspace:*",
     "@tenonkit/validator": "workspace:*",
     "tailwindcss": "4.3.3"
-  }
+  },
+  "sideEffects": false
 }

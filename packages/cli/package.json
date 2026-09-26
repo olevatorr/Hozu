@@ -1,8 +1,28 @@
 {
   "name": "@tenonkit/cli",
-  "version": "0.0.0",
-  "type": "module",
+  "version": "0.1.0",
+  "description": "The tenon command: validate, inspect, graph, explain, impact, plan, build and skill (all with --json)",
+  "keywords": [
+    "tenon",
+    "framework",
+    "ai",
+    "agents",
+    "ssr",
+    "islands",
+    "typescript"
+  ],
+  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/olevatorr/Tenon/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "directory": "packages/cli"
+  },
   "license": "MIT",
+  "author": "olevatorr",
+  "type": "module",
   "bin": {
     "tenon": "./bin/tenon.js"
   },
@@ -20,6 +40,9 @@
   ],
   "engines": {
     "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@tenonkit/core": "workspace:*",
