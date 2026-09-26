@@ -73,3 +73,21 @@ because Tenon loads motion, widget, live and upload code only on pages that use 
 - Initial JS grew from 4.1 to 7.1 KB gzipped. The runtime now covers the full DOM vocabulary, keyed moves,
   `if`/`html`/`window` nodes and client query fetching. It is still the second smallest after Preact.
 - "Interactive at" moved from 58 to 103 ms. This metric swings the most between runs (Svelte went from 96 to 70).
+
+## Fourth run: after Phase 9 (2026-09-26, local macOS, system Chrome)
+This run used a different machine than the earlier runs, so compare the ranking, not the absolute numbers.
+
+| Framework | SSR renders/s | HTML (gz) | JS min (gz) | Hydrate ms (4× CPU) | Interactive at ms | 200 clicks ms |
+|---|---|---|---|---|---|---|
+| React 19.3.0 | 2,337 | 13.4 KB (1.6) | 218.1 KB (67.7) | 35.1 | 126.2 | 79.6 |
+| Vue 3.5.43 | 12,563 | 12.6 KB (1.5) | 77.1 KB (30.9) | 12.1 | 33.4 | 42.7 |
+| Preact 10.29.8 | 22,678 | 12.6 KB (1.5) | 12.9 KB (5.4) | 7.6 | 26.0 | 86.6 |
+| Svelte 5.57.1 | 92,570 | 12.6 KB (1.6) | 49.5 KB (18.7) | 7.2 | 31.6 | 9.1 |
+| **Tenon** | 21,959 | 18.7 KB (1.8) | 18.5 KB (7.7) | 7.3 | 61.2 | 10.5 |
+
+- **Initial JS** (7.7 KB gzipped) is still second after Preact, and less than half of Svelte. Phases 7–9 added
+  0.6 KB.
+- **Hydration** (7.3 ms) and **200 clicks** (10.5 ms) are second, next to Svelte.
+- **SSR** is third, close to Preact.
+- **"Interactive at"** is second to last. This metric swung the most in earlier runs, too.
+- **Parity** (`pnpm bench:parity`, same day): 24/24 identical against the Nuxt reference.
