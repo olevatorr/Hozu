@@ -1,4 +1,4 @@
-import { ui } from '@tenonkit/core'
+import { ui } from '@hozu/core'
 import { home, product } from '../../routes.ts'
 import { getProduct, listProducts } from './effects.ts'
 

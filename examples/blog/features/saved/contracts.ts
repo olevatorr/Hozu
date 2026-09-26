@@ -1,4 +1,4 @@
-import { contract } from '@tenonkit/core'
+import { contract } from '@hozu/core'
 import { savePost, unsavePost } from './effects.ts'
 import { Save, savedMachine, Unsave } from './machine.ts'
 
@@ -7,13 +7,13 @@ const idle = { slug: '', error: null }
 export const savesPost = contract(savedMachine, {
   given: { state: 'idle', context: idle },
   when: [
-    { send: Save, payload: { slug: 'hello-tenon' } },
-    { done: savePost, result: ['hello-tenon'] },
+    { send: Save, payload: { slug: 'hello-hozu' } },
+    { done: savePost, result: ['hello-hozu'] },
   ],
   expect: {
     state: 'idle',
-    changes: { slug: 'hello-tenon', error: null },
-    effects: [{ effect: savePost, input: { slug: 'hello-tenon' } }],
+    changes: { slug: 'hello-hozu', error: null },
+    effects: [{ effect: savePost, input: { slug: 'hello-hozu' } }],
   },
 })
 

@@ -1,9 +1,9 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join as joinPath } from 'node:path'
-import { codes, type Diagnostic, hashJson, type Json, join, resolveSource } from '@tenonkit/core/ir'
-import { type Lockfile, verify } from '@tenonkit/validator'
+import { codes, type Diagnostic, hashJson, type Json, join, resolveSource } from '@hozu/core/ir'
+import { type Lockfile, verify } from '@hozu/validator'
 import type { Coverage, ValidateOutput } from '../contract.ts'
-import { TenonCliError } from '../errors.ts'
+import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { json, relativize } from '../output.ts'
 import { unknownClasses } from '../styles.ts'
@@ -35,7 +35,7 @@ function readLock(path: string): Lockfile | null {
   try {
     return JSON.parse(readFileSync(path, 'utf8')) as Lockfile
   } catch (error) {
-    throw new TenonCliError('config', `Cannot read ${path}: ${(error as Error).message}`)
+    throw new HozuCliError('config', `Cannot read ${path}: ${(error as Error).message}`)
   }
 }
 
@@ -48,7 +48,7 @@ export async function runValidate(
   const first = loaded.build(false)
   const second = loaded.build(false)
   const hash = hashJson(first.ir)
-  const lockPath = joinPath(dirname(loaded.path), 'tenon.lock.json')
+  const lockPath = joinPath(dirname(loaded.path), 'hozu.lock.json')
   const previous = readLock(lockPath)
   const unknown = await unknownClasses(loaded.path, first)
   const verified = verify(first.ir, { bindings: first.bindings, lock: previous, unknownClasses: unknown })
@@ -57,8 +57,8 @@ export async function runValidate(
     const pointer = firstDifference(first.ir as unknown as Json, second.ir as unknown as Json) ?? ''
     const featureId = pointer.startsWith('/features/') ? (pointer.split('/')[2] ?? null) : null
     diagnostics.push({
-      code: 'TN011',
-      severity: codes.TN011.severity,
+      code: 'HZ011',
+      severity: codes.HZ011.severity,
       message: 'Building the project twice produced different IR',
       location: { feature: featureId, pointer, source: null },
       cause:

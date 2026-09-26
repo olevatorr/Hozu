@@ -1,4 +1,4 @@
-import { type At, at, type ExportsIR, type JsonPatchOp, parsePointer, resolveAt } from '@tenonkit/core/ir'
+import { type At, at, type ExportsIR, type JsonPatchOp, parsePointer, resolveAt } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { candidatesFor, registriesOf, resolveRef, splitRef } from '../resolve.ts'
 import { refSites } from '../sites.ts'
@@ -34,7 +34,7 @@ export function references(ctx: Ctx) {
           ? [{ op: 'replace', path: resolveAt(parent(pointer)), value: null }]
           : null
       ctx.report(
-        effect ? 'TN003' : 'TN007',
+        effect ? 'HZ003' : 'HZ007',
         f.id,
         pointer,
         `Unknown ${kind} "${ref}".${didYouMean(guess)}`,
@@ -57,7 +57,7 @@ export function references(ctx: Ctx) {
     if (owner.id === f.id) continue
     if (site.key) {
       ctx.report(
-        'TN006',
+        'HZ006',
         f.id,
         pointer,
         `Machine of "${f.id}" handles "${ref}", an event owned by "${owner.id}"`,
@@ -72,7 +72,7 @@ export function references(ctx: Ctx) {
     }
     if (kind === 'widget') {
       ctx.report(
-        'TN006',
+        'HZ006',
         f.id,
         pointer,
         `"${f.id}" uses widget ${ref} owned by "${owner.id}"`,
@@ -94,7 +94,7 @@ export function references(ctx: Ctx) {
         value: resolved.symbol,
       })
     ctx.report(
-      'TN006',
+      'HZ006',
       f.id,
       pointer,
       `"${f.id}" uses ${ref}${exported ? '' : `, which "${owner.id}" does not export`}${imported ? '' : `, without importing "${owner.id}"`}`,
@@ -119,7 +119,7 @@ export function featureLinks(ctx: Ctx) {
       if (id === '?' || Object.hasOwn(ctx.ir.features, id)) return
       const p = featurePointer(f.id, 'imports', i)
       ctx.report(
-        'TN007',
+        'HZ007',
         f.id,
         p,
         `Imported feature "${id}" does not exist`,
@@ -136,7 +136,7 @@ export function featureLinks(ctx: Ctx) {
         if (Object.hasOwn(f[registry], symbol)) return
         const p = featurePointer(f.id, 'exports', registry, i)
         ctx.report(
-          'TN007',
+          'HZ007',
           f.id,
           p,
           `Exported ${registry} entry "${symbol}" does not exist`,
@@ -161,7 +161,7 @@ export function routes(ctx: Ctx) {
       const p = site.at('navigate', 'link')
       const guess = closest(navigate, names)
       ctx.report(
-        'TN007',
+        'HZ007',
         f.id,
         p,
         `Unknown route "${navigate}".${didYouMean(guess)}`,

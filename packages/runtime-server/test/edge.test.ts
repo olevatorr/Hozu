@@ -8,12 +8,12 @@ import { build } from 'esbuild'
 import { describe, expect, it } from 'vitest'
 
 const cart = fileURLToPath(new URL('../../../examples/cart/', import.meta.url))
-const cli = fileURLToPath(new URL('../../cli/bin/tenon.js', import.meta.url))
+const cli = fileURLToPath(new URL('../../cli/bin/hozu.js', import.meta.url))
 const bun = process.env.BUN_PATH ?? 'bun'
 const hasBun = spawnSync(bun, ['--version']).status === 0
 
-const tenonBuild = () => {
-  const out = mkdtempSync(join(tmpdir(), 'tenon-edge-'))
+const hozuBuild = () => {
+  const out = mkdtempSync(join(tmpdir(), 'hozu-edge-'))
   const built = spawnSync(process.execPath, [cli, 'build', '--out', out], { cwd: cart, encoding: 'utf8' })
   expect(built.status, built.stderr).toBe(0)
   return out
@@ -44,7 +44,7 @@ const web = {
 
 describe('edge build (ADR 0016)', () => {
   it('bundles without node: imports and serves the cart from web globals only', async () => {
-    const out = mkdtempSync(join(tmpdir(), 'tenon-edge-'))
+    const out = mkdtempSync(join(tmpdir(), 'hozu-edge-'))
     const built = spawnSync(process.execPath, [cli, 'build', '--out', out, '--json'], {
       cwd: cart,
       encoding: 'utf8',
@@ -82,10 +82,10 @@ describe('edge build (ADR 0016)', () => {
     expect(home.headers.get('content-security-policy')).toContain("script-src 'self' 'sha256-")
     const html = await home.text()
     expect(html).toContain('<h2>Products</h2>')
-    expect(html).toContain('href="/_tenon/styles.')
+    expect(html).toContain('href="/_hozu/styles.')
 
     const added = await fetch(
-      new Request('https://cart.example/_tenon/effect', {
+      new Request('https://cart.example/_hozu/effect', {
         method: 'POST',
         headers: { cookie: 'user=ada', 'content-type': 'application/json' },
         body: JSON.stringify({ effect: 'cart.addItem', input: { sku: 'mug', qty: 2 }, keys: [] }),
@@ -105,7 +105,7 @@ describe('edge build (ADR 0016)', () => {
   it.skipIf(!hasBun)(
     'serves the same entry on Bun',
     async () => {
-      const out = tenonBuild()
+      const out = hozuBuild()
       const entry = join(out, 'serve.ts')
       writeFileSync(
         entry,

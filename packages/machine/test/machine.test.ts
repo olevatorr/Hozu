@@ -1,10 +1,10 @@
-import { event, feature, fn, machine, on, op, project } from '@tenonkit/core'
-import { buildProject, routeTable } from '@tenonkit/core/ir'
-import { compileMachine, enter, init, type Snapshot, transition } from '@tenonkit/machine'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { event, feature, fn, machine, on, op, project } from '@hozu/core'
+import { buildProject, routeTable } from '@hozu/core/ir'
+import { compileMachine, enter, init, type Snapshot, transition } from '@hozu/machine'
+import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import cartProject from '../../../examples/cart/tenon.config.ts'
+import cartProject from '../../../examples/cart/hozu.config.ts'
 
 const built = buildProject(cartProject)
 const cart = compileMachine(built.ir.features.cart!, built.bindings.fns, routeTable(built.ir))

@@ -3,16 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "validate": "tenon validate",
+    "validate": "hozu validate",
     "serve": "node serve.ts"
   },
   "dependencies": {
-    "@tenonkit/adapter-node": "workspace:*",
-    "@tenonkit/cli": "workspace:*",
-    "@tenonkit/core": "workspace:*",
-    "@tenonkit/css": "workspace:*",
-    "@tenonkit/data": "workspace:*",
-    "@tenonkit/schema-zod": "workspace:*",
+    "@hozu/adapter-node": "workspace:*",
+    "@hozu/cli": "workspace:*",
+    "@hozu/core": "workspace:*",
+    "@hozu/css": "workspace:*",
+    "@hozu/data": "workspace:*",
+    "@hozu/schema-zod": "workspace:*",
     "zod": "4.6.5"
   }
 }

@@ -1,5 +1,5 @@
-import { planRoute } from '@tenonkit/compiler'
-import { join } from '@tenonkit/core/ir'
+import { planRoute } from '@hozu/compiler'
+import { join } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 
 export function offlinePage(ctx: Ctx) {
@@ -14,7 +14,7 @@ export function offlinePage(ctx: Ctx) {
   const route = ctx.ir.routes[offline]
   if (!route) {
     ctx.report(
-      'TN007',
+      'HZ007',
       null,
       pointer,
       'site.offline is not a registered route',
@@ -33,7 +33,7 @@ export function offlinePage(ctx: Ctx) {
           : null
   if (why)
     ctx.report(
-      'TN043',
+      'HZ043',
       null,
       pointer,
       why,

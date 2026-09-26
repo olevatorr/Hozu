@@ -1,8 +1,8 @@
-import { createServer } from '@tenonkit/adapter-node'
-import { buildProject } from '@tenonkit/core/ir'
-import { compileStyles } from '@tenonkit/css'
+import { createServer } from '@hozu/adapter-node'
+import { buildProject } from '@hozu/core/ir'
+import { compileStyles } from '@hozu/css'
+import project from './hozu.config.ts'
 import { createResolvers } from './server.ts'
-import project from './tenon.config.ts'
 
 const port = Number(process.env.PORT ?? 3000)
 const build = buildProject(project, { sources: false })

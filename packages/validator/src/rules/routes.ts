@@ -1,4 +1,4 @@
-import { anyRef, type JsonSchema, join, routePattern, type ValueExpr } from '@tenonkit/core/ir'
+import { anyRef, type JsonSchema, join, routePattern, type ValueExpr } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { resolveRef } from '../resolve.ts'
 
@@ -27,7 +27,7 @@ export function routeParams(ctx: Ctx) {
     const have = keysOf(route.params)
     if (want.join() !== have.join())
       ctx.report(
-        'TN024',
+        'HZ024',
         null,
         join('', 'routes', id, 'params'),
         `Route "${id}" (${route.path}) declares params [${have.join(', ')}] but its path has [${want.join(', ')}]`,
@@ -52,7 +52,7 @@ export function routeParams(ctx: Ctx) {
           ? { anyOf: [p, { type: 'null' }] }
           : { type: 'string' }
       ctx.report(
-        'TN024',
+        'HZ024',
         null,
         pointer,
         `Param "${name}" of ${route.path} is ${many ? 'several segments' : mod === '?' ? 'optional' : 'one segment'}, but its schema does not say so`,
@@ -71,7 +71,7 @@ export function routeParams(ctx: Ctx) {
       const view = ir.features[ref.slice(0, dot)]?.views[ref.slice(dot + 1)]
       if (view?.route && view.route !== '?' && view.route !== route)
         ctx.report(
-          'TN024',
+          'HZ024',
           null,
           join('', 'pages', route, 'views', i),
           `View ${ref} is bound to route "${view.route}" but rendered on "${route}"`,
@@ -88,7 +88,7 @@ export function routeParams(ctx: Ctx) {
     const values = [h.title, h.description, h.image, h.published, ...(h.query ? [h.query.input] : [])]
     if (!params && values.some(readsParams))
       ctx.report(
-        'TN024',
+        'HZ024',
         null,
         join('', 'pages', route, 'head'),
         `The head of "${route}" reads params, but the route has none`,
@@ -97,7 +97,7 @@ export function routeParams(ctx: Ctx) {
       )
     if (h.query && h.query.ref !== '?' && !resolveRef(ir, h.query.ref, 'query'))
       ctx.report(
-        'TN003',
+        'HZ003',
         null,
         join('', 'pages', route, 'head', 'query'),
         `Unknown query "${h.query.ref}" in page head`,
@@ -106,7 +106,7 @@ export function routeParams(ctx: Ctx) {
       )
     if (params && !page.entries)
       ctx.report(
-        'TN025',
+        'HZ025',
         null,
         join('', 'pages', route, 'entries'),
         `Page "${route}" has params but no entries`,
@@ -119,7 +119,7 @@ export function routeParams(ctx: Ctx) {
       )
     if (page.entries && page.entries.query !== '?' && !resolveRef(ir, page.entries.query, 'query'))
       ctx.report(
-        'TN003',
+        'HZ003',
         null,
         join('', 'pages', route, 'entries', 'query'),
         `Unknown query "${page.entries.query}" in page entries`,
@@ -153,7 +153,7 @@ export function searchSchemas(ctx: Ctx) {
     const props = (s.properties ?? {}) as Record<string, JsonSchema>
     if (s.type !== 'object' || !Object.keys(props).length) {
       ctx.report(
-        'TN035',
+        'HZ035',
         null,
         join('', 'routes', id, 'search'),
         `Route "${id}" declares a search schema that is not a flat object`,
@@ -166,7 +166,7 @@ export function searchSchemas(ctx: Ctx) {
       const pointer = join('', 'routes', id, 'search', 'properties', key)
       if (!scalar(p))
         ctx.report(
-          'TN035',
+          'HZ035',
           null,
           pointer,
           `Search param "${key}" of route "${id}" is not a string, number, boolean or enum`,
@@ -175,7 +175,7 @@ export function searchSchemas(ctx: Ctx) {
         )
       else if (!optional(p))
         ctx.report(
-          'TN035',
+          'HZ035',
           null,
           pointer,
           `Search param "${key}" of route "${id}" has no default`,

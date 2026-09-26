@@ -1,4 +1,4 @@
-import { feature } from '@tenonkit/core'
+import { feature } from '@hozu/core'
 import { posts } from '../posts/feature.ts'
 import { refusesWhenFull, removeFails, removesPost, saveFails, savesPost } from './contracts.ts'
 import { savedPosts, savedTag, savePost, unsavePost } from './effects.ts'

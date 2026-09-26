@@ -1,4 +1,4 @@
-# Tenon — AI-first frontend framework
+# Hozu — AI-first frontend framework
 
 ## North star
 Make invalid AI-generated programs structurally difficult to express,
@@ -36,101 +36,103 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 
 ## Tech
 - TypeScript strict (TS 7), pnpm workspaces, Vitest, Biome
-- Node ≥ 22.18: `tenon.config.ts` is loaded with native type stripping, so authored code is
+- Node ≥ 22.18: `hozu.config.ts` is loaded with native type stripping, so authored code is
   erasable-syntax TS with explicit `.ts` relative imports
 - Schemas: Standard Schema compatible, exactly one adapter per project (`project({ schema })`;
-  `@tenonkit/schema-zod` is the default, Valibot via adapter). The IR stores JSON Schema.
-- Packages are published under the @tenonkit/ scope:
-  `@tenonkit/core` (IR types + builders; tooling at `@tenonkit/core/ir`), `@tenonkit/schema-zod`,
-  `@tenonkit/machine` (isomorphic compiled interpreter, ADR 0004), `@tenonkit/data` (resolvers, cache,
-  tags, dedup, ADR 0005), `@tenonkit/validator`, `@tenonkit/compiler` (render plans, ADR 0006),
-  `@tenonkit/runtime-server` (in-order streaming SSR + the web-standard handler, ADR 0007/0016), `@tenonkit/runtime-client` (own fine-grained
+  `@hozu/schema-zod` is the default, Valibot via adapter). The IR stores JSON Schema.
+- Packages are published under the @hozu/ scope:
+  `@hozu/core` (IR types + builders; tooling at `@hozu/core/ir`), `@hozu/schema-zod`,
+  `@hozu/machine` (isomorphic compiled interpreter, ADR 0004), `@hozu/data` (resolvers, cache,
+  tags, dedup, ADR 0005), `@hozu/validator`, `@hozu/compiler` (render plans, ADR 0006),
+  `@hozu/runtime-server` (in-order streaming SSR + the web-standard handler, ADR 0007/0016), `@hozu/runtime-client` (own fine-grained
   DOM runtime, no VDOM, replace-hydration of islands, ADR 0006/0007),
-  `@tenonkit/cli`, `@tenonkit/adapter-node` (ISR page cache + tag revalidation), `@tenonkit/adapter-static`,
-  `@tenonkit/css` (Tailwind v4 bound, compiled from the IR's class candidates, TN026, ADR 0009),
-  `@tenonkit/dev` (dev server: CSS hot swap, reload on code changes), `@tenonkit/image` (optional WebP srcset, ADR 0017),
-  `@tenonkit/content` (Markdown collections, ADR 0020), `@tenonkit/testing` (render assertions, ADR 0021)
-- Every `@tenonkit/*` package except `@tenonkit/schema-zod`, `@tenonkit/css` (Tailwind), `@tenonkit/bundle` (esbuild),
-  `@tenonkit/image` (sharp) and `@tenonkit/content` (marked, yaml) has zero third-party runtime dependencies.
-- Views: every HTML/SVG element with per-tag typed attributes, all DOM events, `ui.dom.*` event fields (TN027),
+  `@hozu/cli`, `@hozu/adapter-node` (ISR page cache + tag revalidation), `@hozu/adapter-static`,
+  `@hozu/css` (Tailwind v4 bound, compiled from the IR's class candidates, HZ026, ADR 0009),
+  `@hozu/dev` (dev server: CSS hot swap, reload on code changes), `@hozu/image` (optional WebP srcset, ADR 0017),
+  `@hozu/content` (Markdown collections, ADR 0020), `@hozu/testing` (render assertions, ADR 0021)
+- Every `@hozu/*` package except `@hozu/schema-zod`, `@hozu/css` (Tailwind), `@hozu/bundle` (esbuild),
+  `@hozu/image` (sharp) and `@hozu/content` (marked, yaml) has zero third-party runtime dependencies.
+- Views: every HTML/SVG element with per-tag typed attributes, all DOM events, `ui.dom.*` event fields (HZ027),
   `class` (static) + `toggle` (guarded class groups) + `vars` (CSS custom properties). No `style`, no free
   functions. Stylesheets: `project({ styles })` Tailwind entry + `feature({ styles })`; classes must produce CSS
-  (TN026), hooks use `data-*`. `when`/`ui.if`/`ui.each` take an optional motion name (enter/leave/move classes).
-  Also `ui.if`, `ui.link(route, params)`, `ui.window`/`ui.document`, `ui.html` (TN030 for untrusted values),
-  `ui.asset(url)` (TN028 for img without dimensions).
-  Literals are checked against their schema (TN031); enumerated attributes (`type`, `method`, `loading`…) are typed.
-  Internal links are `ui.link` only: a string `href` starting with `/` is TN032 (ADR 0012).
-- Agent guide: the `tenon` skill (`.claude/skills/tenon/`: `SKILL.md` core API ≤ 10 KB, `reference.md` for
+  (HZ026), hooks use `data-*`. `when`/`ui.if`/`ui.each` take an optional motion name (enter/leave/move classes).
+  Also `ui.if`, `ui.link(route, params)`, `ui.window`/`ui.document`, `ui.html` (HZ030 for untrusted values),
+  `ui.asset(url)` (HZ028 for img without dimensions).
+  Literals are checked against their schema (HZ031); enumerated attributes (`type`, `method`, `loading`…) are typed.
+  Internal links are `ui.link` only: a string `href` starting with `/` is HZ032 (ADR 0012).
+- Agent guide: the `hozu` skill (`.claude/skills/hozu/`: `SKILL.md` core API ≤ 10 KB, `reference.md` for
   everything beyond the core, `changing.md`, `patterns.md`, `diagnostics.md`, and `example/` = a generated copy of
-  `examples/bookmarks`) is the authoring reference; it ships in `create-tenon` and is written into apps by
-  `create-tenon --agent claude|agents|both` and `tenon skill`. `pnpm skill` regenerates `example/` and `AGENTS.md`
-  (from this file); a test fails when they are stale; `examples/bookmarks` is its verified reference app. Keep both in sync with any API change. Busy states declare `ignore: [Event]` (TN005, TN034);
-  `ui.dom.value` / `ui.dom.form(name)` may feed enum fields only from literal `<select>`/radio options (TN033) (ADR 0013).
+  `examples/bookmarks`) is the authoring reference; it ships in `create-hozu` and is written into apps by
+  `create-hozu --agent claude|agents|both` and `hozu skill`. `pnpm skill` regenerates `example/` and `AGENTS.md`
+  (from this file); a test fails when they are stale; `examples/bookmarks` is its verified reference app. Keep both in sync with any API change. Busy states declare `ignore: [Event]` (HZ005, HZ034);
+  `ui.dom.value` / `ui.dom.form(name)` may feed enum fields only from literal `<select>`/radio options (HZ033) (ADR 0013).
 - Widgets (ADR 0009): `ui.widget({ tag, props, events, client, load, wraps })` in the feature's `declarations`,
   `ui.use(W, { props, on, class }, children)`, client module `export default implement<typeof W>(setup)` from
-  `@tenonkit/core/widget` (type-only import of the declaration). Bundled by `@tenonkit/bundle` (esbuild), TN029.
+  `@hozu/core/widget` (type-only import of the declaration). Bundled by `@hozu/bundle` (esbuild), HZ029.
 - Server capabilities (ADR 0010): client fetch of new query keys, live queries over SSE, `head.redirects`,
   `sessionCookie` + `setSession`, `project({ notFound })`, `site.icon` / `themeColor`, uploads via `ctx.file`.
 - Routes: `route({ path: '/posts/:slug', params: schema | null, search: schema | null })` (search: flat scalars with
-  defaults, TN035; canonical URLs, ISR keyed by canonical URL); `ui.link(route, params, search?)` is the only internal
+  defaults, HZ035; canonical URLs, ISR keyed by canonical URL); `ui.link(route, params, search?)` is the only internal
   URL form, also for `navigate: (arg) => ui.link(...)` on transitions (contracts expect `{ navigate: url }`).
   Forms whose submit reads only `ui.dom.form(name)`/context/params/search also work without JS: the server runs the
-  machine for a native post (TN036 warns otherwise). `project({ notFound, error })`; adapter-node sends CSP (script
+  machine for a native post (HZ036 warns otherwise). `project({ notFound, error })`; adapter-node sends CSP (script
   hashes), nosniff and rejects cross-site POSTs; `createServer({ onError, csp })` (ADR 0014).
 - Soft navigation (ADR 0015): a view with an island that is listed on both pages and never reads `params`/`search`
-  keeps its DOM and machine across a link (derived, `tenon plan` shows it; Navigation API, lazy `navigate.js`
+  keeps its DOM and machine across a link (derived, `hozu plan` shows it; Navigation API, lazy `navigate.js`
   chunk, budget P8). Pages without such views keep document navigation + prerender.
-- HTTP (ADR 0016): the server is `createHandler(options).fetch(Request): Response` in `@tenonkit/runtime-server`
-  (no `node:*` in the runtime import graph; `@tenonkit/adapter-node` is a bridge + `publicDir`). `project({ http })`:
-  `basePath`, `trailingSlash` (308 to the canonical form), `redirects` keyed by path (TN037), per-route `headers`
-  (TN038, TN039); no rewrites. `tenon build` writes `dist/public` + `dist/manifest.json`, and
+- HTTP (ADR 0016): the server is `createHandler(options).fetch(Request): Response` in `@hozu/runtime-server`
+  (no `node:*` in the runtime import graph; `@hozu/adapter-node` is a bridge + `publicDir`). `project({ http })`:
+  `basePath`, `trailingSlash` (308 to the canonical form), `redirects` keyed by path (HZ037), per-route `headers`
+  (HZ038, HZ039); no rewrites. `hozu build` writes `dist/public` + `dist/manifest.json`, and
   `buildProject(project, { manifest })` needs no file system (edge; `examples/cart/edge.ts`, checked in a web-only
   vm and on Bun). Budget P9 (req/s through adapter-node) is report-only.
 - i18n (ADR 0017): `site.locales` prefixes every URL with its locale (`/`, locale-less page URLs negotiate by
   Accept-Language); `ui.messages(base, {...})` in the feature's `declarations`, `ui.format.*` (Intl),
   `locale` ref, `ui.alternate(l)`; hreflang/og:locale/sitemap derived. Messages and formats are lowered on the server
-  for the page locale (islands get only its strings; helpers live in `fns.js`, P7 unchanged). TN040–TN042.
-- Images (ADR 0017): optional `@tenonkit/image` (build-time, sharp) → `optimizeImages(build)` makes WebP widths for raster
-  `<img src={ui.asset}>`; the renderer adds `srcset`/`sizes` (IR unchanged). `tenon build` uses it when the project
+  for the page locale (islands get only its strings; helpers live in `fns.js`, P7 unchanged). HZ040–HZ042.
+- Images (ADR 0017): optional `@hozu/image` (build-time, sharp) → `optimizeImages(build)` makes WebP widths for raster
+  `<img src={ui.asset}>`; the renderer adds `srcset`/`sizes` (IR unchanged). `hozu build` uses it when the project
   can resolve it; otherwise images are served as-is.
 - Route grammar (ADR 0018): URLPattern modifiers `:x?` (nullable), `:x+`/`:x*` (string[]), one parser
-  (`routePattern` in core) for server, validator and speculation rules; TN024 checks the schema per modifier.
+  (`routePattern` in core) for server, validator and speculation rules; HZ024 checks the schema per modifier.
   Load more = machine-held cursors + one `ui.query` per page (pattern, `examples/feed`); framework event `visible`
-  (lazy IntersectionObserver chunk, `data-tenon-visible` added at build).
+  (lazy IntersectionObserver chunk, `data-hozu-visible` added at build).
 - Phase 8a (ADR 0019): `project({ env: { server, public } })` parsed at startup (`ctx.env` in resolvers, `ui.env(Schema)`
   in views, lowered for islands); every mutation has the framework error `Invalid` `{ message, fields }` (schema
-  failures and `fail('Invalid', …)`), optional in `failed`, reserved as a declared name (TN014). Optimistic UI =
+  failures and `fail('Invalid', …)`), optional in `failed`, reserved as a declared name (HZ014). Optimistic UI =
   render the in-flight value in the busy state. P7 budget 8 KiB; P2 exponent over 250–2000, 5 interleaved rounds.
-- Phase 8b (ADR 0020): `@tenonkit/css` adds size-adjusted local fallback faces for local font files (metrics from
-  head/hhea/OS/2, node:zlib only); `@tenonkit/content` (marked + yaml, server-side) = Markdown collections returned by
-  query resolvers; `@tenonkit/dev` serves a development client bundle (`globalThis.__TENON_DEV__`) that restores machine
+- Phase 8b (ADR 0020): `@hozu/css` adds size-adjusted local fallback faces for local font files (metrics from
+  head/hhea/OS/2, node:zlib only); `@hozu/content` (marked + yaml, server-side) = Markdown collections returned by
+  query resolvers; `@hozu/dev` serves a development client bundle (`globalThis.__HOZU_DEV__`) that restores machine
   snapshots across code reloads when the machine IR is unchanged (production bundle strips it).
 - Tier 4 (ADR 0021): preview mode (`createHandler({ preview: { secret } })`, signed cookie, `ctx.preview`, no cache,
-  noindex); `ui.og({ title, subtitle })` → `/_tenon/og.png` rendered by an injected `og` (`ogImage` from
-  `@tenonkit/image`); derived web manifest + opt-in `site.offline` service worker (TN043); `@tenonkit/testing`
+  noindex); `ui.og({ title, subtitle })` → `/_hozu/og.png` rendered by an injected `og` (`ogImage` from
+  `@hozu/image`); derived web manifest + opt-in `site.offline` service worker (HZ043); `@hozu/testing`
   (`testApp(...).get/post` → `{ status, headers, html, text, payload }`).
 - Authoring surface (ADR 0022): absent values are omitted (optional, no `null` spelling; behaviour-deciding fields
   such as query `scope`/`freshness`, `initialContext`/`initial` and route `params`/`search` stay required).
   `feature({ id, intent, declarations, imports?, exports?, styles? })` sorts declarations by their brand (a second
-  machine is TN013, a non-declaration TN014); `exports` is a flat list. Contracts: `given.context` defaults to
+  machine is HZ013, a non-declaration HZ014); `exports` is a flat list. Contracts: `given.context` defaults to
   `initialContext`, `expect.changes` is a deep patch (unmentioned fields must stay equal, arrays replace),
   `expect.effects` defaults to none. The IR is unchanged. Recommended feature layout: `model.ts` + `views.ts`.
 - Output (ADR 0023): the page payload lists island node ids once (`ids`) and islands as runs
   `[node, lead, ...scopeTails]` in marker order (feature = node id prefix); node/machine JSON is cached per object.
   `<head>` modulepreloads `client.js` (+ `fns.js` when bound) only on pages with islands. `bench/frameworks` bundles
-  the Tenon row with the production module graph and `__TENON_DEV__ = false`.
+  the Hozu row with the production module graph and `__HOZU_DEV__ = false`.
 - Rendering (ADR 0024): server HTML comes from generated JavaScript source (`generateRender(build, images)` in
-  `@tenonkit/runtime-server`, one function per route × non-suspending node × island × separator), the only render path.
-  Node imports it as a `data:` module at startup; `tenon build` writes `dist/server/render.js`, which edge entries
+  `@hozu/runtime-server`, one function per route × non-suspending node × island × separator), the only render path.
+  Node imports it as a `data:` module at startup; `hozu build` writes `dist/server/render.js`, which edge entries
   pass as `createHandler({ render })` (no eval on the edge). `ui.query` streaming stays interpreted. All IR strings are
   embedded with `JSON.stringify`.
-- Release (ADR 0025): npm scope `@tenonkit/*` (old ADRs say `@tenon/`), plus unscoped `create-tenon`; the binary
-  stays `tenon`. Publishing is manual with the owner's 2FA code: `pnpm -r pack` rehearsal first, no CI.
+- Name (ADR 0026): the framework was called Tenon until 0.1.0; it is **Hozu** (ほぞ, Japanese for "tenon").
+  Historical records (ADRs 0001–0025, `docs/trials`, `docs/benchmarks`) keep `Tenon`, `@tenon/`, `tenon.config.ts`
+  and `TN0xx` codes; everything else uses `Hozu`, `@hozu/`, `hozu.config.ts`, `/_hozu/` and `HZ0xx`.
+- Release (ADR 0025): npm scope `@hozu/*`, plus unscoped `create-hozu`; the binary is `hozu`. Publishing is manual with the owner's 2FA code: `pnpm -r pack` rehearsal first, no CI.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head
   query derives the HTTP status. `assert` is validated, never obeyed (ADR 0008).
-- `fn()` implementations used on the client are shipped by source text (`/_tenon/fns.js`): they must be
+- `fn()` implementations used on the client are shipped by source text (`/_hozu/fns.js`): they must be
   self-contained (no free variables beyond JS globals) — ADR 0007 D5.
 - Query/mutation implementations live in server modules via `resolvers(project, implement => [...])`, bound by
   declaration identity. `project({ session })` declares the identity; public resolvers never see it (ADR 0005).
@@ -148,11 +150,11 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `pnpm --filter example-showcase validate|serve|dev` — every presentation capability and widget library
 - `pnpm --filter example-feed validate|plan|serve` — cursor pagination, infinite scroll, `:x+` / `:x?` routes
 - `node bench/trial/accept.mjs <name> <dir> <entry> <port> [1|2]` — hidden acceptance of the AI trial app (docs/trials/0003)
-- `tenon validate --update-lock` — accept behavior changes into `tenon.lock.json` (only when clean)
+- `hozu validate --update-lock` — accept behavior changes into `hozu.lock.json` (only when clean)
 
 ## CLI (agent-facing, all support --json)
-`tenon inspect <feature>` · `tenon validate [feature]` · `tenon impact <feature>.<symbol>`
-`tenon graph <feature>` · `tenon plan <route>` · `tenon explain <feature>.<state>`
+`hozu inspect <feature>` · `hozu validate [feature]` · `hozu impact <feature>.<symbol>`
+`hozu graph <feature>` · `hozu plan <route>` · `hozu explain <feature>.<state>`
 
 ## Cost rules
 - Do not add CI workflows, scheduled jobs, or any paid/external service without explicit approval.
@@ -163,6 +165,6 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - Before each phase, write `docs/adr/NNNN-*.md` with options, trade-offs, and your decision.
 - Every phase ends with passing tests and a runnable example in `examples/`.
 - A new diagnostic code needs a registry entry, a rule, a fix, and a mistake-catalog case.
-- Every machine transition must be covered by a contract (TN016); change behavior only together with a
-  contract (TN018). Never edit a contract just to match observed behavior without deciding intent.
+- Every machine transition must be covered by a contract (HZ016); change behavior only together with a
+  contract (HZ018). Never edit a contract just to match observed behavior without deciding intent.
 - If a principle blocks a practical need, stop and raise it. Do not quietly bend it.

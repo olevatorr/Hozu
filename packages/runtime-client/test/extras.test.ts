@@ -1,8 +1,8 @@
-import { buildProject } from '@tenonkit/core/ir'
-import { createDataRuntime, resolvers } from '@tenonkit/data'
-import { type App, hydrate } from '@tenonkit/runtime-client'
-import { renderToString } from '@tenonkit/runtime-server'
-import { validate } from '@tenonkit/validator'
+import { buildProject } from '@hozu/core/ir'
+import { createDataRuntime, resolvers } from '@hozu/data'
+import { type App, hydrate } from '@hozu/runtime-client'
+import { renderToString } from '@hozu/runtime-server'
+import { validate } from '@hozu/validator'
 import { Window } from 'happy-dom'
 import { describe, expect, it } from 'vitest'
 import site, { note } from './support/extras.ts'
@@ -17,7 +17,7 @@ const frames = () => new Promise((r) => setTimeout(r, 60))
 describe('capability parity: conditional, primitive lists, links, window events, trusted HTML', () => {
   it('validates clean and server-renders every construct', async () => {
     expect(build.diagnostics).toEqual([])
-    expect(validate(build.ir, { bindings: build.bindings }).map((d) => d.code)).toEqual(['TN025'])
+    expect(validate(build.ir, { bindings: build.bindings }).map((d) => d.code)).toEqual(['HZ025'])
     const { html } = await renderToString({ build, data, route: 'home' })
     expect(html).toContain('<p class="empty">Nothing yet</p>')
     expect(html).toContain('<li>alpha</li><li>beta</li>')
@@ -47,13 +47,13 @@ describe('capability parity: conditional, primitive lists, links, window events,
     expect(document.querySelector('p.width')!.textContent).toBe('Width: 1024')
   })
 
-  it('TN030 — ui.html of client-controlled data', () => {
+  it('HZ030 — ui.html of client-controlled data', () => {
     const ir = structuredClone(build.ir)
     const json = JSON.stringify(ir).replace(
       '"kind":"html","value":{"ref":"binding","depth":0,"path":["html"]}',
       '"kind":"html","value":{"ref":"context","path":["draft"]}',
     )
-    const found = validate(JSON.parse(json), {}).filter((d) => d.code === 'TN030')
+    const found = validate(JSON.parse(json), {}).filter((d) => d.code === 'HZ030')
     expect(found.map((d) => d.message)).toEqual(['ui.html renders a value the client or URL controls'])
     expect(found[0]!.fix?.patch?.[0]).toMatchObject({ op: 'replace', value: { kind: 'text' } })
   })

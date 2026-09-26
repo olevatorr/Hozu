@@ -8,7 +8,7 @@ import {
   type TransitionIR,
   type ValueExpr,
   type ViewNode,
-} from '@tenonkit/core/ir'
+} from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { walkView } from '../walk.ts'
 
@@ -98,7 +98,7 @@ export function i18n(ctx: Ctx) {
     const at0 = join('', 'site', 'locales')
     if (!locales.length)
       ctx.report(
-        'TN042',
+        'HZ042',
         null,
         at0,
         'site.locales is empty',
@@ -111,7 +111,7 @@ export function i18n(ctx: Ctx) {
       )
     else if (!locales.includes(site.lang))
       ctx.report(
-        'TN042',
+        'HZ042',
         null,
         at0,
         `site.lang "${site.lang}" is not one of site.locales`,
@@ -130,7 +130,7 @@ export function i18n(ctx: Ctx) {
       if (canonical === l) return
       const pointer = join(at0, i)
       ctx.report(
-        'TN042',
+        'HZ042',
         null,
         pointer,
         `"${l}" is not a canonical BCP 47 language tag`,
@@ -154,7 +154,7 @@ export function i18n(ctx: Ctx) {
         const text = m.text[l]
         const where = join('', 'features', f.id, 'messages', 'text', l)
         if (!text) {
-          ctx.report('TN040', f.id, where, `Messages have no "${l}" text`, `The site renders in "${l}".`, {
+          ctx.report('HZ040', f.id, where, `Messages have no "${l}" text`, `The site renders in "${l}".`, {
             summary: `Add "${l}" (starting from the "${m.base}" text)`,
             snippet: null,
             patch: [{ op: 'add', path: where, value: base }],
@@ -172,7 +172,7 @@ export function i18n(ctx: Ctx) {
                 : null
           if (why)
             ctx.report(
-              'TN040',
+              'HZ040',
               f.id,
               pointer,
               why,
@@ -196,7 +196,7 @@ export function i18n(ctx: Ctx) {
             const owner = ir.features[ref.slice(0, dot)]?.messages
             if (!owner || !(ref.slice(dot + 1) in (owner.text[owner.base] ?? {})))
               ctx.report(
-                'TN007',
+                'HZ007',
                 f.id,
                 p,
                 `Unknown message ${ref}`,
@@ -210,7 +210,7 @@ export function i18n(ctx: Ctx) {
           }
           if ('ref' in v && v.ref === 'alternate' && !all.includes(v.path[0] ?? ''))
             ctx.report(
-              'TN042',
+              'HZ042',
               f.id,
               p,
               `ui.alternate("${v.path[0]}") names a locale the site does not declare`,
@@ -229,7 +229,7 @@ export function i18n(ctx: Ctx) {
     const flag: Visit = (x, q) => {
       if (!localeBound(x)) return
       ctx.report(
-        'TN041',
+        'HZ041',
         f.id,
         q,
         'A machine uses a message, a format, the locale or the environment',

@@ -1,4 +1,4 @@
-import { ui } from '@tenonkit/core'
+import { ui } from '@hozu/core'
 import { post } from '../../routes.ts'
 import { getPost, listPosts } from './effects.ts'
 import { text } from './messages.ts'

@@ -1,10 +1,10 @@
 import type { AddressInfo } from 'node:net'
-import { createServer } from '@tenonkit/adapter-node'
-import { feature, mutation, project, route, ui } from '@tenonkit/core'
-import { buildProject } from '@tenonkit/core/ir'
-import { resolvers } from '@tenonkit/data'
-import { domField, fetchTransport } from '@tenonkit/runtime-client'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { createServer } from '@hozu/adapter-node'
+import { feature, mutation, project, route, ui } from '@hozu/core'
+import { buildProject } from '@hozu/core/ir'
+import { resolvers } from '@hozu/data'
+import { domField, fetchTransport } from '@hozu/runtime-client'
+import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 
@@ -39,15 +39,15 @@ describe('file uploads (G10)', () => {
     const realFetch = globalThis.fetch
     const spy = vi
       .spyOn(globalThis, 'fetch')
-      .mockImplementation((url, init) => realFetch(`${base}/_tenon/${String(url).split('/').pop()}`, init))
+      .mockImplementation((url, init) => realFetch(`${base}/_hozu/${String(url).split('/').pop()}`, init))
     try {
-      const file = new File(['hello tenon'], 'note.txt', { type: 'text/plain' })
+      const file = new File(['hello hozu'], 'note.txt', { type: 'text/plain' })
       const [meta] = domField({ target: { files: [file] } } as unknown as Event)('files') as [
         { name: string; size: number; type: string; token: string },
       ]
-      expect(meta).toMatchObject({ name: 'note.txt', size: 11, type: 'text/plain' })
+      expect(meta).toMatchObject({ name: 'note.txt', size: 10, type: 'text/plain' })
       const response = await fetchTransport('up.upload', { file: meta }, [])
-      expect(response.result).toEqual({ ok: true, value: { size: 11, text: 'hello tenon' } })
+      expect(response.result).toEqual({ ok: true, value: { size: 10, text: 'hello hozu' } })
       expect(spy.mock.calls[0]![1]!.body).toBeInstanceOf(FormData)
     } finally {
       spy.mockRestore()

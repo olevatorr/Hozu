@@ -1,4 +1,4 @@
-import { resolveAt } from '@tenonkit/core/ir'
+import { resolveAt } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { featurePointer } from '../walk.ts'
 
@@ -12,7 +12,7 @@ export function invalidations(ctx: Ctx) {
         if (t.tag === '?' || carried.has(t.tag)) return
         const p = featurePointer(f.id, 'mutations', sym, 'invalidates', i)
         ctx.report(
-          'TN019',
+          'HZ019',
           f.id,
           p,
           `${f.id}.${sym} invalidates ${t.tag}, but no query carries that tag`,
@@ -32,7 +32,7 @@ export function sessions(ctx: Ctx) {
     for (const [sym, q] of Object.entries(f.queries))
       if (q.scope === 'user')
         ctx.report(
-          'TN020',
+          'HZ020',
           f.id,
           featurePointer(f.id, 'queries', sym, 'scope'),
           `${f.id}.${sym} is user-scoped but the project declares no session`,

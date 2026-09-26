@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
-import { buildProject } from '@tenonkit/core/ir'
-import { compileMachine } from '@tenonkit/machine'
-import { motion, mount, type Payload, payloadKey, type Result } from '@tenonkit/runtime-client'
+import { buildProject } from '@hozu/core/ir'
+import { compileMachine } from '@hozu/machine'
+import { motion, mount, type Payload, payloadKey, type Result } from '@hozu/runtime-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import cartProject from '../../../examples/cart/tenon.config.ts'
+import cartProject from '../../../examples/cart/hozu.config.ts'
 
 const { ir, bindings } = buildProject(cartProject)
 const cart = ir.features.cart!

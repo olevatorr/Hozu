@@ -1,9 +1,9 @@
 import { request as http, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { createServer, type NodeAdapterOptions } from '@tenonkit/adapter-node'
-import { buildProject } from '@tenonkit/core/ir'
+import { createServer, type NodeAdapterOptions } from '@hozu/adapter-node'
+import { buildProject } from '@hozu/core/ir'
+import project from '../../../examples/cart/hozu.config.ts'
 import { createResolvers } from '../../../examples/cart/server.ts'
-import project from '../../../examples/cart/tenon.config.ts'
 
 export const build = buildProject(project, { sources: false })
 

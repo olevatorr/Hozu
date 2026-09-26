@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
-import * as core from '@tenonkit/core'
-import { buildProject } from '@tenonkit/core/ir'
+import * as core from '@hozu/core'
+import { buildProject } from '@hozu/core/ir'
 import { Ajv } from 'ajv'
 import { describe, expect, it } from 'vitest'
-import cartProject from '../../../examples/cart/tenon.config.ts'
+import cartProject from '../../../examples/cart/hozu.config.ts'
 import { generate, targets } from '../../../scripts/gen-schemas.ts'
 
 const read = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), 'utf8')
@@ -53,16 +53,16 @@ describe('IR JSON Schema', () => {
 
 describe('P4 dependencies', () => {
   it.each(['core', 'machine', 'data', 'compiler', 'runtime-client', 'validator', 'cli', 'dev'])(
-    '@tenonkit/%s has no third-party runtime dependencies',
+    '@hozu/%s has no third-party runtime dependencies',
     (pkg) => {
       const manifest = JSON.parse(read(`packages/${pkg}/package.json`))
       const deps = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies })
-      expect(deps.filter((d) => !d.startsWith('@tenonkit/') && d !== 'create-tenon')).toEqual([])
+      expect(deps.filter((d) => !d.startsWith('@hozu/') && d !== 'create-hozu')).toEqual([])
     },
   )
 
-  it('create-tenon has no runtime dependencies', () => {
-    const manifest = JSON.parse(read('packages/create-tenon/package.json'))
+  it('create-hozu has no runtime dependencies', () => {
+    const manifest = JSON.parse(read('packages/create-hozu/package.json'))
     expect(manifest.dependencies ?? {}).toEqual({})
   })
 })

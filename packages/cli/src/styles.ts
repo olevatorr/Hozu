@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { type BuildResult, classCandidates, sha256 } from '@tenonkit/core/ir'
+import { type BuildResult, classCandidates, sha256 } from '@hozu/core/ir'
 
 interface CssModule {
   compileStyles(
@@ -28,12 +28,12 @@ const keyOf = (build: BuildResult, files: string[]) =>
 
 export async function unknownClasses(configPath: string, build: BuildResult) {
   const base = dirname(configPath)
-  const cacheFile = join(base, 'node_modules/.cache/tenon/styles.json')
+  const cacheFile = join(base, 'node_modules/.cache/hozu/styles.json')
   const cached = existsSync(cacheFile) ? (JSON.parse(readFileSync(cacheFile, 'utf8')) as Cache) : null
   if (cached && cached.key === keyOf(build, cached.files)) return new Map(cached.unknown)
   let css: CssModule
   try {
-    css = (await import(pathToFileURL(createRequire(configPath).resolve('@tenonkit/css')).href)) as CssModule
+    css = (await import(pathToFileURL(createRequire(configPath).resolve('@hozu/css')).href)) as CssModule
   } catch {
     return null
   }

@@ -1,9 +1,9 @@
 import type { CompareOp, RefSource } from '../ir/types.ts'
 import type { Typed } from './decl.ts'
 
-export const EXPR = Symbol.for('tenon.expr')
-export const GUARD = Symbol.for('tenon.guard')
-export const ASSIGN = Symbol.for('tenon.assign')
+export const EXPR = Symbol.for('hozu.expr')
+export const GUARD = Symbol.for('hozu.guard')
+export const ASSIGN = Symbol.for('hozu.assign')
 
 export type RawExpr =
   | { kind: 'ref'; ref: RefSource | 'binding'; depth: number; path: readonly string[] }

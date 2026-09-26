@@ -1,5 +1,5 @@
-import { contract, event, feature, machine, on, op, project, route, ui } from '@tenonkit/core'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { contract, event, feature, machine, on, op, project, route, ui } from '@hozu/core'
+import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
 export const Meter = ui.widget({

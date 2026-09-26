@@ -1,4 +1,4 @@
-import { feature } from '@tenonkit/core'
+import { feature } from '@hozu/core'
 import { catalogTag, getProduct, listProducts, productTag } from './effects.ts'
 import { ProductDetail, ProductGrid } from './views.ts'
 

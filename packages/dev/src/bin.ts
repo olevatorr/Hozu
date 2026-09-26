@@ -4,4 +4,4 @@ import { dev } from './index.ts'
 const entry = process.argv[2] ?? 'serve.ts'
 const port = Number(process.env.PORT ?? 3000)
 const { url } = await dev({ entry, port })
-console.log(`Tenon dev on ${url} (hot CSS, reload on code changes)`)
+console.log(`Hozu dev on ${url} (hot CSS, reload on code changes)`)

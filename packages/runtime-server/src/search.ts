@@ -1,4 +1,4 @@
-import { type Json, type JsonSchema, searchDefaults } from '@tenonkit/core/ir'
+import { type Json, type JsonSchema, searchDefaults } from '@hozu/core/ir'
 
 const obj = (v: Json | undefined): JsonSchema | null =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as JsonSchema) : null

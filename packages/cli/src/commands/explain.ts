@@ -1,7 +1,7 @@
-import type { FeatureIR, TransitionIR, ViewNode } from '@tenonkit/core/ir'
-import { closest, verify } from '@tenonkit/validator'
+import type { FeatureIR, TransitionIR, ViewNode } from '@hozu/core/ir'
+import { closest, verify } from '@hozu/validator'
 import type { ExplainOutput, ExplainSend, ExplainTransition } from '../contract.ts'
-import { TenonCliError } from '../errors.ts'
+import { HozuCliError } from '../errors.ts'
 import { type Loaded, requireFeature } from '../load.ts'
 import { renderAssign, renderGuard, renderValue } from '../render.ts'
 
@@ -73,16 +73,16 @@ function sendsIn(feature: FeatureIR, state: string): ExplainSend[] {
 
 export function runExplain(loaded: Loaded, target: string | undefined): ExplainOutput {
   if (!target?.includes('.'))
-    throw new TenonCliError('usage', 'Expected <feature>.<state>, e.g. tenon explain cart.idle')
+    throw new HozuCliError('usage', 'Expected <feature>.<state>, e.g. hozu explain cart.idle')
   const [fid, state] = [target.slice(0, target.indexOf('.')), target.slice(target.indexOf('.') + 1)]
   const build = loaded.build()
   const feature = requireFeature(build.ir, fid)
   const m = feature.machine
-  if (!m) throw new TenonCliError('unknown-feature', `Feature "${fid}" has no machine`)
+  if (!m) throw new HozuCliError('unknown-feature', `Feature "${fid}" has no machine`)
   const s = m.states[state]
   if (!s) {
     const guess = closest(state, Object.keys(m.states))
-    throw new TenonCliError(
+    throw new HozuCliError(
       'unknown-feature',
       `Unknown state "${state}" in ${fid}`,
       guess ? [`${fid}.${guess}`] : Object.keys(m.states).map((n) => `${fid}.${n}`),

@@ -1,4 +1,4 @@
-import type { AssignOp, GuardExpr, ValueExpr } from '@tenonkit/core/ir'
+import type { AssignOp, GuardExpr, ValueExpr } from '@hozu/core/ir'
 
 const local = (ref: string) => ref.slice(ref.indexOf('.') + 1)
 const suffix = (path: readonly string[]) => path.map((p) => `.${p}`).join('')

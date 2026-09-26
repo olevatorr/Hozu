@@ -1,8 +1,8 @@
-import { buildProject } from '@tenonkit/core/ir'
-import { testApp } from '@tenonkit/testing'
+import { buildProject } from '@hozu/core/ir'
+import { testApp } from '@hozu/testing'
 import { describe, expect, it } from 'vitest'
+import project from '../../../examples/blog/hozu.config.ts'
 import { createResolvers } from '../../../examples/blog/server.ts'
-import project from '../../../examples/blog/tenon.config.ts'
 
 const build = buildProject(project, { sources: false })
 const secret = 's'.repeat(32)
@@ -12,20 +12,20 @@ const app = () =>
 describe('preview mode (ADR 0021)', () => {
   it('needs the secret and an internal path', async () => {
     const a = app()
-    expect((await a.get(`/_tenon/preview?secret=wrong&path=/en`)).status).toBe(401)
-    expect((await a.get(`/_tenon/preview?secret=${secret}&path=//evil.example`)).status).toBe(401)
-    const ok = await a.get(`/_tenon/preview?secret=${secret}&path=/en`)
+    expect((await a.get(`/_hozu/preview?secret=wrong&path=/en`)).status).toBe(401)
+    expect((await a.get(`/_hozu/preview?secret=${secret}&path=//evil.example`)).status).toBe(401)
+    const ok = await a.get(`/_hozu/preview?secret=${secret}&path=/en`)
     expect([ok.status, ok.headers.get('location')]).toEqual([307, '/en'])
     expect(ok.headers.get('set-cookie')).toMatch(
-      /^tenon_preview=.+; Path=\/; HttpOnly; SameSite=Lax; Secure; Max-Age=3600$/,
+      /^hozu_preview=.+; Path=\/; HttpOnly; SameSite=Lax; Secure; Max-Age=3600$/,
     )
   })
 
   it('shows drafts only in preview, uncached and noindex, and never leaks them to public pages', async () => {
     const a = app()
     expect((await a.get('/en')).text).not.toContain('What comes next')
-    expect((await a.get('/en/posts/tenon-roadmap')).status).toBe(404)
-    const cookie = (await a.get(`/_tenon/preview?secret=${secret}&path=/en`)).headers
+    expect((await a.get('/en/posts/hozu-roadmap')).status).toBe(404)
+    const cookie = (await a.get(`/_hozu/preview?secret=${secret}&path=/en`)).headers
       .get('set-cookie')!
       .split(';')[0]!
     const home = await a.get('/en', { headers: { cookie } })
@@ -34,10 +34,10 @@ describe('preview mode (ADR 0021)', () => {
       'private, no-store',
       'noindex',
     ])
-    expect((await a.get('/en/posts/tenon-roadmap', { headers: { cookie } })).status).toBe(200)
+    expect((await a.get('/en/posts/hozu-roadmap', { headers: { cookie } })).status).toBe(200)
     expect((await a.get('/en')).text).not.toContain('What comes next')
-    expect((await a.get('/en/posts/tenon-roadmap')).status).toBe(404)
-    const exit = await a.get('/_tenon/preview/exit?path=/en', { headers: { cookie } })
+    expect((await a.get('/en/posts/hozu-roadmap')).status).toBe(404)
+    const exit = await a.get('/_hozu/preview/exit?path=/en', { headers: { cookie } })
     expect(exit.headers.get('set-cookie')).toContain('Max-Age=0')
   })
 })
@@ -47,23 +47,23 @@ describe('PWA and offline (ADR 0021)', () => {
     const a = app()
     const manifest = JSON.parse((await a.get('/manifest.webmanifest')).html)
     expect(manifest).toMatchObject({
-      name: 'Tenon Blog',
+      name: 'Hozu Blog',
       start_url: '/en',
       scope: '/',
       display: 'standalone',
     })
     const page = await a.get('/en')
     expect(page.html).toContain('<link rel="manifest" href="/manifest.webmanifest">')
-    expect(page.html).toContain('<script type="module" src="/_tenon/sw-register.js"></script>')
+    expect(page.html).toContain('<script type="module" src="/_hozu/sw-register.js"></script>')
     const sw = await a.get('/sw.js')
     expect(sw.html).toContain('const OFFLINE = "/en/offline"')
-    expect((await a.get('/_tenon/sw-register.js')).html).toContain('register("/sw.js"')
+    expect((await a.get('/_hozu/sw-register.js')).html).toContain('register("/sw.js"')
     const offline = await a.get('/zh-TW/offline')
     expect(offline.text).toContain('目前離線')
   })
 
   it('serves no worker without an offline page', async () => {
-    const cart = (await import('../../../examples/cart/tenon.config.ts')).default
+    const cart = (await import('../../../examples/cart/hozu.config.ts')).default
     const { createResolvers: cartResolvers } = await import('../../../examples/cart/server.ts')
     const a = testApp({ build: buildProject(cart, { sources: false }), resolvers: cartResolvers() })
     expect((await a.get('/sw.js')).status).toBe(404)
@@ -71,16 +71,16 @@ describe('PWA and offline (ADR 0021)', () => {
   })
 })
 
-describe('@tenonkit/testing (ADR 0021)', () => {
+describe('@hozu/testing (ADR 0021)', () => {
   it('returns visible text, the payload and native form posts', async () => {
     const page = await app().get('/zh-TW')
-    expect(page.text).toContain('Tenon 部落格')
-    expect(page.text).not.toContain('tenon-payload')
+    expect(page.text).toContain('Hozu 部落格')
+    expect(page.text).not.toContain('hozu-payload')
     expect(page.payload).toMatchObject({ islands: expect.any(Array) })
   })
 
   it('posts a native form', async () => {
-    const bookmarks = (await import('../../../examples/bookmarks/tenon.config.ts')).default
+    const bookmarks = (await import('../../../examples/bookmarks/hozu.config.ts')).default
     const { createResolvers: bookmarkResolvers } = await import('../../../examples/bookmarks/server.ts')
     const b = testApp({ build: buildProject(bookmarks, { sources: false }), resolvers: bookmarkResolvers() })
     const action = /<form[^>]* action="([^"]+)"/.exec((await b.get('/')).html)![1]!.replace(/&amp;/g, '&')

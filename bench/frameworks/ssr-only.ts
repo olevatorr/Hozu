@@ -1,7 +1,7 @@
-import { buildProject } from '@tenonkit/core/ir'
-import { createDataRuntime } from '@tenonkit/data'
-import { renderToString } from '@tenonkit/runtime-server'
-import { benchProject, benchResolvers } from './apps/tenon.ts'
+import { buildProject } from '@hozu/core/ir'
+import { createDataRuntime } from '@hozu/data'
+import { renderToString } from '@hozu/runtime-server'
+import { benchProject, benchResolvers } from './apps/hozu.ts'
 
 const build = buildProject(benchProject, { sources: false })
 const data = createDataRuntime({ build, resolvers: benchResolvers })
@@ -10,7 +10,7 @@ const render = () =>
     build,
     data,
     route: 'home',
-    assets: { client: '/tenon/app.js', fns: null, styles: null, preload: [], widgets: {} },
+    assets: { client: '/hozu/app.js', fns: null, styles: null, preload: [], widgets: {} },
   })
 for (let i = 0; i < 500; i++) await render()
 const rounds: number[] = []
@@ -24,7 +24,7 @@ for (let r = 0; r < 5; r++) {
   rounds.push((n / (performance.now() - t)) * 1000)
 }
 console.log(
-  'tenon SSR renders/s',
+  'hozu SSR renders/s',
   Math.round(rounds.sort((a, b) => a - b)[2]!),
   'html bytes',
   (await render()).html.length,

@@ -1,6 +1,6 @@
-import { resolvers } from '@tenonkit/data'
+import { resolvers } from '@hozu/data'
 import { byTag, byYear, listPage, listTags, listYears } from './features/feed/effects.ts'
-import project from './tenon.config.ts'
+import project from './hozu.config.ts'
 
 const TAGS = [['tech', 'web'], ['tech', 'ai'], ['life'], ['tech', 'web', 'css']]
 const PAGE = 10

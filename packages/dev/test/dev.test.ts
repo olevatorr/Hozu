@@ -3,7 +3,7 @@ import { get } from 'node:http'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { dev } from '@tenonkit/dev'
+import { dev } from '@hozu/dev'
 import { describe, expect, it } from 'vitest'
 
 const freePort = () =>
@@ -34,18 +34,18 @@ const fetchText = (url: string) =>
 
 describe('dev server', () => {
   it('injects the dev client, hot-swaps CSS and reloads on code changes', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'tenon-dev-'))
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-'))
     writeFileSync(join(dir, 'style.css'), 'p { color: red }')
     writeFileSync(join(dir, 'app.ts'), app)
     const server = await dev({ entry: 'app.ts', cwd: dir, port: 0, appPort: await freePort(), log: () => {} })
     try {
-      expect(await fetchText(`${server.url}/_tenon/client.js`)).toContain('tenon:snapshots')
+      expect(await fetchText(`${server.url}/_hozu/client.js`)).toContain('hozu:snapshots')
       const html = await fetchText(`${server.url}/`)
       expect(html).toContain('<link rel="stylesheet" href="/s16.css">')
-      expect(html).toContain('<script type="module" src="/_tenon/dev.js"></script></body>')
+      expect(html).toContain('<script type="module" src="/_hozu/dev.js"></script></body>')
       const events: string[] = []
       const stream = await new Promise<import('node:http').IncomingMessage>((resolve) =>
-        get(`${server.url}/_tenon/dev`, resolve),
+        get(`${server.url}/_hozu/dev`, resolve),
       )
       stream.on('data', (c: Buffer) => {
         for (const m of c.toString().matchAll(/event: (\w+)/g)) events.push(m[1]!)

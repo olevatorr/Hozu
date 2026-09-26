@@ -1,6 +1,6 @@
-import { buildProject } from '@tenonkit/core/ir'
-import { compileMachine, type Effect, type Input, init, transition } from '@tenonkit/machine'
-import project from './tenon.config.ts'
+import { buildProject } from '@hozu/core/ir'
+import { compileMachine, type Effect, type Input, init, transition } from '@hozu/machine'
+import project from './hozu.config.ts'
 
 const { ir, bindings } = buildProject(project, { sources: false })
 const machine = compileMachine(ir.features.cart!, bindings.fns)

@@ -1,4 +1,4 @@
-import { op, ui } from '@tenonkit/core'
+import { op, ui } from '@hozu/core'
 import { PublicEnv } from '../../env.ts'
 import { listProducts } from '../catalog/effects.ts'
 import { cartTotal, getCart } from './effects.ts'

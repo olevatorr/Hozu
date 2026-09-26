@@ -6,11 +6,11 @@
     "run": "node run.ts"
   },
   "dependencies": {
-    "@tenonkit/core": "workspace:*",
-    "@tenonkit/data": "workspace:*",
-    "@tenonkit/runtime-client": "workspace:*",
-    "@tenonkit/runtime-server": "workspace:*",
-    "@tenonkit/schema-zod": "workspace:*",
+    "@hozu/core": "workspace:*",
+    "@hozu/data": "workspace:*",
+    "@hozu/runtime-client": "workspace:*",
+    "@hozu/runtime-server": "workspace:*",
+    "@hozu/schema-zod": "workspace:*",
     "@vue/server-renderer": "3.5.43",
     "esbuild": "0.28.2",
     "playwright-core": "1.63.0",

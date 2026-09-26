@@ -3,14 +3,14 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
-const skill = join(root, '.claude/skills/tenon')
+const skill = join(root, '.claude/skills/hozu')
 
 export const exampleFiles = [
   'app.css',
   'routes.ts',
   'server.ts',
   'serve.ts',
-  'tenon.config.ts',
+  'hozu.config.ts',
   'features/bookmarks/model.ts',
   'features/bookmarks/views.ts',
 ]
@@ -18,7 +18,7 @@ export const exampleFiles = [
 export const agentsMd = (claude: string) =>
   `${claude.replace(
     /^# (.+)\n/,
-    '# $1\n\nAgents without skill support: before writing Tenon code, read `.claude/skills/tenon/SKILL.md` (the `tenon` skill below).\n',
+    '# $1\n\nAgents without skill support: before writing Hozu code, read `.claude/skills/hozu/SKILL.md` (the `hozu` skill below).\n',
   )}`
 
 export async function sync(write: boolean): Promise<string[]> {
@@ -38,7 +38,7 @@ export async function sync(write: boolean): Promise<string[]> {
 }
 
 export async function pack() {
-  const target = join(root, 'packages/create-tenon/skill')
+  const target = join(root, 'packages/create-hozu/skill')
   await rm(target, { recursive: true, force: true })
   await cp(skill, target, { recursive: true })
 }

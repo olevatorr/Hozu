@@ -21,8 +21,8 @@ import { page } from './page.ts'
 import type { RouteDecl } from './route.ts'
 import { type WidgetDecl, widget } from './widget.ts'
 
-export const SEND = Symbol.for('tenon.send')
-export const LINK = Symbol.for('tenon.link')
+export const SEND = Symbol.for('hozu.send')
+export const LINK = Symbol.for('hozu.link')
 
 declare const HREF: unique symbol
 

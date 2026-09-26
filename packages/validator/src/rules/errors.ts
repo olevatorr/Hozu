@@ -1,4 +1,4 @@
-import { at, type Json, resolveAt, type TransitionIR, type ViewNode } from '@tenonkit/core/ir'
+import { at, type Json, resolveAt, type TransitionIR, type ViewNode } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { effectSchemas } from '../env.ts'
 import { resolveRef } from '../resolve.ts'
@@ -22,7 +22,7 @@ export function declaredErrors(ctx: Ctx) {
       for (const name of names) {
         if (s.invoke.failed[name]?.length) continue
         ctx.report(
-          'TN004',
+          'HZ004',
           f.id,
           at(base, name),
           `"${state}" invokes ${s.invoke.effect} but does not handle its "${name}" error`,
@@ -38,7 +38,7 @@ export function declaredErrors(ctx: Ctx) {
         if (names.includes(name) || (name === 'Invalid' && schemas.invalid)) continue
         const guess = closest(name, names)
         ctx.report(
-          'TN007',
+          'HZ007',
           f.id,
           at(base, name),
           `${s.invoke.effect} has no error "${name}".${didYouMean(guess)}`,
@@ -65,7 +65,7 @@ export function declaredErrors(ctx: Ctx) {
             value: { literal: '' },
           }
           ctx.report(
-            'TN004',
+            'HZ004',
             f.id,
             at(pointer, 'failed', name),
             `Query ${node.query} can fail with "${name}" but the view does not render it`,
@@ -86,7 +86,7 @@ export function declaredErrors(ctx: Ctx) {
         for (const name of Object.keys(node.failed))
           if (!names.includes(name))
             ctx.report(
-              'TN007',
+              'HZ007',
               f.id,
               at(pointer, 'failed', name),
               `${node.query} has no error "${name}"`,
@@ -108,7 +108,7 @@ export function declaredErrors(ctx: Ctx) {
         const guess = closest(step.error, names)
         const p = featurePointer(f.id, 'contracts', cid, 'when', i, 'error')
         ctx.report(
-          'TN007',
+          'HZ007',
           f.id,
           p,
           `${step.failed} has no error "${step.error}".${didYouMean(guess)}`,

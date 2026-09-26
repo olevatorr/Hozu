@@ -1,4 +1,4 @@
-import { query, tag } from '@tenonkit/core'
+import { query, tag } from '@hozu/core'
 import { z } from 'zod'
 import { NoInput, Product, ProductKey } from './schemas.ts'
 

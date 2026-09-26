@@ -1,4 +1,4 @@
-import { op, ui } from '@tenonkit/core'
+import { op, ui } from '@hozu/core'
 import { home, taskPage } from '../../routes.ts'
 import { getTask, isEmpty, listTasks, visible } from './effects.ts'
 import { Add, ClearDone, Draft, SetShow, Toggle } from './events.ts'

@@ -1,0 +1,12 @@
+---
+title: Hello, Hozu
+excerpt: Why an AI-first framework makes invalid programs hard to write.
+publishedAt: '2026-09-01'
+author: Ada
+---
+
+Hozu compiles features into an IR that tools can verify.
+
+## Closed views
+
+Views are closed trees.

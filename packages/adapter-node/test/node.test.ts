@@ -12,7 +12,7 @@ describe('node adapter', () => {
     let time = 0
     const app = start({ now: () => time })
     close = app.close
-    const cache = async () => (await app.call('GET', '/order/placed')).headers['x-tenon-cache']
+    const cache = async () => (await app.call('GET', '/order/placed')).headers['x-hozu-cache']
     expect(await cache()).toBe('miss')
     expect(await cache()).toBe('hit')
     time += 60_000
@@ -28,13 +28,13 @@ describe('node adapter', () => {
     close = app.close
     await app.call(
       'POST',
-      '/_tenon/effect',
+      '/_hozu/effect',
       { effect: 'cart.addItem', input: { sku: 'mug', qty: 1 }, keys: [] },
       'ada',
     )
     const ada = await app.call('GET', '/', undefined, 'ada')
     const bob = await app.call('GET', '/', undefined, 'bob')
-    expect(ada.headers['x-tenon-cache']).toBe('bypass')
+    expect(ada.headers['x-hozu-cache']).toBe('bypass')
     expect(ada.headers['transfer-encoding']).toBe('chunked')
     expect(ada.body).toContain('Total: $<!---->12')
     expect(bob.body).toContain('Total: $<!---->0')
@@ -43,7 +43,7 @@ describe('node adapter', () => {
   it('effects return the result plus server-pushed data for invalidated payload keys', async () => {
     const app = start()
     close = app.close
-    const res = await app.call('POST', '/_tenon/effect', {
+    const res = await app.call('POST', '/_hozu/effect', {
       effect: 'cart.addItem',
       input: { sku: 'mug', qty: 2 },
       keys: ['cart.getCart{}'],
@@ -55,7 +55,7 @@ describe('node adapter', () => {
     ])
     const failed = JSON.parse(
       (
-        await app.call('POST', '/_tenon/effect', {
+        await app.call('POST', '/_hozu/effect', {
           effect: 'cart.addItem',
           input: { sku: 'tee', qty: 1 },
           keys: ['cart.getCart{}'],
@@ -71,8 +71,8 @@ describe('node adapter', () => {
   it('serves the client bundle, the fns module and 404s', async () => {
     const app = start()
     close = app.close
-    expect((await app.call('GET', '/_tenon/client.js')).headers['content-type']).toBe('text/javascript')
-    expect((await app.call('GET', '/_tenon/fns.js')).body).toContain('"cart.cartTotal": (items) =>')
+    expect((await app.call('GET', '/_hozu/client.js')).headers['content-type']).toBe('text/javascript')
+    expect((await app.call('GET', '/_hozu/fns.js')).body).toContain('"cart.cartTotal": (items) =>')
     expect((await app.call('GET', '/nope')).status).toBe(404)
   })
 })
@@ -89,10 +89,10 @@ describe('crawler endpoints', () => {
     ])
     expect((await app.call('PUT', '/')).status).toBe(405)
     expect((await app.call('GET', '/robots.txt')).body).toBe(
-      'User-agent: *\nAllow: /\nDisallow: /order/placed\nSitemap: https://cart.tenon.dev/sitemap.xml\n',
+      'User-agent: *\nAllow: /\nDisallow: /order/placed\nSitemap: https://cart.hozu.dev/sitemap.xml\n',
     )
     expect((await app.call('GET', '/sitemap.xml')).body).toContain(
-      '<url><loc>https://cart.tenon.dev/</loc></url><url><loc>https://cart.tenon.dev/products/mug</loc></url>',
+      '<url><loc>https://cart.hozu.dev/</loc></url><url><loc>https://cart.hozu.dev/products/mug</loc></url>',
     )
   })
 })

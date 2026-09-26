@@ -34,14 +34,14 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
     const rp = join(p, 'redirects', error)
     if (!id)
       scope.report(
-        'TN007',
+        'HZ007',
         rp,
         'Redirect target is not a registered route',
         'Register it in project({ routes }).',
       )
     else if (defOf<{ params: unknown }>(route).params !== null)
       scope.report(
-        'TN024',
+        'HZ024',
         rp,
         `Redirect target "${id}" has params`,
         'Redirects go to routes without params.',
@@ -101,7 +101,7 @@ export function buildPages(project: ProjectScope, list: unknown[]): Record<strin
     const at = join('', 'pages', i)
     if (info?.kind !== 'page') {
       project.report(
-        'TN014',
+        'HZ014',
         null,
         at,
         'pages must contain ui.page(route, {...})',
@@ -113,7 +113,7 @@ export function buildPages(project: ProjectScope, list: unknown[]): Record<strin
     const id = project.routes.get(d.route)
     if (!id) {
       project.report(
-        'TN007',
+        'HZ007',
         null,
         at,
         'Page route is not registered in project({ routes })',
@@ -124,7 +124,7 @@ export function buildPages(project: ProjectScope, list: unknown[]): Record<strin
     const p = join('', 'pages', id)
     if (pages[id]) {
       project.report(
-        'TN013',
+        'HZ013',
         null,
         p,
         `Route "${id}" is rendered by two pages`,
@@ -138,7 +138,7 @@ export function buildPages(project: ProjectScope, list: unknown[]): Record<strin
       const owner = project.owners.get(v)
       if (owner?.kind === 'view') return `${owner.feature}.${owner.symbol}`
       project.report(
-        'TN007',
+        'HZ007',
         null,
         join(p, 'views'),
         'Page view is not declared in any feature',

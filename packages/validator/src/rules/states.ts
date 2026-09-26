@@ -1,4 +1,4 @@
-import { type At, at, resolveAt } from '@tenonkit/core/ir'
+import { type At, at, resolveAt } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { closest, didYouMean } from '../suggest.ts'
 import { featurePointer, transitionsOf, walkView } from '../walk.ts'
@@ -25,7 +25,7 @@ export function reachability(ctx: Ctx) {
       if (seen.has(state)) continue
       const p = featurePointer(f.id, 'machine', 'states', state)
       ctx.report(
-        'TN001',
+        'HZ001',
         f.id,
         p,
         `State "${state}" is unreachable from "${m.initial}"`,
@@ -46,7 +46,7 @@ export function deadEnds(ctx: Ctx) {
       if (s.final || s.invoke || s.after.length || Object.values(s.on).some((l) => l.length)) continue
       const p = featurePointer(f.id, 'machine', 'states', state)
       ctx.report(
-        'TN010',
+        'HZ010',
         f.id,
         p,
         `State "${state}" has no way out`,
@@ -68,7 +68,7 @@ export function stateNames(ctx: Ctx) {
     const dangling = (p: At, name: string, what: string) => {
       const guess = closest(name, names)
       ctx.report(
-        'TN007',
+        'HZ007',
         f.id,
         p,
         `Unknown state "${name}" in ${what}.${didYouMean(guess)}`,
@@ -93,7 +93,7 @@ export function stateNames(ctx: Ctx) {
     for (const [vid, view] of Object.entries(f.views)) {
       if (view.machine !== null && view.machine !== f.id)
         ctx.report(
-          'TN006',
+          'HZ006',
           f.id,
           featurePointer(f.id, 'views', vid, 'machine'),
           `View ${f.id}.${vid} is bound to the machine of "${view.machine}"`,
@@ -112,7 +112,7 @@ export function stateNames(ctx: Ctx) {
         )
       else if (view.machine === f.id && !m)
         ctx.report(
-          'TN007',
+          'HZ007',
           f.id,
           featurePointer(f.id, 'views', vid, 'machine'),
           `View ${f.id}.${vid} is bound to a machine but ${f.id} has none`,
@@ -147,7 +147,7 @@ export function shadowing(ctx: Ctx) {
     const shadowed = list.map((_, i) => i).filter((i) => i > first)
     for (const i of shadowed)
       ctx.report(
-        'TN009',
+        'HZ009',
         feature,
         at(base, i),
         `Transition ${i} for ${label} can never run`,
@@ -188,7 +188,7 @@ export function shadowing(ctx: Ctx) {
           .map((b, j) => (b.ms === a.ms && j > unguarded ? j : -1))
           .filter((j) => j >= 0)
         ctx.report(
-          'TN009',
+          'HZ009',
           f.id,
           at(base, 'after', i),
           `after(${a.ms}) transition ${i} in "${state}" can never run`,

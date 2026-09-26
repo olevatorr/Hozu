@@ -1,9 +1,9 @@
-import { bundleWidgets } from '@tenonkit/bundle'
-import { buildProject } from '@tenonkit/core/ir'
-import { createDataRuntime, resolvers } from '@tenonkit/data'
-import { type App, hydrate } from '@tenonkit/runtime-client'
-import { renderToString } from '@tenonkit/runtime-server'
-import { validate } from '@tenonkit/validator'
+import { bundleWidgets } from '@hozu/bundle'
+import { buildProject } from '@hozu/core/ir'
+import { createDataRuntime, resolvers } from '@hozu/data'
+import { type App, hydrate } from '@hozu/runtime-client'
+import { renderToString } from '@hozu/runtime-server'
+import { validate } from '@hozu/validator'
 import { Window } from 'happy-dom'
 import { describe, expect, it } from 'vitest'
 import project from './support/meter.ts'
@@ -21,7 +21,7 @@ describe('widgets', () => {
     const bundle = await bundleWidgets(build)
     expect(bundle.diagnostics).toEqual([])
     const url = bundle.urls['meter.Meter']!
-    expect(url).toMatch(/^\/_tenon\/w\/meter-Meter-[A-Z0-9]+\.js$/)
+    expect(url).toMatch(/^\/_hozu\/w\/meter-Meter-[A-Z0-9]+\.js$/)
     expect(bundle.files[url]).toContain('v=')
   })
 
@@ -73,10 +73,10 @@ describe('widgets', () => {
     expect(host.dataset.destroyed).toBe('yes')
   })
 
-  it('TN029 — handlers for events the widget does not declare', () => {
+  it('HZ029 — handlers for events the widget does not declare', () => {
     const ir = structuredClone(build.ir)
     const json = JSON.stringify(ir).replace('"on":{"picked"', '"on":{"pickd"')
-    const found = validate(JSON.parse(json), {}).filter((d) => d.code === 'TN029')
+    const found = validate(JSON.parse(json), {}).filter((d) => d.code === 'HZ029')
     expect(found.map((d) => d.message)).toEqual([
       'Widget meter.Meter does not emit "pickd". Did you mean "picked"?',
     ])

@@ -3,17 +3,17 @@ import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { createServer } from '@tenonkit/adapter-node'
-import { feature, mutation, project, query, route, ui } from '@tenonkit/core'
-import { buildProject } from '@tenonkit/core/ir'
-import { resolvers } from '@tenonkit/data'
-import { sessionCookie } from '@tenonkit/runtime-server'
-import { zodAdapter } from '@tenonkit/schema-zod'
-import { validate } from '@tenonkit/validator'
+import { createServer } from '@hozu/adapter-node'
+import { feature, mutation, project, query, route, ui } from '@hozu/core'
+import { buildProject } from '@hozu/core/ir'
+import { resolvers } from '@hozu/data'
+import { sessionCookie } from '@hozu/runtime-server'
+import { zodAdapter } from '@hozu/schema-zod'
+import { validate } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-const dir = mkdtempSync(join(tmpdir(), 'tenon-auth-'))
+const dir = mkdtempSync(join(tmpdir(), 'hozu-auth-'))
 writeFileSync(join(dir, 'icon.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"></svg>')
 
 const me = query({
@@ -117,7 +117,7 @@ describe('redirects, sessions, custom 404, icon (G5, G6, G7, G12)', () => {
     const get = (path: string, cookie = '') =>
       fetch(`${base}${path}`, { redirect: 'manual', headers: { cookie } })
     const effect = (name: string, input: unknown, cookie = '') =>
-      fetch(`${base}/_tenon/effect`, {
+      fetch(`${base}/_hozu/effect`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', cookie },
         body: JSON.stringify({ effect: `auth.${name}`, input, keys: [] }),
@@ -148,7 +148,7 @@ describe('redirects, sessions, custom 404, icon (G5, G6, G7, G12)', () => {
       const body = await lost.text()
       expect(body).toContain('<h1>Nothing here</h1>')
       expect(body).toContain('<meta name="theme-color" content="#4f46e5">')
-      expect(body).toMatch(/<link rel="icon" href="\/_tenon\/a\/[0-9a-f]{16}\.svg">/)
+      expect(body).toMatch(/<link rel="icon" href="\/_hozu\/a\/[0-9a-f]{16}\.svg">/)
     } finally {
       server.close()
     }

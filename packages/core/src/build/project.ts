@@ -90,11 +90,11 @@ function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
     if (key) records[key as string]![name] = decl
     else if (kind === 'machine' || kind === 'messages') {
       if (parts[kind])
-        scope.report('TN013', id, at, `A feature has one ${kind}`, `"${name}" is a second ${kind}.`)
+        scope.report('HZ013', id, at, `A feature has one ${kind}`, `"${name}" is a second ${kind}.`)
       else (parts as Record<string, unknown>)[kind] = decl
     } else
       scope.report(
-        'TN014',
+        'HZ014',
         id,
         at,
         `"${name}" is not a declaration`,
@@ -108,7 +108,7 @@ function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
     if (key) (parts.exports[key] as unknown[]).push(decl)
     else
       scope.report(
-        'TN014',
+        'HZ014',
         id,
         join(base, 'exports', i),
         'Only events, queries, mutations, tags, fns and views can be exported',
@@ -124,7 +124,7 @@ function register(scope: ProjectScope, id: string, config: FeatureParts) {
     scope.mark(pointer, decl)
     if (!IDENTIFIER.test(symbol))
       scope.report(
-        'TN014',
+        'HZ014',
         id,
         pointer,
         `Name "${symbol}" is not an identifier`,
@@ -133,7 +133,7 @@ function register(scope: ProjectScope, id: string, config: FeatureParts) {
     const info = infoOf(decl)
     if (info?.kind !== kind) {
       scope.report(
-        'TN014',
+        'HZ014',
         id,
         pointer,
         `Expected a ${kind} declaration`,
@@ -144,7 +144,7 @@ function register(scope: ProjectScope, id: string, config: FeatureParts) {
     const existing = scope.owners.get(decl)
     if (existing) {
       scope.report(
-        'TN013',
+        'HZ013',
         id,
         pointer,
         `This ${kind} is already declared as ${existing.feature}.${existing.symbol}`,
@@ -176,7 +176,7 @@ function projectSchema(
   if (schema === null || schema === undefined) return null
   if (!isStandardSchema(schema)) {
     scope.report(
-      'TN014',
+      'HZ014',
       null,
       pointer,
       'Expected a schema or null',
@@ -189,7 +189,7 @@ function projectSchema(
   const vendor = schema['~standard'].vendor
   if (vendor !== adapter.vendor) {
     scope.report(
-      'TN012',
+      'HZ012',
       null,
       pointer,
       `Schema from "${vendor}" but the project adapter is "${adapter.vendor}"`,
@@ -215,7 +215,7 @@ export function buildProject(project: unknown, options: BuildOptions = {}): Buil
 function build(project: unknown, tracking: boolean, manifest: Manifest | null): BuildResult {
   const info = infoOf(project)
   if (info?.kind !== 'project')
-    throw new TypeError('Expected a project() declaration as the default export of tenon.config.ts')
+    throw new TypeError('Expected a project() declaration as the default export of hozu.config.ts')
   const config = info.def as ProjectConfig
   const scope = new ProjectScope(tracking)
   scope.manifest = manifest
@@ -223,11 +223,11 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
   if (adapter?.kind === 'adapter') scope.adapter = adapter.def as SchemaAdapterDef
   else
     scope.report(
-      'TN012',
+      'HZ012',
       null,
       '/schema',
       'project({ schema }) must be a schema adapter',
-      'Use an adapter such as zodAdapter from @tenonkit/schema-zod.',
+      'Use an adapter such as zodAdapter from @hozu/schema-zod.',
     )
 
   scope.basePath = typeof config.http?.basePath === 'string' ? config.http.basePath : ''
@@ -238,7 +238,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     scope.mark(p, route)
     if (scope.routes.has(route)) {
       scope.report(
-        'TN013',
+        'HZ013',
         null,
         p,
         `Route is already registered as ${scope.routes.get(route)}`,
@@ -260,7 +260,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     const fi = infoOf(f)
     if (fi?.kind !== 'feature') {
       scope.report(
-        'TN014',
+        'HZ014',
         null,
         join('', 'features', i),
         'features must contain feature() declarations',
@@ -273,7 +273,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     scope.mark(p, f)
     if (!IDENTIFIER.test(fc.id))
       scope.report(
-        'TN014',
+        'HZ014',
         fc.id,
         p,
         `Feature id "${fc.id}" is not an identifier`,
@@ -281,7 +281,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       )
     if (configs.some(([id]) => id === fc.id)) {
       scope.report(
-        'TN013',
+        'HZ013',
         fc.id,
         p,
         `Feature id "${fc.id}" is declared twice`,
@@ -301,7 +301,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     const path = filePath(url)
     if (path) return path
     scope.report(
-      'TN014',
+      'HZ014',
       feature,
       pointer,
       'Stylesheets must be file URLs',
@@ -331,7 +331,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
   const notFound = config.notFound ? (scope.routes.get(config.notFound) ?? null) : null
   if (config.notFound && !notFound)
     scope.report(
-      'TN007',
+      'HZ007',
       null,
       '/notFound',
       'notFound is not a registered route',
@@ -340,7 +340,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
   const error = config.error ? (scope.routes.get(config.error) ?? null) : null
   if (config.error && !error)
     scope.report(
-      'TN007',
+      'HZ007',
       null,
       '/error',
       'error is not a registered route',

@@ -1,4 +1,4 @@
-import { route } from '@tenonkit/core'
+import { route } from '@hozu/core'
 import { z } from 'zod'
 
 export const home = route({ path: '/', params: null, search: null })

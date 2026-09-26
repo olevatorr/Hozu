@@ -1,4 +1,4 @@
-import { at, resolveAt } from '@tenonkit/core/ir'
+import { at, resolveAt } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { resolveRef } from '../resolve.ts'
 import { closest, didYouMean } from '../suggest.ts'
@@ -17,7 +17,7 @@ export function widgetEvents(ctx: Ctx) {
           if (declared.includes(name)) continue
           const guess = closest(name, declared)
           ctx.report(
-            'TN029',
+            'HZ029',
             f.id,
             at(pointer, 'on', name),
             `Widget ${node.widget} does not emit "${name}".${didYouMean(guess)}`,

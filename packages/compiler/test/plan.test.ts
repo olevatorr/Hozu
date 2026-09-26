@@ -1,7 +1,7 @@
-import { planRoute, softTargets } from '@tenonkit/compiler'
-import { buildProject, type QueryNode } from '@tenonkit/core/ir'
+import { planRoute, softTargets } from '@hozu/compiler'
+import { buildProject, type QueryNode } from '@hozu/core/ir'
 import { describe, expect, it } from 'vitest'
-import cartProject from '../../../examples/cart/tenon.config.ts'
+import cartProject from '../../../examples/cart/hozu.config.ts'
 
 const ir = () => structuredClone(buildProject(cartProject).ir)
 

@@ -4,9 +4,9 @@ import type { AddressInfo } from 'node:net'
 import { extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
-import { buildProject } from '@tenonkit/core/ir'
-import { createDataRuntime } from '@tenonkit/data'
-import { renderToString as tenonRender } from '@tenonkit/runtime-server'
+import { buildProject } from '@hozu/core/ir'
+import { createDataRuntime } from '@hozu/data'
+import { renderToString as hozuRender } from '@hozu/runtime-server'
 import { renderToString as vueRender } from '@vue/server-renderer'
 import { build as bundle } from 'esbuild'
 import { chromium } from 'playwright-core'
@@ -17,10 +17,10 @@ import { renderToString as reactRender } from 'react-dom/server'
 import { compile } from 'svelte/compiler'
 import { createSSRApp } from 'vue'
 import { products } from './apps/data.ts'
-import { preactClient, reactClient, svelteClient, tenonClient, vueClient } from './apps/entries.ts'
+import { hozuClient, preactClient, reactClient, svelteClient, vueClient } from './apps/entries.ts'
+import { benchProject, benchResolvers } from './apps/hozu.ts'
 import { App as PreactApp } from './apps/preact.ts'
 import { App as ReactApp } from './apps/react.ts'
-import { benchProject, benchResolvers } from './apps/tenon.ts'
 import { App as VueApp } from './apps/vue.ts'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
@@ -37,8 +37,8 @@ const props = { products }
 const shell = (body: string, name: string) =>
   `<!doctype html><html><head><meta charset="utf-8"><title>Products</title></head><body><div id="root">${body}</div><script id="props" type="application/json">${JSON.stringify(props).replace(/</g, '\\u003c')}</script><script type="module" src="/${name}/app.js"></script></body></html>`
 
-const tenonBuild = buildProject(benchProject, { sources: false })
-const tenonData = createDataRuntime({ build: tenonBuild, resolvers: benchResolvers })
+const hozuBuild = buildProject(benchProject, { sources: false })
+const hozuData = createDataRuntime({ build: hozuBuild, resolvers: benchResolvers })
 
 const frameworks: { name: string; version: string; ssr: () => Promise<string> | string; client: string }[] = [
   {
@@ -66,18 +66,18 @@ const frameworks: { name: string; version: string; ssr: () => Promise<string> | 
     client: svelteClient,
   },
   {
-    name: 'tenon',
+    name: 'hozu',
     version: 'workspace',
     ssr: async () =>
       (
-        await tenonRender({
-          build: tenonBuild,
-          data: tenonData,
+        await hozuRender({
+          build: hozuBuild,
+          data: hozuData,
           route: 'home',
-          assets: { client: '/tenon/app.js', fns: null, styles: null, preload: [], widgets: {} },
+          assets: { client: '/hozu/app.js', fns: null, styles: null, preload: [], widgets: {} },
         })
       ).html,
-    client: tenonClient,
+    client: hozuClient,
   },
 ]
 
@@ -128,7 +128,7 @@ for (const fw of frameworks) {
     format: 'esm',
     platform: 'browser',
     target: 'es2022',
-    define: { 'process.env.NODE_ENV': '"production"', 'globalThis.__TENON_DEV__': 'false' },
+    define: { 'process.env.NODE_ENV': '"production"', 'globalThis.__HOZU_DEV__': 'false' },
     write: false,
   })
   rmSync(entry)

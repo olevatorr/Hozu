@@ -1,4 +1,4 @@
-import type { ExportsIR, FeatureIR, ProjectIR } from '@tenonkit/core/ir'
+import type { ExportsIR, FeatureIR, ProjectIR } from '@hozu/core/ir'
 
 export type RefKind = 'event' | 'query' | 'mutation' | 'effect' | 'tag' | 'fn' | 'view' | 'widget'
 

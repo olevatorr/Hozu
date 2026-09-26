@@ -1,4 +1,4 @@
-import { fn, query } from '@tenonkit/core'
+import { fn, query } from '@hozu/core'
 import { z } from 'zod'
 import { Metric, Series, Slide, Stats, Todos } from './schemas.ts'
 

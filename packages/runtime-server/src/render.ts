@@ -1,4 +1,4 @@
-import { planRoute, type RoutePlan, softTargets } from '@tenonkit/compiler'
+import { planRoute, type RoutePlan, softTargets } from '@hozu/compiler'
 import {
   type BuildResult,
   canonicalStringify,
@@ -13,11 +13,11 @@ import {
   type ValueExpr,
   type ViewNode,
   type WidgetIR,
-} from '@tenonkit/core/ir'
-import type { DataRuntime } from '@tenonkit/data'
-import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '@tenonkit/machine'
-import type { PagePayload, Result } from '@tenonkit/runtime-client'
-import { attrText, text } from '@tenonkit/runtime-client'
+} from '@hozu/core/ir'
+import type { DataRuntime } from '@hozu/data'
+import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '@hozu/machine'
+import type { PagePayload, Result } from '@hozu/runtime-client'
+import { attrText, text } from '@hozu/runtime-client'
 import { escapeHtml, scriptJson, scriptSafe } from './escape.ts'
 import { CLOSE, OPEN, renderKey, separated } from './generate.ts'
 import { responsive, type Variants } from './images.ts'
@@ -86,7 +86,7 @@ export async function renderPage({
   search = null,
   snapshots = {},
   session,
-  assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: null, preload: [], widgets: {} },
+  assets = { client: '/_hozu/client.js', fns: '/_hozu/fns.js', styles: null, preload: [], widgets: {} },
   locale: requested = null,
   images = null,
   env = NO_ENV,
@@ -413,7 +413,7 @@ export async function renderPage({
       if (payload.islands.length) {
         payload.fns = hasFns ? assets.fns : null
         payload.routes = routes
-        buffer += `<script type="application/json" id="tenon-payload">${payloadJson(payload)}</script>`
+        buffer += `<script type="application/json" id="hozu-payload">${payloadJson(payload)}</script>`
         buffer += `<script type="module" src="${escapeHtml(assets.client)}"></script>`
       }
       buffer += '</body></html>'
@@ -598,7 +598,7 @@ function speculationRules(ir: ProjectIR, route: string, locale: string | null): 
     rules = JSON.stringify({
       prerender: [
         {
-          where: { and: [{ href_matches: '/*' }, { not: { href_matches: '/_tenon/*' } }, ...soft] },
+          where: { and: [{ href_matches: '/*' }, { not: { href_matches: '/_hozu/*' } }, ...soft] },
           eagerness: 'moderate',
         },
       ],
@@ -644,7 +644,7 @@ function headHtml(
   const title = str(h.title) ?? ir.site?.name ?? path
   const description = str(h.description)
   const raw = str(h.image)
-  const local = raw?.startsWith('/_tenon/og.png') ? ir.http.basePath + raw : raw
+  const local = raw?.startsWith('/_hozu/og.png') ? ir.http.basePath + raw : raw
   const image = local?.startsWith('/') && ir.site ? ir.site.url + local : local
   const published = str(h.published)
   const url = ir.site ? `${ir.site.url}${path}` : null
@@ -666,7 +666,7 @@ function headHtml(
     ir.site?.icon ? `<link rel="icon" href="${escapeHtml(ir.site.icon)}">` : '',
     ir.site ? `<link rel="manifest" href="${escapeHtml(ir.http.basePath)}/manifest.webmanifest">` : '',
     ir.site?.offline
-      ? `<script type="module" src="${escapeHtml(ir.http.basePath)}/_tenon/sw-register.js"></script>`
+      ? `<script type="module" src="${escapeHtml(ir.http.basePath)}/_hozu/sw-register.js"></script>`
       : '',
     ...preload.map(
       (href) => `<link rel="preload" href="${escapeHtml(href)}" as="font" type="font/woff2" crossorigin>`,

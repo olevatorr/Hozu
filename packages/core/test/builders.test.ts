@@ -1,6 +1,6 @@
-import { event, feature, invoke, machine, mutation, on, op, project, route, ui } from '@tenonkit/core'
-import { buildProject, type DiagnosticCode } from '@tenonkit/core/ir'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { event, feature, invoke, machine, mutation, on, op, project, route, ui } from '@hozu/core'
+import { buildProject, type DiagnosticCode } from '@hozu/core/ir'
+import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
@@ -20,28 +20,28 @@ const expectBuildError = (p: unknown, code: DiagnosticCode, message: RegExp) => 
 }
 
 describe('builder diagnostics', () => {
-  it('TN013 — one identity registered by two features', () => {
+  it('HZ013 — one identity registered by two features', () => {
     const Ping = event({ payload: Payload })
     const a = feature({ id: 'a', declarations: { Ping }, ...base })
     const b = feature({ id: 'b', declarations: { Ping }, ...base })
     expectBuildError(
       project({ schema: zodAdapter, routes: {}, pages: [], features: [a, b] }),
-      'TN013',
+      'HZ013',
       /already declared as a\.Ping/,
     )
   })
 
-  it('TN013 — duplicate feature ids', () => {
+  it('HZ013 — duplicate feature ids', () => {
     const a = feature({ id: 'a', declarations: {}, ...base })
     const b = feature({ id: 'a', declarations: {}, ...base })
     expectBuildError(
       project({ schema: zodAdapter, routes: {}, pages: [], features: [a, b] }),
-      'TN013',
+      'HZ013',
       /declared twice/,
     )
   })
 
-  it('TN014 — a reference used as a JavaScript value', () => {
+  it('HZ014 — a reference used as a JavaScript value', () => {
     const Ping = event({ payload: Payload })
     const m = machine({
       context: Context,
@@ -56,12 +56,12 @@ describe('builder diagnostics', () => {
     const f = feature({ id: 'f', declarations: { Ping, m }, ...base })
     expectBuildError(
       project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }),
-      'TN014',
+      'HZ014',
       /used as a JavaScript value/,
     )
   })
 
-  it('TN014 — dynamic class and unknown attributes', () => {
+  it('HZ014 — dynamic class and unknown attributes', () => {
     const m = machine({
       context: Context,
       initialContext: { n: 0, label: '' },
@@ -88,7 +88,7 @@ describe('builder diagnostics', () => {
     )
   })
 
-  it('TN014 — attributes are checked per tag; style and select value point to the canonical form', () => {
+  it('HZ014 — attributes are checked per tag; style and select value point to the canonical form', () => {
     const V = ui.view({
       render: () =>
         ui.div({}, [
@@ -115,7 +115,7 @@ describe('builder diagnostics', () => {
     ])
   })
 
-  it('TN029 — widget module that does not exist', () => {
+  it('HZ029 — widget module that does not exist', () => {
     const Ghost = ui.widget({
       tag: 'div',
       props: z.object({}),
@@ -131,24 +131,24 @@ describe('builder diagnostics', () => {
         pages: [],
         features: [feature({ id: 'f', declarations: { Ghost }, ...base })],
       }),
-    ).diagnostics.filter((d) => d.code === 'TN029')
+    ).diagnostics.filter((d) => d.code === 'HZ029')
     expect(found.map((d) => [d.location.pointer, d.message])).toEqual([
       ['/features/f/widgets/Ghost/client', expect.stringMatching(/missing\.client\.ts does not exist$/)],
     ])
   })
 
-  it('TN012 — schema from another vendor', () => {
+  it('HZ012 — schema from another vendor', () => {
     const foreign = { '~standard': { version: 1, vendor: 'valibot', validate: () => ({ value: {} }) } }
     const Ping = event({ payload: foreign as never })
     const f = feature({ id: 'f', declarations: { Ping }, ...base })
     expectBuildError(
       project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }),
-      'TN012',
+      'HZ012',
       /"valibot" but the project adapter is "zod"/,
     )
   })
 
-  it('TN003 — invoke of a mutation no feature declares', () => {
+  it('HZ003 — invoke of a mutation no feature declares', () => {
     const save = mutation({ input: Payload, output: Payload, invalidates: () => [] })
     const m = machine({
       context: Context,
@@ -171,12 +171,12 @@ describe('builder diagnostics', () => {
         pages: [],
         features: [feature({ id: 'f', declarations: { m }, ...base })],
       }),
-      'TN003',
+      'HZ003',
       /not declared in any feature/,
     )
   })
 
-  it('TN007 — navigation to a route missing from the project', () => {
+  it('HZ007 — navigation to a route missing from the project', () => {
     const Ping = event({ payload: Payload })
     const away = route({ path: '/away', params: null, search: null })
     const m = machine({
@@ -192,12 +192,12 @@ describe('builder diagnostics', () => {
         pages: [],
         features: [feature({ id: 'f', declarations: { Ping, m }, ...base })],
       }),
-      'TN007',
+      'HZ007',
       /missing from project\(\{ routes \}\)/,
     )
   })
 
-  it('TN014 — reserved error name and empty intent', () => {
+  it('HZ014 — reserved error name and empty intent', () => {
     const save = mutation({
       input: Payload,
       output: Payload,
@@ -206,8 +206,8 @@ describe('builder diagnostics', () => {
     })
     const f = feature({ id: 'f', declarations: { save }, intent: { summary: ' ' } })
     expect(codesOf(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))).toEqual([
-      'TN014',
-      'TN014',
+      'HZ014',
+      'HZ014',
     ])
   })
 

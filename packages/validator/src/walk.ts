@@ -8,7 +8,7 @@ import {
   UNEXPECTED_ERROR_SCHEMA,
   type ViewIR,
   type ViewNode,
-} from '@tenonkit/core/ir'
+} from '@hozu/core/ir'
 import { contextEnv, type Env, effectSchemas, type schemaIn, valueSchema } from './env.ts'
 import { resolveRef } from './resolve.ts'
 import { itemsOf } from './schema.ts'

@@ -1,4 +1,4 @@
-import type { MutationDecl, QueryDecl } from '@tenonkit/core'
+import type { MutationDecl, QueryDecl } from '@hozu/core'
 import {
   type BuildResult,
   canonicalStringify,
@@ -9,8 +9,8 @@ import {
   join,
   resolveSource,
   type TagExprIR,
-} from '@tenonkit/core/ir'
-import { compileValue, type Getter } from '@tenonkit/machine'
+} from '@hozu/core/ir'
+import { compileValue, type Getter } from '@hozu/machine'
 import { fail, failureOf, implementationOf, type ResolverSet, type Run, resolverSetOf } from './resolvers.ts'
 import type { MutationResult, Result, Stats } from './types.ts'
 
@@ -110,8 +110,8 @@ export function createDataRuntime({
   const problems: Diagnostic[] = []
   const problem = (pointer: string, feature: string | null, message: string, cause: string) =>
     problems.push({
-      code: 'TN021',
-      severity: codes.TN021.severity,
+      code: 'HZ021',
+      severity: codes.HZ021.severity,
       message,
       location: { feature, pointer, source: resolveSource(build.sources, pointer) },
       cause,

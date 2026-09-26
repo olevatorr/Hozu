@@ -3,29 +3,29 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "validate": "tenon validate",
-    "inspect": "tenon inspect cart",
-    "graph": "tenon graph cart",
-    "explain": "tenon explain cart.idle",
+    "validate": "hozu validate",
+    "inspect": "hozu inspect cart",
+    "graph": "hozu graph cart",
+    "explain": "hozu explain cart.idle",
     "simulate": "node simulate.ts",
     "demo": "node demo.ts",
-    "plan": "tenon plan home",
+    "plan": "hozu plan home",
     "client": "node client.ts",
     "serve": "node serve.ts",
     "export": "node export.ts",
-    "dev": "tenon-dev serve.ts"
+    "dev": "hozu-dev serve.ts"
   },
   "dependencies": {
-    "@tenonkit/adapter-node": "workspace:*",
-    "@tenonkit/adapter-static": "workspace:*",
-    "@tenonkit/cli": "workspace:*",
-    "@tenonkit/core": "workspace:*",
-    "@tenonkit/data": "workspace:*",
-    "@tenonkit/machine": "workspace:*",
-    "@tenonkit/runtime-client": "workspace:*",
-    "@tenonkit/schema-zod": "workspace:*",
+    "@hozu/adapter-node": "workspace:*",
+    "@hozu/adapter-static": "workspace:*",
+    "@hozu/cli": "workspace:*",
+    "@hozu/core": "workspace:*",
+    "@hozu/data": "workspace:*",
+    "@hozu/machine": "workspace:*",
+    "@hozu/runtime-client": "workspace:*",
+    "@hozu/schema-zod": "workspace:*",
     "zod": "4.6.5",
-    "@tenonkit/css": "workspace:*",
-    "@tenonkit/dev": "workspace:*"
+    "@hozu/css": "workspace:*",
+    "@hozu/dev": "workspace:*"
   }
 }

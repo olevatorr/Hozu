@@ -3,24 +3,24 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "validate": "tenon validate",
-    "plan": "tenon plan home",
+    "validate": "hozu validate",
+    "plan": "hozu plan home",
     "seo": "node seo-audit.ts",
-    "dev": "tenon-dev serve.ts",
+    "dev": "hozu-dev serve.ts",
     "serve": "node serve.ts"
   },
   "dependencies": {
     "@tailwindcss/typography": "0.5.20",
-    "@tenonkit/adapter-node": "workspace:*",
-    "@tenonkit/adapter-static": "workspace:*",
-    "@tenonkit/cli": "workspace:*",
-    "@tenonkit/content": "workspace:*",
-    "@tenonkit/core": "workspace:*",
-    "@tenonkit/css": "workspace:*",
-    "@tenonkit/data": "workspace:*",
-    "@tenonkit/dev": "workspace:*",
-    "@tenonkit/image": "workspace:*",
-    "@tenonkit/schema-zod": "workspace:*",
+    "@hozu/adapter-node": "workspace:*",
+    "@hozu/adapter-static": "workspace:*",
+    "@hozu/cli": "workspace:*",
+    "@hozu/content": "workspace:*",
+    "@hozu/core": "workspace:*",
+    "@hozu/css": "workspace:*",
+    "@hozu/data": "workspace:*",
+    "@hozu/dev": "workspace:*",
+    "@hozu/image": "workspace:*",
+    "@hozu/schema-zod": "workspace:*",
     "zod": "4.6.5"
   }
 }

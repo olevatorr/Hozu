@@ -5,8 +5,8 @@ import {
   join,
   type ProjectIR,
   type ViewNode,
-} from '@tenonkit/core/ir'
-import cartProject from '../../../../examples/cart/tenon.config.ts'
+} from '@hozu/core/ir'
+import cartProject from '../../../../examples/cart/hozu.config.ts'
 
 let cached: BuildResult | undefined
 

@@ -1,4 +1,4 @@
-import { type ProjectIR, publicPath } from '@tenonkit/core/ir'
+import { type ProjectIR, publicPath } from '@hozu/core/ir'
 
 const iconType = (href: string) =>
   href.endsWith('.svg')
@@ -28,8 +28,8 @@ export function webManifest(ir: ProjectIR): string | null {
 export function serviceWorker(ir: ProjectIR, version: string): string | null {
   const route = ir.site?.offline ? ir.routes[ir.site.offline] : null
   if (!route) return null
-  const prefix = `${ir.http.basePath}/_tenon/`
-  return `const CACHE = ${JSON.stringify(`tenon-${version}`)}
+  const prefix = `${ir.http.basePath}/_hozu/`
+  return `const CACHE = ${JSON.stringify(`hozu-${version}`)}
 const OFFLINE = ${JSON.stringify(publicPath(ir, route.path))}
 const IMMUTABLE = ${JSON.stringify(['a/', 'w/', 'styles.'].map((p) => prefix + p))}
 self.addEventListener('install', (event) => {
@@ -39,7 +39,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('tenon-') && k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('hozu-') && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   )
 })

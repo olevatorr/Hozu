@@ -54,7 +54,7 @@ const widgets = {
   <Widget :setup="widgets.smooth" :props="{}" class="min-h-screen bg-slate-50 font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100">
     <header class="site-header sticky top-0 z-20 border-b border-slate-200/70 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
       <nav :class="`${container} flex h-16 items-center justify-between`">
-        <a href="/" class="text-lg font-bold text-slate-900 dark:text-white">Tenon</a>
+        <a href="/" class="text-lg font-bold text-slate-900 dark:text-white">Hozu</a>
         <div class="flex gap-6 text-sm text-slate-600 dark:text-slate-300">
           <a href="#features" class="hover:text-indigo-600">Features</a>
           <a href="#gallery" class="hover:text-indigo-600">Gallery</a>
@@ -166,6 +166,6 @@ const widgets = {
         </Widget>
       </section>
     </main>
-    <footer :class="`${container} border-t border-slate-200 py-10 text-sm text-slate-500 dark:border-slate-800`">© 2026 Tenon</footer>
+    <footer :class="`${container} border-t border-slate-200 py-10 text-sm text-slate-500 dark:border-slate-800`">© 2026 Hozu</footer>
   </Widget>
 </template>

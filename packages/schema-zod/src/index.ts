@@ -1,5 +1,5 @@
-import { defineSchemaAdapter, type SchemaAdapter } from '@tenonkit/core'
-import type { JsonSchema } from '@tenonkit/core/ir'
+import { defineSchemaAdapter, type SchemaAdapter } from '@hozu/core'
+import type { JsonSchema } from '@hozu/core/ir'
 import { toJSONSchema, type ZodType } from 'zod'
 
 export const zodAdapter: SchemaAdapter = defineSchemaAdapter({

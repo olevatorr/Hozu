@@ -1,9 +1,9 @@
-import { loadCollection } from '@tenonkit/content'
-import { resolvers } from '@tenonkit/data'
+import { loadCollection } from '@hozu/content'
+import { resolvers } from '@hozu/data'
 import { getPost, listPosts } from './features/posts/effects.ts'
 import { Frontmatter } from './features/posts/schemas.ts'
 import { savedPosts, savePost, unsavePost } from './features/saved/effects.ts'
-import project from './tenon.config.ts'
+import project from './hozu.config.ts'
 
 const posts = (
   await loadCollection({ dir: new URL('./content/posts/', import.meta.url), schema: Frontmatter })

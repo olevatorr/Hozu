@@ -1,4 +1,4 @@
-import type { Json } from '@tenonkit/core/ir'
+import type { Json } from '@hozu/core/ir'
 
 export type Unexpected = { ok: false; error: 'Unexpected'; data: { message: string } }
 

@@ -1,8 +1,8 @@
-import type { MachineIR } from '@tenonkit/core/ir'
-import type { Snapshot } from '@tenonkit/machine'
+import type { MachineIR } from '@hozu/core/ir'
+import type { Snapshot } from '@hozu/machine'
 import type { App } from './mount.ts'
 
-const KEY = 'tenon:snapshots'
+const KEY = 'hozu:snapshots'
 
 type Saved = Record<string, { machine: string; snapshot: Snapshot }>
 
@@ -29,9 +29,9 @@ export function restore(doc: Document): (id: string, machine: MachineIR | null) 
 }
 
 export function expose(doc: Document, apps: Map<string, App>, machines: Map<string, MachineIR | null>) {
-  const win = doc.defaultView as (Window & { __tenon?: { save(): void } }) | null
+  const win = doc.defaultView as (Window & { __hozu?: { save(): void } }) | null
   if (!win) return
-  win.__tenon = {
+  win.__hozu = {
     save() {
       const saved: Saved = {}
       for (const [id, app] of apps) {

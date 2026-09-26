@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { hydrate } from '@tenonkit/runtime-client'
+import { hydrate } from '@hozu/runtime-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { build, start } from './support.ts'
 
@@ -22,7 +22,7 @@ describe('end-to-end hydration', () => {
     const before = [...document.body.querySelectorAll('*')]
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
     const transport = vi.fn(async (effect: string, input: unknown, keys: string[]) =>
-      JSON.parse((await app.call('POST', '/_tenon/effect', { effect, input, keys })).body),
+      JSON.parse((await app.call('POST', '/_hozu/effect', { effect, input, keys })).body),
     )
     const apps = await hydrate(document, { transport, loadFns: async () => build.bindings.fns as never })
     expect([...apps.keys()]).toEqual(['cart'])

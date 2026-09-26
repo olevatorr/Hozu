@@ -9,7 +9,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'en' },
-      title: 'Tenon Showcase',
+      title: 'Hozu Showcase',
       meta: [{ name: 'theme-color', content: '#4f46e5' }],
     },
   },

@@ -1,6 +1,6 @@
-import { resolvers } from '@tenonkit/data'
+import { resolvers } from '@hozu/data'
 import { slides, stats } from './features/site/effects.ts'
-import project from './tenon.config.ts'
+import project from './hozu.config.ts'
 
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 

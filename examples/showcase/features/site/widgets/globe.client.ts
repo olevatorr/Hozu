@@ -1,4 +1,4 @@
-import { implement } from '@tenonkit/core/widget'
+import { implement } from '@hozu/core/widget'
 import {
   AdditiveBlending,
   BufferAttribute,

@@ -1,16 +1,16 @@
-import { buildProject } from '@tenonkit/core/ir'
-import { compileStyles, selectorClasses } from '@tenonkit/css'
-import { validate } from '@tenonkit/validator'
+import { buildProject } from '@hozu/core/ir'
+import { compileStyles, selectorClasses } from '@hozu/css'
+import { validate } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
-import blog from '../../../examples/blog/tenon.config.ts'
-import cart from '../../../examples/cart/tenon.config.ts'
+import blog from '../../../examples/blog/hozu.config.ts'
+import cart from '../../../examples/cart/hozu.config.ts'
 
 describe('styles', () => {
   it('builds exactly the classes the IR uses, from the project entry and feature stylesheets', async () => {
     const build = buildProject(blog, { sources: false })
     const styles = await compileStyles(build)
     expect(styles.unknown).toEqual(new Map())
-    expect(styles.href).toMatch(/^\/_tenon\/styles\.[0-9a-f]{12}\.css$/)
+    expect(styles.href).toMatch(/^\/_hozu\/styles\.[0-9a-f]{12}\.css$/)
     expect(styles.css).toContain('.reading-list{')
     expect(styles.css).toContain('.prose')
     expect(styles.css).toContain('--color-brand-600')
@@ -18,7 +18,7 @@ describe('styles', () => {
     expect(styles.files.some((f) => f.endsWith('saved.css'))).toBe(true)
   })
 
-  it('TN026 — unknown classes with a variant-preserving suggestion and a patch', async () => {
+  it('HZ026 — unknown classes with a variant-preserving suggestion and a patch', async () => {
     const build = buildProject(cart, { sources: true })
     const ir = structuredClone(build.ir)
     const section = ir.features.cart!.views.CartPanel!.root
@@ -27,7 +27,7 @@ describe('styles', () => {
     const styles = await compileStyles({ ...build, ir })
     expect(styles.unknown).toEqual(new Map([['md:bg-rde-500', 'md:bg-red-500']]))
     const found = validate(ir, { sources: build.sources, unknownClasses: styles.unknown }).filter(
-      (d) => d.code === 'TN026',
+      (d) => d.code === 'HZ026',
     )
     expect(found.map((d) => [d.message, d.location.pointer])).toEqual([
       [
@@ -41,19 +41,19 @@ describe('styles', () => {
     ])
   })
 
-  it('TN026 — a motion name without any CSS', async () => {
+  it('HZ026 — a motion name without any CSS', async () => {
     const build = buildProject(cart, { sources: true })
     const ir = structuredClone(build.ir)
     const json = JSON.stringify(ir).replace('"motion":"list"', '"motion":"slide"')
     const mutated = JSON.parse(json) as typeof ir
     const styles = await compileStyles({ ...build, ir: mutated })
     const found = validate(mutated, { sources: build.sources, unknownClasses: styles.unknown }).filter(
-      (d) => d.code === 'TN026',
+      (d) => d.code === 'HZ026',
     )
     expect(found.map((d) => d.message)).toEqual(['Motion "slide" has no CSS'])
     expect(found[0]!.fix?.snippet).toContain('.slide-enter-active')
     const clean = await compileStyles(build)
-    expect(validate(build.ir, { unknownClasses: clean.unknown }).filter((d) => d.code === 'TN026')).toEqual(
+    expect(validate(build.ir, { unknownClasses: clean.unknown }).filter((d) => d.code === 'HZ026')).toEqual(
       [],
     )
   })

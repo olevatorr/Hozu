@@ -1,6 +1,6 @@
-import { contract, event, feature, machine, on, op, project, query, route, tag, ui } from '@tenonkit/core'
-import { resolvers } from '@tenonkit/data'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { contract, event, feature, machine, on, op, project, query, route, tag, ui } from '@hozu/core'
+import { resolvers } from '@hozu/data'
+import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
 const Search = event({ payload: z.object({ q: z.string() }) })

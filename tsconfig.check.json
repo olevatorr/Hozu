@@ -44,7 +44,7 @@
       "path": "packages/adapter-static"
     },
     {
-      "path": "packages/create-tenon"
+      "path": "packages/create-hozu"
     }
   ]
 }

@@ -16,7 +16,7 @@ await build({
   format: 'esm',
   platform: 'browser',
   target: 'es2022',
-  define: { 'globalThis.__TENON_DEV__': 'false' },
+  define: { 'globalThis.__HOZU_DEV__': 'false' },
 })
 
 rmSync(dist('browser-dev'), { recursive: true, force: true })
@@ -27,7 +27,7 @@ await build({
   format: 'esm',
   platform: 'browser',
   target: 'es2022',
-  define: { 'globalThis.__TENON_DEV__': 'true' },
+  define: { 'globalThis.__HOZU_DEV__': 'true' },
 })
 
 const files = Object.fromEntries(

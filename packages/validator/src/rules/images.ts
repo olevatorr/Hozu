@@ -1,4 +1,4 @@
-import { at, resolveAt } from '@tenonkit/core/ir'
+import { at, resolveAt } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { walkView } from '../walk.ts'
 
@@ -14,7 +14,7 @@ export function imageDimensions(ctx: Ctx) {
           src && 'literal' in src && typeof src.literal === 'string' ? ctx.assets[src.literal] : null
         const size = known?.width && known.height ? { width: known.width, height: known.height } : null
         ctx.report(
-          'TN028',
+          'HZ028',
           f.id,
           at(pointer, 'attrs'),
           '<img> without width and height',

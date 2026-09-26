@@ -30,7 +30,7 @@ const start = performance.now()
 hydrate(App, { target: document.getElementById('root'), props: JSON.parse(document.getElementById('props').textContent) })
 window.__hydrated = { start, end: performance.now() }
 `
-export const tenonClient = `
+export const hozuClient = `
 import { hydrate } from '../../packages/runtime-client/src/hydrate.ts'
 const start = performance.now()
 hydrate(document).then(() => { window.__hydrated = { start, end: performance.now() } })

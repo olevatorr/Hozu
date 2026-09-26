@@ -1,16 +1,16 @@
-import { planRoute, softTargets } from '@tenonkit/compiler'
-import { closest } from '@tenonkit/validator'
+import { planRoute, softTargets } from '@hozu/compiler'
+import { closest } from '@hozu/validator'
 import type { PlanOutput } from '../contract.ts'
-import { TenonCliError } from '../errors.ts'
+import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 
 export function runPlan(loaded: Loaded, route: string | undefined): PlanOutput {
   const { ir } = loaded.build()
   const routes = Object.keys(ir.pages)
-  if (!route) throw new TenonCliError('usage', 'Missing <route> argument', routes)
+  if (!route) throw new HozuCliError('usage', 'Missing <route> argument', routes)
   if (!ir.pages[route]) {
     const guess = closest(route, routes)
-    throw new TenonCliError('unknown-feature', `No page renders route "${route}"`, guess ? [guess] : routes)
+    throw new HozuCliError('unknown-feature', `No page renders route "${route}"`, guess ? [guess] : routes)
   }
   return { ...planRoute(ir, route).plan, soft: softTargets(ir, route) }
 }

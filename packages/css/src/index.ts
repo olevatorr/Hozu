@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { extname, resolve } from 'node:path'
+import { type BuildResult, classCandidates, sha256 } from '@hozu/core/ir'
+import { closest } from '@hozu/validator'
 import { __unstable__loadDesignSystem, compile, optimize } from '@tailwindcss/node'
-import { type BuildResult, classCandidates, sha256 } from '@tenonkit/core/ir'
-import { closest } from '@tenonkit/validator'
 import { withFallbacks } from './fonts.ts'
 
 export interface CompiledStyles {
@@ -65,11 +65,11 @@ export async function compileStyles(
   const raw = compiler
     .build([...candidates])
     .replace(/url\((['"]?)([^'")]+)\1\)/g, (all, quote: string, url: string) => {
-      if (/^(data:|https?:|\/\/|#|\/_tenon\/)/.test(url)) return all
+      if (/^(data:|https?:|\/\/|#|\/_hozu\/)/.test(url)) return all
       const file = resolve(base, url.split(/[?#]/)[0]!)
       if (!existsSync(file)) return all
       const name = `${sha256(readFileSync(file).toString('base64')).slice(0, 16)}${extname(file).toLowerCase()}`
-      assets[`/_tenon/a/${name}`] = file
+      assets[`/_hozu/a/${name}`] = file
       return `url(${quote}a/${name}${quote})`
     })
   const fonted = withFallbacks(raw, assets, (file) => readFileSync(file))
@@ -99,7 +99,7 @@ export async function compileStyles(
   }
   return {
     css,
-    href: `/_tenon/styles.${sha256(css).slice(0, 12)}.css`,
+    href: `/_hozu/styles.${sha256(css).slice(0, 12)}.css`,
     assets,
     preload: Object.keys(assets).filter((href) => href.endsWith('.woff2')),
     files: [...files],

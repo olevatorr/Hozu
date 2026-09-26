@@ -1,9 +1,9 @@
-import { feature, project, route, ui } from '@tenonkit/core'
-import { buildProject } from '@tenonkit/core/ir'
-import { resolvers } from '@tenonkit/data'
-import { createHandler } from '@tenonkit/runtime-server'
-import { zodAdapter } from '@tenonkit/schema-zod'
-import { validate } from '@tenonkit/validator'
+import { feature, project, route, ui } from '@hozu/core'
+import { buildProject } from '@hozu/core/ir'
+import { resolvers } from '@hozu/data'
+import { createHandler } from '@hozu/runtime-server'
+import { zodAdapter } from '@hozu/schema-zod'
+import { validate } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
@@ -50,7 +50,7 @@ const get = (path: string) => handler.fetch(new Request(`https://blog.example${p
 describe('HTTP rules as data (ADR 0016)', () => {
   it('validates clean', () => {
     expect(build.diagnostics).toEqual([])
-    expect(validate(build.ir, { bindings: build.bindings }).map((d) => d.code)).toEqual(['TN025'])
+    expect(validate(build.ir, { bindings: build.bindings }).map((d) => d.code)).toEqual(['HZ025'])
   })
 
   it('serves pages under the base path in their one canonical form', async () => {
@@ -67,7 +67,7 @@ describe('HTTP rules as data (ADR 0016)', () => {
       expect([(await get(from!)).status, (await get(from!)).headers.get('location')]).toEqual([308, to])
     expect((await get('/posts/hello/')).status).toBe(404)
     expect((await get('/shopping')).status).toBe(404)
-    expect((await get('/shop/_tenon/fns.js')).status).toBe(200)
+    expect((await get('/shop/_hozu/fns.js')).status).toBe(200)
   })
 
   it('redirects typed internal targets and external URLs, carrying the query string', async () => {

@@ -1,4 +1,4 @@
-import { type At, at, type Fix, motionClasses, resolveAt } from '@tenonkit/core/ir'
+import { type At, at, type Fix, motionClasses, resolveAt } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { didYouMean } from '../suggest.ts'
 import { walkView } from '../walk.ts'
@@ -17,7 +17,7 @@ export function classNames(ctx: Ctx) {
         if ((node.kind === 'when' || node.kind === 'each' || node.kind === 'if') && node.motion) {
           if (motionClasses(node.motion).every((c) => unknown.has(c)))
             ctx.report(
-              'TN026',
+              'HZ026',
               f.id,
               at(pointer, 'motion'),
               `Motion "${node.motion}" has no CSS`,
@@ -57,7 +57,7 @@ export function classNames(ctx: Ctx) {
                 .join(' ')
             : null
           ctx.report(
-            'TN026',
+            'HZ026',
             f.id,
             p,
             bad.length === 1

@@ -1,8 +1,8 @@
-import { buildProject, routePattern } from '@tenonkit/core/ir'
-import { pathOf } from '@tenonkit/machine'
-import { matcher } from '@tenonkit/runtime-server'
+import { buildProject, routePattern } from '@hozu/core/ir'
+import { pathOf } from '@hozu/machine'
+import { matcher } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
-import project from '../../../examples/feed/tenon.config.ts'
+import project from '../../../examples/feed/hozu.config.ts'
 
 const build = buildProject(project, { sources: false })
 const match = matcher(build)

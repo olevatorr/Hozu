@@ -96,7 +96,7 @@ export function ranges(body: Node): Map<string, Node[]> {
 export async function swap(session: Session, state: State, next: Document, kept: string[]): Promise<boolean> {
   const { doc, apps } = session
   const { views } = state
-  const script = next.getElementById('tenon-payload')
+  const script = next.getElementById('hozu-payload')
   const fresh = ranges(next.body)
   const live = ranges(doc.body)
   if (!script?.textContent || kept.some((v) => !fresh.has(v) || !live.has(v))) return false
@@ -115,7 +115,7 @@ export async function swap(session: Session, state: State, next: Document, kept:
       apps.delete(id)
     }
   for (const v of [...views.keys()]) if (!keep.has(v)) views.delete(v)
-  const anchor = doc.getElementById('tenon-payload')
+  const anchor = doc.getElementById('hozu-payload')
   let cursor = 0
   const order = [...live.keys()].filter((v) => keep.has(v))
   for (const [ref, nodes] of fresh) {
@@ -142,7 +142,7 @@ export async function swap(session: Session, state: State, next: Document, kept:
 export function soft(session: Session) {
   const { doc } = session
   const win = doc.defaultView as (Window & typeof globalThis & { navigation?: EventTarget }) | null
-  const script = doc.getElementById('tenon-payload')
+  const script = doc.getElementById('hozu-payload')
   if (!win?.navigation || !script?.textContent) return
   const state: State = { views: new Map(), soft: {}, routes: {} }
   track(state, session, JSON.parse(script.textContent) as PagePayload, islandsIn(doc.body))
@@ -174,7 +174,7 @@ export function soft(session: Session) {
     e.intercept({
       handler: async () => {
         const root = doc.documentElement
-        root.setAttribute('data-tenon-navigating', '')
+        root.setAttribute('data-hozu-navigating', '')
         try {
           const response = await win.fetch(url.href, { headers: { accept: 'text/html' } })
           const type = response.headers.get('content-type') ?? ''
@@ -196,7 +196,7 @@ export function soft(session: Session) {
         } catch {
           hard()
         } finally {
-          root.removeAttribute('data-tenon-navigating')
+          root.removeAttribute('data-hozu-navigating')
         }
       },
     })

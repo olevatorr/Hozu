@@ -1,4 +1,4 @@
-import { feature } from '@tenonkit/core'
+import { feature } from '@hozu/core'
 import { interactions } from './contracts.ts'
 import { pick, reversed, slideLabel, slides, stats, todoId } from './effects.ts'
 import {

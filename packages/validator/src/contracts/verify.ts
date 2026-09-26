@@ -1,5 +1,5 @@
-import { type Bindings, type FeatureIR, join, routeTable } from '@tenonkit/core/ir'
-import { type CompiledMachine, compileMachine } from '@tenonkit/machine'
+import { type Bindings, type FeatureIR, join, routeTable } from '@hozu/core/ir'
+import { type CompiledMachine, compileMachine } from '@hozu/machine'
 import type { Ctx } from '../context.ts'
 import { type Coverage, drift, type Lockfile, lockOf } from './lock.ts'
 import { runContract } from './run.ts'
@@ -13,7 +13,7 @@ function compile(ctx: Ctx, feature: FeatureIR, bindings: Bindings): CompiledMach
     return compileMachine(feature, bindings.fns, routeTable(ctx.ir))
   } catch (error) {
     ctx.report(
-      'TN015',
+      'HZ015',
       feature.id,
       join('', 'features', feature.id, 'machine'),
       `Machine cannot run: ${(error as Error).message}`,
@@ -45,7 +45,7 @@ export function verifyContracts(ctx: Ctx, bindings: Bindings, lock: Lockfile | n
           run.failure.cause,
           {
             summary:
-              run.failure.code === 'TN017'
+              run.failure.code === 'HZ017'
                 ? 'Make the contract data match the declared schema'
                 : 'Decide which is intended: fix the machine, or update the contract to specify the new behavior',
             snippet: null,
@@ -56,7 +56,7 @@ export function verifyContracts(ctx: Ctx, bindings: Bindings, lock: Lockfile | n
     for (const [id, contracts] of cov)
       if (contracts.size === 0)
         ctx.report(
-          'TN016',
+          'HZ016',
           feature.id,
           transitionPointer(feature.id, id),
           `Transition ${id} is not covered by any contract`,
@@ -73,14 +73,14 @@ export function verifyContracts(ctx: Ctx, bindings: Bindings, lock: Lockfile | n
   if (lock)
     for (const d of drift(lock, next))
       ctx.report(
-        'TN018',
+        'HZ018',
         d.feature,
         transitionPointer(d.feature, d.id),
         `Behavior of ${d.id} changed but none of its contracts did`,
         `Covered by ${d.contracts.join(', ') || 'no contract'}; principle 5 requires every behavior change to change a contract.`,
         {
           summary:
-            'Update or add a contract that specifies the new behavior, then run tenon validate --update-lock',
+            'Update or add a contract that specifies the new behavior, then run hozu validate --update-lock',
           snippet: null,
           patch: null,
         },

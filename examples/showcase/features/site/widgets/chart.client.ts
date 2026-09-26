@@ -1,4 +1,4 @@
-import { implement } from '@tenonkit/core/widget'
+import { implement } from '@hozu/core/widget'
 import { BarController, BarElement, CategoryScale, Chart, LinearScale, Tooltip } from 'chart.js'
 import type { Chart as ChartWidget } from '../widgets.ts'
 

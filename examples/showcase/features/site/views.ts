@@ -1,4 +1,4 @@
-import { op, ui } from '@tenonkit/core'
+import { op, ui } from '@hozu/core'
 import { about, home } from '../../routes.ts'
 import { pick, slideLabel, slides, stats } from './effects.ts'
 import {
@@ -31,7 +31,7 @@ const nav = () =>
     [
       ui.nav({ class: `${container} flex h-16 items-center justify-between` }, [
         ui.a({ href: ui.link(home, null), class: 'text-lg font-bold text-slate-900 dark:text-white' }, [
-          'Tenon',
+          'Hozu',
         ]),
         ui.div({ class: 'flex gap-6 text-sm text-slate-600 dark:text-slate-300' }, [
           ui.a({ href: '#features', class: 'hover:text-indigo-600' }, ['Features']),
@@ -350,7 +350,7 @@ export const Showcase = ui.view({
           {
             class: `${container} border-t border-slate-200 py-10 text-sm text-slate-500 dark:border-slate-800`,
           },
-          ['© 2026 Tenon'],
+          ['© 2026 Hozu'],
         ),
       ],
     ),
@@ -365,7 +365,7 @@ export const About = ui.view({
         ui.main({ class: `${container} prose prose-slate py-20 dark:prose-invert` }, [
           ui.h1({}, ['About this showcase']),
           ui.p({}, [
-            'The same page is built with Tenon and with Nuxt, then compared screenshot by screenshot. See docs/benchmarks/0002-parity.md.',
+            'The same page is built with Hozu and with Nuxt, then compared screenshot by screenshot. See docs/benchmarks/0002-parity.md.',
           ]),
         ]),
       ],

@@ -1,14 +1,16 @@
-# Tenon
+# Hozu
+
+*Hozu (ほぞ) is the Japanese word for a tenon: the part of a joint that fits exactly into its mortise.*
 
 **An AI-first web framework.** Invalid programs are hard to express, and valid programs are cheap to verify, so a
 coding agent can build and change an app with checks instead of guesses.
 
-[![npm](https://img.shields.io/npm/v/@tenonkit/core?label=%40tenonkit%2Fcore)](https://www.npmjs.com/package/@tenonkit/core)
-[![create-tenon](https://img.shields.io/npm/v/create-tenon?label=create-tenon)](https://www.npmjs.com/package/create-tenon)
+[![npm](https://img.shields.io/npm/v/@hozu/core?label=%40hozu%2Fcore)](https://www.npmjs.com/package/@hozu/core)
+[![create-hozu](https://img.shields.io/npm/v/create-hozu?label=create-hozu)](https://www.npmjs.com/package/create-hozu)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 ```sh
-npm create tenon@latest my-app
+npm create hozu@latest my-app
 ```
 
 ## What makes it different
@@ -30,27 +32,27 @@ npm create tenon@latest my-app
 
 ## Quick start
 ```sh
-npm create tenon@latest my-app      # or: pnpm create tenon my-app
+npm create hozu@latest my-app      # or: pnpm create hozu my-app
 cd my-app
 npm install
 npm start                            # http://localhost:3000
 ```
 
-`create-tenon` asks which coding agent will work on the app. To skip the question, pass `--agent`:
+`create-hozu` asks which coding agent will work on the app. To skip the question, pass `--agent`:
 
 | `--agent` | Writes | For |
 |---|---|---|
-| `claude` | `CLAUDE.md` + `.claude/skills/tenon/` | Claude Code (loads it as the `tenon` skill) |
-| `agents` | `AGENTS.md` + `.agents/skills/tenon/` | Codex, Cursor, Copilot and other agents that read `AGENTS.md` |
+| `claude` | `CLAUDE.md` + `.claude/skills/hozu/` | Claude Code (loads it as the `hozu` skill) |
+| `agents` | `AGENTS.md` + `.agents/skills/hozu/` | Codex, Cursor, Copilot and other agents that read `AGENTS.md` |
 | `both` | both | teams that use several agents |
 
 The skill is the whole authoring reference, with a verified example app. It is versioned with the framework:
-after upgrading, `npx tenon skill` rewrites it for the installed version.
+after upgrading, `npx hozu skill` rewrites it for the installed version.
 
 Checks, which an agent runs after every change:
 ```sh
 npx tsc --noEmit -p .
-npx tenon validate          # every rule and every contract; --json for agents
+npx hozu validate          # every rule and every contract; --json for agents
 ```
 
 ## A feature, end to end
@@ -112,10 +114,10 @@ export const adds = contract(todos, {
 - **Only the parts bound to the machine or to that refresh ship JavaScript.** The rest of the page is plain HTML.
 
 ## Measured
-**Same model and same task, Tenon against Nuxt:** a task board built from a spec, then changed. Each app was checked
+**Same model and same task, Hozu against Nuxt:** a task board built from a spec, then changed. Each app was checked
 by a hidden acceptance test ([trial 0007](docs/trials/0007-after-adr-0022.md)).
 
-| | Tenon | Nuxt |
+| | Hozu | Nuxt |
 |---|---|---|
 | Correctness (build, change, regression) | 12/12, 6/6, 12/12 | 12/12, 6/6, 12/12 |
 | Agent cost to change the app | 1.07× | 1× |
@@ -124,7 +126,7 @@ by a hidden acceptance test ([trial 0007](docs/trials/0007-after-adr-0022.md)).
 **Rendering, against React, Vue, Preact and Svelte:** the same 100-item page, 4× CPU throttling
 ([benchmarks](docs/benchmarks/0001-frameworks.md), sixth run).
 
-| | Tenon | Best of the others |
+| | Hozu | Best of the others |
 |---|---|---|
 | Initial JS (gzip) | 7.5 KB | Preact 5.4 KB |
 | Interactive at | 27.8 ms | Preact 26.7 ms |
@@ -135,21 +137,21 @@ by a hidden acceptance test ([trial 0007](docs/trials/0007-after-adr-0022.md)).
 ## Packages
 | Package | What it is |
 |---|---|
-| [`create-tenon`](https://www.npmjs.com/package/create-tenon) | Creates an app, set up for Claude Code or `AGENTS.md` agents |
-| [`@tenonkit/core`](https://www.npmjs.com/package/@tenonkit/core) | IR types and the builders you write apps with |
-| [`@tenonkit/cli`](https://www.npmjs.com/package/@tenonkit/cli) | `tenon validate`, `inspect`, `graph`, `explain`, `impact`, `plan`, `build`, `skill` (all `--json`) |
-| [`@tenonkit/schema-zod`](https://www.npmjs.com/package/@tenonkit/schema-zod) | Zod schemas (the default adapter) |
-| [`@tenonkit/data`](https://www.npmjs.com/package/@tenonkit/data) | Resolvers, cache, tags, invalidation |
-| [`@tenonkit/adapter-node`](https://www.npmjs.com/package/@tenonkit/adapter-node) | Node server with an ISR page cache |
-| [`@tenonkit/adapter-static`](https://www.npmjs.com/package/@tenonkit/adapter-static) | Static export |
-| [`@tenonkit/runtime-server`](https://www.npmjs.com/package/@tenonkit/runtime-server) | Streaming SSR and a web-standard `Request → Response` handler (Bun, Deno, Workers, Vercel) |
-| [`@tenonkit/runtime-client`](https://www.npmjs.com/package/@tenonkit/runtime-client) | The DOM runtime for islands |
-| [`@tenonkit/css`](https://www.npmjs.com/package/@tenonkit/css) | Tailwind CSS v4, compiled from the classes the IR declares |
-| [`@tenonkit/validator`](https://www.npmjs.com/package/@tenonkit/validator) · [`@tenonkit/compiler`](https://www.npmjs.com/package/@tenonkit/compiler) · [`@tenonkit/machine`](https://www.npmjs.com/package/@tenonkit/machine) | Used by the packages above |
-| [`@tenonkit/content`](https://www.npmjs.com/package/@tenonkit/content) | Markdown collections with typed front matter |
-| [`@tenonkit/image`](https://www.npmjs.com/package/@tenonkit/image) | Optional WebP `srcset` and share-image cards (uses sharp) |
-| [`@tenonkit/testing`](https://www.npmjs.com/package/@tenonkit/testing) | Render assertions through the real handler |
-| [`@tenonkit/dev`](https://www.npmjs.com/package/@tenonkit/dev) · [`@tenonkit/bundle`](https://www.npmjs.com/package/@tenonkit/bundle) | Development server; widget bundling |
+| [`create-hozu`](https://www.npmjs.com/package/create-hozu) | Creates an app, set up for Claude Code or `AGENTS.md` agents |
+| [`@hozu/core`](https://www.npmjs.com/package/@hozu/core) | IR types and the builders you write apps with |
+| [`@hozu/cli`](https://www.npmjs.com/package/@hozu/cli) | `hozu validate`, `inspect`, `graph`, `explain`, `impact`, `plan`, `build`, `skill` (all `--json`) |
+| [`@hozu/schema-zod`](https://www.npmjs.com/package/@hozu/schema-zod) | Zod schemas (the default adapter) |
+| [`@hozu/data`](https://www.npmjs.com/package/@hozu/data) | Resolvers, cache, tags, invalidation |
+| [`@hozu/adapter-node`](https://www.npmjs.com/package/@hozu/adapter-node) | Node server with an ISR page cache |
+| [`@hozu/adapter-static`](https://www.npmjs.com/package/@hozu/adapter-static) | Static export |
+| [`@hozu/runtime-server`](https://www.npmjs.com/package/@hozu/runtime-server) | Streaming SSR and a web-standard `Request → Response` handler (Bun, Deno, Workers, Vercel) |
+| [`@hozu/runtime-client`](https://www.npmjs.com/package/@hozu/runtime-client) | The DOM runtime for islands |
+| [`@hozu/css`](https://www.npmjs.com/package/@hozu/css) | Tailwind CSS v4, compiled from the classes the IR declares |
+| [`@hozu/validator`](https://www.npmjs.com/package/@hozu/validator) · [`@hozu/compiler`](https://www.npmjs.com/package/@hozu/compiler) · [`@hozu/machine`](https://www.npmjs.com/package/@hozu/machine) | Used by the packages above |
+| [`@hozu/content`](https://www.npmjs.com/package/@hozu/content) | Markdown collections with typed front matter |
+| [`@hozu/image`](https://www.npmjs.com/package/@hozu/image) | Optional WebP `srcset` and share-image cards (uses sharp) |
+| [`@hozu/testing`](https://www.npmjs.com/package/@hozu/testing) | Render assertions through the real handler |
+| [`@hozu/dev`](https://www.npmjs.com/package/@hozu/dev) · [`@hozu/bundle`](https://www.npmjs.com/package/@hozu/bundle) | Development server; widget bundling |
 
 ## Also included
 - Soft navigation that keeps UI alive between pages.
@@ -170,7 +172,7 @@ The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router 
 - **Version 0.1.0 is the first public release.** The API may change before 1.0. Every design decision is recorded in
   [`docs/adr`](docs/adr).
 
-## Developing Tenon
+## Developing Hozu
 ```sh
 pnpm install
 pnpm gate            # lint, typecheck, tests and performance budgets
@@ -178,4 +180,4 @@ pnpm gate            # lint, typecheck, tests and performance budgets
 Guides for agents working on this repository: [`CLAUDE.md`](CLAUDE.md) and [`AGENTS.md`](AGENTS.md).
 
 ## License
-[MIT](LICENSE) © olevatorr. Tenon is an independent project, not affiliated with other products named Tenon.
+[MIT](LICENSE) © olevatorr.

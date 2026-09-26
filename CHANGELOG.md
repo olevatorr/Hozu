@@ -2,7 +2,8 @@
 
 ## 0.1.0 — first public release
 
-All packages are published under `@tenonkit/*`, plus [`create-tenon`](https://www.npmjs.com/package/create-tenon).
+All packages are published under `@hozu/*`, plus [`create-hozu`](https://www.npmjs.com/package/create-hozu).
+The framework was developed under the working name Tenon (see `docs/adr` 0001–0025).
 
 ### Authoring
 - **Declarations:**
@@ -10,7 +11,7 @@ All packages are published under `@tenonkit/*`, plus [`create-tenon`](https://ww
     messages;
   - `feature({ id, intent, declarations })` sorts declarations by kind (ADR 0022).
 - **Contracts:** given / when / expect for every transition. `expect.changes` states only what changes. A behaviour
-  lock catches drift (TN016, TN018).
+  lock catches drift (HZ016, HZ018).
 - **Views:** typed element trees with every HTML/SVG element, typed attributes and DOM events, `toggle` and `vars`,
   Tailwind classes checked against the generated CSS, `ui.if`, `ui.each`, `ui.query` and motion.
 - **Routes:**
@@ -26,19 +27,19 @@ All packages are published under `@tenonkit/*`, plus [`create-tenon`](https://ww
   - Markdown collections;
   - image `srcset` and share images;
   - preview mode, PWA and an offline page;
-  - `@tenonkit/testing`.
+  - `@hozu/testing`.
 
 ### Rendering
 - **Render plans are derived per node:** static, ISR, SWR, streamed or client. User-scoped data cannot reach a
   cacheable region.
-- **Server HTML comes from generated JavaScript** (ADR 0024). `tenon build` writes it for edge runtimes.
+- **Server HTML comes from generated JavaScript** (ADR 0024). `hozu build` writes it for edge runtimes.
 - **The client runtime** hydrates only machine-bound islands. It is 7.5 KB gzipped, with a compact payload and
   modulepreload (ADR 0023).
 
 ### Tools
-- `tenon validate | inspect | graph | explain | impact | plan | build | skill`, all with `--json` and JSON Schemas.
+- `hozu validate | inspect | graph | explain | impact | plan | build | skill`, all with `--json` and JSON Schemas.
 - 43 diagnostic codes, each with a location, a cause and a fix.
-- `create-tenon --agent claude|agents|both`: writes `CLAUDE.md` or `AGENTS.md`, plus the versioned authoring skill
+- `create-hozu --agent claude|agents|both`: writes `CLAUDE.md` or `AGENTS.md`, plus the versioned authoring skill
   with a verified example.
 
 ### Requirements

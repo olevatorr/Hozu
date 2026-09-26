@@ -1,4 +1,4 @@
-import { implement } from '@tenonkit/core/widget'
+import { implement } from '@hozu/core/widget'
 import type { Frame } from './meter.ts'
 
 export default implement<typeof Frame>(({ el, props }) => {

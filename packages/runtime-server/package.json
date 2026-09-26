@@ -1,9 +1,9 @@
 {
-  "name": "@tenonkit/runtime-server",
+  "name": "@hozu/runtime-server",
   "version": "0.1.0",
-  "description": "Tenon server runtime: generated render functions, in-order streaming SSR and a web-standard handler",
+  "description": "Hozu server runtime: generated render functions, in-order streaming SSR and a web-standard handler",
   "keywords": [
-    "tenon",
+    "hozu",
     "framework",
     "ai",
     "agents",
@@ -11,13 +11,13 @@
     "islands",
     "typescript"
   ],
-  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/runtime-server#readme",
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/runtime-server#readme",
   "bugs": {
-    "url": "https://github.com/olevatorr/Tenon/issues"
+    "url": "https://github.com/olevatorr/Hozu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
     "directory": "packages/runtime-server"
   },
   "license": "MIT",
@@ -39,11 +39,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@tenonkit/compiler": "workspace:*",
-    "@tenonkit/core": "workspace:*",
-    "@tenonkit/data": "workspace:*",
-    "@tenonkit/machine": "workspace:*",
-    "@tenonkit/runtime-client": "workspace:*"
+    "@hozu/compiler": "workspace:*",
+    "@hozu/core": "workspace:*",
+    "@hozu/data": "workspace:*",
+    "@hozu/machine": "workspace:*",
+    "@hozu/runtime-client": "workspace:*"
   },
   "sideEffects": false
 }

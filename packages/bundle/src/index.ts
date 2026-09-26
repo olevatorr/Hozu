@@ -1,5 +1,5 @@
 import { relative } from 'node:path'
-import { type BuildResult, codes, type Diagnostic, join } from '@tenonkit/core/ir'
+import { type BuildResult, codes, type Diagnostic, join } from '@hozu/core/ir'
 import { build } from 'esbuild'
 
 export interface WidgetBundle {
@@ -8,7 +8,7 @@ export interface WidgetBundle {
   diagnostics: Diagnostic[]
 }
 
-const base = '/_tenon/w'
+const base = '/_hozu/w'
 
 export async function bundleWidgets(
   project: BuildResult,
@@ -42,8 +42,8 @@ export async function bundleWidgets(
     if (meta.exports.includes('default')) continue
     const [feature, symbol] = ref.split('.') as [string, string]
     out.diagnostics.push({
-      code: 'TN029',
-      severity: codes.TN029.severity,
+      code: 'HZ029',
+      severity: codes.HZ029.severity,
       message: `Widget module for ${ref} has no default export`,
       location: {
         feature,

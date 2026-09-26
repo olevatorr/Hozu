@@ -7,7 +7,7 @@ import {
   type JsonSchema,
   resolveAt,
   type ValueExpr,
-} from '@tenonkit/core/ir'
+} from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import {
   contextEnv,
@@ -41,7 +41,7 @@ function reportMismatch(
   const where = m.path.length ? `${what}.${m.path.join('.')}` : what
   const target = at(pointer, 'literal', ...m.path)
   ctx.report(
-    'TN031',
+    'HZ031',
     feature,
     target,
     `${JSON.stringify(actual)} is not a valid value for ${where}.${didYouMean(guess)}`,

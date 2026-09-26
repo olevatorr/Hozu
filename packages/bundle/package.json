@@ -1,9 +1,9 @@
 {
-  "name": "@tenonkit/bundle",
+  "name": "@hozu/bundle",
   "version": "0.1.0",
-  "description": "Bundles Tenon widget client modules with esbuild",
+  "description": "Bundles Hozu widget client modules with esbuild",
   "keywords": [
-    "tenon",
+    "hozu",
     "framework",
     "ai",
     "agents",
@@ -11,13 +11,13 @@
     "islands",
     "typescript"
   ],
-  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/bundle#readme",
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/bundle#readme",
   "bugs": {
-    "url": "https://github.com/olevatorr/Tenon/issues"
+    "url": "https://github.com/olevatorr/Hozu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
     "directory": "packages/bundle"
   },
   "license": "MIT",
@@ -39,7 +39,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@tenonkit/core": "workspace:*",
+    "@hozu/core": "workspace:*",
     "esbuild": "0.28.2"
   },
   "sideEffects": false

@@ -1,4 +1,4 @@
-import type { Json } from '@tenonkit/core/ir'
+import type { Json } from '@hozu/core/ir'
 import type { WidgetRef, WidgetSetup } from './mount.ts'
 
 export interface WidgetHost {

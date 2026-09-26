@@ -1,4 +1,4 @@
-import { contract } from '@tenonkit/core'
+import { contract } from '@hozu/core'
 import { addTask, clearDone, toggleTask } from './effects.ts'
 import { Add, ClearDone, Draft, SetShow, Toggle } from './events.ts'
 import { DUPLICATE, INVALID, tasksMachine } from './machine.ts'

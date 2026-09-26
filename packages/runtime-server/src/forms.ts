@@ -5,8 +5,8 @@ import {
   formRunnable,
   type Json,
   type ViewNode,
-} from '@tenonkit/core/ir'
-import type { DataRuntime } from '@tenonkit/data'
+} from '@hozu/core/ir'
+import type { DataRuntime } from '@hozu/data'
 import {
   compileMachine,
   compileValue,
@@ -15,7 +15,7 @@ import {
   type Snapshot,
   type Step,
   transition,
-} from '@tenonkit/machine'
+} from '@hozu/machine'
 
 const children = (n: ViewNode): ViewNode[] => {
   switch (n.kind) {

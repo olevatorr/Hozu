@@ -1,9 +1,9 @@
 {
-  "name": "@tenonkit/dev",
+  "name": "@hozu/dev",
   "version": "0.1.0",
-  "description": "Tenon development server: CSS hot swap and state-keeping reloads",
+  "description": "Hozu development server: CSS hot swap and state-keeping reloads",
   "keywords": [
-    "tenon",
+    "hozu",
     "framework",
     "ai",
     "agents",
@@ -11,20 +11,20 @@
     "islands",
     "typescript"
   ],
-  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/dev#readme",
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/dev#readme",
   "bugs": {
-    "url": "https://github.com/olevatorr/Tenon/issues"
+    "url": "https://github.com/olevatorr/Hozu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
     "directory": "packages/dev"
   },
   "license": "MIT",
   "author": "olevatorr",
   "type": "module",
   "bin": {
-    "tenon-dev": "./dist/bin.js"
+    "hozu-dev": "./dist/bin.js"
   },
   "exports": {
     ".": {
@@ -42,7 +42,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@tenonkit/runtime-client": "workspace:*"
+    "@hozu/runtime-client": "workspace:*"
   },
   "sideEffects": false
 }

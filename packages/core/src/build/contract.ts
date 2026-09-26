@@ -32,7 +32,7 @@ export function buildContract(scope: FeatureScope, symbol: string, decl: Decl): 
   const owner = scope.project.owners.get(d.machine)
   if (owner?.feature !== scope.id)
     scope.report(
-      'TN006',
+      'HZ006',
       p,
       'Contract targets a machine outside this feature',
       'Contracts specify the behavior of their own feature machine.',

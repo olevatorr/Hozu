@@ -1,9 +1,9 @@
-import { createServer } from '@tenonkit/adapter-node'
-import { bundleWidgets } from '@tenonkit/bundle'
-import { buildProject } from '@tenonkit/core/ir'
-import { compileStyles } from '@tenonkit/css'
+import { createServer } from '@hozu/adapter-node'
+import { bundleWidgets } from '@hozu/bundle'
+import { buildProject } from '@hozu/core/ir'
+import { compileStyles } from '@hozu/css'
+import project from './hozu.config.ts'
 import { createResolvers } from './server.ts'
-import project from './tenon.config.ts'
 
 const port = Number(process.env.PORT ?? 3000)
 const build = buildProject(project, { sources: false })
@@ -15,4 +15,4 @@ createServer({
   styles: await compileStyles(build),
   widgets,
   resolvers: createResolvers(),
-}).listen(port, () => console.log(`Tenon showcase on http://localhost:${port}`))
+}).listen(port, () => console.log(`Hozu showcase on http://localhost:${port}`))

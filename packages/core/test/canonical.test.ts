@@ -1,4 +1,4 @@
-import { canonicalStringify, hashJson, join, parsePointer, resolveSource } from '@tenonkit/core/ir'
+import { canonicalStringify, hashJson, join, parsePointer, resolveSource } from '@hozu/core/ir'
 import { describe, expect, it } from 'vitest'
 
 describe('canonical JSON', () => {

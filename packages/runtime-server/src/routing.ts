@@ -1,4 +1,4 @@
-import { type BuildResult, type Json, routeParams, routePattern } from '@tenonkit/core/ir'
+import { type BuildResult, type Json, routeParams, routePattern } from '@hozu/core/ir'
 
 export interface Match {
   route: string

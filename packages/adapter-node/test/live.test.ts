@@ -1,8 +1,8 @@
 import { get, request } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { createServer } from '@tenonkit/adapter-node'
-import { buildProject } from '@tenonkit/core/ir'
-import { hydrate } from '@tenonkit/runtime-client'
+import { createServer } from '@hozu/adapter-node'
+import { buildProject } from '@hozu/core/ir'
+import { hydrate } from '@hozu/runtime-client'
 import { Window } from 'happy-dom'
 import { describe, expect, it } from 'vitest'
 import { liveResolvers, site } from './support-live.ts'
@@ -39,7 +39,7 @@ describe('client fetch for new query keys (G4) and live queries (G11)', () => {
       expect(html).toContain(
         '"live":{"finder.clock{}":{"query":"finder.clock","input":{},"tags":["finder.clockTag"]}}',
       )
-      expect(await post(base, '/_tenon/query', { query: 'finder.nope', input: {} })).toBe('Unknown query')
+      expect(await post(base, '/_hozu/query', { query: 'finder.nope', input: {} })).toBe('Unknown query')
 
       const window = new Window({ url: base })
       const document = window.document as unknown as Document
@@ -50,7 +50,7 @@ describe('client fetch for new query keys (G4) and live queries (G11)', () => {
         loadFns: async () => ({}),
         query: async (q, input) => {
           queried.push(q + JSON.stringify(input))
-          return JSON.parse(await post(base, '/_tenon/query', { query: q, input }))
+          return JSON.parse(await post(base, '/_hozu/query', { query: q, input }))
         },
         live: (onTags) => {
           push = onTags
@@ -82,7 +82,7 @@ describe('client fetch for new query keys (G4) and live queries (G11)', () => {
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
     try {
       const received = await new Promise<string>((resolve) => {
-        get(`${base}/_tenon/live`, (res) => {
+        get(`${base}/_hozu/live`, (res) => {
           expect(res.headers['content-type']).toBe('text/event-stream')
           res.on('data', (c: Buffer) => {
             const m = /data: (.*)\n\n/.exec(c.toString())

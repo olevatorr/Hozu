@@ -1,4 +1,4 @@
-import { at, formRunnable } from '@tenonkit/core/ir'
+import { at, formRunnable } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { walkView } from '../walk.ts'
 
@@ -10,7 +10,7 @@ export function progressiveForms(ctx: Ctx) {
         if (node.kind !== 'el' || node.tag !== 'form' || !node.on.submit) return
         if (formRunnable(node.on.submit.payload)) return
         ctx.report(
-          'TN036',
+          'HZ036',
           f.id,
           at(pointer, 'on', 'submit', 'payload'),
           `This form only works with JavaScript: its ${node.on.submit.event} payload reads values the server cannot see`,

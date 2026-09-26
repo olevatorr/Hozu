@@ -1,14 +1,14 @@
-import { buildProject } from '@tenonkit/core/ir'
-import { createDataRuntime } from '@tenonkit/data'
-import { compileMachine, init, transition } from '@tenonkit/machine'
-import { createHandler } from '@tenonkit/runtime-server'
+import { buildProject } from '@hozu/core/ir'
+import { createDataRuntime } from '@hozu/data'
+import { compileMachine, init, transition } from '@hozu/machine'
+import { createHandler } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
+import bookmarks from '../../../examples/bookmarks/hozu.config.ts'
 import { createResolvers as bookmarkResolvers } from '../../../examples/bookmarks/server.ts'
-import bookmarks from '../../../examples/bookmarks/tenon.config.ts'
+import cart from '../../../examples/cart/hozu.config.ts'
 import { createResolvers as cartResolvers } from '../../../examples/cart/server.ts'
-import cart from '../../../examples/cart/tenon.config.ts'
+import tasks from '../../../examples/trial-tasks/hozu.config.ts'
 import { createResolvers as taskResolvers } from '../../../examples/trial-tasks/server.ts'
-import tasks from '../../../examples/trial-tasks/tenon.config.ts'
 
 const cartBuild = buildProject(cart, { sources: false })
 const session = () => ({ userId: 'ada' })
@@ -22,7 +22,7 @@ describe('typed environment (ADR 0019)', () => {
       env: { STOCK_LIMIT: '987654', SUPPORT_EMAIL: 'team@example.com' },
     })
     const html = await (await handler.fetch(new Request('https://cart.example/'))).text()
-    const payload = /id="tenon-payload">(.*?)<\/script>/.exec(html)![1]!
+    const payload = /id="hozu-payload">(.*?)<\/script>/.exec(html)![1]!
     expect(payload).toContain('{"literal":"team@example.com"}')
     expect(payload).not.toContain('"ref":"env"')
     expect(html).not.toContain('987654')

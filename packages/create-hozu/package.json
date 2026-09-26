@@ -1,0 +1,47 @@
+{
+  "name": "create-hozu",
+  "version": "0.1.0",
+  "description": "Create a Hozu app, set up for Claude Code or for agents that read AGENTS.md",
+  "keywords": [
+    "hozu",
+    "framework",
+    "ai",
+    "agents",
+    "ssr",
+    "islands",
+    "typescript"
+  ],
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/create-hozu#readme",
+  "bugs": {
+    "url": "https://github.com/olevatorr/Hozu/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
+    "directory": "packages/create-hozu"
+  },
+  "license": "MIT",
+  "author": "olevatorr",
+  "type": "module",
+  "bin": {
+    "create-hozu": "./bin/create-hozu.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "bin",
+    "dist",
+    "templates",
+    "skill"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

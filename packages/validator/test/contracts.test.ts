@@ -1,6 +1,6 @@
-import type { DiagnosticCode, ProjectIR, ValueExpr } from '@tenonkit/core/ir'
-import { compileMachine } from '@tenonkit/machine'
-import { type Lockfile, runContract, verify } from '@tenonkit/validator'
+import type { DiagnosticCode, ProjectIR, ValueExpr } from '@hozu/core/ir'
+import { compileMachine } from '@hozu/machine'
+import { type Lockfile, runContract, verify } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
 import { cartBuild, cartIR } from './support/cart.ts'
 
@@ -21,7 +21,7 @@ interface Case {
 const catalog: Case[] = [
   {
     name: 'machine changed, contract now fails',
-    code: 'TN015',
+    code: 'HZ015',
     pointer: '/features/cart/contracts/rejectsOutOfStock/expect/state',
     mutate: (ir) => {
       cart(ir).machine!.states.adding!.invoke!.failed.OutOfStock![0]!.target = 'idle'
@@ -29,7 +29,7 @@ const catalog: Case[] = [
   },
   {
     name: 'contract answers an effect that is not pending',
-    code: 'TN015',
+    code: 'HZ015',
     pointer: '/features/cart/contracts/addsItem/when/1',
     mutate: (ir) => {
       const step = cart(ir).contracts.addsItem!.when[1] as { done: string }
@@ -38,7 +38,7 @@ const catalog: Case[] = [
   },
   {
     name: 'contract expects the wrong context',
-    code: 'TN015',
+    code: 'HZ015',
     pointer: '/features/cart/contracts/dismissesError/expect/context',
     mutate: (ir) => {
       cart(ir).contracts.dismissesError!.expect.context = {
@@ -50,7 +50,7 @@ const catalog: Case[] = [
   },
   {
     name: 'new transition without a contract',
-    code: 'TN016',
+    code: 'HZ016',
     pointer: '/features/cart/machine/states/idle/on/cart.Dismiss/0',
     mutate: (ir) => {
       cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [
@@ -60,7 +60,7 @@ const catalog: Case[] = [
   },
   {
     name: 'contract payload does not match the event schema',
-    code: 'TN017',
+    code: 'HZ017',
     pointer: '/features/cart/contracts/addsItem/when/0/payload',
     mutate: (ir) => {
       ;(cart(ir).contracts.addsItem!.when[0] as { payload: unknown }).payload = { sku: 'mug' }
@@ -68,7 +68,7 @@ const catalog: Case[] = [
   },
   {
     name: 'contract error data does not match the error schema',
-    code: 'TN017',
+    code: 'HZ017',
     pointer: '/features/cart/contracts/paymentDeclined/when/0/data',
     mutate: (ir) => {
       ;(cart(ir).contracts.paymentDeclined!.when[0] as { data: unknown }).data = { code: 51 }
@@ -96,19 +96,19 @@ describe('Phase 1 behavior catalog', () => {
     expect(d.fix?.patch).toBeNull()
   })
 
-  it('TN016 suggests a contract filled from the declarations', () => {
+  it('HZ016 suggests a contract filled from the declarations', () => {
     const ir = cartIR()
     cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [
       { guard: null, target: 'idle', assign: [], navigate: null },
     ]
-    const d = run(ir).diagnostics.find((x) => x.code === 'TN016')!
+    const d = run(ir).diagnostics.find((x) => x.code === 'HZ016')!
     expect(d.fix?.snippet).toContain("given: { state: 'idle'")
     expect(d.fix?.snippet).toContain('{ send: Dismiss, payload: {} }')
     expect(d.fix?.snippet).toContain("expect: { state: 'idle' }")
     expect(d.fix?.snippet).toContain('placeholders')
   })
 
-  it('TN016 lists only the assigned fields as changes', () => {
+  it('HZ016 lists only the assigned fields as changes', () => {
     const ir = cartIR()
     cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [
       {
@@ -118,7 +118,7 @@ describe('Phase 1 behavior catalog', () => {
         navigate: null,
       },
     ]
-    const d = run(ir).diagnostics.find((x) => x.code === 'TN016')!
+    const d = run(ir).diagnostics.find((x) => x.code === 'HZ016')!
     expect(d.fix?.snippet).toContain("expect: { state: 'idle', changes: { pending: { qty: 1 } } }")
     expect(d.fix?.snippet).toContain('decide the expected pending.qty')
   })
@@ -130,17 +130,17 @@ describe('Phase 1 behavior catalog', () => {
     guard.args[1]!.right = { literal: 50 }
   }
 
-  it('TN018 — behavior changed while every contract still passes', () => {
+  it('HZ018 — behavior changed while every contract still passes', () => {
     const baseline = run(cartIR()).lock!
     const ir = cartIR()
     raiseLimit(ir)
     const { diagnostics } = run(ir, baseline)
-    expect(diagnostics.map((d) => d.code)).toEqual(['TN018'])
+    expect(diagnostics.map((d) => d.code)).toEqual(['HZ018'])
     expect(diagnostics[0]!.location.pointer).toBe('/features/cart/machine/states/idle/on/cart.SetQuantity/0')
     expect(diagnostics[0]!.cause).toContain('setsQuantity')
   })
 
-  it('TN018 is satisfied once a covering contract changes', () => {
+  it('HZ018 is satisfied once a covering contract changes', () => {
     const baseline = run(cartIR()).lock!
     const ir = cartIR()
     raiseLimit(ir)
@@ -151,7 +151,7 @@ describe('Phase 1 behavior catalog', () => {
   it('contracts do not run on a statically invalid feature', () => {
     const ir = cartIR()
     cart(ir).machine!.initial = 'idel'
-    expect(run(ir).diagnostics.map((d) => d.code)).toEqual(['TN007'])
+    expect(run(ir).diagnostics.map((d) => d.code)).toEqual(['HZ007'])
   })
 })
 

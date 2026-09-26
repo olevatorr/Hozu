@@ -9,7 +9,7 @@ import { devClient } from './client.ts'
 let bundle: string | null = null
 const devBundle = () =>
   (bundle ??= readFileSync(
-    fileURLToPath(import.meta.resolve('@tenonkit/runtime-client/browser-dev/client.js')),
+    fileURLToPath(import.meta.resolve('@hozu/runtime-client/browser-dev/client.js')),
     'utf8',
   ))
 
@@ -45,7 +45,7 @@ export async function dev({
   const start = () => {
     child = spawn(process.execPath, [entry], {
       cwd,
-      env: { ...process.env, PORT: String(appPort), TENON_DEV: '1' },
+      env: { ...process.env, PORT: String(appPort), HOZU_DEV: '1' },
       stdio: ['ignore', 'pipe', 'inherit'],
     })
     ready = new Promise((resolve) => {
@@ -100,16 +100,16 @@ export async function dev({
   await ready
 
   const server = createServer((req, res) => {
-    if (req.url === '/_tenon/dev') {
+    if (req.url === '/_hozu/dev') {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' })
       res.write(': connected\n\n')
       clients.add(res)
       req.on('close', () => clients.delete(res))
       return
     }
-    if (req.url === '/_tenon/dev.js')
+    if (req.url === '/_hozu/dev.js')
       return void res.writeHead(200, { 'content-type': 'text/javascript' }).end(devClient)
-    if (req.url?.split('?')[0]?.endsWith('/_tenon/client.js'))
+    if (req.url?.split('?')[0]?.endsWith('/_hozu/client.js'))
       return void res
         .writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store' })
         .end(devBundle())
@@ -129,7 +129,7 @@ export async function dev({
             const text = chunk.toString()
             res.write(
               text.includes('</body>')
-                ? text.replace('</body>', '<script type="module" src="/_tenon/dev.js"></script></body>')
+                ? text.replace('</body>', '<script type="module" src="/_hozu/dev.js"></script></body>')
                 : text,
             )
           })

@@ -1,9 +1,9 @@
 {
-  "name": "@tenonkit/image",
+  "name": "@hozu/image",
   "version": "0.1.0",
-  "description": "Optional build-time image optimisation (WebP srcset) and share-image cards for Tenon, using sharp",
+  "description": "Optional build-time image optimisation (WebP srcset) and share-image cards for Hozu, using sharp",
   "keywords": [
-    "tenon",
+    "hozu",
     "framework",
     "ai",
     "agents",
@@ -11,13 +11,13 @@
     "islands",
     "typescript"
   ],
-  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/image#readme",
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/image#readme",
   "bugs": {
-    "url": "https://github.com/olevatorr/Tenon/issues"
+    "url": "https://github.com/olevatorr/Hozu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
     "directory": "packages/image"
   },
   "license": "MIT",
@@ -39,7 +39,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@tenonkit/core": "workspace:*",
+    "@hozu/core": "workspace:*",
     "sharp": "0.35.4"
   },
   "sideEffects": false

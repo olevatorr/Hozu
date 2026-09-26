@@ -56,7 +56,7 @@
       "path": "packages/bundle"
     },
     {
-      "path": "packages/create-tenon"
+      "path": "packages/create-hozu"
     }
   ]
 }

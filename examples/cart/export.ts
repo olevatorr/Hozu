@@ -1,8 +1,8 @@
-import { exportStatic } from '@tenonkit/adapter-static'
-import { buildProject } from '@tenonkit/core/ir'
-import { compileStyles } from '@tenonkit/css'
+import { exportStatic } from '@hozu/adapter-static'
+import { buildProject } from '@hozu/core/ir'
+import { compileStyles } from '@hozu/css'
+import project from './hozu.config.ts'
 import { createResolvers } from './server.ts'
-import project from './tenon.config.ts'
 
 const build = buildProject(project, { sources: false })
 const result = await exportStatic({

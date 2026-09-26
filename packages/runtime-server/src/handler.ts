@@ -1,4 +1,4 @@
-import { planRoute } from '@tenonkit/compiler'
+import { planRoute } from '@hozu/compiler'
 import {
   type BuildResult,
   FORM_FIELD,
@@ -10,10 +10,10 @@ import {
   routeParams,
   routePattern,
   routeTable,
-} from '@tenonkit/core/ir'
-import { createDataRuntime, type OnError, type ResolverSet } from '@tenonkit/data'
-import { compileValue } from '@tenonkit/machine'
-import type { EffectResponse, Result } from '@tenonkit/runtime-client'
+} from '@hozu/core/ir'
+import { createDataRuntime, type OnError, type ResolverSet } from '@hozu/data'
+import { compileValue } from '@hozu/machine'
+import type { EffectResponse, Result } from '@hozu/runtime-client'
 import { clientBundle } from './assets.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'
@@ -128,7 +128,7 @@ export function createHandler({
   now = Date.now,
   styles = null,
   widgets = null,
-  onError = (error, info) => console.error('[tenon]', info, error),
+  onError = (error, info) => console.error('[hozu]', info, error),
   csp = {},
   cache = memoryCache(),
   readFile,
@@ -162,7 +162,7 @@ export function createHandler({
   if (preview && preview.secret.length < 32) throw new Error('preview.secret must be at least 32 characters')
   const previewCookie = preview
     ? sessionCookie({
-        name: 'tenon_preview',
+        name: 'hozu_preview',
         secret: preview.secret,
         maxAge: 60 * 60,
         secure: preview.secure ?? true,
@@ -175,7 +175,7 @@ export function createHandler({
   const publicEnv = (parsedPublic?.ok ? parsedPublic.value : {}) as Json
   const variants = manifest?.images ?? images?.variants ?? null
   if (manifest && manifest.irHash !== hashJson(build.ir))
-    throw new Error('The build manifest does not match this project; run `tenon build` again')
+    throw new Error('The build manifest does not match this project; run `hozu build` again')
   const store = typeof sessionOption === 'function' ? null : sessionOption
   const session = store
     ? (request: Request) => store.read(request)
@@ -418,7 +418,7 @@ export function createHandler({
       if (cached.redirect) return see(cached.redirect)
       return new Response(head ? null : cached.html, {
         status: statusOf(cached.status),
-        headers: { ...headers, 'x-tenon-cache': state },
+        headers: { ...headers, 'x-hozu-cache': state },
       })
     }
     const rendered = await renderPage({
@@ -437,7 +437,7 @@ export function createHandler({
     if (rendered.redirect) return see(rendered.redirect)
     return new Response(head ? null : stream(rendered.chunks, (e) => onError(e, { path })), {
       status: statusOf(rendered.status),
-      headers: { ...headers, 'x-tenon-cache': 'bypass' },
+      headers: { ...headers, 'x-hozu-cache': 'bypass' },
     })
   }
 
@@ -542,21 +542,21 @@ export function createHandler({
 
   const route = async (request: Request, url: URL, path: string): Promise<Response> => {
     if (request.method === 'POST' && crossSite(request)) return plain(403, 'Cross-site request rejected')
-    if (request.method === 'POST' && !path.startsWith('/_tenon/')) return formPost(request, url, path)
-    if (request.method === 'POST' && path === '/_tenon/effect') return effect(request)
-    if (request.method === 'POST' && path === '/_tenon/query') {
+    if (request.method === 'POST' && !path.startsWith('/_hozu/')) return formPost(request, url, path)
+    if (request.method === 'POST' && path === '/_hozu/effect') return effect(request)
+    if (request.method === 'POST' && path === '/_hozu/query') {
       const { query, input } = (await request.json()) as { query: string; input: Json }
       if (!queries.includes(query)) return plain(400, 'Unknown query')
       return json(await dataFor(request).run(query, input, await session(request)))
     }
-    if (path === '/_tenon/live') return live()
+    if (path === '/_hozu/live') return live()
     if (path === '/manifest.webmanifest' && manifestText)
       return text('application/manifest+json', manifestText, request.method === 'HEAD')
     if (path === '/sw.js' && worker)
       return text('text/javascript', worker, request.method === 'HEAD', 'no-cache')
-    if (path === '/_tenon/sw-register.js' && worker)
+    if (path === '/_hozu/sw-register.js' && worker)
       return text('text/javascript', serviceWorkerRegistration(ir), request.method === 'HEAD')
-    if (path === '/_tenon/og.png') {
+    if (path === '/_hozu/og.png') {
       const png = ogImage(url)
       if (!png) return missing(request)
       return new Response(
@@ -566,19 +566,19 @@ export function createHandler({
         },
       )
     }
-    if (path === '/_tenon/preview') return enterPreview(url)
-    if (path === '/_tenon/preview/exit') return exitPreview(url)
+    if (path === '/_hozu/preview') return enterPreview(url)
+    if (path === '/_hozu/preview/exit') return exitPreview(url)
     const head = request.method === 'HEAD'
     if (request.method !== 'GET' && !head) return plain(405, null, { allow: 'GET, HEAD, POST' })
     const client = clientBundle()[path]
     if (client !== undefined) return text('text/javascript', client, head)
-    if (path === '/_tenon/fns.js') return text('text/javascript', fns, head)
+    if (path === '/_hozu/fns.js') return text('text/javascript', fns, head)
     const variant = images?.files[basePath + path]
     if (variant)
       return new Response(head ? null : (variant as ConstructorParameters<typeof Response>[0]), {
         headers: { 'content-type': 'image/webp', 'cache-control': IMMUTABLE },
       })
-    const file = path.startsWith('/_tenon/a/') ? asset(basePath + path) : null
+    const file = path.startsWith('/_hozu/a/') ? asset(basePath + path) : null
     if (file)
       return new Response(head ? null : ((await file) as ConstructorParameters<typeof Response>[0]), {
         headers: {
@@ -623,7 +623,7 @@ export function createHandler({
         return path === null ? await missing(request) : await route(request, url, path)
       } catch (error) {
         onError(error, { path: url.pathname })
-        if ((within(url.pathname) ?? '').startsWith('/_tenon/')) return plain(500, 'Internal error')
+        if ((within(url.pathname) ?? '').startsWith('/_hozu/')) return plain(500, 'Internal error')
         let html = ERROR_HTML
         if (ir.error)
           try {

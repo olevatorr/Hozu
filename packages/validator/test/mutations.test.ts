@@ -1,5 +1,5 @@
-import type { DiagnosticCode, ElementNode, ProjectIR, QueryNode, TextNode, WhenNode } from '@tenonkit/core/ir'
-import { validate } from '@tenonkit/validator'
+import type { DiagnosticCode, ElementNode, ProjectIR, QueryNode, TextNode, WhenNode } from '@hozu/core/ir'
+import { validate } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
 import { cartBuild, cartIR, findNode, nodeAt } from './support/cart.ts'
 import { applyPatch } from './support/patch.ts'
@@ -20,35 +20,35 @@ const isButton = (label: string) => (n: { kind: string }) =>
 const catalog: Mutation[] = [
   {
     name: 'typo in a transition target',
-    code: 'TN007',
+    code: 'HZ007',
     mutate: (ir) => {
       states(ir).idle!.on['cart.RemoveItem']![0]!.target = 'removin'
     },
   },
   {
     name: 'typo in the initial state',
-    code: 'TN007',
+    code: 'HZ007',
     mutate: (ir) => {
       cart(ir).machine!.initial = 'idel'
     },
   },
   {
     name: 'declared error left unhandled',
-    code: 'TN004',
+    code: 'HZ004',
     mutate: (ir) => {
       delete states(ir).adding!.invoke!.failed.OutOfStock
     },
   },
   {
     name: 'Unexpected error left unhandled',
-    code: 'TN004',
+    code: 'HZ004',
     mutate: (ir) => {
       delete states(ir).removing!.invoke!.failed.Unexpected
     },
   },
   {
     name: 'view query without a failure branch',
-    code: 'TN004',
+    code: 'HZ004',
     mutate: (ir) => {
       const { node } = findNode(
         cart(ir),
@@ -60,7 +60,7 @@ const catalog: Mutation[] = [
   },
   {
     name: 'orphan state',
-    code: 'TN001',
+    code: 'HZ001',
     mutate: (ir) => {
       states(ir).limbo = {
         final: false,
@@ -73,21 +73,21 @@ const catalog: Mutation[] = [
   },
   {
     name: 'only path to a state removed',
-    code: 'TN001',
+    code: 'HZ001',
     mutate: (ir) => {
       states(ir).checkingOut!.invoke!.done[0]!.target = 'idle'
     },
   },
   {
     name: 'event declared but never handled',
-    code: 'TN002',
+    code: 'HZ002',
     mutate: (ir) => {
       cart(ir).events.Refresh = { payload: cart(ir).events.Dismiss!.payload }
     },
   },
   {
     name: 'button visible in a state that ignores its event',
-    code: 'TN005',
+    code: 'HZ005',
     mutate: (ir) => {
       const { pointer } = findNode(
         cart(ir),
@@ -99,7 +99,7 @@ const catalog: Mutation[] = [
   },
   {
     name: 'button moved outside its when()',
-    code: 'TN005',
+    code: 'HZ005',
     mutate: (ir) => {
       const { pointer } = findNode(
         cart(ir),
@@ -112,7 +112,7 @@ const catalog: Mutation[] = [
   },
   {
     name: 'DOM field that the event does not carry',
-    code: 'TN027',
+    code: 'HZ027',
     mutate: (ir) => {
       const { node } = findNode(cart(ir), 'CartPanel', (n) => n.kind === 'el' && n.tag === 'input')
       ;(node as ElementNode).on.input = {
@@ -123,7 +123,7 @@ const catalog: Mutation[] = [
   },
   {
     name: 'foreign view sends an event it cannot observe',
-    code: 'TN005',
+    code: 'HZ005',
     mutate: (ir) => {
       const { node } = findNode(ir.features.catalog!, 'ProductGrid', (n) => n.kind === 'el' && n.tag === 'li')
       ;(node as ElementNode).on.click = { event: 'cart.AddItem', payload: { literal: { sku: 'x', qty: 1 } } }
@@ -131,21 +131,21 @@ const catalog: Mutation[] = [
   },
   {
     name: 'typo in an invoked effect',
-    code: 'TN003',
+    code: 'HZ003',
     mutate: (ir) => {
       states(ir).adding!.invoke!.effect = 'cart.addItm'
     },
   },
   {
     name: 'invoke of an effect that does not exist',
-    code: 'TN003',
+    code: 'HZ003',
     mutate: (ir) => {
       states(ir).removing!.invoke!.effect = 'cart.saveEverything'
     },
   },
   {
     name: 'view reads a private query of another feature',
-    code: 'TN006',
+    code: 'HZ006',
     mutate: (ir) => {
       const { node } = findNode(
         cart(ir),
@@ -158,21 +158,21 @@ const catalog: Mutation[] = [
   },
   {
     name: 'feature used without importing it',
-    code: 'TN006',
+    code: 'HZ006',
     mutate: (ir) => {
       cart(ir).imports = []
     },
   },
   {
     name: 'mutation invalidates a private tag of another feature',
-    code: 'TN006',
+    code: 'HZ006',
     mutate: (ir) => {
       cart(ir).mutations.addItem!.invalidates.push({ tag: 'catalog.productTag', param: { literal: 'mug' } })
     },
   },
   {
     name: 'handler for a misspelled event',
-    code: 'TN007',
+    code: 'HZ007',
     mutate: (ir) => {
       const on = states(ir).error!.on
       on['cart.Dismis'] = on['cart.Dismiss']!
@@ -181,7 +181,7 @@ const catalog: Mutation[] = [
   },
   {
     name: 'when() with an unknown state',
-    code: 'TN007',
+    code: 'HZ007',
     mutate: (ir) => {
       const { node } = findNode(
         cart(ir),
@@ -193,7 +193,7 @@ const catalog: Mutation[] = [
   },
   {
     name: 'navigation to an unknown route',
-    code: 'TN007',
+    code: 'HZ007',
     mutate: (ir) => {
       states(ir).checkingOut!.invoke!.done[0]!.navigate = {
         link: 'orderPlace',
@@ -204,7 +204,7 @@ const catalog: Mutation[] = [
   },
   {
     name: 'failure branch for an undeclared error',
-    code: 'TN007',
+    code: 'HZ007',
     mutate: (ir) => {
       const failed = states(ir).adding!.invoke!.failed
       failed.Timeout = failed.Unexpected!
@@ -212,21 +212,21 @@ const catalog: Mutation[] = [
   },
   {
     name: 'export of a symbol that does not exist',
-    code: 'TN007',
+    code: 'HZ007',
     mutate: (ir) => {
       cart(ir).exports.events.push('Ghost')
     },
   },
   {
     name: 'assign to a misspelled context path',
-    code: 'TN008',
+    code: 'HZ008',
     mutate: (ir) => {
       states(ir).idle!.on['cart.AddItem']![0]!.assign[0]!.path = ['pendin']
     },
   },
   {
     name: 'guard reads a misspelled payload field',
-    code: 'TN008',
+    code: 'HZ008',
     mutate: (ir) => {
       const guard = states(ir).idle!.on['cart.AddItem']![0]!.guard as { left: { path: string[] } }
       guard.left.path = ['qtty']
@@ -234,7 +234,7 @@ const catalog: Mutation[] = [
   },
   {
     name: 'done reads a misspelled result field',
-    code: 'TN008',
+    code: 'HZ008',
     mutate: (ir) => {
       const value = states(ir).checkingOut!.invoke!.done[0]!.assign[0]!.value as { path: string[] }
       value.path = ['orderID']
@@ -242,14 +242,14 @@ const catalog: Mutation[] = [
   },
   {
     name: 'invoke input reads the event',
-    code: 'TN008',
+    code: 'HZ008',
     mutate: (ir) => {
       states(ir).adding!.invoke!.input = { ref: 'event', path: ['pending'] }
     },
   },
   {
     name: 'each keyed by a missing property',
-    code: 'TN008',
+    code: 'HZ008',
     mutate: (ir) => {
       const { node } = findNode(cart(ir), 'CartPanel', (n) => n.kind === 'each')
       ;(node as { key: string }).key = 'skuu'
@@ -257,7 +257,7 @@ const catalog: Mutation[] = [
   },
   {
     name: 'text reads a misspelled item field',
-    code: 'TN008',
+    code: 'HZ008',
     mutate: (ir) => {
       const { node } = findNode(
         cart(ir),
@@ -269,14 +269,14 @@ const catalog: Mutation[] = [
   },
   {
     name: 'guardless transition listed first',
-    code: 'TN009',
+    code: 'HZ009',
     mutate: (ir) => {
       states(ir).idle!.on['cart.AddItem']!.reverse()
     },
   },
   {
     name: 'mutation invalidates a tag no query carries',
-    code: 'TN019',
+    code: 'HZ019',
     mutate: (ir) => {
       ir.features.catalog!.queries.listProducts!.tags = []
       ir.features.cart!.mutations.checkout!.invalidates.push({ tag: 'catalog.catalogTag', param: null })
@@ -284,14 +284,14 @@ const catalog: Mutation[] = [
   },
   {
     name: 'page renders a view that does not exist',
-    code: 'TN007',
+    code: 'HZ007',
     mutate: (ir) => {
       ir.pages.home!.views.push('cart.Ghost')
     },
   },
   {
     name: 'misspelled enumerated attribute value',
-    code: 'TN031',
+    code: 'HZ031',
     mutate: (ir) => {
       const { node } = findNode(cart(ir), 'CartPanel', isButton('Checkout'))
       ;(node as ElementNode).attrs.type = { literal: 'buton' }
@@ -299,7 +299,7 @@ const catalog: Mutation[] = [
   },
   {
     name: 'internal link written as a string',
-    code: 'TN032',
+    code: 'HZ032',
     mutate: (ir) => {
       const { node } = findNode(cart(ir), 'CartPanel', isButton('Checkout'))
       const button = node as ElementNode
@@ -318,21 +318,21 @@ const catalog: Mutation[] = [
   },
   {
     name: 'state both handles and ignores an event',
-    code: 'TN034',
+    code: 'HZ034',
     mutate: (ir) => {
       states(ir).idle!.ignore.push('cart.AddItem')
     },
   },
   {
     name: 'search param without a default',
-    code: 'TN035',
+    code: 'HZ035',
     mutate: (ir) => {
       ir.routes.home!.search = { type: 'object', properties: { page: { type: 'integer' } } }
     },
   },
   {
     name: 'redirect that hides a page',
-    code: 'TN037',
+    code: 'HZ037',
     mutate: (ir) => {
       ir.http.redirects.push({
         from: '/products/:id',
@@ -343,21 +343,21 @@ const catalog: Mutation[] = [
   },
   {
     name: 'header the framework derives',
-    code: 'TN038',
+    code: 'HZ038',
     mutate: (ir) => {
       ir.http.headers.push({ routes: 'all', set: { 'cache-control': 'no-store' } })
     },
   },
   {
     name: 'base path with a trailing slash',
-    code: 'TN039',
+    code: 'HZ039',
     mutate: (ir) => {
       ir.http.basePath = '/shop/'
     },
   },
   {
     name: 'a locale without its messages',
-    code: 'TN040',
+    code: 'HZ040',
     mutate: (ir) => {
       cart(ir).messages = { base: 'en', text: { en: { total: 'Total: {sum}' } } }
       ir.site!.locales = ['en', 'de']
@@ -365,7 +365,7 @@ const catalog: Mutation[] = [
   },
   {
     name: 'a machine that stores a translated message',
-    code: 'TN041',
+    code: 'HZ041',
     mutate: (ir) => {
       cart(ir).messages = { base: 'en', text: { en: { oops: 'Oops' } } }
       states(ir).idle!.on['cart.RemoveItem']![0]!.assign.push({
@@ -377,14 +377,14 @@ const catalog: Mutation[] = [
   },
   {
     name: 'a locale tag that is not canonical',
-    code: 'TN042',
+    code: 'HZ042',
     mutate: (ir) => {
       ir.site!.locales = ['en', 'en_us']
     },
   },
   {
     name: 'a multi-segment route param typed as one string',
-    code: 'TN024',
+    code: 'HZ024',
     mutate: (ir) => {
       ir.routes.orderPlaced!.path = '/order/:rest+'
       ir.routes.orderPlaced!.params = {
@@ -396,14 +396,14 @@ const catalog: Mutation[] = [
   },
   {
     name: 'an offline page that renders per-request data',
-    code: 'TN043',
+    code: 'HZ043',
     mutate: (ir) => {
       ir.site!.offline = 'home'
     },
   },
   {
     name: 'state with no way out',
-    code: 'TN010',
+    code: 'HZ010',
     mutate: (ir) => {
       states(ir).error!.on = {}
       states(ir).error!.after = []
@@ -412,10 +412,10 @@ const catalog: Mutation[] = [
 ]
 
 describe('A2 judgement codes', () => {
-  it('TN020 — user-scoped query without a project session has a location but no patch', () => {
+  it('HZ020 — user-scoped query without a project session has a location but no patch', () => {
     const ir = cartIR()
     ir.session = null
-    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'TN020')
+    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'HZ020')
     expect(found.map((d) => d.location.pointer)).toEqual(['/features/cart/queries/getCart/scope'])
     expect(found[0]!.location.source?.file).toMatch(/examples\/cart\/.+\.ts$/)
     expect(found[0]!.fix?.patch).toBeNull()
@@ -423,16 +423,16 @@ describe('A2 judgement codes', () => {
 })
 
 describe('A2 rendering judgement codes', () => {
-  it('TN027 — DOM fields read outside an event handler', () => {
+  it('HZ027 — DOM fields read outside an event handler', () => {
     const ir = cartIR()
     const { node } = findNode(cart(ir), 'CartPanel', (n) => n.kind === 'el' && n.tag === 'input')
     ;(node as ElementNode).attrs.value = { ref: 'dom', path: ['value'] }
-    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'TN027')
+    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'HZ027')
     expect(found.map((d) => d.message)).toEqual(['ui.dom.value is read outside an event handler'])
     expect(found[0]!.fix?.patch).toBeNull()
   })
 
-  it('TN022 — a public cached query keyed by user data', () => {
+  it('HZ022 — a public cached query keyed by user data', () => {
     const ir = cartIR()
     const { node } = findNode(cart(ir), 'CartPanel', (n) => n.kind === 'query' && n.query === 'cart.getCart')
     const ready = (node as QueryNode).ready as ElementNode
@@ -451,7 +451,7 @@ describe('A2 rendering judgement codes', () => {
         },
       },
     })
-    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'TN022')
+    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'HZ022')
     expect(found.map((d) => d.location.pointer)).toEqual([
       '/features/cart/views/CartPanel/root/children/1/ready/children/2/input',
     ])
@@ -459,20 +459,20 @@ describe('A2 rendering judgement codes', () => {
     expect(found[0]!.fix?.patch).toBeNull()
   })
 
-  it('TN023 — a page asserts cacheable but renders per-request data', () => {
+  it('HZ023 — a page asserts cacheable but renders per-request data', () => {
     const ir = cartIR()
     ir.pages.home!.assert = 'cacheable'
-    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'TN023')
+    const found = validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'HZ023')
     expect(found.map((d) => [d.location.pointer, d.message])).toEqual([
       ['/pages/home/assert', 'Page "home" asserts cacheable but derives cart.getCart → request'],
     ])
-    expect(found[0]!.location.source?.file).toMatch(/examples\/cart\/tenon\.config\.ts$/)
+    expect(found[0]!.location.source?.file).toMatch(/examples\/cart\/hozu\.config\.ts$/)
     expect(found[0]!.fix?.patch).toBeNull()
   })
 })
 
 describe('A2 literal judgement codes', () => {
-  it('TN031 — a guard compares a number with a string; TN032 — a link to no route', () => {
+  it('HZ031 — a guard compares a number with a string; HZ032 — a link to no route', () => {
     const ir = cartIR()
     const guard = states(ir).idle!.on['cart.SetQuantity']![0]!.guard as {
       args: { right: { literal: unknown } }[]
@@ -491,12 +491,12 @@ describe('A2 literal judgement codes', () => {
       children: [],
     })
     const found = validate(ir, { sources: cartBuild().sources }).filter(
-      (d) => d.code === 'TN031' || d.code === 'TN032',
+      (d) => d.code === 'HZ031' || d.code === 'HZ032',
     )
     expect(found.map((d) => [d.code, d.message, d.cause])).toEqual([
-      ['TN031', '"1" is not a valid value for the compared value.', 'Expected number | null.'],
+      ['HZ031', '"1" is not a valid value for the compared value.', 'Expected number | null.'],
       [
-        'TN032',
+        'HZ032',
         'No route matches the internal link "/order/plcaed". Did you mean "/order/placed"?',
         'Internal paths are typed references to a route, so a renamed or missing route is caught. Files use ui.asset.',
       ],
@@ -505,28 +505,28 @@ describe('A2 literal judgement codes', () => {
 })
 
 describe('A2 route judgement codes', () => {
-  it('TN024 — path placeholders differ from the params schema', async () => {
-    const { buildProject } = await import('@tenonkit/core/ir')
-    const blog = buildProject((await import('../../../examples/blog/tenon.config.ts')).default)
+  it('HZ024 — path placeholders differ from the params schema', async () => {
+    const { buildProject } = await import('@hozu/core/ir')
+    const blog = buildProject((await import('../../../examples/blog/hozu.config.ts')).default)
     const ir = structuredClone(blog.ir)
     ir.routes.post!.path = '/posts/:id'
-    const found = validate(ir, { sources: blog.sources }).filter((d) => d.code === 'TN024')
+    const found = validate(ir, { sources: blog.sources }).filter((d) => d.code === 'HZ024')
     expect(found.map((d) => d.location.pointer)).toEqual(['/routes/post/params'])
     expect(found[0]!.location.source?.file).toMatch(/examples\/blog\/routes\.ts$/)
   })
 
-  it('TN024 — a view bound to another route; TN025 — a parameterized page without entries', async () => {
-    const { buildProject } = await import('@tenonkit/core/ir')
-    const blog = buildProject((await import('../../../examples/blog/tenon.config.ts')).default)
+  it('HZ024 — a view bound to another route; HZ025 — a parameterized page without entries', async () => {
+    const { buildProject } = await import('@hozu/core/ir')
+    const blog = buildProject((await import('../../../examples/blog/hozu.config.ts')).default)
     const ir = structuredClone(blog.ir)
     ir.pages.home!.views.push('posts.Article')
     ir.pages.post!.entries = null
     const found = validate(ir, { sources: blog.sources }).filter(
-      (d) => d.code === 'TN024' || d.code === 'TN025',
+      (d) => d.code === 'HZ024' || d.code === 'HZ025',
     )
     expect(found.map((d) => [d.code, d.location.pointer, d.severity])).toEqual([
-      ['TN024', '/pages/home/views/2', 'error'],
-      ['TN025', '/pages/post/entries', 'warning'],
+      ['HZ024', '/pages/home/views/2', 'error'],
+      ['HZ025', '/pages/post/entries', 'warning'],
     ])
     expect(found[1]!.fix?.snippet).toContain('entries:')
   })

@@ -1,5 +1,5 @@
-import type { Json } from '@tenonkit/core/ir'
-import { createHandler, type HandlerOptions } from '@tenonkit/runtime-server'
+import type { Json } from '@hozu/core/ir'
+import { createHandler, type HandlerOptions } from '@hozu/runtime-server'
 
 export interface TestPage {
   status: number
@@ -37,7 +37,7 @@ export function testApp(options: HandlerOptions & { origin?: string }): TestApp 
   const handler = createHandler(rest)
   const page = async (response: Response): Promise<TestPage> => {
     const html = await response.text()
-    const payload = /<script type="application\/json" id="tenon-payload">([\s\S]*?)<\/script>/.exec(html)?.[1]
+    const payload = /<script type="application\/json" id="hozu-payload">([\s\S]*?)<\/script>/.exec(html)?.[1]
     return {
       status: response.status,
       headers: response.headers,

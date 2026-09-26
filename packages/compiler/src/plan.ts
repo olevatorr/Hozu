@@ -7,7 +7,7 @@ import {
   type QueryIR,
   type ValueExpr,
   type ViewNode,
-} from '@tenonkit/core/ir'
+} from '@hozu/core/ir'
 
 export type Mode = 'static' | 'isr' | 'swr' | 'request'
 
@@ -43,7 +43,7 @@ export interface RoutePlan {
 }
 
 export interface PlanIssue {
-  code: 'TN022' | 'TN023'
+  code: 'HZ022' | 'HZ023'
   feature: string | null
   pointer: string
   message: string
@@ -191,7 +191,7 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
         const combined = combine(region, own(q))
         if (q.scope === 'public' && q.freshness.kind !== 'live' && readsBinding(node.input, tainted))
           issues.push({
-            code: 'TN022',
+            code: 'HZ022',
             feature: feature.id,
             pointer: join(pointer, 'input'),
             message: `Public query ${node.query} is keyed by user-scoped data`,
@@ -257,7 +257,7 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
         : []
   if (offending.length)
     issues.push({
-      code: 'TN023',
+      code: 'HZ023',
       feature: null,
       pointer: join('', 'pages', route, 'assert'),
       message: `Page "${route}" asserts ${page.assert} but derives ${offending.map((r) => `${r.query} → ${r.mode}`).join(', ')}`,

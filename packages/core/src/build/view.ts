@@ -35,7 +35,7 @@ function element(
   const on: Record<string, SendIR> = {}
   if (!allowed.has(d.tag))
     scope.report(
-      'TN014',
+      'HZ014',
       at(p, 'tag'),
       `Element "${d.tag}" is not supported`,
       'Use a standard HTML or SVG element.',
@@ -51,14 +51,14 @@ function element(
         const s = sendOf(send)
         if (!eventSet.has(event))
           scope.report(
-            'TN014',
+            'HZ014',
             ep,
             `DOM event "${event}" is not supported`,
             `Supported: ${domEvents.join(', ')}.`,
           )
         else if (!s)
           scope.report(
-            'TN014',
+            'HZ014',
             ep,
             'on handlers must be ui.send(Event, payload)',
             'Views cannot run arbitrary functions.',
@@ -73,7 +73,7 @@ function element(
       attrs[key] = scope.attempt(at(p, 'attrs', key), () => scope.value(value, p), { literal: null })
     } else {
       scope.report(
-        'TN014',
+        'HZ014',
         at(p, 'attrs', key),
         `Attribute "${key}" is not allowed on <${d.tag}>`,
         key === 'style'
@@ -85,20 +85,20 @@ function element(
     }
   }
   if (!Array.isArray(d.children))
-    scope.report('TN014', at(p, 'children'), `<${d.tag}> needs a children array`, 'Pass [] when it has none.')
+    scope.report('HZ014', at(p, 'children'), `<${d.tag}> needs a children array`, 'Pass [] when it has none.')
   else if (voidSet.has(d.tag) && d.children.length)
-    scope.report('TN014', at(p, 'children'), `<${d.tag}> cannot have children`, 'It is a void element.')
+    scope.report('HZ014', at(p, 'children'), `<${d.tag}> cannot have children`, 'It is a void element.')
   const children = (Array.isArray(d.children) ? d.children : []).map((c, i) =>
     node(scope, c, `${id}/${i}`, at(p, 'children', i), depth),
   )
-  if (on.visible) attrs['data-tenon-visible'] = { literal: '' }
+  if (on.visible) attrs['data-hozu-visible'] = { literal: '' }
   return { id, kind: 'el', tag: d.tag, class: cls, toggle, vars, attrs, on, children }
 }
 
 function classOf(scope: FeatureScope, value: unknown, p: At): string | null {
   if (typeof value === 'string') return value
   scope.report(
-    'TN014',
+    'HZ014',
     at(p, 'class'),
     'class must be a static string',
     'Dynamic classes would make render output depend on runtime values.',
@@ -117,7 +117,7 @@ function styling(
     const tp = at(p, key, name)
     if (key === 'toggle' ? !/\S/.test(name) : !/^--[A-Za-z0-9_-]+$/.test(name)) {
       scope.report(
-        'TN014',
+        'HZ014',
         tp,
         key === 'toggle' ? 'toggle keys are class lists' : `CSS variable "${name}" must look like --name`,
         key === 'toggle'
@@ -155,7 +155,7 @@ function widgetNode(
         : null
     if (!s) {
       scope.report(
-        'TN014',
+        'HZ014',
         ep,
         'Widget handlers must be (detail) => ui.send(Event, payload)',
         'Views cannot run arbitrary functions.',
@@ -186,7 +186,7 @@ function motionOf(scope: FeatureScope, motion: unknown, p: At): string | null {
   if (motion === null || motion === undefined) return null
   if (typeof motion === 'string' && /^[a-z][a-z0-9-]*$/.test(motion)) return motion
   scope.report(
-    'TN014',
+    'HZ014',
     p,
     'motion must be a lowercase name such as "fade"',
     'The name prefixes the enter/leave/move classes defined in CSS (fade-enter-active, …).',
@@ -278,7 +278,7 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
           const s = sendOf(send)
           if (!eventSet.has(event) || !s) {
             scope.report(
-              'TN014',
+              'HZ014',
               ep,
               s ? `DOM event "${event}" is not supported` : 'on handlers must be ui.send(Event, payload)',
               s ? `Supported: ${domEvents.join(', ')}.` : 'Views cannot run arbitrary functions.',
@@ -298,7 +298,7 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
     return { id, kind: 'text', value: { literal: value } }
   if (exprOf(value))
     return { id, kind: 'text', value: scope.attempt(p, () => scope.value(value, p), { literal: null }) }
-  scope.report('TN014', p, 'Invalid view child', 'Children must be ui nodes, strings, numbers or references.')
+  scope.report('HZ014', p, 'Invalid view child', 'Children must be ui nodes, strings, numbers or references.')
   return { id, kind: 'text', value: { literal: '' } }
 }
 
@@ -311,14 +311,14 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
     machine = owner?.feature ?? '?'
     if (!owner)
       scope.report(
-        'TN007',
+        'HZ007',
         at(p, 'machine'),
         'View is bound to a machine that no feature declares',
         'Add the machine to feature({ declarations }).',
       )
     else if (owner.feature !== scope.id)
       scope.report(
-        'TN006',
+        'HZ006',
         at(p, 'machine'),
         `View is bound to the machine of feature "${owner.feature}"`,
         'A view may only bind to its own feature machine; other features are reached through exports.',
@@ -329,7 +329,7 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
     route = scope.project.routes.get(d.route) ?? '?'
     if (route === '?')
       scope.report(
-        'TN007',
+        'HZ007',
         at(p, 'route'),
         'View is bound to a route missing from project({ routes })',
         'Register the route.',

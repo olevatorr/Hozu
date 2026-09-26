@@ -1,10 +1,10 @@
-import { buildProject } from '@tenonkit/core/ir'
-import { createDataRuntime } from '@tenonkit/data'
-import { compileMachine } from '@tenonkit/machine'
-import { mount, type Payload, payloadKey, type Result } from '@tenonkit/runtime-client'
+import { buildProject } from '@hozu/core/ir'
+import { createDataRuntime } from '@hozu/data'
+import { compileMachine } from '@hozu/machine'
+import { mount, type Payload, payloadKey, type Result } from '@hozu/runtime-client'
 import { Window } from 'happy-dom'
+import project from './hozu.config.ts'
 import { createResolvers } from './server.ts'
-import project from './tenon.config.ts'
 
 const build = buildProject(project, { sources: false })
 const data = createDataRuntime({ build, resolvers: createResolvers() })

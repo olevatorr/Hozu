@@ -2,9 +2,9 @@ import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { type BuildResult, hashJson, type ImageSet, type Manifest } from '@tenonkit/core/ir'
+import { type BuildResult, hashJson, type ImageSet, type Manifest } from '@hozu/core/ir'
 import type { BuildOutput } from '../contract.ts'
-import { TenonCliError } from '../errors.ts'
+import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 
 interface Stylesheet {
@@ -31,7 +31,7 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
   const build = loaded.build(false)
   const errors = build.diagnostics.filter((d) => d.severity === 'error')
   if (errors.length)
-    throw new TenonCliError('build', `The project has ${errors.length} build errors`, ['Run tenon validate'])
+    throw new HozuCliError('build', `The project has ${errors.length} build errors`, ['Run hozu validate'])
   const require = createRequire(loaded.path)
   const optional = async <T>(id: string): Promise<T | null> => {
     try {
@@ -44,26 +44,24 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
     try {
       return (await import(pathToFileURL(require.resolve(id)).href)) as T
     } catch {
-      throw new TenonCliError('build', `tenon build needs ${id} installed in the project`, [`pnpm add ${id}`])
+      throw new HozuCliError('build', `hozu build needs ${id} installed in the project`, [`pnpm add ${id}`])
     }
   }
   const base = dirname(loaded.path)
   const styles = build.bindings.styles.entry
     ? await (
-        await from<{ compileStyles(b: BuildResult, o: { base: string }): Promise<Stylesheet> }>(
-          '@tenonkit/css',
-        )
+        await from<{ compileStyles(b: BuildResult, o: { base: string }): Promise<Stylesheet> }>('@hozu/css')
       ).compileStyles(build, { base })
     : null
   const widgets = Object.keys(build.bindings.widgets).length
-    ? await (
-        await from<{ bundleWidgets(b: BuildResult): Promise<Widgets> }>('@tenonkit/bundle')
-      ).bundleWidgets(build)
+    ? await (await from<{ bundleWidgets(b: BuildResult): Promise<Widgets> }>('@hozu/bundle')).bundleWidgets(
+        build,
+      )
     : null
-  const images = await optional<{ optimizeImages(b: BuildResult): Promise<ImageSet> }>(
-    '@tenonkit/image',
-  ).then((m) => (m ? m.optimizeImages(build) : null))
-  const server = await from<ServerModule>('@tenonkit/runtime-server')
+  const images = await optional<{ optimizeImages(b: BuildResult): Promise<ImageSet> }>('@hozu/image').then(
+    (m) => (m ? m.optimizeImages(build) : null),
+  )
+  const server = await from<ServerModule>('@hozu/runtime-server')
   const dir = resolve(cwd, out ?? 'dist')
   const files: string[] = []
   for (const f of server.staticFiles(build, { styles, widgets, client: true })) {

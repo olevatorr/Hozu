@@ -54,7 +54,7 @@ function invoke(scope: FeatureScope, decl: unknown, p: At): InvokeIR | null {
   const info = infoOf(decl)
   if (info?.kind !== 'invoke') {
     scope.report(
-      'TN014',
+      'HZ014',
       p,
       'invoke must be created with invoke(effect, {...})',
       'Unknown value in a state config.',
@@ -80,7 +80,7 @@ function state(scope: FeatureScope, config: StateConfig<string>, p: At): StateIR
     const info = infoOf(entry)
     if (info?.kind !== 'on') {
       scope.report(
-        'TN014',
+        'HZ014',
         at(p, 'on'),
         'on entries must be created with on(Event, {...})',
         'Unknown value in on: [...]',
@@ -105,7 +105,7 @@ function state(scope: FeatureScope, config: StateConfig<string>, p: At): StateIR
     after: after.map((a, i) => {
       if (!Number.isInteger(a.ms) || a.ms < 0)
         scope.report(
-          'TN014',
+          'HZ014',
           at(p, 'after', i, 'ms'),
           `after.ms must be a non-negative integer, got ${a.ms}`,
           'Delays are milliseconds.',
@@ -125,7 +125,7 @@ export function buildMachine(scope: FeatureScope, decl: Decl | null): MachineIR 
   for (const [name, config] of Object.entries(configs)) {
     if (!IDENTIFIER.test(name))
       scope.report(
-        'TN014',
+        'HZ014',
         at(p, 'states', name),
         `State name "${name}" is not an identifier`,
         'Names must match /^[A-Za-z][A-Za-z0-9_]*$/.',

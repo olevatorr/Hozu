@@ -36,7 +36,7 @@ function freshness(scope: FeatureScope, f: QueryDef['freshness'], p: At): Freshn
     return { kind: 'revalidate', seconds: f.revalidate }
   if (typeof f === 'object' && f && 'swr' in f && f.swr > 0) return { kind: 'swr', seconds: f.swr }
   scope.report(
-    'TN014',
+    'HZ014',
     p,
     `Invalid freshness ${JSON.stringify(f)}`,
     "Use 'static', 'live', { revalidate: seconds } or { swr: seconds }.",
@@ -68,7 +68,7 @@ function errors(
   return mapRecord(record, (name, schema) => {
     if (name === 'Unexpected' || (mutation && name === 'Invalid'))
       scope.report(
-        'TN014',
+        'HZ014',
         at(p, name),
         `"${name}" is a reserved error name`,
         name === 'Unexpected'
@@ -102,7 +102,7 @@ function buildWidget(scope: FeatureScope, sym: string, d: WidgetDef): WidgetIR {
   if (listed) sourceHash = listed.hash
   else if (!file || !fs?.existsSync(file))
     scope.report(
-      'TN029',
+      'HZ029',
       at(p, 'client'),
       file ? `Widget module ${file} does not exist` : 'Widget client must be a file URL',
       "Declare it with new URL('./my-widget.client.ts', import.meta.url) and default-export implement<typeof MyWidget>(…).",
@@ -113,13 +113,13 @@ function buildWidget(scope: FeatureScope, sym: string, d: WidgetDef): WidgetIR {
   }
   if (!tags.has(d.tag))
     scope.report(
-      'TN014',
+      'HZ014',
       at(p, 'tag'),
       `Widget host "${d.tag}" is not an HTML element`,
       'Use an element such as div.',
     )
   if (!loads.has(d.load))
-    scope.report('TN014', at(p, 'load'), `Invalid load "${d.load}"`, "Use 'eager', 'visible' or 'idle'.")
+    scope.report('HZ014', at(p, 'load'), `Invalid load "${d.load}"`, "Use 'eager', 'visible' or 'idle'.")
   return {
     tag: d.tag,
     props: scope.schema(d.props, at(p, 'props')),
@@ -134,7 +134,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
   const scope = new FeatureScope(project, id)
   if (typeof config.intent?.summary !== 'string' || !config.intent.summary.trim())
     scope.report(
-      'TN014',
+      'HZ014',
       scope.at('intent', 'summary'),
       'intent.summary must be a non-empty string',
       'Intent is the context agents read first.',
@@ -145,7 +145,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
         const fid = project.features.get(f)
         if (fid) return fid
         scope.report(
-          'TN007',
+          'HZ007',
           scope.at('imports', i),
           'Imported feature is not part of the project',
           'List it in project({ features }).',
@@ -162,7 +162,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
           const owner = project.owners.get(decl)
           if (owner?.feature === id) return owner.symbol
           scope.report(
-            'TN006',
+            'HZ006',
             scope.at('exports', key, i),
             owner
               ? `Cannot export ${owner.feature}.${owner.symbol} from ${id}`
@@ -201,7 +201,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
       bindEffect(scope, `${id}.${sym}`, d)
       if (d.scope !== 'public' && d.scope !== 'user')
         scope.report(
-          'TN014',
+          'HZ014',
           at(p, 'scope'),
           `Invalid scope ${JSON.stringify(d.scope)}`,
           "Use 'public' or 'user'.",

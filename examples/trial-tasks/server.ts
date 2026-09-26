@@ -1,6 +1,6 @@
-import { resolvers } from '@tenonkit/data'
+import { resolvers } from '@hozu/data'
 import { addTask, clearDone, getTask, listTasks, toggleTask } from './features/tasks/effects.ts'
-import project from './tenon.config.ts'
+import project from './hozu.config.ts'
 
 export function createResolvers() {
   const items: { id: string; title: string; done: boolean; priority: 'low' | 'normal' | 'high' }[] = [

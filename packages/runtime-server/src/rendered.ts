@@ -1,6 +1,6 @@
-import type { BuildResult, FeatureIR, Json, ValueExpr, ViewNode } from '@tenonkit/core/ir'
-import { equal, getIn, pathOf } from '@tenonkit/machine'
-import { attrText, classText, styleText, text } from '@tenonkit/runtime-client'
+import type { BuildResult, FeatureIR, Json, ValueExpr, ViewNode } from '@hozu/core/ir'
+import { equal, getIn, pathOf } from '@hozu/machine'
+import { attrText, classText, styleText, text } from '@hozu/runtime-client'
 import { escapeHtml } from './escape.ts'
 import { generateRender } from './generate.ts'
 import { responsive, type Variants } from './images.ts'
@@ -94,7 +94,7 @@ export async function loadRender(source: string): Promise<RenderTable> {
     )) as RenderModule
   } catch (cause) {
     throw new RenderModuleError(
-      'This runtime cannot load generated render code. Run `tenon build` and pass the generated module: ' +
+      'This runtime cannot load generated render code. Run `hozu build` and pass the generated module: ' +
         "createHandler({ render: await import('./dist/server/render.js') }).",
       { cause },
     )

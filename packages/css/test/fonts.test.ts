@@ -3,10 +3,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { brotliCompressSync, deflateSync } from 'node:zlib'
-import { feature, project, route, ui } from '@tenonkit/core'
-import { buildProject } from '@tenonkit/core/ir'
-import { compileStyles, fallbackFace, fontMetrics } from '@tenonkit/css'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { feature, project, route, ui } from '@hozu/core'
+import { buildProject } from '@hozu/core/ir'
+import { compileStyles, fallbackFace, fontMetrics } from '@hozu/css'
+import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
 
 const tables = () => {
@@ -102,7 +102,7 @@ describe('font fallback metrics (ADR 0020)', () => {
   )
 
   it('adds the fallback face and puts it right after the family in every font stack', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'tenon-fonts-'))
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-fonts-'))
     writeFileSync(join(dir, 'inter.woff2'), woff2())
     writeFileSync(
       join(dir, 'app.css'),

@@ -2,7 +2,7 @@ import { brand, type Decl } from '../model/decl.ts'
 import type { Val } from '../model/expr.ts'
 import type { Infer, Schema } from '../schema/standard.ts'
 
-export const TAG_USE = Symbol.for('tenon.tagUse')
+export const TAG_USE = Symbol.for('hozu.tagUse')
 
 export interface TagDef {
   param: Schema | null

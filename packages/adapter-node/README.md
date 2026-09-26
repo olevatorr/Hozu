@@ -1,15 +1,15 @@
-# @tenonkit/adapter-node
+# @hozu/adapter-node
 
-Run a Tenon app on Node: HTTP server, ISR page cache and tag revalidation.
+Run a Hozu app on Node: HTTP server, ISR page cache and tag revalidation.
 
-Part of [Tenon](https://github.com/olevatorr/Tenon#readme), an AI-first web framework. Most apps start from
-`npm create tenon@latest`, which installs the right packages and sets up Claude Code or `AGENTS.md` agents.
+Part of [Hozu](https://github.com/olevatorr/Hozu#readme), an AI-first web framework. Most apps start from
+`npm create hozu@latest`, which installs the right packages and sets up Claude Code or `AGENTS.md` agents.
 
 ```sh
-npm install @tenonkit/adapter-node
+npm install @hozu/adapter-node
 ```
 
-Requires Node 22.18 or newer. Documentation: the [README](https://github.com/olevatorr/Tenon#readme) and the
-agent skill that `create-tenon` writes into each app.
+Requires Node 22.18 or newer. Documentation: the [README](https://github.com/olevatorr/Hozu#readme) and the
+agent skill that `create-hozu` writes into each app.
 
 MIT © olevatorr

@@ -1,10 +1,10 @@
-import { ContentError, loadCollection, parseCollection } from '@tenonkit/content'
+import { ContentError, loadCollection, parseCollection } from '@hozu/content'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
 const Front = z.object({ title: z.string(), draft: z.boolean().default(false) })
 
-describe('@tenonkit/content (ADR 0020)', () => {
+describe('@hozu/content (ADR 0020)', () => {
   it('parses front matter with the schema, renders GFM and collects heading ids', () => {
     const [entry] = parseCollection({
       files: {
@@ -47,8 +47,8 @@ describe('@tenonkit/content (ADR 0020)', () => {
         author: z.string(),
       }),
     })
-    expect(entries.map((e) => e.slug)).toEqual(['hello-tenon', 'islands-explained', 'tenon-roadmap'])
-    expect(entries[1]!.html).toBe(
+    expect(entries.map((e) => e.slug)).toEqual(['hello-hozu', 'hozu-roadmap', 'islands-explained'])
+    expect(entries[2]!.html).toBe(
       '<p>Render modes are derived from data <strong>freshness</strong> and <strong>scope</strong>.</p>\n',
     )
   })

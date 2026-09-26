@@ -1,7 +1,7 @@
 import { sha256 } from '../canonical/hash.ts'
 import { fileUrlToPath, readFile } from '../platform.ts'
 
-export const ASSET = Symbol.for('tenon.asset')
+export const ASSET = Symbol.for('hozu.asset')
 
 export interface AssetFile {
   file: string | null
@@ -62,6 +62,6 @@ export function readAsset(url: string): AssetFile & { href: string } {
   const content = readFile(file) as Buffer
   const size = imageSize(content)
   const ext = /\.[^./]+$/.exec(file)?.[0].toLowerCase() ?? ''
-  const href = `/_tenon/a/${sha256(content.toString('base64')).slice(0, 16)}${ext}`
+  const href = `/_hozu/a/${sha256(content.toString('base64')).slice(0, 16)}${ext}`
   return { href, file, width: size?.[0] ?? null, height: size?.[1] ?? null }
 }

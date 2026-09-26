@@ -1,11 +1,11 @@
-import { buildProject } from '@tenonkit/core/ir'
-import { createDataRuntime } from '@tenonkit/data'
-import { hydrate } from '@tenonkit/runtime-client'
-import { renderToString } from '@tenonkit/runtime-server'
+import { buildProject } from '@hozu/core/ir'
+import { createDataRuntime } from '@hozu/data'
+import { hydrate } from '@hozu/runtime-client'
+import { renderToString } from '@hozu/runtime-server'
 import { Window } from 'happy-dom'
 import { describe, expect, it, vi } from 'vitest'
+import project from '../../../examples/cart/hozu.config.ts'
 import { createResolvers } from '../../../examples/cart/server.ts'
-import project from '../../../examples/cart/tenon.config.ts'
 import { routeOf } from '../src/navigate.ts'
 
 const build = buildProject(project, { sources: false })
@@ -78,7 +78,7 @@ describe('soft navigation (ADR 0015)', () => {
 
     expect(document.title).toBe('Mug')
     expect(document.querySelector('link[rel=canonical]')?.getAttribute('href')).toBe(
-      'https://cart.tenon.dev/products/mug',
+      'https://cart.hozu.dev/products/mug',
     )
     expect(document.querySelector('h2')?.textContent).toBe('Mug — $12')
     expect(document.body.textContent).not.toContain('Products')
@@ -87,7 +87,7 @@ describe('soft navigation (ADR 0015)', () => {
     expect(apps.get('cart')).toBe(app)
     expect(app.snapshot()?.context).toMatchObject({ pending: { qty: 4 } })
     expect(document.querySelector('[aria-live="polite"]:not(p)')?.textContent).toBe('Mug')
-    expect(document.documentElement.hasAttribute('data-tenon-navigating')).toBe(false)
+    expect(document.documentElement.hasAttribute('data-hozu-navigating')).toBe(false)
     expect(document.querySelectorAll('title')).toHaveLength(1)
   })
 

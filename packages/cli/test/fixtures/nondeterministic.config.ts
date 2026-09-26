@@ -1,5 +1,5 @@
-import { contract, event, feature, machine, on, op, project } from '@tenonkit/core'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { contract, event, feature, machine, on, op, project } from '@hozu/core'
+import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
 const Roll = event({ payload: z.object({ n: z.number() }) })

@@ -1,7 +1,7 @@
-import { event, feature, machine, on, op, project, ui } from '@tenonkit/core'
-import { buildProject } from '@tenonkit/core/ir'
-import { zodAdapter } from '@tenonkit/schema-zod'
-import { validate } from '@tenonkit/validator'
+import { event, feature, machine, on, op, project, ui } from '@hozu/core'
+import { buildProject } from '@hozu/core/ir'
+import { zodAdapter } from '@hozu/schema-zod'
+import { validate } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
@@ -62,41 +62,41 @@ const codes = (b: ReturnType<typeof board>, only: string[]) =>
     .map((d) => [d.code, d.message])
 
 describe('ADR 0013 ergonomics', () => {
-  it('ignore satisfies TN005; without it, TN005 offers the ignore patch', () => {
+  it('ignore satisfies HZ005; without it, HZ005 offers the ignore patch', () => {
     expect(
-      codes(board({ busyIgnores: true, select: ['low', 'normal', 'high'], field: 'enum' }), ['TN005']),
+      codes(board({ busyIgnores: true, select: ['low', 'normal', 'high'], field: 'enum' }), ['HZ005']),
     ).toEqual([])
     const b = board({ busyIgnores: false, select: ['low', 'normal', 'high'], field: 'enum' })
-    const found = validate(b.ir, { sources: b.sources }).filter((d) => d.code === 'TN005')
+    const found = validate(b.ir, { sources: b.sources }).filter((d) => d.code === 'HZ005')
     expect(found.map((d) => d.fix?.patch)).toContainEqual([
       { op: 'add', path: '/features/board/machine/states/busy/ignore/-', value: 'board.Pick' },
     ])
     expect(b.ir.features.board!.machine!.states.busy!.ignore).toEqual([])
   })
 
-  it('TN033 — a select whose literal options are enum members may send ui.dom.value into the enum', () => {
+  it('HZ033 — a select whose literal options are enum members may send ui.dom.value into the enum', () => {
     expect(
-      codes(board({ busyIgnores: true, select: ['low', 'normal', 'high'], field: 'enum' }), ['TN033']),
+      codes(board({ busyIgnores: true, select: ['low', 'normal', 'high'], field: 'enum' }), ['HZ033']),
     ).toEqual([])
-    expect(codes(board({ busyIgnores: true, select: ['low', 'urgent'], field: 'enum' }), ['TN033'])).toEqual([
-      ['TN033', 'ui.dom.value may not be one of "low", "normal", "high" (board.Pick.priority)'],
+    expect(codes(board({ busyIgnores: true, select: ['low', 'urgent'], field: 'enum' }), ['HZ033'])).toEqual([
+      ['HZ033', 'ui.dom.value may not be one of "low", "normal", "high" (board.Pick.priority)'],
     ])
-    expect(codes(board({ busyIgnores: true, select: ['1', '2'], field: 'number' }), ['TN033'])).toEqual([
-      ['TN033', 'ui.dom.value is text, but board.Count.n is a number'],
+    expect(codes(board({ busyIgnores: true, select: ['1', '2'], field: 'number' }), ['HZ033'])).toEqual([
+      ['HZ033', 'ui.dom.value is text, but board.Count.n is a number'],
     ])
   })
 
-  it('TN034 — a state that both handles and ignores an event', () => {
+  it('HZ034 — a state that both handles and ignores an event', () => {
     const b = board({ busyIgnores: true, select: ['low'], field: 'enum' })
     b.ir.features.board!.machine!.states.busy!.ignore.push('board.Save')
-    expect(codes(b, ['TN034'])).toEqual([['TN034', 'State "busy" both handles and ignores board.Save']])
+    expect(codes(b, ['HZ034'])).toEqual([['HZ034', 'State "busy" both handles and ignores board.Save']])
   })
 })
 
 describe('ADR 0014 judgement codes', () => {
-  it('TN036 — a form whose payload the server cannot evaluate; TN035 — search without defaults', async () => {
-    const { buildProject: build } = await import('@tenonkit/core/ir')
-    const b = build((await import('../../../examples/bookmarks/tenon.config.ts')).default)
+  it('HZ036 — a form whose payload the server cannot evaluate; HZ035 — search without defaults', async () => {
+    const { buildProject: build } = await import('@hozu/core/ir')
+    const b = build((await import('../../../examples/bookmarks/hozu.config.ts')).default)
     const ir = structuredClone(b.ir)
     const form = (
       ir.features.bookmarks!.views.Board!.root as {
@@ -107,10 +107,10 @@ describe('ADR 0014 judgement codes', () => {
       object: { title: { ref: 'dom', path: ['value'] }, kind: { literal: 'video' } },
     }
     ir.routes.home!.search = { type: 'object', properties: { show: { type: 'string' } } }
-    const found = validate(ir, { sources: b.sources }).filter((d) => d.code === 'TN036' || d.code === 'TN035')
+    const found = validate(ir, { sources: b.sources }).filter((d) => d.code === 'HZ036' || d.code === 'HZ035')
     expect(found.map((d) => [d.code, d.severity, d.location.pointer])).toEqual([
-      ['TN035', 'error', '/routes/home/search/properties/show'],
-      ['TN036', 'warning', '/features/bookmarks/views/Board/root/children/1/on/submit/payload'],
+      ['HZ035', 'error', '/routes/home/search/properties/show'],
+      ['HZ036', 'warning', '/features/bookmarks/views/Board/root/children/1/on/submit/payload'],
     ])
   })
 })

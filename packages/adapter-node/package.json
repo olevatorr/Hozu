@@ -1,9 +1,9 @@
 {
-  "name": "@tenonkit/adapter-node",
+  "name": "@hozu/adapter-node",
   "version": "0.1.0",
-  "description": "Run a Tenon app on Node: HTTP server, ISR page cache and tag revalidation",
+  "description": "Run a Hozu app on Node: HTTP server, ISR page cache and tag revalidation",
   "keywords": [
-    "tenon",
+    "hozu",
     "framework",
     "ai",
     "agents",
@@ -11,13 +11,13 @@
     "islands",
     "typescript"
   ],
-  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/adapter-node#readme",
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/adapter-node#readme",
   "bugs": {
-    "url": "https://github.com/olevatorr/Tenon/issues"
+    "url": "https://github.com/olevatorr/Hozu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
     "directory": "packages/adapter-node"
   },
   "license": "MIT",
@@ -39,10 +39,10 @@
     "access": "public"
   },
   "dependencies": {
-    "@tenonkit/compiler": "workspace:*",
-    "@tenonkit/core": "workspace:*",
-    "@tenonkit/data": "workspace:*",
-    "@tenonkit/runtime-client": "workspace:*",
-    "@tenonkit/runtime-server": "workspace:*"
+    "@hozu/compiler": "workspace:*",
+    "@hozu/core": "workspace:*",
+    "@hozu/data": "workspace:*",
+    "@hozu/runtime-client": "workspace:*",
+    "@hozu/runtime-server": "workspace:*"
   }
 }

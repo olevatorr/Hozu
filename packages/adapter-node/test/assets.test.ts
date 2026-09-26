@@ -3,13 +3,13 @@ import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { createServer } from '@tenonkit/adapter-node'
-import { feature, project, route, ui } from '@tenonkit/core'
-import { buildProject } from '@tenonkit/core/ir'
-import { compileStyles } from '@tenonkit/css'
-import { resolvers } from '@tenonkit/data'
-import { zodAdapter } from '@tenonkit/schema-zod'
-import { validate } from '@tenonkit/validator'
+import { createServer } from '@hozu/adapter-node'
+import { feature, project, route, ui } from '@hozu/core'
+import { buildProject } from '@hozu/core/ir'
+import { compileStyles } from '@hozu/css'
+import { resolvers } from '@hozu/data'
+import { zodAdapter } from '@hozu/schema-zod'
+import { validate } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
 
 const png = (w: number, h: number) => {
@@ -22,7 +22,7 @@ const png = (w: number, h: number) => {
   return b
 }
 
-const dir = mkdtempSync(join(tmpdir(), 'tenon-assets-'))
+const dir = mkdtempSync(join(tmpdir(), 'hozu-assets-'))
 writeFileSync(join(dir, 'hero.png'), png(1200, 630))
 writeFileSync(join(dir, 'logo.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20"></svg>')
 writeFileSync(join(dir, 'inter.woff2'), 'wOF2fake')
@@ -56,13 +56,13 @@ const site = project({
 describe('assets', () => {
   const build = buildProject(site)
 
-  it('hashes files, reads image dimensions, and TN028 patches missing width/height from the file', () => {
+  it('hashes files, reads image dimensions, and HZ028 patches missing width/height from the file', () => {
     const assets = Object.values(build.bindings.assets)
     expect(assets.map((a) => [a.width, a.height])).toEqual([
       [1200, 630],
       [40, 20],
     ])
-    const found = validate(build.ir, { bindings: build.bindings }).filter((d) => d.code === 'TN028')
+    const found = validate(build.ir, { bindings: build.bindings }).filter((d) => d.code === 'HZ028')
     expect(found.map((d) => d.location.pointer)).toEqual(['/features/site/views/Page/root/children/0/attrs'])
     expect(found[0]!.fix?.patch).toEqual([
       { op: 'add', path: '/features/site/views/Page/root/children/0/attrs/width', value: { literal: 1200 } },
@@ -73,8 +73,8 @@ describe('assets', () => {
   it('serves hashed images and CSS fonts with immutable caching and preloads woff2', async () => {
     const styles = await compileStyles(build, { base: dir })
     const font = styles.preload[0]!
-    expect(font).toMatch(/^\/_tenon\/a\/[0-9a-f]{16}\.woff2$/)
-    expect(styles.css).toContain(`url(${font.replace('/_tenon/', '')})`)
+    expect(font).toMatch(/^\/_hozu\/a\/[0-9a-f]{16}\.woff2$/)
+    expect(styles.css).toContain(`url(${font.replace('/_hozu/', '')})`)
     const server = createServer({ build, styles, resolvers: resolvers(site, () => []) })
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()))
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`

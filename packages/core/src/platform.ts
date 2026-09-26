@@ -15,6 +15,6 @@ export const fileUrlToPath = (url: string): string =>
 export function readFile(path: string): Uint8Array {
   const fs = builtin('node:fs')
   if (!fs)
-    throw new Error(`Cannot read ${path}: no file system. Build with \`tenon build\` and pass its manifest.`)
+    throw new Error(`Cannot read ${path}: no file system. Build with \`hozu build\` and pass its manifest.`)
   return fs.readFileSync(path)
 }

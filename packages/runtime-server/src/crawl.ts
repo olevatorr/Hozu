@@ -1,6 +1,6 @@
-import { type BuildResult, type Json, publicPath, routeTable, type ValueExpr } from '@tenonkit/core/ir'
-import type { DataRuntime } from '@tenonkit/data'
-import { compileValue } from '@tenonkit/machine'
+import { type BuildResult, type Json, publicPath, routeTable, type ValueExpr } from '@hozu/core/ir'
+import type { DataRuntime } from '@hozu/data'
+import { compileValue } from '@hozu/machine'
 import { escapeHtml } from './escape.ts'
 import { pathOf } from './render.ts'
 

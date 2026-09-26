@@ -1,9 +1,9 @@
 {
-  "name": "@tenonkit/data",
+  "name": "@hozu/data",
   "version": "0.1.0",
-  "description": "Tenon data runtime: resolvers bound by declaration, cache, tags, dedup and invalidation",
+  "description": "Hozu data runtime: resolvers bound by declaration, cache, tags, dedup and invalidation",
   "keywords": [
-    "tenon",
+    "hozu",
     "framework",
     "ai",
     "agents",
@@ -11,13 +11,13 @@
     "islands",
     "typescript"
   ],
-  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/data#readme",
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/data#readme",
   "bugs": {
-    "url": "https://github.com/olevatorr/Tenon/issues"
+    "url": "https://github.com/olevatorr/Hozu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
     "directory": "packages/data"
   },
   "license": "MIT",
@@ -39,8 +39,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@tenonkit/core": "workspace:*",
-    "@tenonkit/machine": "workspace:*"
+    "@hozu/core": "workspace:*",
+    "@hozu/machine": "workspace:*"
   },
   "sideEffects": false
 }

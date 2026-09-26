@@ -1,6 +1,6 @@
-export const devClient = `const source = new EventSource('/_tenon/dev')
+export const devClient = `const source = new EventSource('/_hozu/dev')
 source.addEventListener('reload', () => {
-  window.__tenon?.save()
+  window.__hozu?.save()
   location.reload()
 })
 source.addEventListener('css', async () => {

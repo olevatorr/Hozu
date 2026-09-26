@@ -1,4 +1,4 @@
-import { contract, feature, op, ui } from '@tenonkit/core'
+import { contract, feature, op, ui } from '@hozu/core'
 import { home, taskPage } from '../../routes.ts'
 import {
   Add,

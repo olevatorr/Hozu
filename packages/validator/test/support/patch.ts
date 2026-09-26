@@ -1,4 +1,4 @@
-import { type JsonPatchOp, parsePointer } from '@tenonkit/core/ir'
+import { type JsonPatchOp, parsePointer } from '@hozu/core/ir'
 
 export function applyPatch<T>(doc: T, ops: JsonPatchOp[]): T {
   const out = structuredClone(doc) as unknown

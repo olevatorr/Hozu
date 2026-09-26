@@ -1,5 +1,5 @@
-import { planRoute } from '@tenonkit/compiler'
-import { join } from '@tenonkit/core/ir'
+import { planRoute } from '@hozu/compiler'
+import { join } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 
 export function rendering(ctx: Ctx) {
@@ -7,7 +7,7 @@ export function rendering(ctx: Ctx) {
   for (const [route, page] of Object.entries(ctx.ir.pages)) {
     if (!Object.hasOwn(ctx.ir.routes, route))
       ctx.report(
-        'TN007',
+        'HZ007',
         null,
         join('', 'pages', route),
         `Page for unknown route "${route}"`,
@@ -22,7 +22,7 @@ export function rendering(ctx: Ctx) {
       const dot = ref.indexOf('.')
       if (ref === '?' || ctx.ir.features[ref.slice(0, dot)]?.views[ref.slice(dot + 1)]) return
       ctx.report(
-        'TN007',
+        'HZ007',
         null,
         join('', 'pages', route, 'views', i),
         `Page "${route}" renders unknown view "${ref}"`,
@@ -40,7 +40,7 @@ export function rendering(ctx: Ctx) {
       reported.add(key)
       ctx.report(issue.code, issue.feature, issue.pointer, issue.message, issue.cause, {
         summary:
-          issue.code === 'TN022'
+          issue.code === 'HZ022'
             ? "Make the query scope: 'user', or key it by data that does not come from the user"
             : 'Decide which is intended: change the data freshness/scope, or change the assertion',
         snippet: null,

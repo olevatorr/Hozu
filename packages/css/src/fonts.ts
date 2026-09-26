@@ -195,7 +195,7 @@ export function withFallbacks(
   for (const block of css.matchAll(/@font-face\s*\{([^}]*)\}/g)) {
     const family = /font-family:\s*(["']?)([^;"']+)\1/.exec(block[1]!)?.[2]?.trim()
     const src = /url\((["']?)(a\/[^)"']+)\1\)/.exec(block[1]!)?.[2]
-    const file = src ? files[`/_tenon/${src}`] : undefined
+    const file = src ? files[`/_hozu/${src}`] : undefined
     if (!family || !file || families.has(family)) continue
     const metrics = fontMetrics(read(file))
     if (!metrics) continue

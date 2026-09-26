@@ -1,7 +1,7 @@
 import type { SourceLoc } from '../ir/diagnostic.ts'
 import { captureSource } from '../source/capture.ts'
 
-export const DECL = Symbol.for('tenon.decl')
+export const DECL = Symbol.for('hozu.decl')
 
 export type DeclKind =
   | 'event'

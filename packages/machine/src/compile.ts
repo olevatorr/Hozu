@@ -1,4 +1,4 @@
-import type { AssignOp, FeatureIR, GuardExpr, Json, TransitionIR, ValueExpr } from '@tenonkit/core/ir'
+import type { AssignOp, FeatureIR, GuardExpr, Json, TransitionIR, ValueExpr } from '@hozu/core/ir'
 import { equal, getIn, pathOf, setIn } from './data.ts'
 import type {
   CompiledMachine,

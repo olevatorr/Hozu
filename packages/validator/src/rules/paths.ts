@@ -7,7 +7,7 @@ import {
   type RefSource,
   resolveAt,
   type ValueExpr,
-} from '@tenonkit/core/ir'
+} from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { contextEnv, type Env, schemaIn, triggerEnv, valueSchema } from '../env.ts'
 import { itemsOf, resolvePath } from '../schema.ts'
@@ -26,7 +26,7 @@ function checkPath(
   if (r.ok) return
   const guess = closest(r.segment, r.candidates)
   ctx.report(
-    'TN008',
+    'HZ008',
     env.feature.id,
     at(pointer, 'path', r.index),
     `"${r.segment}" does not exist on ${label}${r.index ? `.${path.slice(0, r.index).join('.')}` : ''}.${didYouMean(guess)}`,
@@ -63,7 +63,7 @@ function checkValue(ctx: Ctx, env: Env, value: ValueExpr, pointer: At) {
       checkPath(ctx, env, env.bindings[value.depth]!, value.path, pointer, 'the binding')
     else
       ctx.report(
-        'TN008',
+        'HZ008',
         env.feature.id,
         at(pointer, 'depth'),
         `Binding ${value.depth} is out of scope`,
@@ -80,7 +80,7 @@ function checkValue(ctx: Ctx, env: Env, value: ValueExpr, pointer: At) {
     (s) => resolvePath(env.sources[s] ?? null, value.path).ok && env.sources[s] !== undefined,
   )
   ctx.report(
-    'TN008',
+    'HZ008',
     env.feature.id,
     at(pointer, 'ref'),
     `"${value.ref}" is not available here`,
@@ -124,7 +124,7 @@ function checkAssign(ctx: Ctx, env: Env, op: AssignOp, pointer: At) {
   if (!r.ok) {
     const guess = closest(op.key, r.candidates)
     ctx.report(
-      'TN008',
+      'HZ008',
       env.feature.id,
       at(pointer, 'key'),
       `Items of ${op.path.join('.')} have no "${op.key}".${didYouMean(guess)}`,
@@ -211,7 +211,7 @@ export function paths(ctx: Ctx) {
             if (!r.ok) {
               const guess = closest(node.key, r.candidates)
               ctx.report(
-                'TN008',
+                'HZ008',
                 f.id,
                 at(pointer, 'key'),
                 `each key "${node.key}" is not a property of the items.${didYouMean(guess)}`,

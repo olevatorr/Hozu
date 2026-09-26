@@ -1,4 +1,4 @@
-import { ui } from '@tenonkit/core'
+import { ui } from '@hozu/core'
 
 export const text = ui.messages('en', {
   en: {

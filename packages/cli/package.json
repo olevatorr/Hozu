@@ -1,9 +1,9 @@
 {
-  "name": "@tenonkit/cli",
+  "name": "@hozu/cli",
   "version": "0.1.0",
-  "description": "The tenon command: validate, inspect, graph, explain, impact, plan, build and skill (all with --json)",
+  "description": "The hozu command: validate, inspect, graph, explain, impact, plan, build and skill (all with --json)",
   "keywords": [
-    "tenon",
+    "hozu",
     "framework",
     "ai",
     "agents",
@@ -11,20 +11,20 @@
     "islands",
     "typescript"
   ],
-  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/cli#readme",
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/cli#readme",
   "bugs": {
-    "url": "https://github.com/olevatorr/Tenon/issues"
+    "url": "https://github.com/olevatorr/Hozu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
     "directory": "packages/cli"
   },
   "license": "MIT",
   "author": "olevatorr",
   "type": "module",
   "bin": {
-    "tenon": "./bin/tenon.js"
+    "hozu": "./bin/hozu.js"
   },
   "exports": {
     ".": {
@@ -45,10 +45,10 @@
     "access": "public"
   },
   "dependencies": {
-    "@tenonkit/core": "workspace:*",
-    "@tenonkit/validator": "workspace:*",
-    "@tenonkit/machine": "workspace:*",
-    "@tenonkit/compiler": "workspace:*",
-    "create-tenon": "workspace:*"
+    "@hozu/core": "workspace:*",
+    "@hozu/validator": "workspace:*",
+    "@hozu/machine": "workspace:*",
+    "@hozu/compiler": "workspace:*",
+    "create-hozu": "workspace:*"
   }
 }

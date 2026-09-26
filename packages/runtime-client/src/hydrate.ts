@@ -1,5 +1,5 @@
-import type { FeatureIR, Json, MachineIR, ViewNode } from '@tenonkit/core/ir'
-import { compileMachine, type Snapshot } from '@tenonkit/machine'
+import type { FeatureIR, Json, MachineIR, ViewNode } from '@hozu/core/ir'
+import { compileMachine, type Snapshot } from '@hozu/machine'
 import { uploads } from './dom.ts'
 import {
   type App,
@@ -15,7 +15,7 @@ import type { mountWidget } from './widget.ts'
 type MountWidget = typeof mountWidget
 
 declare global {
-  var __TENON_DEV__: boolean | undefined
+  var __HOZU_DEV__: boolean | undefined
 }
 
 export interface IslandRef {
@@ -118,7 +118,7 @@ export async function hydrate(
   }: HydrateOptions = {},
 ): Promise<Map<string, App>> {
   const apps = new Map<string, App>()
-  const script = doc.getElementById('tenon-payload')
+  const script = doc.getElementById('hozu-payload')
   if (!script?.textContent) return apps
   const shared: Store = { data: new Map(), versions: new Map() }
   const fns: Record<string, never> = {}
@@ -151,7 +151,7 @@ export async function hydrate(
     if (refreshed.length) for (const app of apps.values()) app.sync()
     return result
   }
-  const dev = globalThis.__TENON_DEV__
+  const dev = globalThis.__HOZU_DEV__
     ? { restore: (await import('./dev.ts')).restore(doc), machines: new Map<string, MachineIR | null>() }
     : null
   const session: Session = {
@@ -176,8 +176,8 @@ export async function hydrate(
       const created: App[] = []
       for (const [id, machine] of Object.entries(payload.features)) {
         if (apps.has(id)) continue
-        const snapshot = (globalThis.__TENON_DEV__ && dev?.restore(id, machine)) || payload.snapshots?.[id]
-        if (globalThis.__TENON_DEV__) dev?.machines.set(id, machine)
+        const snapshot = (globalThis.__HOZU_DEV__ && dev?.restore(id, machine)) || payload.snapshots?.[id]
+        if (globalThis.__HOZU_DEV__) dev?.machines.set(id, machine)
         const app = createApp(doc, {
           machine: machine ? compileMachine({ id, machine } as FeatureIR, fns, routes) : null,
           payload: shared,
@@ -226,7 +226,7 @@ export async function hydrate(
   while (walker.nextNode())
     if ((walker.currentNode as Comment).data === 'i') markers.push(walker.currentNode as Comment)
   await session.mount(payload, markers)
-  if (globalThis.__TENON_DEV__ && dev) (await import('./dev.ts')).expose(doc, apps, dev.machines)
+  if (globalThis.__HOZU_DEV__ && dev) (await import('./dev.ts')).expose(doc, apps, dev.machines)
   if (payload.soft) void import('./navigate.ts').then((m) => m.soft(session))
   return apps
 }

@@ -9,8 +9,8 @@ import {
   project,
   query,
   ui,
-} from '@tenonkit/core'
-import { zodAdapter } from '@tenonkit/schema-zod'
+} from '@hozu/core'
+import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
 const Payload = z.object({ n: z.number() })

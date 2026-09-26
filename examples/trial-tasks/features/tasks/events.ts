@@ -1,4 +1,4 @@
-import { event } from '@tenonkit/core'
+import { event } from '@hozu/core'
 import { z } from 'zod'
 import { NoInput, Priority, Show, TaskKey } from './schemas.ts'
 

@@ -1,9 +1,9 @@
 {
-  "name": "@tenonkit/css",
+  "name": "@hozu/css",
   "version": "0.1.0",
-  "description": "Tailwind CSS v4 for Tenon, compiled from the classes the IR declares",
+  "description": "Tailwind CSS v4 for Hozu, compiled from the classes the IR declares",
   "keywords": [
-    "tenon",
+    "hozu",
     "framework",
     "ai",
     "agents",
@@ -11,13 +11,13 @@
     "islands",
     "typescript"
   ],
-  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/css#readme",
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/css#readme",
   "bugs": {
-    "url": "https://github.com/olevatorr/Tenon/issues"
+    "url": "https://github.com/olevatorr/Hozu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
     "directory": "packages/css"
   },
   "license": "MIT",
@@ -40,8 +40,8 @@
   },
   "dependencies": {
     "@tailwindcss/node": "4.3.3",
-    "@tenonkit/core": "workspace:*",
-    "@tenonkit/validator": "workspace:*",
+    "@hozu/core": "workspace:*",
+    "@hozu/validator": "workspace:*",
     "tailwindcss": "4.3.3"
   },
   "sideEffects": false

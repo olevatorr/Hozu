@@ -88,7 +88,7 @@ export class ProjectScope {
     const name = assetName(url)
     const listed = this.manifest?.assets[this.assetList.length]
     if (this.manifest && listed?.name !== name)
-      throw new Error(`Asset ${name} is not in the manifest in this position; run \`tenon build\` again`)
+      throw new Error(`Asset ${name} is not in the manifest in this position; run \`hozu build\` again`)
     const file = listed ? null : readAsset(url)
     const href = this.basePath + (listed?.href ?? file!.href)
     hit = { name, href, width: listed?.width ?? file!.width, height: listed?.height ?? file!.height }
@@ -146,7 +146,7 @@ export class FeatureScope {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       this.report(
-        'TN014',
+        'HZ014',
         pointer,
         message,
         error instanceof RecorderError
@@ -164,7 +164,7 @@ export class FeatureScope {
     const expected = kinds.join(' | ')
     if (!info) {
       this.report(
-        'TN014',
+        'HZ014',
         pointer,
         `Expected a ${expected} declaration, got ${describe(decl)}`,
         'Only declarations can be referenced.',
@@ -172,7 +172,7 @@ export class FeatureScope {
     } else if (!owner) {
       const effect = kinds.includes('query') || kinds.includes('mutation')
       this.report(
-        effect ? 'TN003' : 'TN007',
+        effect ? 'HZ003' : 'HZ007',
         pointer,
         `This ${info.kind} is not declared in any feature`,
         "It is referenced here but never added to a feature's `declarations`, so it has no identity.",
@@ -184,7 +184,7 @@ export class FeatureScope {
       )
     } else {
       this.report(
-        'TN014',
+        'HZ014',
         pointer,
         `Expected a ${expected} declaration, got a ${owner.kind}`,
         'The declaration kind does not fit here.',
@@ -199,7 +199,7 @@ export class FeatureScope {
     if (cached) return this.intern(cached.hash, cached.json)
     if (!isStandardSchema(schema)) {
       this.report(
-        'TN014',
+        'HZ014',
         pointer,
         `Expected a schema, got ${describe(schema)}`,
         'Schemas must implement Standard Schema.',
@@ -210,7 +210,7 @@ export class FeatureScope {
     const vendor = schema['~standard'].vendor
     if (vendor !== adapter.vendor) {
       this.report(
-        'TN012',
+        'HZ012',
         pointer,
         `Schema from "${vendor}" but the project adapter is "${adapter.vendor}"`,
         'One canonical schema form per project: every schema must come from the configured adapter.',
@@ -251,7 +251,7 @@ export class FeatureScope {
       const route = this.project.routes.get(link.route as object)
       if (!route)
         this.report(
-          'TN007',
+          'HZ007',
           pointer,
           'ui.link targets a route missing from project({ routes })',
           'Routes are identities; register the route.',
@@ -274,7 +274,7 @@ export class FeatureScope {
           const owner = message ? this.project.owners.get(message.decl) : null
           if (message && !owner)
             this.report(
-              'TN007',
+              'HZ007',
               pointer,
               'These messages are not registered in any feature',
               'Add them to feature({ declarations }).',

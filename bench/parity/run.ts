@@ -20,7 +20,7 @@ const start = (cwd: string, entry: string, port: number) =>
     child.on('exit', (code) => reject(new Error(`${entry} exited with ${code}`)))
   })
 
-const [tenon, nuxt] = await Promise.all([
+const [hozu, nuxt] = await Promise.all([
   start(join(here, '../../examples/showcase'), 'serve.ts', 4611),
   start(join(here, 'nuxt'), '.output/server/index.mjs', 4612),
 ])
@@ -86,7 +86,7 @@ const rows: Row[] = []
 for (const width of widths)
   for (const scheme of schemes)
     for (const state of states) {
-      const a = await capture(tenon, width, scheme, state)
+      const a = await capture(hozu, width, scheme, state)
       const b = await capture(nuxt, width, scheme, state)
       const height = Math.min(a.height, b.height)
       const crop = (img: PNG) => {
@@ -99,7 +99,7 @@ for (const width of widths)
       const pixels = pixelmatch(ca.data, cb.data, diff.data, width, height, { threshold: 0.1 })
       const name = `${width}-${scheme}-${state}`
       if (pixels) writeFileSync(join(out, `${name}-diff.png`), PNG.sync.write(diff))
-      writeFileSync(join(out, `${name}-tenon.png`), PNG.sync.write(a))
+      writeFileSync(join(out, `${name}-hozu.png`), PNG.sync.write(a))
       writeFileSync(join(out, `${name}-nuxt.png`), PNG.sync.write(b))
       rows.push({ width, scheme, state, heights: [a.height, b.height], diff: pixels / (width * height) })
       console.log(name, a.height, b.height, `${((pixels / (width * height)) * 100).toFixed(3)}%`)
@@ -107,7 +107,7 @@ for (const width of widths)
 
 const noise: Record<string, number> = {}
 for (const [name, base] of [
-  ['tenon', tenon],
+  ['hozu', hozu],
   ['nuxt', nuxt],
 ] as const)
   for (const width of widths) {
@@ -155,13 +155,13 @@ async function metrics(base: string) {
   return { ...bytes, ...timing }
 }
 
-const perf = { tenon: await metrics(tenon), nuxt: await metrics(nuxt) }
+const perf = { hozu: await metrics(hozu), nuxt: await metrics(nuxt) }
 await browser.close()
 for (const s of servers) s.kill()
 
 writeFileSync(join(out, 'results.json'), `${JSON.stringify({ rows, noise, perf }, null, 2)}\n`)
 const pct = (x: number) => `${(x * 100).toFixed(3)}%`
-console.log('\n| Viewport | Scheme | State | Height (Tenon / Nuxt) | Pixel diff |\n|---|---|---|---|---|')
+console.log('\n| Viewport | Scheme | State | Height (Hozu / Nuxt) | Pixel diff |\n|---|---|---|---|---|')
 for (const r of rows)
   console.log(
     `| ${r.width} | ${r.scheme} | ${r.state} | ${r.heights[0]} / ${r.heights[1]} | ${pct(r.diff)} |`,

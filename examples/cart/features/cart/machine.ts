@@ -1,4 +1,4 @@
-import { invoke, machine, on, op, ui } from '@tenonkit/core'
+import { invoke, machine, on, op, ui } from '@hozu/core'
 import { orderPlaced } from '../../routes.ts'
 import { addItem, checkout, removeItem } from './effects.ts'
 import { AddItem, Checkout, Dismiss, RemoveItem, SetQuantity } from './events.ts'

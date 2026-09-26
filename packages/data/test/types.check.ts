@@ -1,6 +1,6 @@
-import { project, query } from '@tenonkit/core'
-import { resolvers } from '@tenonkit/data'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { project, query } from '@hozu/core'
+import { resolvers } from '@hozu/data'
+import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
 const p = project({

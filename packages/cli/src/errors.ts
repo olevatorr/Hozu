@@ -1,6 +1,6 @@
 import type { CliError } from './contract.ts'
 
-export class TenonCliError extends Error {
+export class HozuCliError extends Error {
   readonly code: CliError['error']['code']
   readonly suggestions: string[]
 

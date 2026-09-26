@@ -1,4 +1,4 @@
-import { event } from '@tenonkit/core'
+import { event } from '@hozu/core'
 import { Line, NoInput, Quantity, SkuOnly } from './schemas.ts'
 
 export const AddItem = event({ payload: Line })

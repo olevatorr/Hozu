@@ -35,7 +35,7 @@ export function buildHttp(project: ProjectScope, config: HttpConfig | null | und
             const id = project.routes.get(r)
             if (!id)
               project.report(
-                'TN007',
+                'HZ007',
                 null,
                 join('', 'http', 'headers', i, 'routes'),
                 'Header rule names a route that is not registered',

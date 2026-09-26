@@ -1,6 +1,6 @@
-import type { RoutePlan } from '@tenonkit/compiler'
-import type { Diagnostic, ExportsIR, FeatureIR } from '@tenonkit/core/ir'
-import type { Impact } from '@tenonkit/validator'
+import type { RoutePlan } from '@hozu/compiler'
+import type { Diagnostic, ExportsIR, FeatureIR } from '@hozu/core/ir'
+import type { Impact } from '@hozu/validator'
 
 export interface CliError {
   error: { code: 'usage' | 'config' | 'unknown-feature' | 'build'; message: string; suggestions: string[] }

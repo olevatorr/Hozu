@@ -1,5 +1,5 @@
-import { canonicalStringify } from '@tenonkit/core/canonical'
-import type { GuardExpr, Json, ValueExpr, ViewIR, ViewNode } from '@tenonkit/core/ir'
+import { canonicalStringify } from '@hozu/core/canonical'
+import type { GuardExpr, Json, ValueExpr, ViewIR, ViewNode } from '@hozu/core/ir'
 import {
   type CompiledMachine,
   compileValue,
@@ -12,7 +12,7 @@ import {
   type Snapshot,
   type Step,
   transition,
-} from '@tenonkit/machine'
+} from '@hozu/machine'
 import { attrText, classText, domField, passive, properties, SVG_NS, text } from './dom.ts'
 
 export type Motion = typeof import('./motion.ts')

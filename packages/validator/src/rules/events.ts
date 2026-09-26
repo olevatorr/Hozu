@@ -1,4 +1,4 @@
-import { at, resolveAt } from '@tenonkit/core/ir'
+import { at, resolveAt } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { resolveRef } from '../resolve.ts'
 import { featurePointer, walkView } from '../walk.ts'
@@ -12,7 +12,7 @@ export function unhandledEvents(ctx: Ctx) {
       const p = featurePointer(f.id, 'events', symbol)
       const exported = f.exports.events.indexOf(symbol)
       ctx.report(
-        'TN002',
+        'HZ002',
         f.id,
         p,
         `Event ${ref} is declared but no state handles it`,
@@ -58,7 +58,7 @@ export function viewEvents(ctx: Ctx) {
           const missing = shown.filter((s) => !handling.has(s))
           if (!missing.length) continue
           ctx.report(
-            'TN005',
+            'HZ005',
             f.id,
             at(pointer, 'on', dom),
             `${send.event} can be sent while ${r.feature.id} is in ${missing.map((s) => `"${s}"`).join(', ')}, where it is not handled`,
@@ -91,7 +91,7 @@ export function conflictingIgnores(ctx: Ctx) {
       s.ignore.forEach((event, i) => {
         if (!s.on[event]?.length) return
         ctx.report(
-          'TN034',
+          'HZ034',
           f.id,
           featurePointer(f.id, 'machine', 'states', name, 'ignore', i),
           `State "${name}" both handles and ignores ${event}`,

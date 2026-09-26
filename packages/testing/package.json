@@ -1,9 +1,9 @@
 {
-  "name": "@tenonkit/testing",
+  "name": "@hozu/testing",
   "version": "0.1.0",
-  "description": "Test rendered Tenon pages through the real handler: status, headers, visible text, payload, form posts",
+  "description": "Test rendered Hozu pages through the real handler: status, headers, visible text, payload, form posts",
   "keywords": [
-    "tenon",
+    "hozu",
     "framework",
     "ai",
     "agents",
@@ -11,13 +11,13 @@
     "islands",
     "typescript"
   ],
-  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/testing#readme",
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/testing#readme",
   "bugs": {
-    "url": "https://github.com/olevatorr/Tenon/issues"
+    "url": "https://github.com/olevatorr/Hozu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
     "directory": "packages/testing"
   },
   "license": "MIT",
@@ -39,8 +39,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@tenonkit/core": "workspace:*",
-    "@tenonkit/runtime-server": "workspace:*"
+    "@hozu/core": "workspace:*",
+    "@hozu/runtime-server": "workspace:*"
   },
   "sideEffects": false
 }

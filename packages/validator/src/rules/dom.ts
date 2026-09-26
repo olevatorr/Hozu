@@ -6,7 +6,7 @@ import {
   resolveAt,
   type SendIR,
   type ValueExpr,
-} from '@tenonkit/core/ir'
+} from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { closest, didYouMean } from '../suggest.ts'
 import { walkView } from '../walk.ts'
@@ -50,7 +50,7 @@ export function domFields(ctx: Ctx) {
       walkView(ir, f, vid, view, ({ node, pointer }) => {
         const outside: Visit = (field, p) =>
           ctx.report(
-            'TN027',
+            'HZ027',
             f.id,
             p,
             `ui.dom.${field} is read outside an event handler`,
@@ -68,7 +68,7 @@ export function domFields(ctx: Ctx) {
               if (allowed.includes(field)) return
               const guess = closest(field, allowed)
               ctx.report(
-                'TN027',
+                'HZ027',
                 f.id,
                 p,
                 `"${event}" events have no DOM field "${field}".${didYouMean(guess)}`,
@@ -93,7 +93,7 @@ export function domFields(ctx: Ctx) {
               domRefs(send.payload, at(pointer, 'on', event, 'payload'), (field, p) => {
                 if (field !== 'detail')
                   ctx.report(
-                    'TN027',
+                    'HZ027',
                     f.id,
                     p,
                     `Widget event "${event}" carries only its detail`,

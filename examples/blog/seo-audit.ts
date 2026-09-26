@@ -1,10 +1,10 @@
 import { request } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { createServer } from '@tenonkit/adapter-node'
-import { buildProject } from '@tenonkit/core/ir'
-import { compileStyles } from '@tenonkit/css'
+import { createServer } from '@hozu/adapter-node'
+import { buildProject } from '@hozu/core/ir'
+import { compileStyles } from '@hozu/css'
+import project from './hozu.config.ts'
 import { createResolvers } from './server.ts'
-import project from './tenon.config.ts'
 
 interface Res {
   status: number
@@ -48,7 +48,7 @@ const textOf = (html: string) =>
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
 
-for (const path of ['/', '/posts/hello-tenon', '/posts/islands-explained']) {
+for (const path of ['/', '/posts/hello-hozu', '/posts/islands-explained']) {
   const res = await call('GET', path)
   const html = res.body
   const title = first(html, /<title>([^<]*)<\/title>/)
@@ -102,13 +102,13 @@ for (const path of ['/', '/posts/hello-tenon', '/posts/islands-explained']) {
   check(
     path,
     'canonical URL = site URL + path',
-    html.includes(`<link rel="canonical" href="https://blog.tenon.dev${path}">`),
+    html.includes(`<link rel="canonical" href="https://blog.hozu.dev${path}">`),
   )
   check(
     path,
     'user-specific content not in cacheable HTML',
-    !(res.headers['x-tenon-cache'] !== 'bypass' && /reading list/i.test(html)),
-    String(res.headers['x-tenon-cache']),
+    !(res.headers['x-hozu-cache'] !== 'bypass' && /reading list/i.test(html)),
+    String(res.headers['x-hozu-cache']),
   )
 }
 const css = await call('GET', styles.href)
@@ -137,7 +137,7 @@ const robots = await call('GET', '/robots.txt')
 check(
   '/robots.txt',
   'robots.txt served with Sitemap line',
-  robots.status === 200 && robots.body.includes('Sitemap: https://blog.tenon.dev/sitemap.xml'),
+  robots.status === 200 && robots.body.includes('Sitemap: https://blog.hozu.dev/sitemap.xml'),
 )
 const sitemap = await call('GET', '/sitemap.xml')
 const locs = [...sitemap.body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])

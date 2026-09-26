@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import type { AddressInfo } from 'node:net'
-import { compileStyles } from '@tenonkit/css'
+import { compileStyles } from '@hozu/css'
 import { chromium } from 'playwright-core'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { build, start } from './support.ts'
@@ -98,7 +98,7 @@ describe.skipIf(!existsSync(chrome))('in Chromium', () => {
       expect(await page.evaluate(() => window.scrollY)).toBe(900)
       expect(await page.evaluate(() => (window as unknown as { __alive?: boolean }).__alive)).toBe(true)
       expect(await page.inputValue('input[name="qty"]')).toBe('5')
-      expect(requests.filter((r) => r.includes('/_tenon/query'))).toEqual([])
+      expect(requests.filter((r) => r.includes('/_hozu/query'))).toEqual([])
     } finally {
       await browser.close()
     }

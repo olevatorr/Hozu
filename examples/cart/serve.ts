@@ -1,8 +1,8 @@
-import { createServer } from '@tenonkit/adapter-node'
-import { buildProject } from '@tenonkit/core/ir'
-import { compileStyles } from '@tenonkit/css'
+import { createServer } from '@hozu/adapter-node'
+import { buildProject } from '@hozu/core/ir'
+import { compileStyles } from '@hozu/css'
+import project from './hozu.config.ts'
 import { createResolvers } from './server.ts'
-import project from './tenon.config.ts'
 
 const port = Number(process.env.PORT ?? 3000)
 const user = (cookie: string | undefined) => /(?:^|;\s*)user=([^;]+)/.exec(cookie ?? '')?.[1] ?? 'guest'
@@ -14,4 +14,4 @@ createServer({
   styles: await compileStyles(build),
   resolvers: createResolvers(),
   session: (request) => ({ userId: user(request.headers.get('cookie') ?? undefined) }),
-}).listen(port, () => console.log(`Tenon cart on http://localhost:${port}`))
+}).listen(port, () => console.log(`Hozu cart on http://localhost:${port}`))

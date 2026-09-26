@@ -1,4 +1,4 @@
-import type { Json, JsonSchema } from '@tenonkit/core/ir'
+import type { Json, JsonSchema } from '@hozu/core/ir'
 
 export type PathResult =
   | { ok: true; schema: JsonSchema | null }

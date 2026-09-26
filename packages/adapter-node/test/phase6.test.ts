@@ -1,9 +1,9 @@
 import type { AddressInfo } from 'node:net'
-import { createServer } from '@tenonkit/adapter-node'
-import { buildProject } from '@tenonkit/core/ir'
+import { createServer } from '@hozu/adapter-node'
+import { buildProject } from '@hozu/core/ir'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import project from '../../../examples/bookmarks/hozu.config.ts'
 import { createResolvers } from '../../../examples/bookmarks/server.ts'
-import project from '../../../examples/bookmarks/tenon.config.ts'
 
 const errors: unknown[] = []
 let base = ''
@@ -34,7 +34,7 @@ const form = (action: string, body: Record<string, string>, headers: Record<stri
 describe('Phase 6 (ADR 0014)', () => {
   it('renders forms that post natively, and search-dependent pages by canonical URL', async () => {
     const html = await (await fetch(`${base}/?show=unread&utm=x`)).text()
-    expect(html).toContain('method="post" action="/?show=unread&amp;__tenon=bookmarks.Board%2F1"')
+    expect(html).toContain('method="post" action="/?show=unread&amp;__hozu=bookmarks.Board%2F1"')
     expect(html).toContain('<link rel="canonical" href="http://localhost:3000/?show=unread">')
     expect(await (await fetch(`${base}/?show=all`)).text()).toContain(
       '<link rel="canonical" href="http://localhost:3000/">',
@@ -42,12 +42,12 @@ describe('Phase 6 (ADR 0014)', () => {
   })
 
   it('runs the machine on the server for a no-JS post: navigate → 303, declared error → page with the alert', async () => {
-    const ok = await form('/?__tenon=bookmarks.Board%2F1', { title: 'From a form', kind: 'video' })
+    const ok = await form('/?__hozu=bookmarks.Board%2F1', { title: 'From a form', kind: 'video' })
     expect(ok.status).toBe(303)
     const location = ok.headers.get('location')!
     expect(location).toMatch(/^\/bookmarks\/b\d+$/)
     expect(await (await fetch(`${base}${location}`)).text()).toContain('Kind: video')
-    const dup = await form('/?__tenon=bookmarks.Board%2F1', { title: 'from a form', kind: 'video' })
+    const dup = await form('/?__hozu=bookmarks.Board%2F1', { title: 'from a form', kind: 'video' })
     expect(dup.status).toBe(200)
     const page = await dup.text()
     expect(page).toContain('This bookmark already exists')
@@ -56,12 +56,12 @@ describe('Phase 6 (ADR 0014)', () => {
 
   it('rejects cross-site posts and sends security headers', async () => {
     const r = await form(
-      '/?__tenon=bookmarks.Board%2F1',
+      '/?__hozu=bookmarks.Board%2F1',
       { title: 'x', kind: 'video' },
       { origin: 'https://evil.example' },
     )
     expect(r.status).toBe(403)
-    const effect = await fetch(`${base}/_tenon/effect`, {
+    const effect = await fetch(`${base}/_hozu/effect`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'sec-fetch-site': 'cross-site' },
       body: '{}',
@@ -74,13 +74,13 @@ describe('Phase 6 (ADR 0014)', () => {
 
   it('reports resolver failures to onError and serves an HTML error page on crashes', async () => {
     const before = errors.length
-    const r = await fetch(`${base}/_tenon/effect`, {
+    const r = await fetch(`${base}/_hozu/effect`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ effect: 'bookmarks.toggleRead', input: { id: 42 }, keys: [] }),
     })
     expect(r.status).toBe(200)
-    const bad = await fetch(`${base}/_tenon/effect`, { method: 'POST', body: 'not json' })
+    const bad = await fetch(`${base}/_hozu/effect`, { method: 'POST', body: 'not json' })
     expect(bad.status).toBe(500)
     expect(errors.length).toBeGreaterThan(before)
   })

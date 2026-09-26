@@ -4,18 +4,18 @@ import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createServer } from '@tenonkit/adapter-node'
-import { buildProject, type Manifest } from '@tenonkit/core/ir'
+import { createServer } from '@hozu/adapter-node'
+import { buildProject, type Manifest } from '@hozu/core/ir'
 import { describe, expect, it } from 'vitest'
+import project from '../../../examples/cart/hozu.config.ts'
 import { createResolvers } from '../../../examples/cart/server.ts'
-import project from '../../../examples/cart/tenon.config.ts'
 
 const cart = fileURLToPath(new URL('../../../examples/cart/', import.meta.url))
-const cli = fileURLToPath(new URL('../../cli/bin/tenon.js', import.meta.url))
+const cli = fileURLToPath(new URL('../../cli/bin/hozu.js', import.meta.url))
 
-describe('tenon build output on Node (ADR 0016)', () => {
+describe('hozu build output on Node (ADR 0016)', () => {
   it('serves dist/public next to pages built from the manifest, and rejects a stale manifest', async () => {
-    const out = mkdtempSync(join(tmpdir(), 'tenon-dist-'))
+    const out = mkdtempSync(join(tmpdir(), 'hozu-dist-'))
     const built = spawnSync(process.execPath, [cli, 'build', '--out', out], { cwd: cart, encoding: 'utf8' })
     expect(built.status, built.stderr).toBe(0)
     const manifest = JSON.parse(readFileSync(join(out, 'manifest.json'), 'utf8')) as Manifest
@@ -39,14 +39,14 @@ describe('tenon build output on Node (ADR 0016)', () => {
         'text/css',
         'public, max-age=31536000, immutable',
       ])
-      const client = await fetch(`${base}/_tenon/client.js`)
+      const client = await fetch(`${base}/_hozu/client.js`)
       expect([client.status, client.headers.get('content-type')]).toEqual([200, 'text/javascript'])
-      expect((await fetch(`${base}/_tenon/..%2F..%2Fpackage.json`)).status).toBe(404)
+      expect((await fetch(`${base}/_hozu/..%2F..%2Fpackage.json`)).status).toBe(404)
     } finally {
       server.close()
     }
     expect(() =>
       createServer({ build, manifest: { ...manifest, irHash: 'stale' }, resolvers: createResolvers() }),
-    ).toThrow('run `tenon build` again')
+    ).toThrow('run `hozu build` again')
   }, 30_000)
 })

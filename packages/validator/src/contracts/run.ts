@@ -1,8 +1,8 @@
-import type { Check, ContractIR, EffectCallIR, Json } from '@tenonkit/core/ir'
-import { type CompiledMachine, enter, equal, type Snapshot, type Step, transition } from '@tenonkit/machine'
+import type { Check, ContractIR, EffectCallIR, Json } from '@hozu/core/ir'
+import { type CompiledMachine, enter, equal, type Snapshot, type Step, transition } from '@hozu/machine'
 
 export interface Failure {
-  code: 'TN015' | 'TN017'
+  code: 'HZ015' | 'HZ017'
   tokens: (string | number)[]
   message: string
   cause: string
@@ -65,14 +65,14 @@ export function runContract(
     check = checks[key],
   ) => {
     const issues = check?.(value)
-    if (issues) stop('TN017', tokens, `${what} does not match its schema`, issues.join('; '))
+    if (issues) stop('HZ017', tokens, `${what} does not match its schema`, issues.join('; '))
   }
   const stateOf = (s: Snapshot) => machine.states[machine.index.get(s.state)!]!
   try {
     const feature = machine.feature
     if (!machine.index.has(contract.given.state))
       stop(
-        'TN015',
+        'HZ015',
         ['given', 'state'],
         `Unknown state "${contract.given.state}"`,
         `States: ${[...machine.index.keys()].join(', ')}.`,
@@ -95,7 +95,7 @@ export function runContract(
       const invoke = stateOf(snapshot).invoke
       if (invoke?.effect !== effect)
         stop(
-          'TN015',
+          'HZ015',
           ['when', i],
           `No pending ${effect} in state "${snapshot.state}"`,
           invoke ? `"${snapshot.state}" invokes ${invoke.effect}.` : `"${snapshot.state}" invokes nothing.`,
@@ -144,21 +144,21 @@ export function runContract(
     const { expect } = contract
     if (snapshot.state !== expect.state)
       stop(
-        'TN015',
+        'HZ015',
         ['expect', 'state'],
         `Expected state "${expect.state}", machine is in "${snapshot.state}"`,
         path,
       )
     if (expect.context !== null && !equal(expect.context, snapshot.context))
       stop(
-        'TN015',
+        'HZ015',
         ['expect', 'context'],
         'Context differs from the expectation',
         `${firstDifference(expect.context, snapshot.context)}. ${path}`,
       )
     if (expect.effects !== null && !equal(expect.effects as unknown as Json, invokes as unknown as Json))
       stop(
-        'TN015',
+        'HZ015',
         ['expect', 'effects'],
         'Effects (invokes and navigation) differ from the expectation',
         `Expected ${show(expect.effects)}, got ${show(invokes)}. ${path}`,
@@ -169,7 +169,7 @@ export function runContract(
     return {
       taken,
       failure: {
-        code: 'TN015',
+        code: 'HZ015',
         tokens: [],
         message: `Contract threw: ${error instanceof Error ? error.message : String(error)}`,
         cause: 'An fn() implementation or the machine raised an exception while running this contract.',

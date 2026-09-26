@@ -1,15 +1,15 @@
-# @tenonkit/content
+# @hozu/content
 
-Markdown content collections with typed front matter for Tenon.
+Markdown content collections with typed front matter for Hozu.
 
-Part of [Tenon](https://github.com/olevatorr/Tenon#readme), an AI-first web framework. Most apps start from
-`npm create tenon@latest`, which installs the right packages and sets up Claude Code or `AGENTS.md` agents.
+Part of [Hozu](https://github.com/olevatorr/Hozu#readme), an AI-first web framework. Most apps start from
+`npm create hozu@latest`, which installs the right packages and sets up Claude Code or `AGENTS.md` agents.
 
 ```sh
-npm install @tenonkit/content
+npm install @hozu/content
 ```
 
-Requires Node 22.18 or newer. Documentation: the [README](https://github.com/olevatorr/Tenon#readme) and the
-agent skill that `create-tenon` writes into each app.
+Requires Node 22.18 or newer. Documentation: the [README](https://github.com/olevatorr/Hozu#readme) and the
+agent skill that `create-hozu` writes into each app.
 
 MIT © olevatorr

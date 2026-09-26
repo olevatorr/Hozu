@@ -1,4 +1,4 @@
-import { type At, at, type ProjectIR, resolveAt, routeParams, routePattern } from '@tenonkit/core/ir'
+import { type At, at, type ProjectIR, resolveAt, routeParams, routePattern } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { closest, didYouMean } from '../suggest.ts'
 import { walkView } from '../walk.ts'
@@ -26,7 +26,7 @@ function report(ctx: Ctx, feature: string, pointer: At, href: string) {
     ? `ui.link(${match.id}, ${match.params ? JSON.stringify(match.params) : 'null'})`
     : 'ui.link(route, params)'
   ctx.report(
-    'TN032',
+    'HZ032',
     feature,
     pointer,
     match
@@ -65,7 +65,7 @@ export function internalLinks(ctx: Ctx) {
         const href = node.attrs.href
         if (!href || !('literal' in href) || typeof href.literal !== 'string') return
         const v = href.literal
-        if (v.startsWith('/') && !v.startsWith('//') && !v.startsWith('/_tenon/'))
+        if (v.startsWith('/') && !v.startsWith('//') && !v.startsWith('/_hozu/'))
           report(ctx, f.id, at(pointer, 'attrs', 'href'), v)
       })
 }

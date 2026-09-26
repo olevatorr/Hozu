@@ -1,9 +1,9 @@
-import { buildProject } from '@tenonkit/core/ir'
-import { createDataRuntime } from '@tenonkit/data'
-import { compileMachine, type Effect, init, type Step, transition } from '@tenonkit/machine'
+import { buildProject } from '@hozu/core/ir'
+import { createDataRuntime } from '@hozu/data'
+import { compileMachine, type Effect, init, type Step, transition } from '@hozu/machine'
 import { getCart } from './features/cart/effects.ts'
+import project from './hozu.config.ts'
 import { createResolvers } from './server.ts'
-import project from './tenon.config.ts'
 
 const build = buildProject(project, { sources: false })
 const data = createDataRuntime({ build, resolvers: createResolvers() })

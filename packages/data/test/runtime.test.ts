@@ -1,13 +1,13 @@
-import { event, feature, mutation, project, query, tag } from '@tenonkit/core'
-import { buildProject } from '@tenonkit/core/ir'
-import { createDataRuntime, DataRuntimeError, resolvers } from '@tenonkit/data'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { event, feature, mutation, project, query, tag } from '@hozu/core'
+import { buildProject } from '@hozu/core/ir'
+import { createDataRuntime, DataRuntimeError, resolvers } from '@hozu/data'
+import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { addItem, getCart } from '../../../examples/cart/features/cart/effects.ts'
 import { getProduct, listProducts } from '../../../examples/cart/features/catalog/effects.ts'
+import cartProject from '../../../examples/cart/hozu.config.ts'
 import { createResolvers } from '../../../examples/cart/server.ts'
-import cartProject from '../../../examples/cart/tenon.config.ts'
 
 const build = buildProject(cartProject, { sources: true })
 const ada = { userId: 'ada' }
@@ -142,7 +142,7 @@ describe('resolver wiring', () => {
   })
   const b = buildProject(p)
 
-  it('TN021 — missing and duplicate implementations are structured errors', () => {
+  it('HZ021 — missing and duplicate implementations are structured errors', () => {
     const attempt = () =>
       createDataRuntime({
         build: b,
@@ -154,8 +154,8 @@ describe('resolver wiring', () => {
     } catch (error) {
       const d = (error as DataRuntimeError).diagnostics
       expect(d.map((x) => [x.code, x.location.pointer, x.message])).toEqual([
-        ['TN021', '/features/f/queries/read', 'f.read is implemented twice'],
-        ['TN021', '/features/f/mutations/write', 'f.write has no implementation'],
+        ['HZ021', '/features/f/queries/read', 'f.read is implemented twice'],
+        ['HZ021', '/features/f/mutations/write', 'f.write has no implementation'],
       ])
     }
   })

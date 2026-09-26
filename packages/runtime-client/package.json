@@ -1,9 +1,9 @@
 {
-  "name": "@tenonkit/runtime-client",
+  "name": "@hozu/runtime-client",
   "version": "0.1.0",
-  "description": "Tenon client runtime: fine-grained DOM islands, no virtual DOM, about 7.5 KB gzipped",
+  "description": "Hozu client runtime: fine-grained DOM islands, no virtual DOM, about 7.5 KB gzipped",
   "keywords": [
-    "tenon",
+    "hozu",
     "framework",
     "ai",
     "agents",
@@ -11,13 +11,13 @@
     "islands",
     "typescript"
   ],
-  "homepage": "https://github.com/olevatorr/Tenon/tree/main/packages/runtime-client#readme",
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/runtime-client#readme",
   "bugs": {
-    "url": "https://github.com/olevatorr/Tenon/issues"
+    "url": "https://github.com/olevatorr/Hozu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olevatorr/Tenon.git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
     "directory": "packages/runtime-client"
   },
   "license": "MIT",
@@ -46,8 +46,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@tenonkit/core": "workspace:*",
-    "@tenonkit/machine": "workspace:*"
+    "@hozu/core": "workspace:*",
+    "@hozu/machine": "workspace:*"
   },
   "sideEffects": false
 }

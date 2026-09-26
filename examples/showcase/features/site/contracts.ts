@@ -1,4 +1,4 @@
-import { contract } from '@tenonkit/core'
+import { contract } from '@hozu/core'
 import {
   AddTodo,
   Draft,

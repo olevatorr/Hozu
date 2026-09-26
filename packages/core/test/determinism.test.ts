@@ -1,21 +1,10 @@
-import {
-  event,
-  feature,
-  invoke,
-  machine,
-  mutation,
-  on,
-  op,
-  type ProjectDecl,
-  project,
-  ui,
-} from '@tenonkit/core'
-import { buildProject, hashJson } from '@tenonkit/core/ir'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { event, feature, invoke, machine, mutation, on, op, type ProjectDecl, project, ui } from '@hozu/core'
+import { buildProject, hashJson } from '@hozu/core/ir'
+import { zodAdapter } from '@hozu/schema-zod'
 import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import cartProject from '../../../examples/cart/tenon.config.ts'
+import cartProject from '../../../examples/cart/hozu.config.ts'
 import type { FeatureConfig, ProjectConfig } from '../src/builders/feature.ts'
 import { DECL, type DeclInfo } from '../src/model/decl.ts'
 

@@ -6,7 +6,7 @@ import {
   type JsonSchema,
   type ValueExpr,
   type ViewNode,
-} from '@tenonkit/core/ir'
+} from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { eventSchema } from '../env.ts'
 import { resolvePath } from '../schema.ts'
@@ -112,7 +112,7 @@ export function domText(ctx: Ctx) {
             const field = path.join('.') || 'payload'
             const source = v.path[0] === 'form' ? `ui.dom.form('${v.path[1]}')` : 'ui.dom.value'
             const report = (message: string, cause: string, summary: string) =>
-              ctx.report('TN033', f.id, p, message, cause, { summary, snippet: null, patch: null })
+              ctx.report('HZ033', f.id, p, message, cause, { summary, snippet: null, patch: null })
             if (kind === 'number') {
               report(
                 `${source} is text, but ${send.event}.${field} is a number`,

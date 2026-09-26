@@ -1,4 +1,4 @@
-import { implement } from '@tenonkit/core/widget'
+import { implement } from '@hozu/core/widget'
 import Lenis from 'lenis'
 import type { Smooth } from '../widgets.ts'
 

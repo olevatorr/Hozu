@@ -1,4 +1,4 @@
-import type { Json } from '@tenonkit/core/ir'
+import type { Json } from '@hozu/core/ir'
 
 export const SVG_NS = 'http://www.w3.org/2000/svg'
 

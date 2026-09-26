@@ -4,18 +4,18 @@ import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { createServer } from '@tenonkit/adapter-node'
-import { feature, project, route, ui } from '@tenonkit/core'
-import { buildProject, type Manifest } from '@tenonkit/core/ir'
-import { resolvers } from '@tenonkit/data'
-import { optimizeImages } from '@tenonkit/image'
-import { createHandler } from '@tenonkit/runtime-server'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { createServer } from '@hozu/adapter-node'
+import { feature, project, route, ui } from '@hozu/core'
+import { buildProject, type Manifest } from '@hozu/core/ir'
+import { resolvers } from '@hozu/data'
+import { optimizeImages } from '@hozu/image'
+import { createHandler } from '@hozu/runtime-server'
+import { zodAdapter } from '@hozu/schema-zod'
 import { chromium } from 'playwright-core'
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 
-const dir = mkdtempSync(join(tmpdir(), 'tenon-image-'))
+const dir = mkdtempSync(join(tmpdir(), 'hozu-image-'))
 writeFileSync(
   join(dir, 'hero.png'),
   await sharp({ create: { width: 2000, height: 1000, channels: 3, background: '#2255aa' } })
@@ -43,7 +43,7 @@ const site = project({
 const build = buildProject(site, { sources: false })
 const chrome = process.env.CHROMIUM_PATH ?? chromium.executablePath()
 
-describe('@tenonkit/image (ADR 0017)', () => {
+describe('@hozu/image (ADR 0017)', () => {
   it('generates WebP widths up to the intrinsic width for raster <img> assets only', async () => {
     const images = await optimizeImages(build)
     const [hero] = Object.keys(images.variants)
@@ -60,10 +60,10 @@ describe('@tenonkit/image (ADR 0017)', () => {
     const with_ = createHandler({ build, resolvers: resolvers(site, () => []), images })
     const html = await (await with_.fetch(new Request('https://x.example/'))).text()
     const img = /<img[^>]*alt="Hero"[^>]*>/.exec(html)![0]
-    expect(img).toMatch(/srcset="\/_tenon\/a\/[0-9a-f]{16}-640\.webp 640w, .*-2000\.webp 2000w"/)
+    expect(img).toMatch(/srcset="\/_hozu\/a\/[0-9a-f]{16}-640\.webp 640w, .*-2000\.webp 2000w"/)
     expect(img).toContain('sizes="(max-width: 1000px) 100vw, 1000px"')
     expect(/<img[^>]*alt="Logo"[^>]*>/.exec(html)![0]).not.toContain('srcset')
-    const href = /(\/_tenon\/a\/[0-9a-f]{16}-640\.webp)/.exec(img)![1]!
+    const href = /(\/_hozu\/a\/[0-9a-f]{16}-640\.webp)/.exec(img)![1]!
     const file = await with_.fetch(new Request(`https://x.example${href}`))
     expect([file.status, file.headers.get('content-type')]).toEqual([200, 'image/webp'])
 
@@ -96,17 +96,17 @@ describe('@tenonkit/image (ADR 0017)', () => {
     30_000,
   )
 
-  it('tenon build picks @tenonkit/image up from the project and the manifest carries the variants', async () => {
+  it('hozu build picks @hozu/image up from the project and the manifest carries the variants', async () => {
     const blog = fileURLToPath(new URL('../../../examples/blog/', import.meta.url))
-    const cli = fileURLToPath(new URL('../../cli/bin/tenon.js', import.meta.url))
-    const out = mkdtempSync(join(tmpdir(), 'tenon-blog-dist-'))
+    const cli = fileURLToPath(new URL('../../cli/bin/hozu.js', import.meta.url))
+    const out = mkdtempSync(join(tmpdir(), 'hozu-blog-dist-'))
     const built = spawnSync(process.execPath, [cli, 'build', '--out', out], { cwd: blog, encoding: 'utf8' })
     expect(built.status, built.stderr).toBe(0)
     const manifest = JSON.parse(readFileSync(join(out, 'manifest.json'), 'utf8')) as Manifest
     const [hero] = Object.values(manifest.images ?? {})
     expect(hero?.map((v) => v.width)).toEqual([640, 960, 1280, 1600])
     for (const v of hero!) expect(existsSync(join(out, 'public', v.href))).toBe(true)
-    const project = (await import('../../../examples/blog/tenon.config.ts')).default
+    const project = (await import('../../../examples/blog/hozu.config.ts')).default
     const { createResolvers } = await import('../../../examples/blog/server.ts')
     const handler = createHandler({
       build: buildProject(project, { sources: false, manifest }),
@@ -114,7 +114,7 @@ describe('@tenonkit/image (ADR 0017)', () => {
       resolvers: createResolvers(),
       session: () => ({ userId: 'a' }),
     })
-    const html = await (await handler.fetch(new Request('https://blog.tenon.dev/en'))).text()
+    const html = await (await handler.fetch(new Request('https://blog.hozu.dev/en'))).text()
     expect(html).toContain(`srcset="${hero!.map((v) => `${v.href} ${v.width}w`).join(', ')}"`)
   }, 30_000)
 })

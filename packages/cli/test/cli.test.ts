@@ -10,7 +10,7 @@ import { main } from '../src/main.ts'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const cart = `${root}examples/cart`
-const bin = `${root}packages/cli/bin/tenon.js`
+const bin = `${root}packages/cli/bin/hozu.js`
 const schema = (name: string) =>
   JSON.parse(readFileSync(`${root}packages/cli/schema/${name}.schema.json`, 'utf8'))
 const ajv = new Ajv({ allErrors: true, strict: false })
@@ -29,19 +29,19 @@ const expectSchema = (name: string, value: unknown) => {
   expect(valid).toBe(true)
 }
 
-describe('tenon skill', () => {
+describe('hozu skill', () => {
   it('asks where to write the skill, then keeps rewriting the same place', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'tenon-skill-'))
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-skill-'))
     const none = await run(['skill', '--json'], dir)
     expect(none.code).toBe(2)
     expect(JSON.parse(none.stdout).error.suggestions[0]).toContain('--agent claude')
     const first = await run(['skill', '--agent', 'agents', '--json'], dir)
     expect(first.code).toBe(0)
     expectSchema('skill', JSON.parse(first.stdout))
-    expect(JSON.parse(first.stdout).written).toEqual(['.agents/skills/tenon', 'AGENTS.md'])
-    expect(existsSync(join(dir, '.agents/skills/tenon/example/tenon.config.ts'))).toBe(true)
+    expect(JSON.parse(first.stdout).written).toEqual(['.agents/skills/hozu', 'AGENTS.md'])
+    expect(existsSync(join(dir, '.agents/skills/hozu/example/hozu.config.ts'))).toBe(true)
     const again = await run(['skill', '--json'], dir)
-    expect(JSON.parse(again.stdout).written).toEqual(['.agents/skills/tenon'])
+    expect(JSON.parse(again.stdout).written).toEqual(['.agents/skills/hozu'])
   })
 })
 
@@ -157,7 +157,7 @@ describe('A5 CLI contract', () => {
     })
   })
 
-  it('reports TN011 when a recorder is nondeterministic', async () => {
+  it('reports HZ011 when a recorder is nondeterministic', async () => {
     const { code, stdout } = await run([
       'validate',
       '--json',
@@ -170,7 +170,7 @@ describe('A5 CLI contract', () => {
     expect(out.lock).toBe('missing')
     expect(out.diagnostics).toHaveLength(1)
     expect(out.diagnostics[0]).toMatchObject({
-      code: 'TN011',
+      code: 'HZ011',
       location: {
         feature: 'dice',
         pointer: '/features/dice/machine/states/idle/on/dice.Roll/0/guard/right/literal',
@@ -186,7 +186,7 @@ describe('built binary', () => {
     const result = await exec('node', [bin, 'validate', '--config', fixture], { cwd: root }).catch((e) => e)
     expect(result.code).toBe(1)
     expect(result.stdout).toContain(
-      'packages/cli/test/fixtures/nondeterministic.config.ts:14:9  error  TN011',
+      'packages/cli/test/fixtures/nondeterministic.config.ts:14:9  error  HZ011',
     )
   })
 })

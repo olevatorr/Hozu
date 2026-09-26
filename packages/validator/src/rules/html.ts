@@ -1,4 +1,4 @@
-import { type At, anyRef, at, resolveAt, type ValueExpr, type ViewNode } from '@tenonkit/core/ir'
+import { type At, anyRef, at, resolveAt, type ValueExpr, type ViewNode } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { featurePointer } from '../walk.ts'
 
@@ -22,7 +22,7 @@ export function unsafeHtml(ctx: Ctx) {
           case 'html':
             if (untrusted(n.value, tainted))
               ctx.report(
-                'TN030',
+                'HZ030',
                 f.id,
                 at(pointer, 'value'),
                 'ui.html renders a value the client or URL controls',

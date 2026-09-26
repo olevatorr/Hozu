@@ -1,8 +1,8 @@
 import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { planRoute } from '@tenonkit/compiler'
-import type { BuildResult, ImageSet } from '@tenonkit/core/ir'
-import { createDataRuntime, type ResolverSet } from '@tenonkit/data'
+import { planRoute } from '@hozu/compiler'
+import type { BuildResult, ImageSet } from '@hozu/core/ir'
+import { createDataRuntime, type ResolverSet } from '@hozu/data'
 import {
   pageEntries,
   publicAssets,
@@ -12,7 +12,7 @@ import {
   sitemapXml,
   staticFiles,
   type WidgetBundle,
-} from '@tenonkit/runtime-server'
+} from '@hozu/runtime-server'
 
 export interface StaticExportOptions {
   build: BuildResult
@@ -55,7 +55,7 @@ export async function exportStatic({
     }
     const list = entries.filter((e) => e.route === route)
     if (!list.length && build.ir.routes[route]?.params && !page.entries) {
-      result.skipped.push({ route, reason: 'parameterized route without entries (TN025)' })
+      result.skipped.push({ route, reason: 'parameterized route without entries (HZ025)' })
       continue
     }
     for (const entry of list) {

@@ -1,4 +1,4 @@
-import { eachGuardRef, eachRef, type Json, type ValueExpr, type ViewNode } from '@tenonkit/core/ir'
+import { eachGuardRef, eachRef, type Json, type ValueExpr, type ViewNode } from '@hozu/core/ir'
 
 const usesMemo = new WeakMap<ViewNode, Uses>()
 

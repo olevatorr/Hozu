@@ -1,6 +1,6 @@
-import { contract, event, feature, invoke, machine, mutation, on, op, project } from '@tenonkit/core'
-import { buildProject } from '@tenonkit/core/ir'
-import { zodAdapter } from '@tenonkit/schema-zod'
+import { contract, event, feature, invoke, machine, mutation, on, op, project } from '@hozu/core'
+import { buildProject } from '@hozu/core/ir'
+import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
@@ -69,9 +69,9 @@ describe('declarations are classified by kind', () => {
     expect(f.machine).not.toBeNull()
   })
 
-  it('reports a second machine as TN013 and a non-declaration as TN014', () => {
+  it('reports a second machine as HZ013 and a non-declaration as HZ014', () => {
     const codes = (d: Record<string, unknown>) => build(d).diagnostics.map((x) => x.code)
-    expect(codes({ SetN, save, m, again: m })).toContain('TN013')
-    expect(codes({ SetN, save, m, helper: () => 1 })).toContain('TN014')
+    expect(codes({ SetN, save, m, again: m })).toContain('HZ013')
+    expect(codes({ SetN, save, m, helper: () => 1 })).toContain('HZ014')
   })
 })

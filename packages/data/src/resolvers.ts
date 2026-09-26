@@ -1,8 +1,8 @@
-import type { MutationDecl, ProjectDecl, QueryDecl, Scope } from '@tenonkit/core'
+import type { MutationDecl, ProjectDecl, QueryDecl, Scope } from '@hozu/core'
 
-export const FAIL = Symbol.for('tenon.fail')
-const IMPLEMENTATION = Symbol.for('tenon.implementation')
-const RESOLVERS = Symbol.for('tenon.resolvers')
+export const FAIL = Symbol.for('hozu.fail')
+const IMPLEMENTATION = Symbol.for('hozu.implementation')
+const RESOLVERS = Symbol.for('hozu.resolvers')
 
 export interface Failure<E> {
   readonly [FAIL]: { error: keyof E & string; data: unknown }

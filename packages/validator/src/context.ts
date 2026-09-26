@@ -9,7 +9,7 @@ import {
   resolveAt,
   resolveSource,
   type SourceIndex,
-} from '@tenonkit/core/ir'
+} from '@hozu/core/ir'
 import type { Env } from './env.ts'
 
 export class Ctx {

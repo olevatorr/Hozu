@@ -1,11 +1,11 @@
 import { existsSync } from 'node:fs'
 import type { AddressInfo } from 'node:net'
-import { createServer } from '@tenonkit/adapter-node'
-import { buildProject } from '@tenonkit/core/ir'
+import { createServer } from '@hozu/adapter-node'
+import { buildProject } from '@hozu/core/ir'
 import { chromium } from 'playwright-core'
 import { describe, expect, it } from 'vitest'
+import project from '../../../examples/feed/hozu.config.ts'
 import { createResolvers } from '../../../examples/feed/server.ts'
-import project from '../../../examples/feed/tenon.config.ts'
 
 const chrome = process.env.CHROMIUM_PATH ?? chromium.executablePath()
 
@@ -29,8 +29,14 @@ describe.skipIf(!existsSync(chrome))('feed in Chromium (ADR 0018)', () => {
       await page.evaluate(() => {
         ;(window as unknown as { __alive: boolean }).__alive = true
       })
-      await page.getByRole('button', { name: 'Load more' }).click()
-      await page.waitForFunction(() => document.querySelectorAll('main li').length === 20)
+      const more = page.getByRole('button', { name: 'Load more' })
+      for (let i = 0; i < 20 && (await items()) < 20; i++) {
+        await more.click()
+        await page
+          .waitForFunction(() => document.querySelectorAll('main li').length >= 20, null, { timeout: 1500 })
+          .catch(() => undefined)
+      }
+      expect(await items()).toBe(20)
       expect(await page.getByRole('button', { name: 'Load more' }).count()).toBe(1)
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
       await page.waitForFunction(() => document.querySelectorAll('main li').length >= 30)

@@ -1,4 +1,4 @@
-import { join, routePattern } from '@tenonkit/core/ir'
+import { join, routePattern } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 
 const RESERVED = new Set([
@@ -9,7 +9,7 @@ const RESERVED = new Set([
   'location',
   'set-cookie',
   'content-security-policy',
-  'x-tenon-cache',
+  'x-hozu-cache',
 ])
 const TOKEN = /^[a-z0-9!#$%&'*+.^_`|~-]+$/
 const BASE = /^(\/[A-Za-z0-9._~-]+)+$/
@@ -23,7 +23,7 @@ export function httpRules(ctx: Ctx) {
   const { http } = ctx.ir
   if (http.basePath !== '' && !BASE.test(http.basePath))
     ctx.report(
-      'TN039',
+      'HZ039',
       null,
       join('', 'http', 'basePath'),
       `basePath "${http.basePath}" is not a path prefix`,
@@ -50,7 +50,7 @@ export function httpRules(ctx: Ctx) {
       snippet: null,
       patch: [{ op: 'remove' as const, path: at }],
     }
-    const invalid = (message: string, cause: string) => ctx.report('TN037', null, at, message, cause, remove)
+    const invalid = (message: string, cause: string) => ctx.report('HZ037', null, at, message, cause, remove)
     if (!r.from.startsWith('/'))
       return invalid(`Redirect "${r.from}" is not a path`, 'A redirect matches a request path.')
     const page = pages.find(([, path]) => overlaps(r.from, path!))
@@ -72,7 +72,7 @@ export function httpRules(ctx: Ctx) {
       )
     if ('literal' in r.to && typeof r.to.literal === 'string' && r.to.literal.startsWith('/'))
       ctx.report(
-        'TN032',
+        'HZ032',
         null,
         join(at, 'to'),
         `Redirect "${r.from}" targets the internal path "${r.to.literal}" as a string`,
@@ -92,7 +92,7 @@ export function httpRules(ctx: Ctx) {
             : null
       if (why)
         ctx.report(
-          'TN038',
+          'HZ038',
           null,
           at,
           why,

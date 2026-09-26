@@ -1,7 +1,7 @@
-import { buildProject, type Manifest } from '@tenonkit/core/ir'
-import { createHandler, type RenderModule } from '@tenonkit/runtime-server'
+import { buildProject, type Manifest } from '@hozu/core/ir'
+import { createHandler, type RenderModule } from '@hozu/runtime-server'
+import project from './hozu.config.ts'
 import { createResolvers } from './server.ts'
-import project from './tenon.config.ts'
 
 const user = (cookie: string | null) => /(?:^|;\s*)user=([^;]+)/.exec(cookie ?? '')?.[1] ?? 'guest'
 

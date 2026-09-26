@@ -1,5 +1,5 @@
-import { routeTable } from '@tenonkit/core/ir'
-import { parseSearch, pathOf } from '@tenonkit/runtime-server'
+import { routeTable } from '@hozu/core/ir'
+import { parseSearch, pathOf } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
 
 const schema = {
@@ -14,10 +14,10 @@ const schema = {
 
 describe('search params (ADR 0014)', () => {
   it('parses, coerces and falls back to defaults', () => {
-    expect(parseSearch(schema, new URLSearchParams('show=unread&page=3&q=tenon&exact=true&x=1'))).toEqual({
+    expect(parseSearch(schema, new URLSearchParams('show=unread&page=3&q=hozu&exact=true&x=1'))).toEqual({
       show: 'unread',
       page: 3,
-      q: 'tenon',
+      q: 'hozu',
       exact: true,
     })
     expect(parseSearch(schema, new URLSearchParams('show=zzz&page=2.5&exact=yes'))).toEqual({

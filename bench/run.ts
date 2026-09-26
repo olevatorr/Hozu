@@ -3,11 +3,11 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
-import { buildProject } from '@tenonkit/core/ir'
-import { createDataRuntime } from '@tenonkit/data'
-import { compileMachine, init, transition } from '@tenonkit/machine'
-import { generateRender } from '@tenonkit/runtime-server'
-import { validate, verify } from '@tenonkit/validator'
+import { buildProject } from '@hozu/core/ir'
+import { createDataRuntime } from '@hozu/data'
+import { compileMachine, init, transition } from '@hozu/machine'
+import { generateRender } from '@hozu/runtime-server'
+import { validate, verify } from '@hozu/validator'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const cartDir = join(root, 'examples/cart')
@@ -46,7 +46,7 @@ const record = (id: string, metric: string, value: number, unit: string, budget:
     ok: budget === null || value <= budget,
   })
 
-const cart = (await import(join(cartDir, 'tenon.config.ts'))).default
+const cart = (await import(join(cartDir, 'hozu.config.ts'))).default
 const built = buildProject(cart)
 record(
   'P1',
@@ -91,13 +91,7 @@ const machineDist = join(root, 'packages/machine/dist')
 const machineJs = readdirSync(machineDist)
   .filter((f) => f.endsWith('.js'))
   .map((f) => readFileSync(join(machineDist, f)))
-record(
-  'A6',
-  '@tenonkit/machine dist gzip (unminified)',
-  gzipSync(Buffer.concat(machineJs)).length,
-  'bytes',
-  null,
-)
+record('A6', '@hozu/machine dist gzip (unminified)', gzipSync(Buffer.concat(machineJs)).length, 'bytes', null)
 
 record(
   'P10',
@@ -144,7 +138,7 @@ function initialClientBytes(): number {
 
 record(
   'P7',
-  '@tenonkit/runtime-client initial JS (entry + static chunks), min+gz',
+  '@hozu/runtime-client initial JS (entry + static chunks), min+gz',
   initialClientBytes(),
   'bytes',
   8 * 1024,
@@ -152,7 +146,7 @@ record(
 
 record(
   'P8',
-  '@tenonkit/runtime-client soft-navigation chunk beyond the initial JS, min+gz',
+  '@hozu/runtime-client soft-navigation chunk beyond the initial JS, min+gz',
   clientBytes('navigate.js'),
   'bytes',
   3 * 1024,
@@ -192,15 +186,15 @@ record(
   1.14,
 )
 
-const bin = join(root, 'packages/cli/bin/tenon.js')
+const bin = join(root, 'packages/cli/bin/hozu.js')
 const cold: number[] = []
 for (let i = 0; i < 10; i++) {
   const start = performance.now()
   const r = spawnSync(process.execPath, [bin, 'validate', '--json'], { cwd: cartDir, encoding: 'utf8' })
   cold.push(performance.now() - start)
-  if (r.status !== 0) throw new Error(`tenon validate failed: ${r.stdout}${r.stderr}`)
+  if (r.status !== 0) throw new Error(`hozu validate failed: ${r.stdout}${r.stderr}`)
 }
-record('P3', 'tenon validate --json cold start, median of 10', median(cold), 'ms', 300)
+record('P3', 'hozu validate --json cold start, median of 10', median(cold), 'ms', 300)
 
 const tsc = join(root, 'node_modules/.bin/tsc')
 const diag = execFileSync(tsc, ['-p', join(cartDir, 'tsconfig.json'), '--extendedDiagnostics'], {

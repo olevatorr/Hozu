@@ -1,16 +1,16 @@
-import { buildProject } from '@tenonkit/core/ir'
-import { createDataRuntime, type DataRuntime } from '@tenonkit/data'
-import type { PagePayload } from '@tenonkit/runtime-client'
-import { renderPage, renderToString } from '@tenonkit/runtime-server'
+import { buildProject } from '@hozu/core/ir'
+import { createDataRuntime, type DataRuntime } from '@hozu/data'
+import type { PagePayload } from '@hozu/runtime-client'
+import { renderPage, renderToString } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
+import project from '../../../examples/cart/hozu.config.ts'
 import { createResolvers } from '../../../examples/cart/server.ts'
-import project from '../../../examples/cart/tenon.config.ts'
 
 const build = buildProject(project, { sources: false })
 const session = { userId: 'ada' }
 const payloadOf = (html: string) =>
   JSON.parse(
-    /<script type="application\/json" id="tenon-payload">(.*?)<\/script>/.exec(html)![1]!,
+    /<script type="application\/json" id="hozu-payload">(.*?)<\/script>/.exec(html)![1]!,
   ) as PagePayload
 const expand = (p: PagePayload) =>
   p.islands.flatMap(([n, lead, ...tails]) =>
@@ -23,7 +23,7 @@ describe('server rendering', () => {
     const { html, plan } = await renderToString({ build, data, route: 'orderPlaced', session })
     expect(plan.islands).toEqual([])
     expect(html).not.toContain('modulepreload')
-    expect(html).not.toContain('/_tenon/client.js')
+    expect(html).not.toContain('/_hozu/client.js')
   })
 
   it('renders islands, reactive regions and a payload with only what islands need', async () => {
@@ -60,11 +60,11 @@ describe('server rendering', () => {
     expect(payload.islands.filter(([n]) => payload.ids[n] === item)).toHaveLength(1)
     expect(payload.data.map(([k]) => k)).toEqual(['cart.getCart{}'])
     expect(Object.keys(payload.features)).toEqual(['cart'])
-    expect(payload.fns).toBe('/_tenon/fns.js')
+    expect(payload.fns).toBe('/_hozu/fns.js')
     const head = html.slice(0, html.indexOf('</head>'))
-    expect(head).toContain('<link rel="modulepreload" href="/_tenon/client.js">')
-    expect(head).toContain('<link rel="modulepreload" href="/_tenon/fns.js">')
-    expect(html.endsWith('<script type="module" src="/_tenon/client.js"></script></body></html>')).toBe(true)
+    expect(head).toContain('<link rel="modulepreload" href="/_hozu/client.js">')
+    expect(head).toContain('<link rel="modulepreload" href="/_hozu/fns.js">')
+    expect(html.endsWith('<script type="module" src="/_hozu/client.js"></script></body></html>')).toBe(true)
   })
 
   it('machine-less pages contain no script at all', async () => {

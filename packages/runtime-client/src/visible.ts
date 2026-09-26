@@ -8,8 +8,8 @@ export function watch(doc: Document) {
     for (const e of entries) if (e.isIntersecting) e.target.dispatchEvent(new win.Event('visible'))
   })
   const scan = (root: Element | Document) => {
-    if (root instanceof win.Element && root.hasAttribute('data-tenon-visible')) seen.observe(root)
-    for (const el of root.querySelectorAll('[data-tenon-visible]')) seen.observe(el)
+    if (root instanceof win.Element && root.hasAttribute('data-hozu-visible')) seen.observe(root)
+    for (const el of root.querySelectorAll('[data-hozu-visible]')) seen.observe(el)
   }
   scan(doc)
   new win.MutationObserver((records) => {

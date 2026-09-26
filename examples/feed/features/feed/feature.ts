@@ -1,4 +1,4 @@
-import { feature } from '@tenonkit/core'
+import { feature } from '@hozu/core'
 import * as contracts from './contracts.ts'
 import { byTag, byYear, itemsTag, listPage, listTags, listYears } from './effects.ts'
 import { More } from './events.ts'
