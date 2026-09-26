@@ -1,0 +1,91 @@
+{
+  "features": {
+    "tasks": {
+      "adding/invoke/done/0": {
+        "behavior": "e0eb2a3405dfc35d",
+        "contracts": {
+          "addsTask": "d258dc6827e6c94b"
+        }
+      },
+      "adding/invoke/failed/Duplicate/0": {
+        "behavior": "fa931adf13e44418",
+        "contracts": {
+          "rejectsDuplicate": "4d0d86d591e62ec3"
+        }
+      },
+      "adding/invoke/failed/Invalid/0": {
+        "behavior": "3ba8e3c9bc908103",
+        "contracts": {
+          "rejectsInvalidTitle": "5f70193cc80c1535"
+        }
+      },
+      "adding/invoke/failed/Unexpected/0": {
+        "behavior": "6606d67832662c72",
+        "contracts": {
+          "addFails": "7e3aeb7ef0915582"
+        }
+      },
+      "clearing/invoke/done/0": {
+        "behavior": "3a0a768ed95dcbe0",
+        "contracts": {
+          "clearsDone": "daea10d5819fb46b"
+        }
+      },
+      "clearing/invoke/failed/Unexpected/0": {
+        "behavior": "0f2f0fb11a153b4a",
+        "contracts": {
+          "clearFails": "e824392e31f3c481"
+        }
+      },
+      "idle/on/tasks.Add/0": {
+        "behavior": "3961fbcec2156728",
+        "contracts": {
+          "addsTask": "d258dc6827e6c94b"
+        }
+      },
+      "idle/on/tasks.ClearDone/0": {
+        "behavior": "c80ae579dea172b9",
+        "contracts": {
+          "clearsDone": "daea10d5819fb46b"
+        }
+      },
+      "idle/on/tasks.Draft/0": {
+        "behavior": "1bf8a242e4e428fe",
+        "contracts": {
+          "typesDraft": "0fe69f4a7f638653"
+        }
+      },
+      "idle/on/tasks.SetShow/0": {
+        "behavior": "accdaafa6d7b598a",
+        "contracts": {
+          "filters": "1fe2223f9f4e7052"
+        }
+      },
+      "idle/on/tasks.Toggle/0": {
+        "behavior": "1866e04dcd69c05b",
+        "contracts": {
+          "togglesTask": "6e3e68d5718a8feb"
+        }
+      },
+      "toggling/invoke/done/0": {
+        "behavior": "49f254475f7985d1",
+        "contracts": {
+          "togglesTask": "6e3e68d5718a8feb"
+        }
+      },
+      "toggling/invoke/failed/NotFound/0": {
+        "behavior": "7630795452b08180",
+        "contracts": {
+          "toggleMissing": "d553a22ad9f708a1"
+        }
+      },
+      "toggling/invoke/failed/Unexpected/0": {
+        "behavior": "57a2233b096a690e",
+        "contracts": {
+          "toggleFails": "83c19395cdb77b5d"
+        }
+      }
+    }
+  },
+  "version": 1
+}
