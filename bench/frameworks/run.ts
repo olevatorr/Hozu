@@ -114,6 +114,7 @@ interface Row {
 const rows: Row[] = []
 for (const fw of frameworks) {
   const html = await fw.ssr()
+  rmSync(join(out, fw.name), { recursive: true, force: true })
   mkdirSync(join(out, fw.name), { recursive: true })
   writeFileSync(join(out, fw.name, 'index.html'), html)
   const entry = join(here, `.entry-${fw.name}.ts`)
@@ -127,7 +128,7 @@ for (const fw of frameworks) {
     format: 'esm',
     platform: 'browser',
     target: 'es2022',
-    define: { 'process.env.NODE_ENV': '"production"' },
+    define: { 'process.env.NODE_ENV': '"production"', 'globalThis.__TENON_DEV__': 'false' },
     write: false,
   })
   rmSync(entry)
@@ -140,7 +141,7 @@ for (const fw of frameworks) {
     const deps = [
       ...Buffer.from(contents)
         .toString()
-        .matchAll(/from"\.\/(chunk-[A-Z0-9]+\.js)"/g),
+        .matchAll(/(?:from|import)"\.\/(chunk-[A-Z0-9]+\.js)"/g),
     ].map((m) => m[1]!)
     return [contents, ...deps.flatMap((d) => initial(d, seen))]
   }

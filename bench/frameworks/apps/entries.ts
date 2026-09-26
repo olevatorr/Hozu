@@ -31,7 +31,7 @@ hydrate(App, { target: document.getElementById('root'), props: JSON.parse(docume
 window.__hydrated = { start, end: performance.now() }
 `
 export const tenonClient = `
-import { hydrate } from '@tenon/runtime-client'
+import { hydrate } from '../../packages/runtime-client/src/hydrate.ts'
 const start = performance.now()
-hydrate(document, { loadFns: async () => ({}) }).then(() => { window.__hydrated = { start, end: performance.now() } })
+hydrate(document).then(() => { window.__hydrated = { start, end: performance.now() } })
 `

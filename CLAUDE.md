@@ -112,6 +112,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   machine is TN013, a non-declaration TN014); `exports` is a flat list. Contracts: `given.context` defaults to
   `initialContext`, `expect.changes` is a deep patch (unmentioned fields must stay equal, arrays replace),
   `expect.effects` defaults to none. The IR is unchanged. Recommended feature layout: `model.ts` + `views.ts`.
+- Output (ADR 0023): the page payload lists island node ids once (`ids`) and islands as runs
+  `[node, lead, ...scopeTails]` in marker order (feature = node id prefix); node/machine JSON is cached per object.
+  `<head>` modulepreloads `client.js` (+ `fns.js` when bound) only on pages with islands. `bench/frameworks` bundles
+  the Tenon row with the production module graph and `__TENON_DEV__ = false`.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

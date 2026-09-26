@@ -91,3 +91,32 @@ This run used a different machine than the earlier runs, so compare the ranking,
 - **SSR** is third, close to Preact.
 - **"Interactive at"** is second to last. This metric swung the most in earlier runs, too.
 - **Parity** (`pnpm bench:parity`, same day): 24/24 identical against the Nuxt reference.
+
+## Fifth run: after ADR 0023 (2026-09-26, same machine as the fourth run)
+| Framework | SSR renders/s | HTML (gz) | JS min (gz) | Hydrate ms (4× CPU) | Interactive at ms | 200 clicks ms |
+|---|---|---|---|---|---|---|
+| React 19.3.0 | 2,427 | 13.4 KB (1.6) | 218.1 KB (67.7) | 62.4 | 123.7 | 79.6 |
+| Vue 3.5.43 | 12,728 | 12.6 KB (1.5) | 77.1 KB (30.9) | 12.5 | 33.8 | 42.5 |
+| Preact 10.29.8 | 21,973 | 12.6 KB (1.5) | 12.9 KB (5.4) | 7.9 | 27.3 | 86.0 |
+| Svelte 5.57.1 | 94,615 | 12.6 KB (1.6) | 49.5 KB (18.7) | 7.0 | 30.9 | 9.4 |
+| **Tenon** | 35,259 | **12.1 KB** (1.8) | 18.0 KB (7.5) | 7.4 | **27.4** | 10.3 |
+
+**The harness was corrected in this run.** Until the fourth run, the Tenon row did not measure what production
+serves:
+- It bundled the client from the package index without defining `__TENON_DEV__`. The index re-exports `motion`, so
+  the bundle had a static chunk that production does not have. Now the entry has the same module graph as the
+  production `browser.ts`, with the same `define`.
+- The initial-JS count missed side-effect imports (`import"./chunk…"`). It now counts them.
+- Old output files are removed before each build.
+
+What the numbers show:
+- **Interactive at** is 27.4 ms, down from 61.8 ms with the old harness in the same session. That is level with
+  Preact (27.3 ms) and ahead of Svelte.
+  - Most of the old gap was the harness's static chunk: one extra round trip on a slowed CPU.
+  - Production now also preloads `client.js` and `fns.js` from `<head>`.
+- **HTML** is the smallest raw (12.1 KB, from 18.7). Gzipped it is 1.8 KB, against 1.5–1.6 KB for the others:
+  - most of the difference is the head Tenon derives (speculation rules, JSON-LD, Open Graph), which the other
+    benchmark pages do not have;
+  - without that head, at maximum compression, the page is 1.53 KB, against 1.43 KB for Vue.
+- **SSR** is 35.3 k renders/s, from 22.0 k. It is second after Svelte, which stays 2.7× ahead.
+- **Initial JS** is 7.5 KB gzipped (the production bundle), still second after Preact.
