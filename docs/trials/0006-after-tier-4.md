@@ -39,26 +39,54 @@ authoring surface, and they added five required fields (`http`, `env`, `messages
 **Ratios against the Nuxt means:** build **0.79×** (trial 0004: 0.82–0.91×), change **0.90×** (trials 0004/0005:
 1.6–1.9×).
 
+## Same-model Nuxt run (added after the user approved it)
+The first reading of this trial compared the Tenon arm with the Nuxt means of earlier runs. The Nuxt arm was then
+re-run the same way:
+- same model, same transcript parser;
+- a rebuilt blank scaffold (`bench/trial/nuxt-0006`), same prompt structure.
+
+To be fair to Nuxt, the blank scaffold sets `shamefully-hoist=true`. Without it `nuxt typecheck` fails under pnpm
+before any code is written; trial 0004's Nuxt agent lost turns to exactly this kind of tooling friction.
+
+| | Tenon build | Nuxt build | Tenon change | Nuxt change |
+|---|---|---|---|---|
+| Hidden acceptance | 12 / 12 | 12 / 12 | 6 / 6, regression 12 / 12 | 6 / 6, regression 12 / 12 |
+| Assistant turns | 8 | 6 | 8 | 8 |
+| Shell commands | 6 | 5 | 6 | 7 |
+| Tool output read (chars) | 30,670 | 7,790 | 26,836 | 14,629 |
+| Output tokens | 10,861 | 6,003 | 7,215 | 4,728 |
+| Fresh input tokens | 69,165 | 46,946 | 47,112 | 32,340 |
+| Cached input read | 0.39 M | 0.21 M | 0.39 M | 0.32 M |
+| Wall time | 90 s | 61 s | 66 s | 57 s |
+| Weighted tokens | **163 k** | **98 k** | **122 k** | **88 k** |
+| App source | 17.4 KB | 6.9 KB | 21.1 KB | 9.2 KB |
+| Files touched by the change | | | 8 | 6 |
+
+**Same-model ratios: build 1.67×, change 1.39× Nuxt.**
+
 ## Reading the result
-- **Correctness:** all checks passed in both steps, as in every earlier trial.
-- **Build** is in line with trial 0004, slightly cheaper.
-- **Change** fell by half (255 k → 122 k), against the expectation. The agent needed 8 turns instead of 21, and read
-  half as much tool output. Nothing in the transcript metrics points to a single cause. Three candidates:
-  1. **The model.** The earlier runs may have used another model. This is the strongest candidate, and this trial
-     cannot separate it from the framework.
-  2. **Framework help added since:**
-     - `Invalid` fields: the agent used the framework error for an invalid priority instead of writing its own;
-     - the skill's patterns for no-JS forms: the agent put `Clear done` in its own form without trial and error;
-     - TN016 contract skeletons.
-  3. **Measurement.** The weighted formula is the same, but the transcript parser is new. A systematic difference
-     from the earlier tool cannot be excluded.
-- **The files a change touches did not shrink:** 8 files changed, as before. The structural premium named in
-  trial 0005 is still there in the code. It no longer shows up in the cost of this run.
+- **The halving of Tenon's change cost is mostly the model.** Nuxt's own costs fell just as much against its earlier
+  means: build 205 k → 98 k, change 136 k → 88 k. The first reading (change 0.90×) compared across models and was
+  wrong. It is kept above because it was reported before the Nuxt run.
+- **Against the same model, Tenon costs more in both steps.** The change premium is smaller than in trial 0005
+  (1.9× → 1.4×). The build is worse than trial 0004's 0.8–0.9×: this model builds the Nuxt app in 6 turns without
+  the tooling friction earlier Nuxt runs had, while Tenon's fixed cost of reading the skill stays.
+- **The cause named in trial 0005 still holds.**
+  - The Tenon app is 2.3× the source of the Nuxt app (21.1 KB vs 9.2 KB).
+  - A change touches 8 files against 6.
+  - The Tenon agents read 2–4× as much tool output: the skill, the reference app, and validator output.
+- **Correctness was equal:** every check passed in all four steps.
+- **What the framework work of Phases 7–9 changed for agents:** the change agent used the framework's `Invalid`
+  and the skill's no-JS form pattern directly, so correctness and turn count held. It did not make the authoring
+  surface smaller, which is where the remaining cost is.
 
 ## Conclusion
-- **Measured:** building and changing the task board in Tenon cost 163 k and 122 k weighted tokens, with every
-  check passing.
-- **Not established:** that Tenon's change cost is now below Nuxt's. Only a same-model, same-parser Nuxt run can
-  show that.
-- **Proposed next step:** re-run the Nuxt arm (build and change) the same way, which costs about 0.35 M weighted.
-  After that, the ratio can be stated.
+- **Measured:** Tenon costs 1.67× Nuxt to build and 1.39× to change the task board, with the same model, and with
+  equal correctness.
+- **Direction:** reducing cost now requires a less verbose authoring surface, as trial 0005 concluded. For example:
+  - optional fields instead of required `null`s;
+  - fewer files per feature;
+  - contracts generated from the machine where the transition is unambiguous;
+  - a shorter skill.
+
+  This is a design decision for a future ADR.

@@ -19,6 +19,7 @@ useHead({ title: () => task.value?.title ?? 'Task not found' })
     <template v-if="task">
       <h1 class="text-3xl font-bold tracking-tight text-slate-900">{{ task.title }}</h1>
       <p class="mt-4 text-slate-600">Status: {{ task.done ? 'done' : 'open' }}</p>
+      <p class="mt-2 text-slate-600">Priority: {{ task.priority }}</p>
     </template>
     <p v-else class="text-xl font-semibold text-slate-900">Task not found</p>
     <NuxtLink to="/" class="mt-8 inline-block text-indigo-600 hover:text-indigo-500">Back</NuxtLink>

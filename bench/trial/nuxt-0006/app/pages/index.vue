@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Task } from '#shared/types/task'
+import { priorities, type Priority, type Task } from '#shared/types/task'
 
 type Filter = 'all' | 'open' | 'done'
 
@@ -12,6 +12,7 @@ const filters: { value: Filter; label: string }[] = [
 const { data: tasks, refresh } = await useFetch<Task[]>('/api/tasks', { default: () => [] })
 
 const newTitle = ref('')
+const newPriority = ref<Priority>('normal')
 const errorMessage = ref('')
 const submitting = ref(false)
 const activeFilter = ref<Filter>('all')
@@ -27,8 +28,9 @@ const visibleTasks = computed(() =>
 async function addTask() {
   submitting.value = true
   try {
-    await $fetch('/api/tasks', { method: 'POST', body: { title: newTitle.value } })
+    await $fetch('/api/tasks', { method: 'POST', body: { title: newTitle.value, priority: newPriority.value } })
     newTitle.value = ''
+    newPriority.value = 'normal'
     errorMessage.value = ''
     await refresh()
   } catch (error) {
@@ -37,6 +39,24 @@ async function addTask() {
       status === 409 ? 'A task with this title already exists' : 'Title must be 3–80 characters'
   } finally {
     submitting.value = false
+  }
+}
+
+const priorityClasses: Record<Priority, string> = {
+  low: 'bg-slate-100 text-slate-600',
+  normal: 'bg-sky-100 text-sky-700',
+  high: 'bg-rose-100 text-rose-700',
+}
+
+const clearing = ref(false)
+
+async function clearDone() {
+  clearing.value = true
+  try {
+    await $fetch('/api/tasks/clear-done', { method: 'POST' })
+    await refresh()
+  } finally {
+    clearing.value = false
   }
 }
 
@@ -64,6 +84,15 @@ async function toggleTask(task: Task) {
           autocomplete="off"
           class="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
         >
+        <select
+          id="new-task-priority"
+          v-model="newPriority"
+          name="priority"
+          aria-label="Priority"
+          class="rounded-lg border border-slate-300 bg-white px-2 py-2 text-slate-900 shadow-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+        >
+          <option v-for="priority in priorities" :key="priority" :value="priority">{{ priority }}</option>
+        </select>
         <button
           type="submit"
           :disabled="submitting"
@@ -91,6 +120,14 @@ async function toggleTask(task: Task) {
       >
         {{ filter.label }}
       </button>
+      <button
+        type="button"
+        :disabled="clearing"
+        class="ml-auto rounded-full px-3 py-1 text-sm font-medium text-rose-700 ring-1 ring-rose-200 hover:bg-rose-50 disabled:opacity-60"
+        @click="clearDone"
+      >
+        Clear done
+      </button>
     </div>
 
     <ul v-if="visibleTasks.length" class="mt-4 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -98,6 +135,10 @@ async function toggleTask(task: Task) {
         <NuxtLink :to="`/tasks/${task.id}`" class="flex-1 font-medium text-slate-900 hover:text-indigo-600">
           {{ task.title }}
         </NuxtLink>
+        <span
+          class="rounded-full px-2 py-0.5 text-xs font-semibold"
+          :class="priorityClasses[task.priority]"
+        >{{ task.priority }}</span>
         <span
           class="rounded-full px-2 py-0.5 text-xs font-semibold"
           :class="task.done ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
