@@ -32,6 +32,9 @@
       "path": "packages/content"
     },
     {
+      "path": "packages/testing"
+    },
+    {
       "path": "packages/runtime-client"
     },
     {

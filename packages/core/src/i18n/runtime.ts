@@ -78,6 +78,12 @@ export const i18nFns: Record<string, Impl> = {
       ? new Intl.RelativeTimeFormat(input.l, { numeric: 'auto' }).format(input.v, input.u)
       : ''
   } as Impl,
+  '#og': function og(input: { title: unknown; subtitle: unknown }): Json {
+    const text = (x: unknown, max: number) => (typeof x === 'string' ? x.slice(0, max) : '')
+    const query = new URLSearchParams({ title: text(input.title, 120) })
+    if (text(input.subtitle, 200)) query.set('subtitle', text(input.subtitle, 200))
+    return `/_tenon/og.png?${query}`
+  } as Impl,
   '#list': function list(input: { v: string[]; o: Intl.ListFormatOptions; l: string }): Json {
     return Array.isArray(input.v) ? new Intl.ListFormat(input.l, input.o).format(input.v.map(String)) : ''
   } as Impl,

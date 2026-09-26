@@ -72,6 +72,7 @@ export interface DataRuntime {
     input: Json,
     session?: unknown,
     files?: Map<string, FileLike>,
+    options?: { preview?: boolean },
   ): Promise<Result | MutationResult>
   invalidate(tags: string[], session?: unknown): number
   stats(): Stats
@@ -200,6 +201,7 @@ export function createDataRuntime({
       throw new Error('Only mutations can set the session')
     },
     files: Map<string, FileLike> = new Map(),
+    preview = false,
   ): Promise<Result> {
     stats.fetches++
     let out: unknown
@@ -214,7 +216,7 @@ export function createDataRuntime({
       return unexpected(error instanceof Error ? error.message : String(error))
     }
     try {
-      out = await effect.run(input, { env, session, fail, setSession, file })
+      out = await effect.run(input, { env, preview, session, fail, setSession, file })
     } catch (error) {
       return report(error)
     }
@@ -389,11 +391,22 @@ export function createDataRuntime({
     input: Json,
     session?: unknown,
     files: Map<string, FileLike> = new Map(),
+    { preview = false }: { preview?: boolean } = {},
   ): Promise<Result | MutationResult> {
     const prepared = prepare(ref, input, session)
     if ('ok' in prepared) return prepared
     const { effect, partition, key } = prepared
-    if (effect.kind === 'query') return read(effect, partition, key, input, session)
+    if (effect.kind === 'query')
+      return preview
+        ? execute(
+            effect,
+            input,
+            effect.scope === 'user' ? (session ?? null) : undefined,
+            undefined,
+            undefined,
+            true,
+          )
+        : read(effect, partition, key, input, session)
     let next: { value: unknown } | null = null
     const result = await execute(
       effect,
@@ -405,6 +418,7 @@ export function createDataRuntime({
         next = { value }
       },
       files,
+      preview,
     )
     const written = next as { value: unknown } | null
     const extra = written ? { session: written.value as Json } : {}

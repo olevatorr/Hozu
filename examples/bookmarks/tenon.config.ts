@@ -17,6 +17,7 @@ export default project({
     url: 'http://localhost:3000',
     name: 'Bookmarks',
     locales: null,
+    offline: null,
     lang: 'en',
     icon: null,
     themeColor: null,

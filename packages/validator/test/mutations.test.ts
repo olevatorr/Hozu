@@ -395,6 +395,13 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'an offline page that renders per-request data',
+    code: 'TN043',
+    mutate: (ir) => {
+      ir.site!.offline = 'home'
+    },
+  },
+  {
     name: 'state with no way out',
     code: 'TN010',
     mutate: (ir) => {

@@ -4,10 +4,10 @@ import { z } from 'zod'
 import { getPost, listPosts } from './features/posts/effects.ts'
 import { posts } from './features/posts/feature.ts'
 import { text } from './features/posts/messages.ts'
-import { Article, PostList } from './features/posts/views.ts'
+import { Article, Offline, PostList } from './features/posts/views.ts'
 import { saved } from './features/saved/feature.ts'
 import { ReadingList } from './features/saved/views.ts'
-import { home, post } from './routes.ts'
+import { home, offline, post } from './routes.ts'
 
 export default project({
   schema: zodAdapter,
@@ -21,11 +21,12 @@ export default project({
     url: 'https://blog.tenon.dev',
     name: 'Tenon Blog',
     locales: ['en', 'zh-TW'],
+    offline,
     lang: 'en',
     icon: null,
     themeColor: null,
   },
-  routes: { home, post },
+  routes: { home, post, offline },
   pages: [
     ui.page(home, {
       views: [PostList, ReadingList],
@@ -56,12 +57,30 @@ export default project({
           title: article.title,
           description: article.excerpt,
           type: 'article',
-          image: null,
+          image: ui.og({ title: article.title, subtitle: article.excerpt }),
           published: article.publishedAt,
           noindex: false,
         }),
       },
       entries: { query: listPosts, input: {}, params: (summary) => ({ slug: summary.slug }) },
+    }),
+    ui.page(offline, {
+      views: [Offline],
+      assert: 'static',
+      head: {
+        redirects: null,
+        query: null,
+        input: null,
+        render: () => ({
+          title: text.offline,
+          description: text.offlineHint,
+          type: 'website',
+          image: null,
+          published: null,
+          noindex: true,
+        }),
+      },
+      entries: null,
     }),
   ],
   features: [posts, saved],

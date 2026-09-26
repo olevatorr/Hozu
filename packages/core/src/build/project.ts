@@ -257,6 +257,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
         icon: scope.asset(config.site.icon)?.href ?? null,
         themeColor: config.site.themeColor ?? null,
         locales: Array.isArray(config.site.locales) ? config.site.locales.map(String) : null,
+        offline: config.site.offline ? (scope.routes.get(config.site.offline) ?? '?') : null,
       }
     : null
   const notFound = config.notFound ? (scope.routes.get(config.notFound) ?? null) : null

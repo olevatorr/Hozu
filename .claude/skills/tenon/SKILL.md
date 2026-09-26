@@ -209,7 +209,8 @@ For a page without data use `head: { redirects: null, query: null, input: null, 
 Project: `project({ schema: zodAdapter, styles: new URL('./app.css', import.meta.url), notFound: null, error: null,
 session: null, site: { url, name, lang, icon: null, themeColor: null }, routes: { home, itemPage }, pages: [...],
 http: null, env: null, features: [items] })`. `notFound` / `error` may name a route to render for 404 / 500.
-`site.locales: null` for one language; see "Languages" below.
+`site.locales: null` for one language; see "Languages" below. `site.offline: route | null`: a static page shown when the
+network is down (a service worker is generated; TN043). A web app manifest is derived from `site`.
 
 `http: null` serves the site at `/` with no trailing slashes (`/about/` answers 308 → `/about`). Otherwise:
 ```ts
@@ -281,6 +282,17 @@ Markdown content: `@tenon/content` turns `content/posts/*.md` (YAML front matter
 `{ slug, data, html, headings }`: `const posts = await loadCollection({ dir: new URL('./content/posts/', import.meta.url),
 schema: Frontmatter })` at the top of `server.ts`, then return them from ordinary query resolvers; render the body
 with `ui.html(post.html)` (see `examples/blog`).
+
+Share images: `head.image: ui.og({ title: post.title, subtitle: post.excerpt })` renders a 1200×630 card; pass
+`og: ogImage` (from `@tenon/image`) to `createServer`.
+
+Drafts: `createServer({ preview: { secret } })`; `GET /_tenon/preview?secret=…&path=/posts/a` turns preview on (a
+signed cookie), `/_tenon/preview/exit` turns it off. Resolvers get `ctx.preview` (return drafts only then); preview
+responses are never cached and are noindex.
+
+Tests of rendered pages: `const app = testApp({ build, resolvers })` from `@tenon/testing`;
+`const page = await app.get('/')` gives `{ status, headers, html, text, payload }`; `app.post(path, fields)` submits a
+native form.
 
 Fonts: a local `@font-face` file in your CSS gets a size-matched `"<Family> Fallback"` automatically; nothing to write.
 

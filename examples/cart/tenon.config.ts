@@ -21,6 +21,7 @@ export default project({
     url: 'https://cart.tenon.dev',
     name: 'Tenon Cart',
     locales: null,
+    offline: null,
     lang: 'en',
     icon: null,
     themeColor: null,

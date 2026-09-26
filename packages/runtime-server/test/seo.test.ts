@@ -40,6 +40,8 @@ describe('route params and head metadata', () => {
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: 'Hello, Tenon',
+      image:
+        'https://blog.tenon.dev/_tenon/og.png?title=Hello%2C+Tenon&subtitle=Why+an+AI-first+framework+makes+invalid+programs+hard+to+write.',
       description: 'Why an AI-first framework makes invalid programs hard to write.',
       url: 'https://blog.tenon.dev/en/posts/hello-tenon',
       datePublished: '2026-09-01',
@@ -64,6 +66,8 @@ describe('route params and head metadata', () => {
     expect(entries.map((e) => e.path)).toEqual([
       '/en',
       '/zh-TW',
+      '/en/offline',
+      '/zh-TW/offline',
       '/en/posts/hello-tenon',
       '/en/posts/islands-explained',
       '/zh-TW/posts/hello-tenon',
@@ -72,6 +76,8 @@ describe('route params and head metadata', () => {
     expect(sitemapXml(build, entries)).toContain(
       '<loc>https://blog.tenon.dev/zh-TW/posts/islands-explained</loc>',
     )
-    expect(robotsTxt(build)).toBe('User-agent: *\nAllow: /\nSitemap: https://blog.tenon.dev/sitemap.xml\n')
+    expect(robotsTxt(build)).toBe(
+      'User-agent: *\nAllow: /\nDisallow: /en/offline\nDisallow: /zh-TW/offline\nSitemap: https://blog.tenon.dev/sitemap.xml\n',
+    )
   })
 })

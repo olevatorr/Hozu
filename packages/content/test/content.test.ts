@@ -47,7 +47,7 @@ describe('@tenon/content (ADR 0020)', () => {
         author: z.string(),
       }),
     })
-    expect(entries.map((e) => e.slug)).toEqual(['hello-tenon', 'islands-explained'])
+    expect(entries.map((e) => e.slug)).toEqual(['hello-tenon', 'islands-explained', 'tenon-roadmap'])
     expect(entries[1]!.html).toBe(
       '<p>Render modes are derived from data <strong>freshness</strong> and <strong>scope</strong>.</p>\n',
     )

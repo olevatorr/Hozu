@@ -13,8 +13,8 @@ export type Fail<E> = <K extends keyof E & string>(error: K, data: E[K]) => Fail
 type Out<O, E> = O | Failure<E> | Promise<O | Failure<E>>
 
 export type QueryContext<Sc extends Scope, Session, E, Env = unknown> = Sc extends 'user'
-  ? { session: Session | null; fail: Fail<E>; env: Env }
-  : { fail: Fail<E>; env: Env }
+  ? { session: Session | null; fail: Fail<E>; env: Env; preview: boolean }
+  : { fail: Fail<E>; env: Env; preview: boolean }
 
 export interface InvalidInput<I = Record<string, unknown>> {
   message: string
@@ -25,6 +25,7 @@ export type WithInvalid<E, I = Record<string, unknown>> = E & { Invalid: Invalid
 
 export interface MutationContext<Session, E, Env = unknown, I = Record<string, unknown>> {
   env: Env
+  preview: boolean
   session: Session | null
   fail: Fail<WithInvalid<E, I>>
   setSession(value: Session | null): void
@@ -42,6 +43,7 @@ export type Run = (
   input: unknown,
   ctx: {
     env: unknown
+    preview: boolean
     session: unknown
     fail: Fail<any>
     setSession(value: unknown): void

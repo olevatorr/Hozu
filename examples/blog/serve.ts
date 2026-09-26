@@ -1,7 +1,7 @@
 import { createServer } from '@tenon/adapter-node'
 import { buildProject } from '@tenon/core/ir'
 import { compileStyles } from '@tenon/css'
-import { optimizeImages } from '@tenon/image'
+import { ogImage, optimizeImages } from '@tenon/image'
 import { createResolvers } from './server.ts'
 import project from './tenon.config.ts'
 
@@ -13,6 +13,7 @@ createServer({
   build,
   styles: await compileStyles(build),
   images: await optimizeImages(build),
+  og: ogImage,
   resolvers: createResolvers(),
   session: (request) => ({ userId: user(request.headers.get('cookie') ?? undefined) }),
 }).listen(port, () => console.log(`Tenon blog on http://localhost:${port}`))

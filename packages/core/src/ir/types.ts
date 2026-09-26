@@ -40,6 +40,7 @@ export interface SiteIR {
   icon: string | null
   themeColor: string | null
   locales: string[] | null
+  offline: string | null
 }
 
 export interface PageIR {

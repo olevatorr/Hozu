@@ -15,6 +15,7 @@ import { imageDimensions } from './rules/images.ts'
 import { internalLinks } from './rules/links.ts'
 import { literals } from './rules/literals.ts'
 import { paths } from './rules/paths.ts'
+import { offlinePage } from './rules/pwa.ts'
 import { featureLinks, references, routes } from './rules/refs.ts'
 import { rendering } from './rules/rendering.ts'
 import { routeParams, searchSchemas } from './rules/routes.ts'
@@ -58,6 +59,7 @@ const rules = [
   progressiveForms,
   httpRules,
   i18n,
+  offlinePage,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>

@@ -19,6 +19,7 @@ export const Frontmatter = z.object({
   excerpt: z.string(),
   publishedAt: z.string(),
   author: z.string(),
+  draft: z.boolean().default(false),
 })
 export const SlugInput = z.object({ slug: z.string() })
 export const NoInput = z.object({})

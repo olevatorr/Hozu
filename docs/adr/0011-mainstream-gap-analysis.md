@@ -1,6 +1,6 @@
 # ADR 0011 — Gap analysis against mainstream frameworks, ranked
 
-- Status: accepted. Tier 1 is implemented (ADR 0014), Tier 2 items 6 (ADR 0015), 7 and 12 (ADR 0016), 8 and 9 (ADR 0017), 10 and 11 (ADR 0018): Tier 2 is complete. Tier 3: 13, 16, 18 (ADR 0019) and 14, 15, 17 (ADR 0020): complete. Tier 4 is open. Rewrites (item 12) were dropped by decision.
+- Status: accepted. Tier 1 is implemented (ADR 0014), Tier 2 items 6 (ADR 0015), 7 and 12 (ADR 0016), 8 and 9 (ADR 0017), 10 and 11 (ADR 0018): Tier 2 is complete. Tier 3: 13, 16, 18 (ADR 0019) and 14, 15, 17 (ADR 0020): complete. Tier 4 (ADR 0021): complete. Rewrites (item 12) were dropped by decision.
 - Supersedes the "open" rows 16–18 of ADR 0010 by placing them in one ranked list.
 
 ## Method

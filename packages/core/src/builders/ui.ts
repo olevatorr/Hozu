@@ -14,7 +14,7 @@ import { type Asset, asset } from './asset.ts'
 import type { TagProps } from './dom-props.ts'
 import type { QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
-import { alternate, format, messages } from './i18n.ts'
+import { alternate, format, messages, openGraph } from './i18n.ts'
 import type { MachineDecl, UnexpectedError } from './machine.ts'
 import type { Condition } from './op.ts'
 import { page } from './page.ts'
@@ -196,6 +196,7 @@ export const ui = Object.freeze({
   messages,
   format,
   alternate,
+  og: openGraph,
   env: <S extends Schema>(_schema: S): Ref<Infer<S>> => refProxy('env', 0),
 })
 

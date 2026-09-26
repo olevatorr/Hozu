@@ -56,6 +56,7 @@ export interface ProjectConfig {
     name: string
     lang: string
     locales: string[] | null
+    offline: RouteDecl | null
     icon: Asset | null
     themeColor: string | null
   } | null

@@ -716,7 +716,9 @@ function headHtml(
   }
   const title = str(h.title) ?? ir.site?.name ?? path
   const description = str(h.description)
-  const image = str(h.image)
+  const raw = str(h.image)
+  const local = raw?.startsWith('/_tenon/og.png') ? ir.http.basePath + raw : raw
+  const image = local?.startsWith('/') && ir.site ? ir.site.url + local : local
   const published = str(h.published)
   const url = ir.site ? `${ir.site.url}${path}` : null
   const meta = (attr: 'name' | 'property', key: string, content: string | null) =>
@@ -734,6 +736,10 @@ function headHtml(
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     ir.site?.themeColor ? `<meta name="theme-color" content="${escapeHtml(ir.site.themeColor)}">` : '',
     ir.site?.icon ? `<link rel="icon" href="${escapeHtml(ir.site.icon)}">` : '',
+    ir.site ? `<link rel="manifest" href="${escapeHtml(ir.http.basePath)}/manifest.webmanifest">` : '',
+    ir.site?.offline
+      ? `<script type="module" src="${escapeHtml(ir.http.basePath)}/_tenon/sw-register.js"></script>`
+      : '',
     ...preload.map(
       (href) => `<link rel="preload" href="${escapeHtml(href)}" as="font" type="font/woff2" crossorigin>`,
     ),

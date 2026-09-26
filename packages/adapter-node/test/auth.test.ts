@@ -79,6 +79,7 @@ const site = project({
     url: 'https://auth.example',
     name: 'Auth',
     locales: null,
+    offline: null,
     lang: 'en',
     icon: ui.asset(pathToFileURL(join(dir, 'icon.svg'))),
     themeColor: '#4f46e5',

@@ -48,4 +48,5 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   TN040: { name: 'incomplete-messages', severity: 'error' },
   TN041: { name: 'message-in-machine', severity: 'error' },
   TN042: { name: 'invalid-i18n', severity: 'error' },
+  TN043: { name: 'invalid-offline-page', severity: 'error' },
 }

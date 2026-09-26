@@ -18,6 +18,7 @@ import { clientBundle } from './assets.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'
 import { formFields, formNode, runForm } from './forms.ts'
+import { serviceWorker, serviceWorkerRegistration, webManifest } from './pwa.ts'
 import {
   fnsModule,
   inlineScriptHashes,
@@ -30,7 +31,7 @@ import {
 import { matcher } from './routing.ts'
 import { parseSearch } from './search.ts'
 import { type CspSources, contentSecurityPolicy, crossSite, ERROR_HTML } from './security.ts'
-import type { SessionStore } from './session.ts'
+import { type SessionStore, sessionCookie } from './session.ts'
 import { publicAssets } from './static.ts'
 
 export interface HandlerOptions {
@@ -47,6 +48,15 @@ export interface HandlerOptions {
   manifest?: Manifest
   images?: ImageSet | null
   env?: Record<string, string | undefined>
+  preview?: { secret: string; secure?: boolean }
+  og?: ((card: OgCard) => Promise<Uint8Array>) | null
+}
+
+export interface OgCard {
+  title: string
+  subtitle: string | null
+  siteName: string | null
+  themeColor: string | null
 }
 
 export interface Handler {
@@ -123,7 +133,38 @@ export function createHandler({
   manifest,
   images = null,
   env: rawEnv = {},
+  preview,
+  og = null,
 }: HandlerOptions): Handler {
+  const cards = new Map<string, Promise<Uint8Array>>()
+  const ogImage = (url: URL) => {
+    if (!og) return null
+    const title = (url.searchParams.get('title') ?? '').slice(0, 120)
+    const subtitle = url.searchParams.get('subtitle')?.slice(0, 200) ?? null
+    const key = JSON.stringify([title, subtitle])
+    let hit = cards.get(key)
+    if (!hit) {
+      if (cards.size >= 500) cards.clear()
+      hit = og({
+        title,
+        subtitle,
+        siteName: build.ir.site?.name ?? null,
+        themeColor: build.ir.site?.themeColor ?? null,
+      })
+      cards.set(key, hit)
+    }
+    return hit
+  }
+  if (preview && preview.secret.length < 32) throw new Error('preview.secret must be at least 32 characters')
+  const previewCookie = preview
+    ? sessionCookie({
+        name: 'tenon_preview',
+        secret: preview.secret,
+        maxAge: 60 * 60,
+        secure: preview.secure ?? true,
+      })
+    : null
+  const previewing = new WeakMap<Request, boolean>()
   const parsedPublic = build.bindings.env.public?.(rawEnv)
   if (parsedPublic && !parsedPublic.ok)
     throw new Error(`Invalid public environment: ${parsedPublic.issues.join('; ')}`)
@@ -145,6 +186,32 @@ export function createHandler({
       )
     : publicAssets(basePath, styles, widgets?.urls ?? {})
   const data = createDataRuntime({ build, resolvers, now, onError, env: rawEnv })
+  const previewData: typeof data = {
+    ...data,
+    run: (ref, input, who, files) => data.run(ref, input, who, files, { preview: true }),
+  }
+  const dataFor = (request: Request) => (previewing.get(request) ? previewData : data)
+  const internal = (path: string | null) => (path?.startsWith('/') && !path.startsWith('//') ? path : null)
+  const enterPreview = async (url: URL) => {
+    const given = new TextEncoder().encode(url.searchParams.get('secret') ?? '')
+    const want = new TextEncoder().encode(preview?.secret ?? '')
+    let same = given.length === want.length && want.length > 0
+    for (let i = 0; i < want.length; i++) same = same && given[i] === want[i]
+    const to = internal(url.searchParams.get('path'))
+    if (!previewCookie || !same || !to) return plain(401, 'Invalid preview request')
+    return new Response(null, {
+      status: 307,
+      headers: { location: to, 'set-cookie': await previewCookie.write(true) },
+    })
+  }
+  const exitPreview = async (url: URL) =>
+    new Response(null, {
+      status: 307,
+      headers: {
+        location: internal(url.searchParams.get('path')) ?? publicPath(ir, '/'),
+        ...(previewCookie ? { 'set-cookie': await previewCookie.write(null) } : {}),
+      },
+    })
   const base: Record<string, string> = {
     'x-content-type-options': 'nosniff',
     'referrer-policy': 'strict-origin-when-cross-origin',
@@ -195,6 +262,8 @@ export function createHandler({
   const queries = Object.values(ir.features).flatMap((f) => Object.keys(f.queries).map((q) => `${f.id}.${q}`))
   const regenerating = new Map<string, Promise<void>>()
   const fns = fnsModule(build)
+  const manifestText = webManifest(ir)
+  const worker = serviceWorker(ir, hashJson(ir).slice(0, 12))
   const fnImpls = build.bindings.fns as Record<string, (x: never) => unknown>
 
   const redirectTable = redirects.map((r) => ({
@@ -320,7 +389,9 @@ export function createHandler({
     }
     const head = request.method === 'HEAD'
     const statusOf = (s: number) => (missing ? 404 : s)
-    if (planRoute(ir, route).plan.cacheable) {
+    const inPreview = previewing.get(request) === true
+    if (inPreview) Object.assign(headers, { 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex' })
+    if (!inPreview && planRoute(ir, route).plan.cacheable) {
       let cached = await cache.get(path)
       let state = 'hit'
       if (!cached) {
@@ -347,7 +418,7 @@ export function createHandler({
     }
     const rendered = await renderPage({
       build,
-      data,
+      data: dataFor(request),
       route,
       params,
       search,
@@ -469,9 +540,27 @@ export function createHandler({
     if (request.method === 'POST' && path === '/_tenon/query') {
       const { query, input } = (await request.json()) as { query: string; input: Json }
       if (!queries.includes(query)) return plain(400, 'Unknown query')
-      return json(await data.run(query, input, await session(request)))
+      return json(await dataFor(request).run(query, input, await session(request)))
     }
     if (path === '/_tenon/live') return live()
+    if (path === '/manifest.webmanifest' && manifestText)
+      return text('application/manifest+json', manifestText, request.method === 'HEAD')
+    if (path === '/sw.js' && worker)
+      return text('text/javascript', worker, request.method === 'HEAD', 'no-cache')
+    if (path === '/_tenon/sw-register.js' && worker)
+      return text('text/javascript', serviceWorkerRegistration(ir), request.method === 'HEAD')
+    if (path === '/_tenon/og.png') {
+      const png = ogImage(url)
+      if (!png) return missing(request)
+      return new Response(
+        request.method === 'HEAD' ? null : ((await png) as ConstructorParameters<typeof Response>[0]),
+        {
+          headers: { 'content-type': 'image/png', 'cache-control': IMMUTABLE },
+        },
+      )
+    }
+    if (path === '/_tenon/preview') return enterPreview(url)
+    if (path === '/_tenon/preview/exit') return exitPreview(url)
     const head = request.method === 'HEAD'
     if (request.method !== 'GET' && !head) return plain(405, null, { allow: 'GET, HEAD, POST' })
     const client = clientBundle()[path]
@@ -522,6 +611,7 @@ export function createHandler({
     async fetch(request) {
       const url = new URL(request.url)
       try {
+        if (previewCookie) previewing.set(request, (await previewCookie.read(request)) === true)
         const path = within(url.pathname)
         return path === null ? await missing(request) : await route(request, url, path)
       } catch (error) {

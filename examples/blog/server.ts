@@ -7,17 +7,21 @@ import project from './tenon.config.ts'
 
 const posts = (
   await loadCollection({ dir: new URL('./content/posts/', import.meta.url), schema: Frontmatter })
-).map(({ slug, data, html }) => ({ slug, ...data, html }))
+).map(({ slug, data: { draft, ...data }, html }) => ({ draft, post: { slug, ...data, html } }))
+const visible = (preview: boolean) => posts.filter((p) => preview || !p.draft).map((p) => p.post)
 
 const who = (session: { userId: string } | null) => session?.userId ?? 'guest'
 
 export function createResolvers() {
   const lists = new Map<string, string[]>()
   return resolvers(project, (implement) => [
-    implement(listPosts, () => posts.map(({ html: _, author: __, ...summary }) => summary)),
+    implement(listPosts, (_, { preview }) =>
+      visible(preview).map(({ html: _, author: __, ...summary }) => summary),
+    ),
     implement(
       getPost,
-      ({ slug }, { fail }) => posts.find((p) => p.slug === slug) ?? fail('NotFound', { slug }),
+      ({ slug }, { fail, preview }) =>
+        visible(preview).find((p) => p.slug === slug) ?? fail('NotFound', { slug }),
     ),
     implement(savedPosts, (_, { session }) => lists.get(who(session)) ?? []),
     implement(savePost, ({ slug }, { session, fail }) => {

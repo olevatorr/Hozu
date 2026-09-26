@@ -91,6 +91,10 @@ const number = builtin('#number')
 const date = builtin('#date')
 const relative = builtin('#relative')
 const list = builtin('#list')
+const og = builtin('#og')
+
+export const openGraph = (card: { title: Val<string>; subtitle?: Val<string | null> }): Expr<string> =>
+  og({ title: card.title, subtitle: card.subtitle ?? null })
 
 export const format = Object.freeze({
   number: (value: Val<number | null>, options: NumberOptions = {}): Expr<string> =>

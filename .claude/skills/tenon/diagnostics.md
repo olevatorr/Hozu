@@ -35,4 +35,5 @@ around the rule.
 | TN039 | `basePath` is not `''` or `/segment[/segment…]` | e.g. `'/shop'`, no trailing slash |
 | TN040 | a locale lacks a message, or uses other `{placeholders}` | add/translate the key in that locale |
 | TN041 | a machine uses a message, `ui.format` or `locale` | store a code in context; choose the message in the view |
+| TN043 | `site.offline` has params, no page, or per-request data | point it at a static page, or `offline: null` |
 | TN042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

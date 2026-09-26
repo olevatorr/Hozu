@@ -11,6 +11,8 @@ export const text = ui.messages('en', {
     byline: 'By {author} · {date}',
     notFound: 'Post not found',
     postUnavailable: 'Post unavailable',
+    offline: 'You are offline',
+    offlineHint: 'This page will come back when your connection does.',
   },
   'zh-TW': {
     title: 'Tenon 部落格 — AI 優先前端筆記',
@@ -22,5 +24,7 @@ export const text = ui.messages('en', {
     byline: '{author} · {date}',
     notFound: '找不到這篇文章',
     postUnavailable: '目前無法顯示這篇文章',
+    offline: '目前離線',
+    offlineHint: '恢復連線後就能繼續閱讀。',
   },
 })

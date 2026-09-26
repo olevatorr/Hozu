@@ -41,6 +41,7 @@ const site = project({
     url: 'https://blog.example',
     name: 'Blog',
     locales: null,
+    offline: null,
     lang: 'en',
     icon: null,
     themeColor: null,

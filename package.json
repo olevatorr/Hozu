@@ -7,7 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev packages/bundle packages/image packages/content && node packages/runtime-client/scripts/bundle.ts",
+    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev packages/bundle packages/image packages/content packages/testing && node packages/runtime-client/scripts/bundle.ts",
     "typecheck": "tsc -b tsconfig.json",
     "test": "pnpm build && vitest run",
     "bench": "pnpm build && node bench/run.ts",
@@ -35,6 +35,7 @@
     "@tenon/runtime-client": "workspace:*",
     "@tenon/runtime-server": "workspace:*",
     "@tenon/schema-zod": "workspace:*",
+    "@tenon/testing": "workspace:*",
     "@tenon/validator": "workspace:*",
     "@types/node": "22.20.4",
     "ajv": "8.20.0",

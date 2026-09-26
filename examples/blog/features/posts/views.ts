@@ -87,3 +87,13 @@ export const Article = ui.view({
       },
     ),
 })
+
+export const Offline = ui.view({
+  machine: null,
+  route: null,
+  render: () =>
+    ui.main({ class: 'mx-auto max-w-2xl space-y-4 px-4 py-12' }, [
+      ui.h1({ class: 'text-2xl font-bold' }, [text.offline]),
+      ui.p({}, [text.offlineHint]),
+    ]),
+})

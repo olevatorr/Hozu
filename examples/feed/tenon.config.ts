@@ -32,6 +32,7 @@ export default project({
     name: 'Feed',
     lang: 'en',
     locales: null,
+    offline: null,
     icon: null,
     themeColor: null,
   },

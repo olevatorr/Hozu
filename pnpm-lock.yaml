@@ -56,6 +56,9 @@ importers:
       '@tenon/schema-zod':
         specifier: workspace:*
         version: link:packages/schema-zod
+      '@tenon/testing':
+        specifier: workspace:*
+        version: link:packages/testing
       '@tenon/validator':
         specifier: workspace:*
         version: link:packages/validator
@@ -561,6 +564,15 @@ importers:
       zod:
         specifier: 4.6.5
         version: 4.6.5
+
+  packages/testing:
+    dependencies:
+      '@tenon/core':
+        specifier: workspace:*
+        version: link:../core
+      '@tenon/runtime-server':
+        specifier: workspace:*
+        version: link:../runtime-server
 
   packages/validator:
     dependencies:
