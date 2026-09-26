@@ -3,6 +3,7 @@ import {
   type BuildResult,
   FORM_FIELD,
   hashJson,
+  type ImageSet,
   type Json,
   type Manifest,
   publicPath,
@@ -42,6 +43,7 @@ export interface HandlerOptions {
   cache?: PageCache
   readFile?: (file: string) => Promise<Uint8Array>
   manifest?: Manifest
+  images?: ImageSet | null
 }
 
 export interface Handler {
@@ -116,7 +118,9 @@ export function createHandler({
   cache = memoryCache(),
   readFile,
   manifest,
+  images = null,
 }: HandlerOptions): Handler {
+  const variants = manifest?.images ?? images?.variants ?? null
   if (manifest && manifest.irHash !== hashJson(build.ir))
     throw new Error('The build manifest does not match this project; run `tenon build` again')
   const store = typeof sessionOption === 'function' ? null : sessionOption
@@ -241,6 +245,7 @@ export function createHandler({
       params,
       search,
       assets,
+      images: variants,
       locale,
     })
     const page = { html, status, redirect, at, ttl: ttlOf(route), tags: [...tags] }
@@ -343,6 +348,7 @@ export function createHandler({
       search,
       session: await session(request),
       assets,
+      images: variants,
       locale,
     })
     if (rendered.redirect) return see(rendered.redirect)
@@ -389,6 +395,7 @@ export function createHandler({
       snapshots: outcome.snapshots,
       session: who,
       assets,
+      images: variants,
       locale,
     })
     return new Response(
@@ -463,6 +470,11 @@ export function createHandler({
     const client = clientBundle()[path]
     if (client !== undefined) return text('text/javascript', client, head)
     if (path === '/_tenon/fns.js') return text('text/javascript', fns, head)
+    const variant = images?.files[basePath + path]
+    if (variant)
+      return new Response(head ? null : (variant as ConstructorParameters<typeof Response>[0]), {
+        headers: { 'content-type': 'image/webp', 'cache-control': IMMUTABLE },
+      })
     const file = path.startsWith('/_tenon/a/') ? asset(basePath + path) : null
     if (file)
       return new Response(head ? null : ((await file) as ConstructorParameters<typeof Response>[0]), {
@@ -511,7 +523,7 @@ export function createHandler({
         let html = ERROR_HTML
         if (ir.error)
           try {
-            html = (await renderToString({ build, data, route: ir.error, assets })).html
+            html = (await renderToString({ build, data, route: ir.error, assets, images: variants })).html
           } catch (again) {
             onError(again, { path: url.pathname })
           }

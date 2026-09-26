@@ -262,6 +262,11 @@ User-scoped resolvers also receive `session`. Mutations can call `setSession(val
 - A strict CSP, `nosniff` and a cross-site POST check are on by default (`csp` adds sources, e.g.
   `{ script: ['https://analytics.example'] }`, or `false`).
 
+Images: `ui.img({ src: ui.asset(new URL('./hero.jpg', import.meta.url)), alt, width, height })`. If the project
+installs `@tenon/image` (build-time, uses sharp), pass `images: await optimizeImages(build)` to `createServer` and
+`tenon build` does it on its own: raster `<img>` assets get WebP `srcset` widths and a `sizes` derived from `width`.
+Without it, images are served as they are.
+
 Deploying: `tenon build` writes `dist/public/` (static files for any host/CDN) and `dist/manifest.json`. On Node pass
 `createServer({ build: buildProject(project, { manifest }), manifest, publicDir: 'dist/public', ... })`. On Bun,
 Deno, Cloudflare Workers or Vercel the whole server is `createHandler({ build, manifest, resolvers })` from

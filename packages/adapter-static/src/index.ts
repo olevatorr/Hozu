@@ -1,7 +1,7 @@
 import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { planRoute } from '@tenon/compiler'
-import type { BuildResult } from '@tenon/core/ir'
+import type { BuildResult, ImageSet } from '@tenon/core/ir'
 import { createDataRuntime, type ResolverSet } from '@tenon/data'
 import {
   pageEntries,
@@ -20,6 +20,7 @@ export interface StaticExportOptions {
   outDir: string
   styles?: Stylesheet | null
   widgets?: WidgetBundle | null
+  images?: ImageSet | null
 }
 
 export interface StaticExport {
@@ -38,6 +39,7 @@ export async function exportStatic({
   outDir,
   styles = null,
   widgets = null,
+  images = null,
 }: StaticExportOptions): Promise<StaticExport> {
   const assets = publicAssets(build.ir.http.basePath, styles, widgets?.urls ?? {})
   const data = createDataRuntime({ build, resolvers })
@@ -64,6 +66,7 @@ export async function exportStatic({
         params: entry.params,
         assets,
         locale: entry.locale,
+        images: images?.variants ?? null,
       })
       if (status !== 200) {
         result.skipped.push({ route: entry.path, reason: `status ${status}` })
@@ -76,7 +79,14 @@ export async function exportStatic({
     }
   }
   if (build.ir.notFound) {
-    const { html } = await renderToString({ build, data, route: build.ir.notFound, params: null, assets })
+    const { html } = await renderToString({
+      build,
+      data,
+      route: build.ir.notFound,
+      params: null,
+      assets,
+      images: images?.variants ?? null,
+    })
     await write(join(outDir, '404.html'), html)
     result.written.push(join(outDir, '404.html'))
   }
@@ -88,6 +98,12 @@ export async function exportStatic({
     await mkdir(dirname(file), { recursive: true })
     if (f.file) await copyFile(f.file, file)
     else await writeFile(file, f.text ?? '')
+    result.written.push(file)
+  }
+  for (const [href, bytes] of Object.entries(images?.files ?? {})) {
+    const file = join(outDir, href.replace(/^\//, ''))
+    await mkdir(dirname(file), { recursive: true })
+    await writeFile(file, bytes)
     result.written.push(file)
   }
   return result

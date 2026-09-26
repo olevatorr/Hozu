@@ -26,6 +26,9 @@
       "path": "packages/css"
     },
     {
+      "path": "packages/image"
+    },
+    {
       "path": "packages/runtime-client"
     },
     {

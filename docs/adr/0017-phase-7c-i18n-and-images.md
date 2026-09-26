@@ -160,6 +160,36 @@ The sitemap and `robots.txt` build paths from the raw route path, so they ignore
 - **A4:** message types add instantiations for the blog, not for the cart, which A4 measures. It is reported
   anyway.
 
+# Implementation notes
+- **`site.locales` instead of `project({ i18n })`.** The locale list sits next to `site.lang`, which is the default
+  locale. Projects without `site` are unaffected, and only 9 configs needed `locales: null` instead of a new
+  top-level field in every project.
+- **`feature({ messages: text | null })`**, like every other declaration. This is one more required line per
+  feature (37 in the repository), accepted for consistency.
+- **No new `ValueExpr` form.** A message is `{ fn: '#msg:feature.key', arg }`, a format is `{ fn: '#number', arg }`,
+  and the new references are `locale` and `alternate`. The existing walkers, type inference and literal checks
+  work unchanged; `#` names are reserved for the framework.
+- **Server evaluation** uses a per-locale function table (memoised), so compiled fragments are cached per locale.
+  Island nodes are lowered for the payload: a message without arguments becomes a literal, and anything else
+  becomes a call to a generic helper in `fns.js` with the template and locale as literals. P7 went from 7,652 to
+  7,650 B.
+- **Locale-less page URLs negotiate** like `/`, so links from before a site turned i18n on keep working.
+- **Two 7b bugs fixed here:** the sitemap, `robots.txt` and the speculation-rules exclusions ignored `basePath`.
+  They now use the route table.
+- **A client bug fixed here:** a nested `ui.query` or `ui.each` copied its outer bindings when it rendered, so after
+  a refresh it kept reading stale outer data. The blog's plural count (`slugs.length` inside a nested query)
+  exposed it. The inner scope now re-syncs its prefix on every update.
+- **Images:** `@tenon/image` 0.0.0 depends on `sharp` 0.35.4 (prebuilt libvips binaries; pnpm skips its install
+  script, which is not needed). Only raster assets used as `<img src>` are processed, so icons and SVGs are left
+  alone.
+- **"Not installed" in this monorepo:** the root lists `@tenon/image` for tests, so every example can resolve it,
+  and `tenon build` writes `images: null` when there is nothing to optimise. The behaviour without the package is
+  covered by rendering without `images` (no `srcset`), not by a project that really lacks it.
+
+- **Gate:** P7 7,650 B (budget 7,680). P8 1,773 B. A4 53,186 (budget 55,000; 51,416 before), up from the new
+  view-scope and `ui` types that every example sees. P2's scaling exponent is back to 1.096, so the 1.131 reported in
+  ADR 0016 was noise. P9 10,188 req/s.
+
 # Implementation order
 1. i18n routing, `site.lang` and `locales`, `ui.alternate`, `/` negotiation, head, sitemap, plus the sitemap
    basePath fix.

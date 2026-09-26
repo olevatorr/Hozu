@@ -1,4 +1,4 @@
-export type { Manifest, ManifestAsset } from './build/manifest.ts'
+export type { ImageSet, ImageVariant, Manifest, ManifestAsset } from './build/manifest.ts'
 export type { BuildOptions, BuildResult } from './build/project.ts'
 export { buildProject, UNEXPECTED_ERROR_SCHEMA } from './build/project.ts'
 export { hashJson, sha256, sha256Bytes } from './canonical/hash.ts'

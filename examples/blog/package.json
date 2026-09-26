@@ -17,8 +17,9 @@
     "@tenon/core": "workspace:*",
     "@tenon/css": "workspace:*",
     "@tenon/data": "workspace:*",
+    "@tenon/dev": "workspace:*",
+    "@tenon/image": "workspace:*",
     "@tenon/schema-zod": "workspace:*",
-    "zod": "4.6.5",
-    "@tenon/dev": "workspace:*"
+    "zod": "4.6.5"
   }
 }

@@ -7,7 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev packages/bundle && node packages/runtime-client/scripts/bundle.ts",
+    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev packages/bundle packages/image && node packages/runtime-client/scripts/bundle.ts",
     "typecheck": "tsc -b tsconfig.json",
     "test": "pnpm build && vitest run",
     "bench": "pnpm build && node bench/run.ts",
@@ -22,12 +22,14 @@
     "@biomejs/biome": "2.5.14",
     "@tenon/adapter-node": "workspace:*",
     "@tenon/adapter-static": "workspace:*",
+    "@tenon/bundle": "workspace:*",
     "@tenon/cli": "workspace:*",
     "@tenon/compiler": "workspace:*",
     "@tenon/core": "workspace:*",
     "@tenon/css": "workspace:*",
     "@tenon/data": "workspace:*",
     "@tenon/dev": "workspace:*",
+    "@tenon/image": "workspace:*",
     "@tenon/machine": "workspace:*",
     "@tenon/runtime-client": "workspace:*",
     "@tenon/runtime-server": "workspace:*",
@@ -44,7 +46,6 @@
     "ts-json-schema-generator": "2.9.0",
     "typescript": "7.0.2",
     "vitest": "5.0.1",
-    "zod": "4.6.5",
-    "@tenon/bundle": "workspace:*"
+    "zod": "4.6.5"
   }
 }

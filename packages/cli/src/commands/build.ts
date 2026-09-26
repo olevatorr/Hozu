@@ -2,7 +2,7 @@ import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { type BuildResult, hashJson, type Manifest } from '@tenon/core/ir'
+import { type BuildResult, hashJson, type ImageSet, type Manifest } from '@tenon/core/ir'
 import type { BuildOutput } from '../contract.ts'
 import { TenonCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
@@ -32,6 +32,13 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
   if (errors.length)
     throw new TenonCliError('build', `The project has ${errors.length} build errors`, ['Run tenon validate'])
   const require = createRequire(loaded.path)
+  const optional = async <T>(id: string): Promise<T | null> => {
+    try {
+      return (await import(pathToFileURL(require.resolve(id)).href)) as T
+    } catch {
+      return null
+    }
+  }
   const from = async <T>(id: string): Promise<T> => {
     try {
       return (await import(pathToFileURL(require.resolve(id)).href)) as T
@@ -50,6 +57,9 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
         build,
       )
     : null
+  const images = await optional<{ optimizeImages(b: BuildResult): Promise<ImageSet> }>('@tenon/image').then(
+    (m) => (m ? m.optimizeImages(build) : null),
+  )
   const server = await from<ServerModule>('@tenon/runtime-server')
   const dir = resolve(cwd, out ?? 'dist')
   const files: string[] = []
@@ -60,8 +70,15 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
     else await writeFile(file, f.text ?? '')
     files.push(file)
   }
+  for (const [href, bytes] of Object.entries(images?.files ?? {})) {
+    const file = join(dir, 'public', href.replace(/^\//, ''))
+    await mkdir(dirname(file), { recursive: true })
+    await writeFile(file, bytes)
+    files.push(file)
+  }
   const manifest: Manifest = {
     irHash: hashJson(build.ir),
+    images: images && Object.keys(images.variants).length ? images.variants : null,
     assets: build.bindings.assetOrder,
     widgets: Object.fromEntries(
       Object.entries(widgets?.urls ?? {}).map(([ref, url]) => {

@@ -47,6 +47,7 @@ describe('static export with params', () => {
       '/zh-TW/posts/islands-explained/index.html',
       '/robots.txt',
       '/sitemap.xml',
+      '/_tenon/a/2ea52ea9eec9e42a.jpg',
     ])
     expect(result.skipped).toEqual([
       { route: 'home', reason: 'per-request regions: saved.savedPosts, posts.listPosts' },

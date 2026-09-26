@@ -1,0 +1,20 @@
+{
+  "name": "@tenon/image",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tenon/core": "workspace:*",
+    "sharp": "0.35.4"
+  }
+}

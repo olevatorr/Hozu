@@ -48,9 +48,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   DOM runtime, no VDOM, replace-hydration of islands, ADR 0006/0007),
   `@tenon/cli`, `@tenon/adapter-node` (ISR page cache + tag revalidation), `@tenon/adapter-static`,
   `@tenon/css` (Tailwind v4 bound, compiled from the IR's class candidates, TN026, ADR 0009),
-  `@tenon/dev` (dev server: CSS hot swap, reload on code changes)
-- Every `@tenon/*` package except `@tenon/schema-zod`, `@tenon/css` (Tailwind) and `@tenon/bundle` (esbuild) has zero
-  third-party runtime dependencies.
+  `@tenon/dev` (dev server: CSS hot swap, reload on code changes), `@tenon/image` (optional WebP srcset, ADR 0017)
+- Every `@tenon/*` package except `@tenon/schema-zod`, `@tenon/css` (Tailwind), `@tenon/bundle` (esbuild) and
+  `@tenon/image` (sharp) has zero third-party runtime dependencies.
 - Views: every HTML/SVG element with per-tag typed attributes, all DOM events, `ui.dom.*` event fields (TN027),
   `class` (static) + `toggle` (guarded class groups) + `vars` (CSS custom properties). No `style`, no free
   functions. Stylesheets: `project({ styles })` Tailwind entry + `feature({ styles })`; classes must produce CSS
@@ -86,6 +86,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   Accept-Language); `ui.messages(base, {...})` registered as `feature({ messages })`, `ui.format.*` (Intl),
   `locale` ref, `ui.alternate(l)`; hreflang/og:locale/sitemap derived. Messages and formats are lowered on the server
   for the page locale (islands get only its strings; helpers live in `fns.js`, P7 unchanged). TN040–TN042.
+- Images (ADR 0017): optional `@tenon/image` (build-time, sharp) → `optimizeImages(build)` makes WebP widths for raster
+  `<img src={ui.asset}>`; the renderer adds `srcset`/`sizes` (IR unchanged). `tenon build` uses it when the project
+  can resolve it; otherwise images are served as-is.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

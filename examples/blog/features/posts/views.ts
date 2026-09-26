@@ -14,6 +14,13 @@ export const PostList = ui.view({
   render: () =>
     ui.section({ class: 'mx-auto max-w-2xl space-y-8 px-4 py-12 font-sans' }, [
       Languages,
+      ui.img({
+        src: ui.asset(new URL('../../hero.jpg', import.meta.url)),
+        alt: '',
+        width: 1600,
+        height: 600,
+        class: 'h-auto w-full rounded-2xl',
+      }),
       ui.h1({ class: 'text-4xl font-bold tracking-tight text-gray-900 dark:text-white' }, [text.heading]),
       ui.query(
         listPosts,

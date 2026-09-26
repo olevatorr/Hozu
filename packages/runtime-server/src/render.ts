@@ -33,6 +33,7 @@ import {
   separated,
 } from './compile.ts'
 import { escapeHtml, scriptJson } from './escape.ts'
+import { responsive, type Variants } from './images.ts'
 import { type Lowering, localeFns, lowerNode, usesI18n } from './lower.ts'
 
 export interface Assets {
@@ -65,6 +66,7 @@ export interface RenderOptions {
   session?: unknown
   assets?: Assets
   locale?: string | null
+  images?: Variants | null
 }
 
 export interface RenderedPage {
@@ -86,7 +88,9 @@ export async function renderPage({
   session,
   assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: null, preload: [], widgets: {} },
   locale: requested = null,
+  images = null,
 }: RenderOptions): Promise<RenderedPage> {
+  const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
   const { ir, bindings } = build
   const locale = localeOf(ir, requested)
   const lang = locale ?? ir.site?.lang ?? 'en'
@@ -178,7 +182,9 @@ export async function renderPage({
     const dot = n.view.indexOf('.')
     const owner = ir.features[n.view.slice(0, dot)]
     const view = owner?.views[n.view.slice(dot + 1)]
-    return owner && view ? { root: view.root, scope: featureScope(owner, view.machine === owner.id) } : null
+    return owner && view
+      ? { root: prepare(view.root), scope: featureScope(owner, view.machine === owner.id) }
+      : null
   }
 
   const suspends = (n: ViewNode): boolean => {
@@ -376,7 +382,7 @@ export async function renderPage({
         const view = feature?.views[ref.slice(dot + 1)]
         if (!feature || !view) continue
         if (bounded) buffer += `<!--v:${ref}-->`
-        await render(view.root, featureScope(feature, view.machine === feature.id), false)
+        await render(prepare(view.root), featureScope(feature, view.machine === feature.id), false)
         if (bounded) buffer += '<!--/v-->'
       }
       if (bounded) payload.soft = soft

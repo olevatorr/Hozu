@@ -19,6 +19,7 @@ describe('tenon build output on Node (ADR 0016)', () => {
     const built = spawnSync(process.execPath, [cli, 'build', '--out', out], { cwd: cart, encoding: 'utf8' })
     expect(built.status, built.stderr).toBe(0)
     const manifest = JSON.parse(readFileSync(join(out, 'manifest.json'), 'utf8')) as Manifest
+    expect(manifest.images).toBeNull()
     const build = buildProject(project, { sources: false, manifest })
     const server = createServer({
       build,
