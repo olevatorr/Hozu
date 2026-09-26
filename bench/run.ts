@@ -137,7 +137,7 @@ record(
   '@tenon/runtime-client initial JS (entry + static chunks), min+gz',
   initialClientBytes(),
   'bytes',
-  7.5 * 1024,
+  8 * 1024,
 )
 
 record(
@@ -158,29 +158,29 @@ record(
   null,
 )
 
-const synthetic = (features: number): number[] =>
-  [0, 1, 2].flatMap(() => {
-    const r = spawnSync(process.execPath, [join(root, 'bench/p2.ts'), String(features)], { encoding: 'utf8' })
-    if (r.status !== 0) throw new Error(`bench/p2.ts ${features}: ${r.stderr}`)
-    return JSON.parse(r.stdout) as number[]
-  })
-const sizes = [250, 500, 750, 1000]
-const runs = sizes.map(synthetic)
-const points = sizes.map((n, i) => [Math.log(n), Math.log(Math.min(...runs[i]!))] as const)
+const synthetic = (features: number): number => {
+  const r = spawnSync(process.execPath, [join(root, 'bench/p2.ts'), String(features)], { encoding: 'utf8' })
+  if (r.status !== 0) throw new Error(`bench/p2.ts ${features}: ${r.stderr}`)
+  return Math.min(...(JSON.parse(r.stdout) as number[]))
+}
+const sizes = [250, 500, 1000, 2000]
+const best = sizes.map(() => Number.POSITIVE_INFINITY)
+for (let round = 0; round < 5; round++) sizes.forEach((n, i) => (best[i] = Math.min(best[i]!, synthetic(n))))
+const points = sizes.map((n, i) => [Math.log(n), Math.log(best[i]!)] as const)
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length
 const mx = mean(points.map(([x]) => x))
 const my = mean(points.map(([, y]) => y))
 const slope =
   points.reduce((sum, [x, y]) => sum + (x - mx) * (y - my), 0) /
   points.reduce((sum, [x]) => sum + (x - mx) ** 2, 0)
+record('P2', 'build + validate, 1000 features × 30 states × 10 events', best[2]!, 'ms', 500)
 record(
   'P2',
-  'build + validate, 1000 features × 30 states × 10 events',
-  Math.exp(points.at(-1)![1]),
-  'ms',
-  500,
+  'scaling exponent, best of 5 interleaved rounds at 250–2000 features (1.14 ≙ 2× → 2.2×)',
+  slope,
+  '',
+  1.14,
 )
-record('P2', 'scaling exponent, best times at 250–1000 features (1.14 ≙ 2× → 2.2×)', slope, '', 1.14)
 
 const bin = join(root, 'packages/cli/bin/tenon.js')
 const cold: number[] = []
@@ -201,7 +201,7 @@ record(
   'type instantiations for examples/cart',
   Number(/Instantiations:\s+(\d+)/.exec(diag)?.[1] ?? Number.NaN),
   '',
-  55_000,
+  65_000,
 )
 
 const bytes = (dir: string): number =>

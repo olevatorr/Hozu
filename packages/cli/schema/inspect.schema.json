@@ -585,7 +585,8 @@
         "search",
         "dom",
         "locale",
-        "alternate"
+        "alternate",
+        "env"
       ]
     },
     "GuardExpr": {

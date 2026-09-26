@@ -17,7 +17,11 @@ export function createResolvers() {
     }),
     implement(addTask, ({ title, priority }, { fail }) => {
       const clean = title.trim()
-      if (clean.length < 3 || clean.length > 80) return fail('Invalid', { title: clean })
+      if (clean.length < 3 || clean.length > 80)
+        return fail('Invalid', {
+          message: 'Title must be 3–80 characters',
+          fields: { title: 'Title must be 3–80 characters' },
+        })
       if (items.some((t) => t.title.toLowerCase() === clean.toLowerCase()))
         return fail('Duplicate', { title: clean })
       const t = { id: `t${++seq}`, title: clean, done: false, priority }

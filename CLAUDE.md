@@ -93,6 +93,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   (`routePattern` in core) for server, validator and speculation rules; TN024 checks the schema per modifier.
   Load more = machine-held cursors + one `ui.query` per page (pattern, `examples/feed`); framework event `visible`
   (lazy IntersectionObserver chunk, `data-tenon-visible` added at build).
+- Phase 8a (ADR 0019): `project({ env: { server, public } })` parsed at startup (`ctx.env` in resolvers, `ui.env(Schema)`
+  in views, lowered for islands); every mutation has the framework error `Invalid` `{ message, fields }` (schema
+  failures and `fail('Invalid', …)`), optional in `failed`, reserved as a declared name (TN014). Optimistic UI =
+  render the in-flight value in the busy state. P7 budget 8 KiB; P2 exponent over 250–2000, 5 interleaved rounds.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

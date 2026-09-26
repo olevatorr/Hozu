@@ -46,6 +46,7 @@ const site = project({
   schema: zodAdapter,
   styles: url('app.css'),
   http: null,
+  env: null,
   notFound: null,
   error: null,
   session: null,

@@ -56,6 +56,43 @@
         "http": {
           "$ref": "#/definitions/HttpIR"
         },
+        "env": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "server": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/JsonSchema"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "public": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/JsonSchema"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "server",
+                "public"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "features": {
           "type": "object",
           "additionalProperties": {
@@ -72,6 +109,7 @@
         "notFound",
         "error",
         "http",
+        "env",
         "features"
       ],
       "additionalProperties": false
@@ -435,7 +473,8 @@
         "search",
         "dom",
         "locale",
-        "alternate"
+        "alternate",
+        "env"
       ]
     },
     "GuardExpr": {

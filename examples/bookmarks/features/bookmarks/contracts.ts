@@ -3,7 +3,13 @@ import { addBookmark, toggleRead } from './effects.ts'
 import { Add, Draft, ToggleRead } from './events.ts'
 import { bookmarksMachine, DUPLICATE } from './machine.ts'
 
-const idle = { draft: '', kind: 'article', target: '', error: null } as const
+const idle = {
+  draft: '',
+  kind: 'article',
+  target: '',
+  error: null,
+  fields: { title: null, kind: null },
+} as const
 
 export const typesDraft = contract(bookmarksMachine, {
   given: { state: 'idle', context: idle },
@@ -32,6 +38,25 @@ export const rejectsDuplicate = contract(bookmarksMachine, {
   given: { state: 'adding', context: { ...idle, draft: 'Tenon talk' } },
   when: [{ failed: addBookmark, error: 'Duplicate', data: { title: 'Tenon talk' } }],
   expect: { state: 'idle', context: { ...idle, draft: 'Tenon talk', error: DUPLICATE }, effects: [] },
+})
+
+export const rejectsInvalidTitle = contract(bookmarksMachine, {
+  given: { state: 'adding', context: { ...idle, draft: 'x' } },
+  when: [
+    {
+      failed: addBookmark,
+      error: 'Invalid',
+      data: {
+        message: 'title: Use at least 2 characters',
+        fields: { title: 'Use at least 2 characters', kind: null },
+      },
+    },
+  ],
+  expect: {
+    state: 'idle',
+    context: { ...idle, draft: 'x', fields: { title: 'Use at least 2 characters', kind: null } },
+    effects: [],
+  },
 })
 
 export const addFails = contract(bookmarksMachine, {

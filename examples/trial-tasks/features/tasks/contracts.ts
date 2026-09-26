@@ -39,7 +39,13 @@ export const rejectsDuplicate = contract(tasksMachine, {
 
 export const rejectsInvalid = contract(tasksMachine, {
   given: { state: 'adding', context: { ...idle, draft: 'ab' } },
-  when: [{ failed: addTask, error: 'Invalid', data: { title: 'ab' } }],
+  when: [
+    {
+      failed: addTask,
+      error: 'Invalid',
+      data: { message: 'Title must be 3–80 characters', fields: { title: 'Title must be 3–80 characters' } },
+    },
+  ],
   expect: { state: 'idle', context: { ...idle, draft: 'ab', error: INVALID }, effects: [] },
 })
 

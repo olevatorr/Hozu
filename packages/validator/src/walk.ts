@@ -113,7 +113,15 @@ export function walkView(
 ) {
   const bound = view.machine === feature.id && feature.machine !== null
   const root: Env = bound ? contextEnv(feature) : { feature, sources: {}, bindings: [] }
-  const base: Env = { ...root, sources: { ...root.sources, locale: { type: 'string' }, alternate: null } }
+  const base: Env = {
+    ...root,
+    sources: {
+      ...root.sources,
+      locale: { type: 'string' },
+      alternate: null,
+      env: ir.env?.public ?? { type: 'object', properties: {}, additionalProperties: false },
+    },
+  }
   const env: Env =
     view.route && view.route !== '?'
       ? {

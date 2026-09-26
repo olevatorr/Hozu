@@ -67,6 +67,7 @@ export class ProjectScope {
     widgets: {},
     assets: {},
     assetOrder: [],
+    env: { server: null, public: null },
   }
   readonly tracking: boolean
 

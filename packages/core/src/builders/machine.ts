@@ -10,6 +10,11 @@ export interface UnexpectedError {
   message: string
 }
 
+export interface InvalidError<I = Record<string, unknown>> {
+  message: string
+  fields: { [K in keyof I & string]: string | null }
+}
+
 export interface TransitionConfig<T extends string, A> {
   target: T
   guard?: (arg: A) => Condition
@@ -56,9 +61,9 @@ export interface MachineDecl<C = any, S extends string = string>
   extends Decl<'machine'>,
     Typed<{ context: C; states: S }> {}
 
-type ErrorTransitions<E, T extends string> = {
+type ErrorTransitions<E, T extends string, I = Record<string, unknown>> = {
   [K in keyof E | 'Unexpected']: TransitionConfig<T, Ref<K extends keyof E ? E[K] : UnexpectedError>>[]
-}
+} & { Invalid?: TransitionConfig<T, Ref<InvalidError<I>>>[] }
 
 export const on = <P, const T extends string>(
   event: EventDecl<P>,
@@ -74,7 +79,7 @@ export const invoke = <
   O,
   E,
   const D extends readonly TransitionConfig<string, Ref<O>>[],
-  const F extends ErrorTransitions<E, string>,
+  const F extends ErrorTransitions<E, string, I>,
 >(
   effect: EffectDecl<I, O, E>,
   config: { input: NoInfer<Val<I>>; done: D; failed: F },

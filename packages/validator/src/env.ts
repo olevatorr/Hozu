@@ -1,5 +1,6 @@
 import {
   type FeatureIR,
+  INVALID_ERROR_SCHEMA,
   type JsonSchema,
   type ProjectIR,
   type RefSource,
@@ -18,6 +19,23 @@ export interface Env {
 export const schemaIn = (feature: FeatureIR | undefined, hash: string | undefined): JsonSchema | null =>
   (feature && hash !== undefined ? feature.schemas[hash] : undefined) ?? null
 
+const invalidSchema = (input: JsonSchema | null): JsonSchema => ({
+  ...INVALID_ERROR_SCHEMA,
+  properties: {
+    message: { type: 'string' },
+    fields: {
+      type: 'object',
+      properties: Object.fromEntries(
+        Object.keys((input?.properties as object | undefined) ?? {}).map((k) => [
+          k,
+          { type: ['string', 'null'] },
+        ]),
+      ),
+      additionalProperties: false,
+    },
+  },
+})
+
 export function effectSchemas(ir: ProjectIR, ref: string) {
   const r = resolveRef(ir, ref, 'effect')
   if (!r) return null
@@ -26,8 +44,13 @@ export function effectSchemas(ir: ProjectIR, ref: string) {
     input: schemaIn(r.feature, effect.input),
     output: schemaIn(r.feature, effect.output),
     errors: effect.errors,
+    invalid: r.registry === 'mutations',
     error: (name: string) =>
-      name === 'Unexpected' ? UNEXPECTED_ERROR_SCHEMA : schemaIn(r.feature, effect.errors[name]),
+      name === 'Unexpected'
+        ? UNEXPECTED_ERROR_SCHEMA
+        : name === 'Invalid' && r.registry === 'mutations' && !effect.errors.Invalid
+          ? invalidSchema(schemaIn(r.feature, effect.input))
+          : schemaIn(r.feature, effect.errors[name]),
   }
 }
 

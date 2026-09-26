@@ -27,7 +27,6 @@ export const addTask = mutation({
   output: Task,
   errors: {
     Duplicate: z.object({ title: z.string() }),
-    Invalid: z.object({ title: z.string() }),
   },
   invalidates: () => [tasksTag()],
 })

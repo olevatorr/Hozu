@@ -18,6 +18,7 @@ export type { ExternalUrl, HttpConfig, PathParams, Redirects } from './builders/
 export type { Message, MessagesDecl } from './builders/i18n.ts'
 export type {
   AfterConfig,
+  InvalidError,
   InvokeDecl,
   MachineDecl,
   OnDecl,

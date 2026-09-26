@@ -23,6 +23,7 @@ export interface Scope {
   url: string
   locale: string
   alternate: Record<string, string>
+  env: Json
 }
 
 export interface Runtime {

@@ -57,7 +57,8 @@ describe('widgets', () => {
       })
     ).get('meter')!
     const host = document.querySelector('div.h-8') as HTMLElement
-    for (let i = 0; i < 50 && (host.textContent !== 'v=0' || loaded.length < 2); i++) await tick()
+    const tone = () => document.querySelector('section')!.dataset.tone
+    for (let i = 0; i < 200 && (host.textContent !== 'v=0' || loaded.length < 2 || !tone()); i++) await tick()
     expect(loaded).toEqual(['/w/meter.js', '/w/frame.js'])
     expect(document.querySelector('section')!.dataset.tone).toBe('calm')
     expect(host.textContent).toBe('v=0')

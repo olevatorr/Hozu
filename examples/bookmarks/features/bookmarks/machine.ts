@@ -8,7 +8,13 @@ export const DUPLICATE = 'This bookmark already exists'
 
 export const bookmarksMachine = machine({
   context: Context,
-  initialContext: { draft: '', kind: 'article', target: '', error: null },
+  initialContext: {
+    draft: '',
+    kind: 'article',
+    target: '',
+    error: null,
+    fields: { title: null, kind: null },
+  },
   initial: 'idle',
   states: ({ ctx }) => ({
     idle: {
@@ -16,7 +22,12 @@ export const bookmarksMachine = machine({
         on(Draft, { target: 'idle', assign: (e) => [op.set(ctx.draft, e.text)] }),
         on(Add, {
           target: 'adding',
-          assign: (e) => [op.set(ctx.draft, e.title), op.set(ctx.kind, e.kind), op.set(ctx.error, null)],
+          assign: (e) => [
+            op.set(ctx.draft, e.title),
+            op.set(ctx.kind, e.kind),
+            op.set(ctx.error, null),
+            op.set(ctx.fields, { title: null, kind: null }),
+          ],
         }),
         on(ToggleRead, { target: 'toggling', assign: (e) => [op.set(ctx.target, e.id)] }),
       ],
@@ -34,6 +45,7 @@ export const bookmarksMachine = machine({
         ],
         failed: {
           Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] }],
+          Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] }],
           Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
         },
       }),

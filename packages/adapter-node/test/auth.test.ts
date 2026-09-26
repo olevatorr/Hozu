@@ -71,6 +71,7 @@ const site = project({
   schema: zodAdapter,
   styles: null,
   http: null,
+  env: null,
   notFound: missing,
   error: null,
   session: z.object({ user: z.string() }),

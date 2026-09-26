@@ -11,6 +11,7 @@ export interface ProjectIR {
   notFound: string | null
   error: string | null
   http: HttpIR
+  env: { server: JsonSchema | null; public: JsonSchema | null } | null
   features: Record<string, FeatureIR>
 }
 
@@ -200,6 +201,7 @@ export type RefSource =
   | 'dom'
   | 'locale'
   | 'alternate'
+  | 'env'
 
 export type ValueExpr =
   | { ref: RefSource; path: string[] }

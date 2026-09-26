@@ -9,6 +9,7 @@ import {
 import type { DomEvent, DomFields } from '../ir/events.ts'
 import { brand, type Decl } from '../model/decl.ts'
 import { createRef, type Expr, type Guard, type Ref, refProxy, type Val } from '../model/expr.ts'
+import type { Infer, Schema } from '../schema/standard.ts'
 import { type Asset, asset } from './asset.ts'
 import type { TagProps } from './dom-props.ts'
 import type { QueryDecl } from './effects.ts'
@@ -195,6 +196,7 @@ export const ui = Object.freeze({
   messages,
   format,
   alternate,
+  env: <S extends Schema>(_schema: S): Ref<Infer<S>> => refProxy('env', 0),
 })
 
 export const sendOf = (value: unknown): Send[typeof SEND] | null =>

@@ -13,7 +13,7 @@ const shows = [
 export const Board = ui.view({
   machine: bookmarksMachine,
   route: home,
-  render: ({ ctx, search }) =>
+  render: ({ ctx, search, when }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [
       ui.h1({ class: 'text-3xl font-bold' }, ['Bookmarks']),
       ui.form(
@@ -28,7 +28,10 @@ export const Board = ui.view({
             name: 'title',
             required: true,
             minlength: 2,
+            maxlength: 80,
             value: ctx.draft,
+            'aria-invalid': op.neq(ctx.fields.title, null),
+            'aria-describedby': 'title-error',
             class: 'flex-1 rounded border px-3 py-2',
             on: { input: ui.send(Draft, { text: ui.dom.value }) },
           }),
@@ -39,7 +42,18 @@ export const Board = ui.view({
           ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
         ],
       ),
+      ui.p({ id: 'title-error', class: 'text-sm text-rose-600' }, [ctx.fields.title]),
       ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+      when(
+        ['adding'],
+        [
+          ui.p({ class: 'rounded border px-4 py-3 opacity-50', 'aria-busy': 'true' }, [
+            'Adding ',
+            ctx.draft,
+            '…',
+          ]),
+        ],
+      ),
       ui.nav(
         { class: 'flex gap-2', 'aria-label': 'Show' },
         shows.map((s) =>

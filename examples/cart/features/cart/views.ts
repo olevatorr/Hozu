@@ -1,4 +1,5 @@
 import { op, ui } from '@tenon/core'
+import { PublicEnv } from '../../env.ts'
 import { listProducts } from '../catalog/effects.ts'
 import { cartTotal, getCart } from './effects.ts'
 import { AddItem, Checkout, Dismiss, RemoveItem, SetQuantity } from './events.ts'
@@ -108,6 +109,7 @@ export const CartPanel = ui.view({
         ['error'],
         [
           ui.p({ role: 'alert' }, [ctx.error]),
+          ui.p({ class: 'text-sm text-gray-500' }, ['Need help? ', ui.env(PublicEnv).SUPPORT_EMAIL]),
           ui.button({ type: 'button', on: { click: ui.send(Dismiss, {}) } }, ['Dismiss']),
         ],
         'fade',

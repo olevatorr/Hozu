@@ -65,10 +65,18 @@ export interface ProjectConfig {
   pages: PageDecl[]
   features: FeatureDecl[]
   http: HttpConfig | null
+  env: { server: Schema | null; public: Schema | null } | null
 }
 
-export interface ProjectDecl<Session = unknown> extends Decl<'project'>, Typed<{ session: Session }> {}
+export interface ProjectDecl<Session = unknown, Env = unknown>
+  extends Decl<'project'>,
+    Typed<{ session: Session; env: Env }> {}
 
-export const project = <S extends Schema | null, R = Record<string, never>>(
-  config: Omit<ProjectConfig, 'session' | 'http'> & { session: S; http: HttpConfig<R> | null },
-): ProjectDecl<S extends Schema ? Infer<S> : null> => brand({}, 'project', { ...config })
+export const project = <S extends Schema | null, R = Record<string, never>, ES extends Schema | null = null>(
+  config: Omit<ProjectConfig, 'session' | 'http' | 'env'> & {
+    session: S
+    http: HttpConfig<R> | null
+    env: { server: ES; public: Schema | null } | null
+  },
+): ProjectDecl<S extends Schema ? Infer<S> : null, ES extends Schema ? Infer<ES> : Record<string, never>> =>
+  brand({}, 'project', { ...config })

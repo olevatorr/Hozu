@@ -12,13 +12,21 @@ export type Fail<E> = <K extends keyof E & string>(error: K, data: E[K]) => Fail
 
 type Out<O, E> = O | Failure<E> | Promise<O | Failure<E>>
 
-export type QueryContext<Sc extends Scope, Session, E> = Sc extends 'user'
-  ? { session: Session | null; fail: Fail<E> }
-  : { fail: Fail<E> }
+export type QueryContext<Sc extends Scope, Session, E, Env = unknown> = Sc extends 'user'
+  ? { session: Session | null; fail: Fail<E>; env: Env }
+  : { fail: Fail<E>; env: Env }
 
-export interface MutationContext<Session, E> {
+export interface InvalidInput<I = Record<string, unknown>> {
+  message: string
+  fields: { [K in keyof I & string]?: string | null }
+}
+
+export type WithInvalid<E, I = Record<string, unknown>> = E & { Invalid: InvalidInput<I> }
+
+export interface MutationContext<Session, E, Env = unknown, I = Record<string, unknown>> {
+  env: Env
   session: Session | null
-  fail: Fail<E>
+  fail: Fail<WithInvalid<E, I>>
   setSession(value: Session | null): void
   file(token: string): Promise<Upload | null>
 }
@@ -33,6 +41,7 @@ export interface Upload {
 export type Run = (
   input: unknown,
   ctx: {
+    env: unknown
     session: unknown
     fail: Fail<any>
     setSession(value: unknown): void
@@ -44,14 +53,17 @@ export interface Implementation {
   readonly [IMPLEMENTATION]: { decl: object; run: Run }
 }
 
-export interface Implement<Session> {
+export interface Implement<Session, Env = unknown> {
   <I, O, E, Sc extends Scope>(
     decl: QueryDecl<I, O, E, Sc>,
-    run: (input: I, ctx: QueryContext<Sc, Session, E>) => Out<O, E>,
+    run: (input: I, ctx: QueryContext<Sc, Session, E, Env>) => Out<O, E>,
   ): Implementation
   <I, O, E>(
     decl: MutationDecl<I, O, E>,
-    run: (input: I, ctx: MutationContext<Session, E>) => Out<O, E>,
+    run: (
+      input: I,
+      ctx: MutationContext<Session, NoInfer<E>, Env, NoInfer<I>>,
+    ) => Out<O, WithInvalid<NoInfer<E>, NoInfer<I>>>,
   ): Implementation
 }
 
@@ -62,10 +74,11 @@ export interface ResolverSet {
 const implement = ((decl: object, run: Run): Implementation =>
   Object.freeze({ [IMPLEMENTATION]: { decl, run } })) as Implement<any>
 
-export const resolvers = <Session>(
-  project: ProjectDecl<Session>,
-  define: (implement: Implement<Session>) => Implementation[],
-): ResolverSet => Object.freeze({ [RESOLVERS]: { project, list: define(implement as Implement<Session>) } })
+export const resolvers = <Session, Env>(
+  project: ProjectDecl<Session, Env>,
+  define: (implement: Implement<Session, Env>) => Implementation[],
+): ResolverSet =>
+  Object.freeze({ [RESOLVERS]: { project, list: define(implement as Implement<Session, Env>) } })
 
 export const implementationOf = (i: Implementation) => i[IMPLEMENTATION]
 

@@ -1,3 +1,5 @@
+import type { Parse } from '../schema/check.ts'
+
 export type Check = (value: unknown) => string[] | null
 
 export interface Bindings {
@@ -8,6 +10,7 @@ export interface Bindings {
   widgets: Record<string, string>
   assets: Record<string, { file: string | null; width: number | null; height: number | null }>
   assetOrder: { name: string; href: string; width: number | null; height: number | null }[]
+  env: { server: Parse | null; public: Parse | null }
 }
 
 export interface StyleFiles {

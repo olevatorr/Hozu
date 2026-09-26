@@ -39,8 +39,8 @@ export function createResolvers() {
       ({ sku }, { fail }) => products.find((p) => p.sku === sku) ?? fail('NotFound', { sku }),
     ),
     implement(getCart, (_, { session }) => cartOf(who(session))),
-    implement(addItem, ({ sku, qty }, { session, fail }) => {
-      const available = stock.get(sku) ?? 0
+    implement(addItem, ({ sku, qty }, { session, fail, env }) => {
+      const available = Math.min(stock.get(sku) ?? 0, env.STOCK_LIMIT)
       if (available < qty) return fail('OutOfStock', { sku, available })
       stock.set(sku, available - qty)
       const lines = carts.get(who(session)) ?? []

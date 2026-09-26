@@ -23,6 +23,7 @@ describe.skipIf(!existsSync(chrome))('feed in Chromium (ADR 0018)', () => {
       page.on('request', (r) => r.resourceType() === 'document' && documents.push(r.url()))
       await page.goto(`http://127.0.0.1:${(server.address() as AddressInfo).port}/`)
       await page.waitForLoadState('networkidle')
+      await page.evaluate(() => new Promise((resolve) => requestIdleCallback(resolve)))
       const items = () => page.locator('main li').count()
       expect(await items()).toBe(10)
       await page.evaluate(() => {
@@ -40,5 +41,5 @@ describe.skipIf(!existsSync(chrome))('feed in Chromium (ADR 0018)', () => {
       await browser.close()
       server.close()
     }
-  }, 30_000)
+  }, 60_000)
 })

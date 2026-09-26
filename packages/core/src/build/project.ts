@@ -6,7 +6,7 @@ import type { Diagnostic, SourceIndex } from '../ir/diagnostic.ts'
 import type { FeatureIR, JsonSchema, ProjectIR, RouteIR } from '../ir/types.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
-import { toCheck } from '../schema/check.ts'
+import { toCheck, toParse } from '../schema/check.ts'
 import { isStandardSchema } from '../schema/standard.ts'
 import { withCapture } from '../source/capture.ts'
 import { buildFeature } from './feature.ts'
@@ -20,6 +20,16 @@ export interface BuildResult {
   bindings: Bindings
   sources: SourceIndex
   diagnostics: Diagnostic[]
+}
+
+export const INVALID_ERROR_SCHEMA: JsonSchema = {
+  type: 'object',
+  properties: {
+    message: { type: 'string' },
+    fields: { type: 'object', additionalProperties: { type: 'string' } },
+  },
+  required: ['message', 'fields'],
+  additionalProperties: false,
 }
 
 export const UNEXPECTED_ERROR_SCHEMA: JsonSchema = {
@@ -270,7 +280,14 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
   scope.mark('/http', project)
   scope.mark('/site', project)
   const http = buildHttp(scope, config.http)
-  const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, notFound, error, http, features }
+  const env = config.env
+    ? {
+        server: projectSchema(scope, config.env.server, '/env/server', '#env:server'),
+        public: projectSchema(scope, config.env.public, '/env/public', '#env:public'),
+      }
+    : null
+  scope.bindings.env = { server: toParse(config.env?.server), public: toParse(config.env?.public) }
+  const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, notFound, error, http, env, features }
   scope.bindings.assetOrder = scope.assetList
   for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
   return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }

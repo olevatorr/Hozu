@@ -85,7 +85,8 @@ function nodeValues(node: ViewNode, pointer: At, visit: Visit) {
 }
 
 const localeBound = (v: ValueExpr) =>
-  ('fn' in v && v.fn.startsWith('#')) || ('ref' in v && (v.ref === 'locale' || v.ref === 'alternate'))
+  ('fn' in v && v.fn.startsWith('#')) ||
+  ('ref' in v && (v.ref === 'locale' || v.ref === 'alternate' || v.ref === 'env'))
 
 export function i18n(ctx: Ctx) {
   const { ir } = ctx
@@ -231,8 +232,8 @@ export function i18n(ctx: Ctx) {
         'TN041',
         f.id,
         q,
-        'A machine uses a message, a format or the locale',
-        'Machines and contracts are locale-independent. Store a code in context and choose the message in the view.',
+        'A machine uses a message, a format, the locale or the environment',
+        'Machines and contracts are independent of locale and deployment. Store a code in context and choose the text in the view.',
         {
           summary: 'Store a code instead',
           snippet: null,

@@ -23,6 +23,7 @@ export default project({
   schema: zodAdapter,
   styles: new URL('./app.css', import.meta.url),
   http: null,
+  env: null,
   notFound: null,
   error: null,
   session: null,

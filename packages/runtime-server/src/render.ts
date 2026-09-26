@@ -34,7 +34,7 @@ import {
 } from './compile.ts'
 import { escapeHtml, scriptJson } from './escape.ts'
 import { responsive, type Variants } from './images.ts'
-import { type Lowering, localeFns, lowerNode, usesI18n } from './lower.ts'
+import { type Lowering, localeFns, lowerCached, usesI18n } from './lower.ts'
 
 export interface Assets {
   client: string
@@ -67,6 +67,7 @@ export interface RenderOptions {
   assets?: Assets
   locale?: string | null
   images?: Variants | null
+  env?: Json
 }
 
 export interface RenderedPage {
@@ -77,6 +78,8 @@ export interface RenderedPage {
   tags: Set<string>
   redirect: string | null
 }
+
+const NO_ENV: Json = {}
 
 export async function renderPage({
   build,
@@ -89,6 +92,7 @@ export async function renderPage({
   assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: null, preload: [], widgets: {} },
   locale: requested = null,
   images = null,
+  env = NO_ENV,
 }: RenderOptions): Promise<RenderedPage> {
   const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
   const { ir, bindings } = build
@@ -134,6 +138,7 @@ export async function renderPage({
   const lowering: Lowering = {
     locale: lang,
     alternate,
+    env,
     message: (ref) => {
       const dot = ref.indexOf('.')
       const m = ir.features[ref.slice(0, dot)]?.messages
@@ -155,6 +160,7 @@ export async function renderPage({
       url,
       locale: lang,
       alternate,
+      env,
     }
   }
 
@@ -162,7 +168,7 @@ export async function renderPage({
     const index = payload.islands.length
     const ref: IslandRef = { feature: scope.feature.id, node: n.id, scope: pruneScope(n, scope.bindings) }
     payload.islands.push(ref)
-    const node = i18n ? lowerNode(n, lowering) : n
+    const node = i18n ? lowerCached(n, lowering) : n
     payload.nodes[n.id] = node.kind === 'widget' ? { ...node, children: [] } : node
     payload.features[scope.feature.id] ??= (scope.feature.machine as MachineIR | null) ?? null
     void index
@@ -341,6 +347,7 @@ export async function renderPage({
     url,
     locale: lang,
     alternate,
+    env,
   }
   let status = 200
   let redirect: string | null = null

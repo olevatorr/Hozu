@@ -42,7 +42,7 @@ export async function send(response: ServerResponse, answer: Response): Promise<
 
 export function createServer(options: NodeAdapterOptions): Server & Pick<Handler, 'revalidate'> {
   const { publicDir, ...rest } = options
-  const handler = createHandler({ ...rest, readFile: (file) => readFile(file) })
+  const handler = createHandler({ env: process.env, ...rest, readFile: (file) => readFile(file) })
   const prefix = `${options.build.ir.http.basePath}/_tenon/`
   const serveStatic = async (request: IncomingMessage, response: ServerResponse) => {
     const path = normalize(decodeURIComponent(new URL(request.url ?? '/', 'http://x').pathname))

@@ -208,7 +208,7 @@ For a page without data use `head: { redirects: null, query: null, input: null, 
 
 Project: `project({ schema: zodAdapter, styles: new URL('./app.css', import.meta.url), notFound: null, error: null,
 session: null, site: { url, name, lang, icon: null, themeColor: null }, routes: { home, itemPage }, pages: [...],
-http: null, features: [items] })`. `notFound` / `error` may name a route to render for 404 / 500.
+http: null, env: null, features: [items] })`. `notFound` / `error` may name a route to render for 404 / 500.
 `site.locales: null` for one language; see "Languages" below.
 
 `http: null` serves the site at `/` with no trailing slashes (`/about/` answers 308 → `/about`). Otherwise:
@@ -240,6 +240,12 @@ There are no rewrites: one URL has one owner.
 - `locale` is in every view scope (`render: ({ locale }) =>`) and the second argument of `head.input`, e.g. for a
   query input `{ slug: params.slug, locale }`. `ui.alternate('zh-TW')` is the current page in another locale.
 
+## Environment
+`env: { server: z.object({ DB_URL: z.string() }), public: z.object({ SUPPORT_EMAIL: z.string().email() }) }` in
+`project`. Both are parsed when the server starts (defaults and `z.coerce` apply; a missing value stops startup).
+Resolvers get `ctx.env` (server values). Views read public values with `ui.env(PublicEnv).SUPPORT_EMAIL`; server values
+never reach a view. Machines cannot read env (TN041).
+
 ## Server (server.ts)
 ```ts
 export function createResolvers() {
@@ -257,6 +263,12 @@ export function createResolvers() {
   ])
 }
 ```
+Every mutation also has the framework error `Invalid` = `{ message, fields }`, where `fields` has one key per top-level
+input field (`string | null`). It is returned when the input fails its schema (put limits there:
+`z.string().min(2, 'Use at least 2 characters')`), and a resolver can return it:
+`fail('Invalid', { message, fields: { title: 'Already taken' } })`. `failed.Invalid` is optional (without it,
+`Unexpected` handles it); with it, `assign: (e) => [op.set(ctx.fields, e.fields)]` and show `ctx.fields.title` under the
+input. Never declare an error named `Invalid` or `Unexpected` yourself (TN014).
 User-scoped resolvers also receive `session`. Mutations can call `setSession(value)` (see `examples/blog`).
 `createServer({ build, styles, resolvers, session?, onError?, csp? })` (from `@tenon/adapter-node`):
 - `session: (request) => value` receives a web `Request` (`request.headers.get('cookie')`), or use

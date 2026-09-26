@@ -47,3 +47,10 @@ Each pattern is used in `examples/bookmarks`.
   { cursor: page.next }) }` and a sentinel `ui.div({ class: 'h-px', on: { visible: ui.send(More, …) } }, [])`.
   `More` appends the cursor and sets `last`, guarded by `op.and(op.neq(ctx.last, e.cursor), op.neq(e.cursor, null))`
   so a page loads once. It needs JS; a list that must work without JS pages through `search` links.
+- **Optimistic item** (used in `examples/bookmarks`): while the mutation runs, render the pending value from context
+  in the busy state: `when(['adding'], [ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…'])])`.
+  Leaving the state (done or failed) removes it; the refreshed query shows the real item.
+- **Field errors** (used in `examples/bookmarks`): context `fields: z.object({ title: z.string().nullable(), kind:
+  z.string().nullable() })`, reset it on submit, `failed.Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields,
+  e.fields)] }]`, and render `ui.p({ id: 'title-error' }, [ctx.fields.title])` with `'aria-invalid': op.neq(ctx.fields.title,
+  null)` on the input. It also works without JS.

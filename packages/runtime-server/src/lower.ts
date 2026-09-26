@@ -6,10 +6,12 @@ import {
   type ValueExpr,
   type ViewNode,
 } from '@tenon/core/ir'
+import { getIn } from '@tenon/machine'
 
 export interface Lowering {
   locale: string
   alternate: Record<string, string>
+  env: Json
   message: (ref: string) => string
 }
 
@@ -19,7 +21,7 @@ export function usesI18n(ir: ProjectIR): boolean {
   let hit = usesMemo.get(ir)
   if (hit === undefined) {
     const text = JSON.stringify(Object.values(ir.features).map((f) => [f.views, f.messages]))
-    hit = /"fn":"#|"ref":"(locale|alternate)"/.test(text)
+    hit = /"fn":"#|"ref":"(locale|alternate|env)"/.test(text)
     usesMemo.set(ir, hit)
   }
   return hit
@@ -118,6 +120,7 @@ export function lowerValue(x: ValueExpr, l: Lowering): ValueExpr {
   if ('ref' in x) {
     if (x.ref === 'locale') return { literal: l.locale }
     if (x.ref === 'alternate') return { literal: l.alternate[x.path[0] ?? ''] ?? null }
+    if (x.ref === 'env') return { literal: getIn(l.env, x.path) }
     return x
   }
   if ('object' in x)
@@ -136,4 +139,32 @@ export function lowerValue(x: ValueExpr, l: Lowering): ValueExpr {
   if ('link' in x) return { ...x, params: lowerValue(x.params, l), search: lowerValue(x.search, l) }
   if ('test' in x) return { test: lowerGuard(x.test, l) }
   return x
+}
+
+const perRequest = new WeakMap<ViewNode, boolean>()
+const cache = new WeakMap<object, WeakMap<ViewNode, Map<string, ViewNode>>>()
+
+export function lowerCached(n: ViewNode, l: Lowering): ViewNode {
+  let varies = perRequest.get(n)
+  if (varies === undefined) {
+    varies = JSON.stringify(n).includes('"ref":"alternate"')
+    perRequest.set(n, varies)
+  }
+  if (varies || typeof l.env !== 'object' || l.env === null) return lowerNode(n, l)
+  let byNode = cache.get(l.env)
+  if (!byNode) {
+    byNode = new WeakMap()
+    cache.set(l.env, byNode)
+  }
+  let byLocale = byNode.get(n)
+  if (!byLocale) {
+    byLocale = new Map()
+    byNode.set(n, byLocale)
+  }
+  let hit = byLocale.get(l.locale)
+  if (!hit) {
+    hit = lowerNode(n, l)
+    byLocale.set(l.locale, hit)
+  }
+  return hit
 }

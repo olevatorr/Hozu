@@ -35,7 +35,7 @@ export function declaredErrors(ctx: Ctx) {
         )
       }
       for (const name of Object.keys(s.invoke.failed)) {
-        if (names.includes(name)) continue
+        if (names.includes(name) || (name === 'Invalid' && schemas.invalid)) continue
         const guess = closest(name, names)
         ctx.report(
           'TN007',
@@ -104,7 +104,7 @@ export function declaredErrors(ctx: Ctx) {
         const schemas = effectSchemas(ctx.ir, step.failed)
         if (!schemas) return
         const names = required(schemas.errors)
-        if (names.includes(step.error)) return
+        if (names.includes(step.error) || (step.error === 'Invalid' && schemas.invalid)) return
         const guess = closest(step.error, names)
         const p = featurePointer(f.id, 'contracts', cid, 'when', i, 'error')
         ctx.report(

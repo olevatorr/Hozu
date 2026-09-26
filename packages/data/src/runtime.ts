@@ -30,6 +30,7 @@ interface Effect {
   freshness: Freshness
   tags: ((input: Json) => string)[]
   errors: Set<string>
+  fields: string[]
   run: Run
 }
 
@@ -53,6 +54,7 @@ export interface DataRuntimeOptions {
   resolvers: ResolverSet
   now?: () => number
   onError?: OnError
+  env?: unknown
 }
 
 export interface FileLike {
@@ -77,6 +79,17 @@ export interface DataRuntime {
 
 const unexpected = (message: string): Result => ({ ok: false, error: 'Unexpected', data: { message } })
 
+const invalid = (keys: string[], issues: string[], given: Record<string, Json> = {}): Result => {
+  const fields: Record<string, Json> = Object.fromEntries(keys.map((k) => [k, null]))
+  for (const [k, v] of Object.entries(given)) if (typeof v === 'string') fields[k] = v
+  for (const issue of issues) {
+    const at = issue.indexOf(': ')
+    const key = at < 0 ? '' : (issue.slice(0, at).split('.')[0] ?? '')
+    if (key in fields && fields[key] === null) fields[key] = at < 0 ? issue : issue.slice(at + 2)
+  }
+  return { ok: false, error: 'Invalid', data: { message: issues.join('; '), fields } }
+}
+
 const tagKey = (tag: TagExprIR, get: Getter | null) => (input: Json) =>
   get ? `${tag.tag}(${canonicalStringify(get({ input }))})` : tag.tag
 
@@ -85,8 +98,13 @@ export function createDataRuntime({
   resolvers,
   now = Date.now,
   onError = () => {},
+  env: rawEnv = {},
 }: DataRuntimeOptions): DataRuntime {
   const { ir, bindings } = build
+  const parsedEnv = bindings.env.server?.(rawEnv)
+  if (parsedEnv && !parsedEnv.ok)
+    throw new Error(`Invalid server environment: ${parsedEnv.issues.join('; ')}`)
+  const env = parsedEnv?.ok ? parsedEnv.value : {}
   const effects = new Map<string, Effect>()
   const problems: Diagnostic[] = []
   const problem = (pointer: string, feature: string | null, message: string, cause: string) =>
@@ -134,6 +152,7 @@ export function createDataRuntime({
       tags: TagExprIR[],
       scope: 'public' | 'user',
       freshness: Freshness,
+      fields: string[] = [],
     ) => {
       const ref = `${feature.id}.${symbol}`
       const run = runs.get(ref)
@@ -152,6 +171,7 @@ export function createDataRuntime({
         scope,
         freshness,
         errors: new Set(Object.keys(errors)),
+        fields,
         tags: tags.map((t) => tagKey(t, t.param ? compileValue(t.param, bindings.fns) : null)),
         run,
       })
@@ -159,7 +179,9 @@ export function createDataRuntime({
     for (const [symbol, q] of Object.entries(feature.queries))
       register('query', symbol, q.errors, q.tags, q.scope, q.freshness)
     for (const [symbol, m] of Object.entries(feature.mutations))
-      register('mutation', symbol, m.errors, m.invalidates, 'user', { kind: 'live' })
+      register('mutation', symbol, m.errors, m.invalidates, 'user', { kind: 'live' }, [
+        ...Object.keys((feature.schemas[m.input]?.properties as object | undefined) ?? {}),
+      ])
   }
   if (problems.length) throw new DataRuntimeError(problems)
 
@@ -192,12 +214,22 @@ export function createDataRuntime({
       return unexpected(error instanceof Error ? error.message : String(error))
     }
     try {
-      out = await effect.run(input, { session, fail, setSession, file })
+      out = await effect.run(input, { env, session, fail, setSession, file })
     } catch (error) {
       return report(error)
     }
     const failure = failureOf(out)
     if (failure) {
+      if (failure.error === 'Invalid' && effect.kind === 'mutation') {
+        const data = failure.data as { message?: unknown; fields?: unknown } | null
+        if (typeof data?.message === 'string' && typeof data.fields === 'object' && data.fields !== null) {
+          const filled = invalid(effect.fields, [], data.fields as Record<string, Json>)
+          return filled.ok
+            ? filled
+            : { ...filled, data: { ...(filled.data as object), message: data.message } }
+        }
+        return report(new Error(`Invalid data from ${effect.ref} must be { message, fields }`))
+      }
       if (!effect.errors.has(failure.error))
         return report(new Error(`Undeclared error "${failure.error}" from ${effect.ref}`))
       const issues = check(`${effect.ref}#error:${failure.error}`, failure.data)
@@ -234,7 +266,10 @@ export function createDataRuntime({
     const key = `${ref}${canonicalStringify(input)}`
     if (!partitions.get(partition)?.has(key)) {
       const issues = check(`${ref}#input`, input)
-      if (issues) return unexpected(`Invalid input for ${ref}: ${issues.join('; ')}`)
+      if (issues)
+        return effect.kind === 'mutation'
+          ? invalid(effect.fields, issues)
+          : unexpected(`Invalid input for ${ref}: ${issues.join('; ')}`)
     }
     return { effect, partition, key }
   }

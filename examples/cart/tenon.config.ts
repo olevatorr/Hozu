@@ -1,6 +1,7 @@
 import { project, ui } from '@tenon/core'
 import { zodAdapter } from '@tenon/schema-zod'
 import { z } from 'zod'
+import { PublicEnv, ServerEnv } from './env.ts'
 import { cart } from './features/cart/feature.ts'
 import { CartPanel } from './features/cart/views.ts'
 import { getProduct, listProducts } from './features/catalog/effects.ts'
@@ -12,6 +13,7 @@ export default project({
   schema: zodAdapter,
   styles: new URL('./app.css', import.meta.url),
   http: null,
+  env: { server: ServerEnv, public: PublicEnv },
   notFound: null,
   error: null,
   session: z.object({ userId: z.string() }),

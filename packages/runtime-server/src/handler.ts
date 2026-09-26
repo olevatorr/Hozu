@@ -46,6 +46,7 @@ export interface HandlerOptions {
   readFile?: (file: string) => Promise<Uint8Array>
   manifest?: Manifest
   images?: ImageSet | null
+  env?: Record<string, string | undefined>
 }
 
 export interface Handler {
@@ -121,7 +122,12 @@ export function createHandler({
   readFile,
   manifest,
   images = null,
+  env: rawEnv = {},
 }: HandlerOptions): Handler {
+  const parsedPublic = build.bindings.env.public?.(rawEnv)
+  if (parsedPublic && !parsedPublic.ok)
+    throw new Error(`Invalid public environment: ${parsedPublic.issues.join('; ')}`)
+  const publicEnv = (parsedPublic?.ok ? parsedPublic.value : {}) as Json
   const variants = manifest?.images ?? images?.variants ?? null
   if (manifest && manifest.irHash !== hashJson(build.ir))
     throw new Error('The build manifest does not match this project; run `tenon build` again')
@@ -138,7 +144,7 @@ export function createHandler({
         Object.fromEntries(Object.entries(manifest.widgets).map(([k, w]) => [k, w.url])),
       )
     : publicAssets(basePath, styles, widgets?.urls ?? {})
-  const data = createDataRuntime({ build, resolvers, now, onError })
+  const data = createDataRuntime({ build, resolvers, now, onError, env: rawEnv })
   const base: Record<string, string> = {
     'x-content-type-options': 'nosniff',
     'referrer-policy': 'strict-origin-when-cross-origin',
@@ -244,6 +250,7 @@ export function createHandler({
       search,
       assets,
       images: variants,
+      env: publicEnv,
       locale,
     })
     const page = { html, status, redirect, at, ttl: ttlOf(route), tags: [...tags] }
@@ -347,6 +354,7 @@ export function createHandler({
       session: await session(request),
       assets,
       images: variants,
+      env: publicEnv,
       locale,
     })
     if (rendered.redirect) return see(rendered.redirect)
@@ -394,6 +402,7 @@ export function createHandler({
       session: who,
       assets,
       images: variants,
+      env: publicEnv,
       locale,
     })
     return new Response(
@@ -521,7 +530,9 @@ export function createHandler({
         let html = ERROR_HTML
         if (ir.error)
           try {
-            html = (await renderToString({ build, data, route: ir.error, assets, images: variants })).html
+            html = (
+              await renderToString({ build, data, route: ir.error, assets, images: variants, env: publicEnv })
+            ).html
           } catch (again) {
             onError(again, { path: url.pathname })
           }

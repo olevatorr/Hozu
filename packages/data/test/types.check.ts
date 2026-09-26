@@ -7,6 +7,7 @@ const p = project({
   schema: zodAdapter,
   styles: null,
   http: null,
+  env: null,
   notFound: null,
   error: null,
   session: z.object({ userId: z.string() }),

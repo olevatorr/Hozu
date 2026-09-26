@@ -59,14 +59,21 @@ function tagExprs(scope: FeatureScope, record: (input: unknown) => unknown, p: A
   }, [])
 }
 
-function errors(scope: FeatureScope, record: Record<string, Schema>, p: At): Record<string, string> {
+function errors(
+  scope: FeatureScope,
+  record: Record<string, Schema>,
+  p: At,
+  mutation = false,
+): Record<string, string> {
   return mapRecord(record, (name, schema) => {
-    if (name === 'Unexpected')
+    if (name === 'Unexpected' || (mutation && name === 'Invalid'))
       scope.report(
         'TN014',
         at(p, name),
-        '"Unexpected" is a reserved error name',
-        'The framework always adds Unexpected ({ message }).',
+        `"${name}" is a reserved error name`,
+        name === 'Unexpected'
+          ? 'The framework always adds Unexpected ({ message }).'
+          : "The framework adds Invalid ({ message, fields }) to every mutation: it is returned when the input fails its schema, and resolvers return it with fail('Invalid', { message, fields }).",
       )
     return scope.schema(schema, at(p, name))
   })
@@ -215,7 +222,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureC
       return {
         input: scope.schema(d.input, at(p, 'input')),
         output: scope.schema(d.output, at(p, 'output')),
-        errors: errors(scope, d.errors, at(p, 'errors')),
+        errors: errors(scope, d.errors, at(p, 'errors'), true),
         invalidates: tagExprs(scope, d.invalidates, at(p, 'invalidates')),
       }
     }),

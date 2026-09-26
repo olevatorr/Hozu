@@ -62,6 +62,7 @@ const site = project({
       { routes: [post], set: { 'x-robots-tag': 'noarchive' } },
     ],
   },
+  env: null,
   features: [
     feature({
       id: 'blog',

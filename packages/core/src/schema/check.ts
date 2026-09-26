@@ -14,3 +14,24 @@ export function toCheck(schema: unknown): Check | null {
     return result.issues.map((i) => `${(i.path ?? []).map(segment).join('.') || '(root)'}: ${i.message}`)
   }
 }
+
+export type Parse = (value: unknown) => { ok: true; value: unknown } | { ok: false; issues: string[] }
+
+export function toParse(schema: unknown): Parse | null {
+  if (!isStandardSchema(schema)) return null
+  return (value) => {
+    const result = schema['~standard'].validate(value) as
+      | { value?: unknown; issues?: ReadonlyArray<Issue> }
+      | Promise<unknown>
+    if (result instanceof Promise)
+      return { ok: false, issues: ['Async schemas cannot be checked synchronously'] }
+    if (result.issues)
+      return {
+        ok: false,
+        issues: result.issues.map(
+          (i) => `${(i.path ?? []).map(segment).join('.') || '(root)'}: ${i.message}`,
+        ),
+      }
+    return { ok: true, value: result.value }
+  }
+}
