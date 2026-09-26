@@ -1,5 +1,5 @@
 import { resolvers } from '@tenon/data'
-import { addBookmark, getBookmark, listBookmarks, toggleRead } from './features/bookmarks/effects.ts'
+import { addBookmark, getBookmark, listBookmarks, toggleRead } from './features/bookmarks/model.ts'
 import project from './tenon.config.ts'
 
 type Kind = 'article' | 'video' | 'podcast'

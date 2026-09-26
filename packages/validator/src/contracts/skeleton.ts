@@ -47,6 +47,23 @@ const ts = (v: Json): string =>
     .replace(/"([A-Za-z_$][\w$]*)":/g, '$1:')
     .replace(/"/g, "'")
 
+function changes(initial: Json, paths: readonly (readonly (string | number)[])[]): Json {
+  const out: Record<string, Json> = {}
+  for (const path of paths) {
+    let target = out
+    let source: Json = initial
+    for (const [i, key] of path.entries()) {
+      source = source && typeof source === 'object' && !Array.isArray(source) ? (source[key] ?? null) : null
+      if (i === path.length - 1) target[key] = source
+      else {
+        target[key] ??= {}
+        target = target[key] as Record<string, Json>
+      }
+    }
+  }
+  return out
+}
+
 export function skeleton(ir: ProjectIR, feature: FeatureIR, id: string): string {
   const [state, kind, key, ...rest] = id.split('/') as [string, string, string, ...string[]]
   const m = feature.machine!
@@ -79,17 +96,18 @@ export function skeleton(ir: ProjectIR, feature: FeatureIR, id: string): string 
     calls.push(
       `{ effect: ${local(entered.effect)}, input: ${ts(example(effectSchemas(ir, entered.effect)?.input ?? null))} }`,
     )
-  const effects = `[${calls.join(', ')}]`
-  const assigned = (t?.assign ?? []).map((a) => a.path.join('.'))
-  const context = ts(m.initialContext)
+  const assigned = (t?.assign ?? []).map((a) => a.path)
+  const expect = [`state: '${target}'`]
+  if (assigned.length) expect.push(`changes: ${ts(changes(m.initialContext, assigned))}`)
+  if (calls.length) expect.push(`effects: [${calls.join(', ')}]`)
   return [
-    'contract(machine, { ',
-    `  given: { state: '${state}', context: ${context} },`,
+    'contract(machine, {',
+    `  given: { state: '${state}' },`,
     `  when: [${step}],`,
-    `  expect: { state: '${target}', context: ${context}, effects: ${effects} },`,
-    ' })',
+    `  expect: { ${expect.join(', ')} },`,
+    '})',
     assigned.length
-      ? `// decide the expected ${assigned.join(', ')}; example values above are placeholders`
+      ? `// decide the expected ${assigned.map((p) => p.join('.')).join(', ')}; example values above are placeholders`
       : '// example values above are placeholders',
   ].join('\n')
 }

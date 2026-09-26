@@ -7,7 +7,7 @@ export function offlinePage(ctx: Ctx) {
   if (!offline) return
   const pointer = join('', 'site', 'offline')
   const fix = {
-    summary: 'Use a static page without params, or offline: null',
+    summary: 'Use a static page without params, or remove site.offline',
     snippet: null,
     patch: [{ op: 'replace' as const, path: pointer, value: null }],
   }

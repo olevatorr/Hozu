@@ -1,8 +1,7 @@
 import { project, ui } from '@tenon/core'
 import { zodAdapter } from '@tenon/schema-zod'
-import { getBookmark, listBookmarks } from './features/bookmarks/effects.ts'
-import { bookmarks } from './features/bookmarks/feature.ts'
-import { Board, Detail } from './features/bookmarks/views.ts'
+import { getBookmark, listBookmarks } from './features/bookmarks/model.ts'
+import { Board, bookmarks, Detail } from './features/bookmarks/views.ts'
 import { bookmarkPage, home } from './routes.ts'
 
 export default project({

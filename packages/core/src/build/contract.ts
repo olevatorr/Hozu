@@ -42,7 +42,7 @@ export function buildContract(scope: FeatureScope, symbol: string, decl: Decl): 
     when: [],
     expect: { state: '?', context: null, effects: null },
   }
-  const initial = (defOf<{ initialContext?: unknown }>(d.machine as Decl) ?? {}).initialContext
+  const initial = defOf<{ initialContext?: unknown }>(d.machine as Decl)?.initialContext
   const given = scope.json(d.given.context === undefined ? (initial ?? null) : d.given.context)
   return scope.attempt(
     p,

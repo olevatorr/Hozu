@@ -116,7 +116,7 @@ export function stateNames(ctx: Ctx) {
           f.id,
           featurePointer(f.id, 'views', vid, 'machine'),
           `View ${f.id}.${vid} is bound to a machine but ${f.id} has none`,
-          'Declare feature({ declarations: {}, machine }) or set the view machine to null.',
+          'Add the machine to feature({ declarations }) or remove machine from the view.',
           {
             summary: 'Unbind the view',
             snippet: null,

@@ -314,7 +314,7 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
         'TN007',
         at(p, 'machine'),
         'View is bound to a machine that no feature declares',
-        'Register the machine in feature({ machine }).',
+        'Add the machine to feature({ declarations }).',
       )
     else if (owner.feature !== scope.id)
       scope.report(

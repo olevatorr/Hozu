@@ -34,19 +34,6 @@ export const filePath = (url: unknown): string | null =>
 
 export { type At, at, resolveAt }
 
-const registryOf: Partial<Record<DeclKind, string>> = {
-  event: 'events',
-  query: 'queries',
-  mutation: 'mutations',
-  fn: 'fns',
-  tag: 'tags',
-  view: 'views',
-  contract: 'contracts',
-  widget: 'widgets',
-  machine: 'machine',
-  route: 'routes',
-}
-
 export class ProjectScope {
   readonly diagnostics: Diagnostic[] = []
   readonly sources: SourceIndex = {}
@@ -184,15 +171,14 @@ export class FeatureScope {
       )
     } else if (!owner) {
       const effect = kinds.includes('query') || kinds.includes('mutation')
-      const registry = registryOf[info.kind] ?? info.kind
       this.report(
         effect ? 'TN003' : 'TN007',
         pointer,
         `This ${info.kind} is not declared in any feature`,
-        `It is referenced here but never registered in a feature's \`${registry}\` record, so it has no identity.`,
+        "It is referenced here but never added to a feature's `declarations`, so it has no identity.",
         {
-          summary: `Register it under \`${registry}\` in the owning feature()`,
-          snippet: `${registry}: { myName }`,
+          summary: 'Add it to the owning feature({ declarations })',
+          snippet: 'declarations: { ...existing, myName }',
           patch: null,
         },
       )
@@ -291,7 +277,7 @@ export class FeatureScope {
               'TN007',
               pointer,
               'These messages are not registered in any feature',
-              'Register them as feature({ messages }).',
+              'Add them to feature({ declarations }).',
             )
           return {
             fn: message ? `#msg:${owner?.feature ?? '?'}.${message.key}` : name,

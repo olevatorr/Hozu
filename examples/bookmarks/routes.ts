@@ -1,6 +1,7 @@
 import { route } from '@tenon/core'
 import { z } from 'zod'
-import { Show } from './features/bookmarks/schemas.ts'
+
+export const Show = z.enum(['all', 'unread'])
 
 export const home = route({ path: '/', params: null, search: z.object({ show: Show.default('all') }) })
 export const bookmarkPage = route({

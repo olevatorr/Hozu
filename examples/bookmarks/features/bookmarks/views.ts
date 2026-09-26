@@ -1,8 +1,19 @@
-import { op, ui } from '@tenon/core'
+import { contract, feature, op, ui } from '@tenon/core'
 import { bookmarkPage, home } from '../../routes.ts'
-import { getBookmark, isEmpty, listBookmarks, visible } from './effects.ts'
-import { Add, Draft, ToggleRead } from './events.ts'
-import { bookmarksMachine } from './machine.ts'
+import {
+  Add,
+  addBookmark,
+  bookmarksMachine,
+  bookmarksTag,
+  Draft,
+  DUPLICATE,
+  getBookmark,
+  isEmpty,
+  listBookmarks,
+  ToggleRead,
+  toggleRead,
+  visible,
+} from './model.ts'
 
 const kinds = ['article', 'video', 'podcast'] as const
 const shows = [
@@ -127,4 +138,111 @@ export const Detail = ui.view({
       ),
       ui.a({ href: ui.link(home, null, null), class: 'underline' }, ['Back']),
     ]),
+})
+
+export const typesDraft = contract(bookmarksMachine, {
+  given: { state: 'idle' },
+  when: [{ send: Draft, payload: { text: 'Tenon' } }],
+  expect: { state: 'idle', changes: { draft: 'Tenon' } },
+})
+
+export const addsBookmark = contract(bookmarksMachine, {
+  given: { state: 'idle' },
+  when: [
+    { send: Add, payload: { title: 'Tenon talk', kind: 'podcast' } },
+    { send: Draft, payload: { text: 'ignored while adding' } },
+    { done: addBookmark, result: { id: 'b3', title: 'Tenon talk', kind: 'podcast', read: false } },
+  ],
+  expect: {
+    state: 'idle',
+    changes: { kind: 'podcast' },
+    effects: [
+      { effect: addBookmark, input: { title: 'Tenon talk', kind: 'podcast' } },
+      { navigate: '/bookmarks/b3' },
+    ],
+  },
+})
+
+export const rejectsDuplicate = contract(bookmarksMachine, {
+  given: { state: 'adding' },
+  when: [{ failed: addBookmark, error: 'Duplicate', data: { title: 'Tenon talk' } }],
+  expect: { state: 'idle', changes: { error: DUPLICATE } },
+})
+
+export const rejectsInvalidTitle = contract(bookmarksMachine, {
+  given: { state: 'adding' },
+  when: [
+    {
+      failed: addBookmark,
+      error: 'Invalid',
+      data: {
+        message: 'title: Use at least 2 characters',
+        fields: { title: 'Use at least 2 characters', kind: null },
+      },
+    },
+  ],
+  expect: { state: 'idle', changes: { fields: { title: 'Use at least 2 characters' } } },
+})
+
+export const addFails = contract(bookmarksMachine, {
+  given: { state: 'adding' },
+  when: [{ failed: addBookmark, error: 'Unexpected', data: { message: 'offline' } }],
+  expect: { state: 'idle', changes: { error: 'offline' } },
+})
+
+export const togglesRead = contract(bookmarksMachine, {
+  given: { state: 'idle' },
+  when: [
+    { send: ToggleRead, payload: { id: 'b1' } },
+    { done: toggleRead, result: { id: 'b1', title: 'A', kind: 'article', read: true } },
+  ],
+  expect: {
+    state: 'idle',
+    changes: { target: 'b1' },
+    effects: [{ effect: toggleRead, input: { id: 'b1' } }],
+  },
+})
+
+export const toggleMissing = contract(bookmarksMachine, {
+  given: { state: 'toggling' },
+  when: [{ failed: toggleRead, error: 'NotFound', data: { id: 'b9' } }],
+  expect: { state: 'idle' },
+})
+
+export const toggleFails = contract(bookmarksMachine, {
+  given: { state: 'toggling' },
+  when: [{ failed: toggleRead, error: 'Unexpected', data: { message: 'offline' } }],
+  expect: { state: 'idle', changes: { error: 'offline' } },
+})
+
+export const bookmarks = feature({
+  id: 'bookmarks',
+  intent: {
+    summary:
+      'A shared reading list: add bookmarks with a kind, mark them read, filter unread, one page each.',
+    invariants: ['Titles are unique, case-insensitive', 'New bookmarks are listed first'],
+  },
+  declarations: {
+    bookmarksTag,
+    Draft,
+    Add,
+    ToggleRead,
+    listBookmarks,
+    getBookmark,
+    addBookmark,
+    toggleRead,
+    visible,
+    isEmpty,
+    bookmarksMachine,
+    Board,
+    Detail,
+    typesDraft,
+    addsBookmark,
+    rejectsDuplicate,
+    rejectsInvalidTitle,
+    addFails,
+    togglesRead,
+    toggleMissing,
+    toggleFails,
+  },
 })

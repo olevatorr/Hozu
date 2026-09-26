@@ -53,7 +53,7 @@ describe('field-level invalid input (ADR 0019)', () => {
   it('turns a schema failure into Invalid with every input field, invalid or not', async () => {
     const build = buildProject(bookmarks, { sources: false })
     const data = createDataRuntime({ build, resolvers: bookmarkResolvers() })
-    const { addBookmark } = await import('../../../examples/bookmarks/features/bookmarks/effects.ts')
+    const { addBookmark } = await import('../../../examples/bookmarks/features/bookmarks/model.ts')
     expect(await data.mutate(addBookmark, { title: 'x', kind: 'article' })).toMatchObject({
       ok: false,
       error: 'Invalid',

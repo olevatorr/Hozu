@@ -104,9 +104,23 @@ describe('Phase 1 behavior catalog', () => {
     const d = run(ir).diagnostics.find((x) => x.code === 'TN016')!
     expect(d.fix?.snippet).toContain("given: { state: 'idle'")
     expect(d.fix?.snippet).toContain('{ send: Dismiss, payload: {} }')
-    expect(d.fix?.snippet).toContain("expect: { state: 'idle'")
-    expect(d.fix?.snippet).toContain('effects: []')
+    expect(d.fix?.snippet).toContain("expect: { state: 'idle' }")
     expect(d.fix?.snippet).toContain('placeholders')
+  })
+
+  it('TN016 lists only the assigned fields as changes', () => {
+    const ir = cartIR()
+    cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [
+      {
+        guard: null,
+        target: 'idle',
+        assign: [{ op: 'set', path: ['pending', 'qty'], value: { literal: 2 } }],
+        navigate: null,
+      },
+    ]
+    const d = run(ir).diagnostics.find((x) => x.code === 'TN016')!
+    expect(d.fix?.snippet).toContain("expect: { state: 'idle', changes: { pending: { qty: 1 } } }")
+    expect(d.fix?.snippet).toContain('decide the expected pending.qty')
   })
 
   const raiseLimit = (ir: ProjectIR) => {
