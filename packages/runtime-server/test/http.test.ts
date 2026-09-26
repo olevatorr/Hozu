@@ -37,7 +37,14 @@ const site = project({
   notFound: null,
   error: null,
   session: null,
-  site: { url: 'https://blog.example', name: 'Blog', lang: 'en', icon: null, themeColor: null },
+  site: {
+    url: 'https://blog.example',
+    name: 'Blog',
+    locales: null,
+    lang: 'en',
+    icon: null,
+    themeColor: null,
+  },
   routes: { home, post },
   pages: [
     ui.page(home, { views: [Home], assert: null, head: head('Home'), entries: null }),
@@ -59,6 +66,7 @@ const site = project({
     feature({
       id: 'blog',
       styles: [],
+      messages: null,
       widgets: {},
       intent: { summary: 'Posts', invariants: [] },
       imports: [],

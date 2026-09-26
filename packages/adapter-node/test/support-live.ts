@@ -93,6 +93,7 @@ export const site = project({
     feature({
       id: 'finder',
       styles: [],
+      messages: null,
       widgets: {},
       intent: { summary: 'Client fetch and live fixture', invariants: [] },
       imports: [],

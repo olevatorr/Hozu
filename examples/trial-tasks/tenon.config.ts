@@ -12,7 +12,14 @@ export default project({
   notFound: null,
   error: null,
   session: null,
-  site: { url: 'http://localhost:3000', name: 'Tasks', lang: 'en', icon: null, themeColor: null },
+  site: {
+    url: 'http://localhost:3000',
+    name: 'Tasks',
+    locales: null,
+    lang: 'en',
+    icon: null,
+    themeColor: null,
+  },
   routes: { home, taskPage },
   pages: [
     ui.page(home, {

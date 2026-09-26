@@ -21,6 +21,8 @@ export interface Scope {
   search: Json
   routes: Record<string, string>
   url: string
+  locale: string
+  alternate: Record<string, string>
 }
 
 export interface Runtime {

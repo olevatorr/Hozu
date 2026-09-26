@@ -57,7 +57,14 @@ export async function exportStatic({
       continue
     }
     for (const entry of list) {
-      const { html, status } = await renderToString({ build, data, route, params: entry.params, assets })
+      const { html, status } = await renderToString({
+        build,
+        data,
+        route,
+        params: entry.params,
+        assets,
+        locale: entry.locale,
+      })
       if (status !== 200) {
         result.skipped.push({ route: entry.path, reason: `status ${status}` })
         continue

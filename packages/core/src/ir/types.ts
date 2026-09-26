@@ -38,6 +38,7 @@ export interface SiteIR {
   lang: string
   icon: string | null
   themeColor: string | null
+  locales: string[] | null
 }
 
 export interface PageIR {
@@ -85,6 +86,7 @@ export interface FeatureIR {
   views: Record<string, ViewIR>
   widgets: Record<string, WidgetIR>
   contracts: Record<string, ContractIR>
+  messages: MessagesIR | null
 }
 
 export interface WidgetIR {
@@ -187,7 +189,17 @@ export interface TransitionIR {
   navigate: ValueExpr | null
 }
 
-export type RefSource = 'context' | 'event' | 'result' | 'error' | 'input' | 'params' | 'search' | 'dom'
+export type RefSource =
+  | 'context'
+  | 'event'
+  | 'result'
+  | 'error'
+  | 'input'
+  | 'params'
+  | 'search'
+  | 'dom'
+  | 'locale'
+  | 'alternate'
 
 export type ValueExpr =
   | { ref: RefSource; path: string[] }
@@ -339,3 +351,8 @@ export interface ExpectIR {
 }
 
 export type EffectCallIR = { effect: string; input: Json } | { navigate: string }
+
+export interface MessagesIR {
+  base: string
+  text: Record<string, Record<string, string>>
+}

@@ -18,6 +18,7 @@ import { Carousel, Chart, Globe, Reveal, Sketch, Smooth } from './widgets.ts'
 export const site = feature({
   id: 'site',
   styles: [],
+  messages: null,
   widgets: { Carousel, Chart, Globe, Reveal, Sketch, Smooth },
   intent: {
     summary: 'Marketing page and small app that exercise every presentation capability.',

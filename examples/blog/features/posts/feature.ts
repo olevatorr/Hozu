@@ -1,10 +1,12 @@
 import { feature } from '@tenon/core'
 import { getPost, listPosts, postsTag, postTag } from './effects.ts'
+import { text } from './messages.ts'
 import { Article, PostList } from './views.ts'
 
 export const posts = feature({
   id: 'posts',
   styles: [],
+  messages: text,
   widgets: {},
   intent: {
     summary: 'Public blog posts: the index and one page per article. Fully cacheable, ships no JavaScript.',

@@ -41,8 +41,10 @@ describe('static export with params', () => {
       outDir,
     })
     expect(result.written.map((f) => f.slice(outDir.length))).toEqual([
-      '/posts/hello-tenon/index.html',
-      '/posts/islands-explained/index.html',
+      '/en/posts/hello-tenon/index.html',
+      '/en/posts/islands-explained/index.html',
+      '/zh-TW/posts/hello-tenon/index.html',
+      '/zh-TW/posts/islands-explained/index.html',
       '/robots.txt',
       '/sitemap.xml',
     ])

@@ -33,3 +33,6 @@ around the rule.
 | TN037 | a redirect is not a path, hides a page or another redirect, or targets an unknown route | change or remove the `from` key; point `to` at `ui.link(...)` |
 | TN038 | `http.headers` sets a header the framework owns, or an invalid name/value | remove it (`cache-control` is derived; CSP is `createServer({ csp })`) |
 | TN039 | `basePath` is not `''` or `/segment[/segment…]` | e.g. `'/shop'`, no trailing slash |
+| TN040 | a locale lacks a message, or uses other `{placeholders}` | add/translate the key in that locale |
+| TN041 | a machine uses a message, `ui.format` or `locale` | store a code in context; choose the message in the view |
+| TN042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

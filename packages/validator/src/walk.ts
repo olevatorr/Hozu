@@ -112,7 +112,8 @@ export function walkView(
   visit: (site: NodeSite) => void,
 ) {
   const bound = view.machine === feature.id && feature.machine !== null
-  const base: Env = bound ? contextEnv(feature) : { feature, sources: {}, bindings: [] }
+  const root: Env = bound ? contextEnv(feature) : { feature, sources: {}, bindings: [] }
+  const base: Env = { ...root, sources: { ...root.sources, locale: { type: 'string' }, alternate: null } }
   const env: Env =
     view.route && view.route !== '?'
       ? {

@@ -98,6 +98,7 @@ export default project({
     feature({
       id: 'meter',
       styles: [],
+      messages: null,
       widgets: { Meter, Frame },
       intent: { summary: 'Widget fixture', invariants: [] },
       imports: [],

@@ -45,4 +45,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   TN037: { name: 'invalid-redirect', severity: 'error' },
   TN038: { name: 'reserved-header', severity: 'error' },
   TN039: { name: 'invalid-base-path', severity: 'error' },
+  TN040: { name: 'incomplete-messages', severity: 'error' },
+  TN041: { name: 'message-in-machine', severity: 'error' },
+  TN042: { name: 'invalid-i18n', severity: 'error' },
 }

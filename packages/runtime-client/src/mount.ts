@@ -290,7 +290,7 @@ export function createApp(doc: Document, options: AppOptions): App {
         const key = () => {
           const k = payloadKey(node.query, value(node.input, scope))
           const r = payload.get(k)
-          if (r && bound !== scope) bound[bound.length - 1] = r.ok ? r.value : r.data
+          if (r && bound !== scope) bound.splice(0, bound.length, ...scope, r.ok ? r.value : r.data)
           return `${k}|${!r ? '' : r.ok ? 'ready' : node.failed[r.error] ? r.error : 'Unexpected'}`
         }
         region(c, block, key, (cc, inner) => {
@@ -538,10 +538,8 @@ export function createApp(doc: Document, options: AppOptions): App {
         const hit = old.get(k)
         if (hit) {
           old.delete(k)
-          if (hit.value !== x) {
-            hit.value = x
-            hit.scope[hit.scope.length - 1] = x
-          }
+          hit.value = x
+          hit.scope.splice(0, hit.scope.length, ...scope, x)
           for (const u of hit.block) u()
           next.push(hit)
         } else {

@@ -2,11 +2,20 @@ import type { MutationDef, QueryDef } from '../builders/effects.ts'
 import type { EventDef } from '../builders/event.ts'
 import type { FeatureConfig } from '../builders/feature.ts'
 import type { FnDef } from '../builders/fn.ts'
+import type { MessagesDef } from '../builders/i18n.ts'
 import { type TagDef, tagUseOf } from '../builders/tag.ts'
 import type { WidgetDef } from '../builders/widget.ts'
 import { sha256 } from '../canonical/hash.ts'
 import { htmlTags } from '../ir/dom-data.ts'
-import type { ExportsIR, FeatureIR, Freshness, QueryIR, TagExprIR, WidgetIR } from '../ir/types.ts'
+import type {
+  ExportsIR,
+  FeatureIR,
+  Freshness,
+  MessagesIR,
+  QueryIR,
+  TagExprIR,
+  WidgetIR,
+} from '../ir/types.ts'
 import { type Decl, defOf } from '../model/decl.ts'
 import { RecorderError, refProxy } from '../model/expr.ts'
 import { builtin } from '../platform.ts'
@@ -223,6 +232,17 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureC
     widgets: mapRecord(config.widgets, (sym, w) => buildWidget(scope, sym, defOf<WidgetDef>(w))),
     views: mapRecord(config.views, (sym, v) => buildView(scope, sym, v)),
     contracts: mapRecord(config.contracts, (sym, c) => buildContract(scope, sym, c)),
+    messages: config.messages ? buildMessages(defOf<MessagesDef>(config.messages)) : null,
   }
   return ir
 }
+
+const buildMessages = (d: MessagesDef): MessagesIR => ({
+  base: String(d.base),
+  text: Object.fromEntries(
+    Object.entries(d.text ?? {}).map(([locale, text]) => [
+      locale,
+      Object.fromEntries(Object.entries(text ?? {}).map(([k, v]) => [k, String(v)])),
+    ]),
+  ),
+})

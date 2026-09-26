@@ -54,6 +54,7 @@ const home = route({ path: '/', params: null, search: null })
 const shop = feature({
   id: 'shop',
   styles: [],
+  messages: null,
   widgets: {},
   intent: { summary: 'Benchmark page', invariants: [] },
   imports: [],

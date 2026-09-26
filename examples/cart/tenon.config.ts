@@ -15,7 +15,14 @@ export default project({
   notFound: null,
   error: null,
   session: z.object({ userId: z.string() }),
-  site: { url: 'https://cart.tenon.dev', name: 'Tenon Cart', lang: 'en', icon: null, themeColor: null },
+  site: {
+    url: 'https://cart.tenon.dev',
+    name: 'Tenon Cart',
+    locales: null,
+    lang: 'en',
+    icon: null,
+    themeColor: null,
+  },
   routes: { home, orderPlaced, product },
   pages: [
     ui.page(home, {

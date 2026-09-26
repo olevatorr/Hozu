@@ -75,6 +75,7 @@ const site = project({
     feature({
       id: 'site',
       styles: [],
+      messages: null,
       widgets: {},
       intent: { summary: 'Asset fixture', invariants: [] },
       imports: [],

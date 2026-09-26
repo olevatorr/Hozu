@@ -19,8 +19,8 @@ export interface PageDef {
   assert: 'static' | 'cacheable' | null
   head: {
     query: QueryDecl | null
-    input: ((params: any) => unknown) | null
-    render: (data: any, params: any) => HeadFields
+    input: ((params: any, locale: any) => unknown) | null
+    render: (data: any, params: any, locale: any) => HeadFields
     redirects: Record<string, RouteDecl> | null
   }
   entries: { query: QueryDecl; input: unknown; params: (item: any) => unknown } | null
@@ -35,8 +35,8 @@ export const page = <P, I = never, O = never, E = never, EI = never, EO = never,
     assert: 'static' | 'cacheable' | null
     head: {
       query: QueryDecl<I, O, E, any> | null
-      input: ((params: Ref<P>) => Val<I>) | null
-      render: (data: Ref<O>, params: Ref<P>) => HeadFields
+      input: ((params: Ref<P>, locale: Ref<string>) => Val<I>) | null
+      render: (data: Ref<O>, params: Ref<P>, locale: Ref<string>) => HeadFields
       redirects: { [K in keyof E]?: RouteDecl<null> } | null
     }
     entries: { query: QueryDecl<EI, EO[], EE, any>; input: Val<EI>; params: (item: Ref<EO>) => Val<P> } | null

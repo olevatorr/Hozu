@@ -143,6 +143,7 @@ describe('resolver wiring', () => {
       feature({
         id: 'f',
         styles: [],
+        messages: null,
         widgets: {},
         intent: { summary: 'wiring fixture', invariants: [] },
         imports: [],

@@ -16,6 +16,7 @@ import { Board, Detail } from './views.ts'
 export const bookmarks = feature({
   id: 'bookmarks',
   styles: [],
+  messages: null,
   widgets: {},
   intent: {
     summary:

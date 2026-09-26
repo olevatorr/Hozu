@@ -1,7 +1,9 @@
 import { assetName, assetUrl, readAsset } from '../builders/asset.ts'
+import { builtinOf, messageKeyOf } from '../builders/i18n.ts'
 import { linkOf } from '../builders/ui.ts'
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import { type At, at, join, resolveAt } from '../canonical/pointer.ts'
+import { i18nFns } from '../i18n/runtime.ts'
 import type { Bindings } from '../ir/bindings.ts'
 import { codes } from '../ir/codes.ts'
 import type { Diagnostic, DiagnosticCode, Fix, SourceIndex } from '../ir/diagnostic.ts'
@@ -277,8 +279,26 @@ export class FeatureScope {
     if (file) return { literal: file.href }
     const expr = exprOf(v)
     if (expr) {
-      if (expr.kind === 'call')
+      if (expr.kind === 'call') {
+        const message = messageKeyOf(expr.fn)
+        const name = message ? '#msg' : builtinOf(expr.fn)
+        if (name) {
+          this.project.bindings.fns[name] = i18nFns[name]!
+          const owner = message ? this.project.owners.get(message.decl) : null
+          if (message && !owner)
+            this.report(
+              'TN007',
+              pointer,
+              'These messages are not registered in any feature',
+              'Register them as feature({ messages }).',
+            )
+          return {
+            fn: message ? `#msg:${owner?.feature ?? '?'}.${message.key}` : name,
+            arg: this.value(expr.arg, pointer),
+          }
+        }
         return { fn: this.ref(expr.fn, ['fn'], pointer), arg: this.value(expr.arg, pointer) }
+      }
       return expr.ref === 'binding'
         ? { ref: 'binding', depth: expr.depth, path: [...expr.path] }
         : { ref: expr.ref, path: [...expr.path] }

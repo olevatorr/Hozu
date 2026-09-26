@@ -6,19 +6,26 @@ import { Window } from 'happy-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { createResolvers } from '../../../examples/cart/server.ts'
 import project from '../../../examples/cart/tenon.config.ts'
+import { routeOf } from '../src/navigate.ts'
 
 const build = buildProject(project, { sources: false })
 const data = createDataRuntime({ build, resolvers: createResolvers() })
 const session = { userId: 'ada' }
 const page = async (route: string, params: Record<string, string> | null = null) =>
   (await renderToString({ build, data, route, params, session })).html
-const ticks = () => new Promise((r) => setTimeout(r, 20))
 
 async function browse(pages: Record<string, string>) {
   const window = new Window({ url: 'http://localhost/' })
   const document = window.document as unknown as Document
   document.write((await page('home')).replace(/<script type="module"[^>]*><\/script>/, ''))
   const navigation = new window.EventTarget()
+  const listening = new Promise<void>((resolve) => {
+    const add = navigation.addEventListener.bind(navigation)
+    navigation.addEventListener = ((...args: Parameters<typeof add>) => {
+      add(...args)
+      resolve()
+    }) as typeof add
+  })
   Object.assign(window, {
     navigation,
     fetch: vi.fn(async (url: string) => {
@@ -33,7 +40,7 @@ async function browse(pages: Record<string, string>) {
     loadFns: async () => build.bindings.fns as never,
     transport: () => new Promise(() => {}),
   })
-  await ticks()
+  await listening
   const go = async (path: string) => {
     let handler: (() => Promise<void>) | null = null
     const event = Object.assign(new window.Event('navigate'), {
@@ -107,5 +114,12 @@ describe('soft navigation (ADR 0015)', () => {
     const replace = vi.spyOn(window.location, 'replace').mockImplementation(() => {})
     expect(await go('/products/nope')).toBe(true)
     expect(replace).toHaveBeenCalledWith('http://localhost/products/nope')
+  })
+
+  it('matches only the current locale, so a language switch is a document navigation (ADR 0017)', () => {
+    const routes = { home: '/en', post: '/en/posts/:slug' }
+    expect(routeOf(routes, '/en/posts/a')).toBe('post')
+    expect(routeOf(routes, '/en')).toBe('home')
+    expect(routeOf(routes, '/zh-TW/posts/a')).toBeNull()
   })
 })

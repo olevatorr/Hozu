@@ -24,14 +24,14 @@ describe('route params and head metadata', () => {
       route: 'post',
       params: { slug: 'hello-tenon' },
     })
-    expect([status, path]).toEqual([200, '/posts/hello-tenon'])
+    expect([status, path]).toEqual([200, '/en/posts/hello-tenon'])
     for (const tag of [
       '<html lang="en">',
       '<title>Hello, Tenon</title>',
       '<meta name="description" content="Why an AI-first framework makes invalid programs hard to write.">',
-      '<link rel="canonical" href="https://blog.tenon.dev/posts/hello-tenon">',
+      '<link rel="canonical" href="https://blog.tenon.dev/en/posts/hello-tenon">',
       '<meta property="og:type" content="article">',
-      '<meta property="og:url" content="https://blog.tenon.dev/posts/hello-tenon">',
+      '<meta property="og:url" content="https://blog.tenon.dev/en/posts/hello-tenon">',
       '<meta property="article:published_time" content="2026-09-01">',
     ])
       expect(html).toContain(tag)
@@ -41,7 +41,7 @@ describe('route params and head metadata', () => {
       '@type': 'Article',
       headline: 'Hello, Tenon',
       description: 'Why an AI-first framework makes invalid programs hard to write.',
-      url: 'https://blog.tenon.dev/posts/hello-tenon',
+      url: 'https://blog.tenon.dev/en/posts/hello-tenon',
       datePublished: '2026-09-01',
     })
   })
@@ -61,8 +61,17 @@ describe('route params and head metadata', () => {
 
   it('expands entries into the sitemap and writes robots.txt', async () => {
     const entries = await pageEntries(build, data())
-    expect(entries.map((e) => e.path)).toEqual(['/', '/posts/hello-tenon', '/posts/islands-explained'])
-    expect(sitemapXml(build, entries)).toContain('<loc>https://blog.tenon.dev/posts/islands-explained</loc>')
+    expect(entries.map((e) => e.path)).toEqual([
+      '/en',
+      '/zh-TW',
+      '/en/posts/hello-tenon',
+      '/en/posts/islands-explained',
+      '/zh-TW/posts/hello-tenon',
+      '/zh-TW/posts/islands-explained',
+    ])
+    expect(sitemapXml(build, entries)).toContain(
+      '<loc>https://blog.tenon.dev/zh-TW/posts/islands-explained</loc>',
+    )
     expect(robotsTxt(build)).toBe('User-agent: *\nAllow: /\nSitemap: https://blog.tenon.dev/sitemap.xml\n')
   })
 })

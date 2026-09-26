@@ -8,6 +8,7 @@ import { Board, Detail } from './views.ts'
 export const tasks = feature({
   id: 'tasks',
   styles: [],
+  messages: null,
   widgets: {},
   intent: {
     summary:

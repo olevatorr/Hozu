@@ -39,3 +39,5 @@ Each pattern is used in `examples/bookmarks`.
   DOM and machine state stay. Nothing to declare: a view is kept only if it never reads `params`/`search` (neither
   in its tree nor in its machine). `tenon plan <route>` lists what is kept per target route. Style the loading
   state with `html[data-tenon-navigating]`.
+- **Two languages** (used in `examples/blog`): `site.locales`, one `ui.messages` per feature, a language switcher of
+  `ui.a({ href: ui.alternate('en'), hreflang: 'en', lang: 'en' }, ['English'])` links, and `ui.format.date` for dates.

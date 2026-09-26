@@ -50,6 +50,7 @@ const site = project({
     feature({
       id: 'up',
       styles: [],
+      messages: null,
       widgets: {},
       intent: { summary: 'Upload fixture', invariants: [] },
       imports: [],

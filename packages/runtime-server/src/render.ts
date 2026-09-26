@@ -7,6 +7,7 @@ import {
   type FeatureIR,
   type HeadIR,
   type Json,
+  localeOf,
   type MachineIR,
   type ProjectIR,
   routeTable,
@@ -32,6 +33,7 @@ import {
   separated,
 } from './compile.ts'
 import { escapeHtml, scriptJson } from './escape.ts'
+import { type Lowering, localeFns, lowerNode, usesI18n } from './lower.ts'
 
 export interface Assets {
   client: string
@@ -62,6 +64,7 @@ export interface RenderOptions {
   snapshots?: Record<string, Snapshot>
   session?: unknown
   assets?: Assets
+  locale?: string | null
 }
 
 export interface RenderedPage {
@@ -82,8 +85,12 @@ export async function renderPage({
   snapshots = {},
   session,
   assets = { client: '/_tenon/client.js', fns: '/_tenon/fns.js', styles: null, preload: [], widgets: {} },
+  locale: requested = null,
 }: RenderOptions): Promise<RenderedPage> {
   const { ir, bindings } = build
+  const locale = localeOf(ir, requested)
+  const lang = locale ?? ir.site?.lang ?? 'en'
+  const i18n = usesI18n(ir)
   const plan = planOf(ir, route)
   const islandIds = new Set(plan.islands)
   const tags = new Set<string>()
@@ -100,7 +107,7 @@ export async function renderPage({
     live: {},
   }
   const widgets = widgetsOf(ir)
-  const fns = bindings.fns as Record<string, (x: Json) => Json>
+  const fns = i18n ? fnsFor(build, lang) : (bindings.fns as Record<string, (x: Json) => Json>)
   const getters = gettersFor(fns)
 
   const value = (v: ValueExpr, scope: Scope, input?: Json): Json => {
@@ -115,8 +122,21 @@ export async function renderPage({
   const tagKeys = (list: TagExprIR[], input: Json, scope: Scope) =>
     list.map((t) => (t.param ? `${t.tag}(${canonicalStringify(value(t.param, scope, input))})` : t.tag))
 
-  const routes = routesOf(ir)
+  const routes = routesOf(ir, locale)
   const url = pathOf(routes[route] ?? '/', params, search)
+  const alternate: Record<string, string> = Object.fromEntries(
+    (ir.site?.locales ?? []).map((l) => [l, pathOf(routesOf(ir, l)[route] ?? '/', params, search)]),
+  )
+  const lowering: Lowering = {
+    locale: lang,
+    alternate,
+    message: (ref) => {
+      const dot = ref.indexOf('.')
+      const m = ir.features[ref.slice(0, dot)]?.messages
+      const key = ref.slice(dot + 1)
+      return m?.text[lang]?.[key] ?? m?.text[m.base]?.[key] ?? ''
+    },
+  }
   const featureScope = (feature: FeatureIR, bound: boolean): Scope => {
     const snap = bound ? snapshots[feature.id] : undefined
     if (snap) payload.snapshots = { ...payload.snapshots, [feature.id]: snap }
@@ -129,6 +149,8 @@ export async function renderPage({
       search,
       routes,
       url,
+      locale: lang,
+      alternate,
     }
   }
 
@@ -136,7 +158,8 @@ export async function renderPage({
     const index = payload.islands.length
     const ref: IslandRef = { feature: scope.feature.id, node: n.id, scope: pruneScope(n, scope.bindings) }
     payload.islands.push(ref)
-    payload.nodes[n.id] = n.kind === 'widget' ? { ...n, children: [] } : n
+    const node = i18n ? lowerNode(n, lowering) : n
+    payload.nodes[n.id] = node.kind === 'widget' ? { ...node, children: [] } : node
     payload.features[scope.feature.id] ??= (scope.feature.machine as MachineIR | null) ?? null
     void index
     return '<!--i-->'
@@ -198,7 +221,7 @@ export async function renderPage({
       if (w && url) payload.widgets[ref] ??= { url, tag: w.tag, load: w.load, wraps: w.wraps }
     },
   }
-  const compiled = compiledFor(plan, islandIds)
+  const compiled = compiledFor(plan, fns)
   const sync = (n: ViewNode, scope: Scope, island: boolean, sep = false): string => {
     const cache = island ? compiled.inside : compiled.outside
     let frag = cache.get(n)
@@ -310,6 +333,8 @@ export async function renderPage({
     search,
     routes,
     url,
+    locale: lang,
+    alternate,
   }
   let status = 200
   let redirect: string | null = null
@@ -327,11 +352,22 @@ export async function renderPage({
     }
     headScope = { ...empty, bindings: [result.ok ? result.value : null] }
   }
-  const head = headHtml(ir, route, page.head, (v) => value(v, headScope), path, status, assets)
+  const head = headHtml(
+    ir,
+    route,
+    page.head,
+    (v) => value(v, headScope),
+    path,
+    status,
+    assets,
+    lang,
+    alternate,
+    locale,
+  )
 
   void (async () => {
     try {
-      buffer += `<!doctype html><html${ir.site ? ` lang="${escapeHtml(ir.site.lang)}"` : ''}><head>${head}</head><body>`
+      buffer += `<!doctype html><html${ir.site ? ` lang="${escapeHtml(lang)}"` : ''}><head>${head}</head><body>`
       const soft = softTargets(ir, route)
       const bounded = Object.keys(soft).length > 0
       for (const ref of plan.views) {
@@ -371,12 +407,32 @@ const gettersFor = (fns: object) => {
   return g
 }
 
-const routeMemo = new WeakMap<ProjectIR, Record<string, string>>()
-function routesOf(ir: ProjectIR): Record<string, string> {
-  let hit = routeMemo.get(ir)
+const routeMemo = new WeakMap<ProjectIR, Map<string | null, Record<string, string>>>()
+function routesOf(ir: ProjectIR, locale: string | null): Record<string, string> {
+  let byLocale = routeMemo.get(ir)
+  if (!byLocale) {
+    byLocale = new Map()
+    routeMemo.set(ir, byLocale)
+  }
+  let hit = byLocale.get(locale)
   if (!hit) {
-    hit = routeTable(ir)
-    routeMemo.set(ir, hit)
+    hit = routeTable(ir, locale)
+    byLocale.set(locale, hit)
+  }
+  return hit
+}
+
+const fnsMemo = new WeakMap<BuildResult, Map<string, Record<string, (x: Json) => Json>>>()
+function fnsFor(build: BuildResult, locale: string) {
+  let byLocale = fnsMemo.get(build)
+  if (!byLocale) {
+    byLocale = new Map()
+    fnsMemo.set(build, byLocale)
+  }
+  let hit = byLocale.get(locale)
+  if (!hit) {
+    hit = localeFns(build.ir, build.bindings.fns as Record<string, (x: Json) => Json>, locale)
+    byLocale.set(locale, hit)
   }
   return hit
 }
@@ -396,14 +452,19 @@ function widgetsOf(ir: ProjectIR): Record<string, WidgetIR> {
 const plans = new WeakMap<ProjectIR, Map<string, RoutePlan>>()
 const compiledPlans = new WeakMap<
   RoutePlan,
-  { inside: WeakMap<ViewNode, Frag>; outside: WeakMap<ViewNode, Frag> }
+  WeakMap<object, { inside: WeakMap<ViewNode, Frag>; outside: WeakMap<ViewNode, Frag> }>
 >()
 
-function compiledFor(plan: RoutePlan, _islands: Set<string>) {
-  let c = compiledPlans.get(plan)
+function compiledFor(plan: RoutePlan, fns: object) {
+  let byFns = compiledPlans.get(plan)
+  if (!byFns) {
+    byFns = new WeakMap()
+    compiledPlans.set(plan, byFns)
+  }
+  let c = byFns.get(fns)
   if (!c) {
     c = { inside: new WeakMap(), outside: new WeakMap() }
-    compiledPlans.set(plan, c)
+    byFns.set(fns, c)
   }
   return c
 }
@@ -582,16 +643,18 @@ export { pathOf }
 
 const speculationMemo = new WeakMap<ProjectIR, Map<string, string>>()
 
-function speculationRules(ir: ProjectIR, route: string): string {
+function speculationRules(ir: ProjectIR, route: string, locale: string | null): string {
   let byRoute = speculationMemo.get(ir)
   if (!byRoute) {
     byRoute = new Map()
     speculationMemo.set(ir, byRoute)
   }
-  let rules = byRoute.get(route)
+  const key = `${locale ?? ''} ${route}`
+  let rules = byRoute.get(key)
   if (rules === undefined) {
+    const table = routesOf(ir, locale)
     const soft = Object.keys(softTargets(ir, route)).map((r) => ({
-      not: { href_matches: { pathname: ir.routes[r]?.path ?? r } },
+      not: { href_matches: { pathname: (table[r] ?? r).split('?')[0]! } },
     }))
     rules = JSON.stringify({
       prerender: [
@@ -601,13 +664,18 @@ function speculationRules(ir: ProjectIR, route: string): string {
         },
       ],
     })
-    byRoute.set(route, rules)
+    byRoute.set(key, rules)
   }
   return rules
 }
 
 export async function inlineScriptHashes(ir: ProjectIR): Promise<string[]> {
-  const rules = new Set(Object.keys(ir.pages).map((route) => speculationRules(ir, route)))
+  const locales = ir.site?.locales ?? [null]
+  const rules = new Set(
+    Object.keys(ir.pages).flatMap((route) =>
+      locales.map((l) => speculationRules(ir, route, localeOf(ir, l))),
+    ),
+  )
   const digest = async (text: string) =>
     btoa(
       String.fromCharCode(
@@ -625,6 +693,9 @@ function headHtml(
   path: string,
   status: number,
   { styles, preload }: Assets,
+  lang: string,
+  alternate: Record<string, string>,
+  locale: string | null,
 ): string {
   const str = (v: ValueExpr) => {
     const x = value(v)
@@ -654,7 +725,7 @@ function headHtml(
       (href) => `<link rel="preload" href="${escapeHtml(href)}" as="font" type="font/woff2" crossorigin>`,
     ),
     styles ? `<link rel="stylesheet" href="${escapeHtml(styles)}">` : '',
-    `<script type="speculationrules">${speculationRules(ir, route)}</script>`,
+    `<script type="speculationrules">${speculationRules(ir, route, locale)}</script>`,
     `<title>${escapeHtml(title)}</title>`,
     meta('name', 'description', description),
     h.noindex || status !== 200 ? '<meta name="robots" content="noindex">' : '',
@@ -665,6 +736,19 @@ function headHtml(
     meta('property', 'og:url', url),
     meta('property', 'og:site_name', ir.site?.name ?? null),
     meta('property', 'og:image', image),
+    ir.site?.locales ? meta('property', 'og:locale', lang.replace('-', '_')) : '',
+    ...(ir.site?.locales ?? [])
+      .filter((l) => l !== lang)
+      .map((l) => meta('property', 'og:locale:alternate', l.replace('-', '_'))),
+    ...(ir.site?.locales && status === 200
+      ? [
+          ...Object.entries(alternate).map(
+            ([l, p]) =>
+              `<link rel="alternate" hreflang="${escapeHtml(l)}" href="${escapeHtml(ir.site!.url + p)}">`,
+          ),
+          `<link rel="alternate" hreflang="x-default" href="${escapeHtml(ir.site.url + (alternate[ir.site.lang] ?? ''))}">`,
+        ]
+      : []),
     h.type === 'article' ? meta('property', 'article:published_time', published) : '',
     status === 200 ? `<script type="application/ld+json">${scriptJson(ld)}</script>` : '',
   ].join('')

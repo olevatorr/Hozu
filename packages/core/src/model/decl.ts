@@ -21,6 +21,7 @@ export type DeclKind =
   | 'page'
   | 'adapter'
   | 'widget'
+  | 'messages'
 
 export interface DeclInfo<K extends DeclKind = DeclKind, D = unknown> {
   readonly kind: K

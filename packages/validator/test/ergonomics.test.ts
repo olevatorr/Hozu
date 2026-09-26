@@ -53,6 +53,7 @@ const board = (options: { busyIgnores: boolean; select: string[]; field: 'enum' 
     id: 'board',
     intent: { summary: 'fixture', invariants: [] },
     styles: [],
+    messages: null,
     widgets: {},
     imports: [],
     tags: {},

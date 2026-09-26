@@ -28,6 +28,7 @@ export default project({
   site: {
     url: 'https://showcase.tenon.dev',
     name: 'Tenon Showcase',
+    locales: null,
     lang: 'en',
     icon: ui.asset(new URL('./icon.svg', import.meta.url)),
     themeColor: '#4f46e5',

@@ -99,6 +99,19 @@
             "string",
             "null"
           ]
+        },
+        "locales": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -106,7 +119,8 @@
         "name",
         "lang",
         "icon",
-        "themeColor"
+        "themeColor",
+        "locales"
       ],
       "additionalProperties": false
     },
@@ -419,7 +433,9 @@
         "input",
         "params",
         "search",
-        "dom"
+        "dom",
+        "locale",
+        "alternate"
       ]
     },
     "GuardExpr": {
@@ -703,6 +719,16 @@
           "additionalProperties": {
             "$ref": "#/definitions/ContractIR"
           }
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/MessagesIR"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -719,7 +745,8 @@
         "machine",
         "views",
         "widgets",
-        "contracts"
+        "contracts",
+        "messages"
       ],
       "additionalProperties": false
     },
@@ -1897,6 +1924,28 @@
           "additionalProperties": false
         }
       ]
+    },
+    "MessagesIR": {
+      "type": "object",
+      "properties": {
+        "base": {
+          "type": "string"
+        },
+        "text": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "base",
+        "text"
+      ],
+      "additionalProperties": false
     }
   }
 }

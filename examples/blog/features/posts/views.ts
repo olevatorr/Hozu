@@ -1,13 +1,20 @@
 import { ui } from '@tenon/core'
 import { post } from '../../routes.ts'
 import { getPost, listPosts } from './effects.ts'
+import { text } from './messages.ts'
+
+const Languages = ui.nav({ 'aria-label': text.languages, class: 'flex gap-3 text-sm' }, [
+  ui.a({ href: ui.alternate('en'), hreflang: 'en', lang: 'en' }, ['English']),
+  ui.a({ href: ui.alternate('zh-TW'), hreflang: 'zh-TW', lang: 'zh-TW' }, ['中文']),
+])
 
 export const PostList = ui.view({
   machine: null,
   route: null,
   render: () =>
     ui.section({ class: 'mx-auto max-w-2xl space-y-8 px-4 py-12 font-sans' }, [
-      ui.h1({ class: 'text-4xl font-bold tracking-tight text-gray-900 dark:text-white' }, ['Tenon Blog']),
+      Languages,
+      ui.h1({ class: 'text-4xl font-bold tracking-tight text-gray-900 dark:text-white' }, [text.heading]),
       ui.query(
         listPosts,
         {},
@@ -32,14 +39,14 @@ export const PostList = ui.view({
                     ]),
                     ui.p({ class: 'mt-2 text-gray-600 dark:text-gray-300' }, [entry.excerpt]),
                     ui.small({ class: 'mt-4 block text-xs uppercase tracking-wide text-gray-500' }, [
-                      entry.publishedAt,
+                      ui.format.date(entry.publishedAt, { dateStyle: 'medium' }),
                     ]),
                   ],
                 ),
               ),
             ]),
-          pending: ui.p({}, ['Loading posts…']),
-          failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Posts are unavailable']) },
+          pending: ui.p({}, [text.loading]),
+          failed: { Unexpected: () => ui.p({ role: 'alert' }, [text.unavailable]) },
         },
       ),
     ]),
@@ -55,14 +62,20 @@ export const Article = ui.view({
       {
         ready: (post) =>
           ui.article({ class: 'prose prose-lg mx-auto px-4 py-12 dark:prose-invert' }, [
+            Languages,
             ui.h1({}, [post.title]),
-            ui.p({ class: 'text-sm text-gray-500' }, ['By ', post.author, ' · ', post.publishedAt]),
+            ui.p({ class: 'text-sm text-gray-500' }, [
+              text.byline({
+                author: post.author,
+                date: ui.format.date(post.publishedAt, { dateStyle: 'long' }),
+              }),
+            ]),
             ui.each(post.body, 'text', (paragraph) => ui.p({}, [paragraph.text])),
           ]),
         pending: null,
         failed: {
-          NotFound: () => ui.p({ role: 'alert' }, ['Post not found']),
-          Unexpected: () => ui.p({ role: 'alert' }, ['Post unavailable']),
+          NotFound: () => ui.p({ role: 'alert' }, [text.notFound]),
+          Unexpected: () => ui.p({ role: 'alert' }, [text.postUnavailable]),
         },
       },
     ),

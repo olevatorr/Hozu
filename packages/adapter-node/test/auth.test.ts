@@ -77,6 +77,7 @@ const site = project({
   site: {
     url: 'https://auth.example',
     name: 'Auth',
+    locales: null,
     lang: 'en',
     icon: ui.asset(pathToFileURL(join(dir, 'icon.svg'))),
     themeColor: '#4f46e5',
@@ -114,6 +115,7 @@ const site = project({
     feature({
       id: 'auth',
       styles: [],
+      messages: null,
       widgets: {},
       intent: { summary: 'Session fixture', invariants: [] },
       imports: [],

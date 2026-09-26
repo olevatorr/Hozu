@@ -206,6 +206,7 @@ For a page without data use `head: { redirects: null, query: null, input: null, 
 Project: `project({ schema: zodAdapter, styles: new URL('./app.css', import.meta.url), notFound: null, error: null,
 session: null, site: { url, name, lang, icon: null, themeColor: null }, routes: { home, itemPage }, pages: [...],
 http: null, features: [items] })`. `notFound` / `error` may name a route to render for 404 / 500.
+`site.locales: null` for one language; see "Languages" below.
 
 `http: null` serves the site at `/` with no trailing slashes (`/about/` answers 308 → `/about`). Otherwise:
 ```ts
@@ -220,6 +221,21 @@ http: {
 },
 ```
 There are no rewrites: one URL has one owner.
+
+## Languages (i18n)
+- `site: { lang: 'en', locales: ['en', 'zh-TW'], ... }`: every URL gets a locale prefix (`/en/posts/a`). Routes and
+  `ui.link` stay locale-free; links stay in the current locale. `/` and old locale-less URLs redirect by
+  `Accept-Language`. `<html lang>`, hreflang, og:locale and the sitemap are derived.
+- Text: `export const text = ui.messages('en', { en: { saved: '{count} saved' }, 'zh-TW': { saved: '已儲存 {count} 筆' } })`,
+  registered as `feature({ messages: text })` (`messages: null` otherwise). Use `text.title` or
+  `text.saved({ count: items.length })` in views and `head.render`. Every locale needs every key with the same
+  `{placeholders}` (TN040). Plurals: `'{n, plural, =0 {none} one {# item} other {# items}}'`; `select` also works.
+- Machines never hold translated text (TN041): store a code in context (`'duplicate'`) and pick the message in the
+  view with `ui.if`.
+- `ui.format.number(x, { style: 'currency', currency: 'EUR' })`, `ui.format.date(x, { dateStyle: 'medium' })`,
+  `ui.format.relative(n, 'day')`, `ui.format.list(xs)`.
+- `locale` is in every view scope (`render: ({ locale }) =>`) and the second argument of `head.input`, e.g. for a
+  query input `{ slug: params.slug, locale }`. `ui.alternate('zh-TW')` is the current page in another locale.
 
 ## Server (server.ts)
 ```ts

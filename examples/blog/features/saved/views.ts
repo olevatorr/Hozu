@@ -2,13 +2,14 @@ import { ui } from '@tenon/core'
 import { listPosts } from '../posts/effects.ts'
 import { savedPosts } from './effects.ts'
 import { Save, savedMachine, Unsave } from './machine.ts'
+import { text } from './messages.ts'
 
 export const ReadingList = ui.view({
   machine: savedMachine,
   route: null,
   render: ({ ctx, when }) =>
     ui.aside({ class: 'reading-list mx-auto mt-8 max-w-2xl' }, [
-      ui.h2({ class: 'text-lg font-semibold' }, ['Your reading list']),
+      ui.h2({ class: 'text-lg font-semibold' }, [text.heading]),
       ui.query(
         savedPosts,
         {},
@@ -33,7 +34,7 @@ export const ReadingList = ui.view({
                                   'rounded-md bg-brand-600 px-2 py-0.5 text-xs text-white hover:bg-brand-700',
                                 on: { click: ui.send(Save, { slug: post.slug }) },
                               },
-                              ['Save'],
+                              [text.save],
                             ),
                             ui.button(
                               {
@@ -42,23 +43,23 @@ export const ReadingList = ui.view({
                                   'rounded-md border px-2 py-0.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800',
                                 on: { click: ui.send(Unsave, { slug: post.slug }) },
                               },
-                              ['Remove'],
+                              [text.remove],
                             ),
                           ],
                         ),
                       ]),
                     ),
-                    ui.li({}, ['Saved: ', slugs.length]),
+                    ui.li({}, [text.count({ count: slugs.length })]),
                   ]),
                 pending: null,
-                failed: { Unexpected: () => ui.p({}, ['Posts unavailable']) },
+                failed: { Unexpected: () => ui.p({}, [text.postsUnavailable]) },
               },
             ),
-          pending: ui.p({}, ['Loading your list…']),
-          failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Could not load your list']) },
+          pending: ui.p({}, [text.loading]),
+          failed: { Unexpected: () => ui.p({ role: 'alert' }, [text.unavailable]) },
         },
       ),
-      when(['saving', 'removing'], [ui.p({ 'aria-live': 'polite' }, ['Saving…'])]),
+      when(['saving', 'removing'], [ui.p({ 'aria-live': 'polite' }, [text.saving])]),
       ui.p({ role: 'alert' }, [ctx.error]),
     ]),
 })

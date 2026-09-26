@@ -42,6 +42,9 @@ export type DiagnosticCode =
   | 'TN037'
   | 'TN038'
   | 'TN039'
+  | 'TN040'
+  | 'TN041'
+  | 'TN042'
 
 export interface SourceLoc {
   file: string

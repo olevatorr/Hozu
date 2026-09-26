@@ -10,6 +10,7 @@ const Context = z.object({ n: z.number(), label: z.string() })
 const base = {
   intent: { summary: 'fixture', invariants: [] },
   styles: [],
+  messages: null,
   widgets: {},
   imports: [],
   tags: {},

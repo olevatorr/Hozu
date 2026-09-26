@@ -13,6 +13,7 @@ import { type Asset, asset } from './asset.ts'
 import type { TagProps } from './dom-props.ts'
 import type { QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
+import { alternate, format, messages } from './i18n.ts'
 import type { MachineDecl, UnexpectedError } from './machine.ts'
 import type { Condition } from './op.ts'
 import { page } from './page.ts'
@@ -102,6 +103,7 @@ export interface ViewScope<C, S extends string, P, Q = null> {
   when: When<S>
   params: Ref<P>
   search: Ref<Q>
+  locale: Ref<string>
 }
 
 const node = (def: NodeDef): NodeDecl => brand({}, 'node', def)
@@ -127,7 +129,7 @@ function view<C, S extends string, P = null, Q = null>(config: {
 function view<P = null, Q = null>(config: {
   machine: null
   route: RouteDecl<P, Q> | null
-  render: (scope: { params: Ref<P>; search: Ref<Q> }) => NodeDecl
+  render: (scope: { params: Ref<P>; search: Ref<Q>; locale: Ref<string> }) => NodeDecl
 }): ViewDecl
 function view(config: ViewDef): ViewDecl {
   return brand({}, 'view', {
@@ -190,6 +192,9 @@ export const ui = Object.freeze({
   use: <P, E>(w: WidgetDecl<P, E>, options: NoInfer<WidgetUse<P, E>>, children: Child[]): NodeDecl =>
     node({ kind: 'widget', widget: w, options, children }),
   page,
+  messages,
+  format,
+  alternate,
 })
 
 export const sendOf = (value: unknown): Send[typeof SEND] | null =>

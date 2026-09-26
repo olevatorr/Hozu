@@ -21,7 +21,7 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
         ref: scope.ref(d.query, ['query'], join(p, 'query')),
         input: scope.attempt(
           join(p, 'input'),
-          () => scope.value(d.input ? d.input(params) : {}, join(p, 'input')),
+          () => scope.value(d.input ? d.input(params, refProxy('locale', 0)) : {}, join(p, 'input')),
           {
             literal: null,
           },
@@ -48,7 +48,11 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
       )
     else redirects[error] = id
   }
-  const fields = scope.attempt(join(p, 'render'), () => d.render(refProxy('binding', 0), params), null)
+  const fields = scope.attempt(
+    join(p, 'render'),
+    () => d.render(refProxy('binding', 0), params, refProxy('locale', 0)),
+    null,
+  )
   if (!fields)
     return {
       redirects,

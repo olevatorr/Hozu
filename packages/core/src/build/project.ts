@@ -86,6 +86,7 @@ function register(scope: ProjectScope, id: string, config: FeatureConfig) {
     for (const [symbol, decl] of Object.entries((config[key] ?? {}) as Record<string, object>))
       claim(decl, symbol, kind, join(base, key, symbol))
   if (config.machine) claim(config.machine, 'machine', 'machine', join(base, 'machine'))
+  if (config.messages) claim(config.messages, 'messages', 'messages', join(base, 'messages'))
 }
 
 function projectSchema(
@@ -245,6 +246,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
         lang: String(config.site.lang),
         icon: scope.asset(config.site.icon)?.href ?? null,
         themeColor: config.site.themeColor ?? null,
+        locales: Array.isArray(config.site.locales) ? config.site.locales.map(String) : null,
       }
     : null
   const notFound = config.notFound ? (scope.routes.get(config.notFound) ?? null) : null
@@ -266,6 +268,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       'Register it in project({ routes }).',
     )
   scope.mark('/http', project)
+  scope.mark('/site', project)
   const http = buildHttp(scope, config.http)
   const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, notFound, error, http, features }
   scope.bindings.assetOrder = scope.assetList

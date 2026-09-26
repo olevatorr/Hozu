@@ -97,6 +97,7 @@ export const home = route({ path: '/', params: null, search: null })
 export const todoFeature = feature({
   id: 'todo',
   styles: [],
+  messages: null,
   widgets: {},
   intent: { summary: 'Client runtime fixture', invariants: [] },
   imports: [],

@@ -148,6 +148,38 @@ export function createHandler({
           })))
   const match = matcher(build)
   const table = routeTable(ir)
+  const locales = ir.site?.locales ?? null
+  const tables = new Map((locales ?? []).map((l) => [l, routeTable(ir, l)]))
+  const tableOf = (locale: string | null) => (locale ? (tables.get(locale) ?? table) : table)
+  const split = (path: string): { locale: string | null; rest: string } | null => {
+    if (!locales) return { locale: null, rest: path }
+    const segment = path.split('/')[1] ?? ''
+    if (!locales.includes(segment)) return null
+    return { locale: segment, rest: path.slice(segment.length + 1) || '/' }
+  }
+  const negotiate = (request: Request, url: URL, path: string) => {
+    const wanted = (request.headers.get('accept-language') ?? '')
+      .split(',')
+      .map((part) => {
+        const [tag = '', q] = part.trim().split(';q=')
+        return { tag: tag.toLowerCase(), q: q === undefined ? 1 : Number(q) }
+      })
+      .filter((w) => w.tag && w.q > 0)
+      .sort((a, b) => b.q - a.q)
+    const list = locales ?? []
+    const best =
+      wanted
+        .map(
+          (w) =>
+            list.find((l) => l.toLowerCase() === w.tag) ??
+            list.find((l) => l.toLowerCase().split('-')[0] === w.tag.split('-')[0]),
+        )
+        .find(Boolean) ?? ir.site!.lang
+    return new Response(null, {
+      status: 307,
+      headers: { location: publicPath(ir, path, best) + url.search, vary: 'Accept-Language' },
+    })
+  }
   const queries = Object.values(ir.features).flatMap((f) => Object.keys(f.queries).map((q) => `${f.id}.${q}`))
   const regenerating = new Map<string, Promise<void>>()
   const fns = fnsModule(build)
@@ -194,7 +226,13 @@ export function createHandler({
     return seconds.length ? Math.min(...seconds) * 1000 : Number.POSITIVE_INFINITY
   }
 
-  const generate = async (path: string, route: string, params: Json, search: Json): Promise<CachedPage> => {
+  const generate = async (
+    path: string,
+    route: string,
+    params: Json,
+    search: Json,
+    locale: string | null,
+  ): Promise<CachedPage> => {
     const at = now()
     const { html, tags, status, redirect } = await renderToString({
       build,
@@ -203,6 +241,7 @@ export function createHandler({
       params,
       search,
       assets,
+      locale,
     })
     const page = { html, status, redirect, at, ttl: ttlOf(route), tags: [...tags] }
     await cache.set(path, page)
@@ -261,7 +300,8 @@ export function createHandler({
     params: Json,
     search: Json,
     request: Request,
-    missing = false,
+    missing: boolean,
+    locale: string | null,
   ) => {
     const headers = {
       ...extraHeaders(route),
@@ -274,14 +314,14 @@ export function createHandler({
       let cached = await cache.get(path)
       let state = 'hit'
       if (!cached) {
-        cached = await generate(path, route, params, search)
+        cached = await generate(path, route, params, search, locale)
         state = 'miss'
       } else if (now() - cached.at >= cached.ttl) {
         state = 'stale'
         if (!regenerating.has(path))
           regenerating.set(
             path,
-            generate(path, route, params, search)
+            generate(path, route, params, search, locale)
               .then(
                 () => undefined,
                 () => undefined,
@@ -303,6 +343,7 @@ export function createHandler({
       search,
       session: await session(request),
       assets,
+      locale,
     })
     if (rendered.redirect) return see(rendered.redirect)
     return new Response(head ? null : stream(rendered.chunks, (e) => onError(e, { path })), {
@@ -313,7 +354,9 @@ export function createHandler({
 
   const formPost = async (request: Request, url: URL, path: string) => {
     const id = url.searchParams.get(FORM_FIELD)
-    const found = match(path)
+    const where = split(path)
+    const found = where ? match(where.rest) : null
+    const locale = where?.locale ?? null
     const form = id ? formNode(build, id) : null
     if (!found || !form) return notAllowed()
     const query = new URLSearchParams(url.searchParams)
@@ -324,7 +367,7 @@ export function createHandler({
     const outcome = await runForm({
       build,
       data,
-      routes: table,
+      routes: tableOf(locale),
       form,
       fields,
       params: found.params,
@@ -334,7 +377,7 @@ export function createHandler({
     if (!outcome) return notAllowed()
     if (outcome.invalidated.length) await revalidate(outcome.invalidated)
     const cookie = store && outcome.session ? await store.write(outcome.session.value) : null
-    const back = pathOf(table[found.route] ?? url.pathname, found.params, search)
+    const back = pathOf(tableOf(locale)[found.route] ?? url.pathname, found.params, search)
     const target = outcome.navigate ?? (outcome.unchanged ? back : null)
     if (target) return see(target, cookie)
     const rendered = await renderPage({
@@ -346,6 +389,7 @@ export function createHandler({
       snapshots: outcome.snapshots,
       session: who,
       assets,
+      locale,
     })
     return new Response(
       stream(rendered.chunks, (e) => onError(e, { path })),
@@ -399,9 +443,9 @@ export function createHandler({
     })
   }
 
-  const missing = (request: Request) =>
+  const missing = (request: Request, locale: string | null = null) =>
     ir.notFound
-      ? page('#404', ir.notFound, null, null, request, true)
+      ? page(`#404:${locale ?? ''}`, ir.notFound, null, null, request, true, locale)
       : plain(404, request.method === 'HEAD' ? null : 'Not found')
 
   const route = async (request: Request, url: URL, path: string): Promise<Response> => {
@@ -435,14 +479,17 @@ export function createHandler({
       return text('application/xml', sitemapXml(build, await pageEntries(build, data)), head)
     const moved = redirectFor(path, url.search)
     if (moved) return moved
-    const found = match(path)
-    if (!found) return missing(request)
-    const canonical = publicPath(ir, path)
+    if (locales && path === '/') return negotiate(request, url, '/')
+    const where = split(path)
+    if (!where) return match(path) ? negotiate(request, url, path) : missing(request)
+    const found = match(where.rest)
+    if (!found) return missing(request, where.locale)
+    const canonical = publicPath(ir, where.rest, where.locale)
     if (canonical !== url.pathname)
       return new Response(null, { status: 308, headers: { location: canonical + url.search } })
     const search = parseSearch(ir.routes[found.route]?.search ?? null, url.searchParams)
-    const key = pathOf(table[found.route] ?? url.pathname, found.params, search)
-    return page(key, found.route, found.params, search, request)
+    const key = pathOf(tableOf(where.locale)[found.route] ?? url.pathname, found.params, search)
+    return page(key, found.route, found.params, search, request, false, where.locale)
   }
 
   const within = (pathname: string): string | null => {

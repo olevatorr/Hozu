@@ -93,6 +93,7 @@ const site = project({
     feature({
       id: 'extras',
       styles: [],
+      messages: null,
       widgets: {},
       intent: { summary: 'Capability fixture', invariants: [] },
       imports: [],

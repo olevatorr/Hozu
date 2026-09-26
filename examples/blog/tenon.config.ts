@@ -3,6 +3,7 @@ import { zodAdapter } from '@tenon/schema-zod'
 import { z } from 'zod'
 import { getPost, listPosts } from './features/posts/effects.ts'
 import { posts } from './features/posts/feature.ts'
+import { text } from './features/posts/messages.ts'
 import { Article, PostList } from './features/posts/views.ts'
 import { saved } from './features/saved/feature.ts'
 import { ReadingList } from './features/saved/views.ts'
@@ -15,7 +16,14 @@ export default project({
   notFound: null,
   error: null,
   session: z.object({ userId: z.string() }),
-  site: { url: 'https://blog.tenon.dev', name: 'Tenon Blog', lang: 'en', icon: null, themeColor: null },
+  site: {
+    url: 'https://blog.tenon.dev',
+    name: 'Tenon Blog',
+    locales: ['en', 'zh-TW'],
+    lang: 'en',
+    icon: null,
+    themeColor: null,
+  },
   routes: { home, post },
   pages: [
     ui.page(home, {
@@ -26,8 +34,8 @@ export default project({
         query: null,
         input: null,
         render: () => ({
-          title: 'Tenon Blog — notes on AI-first frontends',
-          description: 'Articles about building verifiable, AI-friendly web apps with Tenon.',
+          title: text.title,
+          description: text.description,
           type: 'website',
           image: null,
           published: null,

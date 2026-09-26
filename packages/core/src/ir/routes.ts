@@ -12,21 +12,26 @@ export function searchDefaults(search: JsonSchema | null): Record<string, Json> 
   return out
 }
 
-export function routeTable(ir: ProjectIR): Record<string, string> {
+export function routeTable(ir: ProjectIR, locale: string | null = null): Record<string, string> {
   const out: Record<string, string> = {}
   for (const [id, r] of Object.entries(ir.routes)) {
     const q = Object.entries(searchDefaults(r.search))
       .filter(([, v]) => v !== null && typeof v !== 'object')
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
       .join('&')
-    const path = publicPath(ir, r.path)
+    const path = publicPath(ir, r.path, locale)
     out[id] = q ? `${path}?${q}` : path
   }
   return out
 }
 
-export function publicPath(ir: ProjectIR, path: string): string {
-  const { basePath, trailingSlash } = ir.http
+export const localeOf = (ir: ProjectIR, locale: string | null): string | null =>
+  ir.site?.locales ? (locale ?? ir.site.lang) : null
+
+export function publicPath(ir: ProjectIR, path: string, locale: string | null = null): string {
+  const { trailingSlash } = ir.http
+  const prefix = localeOf(ir, locale)
+  const basePath = prefix ? `${ir.http.basePath}/${prefix}` : ir.http.basePath
   const bare = path === '/' ? '' : path.replace(/\/$/, '')
   if (trailingSlash === 'always') return `${basePath}${bare}/`
   return `${basePath}${bare}` || '/'

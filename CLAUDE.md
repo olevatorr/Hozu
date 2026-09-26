@@ -82,6 +82,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   (TN038, TN039); no rewrites. `tenon build` writes `dist/public` + `dist/manifest.json`, and
   `buildProject(project, { manifest })` needs no file system (edge; `examples/cart/edge.ts`, checked in a web-only
   vm and on Bun). Budget P9 (req/s through adapter-node) is report-only.
+- i18n (ADR 0017): `site.locales` prefixes every URL with its locale (`/`, locale-less page URLs negotiate by
+  Accept-Language); `ui.messages(base, {...})` registered as `feature({ messages })`, `ui.format.*` (Intl),
+  `locale` ref, `ui.alternate(l)`; hreflang/og:locale/sitemap derived. Messages and formats are lowered on the server
+  for the page locale (islands get only its strings; helpers live in `fns.js`, P7 unchanged). TN040–TN042.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, assert, head, entries })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

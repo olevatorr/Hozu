@@ -128,6 +128,7 @@ describe('assign ops and fn bindings', () => {
   const f = feature({
     id: 'f',
     styles: [],
+    messages: null,
     widgets: {},
     intent: { summary: 'ops fixture', invariants: [] },
     imports: [],

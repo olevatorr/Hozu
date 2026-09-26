@@ -5,6 +5,7 @@ import { ProductDetail, ProductGrid } from './views.ts'
 export const catalog = feature({
   id: 'catalog',
   styles: [],
+  messages: null,
   widgets: {},
   intent: {
     summary: 'Public product catalog. Read-only, cacheable, ships no JavaScript.',

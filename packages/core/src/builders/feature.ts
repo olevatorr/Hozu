@@ -7,6 +7,7 @@ import type { MutationDecl, QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
 import type { FnDecl } from './fn.ts'
 import type { HttpConfig } from './http.ts'
+
 import type { MachineDecl } from './machine.ts'
 import type { PageDecl } from './page.ts'
 import type { RouteDecl } from './route.ts'
@@ -28,6 +29,7 @@ export interface FeatureConfig {
   views: Record<string, ViewDecl>
   widgets: Record<string, WidgetDecl>
   contracts: Record<string, ContractDecl>
+  messages: Decl<'messages'> | null
   exports: {
     events: EventDecl<any>[]
     queries: QueryDecl[]
@@ -49,7 +51,14 @@ export interface ProjectConfig {
   schema: SchemaAdapter
   session: Schema | null
   routes: Record<string, RouteDecl>
-  site: { url: string; name: string; lang: string; icon: Asset | null; themeColor: string | null } | null
+  site: {
+    url: string
+    name: string
+    lang: string
+    locales: string[] | null
+    icon: Asset | null
+    themeColor: string | null
+  } | null
   styles: URL | null
   notFound: RouteDecl | null
   error: RouteDecl | null

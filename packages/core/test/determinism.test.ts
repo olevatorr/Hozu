@@ -135,6 +135,7 @@ function freshProject(rand: Rand): ProjectDecl {
   const f = feature({
     id: 'fresh',
     styles: [],
+    messages: null,
     widgets: {},
     intent: { summary: 'Determinism fixture', invariants: [] },
     imports: [],

@@ -356,6 +356,33 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'a locale without its messages',
+    code: 'TN040',
+    mutate: (ir) => {
+      cart(ir).messages = { base: 'en', text: { en: { total: 'Total: {sum}' } } }
+      ir.site!.locales = ['en', 'de']
+    },
+  },
+  {
+    name: 'a machine that stores a translated message',
+    code: 'TN041',
+    mutate: (ir) => {
+      cart(ir).messages = { base: 'en', text: { en: { oops: 'Oops' } } }
+      states(ir).idle!.on['cart.RemoveItem']![0]!.assign.push({
+        op: 'set',
+        path: ['error'],
+        value: { fn: '#msg:cart.oops', arg: { literal: null } },
+      })
+    },
+  },
+  {
+    name: 'a locale tag that is not canonical',
+    code: 'TN042',
+    mutate: (ir) => {
+      ir.site!.locales = ['en', 'en_us']
+    },
+  },
+  {
     name: 'state with no way out',
     code: 'TN010',
     mutate: (ir) => {
@@ -501,7 +528,7 @@ describe('A2 mistake catalog', () => {
     const found = validate(ir, { sources }).filter((d) => d.code === code)
     expect(found.length, `expected ${code}`).toBeGreaterThan(0)
     for (const d of found) {
-      expect(d.location.pointer).toMatch(/^\/(features|pages|routes|http)\//)
+      expect(d.location.pointer).toMatch(/^\/(features|pages|routes|http|site)\//)
       expect(d.location.source?.file).toMatch(/examples\/cart\/.+\.ts$/)
       expect(d.location.source?.line).toBeGreaterThan(0)
       expect(d.fix?.patch?.length, `${code} at ${d.location.pointer} needs a patch`).toBeGreaterThan(0)
