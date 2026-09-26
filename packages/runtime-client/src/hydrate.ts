@@ -26,7 +26,7 @@ export interface IslandRef {
 
 export interface PagePayload {
   ids: string[]
-  islands: [node: number, scope: Json[]][]
+  islands: [node: number, lead: number, ...tails: Json[][]][]
   motion?: true
   visible?: true
   data: [string, Result][]
@@ -56,9 +56,10 @@ export interface EffectResponse {
 export type Transport = (effect: string, input: Json, keys: string[]) => Promise<EffectResponse>
 
 const islandsOf = (payload: PagePayload): IslandRef[] =>
-  payload.islands.map(([n, scope]) => {
+  payload.islands.flatMap(([n, lead, ...tails]) => {
     const node = payload.ids[n]!
-    return { feature: node.slice(0, node.indexOf('.')), node, scope }
+    const feature = node.slice(0, node.indexOf('.'))
+    return tails.map((tail) => ({ feature, node, scope: [...Array<Json>(lead).fill(null), ...tail] }))
   })
 
 const endpoint = (name: string) => new URL(name, import.meta.url)

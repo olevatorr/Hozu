@@ -32,7 +32,7 @@ import {
   type Scope,
   separated,
 } from './compile.ts'
-import { escapeHtml, scriptJson } from './escape.ts'
+import { escapeHtml, scriptJson, scriptSafe } from './escape.ts'
 import { responsive, type Variants } from './images.ts'
 import { type Lowering, localeFns, lowerCached, usesI18n } from './lower.ts'
 
@@ -177,7 +177,13 @@ export async function renderPage({
       if (motion) payload.motion = true
       if (visible) payload.visible = true
     }
-    payload.islands.push([index, pruneScope(n, scope.bindings)])
+    const scoped = pruneScope(n, scope.bindings)
+    let lead = 0
+    while (lead < scoped.length && scoped[lead] === null) lead++
+    const tail = scoped.slice(lead)
+    const last = payload.islands.at(-1)
+    if (last && last[0] === index && last[1] === lead) last.push(tail)
+    else payload.islands.push([index, lead, tail])
     payload.features[scope.feature.id] ??= (scope.feature.machine as MachineIR | null) ?? null
     return '<!--i-->'
   }
@@ -372,6 +378,8 @@ export async function renderPage({
     }
     headScope = { ...empty, bindings: [result.ok ? result.value : null] }
   }
+  const hasFns = Object.keys(bindings.fns).length > 0
+  const scripts = plan.islands.length ? [assets.client, ...(hasFns && assets.fns ? [assets.fns] : [])] : []
   const head = headHtml(
     ir,
     route,
@@ -380,6 +388,7 @@ export async function renderPage({
     path,
     status,
     assets,
+    scripts,
     lang,
     alternate,
     locale,
@@ -401,9 +410,9 @@ export async function renderPage({
       }
       if (bounded) payload.soft = soft
       if (payload.islands.length) {
-        payload.fns = Object.keys(bindings.fns).length ? assets.fns : null
+        payload.fns = hasFns ? assets.fns : null
         payload.routes = routes
-        buffer += `<script type="application/json" id="tenon-payload">${scriptJson(payload)}</script>`
+        buffer += `<script type="application/json" id="tenon-payload">${payloadJson(payload)}</script>`
         buffer += `<script type="module" src="${escapeHtml(assets.client)}"></script>`
       }
       buffer += '</body></html>'
@@ -609,6 +618,34 @@ const project = (value: Json, shape: Shape): Json => {
 
 const shapesMemo = new WeakMap<ViewNode, (Shape | null)[]>()
 
+const jsonMemo = new WeakMap<object, string>()
+
+const cachedJson = (v: unknown): string => {
+  if (v === null || typeof v !== 'object') return JSON.stringify(v)
+  let hit = jsonMemo.get(v)
+  if (hit === undefined) {
+    hit = JSON.stringify(v)
+    jsonMemo.set(v, hit)
+  }
+  return hit
+}
+
+const recordJson = (r: Record<string, unknown>) =>
+  `{${Object.entries(r)
+    .map(([k, v]) => `${JSON.stringify(k)}:${cachedJson(v)}`)
+    .join(',')}}`
+
+function payloadJson(payload: PagePayload): string {
+  const parts: string[] = []
+  for (const [k, v] of Object.entries(payload)) {
+    if (v === undefined) continue
+    const json =
+      k === 'nodes' || k === 'features' ? recordJson(v as Record<string, unknown>) : JSON.stringify(v)
+    parts.push(`${JSON.stringify(k)}:${json}`)
+  }
+  return scriptSafe(`{${parts.join(',')}}`)
+}
+
 const pruneScope = (n: ViewNode, bindings: Json[]): Json[] => {
   let shapes = shapesMemo.get(n)
   if (!shapes) {
@@ -724,6 +761,7 @@ function headHtml(
   path: string,
   status: number,
   { styles, preload }: Assets,
+  scripts: string[],
   lang: string,
   alternate: Record<string, string>,
   locale: string | null,
@@ -752,6 +790,7 @@ function headHtml(
   return [
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    ...scripts.map((href) => `<link rel="modulepreload" href="${escapeHtml(href)}">`),
     ir.site?.themeColor ? `<meta name="theme-color" content="${escapeHtml(ir.site.themeColor)}">` : '',
     ir.site?.icon ? `<link rel="icon" href="${escapeHtml(ir.site.icon)}">` : '',
     ir.site ? `<link rel="manifest" href="${escapeHtml(ir.http.basePath)}/manifest.webmanifest">` : '',

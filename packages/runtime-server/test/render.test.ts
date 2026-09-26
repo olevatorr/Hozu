@@ -12,8 +12,20 @@ const payloadOf = (html: string) =>
   JSON.parse(
     /<script type="application\/json" id="tenon-payload">(.*?)<\/script>/.exec(html)![1]!,
   ) as PagePayload
+const expand = (p: PagePayload) =>
+  p.islands.flatMap(([n, lead, ...tails]) =>
+    tails.map((tail) => ({ node: p.ids[n]!, scope: [...Array(lead).fill(null), ...tail] })),
+  )
 
 describe('server rendering', () => {
+  it('preloads no script on a page without islands', async () => {
+    const data = createDataRuntime({ build, resolvers: createResolvers() })
+    const { html, plan } = await renderToString({ build, data, route: 'orderPlaced', session })
+    expect(plan.islands).toEqual([])
+    expect(html).not.toContain('modulepreload')
+    expect(html).not.toContain('/_tenon/client.js')
+  })
+
   it('renders islands, reactive regions and a payload with only what islands need', async () => {
     const data = createDataRuntime({ build, resolvers: createResolvers() })
     const { html, tags, plan } = await renderToString({ build, data, route: 'home', session })
@@ -33,7 +45,7 @@ describe('server rendering', () => {
       'cart.CartPanel/6',
       'cart.CartPanel/7',
     ])
-    expect(payload.islands.map(([n]) => payload.ids[n])).toEqual([
+    expect(expand(payload).map((i) => i.node)).toEqual([
       'cart.CartPanel/1',
       'cart.CartPanel/2',
       item,
@@ -44,10 +56,14 @@ describe('server rendering', () => {
       'cart.CartPanel/7',
     ])
     expect(payload.ids.filter((id) => id === item)).toHaveLength(1)
-    expect(payload.islands[3]![1][1]).toEqual({ sku: 'tee' })
+    expect(expand(payload)[3]!.scope[1]).toEqual({ sku: 'tee' })
+    expect(payload.islands.filter(([n]) => payload.ids[n] === item)).toHaveLength(1)
     expect(payload.data.map(([k]) => k)).toEqual(['cart.getCart{}'])
     expect(Object.keys(payload.features)).toEqual(['cart'])
     expect(payload.fns).toBe('/_tenon/fns.js')
+    const head = html.slice(0, html.indexOf('</head>'))
+    expect(head).toContain('<link rel="modulepreload" href="/_tenon/client.js">')
+    expect(head).toContain('<link rel="modulepreload" href="/_tenon/fns.js">')
     expect(html.endsWith('<script type="module" src="/_tenon/client.js"></script></body></html>')).toBe(true)
   })
 
