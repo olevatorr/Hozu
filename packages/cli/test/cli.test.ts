@@ -1,5 +1,7 @@
 import { execFile } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { Ajv } from 'ajv'
@@ -26,6 +28,22 @@ const expectSchema = (name: string, value: unknown) => {
   expect(ajv.errors ?? []).toEqual([])
   expect(valid).toBe(true)
 }
+
+describe('tenon skill', () => {
+  it('asks where to write the skill, then keeps rewriting the same place', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'tenon-skill-'))
+    const none = await run(['skill', '--json'], dir)
+    expect(none.code).toBe(2)
+    expect(JSON.parse(none.stdout).error.suggestions[0]).toContain('--agent claude')
+    const first = await run(['skill', '--agent', 'agents', '--json'], dir)
+    expect(first.code).toBe(0)
+    expectSchema('skill', JSON.parse(first.stdout))
+    expect(JSON.parse(first.stdout).written).toEqual(['.agents/skills/tenon', 'AGENTS.md'])
+    expect(existsSync(join(dir, '.agents/skills/tenon/example/tenon.config.ts'))).toBe(true)
+    const again = await run(['skill', '--json'], dir)
+    expect(JSON.parse(again.stdout).written).toEqual(['.agents/skills/tenon'])
+  })
+})
 
 describe('A5 CLI contract', () => {
   it('validate --json is clean for the cart and matches its schema', async () => {

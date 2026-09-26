@@ -115,3 +115,7 @@ export interface BuildOutput {
   manifest: string
   files: string[]
 }
+
+export interface SkillOutput {
+  written: string[]
+}

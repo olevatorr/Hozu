@@ -7,7 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev packages/bundle packages/image packages/content packages/testing && node packages/runtime-client/scripts/bundle.ts",
+    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev packages/bundle packages/image packages/content packages/testing packages/create-tenon && node packages/runtime-client/scripts/bundle.ts && node scripts/skill.ts --pack",
     "typecheck": "tsc -b tsconfig.json",
     "test": "pnpm build && vitest run",
     "bench": "pnpm build && node bench/run.ts",
@@ -16,7 +16,8 @@
     "schema": "node scripts/gen-schemas.ts",
     "gate": "pnpm lint && pnpm typecheck && pnpm test && pnpm bench",
     "bench:frameworks": "pnpm build && pnpm --filter bench-frameworks run run",
-    "bench:parity": "pnpm build && pnpm --filter bench-parity build:nuxt && pnpm --filter bench-parity run run"
+    "bench:parity": "pnpm build && pnpm --filter bench-parity build:nuxt && pnpm --filter bench-parity run run",
+    "skill": "node scripts/skill.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
@@ -39,6 +40,7 @@
     "@tenonkit/validator": "workspace:*",
     "@types/node": "22.20.4",
     "ajv": "8.20.0",
+    "create-tenon": "workspace:*",
     "esbuild": "0.28.2",
     "fast-check": "4.10.2",
     "happy-dom": "20.14.5",

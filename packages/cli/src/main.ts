@@ -5,6 +5,7 @@ import { mermaid, runGraph } from './commands/graph.ts'
 import { describeImpact, runImpact } from './commands/impact.ts'
 import { runInspect } from './commands/inspect.ts'
 import { describePlan, runPlan } from './commands/plan.ts'
+import { runSkill } from './commands/skill.ts'
 import { runValidate } from './commands/validate.ts'
 import { TenonCliError } from './errors.ts'
 import { load } from './load.ts'
@@ -19,13 +20,15 @@ Commands:
   explain <feature>.<state> Explain a state: transitions, guards, effects, covering contracts
   impact <feature>.<symbol> What a query, mutation, tag, event, fn or view affects
   plan <route>              Derived render plan: regions, cache modes, hydration islands
-  build                     Write dist/public (static files) and dist/manifest.json for deployment
+  build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
+  skill                     Rewrite the agent skill for this Tenon version (--agent claude|agents|both)
 
 Options:
   --json               Machine-readable output (schemas in @tenonkit/cli/schema)
   --config <path>      Config file (default: tenon.config.ts)
   --update-lock        validate: rewrite tenon.lock.json when there are no errors
   --out <dir>          build: output directory (default: dist)
+  --agent <agent>      skill: claude, agents or both (default: the folders that exist)
   -h, --help           Show this help
 `
 
@@ -45,6 +48,7 @@ export async function main(
         config: { type: 'string' },
         'update-lock': { type: 'boolean', default: false },
         out: { type: 'string' },
+        agent: { type: 'string' },
         help: { type: 'boolean', short: 'h' },
       },
     })
@@ -54,9 +58,14 @@ export async function main(
       out(usage)
       return command || values.help ? 0 : 2
     }
-    const commands = ['validate', 'inspect', 'graph', 'explain', 'impact', 'plan', 'build']
+    const commands = ['validate', 'inspect', 'graph', 'explain', 'impact', 'plan', 'build', 'skill']
     if (!commands.includes(command))
       throw new TenonCliError('usage', `Unknown command "${command}"`, commands)
+    if (command === 'skill') {
+      const result = await runSkill(cwd, values.agent)
+      out(asJson ? json(result) : `✔ wrote ${result.written.join(', ')}\n`)
+      return 0
+    }
     const loaded = await load(values.config, cwd)
     if (command === 'validate') {
       const result = await runValidate(loaded, target, cwd, values['update-lock'] === true)

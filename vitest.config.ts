@@ -18,6 +18,7 @@ export default defineConfig({
       { find: /^@tenonkit\/data$/, replacement: `${src('data')}index.ts` },
       { find: /^@tenonkit\/machine$/, replacement: `${src('machine')}index.ts` },
       { find: /^@tenonkit\/validator$/, replacement: `${src('validator')}index.ts` },
+      { find: /^create-tenon$/, replacement: `${src('create-tenon')}index.ts` },
     ],
   },
   test: {

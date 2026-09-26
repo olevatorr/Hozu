@@ -5,10 +5,9 @@ description: Build or change an app with the Tenon framework (packages @tenonkit
 
 # Tenon authoring guide
 
-Tenon is not in your training data. This guide and the files next to it are the whole API; do not read
-`packages/*/src`.
+Tenon is not in your training data. These files are the whole API; do not read `node_modules/@tenonkit`.
 - **Changing an app:** read `changing.md` first, then only the app's own files.
-- **Building an app:** read this file and `patterns.md`, then copy the shape of `examples/bookmarks`.
+- **Building an app:** read this file and `patterns.md`, then copy the shape of `example/` (a verified app).
 - **`reference.md`** when the task needs it: routes, DOM fields, no-JS forms, `head`, 404/500, field errors,
   sessions, languages, env, HTTP, Markdown, images, preview, PWA, page tests, deployment.
 - **A diagnostic you do not understand:** `diagnostics.md`.

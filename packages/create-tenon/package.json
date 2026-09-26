@@ -1,0 +1,25 @@
+{
+  "name": "create-tenon",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Create a Tenon app, set up for Claude Code or for agents that read AGENTS.md",
+  "bin": {
+    "create-tenon": "./bin/create-tenon.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "bin",
+    "dist",
+    "templates",
+    "skill"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  }
+}

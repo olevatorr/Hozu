@@ -25,6 +25,7 @@
     "@tenonkit/core": "workspace:*",
     "@tenonkit/validator": "workspace:*",
     "@tenonkit/machine": "workspace:*",
-    "@tenonkit/compiler": "workspace:*"
+    "@tenonkit/compiler": "workspace:*",
+    "create-tenon": "workspace:*"
   }
 }

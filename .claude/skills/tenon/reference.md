@@ -54,7 +54,7 @@ Every mutation also has the framework error `Invalid` = `{ message, fields }`: o
 - `project({ session: z.object({ user: z.string() }) })` declares the identity. Queries with `scope: 'user'` and
   mutations receive `session`; public resolvers never do.
 - `createServer({ session: (request) => value })`, or `sessionCookie({ name, secret })` from
-  `@tenonkit/runtime-server` for a signed cookie. Mutations can call `setSession(value)` (see `examples/blog`).
+  `@tenonkit/runtime-server` for a signed cookie. Mutations can call `setSession(value)`.
 
 ## Languages (i18n)
 - `site: { lang: 'en', locales: ['en', 'zh-TW'], … }`: every URL gets a locale prefix (`/en/posts/a`). Routes and
@@ -130,4 +130,10 @@ shown when the network is down; a service worker is generated (TN043: no params,
 Cloudflare Workers or Vercel the server is `createHandler({ build, manifest, resolvers, render })` from
 `@tenonkit/runtime-server` with `export default { fetch: handler.fetch }`, where
 `import * as render from './dist/server/render.js'` is the page code `tenon build` generates (edge runtimes cannot
-generate it at startup; see `examples/cart/edge.ts`). Page cache and tag revalidation are per instance.
+generate it at startup). Page cache and tag revalidation are per instance.
+```ts
+import manifest from './dist/manifest.json' with { type: 'json' }
+import * as render from './dist/server/render.js'
+const handler = createHandler({ build: buildProject(project, { manifest }), manifest, render, resolvers: createResolvers() })
+export default { fetch: handler.fetch }
+```

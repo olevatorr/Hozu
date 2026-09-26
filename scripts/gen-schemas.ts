@@ -45,6 +45,11 @@ export const targets = [
     type: 'BuildOutput',
     out: 'packages/cli/schema/build.schema.json',
   },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'SkillOutput',
+    out: 'packages/cli/schema/skill.schema.json',
+  },
 ]
 
 export function generate(target: (typeof targets)[number]): string {

@@ -68,6 +68,9 @@ importers:
       ajv:
         specifier: 8.20.0
         version: 8.20.0
+      create-tenon:
+        specifier: workspace:*
+        version: link:packages/create-tenon
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
@@ -510,6 +513,9 @@ importers:
       '@tenonkit/validator':
         specifier: workspace:*
         version: link:../validator
+      create-tenon:
+        specifier: workspace:*
+        version: link:../create-tenon
 
   packages/compiler:
     dependencies:
@@ -530,6 +536,8 @@ importers:
         version: 2.9.1
 
   packages/core: {}
+
+  packages/create-tenon: {}
 
   packages/css:
     dependencies:
