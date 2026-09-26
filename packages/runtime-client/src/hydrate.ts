@@ -25,7 +25,10 @@ export interface IslandRef {
 }
 
 export interface PagePayload {
-  islands: IslandRef[]
+  ids: string[]
+  islands: [node: number, scope: Json[]][]
+  motion?: true
+  visible?: true
   data: [string, Result][]
   features: Record<string, MachineIR | null>
   nodes: Record<string, ViewNode>
@@ -51,6 +54,12 @@ export interface EffectResponse {
 }
 
 export type Transport = (effect: string, input: Json, keys: string[]) => Promise<EffectResponse>
+
+const islandsOf = (payload: PagePayload): IslandRef[] =>
+  payload.islands.map(([n, scope]) => {
+    const node = payload.ids[n]!
+    return { feature: node.slice(0, node.indexOf('.')), node, scope }
+  })
 
 const endpoint = (name: string) => new URL(name, import.meta.url)
 
@@ -94,6 +103,7 @@ export interface Session {
   doc: Document
   apps: Map<string, App>
   mount(payload: PagePayload, markers: (Comment | undefined)[]): Promise<void>
+  islands(payload: PagePayload): IslandRef[]
 }
 
 export async function hydrate(
@@ -146,10 +156,10 @@ export async function hydrate(
   const session: Session = {
     doc,
     apps,
+    islands: islandsOf,
     async mount(payload, markers) {
-      const nodes = JSON.stringify(payload.nodes)
-      if (!loaded.motion && nodes.includes('"motion":"')) loaded.motion = await import('./motion.ts')
-      if (nodes.includes('"visible":')) void import('./visible.ts').then((m) => m.watch(doc))
+      if (!loaded.motion && payload.motion) loaded.motion = await import('./motion.ts')
+      if (payload.visible) void import('./visible.ts').then((m) => m.watch(doc))
       if (!loaded.mountWidget && Object.keys(payload.widgets).length)
         loaded.mountWidget = (await import('./widget.ts')).mountWidget
       if (!loaded.fns && payload.fns) {
@@ -190,7 +200,7 @@ export async function hydrate(
         apps.set(id, app)
         created.push(app)
       }
-      payload.islands.forEach((island, i) => {
+      islandsOf(payload).forEach((island, i) => {
         const at = markers[i]
         const node = payload.nodes[island.node]
         if (at?.parentNode && node)

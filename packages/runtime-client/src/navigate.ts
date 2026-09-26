@@ -61,8 +61,13 @@ export function islandsIn(root: Node): { marker: Comment; view: string | null }[
   return found
 }
 
-export function track(state: State, payload: PagePayload, found: { view: string | null }[]) {
-  payload.islands.forEach((island, i) => {
+export function track(
+  state: State,
+  session: Session,
+  payload: PagePayload,
+  found: { view: string | null }[],
+) {
+  session.islands(payload).forEach((island, i) => {
     const view = found[i]?.view
     if (!view) return
     const owners = state.views.get(view) ?? new Set()
@@ -100,7 +105,7 @@ export async function swap(session: Session, state: State, next: Document, kept:
   const found = islandsIn(next.body)
   const needed = new Set<string>()
   for (const v of keep) for (const f of views.get(v) ?? []) needed.add(f)
-  payload.islands.forEach((island, i) => {
+  session.islands(payload).forEach((island, i) => {
     const view = found[i]?.view
     if (view === undefined || view === null || !keep.has(view)) needed.add(island.feature)
   })
@@ -130,7 +135,7 @@ export async function swap(session: Session, state: State, next: Document, kept:
     payload,
     found.map((f) => (f.view !== null && keep.has(f.view) ? undefined : f.marker)),
   )
-  track(state, payload, found)
+  track(state, session, payload, found)
   return true
 }
 
@@ -140,7 +145,7 @@ export function soft(session: Session) {
   const script = doc.getElementById('tenon-payload')
   if (!win?.navigation || !script?.textContent) return
   const state: State = { views: new Map(), soft: {}, routes: {} }
-  track(state, JSON.parse(script.textContent) as PagePayload, islandsIn(doc.body))
+  track(state, session, JSON.parse(script.textContent) as PagePayload, islandsIn(doc.body))
   let announcer: HTMLElement | null = null
   let bypass = false
   const announce = (title: string) => {

@@ -33,7 +33,7 @@ describe('server rendering', () => {
       'cart.CartPanel/6',
       'cart.CartPanel/7',
     ])
-    expect(payload.islands.map((i) => i.node)).toEqual([
+    expect(payload.islands.map(([n]) => payload.ids[n])).toEqual([
       'cart.CartPanel/1',
       'cart.CartPanel/2',
       item,
@@ -43,7 +43,8 @@ describe('server rendering', () => {
       'cart.CartPanel/6',
       'cart.CartPanel/7',
     ])
-    expect(payload.islands[3]!.scope[1]).toEqual({ sku: 'tee' })
+    expect(payload.ids.filter((id) => id === item)).toHaveLength(1)
+    expect(payload.islands[3]![1][1]).toEqual({ sku: 'tee' })
     expect(payload.data.map(([k]) => k)).toEqual(['cart.getCart{}'])
     expect(Object.keys(payload.features)).toEqual(['cart'])
     expect(payload.fns).toBe('/_tenon/fns.js')

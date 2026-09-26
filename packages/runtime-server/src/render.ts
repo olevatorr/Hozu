@@ -18,7 +18,7 @@ import {
 } from '@tenon/core/ir'
 import type { DataRuntime } from '@tenon/data'
 import { compileGuard, type Getter, pathOf, type Snapshot } from '@tenon/machine'
-import type { IslandRef, PagePayload, Result } from '@tenon/runtime-client'
+import type { PagePayload, Result } from '@tenon/runtime-client'
 import { attrText, text } from '@tenon/runtime-client'
 import {
   CLOSE,
@@ -102,7 +102,9 @@ export async function renderPage({
   const plan = planOf(ir, route)
   const islandIds = new Set(plan.islands)
   const tags = new Set<string>()
+  const nodeIndex = new Map<string, number>()
   const payload: PagePayload = {
+    ids: [],
     islands: [],
     data: [],
     features: {},
@@ -165,13 +167,18 @@ export async function renderPage({
   }
 
   const open = (n: ViewNode, scope: Scope) => {
-    const index = payload.islands.length
-    const ref: IslandRef = { feature: scope.feature.id, node: n.id, scope: pruneScope(n, scope.bindings) }
-    payload.islands.push(ref)
-    const node = i18n ? lowerCached(n, lowering) : n
-    payload.nodes[n.id] = node.kind === 'widget' ? { ...node, children: [] } : node
+    let index = nodeIndex.get(n.id)
+    if (index === undefined) {
+      index = payload.ids.push(n.id) - 1
+      nodeIndex.set(n.id, index)
+      const node = i18n ? lowerCached(n, lowering) : n
+      payload.nodes[n.id] = node.kind === 'widget' ? { ...node, children: [] } : node
+      const { motion, visible } = loadsOf(node)
+      if (motion) payload.motion = true
+      if (visible) payload.visible = true
+    }
+    payload.islands.push([index, pruneScope(n, scope.bindings)])
     payload.features[scope.feature.id] ??= (scope.feature.machine as MachineIR | null) ?? null
-    void index
     return '<!--i-->'
   }
 
@@ -482,6 +489,17 @@ function compiledFor(plan: RoutePlan, fns: object) {
   return c
 }
 const suspendMemo = new WeakMap<ViewNode, boolean>()
+const loadsMemo = new WeakMap<ViewNode, { motion: boolean; visible: boolean }>()
+
+function loadsOf(n: ViewNode) {
+  let hit = loadsMemo.get(n)
+  if (!hit) {
+    const json = JSON.stringify(n)
+    hit = { motion: json.includes('"motion":"'), visible: json.includes('"visible":') }
+    loadsMemo.set(n, hit)
+  }
+  return hit
+}
 const usesMemo = new WeakMap<ViewNode, Uses>()
 
 function planOf(ir: ProjectIR, route: string): RoutePlan {
