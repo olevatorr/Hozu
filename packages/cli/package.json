@@ -21,7 +21,7 @@
     "directory": "packages/cli"
   },
   "license": "MIT",
-  "author": "Otis Chen",
+  "author": "olevatorr",
   "type": "module",
   "bin": {
     "hozu": "./bin/hozu.js"

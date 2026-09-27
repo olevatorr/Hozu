@@ -21,7 +21,7 @@
     "directory": "packages/dev"
   },
   "license": "MIT",
-  "author": "Otis Chen",
+  "author": "olevatorr",
   "type": "module",
   "bin": {
     "hozu-dev": "./dist/bin.js"
