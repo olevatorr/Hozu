@@ -126,4 +126,9 @@ Its contract would only restate the machine.
 - **Size:** a scaffolded tasks feature (`--with detail,toggle,filter,remove`) is 10.5 KB, down from 14.0 KB.
   **The ≤ 8 KB target is not met.** The rest is views (4.8 KB) and model (4.2 KB).
 - **Gate:** green, 282 tests; P3 130 ms, P7 7819 B, A4 61,691. The Chromium tests pass (46).
-- **D7 (the trial) waits for the owner's go.**
+- **D7:** trial 0014 (`docs/trials/0014-0-5-notes.md`).
+  - Correctness is 72/72.
+  - Build is 1.80× Nuxt and change is 1.81× Nuxt, so the ≤ 1.3× target is missed. The difference from 0.3 is within
+    the noise of two runs.
+  - The remaining cost is reading the guide and the app, which 0.5 did not reduce.
+  - The Codex run was void, because it hit the Codex usage limit.
