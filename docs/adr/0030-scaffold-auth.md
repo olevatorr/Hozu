@@ -42,3 +42,5 @@ account feature.
   - the second feature's page also redirects when signed out.
 - The gate is green.
 - **Gate:** green, 265 tests. The runtime did not change, so parity keeps its 24/24.
+- **Trial 0013** (`docs/trials/0013-notes-with-auth-scaffold.md`): the notes app now builds at **1.66×** Nuxt
+  (trial 0012: 2.79×), and both runs pass 15/15.
