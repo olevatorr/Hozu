@@ -7,7 +7,14 @@
     "rewriteRelativeImportExtensions": false,
     "lib": ["es2023", "dom"]
   },
-  "include": ["packages/*/test", "packages/*/scripts", "examples/*/**/*.ts", "bench", "scripts"],
+  "include": [
+    "packages/*/test",
+    "packages/*/scripts",
+    "examples/*/**/*.ts",
+    "bench",
+    "scripts",
+    "site/**/*.ts"
+  ],
   "exclude": ["**/dist", "**/node_modules", "bench/frameworks", "bench/parity", "bench/trial"],
   "references": [
     {

@@ -666,6 +666,42 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  site:
+    dependencies:
+      '@hozu/adapter-static':
+        specifier: workspace:*
+        version: link:../packages/adapter-static
+      '@hozu/cli':
+        specifier: workspace:*
+        version: link:../packages/cli
+      '@hozu/content':
+        specifier: workspace:*
+        version: link:../packages/content
+      '@hozu/core':
+        specifier: workspace:*
+        version: link:../packages/core
+      '@hozu/css':
+        specifier: workspace:*
+        version: link:../packages/css
+      '@hozu/data':
+        specifier: workspace:*
+        version: link:../packages/data
+      '@hozu/schema-zod':
+        specifier: workspace:*
+        version: link:../packages/schema-zod
+      '@hozu/testing':
+        specifier: workspace:*
+        version: link:../packages/testing
+      '@tailwindcss/typography':
+        specifier: 0.5.20
+        version: 0.5.20(tailwindcss@4.3.3)
+      tailwindcss:
+        specifier: 4.3.3
+        version: 4.3.3
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+
 packages:
 
   '@babel/code-frame@7.29.7':

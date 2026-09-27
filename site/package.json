@@ -1,0 +1,28 @@
+{
+  "name": "hozu-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "hozu validate",
+    "check": "hozu check",
+    "export": "node export.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "verify": "node verify.ts"
+  },
+  "dependencies": {
+    "@tailwindcss/typography": "0.5.20",
+    "@hozu/adapter-static": "workspace:*",
+    "@hozu/cli": "workspace:*",
+    "@hozu/content": "workspace:*",
+    "@hozu/core": "workspace:*",
+    "@hozu/css": "workspace:*",
+    "@hozu/data": "workspace:*",
+    "@hozu/schema-zod": "workspace:*",
+    "zod": "4.6.5",
+    "@hozu/testing": "workspace:*",
+    "tailwindcss": "4.3.3"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}

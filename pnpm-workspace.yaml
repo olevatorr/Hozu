@@ -3,3 +3,4 @@ packages:
   - examples/*
   - bench/frameworks
   - bench/parity
+  - site

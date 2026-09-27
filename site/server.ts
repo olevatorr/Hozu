@@ -1,0 +1,71 @@
+import { readFile } from 'node:fs/promises'
+import { loadCollection } from '@hozu/content'
+import { resolvers } from '@hozu/data'
+import { z } from 'zod'
+import {
+  Frontmatter,
+  getChangelog,
+  getDoc,
+  getTrial,
+  listDocs,
+  listTrials,
+} from './features/content/model.ts'
+import project from './hozu.config.ts'
+
+const repository = 'https://github.com/olevatorr/Hozu/blob/main/'
+const rewriteLinks = (html: string, source: string) =>
+  html.replace(/href="([^"#]+)(#[^"]*)?"/g, (match, href: string, hash = '') => {
+    if (/^(?:[a-z]+:|\/)/i.test(href)) return match
+    const path = new URL(href, `https://source.local/${source}`).pathname.slice(1)
+    if (path.startsWith('docs/trials/') && path.endsWith('.md'))
+      return `href="/trials/${path.slice(12, -3)}${hash}"`
+    if (path === 'CHANGELOG.md') return `href="/changelog${hash}"`
+    return `href="${repository}${path}${hash}"`
+  })
+const docs = (await loadCollection({ dir: new URL('./content/docs/', import.meta.url), schema: Frontmatter }))
+  .map(({ slug, data, html }) => ({ slug, ...data, html }))
+  .sort((a, b) => a.order - b.order)
+const trials = await Promise.all(
+  (await loadCollection({ dir: new URL('../docs/trials/', import.meta.url), schema: z.object({}) })).map(
+    async ({ slug, html }) => {
+      const raw = await readFile(new URL(`../docs/trials/${slug}.md`, import.meta.url), 'utf8')
+      return {
+        slug,
+        title: raw
+          .split('\n')[0]!
+          .replace(/^# /, '')
+          .replace(/`([^`]+)`/g, '$1'),
+        description: 'Original methods, results and limitations from the Hozu repository.',
+        order: Number(slug.slice(0, 4)),
+        html: rewriteLinks(html, `docs/trials/${slug}.md`),
+      }
+    },
+  ),
+)
+trials.sort((a, b) => b.order - a.order)
+const changelog = (await loadCollection({ dir: new URL('../', import.meta.url), schema: z.object({}) })).find(
+  (entry) => entry.slug === 'CHANGELOG',
+)
+if (!changelog) throw new Error('CHANGELOG.md was not loaded')
+const changelogHtml = rewriteLinks(changelog.html, 'CHANGELOG.md')
+const summary = ({ html: _, ...item }: (typeof docs)[number]) => item
+const article = (items: typeof docs, slug: string) => {
+  const index = items.findIndex((item) => item.slug === slug)
+  const item = items[index]
+  return item
+    ? {
+        ...item,
+        previous: items.slice(Math.max(0, index - 1), index).map(summary),
+        next: items.slice(index + 1, index + 2).map(summary),
+      }
+    : undefined
+}
+export function createResolvers() {
+  return resolvers(project, (implement) => [
+    implement(listDocs, () => docs.map(summary)),
+    implement(getDoc, ({ slug }, { fail }) => article(docs, slug) ?? fail('NotFound', { slug })),
+    implement(listTrials, () => trials.map(summary)),
+    implement(getTrial, ({ slug }, { fail }) => article(trials, slug) ?? fail('NotFound', { slug })),
+    implement(getChangelog, () => ({ html: changelogHtml })),
+  ])
+}
