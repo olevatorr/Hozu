@@ -932,14 +932,21 @@ label:has(input:checked) {
   align-items: center;
   min-height: 63px;
 }
+[data-execution-rail] li:not(:first-child)::before,
 [data-execution-rail] li:not(:last-child)::after {
   content: "";
   width: 2px;
-  height: 25px;
   position: absolute;
   left: 18px;
-  top: 44px;
   background: var(--border);
+}
+[data-execution-rail] li:not(:first-child)::before {
+  top: 0;
+  bottom: calc(50% + 19px);
+}
+[data-execution-rail] li:not(:last-child)::after {
+  top: calc(50% + 19px);
+  bottom: 0;
 }
 [data-step-number] {
   display: grid;

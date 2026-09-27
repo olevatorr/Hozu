@@ -21,8 +21,29 @@ export const docs = route({ path: '/docs/:path+', params: z.object({ path: z.arr
   literal option values are all members, so one submit carries a title and a priority.
 - `ui.dom.valueAsNumber` (number | null), `ui.dom.checked`, `ui.dom.key`, and similar event fields.
 - Also: `ui.html(value)` (trusted HTML from query data only, HZ030), `ui.asset(new URL('./x.png', import.meta.url))`,
-  `ui.window({ on })` / `ui.document({ on })` for global listeners, widgets (`ui.widget` / `ui.use`) for
+  `ui.window({ on })` / `ui.document({ on })` for global listeners, widgets (see Widgets) for browser APIs and
   third-party DOM libraries.
+
+## Widgets (browser APIs, DOM libraries)
+There is no `widget` export: declare with `ui.widget`, place with `ui.use`, list the declaration in the feature's
+`declarations`, and implement it in a client module.
+```ts
+export const Copy = ui.widget({ tag: 'button', props: z.object({ text: z.string() }),
+  events: { copied: z.object({}) }, client: new URL('./copy.client.ts', import.meta.url), load: 'visible', wraps: true })
+ui.use(Copy, { props: { text: block.code }, on: { copied: () => ui.send(Copied, {}) }, class: 'btn' }, ['Copy'])
+```
+```ts
+// copy.client.ts: a type-only import of the declaration
+import { implement } from '@hozu/core/widget'
+import type { Copy } from './widgets.ts'
+export default implement<typeof Copy>(({ el, props, emit, signal }) => {
+  el.addEventListener('click', () => navigator.clipboard.writeText(props.text).then(() => emit('copied', {})), { signal })
+  return { update(next) { props = next } }
+})
+```
+`load`: `'eager' | 'visible' | 'idle'`; `wraps: true` keeps the children as server HTML. Serve with
+`widgets: await bundleWidgets(build)` from `@hozu/bundle` (and pass it to `exportStatic`); `hozu build` bundles
+them itself (HZ029 for a client module that does not bundle).
 
 ## Forms without JavaScript
 A submit whose payload reads only `ui.dom.form('name')`, literals, context, params and search also works without JS
