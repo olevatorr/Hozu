@@ -65,6 +65,11 @@ export const targets = [
     type: 'AddOutput',
     out: 'packages/cli/schema/add.schema.json',
   },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'MapOutput',
+    out: 'packages/cli/schema/map.schema.json',
+  },
 ]
 
 export function generate(target: (typeof targets)[number]): string {

@@ -1,0 +1,383 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/MapOutput",
+  "definitions": {
+    "MapOutput": {
+      "type": "object",
+      "properties": {
+        "routes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MapRoute"
+          }
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MapFeature"
+          }
+        }
+      },
+      "required": [
+        "routes",
+        "features"
+      ],
+      "additionalProperties": false
+    },
+    "MapRoute": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "search": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "views": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "head": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "path",
+        "search",
+        "views",
+        "head",
+        "at"
+      ],
+      "additionalProperties": false
+    },
+    "MapFeature": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "queries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "scope": {
+                "type": "string"
+              },
+              "freshness": {
+                "type": "string"
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "scope",
+              "freshness",
+              "errors",
+              "tags",
+              "at"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "mutations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "invalidates": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "errors",
+              "invalidates",
+              "at"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "fields",
+              "at"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "fns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "context": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "machineAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "states": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MapState"
+          }
+        },
+        "views": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "machine": {
+                "type": "boolean"
+              },
+              "route": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "machine",
+              "route",
+              "at"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "contracts": {
+          "type": "number"
+        },
+        "contractsAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "queries",
+        "mutations",
+        "events",
+        "fns",
+        "context",
+        "machineAt",
+        "states",
+        "views",
+        "contracts",
+        "contractsAt"
+      ],
+      "additionalProperties": false
+    },
+    "MapState": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "initial": {
+          "type": "boolean"
+        },
+        "final": {
+          "type": "boolean"
+        },
+        "on": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string"
+              },
+              "targets": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "event",
+              "targets"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "invoke": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "effect": {
+                  "type": "string"
+                },
+                "done": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "failed": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "required": [
+                "effect",
+                "done",
+                "failed"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ignore": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "after": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ms": {
+                "type": "number"
+              },
+              "target": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "ms",
+              "target"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "initial",
+        "final",
+        "on",
+        "invoke",
+        "ignore",
+        "after",
+        "at"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

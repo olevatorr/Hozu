@@ -149,6 +149,52 @@ export interface RequestOutput {
   steps: RequestStep[]
 }
 
+export interface MapRoute {
+  id: string
+  path: string
+  search: string[]
+  views: string[]
+  head: string | null
+  at: string | null
+}
+
+export interface MapState {
+  name: string
+  initial: boolean
+  final: boolean
+  on: { event: string; targets: string[] }[]
+  invoke: { effect: string; done: string[]; failed: Record<string, string[]> } | null
+  ignore: string[]
+  after: { ms: number; target: string }[]
+  at: string | null
+}
+
+export interface MapFeature {
+  id: string
+  queries: {
+    name: string
+    scope: string
+    freshness: string
+    errors: string[]
+    tags: string[]
+    at: string | null
+  }[]
+  mutations: { name: string; errors: string[]; invalidates: string[]; at: string | null }[]
+  events: { name: string; fields: string[]; at: string | null }[]
+  fns: string[]
+  context: string[]
+  machineAt: string | null
+  states: MapState[]
+  views: { name: string; machine: boolean; route: string | null; at: string | null }[]
+  contracts: number
+  contractsAt: string | null
+}
+
+export interface MapOutput {
+  routes: MapRoute[]
+  features: MapFeature[]
+}
+
 export interface AddOutput {
   created: string[]
   edited: string[]

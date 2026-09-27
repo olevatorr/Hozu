@@ -6,6 +6,7 @@ import { describeExplain, runExplain } from './commands/explain.ts'
 import { mermaid, runGraph } from './commands/graph.ts'
 import { describeImpact, runImpact } from './commands/impact.ts'
 import { runInspect } from './commands/inspect.ts'
+import { describeMap, runMap } from './commands/map.ts'
 import { describePlan, runPlan } from './commands/plan.ts'
 import { describeRequest, runRequest } from './commands/request.ts'
 import { runSkill } from './commands/skill.ts'
@@ -26,6 +27,7 @@ Commands:
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
   skill                     Rewrite the agent skill for this Hozu version (--agent claude|agents|both)
   check                     Type-check the app and validate it: the one command to run after every edit
+  map                       Outline the app (routes, queries, mutations, events, states, views) with file:line
   get <path>...             Request pages in-process (no server): status, title, alerts, visible text
   post <path> --field k=v   Submit the page's form like a browser, follow the redirect (--next <path> after)
   add feature <name>        Scaffold a working feature (model, views, contracts, resolvers) and wire it in
@@ -42,6 +44,7 @@ Options:
   --session <json>     get/post: the session value for user-scoped queries
   --full               get/post: print the whole visible text
   --page <path>        add feature: also add a route and a page at this path
+  --with <parts>       add feature: any of detail,toggle,filter,remove (comma-separated)
   -h, --help           Show this help
 `
 
@@ -67,6 +70,7 @@ export async function main(
         session: { type: 'string' },
         full: { type: 'boolean', default: false },
         page: { type: 'string' },
+        with: { type: 'string' },
         button: { type: 'string' },
         help: { type: 'boolean', short: 'h' },
       },
@@ -80,6 +84,7 @@ export async function main(
     const commands = [
       'validate',
       'check',
+      'map',
       'get',
       'post',
       'add',
@@ -100,7 +105,7 @@ export async function main(
     if (command === 'add') {
       if (target !== 'feature')
         throw new HozuCliError('usage', 'hozu add supports: feature', ['hozu add feature tasks --page /'])
-      const result = await runAddFeature(cwd, values.config, positionals[2], values.page)
+      const result = await runAddFeature(cwd, values.config, positionals[2], values.page, values.with)
       out(asJson ? json(result) : describeAdd(result))
       return 0
     }
@@ -121,6 +126,11 @@ export async function main(
         )
       }
       return result.ok ? 0 : 1
+    }
+    if (command === 'map') {
+      const result = runMap(loaded, cwd)
+      out(asJson ? json(result) : describeMap(result))
+      return 0
     }
     if (command === 'get' || command === 'post') {
       const result = await runRequest(loaded, {

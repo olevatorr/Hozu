@@ -109,4 +109,64 @@ describe('the agent loop (ADR 0027)', () => {
       { action: '/?__hozu=c', fields: {}, buttons: ['Clear done'] },
     ])
   })
+
+  it('checks clean for every combination of --with parts', async () => {
+    const parts = ['detail', 'toggle', 'filter', 'remove']
+    for (let mask = 0; mask < 16; mask++) {
+      const chosen = parts.filter((_, i) => mask & (1 << i))
+      const app = await freshApp()
+      const args = [
+        'add',
+        'feature',
+        'tasks',
+        '--page',
+        '/',
+        ...(chosen.length ? ['--with', chosen.join(',')] : []),
+      ]
+      const added = await json('add', args, app)
+      expect(added.out.manual, chosen.join(',')).toEqual([])
+      const check = await json('check', ['check'], app)
+      expect(check.out.types.errors, chosen.join(',')).toEqual([])
+      expect(check.out.validate.summary, chosen.join(',')).toEqual({ errors: 0, warnings: 0 })
+    }
+  }, 120_000)
+
+  it('runs the full scaffold like a user: toggle, detail, remove and a 404', async () => {
+    const app = await freshApp()
+    await run(['add', 'feature', 'tasks', '--page', '/', '--with', 'detail,toggle,filter,remove'], app)
+    const flow = await json(
+      'request',
+      [
+        'post',
+        '/',
+        '--field',
+        'title=Ship it',
+        '--next',
+        'POST / id=t1@Mark done',
+        '--next',
+        '/tasks/t1',
+        '--next',
+        'POST / id=t1@Delete',
+        '--next',
+        '/tasks/t1',
+      ],
+      app,
+    )
+    const steps = flow.out.steps as { method: string; path: string; status: number; text: string | null }[]
+    expect(steps.find((s) => s.method === 'GET' && s.path === '/tasks/t1')?.text).toContain('Status: done')
+    expect(steps.at(-1)).toMatchObject({ path: '/tasks/t1', status: 404 })
+    expect(steps.at(-1)?.text).toContain('Not found')
+  })
+
+  it('maps an app in a couple of kilobytes, with file:line for every declaration', async () => {
+    for (const example of ['bookmarks', 'trial-0007']) {
+      const cwd = join(root, 'examples', example)
+      const { code, stdout } = await run(['map'], cwd)
+      expect(code).toBe(0)
+      expect(stdout.length, example).toBeLessThan(2048)
+      expect(stdout).toMatch(/state idle\*: /)
+      expect(stdout).toMatch(/model\.ts:\d+/)
+      await json('map', ['map'], cwd)
+    }
+  })
 })

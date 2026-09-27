@@ -3,218 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import type { AddOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
-
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
-
-export function namesOf(name: string) {
-  const one = name.endsWith('s') && name.length > 1 ? name.slice(0, -1) : name
-  const many = name.endsWith('s') ? name : `${name}s`
-  return {
-    id: name,
-    Item: cap(one),
-    New: `New${cap(one)}`,
-    list: `list${cap(many)}`,
-    add: `add${cap(one)}`,
-    tag: `${name}Tag`,
-    machine: `${name}Machine`,
-    View: `${cap(name)}Board`,
-    feature: name,
-    resolvers: `${name}Resolvers`,
-    title: cap(name),
-    one,
-  }
-}
-
-type Names = ReturnType<typeof namesOf>
-
-const model = (n: Names) => `import { event, invoke, machine, mutation, on, op, query, tag } from '@hozu/core'
-import { z } from 'zod'
-
-export const ${n.Item} = z.object({ id: z.string(), title: z.string() })
-export const ${n.New} = z.object({
-  title: z.string().min(2, 'Use at least 2 characters').max(80, 'Use at most 80 characters'),
-})
-
-export const Draft = event({ payload: z.object({ text: z.string() }) })
-export const Add = event({ payload: z.object({ title: z.string() }) })
-
-export const ${n.tag} = tag({ param: null })
-
-export const ${n.list} = query({
-  input: z.object({}),
-  output: z.array(${n.Item}),
-  scope: 'public',
-  freshness: 'static',
-  tags: () => [${n.tag}()],
-})
-
-export const ${n.add} = mutation({
-  input: ${n.New},
-  output: ${n.Item},
-  errors: { Duplicate: z.object({ title: z.string() }) },
-  invalidates: () => [${n.tag}()],
-})
-
-export const DUPLICATE = 'This ${n.one} already exists'
-
-export const ${n.machine} = machine({
-  context: z.object({
-    draft: z.string(),
-    error: z.string().nullable(),
-    fields: z.object({ title: z.string().nullable() }),
-  }),
-  initialContext: { draft: '', error: null, fields: { title: null } },
-  initial: 'idle',
-  states: ({ ctx }) => ({
-    idle: {
-      on: [
-        on(Draft, { target: 'idle', assign: (e) => [op.set(ctx.draft, e.text)] }),
-        on(Add, {
-          target: 'adding',
-          assign: (e) => [
-            op.set(ctx.draft, e.title),
-            op.set(ctx.error, null),
-            op.set(ctx.fields, { title: null }),
-          ],
-        }),
-      ],
-    },
-    adding: {
-      ignore: [Draft, Add],
-      invoke: invoke(${n.add}, {
-        input: { title: ctx.draft },
-        done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')] }],
-        failed: {
-          Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] }],
-          Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
-        },
-      }),
-    },
-  }),
-})
-`
-
-const views = (n: Names) => `import { contract, feature, op, ui } from '@hozu/core'
-import { Add, ${n.add}, DUPLICATE, Draft, ${n.list}, ${n.machine}, ${n.tag} } from './model.ts'
-
-export const ${n.View} = ui.view({
-  machine: ${n.machine},
-  render: ({ ctx, when }) =>
-    ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [
-      ui.h1({ class: 'text-3xl font-bold' }, ['${n.title}']),
-      ui.form({ class: 'flex gap-2', on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } }, [
-        ui.label({ for: '${n.id}-title', class: 'sr-only' }, ['Title']),
-        ui.input({
-          id: '${n.id}-title',
-          name: 'title',
-          required: true,
-          minlength: 2,
-          maxlength: 80,
-          value: ctx.draft,
-          'aria-invalid': op.neq(ctx.fields.title, null),
-          'aria-describedby': '${n.id}-title-error',
-          class: 'flex-1 rounded border px-3 py-2',
-          on: { input: ui.send(Draft, { text: ui.dom.value }) },
-        }),
-        ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
-      ]),
-      ui.p({ id: '${n.id}-title-error', class: 'text-sm text-rose-600' }, [ctx.fields.title]),
-      ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
-      when(['adding'], [ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…'])]),
-      ui.query(
-        ${n.list},
-        {},
-        {
-          ready: (items) =>
-            ui.ul({ class: 'divide-y rounded border' }, [
-              ui.each(items, 'id', (item) => ui.li({ class: 'px-4 py-3' }, [item.title])),
-            ]),
-          pending: ui.p({}, ['Loading…']),
-          failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },
-        },
-      ),
-    ]),
-})
-
-export const typesDraft = contract(${n.machine}, {
-  given: { state: 'idle' },
-  when: [{ send: Draft, payload: { text: 'Ship' } }],
-  expect: { state: 'idle', changes: { draft: 'Ship' } },
-})
-
-export const adds = contract(${n.machine}, {
-  given: { state: 'idle' },
-  when: [
-    { send: Add, payload: { title: 'Ship' } },
-    { done: ${n.add}, result: { id: 'x1', title: 'Ship' } },
-  ],
-  expect: { state: 'idle', effects: [{ effect: ${n.add}, input: { title: 'Ship' } }] },
-})
-
-export const rejectsDuplicate = contract(${n.machine}, {
-  given: { state: 'adding' },
-  when: [{ failed: ${n.add}, error: 'Duplicate', data: { title: 'Ship' } }],
-  expect: { state: 'idle', changes: { error: DUPLICATE } },
-})
-
-export const rejectsInvalid = contract(${n.machine}, {
-  given: { state: 'adding' },
-  when: [
-    {
-      failed: ${n.add},
-      error: 'Invalid',
-      data: { message: 'title: Use at least 2 characters', fields: { title: 'Use at least 2 characters' } },
-    },
-  ],
-  expect: { state: 'idle', changes: { fields: { title: 'Use at least 2 characters' } } },
-})
-
-export const addFails = contract(${n.machine}, {
-  given: { state: 'adding' },
-  when: [{ failed: ${n.add}, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
-})
-
-export const ${n.feature} = feature({
-  id: '${n.id}',
-  intent: { summary: '${n.title}: add one with a title; titles are unique, case-insensitive.' },
-  declarations: {
-    Draft,
-    Add,
-    ${n.tag},
-    ${n.list},
-    ${n.add},
-    ${n.machine},
-    ${n.View},
-    typesDraft,
-    adds,
-    rejectsDuplicate,
-    rejectsInvalid,
-    addFails,
-  },
-})
-`
-
-const server = (n: Names) => `import type { Implement } from '@hozu/data'
-import { ${n.add}, ${n.list} } from './model.ts'
-
-export function ${n.resolvers}<Session, Env>(implement: Implement<Session, Env>) {
-  const items: { id: string; title: string }[] = []
-  let seq = 0
-  return [
-    implement(${n.list}, () => items.map((item) => ({ ...item }))),
-    implement(${n.add}, ({ title }, { fail }) => {
-      const clean = title.trim()
-      if (items.some((item) => item.title.toLowerCase() === clean.toLowerCase()))
-        return fail('Duplicate', { title: clean })
-      const item = { id: \`${n.one.charAt(0)}\${++seq}\`, title: clean }
-      items.unshift(item)
-      return { ...item }
-    }),
-  ]
-}
-`
+import { model, namesOf, PARTS, type Part, server, views, type With } from './scaffold.ts'
 
 const addImport = (source: string, line: string): string | null => {
   const imports = [...source.matchAll(/^import[\s\S]*?from '[^']+'\n/gm)]
@@ -237,7 +26,21 @@ export async function runAddFeature(
   config: string | undefined,
   name: string | undefined,
   page: string | undefined,
+  parts: string | undefined = undefined,
 ): Promise<AddOutput> {
+  const asked = (parts ?? '')
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
+  for (const p of asked)
+    if (!PARTS.includes(p as Part))
+      throw new HozuCliError('usage', `Unknown --with part "${p}"`, [`--with ${PARTS.join(',')}`])
+  const w: With = Object.fromEntries(PARTS.map((p) => [p, asked.includes(p)])) as With
+  if (w.filter) w.toggle = true
+  if (w.detail && page === undefined)
+    throw new HozuCliError('usage', '--with detail needs --page, so the detail page can link back', [
+      `hozu add feature ${name ?? 'tasks'} --page / --with detail`,
+    ])
   if (!name || !/^[a-z][a-zA-Z0-9]*$/.test(name))
     throw new HozuCliError('usage', 'Give the feature a lower-case identifier', [
       'hozu add feature tasks --page /',
@@ -253,10 +56,21 @@ export async function runAddFeature(
   const n = namesOf(name)
   const out: AddOutput = { created: [], edited: [], manual: [] }
   await mkdir(dir, { recursive: true })
+  const routesPath = join(root, 'routes.ts')
+  const routesSource = existsSync(routesPath) ? await readFile(routesPath, 'utf8') : ''
+  const existing =
+    page === undefined
+      ? null
+      : new RegExp(`export const (\\w+) = route\\(\\{\\s*path: '${page.replace(/[/-]/g, '\\$&')}'`).exec(
+          routesSource,
+        )
+  const pageRoute = page === undefined ? null : (existing?.[1] ?? `${name}Page`)
+  const newRoute = page !== undefined && !existing
+  const detailPath = page === undefined ? null : page === '/' ? `/${n.many}/:id` : `${page}/:id`
   for (const [file, text] of [
-    ['model.ts', model(n)],
-    ['views.ts', views(n)],
-    ['server.ts', server(n)],
+    ['model.ts', model(n, w)],
+    ['views.ts', views(n, w, pageRoute)],
+    ['server.ts', server(n, w)],
   ] as const) {
     await writeFile(join(dir, file), text)
     out.created.push(relative(cwd, join(dir, file)))
@@ -284,36 +98,44 @@ export async function runAddFeature(
     },
     `import { ${n.resolvers} } from './features/${name}/server.ts' and add ...${n.resolvers}(implement) to resolvers(project, (implement) => [...])`,
   )
-  let pageRoute: string | null = null
-  let newRoute = false
-  if (page !== undefined) {
-    const routesPath = join(root, 'routes.ts')
-    const routes = existsSync(routesPath) ? await readFile(routesPath, 'utf8') : ''
-    const existing = new RegExp(
-      `export const (\\w+) = route\\(\\{\\s*path: '${page.replace(/[/-]/g, '\\$&')}'`,
-    ).exec(routes)
-    pageRoute = existing?.[1] ?? `${name}Page`
-    newRoute = !existing
-    if (newRoute)
-      await edit(
-        'routes.ts',
-        (s) =>
-          `${s.trimEnd()}\nexport const ${pageRoute} = route({ path: '${page}', params: null, search: null })\n`,
-        `export const ${pageRoute} = route({ path: '${page}', params: null, search: null })`,
-      )
-  }
+  const newRoutes = [
+    ...(newRoute
+      ? [`export const ${pageRoute} = route({ path: '${page}', params: null, search: null })`]
+      : []),
+    ...(w.detail
+      ? [
+          `export const ${n.detailRoute} = route({ path: '${detailPath}', params: z.object({ id: z.string() }), search: null })`,
+        ]
+      : []),
+  ]
+  if (newRoutes.length)
+    await edit(
+      'routes.ts',
+      (source) => {
+        const withZod =
+          w.detail && !/from 'zod'/.test(source) ? addImport(source, `import { z } from 'zod'\n`) : source
+        return withZod === null ? null : `${withZod.trimEnd()}\n${newRoutes.join('\n')}\n`
+      },
+      newRoutes.join('; '),
+    )
   await edit(
     config ?? 'hozu.config.ts',
     (s) => {
       let next: string | null = addImport(
         s,
-        `import { ${n.View}, ${n.feature} } from './features/${name}/views.ts'\n`,
+        `import { ${[n.View, n.feature, ...(w.detail ? [n.Detail] : [])].sort().join(', ')} } from './features/${name}/views.ts'\n`,
       )
+      if (next && w.detail)
+        next = addImport(
+          next,
+          `import { ${[n.get, n.list].sort().join(', ')} } from './features/${name}/model.ts'\n`,
+        )
       if (next) next = append(next, /features:\s*\[([^\]]*)\]/, n.feature)
-      if (next && pageRoute && newRoute) {
-        next = append(next, /routes:\s*\{([^}]*)\}/, pageRoute)
+      const routeNames = [...(newRoute && pageRoute ? [pageRoute] : []), ...(w.detail ? [n.detailRoute] : [])]
+      for (const r of routeNames) if (next) next = append(next, /routes:\s*\{([^}]*)\}/, r)
+      if (next && routeNames.length)
         next =
-          next?.replace(/import \{([^}]*)\} from '\.\/routes\.ts'/, (all, names: string) =>
+          next.replace(/import \{([^}]*)\} from '\.\/routes\.ts'/, (all, names: string) =>
             all.replace(
               names,
               ` ${[
@@ -321,18 +143,24 @@ export async function runAddFeature(
                   .split(',')
                   .map((x) => x.trim())
                   .filter(Boolean),
-                pageRoute,
+                ...routeNames,
               ]
                 .sort()
                 .join(', ')} `,
             ),
           ) ?? null
-        next =
-          next?.replace(
-            /pages:\s*\[/,
-            (m) =>
-              `${m}\n    ui.page(${pageRoute}, { views: [${n.View}], head: { render: () => ({ title: '${n.title}' }) } }),`,
-          ) ?? null
+      if (next && w.detail)
+        next = next.replace(
+          /pages:\s*\[/,
+          (m) =>
+            `${m}\n    ui.page(${n.detailRoute}, {\n      views: [${n.Detail}],\n      head: { query: ${n.get}, input: (params) => ({ id: params.id }), render: (item) => ({ title: item.title }) },\n      entries: { query: ${n.list}, input: {}, params: (item) => ({ id: item.id }) },\n    }),`,
+        )
+      if (next && pageRoute && newRoute) {
+        next = next.replace(
+          /pages:\s*\[/,
+          (m) =>
+            `${m}\n    ui.page(${pageRoute}, { views: [${n.View}], head: { render: () => ({ title: '${n.title}' }) } }),`,
+        )
       } else if (next && pageRoute) {
         const views = new RegExp(`ui\\.page\\(\\s*${pageRoute}\\s*,\\s*\\{\\s*views:\\s*\\[[^\\]]*\\]`)
         next = views.test(next) ? next.replace(views, `ui.page(${pageRoute}, { views: [${n.View}]`) : null
