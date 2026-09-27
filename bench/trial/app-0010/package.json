@@ -1,0 +1,48 @@
+{
+  "name": "h1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "hozu check",
+    "start": "node serve.ts",
+    "build": "hozu build"
+  },
+  "dependencies": {
+    "@hozu/adapter-node": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-adapter-node-0.3.0.tgz",
+    "@hozu/core": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-core-0.3.0.tgz",
+    "@hozu/css": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-css-0.3.0.tgz",
+    "@hozu/data": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-data-0.3.0.tgz",
+    "@hozu/runtime-server": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-runtime-server-0.3.0.tgz",
+    "@hozu/schema-zod": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-schema-zod-0.3.0.tgz",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@hozu/cli": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-cli-0.3.0.tgz",
+    "@hozu/testing": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-testing-0.3.0.tgz",
+    "@types/node": "^22.20.4",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "overrides": {
+    "@hozu/runtime-server": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-runtime-server-0.3.0.tgz",
+    "@hozu/compiler": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-compiler-0.3.0.tgz",
+    "@hozu/validator": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-validator-0.3.0.tgz",
+    "@hozu/core": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-core-0.3.0.tgz",
+    "@hozu/content": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-content-0.3.0.tgz",
+    "@hozu/testing": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-testing-0.3.0.tgz",
+    "@hozu/schema-zod": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-schema-zod-0.3.0.tgz",
+    "@hozu/image": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-image-0.3.0.tgz",
+    "@hozu/adapter-node": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-adapter-node-0.3.0.tgz",
+    "@hozu/adapter-static": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-adapter-static-0.3.0.tgz",
+    "@hozu/data": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-data-0.3.0.tgz",
+    "@hozu/bundle": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-bundle-0.3.0.tgz",
+    "@hozu/css": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-css-0.3.0.tgz",
+    "@hozu/machine": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-machine-0.3.0.tgz",
+    "@hozu/runtime-client": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-runtime-client-0.3.0.tgz",
+    "@hozu/dev": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-dev-0.3.0.tgz",
+    "@hozu/cli": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/hozu-cli-0.3.0.tgz",
+    "create-hozu": "file:/private/tmp/claude-501/-Users-otischen-Developer-Tenon/4f79a653-27aa-4bda-9110-5c5436aaec4d/scratchpad/trial-0010/tgz/create-hozu-0.3.0.tgz"
+  }
+}

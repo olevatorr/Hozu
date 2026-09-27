@@ -1,0 +1,73 @@
+{
+  "features": {
+    "tasks": {
+      "adding/invoke/done/0": {
+        "behavior": "e0eb2a3405dfc35d",
+        "contracts": {
+          "adds": "e6088c8835af75a9"
+        }
+      },
+      "adding/invoke/failed/Duplicate/0": {
+        "behavior": "fa931adf13e44418",
+        "contracts": {
+          "rejectsDuplicate": "5e288c5f2404fd97"
+        }
+      },
+      "adding/invoke/failed/Invalid/0": {
+        "behavior": "3ba8e3c9bc908103",
+        "contracts": {
+          "rejectsInvalid": "beba5f4f147146ae"
+        }
+      },
+      "adding/invoke/failed/Unexpected/0": {
+        "behavior": "6606d67832662c72",
+        "contracts": {
+          "addFails": "58fc60a12c4f1b3b"
+        }
+      },
+      "idle/on/tasks.Add/0": {
+        "behavior": "9b93b1c753265173",
+        "contracts": {
+          "adds": "e6088c8835af75a9"
+        }
+      },
+      "idle/on/tasks.Draft/0": {
+        "behavior": "1bf8a242e4e428fe",
+        "contracts": {
+          "typesDraft": "7d58b0b4a3a3dd8c"
+        }
+      },
+      "idle/on/tasks.SetShow/0": {
+        "behavior": "accdaafa6d7b598a",
+        "contracts": {
+          "filters": "d9c73f9021147319"
+        }
+      },
+      "idle/on/tasks.Toggle/0": {
+        "behavior": "7d21c22ef38dff81",
+        "contracts": {
+          "toggles": "a088a13f392e490f"
+        }
+      },
+      "toggling/invoke/done/0": {
+        "behavior": "49f254475f7985d1",
+        "contracts": {
+          "toggles": "a088a13f392e490f"
+        }
+      },
+      "toggling/invoke/failed/NotFound/0": {
+        "behavior": "859ecfcf7c70eaca",
+        "contracts": {
+          "toggleMissing": "3637e928646d7579"
+        }
+      },
+      "toggling/invoke/failed/Unexpected/0": {
+        "behavior": "57a2233b096a690e",
+        "contracts": {
+          "toggleFails": "f5d246d004ebc250"
+        }
+      }
+    }
+  },
+  "version": 1
+}

@@ -89,3 +89,8 @@ touches principles 1 and 4 and the product's main claim, so it needs its own ADR
   so for a moment there is no "Load more" button. The test now asserts at most one button, which is the invariant
   it meant.
 - **Gate:** green, 263 tests. The first run failed on that race.
+- **Parity:** 24/24.
+- **Trial 0010** (`docs/trials/0010-map-scaffold-recipes.md`), two runs per arm:
+  - build **1.64×** Nuxt (target ≤ 1.5×, missed; 0.2: 2.05×);
+  - change **1.44×** (target ≤ 1.5×, met; 0.2: 2.34×);
+  - correctness in all eight runs.
