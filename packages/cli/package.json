@@ -1,6 +1,6 @@
 {
   "name": "@hozu/cli",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The hozu command: validate, inspect, graph, explain, impact, plan, build and skill (all with --json)",
   "keywords": [
     "hozu",
