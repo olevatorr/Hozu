@@ -6,7 +6,14 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/schema/*.json", "!**/__snapshots__", "!**/*.vue", "!**/*.svelte"]
+    "includes": [
+      "**",
+      "!**/schema/*.json",
+      "!**/__snapshots__",
+      "!**/*.vue",
+      "!**/*.svelte",
+      "!bench/trial/notes/*-run*"
+    ]
   },
   "formatter": {
     "enabled": true,
