@@ -176,8 +176,8 @@ export const ui = Object.freeze({
   query: <I, O, E>(
     query: QueryDecl<I, O, E>,
     input: NoInfer<Val<I>>,
-    branches: { ready: (data: Ref<O>) => NodeDecl; pending: NodeDecl | null; failed: QueryErrors<E> },
-  ): NodeDecl => node({ kind: 'query', query, input, ...branches }),
+    branches: { ready: (data: Ref<O>) => NodeDecl; pending?: NodeDecl | null; failed: QueryErrors<E> },
+  ): NodeDecl => node({ kind: 'query', query, input, ...branches, pending: branches.pending ?? null }),
   embed: (view: ViewDecl): NodeDecl => node({ kind: 'embed', view }),
   widget,
   asset,

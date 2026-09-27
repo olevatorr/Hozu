@@ -35,36 +35,38 @@ export const notice = machine({
 
 Here, the delay is an illustrative application choice, not a measured framework result. The framework owns the timer. The `ignore` declaration makes repeated acknowledgements intentional instead of leaving a visible event unhandled. A transition back to the same state would re-enter it, which matters especially when state entry invokes a mutation.
 
-For the reading-list form, a busy state instead declares `invoke(addItem, ...)`. Its `done` transitions describe successful results, and its `failed` transitions handle declared errors plus the framework’s unexpected-error path. The form sends an event; it does not hide an asynchronous request inside its view. See the [data guide](/docs/data) for that boundary.
+For the reading-list form, a busy state instead declares `invoke(addItem, ...)`. A state with `invoke` drops every event it does not handle, so the repeated click needs no declaration. Its `done` transitions describe successful results, and its `failed` transitions handle declared errors plus the framework’s unexpected-error path. The form sends an event; it does not hide an asynchronous request inside its view. See the [data guide](/docs/data) for that boundary.
 
 ## State what the transition must do
 
-A contract starts from a known state, supplies an event or effect result, and states the expected outcome. This acknowledgement needs a contract for the event and another for the timer:
+A contract starts from a known state, supplies an event or effect result, and states the expected outcome. Since 0.5 ([ADR 0037](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0037-0-5-lower-reading-and-writing-cost.md)), contracts are required where a transition *decides* something: a guard that chooses between outcomes, a navigation, or a value computed by a `fn`. The acknowledgement above only moves between states, so it needs none; its transitions are recorded in `hozu.lock.json` in readable form:
+
+```text
+idle --Acknowledge--> acknowledged
+acknowledged --after 2000ms--> idle
+```
+
+A guarded transition is different. If acknowledging is only allowed once a notice has been read, the contract states that decision:
 
 ```ts
 import { contract } from '@hozu/core'
 
-export const acknowledges = contract(notice, {
-  given: { state: 'idle' },
+export const acknowledgesRead = contract(notice, {
+  given: { state: 'idle', context: { read: true } },
   when: [{ send: Acknowledge, payload: {} }],
   expect: { state: 'acknowledged' },
 })
-export const resets = contract(notice, {
-  given: { state: 'acknowledged' },
-  when: [{ elapse: 2000 }],
-  expect: { state: 'idle' },
-})
 ```
 
-Register the event, machine, views and contracts in the feature’s `declarations`. HZ016 reports transitions without contract coverage. Coverage includes event transitions, invoked effects’ success and failure paths, and scheduled transitions. A covered happy path does not excuse an unspecified error path.
+Register the event, machine, views and contracts in the feature’s `declarations`. HZ016 reports decisions without a contract, with a skeleton ready to fill in. A covered happy path does not excuse an unspecified error path that computes or navigates.
 
-When context is involved, `given.context` defaults to the machine’s initial context. `expect.changes` states a deep patch: unmentioned fields must remain equal, while arrays replace their previous value. Expected effects are explicit; omitting `expect.effects` means no effects are expected. This keeps a contract focused on the behaviour it is meant to establish while still detecting unintended changes elsewhere.
+When context is involved, `given.context` defaults to the machine’s initial context. `expect.changes` states a deep patch: unmentioned fields must remain equal, while arrays replace their previous value. Expected effects are explicit; omitting `expect.effects` means no effects are expected.
 
 ## Keep the lock tied to intent
 
-The behaviour lock records accepted behaviour. HZ018 detects behavioural changes that lack the corresponding contract change. The point is to prevent a plausible edit from silently redefining what a feature does. It is not an invitation to update expectations until an incorrect implementation passes.
+The behaviour lock records accepted behaviour. HZ018 detects a change: for a decision, it asks for the matching contract change; for a transition that only copies values, it shows the change as `was: … now: …`. The point is to prevent a plausible edit from silently redefining what a feature does. It is not an invitation to update expectations until an incorrect implementation passes.
 
-Suppose the acknowledgement should now last longer. Decide that requirement first, change the timer and its time-based contract together, and run the checks. Once the change is intended and clean, `hozu check --update-lock` accepts the new baseline. The same process applies when a mutation begins navigating after success or a guard changes which submissions are allowed.
+Suppose the acknowledgement should now last longer. Decide that requirement first, change the timer, and run the checks: HZ018 shows `acknowledged --after 2000ms--> idle` becoming `after 5000ms`. Once the change is intended, `hozu check --update-lock` accepts the new baseline. The same process applies when a mutation begins navigating after success or a guard changes which submissions are allowed.
 
 The original interpreter and contract design is recorded in [ADR 0004](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0004-machine-runtime-and-contracts.md). The shorter contract authoring form is explained in [ADR 0022](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0022-authoring-surface-diet.md). Historical examples use the former framework name; the principles remain relevant, while the installed skill defines today’s syntax.
 

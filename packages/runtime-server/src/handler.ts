@@ -542,8 +542,55 @@ export function createHandler({
       ? page(`#404:${locale ?? ''}`, ir.notFound, null, null, request, true, locale)
       : plain(404, request.method === 'HEAD' ? null : 'Not found')
 
+  const endpointRefs = new Map<string, string>(
+    Object.values(ir.features).flatMap((f) =>
+      Object.entries(f.endpoints ?? {}).map(
+        ([symbol, e]) => [`${e.method} ${e.path}`, `${f.id}.${symbol}`] as const,
+      ),
+    ),
+  )
+
+  const endpointCall = async (request: Request, url: URL, ref: string) => {
+    let input: Json
+    if (request.method === 'GET') input = Object.fromEntries(url.searchParams)
+    else if ((request.headers.get('content-type') ?? '').includes('json'))
+      input = (await request.json().catch(() => null)) as Json
+    else {
+      const form = await request.formData().catch(() => null)
+      input = Object.fromEntries(
+        [...(form?.entries() ?? [])].filter((e): e is [string, string] => typeof e[1] === 'string'),
+      )
+    }
+    let next: { value: unknown } | null = null
+    const result = await dataFor(request).endpoint(ref, input, {
+      request,
+      session: await session(request),
+      setSession: (value) => {
+        next = { value }
+      },
+      preview: previewing.get(request) === true,
+    })
+    const saved = next as { value: unknown } | null
+    const cookie = store && saved ? await store.write(saved.value) : null
+    const withCookie = (response: Response) => {
+      if (cookie) response.headers.append('set-cookie', cookie)
+      return response
+    }
+    if (!result.ok)
+      return withCookie(
+        new Response(JSON.stringify({ message: result.message, fields: result.fields }), {
+          status: result.status,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+    if (result.value instanceof Response) return withCookie(result.value)
+    return json(result.value, cookie ? { 'set-cookie': cookie } : {})
+  }
+
   const route = async (request: Request, url: URL, path: string): Promise<Response> => {
     if (request.method === 'POST' && crossSite(request)) return plain(403, 'Cross-site request rejected')
+    const endpointRef = endpointRefs.get(`${request.method === 'HEAD' ? 'GET' : request.method} ${path}`)
+    if (endpointRef) return endpointCall(request, url, endpointRef)
     if (request.method === 'POST' && !path.startsWith('/_hozu/')) return formPost(request, url, path)
     if (request.method === 'POST' && path === '/_hozu/effect') return effect(request)
     if (request.method === 'POST' && path === '/_hozu/query') {

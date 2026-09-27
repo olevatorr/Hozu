@@ -5,6 +5,7 @@ import { verifyContracts } from './contracts/verify.ts'
 import { classNames } from './rules/classes.ts'
 import { invalidations, sessions } from './rules/data.ts'
 import { domFields } from './rules/dom.ts'
+import { endpoints } from './rules/endpoints.ts'
 import { declaredErrors } from './rules/errors.ts'
 import { conflictingIgnores, unhandledEvents, viewEvents } from './rules/events.ts'
 import { progressiveForms } from './rules/forms.ts'
@@ -24,6 +25,7 @@ import { domText } from './rules/text.ts'
 import { widgetEvents } from './rules/widgets.ts'
 
 export type { Drift, LockEntry, Lockfile } from './contracts/lock.ts'
+export { isMechanical, summaryOf } from './contracts/mechanical.ts'
 export type { ContractRun, Failure } from './contracts/run.ts'
 export { runContract } from './contracts/run.ts'
 export type { Impact, ImpactKind, ImpactQuery, ImpactUse } from './impact.ts'
@@ -31,6 +33,7 @@ export { impact, UnknownSymbolError } from './impact.ts'
 export { closest, distance } from './suggest.ts'
 
 const rules = [
+  endpoints,
   featureLinks,
   references,
   routes,
@@ -72,6 +75,7 @@ export interface ValidateOptions {
   feature?: string
   bindings?: Bindings
   lock?: Lockfile | null
+  accept?: boolean
   unknownClasses?: Map<string, string | null> | null
 }
 
@@ -88,7 +92,9 @@ export function verify(ir: ProjectIR, options: ValidateOptions = {}): Verificati
     options.bindings?.assets ?? {},
   )
   for (const rule of rules) rule(ctx)
-  const lock = options.bindings ? verifyContracts(ctx, options.bindings, options.lock ?? null) : null
+  const lock = options.bindings
+    ? verifyContracts(ctx, options.bindings, options.lock ?? null, options.accept === true)
+    : null
   const out = options.feature
     ? ctx.diagnostics.filter((d) => d.location.feature === options.feature)
     : ctx.diagnostics
@@ -97,3 +103,5 @@ export function verify(ir: ProjectIR, options: ValidateOptions = {}): Verificati
 
 export const validate = (ir: ProjectIR, options: ValidateOptions = {}): Diagnostic[] =>
   verify(ir, options).diagnostics
+export { scanTruthiness, type TruthinessFinding } from './truthiness.ts'
+export { truthinessDiagnostics } from './truthiness-rule.ts'

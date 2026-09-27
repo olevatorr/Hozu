@@ -49,4 +49,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   HZ041: { name: 'message-in-machine', severity: 'error' },
   HZ042: { name: 'invalid-i18n', severity: 'error' },
   HZ043: { name: 'invalid-offline-page', severity: 'error' },
+  HZ044: { name: 'reference-truthiness', severity: 'warning' },
+  HZ045: { name: 'incomplete-server-entry', severity: 'warning' },
+  HZ046: { name: 'invalid-endpoint', severity: 'error' },
 }

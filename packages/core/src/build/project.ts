@@ -47,6 +47,7 @@ const registries: [keyof FeatureParts, DeclKind][] = [
   ['fns', 'fn'],
   ['views', 'view'],
   ['widgets', 'widget'],
+  ['endpoints', 'endpoint'],
   ['contracts', 'contract'],
 ]
 
@@ -58,6 +59,7 @@ const kindKeys: Partial<Record<DeclKind, keyof FeatureParts>> = {
   fn: 'fns',
   view: 'views',
   widget: 'widgets',
+  endpoint: 'endpoints',
   contract: 'contracts',
 }
 const exportKeys: Partial<Record<DeclKind, keyof FeatureParts['exports']>> = {
@@ -98,7 +100,7 @@ function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
         id,
         at,
         `"${name}" is not a declaration`,
-        'declarations holds events, queries, mutations, fns, tags, views, widgets, contracts, one machine and one messages.',
+        'declarations holds events, queries, mutations, fns, tags, views, widgets, endpoints, contracts, one machine and one messages.',
       )
   }
   Object.assign(parts, records)

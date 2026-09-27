@@ -9,12 +9,13 @@ import { generate, targets } from '../../../scripts/gen-schemas.ts'
 const read = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), 'utf8')
 
 describe('A3 public surface', () => {
-  it('exports at most 15 values, no aliases', () => {
+  it('exports at most 16 values, no aliases', () => {
     const names = Object.keys(core).sort()
     expect(names).toMatchInlineSnapshot(`
       [
         "contract",
         "defineSchemaAdapter",
+        "endpoint",
         "event",
         "feature",
         "fn",
@@ -30,7 +31,7 @@ describe('A3 public surface', () => {
         "ui",
       ]
     `)
-    expect(names.length).toBeLessThanOrEqual(15)
+    expect(names.length).toBeLessThanOrEqual(16)
     expect(new Set(Object.values(core)).size).toBe(names.length)
   })
 })

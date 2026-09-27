@@ -31,11 +31,13 @@ export interface OnDef {
   transition: TransitionConfig<string, any>
 }
 
+export type Outcome<T extends string, A> = T | TransitionConfig<T, A> | readonly TransitionConfig<T, A>[]
+
 export interface InvokeDef {
   effect: EffectDecl
   input: unknown
-  done: TransitionConfig<string, any>[]
-  failed: Record<string, TransitionConfig<string, any>[]>
+  done: Outcome<string, any>
+  failed: Record<string, Outcome<string, any>>
 }
 
 export interface OnDecl<T extends string = string> extends Decl<'on'>, Typed<T> {}
@@ -62,15 +64,21 @@ export interface MachineDecl<C = any, S extends string = string>
     Typed<{ context: C; states: S }> {}
 
 type ErrorTransitions<E, T extends string, I = Record<string, unknown>> = {
-  [K in keyof E | 'Unexpected']: TransitionConfig<T, Ref<K extends keyof E ? E[K] : UnexpectedError>>[]
-} & { Invalid?: TransitionConfig<T, Ref<InvalidError<I>>>[] }
+  [K in keyof E | 'Unexpected']: Outcome<T, Ref<K extends keyof E ? E[K] : UnexpectedError>>
+} & { Invalid?: Outcome<T, Ref<InvalidError<I>>> }
 
 export const on = <P, const T extends string>(
   event: EventDecl<P>,
   transition: TransitionConfig<T, Ref<P>>,
 ): OnDecl<T> => brand({}, 'on', { event, transition } satisfies OnDef)
 
-type TargetOf<L> = L extends readonly { target: infer T extends string }[] ? T : never
+type TargetOf<L> = L extends string
+  ? L
+  : L extends { target: infer T extends string }
+    ? T
+    : L extends readonly { target: infer T extends string }[]
+      ? T
+      : never
 
 type Known<T extends string> = string extends T ? never : T
 
@@ -78,7 +86,7 @@ export const invoke = <
   I,
   O,
   E,
-  const D extends readonly TransitionConfig<string, Ref<O>>[],
+  const D extends Outcome<string, Ref<O>>,
   const F extends ErrorTransitions<E, string, I>,
 >(
   effect: EffectDecl<I, O, E>,

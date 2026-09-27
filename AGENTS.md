@@ -17,7 +17,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
    Side effects only via declared `query` / `mutation`, plus the framework-owned
    `navigate` (on a transition) and `after(ms)` (on a state). Logic is data: `op.*` for
    assigns/guards; anything else is a named, schema-typed `fn()` (ADR 0002 D1).
-5. Every behavior change requires a contract change (behavior `contracts`: given / when / expect).
+5. Every behavior change requires a reviewed change: a contract (given / when / expect) for transitions that decide
+   (a guard, `navigate`, a `fn` value); the readable lock entry for transitions that only copy values (ADR 0037).
 6. Feature boundaries are enforced: features import only other features' public contracts (`exports`).
 7. Diagnostics are structured JSON with location, cause, and suggested fix.
 8. Rendering mode is DERIVED, never chosen:
@@ -130,6 +131,12 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   Historical records (ADRs 0001–0025, `docs/trials`, `docs/benchmarks`) keep `Tenon`, `@tenon/`, `tenon.config.ts`
   and `TN0xx` codes; everything else uses `Hozu`, `@hozu/`, `hozu.config.ts`, `/_hozu/` and `HZ0xx`.
 - Release (ADR 0025): npm scope `@hozu/*`, plus unscoped `create-hozu`; the binary is `hozu`. Publishing is manual with the owner's 2FA code: `pnpm -r pack` rehearsal first, no CI.
+- 0.5 (ADR 0037): contracts only for deciding transitions, the lock summarises every transition (`was/now` in HZ018,
+  `--update-lock` accepts copy-only changes); states with `invoke` drop unhandled events (listing `ignore` there is
+  HZ014) and `done` / `failed` take a state name, a transition or a guarded list; `ui.query` `pending` is optional;
+  `hozu check` hints TS errors on references and warns on truthiness (HZ044, token scanner in `@hozu/validator`) and
+  on an incomplete `serve.ts` (HZ045); `hozu add widget`; `endpoint({ method, path, input, output })` declarations
+  implemented in resolvers (HZ046, JSON or `'response'`, `setSession`).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head
@@ -169,6 +176,6 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - Before each phase, write `docs/adr/NNNN-*.md` with options, trade-offs, and your decision.
 - Every phase ends with passing tests and a runnable example in `examples/`.
 - A new diagnostic code needs a registry entry, a rule, a fix, and a mistake-catalog case.
-- Every machine transition must be covered by a contract (HZ016); change behavior only together with a
-  contract (HZ018). Never edit a contract just to match observed behavior without deciding intent.
+- Every deciding transition must be covered by a contract (HZ016); change behavior only together with a
+  contract or an accepted lock diff (HZ018). Never edit a contract just to match observed behavior without deciding intent.
 - If a principle blocks a practical need, stop and raise it. Do not quietly bend it.

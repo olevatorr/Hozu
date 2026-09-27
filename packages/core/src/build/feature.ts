@@ -1,4 +1,5 @@
 import type { MutationDef, QueryDef } from '../builders/effects.ts'
+import type { EndpointDef } from '../builders/endpoint.ts'
 import type { EventDef } from '../builders/event.ts'
 import type { FeatureParts } from '../builders/feature.ts'
 import type { FnDef } from '../builders/fn.ts'
@@ -8,6 +9,7 @@ import type { WidgetDef } from '../builders/widget.ts'
 import { sha256 } from '../canonical/hash.ts'
 import { htmlTags } from '../ir/dom-data.ts'
 import type {
+  EndpointIR,
   ExportsIR,
   FeatureIR,
   Freshness,
@@ -177,6 +179,9 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
   ) as unknown as ExportsIR
 
   const machine = buildMachine(scope, config.machine)
+  const own = Object.keys(config.events).map((sym) => `${id}.${sym}`)
+  for (const state of Object.values(machine?.states ?? {}))
+    if (state.invoke) state.ignore = own.filter((e) => !state.on[e]?.length).sort()
   const ir: FeatureIR = {
     id,
     intent: {
@@ -237,6 +242,18 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     }),
     machine,
     widgets: mapRecord(config.widgets, (sym, w) => buildWidget(scope, sym, defOf<WidgetDef>(w))),
+    endpoints: mapRecord(config.endpoints, (sym, e): EndpointIR => {
+      const d = defOf<EndpointDef>(e)
+      const p = scope.at('endpoints', sym)
+      scope.bind(`${id}.${sym}#input`, d.input)
+      if (d.output !== 'response') scope.bind(`${id}.${sym}#output`, d.output)
+      return {
+        method: d.method,
+        path: String(d.path),
+        input: scope.schema(d.input, at(p, 'input')),
+        output: d.output === 'response' ? null : scope.schema(d.output, at(p, 'output')),
+      }
+    }),
     views: mapRecord(config.views, (sym, v) => buildView(scope, sym, v)),
     contracts: mapRecord(config.contracts, (sym, c) => buildContract(scope, sym, c)),
     messages: config.messages ? buildMessages(defOf<MessagesDef>(config.messages)) : null,

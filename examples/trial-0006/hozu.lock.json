@@ -2,70 +2,102 @@
   "features": {
     "tasks": {
       "adding/invoke/done/0": {
-        "behavior": "e0eb2a3405dfc35d",
+        "behavior": "170f7afe0ca84f49",
         "contracts": {
-          "addsTask": "c3f034dfa0f2b520"
-        }
+          "addsTask": "af7fb8dcbb8653b7"
+        },
+        "summary": "adding --done addTask--> idle · draft := \"\", priority := \"normal\""
       },
       "adding/invoke/failed/Duplicate/0": {
         "behavior": "fa931adf13e44418",
         "contracts": {
-          "rejectsDuplicate": "9c2a680aeb1981de"
-        }
+          "rejectsDuplicate": "733fdab2da337e21"
+        },
+        "summary": "adding --failed addTask.Duplicate--> idle · error := \"A task with this title already exists\""
       },
       "adding/invoke/failed/Invalid/0": {
         "behavior": "3ba8e3c9bc908103",
         "contracts": {
-          "rejectsInvalidTitle": "a38cfb6594a11358"
-        }
+          "rejectsInvalidTitle": "5598a27a5d335bef"
+        },
+        "summary": "adding --failed addTask.Invalid--> idle · fields := error.fields"
       },
       "adding/invoke/failed/Unexpected/0": {
         "behavior": "6606d67832662c72",
         "contracts": {
-          "addFails": "58fc60a12c4f1b3b"
-        }
+          "addFails": "7e3aeb7ef0915582"
+        },
+        "summary": "adding --failed addTask.Unexpected--> idle · error := error.message"
+      },
+      "clearing/invoke/done/0": {
+        "behavior": "3a0a768ed95dcbe0",
+        "contracts": {
+          "clearsDone": "daea10d5819fb46b"
+        },
+        "summary": "clearing --done clearDone--> idle"
+      },
+      "clearing/invoke/failed/Unexpected/0": {
+        "behavior": "0f2f0fb11a153b4a",
+        "contracts": {
+          "clearFails": "e824392e31f3c481"
+        },
+        "summary": "clearing --failed clearDone.Unexpected--> idle · error := error.message"
       },
       "idle/on/tasks.Add/0": {
-        "behavior": "9b93b1c753265173",
+        "behavior": "357a2a420c5a5a99",
         "contracts": {
-          "addsTask": "c3f034dfa0f2b520"
-        }
+          "addsTask": "af7fb8dcbb8653b7"
+        },
+        "summary": "idle --Add--> adding · draft := event.title, priority := event.priority, error := null, fields := {\"title\":null,\"priority\":null} · invoke addTask({ title: ctx.draft, priority: ctx.priority })"
+      },
+      "idle/on/tasks.ClearDone/0": {
+        "behavior": "c80ae579dea172b9",
+        "contracts": {
+          "clearsDone": "daea10d5819fb46b"
+        },
+        "summary": "idle --ClearDone--> clearing · error := null · invoke clearDone({})"
       },
       "idle/on/tasks.Draft/0": {
         "behavior": "1bf8a242e4e428fe",
         "contracts": {
-          "typesDraft": "7d58b0b4a3a3dd8c"
-        }
+          "typesDraft": "0fe69f4a7f638653"
+        },
+        "summary": "idle --Draft--> idle · draft := event.text"
       },
       "idle/on/tasks.SetShow/0": {
         "behavior": "accdaafa6d7b598a",
         "contracts": {
-          "filtersDone": "d9c73f9021147319"
-        }
+          "filtersDone": "1fe2223f9f4e7052"
+        },
+        "summary": "idle --SetShow--> idle · show := event.show"
       },
       "idle/on/tasks.Toggle/0": {
         "behavior": "e0d07094a3016415",
         "contracts": {
-          "togglesTask": "82ee13d7c9e0b809"
-        }
+          "togglesTask": "6e3e68d5718a8feb"
+        },
+        "summary": "idle --Toggle--> toggling · target := event.id · invoke toggleTask({ id: ctx.target })"
       },
       "toggling/invoke/done/0": {
         "behavior": "49f254475f7985d1",
         "contracts": {
-          "togglesTask": "82ee13d7c9e0b809"
-        }
+          "togglesTask": "6e3e68d5718a8feb"
+        },
+        "summary": "toggling --done toggleTask--> idle"
       },
       "toggling/invoke/failed/NotFound/0": {
         "behavior": "7630795452b08180",
         "contracts": {
-          "toggleMissing": "afecb14c62db257a"
-        }
+          "toggleMissing": "353f91cb35698fc3"
+        },
+        "summary": "toggling --failed toggleTask.NotFound--> idle"
       },
       "toggling/invoke/failed/Unexpected/0": {
         "behavior": "57a2233b096a690e",
         "contracts": {
-          "toggleFails": "f5d246d004ebc250"
-        }
+          "toggleFails": "83c19395cdb77b5d"
+        },
+        "summary": "toggling --failed toggleTask.Unexpected--> idle · error := error.message"
       }
     }
   },

@@ -4,6 +4,7 @@ import type { Infer, Schema } from '../schema/standard.ts'
 import type { Asset } from './asset.ts'
 import type { ContractDecl } from './contract.ts'
 import type { MutationDecl, QueryDecl } from './effects.ts'
+import type { EndpointDecl } from './endpoint.ts'
 import type { EventDecl } from './event.ts'
 import type { FnDecl } from './fn.ts'
 import type { HttpConfig } from './http.ts'
@@ -28,6 +29,7 @@ export interface FeatureParts {
   machine: MachineDecl | null
   views: Record<string, ViewDecl>
   widgets: Record<string, WidgetDecl>
+  endpoints: Record<string, EndpointDecl>
   contracts: Record<string, ContractDecl>
   messages: Decl<'messages'> | null
   exports: {

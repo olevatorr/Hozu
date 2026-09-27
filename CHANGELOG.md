@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.5.0 — less to read, less to write (ADR 0037)
+
+### Changes
+- **Contracts are for decisions.**
+  - A transition with a guard, a `navigate` or a `fn` value needs a contract (HZ016). Transitions that only copy
+    values do not.
+  - `hozu.lock.json` records every transition in readable form, e.g.
+    `idle --Draft--> idle · draft := event.text`.
+  - HZ018 shows a changed transition as `was: … now: …`. For a transition that only copies values,
+    `hozu check --update-lock` accepts it.
+  - `hozu add feature` generates contracts only where they are required. A tasks feature went from 14.0 KB to
+    10.5 KB.
+- **Busy states by rule.**
+  - A state with `invoke` drops every event it does not handle, so it needs no `ignore` list.
+  - `done` and each `failed` entry take a state name (`done: 'idle'`), one transition, or a list of guarded
+    transitions.
+- **References used as values are explained and caught.**
+  - `hozu check` adds a Hozu hint to TypeScript errors about recorded references (`===`, methods, arithmetic).
+  - New warning HZ044: it flags a reference used as `?:`, `&&`, `||`, `??`, `!` or an `if` condition, at its source
+    line. These uses are always truthy and were not caught before.
+- **Clearer view errors.**
+  - `Invalid view child` now says what it got and the likely cause.
+  - `ui.query`'s `pending` is optional.
+- **`serve.ts` is checked.** HZ045 warns when views use widgets but `serve.ts` has no `bundleWidgets`, or when the
+  project declares a session but passes none.
+- **`hozu add widget <feature> <Name>`** writes the declaration, the client module, the `serve.ts` bundle and the
+  `@hozu/bundle` dependency.
+- **Declared HTTP endpoints.**
+  - `endpoint({ method: 'GET' | 'POST', path, input, output })` in a feature's declarations, implemented in
+    `resolvers`, for webhooks, JSON APIs and auth callbacks.
+  - Input comes from the query string or the body, and invalid input answers 400 `{ message, fields }`.
+  - `output: 'response'` returns a web `Response`; `setSession` sets the cookie.
+  - HZ046 checks the path: static, not reserved, not a page or redirect, not a duplicate. It comes with a patch.
+  - `hozu map` lists endpoints. `examples/notes` serves `GET /api/notes`.
+
+### Migrating from 0.4
+- **`ignore` in a state with `invoke`** is now HZ014. Delete it; the patch in `--json` does this for you.
+- **Contracts on transitions that only copy values** keep working, as optional examples. You may delete them.
+- **`hozu validate --json` coverage** has changed. `covered` / `total` now count deciding transitions, and
+  `transitions` counts all of them.
+- **Run `hozu check --update-lock` once** to add the readable summaries to `hozu.lock.json`.
+
 ## 0.4.2 — no JS download on pages that do not run it, no silent widgets
 
 - **The client runtime is preloaded only where an island renders (ADR 0036).**

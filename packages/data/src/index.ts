@@ -1,4 +1,5 @@
 export type {
+  EndpointContext,
   Fail,
   Failure,
   Implement,
@@ -9,6 +10,13 @@ export type {
   Upload,
 } from './resolvers.ts'
 export { resolvers } from './resolvers.ts'
-export type { DataRuntime, DataRuntimeOptions, ErrorInfo, FileLike, OnError } from './runtime.ts'
+export type {
+  DataRuntime,
+  DataRuntimeOptions,
+  EndpointResult,
+  ErrorInfo,
+  FileLike,
+  OnError,
+} from './runtime.ts'
 export { createDataRuntime, DataRuntimeError } from './runtime.ts'
 export type * from './types.ts'

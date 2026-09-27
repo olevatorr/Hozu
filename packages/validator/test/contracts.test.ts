@@ -54,7 +54,12 @@ const catalog: Case[] = [
     pointer: '/features/cart/machine/states/idle/on/cart.Dismiss/0',
     mutate: (ir) => {
       cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [
-        { guard: null, target: 'idle', assign: [], navigate: null },
+        {
+          guard: { op: 'eq', left: { ref: 'context', path: ['error'] }, right: { literal: null } },
+          target: 'idle',
+          assign: [],
+          navigate: null,
+        },
       ]
     },
   },
@@ -99,7 +104,12 @@ describe('Phase 1 behavior catalog', () => {
   it('HZ016 suggests a contract filled from the declarations', () => {
     const ir = cartIR()
     cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [
-      { guard: null, target: 'idle', assign: [], navigate: null },
+      {
+        guard: { op: 'eq', left: { ref: 'context', path: ['error'] }, right: { literal: null } },
+        target: 'idle',
+        assign: [],
+        navigate: null,
+      },
     ]
     const d = run(ir).diagnostics.find((x) => x.code === 'HZ016')!
     expect(d.fix?.snippet).toContain("given: { state: 'idle'")
@@ -112,7 +122,7 @@ describe('Phase 1 behavior catalog', () => {
     const ir = cartIR()
     cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [
       {
-        guard: null,
+        guard: { op: 'eq', left: { ref: 'context', path: ['error'] }, right: { literal: null } },
         target: 'idle',
         assign: [{ op: 'set', path: ['pending', 'qty'], value: { literal: 2 } }],
         navigate: null,
@@ -146,6 +156,45 @@ describe('Phase 1 behavior catalog', () => {
     raiseLimit(ir)
     cart(ir).contracts.setsQuantity!.expect.effects = null
     expect(run(ir, baseline).diagnostics).toEqual([])
+  })
+
+  it('a transition that only copies values needs no contract; the lock summarises it (ADR 0037)', () => {
+    const ir = cartIR()
+    cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [
+      {
+        guard: null,
+        target: 'idle',
+        assign: [{ op: 'set', path: ['error'], value: { literal: null } }],
+        navigate: null,
+      },
+    ]
+    const { diagnostics, lock } = run(ir)
+    expect(diagnostics).toEqual([])
+    expect(lock!.features.cart!['idle/on/cart.Dismiss/0']).toMatchObject({
+      summary: 'idle --Dismiss--> idle · error := null',
+      contracts: {},
+    })
+  })
+
+  it('HZ018 shows a changed mechanical transition, and accepting it is the review', () => {
+    const mechanical = (value: ValueExpr) => (ir: ProjectIR) => {
+      cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [
+        { guard: null, target: 'idle', assign: [{ op: 'set', path: ['error'], value }], navigate: null },
+      ]
+    }
+    const before = cartIR()
+    mechanical({ literal: null })(before)
+    const baseline = run(before).lock!
+    const after = cartIR()
+    mechanical({ literal: 'dismissed' })(after)
+    const { diagnostics } = run(after, baseline)
+    expect(diagnostics.map((d) => d.code)).toEqual(['HZ018'])
+    expect(diagnostics[0]!.message).toBe(
+      'Transition idle/on/cart.Dismiss/0 changed (was: idle --Dismiss--> idle · error := null; now: idle --Dismiss--> idle · error := "dismissed")',
+    )
+    expect(diagnostics[0]!.fix?.summary).toContain('--update-lock')
+    const { sources, bindings } = cartBuild()
+    expect(verify(after, { sources, bindings, lock: baseline, accept: true }).diagnostics).toEqual([])
   })
 
   it('contracts do not run on a statically invalid feature', () => {

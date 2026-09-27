@@ -41,7 +41,7 @@ Bind a view to a machine when it needs state and events. A button can send a dec
 
 A form whose submit payload reads only named form fields, constants, context, route parameters or search parameters can also work without JavaScript. The server runs the same machine for the native form post.
 
-Busy states explicitly list ignored events. This prevents a repeated click from restarting an in-flight operation.
+A state with `invoke` drops every event it does not handle, so a repeated click cannot restart an in-flight operation.
 
 ## Images and Markdown
 

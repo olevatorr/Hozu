@@ -22,7 +22,7 @@ Static content does not need a machine. Add one when the UI has an interaction w
 
 ## Behaviour has a contract
 
-A machine describes states and transitions. A contract states the starting state, the events or effect results that occur, and the expected state, data changes and effects. Every transition needs coverage, including failure paths and timers.
+A machine describes states and transitions. A contract states the starting state, the events or effect results that occur, and the expected state, data changes and effects. Transitions that decide something (a guard, a navigation or a computed value) need a contract. Transitions that only copy values are recorded in readable form in `hozu.lock.json`, so a change to them is reviewed as a lock diff.
 
 `expect.changes` is a deep patch: omitted fields must remain unchanged, and arrays replace the old value. `given.context` defaults to the machine's initial context. A behaviour lock catches changes made without an accompanying contract change.
 

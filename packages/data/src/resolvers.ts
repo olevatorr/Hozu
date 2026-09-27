@@ -1,4 +1,4 @@
-import type { MutationDecl, ProjectDecl, QueryDecl, Scope } from '@hozu/core'
+import type { EndpointDecl, MutationDecl, ProjectDecl, QueryDecl, Scope } from '@hozu/core'
 
 export const FAIL = Symbol.for('hozu.fail')
 const IMPLEMENTATION = Symbol.for('hozu.implementation')
@@ -32,6 +32,16 @@ export interface MutationContext<Session, E, Env = unknown, I = Record<string, u
   file(token: string): Promise<Upload | null>
 }
 
+export type WebRequest = typeof globalThis extends { Request: { prototype: infer R } } ? R : unknown
+
+export interface EndpointContext<Session, Env = unknown> {
+  request: WebRequest
+  env: Env
+  preview: boolean
+  session: Session | null
+  setSession(value: Session | null): void
+}
+
 export interface Upload {
   name: string
   type: string
@@ -48,6 +58,7 @@ export type Run = (
     fail: Fail<any>
     setSession(value: unknown): void
     file(token: string): Promise<Upload | null>
+    request?: unknown
   },
 ) => unknown
 
@@ -66,6 +77,10 @@ export interface Implement<Session, Env = unknown> {
       input: I,
       ctx: MutationContext<Session, NoInfer<E>, Env, NoInfer<I>>,
     ) => Out<O, WithInvalid<NoInfer<E>, NoInfer<I>>>,
+  ): Implementation
+  <I, O>(
+    decl: EndpointDecl<I, O>,
+    run: (input: I, ctx: EndpointContext<Session, Env>) => O | Promise<O>,
   ): Implementation
 }
 

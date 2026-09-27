@@ -59,6 +59,12 @@
         },
         "message": {
           "type": "string"
+        },
+        "hint": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -66,7 +72,8 @@
         "line",
         "column",
         "code",
-        "message"
+        "message",
+        "hint"
       ],
       "additionalProperties": false
     },
@@ -143,11 +150,15 @@
         },
         "total": {
           "type": "number"
+        },
+        "transitions": {
+          "type": "number"
         }
       },
       "required": [
         "covered",
-        "total"
+        "total",
+        "transitions"
       ],
       "additionalProperties": false
     },
@@ -235,7 +246,10 @@
         "HZ040",
         "HZ041",
         "HZ042",
-        "HZ043"
+        "HZ043",
+        "HZ044",
+        "HZ045",
+        "HZ046"
       ]
     },
     "Severity": {

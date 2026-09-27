@@ -1,5 +1,6 @@
 import { parseArgs } from 'node:util'
 import { describeAdd, runAddFeature } from './commands/add.ts'
+import { describeAddWidget, runAddWidget } from './commands/add-widget.ts'
 import { runBuild } from './commands/build.ts'
 import { runCheck } from './commands/check.ts'
 import { describeExplain, runExplain } from './commands/explain.ts'
@@ -31,6 +32,7 @@ Commands:
   get <path>...             Request pages in-process (no server): status, title, alerts, visible text
   post <path> --field k=v   Submit the page's form like a browser, follow the redirect (--next <path> after)
   add feature <name>        Scaffold a working feature (model, views, contracts, resolvers) and wire it in
+  add widget <feature> <Name>  Add a widget: declaration, client module, serve.ts bundle, @hozu/bundle dependency
 
 Options:
   --json               Machine-readable output (schemas in @hozu/cli/schema)
@@ -107,8 +109,16 @@ export async function main(
       return 0
     }
     if (command === 'add') {
+      if (target === 'widget') {
+        const result = await runAddWidget(cwd, values.config, positionals[2], positionals[3])
+        out(asJson ? json(result) : describeAddWidget(result, positionals[3]!))
+        return 0
+      }
       if (target !== 'feature')
-        throw new HozuCliError('usage', 'hozu add supports: feature', ['hozu add feature tasks --page /'])
+        throw new HozuCliError('usage', 'hozu add supports: feature, widget', [
+          'hozu add feature tasks --page /',
+          'hozu add widget tasks Chart',
+        ])
       const result = await runAddFeature(cwd, values.config, positionals[2], values.page, values.with)
       out(asJson ? json(result) : describeAdd(result))
       return 0
@@ -118,7 +128,10 @@ export async function main(
       const result = await runCheck(loaded, cwd, values['update-lock'] === true)
       if (asJson) out(json(result))
       else {
-        for (const e of result.types.errors) out(`${e.file}:${e.line}:${e.column}  ${e.code}  ${e.message}\n`)
+        for (const e of result.types.errors)
+          out(
+            `${e.file}:${e.line}:${e.column}  ${e.code}  ${e.message}\n${e.hint ? `  hozu: ${e.hint}\n` : ''}`,
+          )
         if (result.types.errors.length) out('\n')
         for (const d of result.validate.diagnostics) out(`${human(d)}\n\n`)
         const v = result.validate
@@ -126,7 +139,7 @@ export async function main(
           ? 'types skipped (npm install -D typescript)'
           : `types ${result.types.ok ? 'ok' : `${result.types.errors.length} errors`}`
         out(
-          `${result.ok ? '✔' : '✖'} ${types} · ${v.summary.errors} errors, ${v.summary.warnings} warnings · contracts ${Object.values(v.coverage).reduce((n, c) => n + c.covered, 0)}/${Object.values(v.coverage).reduce((n, c) => n + c.total, 0)} · lock ${v.lock}\n`,
+          `${result.ok ? '✔' : '✖'} ${types} · ${v.summary.errors} errors, ${v.summary.warnings} warnings · contracts ${Object.values(v.coverage).reduce((n, c) => n + c.covered, 0)}/${Object.values(v.coverage).reduce((n, c) => n + c.total, 0)} decisions · lock ${v.lock}\n`,
         )
       }
       return result.ok ? 0 : 1
@@ -157,7 +170,7 @@ export async function main(
       else {
         for (const d of result.diagnostics) out(`${human(d)}\n\n`)
         const coverage = Object.entries(result.coverage)
-          .map(([f, c]) => `${f} ${c.covered}/${c.total}`)
+          .map(([f, c]) => `${f} ${c.covered}/${c.total} decisions (${c.transitions} transitions)`)
           .join(', ')
         out(
           `${result.ok ? '✔' : '✖'} ${result.summary.errors} errors, ${result.summary.warnings} warnings · contracts cover ${coverage || 'n/a'} · styles ${result.styles} · lock ${result.lock} (ir ${result.hash.slice(0, 12)})\n`,

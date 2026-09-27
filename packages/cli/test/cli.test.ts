@@ -53,7 +53,7 @@ describe('A5 CLI contract', () => {
     expect(out).toMatchObject({
       ok: true,
       summary: { errors: 0, warnings: 0 },
-      coverage: { cart: { covered: 15, total: 15 } },
+      coverage: { cart: expect.objectContaining({ transitions: 15 }) },
       lock: 'checked',
       diagnostics: [],
     })

@@ -27,9 +27,8 @@ Names follow `hozu add feature items`: `Item`, `NewItem`, `Add`, `addItem`, `ite
   - inside the form add
     `ui.select({ name: 'priority', 'aria-label': 'Priority', class: 'rounded border px-2' }, ['low', 'normal', 'high'].map((p) => ui.option({ value: p, selected: p === 'normal' }, [p])))`;
   - in the item: `ui.span({ class: 'text-xs' }, [item.priority])`.
-- **Contracts:**
-  - add `priority: 'normal'` to every `Add` payload, to the add effect's input, and to the `done` result;
-  - `rejectsInvalid`'s `data.fields` and `changes.fields` get `priority: null`.
+- **Contracts:** if the app has contracts that send `Add` or return an item, add `priority` to their payloads,
+  inputs and results. These transitions only copy values, so they need no new contract.
 - **server:** store `priority` (seed items included) and return it.
 
 ### An action button that works on many items (e.g. "Clear done")
@@ -38,15 +37,11 @@ Names follow `hozu add feature items`: `Item`, `NewItem`, `Add`, `addItem`, `ite
   - `export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()] })`;
   - in `idle`: `on(ClearDone, { target: 'clearing', assign: () => [op.set(ctx.error, null)] })`;
   - a state
-    `clearing: { ignore: [...], invoke: invoke(clearDone, { input: {}, done: [{ target: 'idle' }], failed: { Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }] } }) }`;
-  - add `ClearDone` to every busy state's `ignore`, and give `clearing` the same list.
+    `clearing: { invoke: invoke(clearDone, { input: {}, done: 'idle', failed: { Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] } } }) }`
+    (busy states drop events they do not handle, so no `ignore`).
 - **views:** the control
   `ui.form({ on: { submit: ui.send(ClearDone, {}) } }, [ui.button({ type: 'submit', class: 'text-sm underline' }, ['Clear done'])])`.
-- **Contracts:**
-  - `given: { state: 'idle' }`, when `[{ send: ClearDone, payload: {} }, { done: clearDone, result: { removed: 1 } }]`,
-    expect `{ state: 'idle', effects: [{ effect: clearDone, input: {} }] }`;
-  - a second one for `failed … 'Unexpected'` from `clearing`;
-  - add `ClearDone`, `clearDone` and both contracts to `declarations`.
+- Add `ClearDone` and `clearDone` to `declarations`. The new transitions only copy values, so they need no contract.
 - **server:**
   `implement(clearDone, () => { const before = items.length; items.splice(0, items.length, ...items.filter((i) => !i.done)); return { removed: before - items.length } })`.
 - **Try it:** `hozu post / --button 'Clear done' --next /`.
@@ -66,20 +61,22 @@ Run a fresh scaffold into a scratch app with `--with detail`, and copy the parts
 ### Other changes
 | Change | Touch |
 |---|---|
-| New UI-only state (a tab) | model: the context field and its initial value, an event, an `on` that `op.set`s it (add the event to every busy state's `ignore`) → views: the control, a contract, the event in `declarations`. |
+| New UI-only state (a tab) | model: the context field and its initial value, an event, an `on` that `op.set`s it → views: the control, the event in `declarations` (no contract: it only copies a value). |
 | Filter / sort / page in the URL | the route's `search` schema (with a default) → links with `ui.link(route, params, { key: value })` → read `search.key` in the view. No machine change. |
 | New page | `routes.ts` → a view with `route`, in `declarations` → `ui.page(...)` in `hozu.config.ts` (`head`, and `entries` when the route has params). |
 
 Whenever the machine changes:
-- Add one contract per new transition; HZ016 prints each missing one ready to paste.
-- Every busy state `ignore`s every event its visible controls can send; HZ005 prints the missing entries.
+- A transition that decides something (a guard, `navigate`, or a `fn` in its values) needs a contract; HZ016
+  prints each missing one ready to paste. Transitions that only copy values are reviewed through the lock.
+- States with `invoke` drop unhandled events by themselves. Other states must handle or `ignore` every event their
+  visible controls send; HZ005 prints the missing entries.
 
 ## 3. Check (once, after all edits)
 ```
 pnpm exec hozu check
 ```
-Fix what it reports. When the behaviour change is intended and everything is clean, run
-`pnpm exec hozu check --update-lock`. HZ018 asks for this.
+Fix what it reports. When the behaviour change is intended, run `pnpm exec hozu check --update-lock`: HZ018 shows
+each changed transition as `was: … now: …`, and accepting it updates the lock.
 
 ## 4. Verify (once, no server needed)
 - **Pages:** `pnpm exec hozu get / /items/i1` prints the status, title, alerts and visible text.

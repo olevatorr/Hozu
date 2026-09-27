@@ -5,93 +5,108 @@
         "behavior": "594a2c5f650e3ba7",
         "contracts": {
           "addsItem": "fb34f47c1478f1a6"
-        }
+        },
+        "summary": "adding --done addItem--> idle"
       },
       "adding/invoke/failed/OutOfStock/0": {
         "behavior": "bd51ed198fb52519",
         "contracts": {
-          "rejectsOutOfStock": "3509a27205093577"
-        }
+          "rejectsOutOfStock": "3e6c2eeb1a8fc68a"
+        },
+        "summary": "adding --failed addItem.OutOfStock--> error · error := \"Out of stock\""
       },
       "adding/invoke/failed/Unexpected/0": {
         "behavior": "2f42fbd67756abc4",
         "contracts": {
-          "addFailsUnexpectedly": "f5c15430a6eae4ba"
-        }
+          "addFailsUnexpectedly": "353eef76f0afab59"
+        },
+        "summary": "adding --failed addItem.Unexpected--> error · error := error.message"
       },
       "checkingOut/invoke/done/0": {
         "behavior": "9e4bf4e776def1b5",
         "contracts": {
           "placesOrder": "60a087c9e1d2211d"
-        }
+        },
+        "summary": "checkingOut --done checkout--> placed · orderId := result.orderId · navigate link(orderPlaced, null)"
       },
       "checkingOut/invoke/failed/PaymentDeclined/0": {
         "behavior": "562a1e0982514be4",
         "contracts": {
           "paymentDeclined": "35a2b1cca87dda36"
-        }
+        },
+        "summary": "checkingOut --failed checkout.PaymentDeclined--> error · error := error.reason"
       },
       "checkingOut/invoke/failed/Unexpected/0": {
         "behavior": "e00715b2a7ec5868",
         "contracts": {
           "checkoutFails": "06e3c42dbbff1f01"
-        }
+        },
+        "summary": "checkingOut --failed checkout.Unexpected--> error · error := error.message"
       },
       "error/after/0": {
         "behavior": "15af36cebbfcd151",
         "contracts": {
           "errorAutoDismisses": "27acd7b98522de18"
-        }
+        },
+        "summary": "error --after 5000ms--> idle · error := null"
       },
       "error/on/cart.Dismiss/0": {
         "behavior": "9ef5ac34a1d98e7e",
         "contracts": {
           "dismissesError": "1e635a95db49d33b"
-        }
+        },
+        "summary": "error --Dismiss--> idle · error := null"
       },
       "idle/on/cart.AddItem/0": {
         "behavior": "bcf8b553faaf3b81",
         "contracts": {
-          "addFailsUnexpectedly": "f5c15430a6eae4ba",
+          "addFailsUnexpectedly": "353eef76f0afab59",
           "addsItem": "fb34f47c1478f1a6",
-          "rejectsOutOfStock": "3509a27205093577"
-        }
+          "rejectsOutOfStock": "3e6c2eeb1a8fc68a"
+        },
+        "summary": "idle --AddItem--> adding · if event.qty lte 10 · pending := event · invoke addItem(ctx.pending)"
       },
       "idle/on/cart.AddItem/1": {
         "behavior": "0af6847198f544aa",
         "contracts": {
           "rejectsTooMany": "e9c4b870bf7a517f"
-        }
+        },
+        "summary": "idle --AddItem--> error · error := \"At most 10 per item\""
       },
       "idle/on/cart.Checkout/0": {
         "behavior": "ae752587bca4e86f",
         "contracts": {
           "placesOrder": "60a087c9e1d2211d"
-        }
+        },
+        "summary": "idle --Checkout--> checkingOut · invoke checkout({})"
       },
       "idle/on/cart.RemoveItem/0": {
         "behavior": "9448898f42796ffa",
         "contracts": {
           "removesItem": "097e12321afb306e"
-        }
+        },
+        "summary": "idle --RemoveItem--> removing · pending.sku := event.sku · invoke removeItem({ sku: ctx.pending.sku })"
       },
       "idle/on/cart.SetQuantity/0": {
         "behavior": "0f714296a4146742",
         "contracts": {
           "setsQuantity": "9db490ef6b09c941"
-        }
+        },
+        "summary": "idle --SetQuantity--> idle · if (event.qty gte 1 and event.qty lte 10) · pending.qty := event.qty"
       },
       "removing/invoke/done/0": {
         "behavior": "e54a61bbf262f9f9",
         "contracts": {
           "removesItem": "097e12321afb306e"
-        }
+        },
+        "summary": "removing --done removeItem--> idle"
       },
       "removing/invoke/failed/Unexpected/0": {
         "behavior": "9ff271b4277654e6",
         "contracts": {
           "removeFails": "734f2a95087604a7"
-        }
+        },
+        "summary": "removing --failed removeItem.Unexpected--> error · error := error.message"
       }
     }
   },

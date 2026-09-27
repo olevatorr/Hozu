@@ -1,6 +1,6 @@
 import { resolvers } from '@hozu/data'
 import { me, signIn, signOut } from './features/account/model.ts'
-import { addNote, listNotes, removeNote, togglePin } from './features/notes/model.ts'
+import { addNote, listNotes, notesApi, removeNote, togglePin } from './features/notes/model.ts'
 import project from './hozu.config.ts'
 
 interface Note {
@@ -37,6 +37,10 @@ export function createResolvers() {
       setSession(null)
       return {}
     }),
+    implement(notesApi, (_, { session }) => ({
+      signedIn: session !== null,
+      notes: session ? ordered(notesOf(session.user)).map((n) => ({ ...n })) : [],
+    })),
     implement(listNotes, (_, { session, fail }) =>
       session ? ordered(notesOf(session.user)).map((n) => ({ ...n })) : fail('Unauthorized', {}),
     ),

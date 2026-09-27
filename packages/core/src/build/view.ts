@@ -298,7 +298,26 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
     return { id, kind: 'text', value: { literal: value } }
   if (exprOf(value))
     return { id, kind: 'text', value: scope.attempt(p, () => scope.value(value, p), { literal: null }) }
-  scope.report('HZ014', p, 'Invalid view child', 'Children must be ui nodes, strings, numbers or references.')
+  const got =
+    value === undefined
+      ? 'undefined'
+      : value === null
+        ? 'null'
+        : typeof value === 'function'
+          ? 'a function'
+          : typeof value === 'object'
+            ? 'an object'
+            : typeof value
+  scope.report(
+    'HZ014',
+    p,
+    `Invalid view child: got ${got}`,
+    value === undefined
+      ? 'A required field was left out, or a callback returned nothing. Children must be ui nodes, strings, numbers or references.'
+      : typeof value === 'function'
+        ? 'A function was passed instead of calling it, or a callback where a node belongs. Children must be ui nodes, strings, numbers or references.'
+        : 'Children must be ui nodes, strings, numbers or references; use ui.if for conditional content.',
+  )
   return { id, kind: 'text', value: { literal: '' } }
 }
 

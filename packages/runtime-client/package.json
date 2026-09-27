@@ -1,6 +1,6 @@
 {
   "name": "@hozu/runtime-client",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Hozu client runtime: fine-grained DOM islands, no virtual DOM, about 7.5 KB gzipped",
   "keywords": [
     "hozu",

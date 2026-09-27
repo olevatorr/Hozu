@@ -1,4 +1,4 @@
-import { event, fn, invoke, machine, mutation, on, op, query, tag } from '@hozu/core'
+import { endpoint, event, fn, invoke, machine, mutation, on, op, query, tag } from '@hozu/core'
 import { z } from 'zod'
 
 export const Note = z.object({ id: z.string(), text: z.string(), pinned: z.boolean() })
@@ -15,6 +15,13 @@ export const Pin = event({ payload: NoteKey })
 export const Search = event({ payload: z.object({ query: z.string() }) })
 
 export const notesTag = tag({ param: null })
+
+export const notesApi = endpoint({
+  method: 'GET',
+  path: '/api/notes',
+  input: z.object({}),
+  output: z.object({ signedIn: z.boolean(), notes: z.array(Note) }),
+})
 
 export const listNotes = query({
   input: z.object({}),
@@ -69,8 +76,6 @@ export const total = fn({
 export const DUPLICATE = 'You already have this note'
 export const GONE = 'This note no longer exists'
 
-const busy = [Draft, Add, Remove, Pin, Search]
-
 export const notesMachine = machine({
   context: z.object({
     draft: z.string(),
@@ -102,7 +107,6 @@ export const notesMachine = machine({
       ],
     },
     adding: {
-      ignore: busy,
       invoke: invoke(addNote, {
         input: { text: ctx.draft },
         done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')] }],
@@ -114,7 +118,6 @@ export const notesMachine = machine({
       }),
     },
     removing: {
-      ignore: busy,
       invoke: invoke(removeNote, {
         input: { id: ctx.target },
         done: [{ target: 'idle' }],
@@ -125,7 +128,6 @@ export const notesMachine = machine({
       }),
     },
     pinning: {
-      ignore: busy,
       invoke: invoke(togglePin, {
         input: { id: ctx.target },
         done: [{ target: 'idle' }],

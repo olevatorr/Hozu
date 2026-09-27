@@ -14,7 +14,7 @@ Start with `npx hozu check`. Resolve TypeScript errors first, then address each 
 
 | Code | What to look for | How to respond |
 | --- | --- | --- |
-| HZ005 | A visible control sends an event the busy state cannot accept. | Declare the event in that state's `ignore` list when dropping it is intended. |
+| HZ005 | A visible control sends an event a state (without `invoke`) does not handle. | Handle it, or list it in that state's `ignore` when dropping it is intended. |
 | HZ016 | A machine transition lacks a contract. | Add a given/when/expect example for the intended transition. |
 | HZ018 | Behaviour changed without a corresponding contract change. | Decide the intended behaviour, update the contract, then accept a clean lock. |
 | HZ024 | A route's parameter schema disagrees with its pattern. | Match strings, nullable strings or arrays to the segment modifiers. |

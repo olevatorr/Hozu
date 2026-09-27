@@ -154,6 +154,36 @@
             "additionalProperties": false
           }
         },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "method",
+              "path",
+              "at"
+            ],
+            "additionalProperties": false
+          }
+        },
         "events": {
           "type": "array",
           "items": {
@@ -254,6 +284,7 @@
         "id",
         "queries",
         "mutations",
+        "endpoints",
         "events",
         "fns",
         "context",

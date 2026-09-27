@@ -30,7 +30,6 @@ const edit = (file: string, pairs: [string, string][]) => {
 const m = 'features/items/model.ts'
 const v = 'features/items/views.ts'
 const s = 'features/items/server.ts'
-const ignoreAll = 'ignore: [Draft, Add, Toggle, ClearDone],'
 
 describe('changing.md recipes (ADR 0028)', () => {
   it('an enum field chosen in the add form, and an action button, applied as written, check clean', async () => {
@@ -85,12 +84,10 @@ describe('changing.md recipes (ADR 0028)', () => {
         "        on(ClearDone, { target: 'clearing', assign: () => [op.set(ctx.error, null)] }),\n        on(Toggle, {",
       ],
     ])
-    const model = readFileSync(join(dir, m), 'utf8')
-      .replaceAll('ignore: [Draft, Add, Toggle],', ignoreAll)
-      .replace(
-        '  }),\n})\n',
-        `    clearing: {\n      ${ignoreAll}\n      invoke: invoke(clearDone, { input: {}, done: [{ target: 'idle' }], failed: { Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }] } }),\n    },\n  }),\n})\n`,
-      )
+    const model = readFileSync(join(dir, m), 'utf8').replace(
+      '  }),\n})\n',
+      `    clearing: { invoke: invoke(clearDone, { input: {}, done: 'idle', failed: { Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] } } }) },\n  }),\n})\n`,
+    )
     writeFileSync(join(dir, m), model)
     edit(v, [
       [
@@ -105,43 +102,12 @@ describe('changing.md recipes (ADR 0028)', () => {
         "ui.span({ class: 'text-xs text-slate-500' }, [ui.if(op.eq(item.done, true), ['done'], ['open'])]),",
         "ui.span({ class: 'text-xs text-slate-500' }, [ui.if(op.eq(item.done, true), ['done'], ['open'])]),\n                    ui.span({ class: 'text-xs' }, [item.priority]),",
       ],
-      [
-        "{ send: Add, payload: { title: 'Ship' } },",
-        "{ send: Add, payload: { title: 'Ship', priority: 'normal' } },",
-      ],
-      [
-        "{ done: addItem, result: { id: 'x1', title: 'Ship', done: false } },",
-        "{ done: addItem, result: { id: 'x1', title: 'Ship', done: false, priority: 'normal' } },",
-      ],
-      [
-        "effects: [{ effect: addItem, input: { title: 'Ship' } }]",
-        "effects: [{ effect: addItem, input: { title: 'Ship', priority: 'normal' } }]",
-      ],
-      [
-        "fields: { title: 'Use at least 2 characters' } },\n    },",
-        "fields: { title: 'Use at least 2 characters', priority: null } },\n    },",
-      ],
-      [
-        "changes: { fields: { title: 'Use at least 2 characters' } }",
-        "changes: { fields: { title: 'Use at least 2 characters', priority: null } }",
-      ],
-      [
-        "result: { id: 'x1', title: 'Ship', done: true } }",
-        "result: { id: 'x1', title: 'Ship', done: true, priority: 'normal' } }",
-      ],
       ['  addItem,', '  addItem,\n  ClearDone,\n  clearDone,'],
       [
         "      when(['adding']",
         "      ui.form({ on: { submit: ui.send(ClearDone, {}) } }, [ui.button({ type: 'submit', class: 'text-sm underline' }, ['Clear done'])]),\n      when(['adding']",
       ],
-      [
-        'export const items = feature({',
-        "export const clears = contract(itemsMachine, {\n  given: { state: 'idle' },\n  when: [{ send: ClearDone, payload: {} }, { done: clearDone, result: { removed: 1 } }],\n  expect: { state: 'idle', effects: [{ effect: clearDone, input: {} }] },\n})\n\nexport const clearFails = contract(itemsMachine, {\n  given: { state: 'clearing' },\n  when: [{ failed: clearDone, error: 'Unexpected', data: { message: 'offline' } }],\n  expect: { state: 'idle', changes: { error: 'offline' } },\n})\n\nexport const items = feature({",
-      ],
-      [
-        '  declarations: {\n',
-        '  declarations: {\n    ClearDone,\n    clearDone,\n    clears,\n    clearFails,\n',
-      ],
+      ['  declarations: {\n', '  declarations: {\n    ClearDone,\n    clearDone,\n'],
       [
         "ui.p({}, ['Status: '",
         "ui.p({}, ['Priority: ', item.priority]),\n              ui.p({}, ['Status: '",

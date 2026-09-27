@@ -203,6 +203,12 @@
             "$ref": "#/definitions/WidgetIR"
           }
         },
+        "endpoints": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/EndpointIR"
+          }
+        },
         "contracts": {
           "type": "object",
           "additionalProperties": {
@@ -234,6 +240,7 @@
         "machine",
         "views",
         "widgets",
+        "endpoints",
         "contracts",
         "messages"
       ],
@@ -1456,6 +1463,37 @@
         "load",
         "wraps",
         "sourceHash"
+      ],
+      "additionalProperties": false
+    },
+    "EndpointIR": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "input": {
+          "type": "string"
+        },
+        "output": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "method",
+        "path",
+        "input",
+        "output"
       ],
       "additionalProperties": false
     },

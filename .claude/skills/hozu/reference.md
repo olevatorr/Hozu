@@ -86,6 +86,18 @@ Every mutation also has the framework error `Invalid` = `{ message, fields }`: o
 - `createServer({ session: (request) => value })`, or `sessionCookie({ name, secret })` from
   `@hozu/runtime-server` for a signed cookie. Mutations can call `setSession(value)`.
 
+## Endpoints (webhooks, JSON APIs, auth callbacks)
+```ts
+export const orderHook = endpoint({ method: 'POST', path: '/api/hooks/order',
+  input: z.object({ id: z.string() }), output: z.object({ received: z.string() }) })  // in declarations
+implement(orderHook, ({ id }, { request, session, setSession, env }) => ({ received: id }))  // in resolvers
+```
+- GET input comes from the query string, POST input from a JSON or form body; invalid input answers 400
+  `{ message, fields }`. The output is validated and sent as JSON.
+- `output: 'response'` returns a web `Response` yourself (redirects, headers); `setSession(value)` adds the cookie.
+- Paths are static and outside pages, redirects and `/_hozu/` (HZ046). Cross-site browser POSTs are rejected;
+  server-to-server calls (no `Origin`) are accepted.
+
 ## Languages (i18n)
 - `site: { lang: 'en', locales: ['en', 'zh-TW'], … }`: every URL gets a locale prefix (`/en/posts/a`). Routes and
   `ui.link` stay locale-free; links keep the current locale. `/` and locale-less URLs redirect by

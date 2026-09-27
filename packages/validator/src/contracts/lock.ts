@@ -1,9 +1,11 @@
 import { type FeatureIR, hashJson, type Json, type ProjectIR, type ValueExpr } from '@hozu/core/ir'
 import { resolveRef } from '../resolve.ts'
 import { guardRefs, valueRefs } from '../sites.ts'
+import { summaryOf } from './mechanical.ts'
 
 export interface LockEntry {
   behavior: string
+  summary: string
   contracts: Record<string, string>
 }
 
@@ -56,6 +58,7 @@ export function lockOf(ir: ProjectIR, coverage: Map<string, Coverage>): Lockfile
     for (const [id, contracts] of [...cov].sort(([a], [b]) => a.localeCompare(b)))
       entries[id] = {
         behavior: behaviorOf(ir, feature, id),
+        summary: summaryOf(feature, id),
         contracts: Object.fromEntries(
           [...contracts]
             .sort()
@@ -71,6 +74,8 @@ export interface Drift {
   feature: string
   id: string
   contracts: string[]
+  before: string | null
+  after: string
 }
 
 export function drift(previous: Lockfile, next: Lockfile): Drift[] {
@@ -80,7 +85,14 @@ export function drift(previous: Lockfile, next: Lockfile): Drift[] {
       const before = previous.features[fid]?.[id]
       if (!before || before.behavior === entry.behavior) continue
       const changed = Object.entries(entry.contracts).some(([c, hash]) => before.contracts[c] !== hash)
-      if (!changed) out.push({ feature: fid, id, contracts: Object.keys(entry.contracts) })
+      if (!changed)
+        out.push({
+          feature: fid,
+          id,
+          contracts: Object.keys(entry.contracts),
+          before: before.summary ?? null,
+          after: entry.summary,
+        })
     }
   return out
 }

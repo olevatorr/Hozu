@@ -20,9 +20,9 @@ npm create hozu@latest my-app
   a compiler derives how each part renders, and a runtime serves it.
 - **Every diagnostic is structured:** JSON with a location, a cause and a suggested fix, which an agent can apply
   directly.
-- **Behaviour is specified.** Each feature has one state machine, and every transition is covered by a contract
-  (given / when / expect). A behaviour change without a contract change is an error, and a lock file catches
-  silent drift.
+- **Behaviour is specified.** Each feature has one state machine. Every transition that decides something (a guard,
+  a navigation, a computed value) is covered by a contract (given / when / expect); the lock file records every
+  transition in readable form, so no behaviour change goes unreviewed.
 - **Rendering is derived, never chosen.** Queries declare `scope` and `freshness`; the compiler decides static, ISR,
   SWR, streamed or client rendering per node. User data can never reach a cacheable region. Only views bound to a
   machine ship JavaScript.
@@ -78,11 +78,10 @@ export const todos = machine({
   states: ({ ctx }) => ({
     idle: { on: [on(Add, { target: 'adding', assign: (e) => [op.set(ctx.draft, e.title)] })] },
     adding: {
-      ignore: [Add],
       invoke: invoke(addTodo, {
         input: { title: ctx.draft },
-        done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')] }],
-        failed: { Unexpected: [{ target: 'idle' }] },
+        done: { target: 'idle', assign: () => [op.set(ctx.draft, '')] },
+        failed: { Unexpected: 'idle' },
       }),
     },
   }),
@@ -99,18 +98,15 @@ export const Board = ui.view({
       ]),
       ui.query(listTodos, {}, {
         ready: (items) => ui.ul({}, [ui.each(items, 'id', (t) => ui.li({}, [t.title]))]),
-        pending: null,
         failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },
       }),
     ]),
 })
-
-export const adds = contract(todos, {
-  given: { state: 'idle' },
-  when: [{ send: Add, payload: { title: 'Ship' } }, { done: addTodo, result: { id: 't1', title: 'Ship' } }],
-  expect: { state: 'idle', effects: [{ effect: addTodo, input: { title: 'Ship' } }] },
-})
 ```
+- **A second Add while saving is dropped:** a state with `invoke` ignores the events it does not handle.
+- **No contract is needed here,** because every transition only copies values; `hozu.lock.json` lists them
+  (`idle --Add--> adding · draft := event.title · invoke addTodo({ title: ctx.draft })`), and a change shows up
+  as a diff to accept. A guard or a navigation would need a contract.
 - **The form works without JavaScript too:** the server runs the same machine for a native post.
 - **The list refreshes in place after the mutation,** because the mutation invalidates the query's tag.
 - **Only the parts bound to the machine or to that refresh ship JavaScript.** The rest of the page is plain HTML.

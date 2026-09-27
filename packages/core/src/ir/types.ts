@@ -87,8 +87,16 @@ export interface FeatureIR {
   machine: MachineIR | null
   views: Record<string, ViewIR>
   widgets: Record<string, WidgetIR>
+  endpoints: Record<string, EndpointIR>
   contracts: Record<string, ContractIR>
   messages: MessagesIR | null
+}
+
+export interface EndpointIR {
+  method: 'GET' | 'POST'
+  path: string
+  input: string
+  output: string | null
 }
 
 export interface WidgetIR {

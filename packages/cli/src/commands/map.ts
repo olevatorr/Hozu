@@ -76,6 +76,12 @@ export function runMap(loaded: Loaded, cwd: string): MapOutput {
         invalidates: q.invalidates.map((t) => local(t.tag)),
         at: at(`${base}/mutations/${name}`),
       })),
+      endpoints: Object.entries(f.endpoints ?? {}).map(([name, e]) => ({
+        name,
+        method: e.method,
+        path: e.path,
+        at: at(`${base}/endpoints/${name}`),
+      })),
       events: Object.entries(f.events).map(([name, e]) => ({
         name,
         fields: fieldsOf(f.schemas[e.payload]),
@@ -116,6 +122,7 @@ export function describeMap(out: MapOutput): string {
       lines.push(
         `  mutation ${q.name}${q.errors.length ? ` !${q.errors.join(' !')}` : ''}${q.invalidates.length ? ` ⟳${q.invalidates.join(' ')}` : ''}${where(q.at)}`,
       )
+    for (const e of f.endpoints) lines.push(`  endpoint ${e.name} ${e.method} ${e.path}${where(e.at)}`)
     if (f.events.length)
       lines.push(`  events ${f.events.map((e) => `${e.name}{${e.fields.join(',')}}`).join(' ')}`)
     if (f.fns.length) lines.push(`  fns ${f.fns.join(' ')}`)

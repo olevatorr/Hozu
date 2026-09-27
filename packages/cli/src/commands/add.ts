@@ -17,7 +17,7 @@ import {
   type With,
 } from './scaffold.ts'
 
-const addImport = (source: string, line: string): string | null => {
+export const addImport = (source: string, line: string): string | null => {
   const imports = [...source.matchAll(/^import[\s\S]*?from '[^']+'\n/gm)]
   const last = imports.at(-1)
   if (!last) return null

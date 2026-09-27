@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join as joinPath } from 'node:path'
 import { codes, type Diagnostic, hashJson, type Json, join, resolveSource } from '@hozu/core/ir'
-import { type Lockfile, verify } from '@hozu/validator'
+import { isMechanical, type Lockfile, truthinessDiagnostics, verify } from '@hozu/validator'
 import type { Coverage, ValidateOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
@@ -51,8 +51,23 @@ export async function runValidate(
   const lockPath = joinPath(dirname(loaded.path), 'hozu.lock.json')
   const previous = readLock(lockPath)
   const unknown = await unknownClasses(loaded.path, first)
-  const verified = verify(first.ir, { bindings: first.bindings, lock: previous, unknownClasses: unknown })
-  let diagnostics: Diagnostic[] = [...first.diagnostics, ...verified.diagnostics]
+  const verified = verify(first.ir, {
+    bindings: first.bindings,
+    lock: previous,
+    accept: updateLock,
+    unknownClasses: unknown,
+  })
+  const traced = loaded.build(true)
+  const files = Object.fromEntries(
+    [...new Set(Object.values(traced.sources).map((s) => s.file))]
+      .filter((f) => !f.endsWith('.client.ts') && existsSync(f))
+      .map((f) => [f, readFileSync(f, 'utf8')]),
+  )
+  let diagnostics: Diagnostic[] = [
+    ...first.diagnostics,
+    ...verified.diagnostics,
+    ...truthinessDiagnostics(files),
+  ]
   if (hash !== hashJson(second.ir)) {
     const pointer = firstDifference(first.ir as unknown as Json, second.ir as unknown as Json) ?? ''
     const featureId = pointer.startsWith('/features/') ? (pointer.split('/')[2] ?? null) : null
@@ -70,13 +85,11 @@ export async function runValidate(
       },
     })
   }
-  if (diagnostics.length) {
-    const traced = loaded.build(true)
-    diagnostics = diagnostics.map((d) => ({
-      ...d,
-      location: { ...d.location, source: resolveSource(traced.sources, d.location.pointer) },
-    }))
-  }
+  diagnostics = diagnostics.map((d) =>
+    d.location.source
+      ? d
+      : { ...d, location: { ...d.location, source: resolveSource(traced.sources, d.location.pointer) } },
+  )
   const clean = !diagnostics.some((d) => d.severity === 'error')
   let lock: ValidateOutput['lock'] = previous ? 'checked' : 'missing'
   if (updateLock) {
@@ -86,10 +99,11 @@ export async function runValidate(
   const coverage: Record<string, Coverage> = {}
   for (const [fid, entries] of Object.entries(verified.lock?.features ?? {})) {
     if (feature && fid !== feature) continue
-    const list = Object.values(entries)
+    const decisions = Object.entries(entries).filter(([id]) => !isMechanical(first.ir.features[fid]!, id))
     coverage[fid] = {
-      covered: list.filter((e) => Object.keys(e.contracts).length > 0).length,
-      total: list.length,
+      covered: decisions.filter(([, e]) => Object.keys(e.contracts).length > 0).length,
+      total: decisions.length,
+      transitions: Object.keys(entries).length,
     }
   }
   const selected = feature ? diagnostics.filter((d) => d.location.feature === feature) : diagnostics

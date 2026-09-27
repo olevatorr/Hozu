@@ -97,7 +97,6 @@ export const bookmarksMachine = machine({
       ],
     },
     adding: {
-      ignore: [Draft, Add, ToggleRead],
       invoke: invoke(addBookmark, {
         input: { title: ctx.draft, kind: ctx.kind },
         done: [
@@ -115,7 +114,6 @@ export const bookmarksMachine = machine({
       }),
     },
     toggling: {
-      ignore: [Draft, Add, ToggleRead],
       invoke: invoke(toggleRead, {
         input: { id: ctx.target },
         done: [{ target: 'idle' }],

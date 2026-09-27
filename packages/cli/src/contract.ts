@@ -9,6 +9,7 @@ export interface CliError {
 export interface Coverage {
   covered: number
   total: number
+  transitions: number
 }
 
 export interface ValidateOutput {
@@ -126,6 +127,7 @@ export interface TypeIssue {
   column: number
   code: string
   message: string
+  hint: string | null
 }
 
 export interface CheckOutput {
@@ -195,6 +197,7 @@ export interface MapFeature {
     at: string | null
   }[]
   mutations: { name: string; errors: string[]; invalidates: string[]; at: string | null }[]
+  endpoints: { name: string; method: string; path: string; at: string | null }[]
   events: { name: string; fields: string[]; at: string | null }[]
   fns: string[]
   context: string[]

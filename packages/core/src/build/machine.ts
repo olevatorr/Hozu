@@ -1,8 +1,15 @@
-import type { InvokeDef, MachineDef, OnDef, StateConfig, TransitionConfig } from '../builders/machine.ts'
+import type {
+  InvokeDef,
+  MachineDef,
+  OnDef,
+  Outcome,
+  StateConfig,
+  TransitionConfig,
+} from '../builders/machine.ts'
 import type { AssignOp, GuardExpr, InvokeIR, MachineIR, StateIR, TransitionIR } from '../ir/types.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
 import { assignOf, exprOf, RecorderError, refProxy } from '../model/expr.ts'
-import { type At, at, type FeatureScope, IDENTIFIER } from './scope.ts'
+import { type At, at, type FeatureScope, IDENTIFIER, resolveAt } from './scope.ts'
 
 const guard = (scope: FeatureScope, g: unknown, p: At): GuardExpr => scope.guard(g, p)
 
@@ -50,6 +57,15 @@ function transition(
   }
 }
 
+const outcomes = (o: Outcome<string, any> | undefined): readonly TransitionConfig<string, any>[] =>
+  o === undefined
+    ? []
+    : typeof o === 'string'
+      ? [{ target: o }]
+      : Array.isArray(o)
+        ? o
+        : [o as TransitionConfig<string, any>]
+
 function invoke(scope: FeatureScope, decl: unknown, p: At): InvokeIR | null {
   const info = infoOf(decl)
   if (info?.kind !== 'invoke') {
@@ -65,11 +81,13 @@ function invoke(scope: FeatureScope, decl: unknown, p: At): InvokeIR | null {
   const d = info.def as InvokeDef
   const failed: Record<string, TransitionIR[]> = {}
   for (const [name, list] of Object.entries(d.failed ?? {}))
-    failed[name] = list.map((t, i) => transition(scope, t, refProxy('error', 0), at(p, 'failed', name, i)))
+    failed[name] = outcomes(list).map((t, i) =>
+      transition(scope, t, refProxy('error', 0), at(p, 'failed', name, i)),
+    )
   return {
     effect: scope.ref(d.effect, ['query', 'mutation'], at(p, 'effect')),
     input: scope.attempt(at(p, 'input'), () => scope.value(d.input, at(p, 'input')), { literal: null }),
-    done: (d.done ?? []).map((t, i) => transition(scope, t, refProxy('result', 0), at(p, 'done', i))),
+    done: outcomes(d.done).map((t, i) => transition(scope, t, refProxy('result', 0), at(p, 'done', i))),
     failed,
   }
 }
@@ -96,7 +114,21 @@ function state(scope: FeatureScope, config: StateConfig<string>, p: At): StateIR
     list.push(transition(scope, d.transition, refProxy('event', 0), tp))
   }
   const after = [...(config.after ?? [])].sort((a, b) => a.ms - b.ms)
-  const ignore = (config.ignore ?? []).map((e, i) => scope.ref(e, ['event'], at(p, 'ignore', i)))
+  if (config.invoke && config.ignore?.length)
+    scope.report(
+      'HZ014',
+      at(p, 'ignore'),
+      'A state with invoke must not list ignore',
+      'A state with invoke drops every event it does not handle (ADR 0037).',
+      {
+        summary: 'Remove the ignore list',
+        snippet: null,
+        patch: [{ op: 'remove', path: resolveAt(at(p, 'ignore')) }],
+      },
+    )
+  const ignore = config.invoke
+    ? []
+    : (config.ignore ?? []).map((e, i) => scope.ref(e, ['event'], at(p, 'ignore', i)))
   return {
     final: config.final === true,
     on,

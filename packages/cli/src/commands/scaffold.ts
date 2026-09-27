@@ -41,7 +41,6 @@ const events = (w: With) =>
 export function model(n: Names, w: With): string {
   const keyed = w.detail || w.toggle || w.remove
   const busy = w.toggle || w.remove
-  const ignore = `ignore: [${events(w).join(', ')}],`
   const core = [
     'event',
     ...(w.filter ? ['fn'] : []),
@@ -54,13 +53,12 @@ export function model(n: Names, w: With): string {
     'tag',
   ]
   const actionState = (state: string, effect: string) => `    ${state}: {
-      ${ignore}
       invoke: invoke(${effect}, {
         input: { id: ctx.target },
-        done: [{ target: 'idle' }],
+        done: 'idle',
         failed: {
-          NotFound: [{ target: 'idle', assign: () => [op.set(ctx.error, NOT_FOUND)] }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          NotFound: { target: 'idle', assign: () => [op.set(ctx.error, NOT_FOUND)] },
+          Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] },
         },
       }),
     },`
@@ -173,14 +171,13 @@ export const isEmpty = fn({
     '      ],',
     '    },',
     '    adding: {',
-    `      ${ignore}`,
     `      invoke: invoke(${n.add}, {`,
     '        input: { title: ctx.draft },',
-    `        done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')] }],`,
+    `        done: { target: 'idle', assign: () => [op.set(ctx.draft, '')] },`,
     '        failed: {',
-    `          Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] }],`,
-    `          Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] }],`,
-    `          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],`,
+    `          Duplicate: { target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] },`,
+    `          Invalid: { target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] },`,
+    `          Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] },`,
     '        },',
     '      }),',
     '    },',
@@ -239,40 +236,8 @@ export function views(n: Names, w: With, listRoute: string | null): string {
               ],
             )`
     : list
-  const actionContracts = (event: string, state: string, effect: string, name: string, result: string) => `
-export const ${name}s = contract(${n.machine}, {
-  given: { state: 'idle' },
-  when: [
-    { send: ${event}, payload: { id: 'x1' } },
-    { done: ${effect}, result: ${result} },
-  ],
-  expect: { state: 'idle', changes: { target: 'x1' }, effects: [{ effect: ${effect}, input: { id: 'x1' } }] },
-})
-
-export const ${name}Missing = contract(${n.machine}, {
-  given: { state: '${state}' },
-  when: [{ failed: ${effect}, error: 'NotFound', data: { id: 'x1' } }],
-  expect: { state: 'idle', changes: { error: NOT_FOUND } },
-})
-
-export const ${name}Fails = contract(${n.machine}, {
-  given: { state: '${state}' },
-  when: [{ failed: ${effect}, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
-})`
-  const itemResult = `{ id: 'x1', title: 'Ship'${w.toggle ? ', done: true' : ''} }`
-  const contracts = [
-    'typesDraft',
-    'adds',
-    'rejectsDuplicate',
-    'rejectsInvalid',
-    'addFails',
-    ...(w.toggle ? ['toggles', 'toggleMissing', 'toggleFails'] : []),
-    ...(w.remove ? ['removes', 'removeMissing', 'removeFails'] : []),
-    ...(w.filter ? ['filters'] : []),
-  ]
   return `${lines(
-    `import { contract, feature, op, ui } from '@hozu/core'`,
+    `import { feature, op, ui } from '@hozu/core'`,
     w.detail && `import { ${[listRoute ?? 'home', n.detailRoute].sort().join(', ')} } from '../../routes.ts'`,
     `import {\n  ${modelNames.join(',\n  ')},\n} from './model.ts'`,
     '',
@@ -353,7 +318,6 @@ export const ${n.Detail} = ui.view({
                   : ''
               }
             ]),
-          pending: null,
           failed: {
             NotFound: () => ui.p({ role: 'alert' }, ['Not found']),
             Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']),
@@ -362,54 +326,6 @@ export const ${n.Detail} = ui.view({
       ),
       ui.a({ href: ui.link(${listRoute ?? 'home'}, null), class: 'underline' }, ['Back']),
     ]),
-})`,
-    `
-export const typesDraft = contract(${n.machine}, {
-  given: { state: 'idle' },
-  when: [{ send: Draft, payload: { text: 'Ship' } }],
-  expect: { state: 'idle', changes: { draft: 'Ship' } },
-})
-
-export const adds = contract(${n.machine}, {
-  given: { state: 'idle' },
-  when: [
-    { send: Add, payload: { title: 'Ship' } },
-    { done: ${n.add}, result: { id: 'x1', title: 'Ship'${w.toggle ? ', done: false' : ''} } },
-  ],
-  expect: { state: 'idle', effects: [{ effect: ${n.add}, input: { title: 'Ship' } }] },
-})
-
-export const rejectsDuplicate = contract(${n.machine}, {
-  given: { state: 'adding' },
-  when: [{ failed: ${n.add}, error: 'Duplicate', data: { title: 'Ship' } }],
-  expect: { state: 'idle', changes: { error: DUPLICATE } },
-})
-
-export const rejectsInvalid = contract(${n.machine}, {
-  given: { state: 'adding' },
-  when: [
-    {
-      failed: ${n.add},
-      error: 'Invalid',
-      data: { message: 'title: Use at least 2 characters', fields: { title: 'Use at least 2 characters' } },
-    },
-  ],
-  expect: { state: 'idle', changes: { fields: { title: 'Use at least 2 characters' } } },
-})
-
-export const addFails = contract(${n.machine}, {
-  given: { state: 'adding' },
-  when: [{ failed: ${n.add}, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
-})`,
-    w.toggle && actionContracts('Toggle', 'toggling', n.toggle, 'toggle', itemResult),
-    w.remove && actionContracts('Remove', 'removing', n.remove, 'remove', `{ id: 'x1' }`),
-    w.filter &&
-      `
-export const filters = contract(${n.machine}, {
-  given: { state: 'idle' },
-  when: [{ send: SetShow, payload: { show: 'done' } }],
-  expect: { state: 'idle', changes: { show: 'done' } },
 })`,
     `
 export const ${n.feature} = feature({
@@ -428,7 +344,6 @@ export const ${n.feature} = feature({
       n.machine,
       n.View,
       ...(w.detail ? [n.Detail] : []),
-      ...contracts,
     ].join(',\n    ')},
   },
 })`,
@@ -542,22 +457,20 @@ export const accountMachine = machine({
       ],
     },
     signingIn: {
-      ignore: [SignIn, SignOut],
       invoke: invoke(signIn, {
         input: { name: ctx.draft },
-        done: [{ target: 'idle', navigate: () => ui.link(${homeRoute}, null) }],
+        done: { target: 'idle', navigate: () => ui.link(${homeRoute}, null) },
         failed: {
-          Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          Invalid: { target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] },
+          Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] },
         },
       }),
     },
     signingOut: {
-      ignore: [SignIn, SignOut],
       invoke: invoke(signOut, {
         input: {},
-        done: [{ target: 'idle', navigate: () => ui.link(login, null) }],
-        failed: { Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }] },
+        done: { target: 'idle', navigate: () => ui.link(login, null) },
+        failed: { Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] } },
       }),
     },
   }),
@@ -605,7 +518,6 @@ export const AccountBar = ui.view({
         {},
         {
           ready: (user) => ui.p({}, ['Signed in as ', user.name]),
-          pending: null,
           failed: { Unauthorized: () => ui.p({}, ['Signed out']), Unexpected: () => ui.p({}, ['']) },
         },
       ),
@@ -628,24 +540,6 @@ export const signsIn = contract(accountMachine, {
   },
 })
 
-export const rejectsName = contract(accountMachine, {
-  given: { state: 'signingIn' },
-  when: [
-    {
-      failed: signIn,
-      error: 'Invalid',
-      data: { message: 'name: Use 2–20 letters', fields: { name: 'Use 2–20 letters' } },
-    },
-  ],
-  expect: { state: 'idle', changes: { fields: { name: 'Use 2–20 letters' } } },
-})
-
-export const signInFails = contract(accountMachine, {
-  given: { state: 'signingIn' },
-  when: [{ failed: signIn, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
-})
-
 export const signsOut = contract(accountMachine, {
   given: { state: 'idle' },
   when: [
@@ -653,12 +547,6 @@ export const signsOut = contract(accountMachine, {
     { done: signOut, result: {} },
   ],
   expect: { state: 'idle', effects: [{ effect: signOut, input: {} }, { navigate: '/login' }] },
-})
-
-export const signOutFails = contract(accountMachine, {
-  given: { state: 'signingOut' },
-  when: [{ failed: signOut, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
 })
 
 export const account = feature({
@@ -675,10 +563,7 @@ export const account = feature({
     Login,
     AccountBar,
     signsIn,
-    rejectsName,
-    signInFails,
     signsOut,
-    signOutFails,
   },
 })
 `

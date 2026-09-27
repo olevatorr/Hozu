@@ -5,7 +5,8 @@
         "behavior": "5be54dc11631b6a3",
         "contracts": {
           "loadsNextPage": "c5ddf967f1067bac"
-        }
+        },
+        "summary": "idle --More--> idle · if (ctx.last neq event.cursor and event.cursor neq null) · cursors append event.cursor, last := event.cursor"
       }
     }
   },

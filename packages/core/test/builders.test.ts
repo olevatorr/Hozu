@@ -246,3 +246,59 @@ describe('builder diagnostics', () => {
     expect(second!.assign[0]!.value).toEqual({ literal: { a: 1, b: 2 } })
   })
 })
+
+describe('busy states by rule (ADR 0037)', () => {
+  const Go = event({ payload: Payload })
+  const Tick = event({ payload: Payload })
+  const save = mutation({ input: Payload, output: Payload, errors: {}, invalidates: () => [] })
+  const build = (states: (ctx: any) => any) => {
+    const m = machine({
+      context: Context,
+      initialContext: { n: 0, label: '' },
+      initial: 'idle',
+      states: ({ ctx }) => states(ctx),
+    })
+    return buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [feature({ id: 'f', declarations: { Go, Tick, save, m }, ...base })],
+      }),
+    )
+  }
+
+  it('a state with invoke drops the events it does not handle, and done / failed accept a state name', () => {
+    const b = build((ctx) => ({
+      idle: { on: [on(Go, { target: 'saving' }), on(Tick, { target: 'idle' })] },
+      saving: {
+        on: [on(Tick, { target: 'saving', assign: (e) => [op.set(ctx.n, e.n)] })],
+        invoke: invoke(save, {
+          input: { n: ctx.n },
+          done: 'idle',
+          failed: { Unexpected: { target: 'idle' } },
+        }),
+      },
+    }))
+    expect(b.diagnostics).toEqual([])
+    const saving = b.ir.features.f!.machine!.states.saving!
+    expect(saving.ignore).toEqual(['f.Go'])
+    expect(saving.invoke!.done).toEqual([{ target: 'idle', guard: null, assign: [], navigate: null }])
+    expect(saving.invoke!.failed.Unexpected).toEqual([
+      { target: 'idle', guard: null, assign: [], navigate: null },
+    ])
+  })
+
+  it('HZ014 — ignore listed in a state with invoke, with a patch that removes it', () => {
+    const b = build((ctx) => ({
+      idle: { on: [on(Go, { target: 'saving' })] },
+      saving: {
+        ignore: [Go],
+        invoke: invoke(save, { input: { n: ctx.n }, done: 'idle', failed: { Unexpected: 'idle' } }),
+      },
+    }))
+    const d = b.diagnostics.find((x) => x.code === 'HZ014')!
+    expect(d.message).toBe('A state with invoke must not list ignore')
+    expect(d.fix?.patch).toEqual([{ op: 'remove', path: '/features/f/machine/states/saving/ignore' }])
+  })
+})

@@ -28,7 +28,6 @@ export const tasksMachine = machine({
       ],
     },
     adding: {
-      ignore: [SetShow, Draft, Add, Toggle, ClearDone],
       invoke: invoke(addTask, {
         input: { title: ctx.draft, priority: ctx.priority },
         done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')] }],
@@ -40,7 +39,6 @@ export const tasksMachine = machine({
       }),
     },
     toggling: {
-      ignore: [SetShow, Draft, Add, Toggle, ClearDone],
       invoke: invoke(toggleTask, {
         input: { id: ctx.target },
         done: [{ target: 'idle' }],
@@ -51,7 +49,6 @@ export const tasksMachine = machine({
       }),
     },
     clearing: {
-      ignore: [SetShow, Draft, Add, Toggle, ClearDone],
       invoke: invoke(clearDone, {
         input: {},
         done: [{ target: 'idle' }],

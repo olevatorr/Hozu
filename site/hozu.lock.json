@@ -5,259 +5,301 @@
         "behavior": "7b27dc0d081887a1",
         "contracts": {
           "blockedInvalid": "341343e56c96bda7"
-        }
+        },
+        "summary": "blocked --Run--> brokenSource · if ctx.missing eq true"
       },
       "blocked/on/lab.Run/1": {
         "behavior": "762bb8781cbd20d9",
         "contracts": {
           "blockedValid": "e26d4b2f3cd6d7ec"
-        }
+        },
+        "summary": "blocked --Run--> source · if ctx.missing eq false"
       },
       "blocked/on/lab.SetBinding/0": {
         "behavior": "c033cdde5e0f389b",
         "contracts": {
           "blockedBinding": "3d12e6f02a83d0c9"
-        }
+        },
+        "summary": "blocked --SetBinding--> blocked · binding := event.value"
       },
       "blocked/on/lab.SetContract/0": {
         "behavior": "752ba20b20a40ee3",
         "contracts": {
           "blockedContract": "bd5f0c129aa7bb10",
           "repairAndRun": "20b2b223d4bc8224"
-        }
+        },
+        "summary": "blocked --SetContract--> idle · missing := event.missing"
       },
       "blocked/on/lab.SetFreshness/0": {
         "behavior": "f8d0b96f277548e6",
         "contracts": {
           "blockedFreshness": "49980abe6e656063"
-        }
+        },
+        "summary": "blocked --SetFreshness--> blocked · freshness := event.value"
       },
       "blocked/on/lab.SetScope/0": {
         "behavior": "758e5e499c0321f4",
         "contracts": {
           "blockedScope": "78140634e62727a8"
-        }
+        },
+        "summary": "blocked --SetScope--> blocked · scope := event.value"
       },
       "brokenIr/after/0": {
         "behavior": "4245380923c2348d",
         "contracts": {
           "brokenIrTimer": "0f5f424739d05462"
-        }
+        },
+        "summary": "brokenIr --after 700ms--> blocked"
       },
       "brokenIr/on/lab.SetBinding/0": {
         "behavior": "89bf492a9b3240a5",
         "contracts": {
           "brokenIrBinding": "ebbccb599d6d7611"
-        }
+        },
+        "summary": "brokenIr --SetBinding--> brokenIr · binding := event.value"
       },
       "brokenIr/on/lab.SetFreshness/0": {
         "behavior": "15e6347b535a778b",
         "contracts": {
           "brokenIrFreshness": "4d0d2ef4e1da0d42"
-        }
+        },
+        "summary": "brokenIr --SetFreshness--> brokenIr · freshness := event.value"
       },
       "brokenIr/on/lab.SetScope/0": {
         "behavior": "44a484d656bcb751",
         "contracts": {
           "brokenIrScope": "b27723558552f538"
-        }
+        },
+        "summary": "brokenIr --SetScope--> brokenIr · scope := event.value"
       },
       "brokenSource/after/0": {
         "behavior": "7592b0bbe562f997",
         "contracts": {
           "brokenSourceTimer": "22c80847dbed3060"
-        }
+        },
+        "summary": "brokenSource --after 700ms--> brokenIr"
       },
       "brokenSource/on/lab.SetBinding/0": {
         "behavior": "c151f25bace993a7",
         "contracts": {
           "brokenSourceBinding": "6baac11ab08b6620"
-        }
+        },
+        "summary": "brokenSource --SetBinding--> brokenSource · binding := event.value"
       },
       "brokenSource/on/lab.SetFreshness/0": {
         "behavior": "7048c517a7a67c6a",
         "contracts": {
           "brokenSourceFreshness": "a94fa22adf0de094"
-        }
+        },
+        "summary": "brokenSource --SetFreshness--> brokenSource · freshness := event.value"
       },
       "brokenSource/on/lab.SetScope/0": {
         "behavior": "268d1407e1a68ae2",
         "contracts": {
           "brokenSourceScope": "e6bbbf4e64fd9402"
-        }
+        },
+        "summary": "brokenSource --SetScope--> brokenSource · scope := event.value"
       },
       "compiled/after/0": {
         "behavior": "4ad4c091ad142622",
         "contracts": {
           "compiledTimer": "6ba6c2816814a928",
           "repairAndRun": "20b2b223d4bc8224"
-        }
+        },
+        "summary": "compiled --after 700ms--> done"
       },
       "compiled/on/lab.SetBinding/0": {
         "behavior": "ad90b9379318f7f0",
         "contracts": {
           "compiledBinding": "8f45ae4438e5140d"
-        }
+        },
+        "summary": "compiled --SetBinding--> compiled · binding := event.value"
       },
       "compiled/on/lab.SetFreshness/0": {
         "behavior": "514e9f7fead92857",
         "contracts": {
           "compiledFreshness": "6829b46a6ee68d81"
-        }
+        },
+        "summary": "compiled --SetFreshness--> compiled · freshness := event.value"
       },
       "compiled/on/lab.SetScope/0": {
         "behavior": "9ef3f4ddf1c1fe07",
         "contracts": {
           "compiledScope": "6ee3e9a70af5b20b"
-        }
+        },
+        "summary": "compiled --SetScope--> compiled · scope := event.value"
       },
       "done/on/lab.Run/0": {
         "behavior": "be95bf3ce42659bc",
         "contracts": {
           "doneInvalid": "f3461d63ed00bed1"
-        }
+        },
+        "summary": "done --Run--> brokenSource · if ctx.missing eq true"
       },
       "done/on/lab.Run/1": {
         "behavior": "a32588015183beb7",
         "contracts": {
           "doneValid": "3458f7b102391a78"
-        }
+        },
+        "summary": "done --Run--> source · if ctx.missing eq false"
       },
       "done/on/lab.SetBinding/0": {
         "behavior": "d9b1c08428c4c962",
         "contracts": {
           "doneBinding": "8e281987189c5c7e"
-        }
+        },
+        "summary": "done --SetBinding--> done · binding := event.value"
       },
       "done/on/lab.SetContract/0": {
         "behavior": "45a24a29fdea63a7",
         "contracts": {
           "doneContract": "c16e9c6e2f7b0883"
-        }
+        },
+        "summary": "done --SetContract--> idle · missing := event.missing"
       },
       "done/on/lab.SetFreshness/0": {
         "behavior": "cb0e51c10e4b9dab",
         "contracts": {
           "doneFreshness": "6ca9858971555b06"
-        }
+        },
+        "summary": "done --SetFreshness--> done · freshness := event.value"
       },
       "done/on/lab.SetScope/0": {
         "behavior": "c90f69bc4db2d5de",
         "contracts": {
           "doneScope": "e6683d67214dfb92"
-        }
+        },
+        "summary": "done --SetScope--> done · scope := event.value"
       },
       "idle/on/lab.Run/0": {
         "behavior": "688b261f657d4646",
         "contracts": {
           "idleInvalid": "352dd010b570b00e"
-        }
+        },
+        "summary": "idle --Run--> brokenSource · if ctx.missing eq true"
       },
       "idle/on/lab.Run/1": {
         "behavior": "cdba382057f82ae3",
         "contracts": {
           "idleValid": "49a8a3747a917fd2",
           "repairAndRun": "20b2b223d4bc8224"
-        }
+        },
+        "summary": "idle --Run--> source · if ctx.missing eq false"
       },
       "idle/on/lab.SetBinding/0": {
         "behavior": "74b1ef521cedc55c",
         "contracts": {
           "idleBinding": "5e4cb9e0f4e1b9eb"
-        }
+        },
+        "summary": "idle --SetBinding--> idle · binding := event.value"
       },
       "idle/on/lab.SetContract/0": {
         "behavior": "03165dfff16f11e1",
         "contracts": {
           "idleContract": "4d4e433a49ba55ac"
-        }
+        },
+        "summary": "idle --SetContract--> idle · missing := event.missing"
       },
       "idle/on/lab.SetFreshness/0": {
         "behavior": "80c91e00190ac626",
         "contracts": {
           "idleFreshness": "b5baac9895cda42f"
-        }
+        },
+        "summary": "idle --SetFreshness--> idle · freshness := event.value"
       },
       "idle/on/lab.SetScope/0": {
         "behavior": "ad8f641df889db87",
         "contracts": {
           "idleScope": "f1d05f2bda765509"
-        }
+        },
+        "summary": "idle --SetScope--> idle · scope := event.value"
       },
       "ir/after/0": {
         "behavior": "b2e8f3ce96f52003",
         "contracts": {
           "irTimer": "fd06032db9467997",
           "repairAndRun": "20b2b223d4bc8224"
-        }
+        },
+        "summary": "ir --after 700ms--> validated"
       },
       "ir/on/lab.SetBinding/0": {
         "behavior": "587cc53df2abe534",
         "contracts": {
           "irBinding": "40a0af00b9a3a1b8"
-        }
+        },
+        "summary": "ir --SetBinding--> ir · binding := event.value"
       },
       "ir/on/lab.SetFreshness/0": {
         "behavior": "3a200b143d06c853",
         "contracts": {
           "irFreshness": "69824ebf6286f04f"
-        }
+        },
+        "summary": "ir --SetFreshness--> ir · freshness := event.value"
       },
       "ir/on/lab.SetScope/0": {
         "behavior": "ea3b3535603e9e4a",
         "contracts": {
           "irScope": "c863dcbe6974446f"
-        }
+        },
+        "summary": "ir --SetScope--> ir · scope := event.value"
       },
       "source/after/0": {
         "behavior": "6a532c1586baedb3",
         "contracts": {
           "repairAndRun": "20b2b223d4bc8224",
           "sourceTimer": "25d1017168b9fbde"
-        }
+        },
+        "summary": "source --after 700ms--> ir"
       },
       "source/on/lab.SetBinding/0": {
         "behavior": "3398a5484bdbfcad",
         "contracts": {
           "sourceBinding": "a3a8b544f5b6a081"
-        }
+        },
+        "summary": "source --SetBinding--> source · binding := event.value"
       },
       "source/on/lab.SetFreshness/0": {
         "behavior": "e2d2e3ad84a2b2a0",
         "contracts": {
           "sourceFreshness": "72ff35928a76c6b1"
-        }
+        },
+        "summary": "source --SetFreshness--> source · freshness := event.value"
       },
       "source/on/lab.SetScope/0": {
         "behavior": "b785c1565949597e",
         "contracts": {
           "sourceScope": "6ee1b0d0791df1c4"
-        }
+        },
+        "summary": "source --SetScope--> source · scope := event.value"
       },
       "validated/after/0": {
         "behavior": "941f3804c6dbc082",
         "contracts": {
           "repairAndRun": "20b2b223d4bc8224",
           "validatedTimer": "6420ca6362482872"
-        }
+        },
+        "summary": "validated --after 700ms--> compiled"
       },
       "validated/on/lab.SetBinding/0": {
         "behavior": "0169d83e931f1252",
         "contracts": {
           "validatedBinding": "7fa32b7c0c71bcf6"
-        }
+        },
+        "summary": "validated --SetBinding--> validated · binding := event.value"
       },
       "validated/on/lab.SetFreshness/0": {
         "behavior": "40fe079f9781f613",
         "contracts": {
           "validatedFreshness": "4ad651d2d0ac0c7e"
-        }
+        },
+        "summary": "validated --SetFreshness--> validated · freshness := event.value"
       },
       "validated/on/lab.SetScope/0": {
         "behavior": "c0123685e7ade819",
         "contracts": {
           "validatedScope": "565c3929c3acf2ba"
-        }
+        },
+        "summary": "validated --SetScope--> validated · scope := event.value"
       }
     }
   },

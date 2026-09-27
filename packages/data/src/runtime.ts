@@ -75,8 +75,23 @@ export interface DataRuntime {
     options?: { preview?: boolean },
   ): Promise<Result | MutationResult>
   invalidate(tags: string[], session?: unknown): number
+  endpoint(
+    ref: string,
+    input: Json,
+    ctx: { request: unknown; session: unknown; setSession(value: unknown): void; preview?: boolean },
+  ): Promise<EndpointResult>
   stats(): Stats
 }
+
+export type EndpointResult =
+  | { ok: true; value: unknown }
+  | { ok: false; status: 400 | 404 | 500; message: string; fields: Record<string, string | null> | null }
+
+const isResponse = (value: unknown): boolean =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as { status?: unknown }).status === 'number' &&
+  typeof (value as { headers?: unknown }).headers === 'object'
 
 const unexpected = (message: string): Result => ({ ok: false, error: 'Unexpected', data: { message } })
 
@@ -123,6 +138,7 @@ export function createDataRuntime({
     })
 
   const runs = new Map<string, Run>()
+  const endpoints = new Map<string, { run: Run; output: boolean; fields: string[] }>()
   for (const impl of resolverSetOf(resolvers).list) {
     const { decl, run } = implementationOf(impl)
     const ref = bindings.refs.get(decl)
@@ -131,7 +147,7 @@ export function createDataRuntime({
         '',
         null,
         'Resolver implements a declaration that is not part of this project',
-        'Only registered queries and mutations can be implemented.',
+        'Only registered queries, mutations and endpoints can be implemented.',
       )
       continue
     }
@@ -179,6 +195,23 @@ export function createDataRuntime({
     }
     for (const [symbol, q] of Object.entries(feature.queries))
       register('query', symbol, q.errors, q.tags, q.scope, q.freshness)
+    for (const [symbol, e] of Object.entries(feature.endpoints ?? {})) {
+      const ref = `${feature.id}.${symbol}`
+      const run = runs.get(ref)
+      if (!run)
+        problem(
+          join('', 'features', feature.id, 'endpoints', symbol),
+          feature.id,
+          `${ref} has no implementation`,
+          'Every endpoint needs a resolver.',
+        )
+      else
+        endpoints.set(ref, {
+          run,
+          output: e.output !== null,
+          fields: Object.keys((feature.schemas[e.input]?.properties as object | undefined) ?? {}),
+        })
+    }
     for (const [symbol, m] of Object.entries(feature.mutations))
       register('mutation', symbol, m.errors, m.invalidates, 'user', { kind: 'live' }, [
         ...Object.keys((feature.schemas[m.input]?.properties as object | undefined) ?? {}),
@@ -434,7 +467,48 @@ export function createDataRuntime({
     return ref
   }
 
+  async function endpoint(
+    ref: string,
+    input: Json,
+    ctx: { request: unknown; session: unknown; setSession(value: unknown): void; preview?: boolean },
+  ): Promise<EndpointResult> {
+    const e = endpoints.get(ref)
+    if (!e) return { ok: false, status: 404, message: `Unknown endpoint ${ref}`, fields: null }
+    const issues = check(`${ref}#input`, input)
+    if (issues) {
+      const bad = invalid(e.fields, issues) as unknown as {
+        data: { message: string; fields: Record<string, string | null> }
+      }
+      return { ok: false, status: 400, message: bad.data.message, fields: bad.data.fields }
+    }
+    const report = (error: unknown): EndpointResult => {
+      onError(error, { effect: ref })
+      return { ok: false, status: 500, message: 'Internal error', fields: null }
+    }
+    let out: unknown
+    try {
+      out = await e.run(input, {
+        env,
+        preview: ctx.preview === true,
+        session: ctx.session ?? null,
+        fail,
+        setSession: ctx.setSession,
+        file: async () => null,
+        request: ctx.request,
+      })
+    } catch (error) {
+      return report(error)
+    }
+    if (!e.output)
+      return isResponse(out) ? { ok: true, value: out } : report(new Error(`${ref} must return a Response`))
+    const wrong = check(`${ref}#output`, out)
+    return wrong
+      ? report(new Error(`Invalid output from ${ref}: ${wrong.join('; ')}`))
+      : { ok: true, value: out }
+  }
+
   return {
+    endpoint,
     query: (decl, input, session) => run(refOf(decl), input as Json, session) as never,
     mutate: (decl, input, session) => run(refOf(decl), input as Json, session) as never,
     run,

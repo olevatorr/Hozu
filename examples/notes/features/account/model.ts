@@ -44,7 +44,6 @@ export const accountMachine = machine({
       ],
     },
     signingIn: {
-      ignore: [SignIn, SignOut],
       invoke: invoke(signIn, {
         input: { name: ctx.draft },
         done: [{ target: 'idle', navigate: () => ui.link(home, null) }],
@@ -55,7 +54,6 @@ export const accountMachine = machine({
       }),
     },
     signingOut: {
-      ignore: [SignIn, SignOut],
       invoke: invoke(signOut, {
         input: {},
         done: [{ target: 'idle', navigate: () => ui.link(login, null) }],

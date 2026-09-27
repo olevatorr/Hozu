@@ -8,9 +8,9 @@ read only the part you need.
   - The machine goes to `adding`, which invokes the mutation. `failed.Duplicate` sets `ctx.error`.
   - Show the error with `ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert' }, [ctx.error])], [])`.
   - To clear the input after success, bind `value: ctx.draft` and reset `draft` in `done`.
-- **Busy states (a mutation in flight)** *(example)*: render every control **once**. In each busy state, `ignore` the events
-  those controls send. Do not duplicate controls under `when`. Handling them there would re-enter the busy state
-  instead, and HZ005 would reject leaving them unhandled.
+- **Busy states (a mutation in flight)** *(example)*: render every control **once**. A state with `invoke` drops every
+  event it does not handle, so double submits are ignored without an `ignore` list. Do not duplicate controls under
+  `when`, and do not handle the add event in the busy state (that would re-enter it and run the mutation again).
 - **Filtering and empty state** *(example)*: `ui.each(visible({ items, show: ctx.show }), 'id', …)` and
   `ui.if(isEmpty({ items, show: ctx.show }), [ui.p({}, ['No items'])], [ui.ul(...)])`, both using `fn`s.
 - **Toggle buttons** (`aria-pressed`): `'aria-pressed': op.eq(ctx.show, s.value)` plus
@@ -31,7 +31,7 @@ read only the part you need.
 - **Filter in the URL** *(example)* (shareable, works without JS): declare `search` on the route, render the options as
   `ui.link(home, null, { show: s.value })` links with `'aria-current': op.eq(search.show, s.value)`, and filter with
   `fn`s over `search.show`. Only use machine context for filters that should not survive a reload.
-- **Go to what was just created** *(example)*: `done: [{ target: 'idle', navigate: (r) => ui.link(itemPage, { id: r.id }) }]`.
+- **Go to what was just created** *(example)*: `done: { target: 'idle', navigate: (r) => ui.link(itemPage, { id: r.id }) }`.
 - **No-JS form** *(example)*: every value the submit needs is a named field read with `ui.dom.form('name')`; the server runs the
   machine for a native post. Per-item actions without JS: wrap the button in its own small form.
 - **UI that survives following a link** (a cart, a player, a chat box): list the same
@@ -52,6 +52,6 @@ read only the part you need.
   in the busy state: `when(['adding'], [ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…'])])`.
   Leaving the state (done or failed) removes it; the refreshed query shows the real item.
 - **Field errors** *(example)*: context `fields: z.object({ title: z.string().nullable(), kind:
-  z.string().nullable() })`, reset it on submit, `failed.Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields,
-  e.fields)] }]`, and render `ui.p({ id: 'title-error' }, [ctx.fields.title])` with `'aria-invalid': op.neq(ctx.fields.title,
+  z.string().nullable() })`, reset it on submit, `failed.Invalid: { target: 'idle', assign: (e) => [op.set(ctx.fields,
+  e.fields)] }`, and render `ui.p({ id: 'title-error' }, [ctx.fields.title])` with `'aria-invalid': op.neq(ctx.fields.title,
   null)` on the input. It also works without JS.

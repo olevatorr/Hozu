@@ -7,6 +7,7 @@ import {
   GONE,
   listNotes,
   noMatch,
+  notesApi,
   notesMachine,
   notesTag,
   Pin,
@@ -195,6 +196,7 @@ export const notes = feature({
     invariants: ['A user sees only their own notes', 'Note texts are unique per user, case-insensitive'],
   },
   declarations: {
+    notesApi,
     Draft,
     Add,
     Remove,
