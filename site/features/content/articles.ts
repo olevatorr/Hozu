@@ -1,5 +1,5 @@
 import { op, ui } from '@hozu/core'
-import { chapter, doc, how, trials } from '../../routes.ts'
+import { chapter, doc, how } from '../../routes.ts'
 import { pipelineDiagram, renderDiagram } from './diagrams.ts'
 import { getChapter, getDoc, listChapters, listDocs } from './model.ts'
 
@@ -122,31 +122,3 @@ const articleView = (
   })
 export const Docs = articleView(doc, listDocs, getDoc, 'Documentation', false)
 export const Chapter = articleView(chapter, listChapters, getChapter, 'How it works', true)
-export const How = ui.view({
-  render: () =>
-    ui.main({ id: 'main', 'data-reading': '' }, [
-      ui.h1({}, ['Understand the design.']),
-      ui.p({ 'data-description': '' }, [
-        'What Hozu makes explicit, what the tools can check, and where the trade-offs remain.',
-      ]),
-      pipelineDiagram(),
-      ui.query(
-        listChapters,
-        {},
-        {
-          ready: (items) =>
-            ui.ol({ 'data-chapter-list': '' }, [
-              ui.each(items, 'slug', (item) =>
-                ui.li({}, [
-                  ui.h2({}, [ui.a({ href: ui.link(chapter, { slug: item.slug }) }, [item.title])]),
-                  ui.p({}, [item.description]),
-                ]),
-              ),
-            ]),
-          pending: null,
-          failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Chapters are unavailable.']) },
-        },
-      ),
-      ui.p({}, ['Prefer the raw evidence? ', ui.a({ href: ui.link(trials, null) }, ['Read the trials.'])]),
-    ]),
-})

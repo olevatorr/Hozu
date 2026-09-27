@@ -1,5 +1,7 @@
 # Site v2 review
 
+This records the initial static phase. The subsequently approved JavaScript overview is documented in [the interactive review](INTERACTIVE-REVIEW.md), which supersedes the overview’s zero-JS measurements below.
+
 ## Changes
 
 The header is now 61 px tall at 375, 768 and 1280 px. How it works has an ordered overview and six sourced articles. Pipeline stages and render-plan inputs are interactive native radio groups: they work with JavaScript disabled. No framework package was changed.

@@ -61,8 +61,15 @@ let pages = 0
 for (const file of files.filter((name) => name.endsWith('.html'))) {
   const html = await readFile(new URL(file, root), 'utf8')
   assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1, `${file}: one main heading`)
-  assert.ok(!/<script[^>]+(?:src=|type="module")/.test(html), `${file}: no client scripts`)
-  assert.ok(!/rel="modulepreload"/.test(html), `${file}: no hidden JavaScript preloads`)
+  const interactive = file === 'how-it-works/index.html'
+  if (interactive) {
+    assert.match(html, /<script type="module" src="\/_hozu\/client\.js">/, 'Overview loads its Hozu island')
+    assert.ok(html.includes('Run example'), 'Pipeline interaction exported')
+    assert.ok(html.includes('Machine binding'), 'Render-plan interaction exported')
+  } else {
+    assert.ok(!/<script[^>]+(?:src=|type="module")/.test(html), `${file}: no client scripts`)
+    assert.ok(!/rel="modulepreload"/.test(html), `${file}: no hidden JavaScript preloads`)
+  }
   if (file.startsWith('docs/') || (file.startsWith('how-it-works/') && file !== 'how-it-works/index.html')) {
     assert.ok(html.includes('aria-current="page"'), `${file}: active chapter`)
     assert.ok(html.includes('On this page'), `${file}: table of contents`)
@@ -96,5 +103,10 @@ console.log(
 )
 console.log('CNAME, .nojekyll, 404.html, static share image and source-content coverage verified.')
 
-assert.ok(!files.some((file) => file.endsWith('.js')), 'No client JS files in static fallback')
-console.log('Client JavaScript: home 0 B, docs 0 B, How it works 0 B, trials 0 B, changelog 0 B.')
+assert.ok(
+  files.some((file) => file.endsWith('client.js')),
+  'Interactive overview has its client runtime',
+)
+console.log(
+  'Client JavaScript: overview has a Hozu island; home, docs, chapters, trials and changelog have none.',
+)

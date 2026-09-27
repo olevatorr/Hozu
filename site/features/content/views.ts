@@ -1,6 +1,6 @@
 import { feature, ui } from '@hozu/core'
 import { doc, home, how, trial, trials } from '../../routes.ts'
-import { Chapter, Docs, How } from './articles.ts'
+import { Chapter, Docs } from './articles.ts'
 import { Footer, Header } from './chrome.ts'
 import {
   getChangelog,
@@ -13,7 +13,7 @@ import {
   listTrials,
 } from './model.ts'
 
-export { Chapter, Docs, Footer, Header, How }
+export { Chapter, Docs, Footer, Header }
 
 export const Home = ui.view({
   render: () =>
@@ -200,13 +200,13 @@ export const NotFound = ui.view({
 })
 export const content = feature({
   id: 'content',
+  exports: [listChapters],
   intent: { summary: 'Static official Hozu documentation, trials and releases' },
   declarations: {
     listChapters,
     getChapter,
     getStart,
     Chapter,
-    How,
     listDocs,
     getDoc,
     listTrials,

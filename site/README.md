@@ -1,6 +1,6 @@
 # Hozu website
 
-The official site at https://hozu.org is a private Hozu workspace application. Every query is public and static. There are no machines, mutations, sessions, analytics or external font requests.
+The official site at https://hozu.org is a private Hozu workspace application. Every query is public and static. The How it works overview has a Hozu machine for its interactive teaching lab. Other pages have no client scripts. There are no mutations, sessions, analytics or external font requests.
 
 ## Build and verify
 
@@ -33,6 +33,10 @@ The export includes `CNAME`, `.nojekyll`, `404.html`, `sitemap.xml`, `robots.txt
 
 ## Verification record
 
-See [the v2 review](REVIEW.md) for route checks, screenshot findings, article counts and the repository gate. Syntax highlighting runs at build time. All exported pages ship 0 client JavaScript bytes, including the native interactive explanations. The conditional clipboard island attempt is documented in [framework gaps](FRAMEWORK-GAPS.md).
+See [the v2 review](REVIEW.md) for route checks, screenshot findings, article counts and the repository gate. Syntax highlighting runs at build time. The six chapters retain native HTML/CSS explanations. The overview now loads the Hozu client for its pipeline and render-plan lab; see [the interactive review](INTERACTIVE-REVIEW.md) for script measurements and browser checks. The conditional clipboard island attempt is documented in [framework gaps](FRAMEWORK-GAPS.md).
 
 The framework packages remain unchanged.
+
+## Interactive browser verification
+
+Serve the export with a static file server on port 4799, then run `node site/verify-browser.ts` from the repository root. The check uses the repository's existing Playwright dependency and a locally installed Chrome. Set `HOZU_BROWSER_EXECUTABLE` to use a different browser executable and `HOZU_SITE_URL` to use a different local origin. Screenshots and request measurements are saved to `.tmp/site-interactive/`. Stop the static server by its PID when finished.
