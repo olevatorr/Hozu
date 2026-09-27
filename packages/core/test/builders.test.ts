@@ -96,7 +96,8 @@ describe('builder diagnostics', () => {
           ui.p({ style: 'color: red' } as never, []),
           ui.select({ value: 'a' } as never, [ui.option({ value: 'a', selected: true }, ['A'])]),
           ui.circle({ cx: 1, fill: 'red', href: '#' } as never, []),
-          ui.svg({ viewBox: '0 0 1 1' }, []),
+          ui.svg({ viewBox: '0 0 1 1', role: 'img', 'aria-label': 'Diagram' }, []),
+          ui.noscript({}, ['Needs JavaScript']),
         ]),
     })
     const messages = buildProject(

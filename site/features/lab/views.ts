@@ -187,8 +187,10 @@ export const How = ui.view({
             ]),
           ]),
         ]),
-        ui.p({ 'data-lab-note': '' }, [
-          'This walkthrough needs JavaScript. The six design chapters below explain the same pipeline without it.',
+        ui.noscript({}, [
+          ui.p({ 'data-lab-note': '' }, [
+            'This walkthrough needs JavaScript. The six design chapters below explain the same pipeline without it.',
+          ]),
         ]),
       ]),
       ui.section({ 'data-render-lab': '', 'aria-labelledby': 'render-heading' }, [

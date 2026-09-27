@@ -69,6 +69,7 @@ export interface SvgGlobalProps {
   overflow?: V
   'paint-order'?: V
   'pointer-events'?: V
+  role?: V
   'shape-rendering'?: V
   'stop-color'?: V
   'stop-opacity'?: V
@@ -392,6 +393,7 @@ export interface TagProps {
     value?: V
   }
   nav: HtmlGlobalProps
+  noscript: HtmlGlobalProps
   object: HtmlGlobalProps & {
     data?: V
     form?: V

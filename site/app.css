@@ -1326,7 +1326,7 @@ label:has(input:checked) {
   }
 }
 
-[data-workbench] > [data-lab-note] {
+[data-workbench] > noscript > [data-lab-note] {
   padding: 12px 24px;
   margin: 0;
   border-top: 1px solid var(--border);

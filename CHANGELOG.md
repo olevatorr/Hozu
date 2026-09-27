@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.1 — accessibility and widget docs
+
+- **`role` on SVG elements.** `ui.svg({ role: 'img', 'aria-label': '…' }, …)` type-checks and validates. Before, it
+  was TS2353 and HZ014.
+- **`ui.noscript`,** for content shown only without JavaScript.
+- **Widgets in the guide.** `reference.md` explains that there is no `widget` export. It shows the whole path:
+  `ui.widget` in the feature's `declarations`, `ui.use`, a client module with `implement<typeof W>` from
+  `@hozu/core/widget`, and `bundleWidgets` (`hozu build` does it for you).
+
 ## 0.4.0 — what the official site found
 
 Gaps found while building [hozu.org](https://hozu.org) with Hozu (ADR 0032).

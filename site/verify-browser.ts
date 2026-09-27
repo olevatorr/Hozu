@@ -111,10 +111,7 @@ try {
   const noScript = await browser.newPage({ javaScriptEnabled: false })
   await noScript.goto(`${origin}/how-it-works/`)
   assert.equal(await noScript.locator('[data-design-chapters] li a').count(), 6)
-  assert.equal(
-    await noScript.getByText('This walkthrough needs JavaScript.', { exact: false }).isVisible(),
-    true,
-  )
+  assert.ok((await noScript.locator('noscript [data-lab-note]').boundingBox())?.height)
   const staticPages = await browser.newPage()
   const staticScripts: string[] = []
   staticPages.on('request', (request) => {

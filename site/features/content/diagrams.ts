@@ -40,6 +40,7 @@ export const pipelineDiagram = () =>
     ]),
     ui.svg(
       {
+        role: 'img',
         viewBox: '0 0 640 90',
         'aria-label': 'Source flows into Feature IR, then validator, compiler and runtime.',
         'data-diagram': '',
@@ -77,6 +78,7 @@ export const pipelineDiagram = () =>
     ),
     ui.svg(
       {
+        role: 'img',
         viewBox: '0 0 300 355',
         'aria-label': 'Source, Feature IR, validator, compiler and runtime in sequence.',
         'data-mobile-diagram': '',
@@ -150,6 +152,7 @@ export const renderDiagram = () =>
     ]),
     ui.svg(
       {
+        role: 'img',
         viewBox: '0 0 640 90',
         'aria-label': 'Declared scope and freshness feed the compiler, which derives a render region.',
         'data-diagram': '',
@@ -182,6 +185,7 @@ export const renderDiagram = () =>
     ),
     ui.svg(
       {
+        role: 'img',
         viewBox: '0 0 300 210',
         'aria-label': 'Scope and freshness flow into the compiler and determine the render region.',
         'data-mobile-diagram': '',
