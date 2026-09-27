@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/olevatorr/Hozu/main/docs/assets/logo.png" alt="Hozu logo" width="72">
+
 # @hozu/data
 
 Hozu data runtime: resolvers bound by declaration, cache, tags, dedup and invalidation.

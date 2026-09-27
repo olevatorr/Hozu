@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/olevatorr/Hozu/main/docs/assets/logo.png" alt="Hozu logo" width="72">
+
 # @hozu/runtime-server
 
 Hozu server runtime: generated render functions, in-order streaming SSR and a web-standard handler.

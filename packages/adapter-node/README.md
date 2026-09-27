@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/olevatorr/Hozu/main/docs/assets/logo.png" alt="Hozu logo" width="72">
+
 # @hozu/adapter-node
 
 Run a Hozu app on Node: HTTP server, ISR page cache and tag revalidation.

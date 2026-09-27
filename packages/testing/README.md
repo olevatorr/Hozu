@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/olevatorr/Hozu/main/docs/assets/logo.png" alt="Hozu logo" width="72">
+
 # @hozu/testing
 
 Test rendered Hozu pages through the real handler: status, headers, visible text, payload, form posts.

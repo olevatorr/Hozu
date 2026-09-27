@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/olevatorr/Hozu/main/docs/assets/logo.png" alt="Hozu logo" width="72">
+
 # @hozu/schema-zod
 
 Zod adapter for Hozu schemas (Standard Schema, stored as JSON Schema in the IR).

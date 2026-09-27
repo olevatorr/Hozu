@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/olevatorr/Hozu/main/docs/assets/logo.png" alt="Hozu logo" width="72">
+
 # create-hozu
 
 Create a Hozu app, set up for Claude Code or for agents that read AGENTS.md.

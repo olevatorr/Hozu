@@ -1,4 +1,6 @@
-# Hozu
+<p align="center"><img src="docs/assets/logo.png" alt="Hozu logo" width="140"></p>
+
+<h1 align="center">Hozu</h1>
 
 *Hozu (ほぞ) is the Japanese word for a tenon: the part of a joint that fits exactly into its mortise.*
 

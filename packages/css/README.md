@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/olevatorr/Hozu/main/docs/assets/logo.png" alt="Hozu logo" width="72">
+
 # @hozu/css
 
 Tailwind CSS v4 for Hozu, compiled from the classes the IR declares.

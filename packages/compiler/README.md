@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/olevatorr/Hozu/main/docs/assets/logo.png" alt="Hozu logo" width="72">
+
 # @hozu/compiler
 
 Hozu compiler: derives per-node render plans (static, ISR, SWR, streamed, client) from the IR.

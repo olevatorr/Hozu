@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/olevatorr/Hozu/main/docs/assets/logo.png" alt="Hozu logo" width="72">
+
 # @hozu/image
 
 Optional build-time image optimisation (WebP srcset) and share-image cards for Hozu, using sharp.

@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/olevatorr/Hozu/main/docs/assets/logo.png" alt="Hozu logo" width="72">
+
 # @hozu/runtime-client
 
 Hozu client runtime: fine-grained DOM islands, no virtual DOM, about 7.5 KB gzipped.

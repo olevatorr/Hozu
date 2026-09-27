@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/olevatorr/Hozu/main/docs/assets/logo.png" alt="Hozu logo" width="72">
+
 # @hozu/core
 
 Hozu IR types and the typed builders you author apps with: feature, machine, query, mutation, ui, contract, project.
