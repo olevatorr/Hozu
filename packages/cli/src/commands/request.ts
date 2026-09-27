@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -194,11 +195,20 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
     } catch {
       throw new HozuCliError('usage', '--session must be JSON', [`--session '{"userId":"ada"}'`])
     }
+  const store =
+    options.session === undefined
+      ? (
+          await importFrom<{ sessionCookie(o: { name: string; secret: string; secure: boolean }): unknown }>(
+            '@hozu/runtime-server',
+            ['npm install @hozu/runtime-server'],
+          )
+        ).sessionCookie({ name: 'sid', secret: randomBytes(24).toString('hex'), secure: false })
+      : () => session
   const app = testApp({
     build: loaded.build(),
     resolvers: server.createResolvers(),
     env: process.env,
-    session: () => session,
+    session: store,
   })
   const cookies = new Map<string, string>()
   const init = (): RequestInit => ({

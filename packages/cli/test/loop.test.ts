@@ -1,6 +1,8 @@
+import { execFile } from 'node:child_process'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
 import { Ajv } from 'ajv'
 import { createApp } from 'create-hozu'
 import { afterAll, describe, expect, it } from 'vitest'
@@ -213,4 +215,60 @@ describe('the agent loop (ADR 0027)', () => {
     expect(last.forms[1].fields).toEqual({ id: 't1' })
     expect((await run(['get', '/', '--select', 'div > p'], app)).code).toBe(2)
   })
+
+  it('scaffolds accounts: sign in, per-user data, sign out, and a second feature reusing the account', async () => {
+    const app = await freshApp()
+    const added = await json(
+      'add',
+      ['add', 'feature', 'notes', '--page', '/', '--with', 'auth,detail,toggle,filter,remove'],
+      app,
+    )
+    expect(added.out.created).toEqual(
+      expect.arrayContaining(['features/account/model.ts', 'features/account/views.ts']),
+    )
+    expect(added.out.edited).toEqual(
+      expect.arrayContaining(['serve.ts', 'server.ts', 'routes.ts', 'hozu.config.ts']),
+    )
+    expect(added.out.manual).toEqual([])
+    const check = await json('check', ['check'], app)
+    expect(check.out.types.errors).toEqual([])
+    expect(check.out.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect(readFileSync(join(app, 'serve.ts'), 'utf8')).toContain('sessionCookie({')
+    const signedOut = await json('request', ['get', '/'], app)
+    expect(signedOut.out.steps[0]).toMatchObject({ status: 303, location: '/login' })
+    const flow = await json(
+      'request',
+      [
+        'post',
+        '/login',
+        '--field',
+        'name=ada',
+        '--next',
+        'POST / title=Milk',
+        '--next',
+        'POST / @Sign out',
+        '--next',
+        'POST /login name=bob',
+        '--next',
+        '/',
+        '--next',
+        '/notes/n1',
+      ],
+      app,
+    )
+    const steps = flow.out.steps as { method: string; path: string; status: number; text: string | null }[]
+    expect(steps.some((s) => s.text?.includes('Signed in as ada') && s.text.includes('Milk'))).toBe(true)
+    expect(steps.at(-1)).toMatchObject({ path: '/notes/n1', status: 404 })
+    const second = await json('add', ['add', 'feature', 'tasks', '--page', '/tasks', '--with', 'auth'], app)
+    expect(second.out.created.some((f: string) => f.startsWith('features/account/'))).toBe(false)
+    expect((await run(['check'], app)).code).toBe(0)
+    const fresh = await promisify(execFile)(
+      process.execPath,
+      [`${root}packages/cli/bin/hozu.js`, 'get', '/tasks', '--json'],
+      {
+        cwd: app,
+      },
+    )
+    expect(JSON.parse(fresh.stdout).steps[0]).toMatchObject({ status: 303, location: '/login' })
+  }, 60_000)
 })

@@ -51,6 +51,10 @@ Every mutation also has the framework error `Invalid` = `{ message, fields }`: o
   (see `patterns.md`).
 
 ## Sessions
+- **Start from the scaffold:** `hozu add feature notes --page / --with auth` writes `features/account`
+  (sign-in page, sign-out, `me`), the session cookie in `serve.ts`, per-user resolvers, and a redirect to `/login`
+  when signed out. Replace the name-only sign-in with real credentials before production; set `SESSION_SECRET`
+  (and `SESSION_SECURE=true` behind HTTPS).
 - `project({ session: z.object({ user: z.string() }) })` declares the identity. Queries with `scope: 'user'` and
   mutations receive `session`; public resolvers never do.
 - `createServer({ session: (request) => value })`, or `sessionCookie({ name, secret })` from

@@ -25,6 +25,10 @@
   - `--select <selector>` prints matching elements with their attributes. The selectors are `tag`, `#id`,
     `[attr]`, `[attr=value]` and `tag[attr=value]`, e.g. `button[aria-pressed=true]`.
   - `--forms` lists each form's action, fields with their defaults, and submit buttons.
+- **`--with auth`:** sign-in and sign-out (`features/account`), a signed `HttpOnly` session cookie in `serve.ts`,
+  per-user queries and resolvers, and a redirect to `/login` when signed out. A second feature with `auth` reuses the
+  account. `hozu get` / `hozu post` keep a real session cookie across steps, so sign-in flows can be tried without a
+  server.
 - **`hozu add feature` prints what to edit:** the generated declarations by kind, and every user-facing text with its
   `file:line`. The guides say not to print the generated files.
 

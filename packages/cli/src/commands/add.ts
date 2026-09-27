@@ -1,9 +1,21 @@
+import { randomBytes } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import type { AddOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
-import { model, namesOf, PARTS, type Part, server, views, type With } from './scaffold.ts'
+import {
+  accountModel,
+  accountServer,
+  accountViews,
+  model,
+  namesOf,
+  PARTS,
+  type Part,
+  server,
+  views,
+  type With,
+} from './scaffold.ts'
 
 const addImport = (source: string, line: string): string | null => {
   const imports = [...source.matchAll(/^import[\s\S]*?from '[^']+'\n/gm)]
@@ -11,6 +23,28 @@ const addImport = (source: string, line: string): string | null => {
   if (!last) return null
   const at = last.index + last[0].length
   return source.slice(0, at) + line + source.slice(at)
+}
+
+const callEnd = (source: string, open: number): number => {
+  let depth = 0
+  let quote: string | null = null
+  for (let i = open; i < source.length; i++) {
+    const c = source[i]!
+    if (quote) {
+      if (c === '\\') i++
+      else if (c === quote) quote = null
+    } else if (c === "'" || c === '"' || c === '`') quote = c
+    else if (c === '(') depth++
+    else if (c === ')' && --depth === 0) return i + 1
+  }
+  return -1
+}
+
+const replacePage = (source: string, route: string, text: string): string | null => {
+  const m = new RegExp(`ui\\.page\\(\\s*${route}\\s*,`).exec(source)
+  if (!m) return null
+  const end = callEnd(source, m.index + 'ui.page'.length)
+  return end < 0 ? null : source.slice(0, m.index) + text + source.slice(end)
 }
 
 const append = (source: string, pattern: RegExp, item: string): string | null => {
@@ -41,6 +75,10 @@ export async function runAddFeature(
     throw new HozuCliError('usage', '--with detail needs --page, so the detail page can link back', [
       `hozu add feature ${name ?? 'tasks'} --page / --with detail`,
     ])
+  if (w.auth && page === undefined)
+    throw new HozuCliError('usage', '--with auth needs --page, the page that signed-in users land on', [
+      `hozu add feature ${name ?? 'notes'} --page / --with auth`,
+    ])
   if (!name || !/^[a-z][a-zA-Z0-9]*$/.test(name))
     throw new HozuCliError('usage', 'Give the feature a lower-case identifier', [
       'hozu add feature tasks --page /',
@@ -67,13 +105,25 @@ export async function runAddFeature(
   const pageRoute = page === undefined ? null : (existing?.[1] ?? `${name}Page`)
   const newRoute = page !== undefined && !existing
   const detailPath = page === undefined ? null : page === '/' ? `/${n.many}/:id` : `${page}/:id`
-  for (const [file, text] of [
-    ['model.ts', model(n, w)],
-    ['views.ts', views(n, w, pageRoute)],
-    ['server.ts', server(n, w)],
-  ] as const) {
-    await writeFile(join(dir, file), text)
-    out.created.push(relative(cwd, join(dir, file)))
+  const accountDir = join(root, 'features', 'account')
+  const newAccount = w.auth && !existsSync(accountDir)
+  const newLogin = newAccount && !/export const login = route\(/.test(routesSource)
+  const files: [string, string][] = [
+    [join(dir, 'model.ts'), model(n, w)],
+    [join(dir, 'views.ts'), views(n, w, pageRoute)],
+    [join(dir, 'server.ts'), server(n, w)],
+    ...(newAccount && pageRoute && page
+      ? ([
+          [join(accountDir, 'model.ts'), accountModel(pageRoute)],
+          [join(accountDir, 'views.ts'), accountViews(page)],
+          [join(accountDir, 'server.ts'), accountServer()],
+        ] as [string, string][])
+      : []),
+  ]
+  for (const [path, text] of files) {
+    await mkdir(dirname(path), { recursive: true })
+    await writeFile(path, text)
+    out.created.push(relative(cwd, path))
   }
   const edit = async (file: string, change: (s: string) => string | null, manual: string) => {
     const path = join(root, file)
@@ -90,15 +140,30 @@ export async function runAddFeature(
     (s) => {
       const wired = s.replace(
         /resolvers\(project,\s*\((?:implement)?\)\s*=>\s*\[/,
-        `resolvers(project, (implement) => [\n    ...${n.resolvers}(implement),`,
+        `resolvers(project, (implement) => [\n    ${newAccount ? '...accountResolvers(implement),\n    ' : ''}...${n.resolvers}(implement),`,
       )
-      return wired === s
-        ? null
-        : addImport(wired, `import { ${n.resolvers} } from './features/${name}/server.ts'\n`)
+      if (wired === s) return null
+      const withFeature = addImport(wired, `import { ${n.resolvers} } from './features/${name}/server.ts'\n`)
+      return newAccount && withFeature
+        ? addImport(withFeature, `import { accountResolvers } from './features/account/server.ts'\n`)
+        : withFeature
     },
     `import { ${n.resolvers} } from './features/${name}/server.ts' and add ...${n.resolvers}(implement) to resolvers(project, (implement) => [...])`,
   )
+  if (newAccount)
+    await edit(
+      'serve.ts',
+      (s) => {
+        const next = s.replace(
+          /resolvers: createResolvers\(\),/,
+          `resolvers: createResolvers(),\n  session: sessionCookie({\n    name: 'sid',\n    secret: process.env.SESSION_SECRET ?? '${randomBytes(24).toString('hex')}',\n    secure: process.env.SESSION_SECURE === 'true',\n  }),`,
+        )
+        return next === s ? null : addImport(next, `import { sessionCookie } from '@hozu/runtime-server'\n`)
+      },
+      "createServer({ ..., session: sessionCookie({ name: 'sid', secret: process.env.SESSION_SECRET, secure: false }) }) with sessionCookie from '@hozu/runtime-server'",
+    )
   const newRoutes = [
+    ...(newLogin ? [`export const login = route({ path: '/login', params: null, search: null })`] : []),
     ...(newRoute
       ? [`export const ${pageRoute} = route({ path: '${page}', params: null, search: null })`]
       : []),
@@ -130,8 +195,20 @@ export async function runAddFeature(
           next,
           `import { ${[n.get, n.list].sort().join(', ')} } from './features/${name}/model.ts'\n`,
         )
+      if (next && newAccount) {
+        next = addImport(next, `import { me, Session } from './features/account/model.ts'\n`)
+        if (next)
+          next = addImport(next, `import { AccountBar, account, Login } from './features/account/views.ts'\n`)
+        if (next && !/\bsession:/.test(next))
+          next = next.replace(/(schema: \w+,\n)/, `$1  session: Session,\n`)
+        if (next) next = append(next, /features:\s*\[([^\]]*)\]/, 'account')
+      }
       if (next) next = append(next, /features:\s*\[([^\]]*)\]/, n.feature)
-      const routeNames = [...(newRoute && pageRoute ? [pageRoute] : []), ...(w.detail ? [n.detailRoute] : [])]
+      const routeNames = [
+        ...(newLogin ? ['login'] : []),
+        ...(newRoute && pageRoute ? [pageRoute] : []),
+        ...(w.detail ? [n.detailRoute] : []),
+      ]
       for (const r of routeNames) if (next) next = append(next, /routes:\s*\{([^}]*)\}/, r)
       if (next && routeNames.length)
         next =
@@ -155,17 +232,21 @@ export async function runAddFeature(
           (m) =>
             `${m}\n    ui.page(${n.detailRoute}, {\n      views: [${n.Detail}],\n      head: { query: ${n.get}, input: (params) => ({ id: params.id }), render: (item) => ({ title: item.title }) },\n      entries: { query: ${n.list}, input: {}, params: (item) => ({ id: item.id }) },\n    }),`,
         )
-      if (next && pageRoute && newRoute) {
+      if (next && newAccount)
         next = next.replace(
           /pages:\s*\[/,
           (m) =>
-            `${m}\n    ui.page(${pageRoute}, { views: [${n.View}], head: { render: () => ({ title: '${n.title}' }) } }),`,
+            `${m}\n    ui.page(login, { views: [Login], head: { render: () => ({ title: 'Sign in' }) } }),`,
         )
-      } else if (next && pageRoute) {
-        const views = new RegExp(`ui\\.page\\(\\s*${pageRoute}\\s*,\\s*\\{\\s*views:\\s*\\[[^\\]]*\\]`)
-        next = views.test(next) ? next.replace(views, `ui.page(${pageRoute}, { views: [${n.View}]`) : null
+      if (next && pageRoute) {
+        const text = w.auth
+          ? `ui.page(${pageRoute}, {\n      views: [AccountBar, ${n.View}],\n      head: {\n        query: me,\n        input: () => ({}),\n        render: () => ({ title: '${n.title}', noindex: true }),\n        redirects: { Unauthorized: login },\n      },\n    })`
+          : `ui.page(${pageRoute}, { views: [${n.View}], head: { render: () => ({ title: '${n.title}' }) } })`
+        next = newRoute
+          ? next.replace(/pages:\s*\[/, (m) => `${m}\n    ${text},`)
+          : replacePage(next, pageRoute, text)
       }
-      return next
+      return next?.replace(/\),\s*ui\.page\(/g, '),\n    ui.page(') ?? null
     },
     `import { ${n.View}, ${n.feature} } from './features/${name}/views.ts', add ${n.feature} to features${pageRoute ? ` and ui.page(${pageRoute}, { views: [${n.View}], head: { render: () => ({ title: '${n.title}' }) } }) to pages` : ''}`,
   )

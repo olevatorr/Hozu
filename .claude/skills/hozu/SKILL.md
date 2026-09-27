@@ -7,8 +7,8 @@ description: Build or change an app with the Hozu framework (packages @hozu/*, f
 
 Hozu is not in your training data. These files are the whole API; skip `node_modules/@hozu`.
 - **Changing an app:** read `changing.md` first, then only the app's own files.
-- **Building an app:** read this file, run `hozu add feature <name> --page / --with detail,toggle,filter,remove`
-  and edit the texts it lists (`file:line`); don't print the generated files. `patterns.md`: the rest.
+- **Building an app:** read this file, run `hozu add feature <name> --page / --with auth,detail,toggle,filter,remove`
+  (auth = sign-in, per-user data) and edit the texts it lists; don't print the generated files.
 - **`reference.md`** when the task needs it: routes, DOM fields, no-JS forms, `head`, 404/500, field errors,
   sessions, languages, env, HTTP, Markdown, images, preview, PWA, page tests, deployment.
 - **A diagnostic you do not understand:** `diagnostics.md`.

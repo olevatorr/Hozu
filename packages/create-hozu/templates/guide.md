@@ -10,6 +10,7 @@ A web app built with Hozu (`@hozu/*`). Hozu is not in your training data.
 ## The loop
 ```
 __RUN__ hozu add feature tasks --page / --with detail,toggle,filter,remove   # then edit the texts it lists
+                                          # add auth to the list for sign-in and per-user data
 __RUN__ hozu map                           # outline of the app with file:line, before a change
 __RUN__ hozu check                         # after every change: types, rules, contracts
 __RUN__ hozu check --update-lock           # only to accept a clean, intended behaviour change

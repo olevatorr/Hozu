@@ -1,4 +1,4 @@
-export const PARTS = ['detail', 'toggle', 'filter', 'remove'] as const
+export const PARTS = ['auth', 'detail', 'toggle', 'filter', 'remove'] as const
 export type Part = (typeof PARTS)[number]
 export type With = Record<Part, boolean>
 
@@ -86,7 +86,8 @@ export function model(n: Names, w: With): string {
     `export const ${n.list} = query({`,
     `  input: z.object({}),`,
     `  output: z.array(${n.Item}),`,
-    `  scope: 'public',`,
+    w.auth && `  errors: { Unauthorized: z.object({}) },`,
+    `  scope: '${w.auth ? 'user' : 'public'}',`,
     `  freshness: 'static',`,
     `  tags: () => [${n.tag}()],`,
     '})',
@@ -96,7 +97,7 @@ export const ${n.get} = query({
   input: ${n.Key},
   output: ${n.Item},
   errors: { NotFound: ${n.Key} },
-  scope: 'public',
+  scope: '${w.auth ? 'user' : 'public'}',
   freshness: 'static',
   tags: () => [${n.tag}()],
 })`,
@@ -328,7 +329,7 @@ export const ${name}Fails = contract(${n.machine}, {
     '          ready: (items) =>',
     `            ${ready},`,
     `          pending: ui.p({}, ['Loading…']),`,
-    `          failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },`,
+    `          failed: { ${w.auth ? "Unauthorized: () => ui.p({ role: 'alert' }, ['Signed out']), " : ''}Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },`,
     '        },',
     '      ),',
     '    ]),',
@@ -443,44 +444,260 @@ export function server(n: Names, w: With): string {
     ...(w.toggle ? [n.toggle] : []),
     ...(w.remove ? [n.remove] : []),
   ]
+  const Row = `{ id: string; title: string${w.toggle ? '; done: boolean' : ''} }`
+  const ctx = (rest: string) =>
+    w.auth ? `{ ${[...rest.split(', ').filter(Boolean), 'session'].join(', ')} }` : `{ ${rest} }`
+  const take = w.auth ? '      const items = itemsOf(session)\n' : ''
+  const scoped = (body: string) => (w.auth ? `{\n${take}${body}\n    }` : `{\n${body}\n    }`)
   return `${lines(
     `import type { Implement } from '@hozu/data'`,
     `import { ${imports.sort().join(', ')} } from './model.ts'`,
     '',
-    `export function ${n.resolvers}<Session, Env>(implement: Implement<Session, Env>) {`,
-    `  const items: { id: string; title: string${w.toggle ? '; done: boolean' : ''} }[] = []`,
+    w.auth
+      ? `export function ${n.resolvers}<Env>(implement: Implement<{ user: string }, Env>) {`
+      : `export function ${n.resolvers}<Session, Env>(implement: Implement<Session, Env>) {`,
+    w.auth
+      ? `  const store = new Map<string, ${Row}[]>()
+  const itemsOf = (session: { user: string } | null) => {
+    if (!session) return []
+    const list = store.get(session.user) ?? []
+    store.set(session.user, list)
+    return list
+  }`
+      : `  const items: ${Row}[] = []`,
     '  let seq = 0',
-    find && '  const find = (id: string) => items.find((item) => item.id === id)',
+    find && `  const find = (items: ${Row}[], id: string) => items.find((item) => item.id === id)`,
     '  return [',
-    `    implement(${n.list}, () => items.map((item) => ({ ...item }))),`,
+    w.auth
+      ? `    implement(${n.list}, (_, { session, fail }) =>
+      session ? itemsOf(session).map((item) => ({ ...item })) : fail('Unauthorized', {}),
+    ),`
+      : `    implement(${n.list}, () => items.map((item) => ({ ...item }))),`,
     w.detail &&
-      `    implement(${n.get}, ({ id }, { fail }) => {
-      const item = find(id)
-      return item ? { ...item } : fail('NotFound', { id })
-    }),`,
-    `    implement(${n.add}, ({ title }, { fail }) => {`,
-    '      const clean = title.trim()',
-    '      if (items.some((item) => item.title.toLowerCase() === clean.toLowerCase()))',
-    `        return fail('Duplicate', { title: clean })`,
-    `      const item = { id: \`${n.one.charAt(0)}\${++seq}\`, title: clean${w.toggle ? ', done: false' : ''} }`,
-    '      items.unshift(item)',
-    '      return { ...item }',
-    '    }),',
+      `    implement(${n.get}, ({ id }, ${ctx('fail')}) => ${scoped(`      const item = find(items, id)
+      return item ? { ...item } : fail('NotFound', { id })`)}),`,
+    `    implement(${n.add}, ({ title }, ${ctx('fail')}) => ${scoped(`${
+      w.auth
+        ? `      if (!session) return fail('Invalid', { message: 'Signed out', fields: { title: 'Sign in first' } })\n`
+        : ''
+    }      const clean = title.trim()
+      if (items.some((item) => item.title.toLowerCase() === clean.toLowerCase()))
+        return fail('Duplicate', { title: clean })
+      const item = { id: \`${n.one.charAt(0)}\${++seq}\`, title: clean${w.toggle ? ', done: false' : ''} }
+      items.unshift(item)
+      return { ...item }`)}),`,
     w.toggle &&
-      `    implement(${n.toggle}, ({ id }, { fail }) => {
-      const item = find(id)
+      `    implement(${n.toggle}, ({ id }, ${ctx('fail')}) => ${scoped(`      const item = find(items, id)
       if (!item) return fail('NotFound', { id })
       item.done = !item.done
-      return { ...item }
-    }),`,
+      return { ...item }`)}),`,
     w.remove &&
-      `    implement(${n.remove}, ({ id }, { fail }) => {
-      const at = items.findIndex((item) => item.id === id)
+      `    implement(${n.remove}, ({ id }, ${ctx('fail')}) => ${scoped(`      const at = items.findIndex((item) => item.id === id)
       if (at < 0) return fail('NotFound', { id })
       items.splice(at, 1)
-      return { id }
-    }),`,
+      return { id }`)}),`,
     '  ]',
     '}',
   )}\n`
 }
+
+export function accountModel(homeRoute: string): string {
+  return `import { event, invoke, machine, mutation, on, op, query, ui } from '@hozu/core'
+import { z } from 'zod'
+import { ${[homeRoute, 'login'].sort().join(', ')} } from '../../routes.ts'
+
+export const Session = z.object({ user: z.string() })
+export const Name = z.object({ name: z.string().regex(/^\\s*[A-Za-z]{2,20}\\s*$/, 'Use 2–20 letters') })
+
+export const SignIn = event({ payload: z.object({ name: z.string() }) })
+export const SignOut = event({ payload: z.object({}) })
+
+export const me = query({
+  input: z.object({}),
+  output: z.object({ name: z.string() }),
+  errors: { Unauthorized: z.object({}) },
+  scope: 'user',
+  freshness: 'static',
+})
+
+export const signIn = mutation({ input: Name, output: z.object({}) })
+export const signOut = mutation({ input: z.object({}), output: z.object({}) })
+
+export const accountMachine = machine({
+  context: z.object({
+    draft: z.string(),
+    error: z.string().nullable(),
+    fields: z.object({ name: z.string().nullable() }),
+  }),
+  initialContext: { draft: '', error: null, fields: { name: null } },
+  initial: 'idle',
+  states: ({ ctx }) => ({
+    idle: {
+      on: [
+        on(SignIn, {
+          target: 'signingIn',
+          assign: (e) => [op.set(ctx.draft, e.name), op.set(ctx.error, null), op.set(ctx.fields, { name: null })],
+        }),
+        on(SignOut, { target: 'signingOut' }),
+      ],
+    },
+    signingIn: {
+      ignore: [SignIn, SignOut],
+      invoke: invoke(signIn, {
+        input: { name: ctx.draft },
+        done: [{ target: 'idle', navigate: () => ui.link(${homeRoute}, null) }],
+        failed: {
+          Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] }],
+          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+        },
+      }),
+    },
+    signingOut: {
+      ignore: [SignIn, SignOut],
+      invoke: invoke(signOut, {
+        input: {},
+        done: [{ target: 'idle', navigate: () => ui.link(login, null) }],
+        failed: { Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }] },
+      }),
+    },
+  }),
+})
+`
+}
+
+export function accountViews(homePath: string): string {
+  return `import { contract, feature, op, ui } from '@hozu/core'
+import { login } from '../../routes.ts'
+import { accountMachine, me, SignIn, SignOut, signIn, signOut } from './model.ts'
+
+export const Login = ui.view({
+  machine: accountMachine,
+  route: login,
+  render: ({ ctx }) =>
+    ui.main({ class: 'mx-auto max-w-sm space-y-6 px-4 py-16' }, [
+      ui.h1({ class: 'text-3xl font-bold' }, ['Sign in']),
+      ui.form({ class: 'space-y-3', on: { submit: ui.send(SignIn, { name: ui.dom.form('name') }) } }, [
+        ui.label({ for: 'name', class: 'block text-sm font-medium' }, ['Name']),
+        ui.input({
+          id: 'name',
+          name: 'name',
+          required: true,
+          minlength: 2,
+          maxlength: 20,
+          autocomplete: 'username',
+          'aria-invalid': op.neq(ctx.fields.name, null),
+          'aria-describedby': 'name-error',
+          class: 'w-full rounded border px-3 py-2',
+        }),
+        ui.p({ id: 'name-error', class: 'text-sm text-rose-600' }, [ctx.fields.name]),
+        ui.button({ type: 'submit', class: 'w-full rounded bg-indigo-600 px-4 py-2 text-white' }, ['Sign in']),
+      ]),
+      ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+    ]),
+})
+
+export const AccountBar = ui.view({
+  machine: accountMachine,
+  render: () =>
+    ui.header({ class: 'mx-auto flex max-w-xl items-center justify-between px-4 pt-8 text-sm text-slate-600' }, [
+      ui.query(
+        me,
+        {},
+        {
+          ready: (user) => ui.p({}, ['Signed in as ', user.name]),
+          pending: null,
+          failed: { Unauthorized: () => ui.p({}, ['Signed out']), Unexpected: () => ui.p({}, ['']) },
+        },
+      ),
+      ui.form({ on: { submit: ui.send(SignOut, {}) } }, [
+        ui.button({ type: 'submit', class: 'underline' }, ['Sign out']),
+      ]),
+    ]),
+})
+
+export const signsIn = contract(accountMachine, {
+  given: { state: 'idle' },
+  when: [
+    { send: SignIn, payload: { name: 'ada' } },
+    { done: signIn, result: {} },
+  ],
+  expect: {
+    state: 'idle',
+    changes: { draft: 'ada' },
+    effects: [{ effect: signIn, input: { name: 'ada' } }, { navigate: '${homePath}' }],
+  },
+})
+
+export const rejectsName = contract(accountMachine, {
+  given: { state: 'signingIn' },
+  when: [
+    {
+      failed: signIn,
+      error: 'Invalid',
+      data: { message: 'name: Use 2–20 letters', fields: { name: 'Use 2–20 letters' } },
+    },
+  ],
+  expect: { state: 'idle', changes: { fields: { name: 'Use 2–20 letters' } } },
+})
+
+export const signInFails = contract(accountMachine, {
+  given: { state: 'signingIn' },
+  when: [{ failed: signIn, error: 'Unexpected', data: { message: 'offline' } }],
+  expect: { state: 'idle', changes: { error: 'offline' } },
+})
+
+export const signsOut = contract(accountMachine, {
+  given: { state: 'idle' },
+  when: [
+    { send: SignOut, payload: {} },
+    { done: signOut, result: {} },
+  ],
+  expect: { state: 'idle', effects: [{ effect: signOut, input: {} }, { navigate: '/login' }] },
+})
+
+export const signOutFails = contract(accountMachine, {
+  given: { state: 'signingOut' },
+  when: [{ failed: signOut, error: 'Unexpected', data: { message: 'offline' } }],
+  expect: { state: 'idle', changes: { error: 'offline' } },
+})
+
+export const account = feature({
+  id: 'account',
+  intent: { summary: 'Sign in with a name, sign out; the session identifies the user' },
+  exports: [me],
+  declarations: {
+    SignIn,
+    SignOut,
+    me,
+    signIn,
+    signOut,
+    accountMachine,
+    Login,
+    AccountBar,
+    signsIn,
+    rejectsName,
+    signInFails,
+    signsOut,
+    signOutFails,
+  },
+})
+`
+}
+
+export const accountServer = () => `import type { Implement } from '@hozu/data'
+import { me, signIn, signOut } from './model.ts'
+
+export function accountResolvers<Env>(implement: Implement<{ user: string }, Env>) {
+  return [
+    implement(me, (_, { session, fail }) => (session ? { name: session.user } : fail('Unauthorized', {}))),
+    implement(signIn, ({ name }, { setSession }) => {
+      setSession({ user: name.trim().toLowerCase() })
+      return {}
+    }),
+    implement(signOut, (_, { setSession }) => {
+      setSession(null)
+      return {}
+    }),
+  ]
+}
+`
