@@ -15,7 +15,6 @@ import {
 import { changelog, doc, home, notFound, trial, trials } from './routes.ts'
 
 const icon = ui.asset(new URL('./assets/icon-256.png', import.meta.url))
-const image = 'https://hozu.org/icon-256.png'
 export default project({
   schema: zodAdapter,
   styles: new URL('./app.css', import.meta.url),
@@ -30,7 +29,7 @@ export default project({
         render: () => ({
           title: 'Hozu — An AI-first web framework',
           description: 'Invalid programs are hard to express. Valid programs are cheap to verify.',
-          image,
+          image: icon,
         }),
       },
     }),
@@ -40,7 +39,7 @@ export default project({
       head: {
         query: getDoc,
         input: (params) => ({ slug: params.slug }),
-        render: (article) => ({ title: article.title, description: article.description, image }),
+        render: (article) => ({ title: article.title, description: article.description, image: icon }),
       },
       entries: { query: listDocs, input: {}, params: (item) => ({ slug: item.slug }) },
     }),
@@ -51,7 +50,7 @@ export default project({
         render: () => ({
           title: 'Hozu trials',
           description: 'Measured correctness and agent cost, with methods and limitations.',
-          image,
+          image: icon,
         }),
       },
     }),
@@ -65,7 +64,7 @@ export default project({
           title: article.title,
           description: article.description,
           type: 'article',
-          image,
+          image: icon,
         }),
       },
       entries: { query: listTrials, input: {}, params: (item) => ({ slug: item.slug }) },
@@ -74,13 +73,17 @@ export default project({
       views: [Header, Changelog, Footer],
       assert: 'static',
       head: {
-        render: () => ({ title: 'Hozu changelog', description: 'What changed in each Hozu release.', image }),
+        render: () => ({
+          title: 'Hozu changelog',
+          description: 'What changed in each Hozu release.',
+          image: icon,
+        }),
       },
     }),
     ui.page(notFound, {
       views: [Header, NotFound, Footer],
       assert: 'static',
-      head: { render: () => ({ title: 'Page not found — Hozu', noindex: true, image }) },
+      head: { render: () => ({ title: 'Page not found — Hozu', noindex: true, image: icon }) },
     }),
   ],
   features: [content],

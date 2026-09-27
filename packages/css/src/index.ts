@@ -35,6 +35,11 @@ export function selectorClasses(css: string): Set<string> {
   return out
 }
 
+const transitions = `@view-transition { navigation: auto; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}`
+
 const foldDivisions = (css: string) =>
   css.replace(/calc\((-?\d*\.?\d+)\s*\/\s*(-?\d*\.?\d+)\)/g, (all, a: string, b: string) => {
     const x = Number(a) / Number(b)
@@ -52,7 +57,7 @@ export async function compileStyles(
 ): Promise<CompiledStyles> {
   const { entry, features } = build.bindings.styles
   const imports = [entry ?? 'tailwindcss', ...Object.values(features).flat()]
-  const source = imports.map((file) => `@import ${JSON.stringify(file)};`).join('\n')
+  const source = [transitions, ...imports.map((file) => `@import ${JSON.stringify(file)};`)].join('\n')
   const files = new Set<string>()
   const compiler = await compile(source, {
     base,

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 — what the official site found
+
+Gaps found while building [hozu.org](https://hozu.org) with Hozu (ADR 0032).
+- **No flash between pages.** The stylesheet turns on cross-document view transitions, so links between pages
+  without islands cross-fade instead of flashing, with no JS (Chrome/Edge 126+, Safari 18.2+; other browsers are
+  unchanged). With `prefers-reduced-motion` the pages swap without animation. Turn them off with
+  `@view-transition { navigation: none; }` in your stylesheet.
+- **Static output contains every file its pages link to.** `exportStatic` and `hozu build` now write
+  `/manifest.webmanifest`, and `/sw.js` with `/_hozu/sw-register.js` when `site.offline` is set. Before, pages linked
+  them but only the server generated them.
+- **`head.image` accepts `ui.asset(...)`,** for a share image on a static host. It is linked by absolute URL and
+  copied with the other assets.
+
 ## 0.3.0 — less reading, less rewriting
 
 - **`hozu map`:** a compact outline of the app with `file:line` for every entry. It covers routes and their pages,

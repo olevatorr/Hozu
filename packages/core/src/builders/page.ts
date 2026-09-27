@@ -1,5 +1,6 @@
 import { brand, type Decl } from '../model/decl.ts'
 import type { Ref, Val } from '../model/expr.ts'
+import type { Asset } from './asset.ts'
 import type { QueryDecl } from './effects.ts'
 import type { RouteDecl } from './route.ts'
 import type { ViewDecl } from './ui.ts'
@@ -8,7 +9,7 @@ export interface HeadFields {
   title: Val<string>
   description?: Val<string>
   type?: 'website' | 'article'
-  image?: Val<string | null>
+  image?: Val<string | null> | Asset
   published?: Val<string | null>
   noindex?: boolean
 }

@@ -22,13 +22,13 @@ The first build compiles workspace packages on a fresh checkout. Export replaces
 - `../docs/trials/*.md`: the original trial records, loaded directly with `@hozu/content`. Do not copy them into the site. Relative links to trials resolve to published trial pages; other relative links resolve to GitHub source.
 - `../CHANGELOG.md`: the original changelog, rendered directly.
 - `features/content/views.ts`: home page and shared navigation. Measured claims link to trials 0010–0013. The 72/72 versus 67/72 result comes specifically from trial 0012.
-- `assets/`: copies of the repository logo and static sharing icon.
+- `assets/`: copies of the repository logo and the sharing icon (`head.image` via `ui.asset`).
 
 ## Deployment
 
 `.github/workflows/pages.yml` builds and uploads `site/dist` on the configured main-branch paths or a manual dispatch, then deploys with the GitHub Pages environment. Select GitHub Actions as the repository's Pages source and configure the custom domain `hozu.org` with its DNS records. The workflow does not change repository settings or DNS.
 
-The export includes `CNAME`, `.nojekyll`, `404.html`, `sitemap.xml`, `robots.txt`, a static sharing image and a web manifest. The manifest and sharing image use the site-local fallback designs recorded in `FRAMEWORK-GAPS.md`.
+The export includes `CNAME`, `.nojekyll`, `404.html`, `sitemap.xml`, `robots.txt`, a static sharing image and a web manifest.
 
 ## Verification record
 

@@ -1,5 +1,6 @@
-import type { BuildResult } from '@hozu/core/ir'
+import { type BuildResult, hashJson } from '@hozu/core/ir'
 import { clientBundle } from './assets.ts'
+import { serviceWorker, serviceWorkerRegistration, webManifest } from './pwa.ts'
 import { type Assets, fnsModule, type Stylesheet, type WidgetBundle } from './render.ts'
 
 export interface StaticFile {
@@ -41,5 +42,12 @@ export function staticFiles(
   for (const [path, a] of Object.entries(build.bindings.assets))
     if (a.file) out.push({ path, text: null, file: a.file })
   for (const [path, code] of Object.entries(widgets?.files ?? {})) out.push(text(path, code))
+  const manifest = webManifest(build.ir)
+  if (manifest) out.push(text('/manifest.webmanifest', manifest))
+  const worker = serviceWorker(build.ir, hashJson(build.ir).slice(0, 12))
+  if (worker) {
+    out.push(text('/sw.js', worker))
+    out.push(text('/_hozu/sw-register.js', serviceWorkerRegistration(build.ir)))
+  }
   return out
 }

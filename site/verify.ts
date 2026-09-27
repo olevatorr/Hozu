@@ -26,7 +26,7 @@ assert.equal(await readFile(new URL('.nojekyll', root), 'utf8'), '')
 assert.match(await readFile(new URL('404.html', root), 'utf8'), /Page not found/)
 const manifest = JSON.parse(await readFile(new URL('manifest.webmanifest', root), 'utf8'))
 assert.equal(manifest.name, 'Hozu')
-assert.equal(manifest.icons[0].src, '/icon-256.png')
+assert.match(manifest.icons[0].src, /^\/_hozu\/a\/[0-9a-f]{16}\.png$/)
 const sitemap = await readFile(new URL('sitemap.xml', root), 'utf8')
 const locations = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => new URL(match[1]!))
 assert.ok(locations.length > 0)
@@ -54,7 +54,11 @@ for (const file of files.filter((name) => name.endsWith('.html'))) {
   assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1, `${file}: one main heading`)
   assert.ok(!/<script[^>]+src=/.test(html), `${file}: no client scripts`)
   assert.ok(!/role="alert"/.test(html), `${file}: no query failure alerts`)
-  assert.ok(html.includes('https://hozu.org/icon-256.png'), `${file}: share image`)
+  assert.match(
+    html,
+    /<meta property="og:image" content="https:\/\/hozu\.org\/_hozu\/a\/[0-9a-f]{16}\.png">/,
+    `${file}: share image`,
+  )
   for (const match of html.matchAll(/(?:href|src)="([^"#]+)(?:#[^"]*)?"/g)) {
     const url = new URL(match[1]!, `https://hozu.org/${file}`)
     if (url.origin !== 'https://hozu.org') continue

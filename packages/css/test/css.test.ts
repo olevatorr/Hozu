@@ -1,3 +1,6 @@
+import { mkdtemp, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { buildProject } from '@hozu/core/ir'
 import { compileStyles, selectorClasses } from '@hozu/css'
 import { validate } from '@hozu/validator'
@@ -64,5 +67,29 @@ describe('styles', () => {
         '.md\\:grid-cols-2{}.w-1\\/2{}.group-hover\\:x:is(:where(.group):hover *){}.\\[mask-type\\:a\\]{}',
       ),
     ]).toEqual(['md:grid-cols-2', 'w-1/2', 'group-hover:x', 'group', '[mask-type:a]'])
+  })
+})
+
+describe('page transitions', () => {
+  it('turns on cross-document view transitions before the project stylesheet', async () => {
+    const { css } = await compileStyles(buildProject(cart, { sources: false }))
+    expect(css.indexOf('@view-transition{navigation:auto}')).toBeGreaterThanOrEqual(0)
+    expect(css.indexOf('@view-transition{navigation:auto}')).toBeLessThan(css.indexOf('@layer theme{'))
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion:reduce\)\{::view-transition-group\(\*\)\{animation:none!important\}/,
+    )
+  })
+
+  it('a project turns them off with its own @view-transition rule, which comes later', async () => {
+    const build = buildProject(cart, { sources: false })
+    const entry = join(await mkdtemp(join(tmpdir(), 'hozu-css-')), 'app.css')
+    await writeFile(entry, '@import "tailwindcss";\n@view-transition { navigation: none; }\n')
+    const { css } = await compileStyles({
+      ...build,
+      bindings: { ...build.bindings, styles: { entry, features: {} } },
+    })
+    expect(css.indexOf('@view-transition{navigation:none}')).toBeGreaterThan(
+      css.indexOf('@view-transition{navigation:auto}'),
+    )
   })
 })

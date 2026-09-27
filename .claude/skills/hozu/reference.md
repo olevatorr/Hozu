@@ -112,8 +112,12 @@ There are no rewrites: one URL has one owner.
   dimensions). With `@hozu/image` installed, pass `images: await optimizeImages(build)` to `createServer` (and
   `hozu build` does it itself): raster assets get WebP `srcset` widths and `sizes`.
 - **Share images:** `head.render` → `image: ui.og({ title, subtitle })` renders a 1200×630 card; pass
-  `og: ogImage` (from `@hozu/image`) to `createServer`.
+  `og: ogImage` (from `@hozu/image`) to `createServer`. On a static host, use a file instead:
+  `image: ui.asset(new URL('./share.png', import.meta.url))` (made absolute with `site.url`).
 - **Fonts:** a local `@font-face` gets a size-matched `"<Family> Fallback"` automatically.
+- **Page transitions:** the stylesheet turns on cross-document view transitions, so links between pages cross-fade
+  instead of flashing (no JS). Turn them off with `@view-transition { navigation: none; }` in `app.css`; style them
+  with `::view-transition-*`.
 
 ## Preview (drafts)
 `createServer({ preview: { secret } })`; `GET /_hozu/preview?secret=…&path=/posts/a` turns preview on (a signed
@@ -136,6 +140,9 @@ Cloudflare Workers or Vercel the server is `createHandler({ build, manifest, res
 `@hozu/runtime-server` with `export default { fetch: handler.fetch }`, where
 `import * as render from './dist/server/render.js'` is the page code `hozu build` generates (edge runtimes cannot
 generate it at startup). Page cache and tag revalidation are per instance.
+A fully static site (GitHub Pages, any file host): `exportStatic({ build, styles, resolvers, outDir })` from
+`@hozu/adapter-static` writes every page without per-request data, plus the files they link to, and lists skipped
+routes.
 ```ts
 import manifest from './dist/manifest.json' with { type: 'json' }
 import * as render from './dist/server/render.js'

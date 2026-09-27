@@ -32,7 +32,7 @@ if (result.skipped.length) process.exitCode = 1
 
 Declare `entries` for every parameterized page and set `site.url` to the production origin. Inspect the output for missing pages before publishing. This website exports to `site/dist`, writes a `CNAME` for `hozu.org`, and includes `.nojekyll` so GitHub Pages serves its underscore-prefixed assets.
 
-Static hosts do not run query resolvers after export. Rebuild the site when content changes. Use a static image for social metadata; generated `ui.og` images require a server handler.
+Static hosts do not run query resolvers after export. Rebuild the site when content changes. For social metadata, pass `ui.asset(...)` as `head.image`; the export copies the file and the page links it by absolute URL. Generated `ui.og` images require a server handler.
 
 ## Node
 

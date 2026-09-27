@@ -1,17 +1,20 @@
 # Framework gaps
 
-## Local assets in head.image
+Gaps found while building this site. Resolved ones stay listed with the release that fixed them.
 
-- Needed: use the copied local icon as a static social image through the asset pipeline.
-- Tried: `head.render: () => ({ image: ui.asset(new URL('./assets/icon-256.png', import.meta.url)) })`.
-- Diagnostic: `TS2322: Type 'Asset' is not assignable to type 'Val<string | null>'`. Hozu validation itself reported no errors or warnings.
-- Supported design: use the absolute URL `https://hozu.org/icon-256.png` for `head.image` and copy that file into the export directory. The site icon still uses `ui.asset`. No `ui.og` or server is needed.
+## Local assets in head.image (resolved in 0.4.0, ADR 0032)
 
-## Static export omits the linked web manifest
+- Needed: use the copied local icon as the social image through the asset pipeline.
+- Was: `head.render: () => ({ image: ui.asset(...) })` failed with `TS2322: Type 'Asset' is not assignable to type 'Val<string | null>'`.
+- Now: `head.image` accepts `ui.asset(...)`; the page links it by absolute URL and the export copies it.
+
+## Static export omits the linked web manifest (resolved in 0.4.0, ADR 0032)
 
 - Needed: every local URL linked by exported HTML must exist on GitHub Pages.
-- Tried: export with `site.icon` and `site.themeColor`, then without both optional fields. Both outputs link `/manifest.webmanifest`; neither export writes that file.
-- Diagnostic: the export reports zero skipped routes, but the link audit fails with `ENOENT: no such file or directory, stat 'site/dist/manifest.webmanifest'`. Hozu validation reports no warning for it.
-- Supported design: the site's export script writes a static web manifest alongside its copied icon. It declares browser display, with no offline service worker or server requirement.
+- Was: every page linked `/manifest.webmanifest`, but the export did not write it, and nothing reported it.
+- Now: static exports and `hozu build` write the manifest (and the service worker files with `site.offline`).
 
-No framework packages are modified.
+## Pages flash on every link (resolved in 0.4.0, ADR 0032)
+
+- Found after deploying: pages without islands load a new document per link, and browsers paint a blank frame.
+- Now: the stylesheet turns on cross-document view transitions (Chrome/Edge 126+, Safari 18.2+), with no JS.
