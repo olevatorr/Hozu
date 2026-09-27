@@ -59,3 +59,14 @@ Trial 0011 repeats trial 0010 (two runs per arm and step, Nuxt re-run). Targets 
   - **Excluded:** contract data and enum values.
 - **SKILL.md:** stays at 10,239 bytes.
 - **Gate:** green, 264 tests. The runtime did not change, so parity keeps its 24/24 from ADR 0028.
+
+## Results
+**Trial 0011** (`docs/trials/0011-inspect-and-summaries.md`):
+- build **2.28×** and change **1.53×** Nuxt (both targets missed), correctness in every run;
+- across the four 0.3 runs: 1.96× and 1.48×.
+
+The tools were used. The guidance not to print the generated files, and `hozu map` as the first step of a change,
+were not followed: agents read the code they edit. One scripted-edit mistake in a build accounts for much of the
+difference from trial 0010.
+
+The additions stay as working tools. The next lever is the size of the code an agent reads.
