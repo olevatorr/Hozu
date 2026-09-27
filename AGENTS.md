@@ -151,6 +151,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `pnpm --filter example-cart dev` — dev server with CSS hot swap
 - `pnpm --filter example-showcase validate|serve|dev` — every presentation capability and widget library
 - `pnpm --filter example-feed validate|plan|serve` — cursor pagination, infinite scroll, `:x+` / `:x?` routes
+- `examples/notes` — sessions (sign in/out), user-scoped data, no-JS forms; reference app for `bench/trial/notes`
+- `node bench/trial/notes/accept.mjs <name> <dir> <entry> <port> [1|2]` — hidden acceptance of the notes trial
 - `node bench/trial/accept.mjs <name> <dir> <entry> <port> [1|2]` — hidden acceptance of the AI trial app (docs/trials/0003)
 - `hozu validate --update-lock` — accept behavior changes into `hozu.lock.json` (only when clean)
 

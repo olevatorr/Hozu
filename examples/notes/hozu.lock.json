@@ -1,0 +1,141 @@
+{
+  "features": {
+    "account": {
+      "idle/on/account.SignIn/0": {
+        "behavior": "aaeb32df54d48ab1",
+        "contracts": {
+          "signsIn": "c44ede1b3bdcc2fc"
+        }
+      },
+      "idle/on/account.SignOut/0": {
+        "behavior": "e82aedd52c0e5186",
+        "contracts": {
+          "signsOut": "1aff8c28d9db651f"
+        }
+      },
+      "signingIn/invoke/done/0": {
+        "behavior": "d46f577c3995b180",
+        "contracts": {
+          "signsIn": "c44ede1b3bdcc2fc"
+        }
+      },
+      "signingIn/invoke/failed/Invalid/0": {
+        "behavior": "3adac45963ae399a",
+        "contracts": {
+          "rejectsName": "fa1d7cbccff658e1"
+        }
+      },
+      "signingIn/invoke/failed/Unexpected/0": {
+        "behavior": "8ee6315677d953da",
+        "contracts": {
+          "signInFails": "d0e3d8e1aa6ec50b"
+        }
+      },
+      "signingOut/invoke/done/0": {
+        "behavior": "6fd5c9e6a2149dde",
+        "contracts": {
+          "signsOut": "1aff8c28d9db651f"
+        }
+      },
+      "signingOut/invoke/failed/Unexpected/0": {
+        "behavior": "9ae8bb06af1922b5",
+        "contracts": {
+          "signOutFails": "6f238049557fd26f"
+        }
+      }
+    },
+    "notes": {
+      "adding/invoke/done/0": {
+        "behavior": "e0eb2a3405dfc35d",
+        "contracts": {
+          "adds": "738e9f720426d974"
+        }
+      },
+      "adding/invoke/failed/Duplicate/0": {
+        "behavior": "1233a75b5aaada40",
+        "contracts": {
+          "rejectsDuplicate": "a7e2e2f35dee6801"
+        }
+      },
+      "adding/invoke/failed/Invalid/0": {
+        "behavior": "3ba8e3c9bc908103",
+        "contracts": {
+          "rejectsInvalid": "547340307795e406"
+        }
+      },
+      "adding/invoke/failed/Unexpected/0": {
+        "behavior": "6606d67832662c72",
+        "contracts": {
+          "addFails": "a13c19cffe196491"
+        }
+      },
+      "idle/on/notes.Add/0": {
+        "behavior": "f714f6aa11e92791",
+        "contracts": {
+          "adds": "738e9f720426d974"
+        }
+      },
+      "idle/on/notes.Draft/0": {
+        "behavior": "3857c5fe4a6a008e",
+        "contracts": {
+          "typesDraft": "78e79a815a6544e5"
+        }
+      },
+      "idle/on/notes.Pin/0": {
+        "behavior": "71ea41aeb924b3bc",
+        "contracts": {
+          "pins": "9963c44d952ca31d"
+        }
+      },
+      "idle/on/notes.Remove/0": {
+        "behavior": "9a9661f294496cd6",
+        "contracts": {
+          "removes": "07804552c5848ba7"
+        }
+      },
+      "idle/on/notes.Search/0": {
+        "behavior": "cc98ea187307423e",
+        "contracts": {
+          "searches": "d170da153364c8eb"
+        }
+      },
+      "pinning/invoke/done/0": {
+        "behavior": "2bff26500adc2814",
+        "contracts": {
+          "pins": "9963c44d952ca31d"
+        }
+      },
+      "pinning/invoke/failed/NotFound/0": {
+        "behavior": "a7d1ce36cbdb54e3",
+        "contracts": {
+          "pinMissing": "91c8cd2486a5a33b"
+        }
+      },
+      "pinning/invoke/failed/Unexpected/0": {
+        "behavior": "f2e84ebd5e7b6484",
+        "contracts": {
+          "pinFails": "a2cf94e15d5b1389"
+        }
+      },
+      "removing/invoke/done/0": {
+        "behavior": "e54a61bbf262f9f9",
+        "contracts": {
+          "removes": "07804552c5848ba7"
+        }
+      },
+      "removing/invoke/failed/NotFound/0": {
+        "behavior": "2406737070881788",
+        "contracts": {
+          "removeMissing": "d31d942a7ae10a2c"
+        }
+      },
+      "removing/invoke/failed/Unexpected/0": {
+        "behavior": "5fbd09f5a2ecb8ee",
+        "contracts": {
+          "removeFails": "3178838156688a2d"
+        }
+      }
+    }
+  },
+  "version": 1
+}

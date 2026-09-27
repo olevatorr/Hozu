@@ -1,0 +1,27 @@
+import { project, ui } from '@hozu/core'
+import { zodAdapter } from '@hozu/schema-zod'
+import { me, Session } from './features/account/model.ts'
+import { AccountBar, account, Login } from './features/account/views.ts'
+import { NotesBoard, notes } from './features/notes/views.ts'
+import { home, login } from './routes.ts'
+
+export default project({
+  schema: zodAdapter,
+  styles: new URL('./app.css', import.meta.url),
+  session: Session,
+  site: { url: 'http://localhost:3000', name: 'Notes', lang: 'en' },
+  routes: { home, login },
+  pages: [
+    ui.page(home, {
+      views: [AccountBar, NotesBoard],
+      head: {
+        query: me,
+        input: () => ({}),
+        render: () => ({ title: 'Notes', noindex: true }),
+        redirects: { Unauthorized: login },
+      },
+    }),
+    ui.page(login, { views: [Login], head: { render: () => ({ title: 'Sign in' }) } }),
+  ],
+  features: [account, notes],
+})

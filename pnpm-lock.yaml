@@ -152,15 +152,15 @@ importers:
 
   bench/parity:
     dependencies:
+      '@hozu/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@tailwindcss/typography':
         specifier: 0.5.20
         version: 0.5.20(tailwindcss@4.3.3)
       '@tailwindcss/vite':
         specifier: 4.3.3
         version: 4.3.3(vite@8.3.1(@types/node@22.20.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
-      '@hozu/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       chart.js:
         specifier: 4.5.1
         version: 4.5.1
@@ -203,9 +203,6 @@ importers:
 
   examples/blog:
     dependencies:
-      '@tailwindcss/typography':
-        specifier: 0.5.20
-        version: 0.5.20(tailwindcss@4.3.3)
       '@hozu/adapter-node':
         specifier: workspace:*
         version: link:../../packages/adapter-node
@@ -236,6 +233,9 @@ importers:
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
+      '@tailwindcss/typography':
+        specifier: 0.5.20
+        version: 0.5.20(tailwindcss@4.3.3)
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -317,6 +317,33 @@ importers:
       '@hozu/data':
         specifier: workspace:*
         version: link:../../packages/data
+      '@hozu/schema-zod':
+        specifier: workspace:*
+        version: link:../../packages/schema-zod
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+
+  examples/notes:
+    dependencies:
+      '@hozu/adapter-node':
+        specifier: workspace:*
+        version: link:../../packages/adapter-node
+      '@hozu/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@hozu/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@hozu/css':
+        specifier: workspace:*
+        version: link:../../packages/css
+      '@hozu/data':
+        specifier: workspace:*
+        version: link:../../packages/data
+      '@hozu/runtime-server':
+        specifier: workspace:*
+        version: link:../../packages/runtime-server
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
@@ -541,15 +568,15 @@ importers:
 
   packages/css:
     dependencies:
-      '@tailwindcss/node':
-        specifier: 4.3.3
-        version: 4.3.3
       '@hozu/core':
         specifier: workspace:*
         version: link:../core
       '@hozu/validator':
         specifier: workspace:*
         version: link:../validator
+      '@tailwindcss/node':
+        specifier: 4.3.3
+        version: 4.3.3
       tailwindcss:
         specifier: 4.3.3
         version: 4.3.3

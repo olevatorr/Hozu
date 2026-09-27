@@ -1,0 +1,19 @@
+{
+  "name": "example-notes",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "hozu validate",
+    "serve": "node serve.ts"
+  },
+  "dependencies": {
+    "@hozu/adapter-node": "workspace:*",
+    "@hozu/cli": "workspace:*",
+    "@hozu/core": "workspace:*",
+    "@hozu/css": "workspace:*",
+    "@hozu/data": "workspace:*",
+    "@hozu/runtime-server": "workspace:*",
+    "@hozu/schema-zod": "workspace:*",
+    "zod": "4.6.5"
+  }
+}
