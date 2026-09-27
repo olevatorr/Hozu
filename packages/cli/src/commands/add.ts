@@ -54,7 +54,7 @@ export async function runAddFeature(
   const dir = join(root, 'features', name)
   if (existsSync(dir)) throw new HozuCliError('usage', `features/${name} already exists`, [])
   const n = namesOf(name)
-  const out: AddOutput = { created: [], edited: [], manual: [] }
+  const out: AddOutput = { created: [], edited: [], manual: [], declarations: {}, texts: [] }
   await mkdir(dir, { recursive: true })
   const routesPath = join(root, 'routes.ts')
   const routesSource = existsSync(routesPath) ? await readFile(routesPath, 'utf8') : ''
@@ -169,15 +169,71 @@ export async function runAddFeature(
     },
     `import { ${n.View}, ${n.feature} } from './features/${name}/views.ts', add ${n.feature} to features${pageRoute ? ` and ui.page(${pageRoute}, { views: [${n.View}], head: { render: () => ({ title: '${n.title}' }) } }) to pages` : ''}`,
   )
+  for (const file of out.created) {
+    const source = await readFile(resolve(cwd, file), 'utf8')
+    for (const [kind, names] of Object.entries(declarationsOf(source)))
+      out.declarations[kind] = [...(out.declarations[kind] ?? []), ...names]
+    out.texts.push(...textsOf(source, file))
+  }
   return out
+}
+
+const KINDS: Record<string, string> = {
+  event: 'events',
+  query: 'queries',
+  mutation: 'mutations',
+  fn: 'fns',
+  machine: 'machine',
+  'ui.view': 'views',
+  contract: 'contracts',
+}
+
+export function declarationsOf(source: string): Record<string, string[]> {
+  const out: Record<string, string[]> = {}
+  for (const m of source.matchAll(
+    /^export const (\w+) = (event|query|mutation|fn|machine|ui\.view|contract)\(/gm,
+  )) {
+    const kind = KINDS[m[2]!]!
+    out[kind] = [...(out[kind] ?? []), m[1]!]
+  }
+  return out
+}
+
+export function textsOf(source: string, file: string): AddOutput['texts'] {
+  const texts: AddOutput['texts'] = []
+  source.split('\n').forEach((line, i) => {
+    if (/^\s*((given|when|expect|data|result|input|payload):|\{ (send|done|failed):)/.test(line)) return
+    const message = /^export const [A-Z_]+ = '([^']+)'$/.exec(line)
+    if (message) texts.push({ file, line: i + 1, text: message[1]! })
+    const label = /\blabel: '([^']+)'/.exec(line)
+    if (label) texts.push({ file, line: i + 1, text: label[1]! })
+    if (file.endsWith('model.ts')) return
+    const scan = line.replace(/when\(\[[^\]]*\]/g, '')
+    const found = new Set<string>()
+    for (const lead of scan.matchAll(/\[\s*'([^']*)'\s*,/g)) found.add(lead[1]!)
+    for (const group of scan.matchAll(/\[([^[\]]*)\]/g))
+      for (const lit of group[1]!.matchAll(/'([^']*)'/g))
+        if ((/[A-Za-z…]/.test(lit[1]!) && !/^[a-z]+$/.test(lit[1]!)) || /^(done|open)$/.test(lit[1]!))
+          found.add(lit[1]!)
+    for (const text of found) if (/[A-Za-z…]/.test(text)) texts.push({ file, line: i + 1, text })
+  })
+  return texts
 }
 
 export function describeAdd(out: AddOutput): string {
   const lines = [
-    ...out.created.map((f) => `created ${f}`),
-    ...out.edited.map((f) => `edited  ${f}`),
-    ...out.manual.map((m) => `todo    ${m}`),
-    'next    hozu check',
+    ...out.created.map((f) => `created   ${f}`),
+    ...out.edited.map((f) => `edited    ${f}`),
+    ...out.manual.map((m) => `todo      ${m}`),
+    ...Object.entries(out.declarations).map(([k, names]) => `${k.padEnd(10)}${names.join(' ')}`),
+    ...[...new Map(out.texts.map((t) => [`${t.file}:${t.line}`, [] as string[]])).keys()].map(
+      (at) =>
+        `text      ${at}  ${out.texts
+          .filter((t) => `${t.file}:${t.line}` === at)
+          .map((t) => JSON.stringify(t.text))
+          .join(' ')}`,
+    ),
+    'next      edit the texts above to the spec (no need to print the files; hozu map shows the structure), then hozu check',
   ]
   return `${lines.join('\n')}\n`
 }

@@ -43,6 +43,8 @@ Options:
   --next <step>        post: next '<path>', 'GET <path>', 'POST <path> a=1&b=2' or 'POST <path> @Label' (repeatable)
   --session <json>     get/post: the session value for user-scoped queries
   --full               get/post: print the whole visible text
+  --select <selector>  get/post: print matching elements with their attributes: button, #id, [role=alert], a[href]
+  --forms              get/post: list the page's forms: action, fields with defaults, submit buttons
   --page <path>        add feature: also add a route and a page at this path
   --with <parts>       add feature: any of detail,toggle,filter,remove (comma-separated)
   -h, --help           Show this help
@@ -72,6 +74,8 @@ export async function main(
         page: { type: 'string' },
         with: { type: 'string' },
         button: { type: 'string' },
+        select: { type: 'string', multiple: true },
+        forms: { type: 'boolean', default: false },
         help: { type: 'boolean', short: 'h' },
       },
     })
@@ -139,6 +143,8 @@ export async function main(
         fields: values.field ?? [],
         next: values.next ?? [],
         button: values.button,
+        select: values.select ?? [],
+        forms: values.forms === true,
         session: values.session,
         full: values.full === true,
       })

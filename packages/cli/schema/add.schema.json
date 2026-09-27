@@ -22,12 +22,46 @@
           "items": {
             "type": "string"
           }
+        },
+        "declarations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "texts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "type": "string"
+              },
+              "line": {
+                "type": "number"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "file",
+              "line",
+              "text"
+            ],
+            "additionalProperties": false
+          }
         }
       },
       "required": [
         "created",
         "edited",
-        "manual"
+        "manual",
+        "declarations",
+        "texts"
       ],
       "additionalProperties": false
     }

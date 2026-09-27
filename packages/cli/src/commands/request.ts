@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import type { RequestOutput, RequestStep } from '../contract.ts'
+import type { RequestElement, RequestOutput, RequestStep } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 
@@ -85,6 +85,70 @@ export function formsOf(html: string, at: string): Form[] {
   return forms
 }
 
+const VOID = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'source',
+  'track',
+  'wbr',
+])
+
+const selectorOf = (selector: string) => {
+  const m = /^([a-z][\w-]*)?(?:#([\w-]+))?(?:\[([\w:-]+)(?:=["']?([^"'\]]*)["']?)?\])?$/i.exec(
+    selector.trim(),
+  )
+  if (!m || (!m[1] && !m[2] && !m[3]))
+    throw new HozuCliError('usage', `Unsupported selector "${selector}"`, [
+      'button',
+      '#id',
+      '[role=alert]',
+      'a[href]',
+      'input[name=title]',
+    ])
+  return { tag: m[1]?.toLowerCase(), id: m[2], attr: m[3]?.toLowerCase(), value: m[4] }
+}
+
+export function elementsOf(html: string, selector: string): RequestElement[] {
+  const sel = selectorOf(selector)
+  const source = html.replace(/<(script|style|template)\b[\s\S]*?<\/\1>/gi, (m) => ' '.repeat(m.length))
+  const out: RequestElement[] = []
+  const open = /<([a-z][\w-]*)\b([^>]*)>/gi
+  for (const m of source.matchAll(open)) {
+    const tag = m[1]!.toLowerCase()
+    if (sel.tag && sel.tag !== tag) continue
+    const attrs = attrsOf(m[2]!.replace(/\/$/, ''))
+    if (sel.id && attrs.id !== sel.id) continue
+    if (sel.attr && (!(sel.attr in attrs) || (sel.value !== undefined && attrs[sel.attr] !== sel.value)))
+      continue
+    let text = ''
+    if (!VOID.has(tag)) {
+      const start = m.index + m[0].length
+      const tags = new RegExp(`<(/?)${tag}\\b[^>]*>`, 'gi')
+      tags.lastIndex = start
+      let depth = 1
+      let end = source.length
+      for (let t = tags.exec(source); t; t = tags.exec(source)) {
+        depth += t[1] ? -1 : 1
+        if (depth === 0) {
+          end = t.index
+          break
+        }
+      }
+      text = plain(source.slice(start, end))
+    }
+    out.push({ selector, tag, attrs, text: text.length > 120 ? `${text.slice(0, 120)}…` : text })
+  }
+  return out
+}
+
 const titleOf = (html: string) => {
   const t = /<title>([\s\S]*?)<\/title>/.exec(html)?.[1]
   return t === undefined ? null : plain(t)
@@ -101,6 +165,8 @@ export interface RequestOptions {
   fields: string[]
   next: string[]
   button: string | undefined
+  select: string[]
+  forms: boolean
   session: string | undefined
   full: boolean
 }
@@ -158,6 +224,8 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
       alerts: final ? alertsOf(page.html) : [],
       text: final ? text : null,
       truncated: final && page.text.length > LIMIT && !options.full,
+      elements: final ? options.select.flatMap((q) => elementsOf(page.html, q)) : [],
+      forms: final && options.forms ? formsOf(page.html, path) : [],
     })
   }
   const get = async (path: string): Promise<void> => {
@@ -248,6 +316,21 @@ export function describeRequest(out: RequestOutput): string {
     if (s.title) lines.push(`  title: ${s.title}`)
     for (const a of s.alerts) lines.push(`  alert: ${a}`)
     lines.push(`  text: ${s.text}${s.truncated ? ' (truncated; --full shows all)' : ''}`)
+    for (const e of s.elements)
+      lines.push(
+        `  ${e.selector}: <${e.tag}${Object.entries(e.attrs)
+          .filter(([k]) => k !== 'class')
+          .map(([k, v]) => (v === '' ? ` ${k}` : ` ${k}="${v}"`))
+          .join('')}>${e.text ? ` ${e.text}` : ''}`,
+      )
+    for (const f of s.forms)
+      lines.push(
+        `  form ${f.action} fields: ${
+          Object.entries(f.fields)
+            .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
+            .join(' ') || '(none)'
+        } buttons: ${f.buttons.join(', ') || '(none)'}`,
+      )
   }
   return `${lines.join('\n')}\n`
 }

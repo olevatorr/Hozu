@@ -21,6 +21,12 @@
   - adding a detail page.
 
   The change loop starts with `hozu map`.
+- **`hozu get` / `hozu post` show more without a server:**
+  - `--select <selector>` prints matching elements with their attributes. The selectors are `tag`, `#id`,
+    `[attr]`, `[attr=value]` and `tag[attr=value]`, e.g. `button[aria-pressed=true]`.
+  - `--forms` lists each form's action, fields with their defaults, and submit buttons.
+- **`hozu add feature` prints what to edit:** the generated declarations by kind, and every user-facing text with its
+  `file:line`. The guides say not to print the generated files.
 
 ## 0.2.0 — a cheaper loop for agents
 

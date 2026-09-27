@@ -83,6 +83,8 @@ Fix what it reports. When the behaviour change is intended and everything is cle
 
 ## 4. Verify (once, no server needed)
 - **Pages:** `pnpm exec hozu get / /items/i1` prints the status, title, alerts and visible text.
+- **Attributes and forms:** `--select button` (or `'[role=alert]'`, `a[href]`, `#id`) prints elements with their
+  attributes, e.g. `aria-pressed`; `--forms` lists each form's fields and buttons. Never start a server for this.
 - **Forms:** `pnpm exec hozu post / --field title=A --field priority=high --next /items` fills the form like a
   browser (other fields keep their defaults). It follows the redirect, then runs the next steps in the same
   process.

@@ -143,6 +143,21 @@ export interface RequestStep {
   alerts: string[]
   text: string | null
   truncated: boolean
+  elements: RequestElement[]
+  forms: RequestForm[]
+}
+
+export interface RequestElement {
+  selector: string
+  tag: string
+  attrs: Record<string, string>
+  text: string
+}
+
+export interface RequestForm {
+  action: string
+  fields: Record<string, string>
+  buttons: string[]
 }
 
 export interface RequestOutput {
@@ -199,4 +214,6 @@ export interface AddOutput {
   created: string[]
   edited: string[]
   manual: string[]
+  declarations: Record<string, string[]>
+  texts: { file: string; line: number; text: string }[]
 }

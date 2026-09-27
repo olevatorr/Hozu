@@ -5,10 +5,10 @@ description: Build or change an app with the Hozu framework (packages @hozu/*, f
 
 # Hozu authoring guide
 
-Hozu is not in your training data. These files are the whole API; do not read `node_modules/@hozu`.
+Hozu is not in your training data. These files are the whole API; skip `node_modules/@hozu`.
 - **Changing an app:** read `changing.md` first, then only the app's own files.
 - **Building an app:** read this file, run `hozu add feature <name> --page / --with detail,toggle,filter,remove`
-  (keep the parts you need) and edit the working code; `patterns.md` points into `example/`.
+  and edit the texts it lists (`file:line`); don't print the generated files. `patterns.md`: the rest.
 - **`reference.md`** when the task needs it: routes, DOM fields, no-JS forms, `head`, 404/500, field errors,
   sessions, languages, env, HTTP, Markdown, images, preview, PWA, page tests, deployment.
 - **A diagnostic you do not understand:** `diagnostics.md`.
@@ -43,7 +43,7 @@ pnpm exec hozu check  # after every edit: types, rules, contracts
 pnpm exec hozu check --update-lock  # accept an intended behaviour change
 pnpm exec hozu add feature items --page / --with detail,toggle  # a working feature, wired in
 pnpm exec hozu map  # outline of the app with file:line
-pnpm exec hozu get / /items  # try pages without a server
+pnpm exec hozu get / --select button --forms  # pages without a server: text, attributes, forms
 pnpm exec hozu post / --field title=A --next 'POST / title=a' --next /  # submit a form like a browser
 ```
 Diagnostics give `file:line`, cause and fix: apply the fix. `get` / `post` start from fresh in-memory data;
@@ -128,12 +128,11 @@ export const Board = ui.view({
     ]),
 })
 ```
-- `ui.<tag>(attrs, children)`; attribute values are literals, references or guards.
+- `ui.<tag>(attrs, children)`; values are literals, references or guards. `ui.each(list, 'id', (item) => node)`.
 - `class` is a static string of Tailwind classes that must exist (HZ026). Conditional classes:
   `toggle: { 'bg-indigo-600 text-white': op.eq(ctx.tab, t) }`. CSS variables: `vars: { '--hue': item.hue }`.
 - Events: `on: { click: ui.send(Event, payload) }`. Payload fields: literals, references, `ui.dom.value`,
   `ui.dom.form('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`.
-- `ui.each(list, 'id', (item) => node)` (key `null` for primitives).
 - Links: `ui.link(route, params, search)`, never a string path (HZ032). The third argument exists only when the
   route declares `search` (`null` = all defaults). Filters that belong in the URL are `search` links, not context.
 - A form whose submit reads only `ui.dom.form(...)`, literals, context, params and search also works without JS.

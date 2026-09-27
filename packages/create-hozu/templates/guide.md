@@ -9,15 +9,16 @@ A web app built with Hozu (`@hozu/*`). Hozu is not in your training data.
 
 ## The loop
 ```
-__RUN__ hozu add feature tasks --page / --with detail,toggle,filter,remove   # working code to edit
+__RUN__ hozu add feature tasks --page / --with detail,toggle,filter,remove   # then edit the texts it lists
 __RUN__ hozu map                           # outline of the app with file:line, before a change
 __RUN__ hozu check                         # after every change: types, rules, contracts
 __RUN__ hozu check --update-lock           # only to accept a clean, intended behaviour change
-__RUN__ hozu get / /tasks/t1               # try pages without a server
+__RUN__ hozu get / --select button --forms  # try pages without a server: text, attributes, forms
 __RUN__ hozu post / --field title=Ship --next /   # submit a form like a browser
 ```
 __NOTE__
 ## Rules
+- After `hozu add feature`, do not print the generated files: edit the texts it lists; `hozu map` shows the rest.
 - Apply the fix each diagnostic gives; do not work around a rule.
 - Every behaviour change comes with a contract change.
 - Do not edit `__SKILL__/`: `__RUN__ hozu skill` rewrites it for the installed Hozu version.

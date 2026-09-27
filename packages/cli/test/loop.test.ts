@@ -169,4 +169,48 @@ describe('the agent loop (ADR 0027)', () => {
       await json('map', ['map'], cwd)
     }
   })
+
+  it('shows attributes and forms without a server, and lists the texts a scaffold wants edited', async () => {
+    const app = await freshApp()
+    const added = await json(
+      'add',
+      ['add', 'feature', 'tasks', '--page', '/', '--with', 'detail,toggle,filter,remove'],
+      app,
+    )
+    expect(added.out.declarations.views).toEqual(['TasksBoard', 'TaskDetail'])
+    expect(added.out.texts.map((t: { text: string }) => t.text)).toEqual(
+      expect.arrayContaining([
+        'Tasks',
+        'Add',
+        'Mark done',
+        'No items',
+        'Not found',
+        'Status: ',
+        'This task already exists',
+      ]),
+    )
+    for (const t of added.out.texts as { file: string; line: number; text: string }[])
+      expect(readFileSync(join(app, t.file), 'utf8').split('\n')[t.line - 1], t.text).toContain(t.text)
+    const page = await json(
+      'request',
+      [
+        'post',
+        '/',
+        '--field',
+        'title=Ship it',
+        '--select',
+        'button[aria-pressed=true]',
+        '--select',
+        'a',
+        '--forms',
+      ],
+      app,
+    )
+    const last = page.out.steps.at(-1)
+    expect(last.elements[0]).toMatchObject({ tag: 'button', attrs: { 'aria-pressed': 'true' }, text: 'All' })
+    expect(last.elements[1]).toMatchObject({ tag: 'a', attrs: { href: '/tasks/t1' }, text: 'Ship it' })
+    expect(last.forms.map((f: { buttons: string[] }) => f.buttons[0])).toEqual(['Add', 'Mark done', 'Delete'])
+    expect(last.forms[1].fields).toEqual({ id: 't1' })
+    expect((await run(['get', '/', '--select', 'div > p'], app)).code).toBe(2)
+  })
 })

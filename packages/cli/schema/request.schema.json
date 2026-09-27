@@ -59,6 +59,18 @@
         },
         "truncated": {
           "type": "boolean"
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RequestElement"
+          }
+        },
+        "forms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RequestForm"
+          }
         }
       },
       "required": [
@@ -69,7 +81,62 @@
         "title",
         "alerts",
         "text",
-        "truncated"
+        "truncated",
+        "elements",
+        "forms"
+      ],
+      "additionalProperties": false
+    },
+    "RequestElement": {
+      "type": "object",
+      "properties": {
+        "selector": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "attrs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "selector",
+        "tag",
+        "attrs",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "RequestForm": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "buttons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "action",
+        "fields",
+        "buttons"
       ],
       "additionalProperties": false
     }
