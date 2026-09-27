@@ -19,7 +19,7 @@ const categorize = (name, input) => {
   )
     return 'verify'
   if (
-    /skills\/hozu|SKILL\.md|reference\.md|patterns\.md|changing\.md|diagnostics\.md|AGENTS\.md|CLAUDE\.md|--help|hozu (map|inspect|explain|graph|plan)/.test(
+    /skills\/hozu|SKILL\.md|reference\.md|patterns\.md|changing\.md|diagnostics\.md|AGENTS\.md|CLAUDE\.md|--help|hozu (map|inspect|explain|graph|plan|docs)/.test(
       text,
     )
   )
