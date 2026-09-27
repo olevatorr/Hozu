@@ -1,5 +1,6 @@
 import { assetName, assetUrl, readAsset } from '../builders/asset.ts'
 import { builtinOf, messageKeyOf } from '../builders/i18n.ts'
+import { operatorFns } from '../builders/operators.ts'
 import { linkOf } from '../builders/ui.ts'
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import { type At, at, join, resolveAt } from '../canonical/pointer.ts'
@@ -239,8 +240,14 @@ export class FeatureScope {
       if ('left' in raw) return { op: raw.op, left: this.value(raw.left, p), right: this.value(raw.right, p) }
     }
     const expr = exprOf(g)
-    if (expr?.kind === 'call')
+    if (expr?.kind === 'call') {
+      const name = builtinOf(expr.fn)
+      if (name?.startsWith('%')) {
+        this.project.bindings.fns[name] = operatorFns[name]!
+        return { op: 'fn', fn: name, arg: this.value(expr.arg, p) }
+      }
       return { op: 'fn', fn: this.ref(expr.fn, ['fn'], p), arg: this.value(expr.arg, p) }
+    }
     throw new RecorderError('A guard must be an op.* comparison or a boolean fn() call')
   }
 
@@ -270,7 +277,7 @@ export class FeatureScope {
         const message = messageKeyOf(expr.fn)
         const name = message ? '#msg' : builtinOf(expr.fn)
         if (name) {
-          this.project.bindings.fns[name] = i18nFns[name]!
+          this.project.bindings.fns[name] = (i18nFns[name] ?? operatorFns[name])!
           const owner = message ? this.project.owners.get(message.decl) : null
           if (message && !owner)
             this.report(

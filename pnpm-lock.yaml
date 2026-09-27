@@ -233,6 +233,9 @@ importers:
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../../packages/transform
       '@tailwindcss/typography':
         specifier: 0.5.20
         version: 0.5.20(tailwindcss@4.3.3)
@@ -260,6 +263,9 @@ importers:
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../../packages/transform
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -296,6 +302,9 @@ importers:
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../../packages/transform
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -320,6 +329,9 @@ importers:
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../../packages/transform
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -347,6 +359,9 @@ importers:
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../../packages/transform
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -377,6 +392,9 @@ importers:
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../../packages/transform
       chart.js:
         specifier: 4.5.1
         version: 4.5.1
@@ -429,6 +447,9 @@ importers:
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../../packages/transform
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -453,6 +474,9 @@ importers:
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../../packages/transform
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -477,6 +501,9 @@ importers:
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../../packages/transform
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -537,6 +564,9 @@ importers:
       '@hozu/machine':
         specifier: workspace:*
         version: link:../machine
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../transform
       '@hozu/validator':
         specifier: workspace:*
         version: link:../validator
@@ -657,6 +687,12 @@ importers:
         specifier: workspace:*
         version: link:../runtime-server
 
+  packages/transform:
+    dependencies:
+      acorn:
+        specifier: ^8.18.0
+        version: 8.18.0
+
   packages/validator:
     dependencies:
       '@hozu/compiler':
@@ -692,6 +728,9 @@ importers:
       '@hozu/testing':
         specifier: workspace:*
         version: link:../packages/testing
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../packages/transform
       '@tailwindcss/typography':
         specifier: 0.5.20
         version: 0.5.20(tailwindcss@4.3.3)

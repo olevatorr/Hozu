@@ -54,7 +54,7 @@ export function verifyContracts(
               run.failure.code === 'HZ017'
                 ? 'Make the contract data match the declared schema'
                 : 'Decide which is intended: fix the machine, or update the contract to specify the new behavior',
-            snippet: null,
+            snippet: run.failure.snippet ?? null,
             patch: null,
           },
         )

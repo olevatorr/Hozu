@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join as joinPath } from 'node:path'
 import { codes, type Diagnostic, hashJson, type Json, join, resolveSource } from '@hozu/core/ir'
-import { isMechanical, type Lockfile, truthinessDiagnostics, verify } from '@hozu/validator'
+import { isMechanical, type Lockfile, verify } from '@hozu/validator'
 import type { Coverage, ValidateOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
@@ -58,16 +58,7 @@ export async function runValidate(
     unknownClasses: unknown,
   })
   const traced = loaded.build(true)
-  const files = Object.fromEntries(
-    [...new Set(Object.values(traced.sources).map((s) => s.file))]
-      .filter((f) => !f.endsWith('.client.ts') && existsSync(f))
-      .map((f) => [f, readFileSync(f, 'utf8')]),
-  )
-  let diagnostics: Diagnostic[] = [
-    ...first.diagnostics,
-    ...verified.diagnostics,
-    ...truthinessDiagnostics(files),
-  ]
+  let diagnostics: Diagnostic[] = [...first.diagnostics, ...verified.diagnostics]
   if (hash !== hashJson(second.ir)) {
     const pointer = firstDifference(first.ir as unknown as Json, second.ir as unknown as Json) ?? ''
     const featureId = pointer.startsWith('/features/') ? (pointer.split('/')[2] ?? null) : null

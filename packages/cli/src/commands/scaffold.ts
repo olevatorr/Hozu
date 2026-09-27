@@ -41,24 +41,14 @@ const events = (w: With) =>
 export function model(n: Names, w: With): string {
   const keyed = w.detail || w.toggle || w.remove
   const busy = w.toggle || w.remove
-  const core = [
-    'event',
-    ...(w.filter ? ['fn'] : []),
-    'invoke',
-    'machine',
-    'mutation',
-    'on',
-    'op',
-    'query',
-    'tag',
-  ]
+  const core = ['event', ...(w.filter ? ['fn'] : []), 'invoke', 'machine', 'mutation', 'on', 'query', 'tag']
   const actionState = (state: string, effect: string) => `    ${state}: {
       invoke: invoke(${effect}, {
         input: { id: ctx.target },
         done: 'idle',
         failed: {
-          NotFound: { target: 'idle', assign: () => [op.set(ctx.error, NOT_FOUND)] },
-          Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] },
+          NotFound: { target: 'idle', assign: () => { ctx.error = NOT_FOUND } },
+          Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } },
         },
       }),
     },`
@@ -154,30 +144,30 @@ export const isEmpty = fn({
     '  states: ({ ctx }) => ({',
     '    idle: {',
     '      on: [',
-    `        on(Draft, { target: 'idle', assign: (e) => [op.set(ctx.draft, e.text)] }),`,
+    `        on(Draft, { target: 'idle', assign: (e) => { ctx.draft = e.text } }),`,
     '        on(Add, {',
     `          target: 'adding',`,
-    '          assign: (e) => [',
-    '            op.set(ctx.draft, e.title),',
-    '            op.set(ctx.error, null),',
-    '            op.set(ctx.fields, { title: null }),',
-    '          ],',
+    '          assign: (e) => {',
+    '            ctx.draft = e.title',
+    '            ctx.error = null',
+    '            ctx.fields = { title: null }',
+    '          },',
     '        }),',
     w.toggle &&
-      `        on(Toggle, { target: 'toggling', assign: (e) => [op.set(ctx.target, e.id), op.set(ctx.error, null)] }),`,
+      `        on(Toggle, { target: 'toggling', assign: (e) => { ctx.target = e.id; ctx.error = null } }),`,
     w.remove &&
-      `        on(Remove, { target: 'removing', assign: (e) => [op.set(ctx.target, e.id), op.set(ctx.error, null)] }),`,
-    w.filter && `        on(SetShow, { target: 'idle', assign: (e) => [op.set(ctx.show, e.show)] }),`,
+      `        on(Remove, { target: 'removing', assign: (e) => { ctx.target = e.id; ctx.error = null } }),`,
+    w.filter && `        on(SetShow, { target: 'idle', assign: (e) => { ctx.show = e.show } }),`,
     '      ],',
     '    },',
     '    adding: {',
     `      invoke: invoke(${n.add}, {`,
     '        input: { title: ctx.draft },',
-    `        done: { target: 'idle', assign: () => [op.set(ctx.draft, '')] },`,
+    `        done: { target: 'idle', assign: () => { ctx.draft = '' } },`,
     '        failed: {',
-    `          Duplicate: { target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] },`,
-    `          Invalid: { target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] },`,
-    `          Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] },`,
+    `          Duplicate: { target: 'idle', assign: () => { ctx.error = DUPLICATE } },`,
+    `          Invalid: { target: 'idle', assign: (e) => { ctx.fields = e.fields } },`,
+    `          Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } },`,
     '        },',
     '      }),',
     '    },',
@@ -214,8 +204,8 @@ export function views(n: Names, w: With, listRoute: string | null): string {
       : `ui.span({ class: 'flex-1' }, [item.title])`,
     ...(w.toggle
       ? [
-          `ui.span({ class: 'text-xs text-slate-500' }, [ui.if(op.eq(item.done, true), ['done'], ['open'])])`,
-          itemForm('Toggle', `ui.if(op.eq(item.done, true), ['Mark open'], ['Mark done'])`),
+          `ui.span({ class: 'text-xs text-slate-500' }, [item.done ? 'done' : 'open'])`,
+          itemForm('Toggle', `item.done ? 'Mark open' : 'Mark done'`),
         ]
       : []),
     ...(w.remove ? [itemForm('Remove', `'Delete'`)] : []),
@@ -228,16 +218,12 @@ export function views(n: Names, w: With, listRoute: string | null): string {
                 ),
               ])`
   const ready = w.filter
-    ? `ui.if(
-              isEmpty({ items, show: ctx.show }),
-              [ui.p({ class: 'text-slate-500' }, ['No items'])],
-              [
-              ${list},
-              ],
-            )`
+    ? `isEmpty({ items, show: ctx.show })
+              ? ui.p({ class: 'text-slate-500' }, ['No items'])
+              : ${list}`
     : list
   return `${lines(
-    `import { feature, op, ui } from '@hozu/core'`,
+    `import { feature, ui } from '@hozu/core'`,
     w.detail && `import { ${[listRoute ?? 'home', n.detailRoute].sort().join(', ')} } from '../../routes.ts'`,
     `import {\n  ${modelNames.join(',\n  ')},\n} from './model.ts'`,
     '',
@@ -262,7 +248,7 @@ export function views(n: Names, w: With, listRoute: string | null): string {
     '          minlength: 2,',
     '          maxlength: 80,',
     '          value: ctx.draft,',
-    `          'aria-invalid': op.neq(ctx.fields.title, null),`,
+    `          'aria-invalid': ctx.fields.title !== null,`,
     `          'aria-describedby': '${n.id}-title-error',`,
     `          class: 'flex-1 rounded border px-3 py-2',`,
     '          on: { input: ui.send(Draft, { text: ui.dom.value }) },',
@@ -270,7 +256,7 @@ export function views(n: Names, w: With, listRoute: string | null): string {
     `        ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),`,
     '      ]),',
     `      ui.p({ id: '${n.id}-title-error', class: 'text-sm text-rose-600' }, [ctx.fields.title]),`,
-    `      ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),`,
+    `      ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),`,
     `      when(['adding'], [ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…'])]),`,
     w.filter &&
       `      ui.nav(
@@ -279,7 +265,7 @@ export function views(n: Names, w: With, listRoute: string | null): string {
           ui.button(
             {
               type: 'button',
-              'aria-pressed': op.eq(ctx.show, s.value),
+              'aria-pressed': ctx.show === s.value,
               class: 'rounded-full border px-3 py-1 aria-pressed:bg-indigo-600 aria-pressed:text-white',
               on: { click: ui.send(SetShow, { show: s.value }) },
             },
@@ -314,7 +300,7 @@ export const ${n.Detail} = ui.view({
               ui.h1({ class: 'text-3xl font-bold' }, [item.title]),${
                 w.toggle
                   ? `
-              ui.p({}, ['Status: ', ui.if(op.eq(item.done, true), ['done'], ['open'])]),`
+              ui.p({}, ['Status: ', item.done ? 'done' : 'open']),`
                   : ''
               }
             ]),
@@ -417,7 +403,7 @@ export function server(n: Names, w: With): string {
 }
 
 export function accountModel(homeRoute: string): string {
-  return `import { event, invoke, machine, mutation, on, op, query, ui } from '@hozu/core'
+  return `import { event, invoke, machine, mutation, on, query, ui } from '@hozu/core'
 import { z } from 'zod'
 import { ${[homeRoute, 'login'].sort().join(', ')} } from '../../routes.ts'
 
@@ -451,7 +437,7 @@ export const accountMachine = machine({
       on: [
         on(SignIn, {
           target: 'signingIn',
-          assign: (e) => [op.set(ctx.draft, e.name), op.set(ctx.error, null), op.set(ctx.fields, { name: null })],
+          assign: (e) => { ctx.draft = e.name; ctx.error = null; ctx.fields = { name: null } },
         }),
         on(SignOut, { target: 'signingOut' }),
       ],
@@ -461,8 +447,8 @@ export const accountMachine = machine({
         input: { name: ctx.draft },
         done: { target: 'idle', navigate: () => ui.link(${homeRoute}, null) },
         failed: {
-          Invalid: { target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] },
-          Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] },
+          Invalid: { target: 'idle', assign: (e) => { ctx.fields = e.fields } },
+          Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } },
         },
       }),
     },
@@ -470,7 +456,7 @@ export const accountMachine = machine({
       invoke: invoke(signOut, {
         input: {},
         done: { target: 'idle', navigate: () => ui.link(login, null) },
-        failed: { Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] } },
+        failed: { Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } } },
       }),
     },
   }),
@@ -479,7 +465,7 @@ export const accountMachine = machine({
 }
 
 export function accountViews(homePath: string): string {
-  return `import { contract, feature, op, ui } from '@hozu/core'
+  return `import { contract, feature, ui } from '@hozu/core'
 import { login } from '../../routes.ts'
 import { accountMachine, me, SignIn, SignOut, signIn, signOut } from './model.ts'
 
@@ -498,14 +484,14 @@ export const Login = ui.view({
           minlength: 2,
           maxlength: 20,
           autocomplete: 'username',
-          'aria-invalid': op.neq(ctx.fields.name, null),
+          'aria-invalid': ctx.fields.name !== null,
           'aria-describedby': 'name-error',
           class: 'w-full rounded border px-3 py-2',
         }),
         ui.p({ id: 'name-error', class: 'text-sm text-rose-600' }, [ctx.fields.name]),
         ui.button({ type: 'submit', class: 'w-full rounded bg-indigo-600 px-4 py-2 text-white' }, ['Sign in']),
       ]),
-      ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+      ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),
     ]),
 })
 

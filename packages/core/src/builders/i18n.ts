@@ -67,6 +67,20 @@ const builtin = (name: string) => {
   return (arg: unknown): Expr<string> => Object.freeze({ [EXPR]: { kind: 'call', fn: marker, arg } }) as never
 }
 
+const operatorMarkers = new Map<string, (arg: unknown) => Expr<string>>()
+const operator = (name: string) => {
+  let make = operatorMarkers.get(name)
+  if (!make) {
+    make = builtin(name)
+    operatorMarkers.set(name, make)
+  }
+  return make
+}
+
+export const builtinCall = (name: string, arg: unknown): Expr<unknown> => operator(name)(arg) as never
+
+export const builtinGuard = (name: string, arg: unknown): Expr<boolean> => operator(name)(arg) as never
+
 type NumberOptions = Pick<
   Intl.NumberFormatOptions,
   | 'style'
@@ -103,7 +117,7 @@ export const format = Object.freeze({
     date({ v: value, o: options }),
   relative: (value: Val<number | null>, unit: Intl.RelativeTimeFormatUnit): Expr<string> =>
     relative({ v: value, u: unit }),
-  list: (value: Expr<readonly string[]>, options: ListOptions = {}): Expr<string> =>
+  list: (value: Val<readonly string[]>, options: ListOptions = {}): Expr<string> =>
     list({ v: value, o: options }),
 })
 

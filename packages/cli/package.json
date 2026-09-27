@@ -49,6 +49,7 @@
     "@hozu/validator": "workspace:*",
     "@hozu/machine": "workspace:*",
     "@hozu/compiler": "workspace:*",
-    "create-hozu": "workspace:*"
+    "create-hozu": "workspace:*",
+    "@hozu/transform": "workspace:*"
   }
 }

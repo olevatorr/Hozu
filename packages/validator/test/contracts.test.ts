@@ -197,6 +197,13 @@ describe('Phase 1 behavior catalog', () => {
     expect(verify(after, { sources, bindings, lock: baseline, accept: true }).diagnostics).toEqual([])
   })
 
+  it('HZ015 on effects gives the list to paste, in authoring form (ADR 0038 R2)', () => {
+    const ir = cartIR()
+    cart(ir).contracts.addsItem!.expect.effects = []
+    const d = run(ir).diagnostics.find((x) => x.code === 'HZ015')!
+    expect(d.fix?.snippet).toMatch(/^effects: \[\{ effect: addItem, input: \{.*\} \}\],$/)
+  })
+
   it('contracts do not run on a statically invalid feature', () => {
     const ir = cartIR()
     cart(ir).machine!.initial = 'idel'

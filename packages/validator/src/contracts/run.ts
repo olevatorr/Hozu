@@ -6,6 +6,7 @@ export interface Failure {
   tokens: (string | number)[]
   message: string
   cause: string
+  snippet?: string
 }
 
 export interface ContractRun {
@@ -157,12 +158,19 @@ export function runContract(
         `${firstDifference(expect.context, snapshot.context)}. ${path}`,
       )
     if (expect.effects !== null && !equal(expect.effects as unknown as Json, invokes as unknown as Json))
-      stop(
-        'HZ015',
-        ['expect', 'effects'],
-        'Effects (invokes and navigation) differ from the expectation',
-        `Expected ${show(expect.effects)}, got ${show(invokes)}. ${path}`,
-      )
+      throw new Stop({
+        code: 'HZ015',
+        tokens: ['expect', 'effects'],
+        message: 'Effects (invokes and navigation) differ from the expectation',
+        cause: `Expected ${show(expect.effects)}, got ${show(invokes)}. ${path}`,
+        snippet: `effects: [${invokes
+          .map((e) =>
+            'navigate' in e
+              ? `{ navigate: ${JSON.stringify(e.navigate)} }`
+              : `{ effect: ${e.effect.slice(e.effect.indexOf('.') + 1)}, input: ${JSON.stringify(e.input)} }`,
+          )
+          .join(', ')}],`,
+      })
     return { taken, failure: null }
   } catch (error) {
     if (error instanceof Stop) return { taken, failure: error.failure }

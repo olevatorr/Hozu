@@ -273,38 +273,6 @@ describe('the agent loop (ADR 0027)', () => {
   }, 60_000)
 })
 
-describe('references used as values (ADR 0037 D1)', () => {
-  it('check explains a === on a reference, and warns on truthiness with HZ044 at the source line', async () => {
-    const app = await freshApp()
-    await run(['add', 'feature', 'tasks', '--page', '/'], app)
-    const views = join(app, 'features/tasks/views.ts')
-    const text = readFileSync(views, 'utf8')
-    const heading = "ui.h1({ class: 'text-3xl font-bold' }, ['Tasks']),"
-    expect(text).toContain(heading)
-    writeFileSync(
-      views,
-      text.replace(
-        heading,
-        `${heading}\n      ui.p({}, [ctx.error ? 'Failed' : 'Fine']),\n      ui.p({}, [ctx.draft === 'x' ? 'x' : 'y']),`,
-      ),
-    )
-    const line =
-      readFileSync(views, 'utf8')
-        .split('\n')
-        .findIndex((l) => l.includes("ctx.error ? 'Failed'")) + 1
-    const check = await json('check', ['check'], app)
-    const ts = check.out.types.errors.find((e: { code: string }) => e.code === 'TS2367')
-    expect(ts.hint).toContain('op.eq')
-    const hz = check.out.validate.diagnostics.find((d: { code: string }) => d.code === 'HZ044')
-    expect(hz).toMatchObject({
-      severity: 'warning',
-      message: 'ctx.error is a recorded reference used as a ?: condition',
-      location: { source: { file: 'features/tasks/views.ts', line } },
-    })
-    expect(hz.fix.summary).toContain('ui.if(op.neq(ctx.error, null)')
-  })
-})
-
 const checkFresh = async (app: string) => {
   const { stdout } = await promisify(execFile)(
     process.execPath,
@@ -313,6 +281,43 @@ const checkFresh = async (app: string) => {
   ).catch((e: { stdout: string }) => e)
   return JSON.parse(stdout)
 }
+
+describe('ordinary TypeScript in a scaffolded app (ADR 0039)', () => {
+  it('checks clean, renders the branch it chose, and rejects a method on a reference', async () => {
+    const app = await freshApp()
+    await run(['add', 'feature', 'tasks', '--page', '/'], app)
+    const views = join(app, 'features/tasks/views.ts')
+    const heading = "ui.h1({ class: 'text-3xl font-bold' }, ['Tasks']),"
+    const text = readFileSync(views, 'utf8')
+    expect(text).toContain(heading)
+    writeFileSync(
+      views,
+      text.replace(
+        heading,
+        `${heading}\n      ui.p({}, [ctx.error ? 'Failed' : 'Fine', ctx.draft === '' && ui.span({}, [' · empty'])]),`,
+      ),
+    )
+    const check = await checkFresh(app)
+    expect(check.types.errors).toEqual([])
+    expect(check.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    const page = await promisify(execFile)(
+      process.execPath,
+      [`${root}packages/cli/bin/hozu.js`, 'get', '/', '--json'],
+      {
+        cwd: app,
+      },
+    )
+    expect(JSON.parse(page.stdout).steps[0].text).toContain('Fine · empty')
+    writeFileSync(
+      views,
+      readFileSync(views, 'utf8').replace("ctx.error ? 'Failed' : 'Fine'", 'ctx.draft.toUpperCase()'),
+    )
+    const bad = await checkFresh(app)
+    const d = bad.validate.diagnostics.find((x: { code: string }) => x.code === 'HZ014')
+    expect(d.message).toMatch(/Method "toUpperCase" cannot run on a reference/)
+    expect(d.location.source.file).toBe('features/tasks/views.ts')
+  }, 60_000)
+})
 
 describe('hozu add widget (ADR 0037 D5)', () => {
   it('declares, registers, bundles and depends on the widget, so check is clean and the page renders its host', async () => {
@@ -343,5 +348,55 @@ describe('hozu add widget (ADR 0037 D5)', () => {
     const missing = await checkFresh(app)
     expect(missing.validate.diagnostics.map((d: { code: string }) => d.code)).toEqual(['HZ045'])
     expect(missing.validate.diagnostics[0].message).toContain('tasks.Chart')
+  }, 60_000)
+})
+
+describe('the guide compiles (ADR 0037 D2)', () => {
+  it("SKILL.md's feature example checks clean and works in a fresh app", async () => {
+    const app = await freshApp()
+    const skill = readFileSync(`${skillSource}/SKILL.md`, 'utf8')
+    const block = /## A feature in one screen\n```ts\n([\s\S]*?)```/.exec(skill)![1]!
+    const resolver = /`(implement\(addItem, [^`]*)`/.exec(skill)![1]!
+    mkdirSync(join(app, 'features/todos'), { recursive: true })
+    writeFileSync(
+      join(app, 'features/todos/feature.ts'),
+      `import { event, feature, invoke, machine, mutation, on, query, tag, ui } from '@hozu/core'\nimport { z } from 'zod'\n${block}`,
+    )
+    writeFileSync(
+      join(app, 'server.ts'),
+      `import { resolvers } from '@hozu/data'\nimport { addItem, listItems } from './features/todos/feature.ts'\nimport project from './hozu.config.ts'\n\nconst list: { id: string; title: string; done: boolean }[] = []\nconst save = (title: string) => {\n  const item = { id: String(list.length + 1), title, done: false }\n  list.push(item)\n  return item\n}\n\nexport const createResolvers = () =>\n  resolvers(project, (implement) => [\n    implement(listItems, () => list.map((i) => ({ ...i }))),\n    ${resolver.replace('exists', 'list.some((i) => i.title === title)')},\n  ])\n`,
+    )
+    const config = join(app, 'hozu.config.ts')
+    writeFileSync(
+      config,
+      readFileSync(config, 'utf8')
+        .replace(
+          /import \{ Home, site \} from '[^']+'\n/,
+          "import { Board, todos } from './features/todos/feature.ts'\n",
+        )
+        .replace(/views: \[Home\]/, 'views: [Board]')
+        .replace(/features: \[site\]/, 'features: [todos]'),
+    )
+    rmSync(join(app, 'features/site'), { recursive: true, force: true })
+    const check = await checkFresh(app)
+    expect(check.types.errors).toEqual([])
+    expect(check.validate.diagnostics).toEqual([])
+    const { stdout } = await promisify(execFile)(
+      process.execPath,
+      [
+        `${root}packages/cli/bin/hozu.js`,
+        'post',
+        '/',
+        '--field',
+        'title=Milk',
+        '--next',
+        'POST / title=Milk',
+        '--json',
+      ],
+      { cwd: app },
+    )
+    const steps = JSON.parse(stdout).steps as { text: string | null; alerts: string[] }[]
+    expect(steps.some((s) => s.text?.includes('Milk'))).toBe(true)
+    expect(steps.at(-1)!.alerts).toEqual(['Already listed'])
   }, 60_000)
 })

@@ -70,6 +70,11 @@ export const targets = [
     type: 'MapOutput',
     out: 'packages/cli/schema/map.schema.json',
   },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'DocsOutput',
+    out: 'packages/cli/schema/docs.schema.json',
+  },
 ]
 
 export function generate(target: (typeof targets)[number]): string {

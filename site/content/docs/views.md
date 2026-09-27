@@ -25,7 +25,7 @@ Register `Welcome` in a feature's declarations and list it in a page's `views`. 
 
 Use `ui.query` to read a declared query. Supply a `ready` tree, a pending tree or `null`, and handlers for the query's declared errors plus `Unexpected`.
 
-Use `ui.each(items, 'id', item => ...)` for a list with stable keys. Use `null` as the key for a list of primitive values. To select between trees from a recorded value, use `ui.if(op.eq(value, expected), yes, no)`.
+Use `ui.each(items, 'id', item => ...)` for a list with stable keys. Use `null` as the key for a list of primitive values. To choose between trees, write `cond ? ui.p(…) : ui.ul(…)` or `cond && ui.p(…)`; use `ui.if(cond, yes, no, 'fade')` when the change should animate.
 
 The callback records the tree once. JavaScript array operations on a constant list are fine; array operations on recorded query or context values need a declared `fn()`.
 

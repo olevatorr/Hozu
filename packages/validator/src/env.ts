@@ -64,6 +64,9 @@ export function valueSchema(ir: ProjectIR, env: Env, value: ValueExpr): JsonSche
   if ('link' in value) return { type: 'string' }
   if ('fn' in value) {
     if (value.fn.startsWith('#')) return { type: 'string' }
+    if (value.fn === '%length' || value.fn === '%minus') return { type: 'number' }
+    if (value.fn === '%concat') return { type: 'string' }
+    if (value.fn.startsWith('%')) return null
     const r = resolveRef(ir, value.fn, 'fn')
     return r ? schemaIn(r.feature, r.feature.fns[r.symbol]!.output) : null
   }

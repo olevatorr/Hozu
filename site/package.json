@@ -5,9 +5,9 @@
   "scripts": {
     "validate": "hozu validate",
     "check": "hozu check",
-    "export": "node export.ts",
+    "export": "node --import @hozu/transform/register export.ts",
     "typecheck": "tsc --noEmit -p .",
-    "verify": "node verify.ts"
+    "verify": "node --import @hozu/transform/register verify.ts"
   },
   "dependencies": {
     "@hozu/adapter-static": "workspace:*",
@@ -18,6 +18,7 @@
     "@hozu/data": "workspace:*",
     "@hozu/schema-zod": "workspace:*",
     "@hozu/testing": "workspace:*",
+    "@hozu/transform": "workspace:*",
     "@tailwindcss/typography": "0.5.20",
     "tailwindcss": "4.3.3",
     "zod": "4.6.5"

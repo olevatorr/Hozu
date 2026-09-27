@@ -28,7 +28,7 @@ A machine describes states and transitions. A contract states the starting state
 
 ## Logic stays explicit
 
-Values such as `ctx.title` inside view and machine callbacks are recorded references, not ordinary JavaScript values. Use `op.eq` for comparisons, `op.set` for assignments, and `ui.if` for conditional content. Do not branch on a reference with a JavaScript `if` or interpolate it into a template string.
+View and machine callbacks are written in ordinary TypeScript: `ctx.error !== null && ui.p(…)`, `item.done ? 'done' : 'open'`, `` `${n} items` ``, and `ctx.draft = e.text` in an `assign`. `@hozu/transform` records these operators as data instead of running them once. Methods on data (`.map`, `.toUpperCase()`) cannot be recorded: use `ui.each` for lists and a named `fn()` for other computation.
 
 When an operation needs ordinary JavaScript, declare a named `fn()` with input and output schemas. Client-used functions must be self-contained: their source is shipped independently, so they cannot close over imported helpers or local variables.
 

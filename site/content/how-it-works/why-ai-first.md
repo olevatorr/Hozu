@@ -28,7 +28,7 @@ export const items = feature({
 
 A consumer imports another feature explicitly and uses only its exported declarations. Cross-feature references point at declaration identities instead of repeating names in loosely related strings. The framework can therefore distinguish an intentional public dependency from a view reaching into another feature's private behavior.
 
-Views follow the same approach. A `ui()` tree records elements, conditions, lists and event bindings. It does not hide network requests inside arbitrary rendering functions. Ordinary computation has a named, schema-typed `fn()` boundary; assignments and guards use recorded operations such as `op.set` and `op.eq`.
+Views follow the same approach. A `ui()` tree records elements, conditions, lists and event bindings. It does not hide network requests inside arbitrary rendering functions. Operators, conditions and assignments are written as ordinary TypeScript and recorded as data by a source transform; any other computation has a named, schema-typed `fn()` boundary.
 
 ## A concrete failure worth designing around
 

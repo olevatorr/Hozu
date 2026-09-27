@@ -13,7 +13,7 @@ around the rule.
 | HZ006 | crossing a feature boundary | import the feature and use its `exports` |
 | HZ008 | a path does not exist in the schema | fix the property name |
 | HZ009 | a guardless transition shadows later ones | put guarded transitions first |
-| HZ014 | wrong builder output | follow the builder signature |
+| HZ014 | wrong builder output, or a method called on data (`.map`, `.toUpperCase()`) | follow the builder signature; lists: `ui.each`; computation: a `fn()` |
 | HZ015 / HZ017 | a contract fails / contract data does not match its schema | fix the machine or the contract (decide the intended behaviour first) |
 | HZ016 | a transition that decides (guard, `navigate`, `fn`) has no contract | add the contract from the snippet |
 | HZ018 | behaviour changed; the message shows `was: … now: …` | decision: update its contract; copy-only transition: `--update-lock` if intended |
@@ -36,7 +36,7 @@ around the rule.
 | HZ040 | a locale lacks a message, or uses other `{placeholders}` | add/translate the key in that locale |
 | HZ041 | a machine uses a message, `ui.format` or `locale` | store a code in context; choose the message in the view |
 | HZ043 | `site.offline` has params, no page, or per-request data | point it at a static page, or remove `offline` |
-| HZ044 | a recorded reference used as `?:`, `&&`, `\|\|`, `??`, `!` or `if` (always truthy) | `ui.if(op.neq(x, null), …)` / `op.eq` in views, a guard in machines, `fn()` to compute |
+| HZ044 | a feature file was loaded without the Hozu transform | run node with `--import @hozu/transform/register` (`npm start` does), or add `hozuTransform()` to Vite / Vitest |
 | HZ045 | `serve.ts` misses the widget bundle or the session store | add `widgets: await bundleWidgets(build)` / `session: sessionCookie(…)` |
 | HZ046 | an endpoint path is reserved, has params, or collides with a page, redirect or endpoint | use a static path such as `/api/…` (patch) |
 | HZ042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

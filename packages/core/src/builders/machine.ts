@@ -18,7 +18,7 @@ export interface InvalidError<I = Record<string, unknown>> {
 export interface TransitionConfig<T extends string, A> {
   target: T
   guard?: (arg: A) => Condition
-  assign?: (arg: A) => Assign[]
+  assign?: (arg: A) => Assign[] | void
   navigate?: (arg: A) => Href
 }
 

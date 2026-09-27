@@ -127,7 +127,6 @@ export interface TypeIssue {
   column: number
   code: string
   message: string
-  hint: string | null
 }
 
 export interface CheckOutput {
@@ -141,6 +140,7 @@ export interface RequestStep {
   path: string
   status: number
   location: string | null
+  cookies: string[]
   title: string | null
   alerts: string[]
   text: string | null
@@ -219,4 +219,10 @@ export interface AddOutput {
   manual: string[]
   declarations: Record<string, string[]>
   texts: { file: string; line: number; text: string }[]
+}
+
+export interface DocsOutput {
+  topic: string | null
+  text: string
+  topics: { name: string; title: string }[]
 }

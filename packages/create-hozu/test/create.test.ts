@@ -44,7 +44,7 @@ describe('create-hozu', () => {
     expect(guide).toContain('Read `.agents/skills/hozu/SKILL.md` before writing')
     expect(guide).toContain('npx hozu check')
     expect(guide).toContain('in this app use `npx …`')
-    expect(await has(join(dir, '.agents/skills/hozu/reference.md'))).toBe(true)
+    expect(await has(join(dir, '.agents/skills/hozu/topics/views.md'))).toBe(true)
     expect(await has(join(dir, 'CLAUDE.md'))).toBe(false)
   })
 
@@ -62,9 +62,7 @@ describe('create-hozu', () => {
     await writeFile(join(dir, '.claude/skills/hozu/SKILL.md'), 'old')
     await writeAgentFiles(dir, 'claude', base)
     expect(await readFile(join(dir, 'CLAUDE.md'), 'utf8')).toBe('# mine\n')
-    expect(await readFile(join(dir, '.claude/skills/hozu/SKILL.md'), 'utf8')).toContain(
-      '# Hozu authoring guide',
-    )
+    expect(await readFile(join(dir, '.claude/skills/hozu/SKILL.md'), 'utf8')).toContain('# Hozu\n')
   })
 
   it('writes commands for the package manager that ran it', () => {

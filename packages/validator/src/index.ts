@@ -103,5 +103,3 @@ export function verify(ir: ProjectIR, options: ValidateOptions = {}): Verificati
 
 export const validate = (ir: ProjectIR, options: ValidateOptions = {}): Diagnostic[] =>
   verify(ir, options).diagnostics
-export { scanTruthiness, type TruthinessFinding } from './truthiness.ts'
-export { truthinessDiagnostics } from './truthiness-rule.ts'

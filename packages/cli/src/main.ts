@@ -3,6 +3,7 @@ import { describeAdd, runAddFeature } from './commands/add.ts'
 import { describeAddWidget, runAddWidget } from './commands/add-widget.ts'
 import { runBuild } from './commands/build.ts'
 import { runCheck } from './commands/check.ts'
+import { runDocs } from './commands/docs.ts'
 import { describeExplain, runExplain } from './commands/explain.ts'
 import { mermaid, runGraph } from './commands/graph.ts'
 import { describeImpact, runImpact } from './commands/impact.ts'
@@ -26,6 +27,7 @@ Commands:
   impact <feature>.<symbol> What a query, mutation, tag, event, fn or view affects
   plan <route>              Derived render plan: regions, cache modes, hydration islands
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
+  docs [topic]              Print one topic of the guide (no topic: list them)
   skill                     Rewrite the agent skill for this Hozu version (--agent claude|agents|both)
   check                     Type-check the app and validate it: the one command to run after every edit
   map                       Outline the app (routes, queries, mutations, events, states, views) with file:line
@@ -88,6 +90,7 @@ export async function main(
       return command || values.help ? 0 : 2
     }
     const commands = [
+      'docs',
       'validate',
       'check',
       'map',
@@ -103,6 +106,11 @@ export async function main(
       'skill',
     ]
     if (!commands.includes(command)) throw new HozuCliError('usage', `Unknown command "${command}"`, commands)
+    if (command === 'docs') {
+      const result = await runDocs(cwd, target)
+      out(asJson ? json(result) : result.text)
+      return 0
+    }
     if (command === 'skill') {
       const result = await runSkill(cwd, values.agent)
       out(asJson ? json(result) : `✔ wrote ${result.written.join(', ')}\n`)
@@ -128,10 +136,7 @@ export async function main(
       const result = await runCheck(loaded, cwd, values['update-lock'] === true)
       if (asJson) out(json(result))
       else {
-        for (const e of result.types.errors)
-          out(
-            `${e.file}:${e.line}:${e.column}  ${e.code}  ${e.message}\n${e.hint ? `  hozu: ${e.hint}\n` : ''}`,
-          )
+        for (const e of result.types.errors) out(`${e.file}:${e.line}:${e.column}  ${e.code}  ${e.message}\n`)
         if (result.types.errors.length) out('\n')
         for (const d of result.validate.diagnostics) out(`${human(d)}\n\n`)
         const v = result.validate

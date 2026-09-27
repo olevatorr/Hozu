@@ -4,6 +4,7 @@ import { join, resolveSource } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
 import type { Diagnostic, SourceIndex } from '../ir/diagnostic.ts'
 import type { FeatureIR, JsonSchema, ProjectIR, RouteIR } from '../ir/types.ts'
+import { transformedDecls } from '../lower.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
 import { toCheck, toParse } from '../schema/check.ts'
@@ -295,6 +296,32 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     configs.push([fc.id, fc])
   }
   for (const [id, fc] of configs) register(scope, id, fc)
+  if (!manifest) {
+    const done = transformedDecls()
+    for (const [id, fc] of configs)
+      for (const [symbol, decl] of [
+        ...(fc.machine ? [['machine', fc.machine] as const] : []),
+        ...Object.entries(fc.views),
+      ]) {
+        const file = infoOf(decl)?.source?.file ?? 'A feature file'
+        if (!done.has(decl))
+          scope.report(
+            'HZ044',
+            id,
+            symbol === 'machine'
+              ? join('', 'features', id, 'machine')
+              : join('', 'features', id, 'views', symbol),
+            `${file} was loaded without the Hozu transform`,
+            'Builder callbacks are written in ordinary TypeScript and lowered by @hozu/transform; without it, a comparison such as ctx.x === "a" is silently false.',
+            {
+              summary:
+                'Run node with --import @hozu/transform/register (npm scripts from create-hozu do), or add hozuTransform() from @hozu/transform/vite to Vite / Vitest',
+              snippet: 'node --import @hozu/transform/register serve.ts',
+              patch: null,
+            },
+          )
+      }
+  }
 
   const features: Record<string, FeatureIR> = {}
   for (const [id, fc] of configs) features[id] = buildFeature(scope, id, fc)

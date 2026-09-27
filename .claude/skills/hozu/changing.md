@@ -7,7 +7,7 @@ Keep the loop short: map once, edit everything, check once, verify once.
 - `pnpm exec hozu map`: every route, query, mutation, event, state, view and contract, each with its `file:line`.
   Open only the lines the change touches. Below, *model* is where the app keeps schemas, events, effects and
   the machine (`model.ts`), and *views* where it keeps views, contracts and `feature()`.
-- The API is in `SKILL.md`. Use a recipe below when one fits; open `patterns.md` / `reference.md` only for
+- The API is in `SKILL.md`. Use a recipe below when one fits; run `hozu docs <topic>` only for
   something else.
 
 ## 2. Recipes
@@ -20,7 +20,7 @@ Names follow `hozu add feature items`: `Item`, `NewItem`, `Add`, `addItem`, `ite
   - context: `priority: Priority`, with `priority: 'normal'` in `initialContext`;
   - `fields` gets `priority: z.string().nullable()`, with `priority: null` in `initialContext` and in the `Add`
     assign that resets it;
-  - the `Add` assign also gets `op.set(ctx.priority, e.priority)`, and the add `invoke` input becomes
+  - the `Add` assign also gets `ctx.priority = e.priority`, and the add `invoke` input becomes
     `{ title: ctx.draft, priority: ctx.priority }`.
 - **views:**
   - the form's submit sends `{ title: ui.dom.form('title'), priority: ui.dom.form('priority') }`;
@@ -35,9 +35,9 @@ Names follow `hozu add feature items`: `Item`, `NewItem`, `Add`, `addItem`, `ite
 - **model:**
   - `export const ClearDone = event({ payload: z.object({}) })`;
   - `export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()] })`;
-  - in `idle`: `on(ClearDone, { target: 'clearing', assign: () => [op.set(ctx.error, null)] })`;
+  - in `idle`: `on(ClearDone, { target: 'clearing', assign: () => { ctx.error = null } })`;
   - a state
-    `clearing: { invoke: invoke(clearDone, { input: {}, done: 'idle', failed: { Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] } } }) }`
+    `clearing: { invoke: invoke(clearDone, { input: {}, done: 'idle', failed: { Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } } } }) }`
     (busy states drop events they do not handle, so no `ignore`).
 - **views:** the control
   `ui.form({ on: { submit: ui.send(ClearDone, {}) } }, [ui.button({ type: 'submit', class: 'text-sm underline' }, ['Clear done'])])`.
@@ -61,7 +61,7 @@ Run a fresh scaffold into a scratch app with `--with detail`, and copy the parts
 ### Other changes
 | Change | Touch |
 |---|---|
-| New UI-only state (a tab) | model: the context field and its initial value, an event, an `on` that `op.set`s it → views: the control, the event in `declarations` (no contract: it only copies a value). |
+| New UI-only state (a tab) | model: the context field and its initial value, an event, an `on` whose `assign` sets it → views: the control, the event in `declarations` (no contract: it only copies a value). |
 | Filter / sort / page in the URL | the route's `search` schema (with a default) → links with `ui.link(route, params, { key: value })` → read `search.key` in the view. No machine change. |
 | New page | `routes.ts` → a view with `route`, in `declarations` → `ui.page(...)` in `hozu.config.ts` (`head`, and `entries` when the route has params). |
 

@@ -1,12 +1,17 @@
 import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import { join } from 'node:path'
 
 const require = createRequire(new URL('../../parity/package.json', import.meta.url))
 const { chromium } = require('playwright-core')
 
 const [name, cwd, entry, port, phase = '1'] = process.argv.slice(2)
 const base = `http://127.0.0.1:${port}`
-const server = spawn(process.execPath, [entry], {
+const transform = existsSync(join(cwd, 'node_modules/@hozu/transform'))
+  ? ['--import', '@hozu/transform/register']
+  : []
+const server = spawn(process.execPath, [...transform, entry], {
   cwd,
   env: { ...process.env, PORT: port, HOST: '127.0.0.1', NITRO_HOST: '127.0.0.1', NODE_ENV: 'production' },
 })

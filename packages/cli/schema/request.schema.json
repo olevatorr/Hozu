@@ -39,6 +39,12 @@
             "null"
           ]
         },
+        "cookies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "title": {
           "type": [
             "string",
@@ -78,6 +84,7 @@
         "path",
         "status",
         "location",
+        "cookies",
         "title",
         "alerts",
         "text",

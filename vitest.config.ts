@@ -1,12 +1,15 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
+import { hozuTransform } from './packages/transform/src/vite.ts'
 
 const src = (pkg: string) => fileURLToPath(new URL(`./packages/${pkg}/src/`, import.meta.url))
 
 export default defineConfig({
+  plugins: [hozuTransform()],
   resolve: {
     alias: [
       { find: /^@hozu\/core\/ir$/, replacement: `${src('core')}ir.ts` },
+      { find: /^@hozu\/core\/lower$/, replacement: `${src('core')}lower.ts` },
       { find: /^@hozu\/core$/, replacement: `${src('core')}index.ts` },
       { find: /^@hozu\/schema-zod$/, replacement: `${src('schema-zod')}index.ts` },
       { find: /^@hozu\/compiler$/, replacement: `${src('compiler')}index.ts` },

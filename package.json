@@ -7,10 +7,10 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev packages/bundle packages/image packages/content packages/testing packages/create-hozu && node packages/runtime-client/scripts/bundle.ts && node scripts/skill.ts --pack",
+    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev packages/bundle packages/image packages/content packages/testing packages/transform packages/create-hozu && node packages/runtime-client/scripts/bundle.ts && node scripts/skill.ts --pack",
     "typecheck": "tsc -b tsconfig.json",
     "test": "pnpm build && vitest run",
-    "bench": "pnpm build && node bench/run.ts",
+    "bench": "pnpm build && node --import ./packages/transform/dist/register.js bench/run.ts",
     "lint": "biome check .",
     "format": "biome format --write .",
     "schema": "node scripts/gen-schemas.ts",

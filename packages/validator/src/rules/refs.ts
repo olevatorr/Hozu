@@ -24,7 +24,7 @@ function renameKey(pointer: At, value: string, ctx: Ctx): JsonPatchOp[] {
 export function references(ctx: Ctx) {
   for (const site of refSites(ctx.ir)) {
     const { feature: f, pointer, ref, kind } = site
-    if (ref.startsWith('?') || (kind === 'fn' && ref.startsWith('#'))) continue
+    if (ref.startsWith('?') || (kind === 'fn' && (ref.startsWith('#') || ref.startsWith('%')))) continue
     const resolved = resolveRef(ctx.ir, ref, kind)
     if (!resolved) {
       const guess = closest(ref, candidatesFor(ctx.ir, f, kind))

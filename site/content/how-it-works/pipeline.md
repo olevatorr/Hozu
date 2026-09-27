@@ -14,19 +14,15 @@ The intermediate representation keeps those stages connected. A view event, a ma
 
 TypeScript gives declarations useful editor feedback and typed references. A route describes its parameters, an event describes its payload and a query describes its input and output. A feature registers those declarations under stable names, together with its views and any machine or contracts.
 
-The callbacks used to author a view or machine run as recorders. A value such as `ctx.draft` represents a path that the eventual program will read. It is not the current contents of an input field while the builder runs. This distinction explains the deliberate syntax for conditions and assignments.
+The callbacks used to author a view or machine run as recorders. A value such as `ctx.draft` represents a path that the eventual program will read. It is not the current contents of an input field while the builder runs. Authors still write ordinary TypeScript; `@hozu/transform` rewrites the operators before the callback runs, so the condition is recorded rather than decided once.
 
 For example, a view can record whether an error message exists:
 
 ```ts
-ui.if(
-  op.neq(ctx.error, null),
-  [ui.p({ role: 'alert' }, [ctx.error])],
-  [],
-)
+ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error])
 ```
 
-The condition and both branches remain visible in the IR. A JavaScript `if` over the recorded reference would instead try to decide the branch during recording. For computation outside the operation vocabulary, a named `fn()` supplies input and output schemas and a pure implementation. It is an explicit boundary the tools can identify.
+The transform turns this into a conditional node whose test (`error ≠ null`) and branch remain visible in the IR, exactly as the explicit `ui.if(op.neq(ctx.error, null), […], [])` form would. The transform only rewrites operators that touch recorded values, keeps every line in place so diagnostics point at the author's code, and refuses what it cannot record (a method on data) with a diagnostic. For computation outside the operator vocabulary, a named `fn()` supplies input and output schemas and a pure implementation. It is an explicit boundary the tools can identify ([ADR 0039](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0039-ordinary-typescript-in-builders.md)).
 
 ## Validation checks the relationships
 

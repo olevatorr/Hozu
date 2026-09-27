@@ -1,5 +1,5 @@
 import { type ChildProcess, spawn } from 'node:child_process'
-import { type FSWatcher, readFileSync, statSync, watch } from 'node:fs'
+import { existsSync, type FSWatcher, readFileSync, statSync, watch } from 'node:fs'
 import { createServer, request, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { join } from 'node:path'
@@ -43,7 +43,10 @@ export async function dev({
   let ready: Promise<void> = Promise.resolve()
 
   const start = () => {
-    child = spawn(process.execPath, [entry], {
+    const transform = existsSync(join(cwd, 'node_modules/@hozu/transform'))
+      ? ['--import', '@hozu/transform/register']
+      : []
+    child = spawn(process.execPath, [...transform, entry], {
       cwd,
       env: { ...process.env, PORT: String(appPort), HOZU_DEV: '1' },
       stdio: ['ignore', 'pipe', 'inherit'],

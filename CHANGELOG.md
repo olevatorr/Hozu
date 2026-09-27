@@ -1,46 +1,66 @@
 # Changelog
 
-## 0.5.0 — less to read, less to write (ADR 0037)
+## 0.5.0 — ordinary TypeScript, a shorter guide, less to write (ADR 0037–0039)
 
-### Changes
-- **Contracts are for decisions.**
-  - A transition with a guard, a `navigate` or a `fn` value needs a contract (HZ016). Transitions that only copy
-    values do not.
-  - `hozu.lock.json` records every transition in readable form, e.g.
-    `idle --Draft--> idle · draft := event.text`.
-  - HZ018 shows a changed transition as `was: … now: …`. For a transition that only copies values,
-    `hozu check --update-lock` accepts it.
-  - `hozu add feature` generates contracts only where they are required. A tasks feature went from 14.0 KB to
-    10.5 KB.
-- **Busy states by rule.**
-  - A state with `invoke` drops every event it does not handle, so it needs no `ignore` list.
-  - `done` and each `failed` entry take a state name (`done: 'idle'`), one transition, or a list of guarded
-    transitions.
-- **References used as values are explained and caught.**
-  - `hozu check` adds a Hozu hint to TypeScript errors about recorded references (`===`, methods, arithmetic).
-  - New warning HZ044: it flags a reference used as `?:`, `&&`, `||`, `??`, `!` or an `if` condition, at its source
-    line. These uses are always truthy and were not caught before.
-- **Clearer view errors.**
-  - `Invalid view child` now says what it got and the likely cause.
-  - `ui.query`'s `pending` is optional.
-- **`serve.ts` is checked.** HZ045 warns when views use widgets but `serve.ts` has no `bundleWidgets`, or when the
-  project declares a session but passes none.
-- **`hozu add widget <feature> <Name>`** writes the declaration, the client module, the `serve.ts` bundle and the
-  `@hozu/bundle` dependency.
-- **Declared HTTP endpoints.**
-  - `endpoint({ method: 'GET' | 'POST', path, input, output })` in a feature's declarations, implemented in
-    `resolvers`, for webhooks, JSON APIs and auth callbacks.
-  - Input comes from the query string or the body, and invalid input answers 400 `{ message, fields }`.
-  - `output: 'response'` returns a web `Response`; `setSession` sets the cookie.
-  - HZ046 checks the path: static, not reserved, not a page or redirect, not a duplicate. It comes with a patch.
-  - `hozu map` lists endpoints. `examples/notes` serves `GET /api/notes`.
+A study of every trial transcript (ADR 0038) found that an agent's extra cost is mostly **reading the guide**: 45–75 %
+of the gap to Nuxt. The calls it takes multiply that cost, while writing was already at parity. 0.5 removes the rules
+the guide had to teach, and makes the rest findable in one step.
+
+### Ordinary TypeScript in builder callbacks (ADR 0039)
+- **What you can write:**
+  - `===`, `!==`, `<`, `&&`, `||`, `!`, `??`, `c ? a : b` and template strings;
+  - `+`, `-` and `.length`;
+  - in `assign`: `ctx.x = v`, `ctx.n += 1`, `ctx.list.push(v)` and `ctx.list = ctx.list.filter((i) => i.id !== e.id)`.
+- **How it works:** `@hozu/transform` lowers them to the same IR as the explicit `op.*` / `ui.if` forms, which keep
+  working. `x ? node : node` and `x && node` become conditional nodes.
+- **What is not lowered:** methods on data (`.map`, `.toUpperCase()`). They are HZ014, with the fix: `ui.each`, or a
+  `fn()`.
+- **Where it runs:**
+  - `npm start` runs `node --import @hozu/transform/register serve.ts`, and the CLI registers it itself;
+  - `hozuTransform()` is available for Vite / Vitest (`@hozu/transform/vite`) and esbuild (`@hozu/transform/esbuild`).
+- **HZ044:** a view or machine loaded without the transform. The server refuses to start, instead of silently
+  comparing placeholders.
+- **Types:** data in callbacks is typed as its value (`ctx.error: string | null`). Type instantiations for the cart
+  fell from 61.7 k to 55.0 k.
+
+### The guide (ADR 0038 R1, R2)
+- **The skill is smaller:** `SKILL.md` went from 10.2 KB to about 5.8 KB. It has a complete feature example, checked by
+  a test, and a task index.
+- **Topics:** `hozu docs <topic>` prints one short topic (views, machine, data, forms, auth, …). With no topic, it
+  lists them.
+- **Pointers:** every diagnostic ends with `see: hozu docs <topic>`.
+- **No server needed:** `hozu get` / `post` print `set-cookie` attributes, and the guide says they replace a running
+  server for checks. A `post` is a no-JS form post.
+- **HZ015 on `effects`** gives the list to paste, in authoring form.
+
+### Contracts, busy states, endpoints (ADR 0037)
+- **Contracts for decisions only.** A transition with a guard, `navigate` or a `fn` value needs a contract (HZ016).
+  - `hozu.lock.json` records every transition readably, e.g. `idle --Draft--> idle · draft := event.text`.
+  - HZ018 shows `was: … now: …`, and `--update-lock` accepts copy-only changes.
+  - Scaffolds write contracts only where required.
+- **Busy states by rule.** A state with `invoke` drops unhandled events, so `ignore` there is HZ014. `done` / `failed`
+  take a state name, a transition, or a guarded list.
+- **Clearer view errors.** `Invalid view child` says what it got, and `ui.query`'s `pending` is optional.
+- **`serve.ts` is checked.** HZ045 warns when the widget bundle or the session store is missing.
+- **`hozu add widget <feature> <Name>`** writes the declaration, the client module, the bundle and the dependency.
+- **Declared endpoints.**
+  - `endpoint({ method, path, input, output })` is implemented in resolvers. It answers JSON, or a `Response` with
+    `output: 'response'`, and can call `setSession`.
+  - HZ046 checks paths, with patches.
+  - `examples/notes` serves `GET /api/notes`.
 
 ### Migrating from 0.4
-- **`ignore` in a state with `invoke`** is now HZ014. Delete it; the patch in `--json` does this for you.
-- **Contracts on transitions that only copy values** keep working, as optional examples. You may delete them.
-- **`hozu validate --json` coverage** has changed. `covered` / `total` now count deciding transitions, and
-  `transitions` counts all of them.
-- **Run `hozu check --update-lock` once** to add the readable summaries to `hozu.lock.json`.
+- **Run apps with the transform:**
+  - add `@hozu/transform` to the dependencies;
+  - start with `node --import @hozu/transform/register serve.ts`;
+  - add `hozuTransform()` to Vitest.
+- **Delete `ignore` in states with `invoke`.** The HZ014 patch does it.
+- **Old forms still work.** Explicit `op.*` / `ui.if` code needs no change, and contracts on copy-only transitions
+  stay valid as examples.
+- **Refresh the lock:** run `hozu check --update-lock` once for the readable summaries.
+- **Refresh the skill:** run `hozu skill`.
+- **`hozu validate --json` coverage:** `covered` / `total` now count deciding transitions, and `transitions` counts
+  all of them.
 
 ## 0.4.2 — no JS download on pages that do not run it, no silent widgets
 

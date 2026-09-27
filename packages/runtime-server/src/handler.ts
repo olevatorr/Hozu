@@ -177,6 +177,8 @@ export function createHandler({
   const variants = manifest?.images ?? images?.variants ?? null
   if (manifest && manifest.irHash !== hashJson(build.ir))
     throw new Error('The build manifest does not match this project; run `hozu build` again')
+  const untransformed = build.diagnostics.find((d) => d.code === 'HZ044')
+  if (untransformed) throw new Error(`${untransformed.message}. ${untransformed.fix?.summary ?? ''}`)
   const store = typeof sessionOption === 'function' ? null : sessionOption
   const session = store
     ? (request: Request) => store.read(request)

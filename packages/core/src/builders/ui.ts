@@ -50,7 +50,7 @@ export interface Send {
 
 export interface NodeDecl extends Decl<'node'> {}
 
-export type Child = NodeDecl | string | number | Expr<string | number | null>
+export type Child = NodeDecl | string | number | boolean | null | undefined | Expr<string | number | null>
 
 export type AttrValue = Val<string | number | boolean | null> | Guard | Asset
 
@@ -168,7 +168,7 @@ export const ui = Object.freeze({
   send: <P>(event: EventDecl<P>, payload: NoInfer<Val<P>>): Send =>
     Object.freeze({ [SEND]: { event, payload } }),
   each: <T>(
-    source: Expr<readonly T[]>,
+    source: Expr<readonly T[]> | readonly T[],
     key: [T] extends [object] ? keyof T & string : null,
     item: (item: Ref<T>) => NodeDecl,
     motion?: string,

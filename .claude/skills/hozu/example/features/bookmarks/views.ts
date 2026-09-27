@@ -1,4 +1,4 @@
-import { contract, feature, op, ui } from '@hozu/core'
+import { contract, feature, ui } from '@hozu/core'
 import { bookmarkPage, home } from '../../routes.ts'
 import {
   Add,
@@ -41,20 +41,20 @@ export const Board = ui.view({
             minlength: 2,
             maxlength: 80,
             value: ctx.draft,
-            'aria-invalid': op.neq(ctx.fields.title, null),
+            'aria-invalid': ctx.fields.title !== null,
             'aria-describedby': 'title-error',
             class: 'flex-1 rounded border px-3 py-2',
             on: { input: ui.send(Draft, { text: ui.dom.value }) },
           }),
           ui.select(
             { name: 'kind', 'aria-label': 'Kind', class: 'rounded border px-2' },
-            kinds.map((k) => ui.option({ value: k, selected: op.eq(ctx.kind, k) }, [k])),
+            kinds.map((k) => ui.option({ value: k, selected: ctx.kind === k }, [k])),
           ),
           ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
         ],
       ),
       ui.p({ id: 'title-error', class: 'text-sm text-rose-600' }, [ctx.fields.title]),
-      ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+      ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),
       when(
         ['adding'],
         [
@@ -71,7 +71,7 @@ export const Board = ui.view({
           ui.a(
             {
               href: ui.link(home, null, { show: s.value }),
-              'aria-current': op.eq(search.show, s.value),
+              'aria-current': search.show === s.value,
               class:
                 'rounded-full border px-3 py-1 aria-[current=true]:bg-indigo-600 aria-[current=true]:text-white',
             },
@@ -84,11 +84,9 @@ export const Board = ui.view({
         {},
         {
           ready: (items) =>
-            ui.if(
-              isEmpty({ items, show: search.show }),
-              [ui.p({ class: 'text-slate-500' }, ['No bookmarks'])],
-              [
-                ui.ul({ class: 'divide-y rounded border' }, [
+            isEmpty({ items, show: search.show })
+              ? ui.p({ class: 'text-slate-500' }, ['No bookmarks'])
+              : ui.ul({ class: 'divide-y rounded border' }, [
                   ui.each(visible({ items, show: search.show }), 'id', (b) =>
                     ui.li({ class: 'flex items-center gap-3 px-4 py-3' }, [
                       ui.a({ href: ui.link(bookmarkPage, { id: b.id }), class: 'flex-1 underline' }, [
@@ -101,13 +99,11 @@ export const Board = ui.view({
                           class: 'text-sm',
                           on: { click: ui.send(ToggleRead, { id: b.id }) },
                         },
-                        [ui.if(op.eq(b.read, true), ['Mark unread'], ['Mark read'])],
+                        [b.read ? 'Mark unread' : 'Mark read'],
                       ),
                     ]),
                   ),
                 ]),
-              ],
-            ),
           pending: ui.p({}, ['Loading…']),
           failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Bookmarks are unavailable']) },
         },
@@ -127,7 +123,7 @@ export const Detail = ui.view({
             ui.article({}, [
               ui.h1({ class: 'text-3xl font-bold' }, [b.title]),
               ui.p({}, ['Kind: ', b.kind]),
-              ui.p({}, [ui.if(op.eq(b.read, true), ['Read'], ['Unread'])]),
+              ui.p({}, [b.read ? 'Read' : 'Unread']),
             ]),
           pending: null,
           failed: {

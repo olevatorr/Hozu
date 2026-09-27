@@ -28,13 +28,7 @@ export interface Call<T> extends Expr<T> {
   readonly [CALL]: true
 }
 
-type RefProps<T> = [T] extends [readonly unknown[]]
-  ? { readonly length: Ref<number> }
-  : [T] extends [object]
-    ? { readonly [K in keyof T]-?: Ref<T[K]> }
-    : unknown
-
-export type Ref<T> = Expr<T> & RefProps<NonNullable<T>>
+export type Ref<T> = T
 
 type ValObject<T> = [T] extends [readonly unknown[]]
   ? never

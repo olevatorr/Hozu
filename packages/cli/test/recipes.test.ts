@@ -64,8 +64,8 @@ describe('changing.md recipes (ADR 0028)', () => {
         "initialContext: { draft: '', error: null, fields: { title: null, priority: null }, target: '', priority: 'normal' }",
       ],
       [
-        '            op.set(ctx.fields, { title: null }),',
-        '            op.set(ctx.fields, { title: null, priority: null }),\n            op.set(ctx.priority, e.priority),',
+        '            ctx.fields = { title: null }',
+        '            ctx.fields = { title: null, priority: null }\n            ctx.priority = e.priority',
       ],
       [
         '        input: { title: ctx.draft },',
@@ -81,12 +81,12 @@ describe('changing.md recipes (ADR 0028)', () => {
       ],
       [
         '        on(Toggle, {',
-        "        on(ClearDone, { target: 'clearing', assign: () => [op.set(ctx.error, null)] }),\n        on(Toggle, {",
+        "        on(ClearDone, { target: 'clearing', assign: () => { ctx.error = null } }),\n        on(Toggle, {",
       ],
     ])
     const model = readFileSync(join(dir, m), 'utf8').replace(
       '  }),\n})\n',
-      `    clearing: { invoke: invoke(clearDone, { input: {}, done: 'idle', failed: { Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] } } }) },\n  }),\n})\n`,
+      `    clearing: { invoke: invoke(clearDone, { input: {}, done: 'idle', failed: { Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } } } }) },\n  }),\n})\n`,
     )
     writeFileSync(join(dir, m), model)
     edit(v, [
@@ -99,8 +99,8 @@ describe('changing.md recipes (ADR 0028)', () => {
         "        ui.select({ name: 'priority', 'aria-label': 'Priority', class: 'rounded border px-2' }, ['low', 'normal', 'high'].map((p) => ui.option({ value: p, selected: p === 'normal' }, [p]))),\n        ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),",
       ],
       [
-        "ui.span({ class: 'text-xs text-slate-500' }, [ui.if(op.eq(item.done, true), ['done'], ['open'])]),",
-        "ui.span({ class: 'text-xs text-slate-500' }, [ui.if(op.eq(item.done, true), ['done'], ['open'])]),\n                    ui.span({ class: 'text-xs' }, [item.priority]),",
+        "ui.span({ class: 'text-xs text-slate-500' }, [item.done ? 'done' : 'open']),",
+        "ui.span({ class: 'text-xs text-slate-500' }, [item.done ? 'done' : 'open']),\n                    ui.span({ class: 'text-xs' }, [item.priority]),",
       ],
       ['  addItem,', '  addItem,\n  ClearDone,\n  clearDone,'],
       [

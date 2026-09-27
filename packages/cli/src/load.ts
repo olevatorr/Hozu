@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs'
+import { register } from 'node:module'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { type BuildResult, buildProject, type ProjectIR } from '@hozu/core/ir'
@@ -18,6 +19,7 @@ export async function load(config: string | undefined, cwd: string): Promise<Loa
       'Create hozu.config.ts exporting project({ ... }) as default, or pass --config <path>',
     ])
   let mod: { default?: unknown }
+  registerTransform()
   try {
     mod = await import(pathToFileURL(path).href)
   } catch (error) {
@@ -47,4 +49,11 @@ export function requireFeature(ir: ProjectIR, id: string | undefined) {
   if (feature) return feature
   const guess = closest(id, ids)
   throw new HozuCliError('unknown-feature', `Unknown feature "${id}"`, guess ? [guess] : ids)
+}
+
+let registered = false
+export function registerTransform() {
+  if (registered) return
+  registered = true
+  register('@hozu/transform/hook', import.meta.url)
 }

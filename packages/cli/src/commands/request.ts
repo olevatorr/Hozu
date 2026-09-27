@@ -230,6 +230,7 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
       path,
       status: page.status,
       location,
+      cookies: page.headers.getSetCookie().map((c) => c.replace(/^([^=]+)=[^;]*/, '$1=…')),
       title: final ? titleOf(page.html) : null,
       alerts: final ? alertsOf(page.html) : [],
       text: final ? text : null,
@@ -322,6 +323,7 @@ export function describeRequest(out: RequestOutput): string {
   const lines: string[] = []
   for (const s of out.steps) {
     lines.push(`${s.method} ${s.path} → ${s.status}${s.location ? ` ${s.location}` : ''}`)
+    for (const c of s.cookies) lines.push(`  set-cookie: ${c}`)
     if (s.text === null) continue
     if (s.title) lines.push(`  title: ${s.title}`)
     for (const a of s.alerts) lines.push(`  alert: ${a}`)

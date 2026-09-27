@@ -18,19 +18,6 @@ function typescriptBin(from: string): string | null {
   }
 }
 
-const recorded = /'(?:Expr|Ref|Val)<|'Guard'|'Condition'/
-
-export function hintFor(code: string, message: string): string | null {
-  if (!recorded.test(message)) return null
-  if (code === 'TS2367')
-    return 'References are recorded, not evaluated, so === compares a placeholder. Use op.eq / op.neq: ui.if(op.eq(a, b), […], […]) in views, guard: (e) => op.eq(…) in machines.'
-  if (code === 'TS2339')
-    return 'References have no methods or properties beyond the schema. Compute the value in a fn() and call it with the reference.'
-  if (code === 'TS2362' || code === 'TS2363' || code === 'TS2365')
-    return 'References cannot be used in arithmetic. Use op.inc in an assign, or compute the value in a fn().'
-  return 'A recorded reference is used as a JavaScript value. Use op.* for logic and fn() for computation.'
-}
-
 export function typeErrors(output: string, root: string): TypeIssue[] {
   const errors: TypeIssue[] = []
   for (const line of output.split('\n')) {
@@ -42,7 +29,6 @@ export function typeErrors(output: string, root: string): TypeIssue[] {
         column: Number(m[3]),
         code: m[4]!,
         message: m[5]!,
-        hint: hintFor(m[4]!, m[5]!),
       })
   }
   return errors
@@ -110,7 +96,6 @@ export async function runCheck(loaded: Loaded, cwd: string, updateLock: boolean)
                 column: 0,
                 code: 'tsc',
                 message: (run.stderr || run.stdout).trim(),
-                hint: null,
               },
             ],
     }

@@ -7,11 +7,23 @@ const categorize = (name, input) => {
   const text = `${input.command ?? ''} ${input.file_path ?? ''} ${input.path ?? ''} ${input.pattern ?? ''} ${input.skill ?? ''}`
   if (['Write', 'Edit', 'MultiEdit', 'NotebookEdit'].includes(name)) return 'edit'
   if (name === 'Skill') return 'docs'
-  if (/\bsed -i|python3? -|> ?[\w./-]+\.(ts|vue|js|json|css)\b|\btee\b|apply_patch|writeFile/.test(text)) return 'edit'
+  if (/\bsed -i|python3? -|> ?[\w./-]+\.(ts|vue|js|json|css)\b|\btee\b|apply_patch|writeFile/.test(text))
+    return 'edit'
   if (/hozu add|create-hozu|nuxi init/.test(text)) return 'scaffold'
-  if (/hozu (check|validate)|\btsc\b|typecheck|npm run build|nuxi build|vue-tsc|pnpm build/.test(text)) return 'check'
-  if (/hozu (get|post)|\bcurl\b|npm (start|run dev)|node serve|nuxi (dev|preview)|\bkill\b|lsof|\.output\/server/.test(text)) return 'verify'
-  if (/skills\/hozu|SKILL\.md|reference\.md|patterns\.md|changing\.md|diagnostics\.md|AGENTS\.md|CLAUDE\.md|--help|hozu (map|inspect|explain|graph|plan)/.test(text)) return 'docs'
+  if (/hozu (check|validate)|\btsc\b|typecheck|npm run build|nuxi build|vue-tsc|pnpm build/.test(text))
+    return 'check'
+  if (
+    /hozu (get|post)|\bcurl\b|npm (start|run dev)|node serve|nuxi (dev|preview)|\bkill\b|lsof|\.output\/server/.test(
+      text,
+    )
+  )
+    return 'verify'
+  if (
+    /skills\/hozu|SKILL\.md|reference\.md|patterns\.md|changing\.md|diagnostics\.md|AGENTS\.md|CLAUDE\.md|--help|hozu (map|inspect|explain|graph|plan)/.test(
+      text,
+    )
+  )
+    return 'docs'
   if (/spec\.md|change\.md/.test(text)) return 'spec'
   if (name === 'Read' || /\b(cat|sed -n|head|tail|grep|rg|nl|wc)\b/.test(text)) return 'read'
   if (name === 'Glob' || name === 'Grep' || /\b(ls|find|tree)\b/.test(text)) return 'list'
@@ -21,7 +33,10 @@ const categorize = (name, input) => {
 const failed = (text) => /✖|Exit code [1-9]|error TS|\berror\b.*HZ\d{3}|ERR!|Error:/.test(text)
 
 export function anatomy(file) {
-  const lines = readFileSync(file, 'utf8').trim().split('\n').map((l) => JSON.parse(l))
+  const lines = readFileSync(file, 'utf8')
+    .trim()
+    .split('\n')
+    .map((l) => JSON.parse(l))
   const result = lines.findLast((l) => l.type === 'result')
   const calls = []
   const seen = new Map()

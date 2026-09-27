@@ -11,7 +11,7 @@ import {
 } from '../model/expr.ts'
 
 type Comparable = number | string | boolean | null
-type Condition = Guard | Call<boolean>
+type Condition = Guard | Call<boolean> | boolean
 
 const guard = (raw: Guard[typeof GUARD]): Guard => Object.freeze({ [GUARD]: raw })
 const assign = (raw: Assign[typeof ASSIGN]): Assign => Object.freeze({ [ASSIGN]: raw })
@@ -21,7 +21,7 @@ const compare =
     guard({ op, left, right })
 
 export const op = Object.freeze({
-  set: <T>(target: Ref<T>, value: NoInfer<Val<T> | Expr<NonNullable<T> | null>>): Assign =>
+  set: <T>(target: Ref<T>, value: NoInfer<Val<T> | Val<NonNullable<T> | null>>): Assign =>
     assign({ op: 'set', target, value }),
   append: <T>(target: Ref<T[]>, value: NoInfer<Val<T>>): Assign => assign({ op: 'append', target, value }),
   inc: (target: Ref<number>, by: Val<number>): Assign => assign({ op: 'inc', target, value: by }),

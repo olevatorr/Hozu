@@ -40,6 +40,10 @@
     "./widget": {
       "types": "./dist/widget.d.ts",
       "default": "./dist/widget.js"
+    },
+    "./lower": {
+      "types": "./dist/lower.d.ts",
+      "default": "./dist/lower.js"
     }
   },
   "files": [

@@ -1,4 +1,4 @@
-import { event, fn, invoke, machine, mutation, on, op, query, tag, ui } from '@hozu/core'
+import { event, fn, invoke, machine, mutation, on, query, tag, ui } from '@hozu/core'
 import { z } from 'zod'
 import { bookmarkPage, Show } from '../../routes.ts'
 
@@ -83,43 +83,73 @@ export const bookmarksMachine = machine({
   states: ({ ctx }) => ({
     idle: {
       on: [
-        on(Draft, { target: 'idle', assign: (e) => [op.set(ctx.draft, e.text)] }),
+        on(Draft, {
+          target: 'idle',
+          assign: (e) => {
+            ctx.draft = e.text
+          },
+        }),
         on(Add, {
           target: 'adding',
-          assign: (e) => [
-            op.set(ctx.draft, e.title),
-            op.set(ctx.kind, e.kind),
-            op.set(ctx.error, null),
-            op.set(ctx.fields, { title: null, kind: null }),
-          ],
+          assign: (e) => {
+            ctx.draft = e.title
+            ctx.kind = e.kind
+            ctx.error = null
+            ctx.fields = { title: null, kind: null }
+          },
         }),
-        on(ToggleRead, { target: 'toggling', assign: (e) => [op.set(ctx.target, e.id)] }),
+        on(ToggleRead, {
+          target: 'toggling',
+          assign: (e) => {
+            ctx.target = e.id
+          },
+        }),
       ],
     },
     adding: {
       invoke: invoke(addBookmark, {
         input: { title: ctx.draft, kind: ctx.kind },
-        done: [
-          {
-            target: 'idle',
-            assign: () => [op.set(ctx.draft, '')],
-            navigate: (b) => ui.link(bookmarkPage, { id: b.id }),
+        done: {
+          target: 'idle',
+          assign: () => {
+            ctx.draft = ''
           },
-        ],
+          navigate: (b) => ui.link(bookmarkPage, { id: b.id }),
+        },
         failed: {
-          Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] }],
-          Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          Duplicate: {
+            target: 'idle',
+            assign: () => {
+              ctx.error = DUPLICATE
+            },
+          },
+          Invalid: {
+            target: 'idle',
+            assign: (e) => {
+              ctx.fields = e.fields
+            },
+          },
+          Unexpected: {
+            target: 'idle',
+            assign: (e) => {
+              ctx.error = e.message
+            },
+          },
         },
       }),
     },
     toggling: {
       invoke: invoke(toggleRead, {
         input: { id: ctx.target },
-        done: [{ target: 'idle' }],
+        done: 'idle',
         failed: {
-          NotFound: [{ target: 'idle' }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          NotFound: 'idle',
+          Unexpected: {
+            target: 'idle',
+            assign: (e) => {
+              ctx.error = e.message
+            },
+          },
         },
       }),
     },

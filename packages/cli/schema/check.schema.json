@@ -59,12 +59,6 @@
         },
         "message": {
           "type": "string"
-        },
-        "hint": {
-          "type": [
-            "string",
-            "null"
-          ]
         }
       },
       "required": [
@@ -72,8 +66,7 @@
         "line",
         "column",
         "code",
-        "message",
-        "hint"
+        "message"
       ],
       "additionalProperties": false
     },

@@ -15,8 +15,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 3. No stringly-typed cross references where a declaration identity is possible.
 4. Closed world: views are constrained `ui()` trees, never arbitrary functions.
    Side effects only via declared `query` / `mutation`, plus the framework-owned
-   `navigate` (on a transition) and `after(ms)` (on a state). Logic is data: `op.*` for
-   assigns/guards; anything else is a named, schema-typed `fn()` (ADR 0002 D1).
+   `navigate` (on a transition) and `after(ms)` (on a state). Logic is data: operators and
+   assignments in builder callbacks are lowered by `@hozu/transform` to the `op.*` IR (ADR 0039);
+   anything else is a named, schema-typed `fn()` (ADR 0002 D1).
 5. Every behavior change requires a reviewed change: a contract (given / when / expect) for transitions that decide
    (a guard, `navigate`, a `fn` value); the readable lock entry for transitions that only copy values (ADR 0037).
 6. Feature boundaries are enforced: features import only other features' public contracts (`exports`).
@@ -63,8 +64,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `ui.asset(url)` (HZ028 for img without dimensions).
   Literals are checked against their schema (HZ031); enumerated attributes (`type`, `method`, `loading`…) are typed.
   Internal links are `ui.link` only: a string `href` starting with `/` is HZ032 (ADR 0012).
-- Agent guide: the `hozu` skill (`.claude/skills/hozu/`: `SKILL.md` core API ≤ 10 KB, `reference.md` for
-  everything beyond the core, `changing.md`, `patterns.md`, `diagnostics.md`, and `example/` = a generated copy of
+- Agent guide: the `hozu` skill (`.claude/skills/hozu/`: `SKILL.md` core API with a task index (≤ 6 KB), `topics/*.md`
+  one short topic each, printed by `hozu docs <topic>` (ADR 0038 R1), `changing.md`, and `example/` = a generated copy of
   `examples/bookmarks`) is the authoring reference; it ships in `create-hozu` and is written into apps by
   `create-hozu --agent claude|agents|both` and `hozu skill`. `pnpm skill` regenerates `example/` and `AGENTS.md`
   (from this file); a test fails when they are stale; `examples/bookmarks` is its verified reference app. Keep both in sync with any API change. Busy states declare `ignore: [Event]` (HZ005, HZ034);
@@ -134,9 +135,14 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - 0.5 (ADR 0037): contracts only for deciding transitions, the lock summarises every transition (`was/now` in HZ018,
   `--update-lock` accepts copy-only changes); states with `invoke` drop unhandled events (listing `ignore` there is
   HZ014) and `done` / `failed` take a state name, a transition or a guarded list; `ui.query` `pending` is optional;
-  `hozu check` hints TS errors on references and warns on truthiness (HZ044, token scanner in `@hozu/validator`) and
-  on an incomplete `serve.ts` (HZ045); `hozu add widget`; `endpoint({ method, path, input, output })` declarations
+  `hozu check` warns on an incomplete `serve.ts` (HZ045); `hozu add widget`; `endpoint({ method, path, input, output })` declarations
   implemented in resolvers (HZ046, JSON or `'response'`, `setSession`).
+- 0.5 (ADR 0038, 0039): builder callbacks are ordinary TypeScript (`===`, `?:`, `&&`, `??`, template strings, `+`,
+  `ctx.x = v`, `+=`, `.push`, the `.filter` removal) lowered by `@hozu/transform` (acorn + Node's type stripping,
+  newline-preserving; Node `--import @hozu/transform/register`, `hozuTransform()` for Vite / esbuild, the CLI
+  registers it). Views / machines from untransformed code are HZ044 (the server refuses to start). `Ref<T>` is `T`.
+  Operator builtins `%truthy %cond %coalesce %concat %length %plus %minus`. The skill is a short `SKILL.md` plus
+  `topics/*.md` printed by `hozu docs <topic>`; diagnostics end with `see: hozu docs <topic>`.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

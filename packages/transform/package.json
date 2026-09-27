@@ -1,0 +1,63 @@
+{
+  "name": "@hozu/transform",
+  "version": "0.5.0",
+  "description": "Lets Hozu builder callbacks use ordinary TypeScript (===, ?:, &&, template strings, assignments) by lowering it to the IR's explicit forms",
+  "keywords": [
+    "hozu",
+    "framework",
+    "ai",
+    "agents",
+    "ssr",
+    "islands",
+    "typescript"
+  ],
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/transform#readme",
+  "bugs": {
+    "url": "https://github.com/olevatorr/Hozu/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olevatorr/Hozu.git",
+    "directory": "packages/transform"
+  },
+  "license": "MIT",
+  "author": "olevatorr",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/transform.d.ts",
+      "default": "./dist/transform.js"
+    },
+    "./register": {
+      "types": "./dist/register.d.ts",
+      "default": "./dist/register.js"
+    },
+    "./hook": {
+      "types": "./dist/hook.d.ts",
+      "default": "./dist/hook.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "default": "./dist/vite.js"
+    },
+    "./esbuild": {
+      "types": "./dist/esbuild.d.ts",
+      "default": "./dist/esbuild.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": [
+    "./dist/register.js"
+  ],
+  "dependencies": {
+    "acorn": "^8.18.0"
+  }
+}

@@ -41,7 +41,7 @@ describe('builder diagnostics', () => {
     )
   })
 
-  it('HZ014 — a reference used as a JavaScript value', () => {
+  it('ordinary TypeScript in callbacks becomes the explicit IR (ADR 0039)', () => {
     const Ping = event({ payload: Payload })
     const m = machine({
       context: Context,
@@ -49,15 +49,61 @@ describe('builder diagnostics', () => {
       initial: 'idle',
       states: ({ ctx }) => ({
         idle: {
-          on: [on(Ping, { target: 'idle', assign: (p) => [op.set(ctx.n, (p.n as unknown as number) + 1)] })],
+          on: [
+            on(Ping, {
+              target: 'idle',
+              guard: (p) => p.n > 0 && ctx.label !== 'done',
+              assign: (p) => {
+                ctx.n += p.n
+                ctx.label = `n=${ctx.n}`
+              },
+            }),
+          ],
         },
       }),
     })
-    const f = feature({ id: 'f', declarations: { Ping, m }, ...base })
+    const V = ui.view({
+      machine: m,
+      render: ({ ctx }) => ui.p({}, [ctx.n > 1 ? 'many' : 'one', ctx.label === '' && ui.span({}, ['empty'])]),
+    })
+    const b = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [feature({ id: 'f', declarations: { Ping, m, V }, ...base })],
+      }),
+    )
+    expect(b.diagnostics).toEqual([])
+    const t = b.ir.features.f!.machine!.states.idle!.on['f.Ping']![0]!
+    expect(t.guard).toEqual({
+      op: 'and',
+      args: [
+        { op: 'gt', left: { ref: 'event', path: ['n'] }, right: { literal: 0 } },
+        { op: 'neq', left: { ref: 'context', path: ['label'] }, right: { literal: 'done' } },
+      ],
+    })
+    expect(t.assign.map((a) => [a.op, a.path.join('.')])).toEqual([
+      ['inc', 'n'],
+      ['set', 'label'],
+    ])
+    const root = b.ir.features.f!.views.V!.root as { children: { kind: string }[] }
+    expect(root.children.map((c) => c.kind)).toEqual(['if', 'if'])
+  })
+
+  it('HZ014 — a method called on a reference names the fix', () => {
+    const m = machine({
+      context: Context,
+      initialContext: { n: 0, label: '' },
+      initial: 'idle',
+      states: () => ({ idle: {} }),
+    })
+    const V = ui.view({ machine: m, render: ({ ctx }) => ui.p({}, [ctx.label.toUpperCase()]) })
+    const f = feature({ id: 'f', declarations: { m, V }, ...base })
     expectBuildError(
       project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }),
       'HZ014',
-      /used as a JavaScript value/,
+      /Method "toUpperCase" cannot run on a reference.*fn\(\)/,
     )
   })
 

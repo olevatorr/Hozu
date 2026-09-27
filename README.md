@@ -18,6 +18,8 @@ npm create hozu@latest my-app
 ## What makes it different
 - **The app is data.** Typed builders record an intermediate representation (IR). A validator checks the IR,
   a compiler derives how each part renders, and a runtime serves it.
+- **Ordinary TypeScript.** Views and machines are written with `===`, `? :`, `&&`, template strings and plain
+  assignments; `@hozu/transform` lowers them to the checked data form, so the rules stay out of your way.
 - **Every diagnostic is structured:** JSON with a location, a cause and a suggested fix, which an agent can apply
   directly.
 - **Behaviour is specified.** Each feature has one state machine. Every transition that decides something (a guard,
@@ -72,16 +74,16 @@ export const addTodo = mutation({
   invalidates: () => [todosTag()],
 })
 export const todos = machine({
-  context: z.object({ draft: z.string() }),
-  initialContext: { draft: '' },
+  context: z.object({ draft: z.string(), error: z.string().nullable() }),
+  initialContext: { draft: '', error: null },
   initial: 'idle',
   states: ({ ctx }) => ({
-    idle: { on: [on(Add, { target: 'adding', assign: (e) => [op.set(ctx.draft, e.title)] })] },
+    idle: { on: [on(Add, { target: 'adding', assign: (e) => { ctx.draft = e.title; ctx.error = null } })] },
     adding: {
       invoke: invoke(addTodo, {
         input: { title: ctx.draft },
-        done: { target: 'idle', assign: () => [op.set(ctx.draft, '')] },
-        failed: { Unexpected: 'idle' },
+        done: { target: 'idle', assign: () => { ctx.draft = '' } },
+        failed: { Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } } },
       }),
     },
   }),
@@ -96,6 +98,7 @@ export const Board = ui.view({
         ui.input({ name: 'title', required: true, value: ctx.draft }),
         ui.button({ type: 'submit' }, ['Add']),
       ]),
+      ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error]),
       ui.query(listTodos, {}, {
         ready: (items) => ui.ul({}, [ui.each(items, 'id', (t) => ui.li({}, [t.title]))]),
         failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },

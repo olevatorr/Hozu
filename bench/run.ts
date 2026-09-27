@@ -152,7 +152,8 @@ record(
   3 * 1024,
 )
 
-const p9 = spawnSync(process.execPath, [join(root, 'bench/p9.ts')], { encoding: 'utf8' })
+const hook = ['--import', join(root, 'packages/transform/dist/register.js')]
+const p9 = spawnSync(process.execPath, [...hook, join(root, 'bench/p9.ts')], { encoding: 'utf8' })
 if (p9.status !== 0) throw new Error(`bench/p9.ts: ${p9.stderr}`)
 record(
   'P9',
@@ -163,7 +164,9 @@ record(
 )
 
 const synthetic = (features: number): number => {
-  const r = spawnSync(process.execPath, [join(root, 'bench/p2.ts'), String(features)], { encoding: 'utf8' })
+  const r = spawnSync(process.execPath, [...hook, join(root, 'bench/p2.ts'), String(features)], {
+    encoding: 'utf8',
+  })
   if (r.status !== 0) throw new Error(`bench/p2.ts ${features}: ${r.stderr}`)
   return Math.min(...(JSON.parse(r.stdout) as number[]))
 }
