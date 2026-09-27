@@ -184,7 +184,9 @@ export async function renderPage({
     if (last && last[0] === index && last[1] === lead) last.push(tail)
     else payload.islands.push([index, lead, tail])
     payload.features[scope.feature.id] ??= (scope.feature.machine as MachineIR | null) ?? null
-    return '<!--i-->'
+    if (preloaded) return '<!--i-->'
+    preloaded = true
+    return `${scripts.map((href) => `<link rel="modulepreload" href="${escapeHtml(href)}">`).join('')}<!--i-->`
   }
 
   const element = (n: Extract<ViewNode, { kind: 'el' }>, scope: Scope) => {
@@ -381,6 +383,7 @@ export async function renderPage({
   }
   const hasFns = Object.keys(bindings.fns).length > 0
   const scripts = plan.islands.length ? [assets.client, ...(hasFns && assets.fns ? [assets.fns] : [])] : []
+  let preloaded = plan.js !== 'conditional'
   const head = headHtml(
     ir,
     route,
@@ -389,7 +392,7 @@ export async function renderPage({
     path,
     status,
     assets,
-    scripts,
+    plan.js === 'always' ? scripts : [],
     lang,
     alternate,
     locale,

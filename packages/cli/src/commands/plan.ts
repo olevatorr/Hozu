@@ -18,7 +18,7 @@ export function runPlan(loaded: Loaded, route: string | undefined): PlanOutput {
 export function describePlan(plan: PlanOutput): string {
   const width = Math.max(...plan.regions.map((r) => r.id.length))
   return [
-    `${plan.route}  ${plan.path}  · js: ${plan.js ? `${plan.islands.length} islands` : 'none (0 bytes)'} · cacheable: ${plan.cacheable ? 'yes' : 'no'}${plan.assert ? ` · asserts ${plan.assert}` : ''}`,
+    `${plan.route}  ${plan.path}  · js: ${plan.js ? `${plan.islands.length} ${plan.islands.length === 1 ? 'island' : 'islands'} (${plan.js === 'always' ? 'always' : 'only when rendered'})` : 'none (0 bytes)'} · cacheable: ${plan.cacheable ? 'yes' : 'no'}${plan.assert ? ` · asserts ${plan.assert}` : ''}`,
     'regions:',
     ...plan.regions.map(
       (r) =>

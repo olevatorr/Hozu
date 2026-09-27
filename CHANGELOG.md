@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.2 — no JS download on pages that do not run it
+
+- **The client runtime is preloaded only where an island renders (ADR 0036).**
+  - Some islands can be left out of a page: those inside `ui.each`, `ui.if`, `when` or a query branch.
+  - A route whose islands are all of this kind no longer preloads `client.js` in `<head>`. The preload is written
+    right before the first island that renders, and not at all on a page that renders none.
+  - Before, such pages downloaded about 8 KiB they never ran.
+  - Pages with an island outside such branches are unchanged. This is true of every example app.
+- **`hozu plan`** shows `js: 2 islands (always)` or `js: 1 island (only when rendered)`. In `--json`, `js` is
+  `'always' | 'conditional' | false`; it was a boolean.
+- **Static export** writes `/_hozu/client.js` only when an exported page runs it.
+
 ## 0.4.1 — accessibility and widget docs
 
 - **`role` on SVG elements.** `ui.svg({ role: 'img', 'aria-label': '…' }, …)` type-checks and validates. Before, it

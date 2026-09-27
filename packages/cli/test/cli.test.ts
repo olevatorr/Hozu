@@ -141,7 +141,7 @@ describe('A5 CLI contract', () => {
   it('plan --json matches its schema; machine-less pages ship no JS', async () => {
     const home = JSON.parse((await run(['plan', 'home', '--json'])).stdout)
     expectSchema('plan', home)
-    expect(home).toMatchObject({ route: 'home', path: '/', js: true, cacheable: false })
+    expect(home).toMatchObject({ route: 'home', path: '/', js: 'always', cacheable: false })
     const placed = JSON.parse((await run(['plan', 'orderPlaced', '--json'])).stdout)
     expect(placed).toMatchObject({ js: false, islands: [], cacheable: true, assert: 'cacheable' })
     expect((await run(['plan', 'orderPlacd', '--json'])).stdout).toContain(

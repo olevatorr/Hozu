@@ -93,3 +93,22 @@ describe('static export of the official site', () => {
     await access(join(outDir, image![1]!))
   })
 })
+
+describe('static export of conditional islands (ADR 0036)', () => {
+  it('writes the client runtime only when an exported page runs it', async () => {
+    const { conditional, conditionalResolvers } = await import(
+      '../../runtime-server/test/support/conditional.ts'
+    )
+    const build = buildProject(conditional, { sources: false })
+    const files = async (withCode: boolean) => {
+      const outDir = await mkdtemp(join(tmpdir(), 'hozu-conditional-'))
+      const result = await exportStatic({ build, resolvers: conditionalResolvers(withCode), outDir })
+      expect(await missingFiles(outDir)).toEqual([])
+      return result.written.map((f) => f.slice(outDir.length))
+    }
+    expect(await files(true)).toContain('/_hozu/client.js')
+    const plain = await files(false)
+    expect(plain).toContain('/docs/code/index.html')
+    expect(plain.filter((f) => f.startsWith('/_hozu/'))).toEqual([])
+  })
+})

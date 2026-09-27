@@ -70,6 +70,9 @@ Every mutation also has the framework error `Invalid` = `{ message, fields }`: o
 - `project({ notFound: route, error: route })` renders those pages for 404 / 500.
 - A view listed with a machine on several pages, in the same order, stays mounted when links move between them
   (see `patterns.md`).
+- **JS per page is derived:** a page loads the client only when a machine-bound node renders on it. An island
+  inside `ui.each`, `ui.if`, `when` or a query branch loads it only on pages where it renders; `hozu plan <route>`
+  says `always` or `only when rendered`. Do not add views or flags to avoid JS.
 
 ## Sessions
 - **Start from the scaffold:** `hozu add feature notes --page / --with auth` writes `features/account`

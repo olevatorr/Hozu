@@ -44,7 +44,15 @@
           }
         },
         "js": {
-          "type": "boolean"
+          "type": [
+            "string",
+            "boolean"
+          ],
+          "enum": [
+            "always",
+            "conditional",
+            false
+          ]
         },
         "nodes": {
           "type": "array",

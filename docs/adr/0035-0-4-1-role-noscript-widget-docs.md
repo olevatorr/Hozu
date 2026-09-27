@@ -1,4 +1,4 @@
-# ADR 0033 — 0.4.1: `role` on SVG, `ui.noscript`, and widget documentation
+# ADR 0035 — 0.4.1: `role` on SVG, `ui.noscript`, and widget documentation
 
 - Status: accepted (the user approved 0.4.1)
 - Motivation: the second version of the official site (`site/FRAMEWORK-GAPS.md`) and an outside user found three

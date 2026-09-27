@@ -75,7 +75,7 @@ export async function exportStatic({
       const file = join(outDir, entry.path.replace(/^\//, ''), 'index.html')
       await write(file, html)
       result.written.push(file)
-      js ||= plan.js
+      js ||= html.includes(`<script type="module" src="${assets.client}">`)
     }
   }
   if (build.ir.notFound) {

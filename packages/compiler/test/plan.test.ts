@@ -15,7 +15,7 @@ describe('render plans', () => {
       ['cart.CartPanel/1', 'request', null],
       ['cart.CartPanel/3', 'isr', 60],
     ])
-    expect(plan.js).toBe(true)
+    expect(plan.js).toBe('always')
     expect(plan.cacheable).toBe(false)
     expect(plan.islands).toContain('cart.CartPanel/5')
     expect(plan.nodes.find((n) => n.id === 'cart.CartPanel/0')).toEqual({

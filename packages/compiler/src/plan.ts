@@ -37,7 +37,7 @@ export interface RoutePlan {
   cacheable: boolean
   regions: RegionPlan[]
   islands: string[]
-  js: boolean
+  js: 'always' | 'conditional' | false
   nodes: NodePlan[]
   persistent: string[]
 }
@@ -151,6 +151,7 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
   }
   const nodes: NodePlan[] = []
   const islands: string[] = []
+  let certain = false
   const issues: PlanIssue[] = []
 
   const walk = (
@@ -160,28 +161,38 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     region: RegionPlan,
     tainted: boolean[],
     inIsland: boolean,
+    branch = false,
   ) => {
     const hydrate =
       hydrates(node) || (node.kind === 'query' && (reactiveQuery(node.query) || liveQuery(node.query)))
-    if (hydrate && !inIsland) islands.push(node.id)
+    if (hydrate && !inIsland) {
+      islands.push(node.id)
+      if (!branch) certain = true
+    }
     const island = inIsland || hydrate
     nodes.push({ id: node.id, region: region.id, mode: region.mode, hydrate })
     const inner = node.kind === 'widget' && !inIsland ? false : island
-    const children = (list: ViewNode[], base: string, t = tainted) =>
-      list.forEach((c, i) => walk(feature, c, join(base, 'children', i), region, t, inner))
+    const children = (list: ViewNode[], base: string, t = tainted, b = branch) =>
+      list.forEach((c, i) => walk(feature, c, join(base, 'children', i), region, t, inner, b))
     switch (node.kind) {
       case 'el':
-      case 'when':
       case 'widget':
         children(node.children, pointer)
         return
+      case 'when':
+        children(node.children, pointer, tainted, true)
+        return
       case 'if':
-        node.ifTrue.forEach((c, i) => walk(feature, c, join(pointer, 'ifTrue', i), region, tainted, island))
-        node.ifFalse.forEach((c, i) => walk(feature, c, join(pointer, 'ifFalse', i), region, tainted, island))
+        node.ifTrue.forEach((c, i) =>
+          walk(feature, c, join(pointer, 'ifTrue', i), region, tainted, island, true),
+        )
+        node.ifFalse.forEach((c, i) =>
+          walk(feature, c, join(pointer, 'ifFalse', i), region, tainted, island, true),
+        )
         return
       case 'each': {
         const t = [...tainted, readsBinding(node.source, tainted)]
-        walk(feature, node.item, join(pointer, 'item'), region, t, island)
+        walk(feature, node.item, join(pointer, 'item'), region, t, island, true)
         return
       }
       case 'query': {
@@ -208,17 +219,25 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
         }
         regions.push(child)
         const userData = q.scope === 'user'
-        walk(feature, node.ready, join(pointer, 'ready'), child, [...tainted, userData], island)
-        if (node.pending) walk(feature, node.pending, join(pointer, 'pending'), child, tainted, island)
+        walk(feature, node.ready, join(pointer, 'ready'), child, [...tainted, userData], island, true)
+        if (node.pending) walk(feature, node.pending, join(pointer, 'pending'), child, tainted, island, true)
         for (const [name, n] of Object.entries(node.failed))
-          walk(feature, n, join(pointer, 'failed', name), child, [...tainted, userData], island)
+          walk(feature, n, join(pointer, 'failed', name), child, [...tainted, userData], island, true)
         return
       }
       case 'embed': {
         const { feature: owner, symbol } = resolve(ir, node.view)
         const view = owner?.views[symbol]
         if (owner && view)
-          walk(owner, view.root, join('', 'features', owner.id, 'views', symbol, 'root'), region, [], island)
+          walk(
+            owner,
+            view.root,
+            join('', 'features', owner.id, 'views', symbol, 'root'),
+            region,
+            [],
+            island,
+            branch,
+          )
         return
       }
       default:
@@ -245,7 +264,7 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     cacheable,
     regions,
     islands,
-    js: islands.length > 0,
+    js: islands.length === 0 ? false : certain ? 'always' : 'conditional',
     nodes,
     persistent,
   }
