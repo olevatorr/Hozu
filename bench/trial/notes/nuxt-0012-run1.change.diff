@@ -1,0 +1,145 @@
+diff --git a/app/pages/index.vue b/app/pages/index.vue
+index 5cb13a0..8360734 100644
+--- a/app/pages/index.vue
++++ b/app/pages/index.vue
+@@ -4,6 +4,7 @@ import { FetchError } from 'ofetch'
+ interface Note {
+   id: string
+   text: string
++  pinned?: boolean
+ }
+ 
+ const route = useRoute()
+@@ -26,6 +27,17 @@ const errorMessage = computed(() => (errorKey.value ? messages[errorKey.value] ?
+ const newNote = ref('')
+ const adding = ref(false)
+ const deleting = ref(new Set<string>())
++const pinning = ref(new Set<string>())
++const search = ref('')
++
++const sortedNotes = computed(() =>
++  [...(data.value?.notes ?? [])].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned)),
++)
++const visibleNotes = computed(() => {
++  const q = search.value.trim().toLowerCase()
++  if (!q) return sortedNotes.value
++  return sortedNotes.value.filter((n) => n.text.toLowerCase().includes(q))
++})
+ 
+ function clearErrorQuery() {
+   if (route.query.error) navigateTo({ path: '/', query: {} }, { replace: true })
+@@ -61,6 +73,20 @@ async function deleteNote(id: string) {
+   }
+ }
+ 
++async function togglePin(note: Note) {
++  if (pinning.value.has(note.id) || !data.value) return
++  pinning.value.add(note.id)
++  const pinned = !note.pinned
++  try {
++    await $fetch('/api/notes/pin', { method: 'POST', body: { id: note.id, pinned } })
++    note.pinned = pinned
++  } catch (e) {
++    if (e instanceof FetchError && e.statusCode === 401) return navigateTo('/login')
++  } finally {
++    pinning.value.delete(note.id)
++  }
++}
++
+ async function signOut() {
+   await $fetch('/api/logout', { method: 'POST', body: {} })
+   clearNuxtData('notes')
+@@ -106,18 +132,47 @@ async function signOut() {
+       </form>
+       <p v-if="errorMessage" role="alert" class="mt-3 text-sm text-red-600">{{ errorMessage }}</p>
+ 
++      <div class="mt-6">
++        <label for="search" class="mb-1 block text-sm font-medium text-slate-700">Search</label>
++        <input
++          id="search"
++          v-model="search"
++          type="search"
++          autocomplete="off"
++          class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
++        >
++      </div>
++
+       <p class="mt-6 text-sm font-medium text-slate-500">Notes: {{ data.notes.length }}</p>
+-      <ul class="mt-2 divide-y divide-slate-100">
+-        <li v-for="note in data.notes" :key="note.id" class="flex items-center justify-between gap-4 py-2">
+-          <span class="break-all text-slate-800">{{ note.text }}</span>
+-          <form method="post" action="/api/notes/delete" @submit.prevent="deleteNote(note.id)">
+-            <input type="hidden" name="id" :value="note.id">
+-            <button
+-              type="submit"
+-              :disabled="deleting.has(note.id)"
+-              class="rounded-md px-2 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+-            >Delete</button>
+-          </form>
++      <p v-if="search.trim() && visibleNotes.length === 0" class="mt-2 text-sm text-slate-500">No notes match</p>
++      <ul v-else class="mt-2 divide-y divide-slate-100">
++        <li v-for="note in visibleNotes" :key="note.id" class="flex items-center justify-between gap-4 py-2">
++          <div class="flex min-w-0 items-center gap-2">
++            <span class="break-all text-slate-800">{{ note.text }}</span>
++            <span
++              v-if="note.pinned"
++              class="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800"
++            >pinned</span>
++          </div>
++          <div class="flex shrink-0 items-center gap-1">
++            <form method="post" action="/api/notes/pin" @submit.prevent="togglePin(note)">
++              <input type="hidden" name="id" :value="note.id">
++              <input type="hidden" name="pinned" :value="note.pinned ? 'false' : 'true'">
++              <button
++                type="submit"
++                :disabled="pinning.has(note.id)"
++                class="rounded-md px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-60"
++              >{{ note.pinned ? 'Unpin' : 'Pin' }}</button>
++            </form>
++            <form method="post" action="/api/notes/delete" @submit.prevent="deleteNote(note.id)">
++              <input type="hidden" name="id" :value="note.id">
++              <button
++                type="submit"
++                :disabled="deleting.has(note.id)"
++                class="rounded-md px-2 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
++              >Delete</button>
++            </form>
++          </div>
+         </li>
+       </ul>
+     </section>
+diff --git a/server/api/notes/index.get.ts b/server/api/notes/index.get.ts
+index f7540f6..40b9dea 100644
+--- a/server/api/notes/index.get.ts
++++ b/server/api/notes/index.get.ts
+@@ -1,5 +1,5 @@
+ export default defineEventHandler((event) => {
+   const user = currentUser(event)
+   if (!user) throw createError({ statusCode: 401, statusMessage: 'Not signed in' })
+-  return { user, notes: getNotes(user) }
++  return { user, notes: sortNotes(getNotes(user)) }
+ })
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 38f5f30..9882b77 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -3,6 +3,7 @@ import type { H3Event } from 'h3'
+ export interface Note {
+   id: string
+   text: string
++  pinned?: boolean
+ }
+ 
+ const SESSION_COOKIE = 'notes_session'
+@@ -28,6 +29,11 @@ export function getNotes(user: string): Note[] {
+   return notes
+ }
+ 
++/** Pinned notes first; otherwise keeps the stored (newest-first) order. */
++export function sortNotes<T extends { pinned?: boolean }>(notes: T[]): T[] {
++  return [...notes].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned))
++}
++
+ export function signIn(event: H3Event, name: string) {
+   const sid = crypto.randomUUID()
+   sessions.set(sid, name)

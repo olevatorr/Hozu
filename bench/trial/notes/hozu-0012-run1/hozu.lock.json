@@ -1,0 +1,105 @@
+{
+  "features": {
+    "auth": {
+      "idle/on/auth.SignIn/0": {
+        "behavior": "217f51d0223cda7c",
+        "contracts": {
+          "signsIn": "78e93956208698cf"
+        }
+      },
+      "signingIn/invoke/done/0": {
+        "behavior": "d46f577c3995b180",
+        "contracts": {
+          "signsIn": "78e93956208698cf"
+        }
+      },
+      "signingIn/invoke/failed/Invalid/0": {
+        "behavior": "3adac45963ae399a",
+        "contracts": {
+          "rejectsInvalidName": "b323e787630eed8e"
+        }
+      },
+      "signingIn/invoke/failed/Unexpected/0": {
+        "behavior": "8ee6315677d953da",
+        "contracts": {
+          "signInFails": "c9136e5dcf42e894"
+        }
+      }
+    },
+    "notes": {
+      "adding/invoke/done/0": {
+        "behavior": "e0eb2a3405dfc35d",
+        "contracts": {
+          "addsNote": "e985d6026b14d740"
+        }
+      },
+      "adding/invoke/failed/Duplicate/0": {
+        "behavior": "1233a75b5aaada40",
+        "contracts": {
+          "rejectsDuplicate": "5e50e5fc553a4af4"
+        }
+      },
+      "adding/invoke/failed/Invalid/0": {
+        "behavior": "3ba8e3c9bc908103",
+        "contracts": {
+          "rejectsInvalidNote": "03ac305d156e1196"
+        }
+      },
+      "adding/invoke/failed/Unexpected/0": {
+        "behavior": "6606d67832662c72",
+        "contracts": {
+          "addFails": "1281b94e56259d3c"
+        }
+      },
+      "deleting/invoke/done/0": {
+        "behavior": "989b3755df5bdb72",
+        "contracts": {
+          "deletesNote": "d042ca91c5a2617e"
+        }
+      },
+      "deleting/invoke/failed/NotFound/0": {
+        "behavior": "f21d06b9daaa693d",
+        "contracts": {
+          "deleteMissing": "d936f4f76b4df202"
+        }
+      },
+      "deleting/invoke/failed/Unexpected/0": {
+        "behavior": "afef65fd1650159c",
+        "contracts": {
+          "deleteFails": "20c2d3bbf88241ee"
+        }
+      },
+      "idle/on/notes.Add/0": {
+        "behavior": "f714f6aa11e92791",
+        "contracts": {
+          "addsNote": "e985d6026b14d740"
+        }
+      },
+      "idle/on/notes.Delete/0": {
+        "behavior": "813b859c29566310",
+        "contracts": {
+          "deletesNote": "d042ca91c5a2617e"
+        }
+      },
+      "idle/on/notes.SignOut/0": {
+        "behavior": "a5c2a6762a15fe9f",
+        "contracts": {
+          "signsOut": "48db03f368d3edb0"
+        }
+      },
+      "signingOut/invoke/done/0": {
+        "behavior": "6fd5c9e6a2149dde",
+        "contracts": {
+          "signsOut": "48db03f368d3edb0"
+        }
+      },
+      "signingOut/invoke/failed/Unexpected/0": {
+        "behavior": "9ae8bb06af1922b5",
+        "contracts": {
+          "signOutFails": "b6ac790ee32cc98a"
+        }
+      }
+    }
+  },
+  "version": 1
+}
