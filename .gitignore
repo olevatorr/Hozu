@@ -6,3 +6,4 @@ coverage
 dist-static
 bench/frameworks/out
 .tmp
+.agents
