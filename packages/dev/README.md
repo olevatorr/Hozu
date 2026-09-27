@@ -14,4 +14,4 @@ npm install @hozu/dev
 Requires Node 22.18 or newer. Documentation: the [README](https://github.com/olevatorr/Hozu#readme) and the
 agent skill that `create-hozu` writes into each app.
 
-MIT © olevatorr
+MIT © Otis Chen

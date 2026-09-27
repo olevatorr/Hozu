@@ -21,7 +21,7 @@
     "directory": "packages/adapter-static"
   },
   "license": "MIT",
-  "author": "olevatorr",
+  "author": "Otis Chen",
   "type": "module",
   "exports": {
     ".": {

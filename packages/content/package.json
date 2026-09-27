@@ -21,7 +21,7 @@
     "directory": "packages/content"
   },
   "license": "MIT",
-  "author": "olevatorr",
+  "author": "Otis Chen",
   "type": "module",
   "exports": {
     ".": {

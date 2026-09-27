@@ -182,4 +182,4 @@ pnpm gate            # lint, typecheck, tests and performance budgets
 Guides for agents working on this repository: [`CLAUDE.md`](CLAUDE.md) and [`AGENTS.md`](AGENTS.md).
 
 ## License
-[MIT](LICENSE) © olevatorr.
+[MIT](LICENSE) © Otis Chen.

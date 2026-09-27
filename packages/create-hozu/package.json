@@ -21,7 +21,7 @@
     "directory": "packages/create-hozu"
   },
   "license": "MIT",
-  "author": "olevatorr",
+  "author": "Otis Chen",
   "type": "module",
   "bin": {
     "create-hozu": "./bin/create-hozu.js"
