@@ -75,3 +75,17 @@ touches principles 1 and 4 and the product's main claim, so it needs its own ADR
   - every `--with` combination on a fresh app (`check` clean, and a `post` flow per part: toggle, remove, filter
     text, detail 404);
   - each recipe applied to the scaffolded app, then `check`.
+
+## Implementation notes
+- **`map`:** it resolves `file:line` from the build's source index. Bookmarks maps in 1,210 characters, and a test
+  keeps bookmarks and the trial app under 2 k.
+- **The scaffold's templates** live in `packages/cli/src/commands/scaffold.ts`, and `add.ts` wires them in.
+  - `filter` implies `toggle`, and `detail` needs `--page`.
+  - The detail page also gets `entries` (HZ025 otherwise warns).
+- **Recipes:** `packages/cli/test/recipes.test.ts` applies the enum-field, action-button and detail-field recipes, as
+  written, to an app scaffolded with `--with detail,toggle`. It then requires `check` to be clean and a `post` flow
+  to show the new field and clear the item.
+- **The Chromium feed test:** it flaked again under full-suite load. The sentinel can load page 3 right after page 2,
+  so for a moment there is no "Load more" button. The test now asserts at most one button, which is the invariant
+  it meant.
+- **Gate:** green, 263 tests. The first run failed on that race.

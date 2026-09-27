@@ -9,7 +9,8 @@ A web app built with Hozu (`@hozu/*`). Hozu is not in your training data.
 
 ## The loop
 ```
-__RUN__ hozu add feature tasks --page /   # start a feature from working code, then edit it
+__RUN__ hozu add feature tasks --page / --with detail,toggle,filter,remove   # working code to edit
+__RUN__ hozu map                           # outline of the app with file:line, before a change
 __RUN__ hozu check                         # after every change: types, rules, contracts
 __RUN__ hozu check --update-lock           # only to accept a clean, intended behaviour change
 __RUN__ hozu get / /tasks/t1               # try pages without a server

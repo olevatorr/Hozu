@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.0 — less reading, less rewriting
+
+- **`hozu map`:** a compact outline of the app with `file:line` for every entry. It covers routes and their pages,
+  queries and mutations with their errors and tags, events and their fields, and the machine's states with their
+  transitions, `invoke`, `ignore` and `after`, views and contracts. The example apps map in about 1.2 KB. `--json`
+  follows `map.schema.json`.
+- **`hozu add feature <name> --with detail,toggle,filter,remove`:** composable parts on top of the list and add
+  form:
+  - `detail`: a detail page with a 404, and its route, head and `entries`;
+  - `toggle`: a done field and a per-item button that works without JS;
+  - `filter`: in-page All / Open / Done buttons and an empty state;
+  - `remove`: a per-item delete.
+
+  Each of the 16 combinations checks clean in a fresh app.
+- **Recipes in `changing.md`,** verified by applying them to a scaffolded app in a test:
+  - an enum field chosen in the add form;
+  - an action button that works on many items;
+  - a field shown on the detail page;
+  - adding a detail page.
+
+  The change loop starts with `hozu map`.
+
 ## 0.2.0 — a cheaper loop for agents
 
 ### Commands

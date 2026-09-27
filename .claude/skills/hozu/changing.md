@@ -1,28 +1,78 @@
 # Changing a Hozu app
 
-Keep the loop short: read once, edit everything, check once, verify once.
+Keep the loop short: map once, edit everything, check once, verify once.
 
 ## 1. Read
 - The change request.
-- The app: `features/<name>/*.ts`, `server.ts`, `routes.ts`, `hozu.config.ts`. Below, *model* is where the
-  app keeps schemas, events, effects and the machine (`model.ts` in the recommended layout), and *views* is
-  where it keeps views, contracts and `feature()`.
-- Nothing else. The API is in `SKILL.md`; open `patterns.md` only for a pattern you have not seen in the app,
-  and `reference.md` only for a topic it lists.
+- `pnpm exec hozu map`: every route, query, mutation, event, state, view and contract, each with its `file:line`.
+  Open only the lines the change touches. Below, *model* is where the app keeps schemas, events, effects and
+  the machine (`model.ts`), and *views* where it keeps views, contracts and `feature()`.
+- The API is in `SKILL.md`. Use a recipe below when one fits; open `patterns.md` / `reference.md` only for
+  something else.
 
-## 2. Where each kind of change goes
-| Change | Touch, in this order |
+## 2. Recipes
+Names follow `hozu add feature items`: `Item`, `NewItem`, `Add`, `addItem`, `itemsMachine`, `ItemsBoard`.
+
+### A field chosen in the add form (an enum)
+- **model:**
+  - `export const Priority = z.enum(['low', 'normal', 'high'])`;
+  - add `priority: Priority` to `Item`, `NewItem` and the `Add` payload;
+  - context: `priority: Priority`, with `priority: 'normal'` in `initialContext`;
+  - `fields` gets `priority: z.string().nullable()`, with `priority: null` in `initialContext` and in the `Add`
+    assign that resets it;
+  - the `Add` assign also gets `op.set(ctx.priority, e.priority)`, and the add `invoke` input becomes
+    `{ title: ctx.draft, priority: ctx.priority }`.
+- **views:**
+  - the form's submit sends `{ title: ui.dom.form('title'), priority: ui.dom.form('priority') }`;
+  - inside the form add
+    `ui.select({ name: 'priority', 'aria-label': 'Priority', class: 'rounded border px-2' }, ['low', 'normal', 'high'].map((p) => ui.option({ value: p, selected: p === 'normal' }, [p])))`;
+  - in the item: `ui.span({ class: 'text-xs' }, [item.priority])`.
+- **Contracts:**
+  - add `priority: 'normal'` to every `Add` payload, to the add effect's input, and to the `done` result;
+  - `rejectsInvalid`'s `data.fields` and `changes.fields` get `priority: null`.
+- **server:** store `priority` (seed items included) and return it.
+
+### An action button that works on many items (e.g. "Clear done")
+- **model:**
+  - `export const ClearDone = event({ payload: z.object({}) })`;
+  - `export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()] })`;
+  - in `idle`: `on(ClearDone, { target: 'clearing', assign: () => [op.set(ctx.error, null)] })`;
+  - a state
+    `clearing: { ignore: [...], invoke: invoke(clearDone, { input: {}, done: [{ target: 'idle' }], failed: { Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }] } }) }`;
+  - add `ClearDone` to every busy state's `ignore`, and give `clearing` the same list.
+- **views:** the control
+  `ui.form({ on: { submit: ui.send(ClearDone, {}) } }, [ui.button({ type: 'submit', class: 'text-sm underline' }, ['Clear done'])])`.
+- **Contracts:**
+  - `given: { state: 'idle' }`, when `[{ send: ClearDone, payload: {} }, { done: clearDone, result: { removed: 1 } }]`,
+    expect `{ state: 'idle', effects: [{ effect: clearDone, input: {} }] }`;
+  - a second one for `failed … 'Unexpected'` from `clearing`;
+  - add `ClearDone`, `clearDone` and both contracts to `declarations`.
+- **server:**
+  `implement(clearDone, () => { const before = items.length; items.splice(0, items.length, ...items.filter((i) => !i.done)); return { removed: before - items.length } })`.
+- **Try it:** `hozu post / --button 'Clear done' --next /`.
+
+### A field shown on the detail page
+In the detail view's `ready`: `ui.p({}, ['Priority: ', item.priority])`. The detail query already returns the whole
+item.
+
+### A detail page, when the feature has none
+Run a fresh scaffold into a scratch app with `--with detail`, and copy the parts it prints:
+- the route with params;
+- the `get` query and its resolver;
+- the detail view;
+- the link in the list;
+- `ui.page(...)` with `head` and `entries`.
+
+### Other changes
+| Change | Touch |
 |---|---|
-| New data field (e.g. `priority`) | model: the domain and input schemas → `server.ts` (seed data, store it) → views: show it, also in the detail view if there is one. If the user picks it in a form: a `<select name="…">` inside the form, sent with the submit as `ui.dom.form('…')` (HZ033 checks the options), plus the matching field in the event payload and the mutation input. |
-| New server action (e.g. "clear done") | model: a `mutation` with `invalidates`, an event, and `on(Event)` into a new busy state that `invoke`s the mutation, with `done` and every `failed` handled and the same `ignore` list as the other busy states → views: the control, the contracts, and both new declarations in `feature({ declarations })` → `server.ts`: `implement(...)` it. |
-| New UI-only state (a filter, a tab) | model: the context field, its initial value, an event and an `on` that `op.set`s it (add the event to every busy state's `ignore`) → views: the control, a contract, the event in `declarations`. |
-| New page | `routes.ts` (`params`, `search`) → a view with `route`, added to `declarations` → `ui.page(...)` in `hozu.config.ts` (with `head`, and `entries` when the route has params). |
-| New filter / sort / page number that should be in the URL | the route's `search` schema (with a default) → links with `ui.link(route, params, { key: value })` → read `search.key` in the view. No machine change. |
+| New UI-only state (a tab) | model: the context field and its initial value, an event, an `on` that `op.set`s it (add the event to every busy state's `ignore`) → views: the control, a contract, the event in `declarations`. |
+| Filter / sort / page in the URL | the route's `search` schema (with a default) → links with `ui.link(route, params, { key: value })` → read `search.key` in the view. No machine change. |
+| New page | `routes.ts` → a view with `route`, in `declarations` → `ui.page(...)` in `hozu.config.ts` (`head`, and `entries` when the route has params). |
 
 Whenever the machine changes:
-- Add one contract per new transition; HZ016 prints each missing one ready to paste. A new context field needs
-  no change to existing contracts: `given` defaults to the initial context and `changes` lists only what changes.
-- Every busy state `ignore`s every event its visible controls can send. HZ005 prints the missing `ignore` entries.
+- Add one contract per new transition; HZ016 prints each missing one ready to paste.
+- Every busy state `ignore`s every event its visible controls can send; HZ005 prints the missing entries.
 
 ## 3. Check (once, after all edits)
 ```
@@ -32,9 +82,11 @@ Fix what it reports. When the behaviour change is intended and everything is cle
 `pnpm exec hozu check --update-lock`. HZ018 asks for this.
 
 ## 4. Verify (once, no server needed)
-- Pages: `pnpm exec hozu get / /items/i1` prints status, title, alerts and the visible text.
-- Forms: `pnpm exec hozu post / --field title=A --field kind=video --next /items` fills the form like a browser (other
-  fields keep their defaults), follows the redirect, then requests the next steps in the same process.
-- Chain what must share data: `--next 'POST / title=a'` (fields as `a=1&b=2`), `--next /items/i3`.
-- A form with only a button (an action such as "Clear done"): `--button 'Clear done'`, or `--next 'POST / @Clear done'`.
-  One form per item: `--field id=t2` picks the item's form.
+- **Pages:** `pnpm exec hozu get / /items/i1` prints the status, title, alerts and visible text.
+- **Forms:** `pnpm exec hozu post / --field title=A --field priority=high --next /items` fills the form like a
+  browser (other fields keep their defaults). It follows the redirect, then runs the next steps in the same
+  process.
+- **Chaining:** chain what must share data, e.g. `--next 'POST / title=a'` (fields as `a=1&b=2`) or
+  `--next /items/i3`.
+- **A form with only a button:** `--button 'Clear done'`, or `--next 'POST / @Clear done'`. With one form per item,
+  `--field id=t2` picks the item's form.

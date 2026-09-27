@@ -7,8 +7,8 @@ description: Build or change an app with the Hozu framework (packages @hozu/*, f
 
 Hozu is not in your training data. These files are the whole API; do not read `node_modules/@hozu`.
 - **Changing an app:** read `changing.md` first, then only the app's own files.
-- **Building an app:** read this file, run `hozu add feature <name> --page /` (a working feature) and edit it;
-  `patterns.md` says which part of `example/` shows each pattern.
+- **Building an app:** read this file, run `hozu add feature <name> --page / --with detail,toggle,filter,remove`
+  (keep the parts you need) and edit the working code; `patterns.md` points into `example/`.
 - **`reference.md`** when the task needs it: routes, DOM fields, no-JS forms, `head`, 404/500, field errors,
   sessions, languages, env, HTTP, Markdown, images, preview, PWA, page tests, deployment.
 - **A diagnostic you do not understand:** `diagnostics.md`.
@@ -36,18 +36,18 @@ features/<name>/
   model.ts  schemas, events, query / mutation / tag / fn, the machine
   views.ts  views, contracts, feature()
 ```
-Relative imports end in `.ts`.
 
 ## Commands (from the app directory)
 ```
-pnpm exec hozu check  # after every edit: types, every rule, every contract
+pnpm exec hozu check  # after every edit: types, rules, contracts
 pnpm exec hozu check --update-lock  # accept an intended behaviour change
-pnpm exec hozu add feature items --page /items  # scaffold a working feature and wire it in
-pnpm exec hozu get / /items  # try pages without a server: status, title, alerts, text
+pnpm exec hozu add feature items --page / --with detail,toggle  # a working feature, wired in
+pnpm exec hozu map  # outline of the app with file:line
+pnpm exec hozu get / /items  # try pages without a server
 pnpm exec hozu post / --field title=A --next 'POST / title=a' --next /  # submit a form like a browser
 ```
-Each diagnostic has a `file:line`, a cause and a fix: apply the fix, do not work around the rule. Every `get` /
-`post` starts from fresh in-memory data, so chain steps with `--next`. Run `node serve.ts` only to use the app.
+Diagnostics give `file:line`, cause and fix: apply the fix. `get` / `post` start from fresh in-memory data;
+chain steps with `--next`. Run `node serve.ts` only to use the app. Relative imports end in `.ts`.
 
 ## model.ts
 ```ts
