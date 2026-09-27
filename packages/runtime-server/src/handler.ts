@@ -34,6 +34,7 @@ import { parseSearch } from './search.ts'
 import { type CspSources, contentSecurityPolicy, crossSite, ERROR_HTML } from './security.ts'
 import { type SessionStore, sessionCookie } from './session.ts'
 import { publicAssets } from './static.ts'
+import { assertWidgetBundle } from './widgets.ts'
 
 export interface HandlerOptions {
   build: BuildResult
@@ -189,6 +190,7 @@ export function createHandler({
         Object.fromEntries(Object.entries(manifest.widgets).map(([k, w]) => [k, w.url])),
       )
     : publicAssets(basePath, styles, widgets?.urls ?? {})
+  assertWidgetBundle(ir, assets.widgets, Boolean(manifest || widgets))
   const data = createDataRuntime({ build, resolvers, now, onError, env: rawEnv })
   const previewData: typeof data = {
     ...data,

@@ -1,5 +1,5 @@
 import type { Json } from '@hozu/core/ir'
-import { createHandler, type HandlerOptions } from '@hozu/runtime-server'
+import { createHandler, type HandlerOptions, usedWidgets } from '@hozu/runtime-server'
 
 export interface TestPage {
   status: number
@@ -34,7 +34,17 @@ export const visibleText = (html: string): string =>
 
 export function testApp(options: HandlerOptions & { origin?: string }): TestApp {
   const { origin = 'http://localhost', ...rest } = options
-  const handler = createHandler(rest)
+  const handler = createHandler(
+    rest.widgets || rest.manifest
+      ? rest
+      : {
+          ...rest,
+          widgets: {
+            urls: Object.fromEntries(usedWidgets(rest.build.ir).map((ref) => [ref, `/_hozu/w/${ref}.js`])),
+            files: {},
+          },
+        },
+  )
   const page = async (response: Response): Promise<TestPage> => {
     const html = await response.text()
     const payload = /<script type="application\/json" id="hozu-payload">([\s\S]*?)<\/script>/.exec(html)?.[1]

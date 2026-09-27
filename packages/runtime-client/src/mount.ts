@@ -418,6 +418,7 @@ export function createApp(doc: Document, options: AppOptions): App {
       const inner: Cursor = { parent: el, next: claimed ? el.firstChild : null, claim: claimed }
       for (const child of node.children) render(child, scope, inner, block, null)
     }
+    if (!ref) console.error(`Hozu: widget ${node.widget} has no client code (bundleWidgets)`)
     if (!ref || !options.loadWidget || !options.mountWidget) return
     options.mountWidget({
       el,

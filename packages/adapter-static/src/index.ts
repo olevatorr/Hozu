@@ -4,6 +4,7 @@ import { planRoute } from '@hozu/compiler'
 import type { BuildResult, ImageSet } from '@hozu/core/ir'
 import { createDataRuntime, type ResolverSet } from '@hozu/data'
 import {
+  assertWidgetBundle,
   pageEntries,
   publicAssets,
   renderToString,
@@ -42,6 +43,7 @@ export async function exportStatic({
   images = null,
 }: StaticExportOptions): Promise<StaticExport> {
   const assets = publicAssets(build.ir.http.basePath, styles, widgets?.urls ?? {})
+  assertWidgetBundle(build.ir, assets.widgets, Boolean(widgets))
   const data = createDataRuntime({ build, resolvers })
   const result: StaticExport = { written: [], skipped: [] }
   let js = false

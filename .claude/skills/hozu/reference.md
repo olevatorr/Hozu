@@ -41,9 +41,11 @@ export default implement<typeof Copy>(({ el, props, emit, signal }) => {
   return { update(next) { props = next } }
 })
 ```
-`load`: `'eager' | 'visible' | 'idle'`; `wraps: true` keeps the children as server HTML. Serve with
-`widgets: await bundleWidgets(build)` from `@hozu/bundle` (and pass it to `exportStatic`); `hozu build` bundles
-them itself (HZ029 for a client module that does not bundle).
+`load`: `'eager' | 'visible' | 'idle'`; `wraps: true` keeps the children as server HTML.
+**Serving them is a separate step.** Run `npm install @hozu/bundle`, then pass `widgets: await bundleWidgets(build)`
+to `createServer` in `serve.ts` (and to `exportStatic`). Without it the server refuses to start; `hozu build` bundles
+widgets itself. HZ029 is a client module that does not bundle. A library's own CSS goes in `app.css`
+(`@import "leaflet/dist/leaflet.css";`), and a map or chart host needs a height class (`h-96`).
 
 ## Forms without JavaScript
 A submit whose payload reads only `ui.dom.form('name')`, literals, context, params and search also works without JS

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.2 — no JS download on pages that do not run it
+## 0.4.2 — no JS download on pages that do not run it, no silent widgets
 
 - **The client runtime is preloaded only where an island renders (ADR 0036).**
   - Some islands can be left out of a page: those inside `ui.each`, `ui.if`, `when` or a query branch.
@@ -11,6 +11,13 @@
 - **`hozu plan`** shows `js: 2 islands (always)` or `js: 1 island (only when rendered)`. In `--json`, `js` is
   `'always' | 'conditional' | false`; it was a boolean.
 - **Static export** writes `/_hozu/client.js` only when an exported page runs it.
+- **A missing widget bundle is an error.** If views use `ui.use` but `createServer`, `createHandler` or `exportStatic`
+  got no `widgets`, startup throws and names the widgets and the fix (`widgets: await bundleWidgets(build)`).
+  - Before, the scaffolded `serve.ts` rendered empty hosts that never mounted, with no error anywhere.
+  - A bundle that lacks a widget (a failed HZ029 build) is an error too.
+  - The client logs any widget without client code.
+  - `testApp` and `hozu get` do not run client code, so they need no bundle.
+- **The Widgets guide** says bundling is a separate step, and that a library's CSS goes in `app.css`.
 
 ## 0.4.1 — accessibility and widget docs
 
