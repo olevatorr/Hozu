@@ -48,3 +48,7 @@ Busy states explicitly list ignored events. This prevents a repeated click from 
 Use `ui.asset(new URL('./image.png', import.meta.url))` for local assets and provide image width and height. The optional image package can generate responsive WebP variants.
 
 `ui.html(article.html)` renders trusted HTML, such as a repository-owned Markdown collection. It is not a sanitizer for visitor-provided content. Hozu reports untrusted values passed into raw HTML.
+
+## Understand the design
+
+Read [How Hozu works](/how-it-works/pipeline) for the decisions behind this API and their trade-offs.

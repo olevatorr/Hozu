@@ -41,3 +41,7 @@ Keep changes to the behaviour lock intentional. A green check is one layer of ev
 ## Know what the trials establish
 
 Hozu's trial records include both correctness and cost. They show specific runs, not a universal guarantee that an agent cannot make a mistake. Read the methods, comparison baseline and limitations before treating an outcome as a prediction for your own application.
+
+## Understand the design
+
+Read [How Hozu works](/how-it-works/why-ai-first) for the decisions behind this API and their trade-offs.

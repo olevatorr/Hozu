@@ -50,3 +50,7 @@ Edit the scaffold's text or data model, then run `npx hozu check`. It checks Typ
 For local browser development, the generated application's `npm start` script starts its server. The in-process commands are enough to inspect text, status codes, links and native forms during a change.
 
 The scaffold keeps data in memory. Add durable storage in the server resolvers when your application needs persistence.
+
+## Understand the design
+
+Read [How Hozu works](/how-it-works/why-ai-first) for the decisions behind this API and their trade-offs.

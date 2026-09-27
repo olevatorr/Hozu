@@ -1,39 +1,20 @@
-import { feature, op, ui } from '@hozu/core'
-import { changelog, doc, home, trial, trials } from '../../routes.ts'
-import { getChangelog, getDoc, getTrial, listDocs, listTrials } from './model.ts'
+import { feature, ui } from '@hozu/core'
+import { doc, home, how, trial, trials } from '../../routes.ts'
+import { Chapter, Docs, How } from './articles.ts'
+import { Footer, Header } from './chrome.ts'
+import {
+  getChangelog,
+  getChapter,
+  getDoc,
+  getStart,
+  getTrial,
+  listChapters,
+  listDocs,
+  listTrials,
+} from './model.ts'
 
-export const Header = ui.view({
-  render: () =>
-    ui.header({}, [
-      ui.a({ href: '#main', 'data-skip': '' }, ['Skip to content']),
-      ui.nav({ 'aria-label': 'Main navigation', 'data-header': '' }, [
-        ui.a({ href: ui.link(home, null), 'data-brand': '', 'aria-label': 'Hozu home' }, [
-          ui.img({
-            src: ui.asset(new URL('../../assets/logo.png', import.meta.url)),
-            width: 48,
-            height: 48,
-            alt: '',
-          }),
-          'Hozu',
-        ]),
-        ui.div({ 'data-nav': '' }, [
-          ui.a({ href: ui.link(doc, { slug: 'getting-started' }) }, ['Docs']),
-          ui.a({ href: ui.link(trials, null) }, ['Trials']),
-          ui.a({ href: ui.link(changelog, null) }, ['Changelog']),
-          ui.a({ href: 'https://github.com/olevatorr/Hozu' }, ['GitHub']),
-          ui.a({ href: 'https://www.npmjs.com/package/@hozu/cli' }, ['npm']),
-        ]),
-      ]),
-    ]),
-})
-export const Footer = ui.view({
-  render: () =>
-    ui.footer({}, [
-      ui.p({}, ['Hozu (ほぞ). A precise fit between intent and implementation.']),
-      ui.p({}, ['Built with Hozu. Static HTML, all the way down.']),
-      ui.a({ href: 'https://github.com/olevatorr/Hozu/blob/main/LICENSE' }, ['MIT license']),
-    ]),
-})
+export { Chapter, Docs, Footer, Header, How }
+
 export const Home = ui.view({
   render: () =>
     ui.main({ id: 'main' }, [
@@ -47,7 +28,7 @@ export const Home = ui.view({
             'Give your coding agent a structure it can check: typed views, explicit data and contracts for every behaviour.',
           ]),
           ui.a({ href: ui.link(doc, { slug: 'getting-started' }), 'data-button': '' }, ['Start building']),
-          ui.a({ href: ui.link(doc, { slug: 'concepts' }), 'data-secondary': '' }, ['Understand Hozu']),
+          ui.a({ href: ui.link(how, null), 'data-secondary': '' }, ['Understand Hozu']),
         ]),
         ui.div({ 'data-joint': '' }, [
           ui.img({
@@ -65,11 +46,15 @@ export const Home = ui.view({
           ui.p({}, ['Create an app, add a feature, check your work. Node 22.18 or newer.']),
           ui.p({}, ['Use --agent agents for Codex, Cursor or Copilot; --agent claude for Claude Code.']),
         ]),
-        ui.pre({}, [
-          ui.code({}, [
-            'npm create hozu@latest my-app -- --agent claude\ncd my-app\nnpm install\nnpx hozu add feature tasks --page /tasks\nnpx hozu check',
-          ]),
-        ]),
+        ui.query(
+          getStart,
+          {},
+          {
+            ready: (start) => ui.div({}, [ui.html(start.html)]),
+            pending: null,
+            failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Quick start is unavailable.']) },
+          },
+        ),
       ]),
       ui.section({ 'aria-labelledby': 'principles-title', 'data-section': '' }, [
         ui.h2({ id: 'principles-title' }, ['Structure you can verify.']),
@@ -93,6 +78,23 @@ export const Home = ui.view({
             ],
           ].map(([title, body]) => ui.article({}, [ui.h3({}, [title!]), ui.p({}, [body!])])),
         ]),
+      ]),
+      ui.nav({ 'data-reading-path': '', 'aria-label': 'Learn Hozu' }, [
+        ui.a({ href: ui.link(doc, { slug: 'getting-started' }) }, [
+          ui.strong({}, ['Build something']),
+          ui.span({}, ['Start with the docs']),
+        ]),
+        ui.a({ href: ui.link(how, null) }, [
+          ui.strong({}, ['Understand the design']),
+          ui.span({}, ['Explore how it works']),
+        ]),
+        ui.a({ href: ui.link(trials, null) }, [
+          ui.strong({}, ['Examine the evidence']),
+          ui.span({}, ['Read the trials']),
+        ]),
+      ]),
+      ui.p({ 'data-boundaries': '' }, [
+        'Hozu is not a separate SPA mode or a place for arbitrary effects in views. It makes behaviour explicit, and asks you to pay for that structure.',
       ]),
       ui.section({ 'data-results': '', 'aria-labelledby': 'results-title' }, [
         ui.h2({ id: 'results-title' }, ['Measured, with the rough edges included.']),
@@ -121,65 +123,6 @@ export const Home = ui.view({
           ].map(([slug, title]) => ui.li({}, [ui.a({ href: ui.link(trial, { slug: slug! }) }, [title!])])),
         ]),
       ]),
-    ]),
-})
-export const Docs = ui.view({
-  route: doc,
-  render: ({ params }) =>
-    ui.main({ id: 'main', 'data-doc-layout': '' }, [
-      ui.aside({}, [
-        ui.nav({ 'aria-label': 'Documentation' }, [
-          ui.query(
-            listDocs,
-            {},
-            {
-              ready: (items) =>
-                ui.ul({}, [
-                  ui.each(items, 'slug', (item) =>
-                    ui.li({}, [
-                      ui.a(
-                        {
-                          href: ui.link(doc, { slug: item.slug }),
-                          'aria-current': op.eq(params.slug, item.slug),
-                        },
-                        [item.title],
-                      ),
-                    ]),
-                  ),
-                ]),
-              pending: null,
-              failed: {
-                Unexpected: () => ui.p({ role: 'alert' }, ['Documentation navigation is unavailable.']),
-              },
-            },
-          ),
-        ]),
-      ]),
-      ui.query(
-        getDoc,
-        { slug: params.slug },
-        {
-          ready: (article) =>
-            ui.article({ class: 'prose max-w-none' }, [
-              ui.h1({}, [article.title]),
-              ui.p({ 'data-description': '' }, [article.description]),
-              ui.html(article.html),
-              ui.nav({ 'aria-label': 'Previous and next documentation', 'data-pagination': '' }, [
-                ui.each(article.previous, 'slug', (item) =>
-                  ui.a({ href: ui.link(doc, { slug: item.slug }) }, ['Previous: ', item.title]),
-                ),
-                ui.each(article.next, 'slug', (item) =>
-                  ui.a({ href: ui.link(doc, { slug: item.slug }) }, ['Next: ', item.title]),
-                ),
-              ]),
-            ]),
-          pending: null,
-          failed: {
-            NotFound: () => ui.h1({}, ['Page not found']),
-            Unexpected: () => ui.p({ role: 'alert' }, ['Documentation is unavailable.']),
-          },
-        },
-      ),
     ]),
 })
 export const Trials = ui.view({
@@ -259,6 +202,11 @@ export const content = feature({
   id: 'content',
   intent: { summary: 'Static official Hozu documentation, trials and releases' },
   declarations: {
+    listChapters,
+    getChapter,
+    getStart,
+    Chapter,
+    How,
     listDocs,
     getDoc,
     listTrials,

@@ -64,3 +64,7 @@ Replace the in-memory implementation with your database or service without chang
 ## Load a Markdown collection
 
 `@hozu/content` loads Markdown files into entries with `slug`, validated front matter, HTML and headings. Call `loadCollection({ dir: new URL('./content/posts/', import.meta.url), schema })` in server code, then return the entries through public queries. This website uses that pattern for its documentation and original trial records.
+
+## Understand the design
+
+Read [How Hozu works](/how-it-works/framework-owned-data) for the decisions behind this API and their trade-offs.

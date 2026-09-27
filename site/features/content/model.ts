@@ -10,6 +10,8 @@ export const Summary = z.object({
 })
 export const Article = Summary.extend({
   html: z.string(),
+  headings: z.array(z.object({ id: z.string(), text: z.string(), depth: z.number(), href: z.string() })),
+  source: z.string(),
   previous: z.array(Summary),
   next: z.array(Summary),
 })
@@ -41,6 +43,26 @@ export const getTrial = query({
   freshness: 'static',
 })
 export const getChangelog = query({
+  input: z.object({}),
+  output: z.object({ html: z.string() }),
+  scope: 'public',
+  freshness: 'static',
+})
+
+export const listChapters = query({
+  input: z.object({}),
+  output: z.array(Summary),
+  scope: 'public',
+  freshness: 'static',
+})
+export const getChapter = query({
+  input: Slug,
+  output: Article,
+  errors: { NotFound: Slug },
+  scope: 'public',
+  freshness: 'static',
+})
+export const getStart = query({
   input: z.object({}),
   output: z.object({ html: z.string() }),
   scope: 'public',

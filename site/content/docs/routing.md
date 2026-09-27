@@ -55,3 +55,7 @@ Route modifiers support optional segments (`:slug?`, nullable string), one or mo
 Declare a static error route and pass it as `project({ notFound })`. Hozu uses its page for unmatched URLs. `project({ error })` supplies a server-error page.
 
 Project HTTP options can declare a base path, a trailing-slash policy, explicit redirects and per-route headers. These are server behaviours; a static host must provide any HTTP rules it needs. Hozu does not provide arbitrary rewrites.
+
+## Understand the design
+
+Read [How Hozu works](/how-it-works/derived-rendering) for the decisions behind this API and their trade-offs.

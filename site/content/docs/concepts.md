@@ -39,3 +39,7 @@ Each query declares its scope and freshness. Public static data can be rendered 
 Only machine-bound views hydrate. A static document has no need for a client application runtime. A page's optional `assert: 'static'` asks the validator to verify this property; it does not override the derived plan.
 
 Use `npx hozu plan home` to see the compiler's decision for a named route.
+
+## Understand the design
+
+Read [How Hozu works](/how-it-works/pipeline) for the decisions behind this API and their trade-offs.

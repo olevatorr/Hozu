@@ -19,9 +19,10 @@ The first build compiles workspace packages on a fresh checkout. Export replaces
 ## Content sources
 
 - `content/docs/*.md`: human documentation. Front matter declares `title`, `description` and `order`; order controls the sidebar and previous/next navigation.
+- `content/how-it-works/*.md`: ordered explanations of the design, with native interactive pipeline and render-plan controls.
 - `../docs/trials/*.md`: the original trial records, loaded directly with `@hozu/content`. Do not copy them into the site. Relative links to trials resolve to published trial pages; other relative links resolve to GitHub source.
 - `../CHANGELOG.md`: the original changelog, rendered directly.
-- `features/content/views.ts`: home page and shared navigation. Measured claims link to trials 0010–0013. The 72/72 versus 67/72 result comes specifically from trial 0012.
+- `features/content/views.ts`: home page; `chrome.ts`, `articles.ts` and `diagrams.ts` hold navigation, reading layouts and native interactive diagrams. Measured claims link to trials 0010–0013. The 72/72 versus 67/72 result comes specifically from trial 0012.
 - `assets/`: copies of the repository logo and the sharing icon (`head.image` via `ui.asset`).
 
 ## Deployment
@@ -32,13 +33,6 @@ The export includes `CNAME`, `.nojekyll`, `404.html`, `sitemap.xml`, `robots.txt
 
 ## Verification record
 
-Verified with Node 22.22.2:
-
-- `hozu check`: types OK, 0 errors, 0 warnings, 0/0 contracts, lock checked.
-- Required `hozu get` paths: `/`, `/docs/getting-started`, `/trials/0012-correctness-notes` return 200; `/does-not-exist` returns 404 with the expected text.
-- Additional checks cover the changelog and missing documentation/trial slugs.
-- Static export: 0 skipped routes, 27 HTML files, 25 canonical sitemap URLs; every local link and asset resolves.
-- Desktop and mobile Chromium inspection: images load, no horizontal page overflow. Exported files are intercepted directly; no development server runs.
-- Repository gate: lint, type checking, 261 passing tests (4 skipped) and all benchmark budgets pass. Benchmarks run once.
+See [the v2 review](REVIEW.md) for route checks, screenshot findings, article counts and the repository gate. Syntax highlighting runs at build time. All exported pages ship 0 client JavaScript bytes, including the native interactive explanations. The conditional clipboard island attempt is documented in [framework gaps](FRAMEWORK-GAPS.md).
 
 The framework packages remain unchanged.

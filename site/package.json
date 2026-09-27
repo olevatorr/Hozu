@@ -10,7 +10,6 @@
     "verify": "node verify.ts"
   },
   "dependencies": {
-    "@tailwindcss/typography": "0.5.20",
     "@hozu/adapter-static": "workspace:*",
     "@hozu/cli": "workspace:*",
     "@hozu/content": "workspace:*",
@@ -18,11 +17,15 @@
     "@hozu/css": "workspace:*",
     "@hozu/data": "workspace:*",
     "@hozu/schema-zod": "workspace:*",
-    "zod": "4.6.5",
     "@hozu/testing": "workspace:*",
-    "tailwindcss": "4.3.3"
+    "@tailwindcss/typography": "0.5.20",
+    "tailwindcss": "4.3.3",
+    "zod": "4.6.5"
   },
   "engines": {
     "node": ">=22.18"
+  },
+  "devDependencies": {
+    "highlight.js": "11.11.1"
   }
 }

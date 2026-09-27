@@ -18,3 +18,19 @@ Gaps found while building this site. Resolved ones stay listed with the release 
 
 - Found after deploying: pages without islands load a new document per link, and browsers paint a blank frame.
 - Now: the stylesheet turns on cross-document view transitions (Chrome/Edge 126+, Safari 18.2+), with no JS.
+
+
+## Conditional code-copy island preloads JavaScript on pages without code
+
+- Needed: a typed clipboard widget with an idle → copied → idle machine and a 2000 ms timer, included only when a Markdown page contains code blocks.
+- Attempt: a public/static query returns a list of code blocks. A machine-bound view renders `ui.each(blocks, 'id', block => ui.use(W, ...))`. The widget uses `implement<typeof W>`, `navigator.clipboard.writeText` and a typed success event. Contracts describe the event and timed reset. The query returns an empty list for the no-code reproduction.
+- Exact observed result: the no-code page renders `<main><h1>Page without code</h1><div></div></main>`, but its head still contains `<link rel="modulepreload" href="/_hozu/client.js">`. Static export reports `skipped: []` and writes the client runtime and chunks. There is no framework diagnostic for this JS boundary mismatch.
+- Decision: stop after this reasonable attempt, as requested. Do not ship the copy widget or its machine. All code remains selectable and keyboard-scrollable; every production page remains at 0 client JavaScript bytes. The public render plan is derived for the route, not each query's eventual content.
+- Reproduction during this phase: `.tmp/site-v2/copy-probe/`, with rendered output in `result.log`. No framework source was read or modified.
+
+## SVG role attribute rejected
+
+- Needed: an explicitly named image role on the pipeline/render-plan SVG diagrams.
+- Attempt: `ui.svg({ role: 'img', 'aria-label': '…', viewBox: '…' }, children)`.
+- Exact diagnostics: `TS2353: Object literal may only specify known properties, and 'role' does not exist in type 'Props<"svg">'`; `HZ014: Attribute "role" is not allowed on <svg>`.
+- Supported design: omit the rejected role. Keep an accessible `aria-label`, real SVG text labels, and the explanation in adjacent semantic HTML. Narrow screens receive a vertical SVG with readable labels. No unsafe cast or framework change is used.

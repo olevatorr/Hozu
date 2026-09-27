@@ -62,3 +62,7 @@ export default { fetch: handler.fetch }
 ```
 
 Serve the generated public assets through the host's static-asset mechanism. Keep resolver dependencies compatible with the chosen runtime.
+
+## Understand the design
+
+Read [How Hozu works](/how-it-works/derived-rendering) for the decisions behind this API and their trade-offs.

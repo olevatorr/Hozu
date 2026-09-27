@@ -8,6 +8,14 @@ import { createResolvers } from './server.ts'
 const app = testApp({ build: buildProject(project), resolvers: createResolvers() })
 for (const [path, status, text] of [
   ['/', 200, '72/72'],
+  ['/how-it-works', 200, 'Understand the design'],
+  ['/how-it-works/why-ai-first', 200, 'Why AI-first?'],
+  ['/how-it-works/pipeline', 200, 'One representation'],
+  ['/how-it-works/machines-and-contracts', 200, 'HZ016'],
+  ['/how-it-works/derived-rendering', 200, 'User scope'],
+  ['/how-it-works/framework-owned-data', 200, 'shallow ref'],
+  ['/how-it-works/trade-offs', 200, '1.66×'],
+  ['/how-it-works/missing', 404, 'Page not found'],
   ['/docs/getting-started', 200, 'Create an app'],
   ['/trials/0012-correctness-notes', 200, '67/72'],
   ['/changelog', 200, '0.3.0'],
@@ -37,6 +45,7 @@ for (const location of locations) {
 }
 for (const [directory, prefix] of [
   [new URL('./content/docs/', import.meta.url), '/docs/'],
+  [new URL('./content/how-it-works/', import.meta.url), '/how-it-works/'],
   [new URL('../docs/trials/', import.meta.url), '/trials/'],
 ] as const) {
   for (const name of await readdir(directory)) {
@@ -52,19 +61,33 @@ let pages = 0
 for (const file of files.filter((name) => name.endsWith('.html'))) {
   const html = await readFile(new URL(file, root), 'utf8')
   assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1, `${file}: one main heading`)
-  assert.ok(!/<script[^>]+src=/.test(html), `${file}: no client scripts`)
+  assert.ok(!/<script[^>]+(?:src=|type="module")/.test(html), `${file}: no client scripts`)
+  assert.ok(!/rel="modulepreload"/.test(html), `${file}: no hidden JavaScript preloads`)
+  if (file.startsWith('docs/') || (file.startsWith('how-it-works/') && file !== 'how-it-works/index.html')) {
+    assert.ok(html.includes('aria-current="page"'), `${file}: active chapter`)
+    assert.ok(html.includes('On this page'), `${file}: table of contents`)
+    assert.ok(html.includes('Edit this page on GitHub'), `${file}: source edit link`)
+  }
   assert.ok(!/role="alert"/.test(html), `${file}: no query failure alerts`)
   assert.match(
     html,
     /<meta property="og:image" content="https:\/\/hozu\.org\/_hozu\/a\/[0-9a-f]{16}\.png">/,
     `${file}: share image`,
   )
-  for (const match of html.matchAll(/(?:href|src)="([^"#]+)(?:#[^"]*)?"/g)) {
+  for (const match of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
     const url = new URL(match[1]!, `https://hozu.org/${file}`)
     if (url.origin !== 'https://hozu.org') continue
     const target = new URL(`.${url.pathname}`, root)
     const info = await stat(target)
-    if (info.isDirectory()) await access(new URL(`${target.href.replace(/\/$/, '')}/index.html`))
+    const resolved = info.isDirectory() ? new URL(`${target.href.replace(/\/$/, '')}/index.html`) : target
+    await access(resolved)
+    if (url.hash && resolved.pathname.endsWith('.html')) {
+      const targetHtml = await readFile(resolved, 'utf8')
+      assert.ok(
+        targetHtml.includes(`id="${decodeURIComponent(url.hash.slice(1))}"`),
+        `${file}: missing anchor ${url.href}`,
+      )
+    }
   }
   pages++
 }
@@ -72,3 +95,6 @@ console.log(
   `${pages} HTML files audited; ${locations.length} canonical sitemap URLs; all local links and assets resolve.`,
 )
 console.log('CNAME, .nojekyll, 404.html, static share image and source-content coverage verified.')
+
+assert.ok(!files.some((file) => file.endsWith('.js')), 'No client JS files in static fallback')
+console.log('Client JavaScript: home 0 B, docs 0 B, How it works 0 B, trials 0 B, changelog 0 B.')

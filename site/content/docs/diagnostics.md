@@ -37,3 +37,7 @@ npx hozu check --update-lock
 ```
 
 Do not change an expected result merely to match a broken implementation. The contract describes what you decided the application should do.
+
+## Understand the design
+
+Read [How Hozu works](/how-it-works/machines-and-contracts) for the decisions behind this API and their trade-offs.

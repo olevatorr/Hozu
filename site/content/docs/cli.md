@@ -49,3 +49,7 @@ npx hozu post /tasks --field title=Hello --next /tasks
 Each invocation starts with fresh in-memory data. Use repeated `--next` steps when requests must share state. A step can be a path, `GET /path`, `POST /path title=Hello`, or `POST /path @Button label`. Use `--button` to choose an action form by its submit button.
 
 These commands run the real request handler. They complement browser checks; they do not measure layout or browser-only interaction.
+
+## Understand the design
+
+Read [How Hozu works](/how-it-works/pipeline) for the decisions behind this API and their trade-offs.

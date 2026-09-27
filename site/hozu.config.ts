@@ -1,18 +1,20 @@
 import { project, ui } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
-import { getDoc, getTrial, listDocs, listTrials } from './features/content/model.ts'
+import { getChapter, getDoc, getTrial, listChapters, listDocs, listTrials } from './features/content/model.ts'
 import {
   Changelog,
+  Chapter,
   content,
   Docs,
   Footer,
   Header,
   Home,
+  How,
   NotFound,
   Trial,
   Trials,
 } from './features/content/views.ts'
-import { changelog, doc, home, notFound, trial, trials } from './routes.ts'
+import { changelog, chapter, doc, home, how, notFound, trial, trials } from './routes.ts'
 
 const icon = ui.asset(new URL('./assets/icon-256.png', import.meta.url))
 export default project({
@@ -20,8 +22,29 @@ export default project({
   styles: new URL('./app.css', import.meta.url),
   site: { url: 'https://hozu.org', name: 'Hozu', lang: 'en', icon, themeColor: '#245ca6' },
   notFound,
-  routes: { home, doc, trials, trial, changelog, notFound },
+  routes: { home, doc, trials, trial, changelog, notFound, how, chapter },
   pages: [
+    ui.page(how, {
+      views: [Header, How, Footer],
+      assert: 'static',
+      head: {
+        render: () => ({
+          title: 'How Hozu works',
+          description: 'Explore the design, its checks and its trade-offs.',
+          image: icon,
+        }),
+      },
+    }),
+    ui.page(chapter, {
+      views: [Header, Chapter, Footer],
+      assert: 'static',
+      head: {
+        query: getChapter,
+        input: (params) => ({ slug: params.slug }),
+        render: (article) => ({ title: article.title, description: article.description, image: icon }),
+      },
+      entries: { query: listChapters, input: {}, params: (item) => ({ slug: item.slug }) },
+    }),
     ui.page(home, {
       views: [Header, Home, Footer],
       assert: 'static',
