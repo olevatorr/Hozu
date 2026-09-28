@@ -117,3 +117,38 @@ describe('server rendering', () => {
     expect(placed).not.toContain('<!--v:')
   })
 })
+
+describe('widgets that only appear after client-side state changes', () => {
+  it('are listed in the payload with the island that can render them', async () => {
+    const stations = buildProject((await import('../../../examples/stations/hozu.config.ts')).default, {
+      sources: false,
+    })
+    const { createResolvers: stationResolvers } = await import('../../../examples/stations/server.ts')
+    const { html } = await renderToString({
+      build: stations,
+      data: createDataRuntime({ build: stations, resolvers: stationResolvers() }),
+      route: 'home',
+      search: { q: '', district: '' },
+      assets: {
+        client: '/c.js',
+        fns: null,
+        styles: null,
+        preload: [],
+        widgets: Object.fromEntries(
+          ['StationMap', 'DistrictChart', 'Counter', 'FadeIn', 'Globe'].map((w) => [
+            `stations.${w}`,
+            `/w/${w}.js`,
+          ]),
+        ),
+      },
+    })
+    expect(html.slice(0, html.indexOf('id="hozu-payload"'))).not.toContain('Station details')
+    expect(Object.keys(payloadOf(html).widgets).sort()).toEqual([
+      'stations.Counter',
+      'stations.DistrictChart',
+      'stations.FadeIn',
+      'stations.Globe',
+      'stations.StationMap',
+    ])
+  })
+})

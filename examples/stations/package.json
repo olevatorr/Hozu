@@ -1,0 +1,29 @@
+{
+  "name": "example-stations",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "hozu validate",
+    "serve": "node --import @hozu/transform/register serve.ts"
+  },
+  "dependencies": {
+    "@hozu/adapter-node": "workspace:*",
+    "@hozu/bundle": "workspace:*",
+    "@hozu/cli": "workspace:*",
+    "@hozu/core": "workspace:*",
+    "@hozu/css": "workspace:*",
+    "@hozu/data": "workspace:*",
+    "@hozu/runtime-server": "workspace:*",
+    "@hozu/schema-zod": "workspace:*",
+    "@hozu/transform": "workspace:*",
+    "chart.js": "4.5.1",
+    "gsap": "3.13.0",
+    "leaflet": "1.9.4",
+    "three": "0.180.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/leaflet": "1.9.20",
+    "@types/three": "0.180.0"
+  }
+}

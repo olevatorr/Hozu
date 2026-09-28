@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.1 — widgets that appear later
+
+Both fixes were found while building `examples/stations`, the reference app for the widget trial: a map, a chart, GSAP
+and Three.js.
+- **A widget that first renders after a client-side change now loads.**
+  - The page payload listed only the widgets the server rendered. A widget shown later (for example a details panel
+    that fades in once a station is selected) had no client code, so it never mounted.
+  - Every widget an island can render is now listed.
+- **`fn()` calls are typed as their value,** like data in callbacks since 0.5, so `ctx.selected = nextStop({ … })`
+  type-checks.
+
 ## 0.5.0 — ordinary TypeScript, a shorter guide, less to write (ADR 0037–0039)
 
 A study of every trial transcript (ADR 0038) found that an agent's extra cost is mostly **reading the guide**: 45–75 %

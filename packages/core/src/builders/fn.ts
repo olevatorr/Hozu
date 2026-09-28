@@ -1,5 +1,5 @@
 import { brand, type Decl } from '../model/decl.ts'
-import { type Call, EXPR, type Val } from '../model/expr.ts'
+import { EXPR, type Val } from '../model/expr.ts'
 import type { Infer, Schema } from '../schema/standard.ts'
 
 export interface FnDef {
@@ -9,7 +9,7 @@ export interface FnDef {
 }
 
 export interface FnDecl<I = any, O = any> extends Decl<'fn'> {
-  (arg: Val<I>): Call<O>
+  (arg: Val<I>): O
 }
 
 export function fn<I extends Schema, O extends Schema>(config: {

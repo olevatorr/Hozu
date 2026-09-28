@@ -13,6 +13,7 @@ import {
   type ValueExpr,
   type ViewNode,
   type WidgetIR,
+  widgetsIn,
 } from '@hozu/core/ir'
 import type { DataRuntime } from '@hozu/data'
 import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '@hozu/machine'
@@ -173,6 +174,7 @@ export async function renderPage({
       nodeIndex.set(n.id, index)
       const node = i18n ? lowerCached(n, lowering) : n
       payload.nodes[n.id] = node.kind === 'widget' ? { ...node, children: [] } : node
+      for (const ref of widgetsIn(n, ir)) runtime.widget(ref)
       const { motion, visible } = loadsOf(node)
       if (motion) payload.motion = true
       if (visible) payload.visible = true

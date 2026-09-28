@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+.station-pin {
+  width: 14px !important;
+  height: 14px !important;
+  margin: -7px 0 0 -7px !important;
+  border-radius: 9999px;
+  background: #4f46e5;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px #4f46e5;
+}
+.station-pin[data-selected="true"] {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px #b45309;
+}

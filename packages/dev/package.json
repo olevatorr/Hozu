@@ -1,6 +1,6 @@
 {
   "name": "@hozu/dev",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Hozu development server: CSS hot swap and state-keeping reloads",
   "keywords": [
     "hozu",

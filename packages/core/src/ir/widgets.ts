@@ -17,6 +17,24 @@ const childrenOf = (n: ViewNode): ViewNode[] => {
   }
 }
 
+export function widgetsIn(root: ViewNode, ir: ProjectIR): string[] {
+  const out = new Set<string>()
+  const seen = new Set<ViewNode>()
+  const visit = (n: ViewNode) => {
+    if (seen.has(n)) return
+    seen.add(n)
+    if (n.kind === 'widget') out.add(n.widget)
+    if (n.kind === 'embed') {
+      const dot = n.view.indexOf('.')
+      const view = ir.features[n.view.slice(0, dot)]?.views[n.view.slice(dot + 1)]
+      if (view) visit(view.root)
+    }
+    for (const c of childrenOf(n)) visit(c)
+  }
+  visit(root)
+  return [...out]
+}
+
 export function usedWidgets(ir: ProjectIR): string[] {
   const used = new Set<string>()
   const visit = (n: ViewNode) => {
