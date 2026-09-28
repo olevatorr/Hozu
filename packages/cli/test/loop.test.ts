@@ -400,3 +400,36 @@ describe('the guide compiles (ADR 0037 D2)', () => {
     expect(steps.at(-1)!.alerts).toEqual(['Already listed'])
   }, 60_000)
 })
+
+describe('hozu post friction found by trial 0015', () => {
+  const notes = `${root}examples/notes`
+  const cli = (args: string[]) =>
+    promisify(execFile)(process.execPath, [`${root}packages/cli/bin/hozu.js`, ...args], { cwd: notes }).catch(
+      (e: { stdout: string; stderr: string }) => e,
+    )
+
+  it('accepts a button after & in a --next step, and a comma-separated --select', async () => {
+    const { stdout } = await cli([
+      'post',
+      '/login',
+      '--field',
+      'name=ada',
+      '--next',
+      'POST / id=n1&@Pin',
+      '--next',
+      '/',
+      '--select',
+      'button,label',
+      '--json',
+    ])
+    const last = JSON.parse(stdout).steps.at(-1)
+    expect(last.elements.map((e: { tag: string; text: string }) => e.tag)).toContain('label')
+    expect(last.elements.some((e: { text: string }) => e.text === 'Unpin')).toBe(true)
+  })
+
+  it('says a page redirected instead of "no form"', async () => {
+    const { stderr } = await cli(['post', '/', '--field', 'text=x'])
+    expect(stderr).toContain('GET / redirects to /login')
+    expect(stderr).toContain("hozu post /login --field name=ada --next 'POST / …'")
+  })
+})

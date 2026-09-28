@@ -118,6 +118,11 @@ const selectorOf = (selector: string) => {
 }
 
 export function elementsOf(html: string, selector: string): RequestElement[] {
+  if (selector.includes(','))
+    return selector
+      .split(',')
+      .filter((part) => part.trim())
+      .flatMap((part) => elementsOf(html, part.trim()))
   const sel = selectorOf(selector)
   const source = html.replace(/<(script|style|template)\b[\s\S]*?<\/\1>/gi, (m) => ' '.repeat(m.length))
   const out: RequestElement[] = []
@@ -268,6 +273,13 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
   const post = async (path: string, given: Record<string, string>, button: string | undefined) => {
     const page = await app.get(path, init())
     remember(page)
+    const moved = page.status >= 300 && page.status < 400 ? page.headers.get('location') : null
+    if (moved)
+      throw new HozuCliError('usage', `GET ${path} redirects to ${moved}, so it has no form to post`, [
+        moved.startsWith('/login')
+          ? `sign in first in the same command: hozu post /login --field name=ada --next 'POST ${path} …'`
+          : `post to ${moved} instead`,
+      ])
     const forms = formsOf(page.html, path)
     const label = button?.trim().toLowerCase()
     const form = forms.find(
@@ -313,7 +325,16 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
       const [fields, button] = rest.startsWith('@')
         ? ['', rest.slice(1)]
         : (rest.split('@') as [string, string?])
-      await post(m[2]!, fieldsOf(fields.trim() ? fields.trim().split('&') : []), button?.trim())
+      await post(
+        m[2]!,
+        fieldsOf(
+          fields
+            .split('&')
+            .map((f) => f.trim())
+            .filter(Boolean),
+        ),
+        button?.trim(),
+      )
     }
   }
   return { steps }
