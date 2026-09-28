@@ -141,6 +141,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   registers it). Views / machines from untransformed code are HZ044 (the server refuses to start). `Ref<T>` is `T`.
   Operator builtins `%truthy %cond %coalesce %concat %length %plus %minus`. The skill is a short `SKILL.md` plus
   `topics/*.md` printed by `hozu docs <topic>`; diagnostics end with `see: hozu docs <topic>`.
+- 0.6 (ADR 0040): `hozu browse <path> --do '<step>'` drives an installed Chrome / Chromium / Edge over CDP (pipe, no
+  deps, no port; requests go to the in-process handler) and reports errors, widgets (`data-hozu-widget` +
+  `data-hozu-widget-state` on hosts), text, `--select`, `--screenshot`; HZ047 = a `fn` body using names from outside
+  `impl` (the server refuses to start); no `site.icon` → `<link rel="icon" href="data:,">`.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

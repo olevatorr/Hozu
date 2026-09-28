@@ -16,6 +16,7 @@ __RUN__ hozu check                         # after every change: types, rules, c
 __RUN__ hozu check --update-lock           # only to accept a clean, intended behaviour change
 __RUN__ hozu get / --select button --forms  # try pages without a server: text, attributes, forms
 __RUN__ hozu post / --field title=Ship --next /   # submit a form like a browser
+__RUN__ hozu browse / --do 'click Save'     # real browser, no server: errors, widgets, text after steps
 ```
 __NOTE__
 ## Rules

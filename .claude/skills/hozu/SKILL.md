@@ -34,9 +34,10 @@ npx hozu add feature items --page / --with auth,detail,toggle,filter,remove
 npx hozu map                        # outline with file:line
 npx hozu get / --select button --forms          # a page, no server needed
 npx hozu post / --field title=A --next /        # a no-JS form post, cookies shown
+npx hozu browse / --do 'fill Search=a' --do 'click Save'   # real browser: errors, widgets, text
 npx hozu docs views                 # one topic
 ```
-`get` / `post` replace a running server for checks; `npm start` runs the app. Relative imports end in `.ts`.
+`get` / `post` / `browse` replace a running server for checks; `npm start` runs the app. Relative imports end in `.ts`.
 
 ## A feature in one screen
 ```ts

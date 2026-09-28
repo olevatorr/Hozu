@@ -226,3 +226,40 @@ export interface DocsOutput {
   text: string
   topics: { name: string; title: string }[]
 }
+
+export interface BrowseError {
+  kind: 'exception' | 'console' | 'request'
+  text: string
+  at: string | null
+}
+
+export interface BrowseWidget {
+  name: string
+  state: 'mounted' | 'failed' | 'not mounted'
+  width: number | null
+  height: number | null
+  canvases: number
+  elements: number
+  hint: string | null
+}
+
+export interface BrowseStep {
+  step: string
+  ok: boolean
+  note: string | null
+}
+
+export interface BrowseOutput {
+  path: string
+  url: string
+  status: number
+  title: string
+  hydrated: boolean
+  steps: BrowseStep[]
+  errors: BrowseError[]
+  widgets: BrowseWidget[]
+  text: string
+  truncated: boolean
+  elements: RequestElement[]
+  screenshot: string | null
+}

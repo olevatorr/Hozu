@@ -1,0 +1,205 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/BrowseOutput",
+  "definitions": {
+    "BrowseOutput": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "status": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string"
+        },
+        "hydrated": {
+          "type": "boolean"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BrowseStep"
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BrowseError"
+          }
+        },
+        "widgets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BrowseWidget"
+          }
+        },
+        "text": {
+          "type": "string"
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RequestElement"
+          }
+        },
+        "screenshot": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "url",
+        "status",
+        "title",
+        "hydrated",
+        "steps",
+        "errors",
+        "widgets",
+        "text",
+        "truncated",
+        "elements",
+        "screenshot"
+      ],
+      "additionalProperties": false
+    },
+    "BrowseStep": {
+      "type": "object",
+      "properties": {
+        "step": {
+          "type": "string"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "step",
+        "ok",
+        "note"
+      ],
+      "additionalProperties": false
+    },
+    "BrowseError": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "exception",
+            "console",
+            "request"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "text",
+        "at"
+      ],
+      "additionalProperties": false
+    },
+    "BrowseWidget": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "mounted",
+            "failed",
+            "not mounted"
+          ]
+        },
+        "width": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "height": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "canvases": {
+          "type": "number"
+        },
+        "elements": {
+          "type": "number"
+        },
+        "hint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "state",
+        "width",
+        "height",
+        "canvases",
+        "elements",
+        "hint"
+      ],
+      "additionalProperties": false
+    },
+    "RequestElement": {
+      "type": "object",
+      "properties": {
+        "selector": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "attrs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "selector",
+        "tag",
+        "attrs",
+        "text"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

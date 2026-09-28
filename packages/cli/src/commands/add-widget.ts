@@ -24,6 +24,9 @@ export default implement<typeof ${name}>(({ el }) => {
 })
 `
 
+export const bundleSpec = (core: string | undefined) =>
+  core === undefined ? 'latest' : core.startsWith('file:') ? core.replace(/hozu-core-/, 'hozu-bundle-') : core
+
 export async function runAddWidget(
   cwd: string,
   config: string | undefined,
@@ -94,7 +97,7 @@ export async function runAddWidget(
       const deps = json.dependencies ?? {}
       if (deps['@hozu/bundle']) return s
       json.dependencies = Object.fromEntries(
-        Object.entries({ ...deps, '@hozu/bundle': deps['@hozu/core'] ?? 'latest' }).sort(([a], [b]) =>
+        Object.entries({ ...deps, '@hozu/bundle': bundleSpec(deps['@hozu/core']) }).sort(([a], [b]) =>
           a.localeCompare(b),
         ),
       )

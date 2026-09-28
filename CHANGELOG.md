@@ -1,9 +1,35 @@
 # Changelog
 
-## 0.5.1 — widgets that appear later
+## 0.6.0 — verify what the browser runs (ADR 0040)
 
-Both fixes were found while building `examples/stations`, the reference app for the widget trial: a map, a chart, GSAP
-and Three.js.
+Trial 0017 built a widget-heavy app (Leaflet, Chart.js, GSAP, Three.js).
+- Every Hozu run was correct, but cost 2.65× Nuxt to build.
+- Part of that went to what `check`, `get` and `post` cannot see: code that runs only in the browser.
+
+**Measured (trial 0018, same task, two Claude runs, all checks passing):**
+- building costs 2.15× Nuxt, was 2.65× (−19 %);
+- changing is unchanged at about 3.5×;
+- both runs verified with `hozu browse`, and neither wrote a browser script.
+
+- **`hozu browse <path>`: a real browser, still without a server.**
+  - It drives the installed Chrome, Chromium or Edge over the DevTools protocol. There are no dependencies and no
+    port: requests go to the in-process handler.
+  - It runs `--do` steps in order (`fill`, `select`, `check`, `click`, `press`, `wait`, `goto`, all addressed by the
+    names a user reads).
+  - It reports exceptions, `console.error` calls, failed requests, every widget (mounted, failed or not mounted,
+    with its size and canvases), the text, `--select` elements and an optional `--screenshot`.
+  - The exit code is 1 when anything failed.
+- **HZ047: a `fn` body that uses a helper from outside `impl`.**
+  - `fn` bodies are sent to the browser as source text. A module-level helper worked on the server and silently
+    stopped every island in the browser, while `hozu check` stayed green.
+  - It is now a build error with the names found, and the server refuses to start.
+- **No favicon request without `site.icon`:** the head carries `<link rel="icon" href="data:,">`, so the console no
+  longer shows a 404 that looks like a bug.
+- **Widget hosts are marked** with `data-hozu-widget="<feature>.<Name>"` and `data-hozu-widget-state`
+  (`loading`, `mounted` or `failed`), for `browse` and for any browser test.
+- **`hozu add widget` next to a `file:` core tarball** now adds the bundle tarball, not the core one.
+
+### Found while building `examples/stations` (the reference app for the widget trial)
 - **A widget that first renders after a client-side change now loads.**
   - The page payload listed only the widgets the server rendered. A widget shown later (for example a details panel
     that fades in once a station is selected) had no client code, so it never mounted.

@@ -5,10 +5,18 @@ import { GUARD, RecorderError } from './model/expr.ts'
 
 const TRANSFORMED = Symbol.for('hozu.transformed')
 
+const FREE = Symbol.for('hozu.freeNames')
+
 export const transformedDecls = (): WeakSet<object> => {
   const g = globalThis as { [TRANSFORMED]?: WeakSet<object> }
   g[TRANSFORMED] ??= new WeakSet()
   return g[TRANSFORMED]
+}
+
+export const freeNamesOf = (): WeakMap<object, string[]> => {
+  const g = globalThis as { [FREE]?: WeakMap<object, string[]> }
+  g[FREE] ??= new WeakMap()
+  return g[FREE]
 }
 
 const isGuard = (x: unknown) => typeof x === 'object' && x !== null && GUARD in x
@@ -19,6 +27,10 @@ const list = (x: unknown): any[] =>
 export const lower = Object.freeze({
   done: <T extends object>(decl: T): T => {
     transformedDecls().add(decl)
+    return decl
+  },
+  free: <T extends object>(decl: T, names: string[]): T => {
+    freeNamesOf().set(decl, names)
     return decl
   },
   eq: (a: any, b: any) => op.eq(a, b),

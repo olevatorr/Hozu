@@ -23,3 +23,6 @@ export default implement<typeof Map>(({ el, props, emit, signal }) => {
 - `serve.ts` passes `widgets: await bundleWidgets(build)` (the server refuses to start without it; `hozu build` bundles
   them itself). A library's CSS goes in `app.css` (`@import "leaflet/dist/leaflet.css";`); a map or chart host needs a
   height class.
+- Check it with `hozu browse /` (no server): each widget is listed as mounted / failed / not mounted with its size
+  and canvases, next to any error it threw. A mounted host carries `data-hozu-widget="<feature>.<Name>"` and
+  `data-hozu-widget-state="mounted"` for your own browser tests.

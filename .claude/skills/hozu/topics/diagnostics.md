@@ -39,4 +39,5 @@ around the rule.
 | HZ044 | a feature file was loaded without the Hozu transform | run node with `--import @hozu/transform/register` (`npm start` does), or add `hozuTransform()` to Vite / Vitest |
 | HZ045 | `serve.ts` misses the widget bundle or the session store | add `widgets: await bundleWidgets(build)` / `session: sessionCookie(…)` |
 | HZ046 | an endpoint path is reserved, has params, or collides with a page, redirect or endpoint | use a static path such as `/api/…` (patch) |
+| HZ047 | a `fn` body uses a helper or constant defined outside `impl` (it is sent to the browser as source) | write the helper inside `impl`, or pass the value as input |
 | HZ042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

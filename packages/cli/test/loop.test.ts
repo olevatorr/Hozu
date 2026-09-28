@@ -6,6 +6,7 @@ import { promisify } from 'node:util'
 import { Ajv } from 'ajv'
 import { createApp } from 'create-hozu'
 import { afterAll, describe, expect, it } from 'vitest'
+import { bundleSpec } from '../src/commands/add-widget.ts'
 import { formsOf } from '../src/commands/request.ts'
 import { main } from '../src/main.ts'
 
@@ -349,6 +350,11 @@ describe('hozu add widget (ADR 0037 D5)', () => {
     expect(missing.validate.diagnostics.map((d: { code: string }) => d.code)).toEqual(['HZ045'])
     expect(missing.validate.diagnostics[0].message).toContain('tasks.Chart')
   }, 60_000)
+  it('depends on the bundle tarball next to a core tarball (ADR 0040 C)', () => {
+    expect(bundleSpec('file:/tmp/tgz/hozu-core-0.6.0.tgz')).toBe('file:/tmp/tgz/hozu-bundle-0.6.0.tgz')
+    expect(bundleSpec('^0.6.0')).toBe('^0.6.0')
+    expect(bundleSpec(undefined)).toBe('latest')
+  })
 })
 
 describe('the guide compiles (ADR 0037 D2)', () => {

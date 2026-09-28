@@ -47,6 +47,11 @@ export const targets = [
   },
   {
     source: 'packages/cli/src/contract.ts',
+    type: 'BrowseOutput',
+    out: 'packages/cli/schema/browse.schema.json',
+  },
+  {
+    source: 'packages/cli/src/contract.ts',
     type: 'SkillOutput',
     out: 'packages/cli/schema/skill.schema.json',
   },

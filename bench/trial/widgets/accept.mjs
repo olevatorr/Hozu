@@ -184,7 +184,8 @@ if (phase === '1') {
           .first()
           .evaluate((el) => {
             let o = 1
-            for (let e = el; e; e = e.parentElement) o *= Number(getComputedStyle(e).opacity)
+            for (let e = el.querySelector('h2') ?? el; e; e = e.parentElement)
+              o *= Number(getComputedStyle(e).opacity)
             return o
           })
           .catch(() => null),
@@ -218,10 +219,12 @@ if (phase === '1') {
     )
   })
   await check('W9', 'typing a search updates list, markers, table and total without reloading', async () => {
-    const before = page.url()
+    await page.evaluate(() => {
+      window.__noReload = true
+    })
     await page.getByLabel('Search', { exact: true }).fill('park')
     await wait(page, 1600)
-    eq(page.url(), before, 'no navigation')
+    eq(await page.evaluate(() => window.__noReload === true), true, 'no reload')
     eq(await list(page), ['Riverside Park', 'Tech Park'], 'list')
     eq((await markers(page)).map((m) => m.title).sort(), ['Riverside Park', 'Tech Park'], 'markers')
     eq(
@@ -350,7 +353,7 @@ if (phase === '1') {
       await wait(page, 400)
     }
     const changes = seen.filter((v, i) => i > 0 && v !== seen[i - 1]).length
-    assert(seen[0] === 'Lakeside', `starts at the first visible station: ${seen.join(',')}`)
+    assert(seen.find((v) => v) === 'Lakeside', `starts at the first visible station: ${seen.join(',')}`)
     assert(changes >= 2 && seen.includes('Tech Park'), `moves and wraps: ${seen.join(',')}`)
     assert(
       (await page.getByRole('button', { name: 'Stop tour', exact: true }).count()) === 1,

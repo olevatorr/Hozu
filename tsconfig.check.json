@@ -52,6 +52,9 @@
     },
     {
       "path": "packages/create-hozu"
+    },
+    {
+      "path": "packages/transform"
     }
   ]
 }

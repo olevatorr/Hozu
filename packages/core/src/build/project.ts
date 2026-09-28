@@ -4,7 +4,7 @@ import { join, resolveSource } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
 import type { Diagnostic, SourceIndex } from '../ir/diagnostic.ts'
 import type { FeatureIR, JsonSchema, ProjectIR, RouteIR } from '../ir/types.ts'
-import { transformedDecls } from '../lower.ts'
+import { freeNamesOf, transformedDecls } from '../lower.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
 import { toCheck, toParse } from '../schema/check.ts'
@@ -320,6 +320,28 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
               patch: null,
             },
           )
+      }
+  }
+
+  if (!manifest) {
+    const free = freeNamesOf()
+    for (const [id, fc] of configs)
+      for (const [symbol, decl] of Object.entries(fc.fns)) {
+        const names = free.get(decl)
+        if (!names) continue
+        const list = names.map((n) => `\`${n}\``).join(', ')
+        scope.report(
+          'HZ047',
+          id,
+          join('', 'features', id, 'fns', symbol),
+          `fn ${symbol} uses ${list}, which ${names.length === 1 ? 'is' : 'are'} defined outside its impl`,
+          'fn bodies are sent to the browser as source text, so anything outside impl is undefined there: the island stops while the server still renders the page.',
+          {
+            summary: `Move ${list} inside impl, or pass ${names.length === 1 ? 'it' : 'them'} as input fields`,
+            snippet: `impl: ({ items }) => {\n  const ${names[0]} = /* the helper, written here */\n  return ...\n}`,
+            patch: null,
+          },
+        )
       }
   }
 

@@ -1,6 +1,7 @@
 import { parseArgs } from 'node:util'
 import { describeAdd, runAddFeature } from './commands/add.ts'
 import { describeAddWidget, runAddWidget } from './commands/add-widget.ts'
+import { browseFailed, describeBrowse, runBrowse } from './commands/browse.ts'
 import { runBuild } from './commands/build.ts'
 import { runCheck } from './commands/check.ts'
 import { runDocs } from './commands/docs.ts'
@@ -33,6 +34,7 @@ Commands:
   map                       Outline the app (routes, queries, mutations, events, states, views) with file:line
   get <path>...             Request pages in-process (no server): status, title, alerts, visible text
   post <path> --field k=v   Submit the page's form like a browser, follow the redirect (--next <path> after)
+  browse <path> --do <step> Load the page in headless Chrome (no server): errors, widgets, text after the steps
   add feature <name>        Scaffold a working feature (model, views, contracts, resolvers) and wire it in
   add widget <feature> <Name>  Add a widget: declaration, client module, serve.ts bundle, @hozu/bundle dependency
 
@@ -45,10 +47,14 @@ Options:
   --field <name=value> post: a form field (repeatable); other fields keep their defaults
   --button <label>     post: the form whose submit button reads <label> (for forms without fields)
   --next <step>        post: next '<path>', 'GET <path>', 'POST <path> a=1&b=2' or 'POST <path> @Label' (repeatable)
-  --session <json>     get/post: the session value for user-scoped queries
-  --full               get/post: print the whole visible text
-  --select <selector>  get/post: print matching elements with their attributes: button, #id, [role=alert], a[href]
+  --session <json>     get/post/browse: the session value for user-scoped queries
+  --full               get/post/browse: print the whole visible text
+  --select <selector>  get/post/browse: print matching elements with their attributes: button, #id, [role=alert], a[href]
   --forms              get/post: list the page's forms: action, fields with defaults, submit buttons
+  --do <step>          browse: 'fill <label>=<value>', 'select <label>=<option>', 'check <label>', 'click <name>',
+                       'press <key>', 'wait <ms>', 'goto <path>' (repeatable, in order)
+  --screenshot <file>  browse: save a PNG of the viewport after the steps
+  --reduced-motion     browse: emulate prefers-reduced-motion: reduce
   --page <path>        add feature: also add a route and a page at this path
   --with <parts>       add feature: any of detail,toggle,filter,remove (comma-separated)
   -h, --help           Show this help
@@ -80,6 +86,9 @@ export async function main(
         button: { type: 'string' },
         select: { type: 'string', multiple: true },
         forms: { type: 'boolean', default: false },
+        do: { type: 'string', multiple: true },
+        screenshot: { type: 'string' },
+        'reduced-motion': { type: 'boolean', default: false },
         help: { type: 'boolean', short: 'h' },
       },
     })
@@ -96,6 +105,7 @@ export async function main(
       'map',
       'get',
       'post',
+      'browse',
       'add',
       'inspect',
       'graph',
@@ -168,6 +178,19 @@ export async function main(
       })
       out(asJson ? json(result) : describeRequest(result))
       return 0
+    }
+    if (command === 'browse') {
+      const result = await runBrowse(loaded, {
+        path: target,
+        steps: values.do ?? [],
+        select: values.select ?? [],
+        screenshot: values.screenshot,
+        reducedMotion: values['reduced-motion'] === true,
+        session: values.session,
+        full: values.full === true,
+      })
+      out(asJson ? json(result) : describeBrowse(result))
+      return browseFailed(result) ? 1 : 0
     }
     if (command === 'validate') {
       const result = await runValidate(loaded, target, cwd, values['update-lock'] === true)

@@ -668,7 +668,7 @@ function headHtml(
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     ...scripts.map((href) => `<link rel="modulepreload" href="${escapeHtml(href)}">`),
     ir.site?.themeColor ? `<meta name="theme-color" content="${escapeHtml(ir.site.themeColor)}">` : '',
-    ir.site?.icon ? `<link rel="icon" href="${escapeHtml(ir.site.icon)}">` : '',
+    `<link rel="icon" href="${escapeHtml(ir.site?.icon ?? 'data:,')}">`,
     ir.site ? `<link rel="manifest" href="${escapeHtml(ir.http.basePath)}/manifest.webmanifest">` : '',
     ir.site?.offline
       ? `<script type="module" src="${escapeHtml(ir.http.basePath)}/_hozu/sw-register.js"></script>`

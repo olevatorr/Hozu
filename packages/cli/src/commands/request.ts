@@ -177,16 +177,15 @@ export interface RequestOptions {
   full: boolean
 }
 
-export async function runRequest(loaded: Loaded, options: RequestOptions): Promise<RequestOutput> {
+export async function appParts(loaded: Loaded, command: string, sessionJson: string | undefined) {
   const require = createRequire(loaded.path)
   const importFrom = async <T>(id: string, hint: string[]): Promise<T> => {
     try {
       return (await import(pathToFileURL(require.resolve(id)).href)) as T
     } catch {
-      throw new HozuCliError('config', `hozu ${options.method.toLowerCase()} needs ${id} in the app`, hint)
+      throw new HozuCliError('config', `hozu ${command} needs ${id} in the app`, hint)
     }
   }
-  const { testApp } = await importFrom<TestingModule>('@hozu/testing', ['npm install -D @hozu/testing'])
   const serverPath = join(dirname(loaded.path), 'server.ts')
   const server = await import(pathToFileURL(serverPath).href).catch(() => null)
   if (typeof server?.createResolvers !== 'function')
@@ -194,14 +193,14 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
       'export function createResolvers() { return resolvers(project, (implement) => [...]) }',
     ])
   let session: unknown = null
-  if (options.session !== undefined)
+  if (sessionJson !== undefined)
     try {
-      session = JSON.parse(options.session)
+      session = JSON.parse(sessionJson)
     } catch {
       throw new HozuCliError('usage', '--session must be JSON', [`--session '{"userId":"ada"}'`])
     }
   const store =
-    options.session === undefined
+    sessionJson === undefined
       ? (
           await importFrom<{ sessionCookie(o: { name: string; secret: string; secure: boolean }): unknown }>(
             '@hozu/runtime-server',
@@ -209,11 +208,17 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
           )
         ).sessionCookie({ name: 'sid', secret: randomBytes(24).toString('hex'), secure: false })
       : () => session
+  return { importFrom, resolvers: server.createResolvers() as unknown, session: store }
+}
+
+export async function runRequest(loaded: Loaded, options: RequestOptions): Promise<RequestOutput> {
+  const parts = await appParts(loaded, options.method.toLowerCase(), options.session)
+  const { testApp } = await parts.importFrom<TestingModule>('@hozu/testing', ['npm install -D @hozu/testing'])
   const app = testApp({
     build: loaded.build(),
-    resolvers: server.createResolvers(),
+    resolvers: parts.resolvers,
     env: process.env,
-    session: store,
+    session: parts.session,
   })
   const cookies = new Map<string, string>()
   const init = (): RequestInit => ({

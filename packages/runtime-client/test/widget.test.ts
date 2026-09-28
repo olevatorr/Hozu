@@ -62,6 +62,8 @@ describe('widgets', () => {
     expect(loaded).toEqual(['/w/meter.js', '/w/frame.js'])
     expect(document.querySelector('section')!.dataset.tone).toBe('calm')
     expect(host.textContent).toBe('v=0')
+    expect(host.getAttribute('data-hozu-widget')).toBe('meter.Meter')
+    expect(host.getAttribute('data-hozu-widget-state')).toBe('mounted')
     host.click()
     expect(app.snapshot()?.context).toEqual({ count: 1 })
     expect(host.textContent).toBe('v=1')

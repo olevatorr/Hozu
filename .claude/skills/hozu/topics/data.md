@@ -15,7 +15,7 @@ export const addItem = mutation({
   errors: { Duplicate: z.object({ title: z.string() }) },          // optional: declared failures
   invalidates: () => [itemsTag()],                                  // refreshes queries with these tags
 })
-export const visible = fn({                   // computation: pure JS, self-contained (no imports, no closures)
+export const visible = fn({                   // computation: pure JS, self-contained (no imports, no helpers outside impl: HZ047)
   input: z.object({ items: z.array(Item), show: Show }), output: z.array(Item),
   impl: ({ items, show }) => items.filter((i) => show === 'all' || !i.done),
 })

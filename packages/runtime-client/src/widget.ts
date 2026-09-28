@@ -16,10 +16,13 @@ export interface WidgetHost {
 
 export function mountWidget(h: WidgetHost) {
   const controller = new AbortController()
+  h.el.setAttribute('data-hozu-widget', h.name)
+  h.el.setAttribute('data-hozu-widget-state', 'loading')
   let props = h.props()
   let instance: ReturnType<WidgetSetup>
   const fail = (error: unknown) => {
     instance = undefined
+    h.el.setAttribute('data-hozu-widget-state', 'failed')
     h.doc.defaultView?.console.error(`Widget ${h.name} failed`, error)
   }
   const start = () =>
@@ -27,6 +30,7 @@ export function mountWidget(h: WidgetHost) {
       if (controller.signal.aborted) return
       try {
         instance = setup({ el: h.el, props, emit: h.emit, signal: controller.signal }) ?? undefined
+        h.el.setAttribute('data-hozu-widget-state', 'mounted')
       } catch (error) {
         fail(error)
       }

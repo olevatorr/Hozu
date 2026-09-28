@@ -72,6 +72,105 @@ function patternNames(p: Node | null, out: string[] = []): string[] {
   return out
 }
 
+const GLOBALS = new Set([
+  'undefined',
+  'NaN',
+  'Infinity',
+  'globalThis',
+  'arguments',
+  'Object',
+  'Array',
+  'String',
+  'Number',
+  'Boolean',
+  'Symbol',
+  'BigInt',
+  'Math',
+  'JSON',
+  'Date',
+  'RegExp',
+  'Map',
+  'Set',
+  'WeakMap',
+  'WeakSet',
+  'WeakRef',
+  'Promise',
+  'Reflect',
+  'Proxy',
+  'Intl',
+  'Error',
+  'TypeError',
+  'RangeError',
+  'SyntaxError',
+  'ReferenceError',
+  'EvalError',
+  'URIError',
+  'AggregateError',
+  'parseInt',
+  'parseFloat',
+  'isNaN',
+  'isFinite',
+  'encodeURIComponent',
+  'decodeURIComponent',
+  'encodeURI',
+  'decodeURI',
+  'structuredClone',
+  'ArrayBuffer',
+  'DataView',
+  'Uint8Array',
+  'Int8Array',
+  'Uint16Array',
+  'Int16Array',
+  'Uint32Array',
+  'Int32Array',
+  'Float32Array',
+  'Float64Array',
+  'Uint8ClampedArray',
+  'BigInt64Array',
+  'BigUint64Array',
+  'URL',
+  'URLSearchParams',
+  'TextEncoder',
+  'TextDecoder',
+  'atob',
+  'btoa',
+  'console',
+  'crypto',
+])
+
+function freeNames(root: Node): string[] {
+  const declared = new Set<string>()
+  const used = new Set<string>()
+  const walk = (n: Node, skip = false) => {
+    if (n.type === 'Identifier') {
+      if (!skip) used.add(n.name)
+      return
+    }
+    if (isFunction(n) || n.type === 'ClassDeclaration' || n.type === 'ClassExpression') {
+      if (n.id) declared.add(n.id.name)
+      if (n.params) for (const p of n.params) for (const name of patternNames(p)) declared.add(name)
+    }
+    if (n.type === 'VariableDeclarator') for (const name of patternNames(n.id)) declared.add(name)
+    if (n.type === 'CatchClause') for (const name of patternNames(n.param)) declared.add(name)
+    if (n.type === 'MetaProperty') return
+    if (n.type === 'LabeledStatement' || n.type === 'BreakStatement' || n.type === 'ContinueStatement') {
+      if (n.body) walk(n.body)
+      return
+    }
+    for (const c of children(n)) {
+      const key =
+        (n.type === 'MemberExpression' && c === n.property && !n.computed) ||
+        ((n.type === 'Property' || n.type === 'MethodDefinition' || n.type === 'PropertyDefinition') &&
+          c === n.key &&
+          !n.computed &&
+          !(n.shorthand && c === n.value))
+      walk(c, key)
+    }
+  }
+  walk(root)
+  return [...used].filter((name) => !declared.has(name) && !GLOBALS.has(name)).sort()
+}
+
 export function transform(source: string, _file = ''): TransformResult {
   if (!source.includes('@hozu/core') || source.startsWith(HEADER)) return { code: source, changed: false }
   const js = strip(source)
@@ -323,6 +422,14 @@ export function transform(source: string, _file = ''): TransformResult {
         (callee.type === 'Identifier' && [...locals].some(([l, i]) => l === callee.name && i === 'machine'))
       if (declares) {
         replace(n, `${H}.done(${gen(n)})`, false)
+        return
+      }
+      if (callee.type === 'Identifier' && fnNames.has(callee.name)) {
+        const impl = n.arguments[0]?.properties?.find(
+          (p: Node) => p.type === 'Property' && keyName(p) === 'impl',
+        )?.value
+        const free = impl && isFunction(impl) ? freeNames(impl) : []
+        if (free.length) replace(n, `${H}.free(${gen(n)}, ${JSON.stringify(free)})`, false)
         return
       }
       if (callee.type === 'MemberExpression' && !callee.computed && isRef(callee.object, s)) {
