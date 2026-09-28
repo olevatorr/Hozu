@@ -47,7 +47,7 @@ Relative TypeScript imports end in `.ts`. Imports are explicit: there are no aut
 
 Edit the scaffold's text or data model, then run `npx hozu check`. It checks TypeScript, the framework rules and every behaviour contract. Use `npx hozu get /tasks --forms` to inspect the resulting page without starting a server.
 
-For local browser development, the generated application's `npm start` script starts its server. The in-process commands are enough to inspect text, status codes, links and native forms during a change.
+For local browser development, the generated application's `npm start` script starts its server (`node --import @hozu/transform/register serve.ts`: the transform lets views and machines use ordinary TypeScript). The in-process commands are enough to inspect text, status codes, links and native forms during a change.
 
 The scaffold keeps data in memory. Add durable storage in the server resolvers when your application needs persistence.
 

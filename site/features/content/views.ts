@@ -12,6 +12,7 @@ import {
   listDocs,
   listTrials,
 } from './model.ts'
+import { CodeCopy } from './widgets.ts'
 
 export { Chapter, Docs, Footer, Header }
 
@@ -50,7 +51,7 @@ export const Home = ui.view({
           getStart,
           {},
           {
-            ready: (start) => ui.div({}, [ui.html(start.html)]),
+            ready: (start) => ui.use(CodeCopy, { props: {}, on: {} }, [ui.html(start.html)]),
             pending: null,
             failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Quick start is unavailable.']) },
           },
@@ -99,27 +100,44 @@ export const Home = ui.view({
       ui.section({ 'data-results': '', 'aria-labelledby': 'results-title' }, [
         ui.h2({ id: 'results-title' }, ['Measured, with the rough edges included.']),
         ui.p({}, [
-          'In the notes-app correctness trial, Hozu passed 72/72 checks and Nuxt passed 67/72 across two runs per framework. One Nuxt change broke existing behaviour. This is a small sample, not an estimated failure rate.',
+          'A notes app with accounts, built from a spec and then changed by an agent, checked by a hidden acceptance test: per-user isolation, double submit, forms without JavaScript, HttpOnly sessions, and a regression pass after the change.',
         ]),
         ui.table({}, [
-          ui.caption({}, ['Trial 0012: build, change and regression checks']),
+          ui.caption({}, ['Trials 0012 and 0016: the same task, prompts and model']),
           ui.thead({}, [
-            ui.tr({}, [ui.th({ scope: 'col' }, ['Framework']), ui.th({ scope: 'col' }, ['Checks passed'])]),
+            ui.tr({}, [
+              ui.th({ scope: 'col' }, ['']),
+              ui.th({ scope: 'col' }, ['Hozu 0.5']),
+              ui.th({ scope: 'col' }, ['Nuxt']),
+            ]),
           ]),
           ui.tbody({}, [
-            ui.tr({}, [ui.th({ scope: 'row' }, ['Hozu']), ui.td({}, ['72 / 72'])]),
-            ui.tr({}, [ui.th({ scope: 'row' }, ['Nuxt']), ui.td({}, ['67 / 72'])]),
+            ui.tr({}, [
+              ui.th({ scope: 'row' }, ['Checks passed']),
+              ui.td({}, ['180 / 180 (5 runs, incl. Codex)']),
+              ui.td({}, ['67 / 72 (2 runs)']),
+            ]),
+            ui.tr({}, [
+              ui.th({ scope: 'row' }, ['Agent cost to build']),
+              ui.td({}, ['1.38×']),
+              ui.td({}, ['1×']),
+            ]),
+            ui.tr({}, [
+              ui.th({ scope: 'row' }, ['Agent cost to change']),
+              ui.td({}, ['1.45×']),
+              ui.td({}, ['1×']),
+            ]),
           ]),
         ]),
         ui.p({}, [
-          'The trade-off: trial 0012 used 2.79× Nuxt’s weighted tokens to build and 2.06× to change. With the account scaffold, trial 0013 reduced build cost to 1.66×, reusing the earlier Nuxt baseline.',
+          'One Nuxt change silently broke three working features; no Hozu run did. The price is extra tokens, mostly spent reading the guide of a framework the model has not seen. Small samples, not failure rates.',
         ]),
         ui.ul({}, [
           ...[
-            ['0010-map-scaffold-recipes', '0010: task-board build 1.64×, change 1.44×'],
-            ['0011-inspect-and-summaries', '0011: task-board build 2.28×, change 1.53×'],
+            ['0016-0-5-four-runs', '0016: 0.5, four runs per step and a Codex run'],
+            ['0015-0-5-ordinary-typescript', '0015: ordinary TypeScript, first measurement'],
+            ['0014-0-5-notes', '0014: before the guide was indexed (1.80×)'],
             ['0012-correctness-notes', '0012: correctness, methods and limitations'],
-            ['0013-notes-with-auth-scaffold', '0013: the account scaffold follow-up'],
           ].map(([slug, title]) => ui.li({}, [ui.a({ href: ui.link(trial, { slug: slug! }) }, [title!])])),
         ]),
       ]),
@@ -166,7 +184,12 @@ export const Trial = ui.view({
         getTrial,
         { slug: params.slug },
         {
-          ready: (article) => ui.article({ class: 'prose max-w-none' }, [ui.html(article.html)]),
+          ready: (article) =>
+            ui.article({ class: 'prose max-w-none' }, [
+              article.hasCode
+                ? ui.use(CodeCopy, { props: {}, on: {} }, [ui.html(article.html)])
+                : ui.html(article.html),
+            ]),
           pending: null,
           failed: {
             NotFound: () => ui.h1({}, ['Page not found']),
@@ -203,6 +226,7 @@ export const content = feature({
   exports: [listChapters],
   intent: { summary: 'Static official Hozu documentation, trials and releases' },
   declarations: {
+    CodeCopy,
     listChapters,
     getChapter,
     getStart,

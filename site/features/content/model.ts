@@ -12,6 +12,7 @@ export const Article = Summary.extend({
   html: z.string(),
   headings: z.array(z.object({ id: z.string(), text: z.string(), depth: z.number(), href: z.string() })),
   source: z.string(),
+  hasCode: z.boolean(),
   previous: z.array(Summary),
   next: z.array(Summary),
 })

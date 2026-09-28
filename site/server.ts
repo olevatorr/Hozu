@@ -83,6 +83,7 @@ const article = (items: typeof docs, slug: string) => {
   return item
     ? {
         ...item,
+        hasCode: item.html.includes('<pre'),
         previous: items.slice(Math.max(0, index - 1), index).map(summary),
         next: items.slice(index + 1, index + 2).map(summary),
       }

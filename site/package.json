@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hozu/adapter-static": "workspace:*",
+    "@hozu/bundle": "workspace:*",
     "@hozu/cli": "workspace:*",
     "@hozu/content": "workspace:*",
     "@hozu/core": "workspace:*",

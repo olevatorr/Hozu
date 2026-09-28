@@ -20,7 +20,7 @@ Gaps found while building this site. Resolved ones stay listed with the release 
 - Now: the stylesheet turns on cross-document view transitions (Chrome/Edge 126+, Safari 18.2+), with no JS.
 
 
-## Conditional code-copy island preloads JavaScript on pages without code (resolved in 0.4.2, ADR 0036)
+## Conditional code-copy island preloads JavaScript on pages without code (resolved in 0.4.2, ADR 0036; the copy button shipped with 0.5 via `hozu add widget`)
 
 - Needed: a typed clipboard widget with an idle → copied → idle machine and a 2000 ms timer, included only when a Markdown page contains code blocks.
 - Attempt: a public/static query returns a list of code blocks. A machine-bound view renders `ui.each(blocks, 'id', block => ui.use(W, ...))`. The widget uses `implement<typeof W>`, `navigator.clipboard.writeText` and a typed success event. Contracts describe the event and timed reset. The query returns an empty list for the no-code reproduction.

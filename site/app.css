@@ -1350,3 +1350,28 @@ label:has(input:checked) {
     margin-bottom: 20px;
   }
 }
+
+[data-copyable] {
+  position: relative;
+}
+[data-copy] {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.15rem 0.6rem;
+  font:
+    600 0.75rem / 1.6 ui-sans-serif,
+    system-ui,
+    sans-serif;
+  color: #dbe7f5;
+  background: #ffffff1f;
+  border: 1px solid #ffffff33;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+[data-copy]:hover,
+[data-copy]:focus-visible {
+  opacity: 1;
+  background: #ffffff33;
+}

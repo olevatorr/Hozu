@@ -2,6 +2,7 @@ import { op, ui } from '@hozu/core'
 import { chapter, doc, how } from '../../routes.ts'
 import { pipelineDiagram, renderDiagram } from './diagrams.ts'
 import { getChapter, getDoc, listChapters, listDocs } from './model.ts'
+import { CodeCopy } from './widgets.ts'
 
 const articleView = (
   route: typeof doc,
@@ -79,7 +80,9 @@ const articleView = (
                           ui.if(op.eq(params.slug, 'derived-rendering'), [renderDiagram()], []),
                         ]
                       : []),
-                    ui.html(article.html),
+                    article.hasCode
+                      ? ui.use(CodeCopy, { props: {}, on: {} }, [ui.html(article.html)])
+                      : ui.html(article.html),
                     ui.a({ href: article.source, 'data-edit': '' }, ['Edit this page on GitHub']),
                     ui.nav({ 'aria-label': 'Previous and next pages', 'data-pagination': '' }, [
                       ui.each(article.previous, 'slug', (item) =>

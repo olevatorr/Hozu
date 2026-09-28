@@ -7,7 +7,7 @@ import { createResolvers } from './server.ts'
 
 const app = testApp({ build: buildProject(project), resolvers: createResolvers() })
 for (const [path, status, text] of [
-  ['/', 200, '72/72'],
+  ['/', 200, '180 / 180'],
   ['/how-it-works', 200, 'Understand the design'],
   ['/how-it-works/why-ai-first', 200, 'Why AI-first?'],
   ['/how-it-works/pipeline', 200, 'One representation'],
@@ -66,6 +66,13 @@ for (const file of files.filter((name) => name.endsWith('.html'))) {
     assert.match(html, /<script type="module" src="\/_hozu\/client\.js">/, 'Overview loads its Hozu island')
     assert.ok(html.includes('Run example'), 'Pipeline interaction exported')
     assert.ok(html.includes('Machine binding'), 'Render-plan interaction exported')
+  } else if (html.includes('<pre')) {
+    assert.match(
+      html,
+      /<script type="module" src="\/_hozu\/client\.js">/,
+      `${file}: code blocks get the copy widget`,
+    )
+    assert.ok(html.includes('content.CodeCopy'), `${file}: the copy widget is in the payload`)
   } else {
     assert.ok(!/<script[^>]+(?:src=|type="module")/.test(html), `${file}: no client scripts`)
     assert.ok(!/rel="modulepreload"/.test(html), `${file}: no hidden JavaScript preloads`)
@@ -108,5 +115,5 @@ assert.ok(
   'Interactive overview has its client runtime',
 )
 console.log(
-  'Client JavaScript: overview has a Hozu island; home, docs, chapters, trials and changelog have none.',
+  'Client JavaScript: the overview island, and the copy widget on pages with code blocks; every other page has none.',
 )

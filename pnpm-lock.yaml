@@ -707,6 +707,9 @@ importers:
       '@hozu/adapter-static':
         specifier: workspace:*
         version: link:../packages/adapter-static
+      '@hozu/bundle':
+        specifier: workspace:*
+        version: link:../packages/bundle
       '@hozu/cli':
         specifier: workspace:*
         version: link:../packages/cli

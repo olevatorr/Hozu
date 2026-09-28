@@ -6,7 +6,7 @@ order: 9
 
 ## Install the matching guide
 
-Hozu's authoring skill ships with the framework version. It contains the public API, change recipes, diagnostic guidance and a verified example. Give an agent that reference rather than asking it to infer an unfamiliar API.
+Hozu's authoring skill ships with the framework version: a short core (`SKILL.md`, with a complete, tested example and a task index), change recipes, and one small topic per task that `hozu docs <topic>` prints. Every diagnostic ends with the topic to read. Give an agent that reference rather than asking it to infer an unfamiliar API.
 
 | Option | Files written |
 | --- | --- |
@@ -25,7 +25,7 @@ The agent can then change the schemas, event, mutation input, form and contracts
 ## Keep the loop short
 
 1. Run `hozu map` to locate declarations and routes.
-2. Read the relevant skill section and the feature's own files.
+2. Print the topic the change needs with `hozu docs <topic>`, then read the feature's own lines.
 3. Edit the declarations, resolvers, views and contracts together.
 4. Run `hozu check` and fix its diagnostics.
 5. Run `hozu get` or `hozu post` to verify the intended result without starting a server.

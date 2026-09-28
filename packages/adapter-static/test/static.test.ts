@@ -79,9 +79,12 @@ describe('static export of the official site', () => {
     const site = (await import('../../../site/hozu.config.ts')).default
     const { createResolvers: siteResolvers } = await import('../../../site/server.ts')
     const outDir = await mkdtemp(join(tmpdir(), 'hozu-site-'))
+    const { bundleWidgets } = await import('@hozu/bundle')
+    const build = buildProject(site, { sources: false })
     const result = await exportStatic({
-      build: buildProject(site, { sources: false }),
+      build,
       resolvers: siteResolvers(),
+      widgets: await bundleWidgets(build),
       outDir,
     })
     expect(result.skipped).toEqual([])

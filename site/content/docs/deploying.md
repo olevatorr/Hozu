@@ -36,7 +36,7 @@ Static hosts do not run query resolvers after export. Rebuild the site when cont
 
 ## Node
 
-Run `hozu build` to generate `dist/public`, `dist/manifest.json` and `dist/server/render.js`. The Node adapter bridges HTTP requests to Hozu and serves static assets. Connect `createServer` from `@hozu/adapter-node` to the build and your resolvers; use the generated manifest and `publicDir` for a production build.
+Node runs the app with `node --import @hozu/transform/register serve.ts` (the generated `npm start`); edge bundles add `hozuTransform()` from `@hozu/transform/esbuild`. Without the transform the server refuses to start (HZ044). Run `hozu build` to generate `dist/public`, `dist/manifest.json` and `dist/server/render.js`. The Node adapter bridges HTTP requests to Hozu and serves static assets. Connect `createServer` from `@hozu/adapter-node` to the build and your resolvers; use the generated manifest and `publicDir` for a production build.
 
 The adapter includes an ISR page cache, tag revalidation, CSP and cross-site POST checks. Session-based applications must configure their session identity and a stable production secret. Cache and invalidation state are per instance; account for that when running multiple instances.
 

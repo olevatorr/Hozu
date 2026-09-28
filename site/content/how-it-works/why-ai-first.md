@@ -48,6 +48,8 @@ Explicit behavior takes source code and reading time. On the task board, trial 0
 
 The notes trial measured 2.79× for building and 2.06× for changing before the account scaffold existed. Adding that scaffold brought the build comparison to 1.66× in trial 0013, using two new Hozu runs and the earlier Nuxt baseline. That improvement concerns a particular workflow and task; it does not establish a universal productivity advantage. [Trial 0013](/trials/0013-notes-with-auth-scaffold) records the scope.
 
+A study of every trial transcript then found where the remaining cost was: mostly reading the guide, multiplied by the number of calls an agent makes, not writing code ([ADR 0038](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0038-cost-anatomy.md)). Hozu 0.5 answered that by letting callbacks use ordinary TypeScript and by splitting the guide into topics found with `hozu docs`. On the same notes task, four runs per step measured 1.38× Nuxt to build and 1.45× to change, and all five runs, one of them by Codex, passed every check. [Trial 0016](/trials/0016-0-5-four-runs) has the details and the limits.
+
 ## Start with the questions you need answered
 
 An agent can use `hozu map` to locate the relevant declarations, `hozu inspect` to examine a feature and `hozu explain` to understand a state. `hozu check` combines type checking, rules and contracts. `hozu get` and `hozu post` then exercise rendered pages and native forms without starting a server.

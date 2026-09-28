@@ -26,7 +26,7 @@ Start with `npx hozu check`. Resolve TypeScript errors first, then address each 
 | HZ035 | A search schema cannot be canonicalized. | Use flat scalar fields with defaults or nullable values. |
 | HZ036 | A form cannot run without JavaScript. | Read named form fields with `ui.dom.form` when a native form is required. |
 
-The installed skill's `diagnostics.md` is the version-matched reference for the full rule set. Historical trial records use the old `TN` prefix; current Hozu diagnostics use `HZ`.
+`hozu docs diagnostics` prints the version-matched table of the full rule set, and every diagnostic names its topic (`see: hozu docs …`). Historical trial records use the old `TN` prefix; current Hozu diagnostics use `HZ`.
 
 ## Accept an intentional change
 

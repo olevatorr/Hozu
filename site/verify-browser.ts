@@ -117,7 +117,7 @@ try {
   staticPages.on('request', (request) => {
     if (request.resourceType() === 'script') staticScripts.push(request.url())
   })
-  for (const path of ['/', '/docs/getting-started/', '/how-it-works/pipeline/', '/trials/', '/changelog/']) {
+  for (const path of ['/trials/', '/changelog/', '/docs/ai-agents/']) {
     await staticPages.goto(`${origin}${path}`)
     assert.equal(
       await staticPages.locator('script[src], script[type="module"], link[rel="modulepreload"]').count(),
