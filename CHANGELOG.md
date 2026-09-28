@@ -6,6 +6,10 @@ A study of every trial transcript (ADR 0038) found that an agent's extra cost is
 of the gap to Nuxt. The calls it takes multiply that cost, while writing was already at parity. 0.5 removes the rules
 the guide had to teach, and makes the rest findable in one step.
 
+**Measured (trial 0016, notes app, four Claude runs per step plus one Codex run):**
+- building costs 1.38× Nuxt and changing 1.45× (before 0.5: 1.80× and 1.81×);
+- every run passed all 36 acceptance checks.
+
 ### Ordinary TypeScript in builder callbacks (ADR 0039)
 - **What you can write:**
   - `===`, `!==`, `<`, `&&`, `||`, `!`, `??`, `c ? a : b` and template strings;
@@ -32,6 +36,10 @@ the guide had to teach, and makes the rest findable in one step.
 - **No server needed:** `hozu get` / `post` print `set-cookie` attributes, and the guide says they replace a running
   server for checks. A `post` is a no-JS form post.
 - **HZ015 on `effects`** gives the list to paste, in authoring form.
+- **`hozu post` is easier to use:**
+  - a button can follow `&` in `--next` (`'POST / id=n1&@Pin'`);
+  - `--select` takes a comma list;
+  - a post to a page that redirects (to sign-in) says so.
 
 ### Contracts, busy states, endpoints (ADR 0037)
 - **Contracts for decisions only.** A transition with a guard, `navigate` or a `fn` value needs a contract (HZ016).

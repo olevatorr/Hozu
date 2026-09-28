@@ -115,14 +115,19 @@ export const Board = ui.view({
 - **Only the parts bound to the machine or to that refresh ship JavaScript.** The rest of the page is plain HTML.
 
 ## Measured
-**Same model and same task, Hozu against Nuxt:** a task board built from a spec, then changed. Each app was checked
-by a hidden acceptance test ([trial 0007](docs/trials/0007-after-adr-0022.md)).
+**Same model and same task, Hozu against Nuxt:** a notes app with accounts, built from a spec, then changed. Each app
+was checked by a hidden acceptance test covering per-user isolation, double submit, forms without JavaScript,
+`HttpOnly` sessions, and a regression pass after the change ([trial 0016](docs/trials/0016-0-5-four-runs.md),
+[trial 0012](docs/trials/0012-correctness-notes.md)).
 
-| | Hozu | Nuxt |
+| | Hozu 0.5 | Nuxt |
 |---|---|---|
-| Correctness (build, change, regression) | 12/12, 6/6, 12/12 | 12/12, 6/6, 12/12 |
-| Agent cost to change the app | 1.07× | 1× |
-| Agent cost to build it | 1.75× | 1× |
+| Checks passed (build, change, regression) | 180/180 over 5 runs, including one by Codex | 67/72 over 2 runs; one change silently broke three features |
+| Agent cost to build the app | 1.38× | 1× |
+| Agent cost to change it | 1.45× | 1× |
+
+The extra cost is mostly reading the guide of a framework the model has not seen
+([ADR 0038](docs/adr/0038-cost-anatomy.md)).
 
 **Rendering, against React, Vue, Preact and Svelte:** the same 100-item page, 4× CPU throttling
 ([benchmarks](docs/benchmarks/0001-frameworks.md), sixth run).

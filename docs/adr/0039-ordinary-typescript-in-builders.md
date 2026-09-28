@@ -79,3 +79,18 @@ Method calls also type-check, and the transform rejects them with HZ014.
 - Locations point at the authored line.
 - Gate green, A4 (type instantiations) within budget.
 - Trial: R1–R3 together (ADR 0038 targets).
+
+## Result
+- **Implemented as decided**, with two changes:
+  - HZ044 is the untransformed-source error; the code was never released with its earlier meaning;
+  - the safety net marks the declarations rather than the files, because file paths from stack traces are unreliable
+    under happy-dom.
+- **Bookmarks, the scaffold, the recipes, the README and the site** use the ordinary form.
+  - Bookmarks' machine behaviour is unchanged: the lock checks.
+  - The view IR differs where a condition became a ternary: `b.read ? …` is truthiness, where it was `op.eq(b.read,
+    true)`.
+- **Costs of the transform:**
+  - `hozu validate --json` cold start went from 130 to about 185 ms, which includes loading the parser (budget P3:
+    300 ms);
+  - type instantiations for the cart fell from 61.7 k to 55.0 k.
+- **Trial 0016:** see ADR 0038, "Result".

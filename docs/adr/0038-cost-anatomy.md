@@ -1,6 +1,6 @@
 # ADR 0038 — Where an agent's cost goes (a study of trials 0009–0014)
 
-- Status: study done; the remedy is being decided (see "Options")
+- Status: accepted. The owner chose R1 + R2 + R3 for 0.5; the results are below.
 - Motivation: every release since ADR 0022 changed something, and trials 0007, 0009, 0011 and 0014 each reported
   the same finding: the cost is reading.
   - None of those releases had a model of the cost to check the change against.
@@ -114,3 +114,21 @@ Data: every transcript kept (Hozu: 11 builds, 9 changes; Nuxt: 5 builds, 5 chang
     - principle 2 holds if the transform is deterministic and visible (`hozu explain` shows the IR it produced);
     - principle 1 needs a choice: the `op.*` forms either go, or stay as the lowered form that is never written by
       hand.
+
+## Result
+Trials 0015 and 0016 ran on the same notes task, prompts and model as trial 0014.
+- **Trial 0016** used four Claude runs per step, after the trial 0015 fixes.
+  - **Cost:**
+
+    | | Before (0.5 without R1–R3, trial 0014) | After (trial 0016) |
+    |---|---|---|
+    | Build | 1.80× Nuxt | **1.38×** |
+    | Change | 1.81× Nuxt | **1.45×** |
+    | Together | 1.80× Nuxt | **1.41×** |
+  - **Correctness:** 180/180 checks, including one Codex run reading `AGENTS.md`.
+- **Where it fell:**
+  - calls: 17 → 12.5 per build;
+  - output: −23 %, because operators and assignments are shorter than `op.*`;
+  - guide lookups: 5.5 → 3.3 calls per build;
+  - reading the scaffold: 14.5 → 8.4 k.
+- **The ≤ 1.3× target is not met.** The carried docs cost (22–28 k per run) is still the largest single part.
