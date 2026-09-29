@@ -1,0 +1,31 @@
+{
+  "ok": true,
+  "types": {
+    "errors": [],
+    "ok": true,
+    "skipped": false
+  },
+  "validate": {
+    "coverage": {
+      "account": {
+        "covered": 2,
+        "total": 2,
+        "transitions": 7
+      },
+      "notes": {
+        "covered": 0,
+        "total": 0,
+        "transitions": 37
+      }
+    },
+    "diagnostics": [],
+    "hash": "eb0c58cda8352edeff676a264f455c37a8b548f341bbf2b942f5721628d6d4b0",
+    "lock": "checked",
+    "ok": true,
+    "styles": "checked",
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    }
+  }
+}

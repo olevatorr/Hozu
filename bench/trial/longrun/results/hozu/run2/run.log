@@ -1,0 +1,48 @@
+[2026-09-29 17:57:03] hozu/run2 scaffold
+[2026-09-29 17:57:07] hozu/run2 step 00 attempt 1
+step 0: 15/15 new 15/15 regression 0/0 js {"login":22560,"list":22560}
+[2026-09-29 17:59:59] hozu/run2 step 01 attempt 1
+step 1: 20/20 new 5/5 regression 15/15 js {"login":23080,"list":23080}
+[2026-09-29 18:04:03] hozu/run2 step 02 attempt 1
+step 2: 22/22 new 2/2 regression 20/20 js {"login":23080,"list":23080}
+[2026-09-29 18:07:22] hozu/run2 step 03 attempt 1
+step 3: 24/24 new 2/2 regression 22/22 js {"login":23139,"list":23139}
+[2026-09-29 18:10:08] hozu/run2 step 04 attempt 1
+step 4: 25/25 new 1/1 regression 24/24 js {"login":23139,"list":23139}
+[2026-09-29 18:13:05] hozu/run2 step 05 attempt 1
+step 5: 29/29 new 4/4 regression 25/25 js {"login":23224,"list":23224}
+[2026-09-29 18:18:26] hozu/run2 step 06 attempt 1
+step 6: 32/32 new 3/3 regression 29/29 js {"login":23420,"list":23420}
+[2026-09-29 18:24:47] hozu/run2 step 07 attempt 1
+step 7: 36/36 new 4/4 regression 32/32 js {"login":23420,"list":23420}
+[2026-09-29 18:32:39] hozu/run2 step 08 attempt 1
+step 8: 38/38 new 2/2 regression 36/36 js {"login":23420,"list":23420}
+[2026-09-29 18:38:12] hozu/run2 step 09 attempt 1
+step 9: 40/40 new 2/2 regression 38/38 js {"login":23420,"list":23420}
+[2026-09-29 18:43:59] hozu/run2 step 10 attempt 1
+step 10: 43/43 new 3/3 regression 40/40 js {"login":23420,"list":23420}
+[2026-09-29 18:51:34] hozu/run2 step 11 attempt 1
+step 11: 46/46 new 3/3 regression 43/43 js {"login":23969,"list":23969}
+[2026-09-29 19:01:16] hozu/run2 step 12 attempt 1
+step 12: 48/48 new 2/2 regression 46/46 js {"login":23969,"list":23969}
+[2026-09-29 19:09:13] hozu/run2 step 13 attempt 1
+step 13: 51/51 new 3/3 regression 48/48 js {"login":24165,"list":24332}
+[2026-09-29 19:38:16] hozu/run2 step 14 attempt 1
+step 14: 52/52 new 1/1 regression 51/51 js {"login":24165,"list":24332}
+[2026-09-29 19:49:25] hozu/run2 step 15 attempt 1
+step 15: 56/56 new 4/4 regression 52/52 js {"login":24249,"list":24416}
+[2026-09-29 20:01:05] hozu/run2 step 16 attempt 1
+step 16: 58/58 new 2/2 regression 56/56 js {"login":24249,"list":24416}
+[2026-09-29 20:09:57] hozu/run2 step 17 attempt 1
+step 17: 59/60 new 1/2 regression 58/58 js {"login":20642,"list":24416}
+  new DA1 delete an account: notes, shares, admin row: FAIL: admin row kept
+[2026-09-29 20:19:31] hozu/run2 step 18 attempt 1
+step 18: 61/62 new 2/2 regression 59/60 js {"login":20809,"list":24416}
+  regression DA1 delete an account: notes, shares, admin row: FAIL: admin row kept
+[2026-09-29 20:34:37] hozu/run2 step 19 attempt 1
+step 19: 63/64 new 2/2 regression 61/62 js {"login":20809,"list":24416}
+  regression DA1 delete an account: notes, shares, admin row: FAIL: admin row kept
+[2026-09-29 20:43:54] hozu/run2 step 20 attempt 1
+step 20: 60/61 new 1/1 regression 59/60 js {"login":20507,"list":24114}
+  regression DA1 delete an account: notes, shares, admin row: FAIL: admin row kept
+[2026-09-29 20:53:11] hozu/run2 done

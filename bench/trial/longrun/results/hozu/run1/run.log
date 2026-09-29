@@ -1,0 +1,53 @@
+[2026-09-29 15:09:24] hozu/run1 scaffold
+[2026-09-29 15:09:29] hozu/run1 step 00 attempt 1
+step 0: 15/15 new 15/15 regression 0/0 js {"login":22560,"list":22560}
+[2026-09-29 15:12:48] hozu/run1 step 01 attempt 1
+step 1: 20/20 new 5/5 regression 15/15 js {"login":23098,"list":23098}
+[2026-09-29 15:19:16] hozu/run1 step 02 attempt 1
+step 2: 22/22 new 2/2 regression 20/20 js {"login":23098,"list":23098}
+[2026-09-29 15:22:54] hozu/run1 step 03 attempt 1
+step 3: 24/24 new 2/2 regression 22/22 js {"login":23171,"list":23171}
+[2026-09-29 15:25:38] hozu/run1 step 04 attempt 1
+step 4: 25/25 new 1/1 regression 24/24 js {"login":23171,"list":23171}
+[2026-09-29 15:28:58] hozu/run1 step 05 attempt 1
+step 5: 29/29 new 4/4 regression 25/25 js {"login":23171,"list":23171}
+[2026-09-29 15:33:36] hozu/run1 step 06 attempt 1
+step 6: 32/32 new 3/3 regression 29/29 js {"login":23353,"list":23353}
+[2026-09-29 15:46:59] hozu/run1 step 07 attempt 1
+step 7: 36/36 new 4/4 regression 32/32 js {"login":23353,"list":23353}
+[2026-09-29 15:52:42] hozu/run1 step 08 attempt 1
+step 8: 38/38 new 2/2 regression 36/36 js {"login":23353,"list":23353}
+[2026-09-29 15:57:54] hozu/run1 step 09 attempt 1
+step 9: 40/40 new 2/2 regression 38/38 js {"login":23353,"list":23353}
+[2026-09-29 16:03:06] hozu/run1 step 10 attempt 1
+step 10: 43/43 new 3/3 regression 40/40 js {"login":23353,"list":23353}
+[2026-09-29 16:10:42] hozu/run1 step 11 attempt 1
+step 11: 46/46 new 3/3 regression 43/43 js {"login":24851,"list":24851}
+[2026-09-29 16:18:27] hozu/run1 step 12 attempt 1
+step 12: 48/48 new 2/2 regression 46/46 js {"login":24851,"list":24851}
+[2026-09-29 16:26:28] hozu/run1 step 13 attempt 1
+step 13: 51/51 new 3/3 regression 48/48 js {"login":25885,"list":25885}
+[2026-09-29 16:42:30] hozu/run1 step 14 attempt 1
+step 14: 52/52 new 1/1 regression 51/51 js {"login":25885,"list":25885}
+[2026-09-29 16:49:03] hozu/run1 step 15 attempt 1
+step 15: 56/56 new 4/4 regression 52/52 js {"login":25885,"list":26052}
+[2026-09-29 17:00:24] hozu/run1 step 16 attempt 1
+step 16: 57/58 new 2/2 regression 55/56 js {"login":25885,"list":26052}
+  regression N15 no console errors: FAIL: Transition was aborted because of invalid state. ViewTransition opt-in disabled
+[2026-09-29 17:09:42] hozu/run1 step 17 attempt 1
+step 17: 58/60 new 1/2 regression 57/58 js {"login":22278,"list":26052}
+  new DA1 delete an account: notes, shares, admin row: FAIL: admin row kept
+  regression N15 no console errors: FAIL: Transition was aborted because of invalid state. ViewTransition opt-in disabled
+[2026-09-29 17:22:48] hozu/run1 step 18 attempt 1
+step 18: 60/62 new 2/2 regression 58/60 js {"login":22363,"list":26137}
+  regression DA1 delete an account: notes, shares, admin row: FAIL: admin row kept
+  regression N15 no console errors: FAIL: Transition was aborted because of invalid state. ViewTransition opt-in disabled
+[2026-09-29 17:39:16] hozu/run1 step 19 attempt 1
+step 19: 62/64 new 2/2 regression 60/62 js {"login":22363,"list":26137}
+  regression DA1 delete an account: notes, shares, admin row: FAIL: admin row kept
+  regression N15 no console errors: FAIL: Transition was aborted because of invalid state. ViewTransition opt-in disabled
+[2026-09-29 17:47:50] hozu/run1 step 20 attempt 1
+step 20: 59/61 new 1/1 regression 58/60 js {"login":21811,"list":25585}
+  regression DA1 delete an account: notes, shares, admin row: FAIL: admin row kept
+  regression N15 no console errors: FAIL: Transition was aborted because of invalid state. ViewTransition opt-in disabled
+[2026-09-29 17:56:49] hozu/run1 done

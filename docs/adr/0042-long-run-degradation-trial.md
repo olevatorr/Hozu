@@ -122,3 +122,17 @@ the Hozu app's correctness, cost per change, size, duplication and shipped JS de
 ## Out of scope
 - No framework changes. Hozu defects found along the way are reported, not fixed, unless the owner approves.
 - No CI, no push, no tag, no publish. Commits go to the local branch `trial-0020`.
+
+## Result
+- **Run as decided,** with two runs per framework and both reference apps passing every step
+  (`bench/trial/longrun/reference/`). Details and data are in `docs/trials/0020-long-run.md`.
+- **Settled along the way:**
+  - A1 / SH1 no longer count hidden inputs (found by the Hozu reference before any run);
+  - the acceptance relaunches Chrome and re-runs a check when the browser crashes (seen once under load while
+    verifying the references; zero crashes in the trial runs);
+  - the silent-failure heuristic also reads Chinese summaries, and the failing steps were classified by hand.
+- **The criterion in F is not met:** Nuxt had no regression in either run, and Hozu's cost per change doubled from
+  steps 1–10 to 11–20 (Nuxt +15–27 %). Hozu kept duplication at 1–2.5 % (Nuxt 6.5–8.2 %) and client JS at
+  24–26 KB (Nuxt 232 KB).
+- **Hozu defects found:** D1–D8 in the reference app and D9 in the trial apps (live refetch racing a session change).
+  Framework code was not changed.
