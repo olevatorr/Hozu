@@ -10,3 +10,4 @@ step 8: 38/38 new 2/2 regression 36/36 js {"login":23302,"list":23302}
 step 9: 40/40 new 2/2 regression 38/38 js {"login":23302,"list":23302}
 step 10: 43/43 new 3/3 regression 40/40 js {"login":23302,"list":23302}
 step 11: 46/46 new 3/3 regression 43/43 js {"login":23472,"list":23472}
+step 12: 48/48 new 2/2 regression 46/46 js {"login":23472,"list":23472}

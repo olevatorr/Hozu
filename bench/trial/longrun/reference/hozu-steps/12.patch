@@ -1,0 +1,30 @@
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index 65f491e..982a6e7 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -142,7 +142,6 @@ export const NotesBoard = ui.view({
+           failed: { Unexpected: () => null },
+         },
+       ),
+-      when(['adding'], [ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…'])]),
+       ui.form({ method: 'get', class: 'flex gap-2' }, [
+         ui.label({ for: 'search', class: 'sr-only' }, ['Search']),
+         ui.input({
+@@ -171,6 +170,17 @@ export const NotesBoard = ui.view({
+               ui.p({ class: 'text-sm text-slate-600' }, [
+                 `Showing ${listed({ items: page.notes, query: ctx.query })} of ${page.matching}`,
+               ]),
++              when(
++                ['adding'],
++                [
++                  ui.ul({ class: 'rounded border' }, [
++                    ui.li({ class: 'flex gap-3 px-4 py-3 opacity-60', 'aria-busy': 'true' }, [
++                      ui.span({ class: 'flex-1' }, [ctx.draft]),
++                      ui.span({ class: 'text-xs text-slate-500' }, ['saving…']),
++                    ]),
++                  ]),
++                ],
++              ),
+               noMatch({ items: page.notes, query: ctx.query })
+                 ? ui.p({ class: 'text-slate-500' }, ['No notes match'])
+                 : ui.ul({ class: 'divide-y rounded border' }, [
