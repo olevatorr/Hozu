@@ -1,0 +1,56 @@
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index 691dd2c..b89add3 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -81,6 +81,7 @@ const noteItem = (note: NoteT, editing: string) =>
+ export const NotesBoard = ui.view({
+   machine: notesMachine,
+   route: home,
++  seed: ({ search }) => ({ query: search.q }),
+   render: ({ ctx, when, search }) =>
+     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-8' }, [
+       ui.h1({ class: 'text-3xl font-bold' }, ['Notes']),
+@@ -121,14 +122,19 @@ export const NotesBoard = ui.view({
+       ui.p({ id: 'tags-error', role: 'alert', class: 'text-sm text-rose-600' }, [ctx.fields.tags]),
+       ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+       when(['adding'], [ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…'])]),
+-      ui.label({ for: 'search', class: 'block text-sm font-medium' }, ['Search']),
+-      ui.input({
+-        id: 'search',
+-        type: 'search',
+-        value: ctx.query,
+-        class: 'w-full rounded border px-3 py-2',
+-        on: { input: ui.send(Search, { query: ui.dom.value }) },
+-      }),
++      ui.form({ method: 'get', class: 'flex gap-2' }, [
++        ui.label({ for: 'search', class: 'sr-only' }, ['Search']),
++        ui.input({
++          id: 'search',
++          type: 'search',
++          name: 'q',
++          value: ctx.query,
++          class: 'flex-1 rounded border px-3 py-2',
++          on: { input: ui.send(Search, { query: ui.dom.value }) },
++        }),
++        search.tag !== '' && ui.input({ type: 'hidden', name: 'tag', value: search.tag }),
++        ui.button({ type: 'submit', class: 'rounded border px-4 py-2' }, ['Search']),
++      ]),
+       search.tag !== '' &&
+         ui.p({ class: 'flex gap-3 text-sm' }, [
+           `Tagged ${search.tag}`,
+diff --git a/routes.ts b/routes.ts
+index a9d4a0c..6a8d00b 100644
+--- a/routes.ts
++++ b/routes.ts
+@@ -1,6 +1,10 @@
+ import { route } from '@hozu/core'
+ import { z } from 'zod'
+ 
+-export const home = route({ path: '/', params: null, search: z.object({ tag: z.string().default('') }) })
++export const home = route({
++  path: '/',
++  params: null,
++  search: z.object({ tag: z.string().default(''), q: z.string().default('') }),
++})
+ export const login = route({ path: '/login', params: null, search: null })
+ export const archive = route({ path: '/archive', params: null, search: null })
