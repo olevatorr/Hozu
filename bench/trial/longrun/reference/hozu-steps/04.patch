@@ -1,0 +1,393 @@
+diff --git a/features/notes/feature.ts b/features/notes/feature.ts
+index 9c14c36..e8878b0 100644
+--- a/features/notes/feature.ts
++++ b/features/notes/feature.ts
+@@ -6,7 +6,7 @@ export const notes = feature({
+   id: 'notes',
+   intent: {
+     summary: 'Personal notes per signed-in user: add, delete, pin, search in the browser',
+-    invariants: ['A user sees only their own notes', 'Note texts are unique per user, case-insensitive'],
++    invariants: ['A user sees only their own notes', 'Note titles are unique per user, case-insensitive'],
+   },
+   declarations: [model, views],
+ })
+diff --git a/features/notes/model.ts b/features/notes/model.ts
+index 14ffa7c..c704622 100644
+--- a/features/notes/model.ts
++++ b/features/notes/model.ts
+@@ -1,13 +1,18 @@
+ import { endpoint, event, fn, invoke, machine, mutation, on, op, query, tag } from '@hozu/core'
+ import { z } from 'zod'
+ 
+-export const Note = z.object({ id: z.string(), text: z.string(), pinned: z.boolean(), createdAt: z.string() })
++export const Note = z.object({
++  id: z.string(),
++  title: z.string(),
++  pinned: z.boolean(),
++  createdAt: z.string(),
++})
+ const Notes = z.array(Note)
+ const NoteKey = z.object({ id: z.string() })
+-const NewNote = z.object({ text: z.string().min(1, 'Write something') })
++const NewNote = z.object({ title: z.string().min(1, 'Write something') })
+ 
+-export const Draft = event({ payload: z.object({ text: z.string() }) })
+-export const Add = event({ payload: z.object({ text: z.string() }) })
++export const Draft = event({ payload: z.object({ title: z.string() }) })
++export const Add = event({ payload: z.object({ title: z.string() }) })
+ export const Remove = event({ payload: NoteKey })
+ export const Pin = event({ payload: NoteKey })
+ export const Search = event({ payload: z.object({ query: z.string() }) })
+@@ -33,7 +38,7 @@ export const listNotes = query({
+ export const addNote = mutation({
+   input: NewNote,
+   output: Note,
+-  errors: { Duplicate: z.object({ text: z.string() }) },
++  errors: { Duplicate: z.object({ title: z.string() }) },
+   invalidates: () => [notesTag()],
+ })
+ 
+@@ -56,13 +61,13 @@ const Visible = z.object({ items: Notes, query: z.string() })
+ export const visible = fn({
+   input: Visible,
+   output: Notes,
+-  impl: ({ items, query }) => items.filter((n) => n.text.toLowerCase().includes(query.trim().toLowerCase())),
++  impl: ({ items, query }) => items.filter((n) => n.title.toLowerCase().includes(query.trim().toLowerCase())),
+ })
+ 
+ export const noMatch = fn({
+   input: Visible,
+   output: z.boolean(),
+-  impl: ({ items, query }) => !items.some((n) => n.text.toLowerCase().includes(query.trim().toLowerCase())),
++  impl: ({ items, query }) => !items.some((n) => n.title.toLowerCase().includes(query.trim().toLowerCase())),
+ })
+ 
+ export const total = fn({
+@@ -79,7 +84,7 @@ export const addedDay = fn({
+ 
+ export const MAX_TEXT = 60
+ export const TOO_LONG = `Use at most ${MAX_TEXT} characters`
+-export const DUPLICATE = 'You already have this note'
++export const DUPLICATE = 'You already have a note with this title'
+ export const GONE = 'This note no longer exists'
+ 
+ export const notesMachine = machine({
+@@ -88,20 +93,20 @@ export const notesMachine = machine({
+     query: z.string(),
+     target: z.string(),
+     error: z.string().nullable(),
+-    fields: z.object({ text: z.string().nullable() }),
++    fields: z.object({ title: z.string().nullable() }),
+   }),
+-  initialContext: { draft: '', query: '', target: '', error: null, fields: { text: null } },
++  initialContext: { draft: '', query: '', target: '', error: null, fields: { title: null } },
+   initial: 'idle',
+   states: ({ ctx }) => ({
+     idle: {
+       on: [
+-        on(Draft, { target: 'idle', assign: (e) => [op.set(ctx.draft, e.text)] }),
++        on(Draft, { target: 'idle', assign: (e) => [op.set(ctx.draft, e.title)] }),
+         on(Add, {
+           target: 'adding',
+           assign: (e) => [
+-            op.set(ctx.draft, e.text),
++            op.set(ctx.draft, e.title),
+             op.set(ctx.error, null),
+-            op.set(ctx.fields, { text: null }),
++            op.set(ctx.fields, { title: null }),
+           ],
+         }),
+         on(Remove, {
+@@ -114,7 +119,7 @@ export const notesMachine = machine({
+     },
+     adding: {
+       invoke: invoke(addNote, {
+-        input: { text: ctx.draft },
++        input: { title: ctx.draft },
+         done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')] }],
+         failed: {
+           Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] }],
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index 2a345a1..311b72f 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -30,23 +30,23 @@ export const NotesBoard = ui.view({
+   render: ({ ctx, when }) =>
+     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-8' }, [
+       ui.h1({ class: 'text-3xl font-bold' }, ['Notes']),
+-      ui.form({ class: 'flex gap-2', on: { submit: ui.send(Add, { text: ui.dom.form('text') }) } }, [
+-        ui.label({ for: 'note', class: 'sr-only' }, ['New note']),
++      ui.form({ class: 'flex gap-2', on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } }, [
++        ui.label({ for: 'title', class: 'sr-only' }, ['Title']),
+         ui.input({
+-          id: 'note',
+-          name: 'text',
++          id: 'title',
++          name: 'title',
+           required: true,
+           maxlength: MAX_TEXT,
+           value: ctx.draft,
+-          placeholder: 'New note',
+-          'aria-invalid': op.neq(ctx.fields.text, null),
+-          'aria-describedby': 'note-error',
++          placeholder: 'Title',
++          'aria-invalid': op.neq(ctx.fields.title, null),
++          'aria-describedby': 'title-error',
+           class: 'flex-1 rounded border px-3 py-2',
+-          on: { input: ui.send(Draft, { text: ui.dom.value }) },
++          on: { input: ui.send(Draft, { title: ui.dom.value }) },
+         }),
+         ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
+       ]),
+-      ui.p({ id: 'note-error', role: 'alert', class: 'text-sm text-rose-600' }, [ctx.fields.text]),
++      ui.p({ id: 'title-error', role: 'alert', class: 'text-sm text-rose-600' }, [ctx.fields.title]),
+       ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+       when(['adding'], [ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…'])]),
+       ui.label({ for: 'search', class: 'block text-sm font-medium' }, ['Search']),
+@@ -71,7 +71,7 @@ export const NotesBoard = ui.view({
+                   ui.ul({ class: 'divide-y rounded border' }, [
+                     ui.each(visible({ items: notes, query: ctx.query }), 'id', (note) =>
+                       ui.li({ class: 'flex items-center gap-3 px-4 py-3' }, [
+-                        ui.span({ class: 'flex-1' }, [note.text]),
++                        ui.span({ class: 'flex-1' }, [note.title]),
+                         ui.time({ datetime: note.createdAt, class: 'text-xs text-slate-500' }, [
+                           'Added ',
+                           addedDay({ at: note.createdAt }),
+@@ -99,32 +99,32 @@ export const NotesBoard = ui.view({
+     ]),
+ })
+ 
+-const note = (id: string, text: string, pinned = false) => ({
++const note = (id: string, title: string, pinned = false) => ({
+   id,
+-  text,
++  title,
+   pinned,
+   createdAt: '2026-09-29T08:15:00.000Z',
+ })
+ 
+ export const typesDraft = contract(notesMachine, {
+   given: { state: 'idle' },
+-  when: [{ send: Draft, payload: { text: 'Milk' } }],
++  when: [{ send: Draft, payload: { title: 'Milk' } }],
+   expect: { state: 'idle', changes: { draft: 'Milk' } },
+ })
+ 
+ export const adds = contract(notesMachine, {
+   given: { state: 'idle' },
+   when: [
+-    { send: Add, payload: { text: 'Milk' } },
+-    { send: Add, payload: { text: 'Milk' } },
++    { send: Add, payload: { title: 'Milk' } },
++    { send: Add, payload: { title: 'Milk' } },
+     { done: addNote, result: note('n9', 'Milk') },
+   ],
+-  expect: { state: 'idle', effects: [{ effect: addNote, input: { text: 'Milk' } }] },
++  expect: { state: 'idle', effects: [{ effect: addNote, input: { title: 'Milk' } }] },
+ })
+ 
+ export const rejectsDuplicate = contract(notesMachine, {
+   given: { state: 'adding' },
+-  when: [{ failed: addNote, error: 'Duplicate', data: { text: 'Milk' } }],
++  when: [{ failed: addNote, error: 'Duplicate', data: { title: 'Milk' } }],
+   expect: { state: 'idle', changes: { error: DUPLICATE } },
+ })
+ 
+@@ -134,10 +134,10 @@ export const rejectsInvalid = contract(notesMachine, {
+     {
+       failed: addNote,
+       error: 'Invalid',
+-      data: { message: 'text: Write something', fields: { text: 'Write something' } },
++      data: { message: 'title: Write something', fields: { title: 'Write something' } },
+     },
+   ],
+-  expect: { state: 'idle', changes: { fields: { text: 'Write something' } } },
++  expect: { state: 'idle', changes: { fields: { title: 'Write something' } } },
+ })
+ 
+ export const addFails = contract(notesMachine, {
+diff --git a/hozu.lock.json b/hozu.lock.json
+index befbf56..f6eabc8 100644
+--- a/hozu.lock.json
++++ b/hozu.lock.json
+@@ -55,105 +55,105 @@
+       "adding/invoke/done/0": {
+         "behavior": "e0eb2a3405dfc35d",
+         "contracts": {
+-          "adds": "738e9f720426d974"
++          "adds": "80779a3aea0844d8"
+         },
+         "summary": "adding --done addNote--> idle · draft := \"\""
+       },
+       "adding/invoke/failed/Duplicate/0": {
+-        "behavior": "1233a75b5aaada40",
++        "behavior": "f276033e70cceab3",
+         "contracts": {
+-          "rejectsDuplicate": "a7e2e2f35dee6801"
++          "rejectsDuplicate": "c1b5c1180e8007c0"
+         },
+-        "summary": "adding --failed addNote.Duplicate--> idle · error := \"You already have this note\""
++        "summary": "adding --failed addNote.Duplicate--> idle · error := \"You already have a note with this title\""
+       },
+       "adding/invoke/failed/Invalid/0": {
+         "behavior": "3ba8e3c9bc908103",
+         "contracts": {
+-          "rejectsInvalid": "547340307795e406"
++          "rejectsInvalid": "145a99e628bf7c07"
+         },
+         "summary": "adding --failed addNote.Invalid--> idle · fields := error.fields"
+       },
+       "adding/invoke/failed/Unexpected/0": {
+         "behavior": "6606d67832662c72",
+         "contracts": {
+-          "addFails": "a13c19cffe196491"
++          "addFails": "685ecc788d2e2d8b"
+         },
+         "summary": "adding --failed addNote.Unexpected--> idle · error := error.message"
+       },
+       "idle/on/notes.Add/0": {
+-        "behavior": "f714f6aa11e92791",
++        "behavior": "1bf21542a58248a0",
+         "contracts": {
+-          "adds": "738e9f720426d974"
++          "adds": "80779a3aea0844d8"
+         },
+-        "summary": "idle --Add--> adding · draft := event.text, error := null, fields := {\"text\":null} · invoke addNote({ text: ctx.draft })"
++        "summary": "idle --Add--> adding · draft := event.title, error := null, fields := {\"title\":null} · invoke addNote({ title: ctx.draft })"
+       },
+       "idle/on/notes.Draft/0": {
+-        "behavior": "3857c5fe4a6a008e",
++        "behavior": "bb0e04a3b1f4e70d",
+         "contracts": {
+-          "typesDraft": "78e79a815a6544e5"
++          "typesDraft": "ec9106eb367db4c4"
+         },
+-        "summary": "idle --Draft--> idle · draft := event.text"
++        "summary": "idle --Draft--> idle · draft := event.title"
+       },
+       "idle/on/notes.Pin/0": {
+         "behavior": "71ea41aeb924b3bc",
+         "contracts": {
+-          "pins": "9963c44d952ca31d"
++          "pins": "fabe6c1094fe1599"
+         },
+         "summary": "idle --Pin--> pinning · target := event.id, error := null · invoke togglePin({ id: ctx.target })"
+       },
+       "idle/on/notes.Remove/0": {
+         "behavior": "9a9661f294496cd6",
+         "contracts": {
+-          "removes": "07804552c5848ba7"
++          "removes": "8a02d926f7a5b83a"
+         },
+         "summary": "idle --Remove--> removing · target := event.id, error := null · invoke removeNote({ id: ctx.target })"
+       },
+       "idle/on/notes.Search/0": {
+         "behavior": "cc98ea187307423e",
+         "contracts": {
+-          "searches": "d170da153364c8eb"
++          "searches": "5037e6510defa261"
+         },
+         "summary": "idle --Search--> idle · query := event.query"
+       },
+       "pinning/invoke/done/0": {
+         "behavior": "2bff26500adc2814",
+         "contracts": {
+-          "pins": "9963c44d952ca31d"
++          "pins": "fabe6c1094fe1599"
+         },
+         "summary": "pinning --done togglePin--> idle"
+       },
+       "pinning/invoke/failed/NotFound/0": {
+         "behavior": "a7d1ce36cbdb54e3",
+         "contracts": {
+-          "pinMissing": "91c8cd2486a5a33b"
++          "pinMissing": "600d65b9bd44f4b0"
+         },
+         "summary": "pinning --failed togglePin.NotFound--> idle · error := \"This note no longer exists\""
+       },
+       "pinning/invoke/failed/Unexpected/0": {
+         "behavior": "f2e84ebd5e7b6484",
+         "contracts": {
+-          "pinFails": "a2cf94e15d5b1389"
++          "pinFails": "aedd57807674e706"
+         },
+         "summary": "pinning --failed togglePin.Unexpected--> idle · error := error.message"
+       },
+       "removing/invoke/done/0": {
+         "behavior": "e54a61bbf262f9f9",
+         "contracts": {
+-          "removes": "07804552c5848ba7"
++          "removes": "8a02d926f7a5b83a"
+         },
+         "summary": "removing --done removeNote--> idle"
+       },
+       "removing/invoke/failed/NotFound/0": {
+         "behavior": "2406737070881788",
+         "contracts": {
+-          "removeMissing": "d31d942a7ae10a2c"
++          "removeMissing": "fa12618c3bd5b48d"
+         },
+         "summary": "removing --failed removeNote.NotFound--> idle · error := \"This note no longer exists\""
+       },
+       "removing/invoke/failed/Unexpected/0": {
+         "behavior": "5fbd09f5a2ecb8ee",
+         "contracts": {
+-          "removeFails": "3178838156688a2d"
++          "removeFails": "826da098455f4686"
+         },
+         "summary": "removing --failed removeNote.Unexpected--> idle · error := error.message"
+       }
+diff --git a/server.ts b/server.ts
+index 2b2b3e8..96b64ad 100644
+--- a/server.ts
++++ b/server.ts
+@@ -13,7 +13,7 @@ import project from './hozu.config.ts'
+ 
+ interface Note {
+   id: string
+-  text: string
++  title: string
+   pinned: boolean
+   createdAt: string
+ }
+@@ -23,11 +23,11 @@ export function createResolvers() {
+     [
+       'ada',
+       [
+-        { id: 'n1', text: 'Buy milk', pinned: false, createdAt: '2026-01-15T09:00:00.000Z' },
+-        { id: 'n2', text: 'Call Bob', pinned: false, createdAt: '2026-01-14T09:00:00.000Z' },
++        { id: 'n1', title: 'Buy milk', pinned: false, createdAt: '2026-01-15T09:00:00.000Z' },
++        { id: 'n2', title: 'Call Bob', pinned: false, createdAt: '2026-01-14T09:00:00.000Z' },
+       ],
+     ],
+-    ['bob', [{ id: 'n3', text: "Bob's secret", pinned: false, createdAt: '2026-01-10T09:00:00.000Z' }]],
++    ['bob', [{ id: 'n3', title: "Bob's secret", pinned: false, createdAt: '2026-01-10T09:00:00.000Z' }]],
+   ])
+   let seq = 3
+   const notesOf = (user: string) => {
+@@ -53,17 +53,17 @@ export function createResolvers() {
+     implement(listNotes, (_, { session, fail }) =>
+       session ? ordered(notesOf(session.user)).map((n) => ({ ...n })) : fail('Unauthorized', {}),
+     ),
+-    implement(addNote, ({ text }, { session, fail }) => {
+-      if (!session) return fail('Invalid', { message: 'Signed out', fields: { text: 'Sign in first' } })
+-      const clean = text.trim()
++    implement(addNote, ({ title }, { session, fail }) => {
++      if (!session) return fail('Invalid', { message: 'Signed out', fields: { title: 'Sign in first' } })
++      const clean = title.trim()
+       if (!clean)
+-        return fail('Invalid', { message: 'text: Write something', fields: { text: 'Write something' } })
++        return fail('Invalid', { message: 'title: Write something', fields: { title: 'Write something' } })
+       if (clean.length > MAX_TEXT)
+-        return fail('Invalid', { message: `text: ${TOO_LONG}`, fields: { text: TOO_LONG } })
++        return fail('Invalid', { message: `title: ${TOO_LONG}`, fields: { title: TOO_LONG } })
+       const list = notesOf(session.user)
+-      if (list.some((n) => n.text.toLowerCase() === clean.toLowerCase()))
+-        return fail('Duplicate', { text: clean })
+-      const note = { id: `n${++seq}`, text: clean, pinned: false, createdAt: new Date().toISOString() }
++      if (list.some((n) => n.title.toLowerCase() === clean.toLowerCase()))
++        return fail('Duplicate', { title: clean })
++      const note = { id: `n${++seq}`, title: clean, pinned: false, createdAt: new Date().toISOString() }
+       list.unshift(note)
+       return { ...note }
+     }),
