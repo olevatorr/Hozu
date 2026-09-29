@@ -30,6 +30,8 @@ let browser
 const newPage = async (javaScriptEnabled = true) => {
   const ctx = await browser.newContext({ javaScriptEnabled })
   const page = await ctx.newPage()
+  page.setDefaultTimeout(10000)
+  page.setDefaultNavigationTimeout(15000)
   if (javaScriptEnabled) {
     page.on('pageerror', (e) => errors.push(e.message))
     page.on(
