@@ -1,0 +1,366 @@
+diff --git a/features/notes/model.ts b/features/notes/model.ts
+index 489c59f..3527bf2 100644
+--- a/features/notes/model.ts
++++ b/features/notes/model.ts
+@@ -23,6 +23,7 @@ export const Save = event({ payload: z.object({ id: z.string(), title: z.string(
+ export const Archive = event({ payload: NoteKey })
+ export const Restore = event({ payload: NoteKey })
+ export const Undo = event({ payload: z.object({}) })
++export const Select = event({ payload: z.object({ id: z.string(), checked: z.boolean() }) })
+ export const Search = event({ payload: z.object({ query: z.string() }) })
+ 
+ export const notesTag = tag({ param: null })
+@@ -34,12 +35,23 @@ export const notesApi = endpoint({
+   output: z.object({ signedIn: z.boolean(), notes: z.array(Note) }),
+ })
+ 
++export const BULK_FORM = 'bulk'
++export const BULK_PATH = '/api/notes/bulk'
++export const SELECTED = 'selected'
++
++export const bulkNotes = endpoint({
++  method: 'POST',
++  path: BULK_PATH,
++  input: z.record(z.string(), z.string()),
++  output: 'response',
++})
++
+ export const listNotes = query({
+   input: z.object({ tag: z.string(), q: z.string(), limit: z.number() }),
+   output: z.object({ notes: Notes, matching: z.number(), total: z.number() }),
+   errors: { Unauthorized: z.object({}) },
+   scope: 'user',
+-  freshness: 'static',
++  freshness: 'live',
+   tags: () => [notesTag()],
+ })
+ 
+@@ -56,7 +68,7 @@ export const lastDeleted = query({
+   input: z.object({}),
+   output: z.object({ title: z.string() }).nullable(),
+   scope: 'user',
+-  freshness: 'static',
++  freshness: 'live',
+   tags: () => [notesTag()],
+ })
+ 
+@@ -150,6 +162,7 @@ export const notesMachine = machine({
+     query: z.string(),
+     target: z.string(),
+     editing: z.string(),
++    selected: z.array(NoteKey),
+     editTitle: z.string(),
+     error: z.string().nullable(),
+     fields: z.object({ title: z.string().nullable(), tags: z.string().nullable() }),
+@@ -160,6 +173,7 @@ export const notesMachine = machine({
+     query: '',
+     target: '',
+     editing: '',
++    selected: [],
+     editTitle: '',
+     error: null,
+     fields: { title: null, tags: null },
+@@ -191,6 +205,19 @@ export const notesMachine = machine({
+           target: 'restoring',
+           assign: (e) => [op.set(ctx.target, e.id), op.set(ctx.error, null)],
+         }),
++        on(Select, {
++          target: 'idle',
++          guard: (e) => e.checked === true,
++          assign: (e) => {
++            ctx.selected.push({ id: e.id })
++          },
++        }),
++        on(Select, {
++          target: 'idle',
++          assign: (e) => {
++            ctx.selected = ctx.selected.filter((s) => s.id !== e.id)
++          },
++        }),
+         on(Undo, { target: 'undoing', assign: () => [op.set(ctx.error, null)] }),
+         on(Search, { target: 'idle', assign: (e) => [op.set(ctx.query, e.query)] }),
+         on(Edit, { target: 'idle', assign: (e) => [op.set(ctx.editing, e.id), op.set(ctx.error, null)] }),
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index 982a6e7..cb9f7c2 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -5,6 +5,8 @@ import {
+   Archive,
+   addedDay,
+   addNote,
++  BULK_FORM,
++  BULK_PATH,
+   CancelEdit,
+   Draft,
+   DUPLICATE,
+@@ -23,7 +25,9 @@ import {
+   Restore,
+   removeNote,
+   Save,
++  SELECTED,
+   Search,
++  Select,
+   togglePin,
+   Undo,
+   visible,
+@@ -65,6 +69,16 @@ const editForm = (note: NoteT) => [
+ 
+ const noteItem = (note: NoteT, editing: string) =>
+   ui.li({ class: 'flex flex-wrap items-center gap-3 px-4 py-3' }, [
++    ui.label({ class: 'flex items-center' }, [
++      ui.input({
++        type: 'checkbox',
++        form: BULK_FORM,
++        name: note.id,
++        value: SELECTED,
++        on: { change: ui.send(Select, { id: note.id, checked: ui.dom.checked }) },
++      }),
++      ui.span({ class: 'sr-only' }, ['Select ', note.title]),
++    ]),
+     ui.if(op.eq(editing, note.id), editForm(note), [ui.span({ class: 'flex-1' }, [note.title])]),
+     ui.each(note.tags, null, (tag) =>
+       ui.a({ href: ui.link(list, null, { tag }), class: 'text-xs text-indigo-700' }, [`#${tag}`]),
+@@ -170,6 +184,23 @@ export const NotesBoard = ui.view({
+               ui.p({ class: 'text-sm text-slate-600' }, [
+                 `Showing ${listed({ items: page.notes, query: ctx.query })} of ${page.matching}`,
+               ]),
++              ui.form(
++                {
++                  id: BULK_FORM,
++                  method: 'post',
++                  action: BULK_PATH,
++                  class: 'flex items-center gap-3 text-sm',
++                },
++                [
++                  ui.span({ class: 'text-slate-600' }, [`Selected: ${ctx.selected.length}`]),
++                  ui.button({ type: 'submit', name: 'action', value: 'delete', class: 'underline' }, [
++                    'Delete selected',
++                  ]),
++                  ui.button({ type: 'submit', name: 'action', value: 'archive', class: 'underline' }, [
++                    'Archive selected',
++                  ]),
++                ],
++              ),
+               when(
+                 ['adding'],
+                 [
+@@ -338,3 +369,15 @@ export const searches = contract(notesMachine, {
+   when: [{ send: Search, payload: { query: 'milk' } }],
+   expect: { state: 'idle', changes: { query: 'milk' } },
+ })
++
++export const selects = contract(notesMachine, {
++  given: { state: 'idle', context: { selected: [{ id: 'n1' }] } },
++  when: [{ send: Select, payload: { id: 'n2', checked: true } }],
++  expect: { state: 'idle', changes: { selected: [{ id: 'n1' }, { id: 'n2' }] } },
++})
++
++export const unselects = contract(notesMachine, {
++  given: { state: 'idle', context: { selected: [{ id: 'n1' }, { id: 'n2' }] } },
++  when: [{ send: Select, payload: { id: 'n1', checked: false } }],
++  expect: { state: 'idle', changes: { selected: [{ id: 'n2' }] } },
++})
+diff --git a/hozu.lock.json b/hozu.lock.json
+index 29315ef..f3218b3 100644
+--- a/hozu.lock.json
++++ b/hozu.lock.json
+@@ -55,28 +55,28 @@
+       "adding/invoke/done/0": {
+         "behavior": "ef02c689630d2f15",
+         "contracts": {
+-          "adds": "3f3857d19701cc65"
++          "adds": "bd0698f816df682e"
+         },
+         "summary": "adding --done addNote--> idle · draft := \"\", draftTags := \"\""
+       },
+       "adding/invoke/failed/Duplicate/0": {
+         "behavior": "f276033e70cceab3",
+         "contracts": {
+-          "rejectsDuplicate": "1e2098c0ab930e8d"
++          "rejectsDuplicate": "f0017b75413b901d"
+         },
+         "summary": "adding --failed addNote.Duplicate--> idle · error := \"You already have a note with this title\""
+       },
+       "adding/invoke/failed/Invalid/0": {
+         "behavior": "1a149563f421bcca",
+         "contracts": {
+-          "rejectsInvalid": "21727ac88dbacb06"
++          "rejectsInvalid": "8da0245ce775f75a"
+         },
+         "summary": "adding --failed addNote.Invalid--> idle · fields := { title: %coalesce({ a: error.fields.title, b: null }), tags: %coalesce({ a: error.fields.tags, b: null }) }"
+       },
+       "adding/invoke/failed/Unexpected/0": {
+         "behavior": "6606d67832662c72",
+         "contracts": {
+-          "addFails": "5246e8874bf45e5c"
++          "addFails": "0870727aa2fdb2b5"
+         },
+         "summary": "adding --failed addNote.Unexpected--> idle · error := error.message"
+       },
+@@ -98,7 +98,7 @@
+       "idle/on/notes.Add/0": {
+         "behavior": "321be2e5fae1fb36",
+         "contracts": {
+-          "adds": "3f3857d19701cc65"
++          "adds": "bd0698f816df682e"
+         },
+         "summary": "idle --Add--> adding · draft := event.title, draftTags := event.tags, error := null, fields := {\"title\":null,\"tags\":null} · invoke addNote({ title: ctx.draft, tags: ctx.draftTags })"
+       },
+@@ -115,7 +115,7 @@
+       "idle/on/notes.Draft/0": {
+         "behavior": "bb0e04a3b1f4e70d",
+         "contracts": {
+-          "typesDraft": "6eaff138a9d4ee21"
++          "typesDraft": "b28ed40b42dbc0fb"
+         },
+         "summary": "idle --Draft--> idle · draft := event.title"
+       },
+@@ -127,14 +127,14 @@
+       "idle/on/notes.Pin/0": {
+         "behavior": "71ea41aeb924b3bc",
+         "contracts": {
+-          "pins": "6279fb5b6436e179"
++          "pins": "341e2e194859a68b"
+         },
+         "summary": "idle --Pin--> pinning · target := event.id, error := null · invoke togglePin({ id: ctx.target })"
+       },
+       "idle/on/notes.Remove/0": {
+         "behavior": "9a9661f294496cd6",
+         "contracts": {
+-          "removes": "9e6ab6c0d390c273"
++          "removes": "f55198125a4235a3"
+         },
+         "summary": "idle --Remove--> removing · target := event.id, error := null · invoke removeNote({ id: ctx.target })"
+       },
+@@ -151,10 +151,24 @@
+       "idle/on/notes.Search/0": {
+         "behavior": "cc98ea187307423e",
+         "contracts": {
+-          "searches": "19cb8f600911fa5f"
++          "searches": "9a02ca3f096ff579"
+         },
+         "summary": "idle --Search--> idle · query := event.query"
+       },
++      "idle/on/notes.Select/0": {
++        "behavior": "cc8beeb66f565894",
++        "contracts": {
++          "selects": "9a6ebf169292f4b5"
++        },
++        "summary": "idle --Select--> idle · if event.checked eq true · selected append { id: event.id }"
++      },
++      "idle/on/notes.Select/1": {
++        "behavior": "5c5ff77f8215bf5c",
++        "contracts": {
++          "unselects": "4891915fe22226dc"
++        },
++        "summary": "idle --Select--> idle · selected -= where id = event.id"
++      },
+       "idle/on/notes.Undo/0": {
+         "behavior": "edd248c48772f305",
+         "contracts": {},
+@@ -163,42 +177,42 @@
+       "pinning/invoke/done/0": {
+         "behavior": "2bff26500adc2814",
+         "contracts": {
+-          "pins": "6279fb5b6436e179"
++          "pins": "341e2e194859a68b"
+         },
+         "summary": "pinning --done togglePin--> idle"
+       },
+       "pinning/invoke/failed/NotFound/0": {
+         "behavior": "a7d1ce36cbdb54e3",
+         "contracts": {
+-          "pinMissing": "6069a28fd85a4732"
++          "pinMissing": "9f2d931d9c0894e6"
+         },
+         "summary": "pinning --failed togglePin.NotFound--> idle · error := \"This note no longer exists\""
+       },
+       "pinning/invoke/failed/Unexpected/0": {
+         "behavior": "f2e84ebd5e7b6484",
+         "contracts": {
+-          "pinFails": "ad776848542d13d0"
++          "pinFails": "8efefd83a6ce76d0"
+         },
+         "summary": "pinning --failed togglePin.Unexpected--> idle · error := error.message"
+       },
+       "removing/invoke/done/0": {
+         "behavior": "e54a61bbf262f9f9",
+         "contracts": {
+-          "removes": "9e6ab6c0d390c273"
++          "removes": "f55198125a4235a3"
+         },
+         "summary": "removing --done removeNote--> idle"
+       },
+       "removing/invoke/failed/NotFound/0": {
+         "behavior": "2406737070881788",
+         "contracts": {
+-          "removeMissing": "b5bb1b64421848ff"
++          "removeMissing": "0a6680a726c6f07d"
+         },
+         "summary": "removing --failed removeNote.NotFound--> idle · error := \"This note no longer exists\""
+       },
+       "removing/invoke/failed/Unexpected/0": {
+         "behavior": "5fbd09f5a2ecb8ee",
+         "contracts": {
+-          "removeFails": "5856335c254abd6f"
++          "removeFails": "1de62eb74e34a653"
+         },
+         "summary": "removing --failed removeNote.Unexpected--> idle · error := error.message"
+       },
+diff --git a/server.ts b/server.ts
+index 36bd54a..8dd8c60 100644
+--- a/server.ts
++++ b/server.ts
+@@ -4,6 +4,7 @@ import {
+   addNote,
+   archiveNote,
+   BAD_TAGS,
++  bulkNotes,
+   lastDeleted,
+   listArchived,
+   listNotes,
+@@ -13,6 +14,7 @@ import {
+   removeNote,
+   renameNote,
+   restoreNote,
++  SELECTED,
+   TOO_LONG,
+   togglePin,
+   undoDelete,
+@@ -64,6 +66,18 @@ export function createResolvers() {
+     implement(listArchived, (_, { session, fail }) =>
+       session ? store.archived(session.user).map(copy) : fail('Unauthorized', {}),
+     ),
++    implement(bulkNotes, (fields, { session }) => {
++      if (session) {
++        const ids = Object.keys(fields).filter(
++          (id) => fields[id] === SELECTED && store.find(session.user, id),
++        )
++        if (ids.length) store.forget(session.user)
++        for (const id of ids)
++          if (fields.action === 'archive') store.find(session.user, id)!.archived = true
++          else if (fields.action === 'delete') store.remove(session.user, id, false)
++      }
++      return new Response(null, { status: 303, headers: { location: session ? '/notes' : '/login' } })
++    }),
+     implement(lastDeleted, (_, { session }) => {
+       const note = session && store.lastDeleted(session.user)
+       return note ? { title: note.title } : null
+diff --git a/store.ts b/store.ts
+index a13a877..f98fdf8 100644
+--- a/store.ts
++++ b/store.ts
+@@ -58,11 +58,11 @@ export function createStore() {
+       of(user).unshift(note)
+       return note
+     },
+-    remove: (user: string, id: string) => {
++    remove: (user: string, id: string, undoable = true) => {
+       const list = of(user)
+       const at = list.findIndex((n) => n.id === id)
+       const [note] = list.splice(at, 1)
+-      if (note) deleted.set(user, { note, at })
++      if (note && undoable) deleted.set(user, { note, at })
+     },
+   }
+ }

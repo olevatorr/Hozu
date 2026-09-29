@@ -20,3 +20,32 @@ Framework code was not changed. Each entry: symptom, minimal repro, workaround, 
 - **Repro:** move the `li` of `examples/notes` into `const item = (note: Note) => ui.li({}, [note.pinned ? 'Unpin' : 'Pin'])`
   and call it from `ui.each`; `hozu get /` shows `Unpin` for unpinned notes.
 - **Workaround:** `op.*` / `ui.if` in helpers (`ui.if(op.eq(note.pinned, true), ['Unpin'], ['Pin'])`).
+
+## D3 — a form cannot send a variable set of checked items, nor tell two submit buttons apart (step 13)
+- **Symptom:** `ui.dom.form(name)` reads one value per literal name. The client builds it from `new FormData(form)`
+  (last value wins, the submitter button is not included), the server from the posted body (first value wins).
+  So "check any number of notes, then `Delete selected` or `Archive selected`" has no machine form: the ids are
+  multi-valued or have per-note names, and the two buttons share one `submit` handler.
+- **Repro:** checkboxes `name: 'ids', value: note.id` in one form with `on: { submit: ui.send(Bulk, { ids: ui.dom.form('ids') }) }`:
+  checking two notes sends only the last id with JS and only the first without JS.
+- **Workaround:** a plain native form (no `on.submit`) posting to an `endpoint({ method: 'POST', input:
+  z.record(z.string(), z.string()), output: 'response' })`; each checkbox is `form="bulk" name=<note id>`, the buttons
+  are `name="action" value="delete|archive"`, and the endpoint answers 303 to the list. `Selected: <n>` is machine
+  context fed by the checkboxes' `change` events.
+
+## D4 — no way to invalidate user-scoped data written outside the reader's own mutations (steps 13, 15–17)
+- **Symptom:** a mutation invalidates its tags only in the `public` partition and in the writer's own session
+  partition; `endpoint` resolvers cannot declare `invalidates`, and `server.revalidate(tags)` reaches only `public`.
+  A `scope: 'user'`, `freshness: 'static'` query therefore keeps serving the old value after (a) an endpoint wrote
+  the data, or (b) another user changed it (a shared note renamed by its owner, the admin table, a deleted account).
+  `{ revalidate: 0 }` is rejected (HZ014), so no cached freshness is exact.
+- **Repro:** the bulk endpoint above deletes notes; the redirect to `/notes` still lists them (the `listNotes` entry
+  of that session is not stale).
+- **Workaround:** `freshness: 'live'` on every user-scoped query that shows such data (never cached on the server;
+  the client refreshes on tag messages). It adds the live client chunk and an event stream per page.
+
+## D5 — removing a primitive from a context list is not expressible (step 13)
+- **Symptom:** `ctx.selected = ctx.selected.filter((id) => id !== e.id)` on `z.array(z.string())` is HZ014
+  ("Method filter cannot run on a reference"); only the documented `(i) => i.id !== e.id` form over objects lowers
+  (`op.removeWhere` needs a key).
+- **Workaround:** keep `{ id }` objects in the list (`selected: z.array(z.object({ id: z.string() }))`).
