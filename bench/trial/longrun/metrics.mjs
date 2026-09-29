@@ -44,7 +44,7 @@ const toolText = records
   .map((c) => (typeof c.content === 'string' ? c.content : JSON.stringify(c.content)))
   .join('\n')
 
-const admits = /\b(could not|couldn't|cannot|can't|unable to|not (yet )?(implemented|working|supported|done)|does not work|doesn't work|failing|still fails?|partial(ly)?|did not|didn't|TODO|known (issue|limitation)|limitation|skipped|not verified)\b/i
+const admits = /\b(could not|couldn't|cannot|can't|unable to|not (yet )?(implemented|working|supported|done)|does not work|doesn't work|failing|still fails?|partial(ly)?|did not|didn't|TODO|known (issue|limitation)|limitation|skipped|not verified)\b|無法|沒有確認|未確認|沒確認|未驗證|沒有驗證|還是會|仍然會|仍會|沒有成功|未完成|做不到|不支援/i
 const accept = json('accept.json')
 const failed = accept ? accept.total - accept.passed : null
 const row = {
