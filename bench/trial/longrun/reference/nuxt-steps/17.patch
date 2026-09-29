@@ -1,0 +1,132 @@
+diff --git a/app/pages/account/delete.vue b/app/pages/account/delete.vue
+new file mode 100644
+index 0000000..7a571eb
+--- /dev/null
++++ b/app/pages/account/delete.vue
+@@ -0,0 +1,18 @@
++<script setup lang="ts">
++const { data } = await useFetch('/api/session')
++if (!data.value?.user) await navigateTo('/login')
++const submit = useFormAction()
++</script>
++
++<template>
++  <main class="mx-auto max-w-xl px-4 py-12">
++    <NuxtLink to="/notes" class="text-sm text-indigo-600 hover:underline">Back to notes</NuxtLink>
++    <h1 class="mt-2 text-3xl font-bold tracking-tight">Delete account</h1>
++    <p class="mt-4 text-slate-600">This deletes all of your notes, archived ones included, and signs you out.</p>
++    <form method="post" action="/api/account/delete" class="mt-6" @submit.prevent="submit">
++      <button type="submit" class="rounded-lg bg-rose-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-rose-500">
++        Delete my account and notes
++      </button>
++    </form>
++  </main>
++</template>
+diff --git a/app/pages/login.vue b/app/pages/login.vue
+index d552b2c..145725d 100644
+--- a/app/pages/login.vue
++++ b/app/pages/login.vue
+@@ -6,6 +6,7 @@ const submit = useFormAction()
+ <template>
+   <main class="mx-auto max-w-sm px-4 py-16">
+     <h1 class="text-3xl font-bold tracking-tight">Sign in</h1>
++    <p v-if="data?.notice" role="status" class="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{{ data.notice }}</p>
+     <p v-if="data?.flash" role="alert" class="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ data.flash }}</p>
+     <form method="post" action="/api/login" class="mt-6 flex flex-col gap-3" @submit.prevent="submit">
+       <label for="name" class="text-sm font-medium text-slate-700">Name</label>
+diff --git a/app/pages/notes.vue b/app/pages/notes.vue
+index eb1f01e..535d72f 100644
+--- a/app/pages/notes.vue
++++ b/app/pages/notes.vue
+@@ -73,6 +73,7 @@ async function add(event: SubmitEvent) {
+       <span class="flex gap-4">
+         <NuxtLink v-if="data.admin" to="/admin" class="text-indigo-600 hover:underline">Admin</NuxtLink>
+         <NuxtLink to="/archive" class="text-indigo-600 hover:underline">Archived notes</NuxtLink>
++        <NuxtLink to="/account/delete" class="text-rose-600 hover:underline">Delete account</NuxtLink>
+       </span>
+     </p>
+     <p v-if="data.flash" role="alert" class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ data.flash }}</p>
+diff --git a/server/api/account/delete.post.ts b/server/api/account/delete.post.ts
+new file mode 100644
+index 0000000..5abfab6
+--- /dev/null
++++ b/server/api/account/delete.post.ts
+@@ -0,0 +1,6 @@
++export default defineUserAction(({ event, user }) => {
++  deleteAccount(user)
++  endSessionsOf(user)
++  ensureSession(event).notice = 'Account deleted'
++  return '/login'
++})
+diff --git a/server/api/session.get.ts b/server/api/session.get.ts
+index cf1ab5f..ec495a1 100644
+--- a/server/api/session.get.ts
++++ b/server/api/session.get.ts
+@@ -1 +1,5 @@
+-export default defineEventHandler((event) => ({ user: currentUser(event) ?? null, flash: takeFlash(event) }))
++export default defineEventHandler((event) => ({
++  user: currentUser(event) ?? null,
++  flash: takeFlash(event),
++  notice: take(event, 'notice'),
++}))
+diff --git a/server/middleware/guard.ts b/server/middleware/guard.ts
+index 50d841d..5c57a4c 100644
+--- a/server/middleware/guard.ts
++++ b/server/middleware/guard.ts
+@@ -1,4 +1,4 @@
+-const signedInPages = new Set(['/notes', '/archive', '/admin'])
++const signedInPages = new Set(['/notes', '/archive', '/admin', '/account/delete'])
+ 
+ export default defineEventHandler((event) => {
+   const path = getRequestURL(event).pathname
+diff --git a/server/utils/session.ts b/server/utils/session.ts
+index 7eed3bf..794d65f 100644
+--- a/server/utils/session.ts
++++ b/server/utils/session.ts
+@@ -3,6 +3,7 @@ import type { H3Event } from 'h3'
+ interface Session {
+   user?: string
+   flash?: string
++  notice?: string
+ }
+ 
+ const COOKIE = 'sid'
+@@ -43,9 +44,15 @@ export function setFlash(event: H3Event, message: string | null): void {
+   if (message) ensureSession(event).flash = message
+ }
+ 
+-export function takeFlash(event: H3Event): string | null {
++export function take(event: H3Event, key: 'flash' | 'notice'): string | null {
+   const session = findSession(event)
+-  const flash = session?.flash ?? null
+-  if (session) delete session.flash
+-  return flash
++  const value = session?.[key] ?? null
++  if (session) delete session[key]
++  return value
++}
++
++export const takeFlash = (event: H3Event) => take(event, 'flash')
++
++export function endSessionsOf(user: string): void {
++  for (const session of sessions.values()) if (session.user === user) delete session.user
+ }
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 3bade68..725869f 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -148,6 +148,14 @@ export function sharedWithMe(user: string): SharedNote[] {
+   )
+ }
+ 
++export function deleteAccount(user: string): void {
++  notesByUser.delete(user)
++  lastDeleted.delete(user)
++  addedAt.delete(user)
++  for (const notes of notesByUser.values())
++    for (const note of notes) note.sharedWith = note.sharedWith.filter((name) => name !== user)
++}
++
+ export const noteCounts = () => [...notesByUser].map(([user, notes]) => ({ user, notes: notes.length }))
+ 
+ export const deletedTitle = (user: string) => lastDeleted.get(user)?.note.title ?? null
