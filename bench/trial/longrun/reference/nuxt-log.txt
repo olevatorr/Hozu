@@ -6,3 +6,4 @@ step 4: 25/25 new 1/1 regression 24/24 js {"login":200374,"list":203086}
 step 5: 29/29 new 4/4 regression 25/25 js {"login":200476,"list":205036}
 step 6: 32/32 new 3/3 regression 29/29 js {"login":200476,"list":205888}
 step 7: 36/36 new 4/4 regression 32/32 js {"login":200614,"list":207788}
+step 8: 38/38 new 2/2 regression 36/36 js {"login":200614,"list":208184}

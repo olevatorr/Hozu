@@ -1,0 +1,67 @@
+diff --git a/app/pages/index.vue b/app/pages/index.vue
+index a0d569e..2152e01 100644
+--- a/app/pages/index.vue
++++ b/app/pages/index.vue
+@@ -11,6 +11,13 @@ const title = ref('')
+ const tags = ref('')
+ const adding = ref(false)
+ const search = ref('')
++watch(
++  () => route.query.q,
++  (q) => {
++    search.value = typeof q === 'string' ? q : ''
++  },
++  { immediate: true },
++)
+ 
+ const visible = computed(() => {
+   const needle = search.value.trim().toLowerCase()
+@@ -61,17 +68,21 @@ async function add(event: SubmitEvent) {
+       </div>
+     </form>
+ 
+-    <div class="mt-6 flex flex-col gap-2">
++    <form method="get" action="/" class="mt-6 flex flex-col gap-2" @submit.prevent="submit">
++      <input v-if="data.tag" type="hidden" name="tag" :value="data.tag">
+       <label for="search" class="text-sm font-medium text-slate-700">Search</label>
+-      <input id="search" v-model="search" type="search" autocomplete="off" class="input">
+-    </div>
++      <div class="flex gap-2">
++        <input id="search" v-model="search" name="q" type="search" autocomplete="off" class="input flex-1">
++        <button type="submit" class="btn">Search</button>
++      </div>
++    </form>
+ 
+     <p v-if="data.tag" class="mt-4 flex items-center gap-3 text-sm">
+       <span>Tagged {{ data.tag }}</span>
+       <NuxtLink to="/" class="text-indigo-600 hover:underline">All notes</NuxtLink>
+     </p>
+ 
+-    <p v-if="(search.trim() || data.tag) && !visible.length" class="mt-4 text-slate-500">No notes match</p>
++    <p v-if="(search.trim() || route.query.q || data.tag) && !visible.length" class="mt-4 text-slate-500">No notes match</p>
+     <ul v-else class="mt-4 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+       <NoteItem v-for="note in visible" :key="note.id" :note="note" :editing="route.query.edit === note.id" />
+     </ul>
+diff --git a/server/api/notes/index.get.ts b/server/api/notes/index.get.ts
+index 1fdb388..5559712 100644
+--- a/server/api/notes/index.get.ts
++++ b/server/api/notes/index.get.ts
+@@ -3,13 +3,14 @@ import type { NotesPage } from '#shared/types/note'
+ export default defineEventHandler((event): NotesPage => {
+   const user = requireUser(event)
+   const notes = activeNotes(user)
+-  const tag = getQuery(event).tag
+-  const filter = typeof tag === 'string' && tag ? tag : null
++  const query = getQuery(event)
++  const tag = typeof query.tag === 'string' && query.tag ? query.tag : null
++  const q = typeof query.q === 'string' ? query.q.trim().toLowerCase() : ''
+   return {
+     user,
+     count: notes.length,
+-    notes: listed(notes).filter((note) => !filter || note.tags.includes(filter)),
+-    tag: filter,
++    notes: listed(notes).filter((note) => (!tag || note.tags.includes(tag)) && note.title.toLowerCase().includes(q)),
++    tag,
+     flash: takeFlash(event),
+   }
+ })
