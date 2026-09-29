@@ -1,0 +1,110 @@
+diff --git a/features/notes/model.ts b/features/notes/model.ts
+index 79870bd..b52b516 100644
+--- a/features/notes/model.ts
++++ b/features/notes/model.ts
+@@ -50,6 +50,13 @@ export const bulkNotes = endpoint({
+   output: 'response',
+ })
+ 
++export const exportAll = endpoint({
++  method: 'GET',
++  path: '/api/export',
++  input: z.object({}),
++  output: 'response',
++})
++
+ export const listNotes = query({
+   input: z.object({ tag: z.string(), q: z.string(), limit: z.number() }),
+   output: z.object({ notes: Notes, matching: z.number(), total: z.number() }),
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index 2d06f6a..38a4db2 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -1,5 +1,5 @@
+ import { type Child, contract, op, ui } from '@hozu/core'
+-import { archive, list, PAGE } from '../../routes.ts'
++import { archive, exportNotes, list, PAGE } from '../../routes.ts'
+ import { texts } from '../account/model.ts'
+ import {
+   Add,
+@@ -159,8 +159,9 @@ export const NotesBoard = ui.view({
+         ready: (t) =>
+           ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-8' }, [
+             ui.h1({ class: 'text-3xl font-bold' }, [t.notes]),
+-            ui.a({ href: ui.link(archive, null), class: 'text-sm text-indigo-700 underline' }, [
+-              'Archived notes',
++            ui.p({ class: 'flex gap-4 text-sm' }, [
++              ui.a({ href: ui.link(archive, null), class: 'text-indigo-700 underline' }, ['Archived notes']),
++              ui.a({ href: ui.link(exportNotes, null), class: 'text-indigo-700 underline' }, ['Export']),
+             ]),
+             ui.form(
+               {
+diff --git a/hozu.config.ts b/hozu.config.ts
+index 2cd8af0..1ff4705 100644
+--- a/hozu.config.ts
++++ b/hozu.config.ts
+@@ -5,14 +5,14 @@ import { me, Session } from './features/account/model.ts'
+ import { AccountBar, DeleteAccountPage, Login } from './features/account/views.ts'
+ import { notes } from './features/notes/feature.ts'
+ import { ArchiveBoard, NotesBoard } from './features/notes/views.ts'
+-import { accountDelete, admin, archive, list, login } from './routes.ts'
++import { accountDelete, admin, archive, exportNotes, list, login } from './routes.ts'
+ 
+ export default project({
+   schema: zodAdapter,
+   styles: new URL('./app.css', import.meta.url),
+   session: Session,
+   site: { url: 'http://localhost:3000', name: 'Notes', lang: 'en' },
+-  routes: { list, login, archive, admin, accountDelete },
++  routes: { list, login, archive, admin, accountDelete, exportNotes },
+   pages: [
+     ui.page(list, {
+       views: [AccountBar, NotesBoard],
+diff --git a/routes.ts b/routes.ts
+index 2a92933..fbe8b6d 100644
+--- a/routes.ts
++++ b/routes.ts
+@@ -20,3 +20,4 @@ export const login = route({
+ export const archive = route({ path: '/archive', params: null, search: null })
+ export const admin = route({ path: '/admin', params: null, search: null })
+ export const accountDelete = route({ path: '/account/delete', params: null, search: null })
++export const exportNotes = route({ path: '/api/export', params: null, search: null })
+diff --git a/server.ts b/server.ts
+index c7744a6..5c2ca9e 100644
+--- a/server.ts
++++ b/server.ts
+@@ -17,6 +17,7 @@ import {
+   archiveNote,
+   BAD_TAGS,
+   bulkNotes,
++  exportAll,
+   lastDeleted,
+   listArchived,
+   listNotes,
+@@ -114,6 +115,14 @@ export function createResolvers() {
+       const user = userOf(session)
+       return { signedIn: user !== null, notes: user ? store.active(user).map(copy) : [] }
+     }),
++    implement(exportAll, (_, { session }) => {
++      const user = userOf(session)
++      if (!user) return Response.json({ message: 'Sign in first' }, { status: 401 })
++      const notes = store
++        .all(user)
++        .map(({ title, pinned, archived, tags, createdAt }) => ({ title, pinned, archived, tags, createdAt }))
++      return Response.json({ user, notes })
++    }),
+     implement(listNotes, ({ tag, q, limit }, { session, fail }) => {
+       const user = userOf(session)
+       if (!user) return fail('Unauthorized', {})
+diff --git a/store.ts b/store.ts
+index e80f3d5..32898d6 100644
+--- a/store.ts
++++ b/store.ts
+@@ -40,6 +40,7 @@ export function createStore() {
+   const ordered = (list: Note[]) => [...list.filter((n) => n.pinned), ...list.filter((n) => !n.pinned)]
+   return {
+     of,
++    all: (user: string) => ordered(of(user)),
+     active: (user: string) => ordered(of(user).filter((n) => !n.archived)),
+     archived: (user: string) => of(user).filter((n) => n.archived),
+     find: (user: string, id: string, archived = false) =>
