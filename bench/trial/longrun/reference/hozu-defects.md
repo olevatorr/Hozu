@@ -49,3 +49,12 @@ Framework code was not changed. Each entry: symptom, minimal repro, workaround, 
   ("Method filter cannot run on a reference"); only the documented `(i) => i.id !== e.id` form over objects lowers
   (`op.removeWhere` needs a key).
 - **Workaround:** keep `{ id }` objects in the list (`selected: z.array(z.object({ id: z.string() }))`).
+
+## D6 — a new `failed` branch on an invoke is HZ018 on the transition that enters it, with identical was / now (step 14)
+- **Symptom:** adding `TooMany` to `addNote.errors` and `failed.TooMany` to the `adding` invoke changes the behaviour
+  hash of `idle/on/notes.Add/0` (it hashes the entered state's invoke). That transition only copies values, but a
+  contract (`adds`) covers it, so `--update-lock` refuses and HZ018 prints `was:` and `now:` identically (the summary
+  does not show the invoke's failure branches). The new contract for the branch (`adding` → failed) does not count.
+- **Repro:** `examples/notes`: add an error to `addNote`, handle it in `adding`, add a contract for that branch, `hozu check`.
+- **Workaround:** start the new contract from `idle` (`send Add`, then `failed addNote TooMany`) so it also covers
+  `idle/on/notes.Add/0`.

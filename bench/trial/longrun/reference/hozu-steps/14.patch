@@ -1,0 +1,135 @@
+diff --git a/features/notes/model.ts b/features/notes/model.ts
+index 3527bf2..a9c7858 100644
+--- a/features/notes/model.ts
++++ b/features/notes/model.ts
+@@ -82,7 +82,7 @@ export const undoDelete = mutation({
+ export const addNote = mutation({
+   input: NewNote,
+   output: Note,
+-  errors: { Duplicate: z.object({ title: z.string() }) },
++  errors: { Duplicate: z.object({ title: z.string() }), TooMany: z.object({}) },
+   invalidates: () => [notesTag()],
+ })
+ 
+@@ -152,6 +152,7 @@ export const addedDay = fn({
+ export const MAX_TITLE = 60
+ export const TOO_LONG = `Use at most ${MAX_TITLE} characters`
+ export const BAD_TAGS = 'Tags use letters, digits and -'
++export const TOO_MANY = 'Too many notes, try again in a minute'
+ export const DUPLICATE = 'You already have a note with this title'
+ export const GONE = 'This note no longer exists'
+ 
+@@ -239,6 +240,7 @@ export const notesMachine = machine({
+         done: [{ target: 'idle', assign: () => [op.set(ctx.draft, ''), op.set(ctx.draftTags, '')] }],
+         failed: {
+           Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] }],
++          TooMany: { target: 'idle', assign: () => [op.set(ctx.error, TOO_MANY)] },
+           Invalid: {
+             target: 'idle',
+             assign: (e) => {
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index cb9f7c2..7725b33 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -28,6 +28,7 @@ import {
+   SELECTED,
+   Search,
+   Select,
++  TOO_MANY,
+   togglePin,
+   Undo,
+   visible,
+@@ -300,6 +301,19 @@ export const rejectsDuplicate = contract(notesMachine, {
+   expect: { state: 'idle', changes: { error: DUPLICATE } },
+ })
+ 
++export const rejectsTooMany = contract(notesMachine, {
++  given: { state: 'idle' },
++  when: [
++    { send: Add, payload: { title: 'Milk', tags: '' } },
++    { failed: addNote, error: 'TooMany', data: {} },
++  ],
++  expect: {
++    state: 'idle',
++    changes: { draft: 'Milk', error: TOO_MANY },
++    effects: [{ effect: addNote, input: { title: 'Milk', tags: '' } }],
++  },
++})
++
+ export const rejectsInvalid = contract(notesMachine, {
+   given: { state: 'adding' },
+   when: [
+diff --git a/hozu.lock.json b/hozu.lock.json
+index f3218b3..685a414 100644
+--- a/hozu.lock.json
++++ b/hozu.lock.json
+@@ -73,6 +73,13 @@
+         },
+         "summary": "adding --failed addNote.Invalid--> idle · fields := { title: %coalesce({ a: error.fields.title, b: null }), tags: %coalesce({ a: error.fields.tags, b: null }) }"
+       },
++      "adding/invoke/failed/TooMany/0": {
++        "behavior": "1967c947fa3cf591",
++        "contracts": {
++          "rejectsTooMany": "ee43c2d25e9946eb"
++        },
++        "summary": "adding --failed addNote.TooMany--> idle · error := \"Too many notes, try again in a minute\""
++      },
+       "adding/invoke/failed/Unexpected/0": {
+         "behavior": "6606d67832662c72",
+         "contracts": {
+@@ -96,9 +103,10 @@
+         "summary": "archiving --failed archiveNote.Unexpected--> idle · error := error.message"
+       },
+       "idle/on/notes.Add/0": {
+-        "behavior": "321be2e5fae1fb36",
++        "behavior": "45295f764a6b3a2c",
+         "contracts": {
+-          "adds": "bd0698f816df682e"
++          "adds": "bd0698f816df682e",
++          "rejectsTooMany": "ee43c2d25e9946eb"
+         },
+         "summary": "idle --Add--> adding · draft := event.title, draftTags := event.tags, error := null, fields := {\"title\":null,\"tags\":null} · invoke addNote({ title: ctx.draft, tags: ctx.draftTags })"
+       },
+diff --git a/server.ts b/server.ts
+index 8dd8c60..465ce51 100644
+--- a/server.ts
++++ b/server.ts
+@@ -22,6 +22,8 @@ import {
+ import project from './hozu.config.ts'
+ import { createStore, type Note } from './store.ts'
+ 
++const RATE_LIMIT = 10
++const RATE_WINDOW = 60_000
+ const TAG = /^[a-z0-9-]{1,20}$/
+ const titleError = (clean: string) =>
+   !clean ? 'Write something' : clean.length > MAX_TITLE ? TOO_LONG : null
+@@ -95,6 +97,7 @@ export function createResolvers() {
+       if (!parsed.every((t) => TAG.test(t)))
+         return fail('Invalid', { message: BAD_TAGS, fields: { tags: BAD_TAGS } })
+       if (store.taken(session.user, clean)) return fail('Duplicate', { title: clean })
++      if (store.addedSince(session.user, Date.now() - RATE_WINDOW) >= RATE_LIMIT) return fail('TooMany', {})
+       store.forget(session.user)
+       return copy(store.add(session.user, clean, parsed))
+     }),
+diff --git a/store.ts b/store.ts
+index f98fdf8..cdbcfdf 100644
+--- a/store.ts
++++ b/store.ts
+@@ -28,6 +28,7 @@ export function createStore() {
+     ['bob', [seeded('n3', "Bob's secret", '2026-01-10T09:00:00.000Z')]],
+   ])
+   const deleted = new Map<string, { note: Note; at: number }>()
++  const added = new Map<string, number[]>()
+   let seq = 3
+   const of = (user: string) => {
+     const list = notes.get(user) ?? []
+@@ -52,7 +53,9 @@ export function createStore() {
+       deleted.delete(user)
+       return last.note
+     },
++    addedSince: (user: string, since: number) => (added.get(user) ?? []).filter((t) => t > since).length,
+     add: (user: string, title: string, tags: string[]) => {
++      added.set(user, [...(added.get(user) ?? []), Date.now()])
+       const note = seeded(`n${++seq}`, title, new Date().toISOString())
+       note.tags = tags
+       of(user).unshift(note)
