@@ -58,3 +58,14 @@ Framework code was not changed. Each entry: symptom, minimal repro, workaround, 
 - **Repro:** `examples/notes`: add an error to `addNote`, handle it in `adding`, add a contract for that branch, `hozu check`.
 - **Workaround:** start the new contract from `idle` (`send Add`, then `failed addNote TooMany`) so it also covers
   `idle/on/notes.Add/0`.
+
+## D7 — a page cannot answer 403 (step 16)
+- **Symptom:** a failing `head.query` sets the status to 303 (a listed redirect), 500 (`Unexpected`) or 404 (any
+  other declared error). There is no way to answer "signed in, but not allowed" with 403 from a page.
+- **Repro:** `ui.page(admin, { head: { query: adminUsers, redirects: { Unauthorized: login } } })` with
+  `errors: { Forbidden: … }`: a non-admin gets 404.
+- **Workaround:** `/admin` is an `endpoint({ method: 'GET', output: 'response' })` that returns its own HTML (403
+  `Not allowed`, or the table for `admin`) and 302 to `/login`; the route `admin` exists only so `ui.link(admin, null)`
+  can point at it. The hand-written page needs `@view-transition { navigation: auto }` itself, or Chrome logs
+  "Transition was aborted … opt-in disabled" when a list page link leads to it. `hozu check` does not notice a
+  missing endpoint resolver (HZ021 appears only when the server starts).

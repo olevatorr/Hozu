@@ -1,0 +1,139 @@
+diff --git a/features/account/model.ts b/features/account/model.ts
+index c5ab874..f334570 100644
+--- a/features/account/model.ts
++++ b/features/account/model.ts
+@@ -20,6 +20,10 @@ export const me = query({
+ 
+ export const landing = endpoint({ method: 'GET', path: '/', input: z.object({}), output: 'response' })
+ 
++export const adminPage = endpoint({ method: 'GET', path: '/admin', input: z.object({}), output: 'response' })
++
++export const ADMIN = 'admin'
++
+ export const signIn = mutation({ input: Name, output: z.object({}) })
+ export const signOut = mutation({ input: z.object({}), output: z.object({}) })
+ 
+diff --git a/features/account/views.ts b/features/account/views.ts
+index f567c4e..d2f19b6 100644
+--- a/features/account/views.ts
++++ b/features/account/views.ts
+@@ -1,6 +1,6 @@
+ import { contract, op, ui } from '@hozu/core'
+-import { login } from '../../routes.ts'
+-import { accountMachine, me, SignIn, SignOut, signIn, signOut } from './model.ts'
++import { admin, login } from '../../routes.ts'
++import { ADMIN, accountMachine, me, SignIn, SignOut, signIn, signOut } from './model.ts'
+ 
+ export const Login = ui.view({
+   machine: accountMachine,
+@@ -40,7 +40,11 @@ export const AccountBar = ui.view({
+           me,
+           {},
+           {
+-            ready: (user) => ui.p({}, ['Signed in as ', user.name]),
++            ready: (user) =>
++              ui.p({ class: 'flex gap-3' }, [
++                `Signed in as ${user.name}`,
++                user.name === ADMIN && ui.a({ href: ui.link(admin, null), class: 'underline' }, ['Admin']),
++              ]),
+             pending: null,
+             failed: { Unauthorized: () => ui.p({}, ['Signed out']), Unexpected: () => ui.p({}, ['']) },
+           },
+diff --git a/hozu.config.ts b/hozu.config.ts
+index 986655a..5b85e49 100644
+--- a/hozu.config.ts
++++ b/hozu.config.ts
+@@ -5,14 +5,14 @@ import { me, Session } from './features/account/model.ts'
+ import { AccountBar, Login } from './features/account/views.ts'
+ import { notes } from './features/notes/feature.ts'
+ import { ArchiveBoard, NotesBoard } from './features/notes/views.ts'
+-import { archive, list, login } from './routes.ts'
++import { admin, archive, list, login } from './routes.ts'
+ 
+ export default project({
+   schema: zodAdapter,
+   styles: new URL('./app.css', import.meta.url),
+   session: Session,
+   site: { url: 'http://localhost:3000', name: 'Notes', lang: 'en' },
+-  routes: { list, login, archive },
++  routes: { list, login, archive, admin },
+   pages: [
+     ui.page(list, {
+       views: [AccountBar, NotesBoard],
+diff --git a/routes.ts b/routes.ts
+index db211ac..b81407e 100644
+--- a/routes.ts
++++ b/routes.ts
+@@ -14,3 +14,4 @@ export const list = route({
+ })
+ export const login = route({ path: '/login', params: null, search: null })
+ export const archive = route({ path: '/archive', params: null, search: null })
++export const admin = route({ path: '/admin', params: null, search: null })
+diff --git a/server.ts b/server.ts
+index b929f5a..6f56931 100644
+--- a/server.ts
++++ b/server.ts
+@@ -1,5 +1,5 @@
+ import { resolvers } from '@hozu/data'
+-import { landing, me, signIn, signOut } from './features/account/model.ts'
++import { ADMIN, adminPage, landing, me, signIn, signOut } from './features/account/model.ts'
+ import {
+   addNote,
+   archiveNote,
+@@ -38,19 +38,37 @@ const parseTags = (raw: string) => [
+       .filter(Boolean),
+   ),
+ ]
++const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
++const html = (status: number, title: string, body: string) =>
++  new Response(
++    `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title><style>@view-transition{navigation:auto}</style></head><body><main>${body}</main></body></html>`,
++    { status, headers: { 'content-type': 'text/html; charset=utf-8' } },
++  )
++const redirect = (location: string) => new Response(null, { status: 302, headers: { location } })
+ const copy = (n: Note) => ({ ...n, tags: [...n.tags], sharedWith: [...n.sharedWith] })
+ 
+ export function createResolvers() {
+   const store = createStore()
+   return resolvers(project, (implement) => [
+     implement(me, (_, { session, fail }) => (session ? { name: session.user } : fail('Unauthorized', {}))),
+-    implement(
+-      landing,
+-      (_, { session }) =>
+-        new Response(null, { status: 302, headers: { location: session ? '/notes' : '/login' } }),
+-    ),
++    implement(landing, (_, { session }) => redirect(session ? '/notes' : '/login')),
++    implement(adminPage, (_, { session }) => {
++      if (!session) return redirect('/login')
++      if (session.user !== ADMIN) return html(403, 'Not allowed', '<h1>Not allowed</h1>')
++      const rows = store
++        .users()
++        .map(({ user, notes }) => `<tr><td>${escapeHtml(user)}</td><td>${notes}</td></tr>`)
++        .join('')
++      return html(
++        200,
++        'Admin',
++        `<h1>Admin</h1><table><thead><tr><th>User</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>`,
++      )
++    }),
+     implement(signIn, ({ name }, { setSession }) => {
+-      setSession({ user: name.trim().toLowerCase() })
++      const user = name.trim().toLowerCase()
++      store.join(user)
++      setSession({ user })
+       return {}
+     }),
+     implement(signOut, (_, { session, setSession }) => {
+diff --git a/store.ts b/store.ts
+index 9b71fab..7b60e5a 100644
+--- a/store.ts
++++ b/store.ts
+@@ -52,6 +52,8 @@ export function createStore() {
+           .filter((n) => !n.archived && n.sharedWith.includes(user))
+           .map((n) => ({ id: n.id, title: n.title, owner })),
+       ),
++    join: (user: string) => void of(user),
++    users: () => [...notes].map(([user, list]) => ({ user, notes: list.length })),
+     lastDeleted: (user: string) => deleted.get(user)?.note ?? null,
+     forget: (user: string) => deleted.delete(user),
+     undo: (user: string) => {
