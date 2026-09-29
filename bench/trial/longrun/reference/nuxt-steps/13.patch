@@ -1,0 +1,108 @@
+diff --git a/app/components/NoteItem.vue b/app/components/NoteItem.vue
+index 86f01ef..cc3f30c 100644
+--- a/app/components/NoteItem.vue
++++ b/app/components/NoteItem.vue
+@@ -2,6 +2,7 @@
+ import type { Note } from '#shared/types/note'
+ 
+ const props = defineProps<{ note: Note; editing: boolean }>()
++const selected = defineModel<string[]>('selected', { required: true })
+ const submit = useFormAction()
+ const { query, back } = useListQuery()
+ const action = (name: string) => `/api/notes/${props.note.id}/${name}`
+@@ -9,6 +10,8 @@ const action = (name: string) => `/api/notes/${props.note.id}/${name}`
+ 
+ <template>
+   <li class="flex flex-wrap items-center gap-3 px-4 py-3">
++    <input :id="`select-${note.id}`" v-model="selected" type="checkbox" name="ids" :value="note.id" form="bulk">
++    <label :for="`select-${note.id}`" class="sr-only">Select {{ note.title }}</label>
+     <form v-if="editing" method="post" :action="action('edit')" class="flex flex-1 gap-2" @submit.prevent="submit">
+       <input type="hidden" name="back" :value="back">
+       <label :for="`edit-${note.id}`" class="sr-only">Edit title</label>
+diff --git a/app/pages/notes.vue b/app/pages/notes.vue
+index 8905243..470d0e0 100644
+--- a/app/pages/notes.vue
++++ b/app/pages/notes.vue
+@@ -11,6 +11,16 @@ const title = ref('')
+ const tags = ref('')
+ const adding = ref(false)
+ const pending = ref<string | null>(null)
++const selected = ref<string[]>([])
++const hydrated = ref(false)
++onMounted(() => {
++  hydrated.value = true
++})
++
++async function bulk(event: SubmitEvent) {
++  await submit(event)
++  selected.value = []
++}
+ const search = ref('')
+ watch(
+   () => route.query.q,
+@@ -99,13 +109,20 @@ async function add(event: SubmitEvent) {
+ 
+     <p class="mt-4 text-sm text-slate-600">Showing {{ visible.length }} of {{ data.matching }}</p>
+ 
++    <form id="bulk" method="post" action="/api/notes/bulk" class="mt-4 flex items-center gap-2 text-sm" @submit.prevent="bulk">
++      <input type="hidden" name="back" :value="back">
++      <button type="submit" name="op" value="delete" class="btn">Delete selected</button>
++      <button type="submit" name="op" value="archive" class="btn">Archive selected</button>
++      <span v-if="hydrated" class="ml-auto text-slate-600">Selected: {{ selected.length }}</span>
++    </form>
++
+     <p v-if="(search.trim() || route.query.q || data.tag) && !visible.length" class="mt-4 text-slate-500">No notes match</p>
+     <ul v-else class="mt-4 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+       <li v-if="pending" class="flex items-center gap-3 px-4 py-3 text-slate-500">
+         <span class="flex-1">{{ pending }}</span>
+         <span class="text-xs italic">saving…</span>
+       </li>
+-      <NoteItem v-for="note in visible" :key="note.id" :note="note" :editing="route.query.edit === note.id" />
++      <NoteItem v-for="note in visible" :key="note.id" :note="note" :editing="route.query.edit === note.id" v-model:selected="selected" />
+     </ul>
+ 
+     <NuxtLink
+diff --git a/server/api/notes/bulk.post.ts b/server/api/notes/bulk.post.ts
+new file mode 100644
+index 0000000..b33498c
+--- /dev/null
++++ b/server/api/notes/bulk.post.ts
+@@ -0,0 +1,6 @@
++export default defineUserAction(({ form, user }) => {
++  const ids = fields(form, 'ids')
++  if (field(form, 'op') === 'delete') deleteNotes(user, ids)
++  if (field(form, 'op') === 'archive') for (const id of ids) archiveNote(user, id, true)
++  return backTo(form)
++})
+diff --git a/server/utils/action.ts b/server/utils/action.ts
+index 75c3a1c..ecb4696 100644
+--- a/server/utils/action.ts
++++ b/server/utils/action.ts
+@@ -8,6 +8,8 @@ export const field = (form: FormBody, name: string) => {
+   return typeof value === 'string' ? value : ''
+ }
+ 
++export const fields = (form: FormBody, name: string) => [form[name] ?? []].flat()
++
+ export function backTo(form: FormBody, fallback = '/notes'): string {
+   const back = field(form, 'back')
+   return back.startsWith('/') && !back.startsWith('//') ? back : fallback
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 65eca7e..da4b584 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -100,6 +100,14 @@ export function deleteNote(user: string, id: string): void {
+   lastDeleted.set(user, { note, index })
+ }
+ 
++export function deleteNotes(user: string, ids: string[]): void {
++  const notes = notesOf(user)
++  const doomed = new Set(ids.map((id) => activeNote(user, id)).filter((note) => note !== undefined))
++  if (!doomed.size) return
++  notes.splice(0, notes.length, ...notes.filter((note) => !doomed.has(note)))
++  clearUndo(user)
++}
++
+ export const deletedTitle = (user: string) => lastDeleted.get(user)?.note.title ?? null
+ 
+ export function undoDelete(user: string): void {
