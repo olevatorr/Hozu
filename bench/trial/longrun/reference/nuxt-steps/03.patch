@@ -1,0 +1,53 @@
+diff --git a/app/pages/index.vue b/app/pages/index.vue
+index 14c5070..190017d 100644
+--- a/app/pages/index.vue
++++ b/app/pages/index.vue
+@@ -59,7 +59,10 @@ async function add(event: SubmitEvent) {
+     <p v-if="search.trim() && !visible.length" class="mt-4 text-slate-500">No notes match</p>
+     <ul v-else class="mt-4 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+       <li v-for="note in visible" :key="note.id" class="flex items-center gap-3 px-4 py-3">
+-        <span class="flex-1">{{ note.text }}</span>
++        <div class="flex flex-1 flex-col">
++          <span>{{ note.text }}</span>
++          <span class="text-xs text-slate-500">Added <time :datetime="note.createdAt">{{ note.createdAt.slice(0, 10) }}</time></span>
++        </div>
+         <span v-if="note.pinned" class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">pinned</span>
+         <form method="post" :action="`/api/notes/${note.id}/pin`" @submit.prevent="submit">
+           <input type="hidden" name="back" :value="route.fullPath">
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 7a83b21..1fe7bbf 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -1,12 +1,16 @@
+ import type { Note } from '#shared/types/note'
+ 
+-
+ let nextId = 1
+-const newNote = (text: string): Note => ({ id: `n${nextId++}`, text, pinned: false })
++const newNote = (text: string, createdAt = new Date().toISOString()): Note => ({
++  id: `n${nextId++}`,
++  text,
++  pinned: false,
++  createdAt,
++})
+ 
+ const notesByUser = new Map<string, Note[]>([
+-  ['ada', [newNote('Buy milk'), newNote('Call Bob')]],
+-  ['bob', [newNote("Bob's secret")]],
++  ['ada', [newNote('Buy milk', '2026-01-15T09:00:00.000Z'), newNote('Call Bob', '2026-01-14T09:00:00.000Z')]],
++  ['bob', [newNote("Bob's secret", '2026-01-10T09:00:00.000Z')]],
+ ])
+ 
+ export function notesOf(user: string): Note[] {
+diff --git a/shared/types/note.ts b/shared/types/note.ts
+index a414de4..b0bf7b9 100644
+--- a/shared/types/note.ts
++++ b/shared/types/note.ts
+@@ -2,6 +2,7 @@ export interface Note {
+   id: string
+   text: string
+   pinned: boolean
++  createdAt: string
+ }
+ 
+ export interface NotesPage {
