@@ -1,0 +1,99 @@
+diff --git a/features/notes/model.ts b/features/notes/model.ts
+index fe2a200..14ffa7c 100644
+--- a/features/notes/model.ts
++++ b/features/notes/model.ts
+@@ -1,7 +1,7 @@
+ import { endpoint, event, fn, invoke, machine, mutation, on, op, query, tag } from '@hozu/core'
+ import { z } from 'zod'
+ 
+-export const Note = z.object({ id: z.string(), text: z.string(), pinned: z.boolean() })
++export const Note = z.object({ id: z.string(), text: z.string(), pinned: z.boolean(), createdAt: z.string() })
+ const Notes = z.array(Note)
+ const NoteKey = z.object({ id: z.string() })
+ const NewNote = z.object({ text: z.string().min(1, 'Write something') })
+@@ -71,6 +71,12 @@ export const total = fn({
+   impl: ({ items }) => items.length,
+ })
+ 
++export const addedDay = fn({
++  input: z.object({ at: z.string() }),
++  output: z.string(),
++  impl: ({ at }) => at.slice(0, 10),
++})
++
+ export const MAX_TEXT = 60
+ export const TOO_LONG = `Use at most ${MAX_TEXT} characters`
+ export const DUPLICATE = 'You already have this note'
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index d314c39..2a345a1 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -1,6 +1,7 @@
+ import { contract, op, ui } from '@hozu/core'
+ import {
+   Add,
++  addedDay,
+   addNote,
+   Draft,
+   DUPLICATE,
+@@ -71,6 +72,10 @@ export const NotesBoard = ui.view({
+                     ui.each(visible({ items: notes, query: ctx.query }), 'id', (note) =>
+                       ui.li({ class: 'flex items-center gap-3 px-4 py-3' }, [
+                         ui.span({ class: 'flex-1' }, [note.text]),
++                        ui.time({ datetime: note.createdAt, class: 'text-xs text-slate-500' }, [
++                          'Added ',
++                          addedDay({ at: note.createdAt }),
++                        ]),
+                         ui.if(
+                           op.eq(note.pinned, true),
+                           [ui.span({ class: 'text-xs text-amber-700' }, ['pinned'])],
+@@ -94,7 +99,12 @@ export const NotesBoard = ui.view({
+     ]),
+ })
+ 
+-const note = (id: string, text: string, pinned = false) => ({ id, text, pinned })
++const note = (id: string, text: string, pinned = false) => ({
++  id,
++  text,
++  pinned,
++  createdAt: '2026-09-29T08:15:00.000Z',
++})
+ 
+ export const typesDraft = contract(notesMachine, {
+   given: { state: 'idle' },
+diff --git a/server.ts b/server.ts
+index db804cb..2b2b3e8 100644
+--- a/server.ts
++++ b/server.ts
+@@ -15,6 +15,7 @@ interface Note {
+   id: string
+   text: string
+   pinned: boolean
++  createdAt: string
+ }
+ 
+ export function createResolvers() {
+@@ -22,11 +23,11 @@ export function createResolvers() {
+     [
+       'ada',
+       [
+-        { id: 'n1', text: 'Buy milk', pinned: false },
+-        { id: 'n2', text: 'Call Bob', pinned: false },
++        { id: 'n1', text: 'Buy milk', pinned: false, createdAt: '2026-01-15T09:00:00.000Z' },
++        { id: 'n2', text: 'Call Bob', pinned: false, createdAt: '2026-01-14T09:00:00.000Z' },
+       ],
+     ],
+-    ['bob', [{ id: 'n3', text: "Bob's secret", pinned: false }]],
++    ['bob', [{ id: 'n3', text: "Bob's secret", pinned: false, createdAt: '2026-01-10T09:00:00.000Z' }]],
+   ])
+   let seq = 3
+   const notesOf = (user: string) => {
+@@ -62,7 +63,7 @@ export function createResolvers() {
+       const list = notesOf(session.user)
+       if (list.some((n) => n.text.toLowerCase() === clean.toLowerCase()))
+         return fail('Duplicate', { text: clean })
+-      const note = { id: `n${++seq}`, text: clean, pinned: false }
++      const note = { id: `n${++seq}`, text: clean, pinned: false, createdAt: new Date().toISOString() }
+       list.unshift(note)
+       return { ...note }
+     }),
