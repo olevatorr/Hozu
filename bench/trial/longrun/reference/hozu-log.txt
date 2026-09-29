@@ -1,3 +1,4 @@
+$ bench/trial/longrun/verify-reference.sh hozu 4701
 step 0: 15/15 new 15/15 regression 0/0 js {"login":22708,"list":22708}
 step 1: 20/20 new 5/5 regression 15/15 js {"login":22708,"list":22708}
 step 2: 22/22 new 2/2 regression 20/20 js {"login":22708,"list":22708}
@@ -19,3 +20,4 @@ step 17: 60/60 new 2/2 regression 58/58 js {"login":19865,"list":23639}
 step 18: 62/62 new 2/2 regression 60/60 js {"login":19865,"list":23639}
 step 19: 64/64 new 2/2 regression 62/62 js {"login":19865,"list":23639}
 step 20: 61/61 new 1/1 regression 60/60 js {"login":19865,"list":23639}
+exit=0
