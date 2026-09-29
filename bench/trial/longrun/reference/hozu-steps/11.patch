@@ -1,0 +1,163 @@
+diff --git a/features/notes/model.ts b/features/notes/model.ts
+index df3f222..489c59f 100644
+--- a/features/notes/model.ts
++++ b/features/notes/model.ts
+@@ -35,8 +35,8 @@ export const notesApi = endpoint({
+ })
+ 
+ export const listNotes = query({
+-  input: z.object({}),
+-  output: Notes,
++  input: z.object({ tag: z.string(), q: z.string(), limit: z.number() }),
++  output: z.object({ notes: Notes, matching: z.number(), total: z.number() }),
+   errors: { Unauthorized: z.object({}) },
+   scope: 'user',
+   freshness: 'static',
+@@ -109,28 +109,26 @@ export const renameNote = mutation({
+   invalidates: () => [notesTag()],
+ })
+ 
+-const Visible = z.object({ items: Notes, query: z.string(), tag: z.string() })
+-type VisibleT = z.infer<typeof Visible>
++const Visible = z.object({ items: Notes, query: z.string() })
+ 
+-const matches = (n: NoteT, { query, tag }: VisibleT) =>
+-  (tag === '' || n.tags.includes(tag)) && n.title.toLowerCase().includes(query.trim().toLowerCase())
++export const matches = (n: NoteT, query: string) => n.title.toLowerCase().includes(query.trim().toLowerCase())
+ 
+ export const visible = fn({
+   input: Visible,
+   output: Notes,
+-  impl: (v) => v.items.filter((n) => matches(n, v)),
++  impl: ({ items, query }) => items.filter((n) => matches(n, query)),
+ })
+ 
+ export const noMatch = fn({
+   input: Visible,
+   output: z.boolean(),
+-  impl: (v) => !v.items.some((n) => matches(n, v)),
++  impl: ({ items, query }) => !items.some((n) => matches(n, query)),
+ })
+ 
+-export const total = fn({
+-  input: z.object({ items: Notes }),
++export const listed = fn({
++  input: Visible,
+   output: z.number(),
+-  impl: ({ items }) => items.length,
++  impl: ({ items, query }) => items.filter((n) => matches(n, query)).length,
+ })
+ 
+ export const addedDay = fn({
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index 4baf2dd..65f491e 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -1,5 +1,5 @@
+ import { type Child, contract, op, ui } from '@hozu/core'
+-import { archive, list } from '../../routes.ts'
++import { archive, list, PAGE } from '../../routes.ts'
+ import {
+   Add,
+   Archive,
+@@ -12,6 +12,7 @@ import {
+   GONE,
+   lastDeleted,
+   listArchived,
++  listed,
+   listNotes,
+   MAX_TITLE,
+   type NoteT,
+@@ -24,7 +25,6 @@ import {
+   Save,
+   Search,
+   togglePin,
+-  total,
+   Undo,
+   visible,
+ } from './model.ts'
+@@ -163,18 +163,29 @@ export const NotesBoard = ui.view({
+         ]),
+       ui.query(
+         listNotes,
+-        {},
++        { tag: search.tag, q: search.q, limit: search.limit },
+         {
+-          ready: (notes) =>
++          ready: (page) =>
+             ui.section({ class: 'space-y-3' }, [
+-              ui.p({ class: 'text-sm text-slate-600' }, ['Notes: ', total({ items: notes })]),
+-              noMatch({ items: notes, query: ctx.query, tag: search.tag })
++              ui.p({ class: 'text-sm text-slate-600' }, ['Notes: ', page.total]),
++              ui.p({ class: 'text-sm text-slate-600' }, [
++                `Showing ${listed({ items: page.notes, query: ctx.query })} of ${page.matching}`,
++              ]),
++              noMatch({ items: page.notes, query: ctx.query })
+                 ? ui.p({ class: 'text-slate-500' }, ['No notes match'])
+                 : ui.ul({ class: 'divide-y rounded border' }, [
+-                    ui.each(visible({ items: notes, query: ctx.query, tag: search.tag }), 'id', (note) =>
++                    ui.each(visible({ items: page.notes, query: ctx.query }), 'id', (note) =>
+                       noteItem(note, ctx.editing),
+                     ),
+                   ]),
++              page.notes.length < page.matching &&
++                ui.a(
++                  {
++                    href: ui.link(list, null, { tag: search.tag, q: search.q, limit: search.limit + PAGE }),
++                    class: 'block text-center text-indigo-700 underline',
++                  },
++                  ['Load more'],
++                ),
+             ]),
+           pending: ui.p({}, ['Loading…']),
+           failed: {
+diff --git a/routes.ts b/routes.ts
+index e177c47..db211ac 100644
+--- a/routes.ts
++++ b/routes.ts
+@@ -1,10 +1,16 @@
+ import { route } from '@hozu/core'
+ import { z } from 'zod'
+ 
++export const PAGE = 5
++
+ export const list = route({
+   path: '/notes',
+   params: null,
+-  search: z.object({ tag: z.string().default(''), q: z.string().default('') }),
++  search: z.object({
++    tag: z.string().default(''),
++    q: z.string().default(''),
++    limit: z.number().default(PAGE),
++  }),
+ })
+ export const login = route({ path: '/login', params: null, search: null })
+ export const archive = route({ path: '/archive', params: null, search: null })
+diff --git a/server.ts b/server.ts
+index 8496086..36bd54a 100644
+--- a/server.ts
++++ b/server.ts
+@@ -8,6 +8,7 @@ import {
+   listArchived,
+   listNotes,
+   MAX_TITLE,
++  matches,
+   notesApi,
+   removeNote,
+   renameNote,
+@@ -54,9 +55,12 @@ export function createResolvers() {
+       signedIn: session !== null,
+       notes: session ? store.active(session.user).map(copy) : [],
+     })),
+-    implement(listNotes, (_, { session, fail }) =>
+-      session ? store.active(session.user).map(copy) : fail('Unauthorized', {}),
+-    ),
++    implement(listNotes, ({ tag, q, limit }, { session, fail }) => {
++      if (!session) return fail('Unauthorized', {})
++      const all = store.active(session.user)
++      const selected = all.filter((n) => (tag === '' || n.tags.includes(tag)) && matches(n, q))
++      return { notes: selected.slice(0, limit).map(copy), matching: selected.length, total: all.length }
++    }),
+     implement(listArchived, (_, { session, fail }) =>
+       session ? store.archived(session.user).map(copy) : fail('Unauthorized', {}),
+     ),
