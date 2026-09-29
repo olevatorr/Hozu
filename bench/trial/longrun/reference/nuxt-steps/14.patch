@@ -1,0 +1,35 @@
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index da4b584..62d5e7f 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -44,13 +44,28 @@ function titleError(notes: Note[], title: string, self?: Note): string | null {
+   return null
+ }
+ 
++const RATE_LIMIT = 10
++const RATE_WINDOW_MS = 60_000
++const addedAt = new Map<string, number[]>()
++
++function rateLimited(user: string, now: number): boolean {
++  const recent = (addedAt.get(user) ?? []).filter((at) => now - at < RATE_WINDOW_MS)
++  addedAt.set(user, recent)
++  return recent.length >= RATE_LIMIT
++}
++
+ export function addNote(user: string, raw: string, rawTags: string): string | null {
+   const title = raw.trim()
+   const notes = notesOf(user)
+   const tags = parseTags(rawTags)
+-  const error = titleError(notes, title) ?? (tags ? null : 'Tags use letters, digits and -')
++  const now = Date.now()
++  const error =
++    titleError(notes, title) ??
++    (tags ? null : 'Tags use letters, digits and -') ??
++    (rateLimited(user, now) ? 'Too many notes, try again in a minute' : null)
+   if (!error && tags) {
+-    notes.unshift(newNote(title, undefined, tags))
++    notes.unshift(newNote(title, new Date(now).toISOString(), tags))
++    addedAt.get(user)?.push(now)
+     clearUndo(user)
+   }
+   return error
