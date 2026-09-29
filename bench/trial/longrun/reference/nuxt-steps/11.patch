@@ -1,0 +1,74 @@
+diff --git a/app/pages/notes.vue b/app/pages/notes.vue
+index 8d377db..9761228 100644
+--- a/app/pages/notes.vue
++++ b/app/pages/notes.vue
+@@ -2,7 +2,7 @@
+ import type { NotesPage } from '#shared/types/note'
+ 
+ const route = useRoute()
+-const { back } = useListQuery()
++const { query, back } = useListQuery()
+ const { data, error } = await useFetch<NotesPage>('/api/notes', { query: computed(() => route.query) })
+ if (error.value?.statusCode === 401) await navigateTo('/login')
+ 
+@@ -90,9 +90,19 @@ async function add(event: SubmitEvent) {
+       <NuxtLink to="/notes" class="text-indigo-600 hover:underline">All notes</NuxtLink>
+     </p>
+ 
++    <p class="mt-4 text-sm text-slate-600">Showing {{ visible.length }} of {{ data.matching }}</p>
++
+     <p v-if="(search.trim() || route.query.q || data.tag) && !visible.length" class="mt-4 text-slate-500">No notes match</p>
+     <ul v-else class="mt-4 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+       <NoteItem v-for="note in visible" :key="note.id" :note="note" :editing="route.query.edit === note.id" />
+     </ul>
++
++    <NuxtLink
++      v-if="data.notes.length < data.matching"
++      :to="{ path: '/notes', query: { ...query, page: data.page + 1 } }"
++      class="btn mt-4 inline-block"
++    >
++      Load more
++    </NuxtLink>
+   </main>
+ </template>
+diff --git a/server/api/notes/index.get.ts b/server/api/notes/index.get.ts
+index 182b339..2ecea27 100644
+--- a/server/api/notes/index.get.ts
++++ b/server/api/notes/index.get.ts
+@@ -6,10 +6,14 @@ export default defineEventHandler((event): NotesPage => {
+   const query = getQuery(event)
+   const tag = typeof query.tag === 'string' && query.tag ? query.tag : null
+   const q = typeof query.q === 'string' ? query.q.trim().toLowerCase() : ''
++  const page = Math.max(1, Number.parseInt(String(query.page ?? ''), 10) || 1)
++  const matching = listed(notes).filter((note) => (!tag || note.tags.includes(tag)) && note.title.toLowerCase().includes(q))
+   return {
+     user,
+     count: notes.length,
+-    notes: listed(notes).filter((note) => (!tag || note.tags.includes(tag)) && note.title.toLowerCase().includes(q)),
++    notes: matching.slice(0, page * PAGE_SIZE),
++    matching: matching.length,
++    page,
+     tag,
+     deleted: deletedTitle(user),
+     flash: takeFlash(event),
+diff --git a/shared/types/note.ts b/shared/types/note.ts
+index d3eb82d..5297c1e 100644
+--- a/shared/types/note.ts
++++ b/shared/types/note.ts
+@@ -11,6 +11,8 @@ export interface NotesPage {
+   user: string
+   count: number
+   notes: Note[]
++  matching: number
++  page: number
+   tag: string | null
+   deleted: string | null
+   flash: string | null
+diff --git a/shared/utils/limits.ts b/shared/utils/limits.ts
+index b63fb0d..d2bd1f3 100644
+--- a/shared/utils/limits.ts
++++ b/shared/utils/limits.ts
+@@ -1 +1,3 @@
+ export const NOTE_MAX = 60
++
++export const PAGE_SIZE = 5
