@@ -1,0 +1,20 @@
+{
+  "name": "reference-hozu-notes",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "hozu check",
+    "serve": "node --import @hozu/transform/register serve.ts"
+  },
+  "dependencies": {
+    "@hozu/adapter-node": "link:../../../../../packages/adapter-node",
+    "@hozu/cli": "link:../../../../../packages/cli",
+    "@hozu/core": "link:../../../../../packages/core",
+    "@hozu/css": "link:../../../../../packages/css",
+    "@hozu/data": "link:../../../../../packages/data",
+    "@hozu/runtime-server": "link:../../../../../packages/runtime-server",
+    "@hozu/schema-zod": "link:../../../../../packages/schema-zod",
+    "@hozu/transform": "link:../../../../../packages/transform",
+    "zod": "4.6.5"
+  }
+}
