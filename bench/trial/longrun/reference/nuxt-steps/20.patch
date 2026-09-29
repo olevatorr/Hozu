@@ -1,0 +1,262 @@
+diff --git a/app/components/NoteItem.vue b/app/components/NoteItem.vue
+index 6095d88..19028f0 100644
+--- a/app/components/NoteItem.vue
++++ b/app/components/NoteItem.vue
+@@ -25,9 +25,6 @@ const action = (name: string) => `/api/notes/${props.note.id}/${name}`
+     </form>
+     <div v-else class="flex flex-1 flex-col">
+       <span>{{ note.title }}</span>
+-      <span v-if="note.tags.length" class="flex gap-2 text-sm">
+-        <NuxtLink v-for="tag in note.tags" :key="tag" :to="{ path: '/notes', query: { tag } }" class="text-indigo-600 hover:underline">#{{ tag }}</NuxtLink>
+-      </span>
+       <span class="text-xs text-slate-500">{{ t('added') }} <time :datetime="note.createdAt">{{ note.createdAt.slice(0, 10) }}</time></span>
+     </div>
+     <span v-if="note.pinned" class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">{{ t('pinned') }}</span>
+diff --git a/app/pages/notes.vue b/app/pages/notes.vue
+index 09def47..d8556d4 100644
+--- a/app/pages/notes.vue
++++ b/app/pages/notes.vue
+@@ -9,7 +9,6 @@ if (error.value?.statusCode === 401) await navigateTo('/login')
+ const submit = useFormAction()
+ const { t } = useI18n()
+ const title = ref('')
+-const tags = ref('')
+ const adding = ref(false)
+ const pending = ref<string | null>(null)
+ const selected = ref<string[]>([])
+@@ -39,17 +38,13 @@ const visible = computed(() => {
+ async function add(event: SubmitEvent) {
+   if (adding.value) return
+   adding.value = true
+-  const typed = { title: title.value, tags: tags.value }
+-  pending.value = typed.title.trim()
++  const typed = title.value
++  pending.value = typed.trim()
+   const sent = submit(event)
+   title.value = ''
+-  tags.value = ''
+   try {
+     await sent
+-    if (data.value?.flash) {
+-      title.value = typed.title
+-      tags.value = typed.tags
+-    }
++    if (data.value?.flash) title.value = typed
+   } finally {
+     pending.value = null
+     adding.value = false
+@@ -94,16 +89,13 @@ async function add(event: SubmitEvent) {
+     <form method="post" action="/api/notes" class="mt-4 flex flex-col gap-2" @submit.prevent="add">
+       <input type="hidden" name="back" :value="back">
+       <label for="title" class="text-sm font-medium text-slate-700">{{ t('title') }}</label>
+-      <div class="flex flex-wrap gap-2">
++      <div class="flex gap-2">
+         <input id="title" v-model="title" name="title" type="text" required :maxlength="NOTE_MAX" autocomplete="off" class="input flex-1">
+-        <label for="tags" class="sr-only">{{ t('tags') }}</label>
+-        <input id="tags" v-model="tags" name="tags" type="text" :placeholder="t('tagsPlaceholder')" autocomplete="off" class="input">
+         <button type="submit" :disabled="adding" class="btn-primary">{{ t('add') }}</button>
+       </div>
+     </form>
+ 
+     <form method="get" action="/notes" class="mt-6 flex flex-col gap-2" @submit.prevent="submit">
+-      <input v-if="data.tag" type="hidden" name="tag" :value="data.tag">
+       <label for="search" class="text-sm font-medium text-slate-700">{{ t('search') }}</label>
+       <div class="flex gap-2">
+         <input id="search" v-model="search" name="q" type="search" autocomplete="off" class="input flex-1">
+@@ -111,11 +103,6 @@ async function add(event: SubmitEvent) {
+       </div>
+     </form>
+ 
+-    <p v-if="data.tag" class="mt-4 flex items-center gap-3 text-sm">
+-      <span>{{ t('tagged', { tag: data.tag }) }}</span>
+-      <NuxtLink to="/notes" class="text-indigo-600 hover:underline">{{ t('allNotes') }}</NuxtLink>
+-    </p>
+-
+     <p class="mt-4 text-sm text-slate-600">{{ t('showing', { n: visible.length, m: data.matching }) }}</p>
+ 
+     <form id="bulk" method="post" action="/api/notes/bulk" class="mt-4 flex items-center gap-2 text-sm" @submit.prevent="bulk">
+@@ -125,7 +112,7 @@ async function add(event: SubmitEvent) {
+       <span v-if="hydrated" class="ml-auto text-slate-600">{{ t('selected', { n: selected.length }) }}</span>
+     </form>
+ 
+-    <p v-if="(search.trim() || route.query.q || data.tag) && !visible.length" class="mt-4 text-slate-500">{{ t('noMatch') }}</p>
++    <p v-if="(search.trim() || route.query.q) && !visible.length" class="mt-4 text-slate-500">{{ t('noMatch') }}</p>
+     <ul v-else class="mt-4 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+       <li v-if="pending" class="flex items-center gap-3 px-4 py-3 text-slate-500">
+         <span class="flex-1">{{ pending }}</span>
+diff --git a/server/api/export.get.ts b/server/api/export.get.ts
+index 8974f16..601cf63 100644
+--- a/server/api/export.get.ts
++++ b/server/api/export.get.ts
+@@ -4,6 +4,6 @@ export default defineEventHandler((event): NotesExport => {
+   const user = requireUser(event)
+   return {
+     user,
+-    notes: listed(notesOf(user)).map(({ title, pinned, archived, tags, createdAt }) => ({ title, pinned, archived, tags, createdAt })),
++    notes: listed(notesOf(user)).map(({ title, pinned, archived, createdAt }) => ({ title, pinned, archived, createdAt })),
+   }
+ })
+diff --git a/server/api/notes/index.get.ts b/server/api/notes/index.get.ts
+index 3e3d1a5..5b06b76 100644
+--- a/server/api/notes/index.get.ts
++++ b/server/api/notes/index.get.ts
+@@ -4,10 +4,9 @@ export default defineEventHandler((event): NotesPage => {
+   const user = requireUser(event)
+   const notes = activeNotes(user)
+   const query = getQuery(event)
+-  const tag = typeof query.tag === 'string' && query.tag ? query.tag : null
+   const q = typeof query.q === 'string' ? query.q.trim().toLowerCase() : ''
+   const page = Math.max(1, Number.parseInt(String(query.page ?? ''), 10) || 1)
+-  const matching = listed(notes).filter((note) => (!tag || note.tags.includes(tag)) && note.title.toLowerCase().includes(q))
++  const matching = listed(notes).filter((note) => note.title.toLowerCase().includes(q))
+   return {
+     user,
+     admin: isAdmin(user),
+@@ -15,7 +14,6 @@ export default defineEventHandler((event): NotesPage => {
+     notes: matching.slice(0, page * PAGE_SIZE),
+     matching: matching.length,
+     page,
+-    tag,
+     deleted: deletedTitle(user),
+     shared: sharedWithMe(user),
+     flash: takeFlash(event),
+diff --git a/server/api/notes/index.post.ts b/server/api/notes/index.post.ts
+index d8714de..371b2c4 100644
+--- a/server/api/notes/index.post.ts
++++ b/server/api/notes/index.post.ts
+@@ -1,4 +1,4 @@
+ export default defineUserAction(({ event, form, user }) => {
+-  setFlash(event, addNote(user, field(form, 'title'), field(form, 'tags')))
++  setFlash(event, addNote(user, field(form, 'title')))
+   return backTo(form)
+ })
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 6983df9..9718496 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -2,25 +2,17 @@ import type { Note, SharedNote } from '#shared/types/note'
+ import type { MessageKey } from '#shared/utils/messages'
+ 
+ let nextId = 1
+-const newNote = (title: string, createdAt = new Date().toISOString(), tags: string[] = []): Note => ({
++const newNote = (title: string, createdAt = new Date().toISOString()): Note => ({
+   id: `n${nextId++}`,
+   title,
+   pinned: false,
+   createdAt,
+-  tags,
+   archived: false,
+   sharedWith: [],
+ })
+ 
+ export const isValidName = (name: string) => /^\p{L}{2,20}$/u.test(name)
+ 
+-const TAG = /^[\p{L}\p{N}-]{1,20}$/u
+-
+-export function parseTags(raw: string): string[] | null {
+-  const tags = [...new Set(raw.split(',').map((tag) => tag.trim().toLowerCase()).filter(Boolean))]
+-  return tags.every((tag) => TAG.test(tag)) ? tags : null
+-}
+-
+ const notesByUser = new Map<string, Note[]>([
+   ['ada', [newNote('Buy milk', '2026-01-15T09:00:00.000Z'), newNote('Call Bob', '2026-01-14T09:00:00.000Z')]],
+   ['bob', [newNote("Bob's secret", '2026-01-10T09:00:00.000Z')]],
+@@ -58,17 +50,13 @@ function rateLimited(user: string, now: number): boolean {
+   return recent.length >= RATE_LIMIT
+ }
+ 
+-export function addNote(user: string, raw: string, rawTags: string): MessageKey | null {
++export function addNote(user: string, raw: string): MessageKey | null {
+   const title = raw.trim()
+   const notes = notesOf(user)
+-  const tags = parseTags(rawTags)
+   const now = Date.now()
+-  const error =
+-    titleError(notes, title) ??
+-    (tags ? null : 'badTags') ??
+-    (rateLimited(user, now) ? 'rateLimited' : null)
+-  if (!error && tags) {
+-    notes.unshift(newNote(title, new Date(now).toISOString(), tags))
++  const error = titleError(notes, title) ?? (rateLimited(user, now) ? 'rateLimited' : null)
++  if (!error) {
++    notes.unshift(newNote(title, new Date(now).toISOString()))
+     addedAt.get(user)?.push(now)
+     clearUndo(user)
+   }
+diff --git a/shared/types/note.ts b/shared/types/note.ts
+index e9891c8..924941e 100644
+--- a/shared/types/note.ts
++++ b/shared/types/note.ts
+@@ -5,7 +5,6 @@ export interface Note {
+   title: string
+   pinned: boolean
+   createdAt: string
+-  tags: string[]
+   archived: boolean
+   sharedWith: string[]
+ }
+@@ -23,7 +22,6 @@ export interface NotesPage {
+   notes: Note[]
+   matching: number
+   page: number
+-  tag: string | null
+   deleted: string | null
+   shared: SharedNote[]
+   flash: MessageKey | null
+@@ -41,7 +39,7 @@ export interface AdminPage {
+   users: { user: string; notes: number }[]
+ }
+ 
+-export type ExportedNote = Pick<Note, 'title' | 'pinned' | 'archived' | 'tags' | 'createdAt'>
++export type ExportedNote = Pick<Note, 'title' | 'pinned' | 'archived' | 'createdAt'>
+ 
+ export interface NotesExport {
+   user: string
+diff --git a/shared/utils/messages.ts b/shared/utils/messages.ts
+index 7bf69c2..1248484 100644
+--- a/shared/utils/messages.ts
++++ b/shared/utils/messages.ts
+@@ -15,13 +15,9 @@ const en = {
+   deleted: 'Deleted "{title}"',
+   undo: 'Undo',
+   title: 'Title',
+-  tags: 'Tags',
+-  tagsPlaceholder: 'Tags: work, home',
+   add: 'Add',
+   search: 'Search',
+   searchButton: 'Search',
+-  tagged: 'Tagged {tag}',
+-  allNotes: 'All notes',
+   showing: 'Showing {n} of {m}',
+   deleteSelected: 'Delete selected',
+   archiveSelected: 'Archive selected',
+@@ -49,7 +45,6 @@ const en = {
+   titleRequired: 'Write a title first',
+   tooLong: `Use at most ${NOTE_MAX} characters`,
+   duplicate: 'You already have a note with this title',
+-  badTags: 'Tags use letters, digits and -',
+   rateLimited: 'Too many notes, try again in a minute',
+   badName: 'A name is 2–20 letters',
+   shareSelf: 'You cannot share with yourself',
+@@ -74,13 +69,9 @@ const de: Record<MessageKey, string> = {
+   deleted: 'Gelöscht: "{title}"',
+   undo: 'Rückgängig',
+   title: 'Titel',
+-  tags: 'Tags',
+-  tagsPlaceholder: 'Tags: arbeit, zuhause',
+   add: 'Hinzufügen',
+   search: 'Suche',
+   searchButton: 'Suchen',
+-  tagged: 'Markiert mit {tag}',
+-  allNotes: 'Alle Notizen',
+   showing: '{n} von {m} angezeigt',
+   deleteSelected: 'Auswahl löschen',
+   archiveSelected: 'Auswahl archivieren',
+@@ -108,7 +99,6 @@ const de: Record<MessageKey, string> = {
+   titleRequired: 'Gib zuerst einen Titel ein',
+   tooLong: `Höchstens ${NOTE_MAX} Zeichen`,
+   duplicate: 'Du hast bereits eine Notiz mit diesem Titel',
+-  badTags: 'Tags bestehen aus Buchstaben, Ziffern und -',
+   rateLimited: 'Zu viele Notizen, versuche es in einer Minute erneut',
+   badName: 'Ein Name hat 2–20 Buchstaben',
+   shareSelf: 'Du kannst nicht mit dir selbst teilen',

@@ -1,0 +1,155 @@
+diff --git a/app/error.vue b/app/error.vue
+new file mode 100644
+index 0000000..17e41bb
+--- /dev/null
++++ b/app/error.vue
+@@ -0,0 +1,13 @@
++<script setup lang="ts">
++import type { NuxtError } from '#app'
++
++defineProps<{ error: NuxtError }>()
++</script>
++
++<template>
++  <main class="mx-auto max-w-xl px-4 py-16 text-center">
++    <h1 class="text-5xl font-bold text-slate-900">{{ error.statusCode }}</h1>
++    <p class="mt-4 text-slate-600">{{ error.statusMessage || error.message }}</p>
++    <NuxtLink to="/notes" class="mt-6 inline-block text-indigo-600 hover:underline">Back to notes</NuxtLink>
++  </main>
++</template>
+diff --git a/app/pages/admin.vue b/app/pages/admin.vue
+new file mode 100644
+index 0000000..be1d800
+--- /dev/null
++++ b/app/pages/admin.vue
+@@ -0,0 +1,28 @@
++<script setup lang="ts">
++import type { AdminPage } from '#shared/types/note'
++
++const { data, error } = await useFetch<AdminPage>('/api/admin')
++if (error.value?.statusCode === 401) await navigateTo('/login')
++if (error.value?.statusCode === 403) throw createError({ statusCode: 403, statusMessage: 'Not allowed', fatal: true })
++</script>
++
++<template>
++  <main v-if="data" class="mx-auto max-w-xl px-4 py-12">
++    <NuxtLink to="/notes" class="text-sm text-indigo-600 hover:underline">Back to notes</NuxtLink>
++    <h1 class="mt-2 text-3xl font-bold tracking-tight">Admin</h1>
++    <table class="mt-6 w-full overflow-hidden rounded-xl bg-white text-left shadow-sm ring-1 ring-slate-200">
++      <thead class="bg-slate-100 text-sm">
++        <tr>
++          <th class="px-4 py-2">User</th>
++          <th class="px-4 py-2">Notes</th>
++        </tr>
++      </thead>
++      <tbody class="divide-y divide-slate-200">
++        <tr v-for="row in data.users" :key="row.user">
++          <td class="px-4 py-2">{{ row.user }}</td>
++          <td class="px-4 py-2">{{ row.notes }}</td>
++        </tr>
++      </tbody>
++    </table>
++  </main>
++</template>
+diff --git a/app/pages/notes.vue b/app/pages/notes.vue
+index 26ed344..eb1f01e 100644
+--- a/app/pages/notes.vue
++++ b/app/pages/notes.vue
+@@ -70,7 +70,10 @@ async function add(event: SubmitEvent) {
+ 
+     <p class="mt-6 flex items-center justify-between text-sm text-slate-600">
+       <span>Notes: {{ data.count }}</span>
+-      <NuxtLink to="/archive" class="text-indigo-600 hover:underline">Archived notes</NuxtLink>
++      <span class="flex gap-4">
++        <NuxtLink v-if="data.admin" to="/admin" class="text-indigo-600 hover:underline">Admin</NuxtLink>
++        <NuxtLink to="/archive" class="text-indigo-600 hover:underline">Archived notes</NuxtLink>
++      </span>
+     </p>
+     <p v-if="data.flash" role="alert" class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ data.flash }}</p>
+ 
+diff --git a/server/api/admin.get.ts b/server/api/admin.get.ts
+new file mode 100644
+index 0000000..4ea8835
+--- /dev/null
++++ b/server/api/admin.get.ts
+@@ -0,0 +1,6 @@
++import type { AdminPage } from '#shared/types/note'
++
++export default defineEventHandler((event): AdminPage => {
++  requireAdmin(event)
++  return { users: noteCounts() }
++})
+diff --git a/server/api/notes/index.get.ts b/server/api/notes/index.get.ts
+index ce338d4..3e3d1a5 100644
+--- a/server/api/notes/index.get.ts
++++ b/server/api/notes/index.get.ts
+@@ -10,6 +10,7 @@ export default defineEventHandler((event): NotesPage => {
+   const matching = listed(notes).filter((note) => (!tag || note.tags.includes(tag)) && note.title.toLowerCase().includes(q))
+   return {
+     user,
++    admin: isAdmin(user),
+     count: notes.length,
+     notes: matching.slice(0, page * PAGE_SIZE),
+     matching: matching.length,
+diff --git a/server/middleware/guard.ts b/server/middleware/guard.ts
+index a737e51..50d841d 100644
+--- a/server/middleware/guard.ts
++++ b/server/middleware/guard.ts
+@@ -1,4 +1,4 @@
+-const signedInPages = new Set(['/notes', '/archive'])
++const signedInPages = new Set(['/notes', '/archive', '/admin'])
+ 
+ export default defineEventHandler((event) => {
+   const path = getRequestURL(event).pathname
+diff --git a/server/utils/session.ts b/server/utils/session.ts
+index 642291c..7eed3bf 100644
+--- a/server/utils/session.ts
++++ b/server/utils/session.ts
+@@ -31,6 +31,14 @@ export function requireUser(event: H3Event): string {
+   return user
+ }
+ 
++export const isAdmin = (user: string) => user === 'admin'
++
++export function requireAdmin(event: H3Event): string {
++  const user = requireUser(event)
++  if (!isAdmin(user)) throw createError({ statusCode: 403, statusMessage: 'Not allowed' })
++  return user
++}
++
+ export function setFlash(event: H3Event, message: string | null): void {
+   if (message) ensureSession(event).flash = message
+ }
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index f3a2775..3bade68 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -148,6 +148,8 @@ export function sharedWithMe(user: string): SharedNote[] {
+   )
+ }
+ 
++export const noteCounts = () => [...notesByUser].map(([user, notes]) => ({ user, notes: notes.length }))
++
+ export const deletedTitle = (user: string) => lastDeleted.get(user)?.note.title ?? null
+ 
+ export function undoDelete(user: string): void {
+diff --git a/shared/types/note.ts b/shared/types/note.ts
+index 70ed2ac..118e799 100644
+--- a/shared/types/note.ts
++++ b/shared/types/note.ts
+@@ -16,6 +16,7 @@ export interface SharedNote {
+ 
+ export interface NotesPage {
+   user: string
++  admin: boolean
+   count: number
+   notes: Note[]
+   matching: number
+@@ -33,3 +34,7 @@ export interface ActionResult {
+ export interface ArchivePage {
+   notes: Note[]
+ }
++
++export interface AdminPage {
++  users: { user: string; notes: number }[]
++}

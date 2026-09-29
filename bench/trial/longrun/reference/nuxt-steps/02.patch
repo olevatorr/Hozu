@@ -1,0 +1,41 @@
+diff --git a/app/pages/index.vue b/app/pages/index.vue
+index 558e730..14c5070 100644
+--- a/app/pages/index.vue
++++ b/app/pages/index.vue
+@@ -46,7 +46,7 @@ async function add(event: SubmitEvent) {
+       <input type="hidden" name="back" :value="route.fullPath">
+       <label for="new-note" class="text-sm font-medium text-slate-700">New note</label>
+       <div class="flex gap-2">
+-        <input id="new-note" v-model="text" name="text" type="text" required maxlength="100" autocomplete="off" class="input flex-1">
++        <input id="new-note" v-model="text" name="text" type="text" required :maxlength="NOTE_MAX" autocomplete="off" class="input flex-1">
+         <button type="submit" :disabled="adding" class="btn-primary">Add</button>
+       </div>
+     </form>
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 25ac760..7a83b21 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -1,6 +1,5 @@
+ import type { Note } from '#shared/types/note'
+ 
+-export const NOTE_MAX = 100
+ 
+ let nextId = 1
+ const newNote = (text: string): Note => ({ id: `n${nextId++}`, text, pinned: false })
+@@ -23,7 +22,8 @@ const sameText = (a: string, b: string) => a.trim().toLowerCase() === b.trim().t
+ 
+ export function addNote(user: string, raw: string): string | null {
+   const text = raw.trim()
+-  if (text.length < 1 || text.length > NOTE_MAX) return `Notes are 1–${NOTE_MAX} characters`
++  if (!text) return 'Write a note first'
++  if (text.length > NOTE_MAX) return `Use at most ${NOTE_MAX} characters`
+   const notes = notesOf(user)
+   if (notes.some((note) => sameText(note.text, text))) return 'You already have this note'
+   notes.unshift(newNote(text))
+diff --git a/shared/utils/limits.ts b/shared/utils/limits.ts
+new file mode 100644
+index 0000000..b63fb0d
+--- /dev/null
++++ b/shared/utils/limits.ts
+@@ -0,0 +1 @@
++export const NOTE_MAX = 60

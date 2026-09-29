@@ -1,0 +1,171 @@
+diff --git a/app/components/NoteItem.vue b/app/components/NoteItem.vue
+index cc3f30c..25b1383 100644
+--- a/app/components/NoteItem.vue
++++ b/app/components/NoteItem.vue
+@@ -34,6 +34,12 @@ const action = (name: string) => `/api/notes/${props.note.id}/${name}`
+       <input v-for="(value, key) in query" :key="key" type="hidden" :name="key" :value="value">
+       <button type="submit" name="edit" :value="note.id" class="btn">Edit</button>
+     </form>
++    <form method="post" :action="action('share')" class="flex gap-2" @submit.prevent="submit">
++      <input type="hidden" name="back" :value="back">
++      <label :for="`share-${note.id}`" class="sr-only">Share with</label>
++      <input :id="`share-${note.id}`" name="name" type="text" placeholder="Share with" required class="input w-32 py-1 text-sm">
++      <button type="submit" class="btn">Share</button>
++    </form>
+     <form method="post" :action="action('pin')" @submit.prevent="submit">
+       <input type="hidden" name="back" :value="back">
+       <input type="hidden" name="pinned" :value="String(!note.pinned)">
+@@ -47,5 +53,11 @@ const action = (name: string) => `/api/notes/${props.note.id}/${name}`
+       <input type="hidden" name="back" :value="back">
+       <button type="submit" class="btn">Delete</button>
+     </form>
++    <form v-for="name in note.sharedWith" :key="name" method="post" :action="action('unshare')" class="flex w-full items-center gap-2 text-sm text-slate-600" @submit.prevent="submit">
++      <input type="hidden" name="back" :value="back">
++      <input type="hidden" name="name" :value="name">
++      <span>shared with {{ name }}</span>
++      <button type="submit" class="btn">Unshare {{ name }}</button>
++    </form>
+   </li>
+ </template>
+diff --git a/app/pages/notes.vue b/app/pages/notes.vue
+index 470d0e0..26ed344 100644
+--- a/app/pages/notes.vue
++++ b/app/pages/notes.vue
+@@ -132,5 +132,15 @@ async function add(event: SubmitEvent) {
+     >
+       Load more
+     </NuxtLink>
++
++    <template v-if="data.shared.length">
++      <h2 class="mt-10 text-xl font-semibold">Shared with me</h2>
++      <ul class="mt-3 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
++        <li v-for="note in data.shared" :key="note.id" class="flex items-center gap-3 px-4 py-3">
++          <span class="flex-1">{{ note.title }}</span>
++          <span class="text-sm text-slate-500">from {{ note.owner }}</span>
++        </li>
++      </ul>
++    </template>
+   </main>
+ </template>
+diff --git a/server/api/login.post.ts b/server/api/login.post.ts
+index 62c58be..12d470b 100644
+--- a/server/api/login.post.ts
++++ b/server/api/login.post.ts
+@@ -1,7 +1,7 @@
+ export default defineEventHandler(async (event) => {
+   const form = (await readBody<FormBody>(event)) ?? {}
+   const name = field(form, 'name').trim()
+-  if (!/^\p{L}{2,20}$/u.test(name)) {
++  if (!isValidName(name)) {
+     setFlash(event, 'A name is 2–20 letters')
+     return finish(event, '/login')
+   }
+diff --git a/server/api/notes/[id]/share.post.ts b/server/api/notes/[id]/share.post.ts
+new file mode 100644
+index 0000000..a5acc92
+--- /dev/null
++++ b/server/api/notes/[id]/share.post.ts
+@@ -0,0 +1,4 @@
++export default defineUserAction(({ event, form, user }) => {
++  setFlash(event, shareNote(user, getRouterParam(event, 'id') ?? '', field(form, 'name')))
++  return backTo(form)
++})
+diff --git a/server/api/notes/[id]/unshare.post.ts b/server/api/notes/[id]/unshare.post.ts
+new file mode 100644
+index 0000000..23cf5fe
+--- /dev/null
++++ b/server/api/notes/[id]/unshare.post.ts
+@@ -0,0 +1,4 @@
++export default defineUserAction(({ event, form, user }) => {
++  unshareNote(user, getRouterParam(event, 'id') ?? '', field(form, 'name'))
++  return backTo(form)
++})
+diff --git a/server/api/notes/index.get.ts b/server/api/notes/index.get.ts
+index 2ecea27..ce338d4 100644
+--- a/server/api/notes/index.get.ts
++++ b/server/api/notes/index.get.ts
+@@ -16,6 +16,7 @@ export default defineEventHandler((event): NotesPage => {
+     page,
+     tag,
+     deleted: deletedTitle(user),
++    shared: sharedWithMe(user),
+     flash: takeFlash(event),
+   }
+ })
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 62d5e7f..f3a2775 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -1,4 +1,4 @@
+-import type { Note } from '#shared/types/note'
++import type { Note, SharedNote } from '#shared/types/note'
+ 
+ let nextId = 1
+ const newNote = (title: string, createdAt = new Date().toISOString(), tags: string[] = []): Note => ({
+@@ -8,8 +8,11 @@ const newNote = (title: string, createdAt = new Date().toISOString(), tags: stri
+   createdAt,
+   tags,
+   archived: false,
++  sharedWith: [],
+ })
+ 
++export const isValidName = (name: string) => /^\p{L}{2,20}$/u.test(name)
++
+ const TAG = /^[\p{L}\p{N}-]{1,20}$/u
+ 
+ export function parseTags(raw: string): string[] | null {
+@@ -123,6 +126,28 @@ export function deleteNotes(user: string, ids: string[]): void {
+   clearUndo(user)
+ }
+ 
++export function shareNote(user: string, id: string, raw: string): string | null {
++  const name = raw.trim()
++  if (!isValidName(name)) return 'A name is 2–20 letters'
++  if (name === user) return 'You cannot share with yourself'
++  const note = activeNote(user, id)
++  if (note && !note.sharedWith.includes(name)) note.sharedWith.push(name)
++  return null
++}
++
++export function unshareNote(user: string, id: string, name: string): void {
++  const note = activeNote(user, id)
++  if (note) note.sharedWith = note.sharedWith.filter((other) => other !== name)
++}
++
++export function sharedWithMe(user: string): SharedNote[] {
++  return [...notesByUser].flatMap(([owner, notes]) =>
++    notes
++      .filter((note) => !note.archived && note.sharedWith.includes(user))
++      .map((note) => ({ id: note.id, title: note.title, owner })),
++  )
++}
++
+ export const deletedTitle = (user: string) => lastDeleted.get(user)?.note.title ?? null
+ 
+ export function undoDelete(user: string): void {
+diff --git a/shared/types/note.ts b/shared/types/note.ts
+index 5297c1e..70ed2ac 100644
+--- a/shared/types/note.ts
++++ b/shared/types/note.ts
+@@ -5,6 +5,13 @@ export interface Note {
+   createdAt: string
+   tags: string[]
+   archived: boolean
++  sharedWith: string[]
++}
++
++export interface SharedNote {
++  id: string
++  title: string
++  owner: string
+ }
+ 
+ export interface NotesPage {
+@@ -15,6 +22,7 @@ export interface NotesPage {
+   page: number
+   tag: string | null
+   deleted: string | null
++  shared: SharedNote[]
+   flash: string | null
+ }
+ 

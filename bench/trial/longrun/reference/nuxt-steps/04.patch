@@ -1,0 +1,110 @@
+diff --git a/app/pages/index.vue b/app/pages/index.vue
+index 190017d..4200a34 100644
+--- a/app/pages/index.vue
++++ b/app/pages/index.vue
+@@ -6,13 +6,13 @@ const { data, error } = await useFetch<NotesPage>('/api/notes', { query: compute
+ if (error.value?.statusCode === 401) await navigateTo('/login')
+ 
+ const submit = useFormAction()
+-const text = ref('')
++const title = ref('')
+ const adding = ref(false)
+ const search = ref('')
+ 
+ const visible = computed(() => {
+   const needle = search.value.trim().toLowerCase()
+-  return (data.value?.notes ?? []).filter((note) => note.text.toLowerCase().includes(needle))
++  return (data.value?.notes ?? []).filter((note) => note.title.toLowerCase().includes(needle))
+ })
+ 
+ async function add(event: SubmitEvent) {
+@@ -20,7 +20,7 @@ async function add(event: SubmitEvent) {
+   adding.value = true
+   try {
+     await submit(event)
+-    if (!data.value?.flash) text.value = ''
++    if (!data.value?.flash) title.value = ''
+   } finally {
+     adding.value = false
+   }
+@@ -44,9 +44,9 @@ async function add(event: SubmitEvent) {
+ 
+     <form method="post" action="/api/notes" class="mt-4 flex flex-col gap-2" @submit.prevent="add">
+       <input type="hidden" name="back" :value="route.fullPath">
+-      <label for="new-note" class="text-sm font-medium text-slate-700">New note</label>
++      <label for="title" class="text-sm font-medium text-slate-700">Title</label>
+       <div class="flex gap-2">
+-        <input id="new-note" v-model="text" name="text" type="text" required :maxlength="NOTE_MAX" autocomplete="off" class="input flex-1">
++        <input id="title" v-model="title" name="title" type="text" required :maxlength="NOTE_MAX" autocomplete="off" class="input flex-1">
+         <button type="submit" :disabled="adding" class="btn-primary">Add</button>
+       </div>
+     </form>
+@@ -60,7 +60,7 @@ async function add(event: SubmitEvent) {
+     <ul v-else class="mt-4 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+       <li v-for="note in visible" :key="note.id" class="flex items-center gap-3 px-4 py-3">
+         <div class="flex flex-1 flex-col">
+-          <span>{{ note.text }}</span>
++          <span>{{ note.title }}</span>
+           <span class="text-xs text-slate-500">Added <time :datetime="note.createdAt">{{ note.createdAt.slice(0, 10) }}</time></span>
+         </div>
+         <span v-if="note.pinned" class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">pinned</span>
+diff --git a/server/api/notes/index.post.ts b/server/api/notes/index.post.ts
+index 62c0bfe..371b2c4 100644
+--- a/server/api/notes/index.post.ts
++++ b/server/api/notes/index.post.ts
+@@ -1,4 +1,4 @@
+ export default defineUserAction(({ event, form, user }) => {
+-  setFlash(event, addNote(user, field(form, 'text')))
++  setFlash(event, addNote(user, field(form, 'title')))
+   return backTo(form)
+ })
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 1fe7bbf..1d224fd 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -1,9 +1,9 @@
+ import type { Note } from '#shared/types/note'
+ 
+ let nextId = 1
+-const newNote = (text: string, createdAt = new Date().toISOString()): Note => ({
++const newNote = (title: string, createdAt = new Date().toISOString()): Note => ({
+   id: `n${nextId++}`,
+-  text,
++  title,
+   pinned: false,
+   createdAt,
+ })
+@@ -22,15 +22,15 @@ export function notesOf(user: string): Note[] {
+   return notes
+ }
+ 
+-const sameText = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
++const sameTitle = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
+ 
+ export function addNote(user: string, raw: string): string | null {
+-  const text = raw.trim()
+-  if (!text) return 'Write a note first'
+-  if (text.length > NOTE_MAX) return `Use at most ${NOTE_MAX} characters`
++  const title = raw.trim()
++  if (!title) return 'Write a title first'
++  if (title.length > NOTE_MAX) return `Use at most ${NOTE_MAX} characters`
+   const notes = notesOf(user)
+-  if (notes.some((note) => sameText(note.text, text))) return 'You already have this note'
+-  notes.unshift(newNote(text))
++  if (notes.some((note) => sameTitle(note.title, title))) return 'You already have a note with this title'
++  notes.unshift(newNote(title))
+   return null
+ }
+ 
+diff --git a/shared/types/note.ts b/shared/types/note.ts
+index b0bf7b9..cec545e 100644
+--- a/shared/types/note.ts
++++ b/shared/types/note.ts
+@@ -1,6 +1,6 @@
+ export interface Note {
+   id: string
+-  text: string
++  title: string
+   pinned: boolean
+   createdAt: string
+ }

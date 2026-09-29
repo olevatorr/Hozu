@@ -1,0 +1,62 @@
+diff --git a/app/pages/notes.vue b/app/pages/notes.vue
+index 1a58949..09def47 100644
+--- a/app/pages/notes.vue
++++ b/app/pages/notes.vue
+@@ -77,6 +77,7 @@ async function add(event: SubmitEvent) {
+       <span class="flex gap-4">
+         <NuxtLink v-if="data.admin" to="/admin" class="text-indigo-600 hover:underline">{{ t('admin') }}</NuxtLink>
+         <NuxtLink to="/archive" class="text-indigo-600 hover:underline">{{ t('archivedNotes') }}</NuxtLink>
++        <a href="/api/export" class="text-indigo-600 hover:underline">{{ t('export') }}</a>
+         <NuxtLink to="/account/delete" class="text-rose-600 hover:underline">{{ t('deleteAccount') }}</NuxtLink>
+       </span>
+     </p>
+diff --git a/server/api/export.get.ts b/server/api/export.get.ts
+new file mode 100644
+index 0000000..8974f16
+--- /dev/null
++++ b/server/api/export.get.ts
+@@ -0,0 +1,9 @@
++import type { NotesExport } from '#shared/types/note'
++
++export default defineEventHandler((event): NotesExport => {
++  const user = requireUser(event)
++  return {
++    user,
++    notes: listed(notesOf(user)).map(({ title, pinned, archived, tags, createdAt }) => ({ title, pinned, archived, tags, createdAt })),
++  }
++})
+diff --git a/shared/types/note.ts b/shared/types/note.ts
+index 4c9707b..e9891c8 100644
+--- a/shared/types/note.ts
++++ b/shared/types/note.ts
+@@ -40,3 +40,10 @@ export interface ArchivePage {
+ export interface AdminPage {
+   users: { user: string; notes: number }[]
+ }
++
++export type ExportedNote = Pick<Note, 'title' | 'pinned' | 'archived' | 'tags' | 'createdAt'>
++
++export interface NotesExport {
++  user: string
++  notes: ExportedNote[]
++}
+diff --git a/shared/utils/messages.ts b/shared/utils/messages.ts
+index 01e9e6d..7bf69c2 100644
+--- a/shared/utils/messages.ts
++++ b/shared/utils/messages.ts
+@@ -11,6 +11,7 @@ const en = {
+   admin: 'Admin',
+   archivedNotes: 'Archived notes',
+   deleteAccount: 'Delete account',
++  export: 'Export',
+   deleted: 'Deleted "{title}"',
+   undo: 'Undo',
+   title: 'Title',
+@@ -69,6 +70,7 @@ const de: Record<MessageKey, string> = {
+   admin: 'Admin',
+   archivedNotes: 'Archivierte Notizen',
+   deleteAccount: 'Konto löschen',
++  export: 'Exportieren',
+   deleted: 'Gelöscht: "{title}"',
+   undo: 'Rückgängig',
+   title: 'Titel',

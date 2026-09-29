@@ -1,0 +1,22 @@
+# replay 2026-09-29: git archive reference/nuxt + git apply nuxt-steps/01..k, then per step: pnpm build, pnpm typecheck (all green), accept.mjs k
+step 0: 15/15 new 15/15 regression 0/0 js {"login":200374,"list":201840}
+step 1: 20/20 new 5/5 regression 15/15 js {"login":200374,"list":202862}
+step 2: 22/22 new 2/2 regression 20/20 js {"login":200374,"list":202904}
+step 3: 24/24 new 2/2 regression 22/22 js {"login":200374,"list":203092}
+step 4: 25/25 new 1/1 regression 24/24 js {"login":200374,"list":203086}
+step 5: 29/29 new 4/4 regression 25/25 js {"login":200476,"list":205036}
+step 6: 32/32 new 3/3 regression 29/29 js {"login":200476,"list":205888}
+step 7: 36/36 new 4/4 regression 32/32 js {"login":200614,"list":207788}
+step 8: 38/38 new 2/2 regression 36/36 js {"login":200614,"list":208184}
+step 9: 40/40 new 2/2 regression 38/38 js {"login":200619,"list":208209}
+step 10: 43/43 new 3/3 regression 40/40 js {"login":200619,"list":208658}
+step 11: 46/46 new 3/3 regression 43/43 js {"login":200619,"list":208976}
+step 12: 48/48 new 2/2 regression 46/46 js {"login":200619,"list":209302}
+step 13: 51/51 new 3/3 regression 48/48 js {"login":202366,"list":212121}
+step 14: 52/52 new 1/1 regression 51/51 js {"login":202366,"list":212121}
+step 15: 56/56 new 4/4 regression 52/52 js {"login":202366,"list":213577}
+step 16: 58/58 new 2/2 regression 56/56 js {"login":197413,"list":208740}
+step 17: 60/60 new 2/2 regression 58/58 js {"login":197710,"list":210107}
+step 18: 62/62 new 2/2 regression 60/60 js {"login":214309,"list":227021}
+step 19: 64/64 new 2/2 regression 62/62 js {"login":214346,"list":227152}
+step 20: 61/61 new 1/1 regression 60/60 js {"login":214057,"list":225863}

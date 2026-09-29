@@ -1,0 +1,101 @@
+diff --git a/app/pages/index.vue b/app/pages/index.vue
+index db5f20a..558e730 100644
+--- a/app/pages/index.vue
++++ b/app/pages/index.vue
+@@ -8,6 +8,12 @@ if (error.value?.statusCode === 401) await navigateTo('/login')
+ const submit = useFormAction()
+ const text = ref('')
+ const adding = ref(false)
++const search = ref('')
++
++const visible = computed(() => {
++  const needle = search.value.trim().toLowerCase()
++  return (data.value?.notes ?? []).filter((note) => note.text.toLowerCase().includes(needle))
++})
+ 
+ async function add(event: SubmitEvent) {
+   if (adding.value) return
+@@ -45,9 +51,21 @@ async function add(event: SubmitEvent) {
+       </div>
+     </form>
+ 
+-    <ul class="mt-6 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+-      <li v-for="note in data.notes" :key="note.id" class="flex items-center gap-3 px-4 py-3">
++    <div class="mt-6 flex flex-col gap-2">
++      <label for="search" class="text-sm font-medium text-slate-700">Search</label>
++      <input id="search" v-model="search" type="search" autocomplete="off" class="input">
++    </div>
++
++    <p v-if="search.trim() && !visible.length" class="mt-4 text-slate-500">No notes match</p>
++    <ul v-else class="mt-4 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
++      <li v-for="note in visible" :key="note.id" class="flex items-center gap-3 px-4 py-3">
+         <span class="flex-1">{{ note.text }}</span>
++        <span v-if="note.pinned" class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">pinned</span>
++        <form method="post" :action="`/api/notes/${note.id}/pin`" @submit.prevent="submit">
++          <input type="hidden" name="back" :value="route.fullPath">
++          <input type="hidden" name="pinned" :value="String(!note.pinned)">
++          <button type="submit" class="btn">{{ note.pinned ? 'Unpin' : 'Pin' }}</button>
++        </form>
+         <form method="post" :action="`/api/notes/${note.id}/delete`" @submit.prevent="submit">
+           <input type="hidden" name="back" :value="route.fullPath">
+           <button type="submit" class="btn">Delete</button>
+diff --git a/server/api/notes/[id]/pin.post.ts b/server/api/notes/[id]/pin.post.ts
+new file mode 100644
+index 0000000..ce75c32
+--- /dev/null
++++ b/server/api/notes/[id]/pin.post.ts
+@@ -0,0 +1,4 @@
++export default defineUserAction(({ event, form, user }) => {
++  pinNote(user, getRouterParam(event, 'id') ?? '', field(form, 'pinned') === 'true')
++  return backTo(form)
++})
+diff --git a/server/api/notes/index.get.ts b/server/api/notes/index.get.ts
+index cb5aea1..15b267a 100644
+--- a/server/api/notes/index.get.ts
++++ b/server/api/notes/index.get.ts
+@@ -3,5 +3,5 @@ import type { NotesPage } from '#shared/types/note'
+ export default defineEventHandler((event): NotesPage => {
+   const user = requireUser(event)
+   const notes = notesOf(user)
+-  return { user, count: notes.length, notes, flash: takeFlash(event) }
++  return { user, count: notes.length, notes: listed(notes), flash: takeFlash(event) }
+ })
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 465026f..25ac760 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -3,7 +3,7 @@ import type { Note } from '#shared/types/note'
+ export const NOTE_MAX = 100
+ 
+ let nextId = 1
+-const newNote = (text: string): Note => ({ id: `n${nextId++}`, text })
++const newNote = (text: string): Note => ({ id: `n${nextId++}`, text, pinned: false })
+ 
+ const notesByUser = new Map<string, Note[]>([
+   ['ada', [newNote('Buy milk'), newNote('Call Bob')]],
+@@ -30,6 +30,13 @@ export function addNote(user: string, raw: string): string | null {
+   return null
+ }
+ 
++export const listed = (notes: Note[]) => [...notes.filter((note) => note.pinned), ...notes.filter((note) => !note.pinned)]
++
++export function pinNote(user: string, id: string, pinned: boolean): void {
++  const note = notesOf(user).find((note) => note.id === id)
++  if (note) note.pinned = pinned
++}
++
+ export function deleteNote(user: string, id: string): void {
+   const notes = notesOf(user)
+   const index = notes.findIndex((note) => note.id === id)
+diff --git a/shared/types/note.ts b/shared/types/note.ts
+index e007202..a414de4 100644
+--- a/shared/types/note.ts
++++ b/shared/types/note.ts
+@@ -1,6 +1,7 @@
+ export interface Note {
+   id: string
+   text: string
++  pinned: boolean
+ }
+ 
+ export interface NotesPage {

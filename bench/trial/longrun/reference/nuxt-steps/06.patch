@@ -1,0 +1,155 @@
+diff --git a/app/components/NoteItem.vue b/app/components/NoteItem.vue
+index f0d4952..905a404 100644
+--- a/app/components/NoteItem.vue
++++ b/app/components/NoteItem.vue
+@@ -21,6 +21,9 @@ const action = (name: string) => `/api/notes/${props.note.id}/${name}`
+     </form>
+     <div v-else class="flex flex-1 flex-col">
+       <span>{{ note.title }}</span>
++      <span v-if="note.tags.length" class="flex gap-2 text-sm">
++        <NuxtLink v-for="tag in note.tags" :key="tag" :to="{ path: '/', query: { tag } }" class="text-indigo-600 hover:underline">#{{ tag }}</NuxtLink>
++      </span>
+       <span class="text-xs text-slate-500">Added <time :datetime="note.createdAt">{{ note.createdAt.slice(0, 10) }}</time></span>
+     </div>
+     <span v-if="note.pinned" class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">pinned</span>
+diff --git a/app/pages/index.vue b/app/pages/index.vue
+index eef3ead..2029dfd 100644
+--- a/app/pages/index.vue
++++ b/app/pages/index.vue
+@@ -8,6 +8,7 @@ if (error.value?.statusCode === 401) await navigateTo('/login')
+ 
+ const submit = useFormAction()
+ const title = ref('')
++const tags = ref('')
+ const adding = ref(false)
+ const search = ref('')
+ 
+@@ -21,7 +22,10 @@ async function add(event: SubmitEvent) {
+   adding.value = true
+   try {
+     await submit(event)
+-    if (!data.value?.flash) title.value = ''
++    if (!data.value?.flash) {
++      title.value = ''
++      tags.value = ''
++    }
+   } finally {
+     adding.value = false
+   }
+@@ -46,8 +50,10 @@ async function add(event: SubmitEvent) {
+     <form method="post" action="/api/notes" class="mt-4 flex flex-col gap-2" @submit.prevent="add">
+       <input type="hidden" name="back" :value="back">
+       <label for="title" class="text-sm font-medium text-slate-700">Title</label>
+-      <div class="flex gap-2">
++      <div class="flex flex-wrap gap-2">
+         <input id="title" v-model="title" name="title" type="text" required :maxlength="NOTE_MAX" autocomplete="off" class="input flex-1">
++        <label for="tags" class="sr-only">Tags</label>
++        <input id="tags" v-model="tags" name="tags" type="text" placeholder="Tags: work, home" autocomplete="off" class="input">
+         <button type="submit" :disabled="adding" class="btn-primary">Add</button>
+       </div>
+     </form>
+@@ -57,7 +63,12 @@ async function add(event: SubmitEvent) {
+       <input id="search" v-model="search" type="search" autocomplete="off" class="input">
+     </div>
+ 
+-    <p v-if="search.trim() && !visible.length" class="mt-4 text-slate-500">No notes match</p>
++    <p v-if="data.tag" class="mt-4 flex items-center gap-3 text-sm">
++      <span>Tagged {{ data.tag }}</span>
++      <NuxtLink to="/" class="text-indigo-600 hover:underline">All notes</NuxtLink>
++    </p>
++
++    <p v-if="(search.trim() || data.tag) && !visible.length" class="mt-4 text-slate-500">No notes match</p>
+     <ul v-else class="mt-4 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+       <NoteItem v-for="note in visible" :key="note.id" :note="note" :editing="route.query.edit === note.id" />
+     </ul>
+diff --git a/server/api/notes/index.get.ts b/server/api/notes/index.get.ts
+index 15b267a..5a85431 100644
+--- a/server/api/notes/index.get.ts
++++ b/server/api/notes/index.get.ts
+@@ -3,5 +3,13 @@ import type { NotesPage } from '#shared/types/note'
+ export default defineEventHandler((event): NotesPage => {
+   const user = requireUser(event)
+   const notes = notesOf(user)
+-  return { user, count: notes.length, notes: listed(notes), flash: takeFlash(event) }
++  const tag = getQuery(event).tag
++  const filter = typeof tag === 'string' && tag ? tag : null
++  return {
++    user,
++    count: notes.length,
++    notes: listed(notes).filter((note) => !filter || note.tags.includes(filter)),
++    tag: filter,
++    flash: takeFlash(event),
++  }
+ })
+diff --git a/server/api/notes/index.post.ts b/server/api/notes/index.post.ts
+index 371b2c4..d8714de 100644
+--- a/server/api/notes/index.post.ts
++++ b/server/api/notes/index.post.ts
+@@ -1,4 +1,4 @@
+ export default defineUserAction(({ event, form, user }) => {
+-  setFlash(event, addNote(user, field(form, 'title')))
++  setFlash(event, addNote(user, field(form, 'title'), field(form, 'tags')))
+   return backTo(form)
+ })
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 03c724c..446205d 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -1,13 +1,21 @@
+ import type { Note } from '#shared/types/note'
+ 
+ let nextId = 1
+-const newNote = (title: string, createdAt = new Date().toISOString()): Note => ({
++const newNote = (title: string, createdAt = new Date().toISOString(), tags: string[] = []): Note => ({
+   id: `n${nextId++}`,
+   title,
+   pinned: false,
+   createdAt,
++  tags,
+ })
+ 
++const TAG = /^[\p{L}\p{N}-]{1,20}$/u
++
++export function parseTags(raw: string): string[] | null {
++  const tags = [...new Set(raw.split(',').map((tag) => tag.trim().toLowerCase()).filter(Boolean))]
++  return tags.every((tag) => TAG.test(tag)) ? tags : null
++}
++
+ const notesByUser = new Map<string, Note[]>([
+   ['ada', [newNote('Buy milk', '2026-01-15T09:00:00.000Z'), newNote('Call Bob', '2026-01-14T09:00:00.000Z')]],
+   ['bob', [newNote("Bob's secret", '2026-01-10T09:00:00.000Z')]],
+@@ -31,11 +39,12 @@ function titleError(notes: Note[], title: string, self?: Note): string | null {
+   return null
+ }
+ 
+-export function addNote(user: string, raw: string): string | null {
++export function addNote(user: string, raw: string, rawTags: string): string | null {
+   const title = raw.trim()
+   const notes = notesOf(user)
+-  const error = titleError(notes, title)
+-  if (!error) notes.unshift(newNote(title))
++  const tags = parseTags(rawTags)
++  const error = titleError(notes, title) ?? (tags ? null : 'Tags use letters, digits and -')
++  if (!error && tags) notes.unshift(newNote(title, undefined, tags))
+   return error
+ }
+ 
+diff --git a/shared/types/note.ts b/shared/types/note.ts
+index cec545e..b5fc0fd 100644
+--- a/shared/types/note.ts
++++ b/shared/types/note.ts
+@@ -3,12 +3,14 @@ export interface Note {
+   title: string
+   pinned: boolean
+   createdAt: string
++  tags: string[]
+ }
+ 
+ export interface NotesPage {
+   user: string
+   count: number
+   notes: Note[]
++  tag: string | null
+   flash: string | null
+ }
+ 

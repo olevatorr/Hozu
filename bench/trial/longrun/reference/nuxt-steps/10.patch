@@ -1,0 +1,139 @@
+diff --git a/app/pages/notes.vue b/app/pages/notes.vue
+index a68d7a0..8d377db 100644
+--- a/app/pages/notes.vue
++++ b/app/pages/notes.vue
+@@ -57,6 +57,14 @@ async function add(event: SubmitEvent) {
+     </p>
+     <p v-if="data.flash" role="alert" class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ data.flash }}</p>
+ 
++    <div v-if="data.deleted" role="status" class="mt-2 flex items-center justify-between rounded-md bg-slate-100 px-3 py-2 text-sm">
++      <span>Deleted "{{ data.deleted }}"</span>
++      <form method="post" action="/api/notes/undo" @submit.prevent="submit">
++        <input type="hidden" name="back" :value="back">
++        <button type="submit" class="btn">Undo</button>
++      </form>
++    </div>
++
+     <form method="post" action="/api/notes" class="mt-4 flex flex-col gap-2" @submit.prevent="add">
+       <input type="hidden" name="back" :value="back">
+       <label for="title" class="text-sm font-medium text-slate-700">Title</label>
+diff --git a/server/api/logout.post.ts b/server/api/logout.post.ts
+index bc64085..d4c4714 100644
+--- a/server/api/logout.post.ts
++++ b/server/api/logout.post.ts
+@@ -1,5 +1,6 @@
+ export default defineEventHandler((event) => {
+   const session = findSession(event)
++  if (session?.user) clearUndo(session.user)
+   if (session) delete session.user
+   return finish(event, '/login')
+ })
+diff --git a/server/api/notes/index.get.ts b/server/api/notes/index.get.ts
+index 5559712..182b339 100644
+--- a/server/api/notes/index.get.ts
++++ b/server/api/notes/index.get.ts
+@@ -11,6 +11,7 @@ export default defineEventHandler((event): NotesPage => {
+     count: notes.length,
+     notes: listed(notes).filter((note) => (!tag || note.tags.includes(tag)) && note.title.toLowerCase().includes(q)),
+     tag,
++    deleted: deletedTitle(user),
+     flash: takeFlash(event),
+   }
+ })
+diff --git a/server/api/notes/undo.post.ts b/server/api/notes/undo.post.ts
+new file mode 100644
+index 0000000..1a09c17
+--- /dev/null
++++ b/server/api/notes/undo.post.ts
+@@ -0,0 +1,4 @@
++export default defineUserAction(({ form, user }) => {
++  undoDelete(user)
++  return backTo(form)
++})
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 4bfa210..65eca7e 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -22,6 +22,10 @@ const notesByUser = new Map<string, Note[]>([
+   ['bob', [newNote("Bob's secret", '2026-01-10T09:00:00.000Z')]],
+ ])
+ 
++const lastDeleted = new Map<string, { note: Note; index: number }>()
++
++export const clearUndo = (user: string) => lastDeleted.delete(user)
++
+ export function notesOf(user: string): Note[] {
+   let notes = notesByUser.get(user)
+   if (!notes) {
+@@ -45,7 +49,10 @@ export function addNote(user: string, raw: string, rawTags: string): string | nu
+   const notes = notesOf(user)
+   const tags = parseTags(rawTags)
+   const error = titleError(notes, title) ?? (tags ? null : 'Tags use letters, digits and -')
+-  if (!error && tags) notes.unshift(newNote(title, undefined, tags))
++  if (!error && tags) {
++    notes.unshift(newNote(title, undefined, tags))
++    clearUndo(user)
++  }
+   return error
+ }
+ 
+@@ -55,7 +62,10 @@ export function renameNote(user: string, id: string, raw: string): string | null
+   const note = activeNote(user, id)
+   if (!note) return null
+   const error = titleError(notes, title, note)
+-  if (!error) note.title = title
++  if (!error) {
++    note.title = title
++    clearUndo(user)
++  }
+   return error
+ }
+ 
+@@ -69,16 +79,32 @@ export const listed = (notes: Note[]) => [...notes.filter((note) => note.pinned)
+ 
+ export function pinNote(user: string, id: string, pinned: boolean): void {
+   const note = activeNote(user, id)
+-  if (note) note.pinned = pinned
++  if (!note) return
++  note.pinned = pinned
++  clearUndo(user)
+ }
+ 
+ export function archiveNote(user: string, id: string, archived: boolean): void {
+   const note = notesOf(user).find((note) => note.id === id && note.archived !== archived)
+-  if (note) note.archived = archived
++  if (!note) return
++  note.archived = archived
++  clearUndo(user)
+ }
+ 
+ export function deleteNote(user: string, id: string): void {
+   const notes = notesOf(user)
+   const note = activeNote(user, id)
+-  if (note) notes.splice(notes.indexOf(note), 1)
++  if (!note) return
++  const index = notes.indexOf(note)
++  notes.splice(index, 1)
++  lastDeleted.set(user, { note, index })
++}
++
++export const deletedTitle = (user: string) => lastDeleted.get(user)?.note.title ?? null
++
++export function undoDelete(user: string): void {
++  const deleted = lastDeleted.get(user)
++  if (!deleted) return
++  notesOf(user).splice(deleted.index, 0, deleted.note)
++  clearUndo(user)
+ }
+diff --git a/shared/types/note.ts b/shared/types/note.ts
+index c88b998..d3eb82d 100644
+--- a/shared/types/note.ts
++++ b/shared/types/note.ts
+@@ -12,6 +12,7 @@ export interface NotesPage {
+   count: number
+   notes: Note[]
+   tag: string | null
++  deleted: string | null
+   flash: string | null
+ }
+ 
