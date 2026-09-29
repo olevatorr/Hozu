@@ -71,3 +71,19 @@ Framework code was not changed. Each entry: symptom, minimal repro, workaround, 
   can point at it. The hand-written page needs `@view-transition { navigation: auto }` itself, or Chrome logs
   "Transition was aborted … opt-in disabled" when a list page link leads to it. `hozu check` does not notice a
   missing endpoint resolver (HZ021 appears only when the server starts).
+
+## D8 — a second language without changing the default language's URLs is not expressible (step 18)
+- **Symptom:** 18.md keeps the English URLs, persists the choice in a cookie and requires `<html lang="de">` (also
+  without JS). Hozu's only i18n is `site.locales` (ADR 0017, option d): every locale is prefixed, English included
+  (`/notes` answers 307 to `/en/notes`, `/login` becomes `/en/login`), and `<html lang>` comes only from that prefix,
+  otherwise from the static `site.lang`. `ui.messages` / `ui.format` need `site.locales` too. So turning i18n on
+  would move every English page, and without it no view or head field can set `lang`.
+- **Repro:** `site: { lang: 'en', locales: ['en', 'de'] }`, then `GET /notes` → 307 `/en/notes`.
+- **Workaround (agreed with the coordinator):** the language lives in the HttpOnly session cookie
+  (`Session = { user: string | null, lang: 'en' | 'de' }`, so it survives sign-in and sign-out; every resolver reads
+  `session?.user`); a native `<form method="post" action="/language">` (an endpoint that sets the session and 302s
+  back to the `Referer`) switches it; views take their strings from a user-scoped `texts` query (the machine keeps
+  English codes such as the duplicate message, the view maps them); and `serve.ts` wraps `createHandler` with
+  `adapter-node`'s `toRequest` / `send` to rewrite `<html lang="en"` of HTML responses when the session says `de`.
+  CSP, script hashes and no-JS posts are untouched (DE1, DE2 and N15 pass). An endpoint's `ctx.request` is typed
+  `unknown` and needs a cast.

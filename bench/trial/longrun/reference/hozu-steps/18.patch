@@ -1,0 +1,884 @@
+diff --git a/features/account/feature.ts b/features/account/feature.ts
+index 7d309e0..ae810d7 100644
+--- a/features/account/feature.ts
++++ b/features/account/feature.ts
+@@ -5,6 +5,6 @@ import * as views from './views.ts'
+ export const account = feature({
+   id: 'account',
+   intent: { summary: 'Sign in with a name, sign out; the session identifies the user' },
+-  exports: [model.me],
++  exports: [model.me, model.texts],
+   declarations: [model, views],
+ })
+diff --git a/features/account/model.ts b/features/account/model.ts
+index 68a7c9b..5b667f5 100644
+--- a/features/account/model.ts
++++ b/features/account/model.ts
+@@ -2,7 +2,9 @@ import { endpoint, event, invoke, machine, mutation, on, op, query, ui } from '@
+ import { z } from 'zod'
+ import { list, login } from '../../routes.ts'
+ 
+-export const Session = z.object({ user: z.string() })
++export const Lang = z.enum(['en', 'de'])
++export const Session = z.object({ user: z.string().nullable(), lang: Lang })
++export type Session = z.infer<typeof Session>
+ export const Name = z.object({
+   name: z.string().regex(/^\s*[A-Za-z]{2,20}\s*$/, 'Use 2–20 letters'),
+ })
+@@ -25,6 +27,38 @@ export const adminPage = endpoint({ method: 'GET', path: '/admin', input: z.obje
+ 
+ export const ADMIN = 'admin'
+ 
++export const Texts = z.object({
++  signIn: z.string(),
++  notes: z.string(),
++  signedInAs: z.string(),
++  signOut: z.string(),
++  count: z.string(),
++  title: z.string(),
++  add: z.string(),
++  delete: z.string(),
++  search: z.string(),
++  duplicate: z.string(),
++  switchLabel: z.string(),
++  switchTo: z.string(),
++})
++export type TextsT = z.infer<typeof Texts>
++
++export const LANGUAGE_PATH = '/language'
++
++export const setLanguage = endpoint({
++  method: 'POST',
++  path: LANGUAGE_PATH,
++  input: z.object({ to: Lang }),
++  output: 'response',
++})
++
++export const texts = query({
++  input: z.object({}),
++  output: Texts,
++  scope: 'user',
++  freshness: 'static',
++})
++
+ export const signIn = mutation({ input: Name, output: z.object({}) })
+ export const signOut = mutation({ input: z.object({}), output: z.object({}) })
+ export const deleteAccount = mutation({ input: z.object({}), output: z.object({}) })
+diff --git a/features/account/texts.ts b/features/account/texts.ts
+new file mode 100644
+index 0000000..266dcb5
+--- /dev/null
++++ b/features/account/texts.ts
+@@ -0,0 +1,30 @@
++export const TEXTS = {
++  en: {
++    signIn: 'Sign in',
++    notes: 'Notes',
++    signedInAs: 'Signed in as',
++    signOut: 'Sign out',
++    count: 'Notes:',
++    title: 'Title',
++    add: 'Add',
++    delete: 'Delete',
++    search: 'Search',
++    duplicate: 'You already have a note with this title',
++    switchLabel: 'Deutsch',
++    switchTo: 'de',
++  },
++  de: {
++    signIn: 'Anmelden',
++    notes: 'Notizen',
++    signedInAs: 'Angemeldet als',
++    signOut: 'Abmelden',
++    count: 'Notizen:',
++    title: 'Titel',
++    add: 'Hinzufügen',
++    delete: 'Löschen',
++    search: 'Suche',
++    duplicate: 'Du hast bereits eine Notiz mit diesem Titel',
++    switchLabel: 'English',
++    switchTo: 'en',
++  },
++} as const
+diff --git a/features/account/views.ts b/features/account/views.ts
+index 28d1b9f..525e6ad 100644
+--- a/features/account/views.ts
++++ b/features/account/views.ts
+@@ -5,66 +5,98 @@ import {
+   accountMachine,
+   DeleteAccount,
+   deleteAccount,
++  LANGUAGE_PATH,
+   me,
+   SignIn,
+   SignOut,
+   signIn,
+   signOut,
++  type TextsT,
++  texts,
+ } from './model.ts'
+ 
++export const languageSwitch = (t: TextsT) =>
++  ui.form({ method: 'post', action: LANGUAGE_PATH }, [
++    ui.input({ type: 'hidden', name: 'to', value: t.switchTo }),
++    ui.button({ type: 'submit', class: 'underline' }, [t.switchLabel]),
++  ])
++
+ export const Login = ui.view({
+   machine: accountMachine,
+   route: login,
+   render: ({ ctx, search }) =>
+-    ui.main({ class: 'mx-auto max-w-sm space-y-6 px-4 py-16' }, [
+-      ui.h1({ class: 'text-3xl font-bold' }, ['Sign in']),
+-      search.deleted && ui.p({ role: 'status', class: 'text-slate-600' }, ['Account deleted']),
+-      ui.form({ class: 'space-y-3', on: { submit: ui.send(SignIn, { name: ui.dom.form('name') }) } }, [
+-        ui.label({ for: 'name', class: 'block text-sm font-medium' }, ['Name']),
+-        ui.input({
+-          id: 'name',
+-          name: 'name',
+-          required: true,
+-          minlength: 2,
+-          maxlength: 20,
+-          autocomplete: 'username',
+-          'aria-invalid': op.neq(ctx.fields.name, null),
+-          'aria-describedby': 'name-error',
+-          class: 'w-full rounded border px-3 py-2',
+-        }),
+-        ui.p({ id: 'name-error', class: 'text-sm text-rose-600' }, [ctx.fields.name]),
+-        ui.button({ type: 'submit', class: 'w-full rounded bg-indigo-600 px-4 py-2 text-white' }, [
+-          'Sign in',
+-        ]),
+-      ]),
+-      ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+-    ]),
++    ui.query(
++      texts,
++      {},
++      {
++        ready: (t) =>
++          ui.main({ class: 'mx-auto max-w-sm space-y-6 px-4 py-16' }, [
++            languageSwitch(t),
++            ui.h1({ class: 'text-3xl font-bold' }, [t.signIn]),
++            search.deleted && ui.p({ role: 'status', class: 'text-slate-600' }, ['Account deleted']),
++            ui.form({ class: 'space-y-3', on: { submit: ui.send(SignIn, { name: ui.dom.form('name') }) } }, [
++              ui.label({ for: 'name', class: 'block text-sm font-medium' }, ['Name']),
++              ui.input({
++                id: 'name',
++                name: 'name',
++                required: true,
++                minlength: 2,
++                maxlength: 20,
++                autocomplete: 'username',
++                'aria-invalid': op.neq(ctx.fields.name, null),
++                'aria-describedby': 'name-error',
++                class: 'w-full rounded border px-3 py-2',
++              }),
++              ui.p({ id: 'name-error', class: 'text-sm text-rose-600' }, [ctx.fields.name]),
++              ui.button({ type: 'submit', class: 'w-full rounded bg-indigo-600 px-4 py-2 text-white' }, [
++                t.signIn,
++              ]),
++            ]),
++            ui.if(
++              op.neq(ctx.error, null),
++              [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])],
++              [],
++            ),
++          ]),
++        failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },
++      },
++    ),
+ })
+ 
+ export const AccountBar = ui.view({
+   machine: accountMachine,
+   render: () =>
+-    ui.header(
+-      { class: 'mx-auto flex max-w-xl items-center justify-between px-4 pt-8 text-sm text-slate-600' },
+-      [
+-        ui.query(
+-          me,
+-          {},
+-          {
+-            ready: (user) =>
+-              ui.p({ class: 'flex gap-3' }, [
+-                `Signed in as ${user.name}`,
+-                user.name === ADMIN && ui.a({ href: ui.link(admin, null), class: 'underline' }, ['Admin']),
++    ui.query(
++      texts,
++      {},
++      {
++        ready: (t) =>
++          ui.header(
++            { class: 'mx-auto flex max-w-xl items-center justify-between px-4 pt-8 text-sm text-slate-600' },
++            [
++              ui.query(
++                me,
++                {},
++                {
++                  ready: (user) =>
++                    ui.p({ class: 'flex gap-3' }, [
++                      `${t.signedInAs} ${user.name}`,
++                      user.name === ADMIN &&
++                        ui.a({ href: ui.link(admin, null), class: 'underline' }, ['Admin']),
++                    ]),
++                  pending: null,
++                  failed: { Unauthorized: () => ui.p({}, ['Signed out']), Unexpected: () => ui.p({}, ['']) },
++                },
++              ),
++              ui.a({ href: ui.link(accountDelete, null), class: 'underline' }, ['Delete account']),
++              languageSwitch(t),
++              ui.form({ on: { submit: ui.send(SignOut, {}) } }, [
++                ui.button({ type: 'submit', class: 'underline' }, [t.signOut]),
+               ]),
+-            pending: null,
+-            failed: { Unauthorized: () => ui.p({}, ['Signed out']), Unexpected: () => ui.p({}, ['']) },
+-          },
+-        ),
+-        ui.a({ href: ui.link(accountDelete, null), class: 'underline' }, ['Delete account']),
+-        ui.form({ on: { submit: ui.send(SignOut, {}) } }, [
+-          ui.button({ type: 'submit', class: 'underline' }, ['Sign out']),
+-        ]),
+-      ],
++            ],
++          ),
++        failed: { Unexpected: () => null },
++      },
+     ),
+ })
+ 
+diff --git a/features/notes/feature.ts b/features/notes/feature.ts
+index e8878b0..cc5b9d2 100644
+--- a/features/notes/feature.ts
++++ b/features/notes/feature.ts
+@@ -1,4 +1,5 @@
+ import { feature } from '@hozu/core'
++import { account } from '../account/feature.ts'
+ import * as model from './model.ts'
+ import * as views from './views.ts'
+ 
+@@ -8,5 +9,6 @@ export const notes = feature({
+     summary: 'Personal notes per signed-in user: add, delete, pin, search in the browser',
+     invariants: ['A user sees only their own notes', 'Note titles are unique per user, case-insensitive'],
+   },
++  imports: [account],
+   declarations: [model, views],
+ })
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index aa4bc40..2d06f6a 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -1,5 +1,6 @@
+ import { type Child, contract, op, ui } from '@hozu/core'
+ import { archive, list, PAGE } from '../../routes.ts'
++import { texts } from '../account/model.ts'
+ import {
+   Add,
+   Archive,
+@@ -71,7 +72,7 @@ const editForm = (note: NoteT) => [
+   ]),
+ ]
+ 
+-const noteItem = (note: NoteT, editing: string) =>
++const noteItem = (note: NoteT, editing: string, deleteLabel: string) =>
+   ui.li({ class: 'flex flex-wrap items-center gap-3 px-4 py-3' }, [
+     ui.label({ class: 'flex items-center' }, [
+       ui.input({
+@@ -95,7 +96,7 @@ const noteItem = (note: NoteT, editing: string) =>
+     itemForm(Pin, note.id, ui.if(op.eq(note.pinned, true), ['Unpin'], ['Pin'])),
+     itemForm(Edit, note.id, 'Edit'),
+     itemForm(Archive, note.id, 'Archive'),
+-    itemForm(Remove, note.id, 'Delete'),
++    itemForm(Remove, note.id, deleteLabel),
+     ui.form(
+       {
+         class: 'flex gap-2',
+@@ -151,144 +152,164 @@ export const NotesBoard = ui.view({
+   route: list,
+   seed: ({ search }) => ({ query: search.q }),
+   render: ({ ctx, when, search }) =>
+-    ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-8' }, [
+-      ui.h1({ class: 'text-3xl font-bold' }, ['Notes']),
+-      ui.a({ href: ui.link(archive, null), class: 'text-sm text-indigo-700 underline' }, ['Archived notes']),
+-      ui.form(
+-        {
+-          class: 'flex flex-wrap gap-2',
+-          on: { submit: ui.send(Add, { title: ui.dom.form('title'), tags: ui.dom.form('tags') }) },
+-        },
+-        [
+-          ui.label({ for: 'title', class: 'sr-only' }, ['Title']),
+-          ui.input({
+-            id: 'title',
+-            name: 'title',
+-            required: true,
+-            maxlength: MAX_TITLE,
+-            value: ctx.draft,
+-            placeholder: 'Title',
+-            'aria-invalid': op.neq(ctx.fields.title, null),
+-            'aria-describedby': 'title-error',
+-            class: 'flex-1 rounded border px-3 py-2',
+-            on: { input: ui.send(Draft, { title: ui.dom.value }) },
+-          }),
+-          ui.label({ for: 'tags', class: 'sr-only' }, ['Tags']),
+-          ui.input({
+-            id: 'tags',
+-            name: 'tags',
+-            value: ctx.draftTags,
+-            placeholder: 'Tags, e.g. work, home',
+-            'aria-invalid': ctx.fields.tags !== null,
+-            'aria-describedby': 'tags-error',
+-            class: 'w-48 rounded border px-3 py-2',
+-          }),
+-          ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
+-        ],
+-      ),
+-      ui.p({ id: 'title-error', role: 'alert', class: 'text-sm text-rose-600' }, [ctx.fields.title]),
+-      ui.p({ id: 'tags-error', role: 'alert', class: 'text-sm text-rose-600' }, [ctx.fields.tags]),
+-      ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+-      ui.query(
+-        lastDeleted,
+-        {},
+-        {
+-          ready: (deleted) =>
+-            deleted === null
+-              ? null
+-              : ui.div(
+-                  { role: 'status', class: 'flex items-center gap-3 rounded bg-slate-100 px-4 py-2 text-sm' },
+-                  [
+-                    `Deleted "${deleted.title}"`,
+-                    ui.form({ on: { submit: ui.send(Undo, {}) } }, [
+-                      ui.button({ type: 'submit', class: 'text-indigo-700 underline' }, ['Undo']),
+-                    ]),
+-                  ],
+-                ),
+-          failed: { Unexpected: () => null },
+-        },
+-      ),
+-      ui.form({ method: 'get', class: 'flex gap-2' }, [
+-        ui.label({ for: 'search', class: 'sr-only' }, ['Search']),
+-        ui.input({
+-          id: 'search',
+-          type: 'search',
+-          name: 'q',
+-          value: ctx.query,
+-          class: 'flex-1 rounded border px-3 py-2',
+-          on: { input: ui.send(Search, { query: ui.dom.value }) },
+-        }),
+-        search.tag !== '' && ui.input({ type: 'hidden', name: 'tag', value: search.tag }),
+-        ui.button({ type: 'submit', class: 'rounded border px-4 py-2' }, ['Search']),
+-      ]),
+-      search.tag !== '' &&
+-        ui.p({ class: 'flex gap-3 text-sm' }, [
+-          `Tagged ${search.tag}`,
+-          ui.a({ href: ui.link(list, null, {}), class: 'text-indigo-700 underline' }, ['All notes']),
+-        ]),
+-      ui.query(
+-        listNotes,
+-        { tag: search.tag, q: search.q, limit: search.limit },
+-        {
+-          ready: (page) =>
+-            ui.section({ class: 'space-y-3' }, [
+-              ui.p({ class: 'text-sm text-slate-600' }, ['Notes: ', page.total]),
+-              ui.p({ class: 'text-sm text-slate-600' }, [
+-                `Showing ${listed({ items: page.notes, query: ctx.query })} of ${page.matching}`,
++    ui.query(
++      texts,
++      {},
++      {
++        ready: (t) =>
++          ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-8' }, [
++            ui.h1({ class: 'text-3xl font-bold' }, [t.notes]),
++            ui.a({ href: ui.link(archive, null), class: 'text-sm text-indigo-700 underline' }, [
++              'Archived notes',
++            ]),
++            ui.form(
++              {
++                class: 'flex flex-wrap gap-2',
++                on: { submit: ui.send(Add, { title: ui.dom.form('title'), tags: ui.dom.form('tags') }) },
++              },
++              [
++                ui.label({ for: 'title', class: 'sr-only' }, [t.title]),
++                ui.input({
++                  id: 'title',
++                  name: 'title',
++                  required: true,
++                  maxlength: MAX_TITLE,
++                  value: ctx.draft,
++                  placeholder: t.title,
++                  'aria-invalid': op.neq(ctx.fields.title, null),
++                  'aria-describedby': 'title-error',
++                  class: 'flex-1 rounded border px-3 py-2',
++                  on: { input: ui.send(Draft, { title: ui.dom.value }) },
++                }),
++                ui.label({ for: 'tags', class: 'sr-only' }, ['Tags']),
++                ui.input({
++                  id: 'tags',
++                  name: 'tags',
++                  value: ctx.draftTags,
++                  placeholder: 'Tags, e.g. work, home',
++                  'aria-invalid': ctx.fields.tags !== null,
++                  'aria-describedby': 'tags-error',
++                  class: 'w-48 rounded border px-3 py-2',
++                }),
++                ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, [t.add]),
++              ],
++            ),
++            ui.p({ id: 'title-error', role: 'alert', class: 'text-sm text-rose-600' }, [ctx.fields.title]),
++            ui.p({ id: 'tags-error', role: 'alert', class: 'text-sm text-rose-600' }, [ctx.fields.tags]),
++            ctx.error !== null &&
++              ui.p({ role: 'alert', class: 'text-rose-600' }, [
++                ctx.error === DUPLICATE ? t.duplicate : ctx.error,
+               ]),
+-              ui.form(
+-                {
+-                  id: BULK_FORM,
+-                  method: 'post',
+-                  action: BULK_PATH,
+-                  class: 'flex items-center gap-3 text-sm',
+-                },
+-                [
+-                  ui.span({ class: 'text-slate-600' }, [`Selected: ${ctx.selected.length}`]),
+-                  ui.button({ type: 'submit', name: 'action', value: 'delete', class: 'underline' }, [
+-                    'Delete selected',
+-                  ]),
+-                  ui.button({ type: 'submit', name: 'action', value: 'archive', class: 'underline' }, [
+-                    'Archive selected',
+-                  ]),
+-                ],
+-              ),
+-              when(
+-                ['adding'],
+-                [
+-                  ui.ul({ class: 'rounded border' }, [
+-                    ui.li({ class: 'flex gap-3 px-4 py-3 opacity-60', 'aria-busy': 'true' }, [
+-                      ui.span({ class: 'flex-1' }, [ctx.draft]),
+-                      ui.span({ class: 'text-xs text-slate-500' }, ['saving…']),
++            ui.query(
++              lastDeleted,
++              {},
++              {
++                ready: (deleted) =>
++                  deleted === null
++                    ? null
++                    : ui.div(
++                        {
++                          role: 'status',
++                          class: 'flex items-center gap-3 rounded bg-slate-100 px-4 py-2 text-sm',
++                        },
++                        [
++                          `Deleted "${deleted.title}"`,
++                          ui.form({ on: { submit: ui.send(Undo, {}) } }, [
++                            ui.button({ type: 'submit', class: 'text-indigo-700 underline' }, ['Undo']),
++                          ]),
++                        ],
++                      ),
++                failed: { Unexpected: () => null },
++              },
++            ),
++            ui.form({ method: 'get', class: 'flex gap-2' }, [
++              ui.label({ for: 'search', class: 'sr-only' }, [t.search]),
++              ui.input({
++                id: 'search',
++                type: 'search',
++                name: 'q',
++                value: ctx.query,
++                class: 'flex-1 rounded border px-3 py-2',
++                on: { input: ui.send(Search, { query: ui.dom.value }) },
++              }),
++              search.tag !== '' && ui.input({ type: 'hidden', name: 'tag', value: search.tag }),
++              ui.button({ type: 'submit', class: 'rounded border px-4 py-2' }, ['Search']),
++            ]),
++            search.tag !== '' &&
++              ui.p({ class: 'flex gap-3 text-sm' }, [
++                `Tagged ${search.tag}`,
++                ui.a({ href: ui.link(list, null, {}), class: 'text-indigo-700 underline' }, ['All notes']),
++              ]),
++            ui.query(
++              listNotes,
++              { tag: search.tag, q: search.q, limit: search.limit },
++              {
++                ready: (page) =>
++                  ui.section({ class: 'space-y-3' }, [
++                    ui.p({ class: 'text-sm text-slate-600' }, [`${t.count} ${page.total}`]),
++                    ui.p({ class: 'text-sm text-slate-600' }, [
++                      `Showing ${listed({ items: page.notes, query: ctx.query })} of ${page.matching}`,
+                     ]),
+-                  ]),
+-                ],
+-              ),
+-              noMatch({ items: page.notes, query: ctx.query })
+-                ? ui.p({ class: 'text-slate-500' }, ['No notes match'])
+-                : ui.ul({ class: 'divide-y rounded border' }, [
+-                    ui.each(visible({ items: page.notes, query: ctx.query }), 'id', (note) =>
+-                      noteItem(note, ctx.editing),
++                    ui.form(
++                      {
++                        id: BULK_FORM,
++                        method: 'post',
++                        action: BULK_PATH,
++                        class: 'flex items-center gap-3 text-sm',
++                      },
++                      [
++                        ui.span({ class: 'text-slate-600' }, [`Selected: ${ctx.selected.length}`]),
++                        ui.button({ type: 'submit', name: 'action', value: 'delete', class: 'underline' }, [
++                          'Delete selected',
++                        ]),
++                        ui.button({ type: 'submit', name: 'action', value: 'archive', class: 'underline' }, [
++                          'Archive selected',
++                        ]),
++                      ],
++                    ),
++                    when(
++                      ['adding'],
++                      [
++                        ui.ul({ class: 'rounded border' }, [
++                          ui.li({ class: 'flex gap-3 px-4 py-3 opacity-60', 'aria-busy': 'true' }, [
++                            ui.span({ class: 'flex-1' }, [ctx.draft]),
++                            ui.span({ class: 'text-xs text-slate-500' }, ['saving…']),
++                          ]),
++                        ]),
++                      ],
+                     ),
++                    noMatch({ items: page.notes, query: ctx.query })
++                      ? ui.p({ class: 'text-slate-500' }, ['No notes match'])
++                      : ui.ul({ class: 'divide-y rounded border' }, [
++                          ui.each(visible({ items: page.notes, query: ctx.query }), 'id', (note) =>
++                            noteItem(note, ctx.editing, t.delete),
++                          ),
++                        ]),
++                    page.notes.length < page.matching &&
++                      ui.a(
++                        {
++                          href: ui.link(list, null, {
++                            tag: search.tag,
++                            q: search.q,
++                            limit: search.limit + PAGE,
++                          }),
++                          class: 'block text-center text-indigo-700 underline',
++                        },
++                        ['Load more'],
++                      ),
+                   ]),
+-              page.notes.length < page.matching &&
+-                ui.a(
+-                  {
+-                    href: ui.link(list, null, { tag: search.tag, q: search.q, limit: search.limit + PAGE }),
+-                    class: 'block text-center text-indigo-700 underline',
+-                  },
+-                  ['Load more'],
+-                ),
+-            ]),
+-          pending: ui.p({}, ['Loading…']),
+-          failed: {
+-            Unauthorized: () => ui.p({ role: 'alert' }, ['Signed out']),
+-            Unexpected: () => ui.p({ role: 'alert' }, ['Notes are unavailable']),
+-          },
+-        },
+-      ),
+-      sharedList,
+-    ]),
++                pending: ui.p({}, ['Loading…']),
++                failed: {
++                  Unauthorized: () => ui.p({ role: 'alert' }, ['Signed out']),
++                  Unexpected: () => ui.p({ role: 'alert' }, ['Notes are unavailable']),
++                },
++              },
++            ),
++            sharedList,
++          ]),
++        failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },
++      },
++    ),
+ })
+ 
+ export const ArchiveBoard = ui.view({
+diff --git a/serve.ts b/serve.ts
+index 333d7ec..df8cfbd 100644
+--- a/serve.ts
++++ b/serve.ts
+@@ -1,20 +1,37 @@
+-import { createServer } from '@hozu/adapter-node'
++import { createServer } from 'node:http'
++import { send, toRequest } from '@hozu/adapter-node'
+ import { buildProject } from '@hozu/core/ir'
+ import { compileStyles } from '@hozu/css'
+-import { sessionCookie } from '@hozu/runtime-server'
++import { createHandler, sessionCookie } from '@hozu/runtime-server'
++import type { Session } from './features/account/model.ts'
+ import project from './hozu.config.ts'
+ import { createResolvers } from './server.ts'
+ 
+ const port = Number(process.env.PORT ?? 3000)
+ const build = buildProject(project, { sources: false })
+-
+-createServer({
++const session = sessionCookie({
++  name: 'sid',
++  secret: process.env.SESSION_SECRET ?? 'notes-example-secret-change-me-please',
++  secure: false,
++})
++const handler = createHandler({
+   build,
++  env: process.env,
+   styles: await compileStyles(build),
+   resolvers: createResolvers(),
+-  session: sessionCookie({
+-    name: 'sid',
+-    secret: process.env.SESSION_SECRET ?? 'notes-example-secret-change-me-please',
+-    secure: false,
+-  }),
++  session,
++})
++
++// Hozu derives <html lang> only from a URL locale prefix; this app keeps English URLs and a cookie choice.
++const withLang = async (request: Request, answer: Response) => {
++  const lang = ((await session.read(request)) as Session | null)?.lang ?? 'en'
++  if (lang === 'en' || !answer.headers.get('content-type')?.startsWith('text/html')) return answer
++  const html = (await answer.text()).replace('<html lang="en"', `<html lang="${lang}"`)
++  return new Response(html, { status: answer.status, headers: answer.headers })
++}
++
++createServer(async (req, res) => {
++  const request = toRequest(req)
++  const lang = new Request(request.url, { headers: request.headers })
++  await send(res, await withLang(lang, await handler.fetch(request)))
+ }).listen(port, () => console.log(`Notes on http://localhost:${port}`))
+diff --git a/server.ts b/server.ts
+index 65ad8df..c7744a6 100644
+--- a/server.ts
++++ b/server.ts
+@@ -1,5 +1,17 @@
+ import { resolvers } from '@hozu/data'
+-import { ADMIN, adminPage, deleteAccount, landing, me, signIn, signOut } from './features/account/model.ts'
++import {
++  ADMIN,
++  adminPage,
++  deleteAccount,
++  landing,
++  me,
++  type Session,
++  setLanguage,
++  signIn,
++  signOut,
++  texts,
++} from './features/account/model.ts'
++import { TEXTS } from './features/account/texts.ts'
+ import {
+   addNote,
+   archiveNote,
+@@ -45,16 +57,23 @@ const html = (status: number, title: string, body: string) =>
+     { status, headers: { 'content-type': 'text/html; charset=utf-8' } },
+   )
+ const redirect = (location: string) => new Response(null, { status: 302, headers: { location } })
++const userOf = (session: Session | null) => session?.user ?? null
++const signedOut = (session: Session | null) =>
++  session?.lang && session.lang !== 'en' ? { user: null, lang: session.lang } : null
+ const copy = (n: Note) => ({ ...n, tags: [...n.tags], sharedWith: [...n.sharedWith] })
+ 
+ export function createResolvers() {
+   const store = createStore()
+   return resolvers(project, (implement) => [
+-    implement(me, (_, { session, fail }) => (session ? { name: session.user } : fail('Unauthorized', {}))),
+-    implement(landing, (_, { session }) => redirect(session ? '/notes' : '/login')),
++    implement(me, (_, { session, fail }) => {
++      const user = userOf(session)
++      return user ? { name: user } : fail('Unauthorized', {})
++    }),
++    implement(landing, (_, { session }) => redirect(userOf(session) ? '/notes' : '/login')),
+     implement(adminPage, (_, { session }) => {
+-      if (!session) return redirect('/login')
+-      if (session.user !== ADMIN) return html(403, 'Not allowed', '<h1>Not allowed</h1>')
++      const user = userOf(session)
++      if (!user) return redirect('/login')
++      if (user !== ADMIN) return html(403, 'Not allowed', '<h1>Not allowed</h1>')
+       const rows = store
+         .users()
+         .map(({ user, notes }) => `<tr><td>${escapeHtml(user)}</td><td>${notes}</td></tr>`)
+@@ -65,117 +84,141 @@ export function createResolvers() {
+         `<h1>Admin</h1><table><thead><tr><th>User</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>`,
+       )
+     }),
+-    implement(signIn, ({ name }, { setSession }) => {
++    implement(texts, (_, { session }) => ({ ...TEXTS[session?.lang ?? 'en'] })),
++    implement(setLanguage, ({ to }, { session, request, setSession }) => {
++      const user = userOf(session)
++      setSession(user || to !== 'en' ? { user, lang: to } : null)
++      const here = new URL((request as Request).url)
++      const back = new URL((request as Request).headers.get('referer') ?? '/login', here)
++      return redirect(back.origin === here.origin ? back.pathname + back.search : '/login')
++    }),
++    implement(signIn, ({ name }, { session, setSession }) => {
+       const user = name.trim().toLowerCase()
+       store.join(user)
+-      setSession({ user })
++      setSession({ user, lang: session?.lang ?? 'en' })
+       return {}
+     }),
+     implement(signOut, (_, { session, setSession }) => {
+-      if (session) store.forget(session.user)
+-      setSession(null)
++      const user = userOf(session)
++      if (user) store.forget(user)
++      setSession(signedOut(session))
+       return {}
+     }),
+     implement(deleteAccount, (_, { session, setSession }) => {
+-      if (session) store.leave(session.user)
+-      setSession(null)
++      const user = userOf(session)
++      if (user) store.leave(user)
++      setSession(signedOut(session))
+       return {}
+     }),
+-    implement(notesApi, (_, { session }) => ({
+-      signedIn: session !== null,
+-      notes: session ? store.active(session.user).map(copy) : [],
+-    })),
++    implement(notesApi, (_, { session }) => {
++      const user = userOf(session)
++      return { signedIn: user !== null, notes: user ? store.active(user).map(copy) : [] }
++    }),
+     implement(listNotes, ({ tag, q, limit }, { session, fail }) => {
+-      if (!session) return fail('Unauthorized', {})
+-      const all = store.active(session.user)
++      const user = userOf(session)
++      if (!user) return fail('Unauthorized', {})
++      const all = store.active(user)
+       const selected = all.filter((n) => (tag === '' || n.tags.includes(tag)) && matches(n, q))
+       return { notes: selected.slice(0, limit).map(copy), matching: selected.length, total: all.length }
+     }),
+-    implement(listArchived, (_, { session, fail }) =>
+-      session ? store.archived(session.user).map(copy) : fail('Unauthorized', {}),
+-    ),
++    implement(listArchived, (_, { session, fail }) => {
++      const user = userOf(session)
++      return user ? store.archived(user).map(copy) : fail('Unauthorized', {})
++    }),
+     implement(bulkNotes, (fields, { session }) => {
+-      if (session) {
+-        const ids = Object.keys(fields).filter(
+-          (id) => fields[id] === SELECTED && store.find(session.user, id),
+-        )
+-        if (ids.length) store.forget(session.user)
++      const user = userOf(session)
++      if (user) {
++        const ids = Object.keys(fields).filter((id) => fields[id] === SELECTED && store.find(user, id))
++        if (ids.length) store.forget(user)
+         for (const id of ids)
+-          if (fields.action === 'archive') store.find(session.user, id)!.archived = true
+-          else if (fields.action === 'delete') store.remove(session.user, id, false)
++          if (fields.action === 'archive') store.find(user, id)!.archived = true
++          else if (fields.action === 'delete') store.remove(user, id, false)
+       }
+-      return new Response(null, { status: 303, headers: { location: session ? '/notes' : '/login' } })
++      return new Response(null, { status: 303, headers: { location: user ? '/notes' : '/login' } })
++    }),
++    implement(sharedWithMe, (_, { session }) => {
++      const user = userOf(session)
++      return user ? store.sharedWith(user) : []
+     }),
+-    implement(sharedWithMe, (_, { session }) => (session ? store.sharedWith(session.user) : [])),
+     implement(shareNote, ({ id, to }, { session, fail }) => {
+-      const note = session && store.find(session.user, id)
+-      if (!session || !note) return fail('NotFound', { id })
++      const user = userOf(session)
++      const note = user && store.find(user, id)
++      if (!user || !note) return fail('NotFound', { id })
+       const name = to.trim().toLowerCase()
+-      if (name === session.user) return fail('Self', {})
++      if (name === user) return fail('Self', {})
+       if (!note.sharedWith.includes(name)) note.sharedWith.push(name)
+       return { id }
+     }),
+     implement(unshareNote, ({ id, to }, { session, fail }) => {
+-      const note = session && store.find(session.user, id)
++      const user = userOf(session)
++      const note = user && store.find(user, id)
+       if (!note) return fail('NotFound', { id })
+       note.sharedWith = note.sharedWith.filter((name) => name !== to)
+       return { id }
+     }),
+     implement(lastDeleted, (_, { session }) => {
+-      const note = session && store.lastDeleted(session.user)
++      const user = userOf(session)
++      const note = user && store.lastDeleted(user)
+       return note ? { title: note.title } : null
+     }),
+     implement(undoDelete, (_, { session, fail }) => {
+-      const note = session && store.undo(session.user)
++      const user = userOf(session)
++      const note = user && store.undo(user)
+       return note ? { id: note.id } : fail('NotFound', {})
+     }),
+     implement(addNote, ({ title, tags }, { session, fail }) => {
+-      if (!session) return fail('Invalid', { message: 'Signed out', fields: { title: 'Sign in first' } })
++      const user = userOf(session)
++      if (!user) return fail('Invalid', { message: 'Signed out', fields: { title: 'Sign in first' } })
+       const clean = title.trim()
+       const error = titleError(clean)
+       if (error) return fail('Invalid', { message: `title: ${error}`, fields: { title: error } })
+       const parsed = parseTags(tags)
+       if (!parsed.every((t) => TAG.test(t)))
+         return fail('Invalid', { message: BAD_TAGS, fields: { tags: BAD_TAGS } })
+-      if (store.taken(session.user, clean)) return fail('Duplicate', { title: clean })
+-      if (store.addedSince(session.user, Date.now() - RATE_WINDOW) >= RATE_LIMIT) return fail('TooMany', {})
+-      store.forget(session.user)
+-      return copy(store.add(session.user, clean, parsed))
++      if (store.taken(user, clean)) return fail('Duplicate', { title: clean })
++      if (store.addedSince(user, Date.now() - RATE_WINDOW) >= RATE_LIMIT) return fail('TooMany', {})
++      store.forget(user)
++      return copy(store.add(user, clean, parsed))
+     }),
+     implement(removeNote, ({ id }, { session, fail }) => {
+-      if (!session || !store.find(session.user, id)) return fail('NotFound', { id })
+-      store.remove(session.user, id)
++      const user = userOf(session)
++      if (!user || !store.find(user, id)) return fail('NotFound', { id })
++      store.remove(user, id)
+       return { id }
+     }),
+     implement(renameNote, ({ id, title }, { session, fail }) => {
+-      const note = session && store.find(session.user, id)
+-      if (!session || !note) return fail('NotFound', { id })
++      const user = userOf(session)
++      const note = user && store.find(user, id)
++      if (!user || !note) return fail('NotFound', { id })
+       const clean = title.trim()
+       const error = titleError(clean)
+       if (error) return fail('Invalid', { message: error, fields: { title: error } })
+-      if (store.taken(session.user, clean, id)) return fail('Duplicate', { title: clean })
+-      store.forget(session.user)
++      if (store.taken(user, clean, id)) return fail('Duplicate', { title: clean })
++      store.forget(user)
+       note.title = clean
+       return copy(note)
+     }),
+     implement(togglePin, ({ id }, { session, fail }) => {
+-      const note = session && store.find(session.user, id)
++      const user = userOf(session)
++      const note = user && store.find(user, id)
+       if (!note) return fail('NotFound', { id })
+-      store.forget(session.user)
++      store.forget(user)
+       note.pinned = !note.pinned
+       return copy(note)
+     }),
+     implement(archiveNote, ({ id }, { session, fail }) => {
+-      const note = session && store.find(session.user, id)
++      const user = userOf(session)
++      const note = user && store.find(user, id)
+       if (!note) return fail('NotFound', { id })
+-      store.forget(session.user)
++      store.forget(user)
+       note.archived = true
+       return { id }
+     }),
+     implement(restoreNote, ({ id }, { session, fail }) => {
+-      const note = session && store.find(session.user, id, true)
++      const user = userOf(session)
++      const note = user && store.find(user, id, true)
+       if (!note) return fail('NotFound', { id })
+-      store.forget(session.user)
++      store.forget(user)
+       note.archived = false
+       return { id }
+     }),
