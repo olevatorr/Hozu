@@ -1,0 +1,47 @@
+diff --git a/app/pages/notes.vue b/app/pages/notes.vue
+index 9761228..8905243 100644
+--- a/app/pages/notes.vue
++++ b/app/pages/notes.vue
+@@ -10,6 +10,7 @@ const submit = useFormAction()
+ const title = ref('')
+ const tags = ref('')
+ const adding = ref(false)
++const pending = ref<string | null>(null)
+ const search = ref('')
+ watch(
+   () => route.query.q,
+@@ -27,13 +28,19 @@ const visible = computed(() => {
+ async function add(event: SubmitEvent) {
+   if (adding.value) return
+   adding.value = true
++  const typed = { title: title.value, tags: tags.value }
++  pending.value = typed.title.trim()
++  const sent = submit(event)
++  title.value = ''
++  tags.value = ''
+   try {
+-    await submit(event)
+-    if (!data.value?.flash) {
+-      title.value = ''
+-      tags.value = ''
++    await sent
++    if (data.value?.flash) {
++      title.value = typed.title
++      tags.value = typed.tags
+     }
+   } finally {
++    pending.value = null
+     adding.value = false
+   }
+ }
+@@ -94,6 +101,10 @@ async function add(event: SubmitEvent) {
+ 
+     <p v-if="(search.trim() || route.query.q || data.tag) && !visible.length" class="mt-4 text-slate-500">No notes match</p>
+     <ul v-else class="mt-4 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
++      <li v-if="pending" class="flex items-center gap-3 px-4 py-3 text-slate-500">
++        <span class="flex-1">{{ pending }}</span>
++        <span class="text-xs italic">saving…</span>
++      </li>
+       <NoteItem v-for="note in visible" :key="note.id" :note="note" :editing="route.query.edit === note.id" />
+     </ul>
+ 
