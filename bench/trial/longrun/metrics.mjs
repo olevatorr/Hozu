@@ -20,18 +20,34 @@ const diff = git(app, 'diff', '--numstat', prev, tag)
   .filter(Boolean)
   .map((l) => l.split('\t'))
   .filter(([, , f]) => isCode(f))
-  .reduce((a, [add, del]) => ({ added: a.added + (+add || 0), removed: a.removed + (+del || 0) }), { added: 0, removed: 0 })
+  .reduce((a, [add, del]) => ({ added: a.added + (+add || 0), removed: a.removed + (+del || 0) }), {
+    added: 0,
+    removed: 0,
+  })
 
 const transcript = file('jsonl')
 const records = existsSync(transcript)
-  ? readFileSync(transcript, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l))
+  ? readFileSync(transcript, 'utf8')
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l))
   : []
 const result = records.findLast((r) => r.type === 'result')
 const finalText = result?.result ?? ''
 let cost = null
 try {
   const a = anatomy(transcript)
-  cost = { weighted: Math.round(a.weighted), calls: a.calls, output: a.output / 5, fresh: a.fresh, cached: Math.round(a.cached * 10), turnsBy: a.turnsBy, carriedBy: Object.fromEntries(Object.entries(a.carriedBy).map(([k, v]) => [k, Math.round(v)])), fixes: a.fixes }
+  cost = {
+    weighted: Math.round(a.weighted),
+    calls: a.calls,
+    output: a.output / 5,
+    fresh: a.fresh,
+    cached: Math.round(a.cached * 10),
+    turnsBy: a.turnsBy,
+    carriedBy: Object.fromEntries(Object.entries(a.carriedBy).map(([k, v]) => [k, Math.round(v)])),
+    fixes: a.fixes,
+  }
 } catch (e) {
   cost = { error: String(e.message).slice(0, 120) }
 }
@@ -44,7 +60,8 @@ const toolText = records
   .map((c) => (typeof c.content === 'string' ? c.content : JSON.stringify(c.content)))
   .join('\n')
 
-const admits = /\b(could not|couldn't|cannot|can't|unable to|not (yet )?(implemented|working|supported|done)|does not work|doesn't work|failing|still fails?|partial(ly)?|did not|didn't|TODO|known (issue|limitation)|limitation|skipped|not verified)\b|無法|沒有確認|未確認|沒確認|未驗證|沒有驗證|還是會|仍然會|仍會|沒有成功|未完成|做不到|不支援/i
+const admits =
+  /\b(could not|couldn't|cannot|can't|unable to|not (yet )?(implemented|working|supported|done)|does not work|doesn't work|failing|still fails?|partial(ly)?|did not|didn't|TODO|known (issue|limitation)|limitation|skipped|not verified)\b|無法|沒有確認|未確認|沒確認|未驗證|沒有驗證|還是會|仍然會|仍會|沒有成功|未完成|做不到|不支援/i
 const accept = json('accept.json')
 const failed = accept ? accept.total - accept.passed : null
 const row = {
@@ -79,7 +96,10 @@ if (fw === 'hozu') {
       return {}
     }
   }
-  const flat = (l) => Object.fromEntries(Object.entries(l).flatMap(([f, e]) => Object.entries(e).map(([k, v]) => [`${f}/${k}`, v.behavior])))
+  const flat = (l) =>
+    Object.fromEntries(
+      Object.entries(l).flatMap(([f, e]) => Object.entries(e).map(([k, v]) => [`${f}/${k}`, v.behavior])),
+    )
   const [a, b] = [flat(lock(prev)), flat(lock(tag))]
   const keys = new Set([...Object.keys(a), ...Object.keys(b)])
   const inspect = json('inspect.json') ?? []
@@ -90,7 +110,10 @@ if (fw === 'hozu') {
     warnings: check?.validate?.summary?.warnings ?? null,
     codes: [...new Set(d.map((x) => x.code))],
     deadStates: d.filter((x) => x.code === 'HZ001').length,
-    contracts: coverage.reduce((s, c) => ({ covered: s.covered + c.covered, total: s.total + c.total }), { covered: 0, total: 0 }),
+    contracts: coverage.reduce((s, c) => ({ covered: s.covered + c.covered, total: s.total + c.total }), {
+      covered: 0,
+      total: 0,
+    }),
     lockEntries: Object.keys(b).length,
     lockChanged: [...keys].filter((k) => a[k] !== b[k]).length,
     states: inspect.reduce((s, x) => s + (x.summary?.states ?? 0), 0),

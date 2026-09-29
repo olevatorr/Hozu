@@ -16,7 +16,9 @@ export function duplication(cwd, ref = 'HEAD') {
   const seen = new Map()
   for (const { f, lines } of files)
     for (let i = 0; i + WINDOW <= lines.length; i++) {
-      const h = createHash('sha1').update(lines.slice(i, i + WINDOW).join('\n')).digest('hex')
+      const h = createHash('sha1')
+        .update(lines.slice(i, i + WINDOW).join('\n'))
+        .digest('hex')
       const at = seen.get(h) ?? []
       at.push([f, i])
       seen.set(h, at)
@@ -29,7 +31,12 @@ export function duplication(cwd, ref = 'HEAD') {
     for (const [f, i] of at) for (let k = 0; k < WINDOW; k++) dup.add(`${f}:${i + k}`)
   }
   const total = files.reduce((n, x) => n + x.lines.length, 0)
-  return { lines: total, duplicatedLines: dup.size, ratio: total ? +(dup.size / total).toFixed(4) : 0, blocks }
+  return {
+    lines: total,
+    duplicatedLines: dup.size,
+    ratio: total ? +(dup.size / total).toFixed(4) : 0,
+    blocks,
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)

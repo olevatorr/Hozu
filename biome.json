@@ -12,7 +12,9 @@
       "!**/__snapshots__",
       "!**/*.vue",
       "!**/*.svelte",
-      "!bench/trial/notes/*-run*"
+      "!bench/trial/notes/*-run*",
+      "!bench/trial/longrun/results",
+      "!bench/trial/longrun/reference"
     ]
   },
   "formatter": {

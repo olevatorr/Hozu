@@ -7,7 +7,11 @@ for (const fw of existsSync(dir) ? readdirSync(dir) : [])
   for (const run of readdirSync(join(dir, fw))) {
     const f = join(dir, fw, run, 'metrics.jsonl')
     if (!existsSync(f)) continue
-    const rows = readFileSync(f, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l))
+    const rows = readFileSync(f, 'utf8')
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l))
     const byStep = new Map(rows.map((r) => [r.step, r]))
     runs.push({ fw, run, key: `${fw}-${run}`, rows: [...byStep.values()].sort((a, b) => a.step - b.step) })
   }
@@ -34,21 +38,53 @@ for (const r of runs) {
       ? `check ${x.hozu.checkOk ? 'ok' : `✗ ${x.hozu.errors}e`}${x.hozu.warnings ? ` ${x.hozu.warnings}w` : ''}, lock ${x.hozu.lockEntries} (${x.hozu.lockChanged}Δ), ${x.hozu.states}s/${x.hozu.transitions}t`
       : `tc ${x.nuxt.typecheckOk ? 'ok' : '✗'}, build ${x.nuxt.buildOk ? 'ok' : '✗'}`
     out.push(
-      `| ${x.step} | ${a ? `${a.new.passed}/${a.new.total}` : '–'} | ${a && a.regression.total ? `${a.regression.passed}/${a.regression.total}` : '–'} | ${x.silentFailure ? 'yes' : ''} | ${k(x.cost?.weighted)} | ${x.cost?.calls ?? '–'} | ${x.size.lines} | +${x.size.added}/−${x.size.removed} | ${(x.duplication.ratio * 100).toFixed(1)} | ${x.js?.list ?? '–'} | ${status} |`,
+      `| ${x.step} | ${a ? `${a.new.passed}/${a.new.total}` : '–'} | ${a?.regression.total ? `${a.regression.passed}/${a.regression.total}` : '–'} | ${x.silentFailure ? 'yes' : ''} | ${k(x.cost?.weighted)} | ${x.cost?.calls ?? '–'} | ${x.size.lines} | +${x.size.added}/−${x.size.removed} | ${(x.duplication.ratio * 100).toFixed(1)} | ${x.js?.list ?? '–'} | ${status} |`,
     )
   }
   out.push('')
 }
 out.push('### Slopes over steps 1–20', '')
-out.push('| Run | Cost / step (k per step) | Cost per 100 lines of app | Regression failures | Silent failures | Lines / step | Dup pp / step | JS bytes / step |')
+out.push(
+  '| Run | Cost / step (k per step) | Cost per 100 lines of app | Regression failures | Silent failures | Lines / step | Dup pp / step | JS bytes / step |',
+)
 out.push('|---|---|---|---|---|---|---|---|')
 for (const r of runs) {
   const c = changes(r).filter((x) => x.cost?.weighted)
   const steps = c.map((x) => x.step)
-  const regFail = changes(r).reduce((s, x) => s + (x.accept ? x.accept.regression.total - x.accept.regression.passed : 0), 0)
+  const regFail = changes(r).reduce(
+    (s, x) => s + (x.accept ? x.accept.regression.total - x.accept.regression.passed : 0),
+    0,
+  )
   const silent = changes(r).filter((x) => x.silentFailure).length
   out.push(
-    `| ${r.key} | ${(slope(steps, c.map((x) => x.cost.weighted)) / 1000)?.toFixed(2)} | ${(slope(c.map((x) => x.size.lines), c.map((x) => x.cost.weighted)) * 100 / 1000)?.toFixed(2)} k | ${regFail} | ${silent} | ${slope(changes(r).map((x) => x.step), changes(r).map((x) => x.size.lines))?.toFixed(1)} | ${(slope(changes(r).map((x) => x.step), changes(r).map((x) => x.duplication.ratio * 100)) ?? 0).toFixed(2)} | ${slope(changes(r).filter((x) => x.js?.list).map((x) => x.step), changes(r).filter((x) => x.js?.list).map((x) => x.js.list))?.toFixed(0)} |`,
+    `| ${r.key} | ${(
+      slope(
+        steps,
+        c.map((x) => x.cost.weighted),
+      ) / 1000
+    )?.toFixed(2)} | ${(
+      (slope(
+        c.map((x) => x.size.lines),
+        c.map((x) => x.cost.weighted),
+      ) *
+        100) /
+        1000
+    )?.toFixed(2)} k | ${regFail} | ${silent} | ${slope(
+      changes(r).map((x) => x.step),
+      changes(r).map((x) => x.size.lines),
+    )?.toFixed(1)} | ${(
+      slope(
+        changes(r).map((x) => x.step),
+        changes(r).map((x) => x.duplication.ratio * 100),
+      ) ?? 0
+    ).toFixed(2)} | ${slope(
+      changes(r)
+        .filter((x) => x.js?.list)
+        .map((x) => x.step),
+      changes(r)
+        .filter((x) => x.js?.list)
+        .map((x) => x.js.list),
+    )?.toFixed(0)} |`,
   )
 }
 console.log(out.join('\n'))
@@ -65,12 +101,15 @@ const W = 320
 const H = 180
 const pad = 34
 const colors = { hozu: ['#2563eb', '#60a5fa'], nuxt: ['#16a34a', '#86efac'] }
-let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W * 3} ${H * 2 + 30}" font-family="system-ui, sans-serif" font-size="10">`
+let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W * 3} ${H * 2 + 30}" font-family="system-ui, sans-serif" font-size="10" role="img" aria-label="Trial 0020 per-step curves"><title>Trial 0020 per-step curves</title>`
 svg += `<rect width="100%" height="100%" fill="#fff"/>`
 panels.forEach(([title, get], p) => {
   const ox = (p % 3) * W
   const oy = Math.floor(p / 3) * H
-  const series = runs.map((r) => ({ r, pts: r.rows.map((x) => [x.step, get(x)]).filter(([, y]) => y != null) }))
+  const series = runs.map((r) => ({
+    r,
+    pts: r.rows.map((x) => [x.step, get(x)]).filter(([, y]) => y != null),
+  }))
   const max = Math.max(1, ...series.flatMap((s) => s.pts.map(([, y]) => y)))
   const sx = (s) => ox + pad + (s / 20) * (W - pad - 12)
   const sy = (y) => oy + H - 22 - (y / max) * (H - 50)
@@ -80,7 +119,8 @@ panels.forEach(([title, get], p) => {
   for (const s of [0, 5, 10, 15, 20]) svg += `<text x="${sx(s) - 3}" y="${sy(0) + 12}">${s}</text>`
   const seen = {}
   for (const { r, pts } of series) {
-    const i = (seen[r.fw] = (seen[r.fw] ?? -1) + 1)
+    const i = (seen[r.fw] ?? -1) + 1
+    seen[r.fw] = i
     const color = colors[r.fw]?.[i % 2] ?? '#999'
     svg += `<polyline fill="none" stroke="${color}" stroke-width="1.6" points="${pts.map(([x, y]) => `${sx(x).toFixed(1)},${sy(y).toFixed(1)}`).join(' ')}"/>`
   }
