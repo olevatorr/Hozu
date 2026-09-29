@@ -28,6 +28,8 @@ The account scaffold changed the next build comparison. In trial 0013, two new H
 
 Hozu 0.5 targeted the cause that a study of the transcripts identified: agents spend most of the extra tokens reading the guide, and every additional call carries that reading again ([ADR 0038](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0038-cost-anatomy.md)). With ordinary TypeScript in callbacks, a shorter guide split into `hozu docs` topics, and fewer verification detours, trial 0016 measured 1.38× Nuxt to build and 1.45× to change, with four Claude runs per step. All five runs, including one by Codex, passed all 36 checks. The Nuxt baseline is still the two runs of trial 0012, and the cost target of 1.3× was not reached: reading an unfamiliar guide remains the price. [Trial 0016](/trials/0016-0-5-four-runs) records it.
 
+Hozu 0.7 attacked what remained: the code the surface forced an agent to write ([ADR 0041](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0041-0-7-write-less.md)). [Trial 0019](/trials/0019-0-7-write-less) measured 1.14× Nuxt to build and 1.38× to change on the notes task, and 1.75× and 2.03× on a widget-heavy task (Leaflet, Chart.js, GSAP and Three.js), with two runs per step and every check passing. The extra cost is smaller, not gone.
+
 ## The constraints are part of the product
 
 A closed view tree is useful when you want the framework to inspect dependencies and event bindings. It is less convenient when a component design depends on arbitrary render functions, undeclared effects or a large existing library’s assumptions. Hozu offers typed widget boundaries for imperative DOM integration, but that boundary has an opaque implementation; the IR cannot prove every line inside it.

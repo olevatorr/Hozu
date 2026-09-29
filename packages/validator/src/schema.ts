@@ -43,8 +43,9 @@ function step(s: JsonSchema, segment: string): Step {
     if (/^\d+$/.test(segment)) return { ok: true, schema: obj(s.items) }
     return { ok: false, candidates: ['length'] }
   }
+  if (t.includes('string') && segment === 'length') return { ok: true, schema: { type: 'integer' } }
   if (t.length === 0) return { ok: true, schema: null }
-  return { ok: false, candidates: [] }
+  return { ok: false, candidates: t.includes('string') ? ['length'] : [] }
 }
 
 interface Trie {

@@ -16,17 +16,70 @@ import { CodeCopy } from './widgets.ts'
 
 export { Chapter, Docs, Footer, Header }
 
+const catches: {
+  ask: string
+  mistake: string
+  conventional: [boolean, string][]
+  diagnostic: string
+  provenance: string
+}[] = [
+  {
+    ask: '“Make notes private per user.”',
+    mistake: "The agent keeps the notes list cached and keys it by the signed-in user's name.",
+    conventional: [
+      [true, 'TypeScript passes'],
+      [true, 'The build passes'],
+      [false, 'A cache keyed by the URL serves one user’s notes to the next'],
+    ],
+    diagnostic: `features/notes/views.ts:9:14  error  HZ022
+Public query notes.notesOf is keyed by user-scoped data
+cause: Its result is cached in the shared public partition (revalidate), so user-derived input would reach a cacheable region.
+fix: Make the query scope: 'user', or key it by data that does not come from the user`,
+    provenance:
+      'Conventional column: an illustration of the failure. Hozu column: hozu check on this mistake.',
+  },
+  {
+    ask: '“Add pinned notes, listed first.”',
+    mistake: 'The agent sorts and updates the fetched list in place.',
+    conventional: [
+      [true, 'TypeScript passes'],
+      [true, 'The build passes; the agent reports success'],
+      [false, 'New notes stop appearing and deleted notes stay listed'],
+    ],
+    diagnostic: `features/notes/views.ts:9:14  error  HZ014
+Method "sort" cannot run on a reference: references are recorded, not evaluated. For a list use ui.each(list, 'id', (item) => …); for any other computation declare a fn() and call it with the reference.`,
+    provenance:
+      'Conventional column: observed in trial 0012 (Nuxt run 1, a shallow ref mutated in place). Hozu column: hozu check on the same idea.',
+  },
+  {
+    ask: '“Stop saving empty notes.”',
+    mistake:
+      'The agent tightens the rule to three characters, so a two-character note that saved yesterday no longer does.',
+    conventional: [
+      [true, 'TypeScript passes'],
+      [true, 'The build passes'],
+      [false, 'Behaviour changed; nothing flags it unless a test happens to cover it'],
+    ],
+    diagnostic: `features/notes/views.ts:18:31  error  HZ015
+Contract savesLongDraft: Context differs from the expectation
+cause: context.saved: expected true, got false. No transition fired.
+fix: Decide which is intended: fix the machine, or update the contract to specify the new behavior`,
+    provenance:
+      'Conventional column: an illustration. Hozu column: hozu check after the guard changed and its contract did not.',
+  },
+]
+
 export const Home = ui.view({
   render: () =>
     ui.main({ id: 'main' }, [
       ui.section({ 'data-hero': '' }, [
         ui.div({}, [
-          ui.h1({}, ['An AI-first web framework.']),
+          ui.h1({}, ['Built for agents that change software.']),
           ui.p({ 'data-pitch': '' }, [
             'Invalid programs are hard to express. Valid programs are cheap to verify.',
           ]),
           ui.p({}, [
-            'Give your coding agent a structure it can check: typed views, explicit data and contracts for every behaviour.',
+            'Hozu is a web framework for coding agents. When a change looks right and still type-checks, Hozu reports what broke, where, and how to fix it.',
           ]),
           ui.a({ href: ui.link(doc, { slug: 'getting-started' }), 'data-button': '' }, ['Start building']),
           ui.a({ href: ui.link(how, null), 'data-secondary': '' }, ['Understand Hozu']),
@@ -39,6 +92,32 @@ export const Home = ui.view({
             alt: 'The Hozu interlocking joint logo',
           }),
           ui.p({}, ['ほぞ / A joint that fits.']),
+        ]),
+      ]),
+      ui.section({ 'data-section': '', 'aria-labelledby': 'catches-title' }, [
+        ui.h2({ id: 'catches-title' }, ['What an agent gets wrong, and what Hozu says.']),
+        ui.p({ 'data-lede': '' }, [
+          'Each of these changes type-checks and builds. The diagnostics are the real output of hozu check on the same mistake, wrapped to fit.',
+        ]),
+        ui.div({ 'data-catches': '' }, [
+          ...catches.map((c) =>
+            ui.article({}, [
+              ui.h3({}, [c.ask]),
+              ui.p({}, [c.mistake]),
+              ui.div({ 'data-versus': '' }, [
+                ui.div({}, [
+                  ui.h4({}, ['A conventional stack']),
+                  ui.ul({}, [
+                    ...c.conventional.map(([ok, text]) =>
+                      ui.li({ 'data-ok': ok ? 'yes' : 'no' }, [`${ok ? '✓' : '✗'} ${text}`]),
+                    ),
+                  ]),
+                ]),
+                ui.div({}, [ui.h4({}, ['hozu check']), ui.pre({}, [ui.code({}, [c.diagnostic])])]),
+              ]),
+              ui.p({ 'data-provenance': '' }, [c.provenance]),
+            ]),
+          ),
         ]),
       ]),
       ui.section({ 'data-start': '', 'aria-labelledby': 'start-title' }, [
@@ -100,44 +179,41 @@ export const Home = ui.view({
       ui.section({ 'data-results': '', 'aria-labelledby': 'results-title' }, [
         ui.h2({ id: 'results-title' }, ['Measured, with the rough edges included.']),
         ui.p({}, [
-          'A notes app with accounts, built from a spec and then changed by an agent, checked by a hidden acceptance test: per-user isolation, double submit, forms without JavaScript, HttpOnly sessions, and a regression pass after the change.',
+          'Two tasks, each built from a spec and then changed by an agent, checked by hidden acceptance tests. Notes: accounts, per-user isolation, double submit, forms without JavaScript, HttpOnly sessions. City bikes: a Leaflet map, a Chart.js chart, GSAP animation and a Three.js globe. Every run is also re-checked after the change for regressions.',
         ]),
         ui.table({}, [
-          ui.caption({}, ['Trials 0012 and 0016: the same task, prompts and model']),
+          ui.caption({}, [
+            'Trials 0012, 0017 and 0019: the same tasks, prompts and model; agent cost relative to Nuxt',
+          ]),
           ui.thead({}, [
             ui.tr({}, [
               ui.th({ scope: 'col' }, ['']),
-              ui.th({ scope: 'col' }, ['Hozu 0.5']),
+              ui.th({ scope: 'col' }, ['Hozu 0.7']),
               ui.th({ scope: 'col' }, ['Nuxt']),
             ]),
           ]),
           ui.tbody({}, [
-            ui.tr({}, [
-              ui.th({ scope: 'row' }, ['Checks passed']),
-              ui.td({}, ['180 / 180 (5 runs, incl. Codex)']),
-              ui.td({}, ['67 / 72 (2 runs)']),
-            ]),
-            ui.tr({}, [
-              ui.th({ scope: 'row' }, ['Agent cost to build']),
-              ui.td({}, ['1.38×']),
-              ui.td({}, ['1×']),
-            ]),
-            ui.tr({}, [
-              ui.th({ scope: 'row' }, ['Agent cost to change']),
-              ui.td({}, ['1.45×']),
-              ui.td({}, ['1×']),
-            ]),
+            ...[
+              ['Checks passed', 'Every run, trials 0016–0019', 'Notes 67 / 72, city bikes 76 / 76'],
+              ['Notes: build', '1.14×', '1×'],
+              ['Notes: change', '1.38×', '1×'],
+              ['City bikes: build', '1.75×', '1×'],
+              ['City bikes: change', '2.03×', '1×'],
+            ].map(([row, hozu, nuxt]) =>
+              ui.tr({}, [ui.th({ scope: 'row' }, [row!]), ui.td({}, [hozu!]), ui.td({}, [nuxt!])]),
+            ),
           ]),
         ]),
         ui.p({}, [
-          'One Nuxt change silently broke three working features; no Hozu run did. The price is extra tokens, mostly spent reading the guide of a framework the model has not seen. Small samples, not failure rates.',
+          'One Nuxt change silently broke three working features; no Hozu run did. The price is extra tokens: a guide the model has not seen, and on widget-heavy apps more code to write. Two to four runs per step: small samples, not failure rates.',
         ]),
         ui.ul({}, [
           ...[
-            ['0016-0-5-four-runs', '0016: 0.5, four runs per step and a Codex run'],
-            ['0015-0-5-ordinary-typescript', '0015: ordinary TypeScript, first measurement'],
-            ['0014-0-5-notes', '0014: before the guide was indexed (1.80×)'],
-            ['0012-correctness-notes', '0012: correctness, methods and limitations'],
+            ['0019-0-7-write-less', '0019: 0.7 on both tasks'],
+            ['0018-widgets-0-6', '0018: city bikes on 0.6, with hozu browse'],
+            ['0017-widgets', '0017: city bikes, the Nuxt baseline'],
+            ['0016-0-5-four-runs', '0016: notes on 0.5, four runs per step and a Codex run'],
+            ['0012-correctness-notes', '0012: notes, correctness, methods and limitations'],
           ].map(([slug, title]) => ui.li({}, [ui.a({ href: ui.link(trial, { slug: slug! }) }, [title!])])),
         ]),
       ]),

@@ -201,10 +201,11 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
     const d = info.def as NodeDef
     const binding = () => refProxy('binding', depth)
     const branch = (render: (x: unknown) => unknown, bid: string, bp: At): ViewNode => {
-      const rendered = scope.attempt(bp, () => render(binding()), undefined)
-      return rendered === null
+      const failed = Symbol('failed')
+      const rendered = scope.attempt<unknown>(bp, () => render(binding()), failed)
+      return rendered === null || rendered === failed
         ? { id: bid, kind: 'if', test: { op: 'and', args: [] }, motion: null, ifTrue: [], ifFalse: [] }
-        : node(scope, rendered ?? null, bid, bp, depth + 1)
+        : node(scope, rendered, bid, bp, depth + 1)
     }
     switch (d.kind) {
       case 'el':

@@ -362,7 +362,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
           'fn bodies are sent to the browser as source text. Module helpers that are self-contained are sent with them; imported names and mutable module state (let) are not, so the island would stop while the server still renders the page.',
           {
             summary: `Pass ${list} as input fields, or write ${names.length === 1 ? 'it' : 'them'} as a const helper in this module`,
-            snippet: `impl: ({ items }) => {\n  const ${names[0]} = /* the helper, written here */\n  return ...\n}`,
+            snippet: `const ${names[0]} = (…) => …   // declared in this module, not imported`,
             patch: null,
           },
         )

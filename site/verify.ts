@@ -7,7 +7,9 @@ import { createResolvers } from './server.ts'
 
 const app = testApp({ build: buildProject(project), resolvers: createResolvers() })
 for (const [path, status, text] of [
-  ['/', 200, '180 / 180'],
+  ['/', 200, 'Public query notes.notesOf is keyed by user-scoped data'],
+  ['/', 200, 'Every run, trials 0016–0019'],
+  ['/trials/0019-0-7-write-less', 200, '1.38×'],
   ['/how-it-works', 200, 'Understand the design'],
   ['/how-it-works/why-ai-first', 200, 'Why AI-first?'],
   ['/how-it-works/pipeline', 200, 'One representation'],

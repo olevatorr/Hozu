@@ -5,6 +5,7 @@ type Obj = { [key: string]: Json }
 export function getIn(value: Json | undefined, path: readonly string[]): Json {
   let current: unknown = value
   for (const key of path) {
+    if (typeof current === 'string' && key === 'length') return current.length
     if (current === null || typeof current !== 'object') return null
     current = (current as Obj)[key]
   }
