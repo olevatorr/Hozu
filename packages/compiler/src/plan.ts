@@ -303,7 +303,7 @@ function readsRoute(ir: ProjectIR, ref: string, seen = new Set<string>()): boole
     if (o.kind === 'embed' && typeof o.view === 'string' && readsRoute(ir, o.view, seen)) return true
     return Object.values(o).some(scan)
   }
-  const result = scan(view.root) || (view.machine !== null && scan(feature.machine))
+  const result = scan(view.root) || scan(view.seed) || (view.machine !== null && scan(feature.machine))
   routeMemo.set(view, result)
   return result
 }

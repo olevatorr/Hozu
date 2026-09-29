@@ -5,7 +5,7 @@ and the `@hozu/bundle` dependency. There is no `widget` export; the pieces are:
 ```ts
 export const Map = ui.widget({ tag: 'div', props: z.object({ lat: z.number(), lng: z.number() }),
   events: { picked: z.object({ id: z.string() }) }, client: new URL('./map.client.ts', import.meta.url),
-  load: 'visible', wraps: false })                                      // in declarations
+  load: 'visible', wraps: false })                                      // widgets.ts; the feature lists the module
 ui.use(Map, { props: { lat: ctx.lat, lng: ctx.lng }, on: { picked: (d) => ui.send(Pick, { id: d.id }) },
   class: 'h-96 w-full' }, [])                                           // in a view
 ```
@@ -19,6 +19,8 @@ export default implement<typeof Map>(({ el, props, emit, signal }) => {
   return { update(next) { map.move(next) }, destroy() { map.remove() } }
 })
 ```
+- `on` is optional. `ui.use` takes no other attributes: put a role or label on a wrapping element,
+  `ui.section({ role: 'region', 'aria-label': 'Map' }, [ui.use(Map, { props }, [])])`.
 - `load`: `'eager' | 'visible' | 'idle'`; `wraps: true` keeps the children as server HTML.
 - `serve.ts` passes `widgets: await bundleWidgets(build)` (the server refuses to start without it; `hozu build` bundles
   them itself). A library's CSS goes in `app.css` (`@import "leaflet/dist/leaflet.css";`); a map or chart host needs a

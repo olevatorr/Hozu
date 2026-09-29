@@ -7,7 +7,7 @@ around the rule.
 |---|---|---|
 | HZ001 | state unreachable | add a transition to it or delete it |
 | HZ002 | event handled nowhere | handle it in a state or remove it |
-| HZ003 / HZ007 | unknown effect / reference | add it to `feature({ declarations })`, or fix the name (the patch suggests one) |
+| HZ003 / HZ007 | unknown effect / reference | export it from a module the feature lists in `declarations`, or fix the name (the patch suggests one) |
 | HZ004 | a declared error is not handled | add every `failed` key, plus `Unexpected`, in `invoke` and `ui.query` |
 | HZ005 | a node sends an event in a state (without `invoke`) that does not handle it | `ignore: [Event]` in that state, or show the node only via `when` |
 | HZ006 | crossing a feature boundary | import the feature and use its `exports` |
@@ -39,5 +39,6 @@ around the rule.
 | HZ044 | a feature file was loaded without the Hozu transform | run node with `--import @hozu/transform/register` (`npm start` does), or add `hozuTransform()` to Vite / Vitest |
 | HZ045 | `serve.ts` misses the widget bundle or the session store | add `widgets: await bundleWidgets(build)` / `session: sessionCookie(…)` |
 | HZ046 | an endpoint path is reserved, has params, or collides with a page, redirect or endpoint | use a static path such as `/api/…` (patch) |
-| HZ047 | a `fn` body uses a helper or constant defined outside `impl` (it is sent to the browser as source) | write the helper inside `impl`, or pass the value as input |
+| HZ047 | a `fn` body uses an imported name or `let` state (it is sent to the browser as source) | pass the value as input, or write it as a `const` helper in the module |
+| HZ048 | `seed` names a field the context lacks, has no machine or route, or two views on one page seed a machine | seed top-level context fields, on one view per page |
 | HZ042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

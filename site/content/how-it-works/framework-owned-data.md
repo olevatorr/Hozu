@@ -42,7 +42,7 @@ export const addItem = mutation({
 })
 ```
 
-Register the tag and both effects in the feature’s declarations. After the mutation succeeds, the framework can identify and refresh the affected query data. The view does not have to manually mutate a cached array and separately persuade another reactive layer that the value changed. For a private notes application, the list query instead declares user scope and receives the session identity through its resolver.
+Export the tag and both effects from a module the feature lists in its declarations. After the mutation succeeds, the framework can identify and refresh the affected query data. The view does not have to manually mutate a cached array and separately persuade another reactive layer that the value changed. For a private notes application, the list query instead declares user scope and receives the session identity through its resolver.
 
 Tags can also carry a schema-typed parameter. That allows an item query to use a tag for its own key while a broader list uses another tag. Choose the invalidation boundary that matches the write. A tag that is too narrow can leave related data stale; a tag that is too broad causes avoidable refreshes. Explicit declarations make that decision inspectable, but do not choose your domain model for you.
 

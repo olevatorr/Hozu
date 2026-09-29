@@ -5,9 +5,11 @@ import { dirname, join, relative, resolve } from 'node:path'
 import type { AddOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import {
+  accountFeature,
   accountModel,
   accountServer,
   accountViews,
+  featureFile,
   model,
   namesOf,
   PARTS,
@@ -111,11 +113,13 @@ export async function runAddFeature(
   const files: [string, string][] = [
     [join(dir, 'model.ts'), model(n, w)],
     [join(dir, 'views.ts'), views(n, w, pageRoute)],
+    [join(dir, 'feature.ts'), featureFile(n)],
     [join(dir, 'server.ts'), server(n, w)],
     ...(newAccount && pageRoute && page
       ? ([
           [join(accountDir, 'model.ts'), accountModel(pageRoute)],
           [join(accountDir, 'views.ts'), accountViews(page)],
+          [join(accountDir, 'feature.ts'), accountFeature()],
           [join(accountDir, 'server.ts'), accountServer()],
         ] as [string, string][])
       : []),
@@ -188,8 +192,9 @@ export async function runAddFeature(
     (s) => {
       let next: string | null = addImport(
         s,
-        `import { ${[n.View, n.feature, ...(w.detail ? [n.Detail] : [])].sort().join(', ')} } from './features/${name}/views.ts'\n`,
+        `import { ${[n.View, ...(w.detail ? [n.Detail] : [])].sort().join(', ')} } from './features/${name}/views.ts'\n`,
       )
+      if (next) next = addImport(next, `import { ${n.feature} } from './features/${name}/feature.ts'\n`)
       if (next && w.detail)
         next = addImport(
           next,
@@ -197,8 +202,8 @@ export async function runAddFeature(
         )
       if (next && newAccount) {
         next = addImport(next, `import { me, Session } from './features/account/model.ts'\n`)
-        if (next)
-          next = addImport(next, `import { AccountBar, account, Login } from './features/account/views.ts'\n`)
+        if (next) next = addImport(next, `import { AccountBar, Login } from './features/account/views.ts'\n`)
+        if (next) next = addImport(next, `import { account } from './features/account/feature.ts'\n`)
         if (next && !/\bsession:/.test(next))
           next = next.replace(/(schema: \w+,\n)/, `$1  session: Session,\n`)
         if (next) next = append(next, /features:\s*\[([^\]]*)\]/, 'account')
@@ -248,7 +253,7 @@ export async function runAddFeature(
       }
       return next?.replace(/\),\s*ui\.page\(/g, '),\n    ui.page(') ?? null
     },
-    `import { ${n.View}, ${n.feature} } from './features/${name}/views.ts', add ${n.feature} to features${pageRoute ? ` and ui.page(${pageRoute}, { views: [${n.View}], head: { render: () => ({ title: '${n.title}' }) } }) to pages` : ''}`,
+    `import { ${n.View} } from './features/${name}/views.ts' and { ${n.feature} } from './features/${name}/feature.ts', add ${n.feature} to features${pageRoute ? ` and ui.page(${pageRoute}, { views: [${n.View}], head: { render: () => ({ title: '${n.title}' }) } }) to pages` : ''}`,
   )
   for (const file of out.created) {
     const source = await readFile(resolve(cwd, file), 'utf8')

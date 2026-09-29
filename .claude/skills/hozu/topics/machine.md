@@ -5,10 +5,10 @@ export const m = machine({
   context: z.object({ draft: z.string(), error: z.string().nullable(), target: z.string() }),
   initialContext: { draft: '', error: null, target: '' },
   initial: 'idle',
+  on: ({ ctx }) => [on(Draft, { assign: (e) => { ctx.draft = e.text } })],   // shared by every state without invoke
   states: ({ ctx }) => ({
     idle: {
       on: [
-        on(Draft, { target: 'idle', assign: (e) => { ctx.draft = e.text } }),
         on(Add, { target: 'adding', guard: (e) => e.title.length >= 2 }),   // first matching guard wins
         on(Add, { target: 'idle', assign: () => { ctx.error = 'Too short' } }),
         on(Remove, { target: 'removing', assign: (e) => { ctx.target = e.id } }),
@@ -35,6 +35,12 @@ export const m = machine({
 - **guard** returns a condition: comparisons, `&&`, `||`, `!`, or a boolean `fn()`.
 - **navigate** sends the browser to `ui.link(route, params, search)` after the transition.
 - `done` and each `failed` entry take a state name, one transition, or a list of guarded transitions.
+- **Shared transitions:** `machine({ on })` entries are copied into every state that has no `invoke`, is not final,
+  and neither handles nor ignores the event itself. Without `target` they stay in the state they fire in; one
+  contract covers every copy.
+- **Start from the URL:** a view with a `route` may declare `seed: ({ params, search }) => ({ q: search.q })`; the
+  page's machine then starts with those context fields (server render, hydration and no-JS posts alike). One view
+  per page may seed a machine (HZ048).
 - A transition to the same state re-enters it and re-runs its `invoke`: do not handle the busy event in the busy
   state. Machines never hold translated text (store a code, choose the message in the view).
 - Events: `export const Add = event({ payload: z.object({ title: z.string() }) })`.

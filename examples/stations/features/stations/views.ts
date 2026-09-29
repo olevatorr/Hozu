@@ -1,11 +1,10 @@
-import { contract, feature, ui } from '@hozu/core'
+import { contract, ui } from '@hozu/core'
 import { home } from '../../routes.ts'
 import {
   byDistrict,
   districts,
   idsOf,
   listStations,
-  nextStop,
   PickDistrict,
   Search,
   Select,
@@ -13,9 +12,7 @@ import {
   StopTour,
   selected,
   stationsMachine,
-  stationsTag,
   ToggleFavorite,
-  toggleFavorite,
   total,
   visible,
 } from './model.ts'
@@ -24,7 +21,8 @@ import { Counter, DistrictChart, FadeIn, Globe, StationMap } from './widgets.ts'
 export const Explorer = ui.view({
   machine: stationsMachine,
   route: home,
-  render: ({ ctx, search, when }) =>
+  seed: ({ search }) => ({ q: search.q, district: search.district }),
+  render: ({ ctx, when }) =>
     ui.main({ class: 'mx-auto max-w-6xl space-y-6 px-4 py-8' }, [
       ui.h1({ class: 'text-3xl font-bold' }, ['City bikes']),
       ui.query(
@@ -32,8 +30,7 @@ export const Explorer = ui.view({
         {},
         {
           ready: (all) => {
-            const q = ctx.live ? ctx.q : search.q
-            const district = ctx.live ? ctx.district : search.district
+            const { q, district } = ctx
             const list = visible({ stations: all, q, district })
             const rows = byDistrict({ stations: all, q, district })
             return ui.div({ class: 'space-y-6' }, [
@@ -183,42 +180,7 @@ export const startsTour = contract(stationsMachine, {
 })
 
 export const tourAdvancesAndWraps = contract(stationsMachine, {
-  given: {
-    state: 'touring',
-    context: { live: false, q: '', district: '', selected: 's1', tour: ['s4', 's1'], target: '' },
-  },
+  given: { state: 'touring', context: { selected: 's1', tour: ['s4', 's1'] } },
   when: [{ elapse: 1500 }],
   expect: { state: 'touring', changes: { selected: 's4' } },
-})
-
-export const stations = feature({
-  id: 'stations',
-  intent: { summary: 'Bike stations on a list, a map, a chart and a globe, with favourites and a tour' },
-  declarations: {
-    Search,
-    PickDistrict,
-    Select,
-    ToggleFavorite,
-    StartTour,
-    StopTour,
-    stationsTag,
-    listStations,
-    toggleFavorite,
-    visible,
-    total,
-    byDistrict,
-    districts,
-    selected,
-    nextStop,
-    idsOf,
-    stationsMachine,
-    Explorer,
-    StationMap,
-    DistrictChart,
-    Counter,
-    FadeIn,
-    Globe,
-    startsTour,
-    tourAdvancesAndWraps,
-  },
 })

@@ -20,12 +20,14 @@ Hozu is not in your training data; this file and `hozu docs <topic>` are the who
   Methods on data (`.map`, `.toUpperCase()`…) are not: use `ui.each` for lists and a `fn()` for computation.
 - A mutation runs when the machine **enters** a state whose `invoke` calls it; that state drops other events, and
   `done` / `failed` leave it. Contracts are needed only where a transition decides (a guard, `navigate`, a `fn`).
+- A filter in the URL starts the machine: `seed: ({ search }) => ({ q: search.q })` on the view, then read `ctx.q`.
+  `machine({ on })` holds transitions every idle state shares; `fn` bodies may call helpers from the same module.
 
 ## Files and commands
 ```
 hozu.config.ts  project({ schema, site, routes, pages, features })      routes.ts  route() declarations
-features/<name>/model.ts  schemas, events, effects, machine             views.ts  views, contracts, feature()
-features/<name>/server.ts  implement(...) resolvers                     serve.ts  createServer(...)
+features/<name>/model.ts  schemas, events, effects, fns, machine        views.ts  views, contracts
+features/<name>/feature.ts  feature({ declarations: [model, views] })    server.ts  implement(...) resolvers
 ```
 ```
 npx hozu check                      # after every edit: types, rules, contracts
@@ -84,10 +86,12 @@ export const Board = ui.view({
       }),
     ]),
 })
-export const todos = feature({ id: 'todos', intent: { summary: 'A to-do list' },
-  declarations: { Add, itemsTag, listItems, addItem, items, Board } })
+// feature.ts
+import * as model from './model.ts'
+import * as views from './views.ts'
+export const todos = feature({ id: 'todos', intent: { summary: 'A to-do list' }, declarations: [model, views] })
 ```
-Every declaration goes in `declarations` once, under its name. Resolvers:
+Every declaration a listed module exports is registered under its name; schemas and helpers are ignored. Resolvers:
 `implement(addItem, ({ title }, { fail }) => exists ? fail('Duplicate', { title }) : save(title))`.
 
 ## Topics (`hozu docs <topic>`)
@@ -100,7 +104,8 @@ Every declaration goes in `declarations` once, under its name. Resolvers:
 | routes, params, search, pages, `head`, 404, sitemap | `pages` |
 | forms without JS, field errors, selects | `forms` |
 | sign-in, sessions, per-user data | `auth` |
-| common UI: filters, empty states, per-item actions, load more, optimistic | `patterns` |
+| common UI: filters, search in the URL, modes, per-item actions, load more | `patterns` |
+| worked changes: enum field, bulk action, detail field / page | `recipes` |
 | webhooks and JSON APIs | `endpoints` |
 | browser APIs and DOM libraries (maps, charts) | `widgets` |
 | languages, env, HTTP, Markdown, images, preview, PWA, tests, deployment | `i18n`, `env`, `http`, `content`, `testing`, `deploy` |

@@ -50,7 +50,7 @@ describe('the agent loop (ADR 0027)', () => {
   it('scaffolds a feature on the home page that checks clean and works through get and post', async () => {
     const app = await freshApp()
     const added = await json('add', ['add', 'feature', 'tasks', '--page', '/'], app)
-    expect(added.out.created).toHaveLength(3)
+    expect(added.out.created).toHaveLength(4)
     expect(added.out.manual).toEqual([])
     const check = await json('check', ['check'], app)
     expect(check.code).toBe(0)
@@ -328,7 +328,12 @@ describe('hozu add widget (ADR 0037 D5)', () => {
     expect(before.out.validate.summary).toEqual({ errors: 0, warnings: 0 })
     const added = await json('add', ['add', 'widget', 'tasks', 'Chart'], app)
     expect(added.out.created).toEqual(['features/tasks/widgets.ts', 'features/tasks/chart.client.ts'])
-    expect(added.out.edited).toEqual(['features/tasks/views.ts', 'serve.ts', 'package.json'])
+    expect(added.out.edited).toEqual([
+      'features/tasks/views.ts',
+      'features/tasks/feature.ts',
+      'serve.ts',
+      'package.json',
+    ])
     expect(readFileSync(join(app, 'serve.ts'), 'utf8')).toContain('widgets: await bundleWidgets(build),')
     const pkg = JSON.parse(readFileSync(join(app, 'package.json'), 'utf8'))
     expect(pkg.dependencies['@hozu/bundle']).toBe(pkg.dependencies['@hozu/core'])
@@ -364,21 +369,28 @@ describe('the guide compiles (ADR 0037 D2)', () => {
     const block = /## A feature in one screen\n```ts\n([\s\S]*?)```/.exec(skill)![1]!
     const resolver = /`(implement\(addItem, [^`]*)`/.exec(skill)![1]!
     mkdirSync(join(app, 'features/todos'), { recursive: true })
-    writeFileSync(
-      join(app, 'features/todos/feature.ts'),
-      `import { event, feature, invoke, machine, mutation, on, query, tag, ui } from '@hozu/core'\nimport { z } from 'zod'\n${block}`,
-    )
+    const pieces = block.split(/^\/\/ (\w+\.ts)\n/m).slice(1)
+    const parts = Object.fromEntries(pieces.flatMap((x, i) => (i % 2 ? [] : [[x, pieces[i + 1]!] as const])))
+    const heads: Record<string, string> = {
+      'model.ts':
+        "import { event, invoke, machine, mutation, on, query, tag } from '@hozu/core'\nimport { z } from 'zod'\n",
+      'views.ts': "import { ui } from '@hozu/core'\nimport { Add, items, listItems } from './model.ts'\n",
+      'feature.ts': "import { feature } from '@hozu/core'\n",
+    }
+    expect(Object.keys(parts)).toEqual(['model.ts', 'views.ts', 'feature.ts'])
+    for (const [file, text] of Object.entries(parts))
+      writeFileSync(join(app, 'features/todos', file), `${heads[file]}${text}`)
     writeFileSync(
       join(app, 'server.ts'),
-      `import { resolvers } from '@hozu/data'\nimport { addItem, listItems } from './features/todos/feature.ts'\nimport project from './hozu.config.ts'\n\nconst list: { id: string; title: string; done: boolean }[] = []\nconst save = (title: string) => {\n  const item = { id: String(list.length + 1), title, done: false }\n  list.push(item)\n  return item\n}\n\nexport const createResolvers = () =>\n  resolvers(project, (implement) => [\n    implement(listItems, () => list.map((i) => ({ ...i }))),\n    ${resolver.replace('exists', 'list.some((i) => i.title === title)')},\n  ])\n`,
+      `import { resolvers } from '@hozu/data'\nimport { addItem, listItems } from './features/todos/model.ts'\nimport project from './hozu.config.ts'\n\nconst list: { id: string; title: string; done: boolean }[] = []\nconst save = (title: string) => {\n  const item = { id: String(list.length + 1), title, done: false }\n  list.push(item)\n  return item\n}\n\nexport const createResolvers = () =>\n  resolvers(project, (implement) => [\n    implement(listItems, () => list.map((i) => ({ ...i }))),\n    ${resolver.replace('exists', 'list.some((i) => i.title === title)')},\n  ])\n`,
     )
     const config = join(app, 'hozu.config.ts')
     writeFileSync(
       config,
       readFileSync(config, 'utf8')
         .replace(
-          /import \{ Home, site \} from '[^']+'\n/,
-          "import { Board, todos } from './features/todos/feature.ts'\n",
+          /import \{ site \} from '[^']+'\nimport \{ Home \} from '[^']+'\n/,
+          "import { todos } from './features/todos/feature.ts'\nimport { Board } from './features/todos/views.ts'\n",
         )
         .replace(/views: \[Home\]/, 'views: [Board]')
         .replace(/features: \[site\]/, 'features: [todos]'),

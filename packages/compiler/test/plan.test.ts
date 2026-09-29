@@ -37,6 +37,7 @@ describe('render plans', () => {
     doc.features.cart!.views.Summary = {
       machine: null,
       route: null,
+      seed: null,
       root: {
         id: 'cart.Summary/0',
         kind: 'query',

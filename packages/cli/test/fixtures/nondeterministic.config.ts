@@ -35,7 +35,7 @@ export default project({
     feature({
       id: 'dice',
       intent: { summary: 'Reads Math.random inside a recorder' },
-      declarations: { Roll, rolls, dice },
+      declarations: [{ Roll, rolls, dice }],
     }),
   ],
 })

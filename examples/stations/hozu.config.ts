@@ -1,6 +1,7 @@
 import { project, ui } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
-import { Explorer, stations } from './features/stations/views.ts'
+import { stations } from './features/stations/feature.ts'
+import { Explorer } from './features/stations/views.ts'
 import { home } from './routes.ts'
 
 export default project({

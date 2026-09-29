@@ -1,4 +1,4 @@
-import { contract, feature, op, ui } from '@hozu/core'
+import { contract, op, ui } from '@hozu/core'
 import { login } from '../../routes.ts'
 import { accountMachine, me, SignIn, SignOut, signIn, signOut } from './model.ts'
 
@@ -96,25 +96,4 @@ export const signOutFails = contract(accountMachine, {
   given: { state: 'signingOut' },
   when: [{ failed: signOut, error: 'Unexpected', data: { message: 'offline' } }],
   expect: { state: 'idle', changes: { error: 'offline' } },
-})
-
-export const account = feature({
-  id: 'account',
-  intent: { summary: 'Sign in with a name, sign out; the session identifies the user' },
-  exports: [me],
-  declarations: {
-    SignIn,
-    SignOut,
-    me,
-    signIn,
-    signOut,
-    accountMachine,
-    Login,
-    AccountBar,
-    signsIn,
-    rejectsName,
-    signInFails,
-    signsOut,
-    signOutFails,
-  },
 })

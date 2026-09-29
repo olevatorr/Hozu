@@ -128,7 +128,7 @@ describe('assign ops and fn bindings', () => {
   const f = feature({
     id: 'f',
     intent: { summary: 'ops fixture' },
-    declarations: { Ping, Drop, total, isBig, m },
+    declarations: [{ Ping, Drop, total, isBig, m }],
   })
   const b = buildProject(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))
   const compiled = compileMachine(b.ir.features.f!, b.bindings.fns)

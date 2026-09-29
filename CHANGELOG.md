@@ -1,5 +1,56 @@
 # Changelog
 
+## 0.7.0 — write less (ADR 0041)
+
+A study of trials 0016–0018 found the remaining cost is what an agent has to *write*.
+- On the notes task the scaffold writes most of the app, and a build outputs about half of what Nuxt does.
+- On the widget task nothing is generated: apps came out at 1.5–1.9× Nuxt's lines, and a change added 214–529 lines
+  against 61.
+
+Five things forced that code:
+- a machine could not start from the URL (19–23 `ctx.typed ? ctx.search : search.q` per app);
+- `fn` bodies could not share a helper (the same predicate 3–6 times);
+- every declaration was imported and listed again;
+- modes repeated their shared transitions;
+- `changing.md` carried 5.6 KB of recipes into every change.
+
+**Measured (trial 0019, two Claude runs per task, every check passing):**
+- widgets: build 1.75× Nuxt (was 2.15×) and change 2.03× (was 3.46×);
+- notes: build 1.14× (was 1.38×) and change 1.38× (was 1.45×).
+  - A first run of the change measured 1.68×, because a recipe had left `changing.md`.
+  - The re-run with that row restored is the 1.38× above.
+
+### Changes
+- **`seed`**: `ui.view({ machine, route, seed: ({ search }) => ({ q: search.q }) })`.
+  - The page's machine starts with those context fields in the server render, hydration and no-JS posts.
+  - Views read `ctx.q` only.
+  - HZ048 reports an unknown field, a seed without a machine or route, and two seeding views on one page.
+- **`fn` bodies may call helpers from their module:** functions and JSON constants that are themselves self-contained.
+  - They are shipped with the `fn` in `fns.js`, and their source is part of the fn's `sourceHash`.
+  - Imported names and `let` state stay HZ047.
+- **`declarations` is a list of modules:** `feature({ id, intent, declarations: [model, views] })` with namespace
+  imports, in a new `feature.ts`.
+  - Every exported declaration is registered under its name. Schemas and helpers are ignored.
+  - A name two modules declare is HZ013.
+  - **The record form `declarations: { … }` is removed** (HZ014, with the module form as the fix).
+    `hozu add feature` and `hozu add widget` write the new layout.
+- **`machine({ on })`**: transitions shared by every state that is not busy or final and does not handle or ignore the
+  event itself.
+  - Without `target`, a shared transition stays in the state it fires in.
+  - One contract covers every identical copy (HZ016).
+- **`changing.md` is 3 KB:** the loop and a table of change kinds. The worked recipes are `hozu docs recipes`.
+- **Fewer rejected first attempts** (counted from the `hozu check` output of trials 0017 and 0018):
+  - **A contract's `given.context` is a patch over `initialContext`** (30 hits of TS2740 / HZ017).
+    - `given: { state: 'touring', context: { touring: true } }` now works; nested objects merge and arrays replace, like
+      `expect.changes`.
+    - A full context still means the same as before, and the IR is unchanged.
+  - **`ui.use(W, { props })` needs no `on: {}`** (13 hits of TS2741).
+  - **A `ui.query` branch may return `null` to render nothing** (HZ014 and TS2322).
+    - `failed: { Unexpected: () => null }` inside a `<select>` now leaves only the other options.
+    - `ready` may return `null` too.
+  - **The widgets topic says where a role or label goes:** on a wrapping element. `ui.use` stays the widget's props, events
+    and classes, so there is one form (4 hits of TS2353).
+
 ## 0.6.0 — verify what the browser runs (ADR 0040)
 
 Trial 0017 built a widget-heavy app (Leaflet, Chart.js, GSAP, Three.js).

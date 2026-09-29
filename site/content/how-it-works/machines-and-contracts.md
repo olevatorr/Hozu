@@ -58,7 +58,7 @@ export const acknowledgesRead = contract(notice, {
 })
 ```
 
-Register the event, machine, views and contracts in the feature’s `declarations`. HZ016 reports decisions without a contract, with a skeleton ready to fill in. A covered happy path does not excuse an unspecified error path that computes or navigates.
+Export the event, machine, views and contracts from the modules the feature lists in `declarations`. HZ016 reports decisions without a contract, with a skeleton ready to fill in. A covered happy path does not excuse an unspecified error path that computes or navigates.
 
 When context is involved, `given.context` defaults to the machine’s initial context. `expect.changes` states a deep patch: unmentioned fields must remain equal, while arrays replace their previous value. Expected effects are explicit; omitting `expect.effects` means no effects are expected.
 

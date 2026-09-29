@@ -1,4 +1,4 @@
-import { feature, ui } from '@hozu/core'
+import { ui } from '@hozu/core'
 
 export const Home = ui.view({
   render: () =>
@@ -6,10 +6,4 @@ export const Home = ui.view({
       ui.h1({ class: 'text-3xl font-bold' }, ['Hello, Hozu']),
       ui.p({ class: 'text-slate-600' }, ['Edit features/site/views.ts to get started.']),
     ]),
-})
-
-export const site = feature({
-  id: 'site',
-  intent: { summary: 'The start page' },
-  declarations: { Home },
 })

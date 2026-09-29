@@ -113,10 +113,12 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   (`testApp(...).get/post` → `{ status, headers, html, text, payload }`).
 - Authoring surface (ADR 0022): absent values are omitted (optional, no `null` spelling; behaviour-deciding fields
   such as query `scope`/`freshness`, `initialContext`/`initial` and route `params`/`search` stay required).
-  `feature({ id, intent, declarations, imports?, exports?, styles? })` sorts declarations by their brand (a second
-  machine is HZ013, a non-declaration HZ014); `exports` is a flat list. Contracts: `given.context` defaults to
-  `initialContext`, `expect.changes` is a deep patch (unmentioned fields must stay equal, arrays replace),
-  `expect.effects` defaults to none. The IR is unchanged. Recommended feature layout: `model.ts` + `views.ts`.
+  `feature({ id, intent, declarations, imports?, exports?, styles? })`: `declarations` is a list of modules (ADR 0041,
+  `[model, views]` from namespace imports; exported declarations are sorted by brand, other exports ignored; a second
+  machine or a name two modules declare is HZ013; the record form is HZ014); `exports` is a flat list. Contracts:
+  `given.context` is a deep patch over `initialContext` (omitted = `initialContext`), `expect.changes` is a deep patch
+  (unmentioned fields must stay equal, arrays replace), `expect.effects` defaults to none. Feature layout: `model.ts`
+  + `views.ts` + `feature.ts`.
 - Output (ADR 0023): the page payload lists island node ids once (`ids`) and islands as runs
   `[node, lead, ...scopeTails]` in marker order (feature = node id prefix); node/machine JSON is cached per object.
   `<head>` modulepreloads `client.js` (+ `fns.js` when bound) only on pages with islands. `bench/frameworks` bundles
@@ -145,6 +147,12 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   deps, no port; requests go to the in-process handler) and reports errors, widgets (`data-hozu-widget` +
   `data-hozu-widget-state` on hosts), text, `--select`, `--screenshot`; HZ047 = a `fn` body using names from outside
   `impl` (the server refuses to start); no `site.icon` → `<link rel="icon" href="data:,">`.
+- 0.7 (ADR 0041): `ui.view({ machine, route, seed: ({ params, search }) => ({ field: search.x }) })` starts the page's
+  machine from the URL (`ViewIR.seed`; server render, payload `initialContext`, no-JS posts; HZ048); `machine({ on })`
+  = transitions copied into every non-busy, non-final state that does not handle or ignore the event (no `target` =
+  its own state; HZ016 counts identical copies as one); `fn` bodies may call self-contained module helpers (transform
+  `__hozu.helpers`, shipped in `fns.js`; imports / `let` stay HZ047); `ui.use` `on` optional; query branches may
+  return `null`; recipes moved from `changing.md` to `hozu docs recipes`.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

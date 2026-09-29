@@ -40,7 +40,7 @@ const site = project({
       { routes: [post], set: { 'x-robots-tag': 'noarchive' } },
     ],
   },
-  features: [feature({ id: 'blog', intent: { summary: 'Posts' }, declarations: { Home, Post } })],
+  features: [feature({ id: 'blog', intent: { summary: 'Posts' }, declarations: [{ Home, Post }] })],
 })
 
 const build = buildProject(site, { sources: false })

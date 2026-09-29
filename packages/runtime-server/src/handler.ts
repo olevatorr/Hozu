@@ -463,6 +463,7 @@ export function createHandler({
       routes: tableOf(locale),
       form,
       fields,
+      route: found.route,
       params: found.params,
       search,
       session: who,

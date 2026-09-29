@@ -10,12 +10,14 @@ import type { DataRuntime } from '@hozu/data'
 import {
   compileMachine,
   compileValue,
+  enter,
   equal,
   init,
   type Snapshot,
   type Step,
   transition,
 } from '@hozu/machine'
+import { seededContext } from './seed.ts'
 
 const children = (n: ViewNode): ViewNode[] => {
   switch (n.kind) {
@@ -67,17 +69,21 @@ export async function runForm(options: {
   routes: Record<string, string>
   form: ElementNode
   fields: Record<string, string>
+  route: string
   params: Json
   search: Json
   session: unknown
 }): Promise<FormOutcome | null> {
-  const { build, data, routes, form, fields, params, search } = options
+  const { build, data, routes, form, fields, route, params, search } = options
   const send = form.on.submit!
   const feature = build.ir.features[send.event.slice(0, send.event.indexOf('.'))]
   if (!feature?.machine) return null
   const fns = build.bindings.fns as Record<string, (x: never) => unknown>
   const machine = compileMachine(feature, fns, routes)
-  const start = init(machine).snapshot
+  const seeded = seededContext(build.ir, route, feature, fns, params, search)
+  const start = seeded
+    ? enter(machine, machine.states[machine.initial]!.name, seeded).snapshot
+    : init(machine).snapshot
   const payload = compileValue(
     send.payload,
     fns,

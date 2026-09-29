@@ -35,9 +35,6 @@ export type Names = ReturnType<typeof namesOf>
 
 const lines = (...parts: (string | false)[]) => parts.filter((p) => p !== false).join('\n')
 
-const events = (w: With) =>
-  ['Draft', 'Add', w.toggle && 'Toggle', w.remove && 'Remove', w.filter && 'SetShow'].filter(Boolean)
-
 export function model(n: Names, w: With): string {
   const keyed = w.detail || w.toggle || w.remove
   const busy = w.toggle || w.remove
@@ -222,11 +219,7 @@ export function views(n: Names, w: With, listRoute: string | null): string {
               ? ui.p({ class: 'text-slate-500' }, ['No items'])
               : ${list}`
     : list
-  return `${lines(
-    `import { feature, ui } from '@hozu/core'`,
-    w.detail && `import { ${[listRoute ?? 'home', n.detailRoute].sort().join(', ')} } from '../../routes.ts'`,
-    `import {\n  ${modelNames.join(',\n  ')},\n} from './model.ts'`,
-    '',
+  const body = `${lines(
     w.filter &&
       `const shows = [
   { value: 'all', label: 'All' },
@@ -313,27 +306,27 @@ export const ${n.Detail} = ui.view({
       ui.a({ href: ui.link(${listRoute ?? 'home'}, null), class: 'underline' }, ['Back']),
     ]),
 })`,
-    `
+  )}\n`
+  const used = modelNames.filter((name) => new RegExp(`\\b${name}\\b`).test(body))
+  return `${lines(
+    `import { ui } from '@hozu/core'`,
+    w.detail && `import { ${[listRoute ?? 'home', n.detailRoute].sort().join(', ')} } from '../../routes.ts'`,
+    `import {\n  ${used.join(',\n  ')},\n} from './model.ts'`,
+    '',
+  )}\n${body}`
+}
+
+export function featureFile(n: Names): string {
+  return `import { feature } from '@hozu/core'
+import * as model from './model.ts'
+import * as views from './views.ts'
+
 export const ${n.feature} = feature({
   id: '${n.id}',
   intent: { summary: '${n.title}: add one with a title; titles are unique, case-insensitive.' },
-  declarations: {
-    ${[
-      ...events(w),
-      n.tag,
-      n.list,
-      ...(w.detail ? [n.get] : []),
-      n.add,
-      ...(w.toggle ? [n.toggle] : []),
-      ...(w.remove ? [n.remove] : []),
-      ...(w.filter ? ['visible', 'isEmpty'] : []),
-      n.machine,
-      n.View,
-      ...(w.detail ? [n.Detail] : []),
-    ].join(',\n    ')},
-  },
-})`,
-  )}\n`
+  declarations: [model, views],
+})
+`
 }
 
 export function server(n: Names, w: With): string {
@@ -465,7 +458,7 @@ export const accountMachine = machine({
 }
 
 export function accountViews(homePath: string): string {
-  return `import { contract, feature, ui } from '@hozu/core'
+  return `import { contract, ui } from '@hozu/core'
 import { login } from '../../routes.ts'
 import { accountMachine, me, SignIn, SignOut, signIn, signOut } from './model.ts'
 
@@ -534,26 +527,20 @@ export const signsOut = contract(accountMachine, {
   ],
   expect: { state: 'idle', effects: [{ effect: signOut, input: {} }, { navigate: '/login' }] },
 })
+`
+}
+
+export const accountFeature = () => `import { feature } from '@hozu/core'
+import * as model from './model.ts'
+import * as views from './views.ts'
 
 export const account = feature({
   id: 'account',
   intent: { summary: 'Sign in with a name, sign out; the session identifies the user' },
-  exports: [me],
-  declarations: {
-    SignIn,
-    SignOut,
-    me,
-    signIn,
-    signOut,
-    accountMachine,
-    Login,
-    AccountBar,
-    signsIn,
-    signsOut,
-  },
+  exports: [model.me],
+  declarations: [model, views],
 })
 `
-}
 
 export const accountServer = () => `import type { Implement } from '@hozu/data'
 import { me, signIn, signOut } from './model.ts'

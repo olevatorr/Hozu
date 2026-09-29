@@ -16,13 +16,16 @@ A Hozu application passes through `feature()` source, a Feature IR, a validator,
 
 Consider a reading list. Its declarations describe the item schema, the event that adds an item, the mutation that stores it and the query that reads the list. A machine describes when adding is allowed, what happens while the request is in flight and how success or failure changes the screen.
 
-Those declarations belong to a feature. The registration below is a small excerpt from that arrangement; the named declarations are defined alongside it.
+Those declarations belong to a feature. The feature lists the modules that export them; every exported declaration is registered under its name.
 
 ```ts
+import * as model from './model.ts'
+import * as views from './views.ts'
+
 export const items = feature({
   id: 'items',
   intent: { summary: 'A reading list' },
-  declarations: { Add, itemsTag, listItems, addItem, m, Board, adds },
+  declarations: [model, views],
 })
 ```
 

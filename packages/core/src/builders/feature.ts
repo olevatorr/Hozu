@@ -49,7 +49,7 @@ export interface FeatureDecl extends Decl<'feature'> {
 export interface FeatureConfig {
   id: string
   intent: { summary: string; invariants?: string[] }
-  declarations: Record<string, Decl>
+  declarations: readonly object[]
   imports?: FeatureDecl[]
   exports?: Decl[]
   styles?: URL[]

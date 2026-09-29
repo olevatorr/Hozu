@@ -35,29 +35,22 @@ export const toggleFavorite = mutation({
   invalidates: () => [stationsTag()],
 })
 
+const matches = (s: { name: string; district: string }, q: string, district: string) =>
+  s.name.toLowerCase().includes(q.trim().toLowerCase()) && (district === '' || s.district === district)
+
 export const visible = fn({
   input: Filter,
   output: Stations,
   impl: ({ stations, q, district }) =>
     stations
-      .filter(
-        (s) =>
-          s.name.toLowerCase().includes(q.trim().toLowerCase()) &&
-          (district === '' || s.district === district),
-      )
+      .filter((s) => matches(s, q, district))
       .sort((a, b) => Number(b.favorite) - Number(a.favorite) || a.name.localeCompare(b.name)),
 })
 export const total = fn({
   input: Filter,
   output: z.number(),
   impl: ({ stations, q, district }) =>
-    stations
-      .filter(
-        (s) =>
-          s.name.toLowerCase().includes(q.trim().toLowerCase()) &&
-          (district === '' || s.district === district),
-      )
-      .reduce((sum, s) => sum + s.bikes, 0),
+    stations.filter((s) => matches(s, q, district)).reduce((sum, s) => sum + s.bikes, 0),
 })
 export const byDistrict = fn({
   input: Filter,
@@ -65,11 +58,7 @@ export const byDistrict = fn({
   impl: ({ stations, q, district }) => {
     const sums = new Map<string, number>()
     for (const s of stations)
-      if (
-        s.name.toLowerCase().includes(q.trim().toLowerCase()) &&
-        (district === '' || s.district === district)
-      )
-        sums.set(s.district, (sums.get(s.district) ?? 0) + s.bikes)
+      if (matches(s, q, district)) sums.set(s.district, (sums.get(s.district) ?? 0) + s.bikes)
     return [...sums]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([name, bikes]) => ({ district: name, bikes }))
@@ -93,44 +82,42 @@ export const nextStop = fn({
 
 export const stationsMachine = machine({
   context: z.object({
-    live: z.boolean(),
     q: z.string(),
     district: z.string(),
     selected: z.string(),
     tour: z.array(z.string()),
     target: z.string(),
   }),
-  initialContext: { live: false, q: '', district: '', selected: '', tour: [], target: '' },
+  initialContext: { q: '', district: '', selected: '', tour: [], target: '' },
   initial: 'idle',
+  on: ({ ctx }) => [
+    on(Search, {
+      target: 'idle',
+      assign: (e) => {
+        ctx.q = e.text
+      },
+    }),
+    on(PickDistrict, {
+      target: 'idle',
+      assign: (e) => {
+        ctx.district = e.district
+      },
+    }),
+    on(Select, {
+      assign: (e) => {
+        ctx.selected = e.id
+      },
+    }),
+    on(ToggleFavorite, {
+      target: 'favoriting',
+      assign: (e) => {
+        ctx.target = e.id
+      },
+    }),
+  ],
   states: ({ ctx }) => ({
     idle: {
       on: [
-        on(Search, {
-          target: 'idle',
-          assign: (e) => {
-            ctx.live = true
-            ctx.q = e.text
-          },
-        }),
-        on(PickDistrict, {
-          target: 'idle',
-          assign: (e) => {
-            ctx.live = true
-            ctx.district = e.district
-          },
-        }),
-        on(Select, {
-          target: 'idle',
-          assign: (e) => {
-            ctx.selected = e.id
-          },
-        }),
-        on(ToggleFavorite, {
-          target: 'favoriting',
-          assign: (e) => {
-            ctx.target = e.id
-          },
-        }),
         on(StartTour, {
           target: 'touring',
           guard: (e) => e.ids.length > 0,
@@ -151,35 +138,7 @@ export const stationsMachine = machine({
           },
         },
       ],
-      on: [
-        on(StopTour, { target: 'idle' }),
-        on(Search, {
-          target: 'idle',
-          assign: (e) => {
-            ctx.live = true
-            ctx.q = e.text
-          },
-        }),
-        on(PickDistrict, {
-          target: 'idle',
-          assign: (e) => {
-            ctx.live = true
-            ctx.district = e.district
-          },
-        }),
-        on(Select, {
-          target: 'touring',
-          assign: (e) => {
-            ctx.selected = e.id
-          },
-        }),
-        on(ToggleFavorite, {
-          target: 'favoriting',
-          assign: (e) => {
-            ctx.target = e.id
-          },
-        }),
-      ],
+      on: [on(StopTour, { target: 'idle' })],
     },
     favoriting: {
       invoke: invoke(toggleFavorite, {

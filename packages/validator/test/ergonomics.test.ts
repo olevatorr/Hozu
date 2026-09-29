@@ -51,7 +51,7 @@ const board = (options: { busyIgnores: boolean; select: string[]; field: 'enum' 
   const f = feature({
     id: 'board',
     intent: { summary: 'fixture' },
-    declarations: { Pick, Count, Save, View, m },
+    declarations: [{ Pick, Count, Save, View, m }],
   })
   return buildProject(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))
 }

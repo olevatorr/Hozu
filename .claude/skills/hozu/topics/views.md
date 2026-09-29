@@ -4,6 +4,7 @@
 export const Board = ui.view({
   machine: m,        // optional: without it, no ctx / when / events, and 0 JS
   route: home,       // optional: render gets { params, search } typed by the route
+  seed: ({ search }) => ({ q: search.q }),   // optional, with machine + route: context fields from the URL
   render: ({ ctx, when, params, search, locale }) => ui.main({ class: 'mx-auto max-w-xl' }, [ /* children */ ]),
 })
 ```
@@ -27,7 +28,8 @@ export const Board = ui.view({
 - **Links:** `ui.a({ href: ui.link(itemPage, { id: item.id }) }, [...])`; never a string path (HZ032). The third
   argument exists only when the route declares `search`: `ui.link(home, null, { show: 'done' })`.
 - **Data:** `ui.query(listItems, input, { ready: (items) => …, pending: ui.p({}, ['Loading…']), failed: { NotFound:
-  () => …, Unexpected: () => … } })`; `pending` is optional, `failed` lists every declared error plus `Unexpected`.
+  () => …, Unexpected: () => … } })`; `pending` is optional, `failed` lists every declared error plus `Unexpected`; a branch may return `null` to render
+  nothing.
   Server-fetched data is sent with the page and never fetched again; after a mutation, queries whose tags it
   invalidates refresh in place.
 - **Also:** `ui.html(post.html)` (trusted HTML from query data only, HZ030), `ui.asset(new URL('./x.png',

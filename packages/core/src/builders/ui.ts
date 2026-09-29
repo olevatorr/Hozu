@@ -83,7 +83,7 @@ export type NodeDef =
 
 export interface WidgetUse<P, E> {
   props: Val<P>
-  on: { [K in keyof E]?: (detail: Ref<E[K]>) => Send }
+  on?: { [K in keyof E]?: (detail: Ref<E[K]>) => Send }
   class?: string
   toggle?: Record<string, Guard | Val<boolean>>
   vars?: Record<`--${string}`, Val<string | number | null>>
@@ -92,6 +92,7 @@ export interface WidgetUse<P, E> {
 export interface ViewDef {
   machine: MachineDecl | null
   route: RouteDecl | null
+  seed: ((scope: any) => unknown) | null
   render: (scope: any) => unknown
 }
 
@@ -119,12 +120,13 @@ type Elements = {
 }
 
 type QueryErrors<E> = {
-  [K in keyof E | 'Unexpected']: (error: Ref<K extends keyof E ? E[K] : UnexpectedError>) => NodeDecl
+  [K in keyof E | 'Unexpected']: (error: Ref<K extends keyof E ? E[K] : UnexpectedError>) => NodeDecl | null
 }
 
 function view<C, S extends string, P = null, Q = null>(config: {
   machine: MachineDecl<C, S>
   route?: RouteDecl<P, Q>
+  seed?: (scope: { params: Ref<P>; search: Ref<Q> }) => { [K in keyof C]?: Val<C[K]> }
   render: (scope: ViewScope<C, S, P, Q>) => NodeDecl
 }): ViewDecl
 function view<P = null, Q = null>(config: {
@@ -136,6 +138,7 @@ function view(config: Partial<ViewDef> & Pick<ViewDef, 'render'>): ViewDecl {
   return brand({}, 'view', {
     machine: config.machine ?? null,
     route: config.route ?? null,
+    seed: config.seed ?? null,
     render: config.render,
   } satisfies ViewDef)
 }
@@ -176,7 +179,7 @@ export const ui = Object.freeze({
   query: <I, O, E>(
     query: QueryDecl<I, O, E>,
     input: NoInfer<Val<I>>,
-    branches: { ready: (data: Ref<O>) => NodeDecl; pending?: NodeDecl | null; failed: QueryErrors<E> },
+    branches: { ready: (data: Ref<O>) => NodeDecl | null; pending?: NodeDecl | null; failed: QueryErrors<E> },
   ): NodeDecl => node({ kind: 'query', query, input, ...branches, pending: branches.pending ?? null }),
   embed: (view: ViewDecl): NodeDecl => node({ kind: 'embed', view }),
   widget,

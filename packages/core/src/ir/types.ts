@@ -236,6 +236,7 @@ export type GuardExpr =
 export interface ViewIR {
   machine: string | null
   route: string | null
+  seed: Record<string, ValueExpr> | null
   root: ViewNode
 }
 

@@ -30,9 +30,18 @@ function transition(
   t: TransitionConfig<string, any>,
   arg: unknown,
   p: At,
+  self?: string,
 ): TransitionIR {
+  const target = t.target ?? self
+  if (target === undefined)
+    scope.report(
+      'HZ014',
+      at(p, 'target'),
+      'This transition has no target',
+      "A state's transitions name their target state; only machine-wide on entries may omit it (the state they fire in).",
+    )
   return {
-    target: String(t.target),
+    target: String(target ?? '?'),
     guard: t.guard
       ? scope.attempt(at(p, 'guard'), () => guard(scope, t.guard!(arg), at(p, 'guard')), null)
       : null,
@@ -153,6 +162,7 @@ export function buildMachine(scope: FeatureScope, decl: Decl | null): MachineIR 
   scope.project.mark(p, decl)
   const d = defOf<MachineDef>(decl)
   const configs = scope.attempt(p, () => d.states({ ctx: refProxy('context', 0) }), {})
+  const shared = d.on ? scope.attempt(at(p, 'on'), () => d.on!({ ctx: refProxy('context', 0) }), []) : []
   const states: Record<string, StateIR> = {}
   for (const [name, config] of Object.entries(configs)) {
     if (!IDENTIFIER.test(name))
@@ -163,6 +173,30 @@ export function buildMachine(scope: FeatureScope, decl: Decl | null): MachineIR 
         'Names must match /^[A-Za-z][A-Za-z0-9_]*$/.',
       )
     states[name] = state(scope, config, at(p, 'states', name))
+  }
+  const byEvent = new Map<string, { def: OnDef; at: At }[]>()
+  shared.forEach((entry, i) => {
+    const info = infoOf(entry)
+    const sp = at(p, 'on', i)
+    if (info?.kind !== 'on') {
+      scope.report(
+        'HZ014',
+        sp,
+        'on entries must be created with on(Event, {...})',
+        'Unknown value in machine({ on })',
+      )
+      return
+    }
+    scope.project.mark(sp, entry)
+    const def = info.def as OnDef
+    const event = scope.ref(def.event, ['event'], sp)
+    byEvent.set(event, [...(byEvent.get(event) ?? []), { def, at: sp }])
+  })
+  for (const [name, s] of Object.entries(states)) {
+    if (s.invoke || s.final) continue
+    for (const [event, list] of byEvent)
+      if (!s.on[event] && !s.ignore.includes(event))
+        s.on[event] = list.map((e) => transition(scope, e.def.transition, refProxy('event', 0), e.at, name))
   }
   scope.stateNames = Object.keys(states)
   scope.bind(`${scope.id}#context`, d.context)

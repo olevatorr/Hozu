@@ -1,10 +1,9 @@
-import { contract, feature, ui } from '@hozu/core'
+import { contract, ui } from '@hozu/core'
 import { bookmarkPage, home } from '../../routes.ts'
 import {
   Add,
   addBookmark,
   bookmarksMachine,
-  bookmarksTag,
   Draft,
   DUPLICATE,
   getBookmark,
@@ -209,36 +208,4 @@ export const toggleFails = contract(bookmarksMachine, {
   given: { state: 'toggling' },
   when: [{ failed: toggleRead, error: 'Unexpected', data: { message: 'offline' } }],
   expect: { state: 'idle', changes: { error: 'offline' } },
-})
-
-export const bookmarks = feature({
-  id: 'bookmarks',
-  intent: {
-    summary:
-      'A shared reading list: add bookmarks with a kind, mark them read, filter unread, one page each.',
-    invariants: ['Titles are unique, case-insensitive', 'New bookmarks are listed first'],
-  },
-  declarations: {
-    bookmarksTag,
-    Draft,
-    Add,
-    ToggleRead,
-    listBookmarks,
-    getBookmark,
-    addBookmark,
-    toggleRead,
-    visible,
-    isEmpty,
-    bookmarksMachine,
-    Board,
-    Detail,
-    typesDraft,
-    addsBookmark,
-    rejectsDuplicate,
-    rejectsInvalidTitle,
-    addFails,
-    togglesRead,
-    toggleMissing,
-    toggleFails,
-  },
 })

@@ -31,7 +31,7 @@ const m = 'features/items/model.ts'
 const v = 'features/items/views.ts'
 const s = 'features/items/server.ts'
 
-describe('changing.md recipes (ADR 0028)', () => {
+describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
   it('an enum field chosen in the add form, and an action button, applied as written, check clean', async () => {
     mkdirSync(join(root, '.tmp'), { recursive: true })
     await createApp(dir, {
@@ -102,12 +102,11 @@ describe('changing.md recipes (ADR 0028)', () => {
         "ui.span({ class: 'text-xs text-slate-500' }, [item.done ? 'done' : 'open']),",
         "ui.span({ class: 'text-xs text-slate-500' }, [item.done ? 'done' : 'open']),\n                    ui.span({ class: 'text-xs' }, [item.priority]),",
       ],
-      ['  addItem,', '  addItem,\n  ClearDone,\n  clearDone,'],
+      ['  Add,\n', '  Add,\n  ClearDone,\n'],
       [
         "      when(['adding']",
         "      ui.form({ on: { submit: ui.send(ClearDone, {}) } }, [ui.button({ type: 'submit', class: 'text-sm underline' }, ['Clear done'])]),\n      when(['adding']",
       ],
-      ['  declarations: {\n', '  declarations: {\n    ClearDone,\n    clearDone,\n'],
       [
         "ui.p({}, ['Status: '",
         "ui.p({}, ['Priority: ', item.priority]),\n              ui.p({}, ['Status: '",

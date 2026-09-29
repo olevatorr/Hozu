@@ -67,19 +67,21 @@ export const site = project({
     feature({
       id: 'finder',
       intent: { summary: 'Client fetch and live fixture' },
-      declarations: {
-        clockTag,
-        Search,
-        search,
-        clock,
-        Finder,
-        covers: contract(finder, {
-          given: { state: 'ready', context: { q: '' } },
-          when: [{ send: Search, payload: { q: 'x' } }],
-          expect: { state: 'ready', changes: { q: 'x' } },
-        }),
-        finder,
-      },
+      declarations: [
+        {
+          clockTag,
+          Search,
+          search,
+          clock,
+          Finder,
+          covers: contract(finder, {
+            given: { state: 'ready', context: { q: '' } },
+            when: [{ send: Search, payload: { q: 'x' } }],
+            expect: { state: 'ready', changes: { q: 'x' } },
+          }),
+          finder,
+        },
+      ],
     }),
   ],
 })

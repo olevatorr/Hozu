@@ -369,5 +369,5 @@ export const lab = feature({
   id: 'lab',
   intent: { summary: 'Interactive, explicitly illustrative walkthrough of Hozu validation and rendering' },
   imports: [content],
-  declarations: { Run, SetContract, SetScope, SetFreshness, SetBinding, m, How, ...contracts },
+  declarations: [{ Run, SetContract, SetScope, SetFreshness, SetBinding, m, How, ...contracts }],
 })

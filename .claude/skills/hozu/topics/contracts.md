@@ -5,7 +5,7 @@ missing one, ready to paste). Transitions that only copy values need none: `hozu
 in readable form, and a change shows as HZ018 `was: … now: …` until `hozu check --update-lock` accepts it.
 ```ts
 export const addsValid = contract(m, {
-  given: { state: 'idle' },                          // context defaults to initialContext
+  given: { state: 'idle' },                          // context: initialContext; { touring: true } overrides fields
   when: [
     { send: Add, payload: { title: 'Milk' } },
     { done: addItem, result: { id: 'i9', title: 'Milk', done: false } },
@@ -17,5 +17,5 @@ export const addsValid = contract(m, {
   },
 })
 ```
-Add contracts to the feature's `declarations`. When a contract fails (HZ015), decide which is intended — the
+Export contracts from `views.ts` (or any module the feature lists). When a contract fails (HZ015), decide which is intended — the
 machine or the contract — before changing either.

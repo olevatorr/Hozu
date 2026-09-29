@@ -50,7 +50,7 @@ const site = project({
       head: { render: () => ({ title: 'Assets', description: 'Asset fixture' }) },
     }),
   ],
-  features: [feature({ id: 'site', intent: { summary: 'Asset fixture' }, declarations: { Page } })],
+  features: [feature({ id: 'site', intent: { summary: 'Asset fixture' }, declarations: [{ Page }] })],
 })
 
 describe('assets', () => {

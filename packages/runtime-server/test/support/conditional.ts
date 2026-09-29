@@ -77,7 +77,7 @@ const Note = ui.view({
 const docs = feature({
   id: 'docs',
   intent: { summary: 'Docs whose code blocks can be copied', invariants: [] },
-  declarations: { Copy, blocks, docList, copier, Doc, Note },
+  declarations: [{ Copy, blocks, docList, copier, Doc, Note }],
 })
 
 export const conditional = project({

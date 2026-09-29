@@ -1,8 +1,10 @@
 import { project, ui } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
+import { account } from './features/account/feature.ts'
 import { me, Session } from './features/account/model.ts'
-import { AccountBar, account, Login } from './features/account/views.ts'
-import { NotesBoard, notes } from './features/notes/views.ts'
+import { AccountBar, Login } from './features/account/views.ts'
+import { notes } from './features/notes/feature.ts'
+import { NotesBoard } from './features/notes/views.ts'
 import { home, login } from './routes.ts'
 
 export default project({

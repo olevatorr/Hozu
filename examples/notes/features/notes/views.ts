@@ -1,4 +1,4 @@
-import { contract, feature, op, ui } from '@hozu/core'
+import { contract, op, ui } from '@hozu/core'
 import {
   Add,
   addNote,
@@ -7,9 +7,7 @@ import {
   GONE,
   listNotes,
   noMatch,
-  notesApi,
   notesMachine,
-  notesTag,
   Pin,
   Remove,
   removeNote,
@@ -187,42 +185,4 @@ export const searches = contract(notesMachine, {
   given: { state: 'idle' },
   when: [{ send: Search, payload: { query: 'milk' } }],
   expect: { state: 'idle', changes: { query: 'milk' } },
-})
-
-export const notes = feature({
-  id: 'notes',
-  intent: {
-    summary: 'Personal notes per signed-in user: add, delete, pin, search in the browser',
-    invariants: ['A user sees only their own notes', 'Note texts are unique per user, case-insensitive'],
-  },
-  declarations: {
-    notesApi,
-    Draft,
-    Add,
-    Remove,
-    Pin,
-    Search,
-    notesTag,
-    listNotes,
-    addNote,
-    removeNote,
-    togglePin,
-    visible,
-    noMatch,
-    total,
-    notesMachine,
-    NotesBoard,
-    typesDraft,
-    adds,
-    rejectsDuplicate,
-    rejectsInvalid,
-    addFails,
-    removes,
-    removeMissing,
-    removeFails,
-    pins,
-    pinMissing,
-    pinFails,
-    searches,
-  },
 })

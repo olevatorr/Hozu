@@ -4,16 +4,37 @@ import { transform } from '../src/transform.ts'
 const head = "import { fn } from '@hozu/core'\nimport { z } from 'zod'\n"
 const marked = (body: string) =>
   /__hozu\.free\([\s\S]*?, (\[[^\]]*\])\)/.exec(transform(head + body).code)?.[1]
+const helpers = (body: string) =>
+  /__hozu\.helpers\([\s\S]*?, \{ ([^}]*) \}\)/.exec(transform(head + body).code)?.[1]
 
 describe('fn bodies that are not self-contained', () => {
-  it('marks a module-level helper', () => {
-    const code = `const matches = (s: { name: string }, t: string) => s.name.includes(t)
+  it('ships a self-contained module helper with the fn, and helpers it uses in turn', () => {
+    const code = `const lower = (s: string) => s.toLowerCase()
+function matches(name: string, text: string) { return lower(name).includes(lower(text)) }
+const LIMIT = 5
 export const visible = fn({
   input: z.object({ items: z.array(z.string()), text: z.string() }),
   output: z.array(z.string()),
-  impl: ({ items, text }) => items.filter((s) => matches({ name: s }, text)),
+  impl: ({ items, text }) => items.filter((s) => matches(s, text)).slice(0, LIMIT),
 })`
-    expect(marked(code)).toBe('["matches"]')
+    expect(helpers(code)).toBe('LIMIT: () => LIMIT, lower: () => lower, matches: () => matches')
+    expect(marked(code)).toBeUndefined()
+  })
+
+  it('marks names that cannot be shipped: imports, mutable module state, and what helpers need from them', () => {
+    expect(
+      marked(
+        "import { db } from './db.ts'\nexport const f = fn({ input: I, output: O, impl: (x) => db.get(x) })",
+      ),
+    ).toBe('["db"]')
+    expect(
+      marked('let count = 0\nexport const f = fn({ input: I, output: O, impl: (x) => x + count })'),
+    ).toBe('["count"]')
+    expect(
+      marked(
+        "import { rate } from './rate.ts'\nconst price = (n: number) => n * rate\nexport const f = fn({ input: I, output: O, impl: (x) => price(x) })",
+      ),
+    ).toBe('["rate"]')
   })
 
   it('lists every free name once, sorted', () => {

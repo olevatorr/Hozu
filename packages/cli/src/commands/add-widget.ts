@@ -62,19 +62,25 @@ export async function runAddWidget(
   const edit = async (path: string, change: (s: string) => string | null, manual: string) => {
     const source = existsSync(path) ? await readFile(path, 'utf8') : null
     const next = source === null ? null : change(source)
-    if (next === null || next === source) out.manual.push(`${relative(cwd, path)}: ${manual}`)
-    else await write(path, next, false)
+    if (next === null) out.manual.push(`${relative(cwd, path)}: ${manual}`)
+    else if (next !== source) await write(path, next, false)
   }
-  const host =
-    ['views.ts', 'feature.ts'].map((f) => join(dir, f)).find((f) => existsSync(f)) ?? join(dir, 'views.ts')
   await edit(
-    host,
+    join(dir, 'views.ts'),
+    (s) => addImport(s, `import { ${name} } from './widgets.ts'\n`),
+    `import { ${name} } from './widgets.ts'`,
+  )
+  await edit(
+    join(dir, 'feature.ts'),
     (s) => {
-      if (!/declarations: \{\n/.test(s)) return null
-      const listed = s.replace(/declarations: \{\n/, `declarations: {\n    ${name},\n`)
-      return addImport(listed, `import { ${name} } from './widgets.ts'\n`)
+      if (/import \* as widgets from '\.\/widgets\.ts'/.test(s)) return s
+      const listed = s.replace(
+        /declarations: \[([^\]]*)\]/,
+        (_, list: string) => `declarations: [${list}, widgets]`,
+      )
+      return listed === s ? null : addImport(listed, "import * as widgets from './widgets.ts'\n")
     },
-    `import { ${name} } from './widgets.ts' and add ${name} to the feature's declarations`,
+    "import * as widgets from './widgets.ts' and add widgets to the feature's declarations list",
   )
   const serve = join(root, 'serve.ts')
   await edit(

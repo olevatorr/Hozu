@@ -192,7 +192,7 @@ query({ input: Item, output: Item, scope: 'public', freshness: 'static' })
 project({ schema: zodAdapter, http: null, routes: {}, pages: [], features: [] })
 
 // @ts-expect-error declarations are one record, not one record per kind
-feature({ id: 'f', intent: { summary: 'x' }, declarations: {}, events: {} })
+feature({ id: 'f', intent: { summary: 'x' }, declarations: [{}], events: {} })
 
 contract(ok, {
   given: { state: 'idle' },
@@ -206,4 +206,34 @@ contract(ok, {
   when: [],
   // @ts-expect-error the unchecked null form is gone
   expect: { state: 'idle', effects: null },
+})
+
+contract(ok, {
+  given: { state: 'idle', context: { note: 'draft' } },
+  when: [],
+  expect: { state: 'idle' },
+})
+
+contract(ok, {
+  // @ts-expect-error a given patch names context fields only
+  given: { state: 'idle', context: { missing: 1 } },
+  when: [],
+  expect: { state: 'idle' },
+})
+
+const Gauge = ui.widget({
+  tag: 'div',
+  props: z.object({ value: z.number() }),
+  events: {},
+  client: new URL('./gauge.client.ts', import.meta.url),
+  load: 'eager',
+  wraps: false,
+})
+
+export const NoHandlers = ui.view({
+  render: () =>
+    ui.main({}, [
+      ui.use(Gauge, { props: { value: 1 } }, []),
+      ui.query(itemQuery, { slug: 'a' }, { ready: () => null, failed: { Unexpected: () => null } }),
+    ]),
 })

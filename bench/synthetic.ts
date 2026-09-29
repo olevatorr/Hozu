@@ -77,7 +77,7 @@ export function syntheticProject(features: number, states = 30, events = 10) {
       id: `f${f}`,
       intent: { summary: `Synthetic feature ${f}` },
       imports: previous ? [previous.feature] : [],
-      declarations: { ...eventRecord, rows, View, m },
+      declarations: [{ ...eventRecord, rows, View, m }],
       exports: [rows],
     })
     decls.push(decl)

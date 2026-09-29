@@ -33,7 +33,11 @@ const app = project({
   routes: { home },
   pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'Home' }) } })],
   features: [
-    feature({ id: 'api', intent: { summary: 'endpoints' }, declarations: { status, hook, callback, Home } }),
+    feature({
+      id: 'api',
+      intent: { summary: 'endpoints' },
+      declarations: [{ status, hook, callback, Home }],
+    }),
   ],
 })
 const received: string[] = []
@@ -109,14 +113,16 @@ describe('declared endpoints (ADR 0037 D6)', () => {
         feature({
           id: 'x',
           intent: { summary: 'x' },
-          declarations: {
-            Home,
-            a: bad('/_hozu/x'),
-            b: bad('/api/:id'),
-            c: bad('/'),
-            d: bad('/api/ok'),
-            e: bad('/api/ok'),
-          },
+          declarations: [
+            {
+              Home,
+              a: bad('/_hozu/x'),
+              b: bad('/api/:id'),
+              c: bad('/'),
+              d: bad('/api/ok'),
+              e: bad('/api/ok'),
+            },
+          ],
         }),
       ],
     })

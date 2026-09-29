@@ -18,6 +18,7 @@ import type {
   TagExprIR,
   WidgetIR,
 } from '../ir/types.ts'
+import { helpersOf } from '../lower.ts'
 import { type Decl, defOf } from '../model/decl.ts'
 import { RecorderError, refProxy } from '../model/expr.ts'
 import { builtin } from '../platform.ts'
@@ -132,6 +133,16 @@ function buildWidget(scope: FeatureScope, sym: string, d: WidgetDef): WidgetIR {
   }
 }
 
+const plainJson = (v: unknown): boolean =>
+  v === null ||
+  typeof v === 'string' ||
+  typeof v === 'boolean' ||
+  (typeof v === 'number' && Number.isFinite(v)) ||
+  (Array.isArray(v) && v.every(plainJson)) ||
+  (typeof v === 'object' &&
+    Object.getPrototypeOf(v) === Object.prototype &&
+    Object.values(v).every(plainJson))
+
 export function buildFeature(project: ProjectScope, id: string, config: FeatureParts): FeatureIR {
   const scope = new FeatureScope(project, id)
   if (typeof config.intent?.summary !== 'string' || !config.intent.summary.trim())
@@ -234,10 +245,27 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     fns: mapRecord(config.fns, (sym, f) => {
       const d = defOf<FnDef>(f)
       project.bindings.fns[`${id}.${sym}`] = d.impl
+      const helpers: Record<string, string> = {}
+      for (const [name, get] of Object.entries(helpersOf().get(f) ?? {})) {
+        const value = get()
+        if (typeof value === 'function') helpers[name] = String(value)
+        else if (plainJson(value)) helpers[name] = JSON.stringify(value)
+        else
+          scope.report(
+            'HZ047',
+            scope.at('fns', sym),
+            `fn ${sym} uses \`${name}\`, whose value cannot be sent to the browser`,
+            'A constant a fn body uses is copied into the browser as JSON: numbers, strings, booleans, null, arrays and plain objects.',
+            { summary: `Make \`${name}\` a JSON value, or pass it as input`, snippet: null, patch: null },
+          )
+      }
+      if (Object.keys(helpers).length) project.bindings.fnHelpers[`${id}.${sym}`] = helpers
       return {
         input: scope.schema(d.input, scope.at('fns', sym, 'input')),
         output: scope.schema(d.output, scope.at('fns', sym, 'output')),
-        sourceHash: scope.fingerprint(String(d.impl)),
+        sourceHash: scope.fingerprint(
+          Object.keys(helpers).length ? `${String(d.impl)}\n${JSON.stringify(helpers)}` : String(d.impl),
+        ),
       }
     }),
     machine,

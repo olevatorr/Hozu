@@ -29,7 +29,7 @@ export interface ContractDecl extends Decl<'contract'> {}
 export const contract = <C, S extends string>(
   machine: MachineDecl<C, S>,
   spec: {
-    given: { state: NoInfer<S>; context?: NoInfer<C> }
+    given: { state: NoInfer<S>; context?: Changes<NoInfer<C>> }
     when: Step[]
     expect: { state: NoInfer<S>; changes?: Changes<NoInfer<C>>; effects?: EffectCall[] }
   },

@@ -981,6 +981,19 @@
             "null"
           ]
         },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/ValueExpr"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "root": {
           "$ref": "#/definitions/ViewNode"
         }
@@ -988,6 +1001,7 @@
       "required": [
         "machine",
         "route",
+        "seed",
         "root"
       ],
       "additionalProperties": false

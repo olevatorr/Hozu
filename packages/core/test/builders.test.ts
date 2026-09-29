@@ -22,8 +22,8 @@ const expectBuildError = (p: unknown, code: DiagnosticCode, message: RegExp) => 
 describe('builder diagnostics', () => {
   it('HZ013 — one identity registered by two features', () => {
     const Ping = event({ payload: Payload })
-    const a = feature({ id: 'a', declarations: { Ping }, ...base })
-    const b = feature({ id: 'b', declarations: { Ping }, ...base })
+    const a = feature({ id: 'a', declarations: [{ Ping }], ...base })
+    const b = feature({ id: 'b', declarations: [{ Ping }], ...base })
     expectBuildError(
       project({ schema: zodAdapter, routes: {}, pages: [], features: [a, b] }),
       'HZ013',
@@ -32,8 +32,8 @@ describe('builder diagnostics', () => {
   })
 
   it('HZ013 — duplicate feature ids', () => {
-    const a = feature({ id: 'a', declarations: {}, ...base })
-    const b = feature({ id: 'a', declarations: {}, ...base })
+    const a = feature({ id: 'a', declarations: [{}], ...base })
+    const b = feature({ id: 'a', declarations: [{}], ...base })
     expectBuildError(
       project({ schema: zodAdapter, routes: {}, pages: [], features: [a, b] }),
       'HZ013',
@@ -71,7 +71,7 @@ describe('builder diagnostics', () => {
         schema: zodAdapter,
         routes: {},
         pages: [],
-        features: [feature({ id: 'f', declarations: { Ping, m, V }, ...base })],
+        features: [feature({ id: 'f', declarations: [{ Ping, m, V }], ...base })],
       }),
     )
     expect(b.diagnostics).toEqual([])
@@ -99,7 +99,7 @@ describe('builder diagnostics', () => {
       states: () => ({ idle: {} }),
     })
     const V = ui.view({ machine: m, render: ({ ctx }) => ui.p({}, [ctx.label.toUpperCase()]) })
-    const f = feature({ id: 'f', declarations: { m, V }, ...base })
+    const f = feature({ id: 'f', declarations: [{ m, V }], ...base })
     expectBuildError(
       project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }),
       'HZ014',
@@ -123,7 +123,7 @@ describe('builder diagnostics', () => {
         schema: zodAdapter,
         routes: {},
         pages: [],
-        features: [feature({ id: 'f', declarations: { V, m }, ...base })],
+        features: [feature({ id: 'f', declarations: [{ V, m }], ...base })],
       }),
     ).diagnostics
     expect(diagnostics.map((d) => d.message)).toEqual(
@@ -151,7 +151,7 @@ describe('builder diagnostics', () => {
         schema: zodAdapter,
         routes: {},
         pages: [],
-        features: [feature({ id: 'f', declarations: { V }, ...base })],
+        features: [feature({ id: 'f', declarations: [{ V }], ...base })],
       }),
     ).diagnostics.map((d) => [d.message, d.cause])
     expect(messages).toEqual([
@@ -176,7 +176,7 @@ describe('builder diagnostics', () => {
         schema: zodAdapter,
         routes: {},
         pages: [],
-        features: [feature({ id: 'f', declarations: { Ghost }, ...base })],
+        features: [feature({ id: 'f', declarations: [{ Ghost }], ...base })],
       }),
     ).diagnostics.filter((d) => d.code === 'HZ029')
     expect(found.map((d) => [d.location.pointer, d.message])).toEqual([
@@ -187,7 +187,7 @@ describe('builder diagnostics', () => {
   it('HZ012 — schema from another vendor', () => {
     const foreign = { '~standard': { version: 1, vendor: 'valibot', validate: () => ({ value: {} }) } }
     const Ping = event({ payload: foreign as never })
-    const f = feature({ id: 'f', declarations: { Ping }, ...base })
+    const f = feature({ id: 'f', declarations: [{ Ping }], ...base })
     expectBuildError(
       project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }),
       'HZ012',
@@ -216,7 +216,7 @@ describe('builder diagnostics', () => {
         schema: zodAdapter,
         routes: {},
         pages: [],
-        features: [feature({ id: 'f', declarations: { m }, ...base })],
+        features: [feature({ id: 'f', declarations: [{ m }], ...base })],
       }),
       'HZ003',
       /not declared in any feature/,
@@ -237,7 +237,7 @@ describe('builder diagnostics', () => {
         schema: zodAdapter,
         routes: {},
         pages: [],
-        features: [feature({ id: 'f', declarations: { Ping, m }, ...base })],
+        features: [feature({ id: 'f', declarations: [{ Ping, m }], ...base })],
       }),
       'HZ007',
       /missing from project\(\{ routes \}\)/,
@@ -251,7 +251,7 @@ describe('builder diagnostics', () => {
       errors: { Unexpected: Payload },
       invalidates: () => [],
     })
-    const f = feature({ id: 'f', declarations: { save }, intent: { summary: ' ' } })
+    const f = feature({ id: 'f', declarations: [{ save }], intent: { summary: ' ' } })
     expect(codesOf(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))).toEqual([
       'HZ014',
       'HZ014',
@@ -282,7 +282,7 @@ describe('builder diagnostics', () => {
         schema: zodAdapter,
         routes: {},
         pages: [],
-        features: [feature({ id: 'f', declarations: { Ping, m }, ...base })],
+        features: [feature({ id: 'f', declarations: [{ Ping, m }], ...base })],
       }),
     )
     const [first, second] = ir.features.f!.machine!.states.idle!.on['f.Ping']!
@@ -309,7 +309,7 @@ describe('busy states by rule (ADR 0037)', () => {
         schema: zodAdapter,
         routes: {},
         pages: [],
-        features: [feature({ id: 'f', declarations: { Go, Tick, save, m }, ...base })],
+        features: [feature({ id: 'f', declarations: [{ Go, Tick, save, m }], ...base })],
       }),
     )
   }

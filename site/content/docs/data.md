@@ -22,7 +22,7 @@ export const listArticles = query({
 })
 ```
 
-Register both declarations in the feature. Render the query with `ui.query(listArticles, {}, ...)` and bind its implementation through `resolvers(project, implement => [...])`.
+Export both from a module the feature lists in `declarations`. Render the query with `ui.query(listArticles, {}, ...)` and bind its implementation through `resolvers(project, implement => [...])`.
 
 ## Choose scope and freshness
 

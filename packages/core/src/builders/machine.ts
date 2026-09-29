@@ -16,7 +16,7 @@ export interface InvalidError<I = Record<string, unknown>> {
 }
 
 export interface TransitionConfig<T extends string, A> {
-  target: T
+  target?: T
   guard?: (arg: A) => Condition
   assign?: (arg: A) => Assign[] | void
   navigate?: (arg: A) => Href
@@ -56,6 +56,7 @@ export interface MachineDef {
   context: Schema
   initialContext: unknown
   initial: string
+  on?: (scope: { ctx: any }) => OnDecl<string>[]
   states: (scope: { ctx: any }) => Record<string, StateConfig<string>>
 }
 
@@ -67,7 +68,7 @@ type ErrorTransitions<E, T extends string, I = Record<string, unknown>> = {
   [K in keyof E | 'Unexpected']: Outcome<T, Ref<K extends keyof E ? E[K] : UnexpectedError>>
 } & { Invalid?: Outcome<T, Ref<InvalidError<I>>> }
 
-export const on = <P, const T extends string>(
+export const on = <P, const T extends string = never>(
   event: EventDecl<P>,
   transition: TransitionConfig<T, Ref<P>>,
 ): OnDecl<T> => brand({}, 'on', { event, transition } satisfies OnDef)
@@ -98,5 +99,6 @@ export const machine = <CS extends Schema, S extends string>(config: {
   context: CS
   initialContext: NoInfer<Infer<CS>>
   initial: NoInfer<S>
+  on?: (scope: { ctx: Ref<Infer<CS>> }) => OnDecl<NoInfer<S>>[]
   states: (scope: { ctx: Ref<Infer<CS>> }) => { [K in S]: StateConfig<NoInfer<S>> }
 }): MachineDecl<Infer<CS>, S> => brand({}, 'machine', { ...config } as MachineDef)

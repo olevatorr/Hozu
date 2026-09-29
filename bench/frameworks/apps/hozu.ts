@@ -52,7 +52,7 @@ const home = route({ path: '/', params: null, search: null })
 const shop = feature({
   id: 'shop',
   intent: { summary: 'Benchmark page' },
-  declarations: { Add, listProducts, Page, cart },
+  declarations: [{ Add, listProducts, Page, cart }],
 })
 const headFields = {
   title: 'Products',

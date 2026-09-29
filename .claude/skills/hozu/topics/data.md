@@ -15,12 +15,14 @@ export const addItem = mutation({
   errors: { Duplicate: z.object({ title: z.string() }) },          // optional: declared failures
   invalidates: () => [itemsTag()],                                  // refreshes queries with these tags
 })
-export const visible = fn({                   // computation: pure JS, self-contained (no imports, no helpers outside impl: HZ047)
+export const visible = fn({                   // computation: pure JS; may call const/function helpers of this module
   input: z.object({ items: z.array(Item), show: Show }), output: z.array(Item),
   impl: ({ items, show }) => items.filter((i) => show === 'all' || !i.done),
 })
 ```
 - Call a `fn` from views or machines with data: `ui.each(visible({ items, show: ctx.show }), 'id', …)`.
+- A `fn` body may call functions and JSON constants declared in the same module; they are sent to the browser with
+  it. Imported names and `let` state are not (HZ047): pass them as input.
 - Rendering is derived: `scope` and `freshness` decide static, ISR, SWR, streamed or client rendering;
   `scope: 'user'` data never reaches a cached page (HZ022). A mutation's tags can read only its input.
 - **Resolvers** (`server.ts`, or `features/<name>/server.ts` from the scaffold):

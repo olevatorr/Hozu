@@ -2,7 +2,7 @@ import { type Bindings, type FeatureIR, join, routeTable } from '@hozu/core/ir'
 import { type CompiledMachine, compileMachine } from '@hozu/machine'
 import type { Ctx } from '../context.ts'
 import { type Coverage, drift, type Lockfile, lockOf } from './lock.ts'
-import { isMechanical } from './mechanical.ts'
+import { isMechanical, locate } from './mechanical.ts'
 import { runContract } from './run.ts'
 import { skeleton } from './skeleton.ts'
 
@@ -59,8 +59,14 @@ export function verifyContracts(
           },
         )
     }
+    const shape = (id: string) => {
+      const kind = id.split('/').slice(1, -1).join('/')
+      const { from, transition } = locate(feature, id)
+      return `${kind} ${JSON.stringify({ ...transition, target: transition.target === from ? '@self' : transition.target })}`
+    }
+    const coveredShapes = new Set([...cov].filter(([, c]) => c.size > 0).map(([id]) => shape(id)))
     for (const [id, contracts] of cov)
-      if (contracts.size === 0 && !isMechanical(feature, id))
+      if (contracts.size === 0 && !isMechanical(feature, id) && !coveredShapes.has(shape(id)))
         ctx.report(
           'HZ016',
           feature.id,

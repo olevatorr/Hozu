@@ -16,7 +16,7 @@ This lets the tools answer questions about an application before serving it: whi
 
 ## Features define boundaries
 
-A feature groups related declarations: queries, mutations, events, views and, when needed, one state machine. Register each declaration once in its `declarations` object. Other features can use only declarations exposed through its `exports`; consumers declare the feature in `imports`.
+A feature groups related declarations: queries, mutations, events, views and, when needed, one state machine. The feature lists the modules that hold them, `declarations: [model, views]`, and every exported declaration is registered under its export name. Other features can use only declarations exposed through its `exports`; consumers declare the feature in `imports`.
 
 Static content does not need a machine. Add one when the UI has an interaction with state or side effects.
 

@@ -56,6 +56,7 @@ const TOPICS: Record<string, string> = {
   HZ045: 'widgets',
   HZ046: 'endpoints',
   HZ047: 'data',
+  HZ048: 'machine',
 }
 
 export function human(d: Diagnostic): string {

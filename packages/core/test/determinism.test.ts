@@ -40,7 +40,13 @@ function reorderCart(rand: Rand): ProjectDecl {
   const clones = new Map<object, ReturnType<typeof feature>>()
   for (const f of originals) {
     const c = def<FeatureConfig>(f)
-    const next: FeatureConfig = { ...c, declarations: shuffleRecord(c.declarations, rand) }
+    const next: FeatureConfig = {
+      ...c,
+      declarations: shuffle(
+        c.declarations.map((m) => shuffleRecord(m as Record<string, unknown>, rand)),
+        rand,
+      ),
+    }
     if (c.exports) next.exports = shuffle(c.exports, rand)
     if (c.imports) next.imports = c.imports.map((i) => clones.get(i) ?? i)
     clones.set(f, feature(next))
@@ -121,7 +127,7 @@ function freshProject(rand: Rand): ProjectDecl {
   const f = feature({
     id: 'fresh',
     intent: { summary: 'Determinism fixture' },
-    declarations: { ...shuffleRecord({ Ping, Pong, Reset }, rand), save, Panel, m },
+    declarations: [{ ...shuffleRecord({ Ping, Pong, Reset }, rand), save, Panel, m }],
     exports: [...shuffle([Ping, Pong], rand)],
   })
   return project({ schema: zodAdapter, routes: {}, pages: [], features: [f] })

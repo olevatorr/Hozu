@@ -6,11 +6,18 @@ import { GUARD, RecorderError } from './model/expr.ts'
 const TRANSFORMED = Symbol.for('hozu.transformed')
 
 const FREE = Symbol.for('hozu.freeNames')
+const HELPERS = Symbol.for('hozu.fnHelpers')
 
 export const transformedDecls = (): WeakSet<object> => {
   const g = globalThis as { [TRANSFORMED]?: WeakSet<object> }
   g[TRANSFORMED] ??= new WeakSet()
   return g[TRANSFORMED]
+}
+
+export const helpersOf = (): WeakMap<object, Record<string, () => unknown>> => {
+  const g = globalThis as { [HELPERS]?: WeakMap<object, Record<string, () => unknown>> }
+  g[HELPERS] ??= new WeakMap()
+  return g[HELPERS]
 }
 
 export const freeNamesOf = (): WeakMap<object, string[]> => {
@@ -27,6 +34,10 @@ const list = (x: unknown): any[] =>
 export const lower = Object.freeze({
   done: <T extends object>(decl: T): T => {
     transformedDecls().add(decl)
+    return decl
+  },
+  helpers: <T extends object>(decl: T, getters: Record<string, () => unknown>): T => {
+    helpersOf().set(decl, getters)
     return decl
   },
   free: <T extends object>(decl: T, names: string[]): T => {

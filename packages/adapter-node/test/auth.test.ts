@@ -86,7 +86,7 @@ const site = project({
     feature({
       id: 'auth',
       intent: { summary: 'Session fixture' },
-      declarations: { me, login, logout, Account, Home, Login, NotFound },
+      declarations: [{ me, login, logout, Account, Home, Login, NotFound }],
     }),
   ],
 })

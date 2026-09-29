@@ -1,7 +1,8 @@
 import { project, ui } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
+import { bookmarks } from './features/bookmarks/feature.ts'
 import { getBookmark, listBookmarks } from './features/bookmarks/model.ts'
-import { Board, bookmarks, Detail } from './features/bookmarks/views.ts'
+import { Board, Detail } from './features/bookmarks/views.ts'
 import { bookmarkPage, home } from './routes.ts'
 
 export default project({

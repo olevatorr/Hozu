@@ -19,7 +19,7 @@ export const Welcome = ui.view({
 })
 ```
 
-Register `Welcome` in a feature's declarations and list it in a page's `views`. Choose semantic elements, label inputs and give images useful alternative text.
+Export `Welcome` from a module the feature lists in `declarations`, and list it in a page's `views`. Choose semantic elements, label inputs and give images useful alternative text.
 
 ## Render data
 

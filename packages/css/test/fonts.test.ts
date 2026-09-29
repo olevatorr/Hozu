@@ -117,7 +117,7 @@ describe('font fallback metrics (ADR 0020)', () => {
       pages: [
         ui.page(home, { views: [Page], head: { render: () => ({ title: 'Fonts', description: 'Fonts' }) } }),
       ],
-      features: [feature({ id: 'site', intent: { summary: 'Fonts' }, declarations: { Page } })],
+      features: [feature({ id: 'site', intent: { summary: 'Fonts' }, declarations: [{ Page }] })],
     })
     const styles = await compileStyles(buildProject(site, { sources: false }), { base: dir })
     expect(styles.css).toMatch(/font-family:"?Inter Fallback"?;src:local\("?Arial"?\);size-adjust:113\.27%/)

@@ -38,7 +38,7 @@ const site = project({
   pages: [
     ui.page(home, { views: [Home], head: { render: () => ({ title: 'Images', description: 'Images' }) } }),
   ],
-  features: [feature({ id: 'site', intent: { summary: 'Images' }, declarations: { Home } })],
+  features: [feature({ id: 'site', intent: { summary: 'Images' }, declarations: [{ Home }] })],
 })
 const build = buildProject(site, { sources: false })
 const chrome = process.env.CHROMIUM_PATH ?? chromium.executablePath()

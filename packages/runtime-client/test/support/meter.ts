@@ -77,22 +77,24 @@ export default project({
     feature({
       id: 'meter',
       intent: { summary: 'Widget fixture' },
-      declarations: {
-        Picked,
-        Hide,
-        Meter,
-        Frame,
-        Panel,
-        covers: contract(meter, {
-          given: { state: 'shown', context: { count: 0 } },
-          when: [
-            { send: Picked, payload: { n: 2 } },
-            { send: Hide, payload: {} },
-          ],
-          expect: { state: 'hidden', changes: { count: 2 } },
-        }),
-        meter,
-      },
+      declarations: [
+        {
+          Picked,
+          Hide,
+          Meter,
+          Frame,
+          Panel,
+          covers: contract(meter, {
+            given: { state: 'shown', context: { count: 0 } },
+            when: [
+              { send: Picked, payload: { n: 2 } },
+              { send: Hide, payload: {} },
+            ],
+            expect: { state: 'hidden', changes: { count: 2 } },
+          }),
+          meter,
+        },
+      ],
     }),
   ],
 })

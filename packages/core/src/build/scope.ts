@@ -49,6 +49,7 @@ export class ProjectScope {
   readonly resolved = new WeakMap<object, ManifestAsset>()
   readonly bindings: Bindings = {
     fns: {},
+    fnHelpers: {},
     checks: {},
     refs: new Map(),
     styles: { entry: null, features: {} },
@@ -178,8 +179,8 @@ export class FeatureScope {
         `This ${info.kind} is not declared in any feature`,
         "It is referenced here but never added to a feature's `declarations`, so it has no identity.",
         {
-          summary: 'Add it to the owning feature({ declarations })',
-          snippet: 'declarations: { ...existing, myName }',
+          summary: 'Export it from a module the owning feature lists in declarations: [model, views]',
+          snippet: 'export const myName = …',
           patch: null,
         },
       )

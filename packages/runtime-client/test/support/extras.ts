@@ -75,23 +75,25 @@ const site = project({
     feature({
       id: 'extras',
       intent: { summary: 'Capability fixture' },
-      declarations: {
-        Draft,
-        Resize,
-        Tag,
-        note,
-        Page,
-        covers: contract(extras, {
-          given: { state: 'ready', context: { draft: '', tags: [], width: 0 } },
-          when: [
-            { send: Draft, payload: { text: 'x' } },
-            { send: Resize, payload: { width: 800 } },
-            { send: Tag, payload: { tag: 'a' } },
-          ],
-          expect: { state: 'ready', changes: { draft: 'x', tags: ['a'], width: 800 } },
-        }),
-        extras,
-      },
+      declarations: [
+        {
+          Draft,
+          Resize,
+          Tag,
+          note,
+          Page,
+          covers: contract(extras, {
+            given: { state: 'ready', context: { draft: '', tags: [], width: 0 } },
+            when: [
+              { send: Draft, payload: { text: 'x' } },
+              { send: Resize, payload: { width: 800 } },
+              { send: Tag, payload: { tag: 'a' } },
+            ],
+            expect: { state: 'ready', changes: { draft: 'x', tags: ['a'], width: 800 } },
+          }),
+          extras,
+        },
+      ],
     }),
   ],
 })

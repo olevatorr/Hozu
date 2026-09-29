@@ -9,6 +9,6 @@ export const posts = feature({
     summary: 'Public blog posts: the index and one page per article. Fully cacheable, ships no JavaScript.',
     invariants: ['Only public data', 'Articles are static until their tag is revalidated'],
   },
-  declarations: { postsTag, postTag, listPosts, getPost, PostList, Article, Offline, text },
+  declarations: [{ postsTag, postTag, listPosts, getPost, PostList, Article, Offline, text }],
   exports: [listPosts, PostList],
 })

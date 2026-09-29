@@ -8,6 +8,6 @@ export const catalog = feature({
     summary: 'Public product catalog. Read-only, cacheable, ships no JavaScript.',
     invariants: ['Only public data', 'No machine: every node is static or revalidated'],
   },
-  declarations: { catalogTag, productTag, listProducts, getProduct, ProductGrid, ProductDetail },
+  declarations: [{ catalogTag, productTag, listProducts, getProduct, ProductGrid, ProductDetail }],
   exports: [listProducts, catalogTag, ProductGrid],
 })

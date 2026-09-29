@@ -20,7 +20,7 @@ const site = project({
   schema: zodAdapter,
   routes: { home },
   pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'Up', description: 'Up' }) } })],
-  features: [feature({ id: 'up', intent: { summary: 'Upload fixture' }, declarations: { upload, Home } })],
+  features: [feature({ id: 'up', intent: { summary: 'Upload fixture' }, declarations: [{ upload, Home }] })],
 })
 
 describe('file uploads (G10)', () => {

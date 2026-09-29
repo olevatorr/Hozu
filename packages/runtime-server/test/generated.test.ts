@@ -66,7 +66,7 @@ describe('generated source', () => {
       schema: zodAdapter,
       routes: { home },
       pages: [ui.page(home, { views: [View], head: { render: () => ({ title: 'x' }) } })],
-      features: [feature({ id: 'f', intent: { summary: 'x' }, declarations: { Ping, m, View } })],
+      features: [feature({ id: 'f', intent: { summary: 'x' }, declarations: [{ Ping, m, View }] })],
     })
     const build = buildProject(decl, { sources: false })
     const data = createDataRuntime({ build, resolvers: resolvers(decl, () => []) })

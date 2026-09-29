@@ -13,6 +13,7 @@ export const exampleFiles = [
   'hozu.config.ts',
   'features/bookmarks/model.ts',
   'features/bookmarks/views.ts',
+  'features/bookmarks/feature.ts',
 ]
 
 export const agentsMd = (claude: string) =>

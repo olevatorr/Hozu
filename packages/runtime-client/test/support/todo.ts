@@ -96,7 +96,7 @@ export const home = route({ path: '/', params: null, search: null })
 export const todoFeature = feature({
   id: 'todo',
   intent: { summary: 'Client runtime fixture' },
-  declarations: { Draft, Add, Remove, Reverse, Key, reversed, Todo, covers: covers[0]!, todo },
+  declarations: [{ Draft, Add, Remove, Reverse, Key, reversed, Todo, covers: covers[0]!, todo }],
 })
 
 export default project({

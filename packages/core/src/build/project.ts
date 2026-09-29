@@ -86,24 +86,48 @@ function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
     exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
   } as unknown as FeatureParts & Record<string, unknown>
   for (const key of Object.values(kindKeys)) records[key as string] = {}
-  for (const [name, decl] of Object.entries(config.declarations ?? {})) {
-    const kind = infoOf(decl)?.kind
-    const key = kind ? kindKeys[kind] : undefined
-    const at = join(base, 'declarations', name)
-    if (key) records[key as string]![name] = decl
-    else if (kind === 'machine' || kind === 'messages') {
-      if (parts[kind])
-        scope.report('HZ013', id, at, `A feature has one ${kind}`, `"${name}" is a second ${kind}.`)
-      else (parts as Record<string, unknown>)[kind] = decl
-    } else
-      scope.report(
-        'HZ014',
-        id,
-        at,
-        `"${name}" is not a declaration`,
-        'declarations holds events, queries, mutations, fns, tags, views, widgets, endpoints, contracts, one machine and one messages.',
-      )
-  }
+  const modules = config.declarations as unknown
+  if (!Array.isArray(modules))
+    scope.report(
+      'HZ014',
+      id,
+      join(base, 'declarations'),
+      'declarations is a list of modules',
+      'A feature lists the modules that hold its declarations (ADR 0041); every exported declaration is registered under its export name.',
+      {
+        summary:
+          "import * as model from './model.ts' and import * as views from './views.ts', then declarations: [model, views]",
+        snippet: 'declarations: [model, views]',
+        patch: null,
+      },
+    )
+  const named = new Map<string, unknown>()
+  for (const [m, module] of (Array.isArray(modules) ? modules : []).entries())
+    for (const [name, decl] of Object.entries(module as Record<string, unknown>)) {
+      const kind = infoOf(decl)?.kind
+      if (!kind || (!kindKeys[kind] && kind !== 'machine' && kind !== 'messages')) continue
+      const at = join(base, 'declarations', m, name)
+      const seen = named.get(name)
+      if (seen !== undefined) {
+        if (seen !== decl)
+          scope.report(
+            'HZ013',
+            id,
+            at,
+            `"${name}" is declared by two of the feature's modules`,
+            'Each declaration is registered under its export name, so names are unique within a feature.',
+          )
+        continue
+      }
+      named.set(name, decl)
+      const key = kindKeys[kind]
+      if (key) records[key as string]![name] = decl
+      else if (kind === 'machine' || kind === 'messages') {
+        if (parts[kind])
+          scope.report('HZ013', id, at, `A feature has one ${kind}`, `"${name}" is a second ${kind}.`)
+        else (parts as Record<string, unknown>)[kind] = decl
+      }
+    }
   Object.assign(parts, records)
   for (const [i, decl] of (config.exports ?? []).entries()) {
     const kind = infoOf(decl)?.kind
@@ -335,9 +359,9 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
           id,
           join('', 'features', id, 'fns', symbol),
           `fn ${symbol} uses ${list}, which ${names.length === 1 ? 'is' : 'are'} defined outside its impl`,
-          'fn bodies are sent to the browser as source text, so anything outside impl is undefined there: the island stops while the server still renders the page.',
+          'fn bodies are sent to the browser as source text. Module helpers that are self-contained are sent with them; imported names and mutable module state (let) are not, so the island would stop while the server still renders the page.',
           {
-            summary: `Move ${list} inside impl, or pass ${names.length === 1 ? 'it' : 'them'} as input fields`,
+            summary: `Pass ${list} as input fields, or write ${names.length === 1 ? 'it' : 'them'} as a const helper in this module`,
             snippet: `impl: ({ items }) => {\n  const ${names[0]} = /* the helper, written here */\n  return ...\n}`,
             patch: null,
           },

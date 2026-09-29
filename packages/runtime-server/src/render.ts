@@ -31,6 +31,7 @@ import {
   renderTableFor,
   type Scope,
 } from './rendered.ts'
+import { seededContext } from './seed.ts'
 import { pruneScope } from './shape.ts'
 
 export interface Assets {
@@ -147,12 +148,18 @@ export async function renderPage({
       return m?.text[lang]?.[key] ?? m?.text[m.base]?.[key] ?? ''
     },
   }
+  const seeds = new Map<string, Json | null>()
+  const seedOf = (feature: FeatureIR) => {
+    if (!seeds.has(feature.id))
+      seeds.set(feature.id, seededContext(ir, route, feature, fns as never, params, search))
+    return seeds.get(feature.id)!
+  }
   const featureScope = (feature: FeatureIR, bound: boolean): Scope => {
     const snap = bound ? snapshots[feature.id] : undefined
     if (snap) payload.snapshots = { ...payload.snapshots, [feature.id]: snap }
     return {
       feature,
-      context: bound ? (snap?.context ?? feature.machine?.initialContext ?? null) : null,
+      context: bound ? (snap?.context ?? seedOf(feature) ?? feature.machine?.initialContext ?? null) : null,
       state: bound ? (snap?.state ?? feature.machine?.initial ?? null) : null,
       bindings: [],
       params,
@@ -185,7 +192,11 @@ export async function renderPage({
     const last = payload.islands.at(-1)
     if (last && last[0] === index && last[1] === lead) last.push(tail)
     else payload.islands.push([index, lead, tail])
-    payload.features[scope.feature.id] ??= (scope.feature.machine as MachineIR | null) ?? null
+    if (!(scope.feature.id in payload.features)) {
+      const machine = (scope.feature.machine as MachineIR | null) ?? null
+      const seeded = machine ? seedOf(scope.feature) : null
+      payload.features[scope.feature.id] = seeded ? { ...machine!, initialContext: seeded } : machine
+    }
     if (preloaded) return '<!--i-->'
     preloaded = true
     return `${scripts.map((href) => `<link rel="modulepreload" href="${escapeHtml(href)}">`).join('')}<!--i-->`
@@ -733,7 +744,10 @@ export function fnsModule(build: BuildResult): string {
     const expression = /^(async\s+)?(function\b|\(|[A-Za-z_$][\w$]*\s*=>)/.test(source)
       ? source
       : `function ${source}`
-    return `  ${JSON.stringify(ref)}: ${expression},`
+    const helpers = Object.entries(build.bindings.fnHelpers[ref] ?? {})
+    if (!helpers.length) return `  ${JSON.stringify(ref)}: ${expression},`
+    const locals = helpers.map(([name, src]) => `const ${name} = ${src};`).join(' ')
+    return `  ${JSON.stringify(ref)}: (() => { ${locals} return ${expression} })(),`
   })
   return `export const fns = {\n${entries.join('\n')}\n}\n`
 }

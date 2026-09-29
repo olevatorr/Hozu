@@ -6,12 +6,13 @@ Each pattern is complete here; there is no need to open other files.
   `when(['adding'], [ui.p({ 'aria-busy': 'true' }, ['Saving…'])])`. Do not duplicate controls under `when`.
 - **Optimistic item:** `when(['adding'], [ui.li({ class: 'opacity-50' }, [ctx.draft])])`; leaving the state removes it
   and the refreshed query shows the real item.
-- **Filter and empty state** (in context): two `fn`s over the list:
+- **Filter and empty state** (in context): one helper, two `fn`s over the list:
 ```ts
+const shows = (i: Item, show: Show) => show === 'all' || (show === 'done') === i.done   // sent with the fns
 export const visible = fn({ input: z.object({ items: z.array(Item), show: Show }), output: z.array(Item),
-  impl: ({ items, show }) => items.filter((i) => show === 'all' || (show === 'done') === i.done) })
+  impl: ({ items, show }) => items.filter((i) => shows(i, show)) })
 export const isEmpty = fn({ input: z.object({ items: z.array(Item), show: Show }), output: z.boolean(),
-  impl: ({ items, show }) => !items.some((i) => show === 'all' || (show === 'done') === i.done) })
+  impl: ({ items, show }) => !items.some((i) => shows(i, show)) })
 // view
 isEmpty({ items, show: ctx.show })
   ? ui.p({ class: 'text-slate-500' }, ['No items'])
@@ -24,6 +25,17 @@ isEmpty({ items, show: ctx.show })
   `ui.button({ type: 'button', 'aria-pressed': ctx.show === s.value, on: { click: ui.send(SetShow, { show: s.value }) } }, [s.label])`.
 - **Filter in the URL** (shareable, no JS): `search` on the route, options as
   `ui.a({ href: ui.link(home, null, { show: s.value }), 'aria-current': search.show === s.value }, [s.label])`.
+- **In the URL and as you type** (`/?q=park` works without JS, typing filters live): seed the machine from the URL
+  and read only the context. A GET form with `name="q"` submits it without JS.
+```ts
+export const Board = ui.view({ machine: m, route: home, seed: ({ search }) => ({ q: search.q, district: search.district }),
+  render: ({ ctx }) => ui.form({ method: 'get' }, [
+    ui.input({ type: 'search', name: 'q', 'aria-label': 'Search', value: ctx.q, on: { input: ui.send(Search, { q: ui.dom.value }) } }),
+    /* … */ ui.each(visible({ items, q: ctx.q, district: ctx.district }), 'id', (s) => …) ]) })
+```
+- **A mode with shared controls** (a tour, an edit mode): put what every mode handles the same way in
+  `machine({ on: [on(Search, { assign: (e) => { ctx.q = e.q } })] })` (no `target`: stays in its state); each state
+  lists only what differs.
 - **Per-item action** (toggle, pin, delete): each item gets its own small form, so it works without JS:
 ```ts
 ui.form({ on: { submit: ui.send(Toggle, { id: ui.dom.form('id') }) } }, [

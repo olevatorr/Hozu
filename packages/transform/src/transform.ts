@@ -181,6 +181,33 @@ export function transform(source: string, _file = ''): TransformResult {
       for (const s of stmt.specifiers)
         if (s.type === 'ImportSpecifier') locals.set(s.local.name, s.imported.name ?? s.imported.value)
   if (!locals.size) return { code: source, changed: false }
+  const moduleHelpers = new Map<string, Node>()
+  for (const stmt of program.body) {
+    const d = stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt
+    if (d?.type === 'FunctionDeclaration' && d.id) moduleHelpers.set(d.id.name, d)
+    if (d?.type === 'VariableDeclaration' && d.kind === 'const')
+      for (const v of d.declarations)
+        if (v.id.type === 'Identifier' && v.init) moduleHelpers.set(v.id.name, v.init)
+  }
+  const helperClosure = (names: string[]) => {
+    const helpers = new Set<string>()
+    const free = new Set<string>()
+    const visit = (name: string, trail: Set<string>) => {
+      const node = moduleHelpers.get(name)
+      const isFnCall =
+        node?.type === 'CallExpression' && node.callee.type === 'Identifier' && fnNames.has(node.callee.name)
+      if (!node || isFnCall || trail.has(name)) {
+        if (!trail.has(name)) free.add(name)
+        return
+      }
+      if (helpers.has(name)) return
+      helpers.add(name)
+      for (const inner of freeNames(node)) if (inner !== name) visit(inner, new Set([...trail, name]))
+    }
+    for (const n of names) visit(n, new Set())
+    for (const n of free) helpers.delete(n)
+    return { helpers: [...helpers].sort(), free: [...free].sort() }
+  }
   const uiNames = new Set([...locals].filter(([, v]) => v === 'ui').map(([k]) => k))
   const builderNames = new Set([...locals].filter(([, v]) => BUILDERS.has(v)).map(([k]) => k))
   const fnNames = new Set([...locals].filter(([, v]) => v === 'fn').map(([k]) => k))
@@ -428,8 +455,12 @@ export function transform(source: string, _file = ''): TransformResult {
         const impl = n.arguments[0]?.properties?.find(
           (p: Node) => p.type === 'Property' && keyName(p) === 'impl',
         )?.value
-        const free = impl && isFunction(impl) ? freeNames(impl) : []
-        if (free.length) replace(n, `${H}.free(${gen(n)}, ${JSON.stringify(free)})`, false)
+        const { helpers, free } = helperClosure(impl && isFunction(impl) ? freeNames(impl) : [])
+        let text = gen(n)
+        if (helpers.length)
+          text = `${H}.helpers(${text}, { ${helpers.map((h) => `${h}: () => ${h}`).join(', ')} })`
+        if (free.length) text = `${H}.free(${text}, ${JSON.stringify(free)})`
+        if (text !== gen(n)) replace(n, text, false)
         return
       }
       if (callee.type === 'MemberExpression' && !callee.computed && isRef(callee.object, s)) {

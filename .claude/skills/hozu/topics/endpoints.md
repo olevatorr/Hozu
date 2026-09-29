@@ -2,7 +2,7 @@
 
 ```ts
 export const orderHook = endpoint({ method: 'POST', path: '/api/hooks/order',
-  input: z.object({ id: z.string() }), output: z.object({ received: z.string() }) })   // in declarations
+  input: z.object({ id: z.string() }), output: z.object({ received: z.string() }) })   // exported from model.ts
 implement(orderHook, ({ id }, { request, session, setSession, env }) => ({ received: id }))   // in resolvers
 ```
 - GET input comes from the query string, POST input from a JSON or form body; invalid input answers 400

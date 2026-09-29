@@ -200,14 +200,12 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
     scope.project.mark(p, value)
     const d = info.def as NodeDef
     const binding = () => refProxy('binding', depth)
-    const branch = (render: (x: unknown) => unknown, bid: string, bp: At) =>
-      node(
-        scope,
-        scope.attempt(bp, () => render(binding()), null),
-        bid,
-        bp,
-        depth + 1,
-      )
+    const branch = (render: (x: unknown) => unknown, bid: string, bp: At): ViewNode => {
+      const rendered = scope.attempt(bp, () => render(binding()), undefined)
+      return rendered === null
+        ? { id: bid, kind: 'if', test: { op: 'and', args: [] }, motion: null, ifTrue: [], ifFalse: [] }
+        : node(scope, rendered ?? null, bid, bp, depth + 1)
+    }
     switch (d.kind) {
       case 'el':
         return element(scope, d, id, p, depth)
@@ -361,5 +359,29 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
       ? d.render({ ctx: refProxy('context', 0), when, params, search, locale: refProxy('locale', 0) })
       : d.render({ params, search, locale: refProxy('locale', 0) })
   const root = scope.attempt(at(p, 'root'), render, null)
-  return { machine, route, root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0) }
+  let seed: Record<string, ValueExpr> | null = null
+  if (d.seed) {
+    const sp = at(p, 'seed')
+    if (!d.machine || !d.route)
+      scope.report(
+        'HZ048',
+        sp,
+        'seed needs a view with both a machine and a route',
+        'seed starts the machine from the page URL, so the view must bind a machine and declare the route it reads.',
+      )
+    const fields = scope.attempt(sp, () => d.seed!({ params, search }), null)
+    if (fields === null || typeof fields !== 'object' || Array.isArray(fields) || exprOf(fields))
+      scope.report(
+        'HZ048',
+        sp,
+        'seed must return an object of context fields',
+        'Each key is a top-level context field; each value is read from params or search.',
+      )
+    else {
+      seed = {}
+      for (const [key, v] of Object.entries(fields))
+        seed[key] = scope.attempt(at(sp, key), () => scope.value(v, at(sp, key)), { literal: null })
+    }
+  }
+  return { machine, route, seed, root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0) }
 }

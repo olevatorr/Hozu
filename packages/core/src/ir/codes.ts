@@ -53,4 +53,5 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   HZ045: { name: 'incomplete-server-entry', severity: 'warning' },
   HZ046: { name: 'invalid-endpoint', severity: 'error' },
   HZ047: { name: 'fn-not-self-contained', severity: 'error' },
+  HZ048: { name: 'invalid-seed', severity: 'error' },
 }

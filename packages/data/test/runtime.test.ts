@@ -136,7 +136,7 @@ describe('resolver wiring', () => {
       feature({
         id: 'f',
         intent: { summary: 'wiring fixture' },
-        declarations: { pingTag, Ping, read, write },
+        declarations: [{ pingTag, Ping, read, write }],
       }),
     ],
   })
