@@ -1,0 +1,180 @@
+diff --git a/app/components/NoteItem.vue b/app/components/NoteItem.vue
+new file mode 100644
+index 0000000..f0d4952
+--- /dev/null
++++ b/app/components/NoteItem.vue
+@@ -0,0 +1,41 @@
++<script setup lang="ts">
++import type { Note } from '#shared/types/note'
++
++const props = defineProps<{ note: Note; editing: boolean }>()
++const submit = useFormAction()
++const { query, back } = useListQuery()
++const action = (name: string) => `/api/notes/${props.note.id}/${name}`
++</script>
++
++<template>
++  <li class="flex flex-wrap items-center gap-3 px-4 py-3">
++    <form v-if="editing" method="post" :action="action('edit')" class="flex flex-1 gap-2" @submit.prevent="submit">
++      <input type="hidden" name="back" :value="back">
++      <label :for="`edit-${note.id}`" class="sr-only">Edit title</label>
++      <input :id="`edit-${note.id}`" name="title" type="text" :value="note.title" required :maxlength="NOTE_MAX" class="input flex-1">
++      <button type="submit" class="btn">Save</button>
++    </form>
++    <form v-if="editing" method="get" :action="$route.path" @submit.prevent="submit">
++      <input v-for="(value, key) in query" :key="key" type="hidden" :name="key" :value="value">
++      <button type="submit" class="btn">Cancel</button>
++    </form>
++    <div v-else class="flex flex-1 flex-col">
++      <span>{{ note.title }}</span>
++      <span class="text-xs text-slate-500">Added <time :datetime="note.createdAt">{{ note.createdAt.slice(0, 10) }}</time></span>
++    </div>
++    <span v-if="note.pinned" class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">pinned</span>
++    <form v-if="!editing" method="get" :action="$route.path" @submit.prevent="submit">
++      <input v-for="(value, key) in query" :key="key" type="hidden" :name="key" :value="value">
++      <button type="submit" name="edit" :value="note.id" class="btn">Edit</button>
++    </form>
++    <form method="post" :action="action('pin')" @submit.prevent="submit">
++      <input type="hidden" name="back" :value="back">
++      <input type="hidden" name="pinned" :value="String(!note.pinned)">
++      <button type="submit" class="btn">{{ note.pinned ? 'Unpin' : 'Pin' }}</button>
++    </form>
++    <form method="post" :action="action('delete')" @submit.prevent="submit">
++      <input type="hidden" name="back" :value="back">
++      <button type="submit" class="btn">Delete</button>
++    </form>
++  </li>
++</template>
+diff --git a/app/composables/useFormAction.ts b/app/composables/useFormAction.ts
+index 6003f06..c807ba6 100644
+--- a/app/composables/useFormAction.ts
++++ b/app/composables/useFormAction.ts
+@@ -5,10 +5,14 @@ export function useFormAction() {
+   const router = useRouter()
+   return async (event: SubmitEvent) => {
+     const form = event.currentTarget as HTMLFormElement
+-    const body = new URLSearchParams(new FormData(form, event.submitter) as unknown as Record<string, string>)
++    const params = new URLSearchParams(new FormData(form, event.submitter) as unknown as Record<string, string>)
++    if (form.method === 'get') {
++      await navigateTo({ path: new URL(form.action).pathname, query: Object.fromEntries(params) })
++      return
++    }
+     const { redirect } = await $fetch<ActionResult>(form.action, {
+       method: 'POST',
+-      body,
++      body: params,
+       headers: { accept: 'application/json' },
+     })
+     if (router.resolve(redirect).fullPath === route.fullPath) await refreshNuxtData()
+diff --git a/app/composables/useListQuery.ts b/app/composables/useListQuery.ts
+new file mode 100644
+index 0000000..3c2026b
+--- /dev/null
++++ b/app/composables/useListQuery.ts
+@@ -0,0 +1,10 @@
++export function useListQuery() {
++  const route = useRoute()
++  const router = useRouter()
++  const query = computed(() => {
++    const { edit: _edit, ...rest } = route.query
++    return Object.fromEntries(Object.entries(rest).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))
++  })
++  const back = computed(() => router.resolve({ path: route.path, query: query.value }).fullPath)
++  return { query, back }
++}
+diff --git a/app/pages/index.vue b/app/pages/index.vue
+index 4200a34..eef3ead 100644
+--- a/app/pages/index.vue
++++ b/app/pages/index.vue
+@@ -2,6 +2,7 @@
+ import type { NotesPage } from '#shared/types/note'
+ 
+ const route = useRoute()
++const { back } = useListQuery()
+ const { data, error } = await useFetch<NotesPage>('/api/notes', { query: computed(() => route.query) })
+ if (error.value?.statusCode === 401) await navigateTo('/login')
+ 
+@@ -43,7 +44,7 @@ async function add(event: SubmitEvent) {
+     <p v-if="data.flash" role="alert" class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ data.flash }}</p>
+ 
+     <form method="post" action="/api/notes" class="mt-4 flex flex-col gap-2" @submit.prevent="add">
+-      <input type="hidden" name="back" :value="route.fullPath">
++      <input type="hidden" name="back" :value="back">
+       <label for="title" class="text-sm font-medium text-slate-700">Title</label>
+       <div class="flex gap-2">
+         <input id="title" v-model="title" name="title" type="text" required :maxlength="NOTE_MAX" autocomplete="off" class="input flex-1">
+@@ -58,22 +59,7 @@ async function add(event: SubmitEvent) {
+ 
+     <p v-if="search.trim() && !visible.length" class="mt-4 text-slate-500">No notes match</p>
+     <ul v-else class="mt-4 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+-      <li v-for="note in visible" :key="note.id" class="flex items-center gap-3 px-4 py-3">
+-        <div class="flex flex-1 flex-col">
+-          <span>{{ note.title }}</span>
+-          <span class="text-xs text-slate-500">Added <time :datetime="note.createdAt">{{ note.createdAt.slice(0, 10) }}</time></span>
+-        </div>
+-        <span v-if="note.pinned" class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">pinned</span>
+-        <form method="post" :action="`/api/notes/${note.id}/pin`" @submit.prevent="submit">
+-          <input type="hidden" name="back" :value="route.fullPath">
+-          <input type="hidden" name="pinned" :value="String(!note.pinned)">
+-          <button type="submit" class="btn">{{ note.pinned ? 'Unpin' : 'Pin' }}</button>
+-        </form>
+-        <form method="post" :action="`/api/notes/${note.id}/delete`" @submit.prevent="submit">
+-          <input type="hidden" name="back" :value="route.fullPath">
+-          <button type="submit" class="btn">Delete</button>
+-        </form>
+-      </li>
++      <NoteItem v-for="note in visible" :key="note.id" :note="note" :editing="route.query.edit === note.id" />
+     </ul>
+   </main>
+ </template>
+diff --git a/server/api/notes/[id]/edit.post.ts b/server/api/notes/[id]/edit.post.ts
+new file mode 100644
+index 0000000..cb14ced
+--- /dev/null
++++ b/server/api/notes/[id]/edit.post.ts
+@@ -0,0 +1,4 @@
++export default defineUserAction(({ event, form, user }) => {
++  setFlash(event, renameNote(user, getRouterParam(event, 'id') ?? '', field(form, 'title')))
++  return backTo(form)
++})
+diff --git a/server/utils/store.ts b/server/utils/store.ts
+index 1d224fd..03c724c 100644
+--- a/server/utils/store.ts
++++ b/server/utils/store.ts
+@@ -24,16 +24,31 @@ export function notesOf(user: string): Note[] {
+ 
+ const sameTitle = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
+ 
+-export function addNote(user: string, raw: string): string | null {
+-  const title = raw.trim()
++function titleError(notes: Note[], title: string, self?: Note): string | null {
+   if (!title) return 'Write a title first'
+   if (title.length > NOTE_MAX) return `Use at most ${NOTE_MAX} characters`
+-  const notes = notesOf(user)
+-  if (notes.some((note) => sameTitle(note.title, title))) return 'You already have a note with this title'
+-  notes.unshift(newNote(title))
++  if (notes.some((note) => note !== self && sameTitle(note.title, title))) return 'You already have a note with this title'
+   return null
+ }
+ 
++export function addNote(user: string, raw: string): string | null {
++  const title = raw.trim()
++  const notes = notesOf(user)
++  const error = titleError(notes, title)
++  if (!error) notes.unshift(newNote(title))
++  return error
++}
++
++export function renameNote(user: string, id: string, raw: string): string | null {
++  const title = raw.trim()
++  const notes = notesOf(user)
++  const note = notes.find((note) => note.id === id)
++  if (!note) return null
++  const error = titleError(notes, title, note)
++  if (!error) note.title = title
++  return error
++}
++
+ export const listed = (notes: Note[]) => [...notes.filter((note) => note.pinned), ...notes.filter((note) => !note.pinned)]
+ 
+ export function pinNote(user: string, id: string, pinned: boolean): void {
