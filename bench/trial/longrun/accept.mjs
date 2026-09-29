@@ -970,19 +970,32 @@ for (let i = 0; i < 150 && !up; i++) {
 const active = checks.filter((c) => c.since <= step && step < c.until && (!only || only.split(',').includes(c.id)))
 const results = []
 let js = null
+let crashes = 0
 if (!up) {
   for (const c of active) results.push({ ...c, status: 'FAIL: server did not start' })
 } else {
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH })
+  const launch = async () => {
+    browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH })
+  }
+  await launch()
   for (const c of active) {
-    const started = Date.now()
-    try {
-      await c.run()
-      results.push({ ...c, status: 'pass', ms: Date.now() - started })
-    } catch (e) {
-      results.push({ ...c, status: `FAIL: ${String(e.message).split('\n')[0].slice(0, 200)}`, ms: Date.now() - started })
+    for (let attempt = 1; ; attempt++) {
+      const started = Date.now()
+      let status = 'pass'
+      try {
+        await c.run()
+      } catch (e) {
+        status = `FAIL: ${String(e.message).split('\n')[0].slice(0, 200)}`
+      }
+      if (!browser.isConnected()) {
+        crashes++
+        await launch()
+        if (attempt < 3) continue
+      }
+      results.push({ ...c, status, ms: Date.now() - started, attempt })
+      break
     }
-    for (const ctx of browser.contexts()) await ctx.close()
+    for (const ctx of browser.contexts()) await ctx.close().catch(() => {})
   }
   if (!only) {
     try {
@@ -1011,6 +1024,7 @@ console.log(
       results: results.map((r) => [r.id, r.since, r.status, r.ms]),
       retired: checks.filter((c) => c.until <= step).map((c) => c.id),
       js,
+      browserCrashes: crashes,
       serverErrors: serverLog.slice(-2000),
     },
     null,
