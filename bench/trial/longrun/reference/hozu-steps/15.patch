@@ -1,0 +1,522 @@
+diff --git a/features/notes/model.ts b/features/notes/model.ts
+index a9c7858..79870bd 100644
+--- a/features/notes/model.ts
++++ b/features/notes/model.ts
+@@ -6,6 +6,7 @@ export const Note = z.object({
+   title: z.string(),
+   pinned: z.boolean(),
+   tags: z.array(z.string()),
++  sharedWith: z.array(z.string()),
+   createdAt: z.string(),
+ })
+ export type NoteT = z.infer<typeof Note>
+@@ -24,6 +25,9 @@ export const Archive = event({ payload: NoteKey })
+ export const Restore = event({ payload: NoteKey })
+ export const Undo = event({ payload: z.object({}) })
+ export const Select = event({ payload: z.object({ id: z.string(), checked: z.boolean() }) })
++const ShareKey = z.object({ id: z.string(), to: z.string() })
++export const Share = event({ payload: ShareKey })
++export const Unshare = event({ payload: ShareKey })
+ export const Search = event({ payload: z.object({ query: z.string() }) })
+ 
+ export const notesTag = tag({ param: null })
+@@ -79,6 +83,28 @@ export const undoDelete = mutation({
+   invalidates: () => [notesTag()],
+ })
+ 
++export const sharedWithMe = query({
++  input: z.object({}),
++  output: z.array(z.object({ id: z.string(), title: z.string(), owner: z.string() })),
++  scope: 'user',
++  freshness: 'live',
++  tags: () => [notesTag()],
++})
++
++export const shareNote = mutation({
++  input: z.object({ id: z.string(), to: z.string().regex(/^\s*[A-Za-z]{2,20}\s*$/, 'Use 2–20 letters') }),
++  output: NoteKey,
++  errors: { NotFound: NoteKey, Self: z.object({}) },
++  invalidates: () => [notesTag()],
++})
++
++export const unshareNote = mutation({
++  input: ShareKey,
++  output: NoteKey,
++  errors: { NotFound: NoteKey },
++  invalidates: () => [notesTag()],
++})
++
+ export const addNote = mutation({
+   input: NewNote,
+   output: Note,
+@@ -153,6 +179,7 @@ export const MAX_TITLE = 60
+ export const TOO_LONG = `Use at most ${MAX_TITLE} characters`
+ export const BAD_TAGS = 'Tags use letters, digits and -'
+ export const TOO_MANY = 'Too many notes, try again in a minute'
++export const SELF_SHARE = 'You cannot share with yourself'
+ export const DUPLICATE = 'You already have a note with this title'
+ export const GONE = 'This note no longer exists'
+ 
+@@ -165,6 +192,7 @@ export const notesMachine = machine({
+     editing: z.string(),
+     selected: z.array(NoteKey),
+     editTitle: z.string(),
++    shareTo: z.string(),
+     error: z.string().nullable(),
+     fields: z.object({ title: z.string().nullable(), tags: z.string().nullable() }),
+   }),
+@@ -176,6 +204,7 @@ export const notesMachine = machine({
+     editing: '',
+     selected: [],
+     editTitle: '',
++    shareTo: '',
+     error: null,
+     fields: { title: null, tags: null },
+   },
+@@ -219,6 +248,22 @@ export const notesMachine = machine({
+             ctx.selected = ctx.selected.filter((s) => s.id !== e.id)
+           },
+         }),
++        on(Share, {
++          target: 'sharing',
++          assign: (e) => {
++            ctx.target = e.id
++            ctx.shareTo = e.to
++            ctx.error = null
++          },
++        }),
++        on(Unshare, {
++          target: 'unsharing',
++          assign: (e) => {
++            ctx.target = e.id
++            ctx.shareTo = e.to
++            ctx.error = null
++          },
++        }),
+         on(Undo, { target: 'undoing', assign: () => [op.set(ctx.error, null)] }),
+         on(Search, { target: 'idle', assign: (e) => [op.set(ctx.query, e.query)] }),
+         on(Edit, { target: 'idle', assign: (e) => [op.set(ctx.editing, e.id), op.set(ctx.error, null)] }),
+@@ -293,6 +338,28 @@ export const notesMachine = machine({
+         },
+       }),
+     },
++    sharing: {
++      invoke: invoke(shareNote, {
++        input: { id: ctx.target, to: ctx.shareTo },
++        done: 'idle',
++        failed: {
++          Self: { target: 'idle', assign: () => [op.set(ctx.error, SELF_SHARE)] },
++          NotFound: { target: 'idle', assign: () => [op.set(ctx.error, GONE)] },
++          Invalid: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] },
++          Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] },
++        },
++      }),
++    },
++    unsharing: {
++      invoke: invoke(unshareNote, {
++        input: { id: ctx.target, to: ctx.shareTo },
++        done: 'idle',
++        failed: {
++          NotFound: { target: 'idle', assign: () => [op.set(ctx.error, GONE)] },
++          Unexpected: { target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] },
++        },
++      }),
++    },
+     undoing: {
+       invoke: invoke(undoDelete, {
+         input: {},
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index 7725b33..aa4bc40 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -28,9 +28,12 @@ import {
+   SELECTED,
+   Search,
+   Select,
++  Share,
++  sharedWithMe,
+   TOO_MANY,
+   togglePin,
+   Undo,
++  Unshare,
+   visible,
+ } from './model.ts'
+ 
+@@ -93,8 +96,56 @@ const noteItem = (note: NoteT, editing: string) =>
+     itemForm(Edit, note.id, 'Edit'),
+     itemForm(Archive, note.id, 'Archive'),
+     itemForm(Remove, note.id, 'Delete'),
++    ui.form(
++      {
++        class: 'flex gap-2',
++        on: { submit: ui.send(Share, { id: ui.dom.form('id'), to: ui.dom.form('to') }) },
++      },
++      [
++        ui.input({ type: 'hidden', name: 'id', value: note.id }),
++        ui.input({
++          name: 'to',
++          'aria-label': 'Share with',
++          required: true,
++          class: 'w-28 rounded border px-2 py-1',
++        }),
++        ui.button({ type: 'submit', class: 'text-sm text-slate-600 underline' }, ['Share']),
++      ],
++    ),
++    ui.each(note.sharedWith, null, (name) =>
++      ui.span({ class: 'flex items-center gap-2 text-xs text-slate-500' }, [
++        `shared with ${name}`,
++        ui.form({ on: { submit: ui.send(Unshare, { id: ui.dom.form('id'), to: ui.dom.form('to') }) } }, [
++          ui.input({ type: 'hidden', name: 'id', value: note.id }),
++          ui.input({ type: 'hidden', name: 'to', value: name }),
++          ui.button({ type: 'submit', class: 'underline' }, [`Unshare ${name}`]),
++        ]),
++      ]),
++    ),
+   ])
+ 
++const sharedList = ui.query(
++  sharedWithMe,
++  {},
++  {
++    ready: (notes) =>
++      notes.length === 0
++        ? null
++        : ui.section({ class: 'space-y-3' }, [
++            ui.h2({ class: 'text-xl font-semibold' }, ['Shared with me']),
++            ui.ul({ class: 'divide-y rounded border' }, [
++              ui.each(notes, 'id', (note) =>
++                ui.li({ class: 'flex gap-3 px-4 py-3' }, [
++                  ui.span({ class: 'flex-1' }, [note.title]),
++                  ui.span({ class: 'text-xs text-slate-500' }, [`from ${note.owner}`]),
++                ]),
++              ),
++            ]),
++          ]),
++    failed: { Unexpected: () => null },
++  },
++)
++
+ export const NotesBoard = ui.view({
+   machine: notesMachine,
+   route: list,
+@@ -236,6 +287,7 @@ export const NotesBoard = ui.view({
+           },
+         },
+       ),
++      sharedList,
+     ]),
+ })
+ 
+@@ -276,6 +328,7 @@ const note = (id: string, title: string, pinned = false) => ({
+   title,
+   pinned,
+   tags: [],
++  sharedWith: [],
+   createdAt: '2026-09-29T08:15:00.000Z',
+ })
+ 
+diff --git a/hozu.lock.json b/hozu.lock.json
+index 685a414..4e19c1a 100644
+--- a/hozu.lock.json
++++ b/hozu.lock.json
+@@ -55,35 +55,35 @@
+       "adding/invoke/done/0": {
+         "behavior": "ef02c689630d2f15",
+         "contracts": {
+-          "adds": "bd0698f816df682e"
++          "adds": "0602bbcf2fad429a"
+         },
+         "summary": "adding --done addNote--> idle · draft := \"\", draftTags := \"\""
+       },
+       "adding/invoke/failed/Duplicate/0": {
+         "behavior": "f276033e70cceab3",
+         "contracts": {
+-          "rejectsDuplicate": "f0017b75413b901d"
++          "rejectsDuplicate": "d664fb8998a8bad5"
+         },
+         "summary": "adding --failed addNote.Duplicate--> idle · error := \"You already have a note with this title\""
+       },
+       "adding/invoke/failed/Invalid/0": {
+         "behavior": "1a149563f421bcca",
+         "contracts": {
+-          "rejectsInvalid": "8da0245ce775f75a"
++          "rejectsInvalid": "7ec2cab8251aca8d"
+         },
+         "summary": "adding --failed addNote.Invalid--> idle · fields := { title: %coalesce({ a: error.fields.title, b: null }), tags: %coalesce({ a: error.fields.tags, b: null }) }"
+       },
+       "adding/invoke/failed/TooMany/0": {
+         "behavior": "1967c947fa3cf591",
+         "contracts": {
+-          "rejectsTooMany": "ee43c2d25e9946eb"
++          "rejectsTooMany": "1d38b9e7f1bf2d6d"
+         },
+         "summary": "adding --failed addNote.TooMany--> idle · error := \"Too many notes, try again in a minute\""
+       },
+       "adding/invoke/failed/Unexpected/0": {
+         "behavior": "6606d67832662c72",
+         "contracts": {
+-          "addFails": "0870727aa2fdb2b5"
++          "addFails": "a0424f47a2bb5bf9"
+         },
+         "summary": "adding --failed addNote.Unexpected--> idle · error := error.message"
+       },
+@@ -105,8 +105,8 @@
+       "idle/on/notes.Add/0": {
+         "behavior": "45295f764a6b3a2c",
+         "contracts": {
+-          "adds": "bd0698f816df682e",
+-          "rejectsTooMany": "ee43c2d25e9946eb"
++          "adds": "0602bbcf2fad429a",
++          "rejectsTooMany": "1d38b9e7f1bf2d6d"
+         },
+         "summary": "idle --Add--> adding · draft := event.title, draftTags := event.tags, error := null, fields := {\"title\":null,\"tags\":null} · invoke addNote({ title: ctx.draft, tags: ctx.draftTags })"
+       },
+@@ -123,7 +123,7 @@
+       "idle/on/notes.Draft/0": {
+         "behavior": "bb0e04a3b1f4e70d",
+         "contracts": {
+-          "typesDraft": "b28ed40b42dbc0fb"
++          "typesDraft": "f320aaf88d857ab0"
+         },
+         "summary": "idle --Draft--> idle · draft := event.title"
+       },
+@@ -135,14 +135,14 @@
+       "idle/on/notes.Pin/0": {
+         "behavior": "71ea41aeb924b3bc",
+         "contracts": {
+-          "pins": "341e2e194859a68b"
++          "pins": "d7c007d358b9ced7"
+         },
+         "summary": "idle --Pin--> pinning · target := event.id, error := null · invoke togglePin({ id: ctx.target })"
+       },
+       "idle/on/notes.Remove/0": {
+         "behavior": "9a9661f294496cd6",
+         "contracts": {
+-          "removes": "f55198125a4235a3"
++          "removes": "c8ad8e91ca7209b2"
+         },
+         "summary": "idle --Remove--> removing · target := event.id, error := null · invoke removeNote({ id: ctx.target })"
+       },
+@@ -159,68 +159,78 @@
+       "idle/on/notes.Search/0": {
+         "behavior": "cc98ea187307423e",
+         "contracts": {
+-          "searches": "9a02ca3f096ff579"
++          "searches": "43979c8db137070f"
+         },
+         "summary": "idle --Search--> idle · query := event.query"
+       },
+       "idle/on/notes.Select/0": {
+         "behavior": "cc8beeb66f565894",
+         "contracts": {
+-          "selects": "9a6ebf169292f4b5"
++          "selects": "fbfd76f97faf2e08"
+         },
+         "summary": "idle --Select--> idle · if event.checked eq true · selected append { id: event.id }"
+       },
+       "idle/on/notes.Select/1": {
+         "behavior": "5c5ff77f8215bf5c",
+         "contracts": {
+-          "unselects": "4891915fe22226dc"
++          "unselects": "e5a50a1a80f7a1ce"
+         },
+         "summary": "idle --Select--> idle · selected -= where id = event.id"
+       },
++      "idle/on/notes.Share/0": {
++        "behavior": "3c3715c363d66002",
++        "contracts": {},
++        "summary": "idle --Share--> sharing · target := event.id, shareTo := event.to, error := null · invoke shareNote({ id: ctx.target, to: ctx.shareTo })"
++      },
+       "idle/on/notes.Undo/0": {
+         "behavior": "edd248c48772f305",
+         "contracts": {},
+         "summary": "idle --Undo--> undoing · error := null · invoke undoDelete({})"
+       },
++      "idle/on/notes.Unshare/0": {
++        "behavior": "36ce00218d7242e0",
++        "contracts": {},
++        "summary": "idle --Unshare--> unsharing · target := event.id, shareTo := event.to, error := null · invoke unshareNote({ id: ctx.target, to: ctx.shareTo })"
++      },
+       "pinning/invoke/done/0": {
+         "behavior": "2bff26500adc2814",
+         "contracts": {
+-          "pins": "341e2e194859a68b"
++          "pins": "d7c007d358b9ced7"
+         },
+         "summary": "pinning --done togglePin--> idle"
+       },
+       "pinning/invoke/failed/NotFound/0": {
+         "behavior": "a7d1ce36cbdb54e3",
+         "contracts": {
+-          "pinMissing": "9f2d931d9c0894e6"
++          "pinMissing": "d66cca4558d634f1"
+         },
+         "summary": "pinning --failed togglePin.NotFound--> idle · error := \"This note no longer exists\""
+       },
+       "pinning/invoke/failed/Unexpected/0": {
+         "behavior": "f2e84ebd5e7b6484",
+         "contracts": {
+-          "pinFails": "8efefd83a6ce76d0"
++          "pinFails": "944725a1bc9b816f"
+         },
+         "summary": "pinning --failed togglePin.Unexpected--> idle · error := error.message"
+       },
+       "removing/invoke/done/0": {
+         "behavior": "e54a61bbf262f9f9",
+         "contracts": {
+-          "removes": "f55198125a4235a3"
++          "removes": "c8ad8e91ca7209b2"
+         },
+         "summary": "removing --done removeNote--> idle"
+       },
+       "removing/invoke/failed/NotFound/0": {
+         "behavior": "2406737070881788",
+         "contracts": {
+-          "removeMissing": "0a6680a726c6f07d"
++          "removeMissing": "3c956f98ce8b29c8"
+         },
+         "summary": "removing --failed removeNote.NotFound--> idle · error := \"This note no longer exists\""
+       },
+       "removing/invoke/failed/Unexpected/0": {
+         "behavior": "5fbd09f5a2ecb8ee",
+         "contracts": {
+-          "removeFails": "1de62eb74e34a653"
++          "removeFails": "1465f37af8b73c53"
+         },
+         "summary": "removing --failed removeNote.Unexpected--> idle · error := error.message"
+       },
+@@ -264,6 +274,31 @@
+         "contracts": {},
+         "summary": "saving --failed renameNote.Unexpected--> idle · error := error.message"
+       },
++      "sharing/invoke/done/0": {
++        "behavior": "5959ab1037efc31c",
++        "contracts": {},
++        "summary": "sharing --done shareNote--> idle"
++      },
++      "sharing/invoke/failed/Invalid/0": {
++        "behavior": "2feb79c3a94c5c11",
++        "contracts": {},
++        "summary": "sharing --failed shareNote.Invalid--> idle · error := error.message"
++      },
++      "sharing/invoke/failed/NotFound/0": {
++        "behavior": "0d992526e82b4e00",
++        "contracts": {},
++        "summary": "sharing --failed shareNote.NotFound--> idle · error := \"This note no longer exists\""
++      },
++      "sharing/invoke/failed/Self/0": {
++        "behavior": "ed21574295047984",
++        "contracts": {},
++        "summary": "sharing --failed shareNote.Self--> idle · error := \"You cannot share with yourself\""
++      },
++      "sharing/invoke/failed/Unexpected/0": {
++        "behavior": "b61a398497165b77",
++        "contracts": {},
++        "summary": "sharing --failed shareNote.Unexpected--> idle · error := error.message"
++      },
+       "undoing/invoke/done/0": {
+         "behavior": "5472bf2a8da7537e",
+         "contracts": {},
+@@ -278,6 +313,21 @@
+         "behavior": "7ed06cb895f030bb",
+         "contracts": {},
+         "summary": "undoing --failed undoDelete.Unexpected--> idle · error := error.message"
++      },
++      "unsharing/invoke/done/0": {
++        "behavior": "f8a905100dda7674",
++        "contracts": {},
++        "summary": "unsharing --done unshareNote--> idle"
++      },
++      "unsharing/invoke/failed/NotFound/0": {
++        "behavior": "89a1bc0e7b718a10",
++        "contracts": {},
++        "summary": "unsharing --failed unshareNote.NotFound--> idle · error := \"This note no longer exists\""
++      },
++      "unsharing/invoke/failed/Unexpected/0": {
++        "behavior": "e9b80e7aa27007b3",
++        "contracts": {},
++        "summary": "unsharing --failed unshareNote.Unexpected--> idle · error := error.message"
+       }
+     }
+   },
+diff --git a/server.ts b/server.ts
+index 465ce51..b929f5a 100644
+--- a/server.ts
++++ b/server.ts
+@@ -15,9 +15,12 @@ import {
+   renameNote,
+   restoreNote,
+   SELECTED,
++  sharedWithMe,
++  shareNote,
+   TOO_LONG,
+   togglePin,
+   undoDelete,
++  unshareNote,
+ } from './features/notes/model.ts'
+ import project from './hozu.config.ts'
+ import { createStore, type Note } from './store.ts'
+@@ -35,7 +38,7 @@ const parseTags = (raw: string) => [
+       .filter(Boolean),
+   ),
+ ]
+-const copy = (n: Note) => ({ ...n, tags: [...n.tags] })
++const copy = (n: Note) => ({ ...n, tags: [...n.tags], sharedWith: [...n.sharedWith] })
+ 
+ export function createResolvers() {
+   const store = createStore()
+@@ -80,6 +83,21 @@ export function createResolvers() {
+       }
+       return new Response(null, { status: 303, headers: { location: session ? '/notes' : '/login' } })
+     }),
++    implement(sharedWithMe, (_, { session }) => (session ? store.sharedWith(session.user) : [])),
++    implement(shareNote, ({ id, to }, { session, fail }) => {
++      const note = session && store.find(session.user, id)
++      if (!session || !note) return fail('NotFound', { id })
++      const name = to.trim().toLowerCase()
++      if (name === session.user) return fail('Self', {})
++      if (!note.sharedWith.includes(name)) note.sharedWith.push(name)
++      return { id }
++    }),
++    implement(unshareNote, ({ id, to }, { session, fail }) => {
++      const note = session && store.find(session.user, id)
++      if (!note) return fail('NotFound', { id })
++      note.sharedWith = note.sharedWith.filter((name) => name !== to)
++      return { id }
++    }),
+     implement(lastDeleted, (_, { session }) => {
+       const note = session && store.lastDeleted(session.user)
+       return note ? { title: note.title } : null
+diff --git a/store.ts b/store.ts
+index cdbcfdf..9b71fab 100644
+--- a/store.ts
++++ b/store.ts
+@@ -4,6 +4,7 @@ export interface Note {
+   pinned: boolean
+   archived: boolean
+   tags: string[]
++  sharedWith: string[]
+   createdAt: string
+ }
+ 
+@@ -13,6 +14,7 @@ const seeded = (id: string, title: string, createdAt: string): Note => ({
+   pinned: false,
+   archived: false,
+   tags: [],
++  sharedWith: [],
+   createdAt,
+ })
+ 
+@@ -44,6 +46,12 @@ export function createStore() {
+       of(user).find((n) => n.id === id && n.archived === archived),
+     taken: (user: string, title: string, except = '') =>
+       of(user).some((n) => n.id !== except && n.title.toLowerCase() === title.toLowerCase()),
++    sharedWith: (user: string) =>
++      [...notes].flatMap(([owner, list]) =>
++        list
++          .filter((n) => !n.archived && n.sharedWith.includes(user))
++          .map((n) => ({ id: n.id, title: n.title, owner })),
++      ),
+     lastDeleted: (user: string) => deleted.get(user)?.note ?? null,
+     forget: (user: string) => deleted.delete(user),
+     undo: (user: string) => {
