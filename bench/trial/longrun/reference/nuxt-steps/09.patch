@@ -1,0 +1,90 @@
+diff --git a/app/components/NoteItem.vue b/app/components/NoteItem.vue
+index 93ed9a9..86f01ef 100644
+--- a/app/components/NoteItem.vue
++++ b/app/components/NoteItem.vue
+@@ -22,7 +22,7 @@ const action = (name: string) => `/api/notes/${props.note.id}/${name}`
+     <div v-else class="flex flex-1 flex-col">
+       <span>{{ note.title }}</span>
+       <span v-if="note.tags.length" class="flex gap-2 text-sm">
+-        <NuxtLink v-for="tag in note.tags" :key="tag" :to="{ path: '/', query: { tag } }" class="text-indigo-600 hover:underline">#{{ tag }}</NuxtLink>
++        <NuxtLink v-for="tag in note.tags" :key="tag" :to="{ path: '/notes', query: { tag } }" class="text-indigo-600 hover:underline">#{{ tag }}</NuxtLink>
+       </span>
+       <span class="text-xs text-slate-500">Added <time :datetime="note.createdAt">{{ note.createdAt.slice(0, 10) }}</time></span>
+     </div>
+diff --git a/app/pages/archive.vue b/app/pages/archive.vue
+index 7b4120b..35433d2 100644
+--- a/app/pages/archive.vue
++++ b/app/pages/archive.vue
+@@ -8,7 +8,7 @@ const submit = useFormAction()
+ 
+ <template>
+   <main v-if="data" class="mx-auto max-w-xl px-4 py-12">
+-    <NuxtLink to="/" class="text-sm text-indigo-600 hover:underline">Back to notes</NuxtLink>
++    <NuxtLink to="/notes" class="text-sm text-indigo-600 hover:underline">Back to notes</NuxtLink>
+     <h1 class="mt-2 text-3xl font-bold tracking-tight">Archive</h1>
+     <ul v-if="data.notes.length" class="mt-6 divide-y divide-slate-200 rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+       <li v-for="note in data.notes" :key="note.id" class="flex items-center gap-3 px-4 py-3">
+diff --git a/app/pages/index.vue b/app/pages/notes.vue
+similarity index 94%
+rename from app/pages/index.vue
+rename to app/pages/notes.vue
+index 2152e01..a68d7a0 100644
+--- a/app/pages/index.vue
++++ b/app/pages/notes.vue
+@@ -68,7 +68,7 @@ async function add(event: SubmitEvent) {
+       </div>
+     </form>
+ 
+-    <form method="get" action="/" class="mt-6 flex flex-col gap-2" @submit.prevent="submit">
++    <form method="get" action="/notes" class="mt-6 flex flex-col gap-2" @submit.prevent="submit">
+       <input v-if="data.tag" type="hidden" name="tag" :value="data.tag">
+       <label for="search" class="text-sm font-medium text-slate-700">Search</label>
+       <div class="flex gap-2">
+@@ -79,7 +79,7 @@ async function add(event: SubmitEvent) {
+ 
+     <p v-if="data.tag" class="mt-4 flex items-center gap-3 text-sm">
+       <span>Tagged {{ data.tag }}</span>
+-      <NuxtLink to="/" class="text-indigo-600 hover:underline">All notes</NuxtLink>
++      <NuxtLink to="/notes" class="text-indigo-600 hover:underline">All notes</NuxtLink>
+     </p>
+ 
+     <p v-if="(search.trim() || route.query.q || data.tag) && !visible.length" class="mt-4 text-slate-500">No notes match</p>
+diff --git a/server/api/login.post.ts b/server/api/login.post.ts
+index f2bc302..62c58be 100644
+--- a/server/api/login.post.ts
++++ b/server/api/login.post.ts
+@@ -7,5 +7,5 @@ export default defineEventHandler(async (event) => {
+   }
+   ensureSession(event).user = name
+   notesOf(name)
+-  return finish(event, '/')
++  return finish(event, '/notes')
+ })
+diff --git a/server/middleware/guard.ts b/server/middleware/guard.ts
+index d2bfb15..a737e51 100644
+--- a/server/middleware/guard.ts
++++ b/server/middleware/guard.ts
+@@ -1,6 +1,8 @@
+-const signedInPages = new Set(['/', '/archive'])
++const signedInPages = new Set(['/notes', '/archive'])
+ 
+ export default defineEventHandler((event) => {
+   const path = getRequestURL(event).pathname
+-  if (signedInPages.has(path) && !currentUser(event)) return sendRedirect(event, '/login', 302)
++  const user = currentUser(event)
++  if (path === '/') return sendRedirect(event, user ? '/notes' : '/login', 302)
++  if (signedInPages.has(path) && !user) return sendRedirect(event, '/login', 302)
+ })
+diff --git a/server/utils/action.ts b/server/utils/action.ts
+index ece1002..75c3a1c 100644
+--- a/server/utils/action.ts
++++ b/server/utils/action.ts
+@@ -8,7 +8,7 @@ export const field = (form: FormBody, name: string) => {
+   return typeof value === 'string' ? value : ''
+ }
+ 
+-export function backTo(form: FormBody, fallback = '/'): string {
++export function backTo(form: FormBody, fallback = '/notes'): string {
+   const back = field(form, 'back')
+   return back.startsWith('/') && !back.startsWith('//') ? back : fallback
+ }
