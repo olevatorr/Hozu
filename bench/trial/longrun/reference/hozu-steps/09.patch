@@ -1,0 +1,184 @@
+diff --git a/features/account/model.ts b/features/account/model.ts
+index d677db4..c5ab874 100644
+--- a/features/account/model.ts
++++ b/features/account/model.ts
+@@ -1,6 +1,6 @@
+-import { event, invoke, machine, mutation, on, op, query, ui } from '@hozu/core'
++import { endpoint, event, invoke, machine, mutation, on, op, query, ui } from '@hozu/core'
+ import { z } from 'zod'
+-import { home, login } from '../../routes.ts'
++import { list, login } from '../../routes.ts'
+ 
+ export const Session = z.object({ user: z.string() })
+ export const Name = z.object({
+@@ -18,6 +18,8 @@ export const me = query({
+   freshness: 'static',
+ })
+ 
++export const landing = endpoint({ method: 'GET', path: '/', input: z.object({}), output: 'response' })
++
+ export const signIn = mutation({ input: Name, output: z.object({}) })
+ export const signOut = mutation({ input: z.object({}), output: z.object({}) })
+ 
+@@ -46,7 +48,7 @@ export const accountMachine = machine({
+     signingIn: {
+       invoke: invoke(signIn, {
+         input: { name: ctx.draft },
+-        done: [{ target: 'idle', navigate: () => ui.link(home, null, {}) }],
++        done: [{ target: 'idle', navigate: () => ui.link(list, null, {}) }],
+         failed: {
+           Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] }],
+           Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+diff --git a/features/account/views.ts b/features/account/views.ts
+index 89e163d..f567c4e 100644
+--- a/features/account/views.ts
++++ b/features/account/views.ts
+@@ -61,7 +61,7 @@ export const signsInToList = contract(accountMachine, {
+   expect: {
+     state: 'idle',
+     changes: { draft: 'ada' },
+-    effects: [{ effect: signIn, input: { name: 'ada' } }, { navigate: '/' }],
++    effects: [{ effect: signIn, input: { name: 'ada' } }, { navigate: '/notes' }],
+   },
+ })
+ 
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index b89add3..af87285 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -1,5 +1,5 @@
+ import { type Child, contract, op, ui } from '@hozu/core'
+-import { archive, home } from '../../routes.ts'
++import { archive, list } from '../../routes.ts'
+ import {
+   Add,
+   Archive,
+@@ -65,7 +65,7 @@ const noteItem = (note: NoteT, editing: string) =>
+   ui.li({ class: 'flex flex-wrap items-center gap-3 px-4 py-3' }, [
+     ui.if(op.eq(editing, note.id), editForm(note), [ui.span({ class: 'flex-1' }, [note.title])]),
+     ui.each(note.tags, null, (tag) =>
+-      ui.a({ href: ui.link(home, null, { tag }), class: 'text-xs text-indigo-700' }, [`#${tag}`]),
++      ui.a({ href: ui.link(list, null, { tag }), class: 'text-xs text-indigo-700' }, [`#${tag}`]),
+     ),
+     ui.time({ datetime: note.createdAt, class: 'text-xs text-slate-500' }, [
+       'Added ',
+@@ -80,7 +80,7 @@ const noteItem = (note: NoteT, editing: string) =>
+ 
+ export const NotesBoard = ui.view({
+   machine: notesMachine,
+-  route: home,
++  route: list,
+   seed: ({ search }) => ({ query: search.q }),
+   render: ({ ctx, when, search }) =>
+     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-8' }, [
+@@ -138,7 +138,7 @@ export const NotesBoard = ui.view({
+       search.tag !== '' &&
+         ui.p({ class: 'flex gap-3 text-sm' }, [
+           `Tagged ${search.tag}`,
+-          ui.a({ href: ui.link(home, null, {}), class: 'text-indigo-700 underline' }, ['All notes']),
++          ui.a({ href: ui.link(list, null, {}), class: 'text-indigo-700 underline' }, ['All notes']),
+         ]),
+       ui.query(
+         listNotes,
+@@ -171,7 +171,7 @@ export const ArchiveBoard = ui.view({
+   render: ({ ctx }) =>
+     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-8' }, [
+       ui.h1({ class: 'text-3xl font-bold' }, ['Archive']),
+-      ui.a({ href: ui.link(home, null, {}), class: 'text-sm text-indigo-700 underline' }, ['Back to notes']),
++      ui.a({ href: ui.link(list, null, {}), class: 'text-sm text-indigo-700 underline' }, ['Back to notes']),
+       ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+       ui.query(
+         listArchived,
+diff --git a/hozu.config.ts b/hozu.config.ts
+index bd053dc..986655a 100644
+--- a/hozu.config.ts
++++ b/hozu.config.ts
+@@ -5,16 +5,16 @@ import { me, Session } from './features/account/model.ts'
+ import { AccountBar, Login } from './features/account/views.ts'
+ import { notes } from './features/notes/feature.ts'
+ import { ArchiveBoard, NotesBoard } from './features/notes/views.ts'
+-import { archive, home, login } from './routes.ts'
++import { archive, list, login } from './routes.ts'
+ 
+ export default project({
+   schema: zodAdapter,
+   styles: new URL('./app.css', import.meta.url),
+   session: Session,
+   site: { url: 'http://localhost:3000', name: 'Notes', lang: 'en' },
+-  routes: { home, login, archive },
++  routes: { list, login, archive },
+   pages: [
+-    ui.page(home, {
++    ui.page(list, {
+       views: [AccountBar, NotesBoard],
+       head: {
+         query: me,
+diff --git a/hozu.lock.json b/hozu.lock.json
+index 08514e2..c120e16 100644
+--- a/hozu.lock.json
++++ b/hozu.lock.json
+@@ -2,9 +2,9 @@
+   "features": {
+     "account": {
+       "idle/on/account.SignIn/0": {
+-        "behavior": "525ff4c7227253a0",
++        "behavior": "5250ea289410d63c",
+         "contracts": {
+-          "signsInToList": "c44ede1b3bdcc2fc"
++          "signsInToList": "aa5b800932d57946"
+         },
+         "summary": "idle --SignIn--> signingIn · draft := event.name, error := null, fields := {\"name\":null} · invoke signIn({ name: ctx.draft })"
+       },
+@@ -16,11 +16,11 @@
+         "summary": "idle --SignOut--> signingOut · invoke signOut({})"
+       },
+       "signingIn/invoke/done/0": {
+-        "behavior": "e1d60e8eccaea82d",
++        "behavior": "4df7a5c9c084b5de",
+         "contracts": {
+-          "signsInToList": "c44ede1b3bdcc2fc"
++          "signsInToList": "aa5b800932d57946"
+         },
+-        "summary": "signingIn --done signIn--> idle · navigate link(home, null)"
++        "summary": "signingIn --done signIn--> idle · navigate link(list, null)"
+       },
+       "signingIn/invoke/failed/Invalid/0": {
+         "behavior": "3adac45963ae399a",
+diff --git a/routes.ts b/routes.ts
+index 6a8d00b..e177c47 100644
+--- a/routes.ts
++++ b/routes.ts
+@@ -1,8 +1,8 @@
+ import { route } from '@hozu/core'
+ import { z } from 'zod'
+ 
+-export const home = route({
+-  path: '/',
++export const list = route({
++  path: '/notes',
+   params: null,
+   search: z.object({ tag: z.string().default(''), q: z.string().default('') }),
+ })
+diff --git a/server.ts b/server.ts
+index 910a400..340e19b 100644
+--- a/server.ts
++++ b/server.ts
+@@ -1,5 +1,5 @@
+ import { resolvers } from '@hozu/data'
+-import { me, signIn, signOut } from './features/account/model.ts'
++import { landing, me, signIn, signOut } from './features/account/model.ts'
+ import {
+   addNote,
+   archiveNote,
+@@ -34,6 +34,11 @@ export function createResolvers() {
+   const store = createStore()
+   return resolvers(project, (implement) => [
+     implement(me, (_, { session, fail }) => (session ? { name: session.user } : fail('Unauthorized', {}))),
++    implement(
++      landing,
++      (_, { session }) =>
++        new Response(null, { status: 302, headers: { location: session ? '/notes' : '/login' } }),
++    ),
+     implement(signIn, ({ name }, { setSession }) => {
+       setSession({ user: name.trim().toLowerCase() })
+       return {}
