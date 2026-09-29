@@ -1,0 +1,538 @@
+diff --git a/features/notes/model.ts b/features/notes/model.ts
+index daf13ae..9ad5e15 100644
+--- a/features/notes/model.ts
++++ b/features/notes/model.ts
+@@ -20,6 +20,8 @@ export const Pin = event({ payload: NoteKey })
+ export const Edit = event({ payload: NoteKey })
+ export const CancelEdit = event({ payload: z.object({}) })
+ export const Save = event({ payload: z.object({ id: z.string(), title: z.string() }) })
++export const Archive = event({ payload: NoteKey })
++export const Restore = event({ payload: NoteKey })
+ export const Search = event({ payload: z.object({ query: z.string() }) })
+ 
+ export const notesTag = tag({ param: null })
+@@ -40,6 +42,15 @@ export const listNotes = query({
+   tags: () => [notesTag()],
+ })
+ 
++export const listArchived = query({
++  input: z.object({}),
++  output: Notes,
++  errors: { Unauthorized: z.object({}) },
++  scope: 'user',
++  freshness: 'static',
++  tags: () => [notesTag()],
++})
++
+ export const addNote = mutation({
+   input: NewNote,
+   output: Note,
+@@ -61,6 +72,20 @@ export const togglePin = mutation({
+   invalidates: () => [notesTag()],
+ })
+ 
++export const archiveNote = mutation({
++  input: NoteKey,
++  output: NoteKey,
++  errors: { NotFound: NoteKey },
++  invalidates: () => [notesTag()],
++})
++
++export const restoreNote = mutation({
++  input: NoteKey,
++  output: NoteKey,
++  errors: { NotFound: NoteKey },
++  invalidates: () => [notesTag()],
++})
++
+ export const renameNote = mutation({
+   input: z.object({ id: z.string(), title: z.string().min(1, 'Write something') }),
+   output: Note,
+@@ -144,6 +169,14 @@ export const notesMachine = machine({
+           assign: (e) => [op.set(ctx.target, e.id), op.set(ctx.error, null)],
+         }),
+         on(Pin, { target: 'pinning', assign: (e) => [op.set(ctx.target, e.id), op.set(ctx.error, null)] }),
++        on(Archive, {
++          target: 'archiving',
++          assign: (e) => [op.set(ctx.target, e.id), op.set(ctx.error, null)],
++        }),
++        on(Restore, {
++          target: 'restoring',
++          assign: (e) => [op.set(ctx.target, e.id), op.set(ctx.error, null)],
++        }),
+         on(Search, { target: 'idle', assign: (e) => [op.set(ctx.query, e.query)] }),
+         on(Edit, { target: 'idle', assign: (e) => [op.set(ctx.editing, e.id), op.set(ctx.error, null)] }),
+         on(CancelEdit, { target: 'idle', assign: () => [op.set(ctx.editing, '')] }),
+@@ -196,6 +229,26 @@ export const notesMachine = machine({
+         },
+       }),
+     },
++    archiving: {
++      invoke: invoke(archiveNote, {
++        input: { id: ctx.target },
++        done: [{ target: 'idle' }],
++        failed: {
++          NotFound: [{ target: 'idle', assign: () => [op.set(ctx.error, GONE)] }],
++          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
++        },
++      }),
++    },
++    restoring: {
++      invoke: invoke(restoreNote, {
++        input: { id: ctx.target },
++        done: [{ target: 'idle' }],
++        failed: {
++          NotFound: [{ target: 'idle', assign: () => [op.set(ctx.error, GONE)] }],
++          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
++        },
++      }),
++    },
+     pinning: {
+       invoke: invoke(togglePin, {
+         input: { id: ctx.target },
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index d6cc769..691dd2c 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -1,7 +1,8 @@
+ import { type Child, contract, op, ui } from '@hozu/core'
+-import { home } from '../../routes.ts'
++import { archive, home } from '../../routes.ts'
+ import {
+   Add,
++  Archive,
+   addedDay,
+   addNote,
+   CancelEdit,
+@@ -9,6 +10,7 @@ import {
+   DUPLICATE,
+   Edit,
+   GONE,
++  listArchived,
+   listNotes,
+   MAX_TITLE,
+   type NoteT,
+@@ -16,6 +18,7 @@ import {
+   notesMachine,
+   Pin,
+   Remove,
++  Restore,
+   removeNote,
+   Save,
+   Search,
+@@ -24,7 +27,11 @@ import {
+   visible,
+ } from './model.ts'
+ 
+-const itemForm = (event: typeof Pin | typeof Remove | typeof Edit, id: string, label: Child) =>
++const itemForm = (
++  event: typeof Pin | typeof Remove | typeof Edit | typeof Archive | typeof Restore,
++  id: string,
++  label: Child,
++) =>
+   ui.form({ on: { submit: ui.send(event, { id: ui.dom.form('id') }) } }, [
+     ui.input({ type: 'hidden', name: 'id', value: id }),
+     ui.button({ type: 'submit', class: 'text-sm text-slate-600 underline' }, [label]),
+@@ -67,6 +74,7 @@ const noteItem = (note: NoteT, editing: string) =>
+     ui.if(op.eq(note.pinned, true), [ui.span({ class: 'text-xs text-amber-700' }, ['pinned'])], []),
+     itemForm(Pin, note.id, ui.if(op.eq(note.pinned, true), ['Unpin'], ['Pin'])),
+     itemForm(Edit, note.id, 'Edit'),
++    itemForm(Archive, note.id, 'Archive'),
+     itemForm(Remove, note.id, 'Delete'),
+   ])
+ 
+@@ -76,6 +84,7 @@ export const NotesBoard = ui.view({
+   render: ({ ctx, when, search }) =>
+     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-8' }, [
+       ui.h1({ class: 'text-3xl font-bold' }, ['Notes']),
++      ui.a({ href: ui.link(archive, null), class: 'text-sm text-indigo-700 underline' }, ['Archived notes']),
+       ui.form(
+         {
+           class: 'flex flex-wrap gap-2',
+@@ -150,6 +159,38 @@ export const NotesBoard = ui.view({
+     ]),
+ })
+ 
++export const ArchiveBoard = ui.view({
++  machine: notesMachine,
++  route: archive,
++  render: ({ ctx }) =>
++    ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-8' }, [
++      ui.h1({ class: 'text-3xl font-bold' }, ['Archive']),
++      ui.a({ href: ui.link(home, null, {}), class: 'text-sm text-indigo-700 underline' }, ['Back to notes']),
++      ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
++      ui.query(
++        listArchived,
++        {},
++        {
++          ready: (notes) =>
++            notes.length === 0
++              ? ui.p({ class: 'text-slate-500' }, ['No archived notes'])
++              : ui.ul({ class: 'divide-y rounded border' }, [
++                  ui.each(notes, 'id', (note) =>
++                    ui.li({ class: 'flex items-center gap-3 px-4 py-3' }, [
++                      ui.span({ class: 'flex-1' }, [note.title]),
++                      itemForm(Restore, note.id, 'Restore'),
++                    ]),
++                  ),
++                ]),
++          failed: {
++            Unauthorized: () => ui.p({ role: 'alert' }, ['Signed out']),
++            Unexpected: () => ui.p({ role: 'alert' }, ['Notes are unavailable']),
++          },
++        },
++      ),
++    ]),
++})
++
+ const note = (id: string, title: string, pinned = false) => ({
+   id,
+   title,
+diff --git a/hozu.config.ts b/hozu.config.ts
+index 39a01c8..bd053dc 100644
+--- a/hozu.config.ts
++++ b/hozu.config.ts
+@@ -4,15 +4,15 @@ import { account } from './features/account/feature.ts'
+ import { me, Session } from './features/account/model.ts'
+ import { AccountBar, Login } from './features/account/views.ts'
+ import { notes } from './features/notes/feature.ts'
+-import { NotesBoard } from './features/notes/views.ts'
+-import { home, login } from './routes.ts'
++import { ArchiveBoard, NotesBoard } from './features/notes/views.ts'
++import { archive, home, login } from './routes.ts'
+ 
+ export default project({
+   schema: zodAdapter,
+   styles: new URL('./app.css', import.meta.url),
+   session: Session,
+   site: { url: 'http://localhost:3000', name: 'Notes', lang: 'en' },
+-  routes: { home, login },
++  routes: { home, login, archive },
+   pages: [
+     ui.page(home, {
+       views: [AccountBar, NotesBoard],
+@@ -23,6 +23,15 @@ export default project({
+         redirects: { Unauthorized: login },
+       },
+     }),
++    ui.page(archive, {
++      views: [AccountBar, ArchiveBoard],
++      head: {
++        query: me,
++        input: () => ({}),
++        render: () => ({ title: 'Archive', noindex: true }),
++        redirects: { Unauthorized: login },
++      },
++    }),
+     ui.page(login, { views: [Login], head: { render: () => ({ title: 'Sign in' }) } }),
+   ],
+   features: [account, notes],
+diff --git a/hozu.lock.json b/hozu.lock.json
+index 235a9eb..08514e2 100644
+--- a/hozu.lock.json
++++ b/hozu.lock.json
+@@ -80,6 +80,21 @@
+         },
+         "summary": "adding --failed addNote.Unexpected--> idle · error := error.message"
+       },
++      "archiving/invoke/done/0": {
++        "behavior": "2806ce0cefceef90",
++        "contracts": {},
++        "summary": "archiving --done archiveNote--> idle"
++      },
++      "archiving/invoke/failed/NotFound/0": {
++        "behavior": "94273ce5d17af36d",
++        "contracts": {},
++        "summary": "archiving --failed archiveNote.NotFound--> idle · error := \"This note no longer exists\""
++      },
++      "archiving/invoke/failed/Unexpected/0": {
++        "behavior": "3b3b630dee1bbab5",
++        "contracts": {},
++        "summary": "archiving --failed archiveNote.Unexpected--> idle · error := error.message"
++      },
+       "idle/on/notes.Add/0": {
+         "behavior": "321be2e5fae1fb36",
+         "contracts": {
+@@ -87,6 +102,11 @@
+         },
+         "summary": "idle --Add--> adding · draft := event.title, draftTags := event.tags, error := null, fields := {\"title\":null,\"tags\":null} · invoke addNote({ title: ctx.draft, tags: ctx.draftTags })"
+       },
++      "idle/on/notes.Archive/0": {
++        "behavior": "f29ece216427523f",
++        "contracts": {},
++        "summary": "idle --Archive--> archiving · target := event.id, error := null · invoke archiveNote({ id: ctx.target })"
++      },
+       "idle/on/notes.CancelEdit/0": {
+         "behavior": "f1e1672c199fef55",
+         "contracts": {},
+@@ -118,6 +138,11 @@
+         },
+         "summary": "idle --Remove--> removing · target := event.id, error := null · invoke removeNote({ id: ctx.target })"
+       },
++      "idle/on/notes.Restore/0": {
++        "behavior": "5840554d2a561a2d",
++        "contracts": {},
++        "summary": "idle --Restore--> restoring · target := event.id, error := null · invoke restoreNote({ id: ctx.target })"
++      },
+       "idle/on/notes.Save/0": {
+         "behavior": "017eb571a4673549",
+         "contracts": {},
+@@ -172,6 +197,21 @@
+         },
+         "summary": "removing --failed removeNote.Unexpected--> idle · error := error.message"
+       },
++      "restoring/invoke/done/0": {
++        "behavior": "09405288725c51c2",
++        "contracts": {},
++        "summary": "restoring --done restoreNote--> idle"
++      },
++      "restoring/invoke/failed/NotFound/0": {
++        "behavior": "f0d983ed4bec414c",
++        "contracts": {},
++        "summary": "restoring --failed restoreNote.NotFound--> idle · error := \"This note no longer exists\""
++      },
++      "restoring/invoke/failed/Unexpected/0": {
++        "behavior": "66cc43efad8d4af6",
++        "contracts": {},
++        "summary": "restoring --failed restoreNote.Unexpected--> idle · error := error.message"
++      },
+       "saving/invoke/done/0": {
+         "behavior": "dc80e2cb836c738c",
+         "contracts": {},
+diff --git a/routes.ts b/routes.ts
+index 3ff21d5..a9d4a0c 100644
+--- a/routes.ts
++++ b/routes.ts
+@@ -3,3 +3,4 @@ import { z } from 'zod'
+ 
+ export const home = route({ path: '/', params: null, search: z.object({ tag: z.string().default('') }) })
+ export const login = route({ path: '/login', params: null, search: null })
++export const archive = route({ path: '/archive', params: null, search: null })
+diff --git a/server.ts b/server.ts
+index 83d77bd..910a400 100644
+--- a/server.ts
++++ b/server.ts
+@@ -2,60 +2,36 @@ import { resolvers } from '@hozu/data'
+ import { me, signIn, signOut } from './features/account/model.ts'
+ import {
+   addNote,
++  archiveNote,
+   BAD_TAGS,
++  listArchived,
+   listNotes,
+   MAX_TITLE,
+   notesApi,
+   removeNote,
+   renameNote,
++  restoreNote,
+   TOO_LONG,
+   togglePin,
+ } from './features/notes/model.ts'
+ import project from './hozu.config.ts'
+-
+-interface Note {
+-  id: string
+-  title: string
+-  pinned: boolean
+-  tags: string[]
+-  createdAt: string
+-}
++import { createStore, type Note } from './store.ts'
+ 
+ const TAG = /^[a-z0-9-]{1,20}$/
++const titleError = (clean: string) =>
++  !clean ? 'Write something' : clean.length > MAX_TITLE ? TOO_LONG : null
++const parseTags = (raw: string) => [
++  ...new Set(
++    raw
++      .split(',')
++      .map((t) => t.trim().toLowerCase())
++      .filter(Boolean),
++  ),
++]
++const copy = (n: Note) => ({ ...n, tags: [...n.tags] })
+ 
+ export function createResolvers() {
+-  const store = new Map<string, Note[]>([
+-    [
+-      'ada',
+-      [
+-        { id: 'n1', title: 'Buy milk', pinned: false, tags: [], createdAt: '2026-01-15T09:00:00.000Z' },
+-        { id: 'n2', title: 'Call Bob', pinned: false, tags: [], createdAt: '2026-01-14T09:00:00.000Z' },
+-      ],
+-    ],
+-    [
+-      'bob',
+-      [{ id: 'n3', title: "Bob's secret", pinned: false, tags: [], createdAt: '2026-01-10T09:00:00.000Z' }],
+-    ],
+-  ])
+-  let seq = 3
+-  const notesOf = (user: string) => {
+-    const list = store.get(user) ?? []
+-    store.set(user, list)
+-    return list
+-  }
+-  const titleError = (clean: string) =>
+-    !clean ? 'Write something' : clean.length > MAX_TITLE ? TOO_LONG : null
+-  const taken = (list: Note[], clean: string, except = '') =>
+-    list.some((n) => n.id !== except && n.title.toLowerCase() === clean.toLowerCase())
+-  const parseTags = (raw: string) => [
+-    ...new Set(
+-      raw
+-        .split(',')
+-        .map((t) => t.trim().toLowerCase())
+-        .filter(Boolean),
+-    ),
+-  ]
+-  const ordered = (list: Note[]) => [...list.filter((n) => n.pinned), ...list.filter((n) => !n.pinned)]
++  const store = createStore()
+   return resolvers(project, (implement) => [
+     implement(me, (_, { session, fail }) => (session ? { name: session.user } : fail('Unauthorized', {}))),
+     implement(signIn, ({ name }, { setSession }) => {
+@@ -68,54 +44,57 @@ export function createResolvers() {
+     }),
+     implement(notesApi, (_, { session }) => ({
+       signedIn: session !== null,
+-      notes: session ? ordered(notesOf(session.user)).map((n) => ({ ...n })) : [],
++      notes: session ? store.active(session.user).map(copy) : [],
+     })),
+     implement(listNotes, (_, { session, fail }) =>
+-      session ? ordered(notesOf(session.user)).map((n) => ({ ...n })) : fail('Unauthorized', {}),
++      session ? store.active(session.user).map(copy) : fail('Unauthorized', {}),
++    ),
++    implement(listArchived, (_, { session, fail }) =>
++      session ? store.archived(session.user).map(copy) : fail('Unauthorized', {}),
+     ),
+     implement(addNote, ({ title, tags }, { session, fail }) => {
+       if (!session) return fail('Invalid', { message: 'Signed out', fields: { title: 'Sign in first' } })
+       const clean = title.trim()
+       const error = titleError(clean)
+       if (error) return fail('Invalid', { message: `title: ${error}`, fields: { title: error } })
+-      const list = notesOf(session.user)
+       const parsed = parseTags(tags)
+       if (!parsed.every((t) => TAG.test(t)))
+         return fail('Invalid', { message: BAD_TAGS, fields: { tags: BAD_TAGS } })
+-      if (taken(list, clean)) return fail('Duplicate', { title: clean })
+-      const note = {
+-        id: `n${++seq}`,
+-        title: clean,
+-        pinned: false,
+-        tags: parsed,
+-        createdAt: new Date().toISOString(),
+-      }
+-      list.unshift(note)
+-      return { ...note }
++      if (store.taken(session.user, clean)) return fail('Duplicate', { title: clean })
++      return copy(store.add(session.user, clean, parsed))
+     }),
+     implement(removeNote, ({ id }, { session, fail }) => {
+-      const list = session ? notesOf(session.user) : []
+-      const at = list.findIndex((n) => n.id === id)
+-      if (at < 0) return fail('NotFound', { id })
+-      list.splice(at, 1)
++      if (!session || !store.find(session.user, id)) return fail('NotFound', { id })
++      store.remove(session.user, id)
+       return { id }
+     }),
+     implement(renameNote, ({ id, title }, { session, fail }) => {
+-      const list = session ? notesOf(session.user) : []
+-      const note = list.find((n) => n.id === id)
+-      if (!note) return fail('NotFound', { id })
++      const note = session && store.find(session.user, id)
++      if (!session || !note) return fail('NotFound', { id })
+       const clean = title.trim()
+       const error = titleError(clean)
+       if (error) return fail('Invalid', { message: error, fields: { title: error } })
+-      if (taken(list, clean, id)) return fail('Duplicate', { title: clean })
++      if (store.taken(session.user, clean, id)) return fail('Duplicate', { title: clean })
+       note.title = clean
+-      return { ...note }
++      return copy(note)
+     }),
+     implement(togglePin, ({ id }, { session, fail }) => {
+-      const note = (session ? notesOf(session.user) : []).find((n) => n.id === id)
++      const note = session && store.find(session.user, id)
+       if (!note) return fail('NotFound', { id })
+       note.pinned = !note.pinned
+-      return { ...note }
++      return copy(note)
++    }),
++    implement(archiveNote, ({ id }, { session, fail }) => {
++      const note = session && store.find(session.user, id)
++      if (!note) return fail('NotFound', { id })
++      note.archived = true
++      return { id }
++    }),
++    implement(restoreNote, ({ id }, { session, fail }) => {
++      const note = session && store.find(session.user, id, true)
++      if (!note) return fail('NotFound', { id })
++      note.archived = false
++      return { id }
+     }),
+   ])
+ }
+diff --git a/store.ts b/store.ts
+new file mode 100644
+index 0000000..39a4bdb
+--- /dev/null
++++ b/store.ts
+@@ -0,0 +1,59 @@
++export interface Note {
++  id: string
++  title: string
++  pinned: boolean
++  archived: boolean
++  tags: string[]
++  createdAt: string
++}
++
++const seeded = (id: string, title: string, createdAt: string): Note => ({
++  id,
++  title,
++  pinned: false,
++  archived: false,
++  tags: [],
++  createdAt,
++})
++
++export function createStore() {
++  const notes = new Map<string, Note[]>([
++    [
++      'ada',
++      [
++        seeded('n1', 'Buy milk', '2026-01-15T09:00:00.000Z'),
++        seeded('n2', 'Call Bob', '2026-01-14T09:00:00.000Z'),
++      ],
++    ],
++    ['bob', [seeded('n3', "Bob's secret", '2026-01-10T09:00:00.000Z')]],
++  ])
++  let seq = 3
++  const of = (user: string) => {
++    const list = notes.get(user) ?? []
++    notes.set(user, list)
++    return list
++  }
++  const ordered = (list: Note[]) => [...list.filter((n) => n.pinned), ...list.filter((n) => !n.pinned)]
++  return {
++    of,
++    active: (user: string) => ordered(of(user).filter((n) => !n.archived)),
++    archived: (user: string) => of(user).filter((n) => n.archived),
++    find: (user: string, id: string, archived = false) =>
++      of(user).find((n) => n.id === id && n.archived === archived),
++    taken: (user: string, title: string, except = '') =>
++      of(user).some((n) => n.id !== except && n.title.toLowerCase() === title.toLowerCase()),
++    add: (user: string, title: string, tags: string[]) => {
++      const note = seeded(`n${++seq}`, title, new Date().toISOString())
++      note.tags = tags
++      of(user).unshift(note)
++      return note
++    },
++    remove: (user: string, id: string) => {
++      const list = of(user)
++      list.splice(
++        list.findIndex((n) => n.id === id),
++        1,
++      )
++    },
++  }
++}
