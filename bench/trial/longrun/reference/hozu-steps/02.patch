@@ -1,0 +1,83 @@
+diff --git a/features/notes/model.ts b/features/notes/model.ts
+index ae6c88d..fe2a200 100644
+--- a/features/notes/model.ts
++++ b/features/notes/model.ts
+@@ -4,9 +4,7 @@ import { z } from 'zod'
+ export const Note = z.object({ id: z.string(), text: z.string(), pinned: z.boolean() })
+ const Notes = z.array(Note)
+ const NoteKey = z.object({ id: z.string() })
+-const NewNote = z.object({
+-  text: z.string().min(1, 'Write something').max(100, 'Use at most 100 characters'),
+-})
++const NewNote = z.object({ text: z.string().min(1, 'Write something') })
+ 
+ export const Draft = event({ payload: z.object({ text: z.string() }) })
+ export const Add = event({ payload: z.object({ text: z.string() }) })
+@@ -73,6 +71,8 @@ export const total = fn({
+   impl: ({ items }) => items.length,
+ })
+ 
++export const MAX_TEXT = 60
++export const TOO_LONG = `Use at most ${MAX_TEXT} characters`
+ export const DUPLICATE = 'You already have this note'
+ export const GONE = 'This note no longer exists'
+ 
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index 29623f1..d314c39 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -6,6 +6,7 @@ import {
+   DUPLICATE,
+   GONE,
+   listNotes,
++  MAX_TEXT,
+   noMatch,
+   notesMachine,
+   Pin,
+@@ -34,7 +35,7 @@ export const NotesBoard = ui.view({
+           id: 'note',
+           name: 'text',
+           required: true,
+-          maxlength: 100,
++          maxlength: MAX_TEXT,
+           value: ctx.draft,
+           placeholder: 'New note',
+           'aria-invalid': op.neq(ctx.fields.text, null),
+@@ -44,7 +45,7 @@ export const NotesBoard = ui.view({
+         }),
+         ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
+       ]),
+-      ui.p({ id: 'note-error', class: 'text-sm text-rose-600' }, [ctx.fields.text]),
++      ui.p({ id: 'note-error', role: 'alert', class: 'text-sm text-rose-600' }, [ctx.fields.text]),
+       ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+       when(['adding'], [ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…'])]),
+       ui.label({ for: 'search', class: 'block text-sm font-medium' }, ['Search']),
+diff --git a/server.ts b/server.ts
+index 77b2276..db804cb 100644
+--- a/server.ts
++++ b/server.ts
+@@ -1,6 +1,14 @@
+ import { resolvers } from '@hozu/data'
+ import { me, signIn, signOut } from './features/account/model.ts'
+-import { addNote, listNotes, notesApi, removeNote, togglePin } from './features/notes/model.ts'
++import {
++  addNote,
++  listNotes,
++  MAX_TEXT,
++  notesApi,
++  removeNote,
++  TOO_LONG,
++  togglePin,
++} from './features/notes/model.ts'
+ import project from './hozu.config.ts'
+ 
+ interface Note {
+@@ -49,6 +57,8 @@ export function createResolvers() {
+       const clean = text.trim()
+       if (!clean)
+         return fail('Invalid', { message: 'text: Write something', fields: { text: 'Write something' } })
++      if (clean.length > MAX_TEXT)
++        return fail('Invalid', { message: `text: ${TOO_LONG}`, fields: { text: TOO_LONG } })
+       const list = notesOf(session.user)
+       if (list.some((n) => n.text.toLowerCase() === clean.toLowerCase()))
+         return fail('Duplicate', { text: clean })
