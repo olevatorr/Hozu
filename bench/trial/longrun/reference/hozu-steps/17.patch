@@ -1,0 +1,294 @@
+diff --git a/features/account/model.ts b/features/account/model.ts
+index f334570..68a7c9b 100644
+--- a/features/account/model.ts
++++ b/features/account/model.ts
+@@ -9,6 +9,7 @@ export const Name = z.object({
+ 
+ export const SignIn = event({ payload: z.object({ name: z.string() }) })
+ export const SignOut = event({ payload: z.object({}) })
++export const DeleteAccount = event({ payload: z.object({}) })
+ 
+ export const me = query({
+   input: z.object({}),
+@@ -26,6 +27,7 @@ export const ADMIN = 'admin'
+ 
+ export const signIn = mutation({ input: Name, output: z.object({}) })
+ export const signOut = mutation({ input: z.object({}), output: z.object({}) })
++export const deleteAccount = mutation({ input: z.object({}), output: z.object({}) })
+ 
+ export const accountMachine = machine({
+   context: z.object({
+@@ -47,6 +49,7 @@ export const accountMachine = machine({
+           ],
+         }),
+         on(SignOut, { target: 'signingOut' }),
++        on(DeleteAccount, { target: 'deleting' }),
+       ],
+     },
+     signingIn: {
+@@ -62,9 +65,23 @@ export const accountMachine = machine({
+     signingOut: {
+       invoke: invoke(signOut, {
+         input: {},
+-        done: [{ target: 'idle', navigate: () => ui.link(login, null) }],
++        done: [{ target: 'idle', navigate: () => ui.link(login, null, {}) }],
+         failed: { Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }] },
+       }),
+     },
++    deleting: {
++      invoke: invoke(deleteAccount, {
++        input: {},
++        done: { target: 'idle', navigate: () => ui.link(login, null, { deleted: true }) },
++        failed: {
++          Unexpected: {
++            target: 'idle',
++            assign: (e) => {
++              ctx.error = e.message
++            },
++          },
++        },
++      }),
++    },
+   }),
+ })
+diff --git a/features/account/views.ts b/features/account/views.ts
+index d2f19b6..28d1b9f 100644
+--- a/features/account/views.ts
++++ b/features/account/views.ts
+@@ -1,13 +1,24 @@
+ import { contract, op, ui } from '@hozu/core'
+-import { admin, login } from '../../routes.ts'
+-import { ADMIN, accountMachine, me, SignIn, SignOut, signIn, signOut } from './model.ts'
++import { accountDelete, admin, login } from '../../routes.ts'
++import {
++  ADMIN,
++  accountMachine,
++  DeleteAccount,
++  deleteAccount,
++  me,
++  SignIn,
++  SignOut,
++  signIn,
++  signOut,
++} from './model.ts'
+ 
+ export const Login = ui.view({
+   machine: accountMachine,
+   route: login,
+-  render: ({ ctx }) =>
++  render: ({ ctx, search }) =>
+     ui.main({ class: 'mx-auto max-w-sm space-y-6 px-4 py-16' }, [
+       ui.h1({ class: 'text-3xl font-bold' }, ['Sign in']),
++      search.deleted && ui.p({ role: 'status', class: 'text-slate-600' }, ['Account deleted']),
+       ui.form({ class: 'space-y-3', on: { submit: ui.send(SignIn, { name: ui.dom.form('name') }) } }, [
+         ui.label({ for: 'name', class: 'block text-sm font-medium' }, ['Name']),
+         ui.input({
+@@ -49,6 +60,7 @@ export const AccountBar = ui.view({
+             failed: { Unauthorized: () => ui.p({}, ['Signed out']), Unexpected: () => ui.p({}, ['']) },
+           },
+         ),
++        ui.a({ href: ui.link(accountDelete, null), class: 'underline' }, ['Delete account']),
+         ui.form({ on: { submit: ui.send(SignOut, {}) } }, [
+           ui.button({ type: 'submit', class: 'underline' }, ['Sign out']),
+         ]),
+@@ -56,6 +68,22 @@ export const AccountBar = ui.view({
+     ),
+ })
+ 
++export const DeleteAccountPage = ui.view({
++  machine: accountMachine,
++  route: accountDelete,
++  render: ({ ctx }) =>
++    ui.main({ class: 'mx-auto max-w-sm space-y-6 px-4 py-16' }, [
++      ui.h1({ class: 'text-3xl font-bold' }, ['Delete account']),
++      ui.p({ class: 'text-slate-600' }, ['This deletes all of your notes, archived ones included.']),
++      ui.form({ on: { submit: ui.send(DeleteAccount, {}) } }, [
++        ui.button({ type: 'submit', class: 'w-full rounded bg-rose-600 px-4 py-2 text-white' }, [
++          'Delete my account and notes',
++        ]),
++      ]),
++      ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),
++    ]),
++})
++
+ export const signsInToList = contract(accountMachine, {
+   given: { state: 'idle' },
+   when: [
+@@ -87,7 +115,7 @@ export const signInFails = contract(accountMachine, {
+   expect: { state: 'idle', changes: { error: 'offline' } },
+ })
+ 
+-export const signsOut = contract(accountMachine, {
++export const signsOutToLogin = contract(accountMachine, {
+   given: { state: 'idle' },
+   when: [
+     { send: SignOut, payload: {} },
+@@ -101,3 +129,15 @@ export const signOutFails = contract(accountMachine, {
+   when: [{ failed: signOut, error: 'Unexpected', data: { message: 'offline' } }],
+   expect: { state: 'idle', changes: { error: 'offline' } },
+ })
++
++export const deletesAccount = contract(accountMachine, {
++  given: { state: 'idle' },
++  when: [
++    { send: DeleteAccount, payload: {} },
++    { done: deleteAccount, result: {} },
++  ],
++  expect: {
++    state: 'idle',
++    effects: [{ effect: deleteAccount, input: {} }, { navigate: '/login?deleted=true' }],
++  },
++})
+diff --git a/hozu.config.ts b/hozu.config.ts
+index 5b85e49..2cd8af0 100644
+--- a/hozu.config.ts
++++ b/hozu.config.ts
+@@ -2,17 +2,17 @@ import { project, ui } from '@hozu/core'
+ import { zodAdapter } from '@hozu/schema-zod'
+ import { account } from './features/account/feature.ts'
+ import { me, Session } from './features/account/model.ts'
+-import { AccountBar, Login } from './features/account/views.ts'
++import { AccountBar, DeleteAccountPage, Login } from './features/account/views.ts'
+ import { notes } from './features/notes/feature.ts'
+ import { ArchiveBoard, NotesBoard } from './features/notes/views.ts'
+-import { admin, archive, list, login } from './routes.ts'
++import { accountDelete, admin, archive, list, login } from './routes.ts'
+ 
+ export default project({
+   schema: zodAdapter,
+   styles: new URL('./app.css', import.meta.url),
+   session: Session,
+   site: { url: 'http://localhost:3000', name: 'Notes', lang: 'en' },
+-  routes: { list, login, archive, admin },
++  routes: { list, login, archive, admin, accountDelete },
+   pages: [
+     ui.page(list, {
+       views: [AccountBar, NotesBoard],
+@@ -32,6 +32,15 @@ export default project({
+         redirects: { Unauthorized: login },
+       },
+     }),
++    ui.page(accountDelete, {
++      views: [DeleteAccountPage],
++      head: {
++        query: me,
++        input: () => ({}),
++        render: () => ({ title: 'Delete account', noindex: true }),
++        redirects: { Unauthorized: login },
++      },
++    }),
+     ui.page(login, { views: [Login], head: { render: () => ({ title: 'Sign in' }) } }),
+   ],
+   features: [account, notes],
+diff --git a/hozu.lock.json b/hozu.lock.json
+index 4e19c1a..5963c72 100644
+--- a/hozu.lock.json
++++ b/hozu.lock.json
+@@ -1,6 +1,25 @@
+ {
+   "features": {
+     "account": {
++      "deleting/invoke/done/0": {
++        "behavior": "4cbb915159e9660f",
++        "contracts": {
++          "deletesAccount": "37e6193e6056a86f"
++        },
++        "summary": "deleting --done deleteAccount--> idle · navigate link(login, null)"
++      },
++      "deleting/invoke/failed/Unexpected/0": {
++        "behavior": "afef65fd1650159c",
++        "contracts": {},
++        "summary": "deleting --failed deleteAccount.Unexpected--> idle · error := error.message"
++      },
++      "idle/on/account.DeleteAccount/0": {
++        "behavior": "5a0e81588372670d",
++        "contracts": {
++          "deletesAccount": "37e6193e6056a86f"
++        },
++        "summary": "idle --DeleteAccount--> deleting · invoke deleteAccount({})"
++      },
+       "idle/on/account.SignIn/0": {
+         "behavior": "5250ea289410d63c",
+         "contracts": {
+@@ -9,9 +28,9 @@
+         "summary": "idle --SignIn--> signingIn · draft := event.name, error := null, fields := {\"name\":null} · invoke signIn({ name: ctx.draft })"
+       },
+       "idle/on/account.SignOut/0": {
+-        "behavior": "e82aedd52c0e5186",
++        "behavior": "a62cae51e3e6e515",
+         "contracts": {
+-          "signsOut": "1aff8c28d9db651f"
++          "signsOutToLogin": "1aff8c28d9db651f"
+         },
+         "summary": "idle --SignOut--> signingOut · invoke signOut({})"
+       },
+@@ -37,9 +56,9 @@
+         "summary": "signingIn --failed signIn.Unexpected--> idle · error := error.message"
+       },
+       "signingOut/invoke/done/0": {
+-        "behavior": "6fd5c9e6a2149dde",
++        "behavior": "72c0e1a8f73a696b",
+         "contracts": {
+-          "signsOut": "1aff8c28d9db651f"
++          "signsOutToLogin": "1aff8c28d9db651f"
+         },
+         "summary": "signingOut --done signOut--> idle · navigate link(login, null)"
+       },
+diff --git a/routes.ts b/routes.ts
+index b81407e..2a92933 100644
+--- a/routes.ts
++++ b/routes.ts
+@@ -12,6 +12,11 @@ export const list = route({
+     limit: z.number().default(PAGE),
+   }),
+ })
+-export const login = route({ path: '/login', params: null, search: null })
++export const login = route({
++  path: '/login',
++  params: null,
++  search: z.object({ deleted: z.boolean().default(false) }),
++})
+ export const archive = route({ path: '/archive', params: null, search: null })
+ export const admin = route({ path: '/admin', params: null, search: null })
++export const accountDelete = route({ path: '/account/delete', params: null, search: null })
+diff --git a/server.ts b/server.ts
+index 6f56931..65ad8df 100644
+--- a/server.ts
++++ b/server.ts
+@@ -1,5 +1,5 @@
+ import { resolvers } from '@hozu/data'
+-import { ADMIN, adminPage, landing, me, signIn, signOut } from './features/account/model.ts'
++import { ADMIN, adminPage, deleteAccount, landing, me, signIn, signOut } from './features/account/model.ts'
+ import {
+   addNote,
+   archiveNote,
+@@ -76,6 +76,11 @@ export function createResolvers() {
+       setSession(null)
+       return {}
+     }),
++    implement(deleteAccount, (_, { session, setSession }) => {
++      if (session) store.leave(session.user)
++      setSession(null)
++      return {}
++    }),
+     implement(notesApi, (_, { session }) => ({
+       signedIn: session !== null,
+       notes: session ? store.active(session.user).map(copy) : [],
+diff --git a/store.ts b/store.ts
+index 7b60e5a..e80f3d5 100644
+--- a/store.ts
++++ b/store.ts
+@@ -53,6 +53,13 @@ export function createStore() {
+           .map((n) => ({ id: n.id, title: n.title, owner })),
+       ),
+     join: (user: string) => void of(user),
++    leave: (user: string) => {
++      notes.delete(user)
++      deleted.delete(user)
++      added.delete(user)
++      for (const list of notes.values())
++        for (const n of list) n.sharedWith = n.sharedWith.filter((name) => name !== user)
++    },
+     users: () => [...notes].map(([user, list]) => ({ user, notes: list.length })),
+     lastDeleted: (user: string) => deleted.get(user)?.note ?? null,
+     forget: (user: string) => deleted.delete(user),

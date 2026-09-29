@@ -10,7 +10,9 @@ Framework code was not changed. Each entry: symptom, minimal repro, workaround, 
   URL is the same `/`.
 - **Repro:** `examples/notes`: `home = route({ path: '/', params: null, search: z.object({ tag: z.string().default('') }) })`,
   `navigate: () => ui.link(home, null, {})` in the account machine, `hozu check`.
-- **Workaround:** a contract has to change, although none is wrong: `signsIn` renamed to `signsInToList`.
+- **Workaround:** a contract has to change, although none is wrong: `signsIn` renamed to `signsInToList`. It
+  recurs in step 17 (`login` gets `search: { deleted }` for `Account deleted`): `signsOut` renamed to
+  `signsOutToLogin` (verified: with the old name HZ018 fires on `signingOut/invoke/done/0` and `idle/on/account.SignOut/0`).
 
 ## D2 — operators in a view helper function are evaluated at record time, silently (step 06)
 - **Symptom:** `@hozu/transform` lowers operators only inside builder callbacks. In a plain helper that a `render`
