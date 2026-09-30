@@ -11,7 +11,7 @@ import type { Bindings } from '../ir/bindings.ts'
 import { codes } from '../ir/codes.ts'
 import type { Diagnostic, DiagnosticCode, Fix, SourceIndex, SourceLoc } from '../ir/diagnostic.ts'
 import type { GuardExpr, Json, JsonSchema, ValueExpr } from '../ir/types.ts'
-import { type EscapeSite, escapesOf, partNamesOf } from '../lower.ts'
+import { type EscapeSite, escapesOf, loweredOf, partNamesOf } from '../lower.ts'
 import { type DeclKind, infoOf } from '../model/decl.ts'
 import { exprOf, guardOf, RecorderError, ReferenceEscape } from '../model/expr.ts'
 import { fileUrlToPath } from '../platform.ts'
@@ -163,6 +163,7 @@ export class FeatureScope {
   readonly base: string
   readonly schemas: Record<string, JsonSchema> = {}
   stateNames: string[] = []
+  lowering = false
 
   constructor(project: ProjectScope, id: string) {
     this.project = project
@@ -207,6 +208,15 @@ export class FeatureScope {
     } finally {
       onInline(previous)
     }
+  }
+
+  callback<T>(cb: T): T {
+    if (this.lowering && typeof cb === 'function' && !loweredOf().has(cb) && infoOf(cb)?.kind !== 'part')
+      throw new ReferenceEscape(
+        'This callback was not lowered: it is written outside the builder call and passed in through a variable or a helper, so its operators run on the placeholder. Write it inline in the builder call, or declare it with part((…) => …)',
+        null,
+      )
+    return cb
   }
 
   within<T>(value: unknown, run: () => T): T {

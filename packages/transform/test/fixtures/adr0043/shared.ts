@@ -11,3 +11,7 @@ export const shout = fn({
   output: z.string(),
   impl: ({ text }) => text.toUpperCase(),
 })
+
+export const titleOf = (bag: Note[]) => `Note: ${bag[0]!.text}`
+
+export const dump = (bag: Note[]) => JSON.stringify(bag[0])

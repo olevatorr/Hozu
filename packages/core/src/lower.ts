@@ -9,6 +9,7 @@ const FREE = Symbol.for('hozu.freeNames')
 const HELPERS = Symbol.for('hozu.fnHelpers')
 const ESCAPES = Symbol.for('hozu.escapes')
 const NAMES = Symbol.for('hozu.partNames')
+const LOWERED = Symbol.for('hozu.lowered')
 
 export type EscapeKind = 'helper' | 'global' | 'callback' | 'typeof'
 export type EscapeSite = [kind: EscapeKind, name: string, line: number, column: number]
@@ -25,6 +26,7 @@ export const helpersOf = (): WeakMap<object, Record<string, () => unknown>> =>
 export const freeNamesOf = (): WeakMap<object, string[]> => shared(FREE, () => new WeakMap())
 export const escapesOf = (): WeakMap<object, EscapeSite[]> => shared(ESCAPES, () => new WeakMap())
 export const partNamesOf = (): WeakMap<object, string> => shared(NAMES, () => new WeakMap())
+export const loweredOf = (): WeakSet<object> => shared(LOWERED, () => new WeakSet())
 
 const test = (x: unknown): any =>
   guardOf(x) || exprOf(x)?.kind === 'call' ? x : builtinGuard('%truthy', { v: x })
@@ -33,7 +35,7 @@ const list = (x: unknown): any[] =>
 
 const calls = new Set(['fn', 'part', 'tag'])
 const recordable = (f: unknown) =>
-  typeof f !== 'function' || calls.has(infoOf(f)?.kind ?? '') || recorderFns.has(f)
+  typeof f !== 'function' || calls.has(infoOf(f)?.kind ?? '') || recorderFns.has(f) || loweredOf().has(f)
 
 const tagged = <T extends object>(map: WeakMap<object, unknown>, decl: T, value: unknown): T => {
   map.set(decl, value)
@@ -50,10 +52,14 @@ export const lower = Object.freeze({
   free: <T extends object>(decl: T, names: string[]): T => tagged(freeNamesOf(), decl, names),
   escapes: <T extends object>(decl: T, sites: EscapeSite[]): T => tagged(escapesOf(), decl, sites),
   name: <T extends object>(decl: T, name: string): T => tagged(partNamesOf(), decl, name),
+  lowered: <T extends object>(fn: T): T => {
+    loweredOf().add(fn)
+    return fn
+  },
   call: (f: any, name: string, ...args: unknown[]): any => {
     if (!recordable(f))
       throw new ReferenceEscape(
-        `\`${name}\` is a plain function and received a reference, so its operators ran on the placeholder. Declare it with part((…) => …)`,
+        `\`${name}\` is a plain function and received a reference, so its operators ran on the placeholder. Declare it with part((…) => …), or write it inside the builder callback`,
       )
     return f(...args)
   },

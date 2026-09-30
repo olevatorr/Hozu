@@ -3,6 +3,7 @@ import { type NodeDef, sendOf, type ViewDef, when } from '../builders/ui.ts'
 import { htmlGlobalAttrs, svgGlobalAttrs, svgTags, tagAttrs, voidTags } from '../ir/dom-data.ts'
 import { domEvents } from '../ir/events.ts'
 import type { SendIR, ValueExpr, ViewIR, ViewNode } from '../ir/types.ts'
+import { transformedDecls } from '../lower.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
 import { createRef, exprOf, refProxy } from '../model/expr.ts'
 import { type At, at, type FeatureScope } from './scope.ts'
@@ -152,7 +153,7 @@ function widgetNode(
     const ep = at(p, 'on', name)
     const s =
       typeof handler === 'function'
-        ? scope.attempt(ep, () => sendOf(handler(createRef('dom', 0, ['detail']))), null)
+        ? scope.attempt(ep, () => sendOf(scope.callback(handler)(createRef('dom', 0, ['detail']))), null)
         : null
     if (!s) {
       scope.report(
@@ -238,7 +239,7 @@ function nodeOf(scope: FeatureScope, value: unknown, id: string, p: At, depth: n
     const binding = () => refProxy('binding', depth)
     const branch = (render: (x: unknown) => unknown, bid: string, bp: At): ViewNode => {
       const failed = Symbol('failed')
-      const rendered = scope.attempt<unknown>(bp, () => render(binding()), failed)
+      const rendered = scope.attempt<unknown>(bp, () => scope.callback(render)(binding()), failed)
       return rendered === null || rendered === failed
         ? { id: bid, kind: 'if', test: { op: 'and', args: [] }, motion: null, ifTrue: [], ifFalse: [] }
         : node(scope, rendered, bid, bp, depth + 1)
@@ -410,10 +411,17 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
   }
   const params = refProxy('params', 0)
   const search = refProxy('search', 0)
+  scope.lowering = transformedDecls().has(decl)
   const render = () =>
     d.machine
-      ? d.render({ ctx: refProxy('context', 0), when, params, search, locale: refProxy('locale', 0) })
-      : d.render({ params, search, locale: refProxy('locale', 0) })
+      ? scope.callback(d.render)({
+          ctx: refProxy('context', 0),
+          when,
+          params,
+          search,
+          locale: refProxy('locale', 0),
+        })
+      : scope.callback(d.render)({ params, search, locale: refProxy('locale', 0) })
   const root = scope.attempt(at(p, 'root'), render, null)
   let seed: Record<string, ValueExpr> | null = null
   if (d.seed) {
@@ -425,7 +433,7 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
         'seed needs a view with both a machine and a route',
         'seed starts the machine from the page URL, so the view must bind a machine and declare the route it reads.',
       )
-    const fields = scope.attempt(sp, () => d.seed!({ params, search }), null)
+    const fields = scope.attempt(sp, () => scope.callback(d.seed!)({ params, search }), null)
     if (fields === null || typeof fields !== 'object' || Array.isArray(fields) || exprOf(fields))
       scope.report(
         'HZ048',
@@ -439,5 +447,7 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
         seed[key] = scope.attempt(at(sp, key), () => scope.value(v, at(sp, key)), { literal: null })
     }
   }
-  return { machine, route, seed, root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0) }
+  const out = { machine, route, seed, root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0) }
+  scope.lowering = false
+  return out
 }

@@ -301,9 +301,13 @@ export function transform(source: string, _file = ''): TransformResult {
     if (lower) lowered.add(n)
   }
 
-  type Scope = { names: Map<string, boolean>; up: Scope | null }
+  type Scope = { names: Map<string, boolean>; holds: Set<string>; up: Scope | null }
   const lookup = (s: Scope | null, name: string): boolean => {
     for (let x = s; x; x = x.up) if (x.names.has(name)) return x.names.get(name)!
+    return false
+  }
+  const holding = (s: Scope | null, name: string): boolean => {
+    for (let x = s; x; x = x.up) if (x.names.has(name)) return x.holds.has(name)
     return false
   }
   const isRef = (n: Node, s: Scope): boolean => {
@@ -321,6 +325,7 @@ export function transform(source: string, _file = ''): TransformResult {
   }
   const holdsRef = (n: Node, s: Scope): boolean =>
     isRef(n, s) ||
+    (n.type === 'Identifier' && holding(s, n.name)) ||
     (n.type === 'ObjectExpression' &&
       n.properties.some((p: Node) =>
         p.type === 'SpreadElement' ? holdsRef(p.argument, s) : holdsRef(p.value, s),
@@ -433,7 +438,7 @@ export function transform(source: string, _file = ''): TransformResult {
   const visit = (n: Node, s: Scope, bool: boolean, guardFn = false) => {
     if (isFunction(n)) {
       const bears = refBearing(n)
-      const scope: Scope = { names: new Map(), up: s }
+      const scope: Scope = { names: new Map(), holds: new Set(), up: s }
       for (const p of n.params)
         for (const name of patternNames(p)) scope.names.set(name, bears && name !== 'when')
       const guard = bears && inGuard(n)
@@ -442,13 +447,18 @@ export function transform(source: string, _file = ''): TransformResult {
         const p = parent.get(n)
         if (bears && p?.type === 'Property' && keyName(p) === 'assign') assignBody(n, scope)
       } else visit(n.body, scope, guard, guard)
+      if (bears && n.type !== 'FunctionDeclaration') replace(n, `${H}.lowered(${gen(n)})`, false)
       return
     }
     if (n.type === 'VariableDeclaration') {
       for (const d of n.declarations) {
         if (d.init) visit(d.init, s, false, guardFn)
         const ref = !!d.init && isRef(d.init, s)
-        for (const name of patternNames(d.id)) s.names.set(name, ref)
+        const holds = !ref && !!d.init && holdsRef(d.init, s)
+        for (const name of patternNames(d.id)) {
+          s.names.set(name, ref)
+          if (holds) s.holds.add(name)
+        }
       }
       return
     }
@@ -574,10 +584,12 @@ export function transform(source: string, _file = ''): TransformResult {
       }
       if (!refArgs) return
       const root = callee.type === 'MemberExpression' ? callee.object : callee
-      if (root.type !== 'Identifier' || local(s, root.name)) return
+      if (root.type !== 'Identifier') return
       const name = nameOf(callee)
-      if (callee.type === 'Identifier' && plainFunction(root.name)) leak(n, 'helper', name)
-      else if (imported.has(root.name))
+      const inScope = local(s, root.name)
+      if (inScope && (callee !== root || isRef(callee, s))) return
+      if (!inScope && callee.type === 'Identifier' && plainFunction(root.name)) leak(n, 'helper', name)
+      else if (inScope || imported.has(root.name))
         replace(
           n,
           `${H}.call(${gen(callee)}, ${JSON.stringify(name)}${n.arguments.map((a: Node) => `, ${gen(a)}`).join('')})`,
@@ -589,7 +601,7 @@ export function transform(source: string, _file = ''): TransformResult {
     for (const c of children(n)) visit(c, s, false, guardFn)
   }
 
-  visit(program, { names: new Map(), up: null }, false)
+  visit(program, { names: new Map(), holds: new Set(), up: null }, false)
   for (const [owner, sites] of escapes)
     replace(owner, `${H}.escapes(${gen(owner)}, ${JSON.stringify(sites)})`, false)
   const named = (n: Node) => {

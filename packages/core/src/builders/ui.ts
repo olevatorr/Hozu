@@ -14,7 +14,7 @@ import { type Asset, asset } from './asset.ts'
 import type { TagProps } from './dom-props.ts'
 import type { QueryDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
-import { alternate, format, messages, openGraph } from './i18n.ts'
+import { alternate, format, messages, openGraph, recorderFns } from './i18n.ts'
 import type { MachineDecl, UnexpectedError } from './machine.ts'
 import type { Condition } from './op.ts'
 import { page } from './page.ts'
@@ -123,6 +123,7 @@ export const ifNode = (test: unknown, then: readonly unknown[], otherwise: reado
 
 export const when = (states: readonly string[], children: readonly unknown[], motion?: string): NodeDecl =>
   node({ kind: 'when', states, children, motion: motion ?? null })
+recorderFns.add(when)
 
 type Elements = {
   [T in Tag]: T extends VoidTag | 'textarea'

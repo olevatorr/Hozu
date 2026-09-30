@@ -55,8 +55,8 @@ export class RecorderError extends Error {
 export class ReferenceEscape extends RecorderError {
   override name = 'ReferenceEscape'
   readonly source: SourceLoc | null
-  constructor(message: string) {
-    const source = captureSource()
+  constructor(message: string, at?: SourceLoc | null) {
+    const source = at === undefined ? captureSource() : at
     super(source ? `${message} (${source.file}:${source.line}:${source.column})` : message)
     this.source = source
   }
@@ -88,7 +88,9 @@ export function createRef(ref: RefSource | 'binding', depth: number, path: reado
     has: (_, key) => (key === EXPR ? true : typeof key === 'symbol' ? false : leak(what(), `"${key}" in`)),
     get(_, key) {
       if (key === EXPR) return expr
-      if (PRIMITIVE.has(key)) return () => leak(what(), 'it was converted to a string or a number')
+      if (PRIMITIVE.has(key))
+        return () =>
+          leak(what(), key === 'toJSON' ? 'JSON.stringify' : 'it was converted to a string or a number')
       if (typeof key === 'symbol' || key === 'then') return undefined
       let child = children.get(key)
       if (child === undefined) {
@@ -115,7 +117,9 @@ export function callExpr(fn: object, arg: unknown): any {
     has: (_, key) => (key === EXPR ? true : typeof key === 'symbol' ? false : leak(what(), `"${key}" in`)),
     get(_, key) {
       if (key === EXPR) return expr
-      if (PRIMITIVE.has(key)) return () => leak(what(), 'it was converted to a string or a number')
+      if (PRIMITIVE.has(key))
+        return () =>
+          leak(what(), key === 'toJSON' ? 'JSON.stringify' : 'it was converted to a string or a number')
       if (typeof key === 'symbol' || key === 'then') return undefined
       if (key === 'length') {
         length ??= lengthOf!(self)

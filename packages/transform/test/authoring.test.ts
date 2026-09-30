@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { board, Note } from './fixtures/adr0043/board.ts'
 import * as shared from './fixtures/adr0043/shared.ts'
-import { pinnedBadge, plainBadge } from './fixtures/adr0043/shared.ts'
+import { dump, pinnedBadge, plainBadge, titleOf } from './fixtures/adr0043/shared.ts'
 
 const home = route({ path: '/', params: null, search: null })
 const noteRoute = route({ path: '/notes/:id', params: z.object({ id: z.string() }), search: null })
@@ -166,8 +166,10 @@ describe('HZ059 reference-escape', () => {
       }),
     })
     const found = b.diagnostics.filter((d) => d.code === 'HZ059')
-    expect(found).toHaveLength(1)
-    const [d] = found
+    const d = found.find((x) => x.message.startsWith('References are evaluated as JavaScript'))
+    expect(found.filter((x) => x === d || x.message.startsWith('This callback was not lowered'))).toEqual(
+      found,
+    )
     for (const name of ['helperRow', 'Boolean', 'Array.isArray', 'typeof ctx.error'])
       expect(d!.message).toContain(`\`${name}\``)
     expect(d!.message).toMatch(/a plain function is used as a builder callback/)
@@ -233,6 +235,35 @@ describe('HZ059 reference-escape', () => {
     expect(() => createHandler({ build: b, resolvers: resolvers(project({} as never), () => []) })).toThrow(
       /evaluated as JavaScript/,
     )
+  })
+})
+
+describe('record-time traps catch what no static check sees', () => {
+  const viaBag = (format: (bag: Note[]) => string) =>
+    build({
+      board,
+      Board: ui.view({
+        machine: board,
+        render: ({ ctx }) => {
+          const bag: Note[] = []
+          bag.push(ctx.notes[0]!)
+          return ui.p({}, [format(bag)])
+        },
+      }),
+    })
+
+  it('an imported plain helper that interpolates a reference in a template string', () => {
+    const d = viaBag(titleOf).diagnostics.find((x) => x.code === 'HZ059')
+    expect(d?.message).toMatch(
+      /Reference "notes\.0\.text" was evaluated as JavaScript \(it was converted to a string/,
+    )
+    expect(d?.location.source?.file).toMatch(/fixtures\/adr0043\/shared\.ts$/)
+  })
+
+  it('an imported plain helper that JSON.stringify-s a reference', () => {
+    const d = viaBag(dump).diagnostics.find((x) => x.code === 'HZ059')
+    expect(d?.message).toMatch(/Reference "notes\.0" was evaluated as JavaScript \(JSON\.stringify\)/)
+    expect(d?.location.source?.file).toMatch(/fixtures\/adr0043\/shared\.ts$/)
   })
 })
 
