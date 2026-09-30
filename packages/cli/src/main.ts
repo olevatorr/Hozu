@@ -3,7 +3,13 @@ import { parseArgs } from 'node:util'
 import { describeAdd, runAddFeature } from './commands/add.ts'
 import { describeAddWidget, runAddWidget } from './commands/add-widget.ts'
 import { BuildFailed } from './commands/app.ts'
-import { browseFailed, describeBrowse, runBrowse } from './commands/browse.ts'
+import {
+  type BrowseJs,
+  type BrowseOptions,
+  browseFailed,
+  describeBrowse,
+  runBrowse,
+} from './commands/browse.ts'
 import { runBuild } from './commands/build.ts'
 import { runCheck } from './commands/check.ts'
 import { runDocs } from './commands/docs.ts'
@@ -37,9 +43,8 @@ Commands:
   skill                     Rewrite the agent skill for this Hozu version (--agent claude|agents|both)
   check                     Type-check the app and validate it: the one command to run after every edit
   map                       Outline the app (routes, queries, mutations, events, states, views) with file:line
-  get <path>...             Request pages in-process (no server): status, title, alerts, visible text
-  post <path> --field k=v   Submit the page's form like a browser, follow the redirect (--next <path> after)
-  browse <path> --do <step> Load the page in headless Chrome (no server): errors, widgets, text after the steps
+  get <path>...             Request pages in-process (no server): status, title, alerts, visible text, forms
+  browse <path> --do <step> Run the steps in headless Chrome with and without JS (no server): what each step changed
   add feature <name>        Scaffold a working feature (model, views, contracts, resolvers) and wire it in
   add widget <feature> <Name>  Add a widget: declaration, client module, app.ts bundle, @hozu/bundle dependency
   migrate 0.8               Upgrade a 0.7 app: list the lock entries stale under 0.7, rewrite the source, then check
@@ -50,21 +55,66 @@ Options:
   --update-lock        validate: rewrite hozu.lock.json when there are no errors
   --out <dir>          build: output directory (default: dist)
   --agent <agent>      skill: claude, agents or both (default: the folders that exist)
-  --field <name=value> post: a form field (repeatable); other fields keep their defaults
-  --button <label>     post: the form whose submit button reads <label> (for forms without fields)
-  --next <step>        post: next '<path>', 'GET <path>', 'POST <path> a=1&b=2' or 'POST <path> @Label' (repeatable)
-  --session <json>     get/post/browse: start the chain signed in with this session (a real one: sign-out works)
-  --full               get/post/browse: print the whole visible text
-  --select <selector>  get/post/browse: print matching elements with their attributes: button, #id, [role=alert], a[href]
-  --forms              get/post: list the page's forms: action, fields with defaults, submit buttons
-  --do <step>          browse: 'fill <label>=<value>', 'select <label>=<option>', 'check <label>', 'click <name>',
-                       'press <key>', 'wait <ms>', 'goto <path>' (repeatable, in order)
+  --session <json>     get/browse: start signed in with this session (a real one: sign-out works); after --as, that actor's
+  --full               get/browse: print the whole visible text and every changed line
+  --select <selector>  get/browse: print matching elements with their attributes: button, #id, [role=alert], a[href]
+  --forms              get: list the page's forms: fields with defaults, checkbox groups, form= controls, submit buttons
+  --do <step>          browse: 'fill <label>=<value>', 'select <label>=<option>', 'check <label>', 'uncheck <label>',
+                       'click <name>', 'submit "<form>"', 'press <key>', 'wait <ms>', 'goto <path>' (repeatable, in
+                       order); a target may end with in "<text>" (the list item, table row or form containing it)
+  --js <on|off|both>   browse: run the steps with JS, without JS, or both side by side (default both)
+  --as <name>          browse: the steps after it are this actor's, in its own browser; repeat to switch actors
   --screenshot <file>  browse: save a PNG of the viewport after the steps
   --reduced-motion     browse: emulate prefers-reduced-motion: reduce
   --page <path>        add feature: also add a route and a page at this path
   --with <parts>       add feature: any of detail,toggle,filter,remove (comma-separated)
   -h, --help           Show this help
 `
+
+const browseJs = (value: string | undefined): BrowseJs => {
+  if (value === undefined) return 'both'
+  if (value === 'on' || value === 'off' || value === 'both') return value
+  throw new HozuCliError('usage', `--js takes on, off or both, not "${value}"`, ['--js both'])
+}
+
+type Token = { kind: string; name?: string; value?: string | undefined }
+
+export function browsePlan(tokens: Token[]): Pick<BrowseOptions, 'actors' | 'plan'> {
+  const actors: BrowseOptions['actors'] = []
+  const plan: BrowseOptions['plan'] = []
+  const named = tokens.some((t) => t.kind === 'option' && t.name === 'as')
+  if (!named) {
+    const session = tokens.filter((t) => t.kind === 'option' && t.name === 'session').at(-1)?.value
+    actors.push({ name: null, session })
+    plan.push({ open: 0 })
+  }
+  let current = named ? -1 : 0
+  for (const t of tokens) {
+    if (t.kind !== 'option') continue
+    if (t.name === 'as') {
+      const name = t.value ?? ''
+      current = actors.findIndex((a) => a.name === name)
+      if (current < 0) {
+        current = actors.push({ name, session: undefined }) - 1
+        plan.push({ open: current })
+      }
+    } else if (named && (t.name === 'do' || t.name === 'session') && current < 0)
+      throw new HozuCliError('usage', `--${t.name} comes after the --as <name> it belongs to`, [
+        "hozu browse / --as ada --session '{\"user\":\"ada\"}' --do 'click Share' --as bob --do 'wait 500'",
+      ])
+    else if (t.name === 'session' && named) {
+      const actor = actors[current]!
+      if (actor.session !== undefined || plan.some((p) => 'actor' in p && p.actor === current))
+        throw new HozuCliError(
+          'usage',
+          `--session for ${actor.name} must come right after its first --as`,
+          [],
+        )
+      actor.session = t.value
+    } else if (t.name === 'do') plan.push({ actor: current, step: t.value ?? '' })
+  }
+  return { actors, plan }
+}
 
 export async function main(
   argv: string[],
@@ -73,26 +123,26 @@ export async function main(
 ): Promise<number> {
   let asJson = false
   try {
-    const { values, positionals } = parseArgs({
+    const { values, positionals, tokens } = parseArgs({
       args: argv,
       allowPositionals: true,
       strict: true,
+      tokens: true,
       options: {
         json: { type: 'boolean', default: false },
         config: { type: 'string' },
         'update-lock': { type: 'boolean', default: false },
         out: { type: 'string' },
         agent: { type: 'string' },
-        field: { type: 'string', multiple: true },
-        next: { type: 'string', multiple: true },
         session: { type: 'string' },
         full: { type: 'boolean', default: false },
         page: { type: 'string' },
         with: { type: 'string' },
-        button: { type: 'string' },
         select: { type: 'string', multiple: true },
         forms: { type: 'boolean', default: false },
         do: { type: 'string', multiple: true },
+        as: { type: 'string', multiple: true },
+        js: { type: 'string' },
         screenshot: { type: 'string' },
         'reduced-motion': { type: 'boolean', default: false },
         help: { type: 'boolean', short: 'h' },
@@ -110,7 +160,6 @@ export async function main(
       'check',
       'map',
       'get',
-      'post',
       'browse',
       'add',
       'inspect',
@@ -123,6 +172,15 @@ export async function main(
       'skill',
       'migrate',
     ]
+    if (command === 'post')
+      throw new HozuCliError(
+        'usage',
+        'hozu post was replaced by hozu browse, which posts forms with JS off too',
+        [
+          "hozu browse / --do 'fill Title=Milk' --do 'press Enter'   # runs with and without JS",
+          'hozu browse / --js off --do \'click Delete in "Milk"\'',
+        ],
+      )
     if (!commands.includes(command)) throw new HozuCliError('usage', `Unknown command "${command}"`, commands)
     if (command === 'docs') {
       const result = await runDocs(cwd, target)
@@ -183,13 +241,9 @@ export async function main(
       out(asJson ? json(result) : describeMap(result))
       return 0
     }
-    if (command === 'get' || command === 'post') {
+    if (command === 'get') {
       const result = await runRequest(loaded, {
-        method: command === 'get' ? 'GET' : 'POST',
         paths: positionals.slice(1),
-        fields: values.field ?? [],
-        next: values.next ?? [],
-        button: values.button,
         select: values.select ?? [],
         forms: values.forms === true,
         session: values.session,
@@ -201,14 +255,14 @@ export async function main(
     if (command === 'browse') {
       const result = await runBrowse(loaded, {
         path: target,
-        steps: values.do ?? [],
+        ...browsePlan(tokens),
+        js: browseJs(values.js),
         select: values.select ?? [],
         screenshot: values.screenshot,
         reducedMotion: values['reduced-motion'] === true,
-        session: values.session,
         full: values.full === true,
       })
-      out(asJson ? json(result) : describeBrowse(result))
+      out(asJson ? json(result) : describeBrowse(result, values.full === true))
       return browseFailed(result) ? 1 : 0
     }
     if (command === 'validate') {

@@ -45,7 +45,7 @@ ui.form({ on: { submit: ui.send(Toggle, { id: ui.dom.form('id') }) } }, [
 // machine: on(Toggle, { target: 'toggling', assign: (e) => { ctx.target = e.id } })
 // toggling: { invoke: invoke(toggleItem, { input: { id: ctx.target }, done: 'idle', failed: { Unexpected: 'idle' } }) }
 ```
-  Try it without a server: `hozu post / --field title=x --next 'POST / id=i1&@Done' --next /`.
+  Try it without a server: `hozu browse / --do 'fill Title=x' --do 'press Enter' --do 'click Done in "x"'`.
 - **Select many, then act** (bulk delete): checkboxes in the list join one form through a formRef; the invoke
   state drops events, so the checkboxes are disabled while it runs:
 ```ts

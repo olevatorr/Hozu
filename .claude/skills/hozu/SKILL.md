@@ -37,11 +37,11 @@ npx hozu check --update-lock        # accept an intended behaviour change
 npx hozu add feature items --page / --with auth,detail,toggle,filter,remove
 npx hozu map                        # outline with file:line
 npx hozu get / --select button --forms          # a page, no server needed
-npx hozu post / --field title=A --next /        # a no-JS form post, cookies shown
-npx hozu browse / --do 'fill Search=a' --do 'click Save'   # real browser: errors, widgets, text
+npx hozu browse / --do 'fill Title=A' --do 'press Enter'   # with and without JS
+npx hozu browse / --as ada --session '{…}' --as bob --do 'goto /x'   # other users
 npx hozu docs views                 # one topic
 ```
-`get` / `post` / `browse` replace a running server for checks; `npm start` runs the app. Relative imports end in `.ts`.
+`get` / `browse` replace a running server for checks; `npm start` runs the app. Relative imports end in `.ts`.
 
 ## A feature in one screen
 ```ts

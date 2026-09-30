@@ -35,11 +35,9 @@ each changed transition as `was: … now: …`, and accepting it updates the loc
 ## 4. Verify (once, no server needed)
 - **Pages:** `pnpm exec hozu get / /items/i1` prints the status, title, alerts and visible text.
 - **Attributes and forms:** `--select button` (or `'[role=alert]'`, `a[href]`, `#id`) prints elements with their
-  attributes, e.g. `aria-pressed`; `--forms` lists each form's fields and buttons. Never start a server for this.
-- **Forms:** `pnpm exec hozu post / --field title=A --field priority=high --next /items` fills the form like a
-  browser (other fields keep their defaults). It follows the redirect, then runs the next steps in the same
-  process.
-- **Chaining:** chain what must share data, e.g. `--next 'POST / title=a'` (fields as `a=1&b=2`) or
-  `--next /items/i3`.
-- **A form with only a button:** `--button 'Clear done'`, or `--next 'POST / @Clear done'`. With one form per item,
-  `--field id=t2` picks the item's form.
+  attributes, e.g. `aria-pressed`; `--forms` lists each form's fields, checkbox groups and buttons. Never start a
+  server for this.
+- **Forms:** `pnpm exec hozu browse / --do 'fill Title=A' --do 'select Priority=high' --do 'submit Add'` runs the
+  steps in Chrome with and without JS and prints what each step changed; `click Done in "A"` picks the item's form.
+- **Other users, reloads, sign-out:** one `browse` chain with `--js both`; `--as <name>` switches actors
+  (`hozu docs testing`).

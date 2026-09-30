@@ -15,8 +15,7 @@ __RUN__ hozu map                           # outline of the app with file:line, 
 __RUN__ hozu check                         # after every change: types, rules, contracts
 __RUN__ hozu check --update-lock           # only to accept a clean, intended behaviour change
 __RUN__ hozu get / --select button --forms  # try pages without a server: text, attributes, forms
-__RUN__ hozu post / --field title=Ship --next /   # submit a form like a browser
-__RUN__ hozu browse / --do 'click Save'     # real browser, no server: errors, widgets, text after steps
+__RUN__ hozu browse / --do 'fill Title=Ship' --do 'press Enter'   # Chrome, with and without JS, no server
 ```
 __NOTE__
 ## Rules

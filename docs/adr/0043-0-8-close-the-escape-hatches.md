@@ -590,6 +590,32 @@ None of these is bent quietly; each needs the owner's explicit yes.
   - its selectors are display text (principle 3, broken by step 18);
   - DA1 crosses three features (principle 6).
 
+- **Implementation notes (wave 4 J):**
+  - One app world per mode runs in a worker thread (module graph, data, session store), so `--js both` starts both
+    modes from the same state; all actors of a mode share its world. `--session` cookies are minted per world.
+  - SSE is delivered without a port: a live response is held open in the world and each event is fulfilled to the
+    browser's `EventSource` with `retry: 20`, so the real client code reconnects and receives every event in order.
+    `EventSource` requests never count as in flight.
+  - Chrome disables prerendering under DevTools request interception (`PrerenderingDisabledByDevTools`), and the
+    prefetch it falls back to bypasses interception: that was 0.7's error without a URL. Browse disables the
+    fallback (`--disable-features=Prerender2FallbackPrefetchSpecRules`) and auto-attaches prerender targets to the
+    in-process handler, so no speculative request leaves the process; prerender itself is not exercised.
+  - A step settles when it caused activity (a request or navigation) or after 500 ms, then when requests, DOM
+    mutations and finite animations are quiet. A no-JS post navigates with the cross-document View Transition,
+    during which hit testing lands on `<html>`; clicks therefore check `elementFromPoint` before pressing.
+  - Output: `BrowseStep.modes` (one `BrowseChange` per mode: `added`, `removed`, `requested`, `navigated`,
+    `jsOnly`), `differs`, and `elsewhere` (live changes on other actors' pages); `BrowseActor.mode`; `modes`. The
+    comparison ignores widget text and the `__hozu` action parameter, and it needs both modes to start the step with
+    the same text, so one earlier js-only step does not cascade.
+  - A 400 re-render of a native post (C) is not a request error; the browser's own `/favicon.ico` request is
+    ignored. Log entries of level error are reported except `network`, `javascript` and `console-api` sources,
+    which the other domains already report.
+  - `hozu post` answers a usage error that names `browse`. `RequestForm` lists `fields`, `groups` (checkbox, radio,
+    multiple select, with every value) and `buttons` with name and value; a control joined through `form=` is
+    `outside: true`.
+  - The browser tests take up to 20 s per run (`BUDGET_MS` in `packages/cli/test/browse.test.ts`) and skip without
+    Chrome.
+
 ## K. The fixed cost of a change
 **Problem:**
 - The defect-free steps cost 112 k against 75 k (1.49×).

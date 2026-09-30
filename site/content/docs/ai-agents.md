@@ -28,7 +28,7 @@ The agent can then change the schemas, event, mutation input, form and contracts
 2. Print the topic the change needs with `hozu docs <topic>`, then read the feature's own lines.
 3. Edit the declarations, resolvers, views and contracts together.
 4. Run `hozu check` and fix its diagnostics.
-5. Run `hozu get` or `hozu post` to verify the intended result without starting a server.
+5. Run `hozu get` or `hozu browse` to verify the intended result without starting a server; verify what other users see, reloads and sign-out once in one `browse` chain with `--js both`.
 
 Scaffold common behaviours with `hozu add feature` instead of repeatedly rebuilding their state machines and contracts. The command lists generated declarations and user-facing text to adapt.
 

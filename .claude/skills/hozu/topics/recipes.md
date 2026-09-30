@@ -33,7 +33,7 @@ Names follow `hozu add feature items`: `Item`, `NewItem`, `Add`, `addItem`, `ite
 - The new transitions only copy values, so they need no contract (the feature lists `model`, so both are registered).
 - **server:**
   `implement(clearDone, () => { const before = items.length; items.splice(0, items.length, ...items.filter((i) => !i.done)); return { removed: before - items.length } })`.
-- **Try it:** `hozu post / --button 'Clear done' --next /`.
+- **Try it:** `hozu browse / --do 'click Clear done'` (with and without JS).
 
 ## A field shown on the detail page
 In the detail view's `ready`: `ui.p({}, ['Priority: ', item.priority])`. The detail query already returns the whole
