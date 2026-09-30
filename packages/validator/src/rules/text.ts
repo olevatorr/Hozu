@@ -118,6 +118,9 @@ function namedChoices(form: FormModel | undefined, name: string): Named {
   return out
 }
 
+const nullablePatch = (path: string | null, schema: JsonSchema): JsonPatchOp[] | null =>
+  path === null ? null : [{ op: 'replace', path, value: { anyOf: [schema, { type: 'null' }] } }]
+
 const quoted = (xs: string[]) => xs.map((x) => `"${x}"`).join(', ')
 
 export function domText(ctx: Ctx) {
@@ -219,6 +222,9 @@ export function domText(ctx: Ctx) {
               unnamed
                 ? `Give every submit button name: '${name}' and a literal value from ${quoted(allowed)}, or make ${send.event}.${field} nullable`
                 : `Use a <select>, radio inputs or submit buttons whose literal values are exactly ${quoted(allowed)}`,
+              unnamed && !outside.length && found.fixed
+                ? nullablePatch(schemaPointer(ir, send.event, resolved), resolved)
+                : null,
             )
           }
           visit(send.payload, [], at(pointer, 'on', dom, 'payload'))

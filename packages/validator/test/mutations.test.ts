@@ -1,4 +1,15 @@
-import type { DiagnosticCode, ElementNode, ProjectIR, QueryNode, TextNode, WhenNode } from '@hozu/core/ir'
+import type {
+  DiagnosticCode,
+  ElementNode,
+  JsonSchema,
+  ProjectIR,
+  QueryNode,
+  SendIR,
+  TextNode,
+  ValueExpr,
+  ViewNode,
+  WhenNode,
+} from '@hozu/core/ir'
 import { validate } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
 import { cartBuild, cartIR, findNode, nodeAt } from './support/cart.ts'
@@ -16,6 +27,45 @@ const isButton = (label: string) => (n: { kind: string }) =>
   n.kind === 'el' &&
   (n as ElementNode).tag === 'button' &&
   JSON.stringify((n as ElementNode).children).includes(label)
+
+const el = (
+  tag: string,
+  attrs: Record<string, ValueExpr>,
+  children: ViewNode[] = [],
+  on: Record<string, SendIR> = {},
+): ElementNode => ({
+  id: `cart.CartPanel/${tag}`,
+  kind: 'el',
+  tag,
+  class: null,
+  toggle: {},
+  vars: {},
+  attrs,
+  on,
+  children,
+})
+const lit = (literal: string) => ({ literal })
+const read = (kind: 'form' | 'formAll', name: string): ValueExpr => ({ ref: 'dom', path: [kind, name] })
+const object = (properties: Record<string, JsonSchema>): JsonSchema => ({
+  type: 'object',
+  properties,
+  required: Object.keys(properties),
+  additionalProperties: false,
+})
+const withForm = (
+  ir: ProjectIR,
+  payload: JsonSchema,
+  fields: Record<string, ValueExpr>,
+  children: ViewNode[],
+) => {
+  cart(ir).schemas.s_bulk = payload
+  cart(ir).events.Bulk = { payload: 's_bulk' }
+  const root = cart(ir).views.CartPanel!.root as ElementNode
+  root.children.push(
+    el('form', {}, children, { submit: { event: 'cart.Bulk', payload: { object: fields } } }),
+  )
+}
+const text = { type: 'string' }
 
 const catalog: Mutation[] = [
   {
@@ -453,6 +503,79 @@ const catalog: Mutation[] = [
     mutate: (ir) => {
       states(ir).error!.on = {}
       states(ir).error!.after = []
+    },
+  },
+  {
+    name: 'a checkbox group read with ui.dom.form into a list',
+    code: 'HZ054',
+    mutate: (ir) => {
+      withForm(ir, object({ ids: { type: 'array', items: text } }), { ids: read('form', 'ids') }, [
+        el('input', { type: lit('checkbox'), name: lit('ids'), value: lit('a') }),
+        el('input', { type: lit('checkbox'), name: lit('ids'), value: lit('b') }),
+      ])
+    },
+  },
+  {
+    name: 'a form field read under a misspelt name',
+    code: 'HZ055',
+    mutate: (ir) => {
+      withForm(ir, object({ title: text }), { title: read('form', 'titel') }, [
+        el('input', { name: lit('title') }),
+      ])
+    },
+  },
+  {
+    name: 'a misspelt field in a form that also holds ui.html',
+    code: 'HZ063',
+    mutate: (ir) => {
+      withForm(ir, object({ title: text }), { title: read('form', 'titel') }, [
+        el('input', { name: lit('title') }),
+        { id: 'cart.CartPanel/html', kind: 'html', value: lit('<input name="extra">') },
+      ])
+    },
+  },
+  {
+    name: 'a submit button that also sends on click',
+    code: 'HZ056',
+    mutate: (ir) => {
+      withForm(ir, object({}), {}, [
+        el('button', { type: lit('submit') }, [], {
+          click: { event: 'cart.Dismiss', payload: { literal: {} } },
+        }),
+      ])
+    },
+  },
+  {
+    name: 'a form payload that declares a minimum length',
+    code: 'HZ061',
+    mutate: (ir) => {
+      withForm(ir, object({ text: { type: 'string', minLength: 1 } }), { text: read('form', 'text') }, [
+        el('input', { name: lit('text') }),
+      ])
+    },
+  },
+  {
+    name: 'a single checkbox read with ui.dom.form into a boolean',
+    code: 'HZ033',
+    mutate: (ir) => {
+      withForm(ir, object({ remember: { type: 'boolean' } }), { remember: read('form', 'remember') }, [
+        el('input', { type: lit('checkbox'), name: lit('remember') }),
+      ])
+    },
+  },
+  {
+    name: 'submit buttons of which one posts no action into a required enum',
+    code: 'HZ033',
+    mutate: (ir) => {
+      withForm(
+        ir,
+        object({ action: { type: 'string', enum: ['delete', 'archive'] } }),
+        { action: read('form', 'action') },
+        [
+          el('button', { type: lit('submit'), name: lit('action'), value: lit('delete') }),
+          el('button', { type: lit('submit') }),
+        ],
+      )
     },
   },
 ]
