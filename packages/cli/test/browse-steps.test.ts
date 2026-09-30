@@ -8,10 +8,12 @@ import { Tab, type World } from '../src/commands/browse-tab.ts'
 import type { BrowseError, BrowseMode } from '../src/contract.ts'
 
 const PAGE = `<!doctype html><title>Steps</title>
-<ul>
-  <li>Milk <form method="post" action="/done"><input type="hidden" name="id" value="n1"><button>Delete</button></form></li>
-  <li>Bread <form method="post" action="/done"><input type="hidden" name="id" value="n2"><button>Delete</button></form></li>
-</ul>
+<ul><li>Groceries: Milk, Bread
+  <ul>
+    <li>Milk <form method="post" action="/done"><input type="hidden" name="id" value="n1"><button>Delete</button></form></li>
+    <li>Bread <form method="post" action="/done"><input type="hidden" name="id" value="n2"><button>Delete</button></form></li>
+  </ul>
+</li></ul>
 <form method="post" action="/echo" id="bulk" aria-label="Bulk">
   <label>Tag <input name="tag"></label><label>Tag <input name="tag"></label>
   <label><input type="checkbox" name="ids" value="n1"> Apples</label>

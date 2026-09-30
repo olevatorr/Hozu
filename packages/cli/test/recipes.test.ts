@@ -148,7 +148,8 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
       '--json',
     ])
     const steps = JSON.parse(flow.stdout).steps as { modes: { added: string[]; url: string }[] }[]
-    for (const m of steps[3]!.modes) expect([m.url, m.added]).toEqual(['/items/i1', expect.arrayContaining(['Priority: high'])])
+    for (const m of steps[3]!.modes)
+      expect([m.url, m.added]).toEqual(['/items/i1', expect.arrayContaining(['Priority: high'])])
     for (const m of steps[6]!.modes) expect(m.added).toEqual([])
     for (const m of steps[7]!.modes) expect(m.added).toContain('Not found')
   }, 60_000)

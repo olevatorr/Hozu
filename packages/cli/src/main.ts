@@ -3,7 +3,13 @@ import { parseArgs } from 'node:util'
 import { describeAdd, runAddFeature } from './commands/add.ts'
 import { describeAddWidget, runAddWidget } from './commands/add-widget.ts'
 import { BuildFailed } from './commands/app.ts'
-import { type BrowseJs, type BrowseOptions, browseFailed, describeBrowse, runBrowse } from './commands/browse.ts'
+import {
+  type BrowseJs,
+  type BrowseOptions,
+  browseFailed,
+  describeBrowse,
+  runBrowse,
+} from './commands/browse.ts'
 import { runBuild } from './commands/build.ts'
 import { runCheck } from './commands/check.ts'
 import { runDocs } from './commands/docs.ts'
@@ -97,7 +103,11 @@ export function browsePlan(tokens: Token[]): Pick<BrowseOptions, 'actors' | 'pla
     else if (t.name === 'session' && named) {
       const actor = actors[current]!
       if (actor.session !== undefined || plan.some((p) => 'actor' in p && p.actor === current))
-        throw new HozuCliError('usage', `--session for ${actor.name} must come right after its first --as`, [])
+        throw new HozuCliError(
+          'usage',
+          `--session for ${actor.name} must come right after its first --as`,
+          [],
+        )
       actor.session = t.value
     } else if (t.name === 'do') plan.push({ actor: current, step: t.value ?? '' })
   }
@@ -160,10 +170,14 @@ export async function main(
       'skill',
     ]
     if (command === 'post')
-      throw new HozuCliError('usage', 'hozu post was replaced by hozu browse, which posts forms with JS off too', [
-        "hozu browse / --do 'fill Title=Milk' --do 'press Enter'   # runs with and without JS",
-        "hozu browse / --js off --do 'click Delete in \"Milk\"'",
-      ])
+      throw new HozuCliError(
+        'usage',
+        'hozu post was replaced by hozu browse, which posts forms with JS off too',
+        [
+          "hozu browse / --do 'fill Title=Milk' --do 'press Enter'   # runs with and without JS",
+          'hozu browse / --js off --do \'click Delete in "Milk"\'',
+        ],
+      )
     if (!commands.includes(command)) throw new HozuCliError('usage', `Unknown command "${command}"`, commands)
     if (command === 'docs') {
       const result = await runDocs(cwd, target)

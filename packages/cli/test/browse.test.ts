@@ -54,6 +54,16 @@ function copyOf(name: string, file: string, edit: (source: string) => string) {
 
 const steps = (...list: string[]) => list.flatMap((step) => ['--do', step])
 
+describe('the testing guide (ADR 0043 J)', () => {
+  const guide = readFileSync(`${root}.claude/skills/hozu/topics/testing.md`, 'utf8')
+  it('verifies other users, reloads and sign-out in one browse chain with --js both', () => {
+    expect(guide).toContain('verify any such statement once, in one `browse`\n  chain with `--js both`')
+    expect(guide).toContain('`--as <name>`')
+    expect(guide).not.toMatch(/two commands|hozu post|--next/i)
+    expect(guide).toContain('A passing six-step run stays under 1.5 KB')
+  })
+})
+
 describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
   it('mounts every widget, runs the steps in order and reports the page after them', async () => {
     const { code, out } = await browse([
@@ -133,12 +143,15 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     const { code, stdout } = await human(chain, example('notes'))
     expect(code).toBe(0)
     expect(stdout.length).toBeLessThanOrEqual(1536)
+    expect(stdout.trimEnd().split('\n')).toHaveLength(10)
     expect(stdout).toContain('  2 press Enter: + Notes: 3 · + Milk · + Pin · + Delete · − Notes: 2\n')
     expect(stdout).toContain('  3 click Pin in "Milk": + pinned · + Unpin · − Pin\n')
     expect(stdout).toContain('  6 click Sign out: → /login: ')
     const { out } = await browse(chain, example('notes'))
     expect(out.modes).toEqual(['on', 'off'])
-    expect(out.steps.map((s: { modes: { requested: boolean }[] }) => s.modes.map((m) => m.requested))).toEqual([
+    expect(
+      out.steps.map((s: { modes: { requested: boolean }[] }) => s.modes.map((m) => m.requested)),
+    ).toEqual([
       [false, false],
       [true, true],
       [true, true],
@@ -194,7 +207,9 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(out.steps[2].elsewhere).toEqual([
       { actor: 'ada', mode: 'on', added: ['2 posts saved'], removed: ['1 post saved'] },
     ])
-    expect(out.actors.map((a: { name: string; text: string }) => [a.name, a.text.endsWith('2 posts saved')])).toEqual([
+    expect(
+      out.actors.map((a: { name: string; text: string }) => [a.name, a.text.endsWith('2 posts saved')]),
+    ).toEqual([
       ['ada', true],
       ['bob', true],
     ])
@@ -208,7 +223,10 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
   }, 60_000)
 
   it('keeps speculative loads in the in-process handler and reports CSP violations', async () => {
-    const links = await browse(['/', '--session', ADA, ...steps('click Deutsch', 'click English')], example('notes'))
+    const links = await browse(
+      ['/', '--session', ADA, ...steps('click Deutsch', 'click English')],
+      example('notes'),
+    )
     expect([links.code, links.out.errors]).toEqual([0, []])
     const copy = copyOf('notes', 'features/notes/views.ts', (s) =>
       s.replace(
@@ -220,6 +238,6 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(csp.out.errors).toEqual([
       expect.objectContaining({ kind: 'console', type: 'security', url: '/', mode: 'on' }),
     ])
-    expect(csp.out.errors[0].text).toContain("violates the following Content Security Policy directive")
+    expect(csp.out.errors[0].text).toContain('violates the following Content Security Policy directive')
   }, 60_000)
 })

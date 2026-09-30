@@ -70,24 +70,37 @@ describe('the agent loop (ADR 0027)', () => {
     expect(home.out.steps[0].text).toContain('Tasks')
   })
 
-  it.skipIf(!chrome)('adds through the scaffolded form with and without JS, with the same alerts', async () => {
-    const app = await freshApp()
-    await run(['add', 'feature', 'tasks', '--page', '/'], app)
-    const flow = await browse(
-      [
-        '/',
-        ...steps('fill Title=  Ship it ', 'press Enter', 'fill Title=ship IT', 'press Enter', 'fill Title=x'),
-        ...steps('press Enter'),
-      ],
-      app,
-    )
-    expect(flow.code).toBe(0)
-    expect(flow.out.modes).toEqual(['on', 'off'])
-    expect(addedBy(flow.out, 1)).toEqual([expect.arrayContaining(['Ship it']), expect.arrayContaining(['Ship it'])])
-    expect(addedBy(flow.out, 3)).toEqual([['This task already exists'], ['This task already exists']])
-    expect(addedBy(flow.out, 5)).toEqual([['Use at least 2 characters'], ['Use at least 2 characters']])
-    expect(flow.out.steps.some((s: { differs?: boolean }) => s.differs)).toBe(false)
-  }, 60_000)
+  it.skipIf(!chrome)(
+    'adds through the scaffolded form with and without JS, with the same alerts',
+    async () => {
+      const app = await freshApp()
+      await run(['add', 'feature', 'tasks', '--page', '/'], app)
+      const flow = await browse(
+        [
+          '/',
+          ...steps(
+            'fill Title=  Ship it ',
+            'press Enter',
+            'fill Title=ship IT',
+            'press Enter',
+            'fill Title=x',
+          ),
+          ...steps('press Enter'),
+        ],
+        app,
+      )
+      expect(flow.code).toBe(0)
+      expect(flow.out.modes).toEqual(['on', 'off'])
+      expect(addedBy(flow.out, 1)).toEqual([
+        expect.arrayContaining(['Ship it']),
+        expect.arrayContaining(['Ship it']),
+      ])
+      expect(addedBy(flow.out, 3)).toEqual([['This task already exists'], ['This task already exists']])
+      expect(addedBy(flow.out, 5)).toEqual([['Use at least 2 characters'], ['Use at least 2 characters']])
+      expect(flow.out.steps.some((s: { differs?: boolean }) => s.differs)).toBe(false)
+    },
+    60_000,
+  )
 
   it('adds a second feature on its own route', async () => {
     const app = await freshApp()
@@ -174,31 +187,38 @@ describe('the agent loop (ADR 0027)', () => {
     }
   }, 120_000)
 
-  it.skipIf(!chrome)('runs the full scaffold like a user: toggle, detail, remove and a 404', async () => {
-    const app = await freshApp()
-    await run(['add', 'feature', 'tasks', '--page', '/', '--with', 'detail,toggle,filter,remove'], app)
-    const flow = await browse(
-      [
-        '/',
-        ...steps('fill Title=Ship it', 'press Enter', 'click Mark done in "Ship it"', 'click Ship it'),
-        ...steps('goto /', 'click Delete in "Ship it"', 'goto /tasks/t1'),
-      ],
-      app,
-    )
-    expect(addedBy(flow.out, 3)).toEqual([
-      ['Ship it', 'Status: done', 'Back'],
-      ['Ship it', 'Status: done', 'Back'],
-    ])
-    expect(flow.out.steps[5].modes.map((m: { removed: string[] }) => m.removed)).toEqual([
-      expect.arrayContaining(['Ship it']),
-      expect.arrayContaining(['Ship it']),
-    ])
-    expect(addedBy(flow.out, 6)).toEqual([expect.arrayContaining(['Not found']), expect.arrayContaining(['Not found'])])
-    expect(flow.out.errors.map((e: { text: string; mode: string }) => `${e.mode} ${e.text}`)).toEqual([
-      'on 404 /tasks/t1',
-      'off 404 /tasks/t1',
-    ])
-  }, 60_000)
+  it.skipIf(!chrome)(
+    'runs the full scaffold like a user: toggle, detail, remove and a 404',
+    async () => {
+      const app = await freshApp()
+      await run(['add', 'feature', 'tasks', '--page', '/', '--with', 'detail,toggle,filter,remove'], app)
+      const flow = await browse(
+        [
+          '/',
+          ...steps('fill Title=Ship it', 'press Enter', 'click Mark done in "Ship it"', 'click Ship it'),
+          ...steps('goto /', 'click Delete in "Ship it"', 'goto /tasks/t1'),
+        ],
+        app,
+      )
+      expect(addedBy(flow.out, 3)).toEqual([
+        ['Ship it', 'Status: done', 'Back'],
+        ['Ship it', 'Status: done', 'Back'],
+      ])
+      expect(flow.out.steps[5].modes.map((m: { removed: string[] }) => m.removed)).toEqual([
+        expect.arrayContaining(['Ship it']),
+        expect.arrayContaining(['Ship it']),
+      ])
+      expect(addedBy(flow.out, 6)).toEqual([
+        expect.arrayContaining(['Not found']),
+        expect.arrayContaining(['Not found']),
+      ])
+      expect(flow.out.errors.map((e: { text: string; mode: string }) => `${e.mode} ${e.text}`)).toEqual([
+        'on 404 /tasks/t1',
+        'off 404 /tasks/t1',
+      ])
+    },
+    60_000,
+  )
 
   it('maps an app in a couple of kilobytes, with file:line for every declaration', async () => {
     for (const example of ['bookmarks', 'trial-0007']) {
@@ -274,9 +294,15 @@ describe('the agent loop (ADR 0027)', () => {
         expect.arrayContaining(['Signed in as ada']),
         expect.arrayContaining(['Signed in as ada']),
       ])
-      expect(addedBy(flow.out, 3)).toEqual([expect.arrayContaining(['Milk']), expect.arrayContaining(['Milk'])])
+      expect(addedBy(flow.out, 3)).toEqual([
+        expect.arrayContaining(['Milk']),
+        expect.arrayContaining(['Milk']),
+      ])
       expect(flow.out.steps[4].modes.map((m: { url: string }) => m.url)).toEqual(['/login', '/login'])
-      expect(addedBy(flow.out, 7)).toEqual([expect.arrayContaining(['Not found']), expect.arrayContaining(['Not found'])])
+      expect(addedBy(flow.out, 7)).toEqual([
+        expect.arrayContaining(['Not found']),
+        expect.arrayContaining(['Not found']),
+      ])
     }
     const second = await json('add', ['add', 'feature', 'tasks', '--page', '/tasks', '--with', 'auth'], app)
     expect(second.out.created.some((f: string) => f.startsWith('features/account/'))).toBe(false)
@@ -429,7 +455,10 @@ describe('the guide compiles (ADR 0037 D2)', () => {
     const check = await checkFresh(app)
     expect([check.validate.diagnostics, check.validate.lock]).toEqual([[], 'current'])
     if (!chrome) return
-    const flow = await browse(['/', ...steps('fill Title=Milk', 'press Enter', 'fill Title=Milk', 'press Enter')], app)
+    const flow = await browse(
+      ['/', ...steps('fill Title=Milk', 'press Enter', 'fill Title=Milk', 'press Enter')],
+      app,
+    )
     expect(addedBy(flow.out, 1)).toEqual([expect.arrayContaining(['Milk']), expect.arrayContaining(['Milk'])])
     expect(addedBy(flow.out, 3)).toEqual([['Already listed'], ['Already listed']])
   }, 60_000)

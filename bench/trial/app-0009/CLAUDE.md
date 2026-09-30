@@ -13,7 +13,6 @@ npx hozu add feature tasks --page /   # start a feature from working code, then 
 npx hozu check                         # after every change: types, rules, contracts
 npx hozu check --update-lock           # only to accept a clean, intended behaviour change
 npx hozu get / /tasks/t1               # try pages without a server
-npx hozu post / --field title=Ship --next /   # submit a form like a browser
 ```
 
 The skill writes commands as `pnpm exec …`; in this app use `npx …`.

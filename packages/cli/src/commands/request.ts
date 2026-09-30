@@ -98,13 +98,16 @@ export function formsOf(html: string, at: string): RequestForm[] {
       kind,
       outside,
     })
-    if (tag === 'textarea') f.fields.push(field(decode(source.slice(start, closing('textarea', start))), 'textarea'))
+    if (tag === 'textarea')
+      f.fields.push(field(decode(source.slice(start, closing('textarea', start))), 'textarea'))
     else if (tag === 'select') {
       const body = source.slice(start, closing('select', start))
-      const options = [...body.matchAll(/<option\b([^>]*)>([\s\S]*?)(?=<option\b|<\/option>|$)/gi)].map((o) => {
-        const a = attrsOf(o[1]!)
-        return { value: a.value ?? plain(o[2]!), checked: 'selected' in a }
-      })
+      const options = [...body.matchAll(/<option\b([^>]*)>([\s\S]*?)(?=<option\b|<\/option>|$)/gi)].map(
+        (o) => {
+          const a = attrsOf(o[1]!)
+          return { value: a.value ?? plain(o[2]!), checked: 'selected' in a }
+        },
+      )
       if ('multiple' in attrs) f.groups.push({ name: attrs.name!, type: 'select', options, outside })
       else {
         const chosen = options.find((o) => o.checked) ?? options[0]
@@ -113,8 +116,14 @@ export function formsOf(html: string, at: string): RequestForm[] {
     } else if (tag === 'button' || ['submit', 'image'].includes(attrs.type ?? '')) {
       const type = attrs.type ?? 'submit'
       if (!['submit', 'image'].includes(type)) continue
-      const text = tag === 'button' ? plain(source.slice(start, closing('button', start))) : (attrs.value ?? 'Submit')
-      f.buttons.push({ text, name: attrs.name ?? null, value: attrs.name ? (attrs.value ?? '') : null, outside })
+      const text =
+        tag === 'button' ? plain(source.slice(start, closing('button', start))) : (attrs.value ?? 'Submit')
+      f.buttons.push({
+        text,
+        name: attrs.name ?? null,
+        value: attrs.name ? (attrs.value ?? '') : null,
+        outside,
+      })
     } else {
       const type = (attrs.type ?? 'text').toLowerCase()
       if (['button', 'reset', 'file'].includes(type)) continue

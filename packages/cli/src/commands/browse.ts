@@ -71,7 +71,8 @@ async function aim(tab: Tab, call: string) {
   for (;;) {
     const at = await tab.page(call)
     if (at.error || !at.covered) return at
-    if (Date.now() - start > 1500) return { error: `${at.covered} covers the target where it would be clicked` }
+    if (Date.now() - start > 1500)
+      return { error: `${at.covered} covers the target where it would be clicked` }
     await sleep(50)
   }
 }
@@ -222,7 +223,13 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
               removed: [],
             }
           })
-          steps.push({ step: `open ${path}`, ok: true, note: null, actor: nameOf(item.open)!, modes: changes })
+          steps.push({
+            step: `open ${path}`,
+            ok: true,
+            note: null,
+            actor: nameOf(item.open)!,
+            modes: changes,
+          })
         }
         continue
       }
@@ -407,7 +414,17 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
     for (const e of s.elsewhere ?? [])
       lines.push(
         `      ${e.actor || 'page'}${modes.length > 1 ? ` (${e.mode})` : ''}: ${describeChange(
-          { mode: e.mode, ok: true, note: null, jsOnly: null, requested: false, navigated: false, url: '', added: e.added, removed: e.removed },
+          {
+            mode: e.mode,
+            ok: true,
+            note: null,
+            jsOnly: null,
+            requested: false,
+            navigated: false,
+            url: '',
+            added: e.added,
+            removed: e.removed,
+          },
           full,
         )}`,
       )

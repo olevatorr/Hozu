@@ -69,14 +69,21 @@ try {
   const streams = new Map<number, ReadableStreamDefaultReader<Uint8Array>>()
   port.on('message', async (message: WorldRequest) => {
     if ('cancel' in message) {
-      await streams.get(message.cancel)?.cancel().catch(() => {})
+      await streams
+        .get(message.cancel)
+        ?.cancel()
+        .catch(() => {})
       streams.delete(message.cancel)
       return
     }
     const { id, url, method, headers, body } = message
     try {
       const response = await respond(
-        new Request(url, { method, headers, ...(body && method !== 'GET' && method !== 'HEAD' ? { body } : {}) }),
+        new Request(url, {
+          method,
+          headers,
+          ...(body && method !== 'GET' && method !== 'HEAD' ? { body } : {}),
+        }),
       )
       const head = [...response.headers].filter(([k]) => k !== 'set-cookie')
       for (const c of response.headers.getSetCookie()) head.push(['set-cookie', c])

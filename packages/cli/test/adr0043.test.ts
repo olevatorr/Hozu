@@ -75,7 +75,18 @@ describe('ADR 0043 B (tools)', () => {
     })
     if (!findBrowser()) return
     const { code, out } = await hozu(
-      ['browse', '/', '--js', 'off', '--session', '{"user":"ada"}', '--do', 'click Sign out', '--do', 'goto /'],
+      [
+        'browse',
+        '/',
+        '--js',
+        'off',
+        '--session',
+        '{"user":"ada"}',
+        '--do',
+        'click Sign out',
+        '--do',
+        'goto /',
+      ],
       dir,
     )
     expect(code).toBe(0)
@@ -120,6 +131,9 @@ describe('ADR 0043 D and J (tools)', () => {
     expect(check.out.validate.summary.errors).toBeGreaterThan(0)
     const page = await hozu(['get', '/login'], app)
     expect([page.code, page.out.steps]).toEqual([1, undefined])
+    if (!findBrowser()) return
+    const browsed = await hozu(['browse', '/login'], app)
+    expect([browsed.code, browsed.out.steps, browsed.out.error?.code]).toEqual([1, undefined, 'build'])
   }, 90_000)
 
   it('ADR 0043 R4: a missing lock in a project with a machine is HZ057, not a skipped review', async () => {

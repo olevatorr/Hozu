@@ -45,7 +45,7 @@ ui.form({ on: { submit: ui.send(Toggle, { id: ui.dom.form('id') }) } }, [
 // machine: on(Toggle, { target: 'toggling', assign: (e) => { ctx.target = e.id } })
 // toggling: { invoke: invoke(toggleItem, { input: { id: ctx.target }, done: 'idle', failed: { Unexpected: 'idle' } }) }
 ```
-  Try it without a server: `hozu post / --field title=x --next 'POST / id=i1&@Done' --next /`.
+  Try it without a server: `hozu browse / --do 'fill Title=x' --do 'press Enter' --do 'click Done in "x"'`.
 - **Sorted or pinned first:** sort in the resolver (the list query returns items in display order), or in a `fn`.
 - **Refresh after a mutation:** tag the query, list the tag in the mutation's `invalidates`.
 - **Go to what was just created:** `done: { target: 'idle', navigate: (r) => ui.link(itemPage, { id: r.id }) }`.

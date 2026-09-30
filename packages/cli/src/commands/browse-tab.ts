@@ -112,7 +112,8 @@ class Live {
     this.buffer += text.replace(/\r\n?/g, '\n')
     const parts = this.buffer.split('\n\n')
     this.buffer = parts.pop() ?? ''
-    for (const frame of parts) if (frame.split('\n').some((l) => l && !l.startsWith(':'))) this.frames.push(frame)
+    for (const frame of parts)
+      if (frame.split('\n').some((l) => l && !l.startsWith(':'))) this.frames.push(frame)
     this.flush()
   }
   wait(requestId: string, session: string) {
@@ -288,12 +289,19 @@ export class Tab {
       if (method === 'Network.responseReceived') {
         const url = pathOf(params.response.url)
         const type = params.type ?? 'Other'
-        if (main && type === 'Document' && params.frameId === this.targetId) this.status = params.response.status
+        if (main && type === 'Document' && params.frameId === this.targetId)
+          this.status = params.response.status
         const status = params.response.status as number
         const favicon = type === 'Other' && url === '/favicon.ico'
         if (status >= 400 && !this.invalidPosts.has(id) && !favicon)
           this.error(
-            { kind: 'request', text: `${status} ${url}`, at: url, type, ...(type === 'Document' ? { url } : {}) },
+            {
+              kind: 'request',
+              text: `${status} ${url}`,
+              at: url,
+              type,
+              ...(type === 'Document' ? { url } : {}),
+            },
             session,
           )
       }
@@ -408,17 +416,22 @@ export class Tab {
       live.wait(params.requestId, session)
     } catch (error) {
       this.error({ kind: 'request', text: `the app threw: ${String(error)}`, at: pathOf(r.url) }, session)
-      await this.send('Fetch.failRequest', { requestId: params.requestId, errorReason: 'Failed' }, session).catch(
-        () => {},
-      )
+      await this.send(
+        'Fetch.failRequest',
+        { requestId: params.requestId, errorReason: 'Failed' },
+        session,
+      ).catch(() => {})
     }
   }
 
   evaluate(expression: string) {
-    return this.send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }).then((r) => {
-      if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text)
-      return r.result.value
-    })
+    return this.send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }).then(
+      (r) => {
+        if (r.exceptionDetails)
+          throw new Error(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text)
+        return r.result.value
+      },
+    )
   }
 
   page(call: string) {
@@ -466,7 +479,11 @@ export class Tab {
       text: name,
     }
     const base = { key: name === 'Space' ? ' ' : name, code: key.code, windowsVirtualKeyCode: key.keyCode }
-    await this.send('Input.dispatchKeyEvent', { type: 'keyDown', ...base, ...(key.text ? { text: key.text } : {}) })
+    await this.send('Input.dispatchKeyEvent', {
+      type: 'keyDown',
+      ...base,
+      ...(key.text ? { text: key.text } : {}),
+    })
     await this.send('Input.dispatchKeyEvent', { type: 'keyUp', ...base })
   }
 }
