@@ -1,4 +1,4 @@
-import { contract, event, feature, machine, on, project } from '@hozu/core'
+import { contract, event, feature, invoke, machine, mutation, on, project } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import { verify } from '@hozu/validator'
@@ -52,6 +52,66 @@ describe('a shared transition needs one contract (ADR 0041 D)', () => {
     expect(hz016({ Search, Start, finder }).map((d) => d.message)).toEqual([
       'Transition idle/on/f.Search/0 is not covered by any contract',
       'Transition touring/on/f.Search/0 is not covered by any contract',
+    ])
+  })
+
+  it('does not count a hand-written identical transition of another state as covered', () => {
+    const twins = machine({
+      context: z.object({ q: z.string() }),
+      initialContext: { q: '' },
+      initial: 'idle',
+      states: () => ({
+        idle: {
+          on: [on(Search, { target: 'found', guard: (e) => e.q !== '' }), on(Start, { target: 'touring' })],
+        },
+        touring: { on: [on(Search, { target: 'found', guard: (e) => e.q !== '' })], ignore: [Start] },
+        found: { final: true },
+      }),
+    })
+    const one = contract(twins, {
+      given: { state: 'idle' },
+      when: [{ send: Search, payload: { q: 'park' } }],
+      expect: { state: 'found' },
+    })
+    expect(hz016({ Search, Start, twins, one }).map((d) => d.message)).toEqual([
+      'Transition touring/on/f.Search/0 is not covered by any contract',
+    ])
+  })
+
+  it('does not count an identical done branch of another state as covered', () => {
+    const save = mutation({ input: z.object({}), output: z.object({ ok: z.boolean() }) })
+    const saver = machine({
+      context: z.object({ q: z.string() }),
+      initialContext: { q: '' },
+      initial: 'idle',
+      states: () => ({
+        idle: { on: [on(Search, { target: 'saving' }), on(Start, { target: 'again' })] },
+        saving: {
+          invoke: invoke(save, {
+            input: {},
+            done: [{ target: 'idle', guard: (r) => r.ok === true }, { target: 'idle' }],
+            failed: { Unexpected: 'idle' },
+          }),
+        },
+        again: {
+          invoke: invoke(save, {
+            input: {},
+            done: [{ target: 'idle', guard: (r) => r.ok === true }, { target: 'idle' }],
+            failed: { Unexpected: 'idle' },
+          }),
+        },
+      }),
+    })
+    const saves = contract(saver, {
+      given: { state: 'idle' },
+      when: [
+        { send: Search, payload: { q: 'x' } },
+        { done: save, result: { ok: true } },
+      ],
+      expect: { state: 'idle', effects: [{ effect: save, input: {} }] },
+    })
+    expect(hz016({ Search, Start, save, saver, saves }).map((d) => d.message)).toEqual([
+      'Transition again/invoke/done/0 is not covered by any contract',
     ])
   })
 })

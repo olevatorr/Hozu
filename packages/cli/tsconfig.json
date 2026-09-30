@@ -21,6 +21,9 @@
     },
     {
       "path": "../create-hozu"
+    },
+    {
+      "path": "../transform"
     }
   ]
 }

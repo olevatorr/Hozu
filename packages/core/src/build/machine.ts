@@ -205,7 +205,10 @@ export function buildMachine(scope: FeatureScope, decl: Decl | null): MachineIR 
     if (s.invoke || s.final) continue
     for (const [event, list] of byEvent)
       if (!s.on[event] && !s.ignore.includes(event))
-        s.on[event] = list.map((e) => transition(scope, e.def.transition, refProxy('event', 0), e.at, name))
+        s.on[event] = list.map((e, i) => {
+          scope.project.bindings.copies[resolveAt(at(p, 'states', name, 'on', event, i))] = resolveAt(e.at)
+          return transition(scope, e.def.transition, refProxy('event', 0), e.at, name)
+        })
   }
   scope.lowering = false
   scope.stateNames = Object.keys(states)

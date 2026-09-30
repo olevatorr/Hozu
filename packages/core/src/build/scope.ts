@@ -71,6 +71,7 @@ export class ProjectScope {
     assets: {},
     assetOrder: [],
     env: { server: null, public: null },
+    copies: {},
   }
   readonly tracking: boolean
 

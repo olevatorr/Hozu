@@ -279,14 +279,13 @@ export function verifyContracts(ctx: Ctx, bindings: Bindings, lock: unknown, acc
     }
     duplicates(ctx, feature)
     withoutDecision(ctx, feature, noDecision)
-    const shape = (id: string) => {
-      const kind = id.split('/').slice(1, -1).join('/')
-      const { from, transition } = locate(feature, id)
-      return `${kind} ${JSON.stringify({ ...transition, target: transition.target === from ? '@self' : transition.target })}`
+    const source = (id: string) => {
+      const pointer = transitionPointer(feature.id, id)
+      return bindings.copies[pointer] ?? pointer
     }
-    const coveredShapes = new Set([...cov].filter(([, c]) => c.size > 0).map(([id]) => shape(id)))
+    const coveredSources = new Set([...cov].filter(([, c]) => c.size > 0).map(([id]) => source(id)))
     for (const [id, contracts] of cov)
-      if (contracts.size === 0 && decides(feature, id) && !coveredShapes.has(shape(id)))
+      if (contracts.size === 0 && decides(feature, id) && !coveredSources.has(source(id)))
         ctx.report(
           'HZ016',
           feature.id,

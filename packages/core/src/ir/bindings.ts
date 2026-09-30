@@ -13,6 +13,8 @@ export interface Bindings {
   assets: Record<string, { file: string | null; width: number | null; height: number | null }>
   assetOrder: { name: string; href: string; width: number | null; height: number | null }[]
   env: { server: Parse | null; public: Parse | null }
+  /** Transition pointer of each `machine({ on })` copy → pointer of the entry it was copied from. */
+  copies: Record<string, string>
 }
 
 export interface StyleFiles {
