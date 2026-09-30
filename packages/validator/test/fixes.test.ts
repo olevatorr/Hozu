@@ -1,5 +1,5 @@
 import { endpoint, event, feature, machine, on, project, route, ui } from '@hozu/core'
-import { buildProject, type Diagnostic, type ProjectIR } from '@hozu/core/ir'
+import { buildProject, type Diagnostic, type ElementNode, type ProjectIR } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import { validate } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
@@ -63,8 +63,8 @@ describe('AI-first acceptance: the changed codes carry a patch or an exact snipp
 
   it('HZ036: a form that needs JavaScript gets the send to paste, with its own fields', () => {
     const ir = structuredClone(build(Plain).ir)
-    const form = ir.features.f!.views.View!.root as { on: { submit: { payload: unknown } } }
-    form.on.submit.payload = { object: { title: { ref: 'dom', path: ['value'] } } }
+    const form = ir.features.f!.views.View!.root as ElementNode
+    form.on.submit!.payload = { object: { title: { ref: 'dom', path: ['value'] } } }
     expect(of(ir, 'HZ036').map((d) => d.fix!.snippet)).toEqual([
       "on: { submit: ui.send(Add, { title: ui.dom.form('title') }) }",
     ])
