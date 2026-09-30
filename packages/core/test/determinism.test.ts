@@ -178,6 +178,7 @@ describe('A1 determinism', () => {
     )
   }, 30_000)
 
+  // Guards determinism, not speed (bench does); the full parallel suite can stretch it past 5 s.
   it('is independent of identities, state order and cross-event transition order (1000 runs)', () => {
     const expected = hashJson(buildProject(freshProject(seeded(1))).ir)
     fc.assert(
@@ -188,5 +189,5 @@ describe('A1 determinism', () => {
       }),
       { numRuns: 1000 },
     )
-  })
+  }, 30_000)
 })
