@@ -1100,3 +1100,17 @@ done, before or with the first rule that emits them.
   exits 1).
 - The name and the runner are read from the marked block (or the whole file without markers). The 0.8 skill writes
   commands as `npx …`; the guide's note names the app's runner when it differs.
+
+**Wave 5 fixes (found migrating the reference, before the trial freeze; W5):**
+- HZ016's "identical copies count as one" (ADR 0041) now means the copies `machine({ on })` makes of one entry:
+  `Bindings.copies` maps each copy's transition pointer to the entry's pointer, and coverage is grouped by it. The
+  IR cannot tell a copy from a hand-written identical transition, and `hozu check` builds without the source index.
+  No example, the site or the reference gained an HZ016.
+- A query branch (`ready`, `pending`, `failed`) and a `ui.each` item are typed `Branch` (a node or a list), so
+  `c ? a : [b, c]` from H compiles there; both renderers already handled the `if` it lowers to. A plain list there
+  stays HZ014 (not a second spelling for "several nodes"), and its cause names the wrapping element.
+- HZ025 skips a page whose head query is `scope: 'user'`: entries would list private data in `sitemap.xml`.
+- Migration: the 0.7 IR record is `.hozu/migrate-0.7.json` (`MigrateOutput.ir.skipped` when it is missing);
+  Responses are found in the AST (3xx → `output: 'redirect'`, 4xx → `errors` + `failed`); writes are followed
+  into imported functions and the methods of objects an imported factory returns; rewrites follow the file's
+  style (`styleOf`: quotes, semicolons, indent unit, line width).

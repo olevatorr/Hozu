@@ -68,6 +68,17 @@ and never deletes a contract.
 - `examples/notes` gains the 403 admin page, the bulk form (`formAll` + `formRef`) and German under (c).
 - Every new diagnostic carries a patch or an exact snippet, except HZ051, where 403 vs 404 is an intent decision.
 
+### Found while migrating the trial reference to 0.8
+- HZ016 counts only the `machine({ on })` copies of one entry as covered together; an identical transition or `done`
+  branch of another state needs its own contract.
+- `hozu migrate` keeps the 0.7 IR in `.hozu/migrate-0.7.json` (a reinstall keeps it) and says when the comparison
+  cannot run; it prints every hand-built redirect or 4xx `Response` and create-on-read reached through another
+  module; its rewrites keep the file's indentation, quotes, semicolons and import layout.
+- HZ025 is silent for a page whose head query is user-scoped (private pages stay out of the sitemap); HZ046 no
+  longer offers "one of (none)".
+- Query branches and `ui.each` items may return `c ? a : [b, c]`.
+- A clean checkout builds in one `pnpm build` (the CLI's project references include `@hozu/transform`).
+
 ## 0.7.0 — write less (ADR 0041)
 
 A study of trials 0016–0018 found the remaining cost is what an agent has to *write*.

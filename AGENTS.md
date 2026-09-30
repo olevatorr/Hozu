@@ -164,9 +164,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - 0.7 (ADR 0041): `ui.view({ machine, route, seed: ({ params, search }) => ({ field: search.x }) })` starts the page's
   machine from the URL (`ViewIR.seed`; server render, payload `initialContext`, no-JS posts; HZ048); `machine({ on })`
   = transitions copied into every non-busy, non-final state that does not handle or ignore the event (no `target` =
-  its own state; HZ016 counts identical copies as one); `fn` bodies may call self-contained module helpers (transform
-  `__hozu.helpers`, shipped in `fns.js`; imports / `let` stay HZ047); `ui.use` `on` optional; query branches may
-  return `null`; recipes moved from `changing.md` to `hozu docs recipes`.
+  its own state; HZ016 counts the copies of one entry as one); `fn` bodies may call self-contained module helpers
+  (transform `__hozu.helpers`, shipped in `fns.js`; imports / `let` stay HZ047); `ui.use` `on` optional; query
+  branches may return `null`; recipes moved from `changing.md` to `hozu docs recipes`.
 - 0.8 (ADR 0043 D, E): one app module, `project({ app: new URL('./app.ts', import.meta.url) })` default-exporting
   `app({ resolvers, session?, widgets? })`, run by `hozu serve` (`npm start`), `hozu check` (HZ045, HZ021),
   `hozu get` / `browse` and `testApp(app)`; edge: `createHandler(app, { manifest, render })`. Pages answer through
