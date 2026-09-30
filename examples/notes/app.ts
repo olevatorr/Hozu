@@ -1,7 +1,15 @@
 import { resolvers } from '@hozu/data'
 import { app } from '@hozu/runtime-server'
 import { ADMIN, accounts, me, signIn, signOut } from './features/account/model.ts'
-import { addNote, listNotes, notesApi, removeNote, togglePin } from './features/notes/model.ts'
+import {
+  addNote,
+  listNotes,
+  notesApi,
+  pinNotes,
+  removeNote,
+  removeNotes,
+  togglePin,
+} from './features/notes/model.ts'
 import project from './hozu.config.ts'
 
 interface Note {
@@ -72,6 +80,18 @@ export default app({
       if (at < 0) return fail('NotFound', { id })
       list.splice(at, 1)
       return { id }
+    }),
+    implement(removeNotes, ({ ids }, { session }) => {
+      const list = session ? ownListOf(session.user) : []
+      const kept = list.filter((n) => !ids.includes(n.id))
+      const count = list.length - kept.length
+      list.splice(0, list.length, ...kept)
+      return { count }
+    }),
+    implement(pinNotes, ({ ids }, { session }) => {
+      const picked = (session ? ownListOf(session.user) : []).filter((n) => ids.includes(n.id))
+      for (const n of picked) n.pinned = true
+      return { count: picked.length }
     }),
     implement(togglePin, ({ id }, { session, fail }) => {
       const note = (session ? ownListOf(session.user) : []).find((n) => n.id === id)

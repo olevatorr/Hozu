@@ -26,10 +26,10 @@ around the rule.
 | HZ030 | `ui.html` of untrusted data | render text instead |
 | HZ031 | a literal not allowed by its schema | use an allowed value (the patch suggests one) |
 | HZ032 | internal link or form action written as a string | `ui.link(route, params)` / `ui.link(endpoint)` |
-| HZ033 | DOM text into an enum, number or boolean field | a `<select>` with enum options / `valueAsNumber` / `checked` |
+| HZ033 | DOM text into an enum, number or boolean field | a `<select>`, radios or submit buttons with enum values; in a form, a flag through `ui.dom.formAll` and numbers parsed in the mutation input |
 | HZ034 | a state both handles and ignores an event | remove it from one of the two |
 | HZ035 | search schema is not a flat object of scalars with defaults | `z.object({ key: scalar.default(…) })` |
-| HZ036 | (warning) a form needs JavaScript | read its values with `ui.dom.form('name')` |
+| HZ036 | (warning) a form needs JavaScript | read its values with `ui.dom.form('name')` / `ui.dom.formAll('name')` |
 | HZ037 | a redirect is not a path, hides a page or another redirect, or targets an unknown route | change or remove the `from` key; point `to` at `ui.link(...)` |
 | HZ038 | `http.headers` sets a header the framework owns, or an invalid name/value | remove it (`cache-control` is derived; CSP is `createServer({ csp })`) |
 | HZ039 | `basePath` is not `''` or `/segment[/segment…]` | e.g. `'/shop'`, no trailing slash |
@@ -46,10 +46,15 @@ around the rule.
 | HZ051 | `head.failed` misses a declared error of the head query, or maps another one | choose per error: a route (303), `403`, `404` or `410` (an intent decision: no patch) |
 | HZ052 | a route that no page renders | link to the endpoint with `ui.link(endpoint, input)` (patch), or add its `ui.page` |
 | HZ053 | (runtime) an endpoint answered `text/html`: a 500 | make it a `ui.page`; statuses and redirects go through `head.failed` |
+| HZ054 | `ui.dom.form` reads one value of a list field or of a repeated name | `ui.dom.formAll('name')` (patch) |
+| HZ055 | a form read names no control of the form | the name it suggests (patch), or add the control |
+| HZ056 | (warning) a submit button also sends on click | `name`/`value` on the button, read in submit; or `type: 'button'` |
 | HZ057 | `hozu.lock.json` differs from the computed lock (new, removed or copy-only changes, contract maps, a missing or 0.7 file) | if intended, `hozu check --update-lock`, then list the accepted `now:` lines in your summary |
 | HZ058 | (warning) contracts that fire only copy-only transitions and evaluate no guard | none needed: the lock entries it names review those transitions |
 | HZ059 | data reached plain JavaScript: a plain helper, a global (`Boolean`, `Object.keys`, `String`…), `typeof`, a spread or `in` | make the helper a `part()`; for a global use an operator or a `fn()` |
 | HZ060 | a page route starts with a locale segment (`/de/…` under `site.locales`) | rename the route (patch); the locale prefix is added for you |
+| HZ061 | (warning) a form-fed event payload declares limits | move them to the mutation input |
 | HZ062 | (warning) a GET endpoint declares `invalidates` | `method: 'POST'`, or keep it on purpose (e-mail links) |
+| HZ063 | (warning) as HZ055, in a form holding `ui.html`, a widget or another view | as HZ055 |
 | HZ064 | two contracts with identical IR | remove one (patch) |
 | HZ042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

@@ -24,9 +24,9 @@ export const Board = ui.view({
 - **Reuse:** `export const row = part((item: Item) => ui.li({}, [item.done ? 'Done' : item.title]))`, called as
   `row(item)`; it is inlined, so the IR equals the inline form. A plain function that receives data is HZ059.
 - **Events:** `on: { click: ui.send(Event, payload) }`, any DOM event name plus `visible` (entered the viewport).
-  Payload fields: literals, data, `ui.dom.value`, `ui.dom.form('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`,
-  `ui.dom.key`. `ui.dom.value` / `ui.dom.form` fill an enum field only from a `<select>` or radios whose literal
-  option values are all members (HZ033).
+  Payload fields: literals, data, `ui.dom.value`, `ui.dom.form('name')` / `ui.dom.formAll('name')` (submit; `hozu docs
+  forms`), `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`. `ui.dom.value` / `ui.dom.form` fill an enum field
+  only from a `<select>`, radios or submit buttons whose literal values are all members (HZ033).
 - **Links:** `ui.a({ href: ui.link(itemPage, { id: item.id }) }, [...])`; never a string path (HZ032). The third
   argument is optional and exists only when the route declares `search`: omitted means every default, and a search
   lists only the fields that differ: `ui.link(home, null, { show: 'done' })`.

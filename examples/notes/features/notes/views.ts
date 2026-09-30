@@ -2,6 +2,7 @@ import { contract, part, ui } from '@hozu/core'
 import {
   Add,
   addNote,
+  Bulk,
   Draft,
   DUPLICATE,
   GONE,
@@ -9,9 +10,12 @@ import {
   noMatch,
   notesMachine,
   Pin,
+  pinNotes,
   Remove,
   removeNote,
+  removeNotes,
   Search,
+  Select,
   togglePin,
   total,
   visible,
@@ -23,6 +27,8 @@ const itemForm = part((event: typeof Pin | typeof Remove, id: string, label: str
     ui.button({ type: 'submit', class: 'text-sm text-slate-600 underline' }, [label]),
   ]),
 )
+
+const bulk = ui.formRef()
 
 export const NotesBoard = ui.view({
   machine: notesMachine,
@@ -63,11 +69,51 @@ export const NotesBoard = ui.view({
           ready: (notes) =>
             ui.section({ class: 'space-y-3' }, [
               ui.p({ class: 'text-sm text-slate-600' }, ['Notes: ', total({ items: notes })]),
+              ui.form(
+                {
+                  ref: bulk,
+                  class: 'flex gap-2',
+                  on: {
+                    submit: ui.send(Bulk, { ids: ui.dom.formAll('ids'), action: ui.dom.form('action') }),
+                  },
+                },
+                [
+                  ui.span({ class: 'flex-1 text-sm text-slate-600' }, ['Selected: ', ctx.selected.length]),
+                  ui.button(
+                    {
+                      type: 'submit',
+                      name: 'action',
+                      value: 'pin',
+                      class: 'text-sm text-slate-600 underline',
+                    },
+                    ['Pin selected'],
+                  ),
+                  ui.button(
+                    {
+                      type: 'submit',
+                      name: 'action',
+                      value: 'delete',
+                      class: 'text-sm text-slate-600 underline',
+                    },
+                    ['Delete selected'],
+                  ),
+                ],
+              ),
               noMatch({ items: notes, query: ctx.query })
                 ? ui.p({ class: 'text-slate-500' }, ['No notes match'])
                 : ui.ul({ class: 'divide-y rounded border' }, [
                     ui.each(visible({ items: notes, query: ctx.query }), 'id', (note) =>
                       ui.li({ class: 'flex items-center gap-3 px-4 py-3' }, [
+                        ui.input({
+                          type: 'checkbox',
+                          form: bulk,
+                          name: 'ids',
+                          value: note.id,
+                          'aria-label': `Select ${note.text}`,
+                          checked: ctx.selected.includes(note.id),
+                          disabled: ctx.busy,
+                          on: { change: ui.send(Select, { id: note.id, checked: ui.dom.checked }) },
+                        }),
                         ui.span({ class: 'flex-1' }, [note.text]),
                         note.pinned === true && ui.span({ class: 'text-xs text-amber-700' }, ['pinned']),
                         itemForm(Pin, note.id, note.pinned === true ? 'Unpin' : 'Pin'),
@@ -172,6 +218,36 @@ export const pinFails = contract(notesMachine, {
   given: { state: 'pinning' },
   when: [{ failed: togglePin, error: 'Unexpected', data: { message: 'offline' } }],
   expect: { state: 'idle', changes: { error: 'offline' } },
+})
+
+export const selects = contract(notesMachine, {
+  given: { state: 'idle', context: { selected: ['n1'] } },
+  when: [{ send: Select, payload: { id: 'n2', checked: true } }],
+  expect: { state: 'idle', changes: { selected: ['n1', 'n2'] } },
+})
+
+export const unselects = contract(notesMachine, {
+  given: { state: 'idle', context: { selected: ['n1', 'n2'] } },
+  when: [{ send: Select, payload: { id: 'n1', checked: false } }],
+  expect: { state: 'idle', changes: { selected: ['n2'] } },
+})
+
+export const deletesSelected = contract(notesMachine, {
+  given: { state: 'idle' },
+  when: [
+    { send: Bulk, payload: { ids: ['n1', 'n2'], action: 'delete' } },
+    { done: removeNotes, result: { count: 2 } },
+  ],
+  expect: { state: 'idle', effects: [{ effect: removeNotes, input: { ids: ['n1', 'n2'] } }] },
+})
+
+export const pinsSelected = contract(notesMachine, {
+  given: { state: 'idle' },
+  when: [
+    { send: Bulk, payload: { ids: ['n1'], action: 'pin' } },
+    { done: pinNotes, result: { count: 1 } },
+  ],
+  expect: { state: 'idle', effects: [{ effect: pinNotes, input: { ids: ['n1'] } }] },
 })
 
 export const searches = contract(notesMachine, {

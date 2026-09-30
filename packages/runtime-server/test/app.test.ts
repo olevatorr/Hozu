@@ -71,3 +71,47 @@ describe('examples/notes answers 403 through head.failed (ADR 0043 D)', () => {
     expect([root.status, root.text]).toEqual([200, expect.stringContaining('ada: 2 notes')])
   })
 })
+
+describe('examples/notes bulk form: formAll + formRef without JavaScript (ADR 0043 C)', () => {
+  it('deletes every checked note and pins through the pressed button', async () => {
+    const notes = (await import('../../../examples/notes/app.ts')).default
+    const store = memorySessions({ secret: 'n'.repeat(40), secure: false })
+    const cookie = (await store.issue({ user: 'cy' })).split(';')[0]!
+    const t = testApp(notes, { session: store })
+    const form = (html: string, id: string) =>
+      [...html.matchAll(/<form[^>]* action="([^"]+)"/g)]
+        .map((m) => m[1]!.replace(/&amp;/g, '&'))
+        .find((a) => a.endsWith(`__hozu=${encodeURIComponent(id)}`))!
+    const send = (action: string, body: [string, string][]) =>
+      t.get(action, {
+        method: 'POST',
+        headers: { cookie, 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(body),
+      })
+    for (const text of ['Milk', 'Bread', 'Eggs'])
+      await send(form((await t.get('/', { headers: { cookie } })).html, 'notes.NotesBoard/1'), [
+        ['text', text],
+      ])
+    const page = await t.get('/', { headers: { cookie } })
+    expect(page.html).toMatch(
+      /<input type="checkbox" form="notes\.NotesBoard\/[^"]+" name="ids" value="n\d+"/,
+    )
+    const ids = [...page.html.matchAll(/name="ids" value="(n\d+)" aria-label="Select (Milk|Bread)"/g)].map(
+      (m) => m[1]!,
+    )
+    expect(ids).toHaveLength(2)
+    const bulk = form(page.html, 'notes.NotesBoard/7/ready/1')
+    const none = await send(bulk, [['action', 'delete']])
+    expect([none.status, none.text]).toEqual([400, expect.stringContaining('Select at least one note')])
+    await send(bulk, [...ids.map((id): [string, string] => ['ids', id]), ['action', 'delete']])
+    const after = await t.get('/', { headers: { cookie } })
+    expect(after.text).toContain('Eggs')
+    expect(after.text).not.toMatch(/Milk|Bread|pinned/)
+    const eggs = /name="ids" value="(n\d+)" aria-label="Select Eggs"/.exec(after.html)![1]!
+    await send(bulk, [
+      ['ids', eggs],
+      ['action', 'pin'],
+    ])
+    expect((await t.get('/', { headers: { cookie } })).text).toContain('Eggs pinned')
+  })
+})

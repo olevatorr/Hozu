@@ -442,6 +442,139 @@
         },
         "summary": "idle --Add--> adding · draft := event.text, error := null, fields := {\"text\":null} · invoke addNote({ text: ctx.draft })"
       },
+      "idle/on/notes.Bulk/0": {
+        "behavior": "92abfe738f105bb2",
+        "contracts": {
+          "deletesSelected": "3823c9ecd51bf3dc"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "path": [
+                  "ids"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "busy"
+              ],
+              "value": {
+                "literal": true
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "notes.removeNotes",
+            "final": false,
+            "input": {
+              "object": {
+                "ids": {
+                  "path": [
+                    "selected"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "removingMany",
+            "timers": []
+          },
+          "fns": {},
+          "guard": {
+            "left": {
+              "path": [
+                "action"
+              ],
+              "ref": "event"
+            },
+            "op": "eq",
+            "right": {
+              "literal": "delete"
+            }
+          },
+          "navigate": null
+        },
+        "summary": "idle --Bulk--> removingMany · if event.action eq \"delete\" · selected := event.ids, busy := true, error := null · invoke removeNotes({ ids: ctx.selected })"
+      },
+      "idle/on/notes.Bulk/1": {
+        "behavior": "a3d5e50c4b495560",
+        "contracts": {
+          "pinsSelected": "108734876dae075f"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "path": [
+                  "ids"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "busy"
+              ],
+              "value": {
+                "literal": true
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "notes.pinNotes",
+            "final": false,
+            "input": {
+              "object": {
+                "ids": {
+                  "path": [
+                    "selected"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "pinningMany",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Bulk--> pinningMany · selected := event.ids, busy := true, error := null · invoke pinNotes({ ids: ctx.selected })"
+      },
       "idle/on/notes.Draft/0": {
         "behavior": "34b1e7ac4659087f",
         "contracts": {
@@ -614,6 +747,86 @@
         },
         "summary": "idle --Search--> idle · query := event.query"
       },
+      "idle/on/notes.Select/0": {
+        "behavior": "db3a538c05f5659f",
+        "contracts": {
+          "selects": "2fc6368e53c9b496"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "append",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": {
+            "left": {
+              "path": [
+                "checked"
+              ],
+              "ref": "event"
+            },
+            "op": "eq",
+            "right": {
+              "literal": true
+            }
+          },
+          "navigate": null
+        },
+        "summary": "idle --Select--> idle · if event.checked eq true · selected append event.id"
+      },
+      "idle/on/notes.Select/1": {
+        "behavior": "1f388c4e14312929",
+        "contracts": {
+          "unselects": "c8ee1e6a8e6ce94c"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "key": null,
+              "op": "removeWhere",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Select--> idle · selected -= where item = event.id"
+      },
       "pinning/invoke/done/0": {
         "behavior": "e70ffaeac4248998",
         "contracts": {
@@ -700,6 +913,129 @@
         },
         "summary": "pinning --failed togglePin.Unexpected--> idle · error := error.message"
       },
+      "pinningMany/invoke/done/0": {
+        "behavior": "3a038a7701c3ebfe",
+        "contracts": {
+          "pinsSelected": "108734876dae075f"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "literal": []
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "busy"
+              ],
+              "value": {
+                "literal": false
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "pinningMany --done pinNotes--> idle · selected := [], busy := false"
+      },
+      "pinningMany/invoke/failed/Invalid/0": {
+        "behavior": "e6767babfd543c3e",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "fields",
+                  "ids"
+                ],
+                "ref": "error"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "busy"
+              ],
+              "value": {
+                "literal": false
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "pinningMany --failed pinNotes.Invalid--> idle · error := error.fields.ids, busy := false"
+      },
+      "pinningMany/invoke/failed/Unexpected/0": {
+        "behavior": "0d6d011345bf36c1",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "busy"
+              ],
+              "value": {
+                "literal": false
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "pinningMany --failed pinNotes.Unexpected--> idle · error := error.message, busy := false"
+      },
       "removing/invoke/done/0": {
         "behavior": "161009426fbd8484",
         "contracts": {
@@ -785,6 +1121,129 @@
           "navigate": null
         },
         "summary": "removing --failed removeNote.Unexpected--> idle · error := error.message"
+      },
+      "removingMany/invoke/done/0": {
+        "behavior": "021a4a73d24742bb",
+        "contracts": {
+          "deletesSelected": "3823c9ecd51bf3dc"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "literal": []
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "busy"
+              ],
+              "value": {
+                "literal": false
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "removingMany --done removeNotes--> idle · selected := [], busy := false"
+      },
+      "removingMany/invoke/failed/Invalid/0": {
+        "behavior": "7d11a6d875e5527e",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "fields",
+                  "ids"
+                ],
+                "ref": "error"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "busy"
+              ],
+              "value": {
+                "literal": false
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "removingMany --failed removeNotes.Invalid--> idle · error := error.fields.ids, busy := false"
+      },
+      "removingMany/invoke/failed/Unexpected/0": {
+        "behavior": "5593a6699dc77b20",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "busy"
+              ],
+              "value": {
+                "literal": false
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "removingMany --failed removeNotes.Unexpected--> idle · error := error.message, busy := false"
       }
     }
   },
