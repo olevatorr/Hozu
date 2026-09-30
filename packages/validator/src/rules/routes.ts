@@ -104,13 +104,15 @@ export function routeParams(ctx: Ctx) {
         'Head data comes from a declared query.',
         null,
       )
-    if (params && !page.entries)
+    const head = h.query ? resolveRef(ir, h.query.ref, 'query') : null
+    const personal = head?.feature.queries[head.symbol]?.scope === 'user'
+    if (params && !page.entries && !personal)
       ctx.report(
         'HZ025',
         null,
         join('', 'pages', route, 'entries'),
         `Page "${route}" has params but no entries`,
-        'Without entries the page is missing from sitemap.xml and from static export; it still renders on request.',
+        'Without entries the page is missing from sitemap.xml and from static export; it still renders on request. A page whose head query is user-scoped is private and needs none.',
         {
           summary: 'Enumerate the pages from a query',
           snippet: 'entries: { query: listThings, input: {}, params: (thing) => ({ id: thing.id }) }',

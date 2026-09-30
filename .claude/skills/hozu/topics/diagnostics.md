@@ -19,7 +19,7 @@ around the rule.
 | HZ018 | a deciding transition changed (fields first, then `was:` / `now:`) and no covering contract fails against the old behaviour | change or add a contract that specifies the new behaviour; renaming or copying one does not count |
 | HZ021 | a query, mutation or endpoint without a resolver | `implement(...)` it in the resolvers of `app.ts` |
 | HZ022 | user data in a cacheable region | keep `scope: 'user'` queries out of cached pages |
-| HZ024 / HZ025 | route params mismatch (keys, or a schema that does not fit `:x?`/`:x+`/`:x*`) / page with params but no `entries` | align them / add `entries` |
+| HZ024 / HZ025 | route params mismatch (keys, or a schema that does not fit `:x?`/`:x+`/`:x*`) / page with params but no `entries` (a user-scoped head is private: no sitemap, no warning) | align them / add `entries` |
 | HZ026 | a class produces no CSS | fix the Tailwind class |
 | HZ027 | a DOM field used outside an event, or wrong for this event | read `ui.dom.*` only in `ui.send` payloads |
 | HZ028 | `img` without width/height | add both |

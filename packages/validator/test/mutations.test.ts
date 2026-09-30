@@ -715,6 +715,17 @@ describe('A2 route judgement codes', () => {
     ])
     expect(found[1]!.fix?.snippet).toContain('entries:')
   })
+
+  it('HZ025 stays silent for a page whose head reads user data: private pages stay out of the sitemap', async () => {
+    const { buildProject } = await import('@hozu/core/ir')
+    const blog = buildProject((await import('../../../examples/blog/hozu.config.ts')).default)
+    const ir = structuredClone(blog.ir)
+    ir.pages.post!.entries = null
+    const [feature, symbol] = ir.pages.post!.head.query!.ref.split('.') as [string, string]
+    ir.features[feature]!.queries[symbol]!.scope = 'user'
+    ir.features[feature]!.queries[symbol]!.freshness = { kind: 'request' }
+    expect(validate(ir, { sources: blog.sources }).filter((d) => d.code === 'HZ025')).toEqual([])
+  })
 })
 
 describe('A2 mistake catalog', () => {
