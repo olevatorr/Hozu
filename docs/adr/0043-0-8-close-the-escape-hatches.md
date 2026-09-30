@@ -770,7 +770,9 @@ findings and are assigned only by amending this table. Severity is one per code.
   `packages/core/src/builders/ui.ts`, `packages/core/src/build/scope.ts`, `packages/cli/src/contract.ts` and
   `packages/*/schema/*`. Within a wave, one worker owns `runtime-server/src/handler.ts` and
   `runtime-client/src/hydrate.ts`. In wave 3, H merges before G starts.
-- **No wave removes public surface** before the migrate rewrite for it exists and has been run on the repository.
+- **No wave removes public surface** unless the same wave migrates the whole repository (examples, site, skill,
+  scaffold, reference apps, benches) and keeps `pnpm gate` green. The `hozu migrate 0.8` rewrite for it may land later
+  (wave 4); it is proven against the committed 0.7 snapshots, not against the already-migrated repository.
 - **Each fix flips its repro** from `it.fails` to `it`. Repros that need the 0.8 API are written by the fixing worker,
   who shows them failing on the wave-0 commit.
 - **Budget P7** (8 192 B, 7 834 measured, 358 B headroom) is allocated before wave 2 (proposed shares):
