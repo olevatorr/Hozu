@@ -129,7 +129,11 @@ function element(
         at(p, 'attrs', 'id'),
         'A form that holds a formRef takes its id from it',
         'The framework derives the id from the form node (one per item key inside ui.each).',
-        { summary: 'Remove the id', snippet: null, patch: null },
+        {
+          summary: 'Remove the id',
+          snippet: 'ui.form({ ref: bulk, on: { submit: … } }, [...])',
+          patch: null,
+        },
       )
     else if (typeof d.props.id === 'string') literalForm(scope, d.props.id, id, p)
   }

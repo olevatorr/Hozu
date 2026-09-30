@@ -142,7 +142,8 @@ export function finishForms(scope: FeatureScope) {
         'Inside ui.each a formRef has one id per item key, so a control outside that item cannot name one form.',
         {
           summary: 'Move the control into the same ui.each item as the form, or the form out of the ui.each',
-          snippet: null,
+          snippet:
+            "ui.each(items, 'id', (item) => [ui.form({ ref: bulk, … }, [...]), ui.input({ form: bulk, name: 'x' })])",
           patch: null,
         },
       )

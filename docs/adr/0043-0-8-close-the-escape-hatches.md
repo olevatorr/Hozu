@@ -667,6 +667,50 @@ None of these is bent quietly; each needs the owner's explicit yes.
 5. **A broken build never renders:** `hozu get`, `hozu browse` and `testApp` exit 1 with the diagnostics.
 6. **The release is judged by trial 0021** against ADR 0044's registered targets, not by "the code is written".
 
+### Audit of the acceptance conditions (wave 4 K)
+Checked against the source and the tests on the wave-4 branch. "Patch" = a JSON patch the IR harness applies and
+re-validates (`validator/test/mutations.test.ts` asserts the code disappears); "snippet" = text to paste.
+
+| Code | Fix | Where it is checked |
+|---|---|---|
+| HZ049 | patch to `'request'` + snippet | IR catalog |
+| HZ050 | patch to `'request'` + snippet (the tags) | IR catalog |
+| HZ051 | snippet of the choices per error; no patch (the deliberate exception); an extra or `Unexpected` key names the key to remove | `runtime-server/test/pages-endpoints.test.ts` |
+| HZ052 | patch (links to the endpoint, remove the route) for schema / redirect outputs; snippet for `'response'` and for a route with links but no endpoint; patch removes an unused route | IR catalog |
+| HZ053 | snippet (`ui.page` with `head.failed`); runtime only | source catalog (runtime stage) |
+| HZ054 | patch to `formAll` | IR catalog, `forms.test.ts` |
+| HZ055 | did-you-mean patch, or a snippet of the missing control | IR catalog, `forms.test.ts` |
+| HZ056 | patch to `type: 'button'` + snippet | IR catalog |
+| HZ057 | snippet `hozu check --update-lock`; one per machine, at most 10 lines (`--json` lists all), plus one for `/pages` | source catalog (lock stage), `cli.test.ts` |
+| HZ058 | snippet naming the reviewing lock entries; no patch, never a deletion; one per feature, the message names at most 3 | source catalog (contract stage) |
+| HZ059 | snippet (a `part()`), the sites listed like HZ047 | source catalog (transform stage) |
+| HZ060 | patch renaming the route | IR catalog |
+| HZ061 | patch removing the limits when no effect shares the payload schema, otherwise a snippet | IR catalog |
+| HZ062 | patch to `POST` + snippet | `mutations.test.ts` (endpoint codes) |
+| HZ063 | as HZ055 | IR catalog |
+| HZ064 | patch removing the copy | source catalog (contract stage) |
+
+- **Changed codes:** HZ006 (parts, endpoint links: snippet `imports` / `exports`), HZ014 (string `form`: patch to a
+  formRef), HZ018 (a contract skeleton), HZ020, HZ021 (at check, snippet `implement(...)`), HZ033 (patches), HZ037
+  (patch), HZ042 (patches), HZ045 (snippet of `project({ app })` and the module) carried a fix already. Six sites of
+  changed codes had neither and gained one in this wave (`validator/test/fixes.test.ts`, each broken once to red):
+  HZ046 for a method other than GET / POST (patch to POST), HZ046 for a native form field the endpoint input lacks
+  (snippet of the name or the input field), HZ036 (the `ui.send` with the form's own fields), HZ032 for a string
+  redirect target (the `ui.link` of the route with that path), HZ014 for a form that holds a formRef and sets `id`, and
+  for a control outside its form's `ui.each` item (snippets).
+- **Not changed in 0.8 and still without a patch or snippet:** HZ011, HZ012, HZ015 (a failing contract is an intent
+  decision: the fix never edits the contract to match), HZ022, HZ024, HZ027 (one site), HZ035, HZ047 (a free
+  variable that is not JSON), HZ048, and the builder usage errors reported as HZ014 without a fix.
+- **Output sizes:** `hozu map` is under 2 048 B for bookmarks (1 508 B) and trial-0007 (1 656 B), and under the new
+  3 584 B budget for `examples/notes` (3 456 B), header included (`cli/test/loop.test.ts`); a passing six-step
+  `hozu browse --js both` run is at most 1 536 B (`cli/test/browse.test.ts`).
+- **Upgrading rewrites the instructions:** `hozu skill` and `hozu migrate 0.8` share `migrateGuide` (see the wave 4
+  K / M agreement below); a guide it cannot recognise is printed and the command exits 1.
+- **SKILL.md** is 3 400 B with its frontmatter; a test checks the size, each rule no diagnostic enforces, the absence
+  of the rules diagnostics teach, and that its index names exactly the topic files.
+- **A broken build never renders:** `hozu get`, `hozu browse` and `testApp` exit 1 with the diagnostics (J).
+- **Condition 6** is trial 0021's to judge; it is not claimed here.
+
 ## Rejected or deferred, with reasons
 - **`machine({ failed })` (shared failure branches):** it would silently absorb a forgotten error that HZ004 and the
   types catch today. Deferred; the guide shows a shared `const` instead.

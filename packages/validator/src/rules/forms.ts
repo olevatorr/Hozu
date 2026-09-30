@@ -9,6 +9,7 @@ import {
   join,
   type ProjectIR,
   resolveAt,
+  type ValueExpr,
 } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { eventSchema } from '../env.ts'
@@ -17,6 +18,11 @@ import { resolvePath } from '../schema.ts'
 import { closest, didYouMean } from '../suggest.ts'
 import { walkView } from '../walk.ts'
 import { type FormModel, formReads, formsOf, multiValued } from './form-model.ts'
+
+const fieldsOf = (payload: ValueExpr) =>
+  ('object' in payload ? Object.keys(payload.object) : ['title'])
+    .map((k) => `${k}: ui.dom.form('${k}')`)
+    .join(', ')
 
 export function progressiveForms(ctx: Ctx) {
   const { ir } = ctx
@@ -34,7 +40,7 @@ export function progressiveForms(ctx: Ctx) {
           {
             summary:
               "Read the fields with ui.dom.form('name') or ui.dom.formAll('name') so the form also works before hydration and without JavaScript",
-            snippet: null,
+            snippet: `on: { submit: ui.send(${node.on.submit.event.split('.').pop()}, { ${fieldsOf(node.on.submit.payload)} }) }`,
             patch: null,
           },
         )

@@ -73,15 +73,22 @@ export function httpRules(ctx: Ctx) {
         `Redirect "${r.from}" targets an unknown route`,
         'Point `to` at a registered route with ui.link.',
       )
-    if ('literal' in r.to && typeof r.to.literal === 'string' && r.to.literal.startsWith('/'))
+    if ('literal' in r.to && typeof r.to.literal === 'string' && r.to.literal.startsWith('/')) {
+      const path = r.to.literal
+      const route = Object.keys(ctx.ir.routes).find((id) => ctx.ir.routes[id]!.path === path)
       ctx.report(
         'HZ032',
         null,
         join(at, 'to'),
-        `Redirect "${r.from}" targets the internal path "${r.to.literal}" as a string`,
+        `Redirect "${r.from}" targets the internal path "${path}" as a string`,
         'Internal URLs are built from route declarations so they stay typed and canonical.',
-        { summary: 'Use to: (params) => ui.link(route, params)', snippet: null, patch: null },
+        {
+          summary: 'Use to: (params) => ui.link(route, params)',
+          snippet: route ? `to: () => ui.link(${route}, null),` : 'to: (params) => ui.link(route, params),',
+          patch: null,
+        },
       )
+    }
   })
   http.headers.forEach((rule, i) => {
     for (const [name, value] of Object.entries(rule.set)) {

@@ -45,7 +45,17 @@ export function endpoints(ctx: Ctx) {
           featurePointer(f.id, 'endpoints', sym, 'method'),
           `Endpoint ${ref} has method "${e.method}"`,
           'Endpoints answer GET or POST.',
-          { summary: "Use method: 'GET' or 'POST'", snippet: null, patch: null },
+          {
+            summary: "Use method: 'POST' for a write, or 'GET' for a read",
+            snippet: "method: 'POST',",
+            patch: [
+              {
+                op: 'replace',
+                path: resolveAt(featurePointer(f.id, 'endpoints', sym, 'method')),
+                value: 'POST',
+              },
+            ],
+          },
         )
       if (!STATIC.test(e.path))
         report(
@@ -233,20 +243,22 @@ export function endpointLinks(ctx: Ctx) {
           const known = Object.keys((schema?.properties ?? {}) as object)
           const names = new Set<string>()
           fieldNames(node, names)
-          for (const name of names)
+          for (const name of names) {
+            const guess = closest(name, known)
             if (!known.includes(name))
               ctx.report(
                 'HZ046',
                 f.id,
                 p,
-                `The form posting to ${v.endpoint} has a field "${name}" its input does not declare.${didYouMean(closest(name, known))}`,
+                `The form posting to ${v.endpoint} has a field "${name}" its input does not declare.${didYouMean(guess)}`,
                 'A native form sends every named control; the endpoint input schema decides which ones exist.',
                 {
                   summary: `Rename the field to one of ${known.join(', ') || '(none)'}, or add "${name}" to the input`,
-                  snippet: null,
+                  snippet: guess ? `name: '${guess}'` : `input: z.object({ ${name}: z.string() }),`,
                   patch: null,
                 },
               )
+          }
         }
       })
   }
