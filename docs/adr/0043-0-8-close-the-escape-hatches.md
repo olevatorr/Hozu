@@ -825,6 +825,38 @@ findings and are assigned only by amending this table. Severity is one per code.
   - soft navigation is removed: every internal link loads a document.
 - **The repository migrates with it:** the examples, the skill `example/`, the scaffold, `create-hozu`, the trial
   reference apps and the benches.
+- **Implementation notes (wave 4 M):**
+  - `packages/cli/src/commands/migrate*.ts`, one module per rewrite. Step 1 runs in a child process that registers
+    the app's own 0.7 transform hook and loads its installed `@hozu/core` / `@hozu/validator` (from the app, else
+    from its `@hozu/cli`); "0.7" means the build is IR v1, since the workspace packages still read `0.7.0`. It also
+    caches the 0.7 IR in `node_modules/.cache/hozu/`. Run again after the upgrade, migrate rewrites nothing, compares
+    `normalize07(0.7 IR)` with the 0.8 IR and prints each differing pointer as a behaviour change, then runs
+    `hozu check`. So a D2 site is reported only when its IR really changed.
+  - Parts come from `@hozu/transform`'s own HZ059 sites (local helpers) and its `__hozu.call` sites (imported
+    helpers), repeated until no new helper appears, because a helper called only inside another one is found once
+    the outer one is a part.
+  - `itemsOf` is split only in its generated shape and only when a query resolver calls it. Writes reached from a
+    query resolver through same-module helpers are printed.
+  - `serve.ts` is found through `scripts.start` / `serve` / `dev`, or as the file that calls `createServer` from
+    `@hozu/adapter-node`. It is removed only when every statement is recognised; otherwise it is kept and each
+    wrapper line is printed. `sessionCookie` is dropped with a note (G2). Host options `app()` does not take
+    (`env`, `readFile`, `publicDir`, `manifest`, `render`, `images`) are dropped: `hozu serve` provides them. Other
+    importers of `createResolvers()` get `appOptionsOf(app)!.resolvers`.
+  - The CLAUDE.md / AGENTS.md block sits between `<!-- hozu: … -->` markers. Known templates are the released
+    `guide.md` of 0.3–0.5 and 0.6–0.7, filled for every runner. `migrateGuide` is exported for `hozu skill`, which
+    this wave does not change.
+  - Proof (`packages/cli/test/migrate-equivalence.test.ts`): every snapshot of `baseline-0.7` is rebuilt from source
+    (`git archive 5d4a198`, the reference base plus patches, both trial `s12` tags), migrated, built with 0.8 and
+    compared with `normalize07`. Result: 33 of 33 equal, with no diagnostics. The per-snapshot counts of each allowed
+    difference are in `packages/cli/test/__snapshots__/migrate-equivalence.json`.
+  - None of the snapshots holds a guard-position `%cond`, a nested and / or, or a value-position `op.and` /
+    `op.or`, so those mappings are covered by unit tests only.
+  - Not rewritten and left to `hozu check`: TypeScript errors that appear once `op.*` operands are typed (for example
+    a nullable `q.qty >= 1` in the cart), and endpoints that return a redirect or HTML `Response` (printed).
+  - `s12m` dry run (`node bench/migrate/s12m.ts`, report `bench/migrate/s12m.md`): run 1 has 0 entries stale under
+    0.7 and run 2 has 10 (2 behaviour, 4 contracts, 4 missing `Undo`). After the upgrade both IRs equal the 0.7 IR.
+    After an explicit `--update-lock` in a scratch copy, `hozu check` reports types ok, 0 errors and one HZ058
+    summary warning for each run.
 
 ## Release
 - **No separate 0.7.1 (gate G10: folded into 0.8.0).** 0.7.0 keeps the `/\` open redirect and the unscoped SSE
