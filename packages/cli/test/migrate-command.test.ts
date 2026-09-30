@@ -72,7 +72,7 @@ describe('hozu migrate 0.8, end to end', () => {
       }
       const second = await cli(['migrate', '0.8', '--json'], dir)
       const r2 = JSON.parse(second.stdout) as MigrateOutput
-      expect(r2.stale.skipped).toContain('already builds IR v2')
+      expect(r2.stale.skipped).toContain('the stale check runs on 0.7, before the upgrade')
       expect(r2.changed).toEqual([])
       expect(r2.ir).toEqual({ compared: true, differences: [] })
       expect([...new Set(r2.check!.validate.diagnostics.map((d) => d.code))].sort()).toEqual([

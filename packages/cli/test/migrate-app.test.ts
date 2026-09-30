@@ -139,7 +139,7 @@ describe('migrate: the CLAUDE.md / AGENTS.md Hozu block', () => {
     expect(first.kind).toBe('marked')
     if (first.kind === 'custom') return
     expect(first.code).toBe(
-      `${BEGIN}\n# app\n\n0.8 rules for .claude/skills/hozu with \`npx hozu check\`\n\nThe skill writes commands as \`pnpm exec …\`; in this app use \`npx …\`.\n${END}\n`,
+      `${BEGIN}\n# app\n\n0.8 rules for .claude/skills/hozu with \`npx hozu check\`\n${END}\n`,
     )
     expect(migrateGuide(first.code, claude, '/x/app', 'pnpm exec', template).kind).toBe('current')
     const edited = `Notes of my own\n\n${first.code}\nMore notes\n`
