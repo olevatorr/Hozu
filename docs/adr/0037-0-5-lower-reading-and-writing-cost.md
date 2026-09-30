@@ -1,5 +1,7 @@
 # ADR 0037 — 0.5.0: lower the cost of reading and writing Hozu
 
+> **Superseded in part by ADR 0043 (0.8.0):** D3 and the Result: the lock must equal the computed lock (HZ057), copy-only changes stay lock-reviewed even when a contract covers them, and a contract over only copy-only transitions is HZ058 instead of being allowed as an example (G). D5: `hozu check` imports the declared app module, so it runs app code (D, E). D6: an endpoint's `output` is a schema, `'redirect'` or `'response'`, never HTML (HZ053), with `errors`, `failed`, `invalidates` and `input: 'raw'` (D). **Erratum (D6):** the resolver context's `redirect` is used only with `output: 'redirect'` as `redirect(ui.link(route, params, search?))`; `'response'` is for bodies that are neither JSON nor HTML, not for redirects.
+
 - Status: accepted (the user approved the plan and decided D3 and D4)
 - Motivation: the trials measured the cost that remains, and it is not in the tools.
   - **Reading:** trial 0009 found that agents read 30–40 k characters before writing Hozu, against 3 k for Nuxt.

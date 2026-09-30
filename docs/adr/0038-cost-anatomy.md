@@ -1,5 +1,7 @@
 # ADR 0038 — Where an agent's cost goes (a study of trials 0009–0014)
 
+> **Superseded in part by ADR 0043 K (0.8.0):** R1's short SKILL.md is at most 4 096 B with its frontmatter (replacing CLAUDE.md's 6 KB budget), `changing.md` is folded into it and deleted, and the build example moved to `hozu docs feature`. SKILL.md holds only the change loop, the "What to touch" table, the rules no diagnostic enforces and the topic index; everything a diagnostic checks is taught by that diagnostic.
+
 - Status: accepted. The owner chose R1 + R2 + R3 for 0.5; the results are below.
 - Motivation: every release since ADR 0022 changed something, and trials 0007, 0009, 0011 and 0014 each reported
   the same finding: the cost is reading.

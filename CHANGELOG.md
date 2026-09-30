@@ -1,5 +1,73 @@
 # Changelog
 
+## 0.8.0 — close the escape hatches (ADR 0043, breaking)
+
+Trial 0020 ran twenty sequential changes. Hozu 0.7 kept 10× less client JS than Nuxt, but its cost per change doubled
+over the second half, and from step 16 both runs carried regressions that `hozu check` did not see: a deleted
+account came back, a page hand-wrote its 403, bulk forms dropped values. 0.8 closes each hatch those apps left
+through, and teaches an agent at the moment of a mistake instead of in a longer guide. Trial 0021 judges the release.
+
+**Upgrade:** run `npx hozu migrate 0.8` before upgrading the packages. It lists the lock entries already stale under
+0.7, rewrites what it can (below), rewrites the Hozu block of `CLAUDE.md` / `AGENTS.md`, and prints what it cannot.
+Then upgrade, run `npx hozu check` and accept the lock with `npx hozu check --update-lock`. It never writes the lock
+and never deletes a contract.
+
+### Breaking changes
+- **Data (A):** a user-scoped query is `freshness: 'request'` or `'live'` (HZ049, patch to `'request'`);
+  `'request'` also replaces `{ revalidate: 0 }` for public data and makes the page per-request. `'live'` needs tags
+  (HZ050). No per-session cache and no cross-request dedup. `server.revalidate([tag()])` takes tag uses and returns
+  `{ entries, pages }`. Endpoints may declare `invalidates` (HZ062 on a GET endpoint, a warning).
+- **Sessions (B):** a server-side store with an opaque signed id (`memorySessions()` by default); the cookie holds no
+  payload, and sign-out revokes it. Production without `SESSION_SECRET` refuses to start. The effect response re-reads
+  queries with the session after the mutation, and `/_hozu/live` sends a page only its own tags.
+- **Forms (C):** `ui.dom.formAll(name)` reads every value; `ui.dom.form(name)` is the first value on both sides; the
+  pressed submit button is part of the payload. `ui.formRef()` joins controls outside the form (a string `form`
+  attribute is HZ014 with a patch). New: HZ054 single value for a list, HZ055 / HZ063 unknown field, HZ056 a submit
+  button with a click send, HZ061 limits on a form payload. An endpoint form body is multi-valued where its input
+  schema declares an array.
+- **Pages and endpoints (D):** `head.redirects` is `head.failed`, which maps every declared error of the head query to
+  a parameterless route (303) or 403 / 404 / 410 (HZ051). An endpoint's `output` is a schema, `'redirect'` or
+  `'response'`; HTML from an endpoint is a 500 with HZ053. Endpoints gain `errors`, `failed`, `input: 'raw'`,
+  `ui.link(endpoint, input)` and `exports`. A route no page renders is HZ052.
+- **One app module (E):** `project({ app: new URL('./app.ts', import.meta.url) })`, default-exporting
+  `app({ resolvers, session?, widgets? })`. `hozu serve` (`npm start`), `hozu check`, `hozu get` / `browse` and
+  `testApp(app)` build from it; `serve.ts` and `createResolvers()` leave the apps. A default export that is not an
+  `app(…)` is HZ045, now an error.
+- **i18n (F):** `site.lang` keeps its unprefixed URLs, the other locales are prefixed, `/en/x` answers 308 `/x`.
+  A route that starts with a locale segment is HZ060.
+- **Lock and contracts (G):** the lock is version 2 and must equal the computed lock (HZ057, accepted with
+  `hozu check --update-lock`). A deciding change is accepted only when a covering contract fails against the previous
+  record. A contract over only copy-only transitions is HZ058 (a warning), an identical one HZ064. `ui.link(route,
+  params)` takes `search` only when it differs from the defaults (`null` and `{}` are type errors).
+- **Authoring (H):** `op.*` and the motion-less `ui.if` are removed: `c ? a : b` and `c && a` (a branch may be a
+  list). Reusable view logic is `part((…) => …)`; a plain function or a global that receives a reference is HZ059, and
+  the server refuses to start. `list.includes(v)` and the removal of a primitive (`filter((x) => x !== v)`) lower.
+- **No soft navigation (I):** every internal link loads a document, with speculation prerender and the cross-document
+  View Transition. `navigate.js`, `payload.soft` and budget P8 are gone.
+- **Verification (J):** `hozu browse --js on|off|both` (default both), `--as <name>` actors each with their own
+  `--session`, `in "<text>"` targets, `check` / `uncheck`, `submit "<form>"`. `hozu post` is removed (a usage error
+  names `browse`). `hozu get`, `hozu browse` and `testApp` exit 1 with the diagnostics when the build has errors.
+- **The guide (K):** SKILL.md is at most 4 KB (tested): the change loop, what to touch, the rules no diagnostic
+  checks, and the topic index. `changing.md` is gone; `hozu docs feature` has the build example. `hozu map` starts
+  with the session shape, the verify line and the files. The app's `CLAUDE.md` / `AGENTS.md` block sits between
+  `<!-- hozu: … -->` markers that `hozu skill` and `hozu migrate 0.8` rewrite; a guide they do not recognise is printed
+  and the command exits 1.
+- **IR version 2**, lock version 2 and regenerated JSON Schemas.
+
+### Behaviour changes with no diagnostic
+- The Accept-Language negotiation is gone, and prefixed default-locale URLs answer 308.
+- Everyone signs in once more after the upgrade (sessions move to the server-side store).
+- `ui.dom.form` is first-wins on the client too, and JavaScript payloads now include the submitter.
+- An invalid native post answers 400 and re-renders the page with the framework `Invalid` error.
+- User data is no longer cached (budget P9, report-only, moves).
+- Soft navigation is removed: every internal link loads a document.
+
+### Also
+- The examples, the site and the skill example drop the contracts HZ058 flags (95 in all; the negative
+  specifications stay), and every example is clean under `hozu check`.
+- `examples/notes` gains the 403 admin page, the bulk form (`formAll` + `formRef`) and German under (c).
+- Every new diagnostic carries a patch or an exact snippet, except HZ051, where 403 vs 404 is an intent decision.
+
 ## 0.7.0 — write less (ADR 0041)
 
 A study of trials 0016–0018 found the remaining cost is what an agent has to *write*.

@@ -1,5 +1,7 @@
 # ADR 0039 — Ordinary TypeScript in builder callbacks (R3 of ADR 0038)
 
+> **Superseded in part by ADR 0043 H (0.8.0):** `op.*` and the motion-less `ui.if` left the public surface; `c ? a : b` and `c && a` are the only conditional forms, and a branch may be a list. `ctx.n += v` and `ctx.n = ctx.n + v` lower to one computing IR (`%plus`). **Erratum (table):** the builtins are spelt `%truthy`, `%cond`, `%coalesce`, `%concat`, `%length`, `%plus`, `%minus` (the `#` prefix belongs to the i18n builtins); and the `a.length` row applies to every reference, including the results of `fn`, `message` and the builtins, which 0.7 left `undefined` (trial 0021 research T2).
+
 - Status: accepted (the owner chose R1 + R2 + R3 for 0.5)
 - Motivation: ADR 0038 found documentation to be the largest part of an agent's extra cost (45–75 % of the gap to
   Nuxt).

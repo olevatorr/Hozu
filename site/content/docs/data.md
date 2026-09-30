@@ -42,7 +42,7 @@ Session-aware applications declare the session schema on the project. Only user-
 
 ## Write through mutations
 
-A mutation declares its input, output, possible errors and invalidated tags. It runs when a machine enters a state that invokes it. Cover both successful and failed outcomes with transitions and contracts.
+A mutation declares its input, output, possible errors and invalidated tags. It runs when a machine enters a state that invokes it. Handle both successful and failed outcomes with transitions; a contract is needed only where a transition decides. Query resolvers only read: writes belong in mutation and endpoint resolvers, because a prefetched link runs a page's queries.
 
 For example, an `addArticle` mutation can declare `invalidates: () => [articlesTag()]`. Hozu owns the refresh of queries carrying that tag, so your UI does not need a second handwritten synchronization mechanism.
 

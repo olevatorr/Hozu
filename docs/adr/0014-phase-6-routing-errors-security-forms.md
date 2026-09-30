@@ -1,5 +1,7 @@
 # ADR 0014 — Phase 6: search params, typed navigation, error pages, security baseline, progressive forms
 
+> **Superseded in part by ADR 0043 (0.8.0):** in §1 the `search` argument of `ui.link` is optional (omitted = every default; `null` and `{}` are type errors, G). In §5 an invalid native post re-renders the page with status 400 and the framework `Invalid` error instead of redirecting (C).
+
 - Status: accepted (Tier 1 of ADR 0011; the user approved continuing after trial 0005)
 - Scope: the five Tier 1 gaps, plus one defect found while designing them: `navigate` on a transition never
   navigated in the browser. The runtime dispatched a `tenon:navigate` DOM event that nothing listened to, so the

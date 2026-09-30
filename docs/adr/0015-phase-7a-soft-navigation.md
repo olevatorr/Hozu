@@ -1,5 +1,7 @@
 # ADR 0015 — Phase 7a: soft navigation that keeps shared views alive
 
+> **Superseded by ADR 0043 I (0.8.0):** soft navigation is removed, with `navigate.js`, `payload.soft`, the plan's soft section and budget P8. Every internal link is a document navigation with speculation prerender and the cross-document View Transition opt-in; state across pages lives in the URL (seed), on the server (queries) or in a widget's own storage. The panel case below is withdrawn.
+
 - Status: accepted
 - Scope: Tier 2 item 6 of ADR 0011 (soft navigation, persistent layouts, scroll, focus, announcer, progress).
   ADR 0011 splits Tier 2 into four phases; this is the first. 7b (web-standard handler, middleware as data),

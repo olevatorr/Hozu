@@ -1,5 +1,7 @@
 # ADR 0010 — Capability parity with mainstream frameworks
 
+> **Superseded in part by ADR 0043 (0.8.0):** G1's motion-less `ui.if` left the surface (`c ? a : b` / `c && a`; `ui.if` only with a motion, H). G5's `head.redirects` became `head.failed` (D). G6's stateless signed-cookie sessions became a server-side store with an opaque id (`memorySessions()` by default, B). G11's `/_hozu/live` now sends a connection only the tags its page subscribed to (B).
+
 - Status: accepted (the user asked that Tenon can do everything mainstream frameworks can); G1–G13 implemented and tested
 - Scope: capabilities of Nuxt 4, Next.js 16 and SvelteKit 2 that an application actually uses. Visual parity is
   ADR 0009; this ADR is about what an app can *express*.

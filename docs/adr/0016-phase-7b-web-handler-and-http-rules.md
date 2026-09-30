@@ -1,5 +1,7 @@
 # ADR 0016 — Phase 7b: a web-standard handler, HTTP rules as data, and an edge build
 
+> **Superseded in part by ADR 0043 (0.8.0):** in §1 sessions are no longer stateless signed cookies: the handler keeps them in a server-side store with an opaque id (B), which edge and multi-instance entries pass explicitly, and `server.revalidate(tags): number` became `revalidate([tag()]): { entries, pages }` (A). The handler is built from the app module, `createHandler(app, { manifest, render })` (E).
+
 - Status: accepted. Rewrites stay out, and Deno/workerd are not installed (user decision).
 - Scope: Tier 2 items 7 and 12 of ADR 0011. It covers three things:
   - `(Request) => Response` as the only server entry point;

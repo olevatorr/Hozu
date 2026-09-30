@@ -6,7 +6,7 @@ order: 9
 
 ## Install the matching guide
 
-Hozu's authoring skill ships with the framework version: a short core (`SKILL.md`, with a complete, tested example and a task index), change recipes, and one small topic per task that `hozu docs <topic>` prints. Every diagnostic ends with the topic to read. Give an agent that reference rather than asking it to infer an unfamiliar API.
+Hozu's authoring skill ships with the framework version: a core of at most 4 KB (`SKILL.md`: the change loop, what to touch for each kind of change, the few rules no diagnostic can check, and a task index) and one small topic per task that `hozu docs <topic>` prints, including `hozu docs feature` with a complete, tested example. Everything a diagnostic checks is taught by that diagnostic, and every diagnostic ends with the topic to read. Give an agent that reference rather than asking it to infer an unfamiliar API.
 
 | Option | Files written |
 | --- | --- |
@@ -24,10 +24,10 @@ The agent can then change the schemas, event, mutation input, form and contracts
 
 ## Keep the loop short
 
-1. Run `hozu map` to locate declarations and routes.
+1. Run `hozu map`: the session shape, the line to verify with, each file's role and every declaration with its `file:line`.
 2. Print the topic the change needs with `hozu docs <topic>`, then read the feature's own lines.
-3. Edit the declarations, resolvers, views and contracts together.
-4. Run `hozu check` and fix its diagnostics.
+3. Edit the declarations, resolvers and views together; add a contract only where a transition decides (a guard, a navigation or a computed value).
+4. Run `hozu check` and apply the fix each diagnostic gives. Accept an intended behaviour change with `hozu check --update-lock` and list the accepted `now:` lines for review.
 5. Run `hozu get` or `hozu browse` to verify the intended result without starting a server; verify what other users see, reloads and sign-out once in one `browse` chain with `--js both`.
 
 Scaffold common behaviours with `hozu add feature` instead of repeatedly rebuilding their state machines and contracts. The command lists generated declarations and user-facing text to adapt.
@@ -36,7 +36,7 @@ Scaffold common behaviours with `hozu add feature` instead of repeatedly rebuild
 
 Add `--json` when a tool consumes the result. Diagnostics include source locations, causes and fixes; inspection commands expose the same canonical program the runtime uses.
 
-Keep changes to the behaviour lock intentional. A green check is one layer of evidence, alongside page inspection, browser tests where needed and acceptance criteria written by the person requesting the change.
+The agent's `CLAUDE.md` / `AGENTS.md` instructions sit between `hozu` markers; `hozu skill` and `hozu migrate 0.8` rewrite that block for the installed version and leave the rest of the file alone. Keep changes to the behaviour lock intentional. A green check is one layer of evidence, alongside page inspection, browser tests where needed and acceptance criteria written by the person requesting the change.
 
 ## Know what the trials establish
 

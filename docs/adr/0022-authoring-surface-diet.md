@@ -1,5 +1,7 @@
 # ADR 0022 — A smaller authoring surface
 
+> **Superseded in part by ADR 0043 D (0.8.0):** in §1 `head.redirects` is replaced by `head.failed`, which is required and exhaustive when the head query declares errors, so the head's behaviour-deciding field is no longer optional in that case. The `search` argument of `ui.link` follows §1's rule now: omitted means every default (ADR 0043 G).
+
 - Status: accepted
 - Motivation: trial 0006 measured Tenon at **1.67× Nuxt to build and 1.39× to change** the task board, with the
   same model and equal correctness.

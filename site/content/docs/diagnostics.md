@@ -16,7 +16,7 @@ Start with `npx hozu check`. Resolve TypeScript errors first, then address each 
 | --- | --- | --- |
 | HZ005 | A visible control sends an event a state (without `invoke`) does not handle. | Handle it, or list it in that state's `ignore` when dropping it is intended. |
 | HZ016 | A machine transition lacks a contract. | Add a given/when/expect example for the intended transition. |
-| HZ018 | Behaviour changed without a corresponding contract change. | Decide the intended behaviour, update the contract, then accept a clean lock. |
+| HZ018 | A transition that decides changed, and no contract fails against the previous behaviour. | Decide the intended behaviour, add or update the contract, then accept the lock. |
 | HZ024 | A route's parameter schema disagrees with its pattern. | Match strings, nullable strings or arrays to the segment modifiers. |
 | HZ026 | A class does not produce CSS. | Correct the utility or use a `data-*` hook for custom styling. |
 | HZ028 | An image lacks dimensions. | Supply its width and height. |
@@ -25,6 +25,12 @@ Start with `npx hozu check`. Resolve TypeScript errors first, then address each 
 | HZ033 | A DOM string feeds an enum, number or boolean field without known options. | Use literal select, radio or submit button values matching the enum; in a form, send a flag with `ui.dom.formAll` and parse numbers in the mutation input. |
 | HZ035 | A search schema cannot be canonicalized. | Use flat scalar fields with defaults or nullable values. |
 | HZ036 | A form cannot run without JavaScript. | Read named form fields with `ui.dom.form` or `ui.dom.formAll` when a native form is required. |
+| HZ049 | A user-scoped query is cached. | Use `freshness: 'request'` (the fix is a patch). |
+| HZ051 | A declared head error is not mapped in `head.failed`. | Choose a route, 403, 404 or 410 for each error; it is an intent decision. |
+| HZ054 | `ui.dom.form` reads one value where several arrive. | Read every value with `ui.dom.formAll` into a list field. |
+| HZ057 | `hozu.lock.json` differs from the computed lock. | Review the listed lines, run `hozu check --update-lock`, and list the accepted `now:` lines. |
+| HZ058 | A contract covers no decision. | Nothing to patch: the named lock entries already review those transitions. |
+| HZ059 | A reference reached plain JavaScript. | Make the helper a `part()`; for a global, use an operator or a `fn()`. |
 
 `hozu docs diagnostics` prints the version-matched table of the full rule set, and every diagnostic names its topic (`see: hozu docs …`). Historical trial records use the old `TN` prefix; current Hozu diagnostics use `HZ`.
 

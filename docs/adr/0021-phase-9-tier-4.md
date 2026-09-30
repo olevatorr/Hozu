@@ -1,5 +1,7 @@
 # ADR 0021 — Phase 9 (Tier 4): preview mode, OG images, PWA and offline, a test helper
 
+> **Superseded in part by ADR 0043 E (0.8.0):** §4's `testApp` builds from the app module that `hozu serve` runs (`testApp(app)`), so tests, `hozu get` / `browse` and production serve the same handler options; it refuses a build with errors.
+
 - Status: accepted. The user asked to finish Tier 4 and then run a verification (an AI trial and the benchmarks).
 - Scope: Tier 4 of ADR 0011. No principle changes. The only new dependency use is `sharp`, through
   `@tenon/image`, which the project already approved in ADR 0017.

@@ -24,7 +24,7 @@ Static content does not need a machine. Add one when the UI has an interaction w
 
 A machine describes states and transitions. A contract states the starting state, the events or effect results that occur, and the expected state, data changes and effects. Transitions that decide something (a guard, a navigation or a computed value) need a contract. Transitions that only copy values are recorded in readable form in `hozu.lock.json`, so a change to them is reviewed as a lock diff.
 
-`expect.changes` is a deep patch: omitted fields must remain unchanged, and arrays replace the old value. `given.context` defaults to the machine's initial context. A behaviour lock catches changes made without an accompanying contract change.
+`expect.changes` is a deep patch: omitted fields must remain unchanged, and arrays replace the old value. `given.context` defaults to the machine's initial context. The lock must equal the one Hozu computes: any difference is reported until `hozu check --update-lock` accepts it, and a change to a transition that decides is accepted only when a contract fails against the previous behaviour. A contract over transitions that only copy values is flagged, because the lock already reviews them.
 
 ## Logic stays explicit
 
@@ -34,7 +34,7 @@ When an operation needs ordinary JavaScript, declare a named `fn()` with input a
 
 ## Rendering follows the data
 
-Each query declares its scope and freshness. Public static data can be rendered at build time. Revalidation and stale-while-revalidate policies produce their corresponding cache plans. User-scoped data stays out of shared cacheable regions.
+Each query declares its scope and freshness. Public static data can be rendered at build time. Revalidation and stale-while-revalidate policies produce their corresponding cache plans. User-scoped data stays out of shared cacheable regions and is read per request (`'request'` or `'live'`).
 
 Only machine-bound views hydrate. A static document has no need for a client application runtime. A page's optional `assert: 'static'` asks the validator to verify this property; it does not override the derived plan.
 

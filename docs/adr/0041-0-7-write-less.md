@@ -1,5 +1,7 @@
 # ADR 0041 — 0.7: write less (URL-seeded context, shared helpers, module declarations, machine-wide transitions)
 
+> **Superseded in part by ADR 0043 (0.8.0):** A's soft-navigation note no longer applies, since soft navigation is removed (I). E's shorter start is replaced by K: `changing.md` is folded into a SKILL.md of at most 4 096 B, and `hozu map` starts with the session shape, the verify line and the files.
+
 - Status: accepted (the owner chose A–E, with C as the only form)
 - Motivation: an investigation of trials 0016–0018.
   - On the notes task `hozu add feature` writes most of the app, and a Hozu build *outputs* about half of what Nuxt

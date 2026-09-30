@@ -1,5 +1,7 @@
 # ADR 0005 — Data layer: resolvers, cache, tags, scope and freshness
 
+> **Superseded in part by ADR 0043 A (0.8.0):** D3 and D4 no longer hold: there is no per-session partition cache and no cross-request dedup. User-scoped data is read per request (`freshness: 'request'` or `'live'`, HZ049) through one per-request memo that a mutation clears, and every cache entry carries a generation so a refresh never stores data older than an invalidation. D2 stays: public resolvers never see the session (HZ020).
+
 - Status: accepted
 - Phase: 2
 

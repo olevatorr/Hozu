@@ -1,5 +1,7 @@
 # ADR 0008 — Route params, page head metadata, crawler endpoints
 
+> **Superseded in part by ADR 0043 D (0.8.0):** the "HTTP status is derived" paragraph of D3 no longer holds. A failing head query answers what `head.failed` maps its declared error to (a parameterless route with 303, or 403 / 404 / 410), required and exhaustive when the head query declares errors (HZ051); `head.redirects` is removed.
+
 - Status: accepted
 - Trigger: Trial 0001 (blog). The SEO audit passed 19/45 checks; articles needed one route and one view each.
 

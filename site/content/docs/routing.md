@@ -52,7 +52,7 @@ Route modifiers support optional segments (`:slug?`, nullable string), one or mo
 
 ## Missing pages and redirects
 
-Declare a static error route and pass it as `project({ notFound })`. Hozu uses its page for unmatched URLs. `project({ error })` supplies a server-error page.
+Declare a static error route and pass it as `project({ notFound })`. Hozu uses its page for unmatched URLs. `project({ error })` supplies a server-error page. When a page's head query declares errors, `head.failed` maps each one to a route without params (a 303 redirect) or to 403, 404 or 410, for example `failed: { Unauthorized: login, Forbidden: 403 }`.
 
 Project HTTP options can declare a base path, a trailing-slash policy, explicit redirects and per-route headers. These are server behaviours; a static host must provide any HTTP rules it needs. Hozu does not provide arbitrary rewrites.
 

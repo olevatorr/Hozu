@@ -1,5 +1,7 @@
 # ADR 0017 — Phase 7c: internationalisation and optional image optimisation
 
+> **Superseded in part by ADR 0043 F (0.8.0):** A1's option (d) is replaced by (c): the default locale (`site.lang`) keeps its unprefixed URLs, the other locales are prefixed, `/en/x` answers 308 `/x`, and there is no Accept-Language redirect. A route whose first segment is a locale is HZ060.
+
 - Status: accepted. Every locale is prefixed (option d), and sharp may be added to the repository (user decision).
 - Scope: Tier 2 items 8 and 9 of ADR 0011.
 - **i18n** uses no third-party code: locales in the URL, messages as typed data, formatting through the platform's

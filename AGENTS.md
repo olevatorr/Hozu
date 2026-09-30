@@ -11,12 +11,15 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 
 ## Non-negotiable principles
 1. One canonical form per concept. No syntax sugar, no aliases. Formatter normalizes.
-2. Explicit over implicit. No auto-imports, no global injection, no file-based magic.
+2. Explicit over implicit. No auto-imports, no global injection, no file-based magic. An endpoint form body is
+   multi-valued exactly where its input schema declares an array (ADR 0043 C).
 3. No stringly-typed cross references where a declaration identity is possible.
 4. Closed world: views are constrained `ui()` trees, never arbitrary functions; reusable view logic is a `part()`,
    lowered like a builder callback and inlined at record time, so the IR holds no function (ADR 0043 H).
-   Side effects only via declared `query` / `mutation`, plus the framework-owned
-   `navigate` (on a transition) and `after(ms)` (on a state). Logic is data: operators and
+   Side effects only via declared `query` / `mutation` / `endpoint`, plus the framework-owned
+   `navigate` (on a transition) and `after(ms)` (on a state). Query resolvers only read; writes happen in mutation and
+   endpoint resolvers. That is not checkable: `hozu migrate`, the scaffold and `hozu docs data` enforce it
+   (ADR 0043 B). Logic is data: operators and
    assignments in builder callbacks are lowered by `@hozu/transform` to the `op.*` IR (ADR 0039);
    anything else is a named, schema-typed `fn()` (ADR 0002 D1).
 5. Every behavior change requires a reviewed change: a contract (given / when / expect) for transitions that decide
@@ -25,12 +28,14 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 7. Diagnostics are structured JSON with location, cause, and suggested fix.
 8. Rendering mode is DERIVED, never chosen:
    - query declares `scope: 'public' | 'user'` and
-     `freshness: 'static' | { revalidate } | { swr } | 'live'`
-   - compiler derives a per-node render plan (static / ISR / SWR / streamed SSR / client)
-   - `scope: 'user'` data must never reach a cacheable region (hard error)
+     `freshness: 'static' | 'request' | { revalidate } | { swr } | 'live'`
+   - compiler derives a per-node render plan (static / ISR / SWR / per-request / streamed SSR / client);
+     `'request'` is a per-request region in either scope
+   - `scope: 'user'` data must never reach a cacheable region (hard error) and is never cached across requests:
+     its freshness is `'request'` or `'live'` (HZ049, ADR 0043 A)
    - only nodes bound to a machine hydrate; everything else ships 0 JS
    - `render: 'static'` style assertions are allowed but validated, never obeyed blindly
-9. Framework-owned fetch: queries have tags, mutations declare `invalidates`.
+9. Framework-owned fetch: queries have tags, mutations and endpoints declare `invalidates`.
    Server-fetched data is serialized into the payload and never refetched on the client.
 
 ## Explicitly out of scope
@@ -67,8 +72,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `ui.asset(url)` (HZ028 for img without dimensions).
   Literals are checked against their schema (HZ031); enumerated attributes (`type`, `method`, `loading`…) are typed.
   Internal links are `ui.link` only: a string `href` starting with `/` is HZ032 (ADR 0012).
-- Agent guide: the `hozu` skill (`.claude/skills/hozu/`: `SKILL.md` core API with a task index (≤ 6 KB), `topics/*.md`
-  one short topic each, printed by `hozu docs <topic>` (ADR 0038 R1), `changing.md`, and `example/` = a generated copy of
+- Agent guide: the `hozu` skill (`.claude/skills/hozu/`: `SKILL.md` = the change loop, the "What to touch" table, the
+  rules no diagnostic checks and the topic index, ≤ 4 096 B with its frontmatter and tested (ADR 0043 K); `topics/*.md`
+  one short topic each, printed by `hozu docs <topic>` (ADR 0038 R1; `hozu docs feature` has the tested build
+  example), and `example/` = a generated copy of
   `examples/bookmarks`) is the authoring reference; it ships in `create-hozu` and is written into apps by
   `create-hozu --agent claude|agents|both` and `hozu skill`. `pnpm skill` regenerates `example/` and `AGENTS.md`
   (from this file); a test fails when they are stale; `examples/bookmarks` is its verified reference app. Keep both in sync with any API change. Busy states declare `ignore: [Event]` (HZ005, HZ034);
@@ -166,10 +173,24 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `head.failed` (a route, 403, 404 or 410; HZ051); endpoints have `errors` + `failed`, `output` schema / `'redirect'`
   / `'response'` (no HTML, HZ053), `input: 'raw'`, `ui.link(endpoint, input)` and `exports`; a route without a page
   is HZ052.
+- 0.8 (ADR 0043, breaking; `hozu migrate 0.8` rewrites 0.7 apps): user data is `freshness: 'request'` or `'live'`
+  (HZ049; `'request'` also for public data, replacing `{ revalidate: 0 }`; `'live'` needs tags, HZ050), exact
+  invalidation, endpoint `invalidates` (HZ062 on GET), `server.revalidate([tag()]) → { entries, pages }`, derived
+  `Cache-Control` / `Vary`; a session change is a barrier (post-mutation session, `session: true`, scoped
+  `/_hozu/live`); forms: `ui.dom.formAll(name)` (every value; `form` is the first), the submitter included, one
+  decoder `formEntries`, `ui.formRef()` for controls outside the form (HZ054–HZ056, HZ061, HZ063), an invalid native
+  post answers 400; `part()` (HZ059 for references in plain JavaScript); `op.*` and the motion-less `ui.if` removed;
+  the lock is v2 (`decides`, fields, normalised contract hashes, `pages`) and must equal the computed one (HZ057,
+  `hozu check --update-lock`), a contract over copy-only transitions is HZ058, a duplicate HZ064; `ui.link(route,
+  params)` with `search` optional; i18n (c): `site.lang` unprefixed, other locales prefixed (HZ060); no soft
+  navigation; `hozu browse --js on|off|both` (default both), `--as <name>` actors, `--session`, `in "<text>"` targets;
+  `hozu post` is gone; `hozu get` / `browse` / `testApp` refuse a broken build; `hozu map` starts with the session
+  shape, the verify line and the files; the agent's `CLAUDE.md` / `AGENTS.md` block sits between `hozu` markers that
+  `hozu skill` and `hozu migrate 0.8` rewrite.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
-  published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head
-  query derives the HTTP status. `assert` is validated, never obeyed (ADR 0008).
+  published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of
+  the head query answers what `head.failed` maps it to (ADR 0043 D). `assert` is validated, never obeyed (ADR 0008).
 - `fn()` implementations used on the client are shipped by source text (`/_hozu/fns.js`): they must be
   self-contained (no free variables beyond JS globals) — ADR 0007 D5.
 - Query/mutation implementations live in server modules via `resolvers(project, implement => [...])`, bound by
@@ -190,7 +211,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `examples/notes` — sessions (sign in/out), user-scoped data, no-JS forms; reference app for `bench/trial/notes`
 - `node bench/trial/notes/accept.mjs <name> <dir> <entry> <port> [1|2]` — hidden acceptance of the notes trial
 - `node bench/trial/accept.mjs <name> <dir> <entry> <port> [1|2]` — hidden acceptance of the AI trial app (docs/trials/0003)
-- `hozu validate --update-lock` — accept behavior changes into `hozu.lock.json` (only when clean)
+- `hozu check --update-lock` — accept behavior changes into `hozu.lock.json`; list the accepted `now:` lines
 
 ## CLI (agent-facing, all support --json)
 `hozu inspect <feature>` · `hozu validate [feature]` · `hozu impact <feature>.<symbol>`
