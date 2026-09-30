@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
 import { testApp } from '@hozu/testing'
+import { describe, expect, it } from 'vitest'
 
 describe('testApp (ADR 0043 C)', () => {
   it('posts a native form from a record or from [name, value] pairs, repeated names kept in order', async () => {
