@@ -165,6 +165,7 @@ describe('A1 determinism', () => {
     expect(hashJson(a.ir)).toBe(hashJson(b.ir))
   })
 
+  // Guards determinism, not speed (bench does); the full parallel suite can stretch it past 5 s.
   it('is independent of authoring order in the cart (1000 runs)', () => {
     const expected = hashJson(buildProject(cartProject).ir)
     fc.assert(
@@ -175,7 +176,7 @@ describe('A1 determinism', () => {
       }),
       { numRuns: 1000 },
     )
-  })
+  }, 30_000)
 
   it('is independent of identities, state order and cross-event transition order (1000 runs)', () => {
     const expected = hashJson(buildProject(freshProject(seeded(1))).ir)
