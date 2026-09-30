@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { printed } from '../src/commands/migrate.ts'
 import { forget } from '../src/commands/migrate-ast.ts'
 import { migrateForms } from '../src/commands/migrate-forms.ts'
 import { migrateFreshness } from '../src/commands/migrate-freshness.ts'
@@ -233,5 +234,34 @@ export const List = ui.view({
     const notes = [...first.notes, ...second.notes].map((n) => [n.message.split(':')[0], n.behaviour])
     expect(notes).toContainEqual(['row → part()', true])
     expect(notes).toContainEqual(['badge → part() (the IR is unchanged)', false])
+  })
+})
+
+describe('migrate: what it cannot rewrite is printed with its topic', () => {
+  it('hand-made i18n, HTML and redirect Responses from resolvers', () => {
+    const notes = [
+      ...printed(
+        'model.ts',
+        "export const Session = z.object({ user: z.string(), lang: z.enum(['en', 'de']) })\n",
+      ),
+      ...printed(
+        'serve.ts',
+        "import { AsyncLocalStorage } from 'node:async_hooks'\nconst l = req.headers['accept-language']\n",
+      ),
+      ...printed(
+        'server.ts',
+        "implement(admin, () => new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } }))\nimplement(home, () => new Response(null, { status: 303, headers: { location: '/' } }))\n",
+      ),
+      ...printed('views.ts', "ui.p({}, ['text/html is a media type'])\n"),
+    ]
+    expect(notes.map((n) => [n.file, n.line, n.see])).toEqual([
+      ['model.ts', 1, 'i18n'],
+      ['serve.ts', 1, 'i18n'],
+      ['serve.ts', 2, 'i18n'],
+      ['server.ts', 1, 'pages'],
+      ['server.ts', 2, 'pages'],
+    ])
+    expect(notes.every((n) => n.behaviour)).toBe(true)
+    expect(notes[3]!.message).toContain('HZ053')
   })
 })
