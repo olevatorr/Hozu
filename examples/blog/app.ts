@@ -1,5 +1,7 @@
 import { loadCollection } from '@hozu/content'
 import { resolvers } from '@hozu/data'
+import { ogImage } from '@hozu/image'
+import { app } from '@hozu/runtime-server'
 import { getPost, listPosts } from './features/posts/effects.ts'
 import { Frontmatter } from './features/posts/schemas.ts'
 import { savedPosts, savePost, unsavePost } from './features/saved/effects.ts'
@@ -12,9 +14,10 @@ const visible = (preview: boolean) => posts.filter((p) => preview || !p.draft).m
 
 const who = (session: { userId: string } | null) => session?.userId ?? 'guest'
 
-export function createResolvers() {
-  const lists = new Map<string, string[]>()
-  return resolvers(project, (implement) => [
+const user = (cookie: string | undefined) => /(?:^|;\s*)user=([^;]+)/.exec(cookie ?? '')?.[1] ?? 'guest'
+const lists = new Map<string, string[]>()
+export default app({
+  resolvers: resolvers(project, (implement) => [
     implement(listPosts, (_, { preview }) =>
       visible(preview).map(({ html: _, author: __, ...summary }) => summary),
     ),
@@ -36,5 +39,7 @@ export function createResolvers() {
       lists.set(who(session), next)
       return next
     }),
-  ])
-}
+  ]),
+  session: (request) => ({ userId: user(request.headers.get('cookie') ?? undefined) }),
+  og: ogImage,
+})

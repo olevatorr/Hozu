@@ -1,16 +1,17 @@
 import { resolvers } from '@hozu/data'
+import { app } from '@hozu/runtime-server'
 import { addBookmark, getBookmark, listBookmarks, toggleRead } from './features/bookmarks/model.ts'
 import project from './hozu.config.ts'
 
 type Kind = 'article' | 'video' | 'podcast'
 
-export function createResolvers() {
-  const items = [
-    { id: 'b1', title: 'Closed-world UI', kind: 'article' as Kind, read: false },
-    { id: 'b2', title: 'Islands explained', kind: 'video' as Kind, read: true },
-  ]
-  let seq = items.length
-  return resolvers(project, (implement) => [
+const items = [
+  { id: 'b1', title: 'Closed-world UI', kind: 'article' as Kind, read: false },
+  { id: 'b2', title: 'Islands explained', kind: 'video' as Kind, read: true },
+]
+let seq = items.length
+export default app({
+  resolvers: resolvers(project, (implement) => [
     implement(listBookmarks, () => items.map((b) => ({ ...b }))),
     implement(getBookmark, ({ id }, { fail }) => {
       const b = items.find((x) => x.id === id)
@@ -30,5 +31,5 @@ export function createResolvers() {
       b.read = !b.read
       return { ...b }
     }),
-  ])
-}
+  ]),
+})

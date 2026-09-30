@@ -2,7 +2,16 @@ import { readFile } from 'node:fs/promises'
 import { createServer as http, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import { join, normalize } from 'node:path'
 import { Readable } from 'node:stream'
-import { contentType, createHandler, type Handler, type HandlerOptions } from '@hozu/runtime-server'
+import {
+  type App,
+  type AppHost,
+  appHandlerOptions,
+  appOptionsOf,
+  contentType,
+  createHandler,
+  type Handler,
+  type HandlerOptions,
+} from '@hozu/runtime-server'
 
 export interface NodeAdapterOptions extends Omit<HandlerOptions, 'readFile'> {
   publicDir?: string
@@ -40,7 +49,19 @@ export async function send(response: ServerResponse, answer: Response): Promise<
   response.end()
 }
 
-export function createServer(options: NodeAdapterOptions): Server & Pick<Handler, 'revalidate'> {
+export function createServer(options: NodeAdapterOptions): Server & Pick<Handler, 'revalidate'>
+export function createServer(
+  app: App,
+  host?: Omit<AppHost, 'readFile'> & { publicDir?: string },
+): Server & Pick<Handler, 'revalidate'>
+export function createServer(
+  first: NodeAdapterOptions | App,
+  host: Omit<AppHost, 'readFile'> & { publicDir?: string } = {},
+): Server & Pick<Handler, 'revalidate'> {
+  const { publicDir: dir, ...appHost } = host
+  const options: NodeAdapterOptions = appOptionsOf(first)
+    ? { ...appHandlerOptions(first as App, appHost), ...(dir ? { publicDir: dir } : {}) }
+    : (first as NodeAdapterOptions)
   const { publicDir, ...rest } = options
   const handler = createHandler({ env: process.env, ...rest, readFile: (file) => readFile(file) })
   const prefix = `${options.build.ir.http.basePath}/_hozu/`

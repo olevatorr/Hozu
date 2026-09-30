@@ -9,7 +9,7 @@ import { feature, project, route, ui } from '@hozu/core'
 import { buildProject, type Manifest } from '@hozu/core/ir'
 import { resolvers } from '@hozu/data'
 import { optimizeImages } from '@hozu/image'
-import { createHandler } from '@hozu/runtime-server'
+import { appOptionsOf, createHandler } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { chromium } from 'playwright-core'
 import sharp from 'sharp'
@@ -107,7 +107,8 @@ describe('@hozu/image (ADR 0017)', () => {
     expect(hero?.map((v) => v.width)).toEqual([640, 960, 1280, 1600])
     for (const v of hero!) expect(existsSync(join(out, 'public', v.href))).toBe(true)
     const project = (await import('../../../examples/blog/hozu.config.ts')).default
-    const { createResolvers } = await import('../../../examples/blog/server.ts')
+    const { default: createResolversApp } = await import('../../../examples/blog/app.ts')
+    const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
     const handler = createHandler({
       build: buildProject(project, { sources: false, manifest }),
       manifest,

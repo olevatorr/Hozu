@@ -1,10 +1,8 @@
 import { randomBytes } from 'node:crypto'
-import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
-import { pathToFileURL } from 'node:url'
 import type { RequestElement, RequestOutput, RequestStep } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
+import { importer, requireApp } from './app.ts'
 
 interface TestPage {
   status: number
@@ -18,7 +16,7 @@ interface TestApp {
   post(path: string, form: Record<string, string>, init?: RequestInit): Promise<TestPage>
 }
 
-type TestingModule = { testApp(options: Record<string, unknown>): TestApp }
+type TestingModule = { testApp(app: unknown, options: Record<string, unknown>): TestApp }
 
 const LIMIT = 1500
 
@@ -178,20 +176,9 @@ export interface RequestOptions {
 }
 
 export async function appParts(loaded: Loaded, command: string, sessionJson: string | undefined) {
-  const require = createRequire(loaded.path)
-  const importFrom = async <T>(id: string, hint: string[]): Promise<T> => {
-    try {
-      return (await import(pathToFileURL(require.resolve(id)).href)) as T
-    } catch {
-      throw new HozuCliError('config', `hozu ${command} needs ${id} in the app`, hint)
-    }
-  }
-  const serverPath = join(dirname(loaded.path), 'server.ts')
-  const server = await import(pathToFileURL(serverPath).href).catch(() => null)
-  if (typeof server?.createResolvers !== 'function')
-    throw new HozuCliError('config', `${serverPath} must export createResolvers()`, [
-      'export function createResolvers() { return resolvers(project, (implement) => [...]) }',
-    ])
+  const importFrom = importer(loaded, command)
+  const build = loaded.build()
+  const module = await requireApp(loaded, command, build)
   let session: unknown = null
   if (sessionJson !== undefined)
     try {
@@ -202,19 +189,20 @@ export async function appParts(loaded: Loaded, command: string, sessionJson: str
   const { memorySessions } = await importFrom<{
     memorySessions(o: { secret: string; secure: boolean }): { issue(value: unknown): Promise<string> }
   }>('@hozu/runtime-server', ['npm install @hozu/runtime-server'])
-  const store = memorySessions({ secret: randomBytes(24).toString('hex'), secure: false })
-  const cookie = sessionJson === undefined ? null : await store.issue(session)
-  return { importFrom, resolvers: server.createResolvers() as unknown, session: store, cookie }
+  const store =
+    sessionJson === undefined
+      ? null
+      : memorySessions({ secret: randomBytes(24).toString('hex'), secure: false })
+  const cookie = store ? await store.issue(session) : null
+  return { importFrom, build, module, session: store, cookie }
 }
 
 export async function runRequest(loaded: Loaded, options: RequestOptions): Promise<RequestOutput> {
   const parts = await appParts(loaded, options.method.toLowerCase(), options.session)
   const { testApp } = await parts.importFrom<TestingModule>('@hozu/testing', ['npm install -D @hozu/testing'])
-  const app = testApp({
-    build: loaded.build(),
-    resolvers: parts.resolvers,
+  const app = testApp(parts.module.app, {
     env: process.env,
-    session: parts.session,
+    ...(parts.session ? { session: parts.session } : {}),
   })
   const cookies = new Map<string, string>()
   if (parts.cookie) {

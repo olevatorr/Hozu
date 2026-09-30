@@ -92,11 +92,12 @@ export const packageJson = (name: string, version: string) => ({
   type: 'module',
   scripts: {
     check: 'hozu check',
-    start: 'node --import @hozu/transform/register serve.ts',
+    start: 'hozu serve',
     build: 'hozu build',
   },
   dependencies: {
     '@hozu/adapter-node': `^${version}`,
+    '@hozu/cli': `^${version}`,
     '@hozu/core': `^${version}`,
     '@hozu/css': `^${version}`,
     '@hozu/data': `^${version}`,
@@ -106,7 +107,6 @@ export const packageJson = (name: string, version: string) => ({
     zod: '^4.6.5',
   },
   devDependencies: {
-    '@hozu/cli': `^${version}`,
     '@hozu/testing': `^${version}`,
     '@types/node': '^22.20.4',
     typescript: '^7.0.2',

@@ -1,11 +1,9 @@
 import assert from 'node:assert/strict'
 import { access, readdir, readFile, stat } from 'node:fs/promises'
-import { buildProject } from '@hozu/core/ir'
 import { testApp } from '@hozu/testing'
-import project from './hozu.config.ts'
-import { createResolvers } from './server.ts'
+import site from './app.ts'
 
-const app = testApp({ build: buildProject(project), resolvers: createResolvers() })
+const app = testApp(site)
 for (const [path, status, text] of [
   ['/', 200, 'Public query notes.notesOf is keyed by user-scoped data'],
   ['/', 200, 'Every run, trials 0016–0019'],

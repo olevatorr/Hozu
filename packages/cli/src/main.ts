@@ -1,6 +1,7 @@
 import { parseArgs } from 'node:util'
 import { describeAdd, runAddFeature } from './commands/add.ts'
 import { describeAddWidget, runAddWidget } from './commands/add-widget.ts'
+import { BuildFailed } from './commands/app.ts'
 import { browseFailed, describeBrowse, runBrowse } from './commands/browse.ts'
 import { runBuild } from './commands/build.ts'
 import { runCheck } from './commands/check.ts'
@@ -12,6 +13,7 @@ import { runInspect } from './commands/inspect.ts'
 import { describeMap, runMap } from './commands/map.ts'
 import { describePlan, runPlan } from './commands/plan.ts'
 import { describeRequest, runRequest } from './commands/request.ts'
+import { runServe } from './commands/serve.ts'
 import { runSkill } from './commands/skill.ts'
 import { runValidate } from './commands/validate.ts'
 import { HozuCliError } from './errors.ts'
@@ -28,6 +30,7 @@ Commands:
   impact <feature>.<symbol> What a query, mutation, tag, event, fn or view affects
   plan <route>              Derived render plan: regions, cache modes, hydration islands
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
+  serve                     Start the app module (project({ app })) on PORT with adapter-node: what npm start runs
   docs [topic]              Print one topic of the guide (no topic: list them)
   skill                     Rewrite the agent skill for this Hozu version (--agent claude|agents|both)
   check                     Type-check the app and validate it: the one command to run after every edit
@@ -36,7 +39,7 @@ Commands:
   post <path> --field k=v   Submit the page's form like a browser, follow the redirect (--next <path> after)
   browse <path> --do <step> Load the page in headless Chrome (no server): errors, widgets, text after the steps
   add feature <name>        Scaffold a working feature (model, views, contracts, resolvers) and wire it in
-  add widget <feature> <Name>  Add a widget: declaration, client module, serve.ts bundle, @hozu/bundle dependency
+  add widget <feature> <Name>  Add a widget: declaration, client module, app.ts bundle, @hozu/bundle dependency
 
 Options:
   --json               Machine-readable output (schemas in @hozu/cli/schema)
@@ -113,6 +116,7 @@ export async function main(
       'impact',
       'plan',
       'build',
+      'serve',
       'skill',
     ]
     if (!commands.includes(command)) throw new HozuCliError('usage', `Unknown command "${command}"`, commands)
@@ -158,6 +162,10 @@ export async function main(
         )
       }
       return result.ok ? 0 : 1
+    }
+    if (command === 'serve') {
+      await runServe(loaded, (line) => out(`${line}\n`))
+      return 0
     }
     if (command === 'map') {
       const result = runMap(loaded, cwd)
@@ -248,6 +256,6 @@ export async function main(
       process.stderr.write(
         `hozu: ${e.message}${e.suggestions.length ? `\n  ${e.suggestions.join('\n  ')}` : ''}\n`,
       )
-    return 2
+    return e instanceof BuildFailed ? 1 : 2
   }
 }

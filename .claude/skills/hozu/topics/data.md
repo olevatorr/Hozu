@@ -35,14 +35,14 @@ export const visible = fn({                   // computation: pure JS; may call 
 - **Query resolvers only read.** Writes happen in mutation and endpoint resolvers: a query that creates a row on read
   runs again on every request, on prefetch and after a delete (the account comes back). Keep two helpers:
   `listOf(user)` returns the stored list or `[]` for queries; `ownListOf(user)` creates it, for mutations only.
-- **Resolvers** (`server.ts`, or `features/<name>/server.ts` from the scaffold) get the schema-parsed input
-  (defaults and transforms applied):
+- **Resolvers** (in `app.ts`, or `features/<name>/server.ts` from the scaffold, spread into it) get the
+  schema-parsed input (defaults and transforms applied):
 ```ts
-export const createResolvers = () => resolvers(project, (implement) => [
+export default app({ resolvers: resolvers(project, (implement) => [
   implement(listItems, () => items.map((i) => ({ ...i }))),
   implement(getItem, ({ id }, { fail }) => items.find((i) => i.id === id) ?? fail('NotFound', { id })),
   implement(addItem, ({ title }, { fail, session }) => /* … */ ),
-])
+]) })
 ```
 - Every mutation also has `Invalid` = `{ message, fields }` (input failing its schema, or
   `fail('Invalid', { message, fields: { title: 'Taken' } })`); never declare `Invalid` or `Unexpected` yourself.

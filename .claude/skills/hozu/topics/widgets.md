@@ -1,6 +1,6 @@
 # Widgets (browser APIs, DOM libraries)
 
-Start with `hozu add widget <feature> <Name>`: it writes the declaration, the client module, the `serve.ts` bundle
+Start with `hozu add widget <feature> <Name>`: it writes the declaration, the client module, the bundle in `app.ts`
 and the `@hozu/bundle` dependency. There is no `widget` export; the pieces are:
 ```ts
 export const Map = ui.widget({ tag: 'div', props: z.object({ lat: z.number(), lng: z.number() }),
@@ -22,8 +22,8 @@ export default implement<typeof Map>(({ el, props, emit, signal }) => {
 - `on` is optional. `ui.use` takes no other attributes: put a role or label on a wrapping element,
   `ui.section({ role: 'region', 'aria-label': 'Map' }, [ui.use(Map, { props }, [])])`.
 - `load`: `'eager' | 'visible' | 'idle'`; `wraps: true` keeps the children as server HTML.
-- `serve.ts` passes `widgets: await bundleWidgets(build)` (the server refuses to start without it; `hozu build` bundles
-  them itself). A library's CSS goes in `app.css` (`@import "leaflet/dist/leaflet.css";`); a map or chart host needs a
+- `app.ts` passes `widgets: bundleWidgets` to `app()` (`import { bundleWidgets } from '@hozu/bundle'`; without it
+  the server refuses to start and `hozu check` reports HZ045; `hozu build` bundles them itself). A library's CSS goes in `app.css` (`@import "leaflet/dist/leaflet.css";`); a map or chart host needs a
   height class.
 - Check it with `hozu browse /` (no server): each widget is listed as mounted / failed / not mounted with its size
   and canvases, next to any error it threw. A mounted host carries `data-hozu-widget="<feature>.<Name>"` and

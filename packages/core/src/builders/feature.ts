@@ -73,6 +73,7 @@ export interface ProjectConfig {
     themeColor?: string
   }
   styles?: URL
+  app?: URL
   notFound?: RouteDecl
   error?: RouteDecl
   pages: PageDecl[]

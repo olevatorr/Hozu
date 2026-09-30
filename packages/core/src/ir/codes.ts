@@ -50,7 +50,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   HZ042: { name: 'invalid-i18n', severity: 'error' },
   HZ043: { name: 'invalid-offline-page', severity: 'error' },
   HZ044: { name: 'untransformed-source', severity: 'error' },
-  HZ045: { name: 'incomplete-server-entry', severity: 'warning' },
+  HZ045: { name: 'invalid-app-module', severity: 'error' },
   HZ046: { name: 'invalid-endpoint', severity: 'error' },
   HZ047: { name: 'fn-not-self-contained', severity: 'error' },
   HZ048: { name: 'invalid-seed', severity: 'error' },

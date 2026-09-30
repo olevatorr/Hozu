@@ -17,6 +17,7 @@
     "@hozu/core": "workspace:*",
     "@hozu/css": "workspace:*",
     "@hozu/data": "workspace:*",
+    "@hozu/runtime-server": "workspace:*",
     "@hozu/schema-zod": "workspace:*",
     "@hozu/testing": "workspace:*",
     "@hozu/transform": "workspace:*",

@@ -97,7 +97,7 @@ describe.skipIf(!findBrowser())('ADR 0043 B (browse)', () => {
 })
 
 describe('ADR 0043 D and J (tools)', () => {
-  it.fails('ADR 0043 D: hozu check reports a missing resolver as HZ021 with a location', async () => {
+  it('ADR 0043 D: hozu check reports a missing resolver as HZ021 with a location', async () => {
     const app = await authApp()
     const file = join(app, 'features/notes/server.ts')
     const text = readFileSync(file, 'utf8')
@@ -107,14 +107,18 @@ describe('ADR 0043 D and J (tools)', () => {
     const check = await hozu(['check'], app)
     const d = check.out.validate?.diagnostics?.find((x: { code: string }) => x.code === 'HZ021')
     expect(d?.location?.pointer).toBe('/features/notes/queries/listNotes')
+    expect(d?.location?.source?.file).toMatch(/features\/notes\/model\.ts$/)
+    expect(d?.fix?.snippet).toBe('implement(listNotes, (input, ctx) => …),')
     expect(check.code).toBe(1)
   }, 90_000)
 
-  it.fails('ADR 0043 J: hozu get exits 1 without rendering when the build has errors', async () => {
+  it('ADR 0043 J: hozu get exits 1 without rendering when the build has errors', async () => {
     const app = await authApp()
     const file = join(app, 'features/notes/model.ts')
     const text = readFileSync(file, 'utf8')
-    writeFileSync(file, text.replace("freshness: 'static'", 'freshness: { revalidate: 0 }'))
+    const broken = text.replace("freshness: 'request'", 'freshness: { revalidate: 0 }')
+    expect(broken).not.toBe(text)
+    writeFileSync(file, broken)
     const check = await hozu(['check'], app)
     expect(check.out.validate.summary.errors).toBeGreaterThan(0)
     const page = await hozu(['get', '/login'], app)

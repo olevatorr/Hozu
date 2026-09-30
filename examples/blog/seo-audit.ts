@@ -3,8 +3,8 @@ import type { AddressInfo } from 'node:net'
 import { createServer } from '@hozu/adapter-node'
 import { buildProject } from '@hozu/core/ir'
 import { compileStyles } from '@hozu/css'
+import app from './app.ts'
 import project from './hozu.config.ts'
-import { createResolvers } from './server.ts'
 
 interface Res {
   status: number
@@ -14,12 +14,7 @@ interface Res {
 
 const build = buildProject(project, { sources: false })
 const styles = await compileStyles(build)
-const server = createServer({
-  build,
-  styles,
-  resolvers: createResolvers(),
-  session: () => ({ userId: 'crawler' }),
-})
+const server = createServer(app, { styles })
 await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()))
 const { port } = server.address() as AddressInfo
 const call = (method: string, path: string) =>

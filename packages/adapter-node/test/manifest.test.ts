@@ -6,9 +6,12 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createServer } from '@hozu/adapter-node'
 import { buildProject, type Manifest } from '@hozu/core/ir'
+import { appOptionsOf } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
+import createResolversApp from '../../../examples/cart/app.ts'
 import project from '../../../examples/cart/hozu.config.ts'
-import { createResolvers } from '../../../examples/cart/server.ts'
+
+const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
 
 const cart = fileURLToPath(new URL('../../../examples/cart/', import.meta.url))
 const cli = fileURLToPath(new URL('../../cli/bin/hozu.js', import.meta.url))

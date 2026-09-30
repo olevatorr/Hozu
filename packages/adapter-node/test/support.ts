@@ -2,8 +2,14 @@ import { request as http, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { createServer, type NodeAdapterOptions } from '@hozu/adapter-node'
 import { buildProject } from '@hozu/core/ir'
+import { appOptionsOf } from '@hozu/runtime-server'
 import project from '../../../examples/cart/hozu.config.ts'
-import { createResolvers } from '../../../examples/cart/server.ts'
+
+const cartApp = '../../../examples/cart/app.ts'
+const instances = await Promise.all(
+  Array.from({ length: 12 }, async (_, i) => (await import(`${cartApp}?fresh=${i}`)).default),
+)
+const createResolvers = () => appOptionsOf(instances.shift())!.resolvers
 
 export const build = buildProject(project, { sources: false })
 

@@ -137,7 +137,13 @@ export function createDataRuntime({
   const env = parsedEnv?.ok ? parsedEnv.value : {}
   const effects = new Map<string, Effect>()
   const problems: Diagnostic[] = []
-  const problem = (pointer: string, feature: string | null, message: string, cause: string) =>
+  const problem = (
+    pointer: string,
+    feature: string | null,
+    message: string,
+    cause: string,
+    symbol?: string,
+  ) =>
     problems.push({
       code: 'HZ021',
       severity: codes.HZ021.severity,
@@ -145,8 +151,9 @@ export function createDataRuntime({
       location: { feature, pointer, source: resolveSource(build.sources, pointer) },
       cause,
       fix: {
-        summary: 'Add exactly one implement(decl, …) for every query and mutation',
-        snippet: null,
+        summary:
+          'Add exactly one implement(decl, …) for every query, mutation and endpoint, in the resolvers of app.ts',
+        snippet: symbol ? `implement(${symbol}, (input, ctx) => …),` : null,
         patch: null,
       },
     })
@@ -205,6 +212,7 @@ export function createDataRuntime({
           feature.id,
           `${ref} has no implementation`,
           'Every query and mutation needs a resolver.',
+          symbol,
         )
         return
       }
@@ -230,6 +238,7 @@ export function createDataRuntime({
           feature.id,
           `${ref} has no implementation`,
           'Every endpoint needs a resolver.',
+          symbol,
         )
       else
         endpoints.set(ref, {

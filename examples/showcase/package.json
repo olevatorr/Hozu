@@ -4,8 +4,9 @@
   "type": "module",
   "scripts": {
     "validate": "hozu validate",
-    "serve": "node --import @hozu/transform/register serve.ts",
-    "dev": "hozu-dev serve.ts"
+    "serve": "hozu serve",
+    "dev": "hozu-dev",
+    "start": "hozu serve"
   },
   "dependencies": {
     "@hozu/adapter-node": "workspace:*",
@@ -15,6 +16,7 @@
     "@hozu/css": "workspace:*",
     "@hozu/data": "workspace:*",
     "@hozu/dev": "workspace:*",
+    "@hozu/runtime-server": "workspace:*",
     "@hozu/schema-zod": "workspace:*",
     "@hozu/transform": "workspace:*",
     "chart.js": "4.5.1",

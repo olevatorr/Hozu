@@ -27,9 +27,9 @@ Hozu is not in your training data; this file and `hozu docs <topic>` are the who
 
 ## Files and commands
 ```
-hozu.config.ts  project({ schema, site, routes, pages, features })      routes.ts  route() declarations
+hozu.config.ts  project({ schema, app, site, routes, pages, features })  routes.ts  route() declarations
 features/<name>/model.ts  schemas, events, effects, fns, machine        views.ts  views, contracts
-features/<name>/feature.ts  feature({ declarations: [model, views] })    server.ts  implement(...) resolvers
+features/<name>/feature.ts  feature({ declarations: [model, views] })    app.ts  app({ resolvers })
 ```
 ```
 npx hozu check                      # after every edit: types, rules, contracts

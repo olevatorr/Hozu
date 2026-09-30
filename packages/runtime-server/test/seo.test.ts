@@ -1,9 +1,18 @@
 import { buildProject } from '@hozu/core/ir'
 import { createDataRuntime } from '@hozu/data'
-import { matcher, pageEntries, renderToString, robotsTxt, sitemapXml } from '@hozu/runtime-server'
+import {
+  appOptionsOf,
+  matcher,
+  pageEntries,
+  renderToString,
+  robotsTxt,
+  sitemapXml,
+} from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
+import createResolversApp from '../../../examples/blog/app.ts'
 import project from '../../../examples/blog/hozu.config.ts'
-import { createResolvers } from '../../../examples/blog/server.ts'
+
+const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
 
 const build = buildProject(project, { sources: false })
 const data = () => createDataRuntime({ build, resolvers: createResolvers() })

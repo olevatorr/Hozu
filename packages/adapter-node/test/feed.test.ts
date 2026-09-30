@@ -2,10 +2,13 @@ import { existsSync } from 'node:fs'
 import type { AddressInfo } from 'node:net'
 import { createServer } from '@hozu/adapter-node'
 import { buildProject } from '@hozu/core/ir'
+import { appOptionsOf } from '@hozu/runtime-server'
 import { chromium } from 'playwright-core'
 import { describe, expect, it } from 'vitest'
+import createResolversApp from '../../../examples/feed/app.ts'
 import project from '../../../examples/feed/hozu.config.ts'
-import { createResolvers } from '../../../examples/feed/server.ts'
+
+const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
 
 const chrome = process.env.CHROMIUM_PATH ?? chromium.executablePath()
 

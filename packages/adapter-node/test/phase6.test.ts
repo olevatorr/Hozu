@@ -1,9 +1,12 @@
 import type { AddressInfo } from 'node:net'
 import { createServer } from '@hozu/adapter-node'
 import { buildProject } from '@hozu/core/ir'
+import { appOptionsOf } from '@hozu/runtime-server'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import createResolversApp from '../../../examples/bookmarks/app.ts'
 import project from '../../../examples/bookmarks/hozu.config.ts'
-import { createResolvers } from '../../../examples/bookmarks/server.ts'
+
+const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
 
 const errors: unknown[] = []
 let base = ''

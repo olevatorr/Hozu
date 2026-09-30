@@ -1,4 +1,5 @@
 import { resolvers } from '@hozu/data'
+import { app } from '@hozu/runtime-server'
 import { addItem, checkout, getCart, removeItem } from './features/cart/effects.ts'
 import { getProduct, listProducts } from './features/catalog/effects.ts'
 import project from './hozu.config.ts'
@@ -10,29 +11,30 @@ interface Line {
 
 const who = (session: { userId: string } | null) => session?.userId ?? 'guest'
 
-export function createResolvers() {
-  const products = [
-    { sku: 'mug', name: 'Mug', price: 12 },
-    { sku: 'tee', name: 'T-shirt', price: 25 },
-  ]
-  const stock = new Map([
-    ['mug', 3],
-    ['tee', 0],
-  ])
-  const carts = new Map<string, Line[]>()
-  let orders = 0
+const user = (cookie: string | undefined) => /(?:^|;\s*)user=([^;]+)/.exec(cookie ?? '')?.[1] ?? 'guest'
+const products = [
+  { sku: 'mug', name: 'Mug', price: 12 },
+  { sku: 'tee', name: 'T-shirt', price: 25 },
+]
+const stock = new Map([
+  ['mug', 3],
+  ['tee', 0],
+])
+const carts = new Map<string, Line[]>()
+let orders = 0
 
-  const cartOf = (userId: string) => {
-    const lines = carts.get(userId) ?? []
-    return {
-      items: lines.map((line) => {
-        const product = products.find((p) => p.sku === line.sku)!
-        return { sku: line.sku, name: product.name, price: product.price, qty: line.qty }
-      }),
-    }
+const cartOf = (userId: string) => {
+  const lines = carts.get(userId) ?? []
+  return {
+    items: lines.map((line) => {
+      const product = products.find((p) => p.sku === line.sku)!
+      return { sku: line.sku, name: product.name, price: product.price, qty: line.qty }
+    }),
   }
+}
 
-  return resolvers(project, (implement) => [
+export default app({
+  resolvers: resolvers(project, (implement) => [
     implement(listProducts, () => products),
     implement(
       getProduct,
@@ -63,5 +65,6 @@ export function createResolvers() {
       carts.delete(who(session))
       return { orderId: `order-${++orders}` }
     }),
-  ])
-}
+  ]),
+  session: (request) => ({ userId: user(request.headers.get('cookie') ?? undefined) }),
+})

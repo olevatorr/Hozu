@@ -1,11 +1,13 @@
 import { buildProject } from '@hozu/core/ir'
 import { createDataRuntime } from '@hozu/data'
 import { hydrate } from '@hozu/runtime-client'
-import { renderToString } from '@hozu/runtime-server'
+import { appOptionsOf, renderToString } from '@hozu/runtime-server'
 import { Window } from 'happy-dom'
 import { afterEach, describe, expect, it } from 'vitest'
+import createResolversApp from '../../../examples/cart/app.ts'
 import project from '../../../examples/cart/hozu.config.ts'
-import { createResolvers } from '../../../examples/cart/server.ts'
+
+const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
 
 const build = buildProject(project, { sources: false })
 const html = (

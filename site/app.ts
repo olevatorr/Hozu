@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises'
+import { bundleWidgets } from '@hozu/bundle'
 import { loadCollection } from '@hozu/content'
 import { resolvers } from '@hozu/data'
+import { app } from '@hozu/runtime-server'
 import { z } from 'zod'
 import {
   Frontmatter,
@@ -89,8 +91,8 @@ const article = (items: typeof docs, slug: string) => {
       }
     : undefined
 }
-export function createResolvers() {
-  return resolvers(project, (implement) => [
+export default app({
+  resolvers: resolvers(project, (implement) => [
     implement(listChapters, () => chapters.map(summary)),
     implement(getChapter, ({ slug }, { fail }) => article(chapters, slug) ?? fail('NotFound', { slug })),
     implement(getStart, () => ({
@@ -103,5 +105,6 @@ export function createResolvers() {
     implement(listTrials, () => trials.map(summary)),
     implement(getTrial, ({ slug }, { fail }) => article(trials, slug) ?? fail('NotFound', { slug })),
     implement(getChangelog, () => ({ html: changelogHtml })),
-  ])
-}
+  ]),
+  widgets: bundleWidgets,
+})

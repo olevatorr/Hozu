@@ -19,6 +19,7 @@ import { changelog, chapter, doc, home, how, notFound, trial, trials } from './r
 const icon = ui.asset(new URL('./assets/icon-256.png', import.meta.url))
 export default project({
   schema: zodAdapter,
+  app: new URL('./app.ts', import.meta.url),
   styles: new URL('./app.css', import.meta.url),
   site: { url: 'https://hozu.org', name: 'Hozu', lang: 'en', icon, themeColor: '#245ca6' },
   notFound,

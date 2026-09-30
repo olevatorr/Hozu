@@ -1,5 +1,14 @@
-import type { Json } from '@hozu/core/ir'
-import { createHandler, type HandlerOptions, usedWidgets } from '@hozu/runtime-server'
+import type { Diagnostic, Json } from '@hozu/core/ir'
+import {
+  type App,
+  type AppHost,
+  appHandlerOptions,
+  createHandler,
+  type HandlerOptions,
+  type OgCard,
+  type SessionStore,
+  usedWidgets,
+} from '@hozu/runtime-server'
 
 export interface TestPage {
   status: number
@@ -32,8 +41,37 @@ export const visibleText = (html: string): string =>
     .replace(/\s+/g, ' ')
     .trim()
 
-export function testApp(options: HandlerOptions & { origin?: string }): TestApp {
-  const { origin = 'http://localhost', ...rest } = options
+export interface TestAppOptions {
+  origin?: string
+  session?: SessionStore
+  env?: AppHost['env']
+  og?: ((card: OgCard) => Promise<Uint8Array>) | null
+}
+
+export class BuildErrors extends Error {
+  override name = 'BuildErrors'
+  readonly diagnostics: Diagnostic[]
+  constructor(diagnostics: Diagnostic[]) {
+    super(
+      `The build has ${diagnostics.length} error${diagnostics.length === 1 ? '' : 's'}, so nothing is rendered:\n${diagnostics
+        .map((d) => `  ${d.code} ${d.location.pointer} ${d.message}`)
+        .join('\n')}`,
+    )
+    this.diagnostics = diagnostics
+  }
+}
+
+export function testApp(
+  app: App,
+  { origin = 'http://localhost', env, session, og }: TestAppOptions = {},
+): TestApp {
+  const rest: HandlerOptions = appHandlerOptions(app, {
+    ...(env ? { env } : {}),
+    ...(session ? { session } : {}),
+  })
+  if (og !== undefined) rest.og = og
+  const errors = rest.build.diagnostics.filter((d) => d.severity === 'error')
+  if (errors.length) throw new BuildErrors(errors)
   const handler = createHandler(
     rest.widgets || rest.manifest
       ? rest

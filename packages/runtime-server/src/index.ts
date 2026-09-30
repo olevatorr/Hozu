@@ -1,4 +1,6 @@
 export { usedWidgets } from '@hozu/core/ir'
+export type { App, AppHost, AppOptions } from './app.ts'
+export { app, appHandlerOptions, appOptionsOf, projectOfApp } from './app.ts'
 export { clientBundle } from './assets.ts'
 export type { CachedPage, PageCache } from './cache.ts'
 export { memoryCache } from './cache.ts'

@@ -1,8 +1,9 @@
 import { type ChildProcess, spawn } from 'node:child_process'
 import { existsSync, type FSWatcher, readFileSync, statSync, watch } from 'node:fs'
 import { createServer, request, type Server, type ServerResponse } from 'node:http'
+import { createRequire } from 'node:module'
 import type { AddressInfo } from 'node:net'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { devClient } from './client.ts'
 
@@ -14,7 +15,7 @@ const devBundle = () =>
   ))
 
 export interface DevOptions {
-  entry: string
+  entry?: string
   cwd?: string
   port?: number
   appPort?: number
@@ -46,7 +47,13 @@ export async function dev({
     const transform = existsSync(join(cwd, 'node_modules/@hozu/transform'))
       ? ['--import', '@hozu/transform/register']
       : []
-    child = spawn(process.execPath, [...transform, entry], {
+    const args = entry
+      ? [...transform, entry]
+      : [
+          join(dirname(createRequire(join(cwd, 'package.json')).resolve('@hozu/cli')), '../bin/hozu.js'),
+          'serve',
+        ]
+    child = spawn(process.execPath, args, {
       cwd,
       env: { ...process.env, PORT: String(appPort), HOZU_DEV: '1' },
       stdio: ['ignore', 'pipe', 'inherit'],

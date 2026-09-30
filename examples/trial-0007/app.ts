@@ -1,4 +1,5 @@
 import { resolvers } from '@hozu/data'
+import { app } from '@hozu/runtime-server'
 import { addTask, clearDone, getTask, listTasks, toggleTask } from './features/tasks/model.ts'
 import project from './hozu.config.ts'
 
@@ -9,8 +10,8 @@ const tasks: { id: string; title: string; done: boolean; priority: 'low' | 'norm
 ]
 let seq = tasks.length
 
-export function createResolvers() {
-  return resolvers(project, (implement) => [
+export default app({
+  resolvers: resolvers(project, (implement) => [
     implement(listTasks, () => tasks.map((t) => ({ ...t }))),
     implement(getTask, ({ id }, { fail }) => {
       const t = tasks.find((x) => x.id === id)
@@ -36,5 +37,5 @@ export function createResolvers() {
       tasks.splice(0, tasks.length, ...open)
       return { removed: before - tasks.length }
     }),
-  ])
-}
+  ]),
+})

@@ -33,8 +33,9 @@ npx hozu get / --json
 | `hozu post /tasks --field title=Hello --json` | Submit a page's native form and follow its redirect. |
 | `hozu browse /tasks --do 'click Save' --json` | Load a page in headless Chrome without a server: errors, widgets and text after the steps. |
 | `hozu build --json` | Write deployment assets, generated server rendering code and the manifest. |
+| `hozu serve` | Start the app module on `PORT` with adapter-node; this is `npm start`. |
 | `hozu docs forms` | Print one topic of the installed guide; `hozu docs` lists the topics. |
-| `hozu add widget tasks Chart --json` | Add a widget: declaration, client module, the bundle in `serve.ts` and the `@hozu/bundle` dependency. |
+| `hozu add widget tasks Chart --json` | Add a widget: declaration, client module, the bundle in `app.ts` and the `@hozu/bundle` dependency. |
 | `hozu skill --agent both --json` | Refresh the installed authoring skill and agent instructions. |
 
 Use `hozu --help` for the options supported by your installed version. `--config` points to a different configuration file, and `build --out` chooses the output directory.

@@ -83,7 +83,7 @@ describe('the agent loop (ADR 0027)', () => {
     const app = await freshApp()
     await run(['add', 'feature', 'tasks', '--page', '/'], app)
     const notes = await json('add', ['add', 'feature', 'notes', '--page', '/notes'], app)
-    expect(notes.out.edited).toEqual(expect.arrayContaining(['routes.ts', 'hozu.config.ts', 'server.ts']))
+    expect(notes.out.edited).toEqual(expect.arrayContaining(['routes.ts', 'hozu.config.ts', 'app.ts']))
     expect((await run(['check'], app)).code).toBe(0)
     const page = await json('request', ['get', '/notes'], app)
     expect(page.out.steps[0]).toMatchObject({ status: 200 })
@@ -229,12 +229,12 @@ describe('the agent loop (ADR 0027)', () => {
     expect(added.out.created).toEqual(
       expect.arrayContaining(['features/account/model.ts', 'features/account/views.ts']),
     )
-    expect(added.out.edited).toEqual(expect.arrayContaining(['server.ts', 'routes.ts', 'hozu.config.ts']))
+    expect(added.out.edited).toEqual(expect.arrayContaining(['app.ts', 'routes.ts', 'hozu.config.ts']))
     expect(added.out.manual).toEqual([])
     const check = await json('check', ['check'], app)
     expect(check.out.types.errors).toEqual([])
     expect(check.out.validate.summary).toEqual({ errors: 0, warnings: 0 })
-    expect(readFileSync(join(app, 'serve.ts'), 'utf8')).not.toContain('session:')
+    expect(readFileSync(join(app, 'app.ts'), 'utf8')).not.toContain('session:')
     const signedOut = await json('request', ['get', '/'], app)
     expect(signedOut.out.steps[0]).toMatchObject({ status: 303, location: '/login' })
     const flow = await json(
@@ -331,10 +331,10 @@ describe('hozu add widget (ADR 0037 D5)', () => {
     expect(added.out.edited).toEqual([
       'features/tasks/views.ts',
       'features/tasks/feature.ts',
-      'serve.ts',
+      'app.ts',
       'package.json',
     ])
-    expect(readFileSync(join(app, 'serve.ts'), 'utf8')).toContain('widgets: await bundleWidgets(build),')
+    expect(readFileSync(join(app, 'app.ts'), 'utf8')).toContain('widgets: bundleWidgets,')
     const pkg = JSON.parse(readFileSync(join(app, 'package.json'), 'utf8'))
     expect(pkg.dependencies['@hozu/bundle']).toBe(pkg.dependencies['@hozu/core'])
     const views = join(app, 'features/tasks/views.ts')
@@ -349,8 +349,8 @@ describe('hozu add widget (ADR 0037 D5)', () => {
     const check = await checkFresh(app)
     expect(check.types.errors).toEqual([])
     expect(check.validate.summary).toEqual({ errors: 0, warnings: 0 })
-    const serve = join(app, 'serve.ts')
-    writeFileSync(serve, readFileSync(serve, 'utf8').replace('widgets: await bundleWidgets(build),', ''))
+    const entry = join(app, 'app.ts')
+    writeFileSync(entry, readFileSync(entry, 'utf8').replace('widgets: bundleWidgets,', ''))
     const missing = await checkFresh(app)
     expect(missing.validate.diagnostics.map((d: { code: string }) => d.code)).toEqual(['HZ045'])
     expect(missing.validate.diagnostics[0].message).toContain('tasks.Chart')
@@ -381,8 +381,8 @@ describe('the guide compiles (ADR 0037 D2)', () => {
     for (const [file, text] of Object.entries(parts))
       writeFileSync(join(app, 'features/todos', file), `${heads[file]}${text}`)
     writeFileSync(
-      join(app, 'server.ts'),
-      `import { resolvers } from '@hozu/data'\nimport { addItem, listItems } from './features/todos/model.ts'\nimport project from './hozu.config.ts'\n\nconst list: { id: string; title: string; done: boolean }[] = []\nconst save = (title: string) => {\n  const item = { id: String(list.length + 1), title, done: false }\n  list.push(item)\n  return item\n}\n\nexport const createResolvers = () =>\n  resolvers(project, (implement) => [\n    implement(listItems, () => list.map((i) => ({ ...i }))),\n    ${resolver.replace('exists', 'list.some((i) => i.title === title)')},\n  ])\n`,
+      join(app, 'app.ts'),
+      `import { resolvers } from '@hozu/data'\nimport { app } from '@hozu/runtime-server'\nimport { addItem, listItems } from './features/todos/model.ts'\nimport project from './hozu.config.ts'\n\nconst list: { id: string; title: string; done: boolean }[] = []\nconst save = (title: string) => {\n  const item = { id: String(list.length + 1), title, done: false }\n  list.push(item)\n  return item\n}\n\nexport default app({\n  resolvers: resolvers(project, (implement) => [\n    implement(listItems, () => list.map((i) => ({ ...i }))),\n    ${resolver.replace('exists', 'list.some((i) => i.title === title)')},\n  ]),\n})\n`,
     )
     const config = join(app, 'hozu.config.ts')
     writeFileSync(

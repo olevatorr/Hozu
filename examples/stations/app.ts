@@ -1,4 +1,6 @@
+import { bundleWidgets } from '@hozu/bundle'
 import { resolvers } from '@hozu/data'
+import { app } from '@hozu/runtime-server'
 import { listStations, toggleFavorite } from './features/stations/model.ts'
 import project from './hozu.config.ts'
 
@@ -13,23 +15,24 @@ const seed = [
   ['s8', 'Tower Plaza', 'Xinyi', 25.0339, 121.5645, 11, 22],
 ] as const
 
-export function createResolvers() {
-  const stations = seed.map(([id, name, district, lat, lng, bikes, docks]) => ({
-    id,
-    name,
-    district,
-    lat,
-    lng,
-    bikes,
-    docks,
-  }))
-  const favorites = new Set<string>()
-  return resolvers(project, (implement) => [
+const stations = seed.map(([id, name, district, lat, lng, bikes, docks]) => ({
+  id,
+  name,
+  district,
+  lat,
+  lng,
+  bikes,
+  docks,
+}))
+const favorites = new Set<string>()
+export default app({
+  resolvers: resolvers(project, (implement) => [
     implement(listStations, () => stations.map((s) => ({ ...s, favorite: favorites.has(s.id) }))),
     implement(toggleFavorite, ({ id }) => {
       if (favorites.has(id)) favorites.delete(id)
       else favorites.add(id)
       return { id, favorite: favorites.has(id) }
     }),
-  ])
-}
+  ]),
+  widgets: bundleWidgets,
+})

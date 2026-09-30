@@ -1,12 +1,13 @@
 import { buildProject } from '@hozu/core/ir'
 import { createDataRuntime } from '@hozu/data'
 import { compileMachine, type Effect, init, type Step, transition } from '@hozu/machine'
+import { appOptionsOf } from '@hozu/runtime-server'
+import app from './app.ts'
 import { getCart } from './features/cart/effects.ts'
 import project from './hozu.config.ts'
-import { createResolvers } from './server.ts'
 
 const build = buildProject(project, { sources: false })
-const data = createDataRuntime({ build, resolvers: createResolvers() })
+const data = createDataRuntime({ build, resolvers: appOptionsOf(app)!.resolvers })
 const machine = compileMachine(build.ir.features.cart!, build.bindings.fns)
 const session = { userId: 'ada' }
 

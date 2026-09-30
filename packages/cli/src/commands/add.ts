@@ -139,7 +139,7 @@ export async function runAddFeature(
     }
   }
   await edit(
-    'server.ts',
+    'app.ts',
     (s) => {
       const wired = s.replace(
         /resolvers\(project,\s*\((?:implement)?\)\s*=>\s*\[/,
@@ -151,7 +151,7 @@ export async function runAddFeature(
         ? addImport(withFeature, `import { accountResolvers } from './features/account/server.ts'\n`)
         : withFeature
     },
-    `import { ${n.resolvers} } from './features/${name}/server.ts' and add ...${n.resolvers}(implement) to resolvers(project, (implement) => [...])`,
+    `app.ts: import { ${n.resolvers} } from './features/${name}/server.ts' and add ...${n.resolvers}(implement) to resolvers(project, (implement) => [...])`,
   )
   const newRoutes = [
     ...(newLogin ? [`export const login = route({ path: '/login', params: null, search: null })`] : []),

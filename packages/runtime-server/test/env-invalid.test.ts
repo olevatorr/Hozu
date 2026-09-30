@@ -1,14 +1,18 @@
 import { buildProject } from '@hozu/core/ir'
 import { createDataRuntime } from '@hozu/data'
 import { compileMachine, init, transition } from '@hozu/machine'
-import { createHandler } from '@hozu/runtime-server'
+import { appOptionsOf, createHandler } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
+import bookmarkResolversApp from '../../../examples/bookmarks/app.ts'
 import bookmarks from '../../../examples/bookmarks/hozu.config.ts'
-import { createResolvers as bookmarkResolvers } from '../../../examples/bookmarks/server.ts'
+import cartResolversApp from '../../../examples/cart/app.ts'
 import cart from '../../../examples/cart/hozu.config.ts'
-import { createResolvers as cartResolvers } from '../../../examples/cart/server.ts'
+import taskResolversApp from '../../../examples/trial-tasks/app.ts'
 import tasks from '../../../examples/trial-tasks/hozu.config.ts'
-import { createResolvers as taskResolvers } from '../../../examples/trial-tasks/server.ts'
+
+const bookmarkResolvers = () => appOptionsOf(bookmarkResolversApp)!.resolvers
+const cartResolvers = () => appOptionsOf(cartResolversApp)!.resolvers
+const taskResolvers = () => appOptionsOf(taskResolversApp)!.resolvers
 
 const cartBuild = buildProject(cart, { sources: false })
 const session = () => ({ userId: 'ada' })

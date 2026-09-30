@@ -4,8 +4,9 @@ import { exportStatic } from '@hozu/adapter-static'
 import { bundleWidgets } from '@hozu/bundle'
 import { buildProject } from '@hozu/core/ir'
 import { compileStyles } from '@hozu/css'
+import { appOptionsOf } from '@hozu/runtime-server'
+import app from './app.ts'
 import project from './hozu.config.ts'
-import { createResolvers } from './server.ts'
 
 const build = buildProject(project, { sources: false })
 const outDir = fileURLToPath(new URL('./dist/', import.meta.url))
@@ -14,7 +15,7 @@ const result = await exportStatic({
   build,
   styles: await compileStyles(build),
   widgets: await bundleWidgets(build),
-  resolvers: createResolvers(),
+  resolvers: appOptionsOf(app)!.resolvers,
   outDir,
 })
 for (const file of result.written) console.log(`wrote   ${file}`)

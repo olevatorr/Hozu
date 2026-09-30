@@ -14,6 +14,7 @@ const head = (title: string) => ({
 
 export default project({
   schema: zodAdapter,
+  app: new URL('./app.ts', import.meta.url),
   styles: new URL('./app.css', import.meta.url),
   site: { url: 'http://localhost:3000', name: 'Feed', lang: 'en' },
   routes: { home, tag, archive },

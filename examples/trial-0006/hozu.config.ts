@@ -7,6 +7,7 @@ import { home, taskPage } from './routes.ts'
 
 export default project({
   schema: zodAdapter,
+  app: new URL('./app.ts', import.meta.url),
   styles: new URL('./app.css', import.meta.url),
   site: { url: 'http://localhost:3000', name: 'Tasks', lang: 'en' },
   routes: { home, taskPage },

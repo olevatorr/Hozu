@@ -3,9 +3,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { exportStatic } from '@hozu/adapter-static'
 import { buildProject } from '@hozu/core/ir'
+import { appOptionsOf } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
+import createResolversApp from '../../../examples/cart/app.ts'
 import project from '../../../examples/cart/hozu.config.ts'
-import { createResolvers } from '../../../examples/cart/server.ts'
+
+const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
 
 async function missingFiles(outDir: string) {
   const missing: string[] = []
@@ -45,7 +48,8 @@ describe('static export', () => {
 
 describe('static export with params', () => {
   it('expands entries into one file per post', async () => {
-    const { createResolvers: blogResolvers } = await import('../../../examples/blog/server.ts')
+    const { default: blogResolversApp } = await import('../../../examples/blog/app.ts')
+    const blogResolvers = () => appOptionsOf(blogResolversApp)!.resolvers
     const blog = (await import('../../../examples/blog/hozu.config.ts')).default
     const outDir = await mkdtemp(join(tmpdir(), 'hozu-blog-'))
     const result = await exportStatic({
@@ -77,7 +81,8 @@ describe('static export with params', () => {
 describe('static export of the official site', () => {
   it('links only files it wrote, and its share image is an asset', async () => {
     const site = (await import('../../../site/hozu.config.ts')).default
-    const { createResolvers: siteResolvers } = await import('../../../site/server.ts')
+    const { default: siteResolversApp } = await import('../../../site/app.ts')
+    const siteResolvers = () => appOptionsOf(siteResolversApp)!.resolvers
     const outDir = await mkdtemp(join(tmpdir(), 'hozu-site-'))
     const { bundleWidgets } = await import('@hozu/bundle')
     const build = buildProject(site, { sources: false })

@@ -1,10 +1,12 @@
 import { buildProject } from '@hozu/core/ir'
 import { hydrate } from '@hozu/runtime-client'
-import { createHandler } from '@hozu/runtime-server'
+import { appOptionsOf, createHandler } from '@hozu/runtime-server'
 import { Window } from 'happy-dom'
 import { describe, expect, it } from 'vitest'
+import createResolversApp from '../../../examples/blog/app.ts'
 import project from '../../../examples/blog/hozu.config.ts'
-import { createResolvers } from '../../../examples/blog/server.ts'
+
+const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
 
 const build = buildProject(project, { sources: false })
 const handler = createHandler({ build, resolvers: createResolvers(), session: () => ({ userId: 'ada' }) })

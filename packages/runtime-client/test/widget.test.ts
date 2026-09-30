@@ -90,7 +90,6 @@ describe('a missing widget bundle', () => {
   it('fails at startup instead of rendering hosts that never mount', async () => {
     const { createHandler } = await import('@hozu/runtime-server')
     const { exportStatic } = await import('@hozu/adapter-static')
-    const { testApp } = await import('@hozu/testing')
     const options = { build, resolvers: resolvers(project, () => []) }
     const missing =
       /Widgets meter\.Frame, meter\.Meter are used in views, but no widget bundle was given.*bundleWidgets/
@@ -101,6 +100,8 @@ describe('a missing widget bundle', () => {
     ).toThrow(/no client code for meter\.Frame; check the diagnostics of bundleWidgets \(HZ029\)/)
     const bundle = await bundleWidgets(build)
     expect(() => createHandler({ ...options, widgets: bundle })).not.toThrow()
-    expect((await testApp(options).get('/')).status).toBe(200)
+    expect(
+      (await createHandler({ ...options, widgets: bundle }).fetch(new Request('http://x/'))).status,
+    ).toBe(200)
   })
 })

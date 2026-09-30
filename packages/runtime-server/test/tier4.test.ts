@@ -1,13 +1,23 @@
-import { buildProject } from '@hozu/core/ir'
-import { testApp } from '@hozu/testing'
+import { appHandlerOptions, createHandler } from '@hozu/runtime-server'
+import { testApp, visibleText } from '@hozu/testing'
 import { describe, expect, it } from 'vitest'
-import project from '../../../examples/blog/hozu.config.ts'
-import { createResolvers } from '../../../examples/blog/server.ts'
+import blog from '../../../examples/blog/app.ts'
 
-const build = buildProject(project, { sources: false })
 const secret = 's'.repeat(32)
-const app = () =>
-  testApp({ build, resolvers: createResolvers(), session: () => ({ userId: 'a' }), preview: { secret } })
+const app = () => {
+  const handler = createHandler({
+    ...appHandlerOptions(blog),
+    session: () => ({ userId: 'a' }),
+    preview: { secret },
+  })
+  return {
+    get: async (path: string, init?: RequestInit) => {
+      const response = await handler.fetch(new Request(`http://localhost${path}`, init))
+      const html = await response.text()
+      return { status: response.status, headers: response.headers, html, text: visibleText(html) }
+    },
+  }
+}
 
 describe('preview mode (ADR 0021)', () => {
   it('needs the secret and an internal path', async () => {
@@ -63,9 +73,7 @@ describe('PWA and offline (ADR 0021)', () => {
   })
 
   it('serves no worker without an offline page', async () => {
-    const cart = (await import('../../../examples/cart/hozu.config.ts')).default
-    const { createResolvers: cartResolvers } = await import('../../../examples/cart/server.ts')
-    const a = testApp({ build: buildProject(cart, { sources: false }), resolvers: cartResolvers() })
+    const a = testApp((await import('../../../examples/cart/app.ts')).default)
     expect((await a.get('/sw.js')).status).toBe(404)
     expect((await a.get('/')).html).not.toContain('sw-register')
   })
@@ -73,16 +81,14 @@ describe('PWA and offline (ADR 0021)', () => {
 
 describe('@hozu/testing (ADR 0021)', () => {
   it('returns visible text, the payload and native form posts', async () => {
-    const page = await app().get('/zh-TW')
+    const page = await testApp(blog).get('/zh-TW')
     expect(page.text).toContain('Hozu 部落格')
     expect(page.text).not.toContain('hozu-payload')
     expect(page.payload).toMatchObject({ islands: expect.any(Array) })
   })
 
   it('posts a native form', async () => {
-    const bookmarks = (await import('../../../examples/bookmarks/hozu.config.ts')).default
-    const { createResolvers: bookmarkResolvers } = await import('../../../examples/bookmarks/server.ts')
-    const b = testApp({ build: buildProject(bookmarks, { sources: false }), resolvers: bookmarkResolvers() })
+    const b = testApp((await import('../../../examples/bookmarks/app.ts')).default)
     const action = /<form[^>]* action="([^"]+)"/.exec((await b.get('/')).html)![1]!.replace(/&amp;/g, '&')
     const page = await b.post(action, { title: 'x', kind: 'article' })
     expect([page.status, page.text]).toEqual([200, expect.stringContaining('Use at least 2 characters')])

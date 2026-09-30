@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "validate": "hozu validate",
-    "serve": "node --import @hozu/transform/register serve.ts"
+    "serve": "hozu serve",
+    "start": "hozu serve"
   },
   "dependencies": {
     "@hozu/adapter-node": "workspace:*",
@@ -12,6 +13,7 @@
     "@hozu/core": "workspace:*",
     "@hozu/css": "workspace:*",
     "@hozu/data": "workspace:*",
+    "@hozu/runtime-server": "workspace:*",
     "@hozu/schema-zod": "workspace:*",
     "@hozu/transform": "workspace:*",
     "zod": "4.6.5"

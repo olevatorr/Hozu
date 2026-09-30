@@ -6,7 +6,7 @@ import { gzipSync } from 'node:zlib'
 import { buildProject } from '@hozu/core/ir'
 import { createDataRuntime } from '@hozu/data'
 import { compileMachine, init, transition } from '@hozu/machine'
-import { generateRender } from '@hozu/runtime-server'
+import { appOptionsOf, generateRender } from '@hozu/runtime-server'
 import { validate, verify } from '@hozu/validator'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
@@ -102,9 +102,9 @@ record(
 )
 record('A6', 'generated render code for examples/cart', generateRender(built).length, 'bytes', null)
 
-const { createResolvers } = await import(join(cartDir, 'server.ts'))
+const { default: cartApp } = await import(join(cartDir, 'app.ts'))
 const { getProduct } = await import(join(cartDir, 'features/catalog/effects.ts'))
-const data = createDataRuntime({ build: built, resolvers: createResolvers() })
+const data = createDataRuntime({ build: built, resolvers: appOptionsOf(cartApp)!.resolvers })
 const reads = 200_000
 await data.query(getProduct, { sku: 'mug' })
 const readSamples: number[] = []

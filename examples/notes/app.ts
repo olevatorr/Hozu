@@ -1,4 +1,5 @@
 import { resolvers } from '@hozu/data'
+import { app } from '@hozu/runtime-server'
 import { me, signIn, signOut } from './features/account/model.ts'
 import { addNote, listNotes, notesApi, removeNote, togglePin } from './features/notes/model.ts'
 import project from './hozu.config.ts'
@@ -9,26 +10,26 @@ interface Note {
   pinned: boolean
 }
 
-export function createResolvers() {
-  const store = new Map<string, Note[]>([
+const store = new Map<string, Note[]>([
+  [
+    'ada',
     [
-      'ada',
-      [
-        { id: 'n1', text: 'Buy milk', pinned: false },
-        { id: 'n2', text: 'Call Bob', pinned: false },
-      ],
+      { id: 'n1', text: 'Buy milk', pinned: false },
+      { id: 'n2', text: 'Call Bob', pinned: false },
     ],
-    ['bob', [{ id: 'n3', text: "Bob's secret", pinned: false }]],
-  ])
-  let seq = 3
-  const listOf = (user: string) => store.get(user) ?? []
-  const ownListOf = (user: string) => {
-    const list = store.get(user) ?? []
-    store.set(user, list)
-    return list
-  }
-  const ordered = (list: Note[]) => [...list.filter((n) => n.pinned), ...list.filter((n) => !n.pinned)]
-  return resolvers(project, (implement) => [
+  ],
+  ['bob', [{ id: 'n3', text: "Bob's secret", pinned: false }]],
+])
+let seq = 3
+const listOf = (user: string) => store.get(user) ?? []
+const ownListOf = (user: string) => {
+  const list = store.get(user) ?? []
+  store.set(user, list)
+  return list
+}
+const ordered = (list: Note[]) => [...list.filter((n) => n.pinned), ...list.filter((n) => !n.pinned)]
+export default app({
+  resolvers: resolvers(project, (implement) => [
     implement(me, (_, { session, fail }) => (session ? { name: session.user } : fail('Unauthorized', {}))),
     implement(signIn, ({ name }, { setSession }) => {
       setSession({ user: name.trim().toLowerCase() })
@@ -70,5 +71,5 @@ export function createResolvers() {
       note.pinned = !note.pinned
       return { ...note }
     }),
-  ])
-}
+  ]),
+})

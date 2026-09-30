@@ -17,7 +17,7 @@ around the rule.
 | HZ015 / HZ017 | a contract fails / contract data does not match its schema | fix the machine or the contract (decide the intended behaviour first) |
 | HZ016 | a transition that decides (guard, `navigate`, `fn`) has no contract | add the contract from the snippet |
 | HZ018 | behaviour changed; the message shows `was: … now: …` | decision: update its contract; copy-only transition: `--update-lock` if intended |
-| HZ021 | a query or mutation without a resolver | `implement(...)` it in server.ts |
+| HZ021 | a query, mutation or endpoint without a resolver | `implement(...)` it in the resolvers of `app.ts` |
 | HZ022 | user data in a cacheable region | keep `scope: 'user'` queries out of cached pages |
 | HZ024 / HZ025 | route params mismatch (keys, or a schema that does not fit `:x?`/`:x+`/`:x*`) / page with params but no `entries` | align them / add `entries` |
 | HZ026 | a class produces no CSS | fix the Tailwind class |
@@ -37,7 +37,7 @@ around the rule.
 | HZ041 | a machine uses a message, `ui.format` or `locale` | store a code in context; choose the message in the view |
 | HZ043 | `site.offline` has params, no page, or per-request data | point it at a static page, or remove `offline` |
 | HZ044 | a feature file was loaded without the Hozu transform | run node with `--import @hozu/transform/register` (`npm start` does), or add `hozuTransform()` to Vite / Vitest |
-| HZ045 | `serve.ts` misses the widget bundle | add `widgets: await bundleWidgets(build)` |
+| HZ045 | no `project({ app })`, its default export is not `app(…)`, or views use widgets and `app()` has none | `export default app({ resolvers, widgets: bundleWidgets })` |
 | HZ046 | an endpoint path is reserved, has params or collides; an error without a status; a form posting to it with another method or an undeclared field | a static path such as `/api/…` (patch); map every error in `failed` |
 | HZ047 | a `fn` body uses an imported name or `let` state (it is sent to the browser as source) | pass the value as input, or write it as a `const` helper in the module |
 | HZ048 | `seed` names a field the context lacks, has no machine or route, or two views on one page seed a machine | seed top-level context fields, on one view per page |

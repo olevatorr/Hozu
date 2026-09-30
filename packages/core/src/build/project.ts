@@ -391,6 +391,14 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     return null
   }
   scope.bindings.styles.entry = config.styles == null ? null : file(config.styles, null, '/styles')
+  if (config.app != null && !filePath(config.app))
+    scope.report(
+      'HZ014',
+      null,
+      '/app',
+      'project({ app }) must be a file URL',
+      "Name the app module with new URL('./app.ts', import.meta.url).",
+    )
   for (const [id, fc] of configs)
     scope.bindings.styles.features[id] = (fc.styles ?? []).flatMap(
       (u, i) => file(u, id, join('', 'features', id, 'styles', i)) ?? [],
@@ -447,4 +455,9 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     diagnostics: scope.diagnostics,
     parts: [...scope.parts.values()],
   }
+}
+
+export function appModuleOf(project: unknown): string | null {
+  const info = infoOf(project)
+  return info?.kind === 'project' ? filePath((info.def as ProjectConfig).app) : null
 }

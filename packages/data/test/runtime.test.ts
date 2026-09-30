@@ -1,27 +1,32 @@
 import { event, feature, mutation, project, query, tag } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { createDataRuntime, DataRuntimeError, resolvers } from '@hozu/data'
+import { appOptionsOf } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { addItem, getCart } from '../../../examples/cart/features/cart/effects.ts'
 import { getProduct, listProducts } from '../../../examples/cart/features/catalog/effects.ts'
 import cartProject from '../../../examples/cart/hozu.config.ts'
-import { createResolvers } from '../../../examples/cart/server.ts'
+
+let fresh = 0
+const cartApp = '../../../examples/cart/app.ts'
+const createResolvers = async () =>
+  appOptionsOf((await import(`${cartApp}?fresh=${fresh++}`)).default)!.resolvers
 
 const build = buildProject(cartProject, { sources: true })
 const ada = { userId: 'ada' }
 const bob = { userId: 'bob' }
 
 describe('cart data runtime', () => {
-  const setup = () => {
+  const setup = async () => {
     let time = 0
-    const data = createDataRuntime({ build, resolvers: createResolvers(), now: () => time })
+    const data = createDataRuntime({ build, resolvers: await createResolvers(), now: () => time })
     return { data, tick: (ms: number) => (time += ms) }
   }
 
   it('memoizes reads within a request, never across requests, and serves static data from cache', async () => {
-    const { data } = setup()
+    const { data } = await setup()
     const request = data.scope()
     await Promise.all([
       request.run('catalog.getProduct', { sku: 'mug' }),
@@ -30,13 +35,13 @@ describe('cart data runtime', () => {
     expect(data.stats()).toMatchObject({ fetches: 1, deduped: 1 })
     await data.query(getProduct, { sku: 'mug' })
     expect(data.stats()).toMatchObject({ fetches: 1, hits: 1 })
-    const other = setup().data
+    const other = (await setup()).data
     await Promise.all([other.query(getProduct, { sku: 'mug' }), other.query(getProduct, { sku: 'mug' })])
     expect(other.stats()).toMatchObject({ fetches: 2, deduped: 0 })
   })
 
   it('revalidate: expired entries are refetched before returning', async () => {
-    const { data, tick } = setup()
+    const { data, tick } = await setup()
     await data.query(listProducts, {})
     tick(59_999)
     await data.query(listProducts, {})
@@ -47,14 +52,14 @@ describe('cart data runtime', () => {
   })
 
   it('user data is read on every request and never enters the cache', async () => {
-    const { data } = setup()
+    const { data } = await setup()
     await data.query(getCart, {}, ada)
     await data.query(getCart, {}, ada)
     expect(data.stats()).toMatchObject({ fetches: 2, hits: 0, entries: 0 })
   })
 
   it('reads each user with their own session; anonymous callers see no session', async () => {
-    const { data } = setup()
+    const { data } = await setup()
     await data.mutate(addItem, { sku: 'mug', qty: 1 }, ada)
     expect(await data.query(getCart, {}, ada)).toMatchObject({
       ok: true,
@@ -65,7 +70,7 @@ describe('cart data runtime', () => {
   })
 
   it('a mutation clears the request memo and reports its tags', async () => {
-    const { data } = setup()
+    const { data } = await setup()
     const request = data.scope(ada)
     expect(await request.run('cart.getCart', {})).toMatchObject({ value: { items: [] } })
     const result = await request.run('cart.addItem', { sku: 'mug', qty: 2 })
@@ -75,7 +80,7 @@ describe('cart data runtime', () => {
   })
 
   it('returns declared errors without caching them', async () => {
-    const { data } = setup()
+    const { data } = await setup()
     expect(await data.mutate(addItem, { sku: 'tee', qty: 1 }, ada)).toEqual({
       ok: false,
       error: 'OutOfStock',
@@ -92,7 +97,7 @@ describe('cart data runtime', () => {
   })
 
   it('rejects invalid input and session before running resolvers', async () => {
-    const { data } = setup()
+    const { data } = await setup()
     expect(await data.query(getProduct, { sku: 1 } as never)).toMatchObject({
       error: 'Unexpected',
       data: { message: expect.stringMatching(/^Invalid input for catalog.getProduct/) },
@@ -105,7 +110,7 @@ describe('cart data runtime', () => {
   })
 
   it('invalidates parameterized tags exactly', async () => {
-    const { data } = setup()
+    const { data } = await setup()
     await data.query(getProduct, { sku: 'mug' })
     await data.query(getProduct, { sku: 'tee' })
     expect(data.invalidate(['catalog.productTag("mug")'])).toBe(1)

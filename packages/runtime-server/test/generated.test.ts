@@ -1,7 +1,7 @@
 import { event, feature, machine, on, type ProjectDecl, project, route, ui } from '@hozu/core'
 import { buildProject, type Json } from '@hozu/core/ir'
 import { createDataRuntime, resolvers } from '@hozu/data'
-import { pageEntries, renderToString } from '@hozu/runtime-server'
+import { appOptionsOf, pageEntries, renderToString } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
 import { escapeHtml } from '../src/escape.ts'
 import type { Variants } from '../src/images.ts'
@@ -15,7 +15,8 @@ describe('generated render functions', () => {
   for (const name of examples)
     it(`renders every page of ${name}, with and without image variants`, async () => {
       const project = (await import(`../../../examples/${name}/hozu.config.ts`)).default as ProjectDecl
-      const { createResolvers } = await import(`../../../examples/${name}/server.ts`)
+      const { default: createResolversApp } = await import(`../../../examples/${name}/app.ts`)
+      const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
       const build = buildProject(project, { sources: false })
       const entries = await pageEntries(build, createDataRuntime({ build, resolvers: createResolvers() }))
       expect(entries.length).toBeGreaterThan(0)

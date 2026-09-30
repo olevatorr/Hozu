@@ -1,10 +1,12 @@
 import { buildProject } from '@hozu/core/ir'
 import { createDataRuntime, type DataRuntime, type RequestData } from '@hozu/data'
 import type { PagePayload } from '@hozu/runtime-client'
-import { renderPage, renderToString } from '@hozu/runtime-server'
+import { appOptionsOf, renderPage, renderToString } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
+import createResolversApp from '../../../examples/cart/app.ts'
 import project from '../../../examples/cart/hozu.config.ts'
-import { createResolvers } from '../../../examples/cart/server.ts'
+
+const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
 
 const build = buildProject(project, { sources: false })
 const session = { userId: 'ada' }
@@ -127,7 +129,8 @@ describe('widgets that only appear after client-side state changes', () => {
     const stations = buildProject((await import('../../../examples/stations/hozu.config.ts')).default, {
       sources: false,
     })
-    const { createResolvers: stationResolvers } = await import('../../../examples/stations/server.ts')
+    const { default: stationResolversApp } = await import('../../../examples/stations/app.ts')
+    const stationResolvers = () => appOptionsOf(stationResolversApp)!.resolvers
     const { html } = await renderToString({
       build: stations,
       data: createDataRuntime({ build: stations, resolvers: stationResolvers() }),

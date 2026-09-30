@@ -8,8 +8,7 @@ const skill = join(root, '.claude/skills/hozu')
 export const exampleFiles = [
   'app.css',
   'routes.ts',
-  'server.ts',
-  'serve.ts',
+  'app.ts',
   'hozu.config.ts',
   'features/bookmarks/model.ts',
   'features/bookmarks/views.ts',

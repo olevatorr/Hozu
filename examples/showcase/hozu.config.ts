@@ -13,6 +13,7 @@ const head = (title: string, description: string) => ({
 
 export default project({
   schema: zodAdapter,
+  app: new URL('./app.ts', import.meta.url),
   styles: new URL('./app.css', import.meta.url),
   site: {
     url: 'https://showcase.hozu.dev',

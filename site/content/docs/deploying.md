@@ -16,14 +16,15 @@ Use `exportStatic` from `@hozu/adapter-static`, passing the build, compiled styl
 import { exportStatic } from '@hozu/adapter-static'
 import { buildProject } from '@hozu/core/ir'
 import { compileStyles } from '@hozu/css'
+import { appOptionsOf } from '@hozu/runtime-server'
+import app from './app.ts'
 import project from './hozu.config.ts'
-import { createResolvers } from './server.ts'
 
 const build = buildProject(project, { sources: false })
 const result = await exportStatic({
   build,
   styles: await compileStyles(build),
-  resolvers: createResolvers(),
+  resolvers: appOptionsOf(app)!.resolvers,
   outDir: 'dist',
 })
 for (const { route, reason } of result.skipped) console.error(route, reason)
@@ -36,7 +37,7 @@ Static hosts do not run query resolvers after export. Rebuild the site when cont
 
 ## Node
 
-Node runs the app with `node --import @hozu/transform/register serve.ts` (the generated `npm start`); edge bundles add `hozuTransform()` from `@hozu/transform/esbuild`. Without the transform the server refuses to start (HZ044). Run `hozu build` to generate `dist/public`, `dist/manifest.json` and `dist/server/render.js`. The Node adapter bridges HTTP requests to Hozu and serves static assets. Connect `createServer` from `@hozu/adapter-node` to the build and your resolvers; use the generated manifest and `publicDir` for a production build.
+Node runs the app module with `hozu serve` (the generated `npm start`): adapter-node on `PORT`, with the environment, compiled styles and `public/`. It registers the transform itself; edge bundles add `hozuTransform()` from `@hozu/transform/esbuild`. Without the transform the server refuses to start (HZ044). Run `hozu build` to generate `dist/public`, `dist/manifest.json` and `dist/server/render.js`. There is no server file to write: resolvers, the session store and widgets are named in `app.ts`, headers in `project({ http })`, statuses in `head.failed`.
 
 The adapter includes an ISR page cache, tag revalidation, CSP and cross-site POST checks. Session-based applications must configure their session identity and a stable production secret. Cache and invalidation state are per instance; account for that when running multiple instances.
 
@@ -45,19 +46,12 @@ The adapter includes an ISR page cache, tag revalidation, CSP and cross-site POS
 Use `createHandler` from `@hozu/runtime-server` in a runtime that serves web-standard `Request` and `Response` objects. Build ahead of deployment and supply the generated render module, because the edge runtime cannot generate it at startup.
 
 ```ts
-import { buildProject } from '@hozu/core/ir'
 import { createHandler } from '@hozu/runtime-server'
+import app from './app.ts'
 import manifest from './dist/manifest.json' with { type: 'json' }
 import * as render from './dist/server/render.js'
-import project from './hozu.config.ts'
-import { createResolvers } from './server.ts'
 
-const handler = createHandler({
-  build: buildProject(project, { manifest }),
-  manifest,
-  render,
-  resolvers: createResolvers(),
-})
+const handler = createHandler(app, { manifest, render })
 export default { fetch: handler.fetch }
 ```
 

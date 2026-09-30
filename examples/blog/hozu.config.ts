@@ -11,6 +11,7 @@ import { home, offline, post } from './routes.ts'
 
 export default project({
   schema: zodAdapter,
+  app: new URL('./app.ts', import.meta.url),
   styles: new URL('./app.css', import.meta.url),
   session: z.object({ userId: z.string() }),
   site: { url: 'https://blog.hozu.dev', name: 'Hozu Blog', locales: ['en', 'zh-TW'], offline, lang: 'en' },

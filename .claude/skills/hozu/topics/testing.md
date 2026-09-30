@@ -16,7 +16,10 @@
     failed, size, canvases), the visible text and `--select <css>` elements; exit code 1 when anything failed.
   - `--screenshot shot.png` saves the viewport (open it to look); `--reduced-motion` emulates reduced motion.
   - Use it once after client-side work (widgets, islands); `get` / `post` stay the fast checks.
-- In code: `const app = testApp({ build, resolvers })` from `@hozu/testing`; `await app.get('/')` →
-  `{ status, headers, html, text, payload }`; `app.post(path, fields)` submits a native form.
+- In code: `const page = await testApp(app).get('/')` from `@hozu/testing`, with `app` the default export of
+  `app.ts` → `{ status, headers, html, text, payload }`; `.post(path, fields)` submits a native form.
+  `testApp(app, { session: store })` may swap only the session store (a test issuer).
+- `hozu get`, `hozu browse` and `testApp` build the app module; a build with errors exits 1 (throws) and renders
+  nothing: run `hozu check`.
 - Vitest: add `hozuTransform()` from `@hozu/transform/vite` to `plugins`.
 - Browser tests: wait for `html[data-hozu-ready]` (set after hydration) before clicking.

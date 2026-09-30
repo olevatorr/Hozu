@@ -52,17 +52,22 @@ Every mutation also has the framework error `Invalid`, with a message and field 
 
 ## Implement the declaration
 
-Import declarations by identity into server code, then bind them:
+Import declarations by identity into the app module (`project({ app: new URL('./app.ts', import.meta.url) })`), then bind them:
 
 ```ts
 import { resolvers } from '@hozu/data'
+import { app } from '@hozu/runtime-server'
 import project from './hozu.config.ts'
 import { listArticles } from './features/articles/model.ts'
 
-export const createResolvers = () => resolvers(project, (implement) => [
-  implement(listArticles, () => [{ id: 'hello', title: 'Hello Hozu' }]),
-])
+export default app({
+  resolvers: resolvers(project, (implement) => [
+    implement(listArticles, () => [{ id: 'hello', title: 'Hello Hozu' }]),
+  ]),
+})
 ```
+
+`hozu serve`, `hozu check`, `hozu get`, `hozu browse` and `testApp(app)` all run this one module.
 
 Replace the in-memory implementation with your database or service without changing the view's data contract. Server-fetched data is serialized into the page payload instead of being fetched again on hydration.
 

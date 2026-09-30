@@ -76,7 +76,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - Widgets (ADR 0009): `ui.widget({ tag, props, events, client, load, wraps })` in the feature's `declarations`,
   `ui.use(W, { props, on, class }, children)`, client module `export default implement<typeof W>(setup)` from
   `@hozu/core/widget` (type-only import of the declaration). Bundled by `@hozu/bundle` (esbuild), HZ029.
-- Server capabilities (ADR 0010): client fetch of new query keys, live queries over SSE, `head.redirects`,
+- Server capabilities (ADR 0010): client fetch of new query keys, live queries over SSE, `head.failed`,
   `setSession` with a server-side store (`memorySessions()` by default: opaque signed id, revoked on sign-out;
   production needs `SESSION_SECRET`; ADR 0043 B), `project({ notFound })`, `site.icon` / `themeColor`, uploads via
   `ctx.file`.
@@ -85,7 +85,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   URL form, also for `navigate: (arg) => ui.link(...)` on transitions (contracts expect `{ navigate: url }`).
   Forms whose submit reads only `ui.dom.form(name)`/context/params/search also work without JS: the server runs the
   machine for a native post (HZ036 warns otherwise). `project({ notFound, error })`; adapter-node sends CSP (script
-  hashes), nosniff and rejects cross-site POSTs; `createServer({ onError, csp })` (ADR 0014).
+  hashes), nosniff and rejects cross-site POSTs; `app({ onError, csp })` (ADR 0014).
 - Navigation (ADR 0043 I, supersedes ADR 0015): every internal link is a document navigation with speculation
   prerender and the cross-document View Transition opt-in; state across pages lives in the URL (seed), on the server
   (queries) or in a widget's own storage. There is no soft navigation and no budget P8.
@@ -95,8 +95,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   (HZ038, HZ039); no rewrites. `hozu build` writes `dist/public` + `dist/manifest.json`, and
   `buildProject(project, { manifest })` needs no file system (edge; `examples/cart/edge.ts`, checked in a web-only
   vm and on Bun). Budget P9 (req/s through adapter-node) is report-only.
-- i18n (ADR 0017): `site.locales` prefixes every URL with its locale (`/`, locale-less page URLs negotiate by
-  Accept-Language); `ui.messages(base, {...})` in the feature's `declarations`, `ui.format.*` (Intl),
+- i18n (ADR 0017, ADR 0043 F): the URL holds the language: `site.lang` keeps its URLs, other `site.locales` are
+  prefixed (`/de/x`; `/en/x` → 308 `/x`; no Accept-Language redirect; HZ060); `ui.messages(base, {...})` in the
+  feature's `declarations`, `ui.format.*` (Intl),
   `locale` ref, `ui.alternate(l)`; hreflang/og:locale/sitemap derived. Messages and formats are lowered on the server
   for the page locale (islands get only its strings; helpers live in `fns.js`, P7 unchanged). HZ040–HZ042.
 - Images (ADR 0017): optional `@hozu/image` (build-time, sharp) → `optimizeImages(build)` makes WebP widths for raster
@@ -142,8 +143,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - 0.5 (ADR 0037): contracts only for deciding transitions, the lock summarises every transition (`was/now` in HZ018,
   `--update-lock` accepts copy-only changes); states with `invoke` drop unhandled events (listing `ignore` there is
   HZ014) and `done` / `failed` take a state name, a transition or a guarded list; `ui.query` `pending` is optional;
-  `hozu check` warns on an incomplete `serve.ts` (HZ045); `hozu add widget`; `endpoint({ method, path, input, output })` declarations
-  implemented in resolvers (HZ046, JSON or `'response'`, `setSession`).
+  `hozu add widget`; `endpoint({ method, path, input, output })` declarations implemented in resolvers (HZ046).
 - 0.5 (ADR 0038, 0039): builder callbacks are ordinary TypeScript (`===`, `?:`, `&&`, `??`, template strings, `+`,
   `ctx.x = v`, `+=`, `.push`, the `.filter` removal) lowered by `@hozu/transform` (acorn + Node's type stripping,
   newline-preserving; Node `--import @hozu/transform/register`, `hozuTransform()` for Vite / esbuild, the CLI
@@ -160,6 +160,12 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   its own state; HZ016 counts identical copies as one); `fn` bodies may call self-contained module helpers (transform
   `__hozu.helpers`, shipped in `fns.js`; imports / `let` stay HZ047); `ui.use` `on` optional; query branches may
   return `null`; recipes moved from `changing.md` to `hozu docs recipes`.
+- 0.8 (ADR 0043 D, E): one app module, `project({ app: new URL('./app.ts', import.meta.url) })` default-exporting
+  `app({ resolvers, session?, widgets? })`, run by `hozu serve` (`npm start`), `hozu check` (HZ045, HZ021),
+  `hozu get` / `browse` and `testApp(app)`; edge: `createHandler(app, { manifest, render })`. Pages answer through
+  `head.failed` (a route, 403, 404 or 410; HZ051); endpoints have `errors` + `failed`, `output` schema / `'redirect'`
+  / `'response'` (no HTML, HZ053), `input: 'raw'`, `ui.link(endpoint, input)` and `exports`; a route without a page
+  is HZ052.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a failing head

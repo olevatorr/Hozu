@@ -2,12 +2,13 @@ import { buildProject } from '@hozu/core/ir'
 import { createDataRuntime } from '@hozu/data'
 import { compileMachine } from '@hozu/machine'
 import { mount, type Payload, payloadKey, type Result } from '@hozu/runtime-client'
+import { appOptionsOf } from '@hozu/runtime-server'
 import { Window } from 'happy-dom'
+import cartApp from './app.ts'
 import project from './hozu.config.ts'
-import { createResolvers } from './server.ts'
 
 const build = buildProject(project, { sources: false })
-const data = createDataRuntime({ build, resolvers: createResolvers() })
+const data = createDataRuntime({ build, resolvers: appOptionsOf(cartApp)!.resolvers })
 const session = { userId: 'ada' }
 const payload: Payload = new Map()
 for (const query of ['cart.getCart', 'catalog.listProducts'])

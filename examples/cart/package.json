@@ -11,9 +11,10 @@
     "demo": "node demo.ts",
     "plan": "hozu plan home",
     "client": "node client.ts",
-    "serve": "node --import @hozu/transform/register serve.ts",
+    "serve": "hozu serve",
     "export": "node --import @hozu/transform/register export.ts",
-    "dev": "hozu-dev serve.ts"
+    "dev": "hozu-dev",
+    "start": "hozu serve"
   },
   "dependencies": {
     "@hozu/adapter-node": "workspace:*",
@@ -25,6 +26,7 @@
     "@hozu/dev": "workspace:*",
     "@hozu/machine": "workspace:*",
     "@hozu/runtime-client": "workspace:*",
+    "@hozu/runtime-server": "workspace:*",
     "@hozu/schema-zod": "workspace:*",
     "@hozu/transform": "workspace:*",
     "zod": "4.6.5"

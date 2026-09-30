@@ -11,18 +11,18 @@ const out = join(here, 'out')
 mkdirSync(out, { recursive: true })
 
 const servers: ChildProcess[] = []
-const start = (cwd: string, entry: string, port: number) =>
+const start = (cwd: string, args: string[], port: number) =>
   new Promise<string>((resolve, reject) => {
-    const child = spawn(process.execPath, [entry], { cwd, env: { ...process.env, PORT: String(port) } })
+    const child = spawn(process.execPath, args, { cwd, env: { ...process.env, PORT: String(port) } })
     servers.push(child)
     child.stdout!.on('data', () => resolve(`http://127.0.0.1:${port}`))
     child.stderr!.on('data', (d) => process.stderr.write(d))
-    child.on('exit', (code) => reject(new Error(`${entry} exited with ${code}`)))
+    child.on('exit', (code) => reject(new Error(`${args.join(' ')} exited with ${code}`)))
   })
 
 const [hozu, nuxt] = await Promise.all([
-  start(join(here, '../../examples/showcase'), 'serve.ts', 4611),
-  start(join(here, 'nuxt'), '.output/server/index.mjs', 4612),
+  start(join(here, '../../examples/showcase'), [join(here, '../../packages/cli/bin/hozu.js'), 'serve'], 4611),
+  start(join(here, 'nuxt'), ['.output/server/index.mjs'], 4612),
 ])
 
 const browser = await chromium.launch({

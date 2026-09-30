@@ -1,10 +1,11 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, relative } from 'node:path'
-import { codes, type Diagnostic, type ProjectIR, usedWidgets } from '@hozu/core/ir'
 import type { CheckOutput, TypeIssue } from '../contract.ts'
 import type { Loaded } from '../load.ts'
+import { relativize } from '../output.ts'
+import { inspectApp } from './app.ts'
 import { runValidate } from './validate.ts'
 
 function typescriptBin(from: string): string | null {
@@ -32,35 +33,6 @@ export function typeErrors(output: string, root: string): TypeIssue[] {
       })
   }
   return errors
-}
-
-export function serverEntryIssues(root: string, ir: ProjectIR): Diagnostic[] {
-  const file = join(root, 'serve.ts')
-  if (!existsSync(file)) return []
-  const text = readFileSync(file, 'utf8')
-  const lines = text.split('\n')
-  const at = lines.findIndex((l) => /create(Server|Handler)\(/.test(l))
-  const source = { file: 'serve.ts', line: at + 1, column: 1 }
-  const issue = (message: string, cause: string, summary: string, snippet: string): Diagnostic => ({
-    code: 'HZ045',
-    severity: codes.HZ045.severity,
-    message,
-    location: { feature: null, pointer: '', source },
-    cause,
-    fix: { summary, snippet, patch: null },
-  })
-  const out: Diagnostic[] = []
-  const widgets = usedWidgets(ir)
-  if (widgets.length && !/bundleWidgets\s*\(|manifest/.test(text))
-    out.push(
-      issue(
-        `serve.ts starts the server without a widget bundle, but views use ${widgets.join(', ')}`,
-        'Widget client code is bundled separately; without it the server refuses to start.',
-        "npm install @hozu/bundle, then pass widgets: await bundleWidgets(build) to createServer (import { bundleWidgets } from '@hozu/bundle')",
-        'widgets: await bundleWidgets(build),',
-      ),
-    )
-  return out
 }
 
 export async function runCheck(loaded: Loaded, cwd: string, updateLock: boolean): Promise<CheckOutput> {
@@ -92,8 +64,9 @@ export async function runCheck(loaded: Loaded, cwd: string, updateLock: boolean)
     }
   }
   const validate = await runValidate(loaded, undefined, cwd, updateLock)
-  const entry = serverEntryIssues(root, loaded.build(false).ir)
-  validate.diagnostics.push(...entry)
-  validate.summary.warnings += entry.length
+  const { diagnostics: entry } = await inspectApp(loaded, loaded.build(true))
+  validate.diagnostics.push(...relativize(entry, cwd))
+  for (const d of entry) validate.summary[d.severity === 'error' ? 'errors' : 'warnings']++
+  if (entry.some((d) => d.severity === 'error')) validate.ok = false
   return { ok: types.ok && validate.ok, types, validate }
 }

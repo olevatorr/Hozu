@@ -1,15 +1,9 @@
 import { Agent, request } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { createServer } from '@hozu/adapter-node'
-import { buildProject } from '@hozu/core/ir'
-import project from '../examples/cart/hozu.config.ts'
-import { createResolvers } from '../examples/cart/server.ts'
+import cart from '../examples/cart/app.ts'
 
-const server = createServer({
-  build: buildProject(project, { sources: false }),
-  resolvers: createResolvers(),
-  session: () => ({ userId: 'bench' }),
-})
+const server = createServer(cart)
 await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
 const { port } = server.address() as AddressInfo
 const agent = new Agent({ keepAlive: true, maxSockets: 16 })

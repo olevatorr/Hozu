@@ -22,6 +22,7 @@ import {
 import { createDataRuntime, type OnError, type RequestData, type ResolverSet } from '@hozu/data'
 import { compileValue } from '@hozu/machine'
 import type { EffectResponse, Result } from '@hozu/runtime-client'
+import { type App, type AppHost, appHandlerOptions, appOptionsOf } from './app.ts'
 import { clientBundle } from './assets.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'
@@ -135,7 +136,13 @@ const readEffect = async (request: Request) => {
   return { body: String(form.get('request') ?? '{}'), files }
 }
 
-export function createHandler({
+export function createHandler(options: HandlerOptions): Handler
+export function createHandler(app: App, host?: AppHost): Handler
+export function createHandler(first: HandlerOptions | App, host?: AppHost): Handler {
+  return handlerFor(appOptionsOf(first) ? appHandlerOptions(first as App, host) : (first as HandlerOptions))
+}
+
+function handlerFor({
   build,
   resolvers,
   session: sessionOption,

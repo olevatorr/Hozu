@@ -82,18 +82,14 @@ export async function runAddWidget(
     },
     "import * as widgets from './widgets.ts' and add widgets to the feature's declarations list",
   )
-  const serve = join(root, 'serve.ts')
   await edit(
-    serve,
+    join(root, 'app.ts'),
     (s) => {
-      if (/bundleWidgets\s*\(/.test(s)) return s
-      const wired = s.replace(
-        /(create(?:Server|Handler)\(\{\n)(\s*)/,
-        `$1$2widgets: await bundleWidgets(build),\n$2`,
-      )
+      if (/widgets:\s*bundleWidgets/.test(s)) return s
+      const wired = s.replace(/(app\(\{\n)(\s*)/, '$1$2widgets: bundleWidgets,\n$2')
       return wired === s ? null : addImport(wired, "import { bundleWidgets } from '@hozu/bundle'\n")
     },
-    "pass widgets: await bundleWidgets(build) to createServer (import { bundleWidgets } from '@hozu/bundle')",
+    "pass widgets: bundleWidgets to app() in app.ts (import { bundleWidgets } from '@hozu/bundle')",
   )
   const pkg = join(root, 'package.json')
   await edit(

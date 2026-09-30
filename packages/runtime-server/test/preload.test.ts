@@ -1,11 +1,13 @@
 import { planRoute } from '@hozu/compiler'
 import { buildProject, type Json } from '@hozu/core/ir'
 import { createDataRuntime } from '@hozu/data'
-import { renderToString } from '@hozu/runtime-server'
+import { appOptionsOf, renderToString } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
+import createResolversApp from '../../../examples/cart/app.ts'
 import cart from '../../../examples/cart/hozu.config.ts'
-import { createResolvers } from '../../../examples/cart/server.ts'
 import { conditional, conditionalResolvers } from './support/conditional.ts'
+
+const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
 
 const build = buildProject(conditional, { sources: false })
 const render = (route: string, params: Record<string, string> | null, search: Record<string, Json> | null) =>

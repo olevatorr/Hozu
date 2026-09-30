@@ -191,23 +191,18 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
     ])
   const parts = await appParts(loaded, 'browse', options.session)
   const root = dirname(loaded.path)
-  const build = loaded.build(false) as any
+  const build = parts.build as any
   const server = await parts.importFrom<any>('@hozu/runtime-server', ['npm install @hozu/runtime-server'])
   const styles = await (await parts.importFrom<any>('@hozu/css', ['npm install @hozu/css'])).compileStyles(
     build,
     { base: root },
   )
-  const used: string[] = server.usedWidgets(build.ir)
-  const widgets = used.length
-    ? await (await parts.importFrom<any>('@hozu/bundle', ['npm install @hozu/bundle'])).bundleWidgets(build)
-    : null
-  const handler: Handler = server.createHandler({
-    build,
+  const widgets = parts.module.options.widgets ? await parts.module.options.widgets(build) : null
+  const handler: Handler = server.createHandler(parts.module.app, {
     styles,
     widgets,
-    resolvers: parts.resolvers,
-    session: parts.session,
     env: process.env,
+    ...(parts.session ? { session: parts.session } : {}),
   })
   const publicDir = join(root, 'public')
   const respond = async (request: Request): Promise<Response> => {
