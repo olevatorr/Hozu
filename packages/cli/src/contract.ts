@@ -12,7 +12,7 @@ export interface Coverage {
   transitions: number
 }
 
-export type LockState = 'missing' | 'checked' | 'current' | 'stale' | 'updated' | 'skipped'
+export type LockState = 'missing' | 'current' | 'stale' | 'updated' | 'skipped'
 
 export interface ValidateOutput {
   ok: boolean

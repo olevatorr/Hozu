@@ -1,3 +1,4 @@
+import { relative } from 'node:path'
 import { parseArgs } from 'node:util'
 import { describeAdd, runAddFeature } from './commands/add.ts'
 import { describeAddWidget, runAddWidget } from './commands/add-widget.ts'
@@ -15,7 +16,7 @@ import { describePlan, runPlan } from './commands/plan.ts'
 import { describeRequest, runRequest } from './commands/request.ts'
 import { runServe } from './commands/serve.ts'
 import { runSkill } from './commands/skill.ts'
-import { runValidate } from './commands/validate.ts'
+import { featuresCreated, runValidate, seedLockIsolated } from './commands/validate.ts'
 import { HozuCliError } from './errors.ts'
 import { load } from './load.ts'
 import { human, json } from './output.ts'
@@ -142,6 +143,8 @@ export async function main(
           'hozu add widget tasks Chart',
         ])
       const result = await runAddFeature(cwd, values.config, positionals[2], values.page, values.with)
+      const lock = await seedLockIsolated(values.config, cwd, featuresCreated(result.created))
+      if (lock) (lock.created ? result.created : result.edited).push(relative(cwd, lock.path))
       out(asJson ? json(result) : describeAdd(result))
       return 0
     }

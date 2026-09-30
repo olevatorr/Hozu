@@ -2,70 +2,394 @@
   "features": {
     "site": {
       "ready/on/site.AddTodo/0": {
-        "behavior": "bcb5b5a7343a63b3",
+        "behavior": "eee8a7c3d667b5b4",
         "contracts": {
-          "addingCountsIds": "00be56a6d98d7201",
-          "interactions": "b9730b984add547c"
+          "addingCountsIds": "963496955971600c",
+          "interactions": "c895108297b3d514"
         },
-        "summary": "ready --AddTodo--> ready · if event.title neq \"\" · todos append { id: todoId(ctx.next), title: event.title }, next := %plus({ a: ctx.next, b: 1 }), draft := \"\""
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "append",
+              "path": [
+                "todos"
+              ],
+              "value": {
+                "object": {
+                  "id": {
+                    "arg": {
+                      "path": [
+                        "next"
+                      ],
+                      "ref": "context"
+                    },
+                    "fn": "site.todoId"
+                  },
+                  "title": {
+                    "path": [
+                      "title"
+                    ],
+                    "ref": "event"
+                  }
+                }
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "next"
+              ],
+              "value": {
+                "arg": {
+                  "object": {
+                    "a": {
+                      "path": [
+                        "next"
+                      ],
+                      "ref": "context"
+                    },
+                    "b": {
+                      "literal": 1
+                    }
+                  }
+                },
+                "fn": "%plus"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "literal": ""
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "ready",
+            "timers": []
+          },
+          "fns": {
+            "site.todoId": "9e04495873a61b9d"
+          },
+          "guard": {
+            "left": {
+              "path": [
+                "title"
+              ],
+              "ref": "event"
+            },
+            "op": "neq",
+            "right": {
+              "literal": ""
+            }
+          },
+          "navigate": null
+        },
+        "summary": "ready --AddTodo--> ready · if event.title neq \"\" · todos append { id: todoId(ctx.next), title: event.title }, next := (ctx.next + 1), draft := \"\" · fns todoId@9e044958"
       },
       "ready/on/site.Draft/0": {
-        "behavior": "d0dc08d9e138f769",
+        "behavior": "26e2e0d97b5bd3fd",
         "contracts": {
-          "interactions": "b9730b984add547c"
+          "interactions": "c895108297b3d514"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "path": [
+                  "text"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "ready",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "ready --Draft--> ready · draft := event.text"
       },
       "ready/on/site.RemoveTodo/0": {
-        "behavior": "b7566cf27043e458",
+        "behavior": "33af14fde9bc98ad",
         "contracts": {
-          "interactions": "b9730b984add547c"
+          "interactions": "c895108297b3d514"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "key": "id",
+              "op": "removeWhere",
+              "path": [
+                "todos"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "ready",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "ready --RemoveTodo--> ready · todos -= where id = event.id"
       },
       "ready/on/site.SelectMetric/0": {
-        "behavior": "da72c37c8b2064ba",
+        "behavior": "5deee4197ea70890",
         "contracts": {
-          "interactions": "b9730b984add547c"
+          "interactions": "c895108297b3d514"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "metric"
+              ],
+              "value": {
+                "literal": "signups"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "ready",
+            "timers": []
+          },
+          "fns": {},
+          "guard": {
+            "left": {
+              "path": [
+                "metric"
+              ],
+              "ref": "event"
+            },
+            "op": "eq",
+            "right": {
+              "literal": "signups"
+            }
+          },
+          "navigate": null
         },
         "summary": "ready --SelectMetric--> ready · if event.metric eq \"signups\" · metric := \"signups\""
       },
       "ready/on/site.SelectMetric/1": {
-        "behavior": "8693d1639deb4cb6",
+        "behavior": "fa5ed51996f5115f",
         "contracts": {
-          "interactions": "b9730b984add547c"
+          "interactions": "c895108297b3d514"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "metric"
+              ],
+              "value": {
+                "literal": "visits"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "ready",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "ready --SelectMetric--> ready · metric := \"visits\""
       },
       "ready/on/site.SelectTab/0": {
-        "behavior": "83bd5e333912620b",
+        "behavior": "a0163c0c4d09d17c",
         "contracts": {
-          "interactions": "b9730b984add547c"
+          "interactions": "c895108297b3d514"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "tab"
+              ],
+              "value": {
+                "path": [
+                  "tab"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "ready",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "ready --SelectTab--> ready · tab := event.tab"
       },
       "ready/on/site.Shuffle/0": {
-        "behavior": "43c83fef7cc9b105",
+        "behavior": "7d19cd4a3bf6c020",
         "contracts": {
-          "interactions": "b9730b984add547c"
+          "interactions": "c895108297b3d514"
         },
-        "summary": "ready --Shuffle--> ready · todos := reversed(ctx.todos)"
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "todos"
+              ],
+              "value": {
+                "arg": {
+                  "path": [
+                    "todos"
+                  ],
+                  "ref": "context"
+                },
+                "fn": "site.reversed"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "ready",
+            "timers": []
+          },
+          "fns": {
+            "site.reversed": "2a61a8e441807297"
+          },
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "ready --Shuffle--> ready · todos := reversed(ctx.todos) · fns reversed@2a61a8e4"
       },
       "ready/on/site.SlideChanged/0": {
-        "behavior": "7bfc7f11e0fc4867",
+        "behavior": "8079e3d355febcda",
         "contracts": {
-          "interactions": "b9730b984add547c"
+          "interactions": "c895108297b3d514"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "slide"
+              ],
+              "value": {
+                "path": [
+                  "index"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "ready",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "ready --SlideChanged--> ready · slide := event.index"
       },
       "ready/on/site.ToggleSpin/0": {
-        "behavior": "7bdbbd41067626cc",
+        "behavior": "919ec4d961ec6612",
         "contracts": {
-          "interactions": "b9730b984add547c"
+          "interactions": "c895108297b3d514"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "spin"
+              ],
+              "value": {
+                "test": {
+                  "left": {
+                    "path": [
+                      "spin"
+                    ],
+                    "ref": "context"
+                  },
+                  "op": "eq",
+                  "right": {
+                    "literal": false
+                  }
+                }
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "ready",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "ready --ToggleSpin--> ready · spin := ctx.spin eq false"
       }
     }
   },
-  "version": 1
+  "pages": {
+    "endpoints": {},
+    "head": {},
+    "redirects": {}
+  },
+  "version": 2
 }

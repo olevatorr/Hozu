@@ -1,8 +1,11 @@
 # Contracts
 
-A transition that **decides** needs a contract: a guard, a `navigate`, or a `fn()` in its values (HZ016 prints each
-missing one, ready to paste). Transitions that only copy values need none: `hozu.lock.json` records every transition
-in readable form, and a change shows as HZ018 `was: … now: …` until `hozu check --update-lock` accepts it.
+A transition that **decides** needs a contract: a guard, a `navigate`, or a `fn()`, a comparison or a computing
+operator (`+ - ?? ?: .length .includes`) in its values (HZ016 prints each missing one, ready to paste). Transitions that
+only copy values need none (a contract there is HZ058). `hozu.lock.json` records every transition readably and must
+equal the computed lock: any difference is HZ057 until `hozu check --update-lock` accepts it; then list the accepted
+`now:` lines in your summary. A deciding change also needs a contract that fails against the old behaviour (HZ018);
+renaming or copying a contract does not count.
 ```ts
 export const addsValid = contract(m, {
   given: { state: 'idle' },                          // context: initialContext; { touring: true } overrides fields

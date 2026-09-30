@@ -128,10 +128,15 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
         '  return [\n    implement(clearDone, () => { const before = items.length; items.splice(0, items.length, ...items.filter((i) => !i.done)); return { removed: before - items.length } }),\n',
       ],
     ])
+    const stale = JSON.parse((await run(['check', '--json'])).stdout)
+    expect(stale.types.errors).toEqual([])
+    expect(stale.validate.diagnostics.map((d: { code: string }) => d.code)).toEqual(['HZ057'])
+    expect(stale.validate.diagnostics[0].cause).toContain('new idle/on/items.ClearDone/0')
+    await run(['check', '--update-lock'])
     const check = await run(['check', '--json'])
     const out = JSON.parse(check.stdout)
-    expect(out.types.errors).toEqual([])
     expect(out.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect(out.validate.lock).toBe('current')
     const flow = await run([
       'post',
       '/',

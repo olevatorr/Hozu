@@ -1,0 +1,264 @@
+{
+  "features": {
+    "saved": {
+      "idle/on/saved.Save/0": {
+        "behavior": "bb3a888b5be35438",
+        "contracts": {
+          "refusesWhenFull": "346cdb9bd64e4c10",
+          "savesPost": "70cb706af7dc41ac"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "slug"
+              ],
+              "value": {
+                "path": [
+                  "slug"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "saved.savePost",
+            "final": false,
+            "input": {
+              "object": {
+                "slug": {
+                  "path": [
+                    "slug"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "saving",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Save--> saving · slug := event.slug, error := null · invoke savePost({ slug: ctx.slug })"
+      },
+      "idle/on/saved.Unsave/0": {
+        "behavior": "08ae759a085e48a6",
+        "contracts": {
+          "removesPost": "f92c8590f685fabe"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "slug"
+              ],
+              "value": {
+                "path": [
+                  "slug"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "saved.unsavePost",
+            "final": false,
+            "input": {
+              "object": {
+                "slug": {
+                  "path": [
+                    "slug"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "removing",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Unsave--> removing · slug := event.slug, error := null · invoke unsavePost({ slug: ctx.slug })"
+      },
+      "removing/invoke/done/0": {
+        "behavior": "161009426fbd8484",
+        "contracts": {
+          "removesPost": "f92c8590f685fabe"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "removing --done unsavePost--> idle"
+      },
+      "removing/invoke/failed/Unexpected/0": {
+        "behavior": "e371f013b54e7dca",
+        "contracts": {
+          "removeFails": "3571aaab023068f5"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "removing --failed unsavePost.Unexpected--> idle · error := error.message"
+      },
+      "saving/invoke/done/0": {
+        "behavior": "19c6d6166e38b7c8",
+        "contracts": {
+          "savesPost": "70cb706af7dc41ac"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "saving --done savePost--> idle"
+      },
+      "saving/invoke/failed/LimitReached/0": {
+        "behavior": "c9567f908377cd08",
+        "contracts": {
+          "refusesWhenFull": "346cdb9bd64e4c10"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "Reading list is full"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "saving --failed savePost.LimitReached--> idle · error := \"Reading list is full\""
+      },
+      "saving/invoke/failed/Unexpected/0": {
+        "behavior": "a9be53fb995f0773",
+        "contracts": {
+          "saveFails": "506e4460dff22c7b"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "saving --failed savePost.Unexpected--> idle · error := error.message"
+      }
+    }
+  },
+  "pages": {
+    "endpoints": {},
+    "head": {
+      "post": {
+        "NotFound": {
+          "status": 404
+        }
+      }
+    },
+    "redirects": {}
+  },
+  "version": 2
+}

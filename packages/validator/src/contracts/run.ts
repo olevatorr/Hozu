@@ -1,5 +1,13 @@
 import type { Check, ContractIR, EffectCallIR, Json } from '@hozu/core/ir'
-import { type CompiledMachine, enter, equal, type Snapshot, type Step, transition } from '@hozu/machine'
+import {
+  type CompiledMachine,
+  type CompiledTransition,
+  enter,
+  equal,
+  type Snapshot,
+  type Step,
+  transition,
+} from '@hozu/machine'
 
 export interface Failure {
   code: 'HZ015' | 'HZ017'
@@ -11,7 +19,33 @@ export interface Failure {
 
 export interface ContractRun {
   taken: string[]
+  guards: string[]
   failure: Failure | null
+}
+
+function tracing(machine: CompiledMachine, evaluated: Set<string>): CompiledMachine {
+  const wrap = (ts: CompiledTransition[]) =>
+    ts.map((t) => {
+      const guard = t.guard
+      if (!guard) return t
+      return {
+        ...t,
+        guard: (env: Parameters<typeof guard>[0]) => {
+          evaluated.add(t.id)
+          return guard(env)
+        },
+      }
+    })
+  const each = <K>(m: Map<K, CompiledTransition[]>) => new Map([...m].map(([k, ts]) => [k, wrap(ts)]))
+  return {
+    ...machine,
+    states: machine.states.map((s) => ({
+      ...s,
+      on: each(s.on),
+      after: each(s.after),
+      invoke: s.invoke && { ...s.invoke, done: wrap(s.invoke.done), failed: each(s.invoke.failed) },
+    })),
+  }
 }
 
 class Stop extends Error {
@@ -52,10 +86,13 @@ const unexpectedCheck: Check = (value) =>
     : ['(root): Unexpected errors carry { message: string }']
 
 export function runContract(
-  machine: CompiledMachine,
+  compiled: CompiledMachine,
   contract: ContractIR,
   checks: Record<string, Check>,
 ): ContractRun {
+  const evaluated = new Set<string>()
+  const machine = tracing(compiled, evaluated)
+  const guards = () => [...evaluated].sort()
   const taken: string[] = []
   const invokes: EffectCallIR[] = []
   const validate = (
@@ -171,11 +208,12 @@ export function runContract(
           )
           .join(', ')}],`,
       })
-    return { taken, failure: null }
+    return { taken, guards: guards(), failure: null }
   } catch (error) {
-    if (error instanceof Stop) return { taken, failure: error.failure }
+    if (error instanceof Stop) return { taken, guards: guards(), failure: error.failure }
     return {
       taken,
+      guards: guards(),
       failure: {
         code: 'HZ015',
         tokens: [],

@@ -2,75 +2,466 @@
   "features": {
     "stations": {
       "favoriting/invoke/done/0": {
-        "behavior": "20047de786c35fbe",
+        "behavior": "62c771b0f5473f7f",
         "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
         "summary": "favoriting --done toggleFavorite--> idle"
       },
       "favoriting/invoke/failed/Unexpected/0": {
-        "behavior": "83f4c075657f8edf",
+        "behavior": "e8e3d2d7a46c2cee",
         "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
         "summary": "favoriting --failed toggleFavorite.Unexpected--> idle"
       },
       "idle/on/stations.PickDistrict/0": {
-        "behavior": "ffcf89e4ce7bf63e",
+        "behavior": "52a3bdf1ec0a8602",
         "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "district"
+              ],
+              "value": {
+                "path": [
+                  "district"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
         "summary": "idle --PickDistrict--> idle · district := event.district"
       },
       "idle/on/stations.Search/0": {
-        "behavior": "ee259a74de828247",
+        "behavior": "58b0957a4a2cb404",
         "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "q"
+              ],
+              "value": {
+                "path": [
+                  "text"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
         "summary": "idle --Search--> idle · q := event.text"
       },
       "idle/on/stations.Select/0": {
-        "behavior": "3f8666837c63ed45",
+        "behavior": "ed3675fc11e41db9",
         "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
         "summary": "idle --Select--> idle · selected := event.id"
       },
       "idle/on/stations.StartTour/0": {
-        "behavior": "8c6583f90b638022",
+        "behavior": "1e5a5bfe6efd73d3",
         "contracts": {
-          "startsTour": "237d95457e97d8f0"
+          "startsTour": "fc12bf2da6aea581"
         },
-        "summary": "idle --StartTour--> touring · if event.ids.length gt 0 · tour := event.ids, selected := %coalesce({ a: event.ids.0, b: \"\" })"
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "tour"
+              ],
+              "value": {
+                "path": [
+                  "ids"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "arg": {
+                  "object": {
+                    "a": {
+                      "path": [
+                        "ids",
+                        "0"
+                      ],
+                      "ref": "event"
+                    },
+                    "b": {
+                      "literal": ""
+                    }
+                  }
+                },
+                "fn": "%coalesce"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "touring",
+            "timers": [
+              1500
+            ]
+          },
+          "fns": {},
+          "guard": {
+            "left": {
+              "path": [
+                "ids",
+                "length"
+              ],
+              "ref": "event"
+            },
+            "op": "gt",
+            "right": {
+              "literal": 0
+            }
+          },
+          "navigate": null
+        },
+        "summary": "idle --StartTour--> touring · if event.ids.length gt 0 · tour := event.ids, selected := (event.ids.0 ?? \"\") · after 1500ms"
       },
       "idle/on/stations.ToggleFavorite/0": {
-        "behavior": "6dd24cc78a0d2a4e",
+        "behavior": "418296bf9ade50bf",
         "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "target"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": "stations.toggleFavorite",
+            "final": false,
+            "input": {
+              "object": {
+                "id": {
+                  "path": [
+                    "target"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "favoriting",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
         "summary": "idle --ToggleFavorite--> favoriting · target := event.id · invoke toggleFavorite({ id: ctx.target })"
       },
       "touring/after/0": {
-        "behavior": "13b2241f88b78015",
+        "behavior": "1bdc5398fa6f85b1",
         "contracts": {
-          "tourAdvancesAndWraps": "6b091caa8c9d60c6"
+          "tourAdvancesAndWraps": "3477905c53262d10"
         },
-        "summary": "touring --after 1500ms--> touring · selected := nextStop({ ids: ctx.tour, current: ctx.selected })"
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "arg": {
+                  "object": {
+                    "current": {
+                      "path": [
+                        "selected"
+                      ],
+                      "ref": "context"
+                    },
+                    "ids": {
+                      "path": [
+                        "tour"
+                      ],
+                      "ref": "context"
+                    }
+                  }
+                },
+                "fn": "stations.nextStop"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "touring",
+            "timers": [
+              1500
+            ]
+          },
+          "fns": {
+            "stations.nextStop": "dde845315e533bd2"
+          },
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "touring --after 1500ms--> touring · selected := nextStop({ ids: ctx.tour, current: ctx.selected }) · after 1500ms · fns nextStop@dde84531"
       },
       "touring/on/stations.PickDistrict/0": {
-        "behavior": "59c303aeb94d87ba",
+        "behavior": "042b9a46f7c97ab9",
         "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "district"
+              ],
+              "value": {
+                "path": [
+                  "district"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
         "summary": "touring --PickDistrict--> idle · district := event.district"
       },
       "touring/on/stations.Search/0": {
-        "behavior": "b7be9675281079ba",
+        "behavior": "796e72fc366f12c8",
         "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "q"
+              ],
+              "value": {
+                "path": [
+                  "text"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
         "summary": "touring --Search--> idle · q := event.text"
       },
       "touring/on/stations.Select/0": {
-        "behavior": "01c94df09c548eeb",
+        "behavior": "fe8cdddb7ff861c8",
         "contracts": {},
-        "summary": "touring --Select--> touring · selected := event.id"
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "touring",
+            "timers": [
+              1500
+            ]
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "touring --Select--> touring · selected := event.id · after 1500ms"
       },
       "touring/on/stations.StopTour/0": {
-        "behavior": "08314871aff3edbb",
+        "behavior": "9e61ed59f9454287",
         "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
         "summary": "touring --StopTour--> idle"
       },
       "touring/on/stations.ToggleFavorite/0": {
-        "behavior": "868504f7f1903fd3",
+        "behavior": "749a53d3398b658b",
         "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "target"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": "stations.toggleFavorite",
+            "final": false,
+            "input": {
+              "object": {
+                "id": {
+                  "path": [
+                    "target"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "favoriting",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
         "summary": "touring --ToggleFavorite--> favoriting · target := event.id · invoke toggleFavorite({ id: ctx.target })"
       }
     }
   },
-  "version": 1
+  "pages": {
+    "endpoints": {},
+    "head": {},
+    "redirects": {}
+  },
+  "version": 2
 }

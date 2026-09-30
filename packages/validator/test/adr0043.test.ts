@@ -23,7 +23,7 @@ const m = machine({
   states: () => ({
     idle: {
       on: [
-        on(Go, { target: 'idle', navigate: () => ui.link(home, null, null) }),
+        on(Go, { target: 'idle', navigate: () => ui.link(home, null) }),
         on(Open, { target: 'idle', navigate: (e) => ui.link(item, { id: slug({ id: e.id }) }) }),
         on(Save, { target: 'saving' }),
       ],
@@ -72,30 +72,37 @@ describe('ADR 0043 G (lock)', () => {
     expect(check(fresh()).diagnostics.filter((d) => d.severity === 'error')).toEqual([])
   })
 
-  it.fails('ADR 0043 D1: no HZ018 prints identical was/now after ui.link(home, null) becomes {}', () => {
+  it('ADR 0043 D1: no HZ018 prints identical was/now after ui.link(home, null) becomes {}', () => {
     const ir = fresh()
     const go = states(ir).idle!.on['f.Go']![0]!
-    go.navigate = { ...go.navigate!, search: { object: {} } } as never
-    const same = check(ir)
-      .diagnostics.filter((d) => d.code === 'HZ018')
-      .map((d) => /\(was: (.*?); now: (.*)\)/.exec(`${d.message} ${d.cause}`))
-      .filter((w) => w && w[1] === w[2])
-      .map((w) => w![1])
-    expect(same).toEqual([])
+    const link = go.navigate as object
+    go.navigate = { ...link, search: { object: {} } } as never
+    expect(check(ir).diagnostics.filter((d) => ['HZ018', 'HZ057'].includes(d.code))).toEqual([])
+    go.navigate = { ...link, search: { object: { tag: { literal: 'x' } } } } as never
+    const [changed] = check(ir).diagnostics.filter((d) => d.code === 'HZ018')
+    const [was, now] = ['was', 'now'].map((k) =>
+      changed!.cause.split('\n').find((l) => l.startsWith(`${k}: `)),
+    )
+    expect(changed!.message).toContain('(navigate)')
+    expect(now).toContain('navigate link(home, null, { tag: "x" })')
+    expect(was).not.toBe(now?.replace('now: ', 'was: '))
   })
 
-  it.fails('ADR 0043 D6: a new failed branch does not flag the transition entering the invoke', () => {
+  it('ADR 0043 D6: a new failed branch does not flag the transition entering the invoke', () => {
     const ir = fresh()
     f(ir).mutations.save!.errors.Gone = f(ir).mutations.save!.errors.Busy!
     const invoked = states(ir).saving!.invoke!
     invoked.failed.Gone = structuredClone(invoked.failed.Busy!)
-    const flagged = check(ir).diagnostics.filter(
+    const { diagnostics } = check(ir)
+    const flagged = diagnostics.filter(
       (d) => d.code === 'HZ018' && d.location.pointer === pointer('idle/on/f.Save/0'),
     )
     expect(flagged.map((d) => d.cause)).toEqual([])
+    const stale = diagnostics.filter((d) => d.code === 'HZ057').flatMap((d) => d.cause.split('\n').slice(1))
+    expect(stale).toEqual(['new saving/invoke/failed/Gone/0 · now: saving --failed save.Gone--> idle'])
   })
 
-  it.fails('ADR 0043 R4: a new transition missing from the lock is reported', () => {
+  it('ADR 0043 R4: a new transition missing from the lock is reported', () => {
     const ir = fresh()
     f(ir).events.Note = structuredClone(f(ir).events.Go!)
     states(ir).idle!.on['f.Note'] = [
@@ -106,11 +113,12 @@ describe('ADR 0043 G (lock)', () => {
         navigate: null,
       },
     ] as never
-    const at = check(ir).diagnostics.filter((d) => d.location.pointer === pointer('idle/on/f.Note/0'))
-    expect(at.map((d) => d.severity)).toContain('error')
+    const stale = check(ir).diagnostics.filter((d) => d.code === 'HZ057')
+    expect(stale.map((d) => [d.severity, d.location.pointer])).toEqual([['error', pointer('idle')]])
+    expect(stale[0]!.cause).toContain('new idle/on/f.Note/0 · now: idle --Note--> idle · note := "x"')
   })
 
-  it.fails('ADR 0043 R5: a fn used in navigate is part of the behaviour hash', () => {
+  it('ADR 0043 R5: a fn used in navigate is part of the behaviour hash', () => {
     const ir = fresh()
     f(ir).fns.slug!.sourceHash = 'changed'
     const behavior = (lock: typeof baseline) => lock!.features.f!['idle/on/f.Open/0']!.behavior

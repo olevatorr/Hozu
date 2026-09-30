@@ -1,4 +1,4 @@
-import { contract, event, feature, machine, on, project, route, ui } from '@hozu/core'
+import { event, feature, machine, on, project, route, ui } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
@@ -89,14 +89,6 @@ export default project({
           Meter,
           Frame,
           Panel,
-          covers: contract(meter, {
-            given: { state: 'shown', context: { count: 0 } },
-            when: [
-              { send: Picked, payload: { n: 2 } },
-              { send: Hide, payload: {} },
-            ],
-            expect: { state: 'hidden', changes: { count: 2 } },
-          }),
           meter,
         },
       ],

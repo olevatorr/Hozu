@@ -59,7 +59,10 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   HZ051: { name: 'unmapped-head-error', severity: 'error' },
   HZ052: { name: 'unserved-route', severity: 'error' },
   HZ053: { name: 'html-from-endpoint', severity: 'error' },
+  HZ057: { name: 'lock-out-of-date', severity: 'error' },
+  HZ058: { name: 'contract-without-decision', severity: 'warning' },
   HZ059: { name: 'reference-escape', severity: 'error' },
   HZ060: { name: 'locale-path-collision', severity: 'error' },
   HZ062: { name: 'get-endpoint-invalidates', severity: 'warning' },
+  HZ064: { name: 'duplicate-contract', severity: 'error' },
 }

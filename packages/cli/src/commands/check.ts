@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, relative } from 'node:path'
 import type { CheckOutput, TypeIssue } from '../contract.ts'
@@ -35,6 +35,24 @@ export function typeErrors(output: string, root: string): TypeIssue[] {
   return errors
 }
 
+const LINK_SEARCH_HINT =
+  'Hozu: omit the third argument of ui.link; omitted means every search default, and a search lists only the fields that differ'
+
+export function withHints(errors: TypeIssue[], root: string): TypeIssue[] {
+  const lines = new Map<string, string[]>()
+  return errors.map((e) => {
+    if (e.code !== 'TS2345') return e
+    const file = join(root, e.file)
+    if (!lines.has(file)) lines.set(file, existsSync(file) ? readFileSync(file, 'utf8').split('\n') : [])
+    const line = lines.get(file)![e.line - 1] ?? ''
+    const before = line.slice(0, e.column - 1)
+    const arg = line.slice(e.column - 1)
+    return /\blink\((?:[^()]|\([^()]*\))*,\s*$/.test(before) && /^(null\b|\{\s*\})/.test(arg)
+      ? { ...e, message: `${e.message} ${LINK_SEARCH_HINT}` }
+      : e
+  })
+}
+
 export async function runCheck(loaded: Loaded, cwd: string, updateLock: boolean): Promise<CheckOutput> {
   const root = dirname(loaded.path)
   const tsc = typescriptBin(loaded.path)
@@ -45,7 +63,7 @@ export async function runCheck(loaded: Loaded, cwd: string, updateLock: boolean)
       cwd: root,
       encoding: 'utf8',
     })
-    const errors = typeErrors(`${run.stdout}\n${run.stderr}`, root)
+    const errors = withHints(typeErrors(`${run.stdout}\n${run.stderr}`, root), root)
     types = {
       ok: run.status === 0,
       skipped: false,

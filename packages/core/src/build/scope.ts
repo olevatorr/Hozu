@@ -3,6 +3,7 @@ import type { FeatureParts } from '../builders/feature.ts'
 import { builtinOf, messageKeyOf } from '../builders/i18n.ts'
 import { operatorFns } from '../builders/operators.ts'
 import { onInline, type PartDecl } from '../builders/part.ts'
+import type { RouteDef } from '../builders/route.ts'
 import { linkOf } from '../builders/ui.ts'
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import { type At, at, join, resolveAt } from '../canonical/pointer.ts'
@@ -10,6 +11,7 @@ import { i18nFns } from '../i18n/runtime.ts'
 import type { Bindings } from '../ir/bindings.ts'
 import { codes } from '../ir/codes.ts'
 import type { Diagnostic, DiagnosticCode, Fix, SourceIndex, SourceLoc } from '../ir/diagnostic.ts'
+import { searchDefaults } from '../ir/routes.ts'
 import type { GuardExpr, Json, JsonSchema, ValueExpr } from '../ir/types.ts'
 import { type EscapeSite, escapesOf, loweredOf, partNamesOf } from '../lower.ts'
 import { type DeclKind, infoOf } from '../model/decl.ts'
@@ -121,6 +123,26 @@ export class ProjectScope {
 }
 
 const isLiteral = (v: ValueExpr): v is { literal: Json } => 'literal' in v
+
+const foldable = (v: Json | undefined, fallback: Json | undefined) =>
+  v === null || (v !== undefined && typeof v !== 'object' && v === fallback)
+
+/** A literal search field that is null or equals the route default folds away; nothing left is `{ literal: null }`. */
+export function foldSearch(search: ValueExpr, defaults: Record<string, Json>): ValueExpr {
+  if ('literal' in search) {
+    const l = search.literal
+    if (l === null || typeof l !== 'object' || Array.isArray(l)) return search
+    const kept = Object.entries(l).filter(([k, v]) => !foldable(v, defaults[k]))
+    return kept.length ? { literal: Object.fromEntries(kept) } : { literal: null }
+  }
+  if ('object' in search) {
+    const kept = Object.entries(search.object).filter(
+      ([k, v]) => !('literal' in v && foldable(v.literal, defaults[k])),
+    )
+    return kept.length ? { object: Object.fromEntries(kept) } : { literal: null }
+  }
+  return search
+}
 
 const isPlainObject = (v: object): boolean => {
   const proto = Object.getPrototypeOf(v)
@@ -427,6 +449,20 @@ export class FeatureScope {
     return both(both(test, this.test(a, p), 'and'), both(not, this.test(b, p), 'and'), 'or')
   }
 
+  private searchDefaultsOf(route: unknown): Record<string, Json> {
+    const schema = (infoOf(route)?.def as RouteDef | undefined)?.search
+    const { adapter, schemaCache } = this.project
+    if (!schema || !adapter || !isStandardSchema(schema) || schema['~standard'].vendor !== adapter.vendor)
+      return {}
+    let cached = schemaCache.get(schema)
+    if (!cached) {
+      const json = adapter.toJsonSchema(schema)
+      cached = { json, hash: `s_${hashJson(json).slice(0, 16)}` }
+      schemaCache.set(schema, cached)
+    }
+    return searchDefaults(cached.json)
+  }
+
   value(v: unknown, pointer: At): ValueExpr {
     return this.within(v, () => this.valueOf(v, pointer))
   }
@@ -451,7 +487,10 @@ export class FeatureScope {
       return {
         link: route ?? '?',
         params: link.params === null ? { literal: null } : this.value(link.params, pointer),
-        search: link.search === null ? { literal: null } : this.value(link.search, pointer),
+        search:
+          link.search === null
+            ? { literal: null }
+            : foldSearch(this.value(link.search, pointer), this.searchDefaultsOf(link.route)),
       }
     }
     const file = this.project.asset(v)

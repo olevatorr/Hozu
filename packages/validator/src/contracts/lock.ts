@@ -1,98 +1,104 @@
-import { type FeatureIR, hashJson, type Json, type ProjectIR, type ValueExpr } from '@hozu/core/ir'
-import { resolveRef } from '../resolve.ts'
-import { guardRefs, valueRefs } from '../sites.ts'
-import { summaryOf } from './mechanical.ts'
-
-export interface LockEntry {
-  behavior: string
-  summary: string
-  contracts: Record<string, string>
-}
-
-export interface Lockfile {
-  version: 1
-  features: Record<string, Record<string, LockEntry>>
-}
+import { hashJson, type Json, type ProjectIR, pageTables } from '@hozu/core/ir'
+import { decides, summaryOf } from './mechanical.ts'
+import {
+  type BehaviorRecord,
+  behaviorOf,
+  contractHash,
+  type LockEntryV2,
+  type LockfileV2,
+  recordOf,
+} from './record.ts'
 
 export type Coverage = Map<string, Set<string>>
 
-const at = (value: unknown, tokens: string[]): unknown =>
-  tokens.reduce<unknown>((node, t) => (node as Record<string, unknown> | undefined)?.[t], value)
-
-export function behaviorOf(ir: ProjectIR, feature: FeatureIR, id: string): string {
-  const tokens = id.split('/')
-  const states = feature.machine!.states
-  const raw = at(states, tokens) as Record<string, unknown>
-  const transition = (tokens[1] === 'after' ? raw.transition : raw) as {
-    target: string
-    guard: never
-    assign: { value: ValueExpr }[]
-  }
-  const target = states[transition.target]
-  const fns = new Set<string>()
-  const collect = (ref: string) => fns.add(ref)
-  if (transition.guard) guardRefs(transition.guard, '', collect)
-  for (const a of transition.assign) valueRefs(a.value, '', collect)
-  if (target?.invoke) valueRefs(target.invoke.input, '', collect)
-  const sources = Object.fromEntries(
-    [...fns].sort().map((ref) => {
-      const r = resolveRef(ir, ref, 'fn')
-      return [ref, r ? r.feature.fns[r.symbol]!.sourceHash : null]
-    }),
-  )
-  return hashJson({
-    id,
-    transition: raw as Json,
-    enters: target
-      ? { invoke: target.invoke, timers: target.after.map((a) => a.ms), final: target.final }
-      : null,
-    fns: sources,
-  } as unknown as Json).slice(0, 16)
-}
-
-export function lockOf(ir: ProjectIR, coverage: Map<string, Coverage>): Lockfile {
-  const features: Lockfile['features'] = {}
+export function lockOf(ir: ProjectIR, coverage: Map<string, Coverage>): LockfileV2 {
+  const features: LockfileV2['features'] = {}
   for (const [fid, cov] of [...coverage].sort(([a], [b]) => a.localeCompare(b))) {
     const feature = ir.features[fid]!
-    const entries: Record<string, LockEntry> = {}
-    for (const [id, contracts] of [...cov].sort(([a], [b]) => a.localeCompare(b)))
+    const initial = feature.machine!.initialContext
+    const entries: Record<string, LockEntryV2> = {}
+    for (const [id, contracts] of [...cov].sort(([a], [b]) => a.localeCompare(b))) {
+      const fields = recordOf(ir, feature, id)
       entries[id] = {
-        behavior: behaviorOf(ir, feature, id),
-        summary: summaryOf(feature, id),
+        behavior: behaviorOf(id, fields),
+        summary: summaryOf(feature, id, fields),
+        decides: decides(feature, id),
+        fields,
         contracts: Object.fromEntries(
-          [...contracts]
-            .sort()
-            .map((c) => [c, hashJson(feature.contracts[c] as unknown as Json).slice(0, 16)]),
+          [...contracts].sort().map((c) => [c, contractHash(feature.contracts[c]!, initial)]),
         ),
       }
+    }
     features[fid] = entries
   }
-  return { version: 1, features }
+  return { version: 2, features, pages: pageTables(ir) }
 }
 
-export interface Drift {
+export type ChangeKind = 'new' | 'removed' | 'changed' | 'contracts'
+
+export interface LockChange {
   feature: string
   id: string
-  contracts: string[]
-  before: string | null
-  after: string
+  kind: ChangeKind
+  before: LockEntryV2 | null
+  after: LockEntryV2 | null
+  fields: (keyof BehaviorRecord)[]
 }
 
-export function drift(previous: Lockfile, next: Lockfile): Drift[] {
-  const out: Drift[] = []
-  for (const [fid, entries] of Object.entries(next.features))
-    for (const [id, entry] of Object.entries(entries)) {
-      const before = previous.features[fid]?.[id]
-      if (!before || before.behavior === entry.behavior) continue
-      const changed = Object.entries(entry.contracts).some(([c, hash]) => before.contracts[c] !== hash)
-      if (!changed)
+const same = (a: unknown, b: unknown) => hashJson(a as Json) === hashJson(b as Json)
+
+export const isV2 = (lock: unknown): lock is LockfileV2 =>
+  typeof lock === 'object' && lock !== null && (lock as { version?: unknown }).version === 2
+
+const recordKeys: (keyof BehaviorRecord)[] = ['guard', 'assign', 'navigate', 'enters', 'fns']
+
+export function changedFields(before: BehaviorRecord, after: BehaviorRecord): (keyof BehaviorRecord)[] {
+  return recordKeys.filter((k) => !same(before[k], after[k]))
+}
+
+/** Every difference between the lock on disk and the computed one, for the features that were computed. */
+export function lockChanges(
+  previous: LockfileV2 | null,
+  next: LockfileV2,
+  removedFeatures: string[],
+): LockChange[] {
+  const out: LockChange[] = []
+  const features = [...new Set([...Object.keys(next.features), ...removedFeatures])].sort()
+  for (const fid of features) {
+    const before = previous?.features[fid] ?? {}
+    const after = next.features[fid] ?? {}
+    for (const id of [...new Set([...Object.keys(before), ...Object.keys(after)])].sort()) {
+      const b = before[id] ?? null
+      const a = after[id] ?? null
+      if (!b) out.push({ feature: fid, id, kind: 'new', before: null, after: a, fields: [] })
+      else if (!a) out.push({ feature: fid, id, kind: 'removed', before: b, after: null, fields: [] })
+      else if (b.behavior !== a.behavior || !same(b.fields, a.fields) || b.summary !== a.summary)
         out.push({
           feature: fid,
           id,
-          contracts: Object.keys(entry.contracts),
-          before: before.summary ?? null,
-          after: entry.summary,
+          kind: 'changed',
+          before: b,
+          after: a,
+          fields: changedFields(b.fields, a.fields),
         })
+      else if (!same(b.contracts, a.contracts) || b.decides !== a.decides)
+        out.push({ feature: fid, id, kind: 'contracts', before: b, after: a, fields: [] })
     }
+  }
+  return out
+}
+
+export function pagesChanges(previous: LockfileV2 | null, next: LockfileV2): string[] {
+  const out: string[] = []
+  const prev = previous?.pages ?? { head: {}, endpoints: {}, redirects: {} }
+  for (const section of ['head', 'endpoints', 'redirects'] as const) {
+    const b = prev[section] as Record<string, Json>
+    const a = next.pages[section] as Record<string, Json>
+    for (const key of [...new Set([...Object.keys(b), ...Object.keys(a)])].sort())
+      if (!same(b[key] ?? null, a[key] ?? null))
+        out.push(
+          `${section} ${key}: ${b[key] === undefined ? 'new' : `was ${JSON.stringify(b[key])}`}; ${a[key] === undefined ? 'removed' : `now ${JSON.stringify(a[key])}`}`,
+        )
+  }
   return out
 }

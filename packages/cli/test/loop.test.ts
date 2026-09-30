@@ -50,7 +50,8 @@ describe('the agent loop (ADR 0027)', () => {
   it('scaffolds a feature on the home page that checks clean and works through get and post', async () => {
     const app = await freshApp()
     const added = await json('add', ['add', 'feature', 'tasks', '--page', '/'], app)
-    expect(added.out.created).toHaveLength(4)
+    expect(added.out.created).toHaveLength(5)
+    expect(added.out.created).toContain('hozu.lock.json')
     expect(added.out.manual).toEqual([])
     const check = await json('check', ['check'], app)
     expect(check.code).toBe(0)
@@ -262,7 +263,8 @@ describe('the agent loop (ADR 0027)', () => {
     expect(steps.at(-1)).toMatchObject({ path: '/notes/n1', status: 404 })
     const second = await json('add', ['add', 'feature', 'tasks', '--page', '/tasks', '--with', 'auth'], app)
     expect(second.out.created.some((f: string) => f.startsWith('features/account/'))).toBe(false)
-    expect((await run(['check'], app)).code).toBe(0)
+    const again = await checkFresh(app)
+    expect([again.validate.diagnostics, again.validate.lock]).toEqual([[], 'current'])
     const fresh = await promisify(execFile)(
       process.execPath,
       [`${root}packages/cli/bin/hozu.js`, 'get', '/tasks', '--json'],
@@ -396,9 +398,19 @@ describe('the guide compiles (ADR 0037 D2)', () => {
         .replace(/features: \[site\]/, 'features: [todos]'),
     )
     rmSync(join(app, 'features/site'), { recursive: true, force: true })
+    const first = await checkFresh(app)
+    expect(first.types.errors).toEqual([])
+    expect(first.validate.diagnostics.map((d: { code: string }) => d.code)).toEqual(['HZ057'])
+    expect(first.validate.lock).toBe('stale')
+    await promisify(execFile)(
+      process.execPath,
+      [`${root}packages/cli/bin/hozu.js`, 'check', '--update-lock'],
+      {
+        cwd: app,
+      },
+    )
     const check = await checkFresh(app)
-    expect(check.types.errors).toEqual([])
-    expect(check.validate.diagnostics).toEqual([])
+    expect([check.validate.diagnostics, check.validate.lock]).toEqual([[], 'current'])
     const { stdout } = await promisify(execFile)(
       process.execPath,
       [

@@ -15,8 +15,8 @@ around the rule.
 | HZ009 | a guardless transition shadows later ones | put guarded transitions first |
 | HZ014 | wrong builder output, or a method called on data (`.map`, `.toUpperCase()`) | follow the builder signature; lists: `ui.each`; computation: a `fn()` |
 | HZ015 / HZ017 | a contract fails / contract data does not match its schema | fix the machine or the contract (decide the intended behaviour first) |
-| HZ016 | a transition that decides (guard, `navigate`, `fn`) has no contract | add the contract from the snippet |
-| HZ018 | behaviour changed; the message shows `was: … now: …` | decision: update its contract; copy-only transition: `--update-lock` if intended |
+| HZ016 | a transition that decides (guard, `navigate`, a `fn`, comparison or `+ - ?? ?: .length .includes` in a value) has no contract | add the contract from the snippet |
+| HZ018 | a deciding transition changed (fields first, then `was:` / `now:`) and no covering contract fails against the old behaviour | change or add a contract that specifies the new behaviour; renaming or copying one does not count |
 | HZ021 | a query, mutation or endpoint without a resolver | `implement(...)` it in the resolvers of `app.ts` |
 | HZ022 | user data in a cacheable region | keep `scope: 'user'` queries out of cached pages |
 | HZ024 / HZ025 | route params mismatch (keys, or a schema that does not fit `:x?`/`:x+`/`:x*`) / page with params but no `entries` | align them / add `entries` |
@@ -46,7 +46,10 @@ around the rule.
 | HZ051 | `head.failed` misses a declared error of the head query, or maps another one | choose per error: a route (303), `403`, `404` or `410` (an intent decision: no patch) |
 | HZ052 | a route that no page renders | link to the endpoint with `ui.link(endpoint, input)` (patch), or add its `ui.page` |
 | HZ053 | (runtime) an endpoint answered `text/html`: a 500 | make it a `ui.page`; statuses and redirects go through `head.failed` |
+| HZ057 | `hozu.lock.json` differs from the computed lock (new, removed or copy-only changes, contract maps, a missing or 0.7 file) | if intended, `hozu check --update-lock`, then list the accepted `now:` lines in your summary |
+| HZ058 | (warning) contracts that fire only copy-only transitions and evaluate no guard | none needed: the lock entries it names review those transitions |
 | HZ059 | data reached plain JavaScript: a plain helper, a global (`Boolean`, `Object.keys`, `String`…), `typeof`, a spread or `in` | make the helper a `part()`; for a global use an operator or a `fn()` |
 | HZ060 | a page route starts with a locale segment (`/de/…` under `site.locales`) | rename the route (patch); the locale prefix is added for you |
 | HZ062 | (warning) a GET endpoint declares `invalidates` | `method: 'POST'`, or keep it on purpose (e-mail links) |
+| HZ064 | two contracts with identical IR | remove one (patch) |
 | HZ042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

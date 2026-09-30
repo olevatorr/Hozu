@@ -1,6 +1,6 @@
 import type { Bindings, Diagnostic, ProjectIR, SourceIndex } from '@hozu/core/ir'
 import { Ctx } from './context.ts'
-import type { Lockfile } from './contracts/lock.ts'
+import type { LockfileV2 } from './contracts/record.ts'
 import { verifyContracts } from './contracts/verify.ts'
 import { classNames } from './rules/classes.ts'
 import { getEndpointWrites, invalidations, queryFreshness, sessions } from './rules/data.ts'
@@ -26,8 +26,8 @@ import { deadEnds, reachability, shadowing, stateNames } from './rules/states.ts
 import { domText } from './rules/text.ts'
 import { widgetEvents } from './rules/widgets.ts'
 
-export type { Drift, LockEntry, Lockfile } from './contracts/lock.ts'
-export { isMechanical, summaryOf } from './contracts/mechanical.ts'
+export type { ChangeKind, LockChange } from './contracts/lock.ts'
+export { decides, summaryOf } from './contracts/mechanical.ts'
 export type {
   BehaviorRecord,
   EndpointLockV2,
@@ -36,6 +36,7 @@ export type {
   LockfileV2,
   PagesLockV2,
 } from './contracts/record.ts'
+export { behaviorOf, contractHash, recordOf } from './contracts/record.ts'
 export type { ContractRun, Failure } from './contracts/run.ts'
 export { runContract } from './contracts/run.ts'
 export type { Impact, ImpactKind, ImpactQuery, ImpactUse } from './impact.ts'
@@ -90,14 +91,15 @@ export interface ValidateOptions {
   sources?: SourceIndex
   feature?: string
   bindings?: Bindings
-  lock?: Lockfile | null
+  /** The parsed hozu.lock.json, `null` when the file is missing; omit it to skip the lock review. */
+  lock?: unknown
   accept?: boolean
   unknownClasses?: Map<string, string | null> | null
 }
 
 export interface Verification {
   diagnostics: Diagnostic[]
-  lock: Lockfile | null
+  lock: LockfileV2 | null
 }
 
 export function verify(ir: ProjectIR, options: ValidateOptions = {}): Verification {
@@ -109,7 +111,7 @@ export function verify(ir: ProjectIR, options: ValidateOptions = {}): Verificati
   )
   for (const rule of rules) rule(ctx)
   const lock = options.bindings
-    ? verifyContracts(ctx, options.bindings, options.lock ?? null, options.accept === true)
+    ? verifyContracts(ctx, options.bindings, options.lock, options.accept === true)
     : null
   const out = options.feature
     ? ctx.diagnostics.filter((d) => d.location.feature === options.feature)

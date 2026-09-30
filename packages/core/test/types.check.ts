@@ -277,3 +277,22 @@ export const NoHandlers = ui.view({
       ui.query(itemQuery, { slug: 'a' }, { ready: () => null, failed: { Unexpected: () => null } }),
     ]),
 })
+
+const listing = route({
+  path: '/list',
+  params: null,
+  search: z.object({ tag: z.string().default(''), page: z.number().default(1) }),
+})
+const plain = route({ path: '/plain', params: null, search: null })
+export const links = [
+  ui.link(listing, null),
+  ui.link(listing, null, { tag: 'x' }),
+  ui.link(listing, null, { tag: 'x', page: 2 }),
+  ui.link(plain, null),
+  // @ts-expect-error omit the search instead of passing null (ADR 0043 G)
+  ui.link(listing, null, null),
+  // @ts-expect-error an empty search is the omitted one
+  ui.link(listing, null, {}),
+  // @ts-expect-error a route without search takes no third argument
+  ui.link(plain, null, { tag: 'x' }),
+]

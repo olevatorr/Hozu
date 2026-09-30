@@ -1,4 +1,4 @@
-import { contract, event, feature, machine, on, project, query, route, ui } from '@hozu/core'
+import { event, feature, machine, on, project, query, route, ui } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
@@ -97,15 +97,6 @@ const site = project({
           Tag,
           note,
           Page,
-          covers: contract(extras, {
-            given: { state: 'ready', context: { draft: '', tags: [], width: 0 } },
-            when: [
-              { send: Draft, payload: { text: 'x' } },
-              { send: Resize, payload: { width: 800 } },
-              { send: Tag, payload: { tag: 'a' } },
-            ],
-            expect: { state: 'ready', changes: { draft: 'x', tags: ['a'], width: 800 } },
-          }),
           extras,
         },
       ],

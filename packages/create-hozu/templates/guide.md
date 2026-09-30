@@ -22,5 +22,6 @@ __NOTE__
 ## Rules
 - After `hozu add feature`, do not print the generated files: edit the texts it lists; `hozu map` shows the rest.
 - Apply the fix each diagnostic gives; do not work around a rule.
-- Every behaviour change comes with a contract change.
+- A contract only where a transition decides (a guard, a `navigate`, a computed value). Every other change is
+  reviewed in `hozu.lock.json`: after `hozu check --update-lock`, list the accepted `now:` lines in your summary.
 - Do not edit `__SKILL__/`: `__RUN__ hozu skill` rewrites it for the installed Hozu version.
