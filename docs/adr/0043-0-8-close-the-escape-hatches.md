@@ -955,3 +955,31 @@ done, before or with the first rule that emits them.
 - Step 18 of the Hozu reference, rewritten under (c) on a scratch copy of steps 00–17 migrated to the current API
   (`site.locales`, `ui.messages`, a `ui.alternate` link as the switch; no cookie, session field or rewrite): DE1 and
   DE2 pass (2 / 2), and the full step-18 acceptance passes 66 / 66. G3 is confirmed by this run.
+
+**Wave C additions (forms; W-C):** the surface J's tools share.
+- `formEntries(entries, submitter?) → { first, all }` and `formRefOf(value)` are exported from `@hozu/core/ir`; the
+  client imports the decoder from `@hozu/core/forms`. Files decode to their name; a given `submitter` pair is appended
+  after the entries (the browser already places it in tree order, so only tools that build entries from HTML pass it).
+- A formRef's rendered id is the node id of the form that holds it. Inside `ui.each` it is
+  `<node id>~<key>` per enclosing each (the item's key field, or the item for a null key), lowered as `%concat` of
+  `{ formRef }`, `'~'` and binding refs; `formRefOf` reads both shapes. The form gets `ref: { formRef }` and
+  `attrs.id` with the same value (a form holding a formRef may not set `id`, HZ014).
+- A control may use a formRef when the form's `ui.each` chain is a prefix of its own: inside the item of its form, or
+  anywhere when the form is outside `ui.each` (HZ014 otherwise). A formRef no form of the feature holds is HZ007.
+- **Invalid native post (coordinator decision A):** the payload is checked against `<event>#payload`. If it fails,
+  the machine still takes the event; the first invoke calls `data.run` when the effect's own input check fails (the
+  same `Invalid` fields and messages the JS path shows), and otherwise gets a framework `Invalid` from the payload
+  issues without running the resolver. The page re-renders with 400 and never redirects. A mutation `Invalid` on a
+  valid payload also answers 400. A parity test (`runtime-server/test/forms-c.test.ts`) shows the same alert text with
+  JS and as a native post.
+- Endpoint form bodies decode with `endpointForm(schema, request)` (`runtime-server/src/forms.ts`); an array property
+  missing from the body is `[]` unless its schema declares a default.
+- HZ054 counts a name as multi-valued when several non-radio, non-submit controls share it, a control sits in a
+  `ui.each` inside the form instance, or a `select` has `multiple`. HZ055 / HZ063 see descendants, formRef controls
+  and submit buttons; `ui.html`, a widget, an embed or a computed `name` make the form opaque (HZ063).
+- HZ033 counts checkboxes (value `'on'` by default) and submit buttons as options. Its patches (boolean →
+  `formAll` + a string list, number → string, a partly named submit group → nullable) and HZ061's (remove the limits)
+  apply only when no effect input or other event shares the payload schema; otherwise the fix is a snippet.
+- The decoder no longer skips `__hozu`: it is in the action URL, never in a body.
+- Budget P7: 7 774 → 7 893 B (+119): `dom.ts` formAll + submitter with the machine's `[]` default +104 (share
+  ≤ 120), the formRef value in `compileValue` +15 (from the reserve).
