@@ -225,6 +225,7 @@ export function createDataRuntime({
   if (problems.length) throw new DataRuntimeError(problems)
 
   const cache = new Map<string, Entry>()
+  const parsedInputs = new Map<string, { input: Json; key: string }>()
   const tagIndex = new Map<string, Set<Entry>>()
   const stats: Stats = { entries: 0, fetches: 0, hits: 0, deduped: 0, invalidated: 0 }
 
@@ -272,35 +273,79 @@ export function createDataRuntime({
     return count
   }
 
-  function scope(initial?: unknown, { preview = false }: { preview?: boolean } = {}): RequestData {
-    let session: unknown = initial ?? null
-    let checked = false
-    let readSession = false
-    let written: { value: unknown } | null = null
-    const memo = new Map<string, Promise<Result>>()
+  const noSession = () => {
+    throw new Error('Only mutations can set the session')
+  }
+  const noFiles = new Map<string, FileLike>()
 
-    const sessionCtx = <T extends object>(ctx: T) =>
-      Object.defineProperty(ctx as T & { session: unknown }, 'session', {
-        enumerable: true,
-        get: () => {
-          readSession = true
-          return session
-        },
-      })
-    const setSession = (value: unknown) => {
-      const issues = value === null ? null : check('#session', value)
-      if (issues) throw new Error(`Invalid session: ${issues.join('; ')}`)
-      session = value
-      checked = true
-      written = { value }
-      memo.clear()
+  async function refresh(scope: Scope, effect: Effect, entry: Entry, input: Json): Promise<Result> {
+    const gen = entry.gen
+    const started = now()
+    const result = await scope.execute(effect, input)
+    if (result.ok && entry.gen === gen) {
+      entry.value = result
+      entry.at = started
+      entry.stale = false
+    }
+    return result
+  }
+
+  async function read(scope: Scope, effect: Effect, key: string, input: Json): Promise<Result> {
+    if (scope.preview || !cached(effect)) return scope.execute(effect, input)
+    const entry = entryOf(effect, key, input)
+    const f = effect.freshness as Exclude<Freshness, { kind: 'request' } | { kind: 'live' }>
+    if (entry.value && !entry.stale) {
+      if (f.kind === 'static' || now() - entry.at < f.seconds * 1000) {
+        stats.hits++
+        return entry.value
+      }
+      if (f.kind === 'swr') {
+        stats.hits++
+        if (!entry.refreshing) {
+          entry.refreshing = true
+          void refresh(scope, effect, entry, input).finally(() => {
+            entry.refreshing = false
+          })
+        }
+        return entry.value
+      }
+    }
+    return refresh(scope, effect, entry, input)
+  }
+
+  class Scope implements RequestData {
+    session: unknown
+    readSession = false
+    written: { value: unknown } | null = null
+    readonly preview: boolean
+    #checked = false
+    #memo: Map<string, Promise<Result>> | null = null
+
+    constructor(session: unknown, preview: boolean) {
+      this.session = session ?? null
+      this.preview = preview
     }
 
-    async function execute(
-      effect: Effect,
-      input: Json,
-      files: Map<string, FileLike> = new Map(),
-    ): Promise<Result> {
+    #ctx<T extends object>(ctx: T): T & { session: unknown } {
+      return Object.defineProperty(ctx as T & { session: unknown }, 'session', {
+        enumerable: true,
+        get: () => {
+          this.readSession = true
+          return this.session
+        },
+      })
+    }
+
+    setSession = (value: unknown) => {
+      const issues = value === null ? null : check('#session', value)
+      if (issues) throw new Error(`Invalid session: ${issues.join('; ')}`)
+      this.session = value
+      this.#checked = true
+      this.written = { value }
+      this.#memo = null
+    }
+
+    async execute(effect: Effect, input: Json, files: Map<string, FileLike> = noFiles): Promise<Result> {
       stats.fetches++
       let out: unknown
       const file = async (token: string) => {
@@ -315,18 +360,13 @@ export function createDataRuntime({
       }
       const ctx = {
         env,
-        preview,
+        preview: this.preview,
         fail,
         file,
-        setSession:
-          effect.kind === 'mutation'
-            ? setSession
-            : () => {
-                throw new Error('Only mutations can set the session')
-              },
+        setSession: effect.kind === 'mutation' ? this.setSession : noSession,
       }
       try {
-        out = await effect.run(input, effect.scope === 'user' ? sessionCtx(ctx) : (ctx as never))
+        out = await effect.run(input, effect.scope === 'user' ? this.#ctx(ctx) : (ctx as never))
       } catch (error) {
         return report(error)
       }
@@ -354,94 +394,56 @@ export function createDataRuntime({
       return { ok: true, value: out as Json }
     }
 
-    async function refresh(effect: Effect, entry: Entry, input: Json): Promise<Result> {
-      const gen = entry.gen
-      const started = now()
-      const result = await execute(effect, input)
-      if (result.ok && entry.gen === gen) {
-        entry.value = result
-        entry.at = started
-        entry.stale = false
-      }
-      return result
-    }
-
-    async function read(effect: Effect, key: string, input: Json): Promise<Result> {
-      if (preview || !cached(effect)) return execute(effect, input)
-      const entry = entryOf(effect, key, input)
-      const f = effect.freshness as Exclude<Freshness, { kind: 'request' } | { kind: 'live' }>
-      if (entry.value && !entry.stale) {
-        const age = now() - entry.at
-        if (f.kind === 'static' || age < f.seconds * 1000) {
-          stats.hits++
-          return entry.value
-        }
-        if (f.kind === 'swr') {
-          stats.hits++
-          if (!entry.refreshing) {
-            entry.refreshing = true
-            void refresh(effect, entry, input).finally(() => {
-              entry.refreshing = false
-            })
-          }
-          return entry.value
-        }
-      }
-      return refresh(effect, entry, input)
-    }
-
-    const validSession = (): Result | null => {
-      if (checked || session === null || session === undefined) return null
-      const issues = check('#session', session)
+    #validSession(): Result | null {
+      if (this.#checked || this.session === null) return null
+      const issues = check('#session', this.session)
       if (issues) return unexpected(`Invalid session: ${issues.join('; ')}`)
-      checked = true
+      this.#checked = true
       return null
     }
 
-    async function run(
-      ref: string,
-      raw: Json,
-      files: Map<string, FileLike> = new Map(),
-    ): Promise<Result | MutationResult> {
+    async run(ref: string, raw: Json, files?: Map<string, FileLike>): Promise<Result | MutationResult> {
       const effect = effects.get(ref)
       if (!effect) return unexpected(`Unknown effect ${ref}`)
       if (effect.scope === 'user') {
-        const bad = validSession()
+        const bad = this.#validSession()
         if (bad) return effect.kind === 'mutation' ? { ...bad, invalidated: [] } : bad
       }
-      const parsed = parse(ref, raw)
-      if (!parsed.ok)
-        return effect.kind === 'mutation'
-          ? { ...invalid(effect.fields, parsed.issues), invalidated: [] }
-          : unexpected(`Invalid input for ${ref}: ${parsed.issues.join('; ')}`)
-      const input = parsed.value
-      const key = `${ref}${canonicalStringify(input)}`
+      const shared = cached(effect) ? `${ref}${canonicalStringify(raw)}` : null
+      let known = shared === null ? undefined : parsedInputs.get(shared)
+      if (!known) {
+        const parsed = parse(ref, raw)
+        if (!parsed.ok)
+          return effect.kind === 'mutation'
+            ? { ...invalid(effect.fields, parsed.issues), invalidated: [] }
+            : unexpected(`Invalid input for ${ref}: ${parsed.issues.join('; ')}`)
+        known = { input: parsed.value, key: `${ref}${canonicalStringify(parsed.value)}` }
+        if (shared !== null) parsedInputs.set(shared, known)
+      }
+      const { input, key } = known
       if (effect.kind === 'query') {
-        const hit = memo.get(key)
+        this.#memo ??= new Map()
+        const hit = this.#memo.get(key)
         if (hit) {
           stats.deduped++
           return hit
         }
-        const next = read(effect, key, input)
-        memo.set(key, next)
+        const next = read(this, effect, key, input)
+        this.#memo.set(key, next)
         return next
       }
-      const before = written
-      const result = await execute(effect, input, files)
-      memo.clear()
-      const extra =
-        written && written !== before ? { session: (written as { value: unknown }).value as Json } : {}
+      const before = this.written
+      const result = await this.execute(effect, input, files)
+      this.#memo = null
+      const after = this.written as { value: unknown } | null
+      const extra = after && after !== before ? { session: after.value as Json } : {}
       if (!result.ok) return { ...result, invalidated: [], ...extra }
       const tags = [...new Set(effect.tags.map((t) => t(input)))]
       invalidate(tags)
       return { ...result, invalidated: tags, ...extra }
     }
 
-    async function endpoint(
-      ref: string,
-      raw: Json,
-      { request }: { request: unknown },
-    ): Promise<EndpointResult> {
+    async endpoint(ref: string, raw: Json, { request }: { request: unknown }): Promise<EndpointResult> {
       const e = endpoints.get(ref)
       if (!e) return { ok: false, status: 404, message: `Unknown endpoint ${ref}`, fields: null }
       const parsed = parse(ref, raw)
@@ -459,11 +461,11 @@ export function createDataRuntime({
       try {
         out = await e.run(
           parsed.value,
-          sessionCtx({
+          this.#ctx({
             env,
-            preview,
+            preview: this.preview,
             fail,
-            setSession,
+            setSession: this.setSession,
             file: async () => null,
             request,
           }) as never,
@@ -471,7 +473,7 @@ export function createDataRuntime({
       } catch (error) {
         return report(error)
       }
-      memo.clear()
+      this.#memo = null
       const done = (value: unknown, ok: boolean): EndpointResult => {
         const tags = ok ? [...new Set(e.tags.map((t) => t(parsed.value)))] : []
         invalidate(tags)
@@ -484,21 +486,10 @@ export function createDataRuntime({
       const wrong = check(`${ref}#output`, out)
       return wrong ? report(new Error(`Invalid output from ${ref}: ${wrong.join('; ')}`)) : done(out, true)
     }
-
-    return {
-      get session() {
-        return session
-      },
-      get readSession() {
-        return readSession
-      },
-      get written() {
-        return written
-      },
-      run,
-      endpoint,
-    }
   }
+
+  const scope = (session?: unknown, { preview = false }: { preview?: boolean } = {}): RequestData =>
+    new Scope(session, preview)
 
   const refOf = (decl: object) => {
     const ref = bindings.refs.get(decl)
