@@ -119,6 +119,8 @@ export interface BuildOutput {
 
 export interface SkillOutput {
   written: string[]
+  /** Guides with text outside the markers that equals no known template: paste `block` by hand. */
+  custom: { guide: string; block: string }[]
 }
 
 export interface TypeIssue {

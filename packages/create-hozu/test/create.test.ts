@@ -2,7 +2,7 @@ import { mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createApp, runnerOf, writeAgentFiles } from 'create-hozu'
+import { BEGIN, createApp, END, migrateGuide, runnerOf, TARGETS, writeAgentFiles } from 'create-hozu'
 import { describe, expect, it } from 'vitest'
 import { sync } from '../../../scripts/skill.ts'
 
@@ -17,17 +17,43 @@ const base = { name: 'demo', version: '0.1.0', runner: 'pnpm exec' as const, ski
 
 const repo = (path: string) => readFile(fileURLToPath(new URL(`../../../${path}`, import.meta.url)), 'utf8')
 
-describe('the guide states the contract rule of ADR 0037 D3 and ADR 0043 G', () => {
-  it('asks for contracts only where a transition decides, with the ADR definition', async () => {
+describe('the 0.8 guide (ADR 0043 K)', () => {
+  it('leaves the loop and the contract rule to SKILL.md', async () => {
     const guide = await repo('packages/create-hozu/templates/guide.md')
-    const adr37 = await repo('docs/adr/0037-0-5-lower-reading-and-writing-cost.md')
-    const adr43 = await repo('docs/adr/0043-0-8-close-the-escape-hatches.md')
-    expect(adr37).toContain('## D3. Contracts only for decisions')
-    expect(adr43).toContain('a transition decides when it has a guard or a navigate')
-    const rule = /^- A contract only where a transition decides \((.*?)\)\./m.exec(guide)?.[1]
-    expect(rule).toBe('a guard, a `navigate`, a computed value')
-    expect(guide).not.toMatch(/every behaviou?r change comes with a contract/i)
-    expect(guide).toContain('--update-lock')
+    expect(guide).not.toContain('## The loop')
+    expect(guide).not.toMatch(/contract/i)
+    expect(guide).not.toContain('changing.md')
+    expect(guide).not.toContain('hozu post')
+    expect(guide).not.toContain(BEGIN)
+  })
+
+  const target = TARGETS[0]
+  const released = (file: string) => repo(`packages/create-hozu/test/fixtures/${file}`)
+
+  it('replaces the guides 0.3–0.7 wrote', async () => {
+    expect(migrateGuide(await released('AGENTS-0.5.0-pnpm.md'), TARGETS[1], '/apps/x', 'npx').kind).toBe(
+      'marked',
+    )
+  })
+
+  it('replaces a known 0.7 guide, keeping its runner, and then only the marked block', async () => {
+    const marked = migrateGuide(await released('CLAUDE-0.7.0-npx.md'), target, '/apps/other', 'pnpm exec')
+    expect(marked.kind).toBe('marked')
+    const code = (marked as { code: string }).code
+    expect(code.startsWith(`${BEGIN}\n# demo\n`)).toBe(true)
+    expect(code).toContain('npx hozu browse')
+    expect(code).not.toContain('The skill writes commands')
+    const own = `# notes by the team\n\n${code}\n## Ours\n- keep this\n`
+    expect(migrateGuide(own, target, '/apps/demo', 'npx')).toEqual({ kind: 'current', code: own })
+    const stale = own.replace('Apply the fix', 'Apply every fix')
+    const again = migrateGuide(stale, target, '/apps/demo', 'npx')
+    expect(again).toEqual({ kind: 'replaced', code: own })
+  })
+
+  it('never rewrites a guide it does not know', () => {
+    const result = migrateGuide('# mine\n\nOur rules.\n', target, '/apps/demo', 'pnpm exec')
+    expect(result.kind).toBe('custom')
+    expect((result as { block: string }).block).toContain(END)
   })
 })
 
@@ -46,6 +72,9 @@ describe('create-hozu', () => {
     expect(await has(join(dir, '.agents'))).toBe(false)
     const guide = await readFile(join(dir, 'CLAUDE.md'), 'utf8')
     expect(guide).toContain('Use the `hozu` skill (`.claude/skills/hozu/SKILL.md`)')
+    expect(guide.startsWith(`${BEGIN}\n# demo\n`)).toBe(true)
+    expect(guide.endsWith(`${END}\n`)).toBe(true)
+    expect(guide).toContain('in this app use `pnpm exec …`')
     expect(guide).not.toMatch(/__[A-Z]+__/)
     const pkg = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'))
     expect(pkg.dependencies['@hozu/core']).toBe('^0.1.0')
@@ -58,8 +87,8 @@ describe('create-hozu', () => {
     await createApp(dir, { ...base, agent: 'agents', runner: 'npx' })
     const guide = await readFile(join(dir, 'AGENTS.md'), 'utf8')
     expect(guide).toContain('Read `.agents/skills/hozu/SKILL.md` before writing')
-    expect(guide).toContain('npx hozu check')
-    expect(guide).toContain('in this app use `npx …`')
+    expect(guide).toContain('npx hozu browse')
+    expect(guide).not.toContain('The skill writes commands')
     expect(await has(join(dir, '.agents/skills/hozu/topics/views.md'))).toBe(true)
     expect(await has(join(dir, 'CLAUDE.md'))).toBe(false)
   })
@@ -76,7 +105,9 @@ describe('create-hozu', () => {
     await createApp(dir, { ...base, agent: 'claude' })
     await writeFile(join(dir, 'CLAUDE.md'), '# mine\n')
     await writeFile(join(dir, '.claude/skills/hozu/SKILL.md'), 'old')
-    await writeAgentFiles(dir, 'claude', base)
+    const result = await writeAgentFiles(dir, 'claude', base)
+    expect(result.written).toEqual(['.claude/skills/hozu'])
+    expect(result.custom.map((c) => c.guide)).toEqual(['CLAUDE.md'])
     expect(await readFile(join(dir, 'CLAUDE.md'), 'utf8')).toBe('# mine\n')
     expect(await readFile(join(dir, '.claude/skills/hozu/SKILL.md'), 'utf8')).toContain('# Hozu\n')
   })

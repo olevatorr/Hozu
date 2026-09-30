@@ -25,9 +25,8 @@ export async function runSkill(cwd: string, requested: string | undefined): Prom
       'hozu skill --agent agents   (AGENTS.md + .agents/skills/hozu)',
       'hozu skill --agent both',
     ])
-  const written = await writeAgentFiles(cwd, agent, {
+  return writeAgentFiles(cwd, agent, {
     name: basename(cwd),
     runner: runnerOf(process.env.npm_config_user_agent),
   })
-  return { written }
 }

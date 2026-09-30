@@ -1,9 +1,11 @@
 import { cp, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { migrateGuide, type Runner, TARGETS } from './guide.ts'
 
 export type Agent = 'claude' | 'agents' | 'both'
-export type Runner = 'pnpm exec' | 'npx' | 'yarn' | 'bunx'
+export type { BlockResult, Runner, Target } from './guide.ts'
+export { BEGIN, currentGuide, END, GUIDE_07, guideBlock, migrateGuide, RUNNERS, TARGETS } from './guide.ts'
 
 export const AGENTS: readonly Agent[] = ['claude', 'agents', 'both']
 
@@ -12,18 +14,7 @@ export const defaultSkill = join(root, 'skill')
 const templates = join(root, 'templates')
 
 const targets = (agent: Agent) =>
-  [
-    {
-      guide: 'CLAUDE.md',
-      skill: '.claude/skills/hozu',
-      read: 'Use the `hozu` skill (`__SKILL__/SKILL.md`).',
-    },
-    {
-      guide: 'AGENTS.md',
-      skill: '.agents/skills/hozu',
-      read: 'Read `__SKILL__/SKILL.md` before writing or changing any Hozu code.',
-    },
-  ].filter((_, i) => agent === 'both' || (agent === 'claude' ? i === 0 : i === 1))
+  TARGETS.filter((_, i) => agent === 'both' || (agent === 'claude' ? i === 0 : i === 1))
 
 export const runnerOf = (userAgent: string | undefined): Runner => {
   const name = userAgent?.split('/')[0]
@@ -36,39 +27,35 @@ const exists = (path: string) =>
     () => false,
   )
 
-const fill = (text: string, values: Record<string, string>) =>
-  Object.entries(values).reduce((out, [key, value]) => out.replaceAll(`__${key}__`, value), text)
-
 export interface AgentOptions {
   name: string
   runner: Runner
   skillSource?: string
 }
 
-export async function writeAgentFiles(dir: string, agent: Agent, options: AgentOptions): Promise<string[]> {
-  const written: string[] = []
-  const guide = await readFile(join(templates, 'guide.md'), 'utf8')
+export interface AgentFiles {
+  written: string[]
+  custom: { guide: string; block: string }[]
+}
+
+export async function writeAgentFiles(dir: string, agent: Agent, options: AgentOptions): Promise<AgentFiles> {
+  const out: AgentFiles = { written: [], custom: [] }
   for (const t of targets(agent)) {
     const skill = join(dir, t.skill)
     await rm(skill, { recursive: true, force: true })
     await mkdir(dirname(skill), { recursive: true })
     await cp(options.skillSource ?? defaultSkill, skill, { recursive: true })
-    written.push(t.skill)
+    out.written.push(t.skill)
     const file = join(dir, t.guide)
-    if (await exists(file)) continue
-    const values = {
-      NAME: options.name,
-      RUN: options.runner,
-      SKILL: t.skill,
-      NOTE:
-        options.runner === 'pnpm exec'
-          ? ''
-          : `\nThe skill writes commands as \`pnpm exec …\`; in this app use \`${options.runner} …\`.\n`,
+    const existing = (await exists(file)) ? await readFile(file, 'utf8') : null
+    const result = migrateGuide(existing, t, dir, options.runner)
+    if (result.kind === 'custom') out.custom.push({ guide: t.guide, block: result.block })
+    else if (result.kind !== 'current') {
+      await writeFile(file, result.code)
+      out.written.push(t.guide)
     }
-    await writeFile(file, fill(fill(guide, { READ: t.read }), values))
-    written.push(t.guide)
   }
-  return written
+  return out
 }
 
 async function files(dir: string): Promise<string[]> {
@@ -123,7 +110,7 @@ export async function createApp(dir: string, options: CreateOptions): Promise<st
     const rel = relative(app, source)
     const target = join(dir, rel === 'gitignore' ? '.gitignore' : rel)
     await mkdir(dirname(target), { recursive: true })
-    await writeFile(target, fill(await readFile(source, 'utf8'), { NAME: options.name }))
+    await writeFile(target, (await readFile(source, 'utf8')).replaceAll('__NAME__', options.name))
     written.push(relative(dir, target))
   }
   await writeFile(
@@ -131,6 +118,6 @@ export async function createApp(dir: string, options: CreateOptions): Promise<st
     `${JSON.stringify(packageJson(options.name, options.version), null, 2)}\n`,
   )
   written.push('package.json')
-  written.push(...(await writeAgentFiles(dir, options.agent, options)))
+  written.push(...(await writeAgentFiles(dir, options.agent, options)).written)
   return written
 }

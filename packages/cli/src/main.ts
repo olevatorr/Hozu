@@ -186,8 +186,15 @@ export async function main(
     }
     if (command === 'skill') {
       const result = await runSkill(cwd, values.agent)
-      out(asJson ? json(result) : `✔ wrote ${result.written.join(', ')}\n`)
-      return 0
+      if (asJson) out(json(result))
+      else {
+        out(`✔ wrote ${result.written.join(', ')}\n`)
+        for (const c of result.custom)
+          out(
+            `\n✖ ${c.guide} has its own text and no hozu markers. Replace its Hozu instructions with this block:\n\n${c.block}`,
+          )
+      }
+      return result.custom.length ? 1 : 0
     }
     if (command === 'add') {
       if (target === 'widget') {

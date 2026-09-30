@@ -10,10 +10,31 @@
           "items": {
             "type": "string"
           }
+        },
+        "custom": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "guide": {
+                "type": "string"
+              },
+              "block": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "guide",
+              "block"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Guides with text outside the markers that equals no known template: paste `block` by hand."
         }
       },
       "required": [
-        "written"
+        "written",
+        "custom"
       ],
       "additionalProperties": false
     }

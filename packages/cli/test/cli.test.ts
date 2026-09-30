@@ -44,6 +44,11 @@ describe('hozu skill', () => {
     expect(existsSync(join(dir, '.agents/skills/hozu/example/hozu.config.ts'))).toBe(true)
     const again = await run(['skill', '--json'], dir)
     expect(JSON.parse(again.stdout).written).toEqual(['.agents/skills/hozu'])
+    writeFileSync(join(dir, 'AGENTS.md'), '# ours\n\nEvery behaviour change comes with a contract change.\n')
+    const custom = await run(['skill'], dir)
+    expect(custom.code).toBe(1)
+    expect(custom.stdout).toContain('AGENTS.md has its own text and no hozu markers')
+    expect(custom.stdout).toContain('<!-- /hozu -->')
   })
 })
 
