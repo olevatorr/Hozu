@@ -12,6 +12,7 @@ import { mermaid, runGraph } from './commands/graph.ts'
 import { describeImpact, runImpact } from './commands/impact.ts'
 import { runInspect } from './commands/inspect.ts'
 import { describeMap, runMap } from './commands/map.ts'
+import { describeMigrate, runMigrate } from './commands/migrate.ts'
 import { describePlan, runPlan } from './commands/plan.ts'
 import { describeRequest, runRequest } from './commands/request.ts'
 import { runServe } from './commands/serve.ts'
@@ -41,6 +42,7 @@ Commands:
   browse <path> --do <step> Load the page in headless Chrome (no server): errors, widgets, text after the steps
   add feature <name>        Scaffold a working feature (model, views, contracts, resolvers) and wire it in
   add widget <feature> <Name>  Add a widget: declaration, client module, app.ts bundle, @hozu/bundle dependency
+  migrate 0.8               Upgrade a 0.7 app: list the lock entries stale under 0.7, rewrite the source, then check
 
 Options:
   --json               Machine-readable output (schemas in @hozu/cli/schema)
@@ -119,6 +121,7 @@ export async function main(
       'build',
       'serve',
       'skill',
+      'migrate',
     ]
     if (!commands.includes(command)) throw new HozuCliError('usage', `Unknown command "${command}"`, commands)
     if (command === 'docs') {
@@ -130,6 +133,11 @@ export async function main(
       const result = await runSkill(cwd, values.agent)
       out(asJson ? json(result) : `✔ wrote ${result.written.join(', ')}\n`)
       return 0
+    }
+    if (command === 'migrate') {
+      const result = await runMigrate(cwd, values.config, target)
+      out(asJson ? json(result) : describeMigrate(result))
+      return result.ok ? 0 : 1
     }
     if (command === 'add') {
       if (target === 'widget') {
