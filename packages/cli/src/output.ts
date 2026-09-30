@@ -62,11 +62,16 @@ const TOPICS: Record<string, string> = {
   HZ051: 'pages',
   HZ052: 'pages',
   HZ053: 'endpoints',
+  HZ054: 'forms',
+  HZ055: 'forms',
+  HZ056: 'forms',
   HZ057: 'contracts',
   HZ058: 'contracts',
   HZ059: 'views',
   HZ060: 'i18n',
+  HZ061: 'forms',
   HZ062: 'endpoints',
+  HZ063: 'forms',
   HZ064: 'contracts',
 }
 

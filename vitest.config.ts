@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: /^@hozu\/core\/ir$/, replacement: `${src('core')}ir.ts` },
+      { find: /^@hozu\/core\/forms$/, replacement: `${src('core')}ir/forms.ts` },
       { find: /^@hozu\/core\/lower$/, replacement: `${src('core')}lower.ts` },
       { find: /^@hozu\/core$/, replacement: `${src('core')}index.ts` },
       { find: /^@hozu\/schema-zod$/, replacement: `${src('schema-zod')}index.ts` },

@@ -26,7 +26,7 @@ import { type App, type AppHost, appHandlerOptions, appOptionsOf } from './app.t
 import { clientBundle } from './assets.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'
-import { formFields, formNode, runForm } from './forms.ts'
+import { endpointForm, formFields, formNode, runForm } from './forms.ts'
 import { serviceWorker, serviceWorkerRegistration, webManifest } from './pwa.ts'
 import {
   fnsModule,
@@ -539,7 +539,7 @@ function handlerFor({
     await dropPages(outcome.invalidated)
     const cookie = store && outcome.session ? await store.write(outcome.session.value, request) : null
     const back = pathOf(tableOf(locale)[found.route] ?? url.pathname, found.params, search)
-    const target = outcome.navigate ?? (outcome.unchanged ? back : null)
+    const target = outcome.invalid ? null : (outcome.navigate ?? (outcome.unchanged ? back : null))
     if (target) {
       after(outcome.invalidated)
       return see(target, cookie)
@@ -561,7 +561,7 @@ function handlerFor({
     const response = new Response(
       stream(rendered.chunks, (e) => onError(e, { path })),
       {
-        status: outcome.unexpected ? 500 : rendered.status,
+        status: outcome.unexpected ? 500 : outcome.invalid ? 400 : rendered.status,
         headers: {
           ...extraHeaders(found.route),
           'content-type': 'text/html; charset=utf-8',
@@ -673,12 +673,7 @@ function handlerFor({
     else if (request.method !== 'POST') input = queryInput(feature.schemas[e.input] ?? null, url.searchParams)
     else if ((request.headers.get('content-type') ?? '').includes('json'))
       input = (await request.json().catch(() => null)) as Json
-    else {
-      const form = await request.formData().catch(() => null)
-      input = Object.fromEntries(
-        [...(form?.entries() ?? [])].filter((x): x is [string, string] => typeof x[1] === 'string'),
-      )
-    }
+    else input = await endpointForm(feature.schemas[e.input] ?? null, request).catch(() => null)
     const scope = await dataFor(request)
     const result = await scope.endpoint(ref, input, { request, ...(bytes ? { bytes } : {}) })
     const cookie = store && scope.written ? await store.write(scope.written.value, request) : null

@@ -110,7 +110,7 @@ describe('field-level invalid input (ADR 0019)', () => {
         body: 'title=x&kind=article',
       }),
     )
-    expect(posted.status).toBe(200)
+    expect(posted.status).toBe(400)
     const html = (await posted.text()).replace(/<!--[^>]*-->/g, '')
     expect(html).toMatch(/<p[^>]*id="title-error"[^>]*>Use at least 2 characters<\/p>/)
     expect(html).toContain('aria-invalid="true"')

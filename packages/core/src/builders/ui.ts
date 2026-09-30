@@ -178,19 +178,27 @@ const elements = Object.fromEntries(
 ) as Elements
 
 export type DomText = Expr<never>
-export type DomRef = Omit<Ref<DomFields>, 'form' | 'value'> & {
+export type DomList = Expr<never[]>
+export type DomRef = Omit<Ref<DomFields>, 'form' | 'formAll' | 'value'> & {
   value: DomText
   form: (name: string) => DomText
+  formAll: (name: string) => DomList
 }
+
+export interface FormRef extends Decl<'formRef'> {}
 
 const domRoot = refProxy('dom', 0)
 const form = (name: string): DomText => createRef('dom', 0, ['form', name])
-const dom: DomRef = new Proxy(domRoot, { get: (t, k) => (k === 'form' ? form : Reflect.get(t, k)) })
+const formAll = (name: string): DomList => createRef('dom', 0, ['formAll', name])
+const dom: DomRef = new Proxy(domRoot, {
+  get: (t, k) => (k === 'form' ? form : k === 'formAll' ? formAll : Reflect.get(t, k)),
+})
 
 export const ui = Object.freeze({
   ...elements,
   view,
   dom,
+  formRef: (): FormRef => brand({}, 'formRef', null),
   send: <P>(event: EventDecl<P>, payload: NoInfer<Val<P>>): Send =>
     Object.freeze({ [SEND]: { event, payload } }),
   each: <T>(

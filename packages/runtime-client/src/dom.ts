@@ -1,3 +1,4 @@
+import { formEntries } from '@hozu/core/forms'
 import type { Json } from '@hozu/core/ir'
 
 export const SVG_NS = 'http://www.w3.org/2000/svg'
@@ -54,13 +55,12 @@ export const domField =
         return num(t?.valueAsNumber)
       case 'files':
         return fileList((t?.files as FileList | undefined) ?? (e as DragEvent).dataTransfer?.files)
-      case 'form': {
-        const out: Record<string, string> = {}
+      case 'form':
+      case 'formAll': {
         const form = e.target as HTMLFormElement
         const win = form.ownerDocument.defaultView as (Window & typeof globalThis) | null
-        for (const [k, v] of new (win?.FormData ?? FormData)(form))
-          out[k] = typeof v === 'string' ? v : v.name
-        return out
+        const d = formEntries(new (win?.FormData ?? FormData)(form, (e as SubmitEvent).submitter))
+        return field === 'form' ? d.first : d.all
       }
       case 'open':
         return t?.open === true

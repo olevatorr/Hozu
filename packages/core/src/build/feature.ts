@@ -27,6 +27,7 @@ import { builtin } from '../platform.ts'
 import { toParse } from '../schema/check.ts'
 import type { Schema } from '../schema/standard.ts'
 import { buildContract } from './contract.ts'
+import { finishForms } from './forms.ts'
 import { buildMachine } from './machine.ts'
 import { type At, at, FeatureScope, filePath, type ProjectScope } from './scope.ts'
 import { buildView } from './view.ts'
@@ -289,6 +290,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     contracts: mapRecord(config.contracts, (sym, c) => buildContract(scope, sym, c)),
     messages: config.messages ? buildMessages(defOf<MessagesDef>(config.messages)) : null,
   }
+  finishForms(scope)
   return ir
 }
 
