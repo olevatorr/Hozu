@@ -365,6 +365,8 @@ export function createDataRuntime({
     input: Json,
     session: unknown,
   ): Promise<Result> {
+    if (effect.freshness.kind === 'request')
+      return execute(effect, input, effect.scope === 'user' ? (session ?? null) : undefined)
     if (effect.freshness.kind === 'live') {
       const flight = live.get(`${partition}|${key}`)
       if (flight) {

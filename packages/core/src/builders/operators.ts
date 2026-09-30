@@ -1,8 +1,9 @@
+import type { Operator } from '../ir/operators.ts'
 import type { Json } from '../ir/types.ts'
 
 type Impl = (input: never) => Json
 
-export const operatorFns: Record<string, Impl> = {
+export const operatorFns: Record<string, Impl> & Partial<Record<Operator, Impl>> = {
   '%truthy': function truthy(input: { v: Json }): Json {
     return Boolean(input.v)
   },

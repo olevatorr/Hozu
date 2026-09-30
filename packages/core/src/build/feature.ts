@@ -28,7 +28,7 @@ import { buildMachine } from './machine.ts'
 import { type At, at, FeatureScope, filePath, type ProjectScope } from './scope.ts'
 import { buildView } from './view.ts'
 
-const exportKeys = ['events', 'queries', 'mutations', 'tags', 'fns', 'views'] as const
+const exportKeys = ['events', 'queries', 'mutations', 'tags', 'fns', 'views', 'endpoints'] as const
 
 const mapRecord = <T, U>(record: Record<string, T>, fn: (key: string, value: T) => U): Record<string, U> =>
   Object.fromEntries(Object.entries(record ?? {}).map(([k, v]) => [k, fn(k, v)]))

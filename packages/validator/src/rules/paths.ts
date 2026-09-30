@@ -118,6 +118,21 @@ function checkAssign(ctx: Ctx, env: Env, op: AssignOp, pointer: At) {
   checkPath(ctx, env, context, op.path, pointer, 'context')
   checkValue(ctx, env, op.value, at(pointer, 'value'))
   if (op.op !== 'removeWhere') return
+  if (op.key === null) {
+    ctx.report(
+      'HZ014',
+      env.feature.id,
+      at(pointer, 'key'),
+      'removeWhere without a key is not supported yet',
+      'Removing a scalar from a list arrives with ADR 0043 C; until then remove by a field of object items.',
+      {
+        summary: 'Remove by a field of the items',
+        snippet: 'ctx.items = ctx.items.filter((x) => x.id !== e.id)',
+        patch: null,
+      },
+    )
+    return
+  }
   const target = resolvePath(context, op.path)
   const item = target.ok ? itemsOf(target.schema) : null
   const r = resolvePath(item, [op.key])

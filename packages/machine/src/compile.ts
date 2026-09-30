@@ -1,4 +1,4 @@
-import type { AssignOp, FeatureIR, GuardExpr, Json, TransitionIR, ValueExpr } from '@hozu/core/ir'
+import type { AssignOp, FeatureIR, GuardExpr, Json, RefExpr, TransitionIR, ValueExpr } from '@hozu/core/ir'
 import { equal, getIn, pathOf, setIn } from './data.ts'
 import type {
   CompiledMachine,
@@ -43,16 +43,17 @@ export function compileValue(v: ValueExpr, fns: Fns): Getter {
     const test = guard(v.test, fns)
     return (env) => test(env)
   }
-  const { path } = v
-  if (v.ref === 'binding') {
-    const depth = v.depth
+  const r = v as RefExpr
+  const { path } = r
+  if (r.ref === 'binding') {
+    const depth = r.depth
     return path.length ? (env) => getIn(env.bindings?.[depth], path) : (env) => env.bindings?.[depth] ?? null
   }
-  if (v.ref === 'dom') {
+  if (r.ref === 'dom') {
     const [field, ...rest] = path
     return (env) => (env.dom && field ? getIn(env.dom(field), rest) : null)
   }
-  const ref = v.ref as 'context' | 'input' | 'event' | 'result' | 'error' | 'params' | 'search'
+  const ref = r.ref as 'context' | 'input' | 'event' | 'result' | 'error' | 'params' | 'search'
   if (path.length === 0) return (env) => env[ref] ?? null
   return (env) => getIn(env[ref], path)
 }
@@ -118,6 +119,7 @@ function assign(a: AssignOp, fns: Fns): Update {
         setIn(ctx, path, Number(getIn(ctx, path) ?? 0) + Number(v({ ...env, context: ctx })))
     case 'removeWhere': {
       const key = a.key
+      if (key === null) throw new CompileError('HZ014')
       return (ctx, env) => {
         const list = getIn(ctx, path)
         const match = v({ ...env, context: ctx })

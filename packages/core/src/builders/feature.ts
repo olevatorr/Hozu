@@ -39,6 +39,7 @@ export interface FeatureParts {
     tags: TagDecl<any>[]
     fns: FnDecl[]
     views: ViewDecl[]
+    endpoints: EndpointDecl[]
   }
 }
 

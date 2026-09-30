@@ -173,6 +173,7 @@ export function literals(ctx: Ctx) {
               ? itemsOf(schema)
               : a.op === 'removeWhere'
                 ? (() => {
+                    if (a.key === null) return null
                     const r = resolvePath(itemsOf(schema), [a.key])
                     return r.ok ? r.schema : null
                   })()

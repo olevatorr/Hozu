@@ -55,6 +55,8 @@ export function showValue(v: ValueExpr): string {
       .join(', ')} }`
   if ('fn' in v) return `${short(v.fn)}(${showValue(v.arg)})`
   if ('test' in v) return showGuard(v.test)
+  if ('endpoint' in v) return `link(${v.endpoint}${v.input ? `, ${showValue(v.input)}` : ''})`
+  if ('formRef' in v) return `formRef(${v.formRef})`
   return `link(${v.link}, ${showValue(v.params)})`
 }
 
@@ -83,7 +85,7 @@ export function summaryOf(feature: FeatureIR, id: string): string {
           a.op === 'set'
             ? `${a.path.join('.')} := ${showValue(a.value)}`
             : a.op === 'removeWhere'
-              ? `${a.path.join('.')} -= where ${a.key} = ${showValue(a.value)}`
+              ? `${a.path.join('.')} -= where ${a.key ?? 'item'} = ${showValue(a.value)}`
               : `${a.path.join('.')} ${a.op === 'inc' ? '+=' : 'append'} ${showValue(a.value)}`,
         )
         .join(', '),

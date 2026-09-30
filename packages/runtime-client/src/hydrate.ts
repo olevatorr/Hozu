@@ -51,6 +51,7 @@ export interface LiveQuery {
 export interface EffectResponse {
   result: Result
   refreshed: [string, Result][]
+  session?: true
 }
 
 export type Transport = (effect: string, input: Json, keys: string[]) => Promise<EffectResponse>

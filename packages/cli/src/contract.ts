@@ -12,12 +12,14 @@ export interface Coverage {
   transitions: number
 }
 
+export type LockState = 'missing' | 'checked' | 'current' | 'stale' | 'updated' | 'skipped'
+
 export interface ValidateOutput {
   ok: boolean
   hash: string
   summary: { errors: number; warnings: number }
   coverage: Record<string, Coverage>
-  lock: 'missing' | 'checked' | 'updated' | 'skipped'
+  lock: LockState
   styles: 'checked' | 'unavailable'
   diagnostics: Diagnostic[]
 }
@@ -227,10 +229,16 @@ export interface DocsOutput {
   topics: { name: string; title: string }[]
 }
 
+export type BrowseMode = 'on' | 'off'
+
 export interface BrowseError {
   kind: 'exception' | 'console' | 'request'
   text: string
   at: string | null
+  url?: string
+  type?: string
+  actor?: string
+  mode?: BrowseMode
 }
 
 export interface BrowseWidget {
@@ -262,4 +270,15 @@ export interface BrowseOutput {
   truncated: boolean
   elements: RequestElement[]
   screenshot: string | null
+  actors?: BrowseActor[]
+}
+
+export interface BrowseActor {
+  name: string
+  url: string
+  status: number
+  title: string
+  steps: BrowseStep[]
+  errors: BrowseError[]
+  text: string
 }
