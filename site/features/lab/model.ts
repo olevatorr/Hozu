@@ -1,4 +1,4 @@
-import { contract, event, machine, on, op } from '@hozu/core'
+import { contract, event, machine, on } from '@hozu/core'
 import { z } from 'zod'
 
 export const Run = event({ payload: z.object({}) })
@@ -29,15 +29,35 @@ export const m = machine({
   initial: 'idle',
   states: ({ ctx }) => {
     const settings = (target: Stage) => [
-      on(SetScope, { target, assign: (e) => [op.set(ctx.scope, e.value)] }),
-      on(SetFreshness, { target, assign: (e) => [op.set(ctx.freshness, e.value)] }),
-      on(SetBinding, { target, assign: (e) => [op.set(ctx.binding, e.value)] }),
+      on(SetScope, {
+        target,
+        assign: (e) => {
+          ctx.scope = e.value
+        },
+      }),
+      on(SetFreshness, {
+        target,
+        assign: (e) => {
+          ctx.freshness = e.value
+        },
+      }),
+      on(SetBinding, {
+        target,
+        assign: (e) => {
+          ctx.binding = e.value
+        },
+      }),
     ]
     const controls = (target: Stage) => [
       ...settings(target),
-      on(SetContract, { target: 'idle', assign: (e) => [op.set(ctx.missing, e.missing)] }),
-      on(Run, { target: 'brokenSource', guard: () => op.eq(ctx.missing, true) }),
-      on(Run, { target: 'source', guard: () => op.eq(ctx.missing, false) }),
+      on(SetContract, {
+        target: 'idle',
+        assign: (e) => {
+          ctx.missing = e.missing
+        },
+      }),
+      on(Run, { target: 'brokenSource', guard: () => ctx.missing === true }),
+      on(Run, { target: 'source', guard: () => ctx.missing === false }),
     ]
     const running = (state: Stage, target: Stage) => ({
       on: settings(state),

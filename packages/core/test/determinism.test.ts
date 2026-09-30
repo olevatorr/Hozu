@@ -1,4 +1,4 @@
-import { event, feature, invoke, machine, mutation, on, op, type ProjectDecl, project, ui } from '@hozu/core'
+import { event, feature, invoke, machine, mutation, on, type ProjectDecl, project, ui } from '@hozu/core'
 import { buildProject, hashJson } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import fc from 'fast-check'
@@ -81,10 +81,35 @@ function freshProject(rand: Rand): ProjectDecl {
     initial: 'a',
     states: ({ ctx }) => {
       const onA = [
-        [0, on(Ping, { target: 'b', guard: (p) => op.gt(p.n, 1), assign: (p) => [op.set(ctx.n, p.n)] })],
-        [1, on(Ping, { target: 'c', assign: (p) => [op.append(ctx.log, p.n)] })],
+        [
+          0,
+          on(Ping, {
+            target: 'b',
+            guard: (p) => p.n > 1,
+            assign: (p) => {
+              ctx.n = p.n
+            },
+          }),
+        ],
+        [
+          1,
+          on(Ping, {
+            target: 'c',
+            assign: (p) => {
+              ctx.log.push(p.n)
+            },
+          }),
+        ],
         [2, on(Pong, { target: 'c' })],
-        [3, on(Reset, { target: 'a', assign: () => [op.set(ctx.n, 0)] })],
+        [
+          3,
+          on(Reset, {
+            target: 'a',
+            assign: () => {
+              ctx.n = 0
+            },
+          }),
+        ],
       ] as const
       const pings = onA.filter(([i]) => i < 2).map(([, d]) => d)
       const rest = shuffle(

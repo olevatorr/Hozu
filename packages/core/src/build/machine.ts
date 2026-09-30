@@ -16,7 +16,9 @@ const guard = (scope: FeatureScope, g: unknown, p: At): GuardExpr => scope.guard
 function assign(scope: FeatureScope, a: unknown, p: At): AssignOp {
   const raw = assignOf(a)
   if (!raw)
-    throw new RecorderError('assign must return an array of op.set / op.append / op.inc / op.removeWhere')
+    throw new RecorderError(
+      'assign must be a block of context writes: ctx.x = v, ctx.list.push(v), ctx.list = ctx.list.filter((x) => x !== v)',
+    )
   const target = exprOf(raw.target)
   if (target?.kind !== 'ref' || target.ref !== 'context')
     throw new RecorderError('An assign target must be a context path (ctx.…)')
@@ -87,6 +89,7 @@ function invoke(scope: FeatureScope, decl: unknown, p: At): InvokeIR | null {
     return null
   }
   scope.project.mark(p, decl)
+  scope.escapes(decl, p)
   const d = info.def as InvokeDef
   const failed: Record<string, TransitionIR[]> = {}
   for (const [name, list] of Object.entries(d.failed ?? {}))
@@ -120,6 +123,7 @@ function state(scope: FeatureScope, config: StateConfig<string>, p: At): StateIR
     const list = on[event]
     const tp = at(p, 'on', event, list.length)
     scope.project.mark(tp, entry)
+    scope.escapes(entry, tp)
     list.push(transition(scope, d.transition, refProxy('event', 0), tp))
   }
   const after = [...(config.after ?? [])].sort((a, b) => a.ms - b.ms)
@@ -188,6 +192,7 @@ export function buildMachine(scope: FeatureScope, decl: Decl | null): MachineIR 
       return
     }
     scope.project.mark(sp, entry)
+    scope.escapes(entry, sp)
     const def = info.def as OnDef
     const event = scope.ref(def.event, ['event'], sp)
     byEvent.set(event, [...(byEvent.get(event) ?? []), { def, at: sp }])

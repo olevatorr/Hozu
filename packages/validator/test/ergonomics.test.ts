@@ -1,4 +1,4 @@
-import { event, feature, machine, on, op, project, ui } from '@hozu/core'
+import { event, feature, machine, on, project, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import { validate } from '@hozu/validator'
@@ -18,7 +18,12 @@ const board = (options: { busyIgnores: boolean; select: string[]; field: 'enum' 
     states: ({ ctx }) => ({
       idle: {
         on: [
-          on(Pick, { target: 'idle', assign: (p) => [op.set(ctx.priority, p.priority)] }),
+          on(Pick, {
+            target: 'idle',
+            assign: (p) => {
+              ctx.priority = p.priority
+            },
+          }),
           on(Count, { target: 'idle' }),
           on(Save, { target: 'busy' }),
         ],

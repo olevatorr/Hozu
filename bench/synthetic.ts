@@ -1,15 +1,4 @@
-import {
-  type EventDecl,
-  event,
-  type FeatureDecl,
-  feature,
-  machine,
-  on,
-  op,
-  project,
-  query,
-  ui,
-} from '@hozu/core'
+import { type EventDecl, event, type FeatureDecl, feature, machine, on, project, query, ui } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
@@ -40,12 +29,16 @@ export function syntheticProject(features: number, states = 30, events = 10) {
               on: [
                 on(evs[s % events]!, {
                   target: names[(s + 1) % states]!,
-                  assign: (p) => [op.set(ctx.n, p.n)],
+                  assign: (p) => {
+                    ctx.n = p.n
+                  },
                 }),
                 on(evs[(s + 3) % events]!, {
                   target: names[(s + 7) % states]!,
-                  guard: (p) => op.gt(p.n, 0),
-                  assign: (p) => [op.set(ctx.n, p.n)],
+                  guard: (p) => p.n > 0,
+                  assign: (p) => {
+                    ctx.n = p.n
+                  },
                 }),
               ],
             },

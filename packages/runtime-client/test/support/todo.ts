@@ -1,4 +1,4 @@
-import { contract, event, feature, fn, machine, on, op, project, route, ui } from '@hozu/core'
+import { contract, event, feature, fn, machine, on, project, route, ui } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
@@ -25,15 +25,38 @@ const todo = machine({
   states: ({ ctx }) => ({
     ready: {
       on: [
-        on(Draft, { target: 'ready', assign: (d) => [op.set(ctx.draft, d.text)] }),
+        on(Draft, {
+          target: 'ready',
+          assign: (d) => {
+            ctx.draft = d.text
+          },
+        }),
         on(Add, {
           target: 'ready',
-          guard: (a) => op.neq(a.title, ''),
-          assign: (a) => [op.append(ctx.items, { id: a.title, title: a.title }), op.set(ctx.draft, '')],
+          guard: (a) => a.title !== '',
+          assign: (a) => {
+            ctx.items.push({ id: a.title, title: a.title })
+            ctx.draft = ''
+          },
         }),
-        on(Remove, { target: 'ready', assign: (r) => [op.removeWhere(ctx.items, 'id', r.id)] }),
-        on(Reverse, { target: 'ready', assign: () => [op.set(ctx.items, reversed(ctx.items))] }),
-        on(Key, { target: 'ready', assign: (k) => [op.set(ctx.lastKey, k.key)] }),
+        on(Remove, {
+          target: 'ready',
+          assign: (r) => {
+            ctx.items = ctx.items.filter((item) => item.id !== r.id)
+          },
+        }),
+        on(Reverse, {
+          target: 'ready',
+          assign: () => {
+            ctx.items = reversed(ctx.items)
+          },
+        }),
+        on(Key, {
+          target: 'ready',
+          assign: (k) => {
+            ctx.lastKey = k.key
+          },
+        }),
       ],
     },
   }),
@@ -47,13 +70,13 @@ const Todo = ui.view({
         ui.input({
           name: 'title',
           value: ctx.draft,
-          'aria-invalid': op.eq(ctx.draft, 'bad'),
+          'aria-invalid': ctx.draft === 'bad',
           on: {
             input: ui.send(Draft, { text: ui.dom.value }),
             keydown: ui.send(Key, { key: ui.dom.key, shift: ui.dom.shiftKey }),
           },
         }),
-        ui.button({ type: 'submit', disabled: op.eq(ctx.draft, '') }, ['Add']),
+        ui.button({ type: 'submit', disabled: ctx.draft === '' }, ['Add']),
       ]),
       ui.textarea({ name: 'notes', value: ctx.draft }),
       ui.ul({}, [

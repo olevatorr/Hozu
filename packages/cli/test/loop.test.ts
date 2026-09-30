@@ -314,7 +314,7 @@ describe('ordinary TypeScript in a scaffolded app (ADR 0039)', () => {
       readFileSync(views, 'utf8').replace("ctx.error ? 'Failed' : 'Fine'", 'ctx.draft.toUpperCase()'),
     )
     const bad = await checkFresh(app)
-    const d = bad.validate.diagnostics.find((x: { code: string }) => x.code === 'HZ014')
+    const d = bad.validate.diagnostics.find((x: { code: string }) => x.code === 'HZ059')
     expect(d.message).toMatch(/Method "toUpperCase" cannot run on a reference/)
     expect(d.location.source.file).toBe('features/tasks/views.ts')
   }, 60_000)

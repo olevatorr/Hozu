@@ -1,4 +1,4 @@
-import { event, feature, fn, machine, on, op, project } from '@hozu/core'
+import { event, feature, fn, machine, on, project } from '@hozu/core'
 import { buildProject, routeTable } from '@hozu/core/ir'
 import { compileMachine, enter, init, type Snapshot, transition } from '@hozu/machine'
 import { zodAdapter } from '@hozu/schema-zod'
@@ -117,9 +117,18 @@ describe('assign ops and fn bindings', () => {
           on(Ping, { target: 'closed', guard: (p) => isBig(p.n) }),
           on(Ping, {
             target: 'open',
-            assign: (p) => [op.append(ctx.items, p), op.inc(ctx.count, 1), op.set(ctx.sum, total(ctx.items))],
+            assign: (p) => {
+              ctx.items.push(p)
+              ctx.count += 1
+              ctx.sum = total(ctx.items)
+            },
           }),
-          on(Drop, { target: 'open', assign: (p) => [op.removeWhere(ctx.items, 'sku', p.sku)] }),
+          on(Drop, {
+            target: 'open',
+            assign: (p) => {
+              ctx.items = ctx.items.filter((item) => item.sku !== p.sku)
+            },
+          }),
         ],
       },
       closed: { final: true },

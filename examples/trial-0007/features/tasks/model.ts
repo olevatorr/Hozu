@@ -1,4 +1,4 @@
-import { event, fn, invoke, machine, mutation, on, op, query, tag } from '@hozu/core'
+import { event, fn, invoke, machine, mutation, on, query, tag } from '@hozu/core'
 import { z } from 'zod'
 
 export const Show = z.enum(['all', 'open', 'done'])
@@ -84,28 +84,76 @@ export const tasksMachine = machine({
   states: ({ ctx }) => ({
     idle: {
       on: [
-        on(Draft, { target: 'idle', assign: (e) => [op.set(ctx.draft, e.text)] }),
-        on(SetShow, { target: 'idle', assign: (e) => [op.set(ctx.show, e.show)] }),
+        on(Draft, {
+          target: 'idle',
+          assign: (e) => {
+            ctx.draft = e.text
+          },
+        }),
+        on(SetShow, {
+          target: 'idle',
+          assign: (e) => {
+            ctx.show = e.show
+          },
+        }),
         on(Add, {
           target: 'adding',
-          assign: (e) => [
-            op.set(ctx.draft, e.title),
-            op.set(ctx.priority, e.priority),
-            op.set(ctx.error, null),
-          ],
+          assign: (e) => {
+            ctx.draft = e.title
+            ctx.priority = e.priority
+            ctx.error = null
+          },
         }),
-        on(ClearDone, { target: 'clearing', assign: () => [op.set(ctx.error, null)] }),
-        on(Toggle, { target: 'toggling', assign: (e) => [op.set(ctx.target, e.id)] }),
+        on(ClearDone, {
+          target: 'clearing',
+          assign: () => {
+            ctx.error = null
+          },
+        }),
+        on(Toggle, {
+          target: 'toggling',
+          assign: (e) => {
+            ctx.target = e.id
+          },
+        }),
       ],
     },
     adding: {
       invoke: invoke(addTask, {
         input: { title: ctx.draft, priority: ctx.priority },
-        done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')] }],
+        done: [
+          {
+            target: 'idle',
+            assign: () => {
+              ctx.draft = ''
+            },
+          },
+        ],
         failed: {
-          Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] }],
-          Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          Duplicate: [
+            {
+              target: 'idle',
+              assign: () => {
+                ctx.error = DUPLICATE
+              },
+            },
+          ],
+          Invalid: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.error = e.message
+              },
+            },
+          ],
+          Unexpected: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.error = e.message
+              },
+            },
+          ],
         },
       }),
     },
@@ -115,7 +163,14 @@ export const tasksMachine = machine({
         done: [{ target: 'idle' }],
         failed: {
           NotFound: [{ target: 'idle' }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          Unexpected: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.error = e.message
+              },
+            },
+          ],
         },
       }),
     },
@@ -124,7 +179,14 @@ export const tasksMachine = machine({
         input: {},
         done: [{ target: 'idle' }],
         failed: {
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          Unexpected: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.error = e.message
+              },
+            },
+          ],
         },
       }),
     },

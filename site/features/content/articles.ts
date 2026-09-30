@@ -1,4 +1,4 @@
-import { op, ui } from '@hozu/core'
+import { ui } from '@hozu/core'
 import { chapter, doc, how } from '../../routes.ts'
 import { pipelineDiagram, renderDiagram } from './diagrams.ts'
 import { getChapter, getDoc, listChapters, listDocs } from './model.ts'
@@ -23,15 +23,11 @@ const articleView = (
               ui.ul({}, [
                 ui.each(items, 'slug', (item) =>
                   ui.li({}, [
-                    ui.if(
-                      op.eq(params.slug, item.slug),
-                      [
-                        ui.a({ href: ui.link(route, { slug: item.slug }), 'aria-current': 'page' }, [
+                    params.slug === item.slug
+                      ? ui.a({ href: ui.link(route, { slug: item.slug }), 'aria-current': 'page' }, [
                           item.title,
-                        ]),
-                      ],
-                      [ui.a({ href: ui.link(route, { slug: item.slug }) }, [item.title])],
-                    ),
+                        ])
+                      : ui.a({ href: ui.link(route, { slug: item.slug }) }, [item.title]),
                   ]),
                 ),
               ]),
@@ -76,8 +72,8 @@ const articleView = (
                     ]),
                     ...(explain
                       ? [
-                          ui.if(op.eq(params.slug, 'pipeline'), [pipelineDiagram()], []),
-                          ui.if(op.eq(params.slug, 'derived-rendering'), [renderDiagram()], []),
+                          params.slug === 'pipeline' && pipelineDiagram(),
+                          params.slug === 'derived-rendering' && renderDiagram(),
                         ]
                       : []),
                     article.hasCode

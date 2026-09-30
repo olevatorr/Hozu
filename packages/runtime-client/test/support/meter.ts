@@ -1,4 +1,4 @@
-import { contract, event, feature, machine, on, op, project, route, ui } from '@hozu/core'
+import { contract, event, feature, machine, on, project, route, ui } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
@@ -30,7 +30,12 @@ const meter = machine({
   states: ({ ctx }) => ({
     shown: {
       on: [
-        on(Picked, { target: 'shown', assign: (p) => [op.set(ctx.count, p.n)] }),
+        on(Picked, {
+          target: 'shown',
+          assign: (p) => {
+            ctx.count = p.n
+          },
+        }),
         on(Hide, { target: 'hidden' }),
       ],
     },
@@ -51,7 +56,7 @@ const Panel = ui.view({
               props: { value: ctx.count },
               on: { picked: (d) => ui.send(Picked, { n: d.n }) },
               class: 'h-8',
-              toggle: { 'bg-red-500': op.gt(ctx.count, 1) },
+              toggle: { 'bg-red-500': ctx.count > 1 },
             },
             [ui.span({}, ['Loading meter…'])],
           ),

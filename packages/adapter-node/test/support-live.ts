@@ -1,4 +1,4 @@
-import { contract, event, feature, machine, on, op, project, query, route, tag, ui } from '@hozu/core'
+import { contract, event, feature, machine, on, project, query, route, tag, ui } from '@hozu/core'
 import { resolvers } from '@hozu/data'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
@@ -25,7 +25,16 @@ const finder = machine({
   initialContext: { q: '' },
   initial: 'ready',
   states: ({ ctx }) => ({
-    ready: { on: [on(Search, { target: 'ready', assign: (s) => [op.set(ctx.q, s.q)] })] },
+    ready: {
+      on: [
+        on(Search, {
+          target: 'ready',
+          assign: (s) => {
+            ctx.q = s.q
+          },
+        }),
+      ],
+    },
   }),
 })
 

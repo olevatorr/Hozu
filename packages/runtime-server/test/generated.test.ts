@@ -1,4 +1,4 @@
-import type { ProjectDecl } from '@hozu/core'
+import { event, feature, machine, on, type ProjectDecl, project, route, ui } from '@hozu/core'
 import { buildProject, type Json } from '@hozu/core/ir'
 import { createDataRuntime, resolvers } from '@hozu/data'
 import { pageEntries, renderToString } from '@hozu/runtime-server'
@@ -39,7 +39,6 @@ describe('generated render functions', () => {
 
 describe('generated source', () => {
   it('embeds IR strings as data, never as code', async () => {
-    const { event, feature, machine, on, op, project, route, ui } = await import('@hozu/core')
     const { zodAdapter } = await import('@hozu/schema-zod')
     const { z } = await import('zod')
     const hostile = `"'\`\${globalThis.pwned = 1}</script><!--    \\ */`
@@ -49,7 +48,16 @@ describe('generated source', () => {
       initialContext: { n: 0 },
       initial: 'idle',
       states: ({ ctx }) => ({
-        idle: { on: [on(Ping, { target: 'idle', assign: () => [op.inc(ctx.n, 1)] })] },
+        idle: {
+          on: [
+            on(Ping, {
+              target: 'idle',
+              assign: () => {
+                ctx.n += 1
+              },
+            }),
+          ],
+        },
       }),
     })
     const home = route({ path: '/', params: null, search: null })
@@ -58,7 +66,7 @@ describe('generated source', () => {
       render: ({ ctx }) =>
         ui.main({ 'data-x': hostile, title: hostile }, [
           hostile,
-          ui.if(op.eq(ctx.n, 0), [ui.p({ 'data-y': hostile }, [hostile])], []),
+          ctx.n === 0 && ui.p({ 'data-y': hostile }, [hostile]),
           ui.button({ type: 'button', on: { click: ui.send(Ping, { v: hostile }) } }, [hostile]),
         ]),
     })

@@ -1,4 +1,4 @@
-import { op, ui } from '@hozu/core'
+import { ui } from '@hozu/core'
 import { PublicEnv } from '../../env.ts'
 import { listProducts } from '../catalog/effects.ts'
 import { cartTotal, getCart } from './effects.ts'
@@ -50,7 +50,7 @@ export const CartPanel = ui.view({
           ui.label(
             {
               class: 'flex items-center gap-2',
-              toggle: { 'font-semibold text-red-600': op.gte(ctx.pending.qty, MAX_QTY) },
+              toggle: { 'font-semibold text-red-600': ctx.pending.qty >= MAX_QTY },
             },
             [
               'Quantity',

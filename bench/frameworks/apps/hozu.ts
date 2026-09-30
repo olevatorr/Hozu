@@ -1,4 +1,4 @@
-import { event, feature, machine, on, op, project, query, route, ui } from '@hozu/core'
+import { event, feature, machine, on, project, query, route, ui } from '@hozu/core'
 import { resolvers } from '@hozu/data'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
@@ -18,7 +18,16 @@ const cart = machine({
   initialContext: { count: 0 },
   initial: 'ready',
   states: ({ ctx }) => ({
-    ready: { on: [on(Add, { target: 'ready', assign: () => [op.inc(ctx.count, 1)] })] },
+    ready: {
+      on: [
+        on(Add, {
+          target: 'ready',
+          assign: () => {
+            ctx.count += 1
+          },
+        }),
+      ],
+    },
   }),
 })
 const Page = ui.view({

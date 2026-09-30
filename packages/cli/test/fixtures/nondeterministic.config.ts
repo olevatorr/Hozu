@@ -1,4 +1,4 @@
-import { contract, event, feature, machine, on, op, project } from '@hozu/core'
+import { contract, event, feature, machine, on, project } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
@@ -13,8 +13,10 @@ const dice = machine({
       on: [
         on(Roll, {
           target: 'idle',
-          guard: (e) => op.gte(e.n, Math.random()),
-          assign: (e) => [op.set(ctx.last, e.n)],
+          guard: (e) => e.n >= Math.random(),
+          assign: (e) => {
+            ctx.last = e.n
+          },
         }),
       ],
     },

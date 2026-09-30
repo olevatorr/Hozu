@@ -1,4 +1,4 @@
-import { event, invoke, machine, on, op } from '@hozu/core'
+import { event, invoke, machine, on } from '@hozu/core'
 import { z } from 'zod'
 import { savePost, unsavePost } from './effects.ts'
 
@@ -12,10 +12,19 @@ export const savedMachine = machine({
   states: ({ ctx }) => ({
     idle: {
       on: [
-        on(Save, { target: 'saving', assign: (p) => [op.set(ctx.slug, p.slug), op.set(ctx.error, null)] }),
+        on(Save, {
+          target: 'saving',
+          assign: (p) => {
+            ctx.slug = p.slug
+            ctx.error = null
+          },
+        }),
         on(Unsave, {
           target: 'removing',
-          assign: (p) => [op.set(ctx.slug, p.slug), op.set(ctx.error, null)],
+          assign: (p) => {
+            ctx.slug = p.slug
+            ctx.error = null
+          },
         }),
       ],
     },
@@ -24,8 +33,22 @@ export const savedMachine = machine({
         input: { slug: ctx.slug },
         done: [{ target: 'idle' }],
         failed: {
-          LimitReached: [{ target: 'idle', assign: () => [op.set(ctx.error, 'Reading list is full')] }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          LimitReached: [
+            {
+              target: 'idle',
+              assign: () => {
+                ctx.error = 'Reading list is full'
+              },
+            },
+          ],
+          Unexpected: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.error = e.message
+              },
+            },
+          ],
         },
       }),
     },
@@ -33,7 +56,16 @@ export const savedMachine = machine({
       invoke: invoke(unsavePost, {
         input: { slug: ctx.slug },
         done: [{ target: 'idle' }],
-        failed: { Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }] },
+        failed: {
+          Unexpected: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.error = e.message
+              },
+            },
+          ],
+        },
       }),
     },
   }),

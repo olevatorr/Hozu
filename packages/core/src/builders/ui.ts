@@ -50,7 +50,15 @@ export interface Send {
 
 export interface NodeDecl extends Decl<'node'> {}
 
-export type Child = NodeDecl | string | number | boolean | null | undefined | Expr<string | number | null>
+export type Child =
+  | NodeDecl
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Expr<string | number | null>
+  | readonly Child[]
 
 export type AttrValue = Val<string | number | boolean | null> | Guard | Asset
 
@@ -109,6 +117,9 @@ export interface ViewScope<C, S extends string, P, Q = null> {
 }
 
 const node = (def: NodeDef): NodeDecl => brand({}, 'node', def)
+
+export const ifNode = (test: unknown, then: readonly unknown[], otherwise: readonly unknown[]): NodeDecl =>
+  node({ kind: 'if', test, ifTrue: then, ifFalse: otherwise, motion: null })
 
 export const when = (states: readonly string[], children: readonly unknown[], motion?: string): NodeDecl =>
   node({ kind: 'when', states, children, motion: motion ?? null })
@@ -184,8 +195,8 @@ export const ui = Object.freeze({
   embed: (view: ViewDecl): NodeDecl => node({ kind: 'embed', view }),
   widget,
   asset,
-  if: (test: Condition, then: Child[], otherwise: Child[], motion?: string): NodeDecl =>
-    node({ kind: 'if', test, ifTrue: then, ifFalse: otherwise, motion: motion ?? null }),
+  if: (test: Condition, then: Child[], otherwise: Child[], motion: string): NodeDecl =>
+    node({ kind: 'if', test, ifTrue: then, ifFalse: otherwise, motion }),
   html: (value: Val<string | null>): NodeDecl => node({ kind: 'html', value }),
   window: (options: { on: { [E in DomEvent]?: Send } }): NodeDecl =>
     node({ kind: 'global', target: 'window', on: options.on }),

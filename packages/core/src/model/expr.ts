@@ -1,4 +1,6 @@
+import type { SourceLoc } from '../ir/diagnostic.ts'
 import type { CompareOp, RefSource } from '../ir/types.ts'
+import { captureSource } from '../source/capture.ts'
 import type { Typed } from './decl.ts'
 
 export const EXPR = Symbol.for('hozu.expr')
@@ -16,7 +18,7 @@ export type RawGuard =
 
 export type RawAssign =
   | { op: 'set' | 'append' | 'inc'; target: unknown; value: unknown }
-  | { op: 'removeWhere'; target: unknown; key: string; value: unknown }
+  | { op: 'removeWhere'; target: unknown; key: string | null; value: unknown }
 
 export interface Expr<T> extends Typed<T> {
   readonly [EXPR]: RawExpr
@@ -50,22 +52,44 @@ export class RecorderError extends Error {
   override name = 'RecorderError'
 }
 
-const misuse = (path: readonly string[]) => () => {
-  throw new RecorderError(
-    `Reference "${path.join('.') || '<root>'}" was used as a JavaScript value. References are recorded, not evaluated: use op.* for logic or fn() for computation.`,
+export class ReferenceEscape extends RecorderError {
+  override name = 'ReferenceEscape'
+  readonly source: SourceLoc | null
+  constructor(message: string) {
+    const source = captureSource()
+    super(source ? `${message} (${source.file}:${source.line}:${source.column})` : message)
+    this.source = source
+  }
+}
+
+const escape = (what: string, how: string): never => {
+  throw new ReferenceEscape(
+    `${what} was evaluated as JavaScript (${how}). References are recorded, not evaluated: write the logic in a builder callback, or make the helper a part()`,
   )
 }
+
+const PRIMITIVE = new Set<PropertyKey>([Symbol.toPrimitive, 'toString', 'valueOf', 'toJSON'])
+
+const traps = (what: () => string) => ({
+  set: () => escape(what(), 'assignment'),
+  defineProperty: () => escape(what(), 'assignment'),
+  deleteProperty: () => escape(what(), 'delete'),
+  ownKeys: () => escape(what(), 'its keys were read: Object.keys, a spread or a for…in'),
+  has: (_: object, key: PropertyKey) => (typeof key === 'symbol' ? false : escape(what(), `"${key}" in`)),
+})
 
 const roots = new Map<string, unknown>()
 
 export function createRef(ref: RefSource | 'binding', depth: number, path: readonly string[]): any {
   const expr: RawExpr = { kind: 'ref', ref, depth, path }
   const children = new Map<string, unknown>()
+  const what = () => `Reference "${path.join('.') || '<root>'}"`
   return new Proxy(Object.create(null), {
+    ...traps(what),
+    has: (_, key) => (key === EXPR ? true : typeof key === 'symbol' ? false : escape(what(), `"${key}" in`)),
     get(_, key) {
       if (key === EXPR) return expr
-      if (key === Symbol.toPrimitive || key === 'toString' || key === 'valueOf' || key === 'toJSON')
-        return misuse(path)
+      if (PRIMITIVE.has(key)) return () => escape(what(), 'it was converted to a string or a number')
       if (typeof key === 'symbol' || key === 'then') return undefined
       let child = children.get(key)
       if (child === undefined) {
@@ -74,10 +98,34 @@ export function createRef(ref: RefSource | 'binding', depth: number, path: reado
       }
       return child
     },
-    set: misuse(path),
-    defineProperty: misuse(path),
-    deleteProperty: misuse(path),
   })
+}
+
+let lengthOf: ((v: unknown) => unknown) | null = null
+
+export const setLength = (make: (v: unknown) => unknown) => {
+  lengthOf = make
+}
+
+export function callExpr(fn: object, arg: unknown): any {
+  const expr: RawExpr = { kind: 'call', fn, arg }
+  const what = () => 'A fn(), message or builtin result'
+  let length: unknown
+  const self: object = new Proxy(Object.create(null), {
+    ...traps(what),
+    has: (_, key) => (key === EXPR ? true : typeof key === 'symbol' ? false : escape(what(), `"${key}" in`)),
+    get(_, key) {
+      if (key === EXPR) return expr
+      if (PRIMITIVE.has(key)) return () => escape(what(), 'it was converted to a string or a number')
+      if (typeof key === 'symbol' || key === 'then') return undefined
+      if (key === 'length') {
+        length ??= lengthOf!(self)
+        return length
+      }
+      return escape(what(), `its ".${key}" was read; only .length lowers (to %length)`)
+    },
+  })
+  return self
 }
 
 export function refProxy(ref: RefSource | 'binding', depth: number): any {

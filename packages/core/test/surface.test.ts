@@ -23,7 +23,7 @@ describe('A3 public surface', () => {
         "machine",
         "mutation",
         "on",
-        "op",
+        "part",
         "project",
         "query",
         "route",

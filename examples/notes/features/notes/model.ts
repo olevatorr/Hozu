@@ -1,4 +1,4 @@
-import { endpoint, event, fn, invoke, machine, mutation, on, op, query, tag } from '@hozu/core'
+import { endpoint, event, fn, invoke, machine, mutation, on, query, tag } from '@hozu/core'
 import { z } from 'zod'
 
 export const Note = z.object({ id: z.string(), text: z.string(), pinned: z.boolean() })
@@ -89,31 +89,78 @@ export const notesMachine = machine({
   states: ({ ctx }) => ({
     idle: {
       on: [
-        on(Draft, { target: 'idle', assign: (e) => [op.set(ctx.draft, e.text)] }),
+        on(Draft, {
+          target: 'idle',
+          assign: (e) => {
+            ctx.draft = e.text
+          },
+        }),
         on(Add, {
           target: 'adding',
-          assign: (e) => [
-            op.set(ctx.draft, e.text),
-            op.set(ctx.error, null),
-            op.set(ctx.fields, { text: null }),
-          ],
+          assign: (e) => {
+            ctx.draft = e.text
+            ctx.error = null
+            ctx.fields = { text: null }
+          },
         }),
         on(Remove, {
           target: 'removing',
-          assign: (e) => [op.set(ctx.target, e.id), op.set(ctx.error, null)],
+          assign: (e) => {
+            ctx.target = e.id
+            ctx.error = null
+          },
         }),
-        on(Pin, { target: 'pinning', assign: (e) => [op.set(ctx.target, e.id), op.set(ctx.error, null)] }),
-        on(Search, { target: 'idle', assign: (e) => [op.set(ctx.query, e.query)] }),
+        on(Pin, {
+          target: 'pinning',
+          assign: (e) => {
+            ctx.target = e.id
+            ctx.error = null
+          },
+        }),
+        on(Search, {
+          target: 'idle',
+          assign: (e) => {
+            ctx.query = e.query
+          },
+        }),
       ],
     },
     adding: {
       invoke: invoke(addNote, {
         input: { text: ctx.draft },
-        done: [{ target: 'idle', assign: () => [op.set(ctx.draft, '')] }],
+        done: [
+          {
+            target: 'idle',
+            assign: () => {
+              ctx.draft = ''
+            },
+          },
+        ],
         failed: {
-          Duplicate: [{ target: 'idle', assign: () => [op.set(ctx.error, DUPLICATE)] }],
-          Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          Duplicate: [
+            {
+              target: 'idle',
+              assign: () => {
+                ctx.error = DUPLICATE
+              },
+            },
+          ],
+          Invalid: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.fields = e.fields
+              },
+            },
+          ],
+          Unexpected: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.error = e.message
+              },
+            },
+          ],
         },
       }),
     },
@@ -122,8 +169,22 @@ export const notesMachine = machine({
         input: { id: ctx.target },
         done: [{ target: 'idle' }],
         failed: {
-          NotFound: [{ target: 'idle', assign: () => [op.set(ctx.error, GONE)] }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          NotFound: [
+            {
+              target: 'idle',
+              assign: () => {
+                ctx.error = GONE
+              },
+            },
+          ],
+          Unexpected: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.error = e.message
+              },
+            },
+          ],
         },
       }),
     },
@@ -132,8 +193,22 @@ export const notesMachine = machine({
         input: { id: ctx.target },
         done: [{ target: 'idle' }],
         failed: {
-          NotFound: [{ target: 'idle', assign: () => [op.set(ctx.error, GONE)] }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          NotFound: [
+            {
+              target: 'idle',
+              assign: () => {
+                ctx.error = GONE
+              },
+            },
+          ],
+          Unexpected: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.error = e.message
+              },
+            },
+          ],
         },
       }),
     },

@@ -1,4 +1,4 @@
-import { contract, op, ui } from '@hozu/core'
+import { contract, ui } from '@hozu/core'
 import { login } from '../../routes.ts'
 import { accountMachine, me, SignIn, SignOut, signIn, signOut } from './model.ts'
 
@@ -17,7 +17,7 @@ export const Login = ui.view({
           minlength: 2,
           maxlength: 20,
           autocomplete: 'username',
-          'aria-invalid': op.neq(ctx.fields.name, null),
+          'aria-invalid': ctx.fields.name !== null,
           'aria-describedby': 'name-error',
           class: 'w-full rounded border px-3 py-2',
         }),
@@ -26,7 +26,7 @@ export const Login = ui.view({
           'Sign in',
         ]),
       ]),
-      ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+      ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),
     ]),
 })
 

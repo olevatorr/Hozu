@@ -23,6 +23,7 @@ export type DeclKind =
   | 'widget'
   | 'messages'
   | 'endpoint'
+  | 'part'
 
 export interface DeclInfo<K extends DeclKind = DeclKind, D = unknown> {
   readonly kind: K

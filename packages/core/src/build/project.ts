@@ -319,7 +319,10 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     scope.features.set(f, fc.id)
     configs.push([fc.id, fc])
   }
-  for (const [id, fc] of configs) register(scope, id, fc)
+  for (const [id, fc] of configs) {
+    scope.configs.set(id, fc)
+    register(scope, id, fc)
+  }
   if (!manifest) {
     const done = transformedDecls()
     for (const [id, fc] of configs)
@@ -433,6 +436,6 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
   scope.bindings.env = { server: toParse(config.env?.server), public: toParse(config.env?.public) }
   const ir: ProjectIR = { irVersion: 2, site, session, routes, pages, notFound, error, http, env, features }
   scope.bindings.assetOrder = scope.assetList
-  for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
+  for (const d of scope.diagnostics) d.location.source ??= resolveSource(scope.sources, d.location.pointer)
   return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }
 }

@@ -1,4 +1,4 @@
-import { op, ui } from '@hozu/core'
+import { ui } from '@hozu/core'
 import { archive, home, tag } from '../../routes.ts'
 import { byTag, byYear, listPage } from './effects.ts'
 import { More } from './events.ts'
@@ -32,9 +32,8 @@ export const Feed = ui.view({
                     ]),
                   ),
                 ]),
-                ui.if(
-                  op.and(op.eq(cursor, ctx.last), op.neq(page.next, null)),
-                  [
+                cursor === ctx.last &&
+                  page.next !== null && [
                     ui.button(
                       {
                         type: 'button',
@@ -45,8 +44,6 @@ export const Feed = ui.view({
                     ),
                     ui.div({ class: 'h-px', on: { visible: ui.send(More, { cursor: page.next }) } }, []),
                   ],
-                  [],
-                ),
               ]),
             pending: ui.p({}, ['Loading…']),
             failed: { Unexpected: () => ui.p({ role: 'alert' }, ['The feed is unavailable']) },
@@ -81,7 +78,7 @@ export const Archive = ui.view({
   render: ({ params }) =>
     ui.main({ class: 'mx-auto max-w-2xl space-y-4 p-6' }, [
       nav,
-      ui.h1({ class: 'text-2xl font-bold' }, [ui.if(op.eq(params.year, null), ['All years'], [params.year])]),
+      ui.h1({ class: 'text-2xl font-bold' }, [params.year === null ? 'All years' : params.year]),
       ui.query(
         byYear,
         { year: params.year },
