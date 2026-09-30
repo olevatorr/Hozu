@@ -81,9 +81,14 @@ export const PAGE = String.raw`(() => {
     return 'a <' + tag + '>' + (role ? ' with role=' + role : '') + ' has no native action'
   }
   const at = (el) => {
-    el.scrollIntoView({ block: 'center', inline: 'center' })
+    el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' })
     const r = el.getBoundingClientRect()
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+    const x = r.left + r.width / 2
+    const y = r.top + r.height / 2
+    const top = document.elementFromPoint(x, y)
+    const label = el.control ?? null
+    const hit = top && (el.contains(top) || top.contains(el) || top === label || (top.tagName === 'LABEL' && top.control === el))
+    return { x, y, covered: hit ? null : top ? '<' + top.tagName.toLowerCase() + '>' : 'nothing' }
   }
   const FILLED = Symbol.for('hozu.browse.filled')
   const formName = (form) => {

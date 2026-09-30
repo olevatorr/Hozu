@@ -62,6 +62,7 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
     return t
   }
   const run = async (t: Tab, step: string) => {
+    t.mark()
     const r = await act(t, parseStep(step))
     if (r.ok && !r.jsOnly) await t.settle()
     return r

@@ -66,6 +66,16 @@ export function parseStep(text: string): Parsed {
 
 const q = JSON.stringify
 
+async function aim(tab: Tab, call: string) {
+  const start = Date.now()
+  for (;;) {
+    const at = await tab.page(call)
+    if (at.error || !at.covered) return at
+    if (Date.now() - start > 1500) return { error: `${at.covered} covers the target where it would be clicked` }
+    await sleep(50)
+  }
+}
+
 export async function act(tab: Tab, p: Parsed): Promise<StepResult> {
   const off = tab.mode === 'off'
   const done = (r: { error?: string; note?: string | null }): StepResult => ({
@@ -77,7 +87,7 @@ export async function act(tab: Tab, p: Parsed): Promise<StepResult> {
     return done(await tab.page(`${p.verb}(${q(p.target)}, ${q(p.value)}, ${q(p.within)})`))
   if (p.verb === 'submit') return done(await tab.page(`submit(${q(p.target)}, ${q(p.within)})`))
   if (p.verb === 'check' || p.verb === 'uncheck') {
-    const at = await tab.page(`checkable(${q(p.target)}, ${q(p.within)})`)
+    const at = await aim(tab, `checkable(${q(p.target)}, ${q(p.within)})`)
     if (at.error) return done(at)
     const want = p.verb === 'check'
     if (at.radio && !want) return done({ error: 'A radio button cannot be unchecked: check another option' })
@@ -86,7 +96,7 @@ export async function act(tab: Tab, p: Parsed): Promise<StepResult> {
     return done(at)
   }
   if (p.verb === 'click') {
-    const at = await tab.page(`point(${q(p.target)}, ${q(p.within)})`)
+    const at = await aim(tab, `point(${q(p.target)}, ${q(p.within)})`)
     if (at.error) return done(at)
     if (off && at.jsOnly) return { ok: true, note: at.note, jsOnly: at.jsOnly }
     await tab.mouse(at.x, at.y)
@@ -229,6 +239,8 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
           const others = tabs.filter((t) => t.mode === mode && t !== tab)
           const before = tab.snapshot
           tab.requested = false
+          tab.mark()
+          for (const o of others) o.mark()
           let r: StepResult
           let verb = ''
           try {
@@ -239,7 +251,8 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
             r = { ok: false, note: error instanceof Error ? error.message : String(error), jsOnly: null }
           }
           const acted = r.ok && !r.jsOnly && verb !== 'wait' && verb !== 'goto'
-          await Promise.all([acted ? tab.settle() : null, ...others.map((o) => o.settle())])
+          if (acted) await tab.settle()
+          await Promise.all(others.map((o) => o.settle()))
           const after = await tab.look()
           const elsewhere: BrowseElsewhere[] = []
           for (const o of others) {
@@ -282,6 +295,9 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
       if (!ok) failed = true
     }
 
+    const order = (e: BrowseError) =>
+      options.actors.findIndex((a) => a.name === (e.actor ?? null)) * 2 + modes.indexOf(e.mode ?? modes[0]!)
+    errors.sort((a, b) => order(a) - order(b))
     const first = tabs.find((t) => t.actor === options.actors[0]!.name)!
     const on = tabs.find((t) => t.actor === first.actor && t.mode === 'on')
     const expected = on

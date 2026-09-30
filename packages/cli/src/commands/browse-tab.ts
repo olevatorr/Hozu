@@ -9,11 +9,24 @@ import { PAGE } from './browse-page.ts'
 import type { WorldReply, WorldRequest } from './browse-world.ts'
 
 export const ORIGIN = 'http://localhost'
-const QUIET_MS = 300
+const QUIET_MS = 200
 const SETTLE_MS = 500
 const CAP_MS = 8000
 const RETRY_MS = 20
 const COUNTED = new Set(['Document', 'Fetch', 'XHR'])
+const STILL = `!document.getAnimations().some((a) => a.playState === 'running' && a.effect?.getComputedTiming().iterations !== Infinity)`
+const READY = `(() => {
+  const key = Symbol.for('hozu.browse.mutated')
+  if (!window[key]) {
+    window[key] = { at: performance.now() }
+    new MutationObserver(() => { window[key].at = performance.now() })
+      .observe(document, { subtree: true, childList: true, characterData: true, attributes: true })
+    return false
+  }
+  return performance.now() - window[key].at >= ${QUIET_MS} &&
+    (!document.getElementById('hozu-payload') || document.documentElement.hasAttribute('data-hozu-ready')) &&
+    ${STILL}
+})()`
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -153,6 +166,8 @@ export class Tab {
   private readonly live = new Map<string, Live>()
   private readonly invalidPosts = new Set<string>()
   private lastActivity = Date.now()
+  private activity = 0
+  private marked = 0
   private location = ''
   private prerendering = ''
   private readonly cdp: Cdp
@@ -215,9 +230,10 @@ export class Tab {
 
   private error(e: BrowseError, session: string) {
     const prerender = this.prerender.has(session)
+    const url = e.url ?? (prerender ? this.prerendering : this.location)
     this.errors.push({
       ...e,
-      url: e.url ?? (prerender ? this.prerendering : this.location),
+      ...(url ? { url } : {}),
       ...(prerender ? { type: `prerender ${e.type ?? ''}`.trim() } : {}),
       ...(this.actor === null ? {} : { actor: this.actor }),
       mode: this.mode,
@@ -247,6 +263,7 @@ export class Tab {
         this.urls.set(id, { url: params.request.url, type })
         if (type === 'EventSource') return true
         this.tracked.set(id, type)
+        this.activity++
         if (main && COUNTED.has(type)) this.requested = true
       }
       if (!this.tracked.has(id)) return true
@@ -256,11 +273,12 @@ export class Tab {
         this.tracked.delete(id)
         const r = this.urls.get(id)
         const script = this.mode === 'off' && (params.type ?? r?.type) === 'Script'
-        if (!params.canceled && params.blockedReason !== 'inspector' && !script)
+        const blocked = params.blockedReason === 'inspector' || params.blockedReason === 'csp'
+        if (!params.canceled && !blocked && !script)
           this.error(
             {
               kind: 'request',
-              text: params.errorText,
+              text: params.errorText || params.blockedReason || 'failed',
               at: r ? pathOf(r.url) : null,
               type: params.type ?? r?.type,
             },
@@ -272,8 +290,12 @@ export class Tab {
         const type = params.type ?? 'Other'
         if (main && type === 'Document' && params.frameId === this.targetId) this.status = params.response.status
         const status = params.response.status as number
-        if (status >= 400 && !this.invalidPosts.has(id))
-          this.error({ kind: 'request', text: `${status} ${url}`, at: url, type }, session)
+        const favicon = type === 'Other' && url === '/favicon.ico'
+        if (status >= 400 && !this.invalidPosts.has(id) && !favicon)
+          this.error(
+            { kind: 'request', text: `${status} ${url}`, at: url, type, ...(type === 'Document' ? { url } : {}) },
+            session,
+          )
       }
       return true
     }
@@ -322,8 +344,13 @@ export class Tab {
         )
       return true
     }
+    if (main && method === 'Page.frameRequestedNavigation' && params.frameId === this.targetId) {
+      this.loaded = false
+      this.activity++
+    }
     if (main && method === 'Page.frameStartedLoading' && params.frameId === this.targetId) {
       this.loaded = false
+      this.activity++
       for (const live of this.live.values()) this.world.cancel(live.id)
       this.live.clear()
     }
@@ -398,15 +425,16 @@ export class Tab {
     return this.evaluate(`${PAGE}.${call}`)
   }
 
+  mark() {
+    this.marked = this.activity
+  }
+
   async settle() {
     const start = Date.now()
-    await sleep(SETTLE_MS)
+    while (this.activity === this.marked && Date.now() - start < SETTLE_MS) await sleep(25)
     while (Date.now() - start < CAP_MS) {
       if (this.tracked.size === 0 && Date.now() - this.lastActivity >= QUIET_MS && this.loaded) {
-        if (this.mode === 'off') return
-        const ready = await this.evaluate(
-          "!document.getElementById('hozu-payload') || document.documentElement.hasAttribute('data-hozu-ready')",
-        ).catch(() => false)
+        const ready = await this.evaluate(this.mode === 'off' ? STILL : READY).catch(() => false)
         if (ready) return
       }
       await sleep(50)
@@ -416,6 +444,7 @@ export class Tab {
   async open(path: string) {
     this.loaded = false
     this.lastActivity = Date.now()
+    this.mark()
     await this.send('Page.navigate', { url: ORIGIN + path })
     await this.settle()
   }
