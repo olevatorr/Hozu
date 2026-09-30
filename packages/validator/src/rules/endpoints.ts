@@ -253,7 +253,9 @@ export function endpointLinks(ctx: Ctx) {
                 `The form posting to ${v.endpoint} has a field "${name}" its input does not declare.${didYouMean(guess)}`,
                 'A native form sends every named control; the endpoint input schema decides which ones exist.',
                 {
-                  summary: `Rename the field to one of ${known.join(', ') || '(none)'}, or add "${name}" to the input`,
+                  summary: known.length
+                    ? `Rename the field to one of ${known.join(', ')}, or add "${name}" to the input`
+                    : `Declare "${name}" in the endpoint input: it has no named fields${schema?.additionalProperties ? ' (a record input cannot be filled by name)' : ''}`,
                   snippet: guess ? `name: '${guess}'` : `input: z.object({ ${name}: z.string() }),`,
                   patch: null,
                 },

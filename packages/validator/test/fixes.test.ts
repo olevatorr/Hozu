@@ -61,6 +61,25 @@ describe('AI-first acceptance: the changed codes carry a patch or an exact snipp
     expect(of(b.ir, 'HZ046').map((d) => d.fix!.snippet)).toEqual(["name: 'title'"])
   })
 
+  it('HZ046: with no declared field to rename to, the fix says to declare it', () => {
+    const b = build(
+      ui.view({
+        render: () => ui.form({ method: 'post', action: ui.link(save) }, [ui.input({ name: 'titel' })]),
+      }),
+    )
+    const ir = structuredClone(b.ir)
+    ir.features.f!.schemas[ir.features.f!.endpoints.save!.input] = {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+    }
+    expect(of(ir, 'HZ046').map((d) => [d.fix!.summary, d.fix!.snippet])).toEqual([
+      [
+        'Declare "titel" in the endpoint input: it has no named fields (a record input cannot be filled by name)',
+        'input: z.object({ titel: z.string() }),',
+      ],
+    ])
+  })
+
   it('HZ036: a form that needs JavaScript gets the send to paste, with its own fields', () => {
     const ir = structuredClone(build(Plain).ir)
     const form = ir.features.f!.views.View!.root as ElementNode
