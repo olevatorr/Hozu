@@ -75,7 +75,6 @@ const traps = (what: () => string) => ({
   defineProperty: () => leak(what(), 'assignment'),
   deleteProperty: () => leak(what(), 'delete'),
   ownKeys: () => leak(what(), 'its keys were read: Object.keys, a spread or a for…in'),
-  has: (_: object, key: PropertyKey) => (typeof key === 'symbol' ? false : leak(what(), `"${key}" in`)),
 })
 
 const roots = new Map<string, unknown>()
