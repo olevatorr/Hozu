@@ -1,6 +1,8 @@
 # ADR 0043 — 0.8: close the escape hatches (breaking)
 
-- Status: proposed (waiting for the owner; the gates in "Decisions for the owner" are open)
+- Status: accepted (2026-09-30). The owner took every recommendation, reviewed once more from the view that Hozu is
+  an AI-first framework, with two changes: G4 removes soft navigation, and G10 folds 0.7.1 into 0.8.0. The waves run
+  without a stop between them; each ends with a report.
 - Motivation: trial 0020 (ADR 0042, `docs/trials/0020-long-run.md`). Over twenty sequential changes Nuxt had no
   regression in two runs. Hozu 0.7 kept low duplication and 10× less client JS, but:
   - its cost per change doubled from steps 1–10 to 11–20;
@@ -55,9 +57,9 @@ None of these is bent quietly; each needs the owner's explicit yes.
 | ADR 0010 G11 | `/_hozu/live` sends a connection only its page's tags | B |
 | ADR 0014 §1 | the `search` argument of `ui.link` becomes optional (omitted = all defaults); `null` and `{}` are type errors | G |
 | ADR 0014 §5 | an invalid native post re-renders with status 400 | C |
-| ADR 0015 §2, §3, §4.6 | persistence is derived per feature, for stateful views only; a session change forces a document navigation; "a new island joins the surviving app" is withdrawn | I, B |
+| ADR 0015 (whole), ADR 0041 A's soft-navigation note, budget P8 | soft navigation is removed: every internal link is a document navigation with prerender and cross-document View Transitions | I |
 | ADR 0016 §1 | `server.revalidate(tags): number` becomes `revalidate([tag()]): { entries, pages }` | A |
-| ADR 0017 A1 (the owner chose (d) in phase 7c), A4 | the default locale is unprefixed (c); a change of locale is always a document navigation | F |
+| ADR 0017 A1 (the owner chose (d) in phase 7c) | the default locale is unprefixed (c) | F |
 | ADR 0021 §4 | `testApp` builds from the app module that `hozu serve` runs | E |
 | ADR 0037 D3, Result | the lock must equal the computed lock; copy-only changes stay lock-reviewed even when a contract covers them; contracts over only mechanical transitions are HZ058 instead of "allowed as examples"; the examples drop them | G |
 | ADR 0037 D5 | `hozu check` imports the declared app module (it runs app code) | D, E |
@@ -149,9 +151,8 @@ None of these is bent quietly; each needs the owner's explicit yes.
     `fail('Expired')`). This is kept on purpose and documented.
 - **Client:**
   - While an effect is in flight, tag messages are queued.
-  - `session: true` drops the queue, replaces the store with `refreshed`, and makes the next navigation a document
-    navigation.
-  - Soft navigation prunes `shared.data` and `liveKeys` to the new payload plus the kept views (I).
+  - `session: true` drops the queue and replaces the store with `refreshed`. Every navigation is a document navigation
+    (I), so no page carries another page's store.
 - **Query resolvers only read (principle 4 amendment):**
   - `hozu migrate 0.8` recognises the scaffold's generated `itemsOf` shape and splits it into `listOf` (read-only) and
     `ownListOf` (mutations only).
@@ -304,7 +305,7 @@ None of these is bent quietly; each needs the owner's explicit yes.
 - **The app module:** see E. `hozu check` imports it, runs the app's module code, and reports HZ021 with a location and
   a fix. The CLI no longer wraps `DataRuntimeError` as a usage error.
 - **The lock** gains a `pages` section that summarises the head error mappings, the endpoint status and redirect
-  tables and the soft-navigation table (I). Changing who gets a 403 is therefore a reviewed change (principle 5).
+  tables. Changing who gets a 403 is therefore a reviewed change (principle 5).
 - **Fallback pages:** the framework's own error pages carry the view-transition opt-in.
 
 ## E. One app module for the tools and production
@@ -355,9 +356,6 @@ None of these is bent quietly; each needs the owner's explicit yes.
 - **Why this answers ADR 0017's objection** ("a URL's locale has two answers"):
   - Under (c), every (page, locale) pair still has exactly one canonical URL, and URL → locale is a total function.
   - Under (d), an unprefixed URL already had a second meaning: the negotiating 307.
-- **Client matching:** the client matcher applies the server's locale split. A first segment equal to a non-default
-  locale never matches the default table, so `/:slug` cannot claim `/de`. A navigation that changes the locale is
-  always a document navigation (ADR 0017 A4, restated for (c)). A Chromium test covers `/:slug` → `/de`.
 - **Diagnostics:**
   - A page route whose first literal segment is a declared locale is **HZ060 locale-path-collision**.
   - HZ037 and HZ046 compare redirect keys and endpoint paths against every locale's `routeTable(ir, l)`. Endpoints and
@@ -494,33 +492,36 @@ None of these is bent quietly; each needs the owner's explicit yes.
     cart 15, showcase 21).
 - **HZ032** checks `%concat` hrefs (with D).
 
-## I. Soft navigation: persist what has state, restart what reads the URL
+## I. Soft navigation is removed (gate G4: remove)
 **Problem (D10, reproduced in Chrome):**
 - Persistence is derived per view (`compiler/src/plan.ts:248-256`), but the app kept is per feature
   (`runtime-client/src/navigate.ts:106-111`).
 - A kept feature's app skips re-mounting (`hydrate.ts:177-178`) and claims DOM rendered with a new context. So the
   seed does not re-run, the search is frozen, and old and new DOM coexist.
-- Routes whose search has non-null defaults never match on the client (`navigate.ts:24-36` escapes the `?`). This hid
-  D10a in run 2 and makes `hozu plan` disagree with the runtime.
+- Routes whose search has non-null defaults never match on the client (`navigate.ts:24-36`), so `hozu plan` and the
+  runtime disagree.
 - The store is never pruned, which is how the delete page sent `listNotes` in DA1.
-- No change request and no acceptance check needed soft navigation.
+- No change request and no acceptance check needed soft navigation. Its behaviour is derived and invisible: neither
+  `hozu check`, the contracts nor the lock can see what persists.
 
-**Decision (gate G4): fix and narrow.**
-- **When a feature is kept** from A to B:
-  - every island view of it on B is on A, in the same relative order;
-  - and none of them reads the route (tree, seed or machine).
-  - This is computed as a fixpoint over embeds.
-- **Only stateful views persist:** those that read `ctx` or `when`, hold a widget, or hold editable or media elements.
-- **A target that adds an island of a kept feature restarts it:** ADR 0015 §4.6 is withdrawn. The cart panel is
-  unaffected, because the product detail is a static view of another feature.
-- **Matching:** the client matcher uses the path only (the same split as `pathOf`), and `payload.routes` carries a
-  path-only table (ADR 0018's one parser).
-- **Pruning:** the store and `liveKeys` are pruned on swap (B). The pruning loop lives in `navigate.js` (budget P8).
-- **Visibility:**
-  - The derived soft table (per route pair: keeps, and restarts with reasons) is printed by `hozu plan` and
-    summarised in the lock's `pages` section, so a change of persistence is reviewed (HZ057).
-  - `browse` prints whether each click was a soft or a document navigation.
-- **The alternative** of removing soft navigation (ADR 0015) is in gate G4 with its budget numbers.
+**Options:** fix and narrow (a per-feature fixpoint, stateful views only, a soft table in the lock), or remove.
+
+**Decision: remove (the owner, from the AI-first review).**
+- An agent cannot verify what it cannot see. Fixing the derivation would add rules to learn and a lock table to
+  review, for a behaviour no trial asked for.
+- **Deleted:** `runtime-client/src/navigate.ts` and the `navigate.js` chunk, `payload.soft`, the view boundary
+  comments, `RoutePlan.persistent` and the plan's soft section, the speculation exclusions and CSP hashes that exist
+  only for it, the Navigation API code, and budget P8.
+- **What remains:** every internal link is a document navigation, with speculation prerender and the cross-document
+  View Transition opt-in (ADR 0032), which already exist.
+- **State across pages** lives in the URL (seed), on the server (queries) or in a widget's own storage. ADR 0015's
+  product case (a panel keeping machine state across links) is withdrawn; the cart panel re-renders from server data.
+- **Consequences:**
+  - B's barrier needs no store pruning;
+  - F's locale switch is always a document navigation;
+  - D10 cannot occur.
+  - The bytes freed in budget P7 are measured and added to the reserve.
+- **Order:** it is the first task of wave 2, because B, C and F then build on a runtime without it.
 
 ## J. Verification: make the failures visible where agents look
 **Problem:**
@@ -544,7 +545,6 @@ None of these is bent quietly; each needs the owner's explicit yes.
   - speculation prerender goes to the in-process handler;
   - errors carry `url` and `type`;
   - the Log domain is on;
-  - it prints soft or document navigation per click.
 - **`hozu browse --as <name>`:** several actors, each with its own browser context and optional `--session`, in one
   in-process world. It is for simultaneous actors (live sharing); switching users within a chain keeps working.
 - **`hozu browse --js on|off|both`, default `both`:**
@@ -609,6 +609,18 @@ None of these is bent quietly; each needs the owner's explicit yes.
   - New costs: about 3 explicit `--update-lock` calls per run over steps 13–20, the HZ057 / HZ058 output, and the
     two-column browse output.
   - The net is not estimated; trial 0021 measures it.
+
+## AI-first acceptance conditions (from the owner's review)
+0.8.0 is done when an agent can use it cheaply and cannot fail silently. Every section above is held to these:
+1. **Every new diagnostic carries a fix an agent can apply:** a patch, or an exact snippet. HZ051 is the one
+   deliberate exception, because 403 vs 404 is an intent decision.
+2. **Output stays small:** HZ057 and HZ058 report per machine or feature, and the `hozu map` and `hozu browse` outputs
+   have size tests.
+3. **Upgrading rewrites the agent's instructions:** `hozu migrate 0.8` and `hozu skill` replace the app's `CLAUDE.md`
+   / `AGENTS.md` Hozu block. Otherwise an upgraded agent follows 0.7 rules.
+4. **SKILL.md holds only what no diagnostic enforces;** the rest is taught at the moment of the mistake.
+5. **A broken build never renders:** `hozu get`, `hozu browse` and `testApp` exit 1 with the diagnostics.
+6. **The release is judged by trial 0021** against ADR 0044's registered targets, not by "the code is written".
 
 ## Rejected or deferred, with reasons
 - **`machine({ failed })` (shared failure branches):** it would silently absorb a forgotten error that HZ004 and the
@@ -681,7 +693,7 @@ findings and are assigned only by amending this table. Severity is one per code.
   - formRef identities.
   - The dom path `['formAll', name]` needs no schema change but requires the version bump: a 0.7 client reads it as
     null (`dom.ts:68-71`).
-- **Lock `version: 2`** (G), including the `pages` section (D, I).
+- **Lock `version: 2`** (G), including the `pages` section (D).
 - **Schemas:** `pnpm schema` regenerates the JSON Schemas. The CLI's `lock` field becomes
   `'missing' | 'current' | 'stale' | 'updated' | 'skipped'`, where `'missing'` means only "no machine".
 
@@ -721,34 +733,24 @@ findings and are assigned only by amending this table. Severity is one per code.
   - `ui.dom.form` is first-wins on the client, and JS payloads now include the submitter;
   - an invalid native post answers 400;
   - user data is no longer cached (budget P9 moves);
-  - a feature that reads the route restarts on soft navigation;
-  - a session change forces a document navigation.
+  - soft navigation is removed: every internal link loads a document.
 - **The repository migrates with it:** the examples, the skill `example/`, the scaffold, `create-hozu`, the trial
   reference apps and the benches.
 
 ## Release
+- **No separate 0.7.1 (gate G10: folded into 0.8.0).** 0.7.0 keeps the `/\` open redirect and the unscoped SSE
+  broadcast until 0.8.0 is published. The owner accepted this exposure.
 - **Wave 0 (coordinator), before any worker:**
-  - merge `trial-0020` and this ADR into `main`;
+  - on the integration branch `v0.8` (from `trial-0020`; `main` is untouched until the owner merges);
   - commit every repro to `bench/trial/longrun/repro/` as `it.fails` against the 0.7 API, where the 0.7 API can
     express it;
   - commit the 0.7 IR and v1 lock of every example, the site, the reference apps and both `s12` fixtures, computed
     with the 0.7 packages;
-  - publish 0.7.1 from `main` (gate G10).
-  - Every 0.8 worker branches from that commit and first checks `git merge-base --is-ancestor <commit> HEAD`.
-- **0.7.1, non-breaking** (manual publish as always):
-  - security: the `/\` open redirect;
-  - nosniff and referrer-policy on endpoints;
-  - scoped live tags;
-  - the effect refresh with the post-mutation session and tag intersection;
-  - SSE after the response;
-  - the scaffold's `listOf` / `ownListOf`;
-  - `--session` documented and `request.ts:285`;
-  - structured HZ021 from get/post;
-  - request errors carry the URL;
-  - `hozu get/browse` refuse to render a broken build;
-  - `guide.md:25`.
-  - In the repository, `anatomy.mjs`'s classification is fixed before any re-run.
-- **0.8.0 waves:** each wave is a phase. It starts on the owner's go, and `pnpm gate` runs once at its end. Workers are
+  - fix `anatomy.mjs`, `metrics.mjs` and `accept.mjs` (v2), and rescore trial 0020 as the baseline;
+  - have the held-out changes 21–28 written by an author who does not see 0.8, and commit their SHA-256 (ADR 0044).
+  - Every 0.8 worker branches from `v0.8` and first checks `git merge-base --is-ancestor <wave-0 commit> HEAD`.
+- **0.8.0 waves:** each wave is a phase. The owner approved running them back to back; each ends with `pnpm gate` once
+  and a report. A principle conflict, a gate that cannot be made green or a budget overrun stops the run. Workers are
   dispatched through Orca, one worktree each.
   1. **Contracts, one worker, one commit:**
      - `ProjectIR` v2 including formRef and the head and endpoint tables;
@@ -759,10 +761,10 @@ findings and are assigned only by amending this table. Severity is one per code.
      - the runtime protocol types;
      - `codes.ts` with HZ049–HZ064;
      - the second catalog harness.
-  2. **Server, one worker, in order:** A + B, then F, then D + E, then C.
+  2. **Server, one worker, in order:** I (the removal), then A + B, then F, then D + E, then C.
   3. **Authoring and review:** H together with migrate's `op.*` / `ui.if` / part rewrites, run on the repository in the
      same wave. Then G, including the `pages` lock section.
-  4. **The rest:** I, J, K, migrate's remaining rewrites, the examples, and the ADR supersession notes (listed in the
+  4. **The rest:** J, K, migrate's remaining rewrites, the examples, and the ADR supersession notes (listed in the
      principles table, plus the errata to ADR 0039's `a.length` row and ADR 0037 D6's `ctx.redirect`).
 - **Single-writer rule:** after wave 1, one worker at a time touches `packages/core/src/ir/*`,
   `packages/core/src/builders/ui.ts`, `packages/core/src/build/scope.ts`, `packages/cli/src/contract.ts` and
@@ -780,7 +782,7 @@ findings and are assigned only by amending this table. Severity is one per code.
 | the effect barrier (B) | ≤ 150 |
 | reserve | ≥ 48 |
 
-  - Store pruning lives in `navigate.js` (budget P8), and `%includes` in `fns.js`.
+  - `%includes` lives in `fns.js`. The bytes freed by I join the reserve.
   - A wave that exceeds its share stops and raises it.
 - **Examples:** `examples/notes` gains the 403 admin page, the bulk form (formAll + formRef) and German under (c), as
   the runnable example the workflow rules require.
@@ -829,18 +831,18 @@ findings and are assigned only by amending this table. Severity is one per code.
     (confirmed when the mutations are written), and 0.8's check or browse should catch every one.
   - DA1 passing proves D9a only; D9b, D9c and D4f are proven by their repro tests.
 
-## Decisions for the owner
+## Decisions for the owner (all decided 2026-09-30: as recommended, except G4 and G10 as noted)
 | Gate | Question | Recommendation | Main trade-off |
 |---|---|---|---|
 | G1 | Change principle 8: user data is never cached across requests (`'request'` / `'live'` only), and `'request'` is a per-request region in any scope | yes | cost per request vs. correctness by construction; budget P9 moves |
 | G2 | Sessions: a server-side store with an opaque id (default `memorySessions()`), or a stateless token + id/exp + revocation list | **server-side store** | fails closed on restart (everyone signs in again) and hides the payload, vs. no lookup; both are per instance, and edge or multi-instance needs a shared store (an external service to approve) |
 | G3 | i18n: the default locale unprefixed, URL-only (overturns ADR 0017 A1, chosen by you in phase 7c) | yes, no cookie in 0.8; decided after step 18 runs on the reference | shareable URLs and cache-safe rendering vs. no remembered preference on unprefixed URLs |
-| G4 | Soft navigation: fix and narrow, or remove (ADR 0015) | **fix and narrow** | keeps state for views both pages list (the cart panel); a target that adds an island of a kept feature restarts it (§4.6 withdrawn). Removal frees 19–281 B of budget P7 and deletes budget P8. |
+| G4 | Soft navigation: fix and narrow, or remove (ADR 0015) | **decided: remove** | an invisible derived behaviour no trial needed, and the cause of D10 and DA1's JS path; the cart panel no longer keeps machine state across links |
 | G5 | The lock must equal the computed lock (HZ057 error, explicit `--update-lock`), or `hozu check` writes it with a frozen gate | **error + explicit** | either way the real review is you reading the lock diff (agents accepted by reflex, 15 / 11 times); the choice is principle 2 (no unasked file writes) vs. about 3 extra calls per run over steps 13–20 |
 | G6 | `ui.link` search optional (overturns ADR 0014 §1) | yes | fixes D1 at the source; "omitted = defaults" follows ADR 0022 |
 | G7 | Remove `op.*` and the motion-less `ui.if` in 0.8, or deprecate until 0.9 | **remove**, since this is the breaking release, on the condition that `Child[]` branches and the migrate rewrite land in the same wave | principle 1 now vs. a larger codemod; agents wrote neither in 42 sessions, while the examples use them heavily |
 | G8 | `hozu post` replaced by `hozu browse --js off` | yes | one step language vs. a familiar command; the gap (per-item targets) is closed by `in "<text>"` |
 | G9 | Scenarios (`scenario()` + `hozu verify`) in 0.8 | **no, defer** | would catch DA1-class failures, but a third behaviour form, text selectors (principle 3) and cross-feature ownership (principle 6) are unresolved |
-| G10 | Publish 0.7.1 first | yes | protects 0.7 apps now; one more manual publish |
+| G10 | Publish 0.7.1 first | **decided: no, folded into 0.8.0** | 0.7.0 keeps the open redirect and the SSE broadcast until 0.8.0 ships |
 | G11 | `part()` (a principle 4 amendment), or HZ059 alone with "inline or split a view" | **part()** | one declared reuse form vs. no new concept; D2 was met once (the reference), 0 times in agent code |
 | G12 | Trial 0021 budget: 3 runs × 2 frameworks, held-out + short variant (≈ 18 M weighted tokens required, 25 M ceiling) | approve with ADR 0044, before wave 1 | statistical power vs. quota |
