@@ -20,7 +20,7 @@ export default project({
         query: me,
         input: () => ({}),
         render: () => ({ title: 'Notes', noindex: true }),
-        redirects: { Unauthorized: login },
+        failed: { Unauthorized: login },
       },
     }),
     ui.page(login, { views: [Login], head: { render: () => ({ title: 'Sign in' }) } }),

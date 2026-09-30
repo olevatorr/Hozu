@@ -64,6 +64,37 @@ function report(ctx: Ctx, feature: string, pointer: At, href: string) {
   )
 }
 
+const URL_ATTRS: Record<string, string> = {
+  a: 'href',
+  area: 'href',
+  form: 'action',
+  button: 'formaction',
+  input: 'formaction',
+}
+
+function postEndpoint(ir: ProjectIR, path: string): string | null {
+  for (const f of Object.values(ir.features))
+    for (const [sym, e] of Object.entries(f.endpoints))
+      if (e.method === 'POST' && e.path === path) return `${f.id}.${sym}`
+  return null
+}
+
+function reportEndpoint(ctx: Ctx, feature: string, pointer: At, path: string, ref: string) {
+  const call = `ui.link(${ref.slice(ref.indexOf('.') + 1)})`
+  ctx.report(
+    'HZ032',
+    feature,
+    pointer,
+    `Form action "${path}" is a string; use ${call}`,
+    'An endpoint is a declaration identity, so a moved or removed endpoint is caught.',
+    {
+      summary: `Use ${call}`,
+      snippet: call,
+      patch: [{ op: 'replace', path: resolveAt(pointer), value: { endpoint: ref, input: null } }],
+    },
+  )
+}
+
 const internal = (v: string) => v.startsWith('/') && !v.startsWith('//') && !v.startsWith('/_hozu/')
 
 function concatHref(value: ValueExpr): string | null {
@@ -101,13 +132,18 @@ export function internalLinks(ctx: Ctx) {
   for (const f of Object.values(ir.features))
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer }) => {
-        if (node.kind !== 'el' || (node.tag !== 'a' && node.tag !== 'area')) return
-        const href = node.attrs.href
-        if (!href) return
+        if (node.kind !== 'el') return
+        const attr = URL_ATTRS[node.tag]
+        const href = attr ? node.attrs[attr] : undefined
+        if (!attr || !href) return
+        const p = at(pointer, 'attrs', attr)
         const built = concatHref(href)
-        if (built) reportConcat(ctx, f.id, at(pointer, 'attrs', 'href'), built)
+        if (built) reportConcat(ctx, f.id, p, built)
         if (!('literal' in href) || typeof href.literal !== 'string') return
         const v = href.literal
-        if (internal(v)) report(ctx, f.id, at(pointer, 'attrs', 'href'), v)
+        if (!internal(v)) return
+        const endpoint = attr === 'href' ? null : postEndpoint(ir, v)
+        if (endpoint) reportEndpoint(ctx, f.id, p, v, endpoint)
+        else report(ctx, f.id, p, v)
       })
 }

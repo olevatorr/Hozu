@@ -391,9 +391,9 @@ export async function renderPage({
     const q = ir.features[page.head.query.ref.slice(0, dot)]?.queries[page.head.query.ref.slice(dot + 1)]
     if (q) for (const t of tagKeys(q.tags, input, empty)) tags.add(t)
     if (!result.ok) {
-      const target = page.head.redirects[result.error]
-      if (target) redirect = pathOf(ir.routes[target]?.path ?? '/', null)
-      status = redirect ? 303 : result.error === 'Unexpected' ? 500 : 404
+      const failed = page.head.failed[result.error]
+      if (failed && 'redirect' in failed) redirect = pathOf(routes[failed.redirect] ?? '/', null)
+      status = redirect ? 303 : failed && 'status' in failed ? failed.status : 500
     }
     headScope = { ...empty, bindings: [result.ok ? result.value : null] }
   }
@@ -592,17 +592,36 @@ function channel(): Channel {
 
 export { pathOf }
 
-const speculationRules = JSON.stringify({
-  prerender: [
-    {
-      where: { and: [{ href_matches: '/*' }, { not: { href_matches: '/_hozu/*' } }] },
-      eagerness: 'moderate',
-    },
-  ],
-})
+const rulesMemo = new WeakMap<ProjectIR, string>()
+export function speculationRules(ir: ProjectIR): string {
+  let hit = rulesMemo.get(ir)
+  if (!hit) {
+    const base = ir.http.basePath
+    const excluded = [
+      `${base}/_hozu/*`,
+      ...Object.values(ir.features).flatMap((f) =>
+        Object.values(f.endpoints)
+          .filter((e) => e.method === 'GET')
+          .map((e) => `${base}${e.path}`),
+      ),
+    ]
+    hit = JSON.stringify({
+      prerender: [
+        {
+          where: {
+            and: [{ href_matches: `${base}/*` }, ...excluded.map((p) => ({ not: { href_matches: p } }))],
+          },
+          eagerness: 'moderate',
+        },
+      ],
+    })
+    rulesMemo.set(ir, hit)
+  }
+  return hit
+}
 
-export async function inlineScriptHashes(): Promise<string[]> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(speculationRules))
+export async function inlineScriptHashes(ir: ProjectIR): Promise<string[]> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(speculationRules(ir)))
   return [`sha256-${btoa(String.fromCharCode(...new Uint8Array(digest)))}`]
 }
 
@@ -652,7 +671,7 @@ function headHtml(
       (href) => `<link rel="preload" href="${escapeHtml(href)}" as="font" type="font/woff2" crossorigin>`,
     ),
     styles ? `<link rel="stylesheet" href="${escapeHtml(styles)}">` : '',
-    `<script type="speculationrules">${speculationRules}</script>`,
+    `<script type="speculationrules">${speculationRules(ir)}</script>`,
     `<title>${escapeHtml(title)}</title>`,
     meta('name', 'description', description),
     h.noindex || status !== 200 ? '<meta name="robots" content="noindex">' : '',

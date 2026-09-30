@@ -31,6 +31,7 @@ export default project({
       head: {
         query: getProduct,
         input: (params) => ({ sku: params.sku }),
+        failed: { NotFound: 404 },
         render: (item) => ({ title: item.name, description: item.name }),
       },
       entries: { query: listProducts, input: {}, params: (item) => ({ sku: item.sku }) },

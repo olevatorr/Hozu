@@ -1,7 +1,7 @@
 import type { PageDef } from '../builders/page.ts'
 import { join } from '../canonical/pointer.ts'
 import type { DiagnosticCode, Fix } from '../ir/diagnostic.ts'
-import type { EntriesIR, HeadIR, PageIR, ValueExpr } from '../ir/types.ts'
+import type { EntriesIR, HeadFailureIR, HeadIR, PageIR, ValueExpr } from '../ir/types.ts'
 import { defOf, infoOf } from '../model/decl.ts'
 import { RecorderError, refProxy } from '../model/expr.ts'
 import { type At, FeatureScope, type ProjectScope } from './scope.ts'
@@ -28,25 +28,29 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
         ),
       }
     : null
-  const redirects: Record<string, string> = {}
-  for (const [error, route] of Object.entries(d.redirects ?? {})) {
-    const id = scope.project.routes.get(route as object)
-    const rp = join(p, 'redirects', error)
+  const failed: Record<string, HeadFailureIR> = {}
+  for (const [error, target] of Object.entries(d.failed ?? {})) {
+    const rp = join(p, 'failed', error)
+    if (target === 403 || target === 404 || target === 410) {
+      failed[error] = { status: target }
+      continue
+    }
+    const id = scope.project.routes.get(target as object)
     if (!id)
       scope.report(
         'HZ007',
         rp,
-        'Redirect target is not a registered route',
-        'Register it in project({ routes }).',
+        `head.failed.${error} is neither a registered route nor 403, 404 or 410`,
+        'A declared error of the head query redirects (303) to a route without params, or answers 403, 404 or 410.',
       )
-    else if (defOf<{ params: unknown }>(route).params !== null)
+    else if (defOf<{ params: unknown }>(target as never).params !== null)
       scope.report(
         'HZ024',
         rp,
-        `Redirect target "${id}" has params`,
-        'Redirects go to routes without params.',
+        `head.failed.${error} redirects to "${id}", which has params`,
+        'A head failure redirects to a route without params.',
       )
-    else redirects[error] = id
+    else failed[error] = { redirect: id }
   }
   const fields = scope.attempt(
     join(p, 'render'),
@@ -55,7 +59,7 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
   )
   if (!fields)
     return {
-      redirects,
+      failed,
       query,
       title: empty,
       description: empty,
@@ -67,7 +71,7 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
   const v = (key: string, x: unknown, absent: unknown = null) =>
     scope.attempt(join(p, key), () => scope.value(x === undefined ? absent : x, join(p, key)), empty)
   return {
-    redirects,
+    failed,
     query,
     title: v('title', fields.title),
     description: v('description', fields.description, ''),

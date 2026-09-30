@@ -327,12 +327,6 @@
         "noindex": {
           "type": "boolean"
         },
-        "redirects": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
         "failed": {
           "type": "object",
           "additionalProperties": {
@@ -348,7 +342,7 @@
         "image",
         "published",
         "noindex",
-        "redirects"
+        "failed"
       ],
       "additionalProperties": false
     },
@@ -1974,7 +1968,8 @@
         "method",
         "path",
         "input",
-        "output"
+        "output",
+        "mode"
       ],
       "additionalProperties": false
     },

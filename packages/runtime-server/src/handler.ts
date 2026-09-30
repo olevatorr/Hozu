@@ -3,12 +3,18 @@ import type { TagUse } from '@hozu/core'
 import {
   type BuildResult,
   canonicalStringify,
+  codes,
+  type Diagnostic,
+  type EndpointIR,
+  type FeatureIR,
   FORM_FIELD,
   hashJson,
   type ImageSet,
   type Json,
+  join,
   type Manifest,
   publicPath,
+  resolveSource,
   routeParams,
   routePattern,
   routeTable,
@@ -32,8 +38,8 @@ import {
 } from './render.ts'
 import { instantiate, type RenderModule } from './rendered.ts'
 import { matcher } from './routing.ts'
-import { parseSearch } from './search.ts'
-import { type CspSources, contentSecurityPolicy, crossSite, ERROR_HTML } from './security.ts'
+import { parseSearch, queryInput } from './search.ts'
+import { type CspSources, contentSecurityPolicy, crossSite, ERROR_HTML, NOT_FOUND_HTML } from './security.ts'
 import { memorySessions, type SessionStore, signedCookie } from './session.ts'
 import { publicAssets } from './static.ts'
 import { assertWidgetBundle } from './widgets.ts'
@@ -259,7 +265,7 @@ export function createHandler({
     (secure ??=
       csp === false
         ? Promise.resolve(base)
-        : inlineScriptHashes().then((hashes) => ({
+        : inlineScriptHashes(ir).then((hashes) => ({
             ...base,
             'content-security-policy': contentSecurityPolicy(csp, hashes),
           })))
@@ -599,10 +605,13 @@ export function createHandler({
     })
   }
 
-  const missing = (request: Request, locale: string | null = null) =>
+  const missing = async (request: Request, locale: string | null = null) =>
     ir.notFound
       ? page(`#404:${locale ?? ''}`, ir.notFound, null, null, request, true, locale)
-      : plain(404, request.method === 'HEAD' ? null : 'Not found')
+      : new Response(request.method === 'HEAD' ? null : NOT_FOUND_HTML, {
+          status: 404,
+          headers: { 'content-type': 'text/html; charset=utf-8', ...(await secureHeaders()) },
+        })
 
   const endpointRefs = new Map<string, string>(
     Object.values(ir.features).flatMap((f) =>
@@ -612,22 +621,63 @@ export function createHandler({
     ),
   )
 
+  const LINK = Symbol.for('hozu.link')
+  const locationOf = (href: unknown): string | null => {
+    const l = (href as Record<symbol, { route: object; params: Json; search: Json }> | null)?.[LINK]
+    const ref = l ? build.bindings.refs.get(l.route) : undefined
+    return ref?.startsWith('#route:') ? pathOf(table[ref.slice(7)] ?? '/', l!.params, l!.search) : null
+  }
+
+  const endpointIRs = new Map(
+    Object.values(ir.features).flatMap((f) =>
+      Object.entries(f.endpoints).map(
+        ([sym, e]): [string, { feature: FeatureIR; sym: string; e: EndpointIR }] => [
+          `${f.id}.${sym}`,
+          { feature: f, sym, e },
+        ],
+      ),
+    ),
+  )
+
+  const htmlFromEndpoint = (ref: string) => {
+    const { feature, sym } = endpointIRs.get(ref)!
+    const pointer = join('', 'features', feature.id, 'endpoints', sym)
+    const diagnostic: Diagnostic = {
+      code: 'HZ053',
+      severity: codes.HZ053.severity,
+      message: `Endpoint ${ref} answered text/html`,
+      location: { feature: feature.id, pointer, source: resolveSource(build.sources, pointer) },
+      cause:
+        'A page is rendered from the IR, with its CSP, headers, lang and view-transition opt-in; HTML from an endpoint has none of them. The framework answers 500 instead.',
+      fix: {
+        summary: 'Render it as a ui.page, and answer 403 / 404 / 410 or redirect through head.failed',
+        snippet: `ui.page(route, { views: [...], head: { query, input, render, failed: { Forbidden: 403 } } })`,
+        patch: null,
+      },
+    }
+    return Object.assign(new Error(`HZ053 ${diagnostic.message}. ${diagnostic.fix!.summary}`), { diagnostic })
+  }
+
   const endpointCall = async (request: Request, url: URL, ref: string) => {
-    let input: Json
-    if (request.method === 'GET') input = Object.fromEntries(url.searchParams)
+    const { feature, e } = endpointIRs.get(ref)!
+    let input: Json = null
+    let bytes: Uint8Array | undefined
+    if (e.raw) bytes = new Uint8Array(await request.arrayBuffer())
+    else if (request.method !== 'POST') input = queryInput(feature.schemas[e.input] ?? null, url.searchParams)
     else if ((request.headers.get('content-type') ?? '').includes('json'))
       input = (await request.json().catch(() => null)) as Json
     else {
       const form = await request.formData().catch(() => null)
       input = Object.fromEntries(
-        [...(form?.entries() ?? [])].filter((e): e is [string, string] => typeof e[1] === 'string'),
+        [...(form?.entries() ?? [])].filter((x): x is [string, string] => typeof x[1] === 'string'),
       )
     }
     const scope = await dataFor(request)
-    const result = await scope.endpoint(ref, input, { request })
+    const result = await scope.endpoint(ref, input, { request, ...(bytes ? { bytes } : {}) })
     const cookie = store && scope.written ? await store.write(scope.written.value, request) : null
     const finish = (response: Response) => {
       const out = new Response(response.body, response)
+      for (const [k, v] of Object.entries(base)) if (!out.headers.has(k)) out.headers.set(k, v)
       if (cookie) out.headers.append('set-cookie', cookie)
       if (!out.headers.has('cache-control'))
         for (const [k, v] of Object.entries(privately(scope.readSession))) out.headers.set(k, v)
@@ -635,15 +685,34 @@ export function createHandler({
     }
     if (!result.ok)
       return finish(
-        new Response(JSON.stringify({ message: result.message, fields: result.fields }), {
-          status: result.status,
-          headers: { 'content-type': 'application/json' },
-        }),
+        new Response(
+          JSON.stringify({
+            error: result.error,
+            message: result.message,
+            ...(result.fields ? { fields: result.fields } : {}),
+          }),
+          { status: result.status, headers: { 'content-type': 'application/json' } },
+        ),
       )
     await dropPages(result.invalidated)
-    const response = finish(result.value instanceof Response ? result.value : json(result.value))
+    let response: Response
+    const to = result.redirect === undefined ? null : locationOf(result.redirect)
+    if (result.redirect !== undefined && !to) {
+      onError(new Error(`${ref} returned redirect() of something that is not ui.link(route, …)`), {
+        path: url.pathname,
+      })
+      response = plain(500, 'Internal error')
+    } else if (to) response = see(to)
+    else if (result.value instanceof Response) {
+      if ((result.value.headers.get('content-type') ?? '').toLowerCase().includes('text/html')) {
+        const error = htmlFromEndpoint(ref)
+        onError(error, { path: url.pathname })
+        response = plain(500, error.message)
+      } else response = result.value
+    } else response = json(result.value)
+    const out = finish(response)
     after(result.invalidated)
-    return response
+    return out
   }
 
   const route = async (request: Request, url: URL, path: string): Promise<Response> => {

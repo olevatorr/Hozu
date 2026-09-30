@@ -378,6 +378,16 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'a route that exists only to link to a GET endpoint',
+    code: 'HZ052',
+    mutate: (ir) => {
+      const input = cart(ir).queries.getCart!.input
+      cart(ir).endpoints.receipt = { method: 'GET', path: '/api/receipt', input, output: input, mode: 'json' }
+      ir.routes.orderPlaced!.path = '/api/receipt'
+      delete ir.pages.orderPlaced
+    },
+  },
+  {
     name: 'header the framework derives',
     code: 'HZ038',
     mutate: (ir) => {

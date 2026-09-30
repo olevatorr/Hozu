@@ -13,6 +13,7 @@ import type { Infer, Schema } from '../schema/standard.ts'
 import { type Asset, asset } from './asset.ts'
 import type { TagProps } from './dom-props.ts'
 import type { QueryDecl } from './effects.ts'
+import type { EndpointDecl } from './endpoint.ts'
 import type { EventDecl } from './event.ts'
 import { alternate, format, messages, openGraph, recorderFns } from './i18n.ts'
 import type { MachineDecl, UnexpectedError } from './machine.ts'
@@ -31,6 +32,12 @@ export interface Href extends Expr<string> {
 }
 
 type SearchArg<S> = [S] extends [null] ? [] : [search: NoInfer<Val<Partial<S>>> | null]
+
+interface Link {
+  <P, S>(route: RouteDecl<P, S>, params: NoInfer<Val<P>>, ...search: SearchArg<S>): Href
+  <I>(endpoint: EndpointDecl<I, any, any, 'GET'>, input: NoInfer<Val<I>>): Href
+  (endpoint: EndpointDecl<any, any, any, 'POST'>): Href
+}
 
 export const linkOf = (value: unknown): { route: unknown; params: unknown; search: unknown } | null =>
   typeof value === 'object' && value !== null ? ((value as Record<symbol, never>)[LINK] ?? null) : null
@@ -203,8 +210,8 @@ export const ui = Object.freeze({
     node({ kind: 'global', target: 'window', on: options.on }),
   document: (options: { on: { [E in DomEvent]?: Send } }): NodeDecl =>
     node({ kind: 'global', target: 'document', on: options.on }),
-  link: <P, S>(route: RouteDecl<P, S>, params: NoInfer<Val<P>>, ...search: SearchArg<S>): Href =>
-    Object.freeze({ [LINK]: { route, params, search: search[0] ?? null } }) as unknown as Href,
+  link: ((route: unknown, params: unknown = null, ...search: unknown[]): Href =>
+    Object.freeze({ [LINK]: { route, params, search: search[0] ?? null } }) as unknown as Href) as Link,
   use: <P, E>(w: WidgetDecl<P, E>, options: NoInfer<WidgetUse<P, E>>, children: Child[]): NodeDecl =>
     node({ kind: 'widget', widget: w, options, children }),
   page,

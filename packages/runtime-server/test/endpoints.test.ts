@@ -24,7 +24,7 @@ const callback = endpoint({
   method: 'GET',
   path: '/auth/callback',
   input: z.object({ code: z.string() }),
-  output: 'response',
+  output: 'redirect',
 })
 const Home = ui.view({ render: () => ui.main({}, ['Home']) })
 const app = project({
@@ -55,9 +55,9 @@ const handler = () =>
         received.push(id)
         return { received: id }
       }),
-      implement(callback, ({ code }, { setSession }) => {
+      implement(callback, ({ code }, { setSession, redirect }) => {
         setSession({ user: code })
-        return new Response(null, { status: 302, headers: { location: '/' } })
+        return redirect(ui.link(home, null))
       }),
     ]),
   })
@@ -92,10 +92,10 @@ describe('declared endpoints (ADR 0037 D6)', () => {
     expect((await bad.json()).fields.id).toMatch(/2/)
   })
 
-  it("returns the handler's Response and sets the session cookie, which later requests read", async () => {
+  it('a GET redirect endpoint sets the session cookie, which later requests read', async () => {
     const h = handler()
     const res = await h.fetch(new Request('http://x.test/auth/callback?code=ada'))
-    expect(res.status).toBe(302)
+    expect(res.status).toBe(303)
     expect(res.headers.get('location')).toBe('/')
     const cookie = res.headers.get('set-cookie')!.split(';')[0]!
     expect(cookie).toMatch(/^sid=/)

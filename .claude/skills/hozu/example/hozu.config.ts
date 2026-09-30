@@ -20,6 +20,7 @@ export default project({
       head: {
         query: getBookmark,
         input: (params) => ({ id: params.id }),
+        failed: { NotFound: 404 },
         render: (b) => ({ title: b.title, description: b.title, type: 'article' }),
       },
       entries: { query: listBookmarks, input: {}, params: (b) => ({ id: b.id }) },

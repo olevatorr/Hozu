@@ -19,7 +19,10 @@ const build = (declarations: object, extra: object[] = []) =>
     project({
       schema: zodAdapter,
       routes: { home, noteRoute },
-      pages: [ui.page(home, { views: [], head: { render: () => ({ title: 'x' }) } })],
+      pages: [
+        ui.page(home, { views: [], head: { render: () => ({ title: 'x' }) } }),
+        ui.page(noteRoute, { views: [], head: { render: () => ({ title: 'n' }) } }),
+      ],
       features: [
         feature({ id: 'f', intent: { summary: 'ADR 0043 H' }, declarations: [declarations] }),
         ...(extra as never[]),
@@ -441,7 +444,9 @@ describe('lists: includes and removing a scalar (ADR 0043 C)', () => {
     const b = build({ Toggle, picker, Picker })
     expect(codes(b)).toEqual([])
     expect(
-      verify(b.ir, { bindings: b.bindings }).diagnostics.filter((d) => !['HZ010', 'HZ016'].includes(d.code)),
+      verify(b.ir, { bindings: b.bindings }).diagnostics.filter(
+        (d) => !['HZ010', 'HZ016', 'HZ025'].includes(d.code),
+      ),
     ).toEqual([])
     const t = b.ir.features.f!.machine!.states.ready!.on['f.Toggle']![0]!
     expect(t.guard).toMatchObject({ op: 'fn', fn: '%includes' })
@@ -508,7 +513,9 @@ describe('hrefs', () => {
       arg: { object: { a: { link: 'home' }, b: { link: 'noteRoute' } } },
     })
     expect(
-      verify(b.ir, { bindings: b.bindings }).diagnostics.filter((d) => !['HZ010', 'HZ016'].includes(d.code)),
+      verify(b.ir, { bindings: b.bindings }).diagnostics.filter(
+        (d) => !['HZ010', 'HZ016', 'HZ025'].includes(d.code),
+      ),
     ).toEqual([])
   })
 

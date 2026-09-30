@@ -25,7 +25,7 @@ around the rule.
 | HZ028 | `img` without width/height | add both |
 | HZ030 | `ui.html` of untrusted data | render text instead |
 | HZ031 | a literal not allowed by its schema | use an allowed value (the patch suggests one) |
-| HZ032 | internal link written as a string | `ui.link(route, params)` |
+| HZ032 | internal link or form action written as a string | `ui.link(route, params)` / `ui.link(endpoint)` |
 | HZ033 | DOM text into an enum, number or boolean field | a `<select>` with enum options / `valueAsNumber` / `checked` |
 | HZ034 | a state both handles and ignores an event | remove it from one of the two |
 | HZ035 | search schema is not a flat object of scalars with defaults | `z.object({ key: scalar.default(…) })` |
@@ -38,11 +38,14 @@ around the rule.
 | HZ043 | `site.offline` has params, no page, or per-request data | point it at a static page, or remove `offline` |
 | HZ044 | a feature file was loaded without the Hozu transform | run node with `--import @hozu/transform/register` (`npm start` does), or add `hozuTransform()` to Vite / Vitest |
 | HZ045 | `serve.ts` misses the widget bundle | add `widgets: await bundleWidgets(build)` |
-| HZ046 | an endpoint path is reserved, has params, or collides with a page, redirect or endpoint | use a static path such as `/api/…` (patch) |
+| HZ046 | an endpoint path is reserved, has params or collides; an error without a status; a form posting to it with another method or an undeclared field | a static path such as `/api/…` (patch); map every error in `failed` |
 | HZ047 | a `fn` body uses an imported name or `let` state (it is sent to the browser as source) | pass the value as input, or write it as a `const` helper in the module |
 | HZ048 | `seed` names a field the context lacks, has no machine or route, or two views on one page seed a machine | seed top-level context fields, on one view per page |
 | HZ049 | a `scope: 'user'` query is cached (`'static'`, `revalidate`, `swr`) | `freshness: 'request'` (patch), or `'live'` for push |
 | HZ050 | a `'live'` query has no tags | add the tags its writers invalidate, or use `'request'` |
+| HZ051 | `head.failed` misses a declared error of the head query, or maps another one | choose per error: a route (303), `403`, `404` or `410` (an intent decision: no patch) |
+| HZ052 | a route that no page renders | link to the endpoint with `ui.link(endpoint, input)` (patch), or add its `ui.page` |
+| HZ053 | (runtime) an endpoint answered `text/html`: a 500 | make it a `ui.page`; statuses and redirects go through `head.failed` |
 | HZ059 | data reached plain JavaScript: a plain helper, a global (`Boolean`, `Object.keys`, `String`…), `typeof`, a spread or `in` | make the helper a `part()`; for a global use an operator or a `fn()` |
 | HZ060 | a page route starts with a locale segment (`/de/…` under `site.locales`) | rename the route (patch); the locale prefix is added for you |
 | HZ062 | (warning) a GET endpoint declares `invalidates` | `method: 'POST'`, or keep it on purpose (e-mail links) |

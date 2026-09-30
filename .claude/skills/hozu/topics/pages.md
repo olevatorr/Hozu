@@ -21,9 +21,10 @@ export default project({
     ui.page(itemPage, {
       views: [Detail],
       head: {
-        query: getItem,                                    // its failure sets the status (NotFound → 404)
+        query: getItem,
         input: (params) => ({ id: params.id }),
         render: (item) => ({ title: item.title, description: item.title, type: 'article' }),
+        failed: { NotFound: 404 },                         // every declared error of the query (HZ051)
       },
       entries: { query: listItems, input: {}, params: (item) => ({ id: item.id }) },   // sitemap + static export
     }),
@@ -32,8 +33,21 @@ export default project({
 })
 ```
 - `head.render` fields: `title`, `description`, `type` (`'website' | 'article'`), `image` (a URL, `ui.asset(...)`
-  or `ui.og({ title })`), `published`, `noindex`. `head.redirects: { Unauthorized: login }` maps errors to routes.
+  or `ui.og({ title })`), `published`, `noindex`.
+- `head.failed` maps each declared error of the head query to a route without params (303) or to `403`, `404` or
+  `410`: `failed: { Unauthorized: login, Forbidden: 403 }`. It is exhaustive (HZ051); `Unexpected` is always 500.
+  It maps declared errors only: a head query that always fails is not a redirect.
+- **Which redirect** (one per purpose):
+
+| Need | Form |
+|---|---|
+| a static path moved | `http.redirects` (`hozu docs http`) |
+| this visitor may not see the page | `head.failed` |
+| a decision on success, e.g. `/` by session | a GET endpoint with `output: 'redirect'` (`hozu docs endpoints`) |
+| after a machine transition | `navigate` |
+
+- A route no page renders is HZ052; link to an endpoint with `ui.link(endpoint, input)` instead.
 - A detail view: `ui.view({ route: itemPage, render: ({ params }) => ui.query(getItem, { id: params.id }, { ready,
   failed: { NotFound: () => ui.p({}, ['Not found']), Unexpected: () => … } }) })`.
-- A page loads JS only when a machine-bound part renders on it (`hozu plan <route>`). A view with a machine listed
-  on several pages, in the same order, keeps its DOM and state across links when it never reads `params` / `search`.
+- A page loads JS only when a machine-bound part renders on it (`hozu plan <route>`). Every link loads a document;
+  state across pages lives in the URL (`seed`), on the server (queries) or in a widget's own storage.

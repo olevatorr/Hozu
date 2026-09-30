@@ -58,8 +58,7 @@ export interface HeadIR {
   image: ValueExpr
   published: ValueExpr
   noindex: boolean
-  redirects: Record<string, string>
-  failed?: Record<string, HeadFailureIR>
+  failed: Record<string, HeadFailureIR>
 }
 
 export type HeadFailureIR = { redirect: string } | { status: 403 | 404 | 410 }
@@ -100,7 +99,7 @@ export interface EndpointIR {
   path: string
   input: string
   output: string | null
-  mode?: EndpointMode
+  mode: EndpointMode
   raw?: true
   errors?: Record<string, string>
   failed?: Record<string, EndpointStatus>

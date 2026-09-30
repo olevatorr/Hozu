@@ -77,7 +77,7 @@ const site = project({
         query: me,
         input: () => ({}),
         render: (m) => ({ title: m.user, description: 'Account', noindex: true }),
-        redirects: { Unauthorized: signIn },
+        failed: { Unauthorized: signIn },
       },
     }),
   ],

@@ -1,4 +1,4 @@
-import type { EndpointDecl, MutationDecl, ProjectDecl, QueryDecl, Scope } from '@hozu/core'
+import type { EndpointDecl, Href, MutationDecl, ProjectDecl, QueryDecl, Redirect, Scope } from '@hozu/core'
 
 export const FAIL = Symbol.for('hozu.fail')
 const IMPLEMENTATION = Symbol.for('hozu.implementation')
@@ -34,13 +34,26 @@ export interface MutationContext<Session, E, Env = unknown, I = Record<string, u
 
 export type WebRequest = typeof globalThis extends { Request: { prototype: infer R } } ? R : unknown
 
-export interface EndpointContext<Session, Env = unknown> {
+export interface EndpointContext<
+  Session,
+  E = Record<never, never>,
+  Env = unknown,
+  I = Record<string, unknown>,
+> {
   request: WebRequest
   env: Env
   preview: boolean
   session: Session | null
   setSession(value: Session | null): void
+  fail: Fail<WithInvalid<E, I>>
+  redirect(to: Href): Redirect
+  bytes: Uint8Array | null
 }
+
+export const REDIRECT = Symbol.for('hozu.redirect')
+
+export const redirectOf = (value: unknown): unknown =>
+  typeof value === 'object' && value !== null ? ((value as Record<symbol, unknown>)[REDIRECT] ?? null) : null
 
 export interface Upload {
   name: string
@@ -59,6 +72,8 @@ export type Run = (
     setSession(value: unknown): void
     file(token: string): Promise<Upload | null>
     request?: unknown
+    redirect?(to: unknown): unknown
+    bytes?: Uint8Array | null
   },
 ) => unknown
 
@@ -78,9 +93,12 @@ export interface Implement<Session, Env = unknown> {
       ctx: MutationContext<Session, NoInfer<E>, Env, NoInfer<I>>,
     ) => Out<O, WithInvalid<NoInfer<E>, NoInfer<I>>>,
   ): Implementation
-  <I, O>(
-    decl: EndpointDecl<I, O>,
-    run: (input: I, ctx: EndpointContext<Session, Env>) => O | Promise<O>,
+  <I, O, E>(
+    decl: EndpointDecl<I, O, E>,
+    run: (
+      input: I,
+      ctx: EndpointContext<Session, NoInfer<E>, Env, NoInfer<I>>,
+    ) => Out<O, WithInvalid<NoInfer<E>, NoInfer<I>>>,
   ): Implementation
 }
 

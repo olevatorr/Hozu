@@ -434,6 +434,11 @@ export class FeatureScope {
   private valueOf(v: unknown, pointer: At): ValueExpr {
     if (guardOf(v)) return { test: this.guard(v, pointer) }
     const link = linkOf(v)
+    if (link && infoOf(link.route)?.kind === 'endpoint')
+      return {
+        endpoint: this.ref(link.route, ['endpoint'], pointer),
+        input: link.params === null ? null : this.value(link.params, pointer),
+      }
     if (link) {
       const route = this.project.routes.get(link.route as object)
       if (!route)

@@ -9,7 +9,7 @@ export type {
   ResolverSet,
   Upload,
 } from './resolvers.ts'
-export { resolvers } from './resolvers.ts'
+export { redirectOf, resolvers } from './resolvers.ts'
 export type {
   DataRuntime,
   DataRuntimeOptions,

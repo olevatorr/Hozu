@@ -31,5 +31,9 @@ export function contentSecurityPolicy(extra: CspSources, scriptHashes: string[])
   ].join('; ')
 }
 
-export const ERROR_HTML =
-  '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>Something went wrong</title></head><body><h1>Something went wrong</h1><p>Please try again later.</p></body></html>'
+const fallback = (title: string, text: string) =>
+  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><style>@view-transition { navigation: auto; }</style><title>${title}</title></head><body><h1>${title}</h1><p>${text}</p></body></html>`
+
+export const ERROR_HTML = fallback('Something went wrong', 'Please try again later.')
+
+export const NOT_FOUND_HTML = fallback('Not found', 'There is no page at this address.')

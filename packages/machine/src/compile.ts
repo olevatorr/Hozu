@@ -43,6 +43,11 @@ export function compileValue(v: ValueExpr, fns: Fns): Getter {
     const test = guard(v.test, fns)
     return (env) => test(env)
   }
+  if ('endpoint' in v) {
+    const id = v.endpoint
+    const input = compileValue(v.input ?? { literal: null }, fns)
+    return (env) => pathOf(env.routes?.[id] ?? '', null, input(env))
+  }
   const r = v as RefExpr
   const { path } = r
   if (r.ref === 'binding') {

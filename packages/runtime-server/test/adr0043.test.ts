@@ -45,7 +45,7 @@ const app = (extra: { http?: { basePath: `/${string}` }; locales?: string[] } = 
           query: me,
           input: () => ({}),
           render: () => ({ title: 'Notes' }),
-          redirects: { Unauthorized: login },
+          failed: { Unauthorized: login },
         },
       }),
       ui.page(login, { views: [Login], head: { render: () => ({ title: 'Sign in' }) } }),
@@ -152,9 +152,42 @@ describe('ADR 0043 B (sessions)', () => {
 })
 
 describe('ADR 0043 D (pages)', () => {
-  it.todo('ADR 0043 D: a declared head error maps to 403 through head.failed')
+  it('ADR 0043 D: a declared head error maps to 403 through head.failed', async () => {
+    const admin = route({ path: '/admin', params: null, search: null })
+    const role = query({
+      input: z.object({}),
+      output: z.object({}),
+      errors: { Forbidden: z.object({}) },
+      scope: 'user',
+      freshness: 'request',
+    })
+    const Admin = ui.view({ render: () => ui.main({}, ['Admin']) })
+    const p = project({
+      schema: zodAdapter,
+      session: Session,
+      routes: { admin },
+      pages: [
+        ui.page(admin, {
+          views: [Admin],
+          head: {
+            query: role,
+            input: () => ({}),
+            render: () => ({ title: 'Admin' }),
+            failed: { Forbidden: 403 },
+          },
+        }),
+      ],
+      features: [feature({ id: 'admin', intent: { summary: 'role' }, declarations: [{ role, Admin }] })],
+    })
+    const handler = createHandler({
+      build: buildProject(p, { sources: false }),
+      session: () => ({ user: 'ada' }),
+      resolvers: resolvers(p, (implement) => [implement(role, (_, { fail }) => fail('Forbidden', {}))]),
+    })
+    expect((await handler.fetch(new Request(`${origin}/admin`))).status).toBe(403)
+  })
 
-  it.fails('ADR 0043 D: a head redirect Location carries basePath and the page locale', async () => {
+  it('ADR 0043 D: a head redirect Location carries basePath and the page locale', async () => {
     const { get } = setup({ http: { basePath: '/app' }, locales: ['en', 'de'] })
     const res = await get('/app/de/notes')
     expect([res.status, res.headers.get('location')]).toEqual([303, '/app/de/login'])

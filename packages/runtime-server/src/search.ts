@@ -37,3 +37,14 @@ export function parseSearch(schema: JsonSchema | null, query: URLSearchParams): 
   }
   return out
 }
+
+export function queryInput(schema: JsonSchema | null, query: URLSearchParams): Json {
+  const props = obj(schema?.properties) ?? {}
+  const out: Record<string, Json> = {}
+  for (const [key, raw] of query) {
+    const s = obj(props[key])
+    const parsed = s ? coerce(s, raw) : undefined
+    out[key] = parsed === undefined ? raw : parsed
+  }
+  return out
+}

@@ -11,12 +11,14 @@ export interface RefSite {
 }
 
 export const hasRefs = (value: ValueExpr): boolean =>
-  'fn' in value || 'object' in value || 'test' in value || 'link' in value
+  'fn' in value || 'object' in value || 'test' in value || 'link' in value || 'endpoint' in value
 
 export const guardHasRefs = (guard: GuardExpr): boolean =>
   'left' in guard ? hasRefs(guard.left) || hasRefs(guard.right) : true
 
-export function valueRefs(value: ValueExpr, pointer: At, out: (ref: string, pointer: At) => void) {
+type Out = (ref: string, pointer: At, kind?: RefKind) => void
+
+export function valueRefs(value: ValueExpr, pointer: At, out: Out) {
   if ('fn' in value) {
     out(value.fn, at(pointer, 'fn'))
     valueRefs(value.arg, at(pointer, 'arg'), out)
@@ -26,10 +28,13 @@ export function valueRefs(value: ValueExpr, pointer: At, out: (ref: string, poin
   else if ('link' in value) {
     valueRefs(value.params, at(pointer, 'params'), out)
     valueRefs(value.search, at(pointer, 'search'), out)
+  } else if ('endpoint' in value) {
+    out(value.endpoint, at(pointer, 'endpoint'), 'endpoint')
+    if (value.input) valueRefs(value.input, at(pointer, 'input'), out)
   }
 }
 
-export function guardRefs(guard: GuardExpr, pointer: At, out: (ref: string, pointer: At) => void) {
+export function guardRefs(guard: GuardExpr, pointer: At, out: Out) {
   switch (guard.op) {
     case 'and':
     case 'or':
@@ -53,7 +58,7 @@ export function refSites(ir: ProjectIR): RefSite[] {
   for (const f of Object.values(ir.features)) {
     const add = (ref: string, pointer: At, kind: RefKind, key = false) =>
       sites.push({ feature: f, pointer, ref, kind, key })
-    const fnRef = (ref: string, pointer: At) => add(ref, pointer, 'fn')
+    const fnRef = (ref: string, pointer: At, kind: RefKind = 'fn') => add(ref, pointer, kind)
     for (const [sym, q] of Object.entries(f.queries))
       q.tags.forEach((t, i) => {
         const p = featurePointer(f.id, 'queries', sym, 'tags', i)

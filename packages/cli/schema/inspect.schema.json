@@ -1596,7 +1596,8 @@
         "method",
         "path",
         "input",
-        "output"
+        "output",
+        "mode"
       ],
       "additionalProperties": false
     },

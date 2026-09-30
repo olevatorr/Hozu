@@ -20,6 +20,7 @@ export default project({
       head: {
         query: getTask,
         input: (params) => ({ id: params.id }),
+        failed: { NotFound: 404 },
         render: (t) => ({ title: t.title, description: t.title, type: 'article' }),
       },
       entries: { query: listTasks, input: {}, params: (t) => ({ id: t.id }) },

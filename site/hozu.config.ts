@@ -41,6 +41,7 @@ export default project({
       head: {
         query: getChapter,
         input: (params) => ({ slug: params.slug }),
+        failed: { NotFound: 404 },
         render: (article) => ({ title: article.title, description: article.description, image: icon }),
       },
       entries: { query: listChapters, input: {}, params: (item) => ({ slug: item.slug }) },
@@ -62,6 +63,7 @@ export default project({
       head: {
         query: getDoc,
         input: (params) => ({ slug: params.slug }),
+        failed: { NotFound: 404 },
         render: (article) => ({ title: article.title, description: article.description, image: icon }),
       },
       entries: { query: listDocs, input: {}, params: (item) => ({ slug: item.slug }) },
@@ -83,6 +85,7 @@ export default project({
       head: {
         query: getTrial,
         input: (params) => ({ slug: params.slug }),
+        failed: { NotFound: 404 },
         render: (article) => ({
           title: article.title,
           description: article.description,

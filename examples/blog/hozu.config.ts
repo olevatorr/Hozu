@@ -26,6 +26,7 @@ export default project({
       head: {
         query: getPost,
         input: (params) => ({ slug: params.slug }),
+        failed: { NotFound: 404 },
         render: (article) => ({
           title: article.title,
           description: article.excerpt,

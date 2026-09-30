@@ -22,12 +22,20 @@ export interface PageDef {
     query?: QueryDecl
     input?: (params: any, locale: any) => unknown
     render: (data: any, params: any, locale: any) => HeadFields
-    redirects?: Record<string, RouteDecl>
+    failed?: Record<string, RouteDecl | HeadStatus>
   }
   entries?: { query: QueryDecl; input: unknown; params: (item: any) => unknown }
 }
 
 export interface PageDecl extends Decl<'page'> {}
+
+export type HeadStatus = 403 | 404 | 410
+
+export type HeadFailed<E> = [E] extends [never]
+  ? { failed?: never }
+  : [keyof E] extends [never]
+    ? { failed?: never }
+    : { failed: { [K in keyof E]: RouteDecl<null, any> | HeadStatus } }
 
 export const page = <P, I = never, O = never, E = never, EI = never, EO = never, EE = never>(
   route: RouteDecl<P>,
@@ -38,8 +46,7 @@ export const page = <P, I = never, O = never, E = never, EI = never, EO = never,
       query?: QueryDecl<I, O, E, any>
       input?: (params: Ref<P>, locale: Ref<string>) => Val<I>
       render: (data: Ref<O>, params: Ref<P>, locale: Ref<string>) => HeadFields
-      redirects?: { [K in keyof E]?: RouteDecl<null> }
-    }
+    } & HeadFailed<E>
     entries?: { query: QueryDecl<EI, EO[], EE, any>; input: Val<EI>; params: (item: Ref<EO>) => Val<P> }
   },
 ): PageDecl => brand({}, 'page', { route, ...config } as PageDef)

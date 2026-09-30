@@ -71,6 +71,7 @@ const exportKeys: Partial<Record<DeclKind, keyof FeatureParts['exports']>> = {
   tag: 'tags',
   fn: 'fns',
   view: 'views',
+  endpoint: 'endpoints',
 }
 
 function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
@@ -139,7 +140,7 @@ function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
         'HZ014',
         id,
         join(base, 'exports', i),
-        'Only events, queries, mutations, tags, fns and views can be exported',
+        'Only events, queries, mutations, tags, fns, views and endpoints can be exported',
         `Got ${kind ?? typeof decl}.`,
       )
   }
@@ -275,6 +276,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       continue
     }
     scope.routes.set(route, id)
+    scope.bindings.refs.set(route, `#route:${id}`)
     const def = defOf<RouteDef>(route)
     routes[id] = {
       path: def.path,

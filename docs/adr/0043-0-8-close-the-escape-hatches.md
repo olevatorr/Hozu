@@ -920,3 +920,20 @@ reads and writes v1):
 **Not in wave 1** (the task limited it to the items above): the diagnostic registry entries HZ049–HZ064
 (`core/src/ir/codes.ts`, `diagnostic.ts`) and the builder signatures in `core/src/builders/*`. They are still to be
 done, before or with the first rule that emits them.
+
+**Wave 2b additions (D, F; W2b):**
+- `pageTables(ir): PageTables` (`@hozu/core/ir`, `core/src/ir/routes.ts`) is the data of the lock's `pages` section; G
+  copies it into `PagesLockV2` (same shape, keys sorted):
+  - `head`: page id → error name → `HeadFailureIR` (only pages with a non-empty `head.failed`);
+  - `endpoints`: `feature.endpoint` → `{ mode: EndpointMode, failed: name → EndpointStatus }` (every endpoint);
+  - `redirects`: `http.redirects` `from` → `{ to, permanent }`, where `to` is the target route's path pattern for a
+    `ui.link` target (`/posts/:slug`) and the URL for an external one.
+- `HeadIR.redirects` is removed; `HeadIR.failed` is required (`{}` without a head query). `EndpointIR.mode` is
+  required. `input: 'raw'` sets `raw: true` and `input` to the ref of the empty schema `{}`.
+- `routeTable(ir, l)` also maps `feature.endpoint` → `basePath + path` (no locale prefix), so `{ endpoint, input }`
+  renders as `pathOf(routes[ref], null, input)` in the generated renderer, `compileValue` and the client.
+- `bindings.refs` maps every route declaration to `#route:<id>` (the handler resolves `redirect(ui.link(…))`).
+- `EndpointContext` gains `fail`, `redirect(href)` and `bytes` (`Uint8Array` for `input: 'raw'`, otherwise null).
+- Step 18 of the Hozu reference, rewritten under (c) on a scratch copy of steps 00–17 migrated to the current API
+  (`site.locales`, `ui.messages`, a `ui.alternate` link as the switch; no cookie, session field or rewrite): DE1 and
+  DE2 pass (2 / 2), and the full step-18 acceptance passes 66 / 66. G3 is confirmed by this run.

@@ -5,7 +5,7 @@ import { verifyContracts } from './contracts/verify.ts'
 import { classNames } from './rules/classes.ts'
 import { getEndpointWrites, invalidations, queryFreshness, sessions } from './rules/data.ts'
 import { domFields } from './rules/dom.ts'
-import { endpoints } from './rules/endpoints.ts'
+import { endpointLinks, endpoints } from './rules/endpoints.ts'
 import { declaredErrors } from './rules/errors.ts'
 import { conflictingIgnores, unhandledEvents, viewEvents } from './rules/events.ts'
 import { progressiveForms } from './rules/forms.ts'
@@ -15,6 +15,7 @@ import { i18n } from './rules/i18n.ts'
 import { imageDimensions } from './rules/images.ts'
 import { internalLinks } from './rules/links.ts'
 import { literals } from './rules/literals.ts'
+import { headFailures, unservedRoutes } from './rules/pages.ts'
 import { paths } from './rules/paths.ts'
 import { offlinePage } from './rules/pwa.ts'
 import { featureLinks, references, routes } from './rules/refs.ts'
@@ -75,6 +76,9 @@ const rules = [
   httpRules,
   i18n,
   offlinePage,
+  headFailures,
+  unservedRoutes,
+  endpointLinks,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>

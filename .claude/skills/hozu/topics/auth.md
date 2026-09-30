@@ -11,5 +11,6 @@
   shared store explicitly (`createHandler({ session })`).
 - `setSession` also applies in a failing mutation (expiry: `setSession(null)` then `fail('Expired', …)`).
 - After a sign-in or sign-out the page's queries are re-read with the new session; nothing from the old one stays.
-- Guard pages: `head: { query: me, redirects: { Unauthorized: login }, … }`.
+- Guard pages: `head: { query: me, …, failed: { Unauthorized: login } }`; a role check answers 403 with
+  `failed: { Unauthorized: login, Forbidden: 403 }` (`hozu docs pages`).
 - Calling another API with a token: keep the token in the session (server side) and read it in the resolver.

@@ -129,7 +129,7 @@ export function routeParams(ctx: Ctx) {
   }
 }
 
-const scalar = (s: JsonSchema): boolean => {
+export const scalar = (s: JsonSchema): boolean => {
   if (Array.isArray(s.enum) || 'const' in s) return true
   for (const k of ['anyOf', 'oneOf'] as const)
     if (Array.isArray(s[k])) return (s[k] as JsonSchema[]).every((v) => v.type === 'null' || scalar(v))

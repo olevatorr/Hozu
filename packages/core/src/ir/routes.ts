@@ -1,4 +1,12 @@
-import type { Json, JsonSchema, ProjectIR } from './types.ts'
+import type {
+  EndpointMode,
+  EndpointStatus,
+  HeadFailureIR,
+  Json,
+  JsonSchema,
+  ProjectIR,
+  ValueExpr,
+} from './types.ts'
 
 const obj = (v: Json | undefined): JsonSchema | null =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as JsonSchema) : null
@@ -22,6 +30,9 @@ export function routeTable(ir: ProjectIR, locale: string | null = null): Record<
     const path = publicPath(ir, r.path, locale)
     out[id] = q ? `${path}?${q}` : path
   }
+  for (const f of Object.values(ir.features ?? {}))
+    for (const [sym, e] of Object.entries(f.endpoints ?? {}))
+      out[`${f.id}.${sym}`] = `${ir.http.basePath}${e.path}`
   return out
 }
 
@@ -97,5 +108,40 @@ export function routeParams(keys: RouteKey[], match: RegExpExecArray): Record<st
     )
   } catch {
     return null
+  }
+}
+
+export interface PageTables {
+  head: Record<string, Record<string, HeadFailureIR>>
+  endpoints: Record<string, { mode: EndpointMode; failed: Record<string, EndpointStatus> }>
+  redirects: Record<string, { to: string; permanent: boolean }>
+}
+
+const targetOf = (ir: ProjectIR, to: ValueExpr): string =>
+  'link' in to ? (ir.routes[to.link]?.path ?? to.link) : 'literal' in to ? String(to.literal) : '?'
+
+export function pageTables(ir: ProjectIR): PageTables {
+  const sorted = <T>(entries: [string, T][]) =>
+    Object.fromEntries(entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+  return {
+    head: sorted(
+      Object.entries(ir.pages)
+        .filter(([, p]) => Object.keys(p.head.failed).length)
+        .map(([id, p]) => [id, sorted(Object.entries(p.head.failed))]),
+    ),
+    endpoints: sorted(
+      Object.values(ir.features).flatMap((f) =>
+        Object.entries(f.endpoints).map(([sym, e]): [string, PageTables['endpoints'][string]] => [
+          `${f.id}.${sym}`,
+          { mode: e.mode, failed: sorted(Object.entries(e.failed ?? {})) },
+        ]),
+      ),
+    ),
+    redirects: sorted(
+      ir.http.redirects.map((r): [string, PageTables['redirects'][string]] => [
+        r.from,
+        { to: targetOf(ir, r.to), permanent: r.permanent },
+      ]),
+    ),
   }
 }

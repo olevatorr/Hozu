@@ -1,5 +1,7 @@
-import { event, feature, fn, machine, on, part, project, route, ui } from '@hozu/core'
+import { endpoint, event, feature, fn, machine, on, part, project, route, ui } from '@hozu/core'
 import { buildProject, codes, type Diagnostic, type DiagnosticCode } from '@hozu/core/ir'
+import { resolvers } from '@hozu/data'
+import { createHandler } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
@@ -74,6 +76,29 @@ const buildWith = (fns: Record<string, unknown>) =>
     { sources: false },
   ).diagnostics
 
+const report = endpoint({ method: 'GET', path: '/api/report', input: z.object({}), output: 'response' })
+const served = async (body: string, type: string) => {
+  const p = project({
+    schema: zodAdapter,
+    routes: { home },
+    pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'Home' }) } })],
+    features: [feature({ id: 'api', intent: { summary: 'report' }, declarations: [{ report, Home }] })],
+  })
+  const found: Diagnostic[] = []
+  const handler = createHandler({
+    build: buildProject(p, { sources: false }),
+    resolvers: resolvers(p, (implement) => [
+      implement(report, () => new Response(body, { headers: { 'content-type': type } })),
+    ]),
+    onError: (error) => {
+      const d = (error as { diagnostic?: Diagnostic }).diagnostic
+      if (d) found.push(d)
+    },
+  })
+  await handler.fetch(new Request('http://x.test/api/report'))
+  return found
+}
+
 const catalog: SourceMistake[] = [
   {
     name: 'a fn body reads mutable module state',
@@ -109,6 +134,13 @@ const catalog: SourceMistake[] = [
         rows,
         Labelled: labelled(part((row: z.infer<typeof Row>) => (row.done ? 'Done' : 'Open'))),
       }),
+  },
+  {
+    name: 'an endpoint answers a hand-written HTML page',
+    code: 'HZ053',
+    stage: 'runtime',
+    mistake: () => served('<h1>Admin</h1>', 'text/html; charset=utf-8'),
+    fixed: () => served('id,title\n', 'text/csv'),
   },
 ]
 

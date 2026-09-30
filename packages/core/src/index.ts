@@ -3,7 +3,13 @@ export type { ContractDecl, EffectCall, Step } from './builders/contract.ts'
 export { contract } from './builders/contract.ts'
 export type { EffectDecl, Freshness, MutationDecl, QueryDecl, Scope } from './builders/effects.ts'
 export { mutation, query } from './builders/effects.ts'
-export type { EndpointDecl, EndpointMethod } from './builders/endpoint.ts'
+export type {
+  EndpointDecl,
+  EndpointMethod,
+  EndpointOutput,
+  EndpointStatus,
+  Redirect,
+} from './builders/endpoint.ts'
 export { endpoint } from './builders/endpoint.ts'
 export type { EventDecl } from './builders/event.ts'
 export { event } from './builders/event.ts'
@@ -30,7 +36,7 @@ export type {
 } from './builders/machine.ts'
 export { invoke, machine, on } from './builders/machine.ts'
 export type { Condition } from './builders/op.ts'
-export type { HeadFields, PageDecl } from './builders/page.ts'
+export type { HeadFields, HeadStatus, PageDecl } from './builders/page.ts'
 export type { PartDecl } from './builders/part.ts'
 export { part } from './builders/part.ts'
 export type { RouteDecl } from './builders/route.ts'

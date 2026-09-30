@@ -6,10 +6,12 @@ import type { FnDef } from '../builders/fn.ts'
 import type { MessagesDef } from '../builders/i18n.ts'
 import { type TagDef, tagUseOf } from '../builders/tag.ts'
 import type { WidgetDef } from '../builders/widget.ts'
-import { sha256 } from '../canonical/hash.ts'
+import { hashJson, sha256 } from '../canonical/hash.ts'
 import { htmlTags } from '../ir/dom-data.ts'
 import type {
   EndpointIR,
+  EndpointMode,
+  EndpointStatus,
   ExportsIR,
   FeatureIR,
   Freshness,
@@ -282,25 +284,58 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     }),
     machine,
     widgets: mapRecord(config.widgets, (sym, w) => buildWidget(scope, sym, defOf<WidgetDef>(w))),
-    endpoints: mapRecord(config.endpoints, (sym, e): EndpointIR => {
-      const d = defOf<EndpointDef>(e)
-      const p = scope.at('endpoints', sym)
-      bindInput(scope, `${id}.${sym}`, d.input)
-      if (d.output !== 'response') scope.bind(`${id}.${sym}#output`, d.output)
-      const invalidates = d.invalidates ? tagExprs(scope, d.invalidates, at(p, 'invalidates')) : []
-      return {
-        method: d.method,
-        path: String(d.path),
-        input: scope.schema(d.input, at(p, 'input')),
-        output: d.output === 'response' ? null : scope.schema(d.output, at(p, 'output')),
-        ...(invalidates.length ? { invalidates } : {}),
-      }
-    }),
+    endpoints: mapRecord(config.endpoints, (sym, e) => buildEndpoint(scope, sym, defOf<EndpointDef>(e))),
     views: mapRecord(config.views, (sym, v) => buildView(scope, sym, v)),
     contracts: mapRecord(config.contracts, (sym, c) => buildContract(scope, sym, c)),
     messages: config.messages ? buildMessages(defOf<MessagesDef>(config.messages)) : null,
   }
   return ir
+}
+
+const modes: Record<string, EndpointMode> = { redirect: 'redirect', response: 'response' }
+const statuses = new Set([400, 401, 403, 404, 409, 410, 422, 429])
+
+function buildEndpoint(scope: FeatureScope, sym: string, d: EndpointDef): EndpointIR {
+  const ref = `${scope.id}.${sym}`
+  const p = scope.at('endpoints', sym)
+  const raw = d.input === 'raw'
+  if (!raw) bindInput(scope, ref, d.input as Schema)
+  const mode = typeof d.output === 'string' ? (modes[d.output] ?? 'json') : 'json'
+  if (typeof d.output === 'string' && !modes[d.output])
+    scope.report(
+      'HZ014',
+      at(p, 'output'),
+      `Invalid endpoint output ${JSON.stringify(d.output)}`,
+      "Use a schema (JSON), 'redirect' or 'response'.",
+    )
+  if (mode === 'json' && typeof d.output !== 'string') scope.bind(`${ref}#output`, d.output)
+  const errorRefs = errors(scope, d.errors ?? {}, at(p, 'errors'), true)
+  for (const [name, schema] of Object.entries(d.errors ?? {})) scope.bind(`${ref}#error:${name}`, schema)
+  const failed: Record<string, EndpointStatus> = {}
+  for (const [name, status] of Object.entries(d.failed ?? {})) {
+    if (statuses.has(status)) failed[name] = status
+    else
+      scope.report(
+        'HZ014',
+        at(p, 'failed', name),
+        `Endpoint status ${JSON.stringify(status)} for ${name} is not allowed`,
+        'A declared endpoint error answers 400, 401, 403, 404, 409, 410, 422 or 429.',
+      )
+  }
+  const invalidates = d.invalidates ? tagExprs(scope, d.invalidates, at(p, 'invalidates')) : []
+  const empty = `s_${hashJson({}).slice(0, 16)}`
+  if (raw) scope.schemas[empty] = {}
+  return {
+    method: d.method,
+    path: String(d.path),
+    input: raw ? empty : scope.schema(d.input, at(p, 'input')),
+    output: mode === 'json' ? scope.schema(d.output, at(p, 'output')) : null,
+    mode,
+    ...(raw ? { raw: true as const } : {}),
+    ...(Object.keys(errorRefs).length ? { errors: errorRefs } : {}),
+    ...(Object.keys(failed).length || d.failed ? { failed } : {}),
+    ...(invalidates.length ? { invalidates } : {}),
+  }
 }
 
 const buildMessages = (d: MessagesDef): MessagesIR => ({

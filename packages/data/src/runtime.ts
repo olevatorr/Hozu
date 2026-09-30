@@ -11,7 +11,16 @@ import {
   type TagExprIR,
 } from '@hozu/core/ir'
 import { compileValue, type Getter } from '@hozu/machine'
-import { fail, failureOf, implementationOf, type ResolverSet, type Run, resolverSetOf } from './resolvers.ts'
+import {
+  fail,
+  failureOf,
+  implementationOf,
+  REDIRECT,
+  type ResolverSet,
+  type Run,
+  redirectOf,
+  resolverSetOf,
+} from './resolvers.ts'
 import type { MutationResult, Result, Stats } from './types.ts'
 
 export class DataRuntimeError extends Error {
@@ -69,7 +78,7 @@ export interface RequestData {
   readonly readSession: boolean
   readonly written: { value: unknown } | null
   run(ref: string, input: Json, files?: Map<string, FileLike>): Promise<Result | MutationResult>
-  endpoint(ref: string, input: Json, ctx: { request: unknown }): Promise<EndpointResult>
+  endpoint(ref: string, input: Json, ctx: { request: unknown; bytes?: Uint8Array }): Promise<EndpointResult>
 }
 
 export interface DataRuntime {
@@ -83,8 +92,14 @@ export interface DataRuntime {
 }
 
 export type EndpointResult =
-  | { ok: true; value: unknown; invalidated: string[] }
-  | { ok: false; status: 400 | 404 | 500; message: string; fields: Record<string, string | null> | null }
+  | { ok: true; value: unknown; invalidated: string[]; redirect?: unknown }
+  | {
+      ok: false
+      status: number
+      error: string
+      message: string
+      fields: Record<string, string | null> | null
+    }
 
 const isResponse = (value: unknown): boolean =>
   typeof value === 'object' &&
@@ -163,7 +178,14 @@ export function createDataRuntime({
     list.map((t) => tagKey(t, t.param ? compileValue(t.param, bindings.fns) : null))
   const endpoints = new Map<
     string,
-    { run: Run; output: boolean; fields: string[]; tags: ((input: Json) => string)[] }
+    {
+      run: Run
+      mode: 'json' | 'redirect' | 'response'
+      raw: boolean
+      failed: Record<string, number>
+      fields: string[]
+      tags: ((input: Json) => string)[]
+    }
   >()
   for (const feature of Object.values(ir.features)) {
     const register = (
@@ -212,7 +234,9 @@ export function createDataRuntime({
       else
         endpoints.set(ref, {
           run,
-          output: e.output !== null,
+          mode: e.mode,
+          raw: e.raw === true,
+          failed: e.failed ?? {},
           fields: Object.keys((feature.schemas[e.input]?.properties as object | undefined) ?? {}),
           tags: tagsOf(e.invalidates ?? []),
         })
@@ -443,19 +467,30 @@ export function createDataRuntime({
       return { ...result, invalidated: tags, ...extra }
     }
 
-    async endpoint(ref: string, raw: Json, { request }: { request: unknown }): Promise<EndpointResult> {
+    async endpoint(
+      ref: string,
+      raw: Json,
+      { request, bytes }: { request: unknown; bytes?: Uint8Array },
+    ): Promise<EndpointResult> {
       const e = endpoints.get(ref)
-      if (!e) return { ok: false, status: 404, message: `Unknown endpoint ${ref}`, fields: null }
-      const parsed = parse(ref, raw)
+      if (!e)
+        return { ok: false, status: 404, error: 'NotFound', message: `Unknown endpoint ${ref}`, fields: null }
+      const parsed = e.raw ? { ok: true as const, value: null } : parse(ref, raw)
       if (!parsed.ok) {
         const bad = invalid(e.fields, parsed.issues) as unknown as {
           data: { message: string; fields: Record<string, string | null> }
         }
-        return { ok: false, status: 400, message: bad.data.message, fields: bad.data.fields }
+        return {
+          ok: false,
+          status: 400,
+          error: 'Invalid',
+          message: bad.data.message,
+          fields: bad.data.fields,
+        }
       }
       const report = (error: unknown): EndpointResult => {
         onError(error, { effect: ref })
-        return { ok: false, status: 500, message: 'Internal error', fields: null }
+        return { ok: false, status: 500, error: 'Unexpected', message: 'Internal error', fields: null }
       }
       let out: unknown
       try {
@@ -468,18 +503,45 @@ export function createDataRuntime({
             setSession: this.setSession,
             file: async () => null,
             request,
+            redirect: (to: unknown) => Object.freeze({ [REDIRECT]: to }),
+            bytes: e.raw ? (bytes ?? new Uint8Array()) : null,
           }) as never,
         )
       } catch (error) {
         return report(error)
       }
       this.#memo = null
-      const done = (value: unknown, ok: boolean): EndpointResult => {
+      const failure = failureOf(out)
+      if (failure) {
+        const { error, data } = failure
+        const status = error === 'Invalid' ? 400 : e.failed[error]
+        const wrong = error === 'Invalid' ? null : check(`${ref}#error:${error}`, data)
+        if (!status || wrong)
+          return report(
+            new Error(
+              `${ref} failed with ${error}, ${status ? `whose data is invalid: ${wrong!.join('; ')}` : 'which it does not declare in failed'}`,
+            ),
+          )
+        const d = (data ?? {}) as { message?: unknown; fields?: unknown }
+        return {
+          ok: false,
+          status,
+          error,
+          message: typeof d.message === 'string' ? d.message : error,
+          fields:
+            d.fields && typeof d.fields === 'object' ? (d.fields as Record<string, string | null>) : null,
+        }
+      }
+      const done = (value: unknown, ok: boolean, redirect?: unknown): EndpointResult => {
         const tags = ok ? [...new Set(e.tags.map((t) => t(parsed.value)))] : []
         invalidate(tags)
-        return { ok: true, value, invalidated: tags }
+        return { ok: true, value, invalidated: tags, ...(redirect ? { redirect } : {}) }
       }
-      if (!e.output)
+      if (e.mode === 'redirect') {
+        const to = redirectOf(out)
+        return to ? done(null, true, to) : report(new Error(`${ref} must return redirect(ui.link(…))`))
+      }
+      if (e.mode === 'response')
         return isResponse(out)
           ? done(out, (out as { status: number }).status < 400)
           : report(new Error(`${ref} must return a Response`))
