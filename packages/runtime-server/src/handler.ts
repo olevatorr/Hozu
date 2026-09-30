@@ -228,7 +228,8 @@ export function createHandler({
   const hasSession = build.ir.session !== null
   const privately = (read: boolean): Record<string, string> =>
     read ? { 'cache-control': 'private, no-cache', ...(hasSession ? { vary: 'Cookie' } : {}) } : {}
-  const internal = (path: string | null) => (path?.startsWith('/') && !path.startsWith('//') ? path : null)
+  const internal = (path: string | null) =>
+    path && /^\/(?![/\\])/.test(path) && ![...path].some((c) => c < ' ') ? path : null
   const enterPreview = async (url: URL) => {
     const given = new TextEncoder().encode(url.searchParams.get('secret') ?? '')
     const want = new TextEncoder().encode(preview?.secret ?? '')
@@ -267,34 +268,11 @@ export function createHandler({
   const locales = ir.site?.locales ?? null
   const tables = new Map((locales ?? []).map((l) => [l, routeTable(ir, l)]))
   const tableOf = (locale: string | null) => (locale ? (tables.get(locale) ?? table) : table)
-  const split = (path: string): { locale: string | null; rest: string } | null => {
+  const split = (path: string): { locale: string | null; rest: string } => {
     if (!locales) return { locale: null, rest: path }
     const segment = path.split('/')[1] ?? ''
-    if (!locales.includes(segment)) return null
+    if (!locales.includes(segment)) return { locale: ir.site!.lang, rest: path }
     return { locale: segment, rest: path.slice(segment.length + 1) || '/' }
-  }
-  const negotiate = (request: Request, url: URL, path: string) => {
-    const wanted = (request.headers.get('accept-language') ?? '')
-      .split(',')
-      .map((part) => {
-        const [tag = '', q] = part.trim().split(';q=')
-        return { tag: tag.toLowerCase(), q: q === undefined ? 1 : Number(q) }
-      })
-      .filter((w) => w.tag && w.q > 0)
-      .sort((a, b) => b.q - a.q)
-    const list = locales ?? []
-    const best =
-      wanted
-        .map(
-          (w) =>
-            list.find((l) => l.toLowerCase() === w.tag) ??
-            list.find((l) => l.toLowerCase().split('-')[0] === w.tag.split('-')[0]),
-        )
-        .find(Boolean) ?? ir.site!.lang
-    return new Response(null, {
-      status: 307,
-      headers: { location: publicPath(ir, path, best) + url.search, vary: 'Accept-Language' },
-    })
   }
   const queries = Object.values(ir.features).flatMap((f) => Object.keys(f.queries).map((q) => `${f.id}.${q}`))
   const perRequest = new Set(
@@ -525,8 +503,8 @@ export function createHandler({
   const formPost = async (request: Request, url: URL, path: string) => {
     const id = url.searchParams.get(FORM_FIELD)
     const where = split(path)
-    const found = where ? match(where.rest) : null
-    const locale = where?.locale ?? null
+    const found = match(where.rest)
+    const locale = where.locale
     const form = id ? formNode(build, id) : null
     if (!found || !form) return notAllowed()
     const query = new URLSearchParams(url.searchParams)
@@ -726,9 +704,7 @@ export function createHandler({
       return text('application/xml', sitemapXml(build, await pageEntries(build, data)), head)
     const moved = redirectFor(path, url.search)
     if (moved) return moved
-    if (locales && path === '/') return negotiate(request, url, '/')
     const where = split(path)
-    if (!where) return match(path) ? negotiate(request, url, path) : missing(request)
     const found = match(where.rest)
     if (!found) return missing(request, where.locale)
     const canonical = publicPath(ir, where.rest, where.locale)

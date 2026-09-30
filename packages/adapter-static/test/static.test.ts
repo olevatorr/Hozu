@@ -54,10 +54,10 @@ describe('static export with params', () => {
       outDir,
     })
     expect(result.written.map((f) => f.slice(outDir.length))).toEqual([
-      '/en/offline/index.html',
+      '/offline/index.html',
       '/zh-TW/offline/index.html',
-      '/en/posts/hello-hozu/index.html',
-      '/en/posts/islands-explained/index.html',
+      '/posts/hello-hozu/index.html',
+      '/posts/islands-explained/index.html',
       '/zh-TW/posts/hello-hozu/index.html',
       '/zh-TW/posts/islands-explained/index.html',
       '/robots.txt',

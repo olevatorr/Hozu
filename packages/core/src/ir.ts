@@ -26,7 +26,16 @@ export { FORM_FIELD, formRunnable } from './ir/forms.ts'
 export { type Operator, operators, unimplementedOperators } from './ir/operators.ts'
 export { anyGuardRef, anyRef, eachGuardRef, eachRef, type RefExpr } from './ir/refs.ts'
 export type { RouteKey, RouteModifier } from './ir/routes.ts'
-export { localeOf, publicPath, routeParams, routePattern, routeTable, searchDefaults } from './ir/routes.ts'
+export {
+  localeOf,
+  localePath,
+  prefixOf,
+  publicPath,
+  routeParams,
+  routePattern,
+  routeTable,
+  searchDefaults,
+} from './ir/routes.ts'
 export type * from './ir/types.ts'
 export { usedWidgets, widgetsIn } from './ir/widgets.ts'
 export type { Parse } from './schema/check.ts'

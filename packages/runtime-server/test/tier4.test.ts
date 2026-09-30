@@ -12,10 +12,10 @@ const app = () =>
 describe('preview mode (ADR 0021)', () => {
   it('needs the secret and an internal path', async () => {
     const a = app()
-    expect((await a.get(`/_hozu/preview?secret=wrong&path=/en`)).status).toBe(401)
+    expect((await a.get(`/_hozu/preview?secret=wrong&path=/`)).status).toBe(401)
     expect((await a.get(`/_hozu/preview?secret=${secret}&path=//evil.example`)).status).toBe(401)
-    const ok = await a.get(`/_hozu/preview?secret=${secret}&path=/en`)
-    expect([ok.status, ok.headers.get('location')]).toEqual([307, '/en'])
+    const ok = await a.get(`/_hozu/preview?secret=${secret}&path=/`)
+    expect([ok.status, ok.headers.get('location')]).toEqual([307, '/'])
     expect(ok.headers.get('set-cookie')).toMatch(
       /^hozu_preview=.+; Path=\/; HttpOnly; SameSite=Lax; Secure; Max-Age=3600$/,
     )
@@ -23,21 +23,21 @@ describe('preview mode (ADR 0021)', () => {
 
   it('shows drafts only in preview, uncached and noindex, and never leaks them to public pages', async () => {
     const a = app()
-    expect((await a.get('/en')).text).not.toContain('What comes next')
-    expect((await a.get('/en/posts/hozu-roadmap')).status).toBe(404)
-    const cookie = (await a.get(`/_hozu/preview?secret=${secret}&path=/en`)).headers
+    expect((await a.get('/')).text).not.toContain('What comes next')
+    expect((await a.get('/posts/hozu-roadmap')).status).toBe(404)
+    const cookie = (await a.get(`/_hozu/preview?secret=${secret}&path=/`)).headers
       .get('set-cookie')!
       .split(';')[0]!
-    const home = await a.get('/en', { headers: { cookie } })
+    const home = await a.get('/', { headers: { cookie } })
     expect(home.text).toContain('What comes next')
     expect([home.headers.get('cache-control'), home.headers.get('x-robots-tag')]).toEqual([
       'private, no-store',
       'noindex',
     ])
-    expect((await a.get('/en/posts/hozu-roadmap', { headers: { cookie } })).status).toBe(200)
-    expect((await a.get('/en')).text).not.toContain('What comes next')
-    expect((await a.get('/en/posts/hozu-roadmap')).status).toBe(404)
-    const exit = await a.get('/_hozu/preview/exit?path=/en', { headers: { cookie } })
+    expect((await a.get('/posts/hozu-roadmap', { headers: { cookie } })).status).toBe(200)
+    expect((await a.get('/')).text).not.toContain('What comes next')
+    expect((await a.get('/posts/hozu-roadmap')).status).toBe(404)
+    const exit = await a.get('/_hozu/preview/exit?path=/', { headers: { cookie } })
     expect(exit.headers.get('set-cookie')).toContain('Max-Age=0')
   })
 })
@@ -48,15 +48,15 @@ describe('PWA and offline (ADR 0021)', () => {
     const manifest = JSON.parse((await a.get('/manifest.webmanifest')).html)
     expect(manifest).toMatchObject({
       name: 'Hozu Blog',
-      start_url: '/en',
+      start_url: '/',
       scope: '/',
       display: 'standalone',
     })
-    const page = await a.get('/en')
+    const page = await a.get('/')
     expect(page.html).toContain('<link rel="manifest" href="/manifest.webmanifest">')
     expect(page.html).toContain('<script type="module" src="/_hozu/sw-register.js"></script>')
     const sw = await a.get('/sw.js')
-    expect(sw.html).toContain('const OFFLINE = "/en/offline"')
+    expect(sw.html).toContain('const OFFLINE = "/offline"')
     expect((await a.get('/_hozu/sw-register.js')).html).toContain('register("/sw.js"')
     const offline = await a.get('/zh-TW/offline')
     expect(offline.text).toContain('目前離線')

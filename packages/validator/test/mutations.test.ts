@@ -358,6 +358,26 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'redirect that hides the German version of a page',
+    code: 'HZ037',
+    mutate: (ir) => {
+      ir.site!.locales = ['en', 'de']
+      ir.http.redirects.push({
+        from: '/de/order/placed',
+        to: { literal: 'https://shop.example' },
+        permanent: true,
+      })
+    },
+  },
+  {
+    name: 'page route that starts with a locale segment',
+    code: 'HZ060',
+    mutate: (ir) => {
+      ir.site!.locales = ['en', 'de']
+      ir.routes.orderPlaced!.path = '/de/order/placed'
+    },
+  },
+  {
     name: 'header the framework derives',
     code: 'HZ038',
     mutate: (ir) => {

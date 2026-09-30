@@ -53,13 +53,17 @@ const TOPICS: Record<string, string> = {
   HZ042: 'i18n',
   HZ043: 'content',
   HZ044: 'deploy',
-  HZ045: 'widgets',
+  HZ045: 'deploy',
   HZ046: 'endpoints',
   HZ047: 'data',
   HZ048: 'machine',
   HZ049: 'data',
   HZ050: 'data',
+  HZ051: 'pages',
+  HZ052: 'pages',
+  HZ053: 'endpoints',
   HZ059: 'views',
+  HZ060: 'i18n',
   HZ062: 'endpoints',
 }
 

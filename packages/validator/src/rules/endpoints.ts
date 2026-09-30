@@ -1,4 +1,4 @@
-import { resolveAt, routePattern } from '@hozu/core/ir'
+import { localePath, resolveAt, routePattern } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { featurePointer } from '../walk.ts'
 
@@ -6,9 +6,11 @@ const STATIC = /^\/$|^(\/[A-Za-z0-9._~-]+)+$/
 
 export function endpoints(ctx: Ctx) {
   const taken = new Map<string, string>()
+  const locales = ctx.ir.site?.locales ?? [null]
   const pages = Object.keys(ctx.ir.pages)
     .map((r) => ctx.ir.routes[r]?.path)
     .filter((p): p is string => p !== undefined)
+    .flatMap((p) => locales.map((l) => localePath(ctx.ir, p, l)))
   for (const f of Object.values(ctx.ir.features))
     for (const [sym, e] of Object.entries(f.endpoints ?? {})) {
       const ref = `${f.id}.${sym}`

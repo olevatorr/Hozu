@@ -12,7 +12,7 @@ const session = () => ({ userId: 'a' })
 describe('Open Graph images (ADR 0021)', () => {
   it('puts an absolute og:image URL in the head and serves a 1200×630 PNG', async () => {
     const app = testApp({ build, resolvers: createResolvers(), session, og: ogImage })
-    const page = await app.get('/en/posts/hello-hozu')
+    const page = await app.get('/posts/hello-hozu')
     const image = /<meta property="og:image" content="([^"]+)">/.exec(page.html)![1]!.replace(/&amp;/g, '&')
     expect(image).toBe(
       'https://blog.hozu.dev/_hozu/og.png?title=Hello%2C+Hozu&subtitle=Why+an+AI-first+framework+makes+invalid+programs+hard+to+write.',

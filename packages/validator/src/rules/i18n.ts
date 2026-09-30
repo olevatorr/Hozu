@@ -144,6 +144,27 @@ export function i18n(ctx: Ctx) {
         },
       )
     })
+    const taken = new Set(Object.values(ir.routes).map((r) => r.path))
+    for (const id of Object.keys(ir.pages)) {
+      const path = ir.routes[id]?.path
+      const segment = path?.split('/')[1] ?? ''
+      if (!path || !locales.includes(segment)) continue
+      const rest = path.slice(segment.length + 1) || '/'
+      const renamed = taken.has(rest) ? `/${segment}-page${rest === '/' ? '' : rest}` : rest
+      const pointer = join('', 'routes', id, 'path')
+      ctx.report(
+        'HZ060',
+        null,
+        pointer,
+        `Route "${id}" (${path}) starts with the locale segment "${segment}"`,
+        `Under site.locales the first segment of a URL names its locale, so this route would own URLs the locale prefix also means.`,
+        {
+          summary: `Rename the route path to "${renamed}"`,
+          snippet: null,
+          patch: [{ op: 'replace', path: pointer, value: renamed }],
+        },
+      )
+    }
   }
 
   for (const f of Object.values(ir.features)) {

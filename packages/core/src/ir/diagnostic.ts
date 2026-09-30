@@ -53,7 +53,11 @@ export type DiagnosticCode =
   | 'HZ048'
   | 'HZ049'
   | 'HZ050'
+  | 'HZ051'
+  | 'HZ052'
+  | 'HZ053'
   | 'HZ059'
+  | 'HZ060'
   | 'HZ062'
 
 export interface SourceLoc {

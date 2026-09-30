@@ -44,5 +44,6 @@ around the rule.
 | HZ049 | a `scope: 'user'` query is cached (`'static'`, `revalidate`, `swr`) | `freshness: 'request'` (patch), or `'live'` for push |
 | HZ050 | a `'live'` query has no tags | add the tags its writers invalidate, or use `'request'` |
 | HZ059 | data reached plain JavaScript: a plain helper, a global (`Boolean`, `Object.keys`, `String`…), `typeof`, a spread or `in` | make the helper a `part()`; for a global use an operator or a `fn()` |
+| HZ060 | a page route starts with a locale segment (`/de/…` under `site.locales`) | rename the route (patch); the locale prefix is added for you |
 | HZ062 | (warning) a GET endpoint declares `invalidates` | `method: 'POST'`, or keep it on purpose (e-mail links) |
 | HZ042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

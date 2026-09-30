@@ -1,4 +1,4 @@
-import { join, routePattern } from '@hozu/core/ir'
+import { join, localePath, routePattern } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 
 const RESERVED = new Set([
@@ -40,8 +40,11 @@ export function httpRules(ctx: Ctx) {
         ],
       },
     )
+  const locales = ctx.ir.site?.locales ?? [null]
   const pages = Object.keys(ctx.ir.pages).flatMap((id) =>
-    ctx.ir.routes[id] ? [[id, ctx.ir.routes[id]!.path]] : [],
+    ctx.ir.routes[id]
+      ? [...new Set(locales.map((l) => localePath(ctx.ir, ctx.ir.routes[id]!.path, l)))].map((p) => [id, p])
+      : [],
   )
   http.redirects.forEach((r, i) => {
     const at = join('', 'http', 'redirects', i)

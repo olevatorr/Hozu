@@ -162,13 +162,37 @@ describe('ADR 0043 D (pages)', () => {
 })
 
 describe('ADR 0043 F (i18n)', () => {
-  it.fails('ADR 0043 F: the default locale is unprefixed (/login answers 200, no redirect)', async () => {
+  it('ADR 0043 F: the default locale is unprefixed (/login answers 200, no redirect)', async () => {
     const { get } = setup({ locales: ['en', 'de'] })
     const res = await get('/login')
     expect([res.status, res.headers.get('location')]).toEqual([200, null])
   })
 
-  it.fails('ADR 0043 F: internal() rejects /\\ (the preview exit is not an open redirect)', async () => {
+  it('ADR 0043 F: a language switch is a ?: over ui.alternate, resolved in the page locale', async () => {
+    const Switch = ui.view({
+      render: ({ locale }) =>
+        ui.main({}, [
+          ui.a({ href: locale === 'en' ? ui.alternate('de') : ui.alternate('en') }, ['Language']),
+        ]),
+    })
+    const p = project({
+      schema: zodAdapter,
+      site: { url: origin, name: 'Notes', lang: 'en', locales: ['en', 'de'] },
+      routes: { login },
+      pages: [ui.page(login, { views: [Switch], head: { render: () => ({ title: 'Sign in' }) } })],
+      features: [feature({ id: 'lang', intent: { summary: 'switch' }, declarations: [{ Switch }] })],
+    })
+    const handler = createHandler({
+      build: buildProject(p, { sources: false }),
+      resolvers: resolvers(p, () => []),
+    })
+    const html = async (path: string) => (await handler.fetch(new Request(origin + path))).text()
+    expect(await html('/login')).toContain('<a href="/de/login">Language</a>')
+    expect(await html('/de/login')).toContain('<a href="/login">Language</a>')
+    expect(await html('/de/login')).toContain('<html lang="de">')
+  })
+
+  it('ADR 0043 F: internal() rejects /\\ (the preview exit is not an open redirect)', async () => {
     const { get } = setup()
     const location = (await get('/_hozu/preview/exit?path=/\\evil.example')).headers.get('location')!
     expect(new URL(location, origin).origin).toBe(origin)

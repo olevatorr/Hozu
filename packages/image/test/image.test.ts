@@ -114,7 +114,7 @@ describe('@hozu/image (ADR 0017)', () => {
       resolvers: createResolvers(),
       session: () => ({ userId: 'a' }),
     })
-    const html = await (await handler.fetch(new Request('https://blog.hozu.dev/en'))).text()
+    const html = await (await handler.fetch(new Request('https://blog.hozu.dev/'))).text()
     expect(html).toContain(`srcset="${hero!.map((v) => `${v.href} ${v.width}w`).join(', ')}"`)
   }, 30_000)
 })

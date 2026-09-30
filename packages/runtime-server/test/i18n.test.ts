@@ -15,20 +15,17 @@ const where = async (path: string, headers: Record<string, string> = {}) => {
   return [r.status, r.headers.get('location')]
 }
 
-describe('internationalisation (ADR 0017)', () => {
-  it('puts every page under a locale and negotiates only locale-less URLs', async () => {
-    expect(await where('/', { 'accept-language': 'zh-TW,zh;q=0.9,en;q=0.5' })).toEqual([307, '/zh-TW'])
-    expect(await where('/', { 'accept-language': 'zh-HK' })).toEqual([307, '/zh-TW'])
-    expect(await where('/', { 'accept-language': 'fr' })).toEqual([307, '/en'])
-    expect(await where('/')).toEqual([307, '/en'])
-    expect((await get('/')).headers.get('vary')).toBe('Accept-Language')
-    expect(await where('/posts/hello-hozu?x=1', { 'accept-language': 'zh-TW' })).toEqual([
-      307,
-      '/zh-TW/posts/hello-hozu?x=1',
-    ])
+describe('internationalisation (ADR 0017, ADR 0043 F)', () => {
+  it('keeps the default locale unprefixed, prefixes the others and never negotiates', async () => {
+    expect(await where('/', { 'accept-language': 'zh-TW,zh;q=0.9,en;q=0.5' })).toEqual([200, null])
+    expect((await get('/')).headers.get('vary')).not.toContain('Accept-Language')
+    expect(await where('/posts/hello-hozu?x=1', { 'accept-language': 'zh-TW' })).toEqual([200, null])
+    expect(await where('/en')).toEqual([308, '/'])
+    expect(await where('/en/posts/hello-hozu?x=1')).toEqual([308, '/posts/hello-hozu?x=1'])
     expect(await where('/zh-TW/')).toEqual([308, '/zh-TW'])
     expect((await get('/fr/posts/hello-hozu')).status).toBe(404)
     expect((await get('/zh-TW/posts/hello-hozu')).status).toBe(200)
+    expect(await (await get('/')).text()).toContain('<html lang="en">')
   })
 
   it('derives lang, hreflang alternates and og:locale, and translates the head', async () => {
@@ -36,12 +33,12 @@ describe('internationalisation (ADR 0017)', () => {
     for (const tag of [
       '<html lang="zh-TW">',
       '<link rel="canonical" href="https://blog.hozu.dev/zh-TW/posts/hello-hozu">',
-      '<link rel="alternate" hreflang="en" href="https://blog.hozu.dev/en/posts/hello-hozu">',
+      '<link rel="alternate" hreflang="en" href="https://blog.hozu.dev/posts/hello-hozu">',
       '<link rel="alternate" hreflang="zh-TW" href="https://blog.hozu.dev/zh-TW/posts/hello-hozu">',
-      '<link rel="alternate" hreflang="x-default" href="https://blog.hozu.dev/en/posts/hello-hozu">',
+      '<link rel="alternate" hreflang="x-default" href="https://blog.hozu.dev/posts/hello-hozu">',
       '<meta property="og:locale" content="zh_TW">',
       '<meta property="og:locale:alternate" content="en">',
-      '<a href="/en/posts/hello-hozu" hreflang="en" lang="en">English</a>',
+      '<a href="/posts/hello-hozu" hreflang="en" lang="en">English</a>',
     ])
       expect(html).toContain(tag)
     const home = await (await get('/zh-TW')).text()
@@ -51,7 +48,7 @@ describe('internationalisation (ADR 0017)', () => {
 
   it('formats with Intl for the page locale', async () => {
     const zh = await (await get('/zh-TW/posts/hello-hozu')).text()
-    const en = await (await get('/en/posts/hello-hozu')).text()
+    const en = await (await get('/posts/hello-hozu')).text()
     expect(zh).toContain('Ada · 2026年9月1日')
     expect(en).toContain('By Ada · September 1, 2026')
   })

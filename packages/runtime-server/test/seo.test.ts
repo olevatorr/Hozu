@@ -24,14 +24,14 @@ describe('route params and head metadata', () => {
       route: 'post',
       params: { slug: 'hello-hozu' },
     })
-    expect([status, path]).toEqual([200, '/en/posts/hello-hozu'])
+    expect([status, path]).toEqual([200, '/posts/hello-hozu'])
     for (const tag of [
       '<html lang="en">',
       '<title>Hello, Hozu</title>',
       '<meta name="description" content="Why an AI-first framework makes invalid programs hard to write.">',
-      '<link rel="canonical" href="https://blog.hozu.dev/en/posts/hello-hozu">',
+      '<link rel="canonical" href="https://blog.hozu.dev/posts/hello-hozu">',
       '<meta property="og:type" content="article">',
-      '<meta property="og:url" content="https://blog.hozu.dev/en/posts/hello-hozu">',
+      '<meta property="og:url" content="https://blog.hozu.dev/posts/hello-hozu">',
       '<meta property="article:published_time" content="2026-09-01">',
     ])
       expect(html).toContain(tag)
@@ -43,7 +43,7 @@ describe('route params and head metadata', () => {
       image:
         'https://blog.hozu.dev/_hozu/og.png?title=Hello%2C+Hozu&subtitle=Why+an+AI-first+framework+makes+invalid+programs+hard+to+write.',
       description: 'Why an AI-first framework makes invalid programs hard to write.',
-      url: 'https://blog.hozu.dev/en/posts/hello-hozu',
+      url: 'https://blog.hozu.dev/posts/hello-hozu',
       datePublished: '2026-09-01',
     })
   })
@@ -64,12 +64,12 @@ describe('route params and head metadata', () => {
   it('expands entries into the sitemap and writes robots.txt', async () => {
     const entries = await pageEntries(build, data())
     expect(entries.map((e) => e.path)).toEqual([
-      '/en',
+      '/',
       '/zh-TW',
-      '/en/offline',
+      '/offline',
       '/zh-TW/offline',
-      '/en/posts/hello-hozu',
-      '/en/posts/islands-explained',
+      '/posts/hello-hozu',
+      '/posts/islands-explained',
       '/zh-TW/posts/hello-hozu',
       '/zh-TW/posts/islands-explained',
     ])
@@ -77,7 +77,7 @@ describe('route params and head metadata', () => {
       '<loc>https://blog.hozu.dev/zh-TW/posts/islands-explained</loc>',
     )
     expect(robotsTxt(build)).toBe(
-      'User-agent: *\nAllow: /\nDisallow: /en/offline\nDisallow: /zh-TW/offline\nSitemap: https://blog.hozu.dev/sitemap.xml\n',
+      'User-agent: *\nAllow: /\nDisallow: /offline\nDisallow: /zh-TW/offline\nSitemap: https://blog.hozu.dev/sitemap.xml\n',
     )
   })
 })

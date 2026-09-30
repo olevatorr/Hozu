@@ -144,7 +144,7 @@ const locs = [...sitemap.body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
 check(
   '/sitemap.xml',
   'sitemap lists every public page (entries expanded)',
-  sitemap.status === 200 && locs.length === 3,
+  sitemap.status === 200 && locs.length === 6 && locs.includes('https://blog.hozu.dev/'),
   locs.join(' '),
 )
 server.close()

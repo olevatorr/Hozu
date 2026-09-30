@@ -28,9 +28,20 @@ export function routeTable(ir: ProjectIR, locale: string | null = null): Record<
 export const localeOf = (ir: ProjectIR, locale: string | null): string | null =>
   ir.site?.locales ? (locale ?? ir.site.lang) : null
 
+export const prefixOf = (ir: ProjectIR, locale: string | null): string | null => {
+  const l = localeOf(ir, locale)
+  return l && l !== ir.site?.lang ? l : null
+}
+
+export function localePath(ir: ProjectIR, path: string, locale: string | null): string {
+  const prefix = prefixOf(ir, locale)
+  if (!prefix) return path
+  return path === '/' ? `/${prefix}` : `/${prefix}${path}`
+}
+
 export function publicPath(ir: ProjectIR, path: string, locale: string | null = null): string {
   const { trailingSlash } = ir.http
-  const prefix = localeOf(ir, locale)
+  const prefix = prefixOf(ir, locale)
   const basePath = prefix ? `${ir.http.basePath}/${prefix}` : ir.http.basePath
   const bare = path === '/' ? '' : path.replace(/\/$/, '')
   if (trailingSlash === 'always') return `${basePath}${bare}/`

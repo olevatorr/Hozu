@@ -56,6 +56,10 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   HZ048: { name: 'invalid-seed', severity: 'error' },
   HZ049: { name: 'cached-user-data', severity: 'error' },
   HZ050: { name: 'live-without-tags', severity: 'error' },
+  HZ051: { name: 'unmapped-head-error', severity: 'error' },
+  HZ052: { name: 'unserved-route', severity: 'error' },
+  HZ053: { name: 'html-from-endpoint', severity: 'error' },
   HZ059: { name: 'reference-escape', severity: 'error' },
+  HZ060: { name: 'locale-path-collision', severity: 'error' },
   HZ062: { name: 'get-endpoint-invalidates', severity: 'warning' },
 }
