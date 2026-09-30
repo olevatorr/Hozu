@@ -6,6 +6,7 @@ export interface Bindings {
   fns: Record<string, (input: never) => unknown>
   fnHelpers: Record<string, Record<string, string>>
   checks: Record<string, Check>
+  parses?: Record<string, Parse>
   refs: Map<object, string>
   styles: StyleFiles
   widgets: Record<string, string>

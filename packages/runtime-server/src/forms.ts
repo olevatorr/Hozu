@@ -6,7 +6,7 @@ import {
   type Json,
   type ViewNode,
 } from '@hozu/core/ir'
-import type { DataRuntime } from '@hozu/data'
+import type { RequestData } from '@hozu/data'
 import {
   compileMachine,
   compileValue,
@@ -65,14 +65,13 @@ export interface FormOutcome {
 
 export async function runForm(options: {
   build: BuildResult
-  data: DataRuntime
+  data: RequestData
   routes: Record<string, string>
   form: ElementNode
   fields: Record<string, string>
   route: string
   params: Json
   search: Json
-  session: unknown
 }): Promise<FormOutcome | null> {
   const { build, data, routes, form, fields, route, params, search } = options
   const send = form.on.submit!
@@ -102,26 +101,20 @@ export async function runForm(options: {
     invalidated: [],
     session: null,
   }
-  let session = options.session
   let step: Step = transition(machine, start, { type: 'event', event: send.event, payload })
   for (let guard = 0; guard < 16; guard++) {
     let next: Step | null = null
     for (const e of step.effects) {
       if (e.type === 'navigate') outcome.navigate = e.url
       if (e.type !== 'invoke') continue
-      const result = (await data.run(e.effect, e.input, session)) as {
+      const result = (await data.run(e.effect, e.input)) as {
         ok: boolean
         value?: Json
         error?: string
         data?: Json
         invalidated?: string[]
-        session?: unknown
       }
       outcome.invalidated.push(...(result.invalidated ?? []))
-      if ('session' in result) {
-        session = result.session
-        outcome.session = { value: result.session }
-      }
       if (!result.ok && result.error === 'Unexpected') outcome.unexpected = true
       next = transition(
         machine,
@@ -139,6 +132,7 @@ export async function runForm(options: {
     if (!next) break
     step = next
   }
+  outcome.session = data.written
   outcome.snapshots[feature.id] = step.snapshot
   outcome.unchanged = step.snapshot.state === start.state && equal(step.snapshot.context, start.context)
   return outcome

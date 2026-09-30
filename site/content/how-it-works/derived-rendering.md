@@ -29,14 +29,14 @@ Live freshness makes a region request-time and uses the framework’s live-query
 
 ## User scope is a hard boundary
 
-A user-scoped query belongs to the request’s session identity. Its data must never enter a shared cacheable region. Setting its freshness to static does not make the data public or permit a shared cache. Scope is an ownership constraint, not a hint for the compiler to weigh against performance.
+A user-scoped query belongs to the request’s session identity. Its data must never enter a shared cacheable region, and it is not cached across requests at all: its freshness is `'request'` (read once per request) or `'live'` (also pushed). Any other freshness is a diagnostic. Scope is an ownership constraint, not a hint for the compiler to weigh against performance.
 
 ```ts
 export const myNotes = query({
   input: z.object({}),
   output: z.array(Note),
   scope: 'user',
-  freshness: 'static',
+  freshness: 'request',
 })
 ```
 

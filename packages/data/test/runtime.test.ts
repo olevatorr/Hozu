@@ -20,11 +20,19 @@ describe('cart data runtime', () => {
     return { data, tick: (ms: number) => (time += ms) }
   }
 
-  it('deduplicates concurrent reads and serves static data from cache', async () => {
+  it('memoizes reads within a request, never across requests, and serves static data from cache', async () => {
     const { data } = setup()
-    await Promise.all([data.query(getProduct, { sku: 'mug' }), data.query(getProduct, { sku: 'mug' })])
+    const request = data.scope()
+    await Promise.all([
+      request.run('catalog.getProduct', { sku: 'mug' }),
+      request.run('catalog.getProduct', { sku: 'mug' }),
+    ])
+    expect(data.stats()).toMatchObject({ fetches: 1, deduped: 1 })
     await data.query(getProduct, { sku: 'mug' })
-    expect(data.stats()).toMatchObject({ fetches: 1, deduped: 1, hits: 1 })
+    expect(data.stats()).toMatchObject({ fetches: 1, hits: 1 })
+    const other = setup().data
+    await Promise.all([other.query(getProduct, { sku: 'mug' }), other.query(getProduct, { sku: 'mug' })])
+    expect(other.stats()).toMatchObject({ fetches: 2, deduped: 0 })
   })
 
   it('revalidate: expired entries are refetched before returning', async () => {
@@ -38,16 +46,14 @@ describe('cart data runtime', () => {
     expect(data.stats().fetches).toBe(2)
   })
 
-  it('swr: expired entries are served immediately and refreshed in the background', async () => {
-    const { data, tick } = setup()
+  it('user data is read on every request and never enters the cache', async () => {
+    const { data } = setup()
     await data.query(getCart, {}, ada)
-    tick(30_000)
-    const pending = data.query(getCart, {}, ada)
-    expect(data.stats()).toMatchObject({ fetches: 2, hits: 1 })
-    expect(await pending).toEqual({ ok: true, value: { items: [] } })
+    await data.query(getCart, {}, ada)
+    expect(data.stats()).toMatchObject({ fetches: 2, hits: 0, entries: 0 })
   })
 
-  it('isolates user partitions; anonymous callers share their own partition', async () => {
+  it('reads each user with their own session; anonymous callers see no session', async () => {
     const { data } = setup()
     await data.mutate(addItem, { sku: 'mug', qty: 1 }, ada)
     expect(await data.query(getCart, {}, ada)).toMatchObject({
@@ -58,17 +64,14 @@ describe('cart data runtime', () => {
     expect(await data.query(getCart, {})).toEqual({ ok: true, value: { items: [] } })
   })
 
-  it('mutations invalidate by tag in the caller partition only', async () => {
+  it('a mutation clears the request memo and reports its tags', async () => {
     const { data } = setup()
-    await data.query(getCart, {}, ada)
-    await data.query(getCart, {}, bob)
-    const result = await data.mutate(addItem, { sku: 'mug', qty: 2 }, ada)
+    const request = data.scope(ada)
+    expect(await request.run('cart.getCart', {})).toMatchObject({ value: { items: [] } })
+    const result = await request.run('cart.addItem', { sku: 'mug', qty: 2 })
     expect(result).toMatchObject({ ok: true, invalidated: ['cart.cartTag'] })
-    expect(data.stats().invalidated).toBe(1)
-    expect(await data.query(getCart, {}, ada)).toMatchObject({ value: { items: [{ qty: 2 }] } })
-    const fetches = data.stats().fetches
-    await data.query(getCart, {}, bob)
-    expect(data.stats().fetches).toBe(fetches)
+    expect(await request.run('cart.getCart', {})).toMatchObject({ value: { items: [{ qty: 2 }] } })
+    expect(await data.query(getCart, {}, bob)).toEqual({ ok: true, value: { items: [] } })
   })
 
   it('returns declared errors without caching them', async () => {
@@ -122,6 +125,7 @@ describe('resolver wiring', () => {
     freshness: 'live',
     tags: () => [pingTag()],
   })
+  const stale = query({ input: z.object({}), output: z.number(), scope: 'public', freshness: { swr: 30 } })
   const write = mutation({
     input: z.object({}),
     output: z.number(),
@@ -136,7 +140,7 @@ describe('resolver wiring', () => {
       feature({
         id: 'f',
         intent: { summary: 'wiring fixture' },
-        declarations: [{ pingTag, Ping, read, write }],
+        declarations: [{ pingTag, Ping, read, stale, write }],
       }),
     ],
   })
@@ -146,7 +150,11 @@ describe('resolver wiring', () => {
     const attempt = () =>
       createDataRuntime({
         build: b,
-        resolvers: resolvers(p, (implement) => [implement(read, () => 1), implement(read, () => 2)]),
+        resolvers: resolvers(p, (implement) => [
+          implement(read, () => 1),
+          implement(read, () => 2),
+          implement(stale, () => 3),
+        ]),
       })
     expect(attempt).toThrow(DataRuntimeError)
     try {
@@ -160,11 +168,35 @@ describe('resolver wiring', () => {
     }
   })
 
+  it('swr: expired public entries are served immediately and refreshed once in the background', async () => {
+    let time = 0
+    let n = 0
+    const data = createDataRuntime({
+      build: b,
+      now: () => time,
+      resolvers: resolvers(p, (implement) => [
+        implement(read, () => 0),
+        implement(write, () => 0),
+        implement(stale, () => ++n),
+      ]),
+    })
+    await data.query(stale, {})
+    time = 30_000
+    expect(await Promise.all([data.query(stale, {}), data.query(stale, {})])).toEqual([
+      { ok: true, value: 1 },
+      { ok: true, value: 1 },
+    ])
+    expect(data.stats()).toMatchObject({ fetches: 2, hits: 2 })
+    await new Promise((r) => setTimeout(r, 1))
+    expect(await data.query(stale, {})).toEqual({ ok: true, value: 2 })
+  })
+
   it('live queries are never cached; thrown errors and bad output become Unexpected', async () => {
     let n = 0
     const data = createDataRuntime({
       build: b,
       resolvers: resolvers(p, (implement) => [
+        implement(stale, () => 0),
         implement(read, () => ++n),
         implement(write, (_, { fail }) => (n > 1 ? fail('Busy', { retry: 5 }) : ('x' as never))),
       ]),
@@ -175,6 +207,7 @@ describe('resolver wiring', () => {
     const broken = createDataRuntime({
       build: b,
       resolvers: resolvers(p, (implement) => [
+        implement(stale, () => 0),
         implement(read, () => {
           throw new Error('db down')
         }),

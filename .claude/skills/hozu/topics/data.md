@@ -4,8 +4,8 @@
 export const itemsTag = tag({ param: null })                    // tag({ param: z.string() }) → itemTag(id)
 export const listItems = query({
   input: z.object({}), output: z.array(Item),
-  scope: 'public',                  // 'user' = per-session data (needs project({ session }))
-  freshness: 'static',              // | { revalidate: seconds } | { swr: seconds } | 'live'
+  scope: 'public',                  // 'user' = the session's data (needs project({ session }))
+  freshness: 'static',              // | 'request' | { revalidate: seconds } | { swr: seconds } | 'live'
   tags: () => [itemsTag()],          // optional; (input) => [...]
 })
 export const getItem = query({ input: Key, output: Item, errors: { NotFound: Key }, scope: 'public',
@@ -25,7 +25,15 @@ export const visible = fn({                   // computation: pure JS; may call 
   it. Imported names and `let` state are not (HZ047): pass them as input.
 - Rendering is derived: `scope` and `freshness` decide static, ISR, SWR, streamed or client rendering;
   `scope: 'user'` data never reaches a cached page (HZ022). A mutation's tags can read only its input.
-- **Resolvers** (`server.ts`, or `features/<name>/server.ts` from the scaffold):
+- Freshness: public data is `'static'` with tags unless it changes without a declared writer. `'request'` reads
+  once per request (any scope; a public one makes its page uncacheable). User data is `'request'` or `'live'` only
+  (HZ049). `'live'` is only for push updates and needs tags (HZ050).
+- `invalidates` drives the refresh: after a mutation or endpoint, cached pages and entries with those tags are
+  dropped and the page's queries with those tags are re-read. `endpoint({ …, invalidates: (input) => [tag()] })`
+  applies when it succeeds (use POST; a GET write is HZ062).
+- Writes from outside (a webhook, a job): `await server.revalidate([itemsTag()])` → `{ entries, pages }`.
+- **Resolvers** (`server.ts`, or `features/<name>/server.ts` from the scaffold) get the schema-parsed input
+  (defaults and transforms applied):
 ```ts
 export const createResolvers = () => resolvers(project, (implement) => [
   implement(listItems, () => items.map((i) => ({ ...i }))),

@@ -22,6 +22,7 @@ import { helpersOf } from '../lower.ts'
 import { type Decl, defOf } from '../model/decl.ts'
 import { RecorderError, refProxy } from '../model/expr.ts'
 import { builtin } from '../platform.ts'
+import { toParse } from '../schema/check.ts'
 import type { Schema } from '../schema/standard.ts'
 import { buildContract } from './contract.ts'
 import { buildMachine } from './machine.ts'
@@ -34,7 +35,7 @@ const mapRecord = <T, U>(record: Record<string, T>, fn: (key: string, value: T) 
   Object.fromEntries(Object.entries(record ?? {}).map(([k, v]) => [k, fn(k, v)]))
 
 function freshness(scope: FeatureScope, f: QueryDef['freshness'], p: At): Freshness {
-  if (f === 'static' || f === 'live') return { kind: f }
+  if (f === 'static' || f === 'live' || f === 'request') return { kind: f }
   if (typeof f === 'object' && f && 'revalidate' in f && f.revalidate > 0)
     return { kind: 'revalidate', seconds: f.revalidate }
   if (typeof f === 'object' && f && 'swr' in f && f.swr > 0) return { kind: 'swr', seconds: f.swr }
@@ -42,7 +43,7 @@ function freshness(scope: FeatureScope, f: QueryDef['freshness'], p: At): Freshn
     'HZ014',
     p,
     `Invalid freshness ${JSON.stringify(f)}`,
-    "Use 'static', 'live', { revalidate: seconds } or { swr: seconds }.",
+    "Use 'static', 'request', 'live', { revalidate: seconds } or { swr: seconds }.",
   )
   return { kind: 'static' }
 }
@@ -82,12 +83,20 @@ function errors(
   })
 }
 
+function bindInput(scope: FeatureScope, ref: string, schema: Schema) {
+  scope.bind(`${ref}#input`, schema)
+  const parse = toParse(schema)
+  if (!parse) return
+  scope.project.bindings.parses ??= {}
+  scope.project.bindings.parses[`${ref}#input`] = parse
+}
+
 function bindEffect(
   scope: FeatureScope,
   ref: string,
   d: { input: Schema; output: Schema; errors: Record<string, Schema> },
 ) {
-  scope.bind(`${ref}#input`, d.input)
+  bindInput(scope, ref, d.input)
   scope.bind(`${ref}#output`, d.output)
   for (const [name, schema] of Object.entries(d.errors ?? {})) scope.bind(`${ref}#error:${name}`, schema)
 }
@@ -273,13 +282,15 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     endpoints: mapRecord(config.endpoints, (sym, e): EndpointIR => {
       const d = defOf<EndpointDef>(e)
       const p = scope.at('endpoints', sym)
-      scope.bind(`${id}.${sym}#input`, d.input)
+      bindInput(scope, `${id}.${sym}`, d.input)
       if (d.output !== 'response') scope.bind(`${id}.${sym}#output`, d.output)
+      const invalidates = d.invalidates ? tagExprs(scope, d.invalidates, at(p, 'invalidates')) : []
       return {
         method: d.method,
         path: String(d.path),
         input: scope.schema(d.input, at(p, 'input')),
         output: d.output === 'response' ? null : scope.schema(d.output, at(p, 'output')),
+        ...(invalidates.length ? { invalidates } : {}),
       }
     }),
     views: mapRecord(config.views, (sym, v) => buildView(scope, sym, v)),

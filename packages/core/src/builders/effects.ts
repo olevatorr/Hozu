@@ -3,7 +3,7 @@ import type { Ref } from '../model/expr.ts'
 import type { Infer, Schema } from '../schema/standard.ts'
 import type { TagUse } from './tag.ts'
 
-export type Freshness = 'static' | 'live' | { revalidate: number } | { swr: number }
+export type Freshness = 'static' | 'request' | 'live' | { revalidate: number } | { swr: number }
 
 export type ErrorSchemas = Record<string, Schema>
 

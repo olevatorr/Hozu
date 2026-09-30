@@ -1,6 +1,8 @@
 import { planRoute } from '@hozu/compiler'
+import type { TagUse } from '@hozu/core'
 import {
   type BuildResult,
+  canonicalStringify,
   FORM_FIELD,
   hashJson,
   type ImageSet,
@@ -11,7 +13,7 @@ import {
   routePattern,
   routeTable,
 } from '@hozu/core/ir'
-import { createDataRuntime, type OnError, type ResolverSet } from '@hozu/data'
+import { createDataRuntime, type OnError, type RequestData, type ResolverSet } from '@hozu/data'
 import { compileValue } from '@hozu/machine'
 import type { EffectResponse, Result } from '@hozu/runtime-client'
 import { clientBundle } from './assets.ts'
@@ -64,7 +66,12 @@ export interface OgCard {
 
 export interface Handler {
   fetch(request: Request): Promise<Response>
-  revalidate(tags: string[]): Promise<number>
+  revalidate(tags: TagUse[]): Promise<Revalidated>
+}
+
+export interface Revalidated {
+  entries: number
+  pages: number
 }
 
 const mime: Record<string, string> = {
@@ -194,11 +201,18 @@ export function createHandler({
     : publicAssets(basePath, styles, widgets?.urls ?? {})
   assertWidgetBundle(ir, assets.widgets, Boolean(manifest || widgets))
   const data = createDataRuntime({ build, resolvers, now, onError, env: rawEnv })
-  const previewData: typeof data = {
-    ...data,
-    run: (ref, input, who, files) => data.run(ref, input, who, files, { preview: true }),
+  const scopes = new WeakMap<Request, Promise<RequestData>>()
+  const dataFor = (request: Request) => {
+    let scope = scopes.get(request)
+    if (!scope) {
+      scope = session(request).then((who) => data.scope(who, { preview: previewing.get(request) === true }))
+      scopes.set(request, scope)
+    }
+    return scope
   }
-  const dataFor = (request: Request) => (previewing.get(request) ? previewData : data)
+  const hasSession = build.ir.session !== null
+  const privately = (read: boolean): Record<string, string> =>
+    read ? { 'cache-control': 'private, no-cache', ...(hasSession ? { vary: 'Cookie' } : {}) } : {}
   const internal = (path: string | null) => (path?.startsWith('/') && !path.startsWith('//') ? path : null)
   const enterPreview = async (url: URL) => {
     const given = new TextEncoder().encode(url.searchParams.get('secret') ?? '')
@@ -319,31 +333,61 @@ export function createHandler({
     locale: string | null,
   ): Promise<CachedPage> => {
     const at = now()
-    const { html, tags, status, redirect } = await renderToString({
-      build,
-      data,
-      route,
-      params,
-      search,
-      assets,
-      images: variants,
-      ...(generated ? { render: generated } : {}),
-      env: publicEnv,
-      locale,
-    })
-    const page = { html, status, redirect, at, ttl: ttlOf(route), tags: [...tags] }
-    await cache.set(path, page)
-    return page
+    const started = epoch
+    generating++
+    try {
+      const { html, tags, status, redirect } = await renderToString({
+        build,
+        data,
+        route,
+        params,
+        search,
+        assets,
+        images: variants,
+        ...(generated ? { render: generated } : {}),
+        env: publicEnv,
+        locale,
+      })
+      const page = { html, status, redirect, at, ttl: ttlOf(route), tags: [...tags] }
+      if (!page.tags.some((t) => (revalidatedAt.get(t) ?? -1) > started)) await cache.set(path, page)
+      return page
+    } finally {
+      if (--generating === 0) revalidatedAt.clear()
+    }
   }
 
-  const listeners = new Set<ReadableStreamDefaultController<Uint8Array>>()
-  const revalidate = async (tags: string[]) => {
-    if (tags.length) {
-      const message = encoder.encode(`data: ${JSON.stringify(tags)}\n\n`)
-      for (const c of listeners) c.enqueue(message)
-    }
-    data.invalidate(tags)
+  let epoch = 0
+  let generating = 0
+  const revalidatedAt = new Map<string, number>()
+  const dropPages = async (tags: string[]) => {
+    if (!tags.length) return 0
+    epoch++
+    if (generating) for (const t of tags) revalidatedAt.set(t, epoch)
     return cache.deleteTags(tags)
+  }
+  const listeners = new Set<ReadableStreamDefaultController<Uint8Array>>()
+  const broadcast = (tags: string[]) => {
+    if (!tags.length) return
+    const message = encoder.encode(`data: ${JSON.stringify(tags)}\n\n`)
+    for (const c of listeners) c.enqueue(message)
+  }
+  const TAG_USE = Symbol.for('hozu.tagUse')
+  const tagKeyOf = (use: TagUse) => {
+    const u = (use as unknown as Record<symbol, { tag: object; param: unknown } | undefined>)[TAG_USE]
+    const ref = u ? build.bindings.refs.get(u.tag) : undefined
+    if (!u || !ref)
+      throw new TypeError('revalidate takes tag uses of this project: server.revalidate([notesTag()])')
+    const dot = ref.indexOf('.')
+    return ir.features[ref.slice(0, dot)]?.tags[ref.slice(dot + 1)]?.param
+      ? `${ref}(${canonicalStringify(u.param as Json)})`
+      : ref
+  }
+  const revalidate = async (uses: TagUse[]): Promise<Revalidated> => {
+    const tags = [...new Set(uses.map(tagKeyOf))]
+    const entries = data.invalidate(tags)
+    const pages = await dropPages(tags)
+    broadcast(tags)
+    return { entries, pages }
   }
 
   const json = (body: unknown, headers: Record<string, string> = {}) =>
@@ -357,13 +401,13 @@ export function createHandler({
   const effect = async (request: Request) => {
     const { body, files } = await readEffect(request)
     const { effect, input, keys } = JSON.parse(body) as { effect: string; input: Json; keys: string[] }
-    const who = await session(request)
-    const result = (await data.run(effect, input, who, files)) as Result & {
+    const scope = await dataFor(request)
+    const result = (await scope.run(effect, input, files)) as Result & {
       invalidated?: string[]
       session?: unknown
     }
     const invalidated = result.invalidated ?? []
-    if (invalidated.length) await revalidate(invalidated)
+    await dropPages(invalidated)
     const refreshed: [string, Result][] = []
     if (invalidated.length)
       for (const key of keys) {
@@ -371,15 +415,13 @@ export function createHandler({
           (q) => key.startsWith(q) && '{["tfn0123456789-'.includes(key[q.length] ?? ''),
         )
         if (ref)
-          refreshed.push([
-            key,
-            (await data.run(ref, JSON.parse(key.slice(ref.length)) as Json, who)) as Result,
-          ])
+          refreshed.push([key, (await scope.run(ref, JSON.parse(key.slice(ref.length)) as Json)) as Result])
       }
-    const cookie = store && 'session' in result ? await store.write(result.session) : null
-    const { invalidated: _, session: __, ...rest } = result as typeof result & { session?: unknown }
+    const cookie = store && scope.written ? await store.write(scope.written.value) : null
+    const { invalidated: _, session: __, ...rest } = result
     const response: EffectResponse = { result: rest as Result, refreshed }
-    return json(response, cookie ? { 'set-cookie': cookie } : {})
+    broadcast(invalidated)
+    return json(response, { ...privately(true), ...(cookie ? { 'set-cookie': cookie } : {}) })
   }
 
   const page = async (
@@ -399,8 +441,12 @@ export function createHandler({
     const head = request.method === 'HEAD'
     const statusOf = (s: number) => (missing ? 404 : s)
     const inPreview = previewing.get(request) === true
+    const plan = planRoute(ir, route).plan
     if (inPreview) Object.assign(headers, { 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex' })
-    if (!inPreview && planRoute(ir, route).plan.cacheable) {
+    else if (plan.cacheable) Object.assign(headers, { 'cache-control': 'public, max-age=0, must-revalidate' })
+    else if (plan.regions.some((r) => r.scope === 'user')) Object.assign(headers, privately(true))
+    else Object.assign(headers, { 'cache-control': 'no-cache' })
+    if (!inPreview && plan.cacheable) {
       let cached = await cache.get(path)
       let state = 'hit'
       if (!cached) {
@@ -427,11 +473,11 @@ export function createHandler({
     }
     const rendered = await renderPage({
       build,
-      data: dataFor(request),
+      data,
+      scope: await dataFor(request),
       route,
       params,
       search,
-      session: await session(request),
       assets,
       images: variants,
       ...(generated ? { render: generated } : {}),
@@ -456,51 +502,55 @@ export function createHandler({
     query.delete(FORM_FIELD)
     const search = parseSearch(ir.routes[found.route]?.search ?? null, query)
     const fields = await formFields(request)
-    const who = await session(request)
+    const scope = await dataFor(request)
     const outcome = await runForm({
       build,
-      data,
+      data: scope,
       routes: tableOf(locale),
       form,
       fields,
       route: found.route,
       params: found.params,
       search,
-      session: who,
     })
     if (!outcome) return notAllowed()
-    if (outcome.invalidated.length) await revalidate(outcome.invalidated)
+    await dropPages(outcome.invalidated)
     const cookie = store && outcome.session ? await store.write(outcome.session.value) : null
     const back = pathOf(tableOf(locale)[found.route] ?? url.pathname, found.params, search)
     const target = outcome.navigate ?? (outcome.unchanged ? back : null)
-    if (target) return see(target, cookie)
+    if (target) {
+      broadcast(outcome.invalidated)
+      return see(target, cookie)
+    }
     const rendered = await renderPage({
       build,
       data,
+      scope,
       route: found.route,
       params: found.params,
       search,
       snapshots: outcome.snapshots,
-      session: who,
       assets,
       images: variants,
       ...(generated ? { render: generated } : {}),
       env: publicEnv,
       locale,
     })
-    return new Response(
+    const response = new Response(
       stream(rendered.chunks, (e) => onError(e, { path })),
       {
         status: outcome.unexpected ? 500 : rendered.status,
         headers: {
           ...extraHeaders(found.route),
           'content-type': 'text/html; charset=utf-8',
-          'cache-control': 'no-store',
+          ...privately(true),
           ...(cookie ? { 'set-cookie': cookie } : {}),
           ...(await secureHeaders()),
         },
       },
     )
+    broadcast(outcome.invalidated)
+    return response
   }
 
   const files: Record<string, string> = {}
@@ -564,30 +614,27 @@ export function createHandler({
         [...(form?.entries() ?? [])].filter((e): e is [string, string] => typeof e[1] === 'string'),
       )
     }
-    let next: { value: unknown } | null = null
-    const result = await dataFor(request).endpoint(ref, input, {
-      request,
-      session: await session(request),
-      setSession: (value) => {
-        next = { value }
-      },
-      preview: previewing.get(request) === true,
-    })
-    const saved = next as { value: unknown } | null
-    const cookie = store && saved ? await store.write(saved.value) : null
-    const withCookie = (response: Response) => {
-      if (cookie) response.headers.append('set-cookie', cookie)
-      return response
+    const scope = await dataFor(request)
+    const result = await scope.endpoint(ref, input, { request })
+    const cookie = store && scope.written ? await store.write(scope.written.value) : null
+    const finish = (response: Response) => {
+      const out = new Response(response.body, response)
+      if (cookie) out.headers.append('set-cookie', cookie)
+      if (!out.headers.has('cache-control'))
+        for (const [k, v] of Object.entries(privately(scope.readSession))) out.headers.set(k, v)
+      return out
     }
     if (!result.ok)
-      return withCookie(
+      return finish(
         new Response(JSON.stringify({ message: result.message, fields: result.fields }), {
           status: result.status,
           headers: { 'content-type': 'application/json' },
         }),
       )
-    if (result.value instanceof Response) return withCookie(result.value)
-    return json(result.value, cookie ? { 'set-cookie': cookie } : {})
+    await dropPages(result.invalidated)
+    const response = finish(result.value instanceof Response ? result.value : json(result.value))
+    broadcast(result.invalidated)
+    return response
   }
 
   const route = async (request: Request, url: URL, path: string): Promise<Response> => {
@@ -599,7 +646,9 @@ export function createHandler({
     if (request.method === 'POST' && path === '/_hozu/query') {
       const { query, input } = (await request.json()) as { query: string; input: Json }
       if (!queries.includes(query)) return plain(400, 'Unknown query')
-      return json(await dataFor(request).run(query, input, await session(request)))
+      const scope = await dataFor(request)
+      const result = await scope.run(query, input)
+      return json(result, privately(scope.readSession))
     }
     if (path === '/_hozu/live') return live()
     if (path === '/manifest.webmanifest' && manifestText)

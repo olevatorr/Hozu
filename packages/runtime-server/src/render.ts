@@ -15,7 +15,7 @@ import {
   type WidgetIR,
   widgetsIn,
 } from '@hozu/core/ir'
-import type { DataRuntime } from '@hozu/data'
+import type { DataRuntime, RequestData } from '@hozu/data'
 import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '@hozu/machine'
 import type { PagePayload, Result } from '@hozu/runtime-client'
 import { attrText, text } from '@hozu/runtime-client'
@@ -57,6 +57,7 @@ export interface WidgetBundle {
 export interface RenderOptions {
   build: BuildResult
   data: DataRuntime
+  scope?: RequestData
   route: string
   params?: Json
   search?: Json
@@ -82,7 +83,8 @@ const NO_ENV: Json = {}
 
 export async function renderPage({
   build,
-  data,
+  data: dataRuntime,
+  scope: given,
   route,
   params = null,
   search = null,
@@ -95,6 +97,7 @@ export async function renderPage({
   render: generated,
 }: RenderOptions): Promise<RenderedPage> {
   const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
+  const data = given ?? dataRuntime.scope(session)
   const { ir, bindings } = build
   const locale = localeOf(ir, requested)
   const lang = locale ?? ir.site?.lang ?? 'en'
@@ -338,7 +341,7 @@ export async function renderPage({
         const input = value(n.input, scope)
         const dot = n.query.indexOf('.')
         const q = ir.features[n.query.slice(0, dot)]?.queries[n.query.slice(dot + 1)]
-        const pending = data.run(n.query, input, session)
+        const pending = data.run(n.query, input)
         flush()
         const result = (await pending) as Result
         if (q) for (const t of tagKeys(q.tags, input, scope)) tags.add(t)
@@ -383,7 +386,7 @@ export async function renderPage({
   let headScope = empty
   if (page.head.query) {
     const input = value(page.head.query.input, empty)
-    const result = (await data.run(page.head.query.ref, input, session)) as Result
+    const result = (await data.run(page.head.query.ref, input)) as Result
     const dot = page.head.query.ref.indexOf('.')
     const q = ir.features[page.head.query.ref.slice(0, dot)]?.queries[page.head.query.ref.slice(dot + 1)]
     if (q) for (const t of tagKeys(q.tags, input, empty)) tags.add(t)

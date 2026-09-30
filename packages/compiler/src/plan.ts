@@ -200,13 +200,18 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
         const q = owner?.queries[symbol]
         if (!q) return
         const combined = combine(region, own(q))
-        if (q.scope === 'public' && q.freshness.kind !== 'live' && readsBinding(node.input, tainted))
+        if (
+          q.scope === 'public' &&
+          q.freshness.kind !== 'live' &&
+          q.freshness.kind !== 'request' &&
+          readsBinding(node.input, tainted)
+        )
           issues.push({
             code: 'HZ022',
             feature: feature.id,
             pointer: join(pointer, 'input'),
             message: `Public query ${node.query} is keyed by user-scoped data`,
-            cause: `Its result is cached in the shared public partition (${q.freshness.kind}), so user-derived input would reach a cacheable region.`,
+            cause: `Its result is cached for every visitor (${q.freshness.kind}), so user-derived input would reach a cacheable region.`,
           })
         const child: RegionPlan = {
           id: node.id,

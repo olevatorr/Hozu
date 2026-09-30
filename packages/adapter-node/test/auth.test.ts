@@ -21,8 +21,7 @@ const me = query({
   output: z.object({ user: z.string() }),
   errors: { Unauthorized: z.object({}) },
   scope: 'user',
-  freshness: 'live',
-  tags: () => [],
+  freshness: 'request',
 })
 const login = mutation({ input: z.object({ name: z.string() }), output: z.object({}), invalidates: () => [] })
 const logout = mutation({ input: z.object({}), output: z.object({}), invalidates: () => [] })
@@ -135,7 +134,7 @@ describe('redirects, sessions, custom 404, icon (G5, G6, G7, G12)', () => {
       const page = await get('/account', session)
       expect(page.status).toBe(200)
       const text = await page.text()
-      expect(text).toContain('<h1>Hello <!---->ada</h1>')
+      expect(text).toContain('<h1>Hello ada</h1>')
 
       const forged = session.replace(/\.[\w-]+$/, '.AAAA')
       expect((await get('/account', forged)).status).toBe(303)

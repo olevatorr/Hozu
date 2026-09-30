@@ -73,7 +73,7 @@ export function model(n: Names, w: With): string {
     `  output: z.array(${n.Item}),`,
     w.auth && `  errors: { Unauthorized: z.object({}) },`,
     `  scope: '${w.auth ? 'user' : 'public'}',`,
-    `  freshness: 'static',`,
+    `  freshness: '${w.auth ? 'request' : 'static'}',`,
     `  tags: () => [${n.tag}()],`,
     '})',
     w.detail &&
@@ -83,7 +83,7 @@ export const ${n.get} = query({
   output: ${n.Item},
   errors: { NotFound: ${n.Key} },
   scope: '${w.auth ? 'user' : 'public'}',
-  freshness: 'static',
+  freshness: '${w.auth ? 'request' : 'static'}',
   tags: () => [${n.tag}()],
 })`,
     '',
@@ -411,7 +411,7 @@ export const me = query({
   output: z.object({ name: z.string() }),
   errors: { Unauthorized: z.object({}) },
   scope: 'user',
-  freshness: 'static',
+  freshness: 'request',
 })
 
 export const signIn = mutation({ input: Name, output: z.object({}) })

@@ -110,7 +110,7 @@ function setup(extra: Parameters<typeof app>[0] = {}) {
 }
 
 describe('ADR 0043 B (sessions)', () => {
-  it.fails('ADR 0043 D9a: the effect response recomputes queries with the post-mutation session', async () => {
+  it('ADR 0043 D9a: the effect response recomputes queries with the post-mutation session', async () => {
     const { effect, cookieOf, seen } = setup()
     const zed = cookieOf(await effect('signIn', { name: 'zed' }))
     seen.length = 0

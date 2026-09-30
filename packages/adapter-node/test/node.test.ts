@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { catalogTag } from '../../../examples/cart/features/catalog/effects.ts'
 import { start } from './support.ts'
 
 let close: (() => Promise<void>) | null = null
@@ -19,7 +20,7 @@ describe('node adapter', () => {
     expect(await cache()).toBe('stale')
     await new Promise((r) => setTimeout(r, 10))
     expect(await cache()).toBe('hit')
-    expect(await app.server.revalidate(['catalog.catalogTag'])).toBe(1)
+    expect(await app.server.revalidate([catalogTag()])).toMatchObject({ pages: 1 })
     expect(await cache()).toBe('miss')
   })
 
