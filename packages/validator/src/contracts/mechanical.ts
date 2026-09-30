@@ -1,5 +1,5 @@
 import type { FeatureIR, GuardExpr, StateIR, TransitionIR, ValueExpr } from '@hozu/core/ir'
-import { valueRefs } from '../sites.ts'
+import type { BehaviorRecord } from './record.ts'
 
 export interface Located {
   from: string
@@ -32,19 +32,56 @@ export function locate(feature: FeatureIR, id: string): Located {
   return { from, trigger, transition, target: feature.machine!.states[transition.target] }
 }
 
-export function isMechanical(feature: FeatureIR, id: string): boolean {
-  const { transition, target } = locate(feature, id)
-  if (transition.guard || transition.navigate) return false
-  let computes = false
-  const found = () => {
-    computes = true
+const computingBuiltins = new Set(['%plus', '%minus', '%concat', '%cond', '%coalesce', '%includes', '%length'])
+
+const computingFn = (fn: string) => computingBuiltins.has(fn) || !/^[%#]/.test(fn)
+
+export function computes(value: ValueExpr): boolean {
+  if ('fn' in value) return computingFn(value.fn) || computes(value.arg)
+  if ('object' in value) return Object.values(value.object).some(computes)
+  if ('test' in value) return guardComputes(value.test)
+  if ('link' in value) return computes(value.params) || computes(value.search)
+  if ('endpoint' in value) return value.input !== null && computes(value.input)
+  return false
+}
+
+function guardComputes(guard: GuardExpr): boolean {
+  switch (guard.op) {
+    case 'and':
+    case 'or':
+      return guard.args.some(guardComputes)
+    case 'not':
+      return guardComputes(guard.arg)
+    case 'fn':
+      return computingFn(guard.fn) || computes(guard.arg)
+    default:
+      return true
   }
-  for (const a of transition.assign) valueRefs(a.value, '', found)
-  if (target?.invoke) valueRefs(target.invoke.input, '', found)
-  return !computes
+}
+
+/** ADR 0043 G: a guard, a navigate, or a fn / comparison / computing builtin in an assign value or the entered invoke input. */
+export function decides(feature: FeatureIR, id: string): boolean {
+  const { transition, target } = locate(feature, id)
+  if (transition.guard || transition.navigate) return true
+  if (transition.assign.some((a) => a.op === 'inc' || computes(a.value))) return true
+  return target?.invoke ? computes(target.invoke.input) : false
 }
 
 const names: Record<string, string> = { context: 'ctx' }
+
+const infix: Record<string, string> = { '%plus': '+', '%minus': '-', '%coalesce': '??' }
+
+function showCall(fn: string, arg: ValueExpr): string {
+  const o = 'object' in arg ? arg.object : null
+  if (o && infix[fn] && o.a && o.b) return `(${showValue(o.a)} ${infix[fn]} ${showValue(o.b)})`
+  if (o && fn === '%cond' && o.c && o.a && o.b)
+    return `(${showValue(o.c)} ? ${showValue(o.a)} : ${showValue(o.b)})`
+  if (o && fn === '%concat') return `(${Object.values(o).map(showValue).join(' + ')})`
+  if (o && fn === '%length' && o.v) return `${showValue(o.v)}.length`
+  if (o && fn === '%includes' && o.l && o.v) return `${showValue(o.l)}.includes(${showValue(o.v)})`
+  if (o && fn === '%truthy' && o.v) return `!!${showValue(o.v)}`
+  return `${short(fn)}(${showValue(arg)})`
+}
 
 export function showValue(v: ValueExpr): string {
   if ('literal' in v) return JSON.stringify(v.literal)
@@ -53,11 +90,12 @@ export function showValue(v: ValueExpr): string {
     return `{ ${Object.entries(v.object)
       .map(([k, x]) => `${k}: ${showValue(x)}`)
       .join(', ')} }`
-  if ('fn' in v) return `${short(v.fn)}(${showValue(v.arg)})`
+  if ('fn' in v) return showCall(v.fn, v.arg)
   if ('test' in v) return showGuard(v.test)
   if ('endpoint' in v) return `link(${v.endpoint}${v.input ? `, ${showValue(v.input)}` : ''})`
   if ('formRef' in v) return `formRef(${v.formRef})`
-  return `link(${v.link}, ${showValue(v.params)})`
+  const search = 'literal' in v.search && v.search.literal === null ? '' : `, ${showValue(v.search)}`
+  return `link(${v.link}, ${showValue(v.params)}${search})`
 }
 
 export function showGuard(g: GuardExpr): string {
@@ -68,29 +106,45 @@ export function showGuard(g: GuardExpr): string {
     case 'not':
       return `not ${showGuard(g.arg)}`
     case 'fn':
-      return `${short(g.fn)}(${showValue(g.arg)})`
+      return showCall(g.fn, g.arg)
     default:
       return `${showValue(g.left)} ${g.op} ${showValue(g.right)}`
   }
 }
 
-export function summaryOf(feature: FeatureIR, id: string): string {
-  const { from, trigger, transition, target } = locate(feature, id)
-  const parts = [`${from} --${trigger}--> ${transition.target}`]
-  if (transition.guard) parts.push(`if ${showGuard(transition.guard)}`)
-  if (transition.assign.length)
-    parts.push(
-      transition.assign
-        .map((a) =>
-          a.op === 'set'
-            ? `${a.path.join('.')} := ${showValue(a.value)}`
-            : a.op === 'removeWhere'
-              ? `${a.path.join('.')} -= where ${a.key ?? 'item'} = ${showValue(a.value)}`
-              : `${a.path.join('.')} ${a.op === 'inc' ? '+=' : 'append'} ${showValue(a.value)}`,
-        )
-        .join(', '),
+export const showAssign = (assign: BehaviorRecord['assign']): string =>
+  assign
+    .map((a) =>
+      a.op === 'set'
+        ? `${a.path.join('.')} := ${showValue(a.value)}`
+        : a.op === 'removeWhere'
+          ? `${a.path.join('.')} -= where ${a.key ?? 'item'} = ${showValue(a.value)}`
+          : `${a.path.join('.')} ${a.op === 'inc' ? '+=' : 'append'} ${showValue(a.value)}`,
     )
-  if (transition.navigate) parts.push(`navigate ${showValue(transition.navigate)}`)
-  if (target?.invoke) parts.push(`invoke ${short(target.invoke.effect)}(${showValue(target.invoke.input)})`)
+    .join(', ')
+
+export const showEnters = ({ effect, input, timers, final }: BehaviorRecord['enters']): string =>
+  [
+    effect ? `invoke ${short(effect)}(${input ? showValue(input) : ''})` : '',
+    timers.length ? `after ${timers.map((ms) => `${ms}ms`).join(', ')}` : '',
+    final ? 'final' : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+export const showFns = (fns: BehaviorRecord['fns']): string =>
+  Object.entries(fns)
+    .map(([ref, hash]) => `${short(ref)}@${hash ? hash.slice(0, 8) : '?'}`)
+    .join(', ')
+
+export function summaryOf(feature: FeatureIR, id: string, record: BehaviorRecord): string {
+  const { from, trigger } = locate(feature, id)
+  const parts = [`${from} --${trigger}--> ${record.enters.state}`]
+  if (record.guard) parts.push(`if ${showGuard(record.guard)}`)
+  if (record.assign.length) parts.push(showAssign(record.assign))
+  if (record.navigate) parts.push(`navigate ${showValue(record.navigate)}`)
+  const enters = showEnters(record.enters)
+  if (enters) parts.push(enters)
+  if (Object.keys(record.fns).length) parts.push(`fns ${showFns(record.fns)}`)
   return parts.join(' · ')
 }

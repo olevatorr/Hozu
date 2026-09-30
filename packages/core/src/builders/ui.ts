@@ -30,7 +30,11 @@ export interface Href extends Expr<string> {
   readonly [HREF]: true
 }
 
-type SearchArg<S> = [S] extends [null] ? [] : [search: NoInfer<Val<Partial<S>>> | null]
+type SearchPatch<S> = {
+  [K in keyof S]-?: { readonly [P in K]-?: Val<S[P]> } & { readonly [P in keyof S]?: Val<S[P]> }
+}[keyof S]
+
+type SearchArg<S> = [S] extends [null] ? [] : [search?: NoInfer<SearchPatch<S> | Expr<Partial<S>>>]
 
 export const linkOf = (value: unknown): { route: unknown; params: unknown; search: unknown } | null =>
   typeof value === 'object' && value !== null ? ((value as Record<symbol, never>)[LINK] ?? null) : null

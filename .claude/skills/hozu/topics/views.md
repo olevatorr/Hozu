@@ -28,7 +28,8 @@ export const Board = ui.view({
   `ui.dom.key`. `ui.dom.value` / `ui.dom.form` fill an enum field only from a `<select>` or radios whose literal
   option values are all members (HZ033).
 - **Links:** `ui.a({ href: ui.link(itemPage, { id: item.id }) }, [...])`; never a string path (HZ032). The third
-  argument exists only when the route declares `search`: `ui.link(home, null, { show: 'done' })`.
+  argument is optional and exists only when the route declares `search`: omitted means every default, and a search
+  lists only the fields that differ: `ui.link(home, null, { show: 'done' })`.
 - **Data:** `ui.query(listItems, input, { ready: (items) => …, pending: ui.p({}, ['Loading…']), failed: { NotFound:
   () => …, Unexpected: () => … } })`; `pending` is optional, `failed` lists every declared error plus `Unexpected`; a branch may return `null` to render
   nothing.

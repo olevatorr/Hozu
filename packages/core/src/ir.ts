@@ -2,6 +2,7 @@ export type { ImageSet, ImageVariant, Manifest, ManifestAsset } from './build/ma
 export type { BuildOptions, BuildResult } from './build/project.ts'
 export { buildProject, INVALID_ERROR_SCHEMA, UNEXPECTED_ERROR_SCHEMA } from './build/project.ts'
 export type { PartUse } from './build/scope.ts'
+export { foldSearch } from './build/scope.ts'
 export { hashJson, sha256, sha256Bytes } from './canonical/hash.ts'
 export type { At } from './canonical/pointer.ts'
 export { at, join, parsePointer, pointer, resolveAt, resolveSource } from './canonical/pointer.ts'

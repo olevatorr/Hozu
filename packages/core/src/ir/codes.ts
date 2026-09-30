@@ -56,6 +56,9 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   HZ048: { name: 'invalid-seed', severity: 'error' },
   HZ049: { name: 'cached-user-data', severity: 'error' },
   HZ050: { name: 'live-without-tags', severity: 'error' },
+  HZ057: { name: 'lock-out-of-date', severity: 'error' },
+  HZ058: { name: 'contract-without-decision', severity: 'warning' },
   HZ059: { name: 'reference-escape', severity: 'error' },
   HZ062: { name: 'get-endpoint-invalidates', severity: 'warning' },
+  HZ064: { name: 'duplicate-contract', severity: 'error' },
 }

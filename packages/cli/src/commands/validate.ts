@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join as joinPath } from 'node:path'
 import { codes, type Diagnostic, hashJson, type Json, join, resolveSource } from '@hozu/core/ir'
-import { isMechanical, type Lockfile, verify } from '@hozu/validator'
+import { decides, verify } from '@hozu/validator'
 import type { Coverage, ValidateOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
@@ -30,10 +30,10 @@ function firstDifference(a: Json, b: Json, pointer = ''): string | null {
   return null
 }
 
-function readLock(path: string): Lockfile | null {
+function readLock(path: string): unknown {
   if (!existsSync(path)) return null
   try {
-    return JSON.parse(readFileSync(path, 'utf8')) as Lockfile
+    return JSON.parse(readFileSync(path, 'utf8')) as unknown
   } catch (error) {
     throw new HozuCliError('config', `Cannot read ${path}: ${(error as Error).message}`)
   }
@@ -82,15 +82,18 @@ export async function runValidate(
       : { ...d, location: { ...d.location, source: resolveSource(traced.sources, d.location.pointer) } },
   )
   const clean = !diagnostics.some((d) => d.severity === 'error')
-  let lock: ValidateOutput['lock'] = previous ? 'checked' : 'missing'
-  if (updateLock) {
+  const machines = Object.keys(verified.lock?.features ?? {}).length > 0
+  const current = previous !== null && json(previous) === json(verified.lock)
+  let lock: ValidateOutput['lock'] =
+    previous === null && !machines ? 'missing' : current ? 'current' : 'stale'
+  if (updateLock && !current && (previous !== null || machines)) {
     lock = clean && verified.lock ? 'updated' : 'skipped'
     if (lock === 'updated') writeFileSync(lockPath, json(verified.lock))
   }
   const coverage: Record<string, Coverage> = {}
   for (const [fid, entries] of Object.entries(verified.lock?.features ?? {})) {
     if (feature && fid !== feature) continue
-    const decisions = Object.entries(entries).filter(([id]) => !isMechanical(first.ir.features[fid]!, id))
+    const decisions = Object.entries(entries).filter(([id]) => decides(first.ir.features[fid]!, id))
     coverage[fid] = {
       covered: decisions.filter(([, e]) => Object.keys(e.contracts).length > 0).length,
       total: decisions.length,

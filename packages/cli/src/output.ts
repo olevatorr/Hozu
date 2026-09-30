@@ -59,8 +59,19 @@ const TOPICS: Record<string, string> = {
   HZ048: 'machine',
   HZ049: 'data',
   HZ050: 'data',
+  HZ057: 'contracts',
+  HZ058: 'contracts',
   HZ059: 'views',
   HZ062: 'endpoints',
+  HZ064: 'contracts',
+}
+
+const CAUSE_LINES = 10
+
+const cap = (cause: string): string => {
+  const lines = cause.split('\n')
+  if (lines.length <= CAUSE_LINES + 1) return lines.join('\n    ')
+  return [...lines.slice(0, CAUSE_LINES + 1), `… ${lines.length - CAUSE_LINES - 1} more (--json lists all)`].join('\n    ')
 }
 
 export function human(d: Diagnostic): string {
@@ -70,7 +81,7 @@ export function human(d: Diagnostic): string {
   const lines = [
     `${where}  ${d.severity}  ${d.code}  ${d.message}`,
     `  at ${d.location.pointer}`,
-    `  cause: ${d.cause}`,
+    `  cause: ${cap(d.cause)}`,
   ]
   if (d.fix) lines.push(`  fix: ${d.fix.summary}${d.fix.patch ? ' (patch available with --json)' : ''}`)
   if (d.fix?.snippet) lines.push(d.fix.snippet.replace(/^/gm, '    '))
