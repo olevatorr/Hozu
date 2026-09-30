@@ -102,13 +102,7 @@
           }
         },
         "lock": {
-          "type": "string",
-          "enum": [
-            "missing",
-            "checked",
-            "updated",
-            "skipped"
-          ]
+          "$ref": "#/definitions/LockState"
         },
         "styles": {
           "type": "string",
@@ -154,6 +148,17 @@
         "transitions"
       ],
       "additionalProperties": false
+    },
+    "LockState": {
+      "type": "string",
+      "enum": [
+        "missing",
+        "checked",
+        "current",
+        "stale",
+        "updated",
+        "skipped"
+      ]
     },
     "Diagnostic": {
       "type": "object",

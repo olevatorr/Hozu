@@ -3,7 +3,7 @@ export type Json = null | boolean | number | string | Json[] | { [key: string]: 
 export type JsonSchema = { [key: string]: Json }
 
 export interface ProjectIR {
-  irVersion: 1
+  irVersion: 2
   site: SiteIR | null
   session: JsonSchema | null
   routes: Record<string, RouteIR>
@@ -59,7 +59,10 @@ export interface HeadIR {
   published: ValueExpr
   noindex: boolean
   redirects: Record<string, string>
+  failed?: Record<string, HeadFailureIR>
 }
+
+export type HeadFailureIR = { redirect: string } | { status: 403 | 404 | 410 }
 
 export interface EntriesIR {
   query: string
@@ -97,7 +100,16 @@ export interface EndpointIR {
   path: string
   input: string
   output: string | null
+  mode?: EndpointMode
+  raw?: true
+  errors?: Record<string, string>
+  failed?: Record<string, EndpointStatus>
+  invalidates?: TagExprIR[]
 }
+
+export type EndpointMode = 'json' | 'redirect' | 'response'
+
+export type EndpointStatus = 400 | 401 | 403 | 404 | 409 | 410 | 422 | 429
 
 export interface WidgetIR {
   tag: string
@@ -120,6 +132,7 @@ export interface ExportsIR {
   tags: string[]
   fns: string[]
   views: string[]
+  endpoints: string[]
 }
 
 export interface TagIR {
@@ -137,6 +150,7 @@ export type Freshness =
   | { kind: 'revalidate'; seconds: number }
   | { kind: 'swr'; seconds: number }
   | { kind: 'live' }
+  | { kind: 'request' }
 
 export interface QueryIR {
   input: string
@@ -220,10 +234,16 @@ export type ValueExpr =
   | { fn: string; arg: ValueExpr }
   | { test: GuardExpr }
   | { link: string; params: ValueExpr; search: ValueExpr }
+  | { endpoint: string; input: ValueExpr | null }
+  | FormRefIR
+
+export type FormRefIR = {
+  formRef: string
+}
 
 export type AssignOp =
   | { op: 'set' | 'append' | 'inc'; path: string[]; value: ValueExpr }
-  | { op: 'removeWhere'; path: string[]; key: string; value: ValueExpr }
+  | { op: 'removeWhere'; path: string[]; key: string | null; value: ValueExpr }
 
 export type CompareOp = 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte'
 
@@ -269,6 +289,7 @@ export interface ElementNode {
   attrs: Record<string, ValueExpr>
   on: Record<string, SendIR>
   children: ViewNode[]
+  ref?: FormRefIR
 }
 
 export interface WidgetNode {

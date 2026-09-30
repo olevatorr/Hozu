@@ -12,6 +12,8 @@ export function renderValue(v: ValueExpr): string {
   if ('fn' in v) return `${local(v.fn)}(${renderValue(v.arg)})`
   if ('test' in v) return `(${renderGuard(v.test)})`
   if ('link' in v) return `link(${local(v.link)}, ${renderValue(v.params)}, ${renderValue(v.search)})`
+  if ('endpoint' in v) return `link(${local(v.endpoint)}${v.input ? `, ${renderValue(v.input)}` : ''})`
+  if ('formRef' in v) return `formRef(${v.formRef})`
   if (v.ref === 'binding') return `item${v.depth}${suffix(v.path)}`
   return `${v.ref}${suffix(v.path)}`
 }
@@ -42,6 +44,6 @@ export function renderAssign(a: AssignOp): string {
     case 'inc':
       return `${target} += ${renderValue(a.value)}`
     case 'removeWhere':
-      return `${target} = ${target}.filter(x => x.${a.key} != ${renderValue(a.value)})`
+      return `${target} = ${target}.filter(x => ${a.key === null ? 'x' : `x.${a.key}`} != ${renderValue(a.value)})`
   }
 }

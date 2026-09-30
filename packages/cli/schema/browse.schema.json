@@ -55,6 +55,12 @@
             "string",
             "null"
           ]
+        },
+        "actors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BrowseActor"
+          }
         }
       },
       "required": [
@@ -115,6 +121,18 @@
             "string",
             "null"
           ]
+        },
+        "url": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "actor": {
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/definitions/BrowseMode"
         }
       },
       "required": [
@@ -123,6 +141,13 @@
         "at"
       ],
       "additionalProperties": false
+    },
+    "BrowseMode": {
+      "type": "string",
+      "enum": [
+        "on",
+        "off"
+      ]
     },
     "BrowseWidget": {
       "type": "object",
@@ -197,6 +222,48 @@
         "selector",
         "tag",
         "attrs",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "BrowseActor": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "status": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BrowseStep"
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BrowseError"
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "url",
+        "status",
+        "title",
+        "steps",
+        "errors",
         "text"
       ],
       "additionalProperties": false

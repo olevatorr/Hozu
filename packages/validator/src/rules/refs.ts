@@ -1,4 +1,13 @@
-import { type At, at, type ExportsIR, type JsonPatchOp, parsePointer, resolveAt } from '@hozu/core/ir'
+import {
+  type At,
+  at,
+  type ExportsIR,
+  type JsonPatchOp,
+  type Operator,
+  parsePointer,
+  resolveAt,
+  unimplementedOperators,
+} from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { candidatesFor, registriesOf, resolveRef, splitRef } from '../resolve.ts'
 import { refSites } from '../sites.ts'
@@ -24,6 +33,17 @@ function renameKey(pointer: At, value: string, ctx: Ctx): JsonPatchOp[] {
 export function references(ctx: Ctx) {
   for (const site of refSites(ctx.ir)) {
     const { feature: f, pointer, ref, kind } = site
+    if (kind === 'fn' && unimplementedOperators.includes(ref as Operator)) {
+      ctx.report(
+        'HZ014',
+        f.id,
+        pointer,
+        `The builtin ${ref} is not supported yet`,
+        'It is declared for ADR 0043 C and has no implementation until then.',
+        { summary: 'Write the check as a named fn()', snippet: null, patch: null },
+      )
+      continue
+    }
     if (ref.startsWith('?') || (kind === 'fn' && (ref.startsWith('#') || ref.startsWith('%')))) continue
     const resolved = resolveRef(ctx.ir, ref, kind)
     if (!resolved) {

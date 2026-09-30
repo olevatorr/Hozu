@@ -53,7 +53,8 @@ export interface PlanIssue {
 const rank: Record<Mode, number> = { static: 0, isr: 1, swr: 2, request: 3 }
 
 function own(q: QueryIR): { mode: Mode; seconds: number | null } {
-  if (q.scope === 'user' || q.freshness.kind === 'live') return { mode: 'request', seconds: null }
+  if (q.scope === 'user' || q.freshness.kind === 'live' || q.freshness.kind === 'request')
+    return { mode: 'request', seconds: null }
   if (q.freshness.kind === 'static') return { mode: 'static', seconds: null }
   return { mode: q.freshness.kind === 'revalidate' ? 'isr' : 'swr', seconds: q.freshness.seconds }
 }

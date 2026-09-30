@@ -27,6 +27,14 @@ import { widgetEvents } from './rules/widgets.ts'
 
 export type { Drift, LockEntry, Lockfile } from './contracts/lock.ts'
 export { isMechanical, summaryOf } from './contracts/mechanical.ts'
+export type {
+  BehaviorRecord,
+  EndpointLockV2,
+  EnteredRecord,
+  LockEntryV2,
+  LockfileV2,
+  PagesLockV2,
+} from './contracts/record.ts'
 export type { ContractRun, Failure } from './contracts/run.ts'
 export { runContract } from './contracts/run.ts'
 export type { Impact, ImpactKind, ImpactQuery, ImpactUse } from './impact.ts'

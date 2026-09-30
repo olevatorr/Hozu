@@ -11,6 +11,7 @@ export function anyRef(v: ValueExpr, test: (ref: RefExpr) => boolean): boolean {
   if ('fn' in v) return anyRef(v.arg, test)
   if ('test' in v) return anyGuardRef(v.test, test)
   if ('link' in v) return anyRef(v.params, test) || anyRef(v.search, test)
+  if ('endpoint' in v) return v.input !== null && anyRef(v.input, test)
   return false
 }
 

@@ -7,7 +7,7 @@
       "properties": {
         "irVersion": {
           "type": "number",
-          "const": 1
+          "const": 2
         },
         "site": {
           "anyOf": [
@@ -332,6 +332,12 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "failed": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/HeadFailureIR"
+          }
         }
       },
       "required": [
@@ -465,6 +471,32 @@
             "search"
           ],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "endpoint": {
+              "type": "string"
+            },
+            "input": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValueExpr"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "endpoint",
+            "input"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/definitions/FormRefIR"
         }
       ]
     },
@@ -578,6 +610,51 @@
         "lte",
         "gt",
         "gte"
+      ]
+    },
+    "FormRefIR": {
+      "type": "object",
+      "properties": {
+        "formRef": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "formRef"
+      ],
+      "additionalProperties": false
+    },
+    "HeadFailureIR": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "redirect": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "redirect"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "number",
+              "enum": [
+                403,
+                404,
+                410
+              ]
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "additionalProperties": false
+        }
       ]
     },
     "EntriesIR": {
@@ -860,6 +937,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
@@ -868,7 +951,8 @@
         "mutations",
         "tags",
         "fns",
-        "views"
+        "views",
+        "endpoints"
       ],
       "additionalProperties": false
     },
@@ -999,6 +1083,19 @@
             "kind": {
               "type": "string",
               "const": "live"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "request"
             }
           },
           "required": [
@@ -1240,7 +1337,10 @@
               }
             },
             "key": {
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "value": {
               "$ref": "#/definitions/ValueExpr"
@@ -1427,6 +1527,9 @@
           "items": {
             "$ref": "#/definitions/ViewNode"
           }
+        },
+        "ref": {
+          "$ref": "#/definitions/FormRefIR"
         }
       },
       "required": [
@@ -1840,6 +1943,31 @@
             "string",
             "null"
           ]
+        },
+        "mode": {
+          "$ref": "#/definitions/EndpointMode"
+        },
+        "raw": {
+          "type": "boolean",
+          "const": true
+        },
+        "errors": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "failed": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/EndpointStatus"
+          }
+        },
+        "invalidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TagExprIR"
+          }
         }
       },
       "required": [
@@ -1849,6 +1977,27 @@
         "output"
       ],
       "additionalProperties": false
+    },
+    "EndpointMode": {
+      "type": "string",
+      "enum": [
+        "json",
+        "redirect",
+        "response"
+      ]
+    },
+    "EndpointStatus": {
+      "type": "number",
+      "enum": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        422,
+        429
+      ]
     },
     "ContractIR": {
       "type": "object",

@@ -846,3 +846,74 @@ findings and are assigned only by amending this table. Severity is one per code.
 | G10 | Publish 0.7.1 first | **decided: no, folded into 0.8.0** | 0.7.0 keeps the open redirect and the SSE broadcast until 0.8.0 ships |
 | G11 | `part()` (a principle 4 amendment), or HZ059 alone with "inline or split a view" | **part()** | one declared reuse form vs. no new concept; D2 was met once (the reference), 0 times in agent code |
 | G12 | Trial 0021 budget: 3 runs × 2 frameworks, held-out + short variant (≈ 18 M weighted tokens required, 25 M ceiling) | approve with ADR 0044, before wave 1 | statistical power vs. quota |
+
+## Contract layer (wave 1)
+Types only: nothing below is emitted by a builder yet, so every 0.7 program builds to the same IR apart from
+`irVersion` and `exports.endpoints`. Later waves build on these names and do not invent their own.
+
+**IR v2** (`packages/core/src/ir/types.ts`, schema `packages/core/schema/project-ir.schema.json`):
+
+| Type | Where | Change |
+|---|---|---|
+| `ProjectIR.irVersion` | `types.ts:6`, emitted at `core/src/build/project.ts:434` | `2` |
+| `HeadIR.failed?` | `types.ts:62` | `Record<string, HeadFailureIR>`, next to `redirects` (wave 2 removes `redirects`) |
+| `HeadFailureIR` | `types.ts:65` | `{ redirect: string } \| { status: 403 \| 404 \| 410 }`; `redirect` holds a route id |
+| `EndpointIR.mode?` | `types.ts:103` | `EndpointMode`; `output` keeps its meaning (wave 2 makes `mode` required) |
+| `EndpointIR.raw?` | `types.ts:104` | `true` = `input: 'raw'` (the resolver reads `ctx.bytes`) |
+| `EndpointIR.errors?` | `types.ts:105` | name → schema ref, as in mutations |
+| `EndpointIR.failed?` | `types.ts:106` | name → `EndpointStatus` |
+| `EndpointIR.invalidates?` | `types.ts:107` | `TagExprIR[]` |
+| `EndpointMode` | `types.ts:110` | `'json' \| 'redirect' \| 'response'` |
+| `EndpointStatus` | `types.ts:112` | `400 \| 401 \| 403 \| 404 \| 409 \| 410 \| 422 \| 429` |
+| `ExportsIR.endpoints` | `types.ts:135` | `string[]`, always `[]` in wave 1 (`core/src/build/feature.ts:31`, `core/src/build/project.ts:86`, `core/src/builders/feature.ts:42`); exporting an endpoint stays HZ014 until wave 2 |
+| `Freshness` `{ kind: 'request' }` | `types.ts:153` | the builder still rejects `'request'` (HZ014); the compiler maps it to mode `request` (`compiler/src/plan.ts:56`), the data runtime reads it uncached (`data/src/runtime.ts:368`) |
+| `ValueExpr` `{ endpoint, input }` | `types.ts:237` | `input: ValueExpr \| null`; `anyRef` walks it (`core/src/ir/refs.ts:14`) |
+| `FormRefIR` | `types.ts:240`, in `ValueExpr` at `types.ts:238` | `{ formRef: string }`: the value of a control's `form` attribute |
+| `ElementNode.ref?` | `types.ts:292` | `FormRefIR` on a `<form>` node |
+| `AssignOp` `removeWhere.key` | `types.ts:246` | `string \| null`; null = compare the element itself |
+| `operators`, `Operator`, `unimplementedOperators` | `core/src/ir/operators.ts:1,12,14`, exported from `@hozu/core/ir` (`core/src/ir.ts:25`) | the builtin list, with `%includes` declared and not implemented; `operatorFns` is typed against it (`core/src/builders/operators.ts:6`) |
+
+- **Not supported until wave 2, reported as HZ014:**
+  - `removeWhere` with `key: null`: validator `validator/src/rules/paths.ts:121`; `compileMachine` throws
+    `CompileError('HZ014')` (`machine/src/compile.ts:122`). That throw costs 24 B of budget P7 (7 834 → 7 858), taken
+    from the `removeWhere(null)` share; wave 2 replaces it with the implementation.
+  - `%includes`: validator `validator/src/rules/refs.ts:36`.
+  - `endpoint` / `formRef` values: the render generator throws (`runtime-server/src/generate.ts:138`).
+    `compileMachine` only narrows the type (`machine/src/compile.ts:46`), to keep P7 unchanged; no validator rule
+    reports these values yet. Display only: `cli/src/render.ts:15`, `validator/src/contracts/mechanical.ts:58`.
+
+**Lock v2** (`packages/validator/src/contracts/record.ts`, exported from `@hozu/validator`; the validator still
+reads and writes v1):
+
+| Type | Where | Shape |
+|---|---|---|
+| `EnteredRecord` | `record.ts:10` | `{ state, effect, input, timers, final }` of the entered state |
+| `BehaviorRecord` | `record.ts:18` | `{ guard, assign, navigate, enters, fns }`: the previous record G's acceptance runs contracts against; `fns` = ref → `sourceHash` |
+| `LockEntryV2` | `record.ts:26` | `{ behavior, summary, decides, fields: BehaviorRecord, contracts }` |
+| `EndpointLockV2` | `record.ts:34` | `{ mode, failed }` |
+| `PagesLockV2` | `record.ts:39` | `{ head: page → error → HeadFailureIR, endpoints: feature.endpoint → EndpointLockV2, redirects: from → { to, permanent } }` (D) |
+| `LockfileV2` | `record.ts:45` | `{ version: 2, features, pages }` |
+
+**CLI output** (`packages/cli/src/contract.ts`, schemas regenerated under `packages/cli/schema/`):
+
+| Type | Where | Change |
+|---|---|---|
+| `LockState` | `contract.ts:15` | `'missing' \| 'checked' \| 'current' \| 'stale' \| 'updated' \| 'skipped'` (`'checked'` leaves in wave 3); `ValidateOutput.lock` at `contract.ts:22` |
+| `BrowseMode` | `contract.ts:232` | `'on' \| 'off'` (`--js`) |
+| `BrowseError.url?` / `type?` / `actor?` / `mode?` | `contract.ts:238-241` | J's error fields |
+| `BrowseOutput.actors?` | `contract.ts:273` | `BrowseActor[]`, one per `--as` |
+| `BrowseActor` | `contract.ts:276` | `{ name, url, status, title, steps, errors, text }` |
+
+**Runtime protocol:** `EffectResponse.session?: true` (`runtime-client/src/hydrate.ts:51`, imported by
+`runtime-server/src/handler.ts`). Type only; the P7 bundle is unchanged.
+
+**Second mistake-catalog harness:** `packages/validator/test/source-mistakes.test.ts` for codes that are not IR rules.
+- A case is `{ name, code, stage: 'transform' | 'runtime' | 'lock' | 'contract', mistake, fixed }` (`:7`, `:9`);
+  `mistake` and `fixed` return the diagnostics of a source program.
+- Each case asserts that the code is reported with its registry severity, a pointer and a fix with a patch or a
+  snippet, and that `fixed` no longer reports it.
+- The catalog (`:45`) has one case, HZ047. Later waves add HZ044, HZ053, HZ057, HZ058, HZ059 and HZ064 there.
+
+**Not in wave 1** (the task limited it to the items above): the diagnostic registry entries HZ049–HZ064
+(`core/src/ir/codes.ts`, `diagnostic.ts`) and the builder signatures in `core/src/builders/*`. They are still to be
+done, before or with the first rule that emits them.

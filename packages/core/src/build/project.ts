@@ -83,7 +83,7 @@ function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
     imports: config.imports ?? [],
     machine: null,
     messages: null,
-    exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [] },
+    exports: { events: [], queries: [], mutations: [], tags: [], fns: [], views: [], endpoints: [] },
   } as unknown as FeatureParts & Record<string, unknown>
   for (const key of Object.values(kindKeys)) records[key as string] = {}
   const modules = config.declarations as unknown
@@ -431,7 +431,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       }
     : null
   scope.bindings.env = { server: toParse(config.env?.server), public: toParse(config.env?.public) }
-  const ir: ProjectIR = { irVersion: 1, site, session, routes, pages, notFound, error, http, env, features }
+  const ir: ProjectIR = { irVersion: 2, site, session, routes, pages, notFound, error, http, env, features }
   scope.bindings.assetOrder = scope.assetList
   for (const d of scope.diagnostics) d.location.source = resolveSource(scope.sources, d.location.pointer)
   return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }
