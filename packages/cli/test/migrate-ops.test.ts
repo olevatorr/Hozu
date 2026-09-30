@@ -29,9 +29,51 @@ const m = (c) => ui.if(c.x, [ui.p({}, ['a'])], [], 'fade')
 const t = { assign: (e) => [op.set(ctx.a, e.a), op.append(ctx.l, e.x), op.inc(ctx.n, 1), op.removeWhere(ctx.l, 'id', e.id)] }
 `)
     expect(code).toContain(
-      'ctx.a = e.a\nctx.l.push(e.x)\nctx.n += 1\nctx.l = ctx.l.filter((item) => item.id !== e.id)',
+      '{\n  ctx.a = e.a\n  ctx.l.push(e.x)\n  ctx.n += 1\n  ctx.l = ctx.l.filter((item) => item.id !== e.id)\n} }',
     )
     expect(code).not.toContain('import')
+  })
+
+  it('indents the statements like their neighbours, in the indent unit of the module', () => {
+    const nested = run(`import { machine, on, op } from '@hozu/core'
+export const m = machine({
+  states: ({ ctx }) => ({
+    idle: {
+      on: [on(Draft, { target: 'idle', assign: (e) => [op.set(ctx.draft, e.title), op.set(ctx.error, null)] })],
+    },
+  }),
+})
+`)
+    expect(nested.code).toContain(`      on: [on(Draft, { target: 'idle', assign: (e) => {
+        ctx.draft = e.title
+        ctx.error = null
+      } })],`)
+    const four = run(`import { on, op } from "@hozu/core";
+const t = {
+    idle: on(Draft, {
+        assign: (e) => [op.set(ctx.draft, e.title)],
+    }),
+};
+`)
+    expect(four.code).toContain(`        assign: (e) => {
+            ctx.draft = e.title
+        },`)
+  })
+
+  it('keeps a multi-line import multi-line, in the quotes of the module', () => {
+    const { code } = run(`import {
+  machine,
+  on,
+  op,
+} from "@hozu/core";
+const g = (e) => op.eq(e.a, 1);
+`)
+    expect(code).toBe(`import {
+  machine,
+  on,
+} from "@hozu/core";
+const g = (e) => e.a === 1;
+`)
   })
 
   it('lists value-position op.and / op.or: no TS spelling has the same IR', () => {

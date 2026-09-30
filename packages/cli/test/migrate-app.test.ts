@@ -92,12 +92,34 @@ export default app({
       "  app: new URL('./app.ts', import.meta.url),\n})",
     )
     expect(r.write.get(join(dir, 'demo.ts'))).toBe(
-      "import { createDataRuntime } from '@hozu/data'\nimport hozuApp from './app.ts'\nimport { appOptionsOf } from '@hozu/runtime-server'\nconst app = 1\nconst data = createDataRuntime({ resolvers: appOptionsOf(hozuApp)!.resolvers })\n",
+      "import { createDataRuntime } from '@hozu/data'\nimport { appOptionsOf } from '@hozu/runtime-server'\nimport hozuApp from './app.ts'\nconst app = 1\nconst data = createDataRuntime({ resolvers: appOptionsOf(hozuApp)!.resolvers })\n",
     )
     const p = migratePackage(pkg, r.entry)
     expect(JSON.parse(p.code).scripts).toEqual({ start: 'hozu serve', dev: 'hozu-dev' })
     expect(JSON.parse(p.code).dependencies['@hozu/runtime-server']).toBe('^0.7.0')
     expect(migratePackage(p.code, null).code).toBe(p.code)
+  })
+
+  it('puts the app import among the imports, not after the helpers that precede createResolvers', () => {
+    const helpers = `import { resolvers } from '@hozu/data'
+import project from './hozu.config.ts'
+import { listItems } from './model.ts'
+
+const copy = (x: string) => x
+
+export function createResolvers() {
+  return resolvers(project, (implement) => [implement(listItems, () => [copy('a')])])
+}
+`
+    const dir = fixture({ 'serve.ts': serve, 'server.ts': helpers, 'hozu.config.ts': config })
+    const app = migrateApp(dir, join(dir, 'hozu.config.ts'), sources(dir)).write.get(join(dir, 'app.ts'))!
+    expect(app.slice(0, app.indexOf('\nconst copy'))).toBe(`import { bundleWidgets } from '@hozu/bundle'
+import { resolvers } from '@hozu/data'
+import { ogImage } from '@hozu/image'
+import { app } from '@hozu/runtime-server'
+import project from './hozu.config.ts'
+import { listItems } from './model.ts'
+`)
   })
 
   it('drops sessionCookie with a note and keeps a serve.ts that wraps the server', () => {

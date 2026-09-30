@@ -4,6 +4,7 @@ import {
   apply,
   declaration,
   type Edit,
+  indentAt,
   lineOf,
   type Node,
   type Note,
@@ -149,7 +150,15 @@ export function migrateParts(files: Map<string, string>): { files: Map<string, s
           stmt.end,
           `${exported}const ${name} = part(${head} => ${source.slice(fn.body.start, fn.body.end)})`,
         ])
-      } else edits.push([fn.start, fn.end, `part(${source.slice(fn.start, fn.end)})`])
+      } else {
+        const hanging =
+          fn.body.type !== 'BlockStatement' && /=>[ \t]*\n\s*$/.test(source.slice(fn.start, fn.body.start))
+        edits.push([
+          fn.start,
+          fn.end,
+          `part(${source.slice(fn.start, fn.end)}${hanging ? `,\n${indentAt(source, stmt.start)}` : ''})`,
+        ])
+      }
     }
     if (!edits.length) continue
     const imp = addImport(source, program, '@hozu/core', ['part'])

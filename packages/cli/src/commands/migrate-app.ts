@@ -8,6 +8,7 @@ import {
   importItems,
   importsFrom,
   importText,
+  insertImport,
   keyName,
   lineOf,
   localOf,
@@ -15,6 +16,7 @@ import {
   type Note,
   parse,
   property,
+  styleOf,
   walk,
 } from './migrate-ast.ts'
 import { insertProperty } from './migrate-head.ts'
@@ -163,7 +165,7 @@ export function migrateApp(dir: string, config: string, files: Map<string, strin
     : (users.find(([f, s]) => f !== defining!.file && optionsOf(parse(s)))?.[0] ?? null)
   const carried: string[] = []
   const named = new Map<string, string[]>()
-  const defaults: string[] = []
+  const defaults: { from: string; text: string }[] = []
   const options: string[] = [`  resolvers: ${resolversText.replace(/\n/g, '\n  ')},`]
   const appImports = source.slice(0, defining.stmt.start)
   let wrapper = false
@@ -214,7 +216,11 @@ export function migrateApp(dir: string, config: string, files: Map<string, strin
           : s.source.value
         if (x.type === 'ImportSpecifier')
           named.set(from, [...(named.get(from) ?? []), hs.slice(x.start, x.end)])
-        else defaults.push(`import ${hs.slice(x.start, x.end)} from '${from}'`)
+        else
+          defaults.push({
+            from,
+            text: `import ${hs.slice(x.start, x.end)} from ${styleOf(hs).quote}${from}${styleOf(hs).quote}${styleOf(hs).semi}`,
+          })
         return
       }
       for (const n of freeNames(s)) if (n !== name) visit(n)
@@ -260,14 +266,16 @@ export function migrateApp(dir: string, config: string, files: Map<string, strin
   if (options.some((o) => o.startsWith('  widgets: bundleWidgets')))
     named.set('@hozu/bundle', ['bundleWidgets'])
   named.set('@hozu/runtime-server', [...(named.get('@hozu/runtime-server') ?? []), 'app'])
-  const added: string[] = []
+  const style = styleOf(source)
   for (const [from, names] of [...named].sort(([a], [b]) => a.localeCompare(b))) {
     const held = header.body.some((x: Node) => x.type === 'ImportDeclaration' && x.source.value === from)
-    const e = held ? addImport(appImports, header, from, names) : null
+    const e = held
+      ? addImport(appImports, header, from, names)
+      : insertImport(appImports, header, from, importText(names, from, style))
     if (e) edits.push(e)
-    else if (!held) added.push(importText(names, from))
   }
-  const imports = [apply(appImports, edits).trimEnd(), ...added, ...defaults].join('\n')
+  for (const d of defaults) edits.push(insertImport(appImports, header, d.from, d.text))
+  const imports = apply(appImports, edits).trimEnd()
   const tail = source.slice(defining.stmt.end).trim()
   const code = `${[imports, '', ...carried, ...setup].join('\n').replace(/\n{3,}/g, '\n\n')}\n\nexport default app({\n${options.join('\n')}\n})${tail ? `\n\n${tail}` : ''}\n`
   out.write.set(target, code)
@@ -290,11 +298,14 @@ export function migrateApp(dir: string, config: string, files: Map<string, strin
     walk(program, (n) => n.type === 'Identifier' && taken.add(n.name))
     const local = taken.has('app') ? 'hozuApp' : 'app'
     const kept = importItems(s, imp).filter((x) => localOf(x) !== RESOLVERS)
-    const appImport = `import ${local} from '${rel(dirname(file), target)}'`
+    const { quote, semi } = styleOf(s)
+    const appImport = `import ${local} from ${quote}${rel(dirname(file), target)}${quote}${semi}`
     e.push([
       imp.start,
       imp.end,
-      kept.length ? `${appImport}\n${importText(kept, imp.source.value)}` : appImport,
+      kept.length
+        ? `${appImport}\n${importText(kept, imp.source.value, styleOf(s), s.slice(imp.start, imp.end).includes('\n'))}`
+        : appImport,
     ])
     walk(program, (n) => {
       if (resolversCall(n)) e.push([n.start, n.end, `appOptionsOf(${local})!.resolvers`])

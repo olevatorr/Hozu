@@ -1,13 +1,17 @@
 import {
+  apply,
   children,
   type Edit,
+  filterImport,
   importsFrom,
+  indentAt,
   lineOf,
   type Node,
   type Note,
   parents,
   parse,
   type Rewrite,
+  styleOf,
 } from './migrate-ast.ts'
 
 const COMPARE: Record<string, string> = { eq: '===', neq: '!==', lt: '<', lte: '<=', gt: '>', gte: '>=' }
@@ -23,6 +27,7 @@ export function migrateOps(source: string, file: string): Rewrite {
   const uiName = core.get('ui') ?? null
   if (!opName && !uiName) return { code: source, notes: [] }
   const notes: Note[] = []
+  const style = styleOf(source)
   const note = (n: Node, message: string, behaviour = false) =>
     notes.push({ file, line: lineOf(source, n.start), rule: 'op', message, see: 'views', behaviour })
   const parent = parents(program)
@@ -145,7 +150,8 @@ export function migrateOps(source: string, file: string): Rewrite {
           return `${target} = ${target}.filter((item) => item !== ${emit(w)})`
         return `${target} = ${target}.filter((item) => item.${v.value} !== ${emit(w)})`
       })
-      return `${params}{\n${stmts.join('\n')}\n}`
+      const outer = indentAt(source, n.start)
+      return `${params}{\n${stmts.map((x: string) => `${outer}${style.indent}${x}`).join('\n')}\n${outer}}`
     }
     return splice(n)
   }
@@ -177,14 +183,17 @@ export function migrateOps(source: string, file: string): Rewrite {
     const body = code.replace(/^import[^\n]*\n/gm, '')
     if (new RegExp(`\\b${opName}\\.`).test(body))
       note(program, 'op.* is left after the rewrite: rewrite it by hand')
-    else
-      code = code.replace(/import \{([^}]*)\} from '@hozu\/core'\n?/, (_, names: string) => {
-        const kept = names
-          .split(',')
-          .map((x) => x.trim())
-          .filter((x) => x && x !== 'op' && x !== `op as ${opName}`)
-        return kept.length ? `import { ${kept.join(', ')} } from '@hozu/core'\n` : ''
-      })
+    else {
+      const after = parse(code)
+      const decl = after.body.find(
+        (x: Node) =>
+          x.type === 'ImportDeclaration' &&
+          x.source.value === '@hozu/core' &&
+          x.specifiers.some((y: Node) => y.local.name === opName),
+      )
+      const e = decl && filterImport(code, decl, (local) => local !== opName)
+      if (e) code = apply(code, [e])
+    }
   }
   return { code, notes }
 }

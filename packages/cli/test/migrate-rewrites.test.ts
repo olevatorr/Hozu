@@ -2,14 +2,14 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { printed } from '../src/commands/migrate.ts'
-import { forget } from '../src/commands/migrate-ast.ts'
+import { addImport, apply, forget, parse } from '../src/commands/migrate-ast.ts'
 import { migrateForms } from '../src/commands/migrate-forms.ts'
 import { migrateFreshness } from '../src/commands/migrate-freshness.ts'
 import { migrateHead, suggestion } from '../src/commands/migrate-head.ts'
 import { migrateLinks } from '../src/commands/migrate-links.ts'
 import { migrateLists } from '../src/commands/migrate-lists.ts'
 import { migrateParts } from '../src/commands/migrate-parts.ts'
-import { fixture, model } from './migrate-fixture.ts'
+import { fixture, model, read } from './migrate-fixture.ts'
 
 const twice = <T extends { code: string }>(f: (s: string) => T, source: string) => {
   const once = f(source)
@@ -276,6 +276,46 @@ export const List = ui.view({
     const notes = [...first.notes, ...second.notes].map((n) => [n.message.split(':')[0], n.behaviour])
     expect(notes).toContainEqual(['row → part()', true])
     expect(notes).toContainEqual(['badge → part() (the IR is unchanged)', false])
+  })
+})
+
+describe('migrate: rewritten lines look like their neighbours (no formatter in the app)', () => {
+  it('closes a part() around a hanging arrow on its own line, and adds part to a long import in its style', () => {
+    const dir = fixture({
+      'model.ts': model,
+      'views.ts': `import {
+  type Child,
+  ui,
+} from '@hozu/core'
+
+const row = (label: string) =>
+  ui.li({}, [
+    label === '' ? 'none' : label,
+  ])
+
+export const List = ui.view({ render: ({ ctx }) => ui.ul({}, [row(ctx.label)]) })
+`,
+    })
+    const files = new Map([[join(dir, 'views.ts'), read(dir, 'views.ts')]])
+    const views = migrateParts(files).files.get(join(dir, 'views.ts'))!
+    expect(views).toContain(`import {
+  type Child,
+  part,
+  ui,
+} from '@hozu/core'`)
+    expect(views).toContain(`const row = part((label: string) =>
+  ui.li({}, [
+    label === '' ? 'none' : label,
+  ]),
+)`)
+  })
+
+  it('adds a new import in the sorted place, with the quotes and semicolons of the module', () => {
+    const source = `import { a } from "@hozu/core";\nimport { b } from "./b.ts";\n\nconst x = 1;\n`
+    const edit = addImport(source, parse(source), '@hozu/runtime-server', ['app'])!
+    expect(apply(source, [edit])).toBe(
+      `import { a } from "@hozu/core";\nimport { app } from "@hozu/runtime-server";\nimport { b } from "./b.ts";\n\nconst x = 1;\n`,
+    )
   })
 })
 

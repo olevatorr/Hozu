@@ -61,7 +61,8 @@ export const lineOf = (source: string, at: number) => source.slice(0, at).split(
 export function apply(source: string, edits: Edit[]): string {
   let code = source
   let last = Number.POSITIVE_INFINITY
-  for (const [s, e, t] of [...edits].sort((a, b) => b[0] - a[0] || b[1] - a[1])) {
+  const order = edits.map((edit, i) => [edit, i] as const)
+  for (const [[s, e, t]] of order.sort(([a, i], [b, j]) => b[0] - a[0] || b[1] - a[1] || j - i)) {
     if (e > last) continue
     code = code.slice(0, s) + t + code.slice(e)
     last = s
@@ -126,11 +127,58 @@ export const localOf = (item: string) =>
 
 const sortItems = (items: string[]) => [...items].sort((a, b) => localOf(a).localeCompare(localOf(b)))
 
-export const importText = (items: string[], from: string) =>
-  `import { ${sortItems(items).join(', ')} } from '${from}'`
+/** How a module is written, so rewritten lines look like their neighbours without a formatter. */
+export interface Style {
+  quote: "'" | '"'
+  semi: '' | ';'
+  indent: string
+  width: number
+}
 
-/** Adds names to the `import { … } from '<from>'` of a module, or a new import after the last one. */
+export function styleOf(source: string): Style {
+  const froms = [...source.matchAll(/^(?:import\b.*?\s|\}\s*)from\s+(['"])[^'"\n]*\1(;?)/gm)]
+  const doubles = froms.filter((m) => m[1] === '"').length
+  const semis = froms.filter((m) => m[2] === ';').length
+  const lines = source.split('\n')
+  const unit = lines
+    .map((l, i) => (/[{([]\s*$/.test(lines[i - 1] ?? '') ? /^(\t|[ ]+)\S/.exec(l)?.[1] : undefined))
+    .find((x) => x !== undefined)
+  const longest = Math.max(0, ...lines.map((l) => l.length))
+  return {
+    quote: froms.length && doubles * 2 > froms.length ? '"' : "'",
+    semi: froms.length && semis * 2 > froms.length ? ';' : '',
+    indent: unit ?? '  ',
+    width: Math.min(120, Math.max(80, longest)),
+  }
+}
+
+const PLAIN: Style = { quote: "'", semi: '', indent: '  ', width: 110 }
+
+export function importText(items: string[], from: string, style: Style = PLAIN, multiline = false): string {
+  const sorted = sortItems(items)
+  const tail = `} from ${style.quote}${from}${style.quote}${style.semi}`
+  const one = `import { ${sorted.join(', ')} ${tail}`
+  if (!multiline && one.length <= style.width) return one
+  return `import {\n${sorted.map((x) => `${style.indent}${x},`).join('\n')}\n${tail}`
+}
+
+const bare = (from: string) => (from.startsWith('.') ? `1${from}` : `0${from}`)
+
+/** An edit that inserts a whole import line: in source order when the imports are sorted, else after the last. */
+export function insertImport(source: string, program: Node, from: string, text: string): Edit {
+  const imports = program.body.filter((s: Node) => s.type === 'ImportDeclaration')
+  if (!imports.length) return [0, 0, `${text}\n`]
+  const keys = imports.map((s: Node) => bare(String(s.source.value)))
+  const sorted = keys.every((k: string, i: number) => i === 0 || keys[i - 1]! <= k)
+  const next = sorted ? imports.find((_: Node, i: number) => keys[i]! > bare(from)) : undefined
+  if (next) return [next.start, next.start, `${text}\n`]
+  const last = imports[imports.length - 1]
+  return [last.end, last.end, `\n${text}`]
+}
+
+/** Adds names to the `import { … } from '<from>'` of a module, or a new import in its place among the imports. */
 export function addImport(source: string, program: Node, from: string, names: string[]): Edit | null {
+  const style = styleOf(source)
   const decl = program.body.find(
     (s: Node) =>
       s.type === 'ImportDeclaration' &&
@@ -144,13 +192,13 @@ export function addImport(source: string, program: Node, from: string, names: st
     const have = new Set(items.map(localOf))
     const missing = names.filter((n) => !have.has(n))
     if (!missing.length) return null
-    return [decl.start, decl.end, importText([...items, ...missing], from)]
+    return [decl.start, decl.end, reimport(source, decl, [...items, ...missing], style)]
   }
-  const imports = program.body.filter((s: Node) => s.type === 'ImportDeclaration')
-  const at = imports.length ? imports[imports.length - 1].end : 0
-  const text = importText(names, from)
-  return [at, at, at ? `\n${text}` : `${text}\n`]
+  return insertImport(source, program, from, importText(names, from, style))
 }
+
+const reimport = (source: string, decl: Node, items: string[], style: Style) =>
+  importText(items, decl.source.value, style, source.slice(decl.start, decl.end).includes('\n'))
 
 /** Keeps only the named specifiers `keep` accepts; drops the declaration when nothing is left. */
 export function filterImport(source: string, decl: Node, keep: (local: string) => boolean): Edit | null {
@@ -161,8 +209,12 @@ export function filterImport(source: string, decl: Node, keep: (local: string) =
     const end = source[decl.end] === '\n' ? decl.end + 1 : decl.end
     return [decl.start, end, '']
   }
-  return [decl.start, decl.end, importText(kept, decl.source.value)]
+  return [decl.start, decl.end, reimport(source, decl, kept, styleOf(source))]
 }
+
+/** The leading whitespace of the line holding `at`. */
+export const indentAt = (source: string, at: number) =>
+  /^[ \t]*/.exec(source.slice(source.lastIndexOf('\n', at - 1) + 1))![0]
 
 export interface Declaration {
   file: string
