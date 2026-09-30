@@ -1,0 +1,336 @@
+{
+  "commit": "dd953607800426fdc3f8ba9bda8687d09eb83311",
+  "node": "v22.22.1",
+  "snapshots": [
+    {
+      "name": "examples-blog",
+      "source": "examples/blog",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "examples-bookmarks",
+      "source": "examples/bookmarks",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "examples-cart",
+      "source": "examples/cart",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "examples-feed",
+      "source": "examples/feed",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "examples-notes",
+      "source": "examples/notes",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "examples-showcase",
+      "source": "examples/showcase",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "examples-stations",
+      "source": "examples/stations",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "examples-trial-0006",
+      "source": "examples/trial-0006",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "examples-trial-0007",
+      "source": "examples/trial-0007",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "examples-trial-tasks",
+      "source": "examples/trial-tasks",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "site",
+      "source": "site",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-base",
+      "source": "bench/trial/longrun/reference/hozu (steps 0 and 1)",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s02",
+      "source": "reference/hozu + hozu-steps/02..02.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s03",
+      "source": "reference/hozu + hozu-steps/02..03.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s04",
+      "source": "reference/hozu + hozu-steps/02..04.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s05",
+      "source": "reference/hozu + hozu-steps/02..05.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s06",
+      "source": "reference/hozu + hozu-steps/02..06.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s07",
+      "source": "reference/hozu + hozu-steps/02..07.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s08",
+      "source": "reference/hozu + hozu-steps/02..08.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s09",
+      "source": "reference/hozu + hozu-steps/02..09.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s10",
+      "source": "reference/hozu + hozu-steps/02..10.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s11",
+      "source": "reference/hozu + hozu-steps/02..11.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s12",
+      "source": "reference/hozu + hozu-steps/02..12.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s13",
+      "source": "reference/hozu + hozu-steps/02..13.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s14",
+      "source": "reference/hozu + hozu-steps/02..14.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s15",
+      "source": "reference/hozu + hozu-steps/02..15.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s16",
+      "source": "reference/hozu + hozu-steps/02..16.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s17",
+      "source": "reference/hozu + hozu-steps/02..17.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s18",
+      "source": "reference/hozu + hozu-steps/02..18.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s19",
+      "source": "reference/hozu + hozu-steps/02..19.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "reference-hozu-s20",
+      "source": "reference/hozu + hozu-steps/02..20.patch",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "trial0020-hozu-run1-s12",
+      "source": "~/hozu-trial-0020/hozu-run1/app tag s12",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    },
+    {
+      "name": "trial0020-hozu-run2-s12",
+      "source": "~/hozu-trial-0020/hozu-run2/app tag s12",
+      "core": "0.7.0",
+      "build": [],
+      "validate": {
+        "lock": "updated",
+        "errors": []
+      }
+    }
+  ]
+}

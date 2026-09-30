@@ -1,0 +1,1434 @@
+{
+  "env": null,
+  "error": null,
+  "features": {
+    "feed": {
+      "contracts": {
+        "ignoresARepeatedCursor": {
+          "expect": {
+            "context": {
+              "cursors": [null, "c10"],
+              "last": "c10"
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "cursors": [null, "c10"],
+              "last": "c10"
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "cursor": "c10"
+              },
+              "send": "feed.More"
+            }
+          ]
+        },
+        "loadsNextPage": {
+          "expect": {
+            "context": {
+              "cursors": [null, "c10"],
+              "last": "c10"
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "cursors": [null],
+              "last": null
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "cursor": "c10"
+              },
+              "send": "feed.More"
+            }
+          ]
+        }
+      },
+      "endpoints": {},
+      "events": {
+        "More": {
+          "payload": "s_e82a46ab79c7173f"
+        }
+      },
+      "exports": {
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": [],
+        "tags": [],
+        "views": []
+      },
+      "fns": {},
+      "id": "feed",
+      "imports": [],
+      "intent": {
+        "invariants": ["Every page is its own cached query", "A cursor is loaded once"],
+        "summary": "A paginated feed: load more by cursor, infinite scroll, nested tag routes and an optional year segment."
+      },
+      "machine": {
+        "context": "s_923a3522182aa822",
+        "initial": "idle",
+        "initialContext": {
+          "cursors": [null],
+          "last": null
+        },
+        "states": {
+          "idle": {
+            "after": [],
+            "final": false,
+            "ignore": [],
+            "invoke": null,
+            "on": {
+              "feed.More": [
+                {
+                  "assign": [
+                    {
+                      "op": "append",
+                      "path": ["cursors"],
+                      "value": {
+                        "path": ["cursor"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["last"],
+                      "value": {
+                        "path": ["cursor"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": {
+                    "args": [
+                      {
+                        "left": {
+                          "path": ["last"],
+                          "ref": "context"
+                        },
+                        "op": "neq",
+                        "right": {
+                          "path": ["cursor"],
+                          "ref": "event"
+                        }
+                      },
+                      {
+                        "left": {
+                          "path": ["cursor"],
+                          "ref": "event"
+                        },
+                        "op": "neq",
+                        "right": {
+                          "literal": null
+                        }
+                      }
+                    ],
+                    "op": "and"
+                  },
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "messages": null,
+      "mutations": {},
+      "queries": {
+        "byTag": {
+          "errors": {},
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_14ccd27747dd7191",
+          "output": "s_52f6f63ce99f4fe8",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "feed.itemsTag"
+            }
+          ]
+        },
+        "byYear": {
+          "errors": {},
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_d080182bcbf586d5",
+          "output": "s_52f6f63ce99f4fe8",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "feed.itemsTag"
+            }
+          ]
+        },
+        "listPage": {
+          "errors": {},
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_e82a46ab79c7173f",
+          "output": "s_80565b235f5e516a",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "feed.itemsTag"
+            }
+          ]
+        },
+        "listTags": {
+          "errors": {},
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_dfe53fb105a8e6a1",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "feed.itemsTag"
+            }
+          ]
+        },
+        "listYears": {
+          "errors": {},
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_8ab4264305879a9c",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "feed.itemsTag"
+            }
+          ]
+        }
+      },
+      "schemas": {
+        "s_14ccd27747dd7191": {
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["path"],
+          "type": "object"
+        },
+        "s_52f6f63ce99f4fe8": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "tags": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "title": {
+                "type": "string"
+              },
+              "year": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "title", "tags", "label", "year"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "s_80565b235f5e516a": {
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "year": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "title", "tags", "label", "year"],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "next": {
+              "type": ["string", "null"]
+            }
+          },
+          "required": ["items", "next"],
+          "type": "object"
+        },
+        "s_8ab4264305879a9c": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "year": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": ["year"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "s_923a3522182aa822": {
+          "additionalProperties": false,
+          "properties": {
+            "cursors": {
+              "items": {
+                "type": ["string", "null"]
+              },
+              "type": "array"
+            },
+            "last": {
+              "type": ["string", "null"]
+            }
+          },
+          "required": ["cursors", "last"],
+          "type": "object"
+        },
+        "s_99334726611ccf58": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "s_d080182bcbf586d5": {
+          "additionalProperties": false,
+          "properties": {
+            "year": {
+              "type": ["string", "null"]
+            }
+          },
+          "required": ["year"],
+          "type": "object"
+        },
+        "s_dfe53fb105a8e6a1": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": ["path"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "s_e82a46ab79c7173f": {
+          "additionalProperties": false,
+          "properties": {
+            "cursor": {
+              "type": ["string", "null"]
+            }
+          },
+          "required": ["cursor"],
+          "type": "object"
+        }
+      },
+      "tags": {
+        "itemsTag": {
+          "param": null
+        }
+      },
+      "views": {
+        "Archive": {
+          "machine": null,
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {
+                      "href": {
+                        "link": "home",
+                        "params": {
+                          "literal": null
+                        },
+                        "search": {
+                          "literal": null
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "feed.Archive/0/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Feed"
+                        }
+                      }
+                    ],
+                    "class": "underline",
+                    "id": "feed.Archive/0/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "href": {
+                        "link": "archive",
+                        "params": {
+                          "literal": {
+                            "year": null
+                          }
+                        },
+                        "search": {
+                          "literal": null
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "feed.Archive/0/1/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Archive"
+                        }
+                      }
+                    ],
+                    "class": "underline",
+                    "id": "feed.Archive/0/1",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "href": {
+                        "link": "archive",
+                        "params": {
+                          "literal": {
+                            "year": "2026"
+                          }
+                        },
+                        "search": {
+                          "literal": null
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "feed.Archive/0/2/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "2026"
+                        }
+                      }
+                    ],
+                    "class": "underline",
+                    "id": "feed.Archive/0/2",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "flex gap-4 text-sm",
+                "id": "feed.Archive/0",
+                "kind": "el",
+                "on": {},
+                "tag": "nav",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "feed.Archive/1/0",
+                    "ifFalse": [
+                      {
+                        "id": "feed.Archive/1/0/ifFalse/0",
+                        "kind": "text",
+                        "value": {
+                          "path": ["year"],
+                          "ref": "params"
+                        }
+                      }
+                    ],
+                    "ifTrue": [
+                      {
+                        "id": "feed.Archive/1/0/ifTrue/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "All years"
+                        }
+                      }
+                    ],
+                    "kind": "if",
+                    "motion": null,
+                    "test": {
+                      "left": {
+                        "path": ["year"],
+                        "ref": "params"
+                      },
+                      "op": "eq",
+                      "right": {
+                        "literal": null
+                      }
+                    }
+                  }
+                ],
+                "class": "text-2xl font-bold",
+                "id": "feed.Archive/1",
+                "kind": "el",
+                "on": {},
+                "tag": "h1",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "failed": {
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "feed.Archive/2/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "feed.Archive/2/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "feed.Archive/2",
+                "input": {
+                  "object": {
+                    "year": {
+                      "path": ["year"],
+                      "ref": "params"
+                    }
+                  }
+                },
+                "kind": "query",
+                "pending": null,
+                "query": "feed.byYear",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "feed.Archive/2/ready/0",
+                      "item": {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "id": "feed.Archive/2/ready/0/item/0",
+                            "kind": "text",
+                            "value": {
+                              "depth": 1,
+                              "path": ["title"],
+                              "ref": "binding"
+                            }
+                          },
+                          {
+                            "id": "feed.Archive/2/ready/0/item/1",
+                            "kind": "text",
+                            "value": {
+                              "literal": " · "
+                            }
+                          },
+                          {
+                            "id": "feed.Archive/2/ready/0/item/2",
+                            "kind": "text",
+                            "value": {
+                              "depth": 1,
+                              "path": ["year"],
+                              "ref": "binding"
+                            }
+                          }
+                        ],
+                        "class": null,
+                        "id": "feed.Archive/2/ready/0/item",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "li",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      "key": "id",
+                      "kind": "each",
+                      "motion": null,
+                      "source": {
+                        "depth": 0,
+                        "path": [],
+                        "ref": "binding"
+                      }
+                    }
+                  ],
+                  "class": "space-y-2",
+                  "id": "feed.Archive/2/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "ul",
+                  "toggle": {},
+                  "vars": {}
+                }
+              }
+            ],
+            "class": "mx-auto max-w-2xl space-y-4 p-6",
+            "id": "feed.Archive",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": "archive",
+          "seed": null
+        },
+        "Feed": {
+          "machine": "feed",
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {
+                      "href": {
+                        "link": "home",
+                        "params": {
+                          "literal": null
+                        },
+                        "search": {
+                          "literal": null
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "feed.Feed/0/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Feed"
+                        }
+                      }
+                    ],
+                    "class": "underline",
+                    "id": "feed.Feed/0/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "href": {
+                        "link": "archive",
+                        "params": {
+                          "literal": {
+                            "year": null
+                          }
+                        },
+                        "search": {
+                          "literal": null
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "feed.Feed/0/1/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Archive"
+                        }
+                      }
+                    ],
+                    "class": "underline",
+                    "id": "feed.Feed/0/1",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "href": {
+                        "link": "archive",
+                        "params": {
+                          "literal": {
+                            "year": "2026"
+                          }
+                        },
+                        "search": {
+                          "literal": null
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "feed.Feed/0/2/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "2026"
+                        }
+                      }
+                    ],
+                    "class": "underline",
+                    "id": "feed.Feed/0/2",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "flex gap-4 text-sm",
+                "id": "feed.Feed/0",
+                "kind": "el",
+                "on": {},
+                "tag": "nav",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "feed.Feed/1/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Feed"
+                    }
+                  }
+                ],
+                "class": "text-2xl font-bold",
+                "id": "feed.Feed/1",
+                "kind": "el",
+                "on": {},
+                "tag": "h1",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "id": "feed.Feed/2",
+                "item": {
+                  "failed": {
+                    "Unexpected": {
+                      "attrs": {
+                        "role": {
+                          "literal": "alert"
+                        }
+                      },
+                      "children": [
+                        {
+                          "id": "feed.Feed/2/item/failed/Unexpected/0",
+                          "kind": "text",
+                          "value": {
+                            "literal": "The feed is unavailable"
+                          }
+                        }
+                      ],
+                      "class": null,
+                      "id": "feed.Feed/2/item/failed/Unexpected",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  },
+                  "id": "feed.Feed/2/item",
+                  "input": {
+                    "object": {
+                      "cursor": {
+                        "depth": 0,
+                        "path": [],
+                        "ref": "binding"
+                      }
+                    }
+                  },
+                  "kind": "query",
+                  "pending": {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "id": "feed.Feed/2/item/pending/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Loading…"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "feed.Feed/2/item/pending",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  "query": "feed.listPage",
+                  "ready": {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "id": "feed.Feed/2/item/ready/0/0",
+                            "item": {
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "id": "feed.Feed/2/item/ready/0/0/item/0",
+                                  "kind": "text",
+                                  "value": {
+                                    "depth": 2,
+                                    "path": ["title"],
+                                    "ref": "binding"
+                                  }
+                                },
+                                {
+                                  "id": "feed.Feed/2/item/ready/0/0/item/1",
+                                  "kind": "text",
+                                  "value": {
+                                    "literal": " · "
+                                  }
+                                },
+                                {
+                                  "attrs": {
+                                    "href": {
+                                      "link": "tag",
+                                      "params": {
+                                        "object": {
+                                          "path": {
+                                            "depth": 2,
+                                            "path": ["tags"],
+                                            "ref": "binding"
+                                          }
+                                        }
+                                      },
+                                      "search": {
+                                        "literal": null
+                                      }
+                                    }
+                                  },
+                                  "children": [
+                                    {
+                                      "id": "feed.Feed/2/item/ready/0/0/item/2/0",
+                                      "kind": "text",
+                                      "value": {
+                                        "depth": 2,
+                                        "path": ["label"],
+                                        "ref": "binding"
+                                      }
+                                    }
+                                  ],
+                                  "class": "underline",
+                                  "id": "feed.Feed/2/item/ready/0/0/item/2",
+                                  "kind": "el",
+                                  "on": {},
+                                  "tag": "a",
+                                  "toggle": {},
+                                  "vars": {}
+                                }
+                              ],
+                              "class": "rounded border p-3",
+                              "id": "feed.Feed/2/item/ready/0/0/item",
+                              "kind": "el",
+                              "on": {},
+                              "tag": "li",
+                              "toggle": {},
+                              "vars": {}
+                            },
+                            "key": "id",
+                            "kind": "each",
+                            "motion": null,
+                            "source": {
+                              "depth": 1,
+                              "path": ["items"],
+                              "ref": "binding"
+                            }
+                          }
+                        ],
+                        "class": "space-y-2",
+                        "id": "feed.Feed/2/item/ready/0",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "ul",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "id": "feed.Feed/2/item/ready/1",
+                        "ifFalse": [],
+                        "ifTrue": [
+                          {
+                            "attrs": {
+                              "type": {
+                                "literal": "button"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "feed.Feed/2/item/ready/1/ifTrue/0/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Load more"
+                                }
+                              }
+                            ],
+                            "class": "rounded border px-3 py-1",
+                            "id": "feed.Feed/2/item/ready/1/ifTrue/0",
+                            "kind": "el",
+                            "on": {
+                              "click": {
+                                "event": "feed.More",
+                                "payload": {
+                                  "object": {
+                                    "cursor": {
+                                      "depth": 1,
+                                      "path": ["next"],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "tag": "button",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {
+                              "data-hozu-visible": {
+                                "literal": ""
+                              }
+                            },
+                            "children": [],
+                            "class": "h-px",
+                            "id": "feed.Feed/2/item/ready/1/ifTrue/1",
+                            "kind": "el",
+                            "on": {
+                              "visible": {
+                                "event": "feed.More",
+                                "payload": {
+                                  "object": {
+                                    "cursor": {
+                                      "depth": 1,
+                                      "path": ["next"],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "tag": "div",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        ],
+                        "kind": "if",
+                        "motion": null,
+                        "test": {
+                          "args": [
+                            {
+                              "left": {
+                                "depth": 0,
+                                "path": [],
+                                "ref": "binding"
+                              },
+                              "op": "eq",
+                              "right": {
+                                "path": ["last"],
+                                "ref": "context"
+                              }
+                            },
+                            {
+                              "left": {
+                                "depth": 1,
+                                "path": ["next"],
+                                "ref": "binding"
+                              },
+                              "op": "neq",
+                              "right": {
+                                "literal": null
+                              }
+                            }
+                          ],
+                          "op": "and"
+                        }
+                      }
+                    ],
+                    "class": "space-y-2",
+                    "id": "feed.Feed/2/item/ready",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "section",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "key": null,
+                "kind": "each",
+                "motion": null,
+                "source": {
+                  "path": ["cursors"],
+                  "ref": "context"
+                }
+              }
+            ],
+            "class": "mx-auto max-w-2xl space-y-4 p-6",
+            "id": "feed.Feed",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": null,
+          "seed": null
+        },
+        "TagList": {
+          "machine": null,
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {
+                      "href": {
+                        "link": "home",
+                        "params": {
+                          "literal": null
+                        },
+                        "search": {
+                          "literal": null
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "feed.TagList/0/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Feed"
+                        }
+                      }
+                    ],
+                    "class": "underline",
+                    "id": "feed.TagList/0/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "href": {
+                        "link": "archive",
+                        "params": {
+                          "literal": {
+                            "year": null
+                          }
+                        },
+                        "search": {
+                          "literal": null
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "feed.TagList/0/1/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Archive"
+                        }
+                      }
+                    ],
+                    "class": "underline",
+                    "id": "feed.TagList/0/1",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "href": {
+                        "link": "archive",
+                        "params": {
+                          "literal": {
+                            "year": "2026"
+                          }
+                        },
+                        "search": {
+                          "literal": null
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "feed.TagList/0/2/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "2026"
+                        }
+                      }
+                    ],
+                    "class": "underline",
+                    "id": "feed.TagList/0/2",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "flex gap-4 text-sm",
+                "id": "feed.TagList/0",
+                "kind": "el",
+                "on": {},
+                "tag": "nav",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "failed": {
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "feed.TagList/1/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "feed.TagList/1/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "feed.TagList/1",
+                "input": {
+                  "object": {
+                    "path": {
+                      "path": ["path"],
+                      "ref": "params"
+                    }
+                  }
+                },
+                "kind": "query",
+                "pending": null,
+                "query": "feed.byTag",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "feed.TagList/1/ready/0",
+                      "item": {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "id": "feed.TagList/1/ready/0/item/0",
+                            "kind": "text",
+                            "value": {
+                              "depth": 1,
+                              "path": ["title"],
+                              "ref": "binding"
+                            }
+                          },
+                          {
+                            "id": "feed.TagList/1/ready/0/item/1",
+                            "kind": "text",
+                            "value": {
+                              "literal": " · "
+                            }
+                          },
+                          {
+                            "id": "feed.TagList/1/ready/0/item/2",
+                            "kind": "text",
+                            "value": {
+                              "depth": 1,
+                              "path": ["label"],
+                              "ref": "binding"
+                            }
+                          }
+                        ],
+                        "class": null,
+                        "id": "feed.TagList/1/ready/0/item",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "li",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      "key": "id",
+                      "kind": "each",
+                      "motion": null,
+                      "source": {
+                        "depth": 0,
+                        "path": [],
+                        "ref": "binding"
+                      }
+                    }
+                  ],
+                  "class": "space-y-2",
+                  "id": "feed.TagList/1/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "ul",
+                  "toggle": {},
+                  "vars": {}
+                }
+              }
+            ],
+            "class": "mx-auto max-w-2xl space-y-4 p-6",
+            "id": "feed.TagList",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": "tag",
+          "seed": null
+        }
+      },
+      "widgets": {}
+    }
+  },
+  "http": {
+    "basePath": "",
+    "headers": [],
+    "redirects": [],
+    "trailingSlash": "never"
+  },
+  "irVersion": 1,
+  "notFound": null,
+  "pages": {
+    "archive": {
+      "assert": null,
+      "entries": {
+        "input": {
+          "literal": {}
+        },
+        "params": {
+          "object": {
+            "year": {
+              "depth": 0,
+              "path": ["year"],
+              "ref": "binding"
+            }
+          }
+        },
+        "query": "feed.listYears"
+      },
+      "head": {
+        "description": {
+          "literal": "A paginated feed built with Hozu."
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "redirects": {},
+        "title": {
+          "literal": "Archive"
+        },
+        "type": "website"
+      },
+      "views": ["feed.Archive"]
+    },
+    "home": {
+      "assert": null,
+      "entries": null,
+      "head": {
+        "description": {
+          "literal": "A paginated feed built with Hozu."
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "redirects": {},
+        "title": {
+          "literal": "Feed"
+        },
+        "type": "website"
+      },
+      "views": ["feed.Feed"]
+    },
+    "tag": {
+      "assert": null,
+      "entries": {
+        "input": {
+          "literal": {}
+        },
+        "params": {
+          "object": {
+            "path": {
+              "depth": 0,
+              "path": ["path"],
+              "ref": "binding"
+            }
+          }
+        },
+        "query": "feed.listTags"
+      },
+      "head": {
+        "description": {
+          "literal": "A paginated feed built with Hozu."
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "redirects": {},
+        "title": {
+          "literal": "Tagged"
+        },
+        "type": "website"
+      },
+      "views": ["feed.TagList"]
+    }
+  },
+  "routes": {
+    "archive": {
+      "params": {
+        "additionalProperties": false,
+        "properties": {
+          "year": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["year"],
+        "type": "object"
+      },
+      "path": "/archive/:year?",
+      "search": null
+    },
+    "home": {
+      "params": null,
+      "path": "/",
+      "search": null
+    },
+    "tag": {
+      "params": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": ["path"],
+        "type": "object"
+      },
+      "path": "/tags/:path+",
+      "search": null
+    }
+  },
+  "session": null,
+  "site": {
+    "icon": null,
+    "lang": "en",
+    "locales": null,
+    "name": "Feed",
+    "offline": null,
+    "themeColor": null,
+    "url": "http://localhost:3000"
+  }
+}

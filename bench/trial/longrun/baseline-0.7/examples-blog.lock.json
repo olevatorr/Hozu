@@ -1,0 +1,61 @@
+{
+  "committed": null,
+  "computed": {
+    "features": {
+      "saved": {
+        "idle/on/saved.Save/0": {
+          "behavior": "c6524383f5a057c3",
+          "contracts": {
+            "refusesWhenFull": "6563bf1e950f23b2",
+            "savesPost": "248ad1dade15f0b9"
+          },
+          "summary": "idle --Save--> saving · slug := event.slug, error := null · invoke savePost({ slug: ctx.slug })"
+        },
+        "idle/on/saved.Unsave/0": {
+          "behavior": "48462781bd9868ad",
+          "contracts": {
+            "removesPost": "ed80af57dc213adb"
+          },
+          "summary": "idle --Unsave--> removing · slug := event.slug, error := null · invoke unsavePost({ slug: ctx.slug })"
+        },
+        "removing/invoke/done/0": {
+          "behavior": "e54a61bbf262f9f9",
+          "contracts": {
+            "removesPost": "ed80af57dc213adb"
+          },
+          "summary": "removing --done unsavePost--> idle"
+        },
+        "removing/invoke/failed/Unexpected/0": {
+          "behavior": "5fbd09f5a2ecb8ee",
+          "contracts": {
+            "removeFails": "db6212c1dafcb08e"
+          },
+          "summary": "removing --failed unsavePost.Unexpected--> idle · error := error.message"
+        },
+        "saving/invoke/done/0": {
+          "behavior": "0d6aa36c0d34cc58",
+          "contracts": {
+            "savesPost": "248ad1dade15f0b9"
+          },
+          "summary": "saving --done savePost--> idle"
+        },
+        "saving/invoke/failed/LimitReached/0": {
+          "behavior": "18b8c82bcb0566d1",
+          "contracts": {
+            "refusesWhenFull": "6563bf1e950f23b2"
+          },
+          "summary": "saving --failed savePost.LimitReached--> idle · error := \"Reading list is full\""
+        },
+        "saving/invoke/failed/Unexpected/0": {
+          "behavior": "396d4e12f567dab4",
+          "contracts": {
+            "saveFails": "97b6dd49bdd97781"
+          },
+          "summary": "saving --failed savePost.Unexpected--> idle · error := error.message"
+        }
+      }
+    },
+    "version": 1
+  },
+  "stale": null
+}

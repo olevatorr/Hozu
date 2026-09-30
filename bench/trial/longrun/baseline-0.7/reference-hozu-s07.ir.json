@@ -1,0 +1,4627 @@
+{
+  "env": null,
+  "error": null,
+  "features": {
+    "account": {
+      "contracts": {
+        "rejectsName": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "error": null,
+              "fields": {
+                "name": "Use 2–20 letters"
+              }
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "error": null,
+              "fields": {
+                "name": null
+              }
+            },
+            "state": "signingIn"
+          },
+          "when": [
+            {
+              "data": {
+                "fields": {
+                  "name": "Use 2–20 letters"
+                },
+                "message": "name: Use 2–20 letters"
+              },
+              "error": "Invalid",
+              "failed": "account.signIn"
+            }
+          ]
+        },
+        "signInFails": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "error": "offline",
+              "fields": {
+                "name": null
+              }
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "error": null,
+              "fields": {
+                "name": null
+              }
+            },
+            "state": "signingIn"
+          },
+          "when": [
+            {
+              "data": {
+                "message": "offline"
+              },
+              "error": "Unexpected",
+              "failed": "account.signIn"
+            }
+          ]
+        },
+        "signOutFails": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "error": "offline",
+              "fields": {
+                "name": null
+              }
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "error": null,
+              "fields": {
+                "name": null
+              }
+            },
+            "state": "signingOut"
+          },
+          "when": [
+            {
+              "data": {
+                "message": "offline"
+              },
+              "error": "Unexpected",
+              "failed": "account.signOut"
+            }
+          ]
+        },
+        "signsInToList": {
+          "expect": {
+            "context": {
+              "draft": "ada",
+              "error": null,
+              "fields": {
+                "name": null
+              }
+            },
+            "effects": [
+              {
+                "effect": "account.signIn",
+                "input": {
+                  "name": "ada"
+                }
+              },
+              {
+                "navigate": "/"
+              }
+            ],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "error": null,
+              "fields": {
+                "name": null
+              }
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "name": "ada"
+              },
+              "send": "account.SignIn"
+            },
+            {
+              "done": "account.signIn",
+              "result": {}
+            }
+          ]
+        },
+        "signsOut": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "error": null,
+              "fields": {
+                "name": null
+              }
+            },
+            "effects": [
+              {
+                "effect": "account.signOut",
+                "input": {}
+              },
+              {
+                "navigate": "/login"
+              }
+            ],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "error": null,
+              "fields": {
+                "name": null
+              }
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {},
+              "send": "account.SignOut"
+            },
+            {
+              "done": "account.signOut",
+              "result": {}
+            }
+          ]
+        }
+      },
+      "endpoints": {},
+      "events": {
+        "SignIn": {
+          "payload": "s_c70d2daf71667bd2"
+        },
+        "SignOut": {
+          "payload": "s_99334726611ccf58"
+        }
+      },
+      "exports": {
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": ["me"],
+        "tags": [],
+        "views": []
+      },
+      "fns": {},
+      "id": "account",
+      "imports": [],
+      "intent": {
+        "invariants": [],
+        "summary": "Sign in with a name, sign out; the session identifies the user"
+      },
+      "machine": {
+        "context": "s_7535255aa82f682e",
+        "initial": "idle",
+        "initialContext": {
+          "draft": "",
+          "error": null,
+          "fields": {
+            "name": null
+          }
+        },
+        "states": {
+          "idle": {
+            "after": [],
+            "final": false,
+            "ignore": [],
+            "invoke": null,
+            "on": {
+              "account.SignIn": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "path": ["name"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["fields"],
+                      "value": {
+                        "literal": {
+                          "name": null
+                        }
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "signingIn"
+                }
+              ],
+              "account.SignOut": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "signingOut"
+                }
+              ]
+            }
+          },
+          "signingIn": {
+            "after": [],
+            "final": false,
+            "ignore": ["account.SignIn", "account.SignOut"],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": {
+                    "link": "home",
+                    "params": {
+                      "literal": null
+                    },
+                    "search": {
+                      "literal": {}
+                    }
+                  },
+                  "target": "idle"
+                }
+              ],
+              "effect": "account.signIn",
+              "failed": {
+                "Invalid": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["fields"],
+                        "value": {
+                          "path": ["fields"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "name": {
+                    "path": ["draft"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          },
+          "signingOut": {
+            "after": [],
+            "final": false,
+            "ignore": ["account.SignIn", "account.SignOut"],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": {
+                    "link": "login",
+                    "params": {
+                      "literal": null
+                    },
+                    "search": {
+                      "literal": null
+                    }
+                  },
+                  "target": "idle"
+                }
+              ],
+              "effect": "account.signOut",
+              "failed": {
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "literal": {}
+              }
+            },
+            "on": {}
+          }
+        }
+      },
+      "messages": null,
+      "mutations": {
+        "signIn": {
+          "errors": {},
+          "input": "s_43ce61e499bbb5ae",
+          "invalidates": [],
+          "output": "s_99334726611ccf58"
+        },
+        "signOut": {
+          "errors": {},
+          "input": "s_99334726611ccf58",
+          "invalidates": [],
+          "output": "s_99334726611ccf58"
+        }
+      },
+      "queries": {
+        "me": {
+          "errors": {
+            "Unauthorized": "s_99334726611ccf58"
+          },
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_c70d2daf71667bd2",
+          "scope": "user",
+          "tags": []
+        }
+      },
+      "schemas": {
+        "s_43ce61e499bbb5ae": {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "pattern": "^\\s*[A-Za-z]{2,20}\\s*$",
+              "type": "string"
+            }
+          },
+          "required": ["name"],
+          "type": "object"
+        },
+        "s_7535255aa82f682e": {
+          "additionalProperties": false,
+          "properties": {
+            "draft": {
+              "type": "string"
+            },
+            "error": {
+              "type": ["string", "null"]
+            },
+            "fields": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": ["string", "null"]
+                }
+              },
+              "required": ["name"],
+              "type": "object"
+            }
+          },
+          "required": ["draft", "error", "fields"],
+          "type": "object"
+        },
+        "s_99334726611ccf58": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "s_c70d2daf71667bd2": {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": ["name"],
+          "type": "object"
+        }
+      },
+      "tags": {},
+      "views": {
+        "AccountBar": {
+          "machine": "account",
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "failed": {
+                  "Unauthorized": {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "id": "account.AccountBar/0/failed/Unauthorized/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Signed out"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "account.AccountBar/0/failed/Unauthorized",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  "Unexpected": {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "id": "account.AccountBar/0/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": ""
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "account.AccountBar/0/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "account.AccountBar/0",
+                "input": {
+                  "literal": {}
+                },
+                "kind": "query",
+                "pending": null,
+                "query": "account.me",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "account.AccountBar/0/ready/0",
+                      "kind": "text",
+                      "value": {
+                        "literal": "Signed in as "
+                      }
+                    },
+                    {
+                      "id": "account.AccountBar/0/ready/1",
+                      "kind": "text",
+                      "value": {
+                        "depth": 0,
+                        "path": ["name"],
+                        "ref": "binding"
+                      }
+                    }
+                  ],
+                  "class": null,
+                  "id": "account.AccountBar/0/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "p",
+                  "toggle": {},
+                  "vars": {}
+                }
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {
+                      "type": {
+                        "literal": "submit"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "account.AccountBar/1/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Sign out"
+                        }
+                      }
+                    ],
+                    "class": "underline",
+                    "id": "account.AccountBar/1/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "button",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": null,
+                "id": "account.AccountBar/1",
+                "kind": "el",
+                "on": {
+                  "submit": {
+                    "event": "account.SignOut",
+                    "payload": {
+                      "literal": {}
+                    }
+                  }
+                },
+                "tag": "form",
+                "toggle": {},
+                "vars": {}
+              }
+            ],
+            "class": "mx-auto flex max-w-xl items-center justify-between px-4 pt-8 text-sm text-slate-600",
+            "id": "account.AccountBar",
+            "kind": "el",
+            "on": {},
+            "tag": "header",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": null,
+          "seed": null
+        },
+        "Login": {
+          "machine": "account",
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "account.Login/0/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Sign in"
+                    }
+                  }
+                ],
+                "class": "text-3xl font-bold",
+                "id": "account.Login/0",
+                "kind": "el",
+                "on": {},
+                "tag": "h1",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {
+                      "for": {
+                        "literal": "name"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "account.Login/1/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Name"
+                        }
+                      }
+                    ],
+                    "class": "block text-sm font-medium",
+                    "id": "account.Login/1/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "label",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "aria-describedby": {
+                        "literal": "name-error"
+                      },
+                      "aria-invalid": {
+                        "test": {
+                          "left": {
+                            "path": ["fields", "name"],
+                            "ref": "context"
+                          },
+                          "op": "neq",
+                          "right": {
+                            "literal": null
+                          }
+                        }
+                      },
+                      "autocomplete": {
+                        "literal": "username"
+                      },
+                      "id": {
+                        "literal": "name"
+                      },
+                      "maxlength": {
+                        "literal": 20
+                      },
+                      "minlength": {
+                        "literal": 2
+                      },
+                      "name": {
+                        "literal": "name"
+                      },
+                      "required": {
+                        "literal": true
+                      }
+                    },
+                    "children": [],
+                    "class": "w-full rounded border px-3 py-2",
+                    "id": "account.Login/1/1",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "input",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "id": {
+                        "literal": "name-error"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "account.Login/1/2/0",
+                        "kind": "text",
+                        "value": {
+                          "path": ["fields", "name"],
+                          "ref": "context"
+                        }
+                      }
+                    ],
+                    "class": "text-sm text-rose-600",
+                    "id": "account.Login/1/2",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "type": {
+                        "literal": "submit"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "account.Login/1/3/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Sign in"
+                        }
+                      }
+                    ],
+                    "class": "w-full rounded bg-indigo-600 px-4 py-2 text-white",
+                    "id": "account.Login/1/3",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "button",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "space-y-3",
+                "id": "account.Login/1",
+                "kind": "el",
+                "on": {
+                  "submit": {
+                    "event": "account.SignIn",
+                    "payload": {
+                      "object": {
+                        "name": {
+                          "path": ["form", "name"],
+                          "ref": "dom"
+                        }
+                      }
+                    }
+                  }
+                },
+                "tag": "form",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "id": "account.Login/2",
+                "ifFalse": [],
+                "ifTrue": [
+                  {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "account.Login/2/ifTrue/0/0",
+                        "kind": "text",
+                        "value": {
+                          "path": ["error"],
+                          "ref": "context"
+                        }
+                      }
+                    ],
+                    "class": "text-rose-600",
+                    "id": "account.Login/2/ifTrue/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "kind": "if",
+                "motion": null,
+                "test": {
+                  "left": {
+                    "path": ["error"],
+                    "ref": "context"
+                  },
+                  "op": "neq",
+                  "right": {
+                    "literal": null
+                  }
+                }
+              }
+            ],
+            "class": "mx-auto max-w-sm space-y-6 px-4 py-16",
+            "id": "account.Login",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": "login",
+          "seed": null
+        }
+      },
+      "widgets": {}
+    },
+    "notes": {
+      "contracts": {
+        "addFails": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": "offline",
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "adding"
+          },
+          "when": [
+            {
+              "data": {
+                "message": "offline"
+              },
+              "error": "Unexpected",
+              "failed": "notes.addNote"
+            }
+          ]
+        },
+        "adds": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "effects": [
+              {
+                "effect": "notes.addNote",
+                "input": {
+                  "tags": "home",
+                  "title": "Milk"
+                }
+              }
+            ],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "tags": "home",
+                "title": "Milk"
+              },
+              "send": "notes.Add"
+            },
+            {
+              "payload": {
+                "tags": "home",
+                "title": "Milk"
+              },
+              "send": "notes.Add"
+            },
+            {
+              "done": "notes.addNote",
+              "result": {
+                "createdAt": "2026-09-29T08:15:00.000Z",
+                "id": "n9",
+                "pinned": false,
+                "tags": [],
+                "title": "Milk"
+              }
+            }
+          ]
+        },
+        "pinFails": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": "offline",
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "pinning"
+          },
+          "when": [
+            {
+              "data": {
+                "message": "offline"
+              },
+              "error": "Unexpected",
+              "failed": "notes.togglePin"
+            }
+          ]
+        },
+        "pinMissing": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": "This note no longer exists",
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "pinning"
+          },
+          "when": [
+            {
+              "data": {
+                "id": "n1"
+              },
+              "error": "NotFound",
+              "failed": "notes.togglePin"
+            }
+          ]
+        },
+        "pins": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": "n1"
+            },
+            "effects": [
+              {
+                "effect": "notes.togglePin",
+                "input": {
+                  "id": "n1"
+                }
+              }
+            ],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "id": "n1"
+              },
+              "send": "notes.Pin"
+            },
+            {
+              "done": "notes.togglePin",
+              "result": {
+                "createdAt": "2026-09-29T08:15:00.000Z",
+                "id": "n1",
+                "pinned": true,
+                "tags": [],
+                "title": "Milk"
+              }
+            }
+          ]
+        },
+        "rejectsDuplicate": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": "You already have a note with this title",
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "adding"
+          },
+          "when": [
+            {
+              "data": {
+                "title": "Milk"
+              },
+              "error": "Duplicate",
+              "failed": "notes.addNote"
+            }
+          ]
+        },
+        "rejectsInvalid": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": "Write something"
+              },
+              "query": "",
+              "target": ""
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "adding"
+          },
+          "when": [
+            {
+              "data": {
+                "fields": {
+                  "title": "Write something"
+                },
+                "message": "title: Write something"
+              },
+              "error": "Invalid",
+              "failed": "notes.addNote"
+            }
+          ]
+        },
+        "removeFails": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": "offline",
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "removing"
+          },
+          "when": [
+            {
+              "data": {
+                "message": "offline"
+              },
+              "error": "Unexpected",
+              "failed": "notes.removeNote"
+            }
+          ]
+        },
+        "removeMissing": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": "This note no longer exists",
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "removing"
+          },
+          "when": [
+            {
+              "data": {
+                "id": "n1"
+              },
+              "error": "NotFound",
+              "failed": "notes.removeNote"
+            }
+          ]
+        },
+        "removes": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": "n1"
+            },
+            "effects": [
+              {
+                "effect": "notes.removeNote",
+                "input": {
+                  "id": "n1"
+                }
+              }
+            ],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "id": "n1"
+              },
+              "send": "notes.Remove"
+            },
+            {
+              "done": "notes.removeNote",
+              "result": {
+                "id": "n1"
+              }
+            }
+          ]
+        },
+        "searches": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "milk",
+              "target": ""
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "query": "milk"
+              },
+              "send": "notes.Search"
+            }
+          ]
+        },
+        "typesDraft": {
+          "expect": {
+            "context": {
+              "draft": "Milk",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "draftTags": "",
+              "editTitle": "",
+              "editing": "",
+              "error": null,
+              "fields": {
+                "tags": null,
+                "title": null
+              },
+              "query": "",
+              "target": ""
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "title": "Milk"
+              },
+              "send": "notes.Draft"
+            }
+          ]
+        }
+      },
+      "endpoints": {
+        "notesApi": {
+          "input": "s_99334726611ccf58",
+          "method": "GET",
+          "output": "s_054231bf750e081f",
+          "path": "/api/notes"
+        }
+      },
+      "events": {
+        "Add": {
+          "payload": "s_456e0f2de3a63786"
+        },
+        "Archive": {
+          "payload": "s_7717dd85c2e5ff93"
+        },
+        "CancelEdit": {
+          "payload": "s_99334726611ccf58"
+        },
+        "Draft": {
+          "payload": "s_c0f00621ba42dc11"
+        },
+        "Edit": {
+          "payload": "s_7717dd85c2e5ff93"
+        },
+        "Pin": {
+          "payload": "s_7717dd85c2e5ff93"
+        },
+        "Remove": {
+          "payload": "s_7717dd85c2e5ff93"
+        },
+        "Restore": {
+          "payload": "s_7717dd85c2e5ff93"
+        },
+        "Save": {
+          "payload": "s_fb1dd9092be5e07c"
+        },
+        "Search": {
+          "payload": "s_10798ac8d2df2a31"
+        }
+      },
+      "exports": {
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": [],
+        "tags": [],
+        "views": []
+      },
+      "fns": {
+        "addedDay": {
+          "input": "s_3f7021c34da34ce3",
+          "output": "s_00404e686415370f",
+          "sourceHash": "dc47e7d2062bfa97"
+        },
+        "noMatch": {
+          "input": "s_f378425ab2bd8f37",
+          "output": "s_7cb541e84f226754",
+          "sourceHash": "9879d2364dcd1aa3"
+        },
+        "total": {
+          "input": "s_420378e561e517d5",
+          "output": "s_cddf8275afa15408",
+          "sourceHash": "750d1d6ccffcac32"
+        },
+        "visible": {
+          "input": "s_f378425ab2bd8f37",
+          "output": "s_c3607117c0e3292f",
+          "sourceHash": "99619bd49f3b4702"
+        }
+      },
+      "id": "notes",
+      "imports": [],
+      "intent": {
+        "invariants": [
+          "A user sees only their own notes",
+          "Note titles are unique per user, case-insensitive"
+        ],
+        "summary": "Personal notes per signed-in user: add, delete, pin, search in the browser"
+      },
+      "machine": {
+        "context": "s_045edee3f5782b83",
+        "initial": "idle",
+        "initialContext": {
+          "draft": "",
+          "draftTags": "",
+          "editTitle": "",
+          "editing": "",
+          "error": null,
+          "fields": {
+            "tags": null,
+            "title": null
+          },
+          "query": "",
+          "target": ""
+        },
+        "states": {
+          "adding": {
+            "after": [],
+            "final": false,
+            "ignore": [
+              "notes.Add",
+              "notes.Archive",
+              "notes.CancelEdit",
+              "notes.Draft",
+              "notes.Edit",
+              "notes.Pin",
+              "notes.Remove",
+              "notes.Restore",
+              "notes.Save",
+              "notes.Search"
+            ],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "literal": ""
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["draftTags"],
+                      "value": {
+                        "literal": ""
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "notes.addNote",
+              "failed": {
+                "Duplicate": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "You already have a note with this title"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Invalid": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["fields"],
+                        "value": {
+                          "object": {
+                            "tags": {
+                              "arg": {
+                                "object": {
+                                  "a": {
+                                    "path": ["fields", "tags"],
+                                    "ref": "error"
+                                  },
+                                  "b": {
+                                    "literal": null
+                                  }
+                                }
+                              },
+                              "fn": "%coalesce"
+                            },
+                            "title": {
+                              "arg": {
+                                "object": {
+                                  "a": {
+                                    "path": ["fields", "title"],
+                                    "ref": "error"
+                                  },
+                                  "b": {
+                                    "literal": null
+                                  }
+                                }
+                              },
+                              "fn": "%coalesce"
+                            }
+                          }
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "tags": {
+                    "path": ["draftTags"],
+                    "ref": "context"
+                  },
+                  "title": {
+                    "path": ["draft"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          },
+          "archiving": {
+            "after": [],
+            "final": false,
+            "ignore": [
+              "notes.Add",
+              "notes.Archive",
+              "notes.CancelEdit",
+              "notes.Draft",
+              "notes.Edit",
+              "notes.Pin",
+              "notes.Remove",
+              "notes.Restore",
+              "notes.Save",
+              "notes.Search"
+            ],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "notes.archiveNote",
+              "failed": {
+                "NotFound": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "This note no longer exists"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "id": {
+                    "path": ["target"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          },
+          "idle": {
+            "after": [],
+            "final": false,
+            "ignore": [],
+            "invoke": null,
+            "on": {
+              "notes.Add": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "path": ["title"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["draftTags"],
+                      "value": {
+                        "path": ["tags"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["fields"],
+                      "value": {
+                        "literal": {
+                          "tags": null,
+                          "title": null
+                        }
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "adding"
+                }
+              ],
+              "notes.Archive": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["target"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "archiving"
+                }
+              ],
+              "notes.CancelEdit": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["editing"],
+                      "value": {
+                        "literal": ""
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "notes.Draft": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "path": ["title"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "notes.Edit": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["editing"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "notes.Pin": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["target"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "pinning"
+                }
+              ],
+              "notes.Remove": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["target"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "removing"
+                }
+              ],
+              "notes.Restore": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["target"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "restoring"
+                }
+              ],
+              "notes.Save": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["target"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["editing"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["editTitle"],
+                      "value": {
+                        "path": ["title"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "saving"
+                }
+              ],
+              "notes.Search": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["query"],
+                      "value": {
+                        "path": ["query"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ]
+            }
+          },
+          "pinning": {
+            "after": [],
+            "final": false,
+            "ignore": [
+              "notes.Add",
+              "notes.Archive",
+              "notes.CancelEdit",
+              "notes.Draft",
+              "notes.Edit",
+              "notes.Pin",
+              "notes.Remove",
+              "notes.Restore",
+              "notes.Save",
+              "notes.Search"
+            ],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "notes.togglePin",
+              "failed": {
+                "NotFound": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "This note no longer exists"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "id": {
+                    "path": ["target"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          },
+          "removing": {
+            "after": [],
+            "final": false,
+            "ignore": [
+              "notes.Add",
+              "notes.Archive",
+              "notes.CancelEdit",
+              "notes.Draft",
+              "notes.Edit",
+              "notes.Pin",
+              "notes.Remove",
+              "notes.Restore",
+              "notes.Save",
+              "notes.Search"
+            ],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "notes.removeNote",
+              "failed": {
+                "NotFound": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "This note no longer exists"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "id": {
+                    "path": ["target"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          },
+          "restoring": {
+            "after": [],
+            "final": false,
+            "ignore": [
+              "notes.Add",
+              "notes.Archive",
+              "notes.CancelEdit",
+              "notes.Draft",
+              "notes.Edit",
+              "notes.Pin",
+              "notes.Remove",
+              "notes.Restore",
+              "notes.Save",
+              "notes.Search"
+            ],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "notes.restoreNote",
+              "failed": {
+                "NotFound": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "This note no longer exists"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "id": {
+                    "path": ["target"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          },
+          "saving": {
+            "after": [],
+            "final": false,
+            "ignore": [
+              "notes.Add",
+              "notes.Archive",
+              "notes.CancelEdit",
+              "notes.Draft",
+              "notes.Edit",
+              "notes.Pin",
+              "notes.Remove",
+              "notes.Restore",
+              "notes.Save",
+              "notes.Search"
+            ],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["editing"],
+                      "value": {
+                        "literal": ""
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "notes.renameNote",
+              "failed": {
+                "Duplicate": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "You already have a note with this title"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Invalid": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "NotFound": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "This note no longer exists"
+                        }
+                      },
+                      {
+                        "op": "set",
+                        "path": ["editing"],
+                        "value": {
+                          "literal": ""
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "id": {
+                    "path": ["target"],
+                    "ref": "context"
+                  },
+                  "title": {
+                    "path": ["editTitle"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          }
+        }
+      },
+      "messages": null,
+      "mutations": {
+        "addNote": {
+          "errors": {
+            "Duplicate": "s_c0f00621ba42dc11"
+          },
+          "input": "s_5471b961011c1bd2",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "notes.notesTag"
+            }
+          ],
+          "output": "s_e1b93b20170c3a15"
+        },
+        "archiveNote": {
+          "errors": {
+            "NotFound": "s_7717dd85c2e5ff93"
+          },
+          "input": "s_7717dd85c2e5ff93",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "notes.notesTag"
+            }
+          ],
+          "output": "s_7717dd85c2e5ff93"
+        },
+        "removeNote": {
+          "errors": {
+            "NotFound": "s_7717dd85c2e5ff93"
+          },
+          "input": "s_7717dd85c2e5ff93",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "notes.notesTag"
+            }
+          ],
+          "output": "s_7717dd85c2e5ff93"
+        },
+        "renameNote": {
+          "errors": {
+            "Duplicate": "s_c0f00621ba42dc11",
+            "NotFound": "s_7717dd85c2e5ff93"
+          },
+          "input": "s_c316c11871b56db4",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "notes.notesTag"
+            }
+          ],
+          "output": "s_e1b93b20170c3a15"
+        },
+        "restoreNote": {
+          "errors": {
+            "NotFound": "s_7717dd85c2e5ff93"
+          },
+          "input": "s_7717dd85c2e5ff93",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "notes.notesTag"
+            }
+          ],
+          "output": "s_7717dd85c2e5ff93"
+        },
+        "togglePin": {
+          "errors": {
+            "NotFound": "s_7717dd85c2e5ff93"
+          },
+          "input": "s_7717dd85c2e5ff93",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "notes.notesTag"
+            }
+          ],
+          "output": "s_e1b93b20170c3a15"
+        }
+      },
+      "queries": {
+        "listArchived": {
+          "errors": {
+            "Unauthorized": "s_99334726611ccf58"
+          },
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_c3607117c0e3292f",
+          "scope": "user",
+          "tags": [
+            {
+              "param": null,
+              "tag": "notes.notesTag"
+            }
+          ]
+        },
+        "listNotes": {
+          "errors": {
+            "Unauthorized": "s_99334726611ccf58"
+          },
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_c3607117c0e3292f",
+          "scope": "user",
+          "tags": [
+            {
+              "param": null,
+              "tag": "notes.notesTag"
+            }
+          ]
+        }
+      },
+      "schemas": {
+        "s_00404e686415370f": {
+          "type": "string"
+        },
+        "s_045edee3f5782b83": {
+          "additionalProperties": false,
+          "properties": {
+            "draft": {
+              "type": "string"
+            },
+            "draftTags": {
+              "type": "string"
+            },
+            "editTitle": {
+              "type": "string"
+            },
+            "editing": {
+              "type": "string"
+            },
+            "error": {
+              "type": ["string", "null"]
+            },
+            "fields": {
+              "additionalProperties": false,
+              "properties": {
+                "tags": {
+                  "type": ["string", "null"]
+                },
+                "title": {
+                  "type": ["string", "null"]
+                }
+              },
+              "required": ["title", "tags"],
+              "type": "object"
+            },
+            "query": {
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            }
+          },
+          "required": ["draft", "draftTags", "query", "target", "editing", "editTitle", "error", "fields"],
+          "type": "object"
+        },
+        "s_054231bf750e081f": {
+          "additionalProperties": false,
+          "properties": {
+            "notes": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "pinned": {
+                    "type": "boolean"
+                  },
+                  "tags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "title", "pinned", "tags", "createdAt"],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "signedIn": {
+              "type": "boolean"
+            }
+          },
+          "required": ["signedIn", "notes"],
+          "type": "object"
+        },
+        "s_10798ac8d2df2a31": {
+          "additionalProperties": false,
+          "properties": {
+            "query": {
+              "type": "string"
+            }
+          },
+          "required": ["query"],
+          "type": "object"
+        },
+        "s_3f7021c34da34ce3": {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "type": "string"
+            }
+          },
+          "required": ["at"],
+          "type": "object"
+        },
+        "s_420378e561e517d5": {
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "pinned": {
+                    "type": "boolean"
+                  },
+                  "tags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "title", "pinned", "tags", "createdAt"],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["items"],
+          "type": "object"
+        },
+        "s_456e0f2de3a63786": {
+          "additionalProperties": false,
+          "properties": {
+            "tags": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["title", "tags"],
+          "type": "object"
+        },
+        "s_5471b961011c1bd2": {
+          "additionalProperties": false,
+          "properties": {
+            "tags": {
+              "type": "string"
+            },
+            "title": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": ["title", "tags"],
+          "type": "object"
+        },
+        "s_7717dd85c2e5ff93": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": ["id"],
+          "type": "object"
+        },
+        "s_7cb541e84f226754": {
+          "type": "boolean"
+        },
+        "s_99334726611ccf58": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "s_c0f00621ba42dc11": {
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["title"],
+          "type": "object"
+        },
+        "s_c316c11871b56db4": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": ["id", "title"],
+          "type": "object"
+        },
+        "s_c3607117c0e3292f": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "createdAt": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "pinned": {
+                "type": "boolean"
+              },
+              "tags": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "title", "pinned", "tags", "createdAt"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "s_cddf8275afa15408": {
+          "type": "number"
+        },
+        "s_e1b93b20170c3a15": {
+          "additionalProperties": false,
+          "properties": {
+            "createdAt": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "pinned": {
+              "type": "boolean"
+            },
+            "tags": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["id", "title", "pinned", "tags", "createdAt"],
+          "type": "object"
+        },
+        "s_f378425ab2bd8f37": {
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "pinned": {
+                    "type": "boolean"
+                  },
+                  "tags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "title", "pinned", "tags", "createdAt"],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "query": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            }
+          },
+          "required": ["items", "query", "tag"],
+          "type": "object"
+        },
+        "s_fb1dd9092be5e07c": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["id", "title"],
+          "type": "object"
+        }
+      },
+      "tags": {
+        "notesTag": {
+          "param": null
+        }
+      },
+      "views": {
+        "ArchiveBoard": {
+          "machine": "notes",
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "notes.ArchiveBoard/0/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Archive"
+                    }
+                  }
+                ],
+                "class": "text-3xl font-bold",
+                "id": "notes.ArchiveBoard/0",
+                "kind": "el",
+                "on": {},
+                "tag": "h1",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {
+                  "href": {
+                    "link": "home",
+                    "params": {
+                      "literal": null
+                    },
+                    "search": {
+                      "literal": {}
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "id": "notes.ArchiveBoard/1/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Back to notes"
+                    }
+                  }
+                ],
+                "class": "text-sm text-indigo-700 underline",
+                "id": "notes.ArchiveBoard/1",
+                "kind": "el",
+                "on": {},
+                "tag": "a",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "id": "notes.ArchiveBoard/2",
+                "ifFalse": [],
+                "ifTrue": [
+                  {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "notes.ArchiveBoard/2/ifTrue/0/0",
+                        "kind": "text",
+                        "value": {
+                          "path": ["error"],
+                          "ref": "context"
+                        }
+                      }
+                    ],
+                    "class": "text-rose-600",
+                    "id": "notes.ArchiveBoard/2/ifTrue/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "kind": "if",
+                "motion": null,
+                "test": {
+                  "left": {
+                    "path": ["error"],
+                    "ref": "context"
+                  },
+                  "op": "neq",
+                  "right": {
+                    "literal": null
+                  }
+                }
+              },
+              {
+                "failed": {
+                  "Unauthorized": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "notes.ArchiveBoard/3/failed/Unauthorized/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Signed out"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "notes.ArchiveBoard/3/failed/Unauthorized",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "notes.ArchiveBoard/3/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Notes are unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "notes.ArchiveBoard/3/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "notes.ArchiveBoard/3",
+                "input": {
+                  "literal": {}
+                },
+                "kind": "query",
+                "pending": null,
+                "query": "notes.listArchived",
+                "ready": {
+                  "id": "notes.ArchiveBoard/3/ready",
+                  "ifFalse": [
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "notes.ArchiveBoard/3/ready/ifFalse/0/0",
+                          "item": {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "notes.ArchiveBoard/3/ready/ifFalse/0/0/item/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "depth": 1,
+                                      "path": ["title"],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                ],
+                                "class": "flex-1",
+                                "id": "notes.ArchiveBoard/3/ready/ifFalse/0/0/item/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "span",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "attrs": {
+                                      "name": {
+                                        "literal": "id"
+                                      },
+                                      "type": {
+                                        "literal": "hidden"
+                                      },
+                                      "value": {
+                                        "depth": 1,
+                                        "path": ["id"],
+                                        "ref": "binding"
+                                      }
+                                    },
+                                    "children": [],
+                                    "class": null,
+                                    "id": "notes.ArchiveBoard/3/ready/ifFalse/0/0/item/1/0",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "input",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "attrs": {
+                                      "type": {
+                                        "literal": "submit"
+                                      }
+                                    },
+                                    "children": [
+                                      {
+                                        "id": "notes.ArchiveBoard/3/ready/ifFalse/0/0/item/1/1/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Restore"
+                                        }
+                                      }
+                                    ],
+                                    "class": "text-sm text-slate-600 underline",
+                                    "id": "notes.ArchiveBoard/3/ready/ifFalse/0/0/item/1/1",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "button",
+                                    "toggle": {},
+                                    "vars": {}
+                                  }
+                                ],
+                                "class": null,
+                                "id": "notes.ArchiveBoard/3/ready/ifFalse/0/0/item/1",
+                                "kind": "el",
+                                "on": {
+                                  "submit": {
+                                    "event": "notes.Restore",
+                                    "payload": {
+                                      "object": {
+                                        "id": {
+                                          "path": ["form", "id"],
+                                          "ref": "dom"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "tag": "form",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "class": "flex items-center gap-3 px-4 py-3",
+                            "id": "notes.ArchiveBoard/3/ready/ifFalse/0/0/item",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "li",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          "key": "id",
+                          "kind": "each",
+                          "motion": null,
+                          "source": {
+                            "depth": 0,
+                            "path": [],
+                            "ref": "binding"
+                          }
+                        }
+                      ],
+                      "class": "divide-y rounded border",
+                      "id": "notes.ArchiveBoard/3/ready/ifFalse/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "ul",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  ],
+                  "ifTrue": [
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "notes.ArchiveBoard/3/ready/ifTrue/0/0",
+                          "kind": "text",
+                          "value": {
+                            "literal": "No archived notes"
+                          }
+                        }
+                      ],
+                      "class": "text-slate-500",
+                      "id": "notes.ArchiveBoard/3/ready/ifTrue/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  ],
+                  "kind": "if",
+                  "motion": null,
+                  "test": {
+                    "left": {
+                      "depth": 0,
+                      "path": ["length"],
+                      "ref": "binding"
+                    },
+                    "op": "eq",
+                    "right": {
+                      "literal": 0
+                    }
+                  }
+                }
+              }
+            ],
+            "class": "mx-auto max-w-xl space-y-6 px-4 py-8",
+            "id": "notes.ArchiveBoard",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": "archive",
+          "seed": null
+        },
+        "NotesBoard": {
+          "machine": "notes",
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "notes.NotesBoard/0/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Notes"
+                    }
+                  }
+                ],
+                "class": "text-3xl font-bold",
+                "id": "notes.NotesBoard/0",
+                "kind": "el",
+                "on": {},
+                "tag": "h1",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {
+                  "href": {
+                    "link": "archive",
+                    "params": {
+                      "literal": null
+                    },
+                    "search": {
+                      "literal": null
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "id": "notes.NotesBoard/1/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Archived notes"
+                    }
+                  }
+                ],
+                "class": "text-sm text-indigo-700 underline",
+                "id": "notes.NotesBoard/1",
+                "kind": "el",
+                "on": {},
+                "tag": "a",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {
+                      "for": {
+                        "literal": "title"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "notes.NotesBoard/2/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Title"
+                        }
+                      }
+                    ],
+                    "class": "sr-only",
+                    "id": "notes.NotesBoard/2/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "label",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "aria-describedby": {
+                        "literal": "title-error"
+                      },
+                      "aria-invalid": {
+                        "test": {
+                          "left": {
+                            "path": ["fields", "title"],
+                            "ref": "context"
+                          },
+                          "op": "neq",
+                          "right": {
+                            "literal": null
+                          }
+                        }
+                      },
+                      "id": {
+                        "literal": "title"
+                      },
+                      "maxlength": {
+                        "literal": 60
+                      },
+                      "name": {
+                        "literal": "title"
+                      },
+                      "placeholder": {
+                        "literal": "Title"
+                      },
+                      "required": {
+                        "literal": true
+                      },
+                      "value": {
+                        "path": ["draft"],
+                        "ref": "context"
+                      }
+                    },
+                    "children": [],
+                    "class": "flex-1 rounded border px-3 py-2",
+                    "id": "notes.NotesBoard/2/1",
+                    "kind": "el",
+                    "on": {
+                      "input": {
+                        "event": "notes.Draft",
+                        "payload": {
+                          "object": {
+                            "title": {
+                              "path": ["value"],
+                              "ref": "dom"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "tag": "input",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "for": {
+                        "literal": "tags"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "notes.NotesBoard/2/2/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Tags"
+                        }
+                      }
+                    ],
+                    "class": "sr-only",
+                    "id": "notes.NotesBoard/2/2",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "label",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "aria-describedby": {
+                        "literal": "tags-error"
+                      },
+                      "aria-invalid": {
+                        "test": {
+                          "left": {
+                            "path": ["fields", "tags"],
+                            "ref": "context"
+                          },
+                          "op": "neq",
+                          "right": {
+                            "literal": null
+                          }
+                        }
+                      },
+                      "id": {
+                        "literal": "tags"
+                      },
+                      "name": {
+                        "literal": "tags"
+                      },
+                      "placeholder": {
+                        "literal": "Tags, e.g. work, home"
+                      },
+                      "value": {
+                        "path": ["draftTags"],
+                        "ref": "context"
+                      }
+                    },
+                    "children": [],
+                    "class": "w-48 rounded border px-3 py-2",
+                    "id": "notes.NotesBoard/2/3",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "input",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "type": {
+                        "literal": "submit"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "notes.NotesBoard/2/4/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Add"
+                        }
+                      }
+                    ],
+                    "class": "rounded bg-indigo-600 px-4 py-2 text-white",
+                    "id": "notes.NotesBoard/2/4",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "button",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "flex flex-wrap gap-2",
+                "id": "notes.NotesBoard/2",
+                "kind": "el",
+                "on": {
+                  "submit": {
+                    "event": "notes.Add",
+                    "payload": {
+                      "object": {
+                        "tags": {
+                          "path": ["form", "tags"],
+                          "ref": "dom"
+                        },
+                        "title": {
+                          "path": ["form", "title"],
+                          "ref": "dom"
+                        }
+                      }
+                    }
+                  }
+                },
+                "tag": "form",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {
+                  "id": {
+                    "literal": "title-error"
+                  },
+                  "role": {
+                    "literal": "alert"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "notes.NotesBoard/3/0",
+                    "kind": "text",
+                    "value": {
+                      "path": ["fields", "title"],
+                      "ref": "context"
+                    }
+                  }
+                ],
+                "class": "text-sm text-rose-600",
+                "id": "notes.NotesBoard/3",
+                "kind": "el",
+                "on": {},
+                "tag": "p",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {
+                  "id": {
+                    "literal": "tags-error"
+                  },
+                  "role": {
+                    "literal": "alert"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "notes.NotesBoard/4/0",
+                    "kind": "text",
+                    "value": {
+                      "path": ["fields", "tags"],
+                      "ref": "context"
+                    }
+                  }
+                ],
+                "class": "text-sm text-rose-600",
+                "id": "notes.NotesBoard/4",
+                "kind": "el",
+                "on": {},
+                "tag": "p",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "id": "notes.NotesBoard/5",
+                "ifFalse": [],
+                "ifTrue": [
+                  {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "notes.NotesBoard/5/ifTrue/0/0",
+                        "kind": "text",
+                        "value": {
+                          "path": ["error"],
+                          "ref": "context"
+                        }
+                      }
+                    ],
+                    "class": "text-rose-600",
+                    "id": "notes.NotesBoard/5/ifTrue/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "kind": "if",
+                "motion": null,
+                "test": {
+                  "left": {
+                    "path": ["error"],
+                    "ref": "context"
+                  },
+                  "op": "neq",
+                  "right": {
+                    "literal": null
+                  }
+                }
+              },
+              {
+                "children": [
+                  {
+                    "attrs": {
+                      "aria-busy": {
+                        "literal": "true"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "notes.NotesBoard/6/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Adding "
+                        }
+                      },
+                      {
+                        "id": "notes.NotesBoard/6/0/1",
+                        "kind": "text",
+                        "value": {
+                          "path": ["draft"],
+                          "ref": "context"
+                        }
+                      },
+                      {
+                        "id": "notes.NotesBoard/6/0/2",
+                        "kind": "text",
+                        "value": {
+                          "literal": "…"
+                        }
+                      }
+                    ],
+                    "class": "opacity-50",
+                    "id": "notes.NotesBoard/6/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "id": "notes.NotesBoard/6",
+                "kind": "when",
+                "motion": null,
+                "states": ["adding"]
+              },
+              {
+                "attrs": {
+                  "for": {
+                    "literal": "search"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "notes.NotesBoard/7/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Search"
+                    }
+                  }
+                ],
+                "class": "block text-sm font-medium",
+                "id": "notes.NotesBoard/7",
+                "kind": "el",
+                "on": {},
+                "tag": "label",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {
+                  "id": {
+                    "literal": "search"
+                  },
+                  "type": {
+                    "literal": "search"
+                  },
+                  "value": {
+                    "path": ["query"],
+                    "ref": "context"
+                  }
+                },
+                "children": [],
+                "class": "w-full rounded border px-3 py-2",
+                "id": "notes.NotesBoard/8",
+                "kind": "el",
+                "on": {
+                  "input": {
+                    "event": "notes.Search",
+                    "payload": {
+                      "object": {
+                        "query": {
+                          "path": ["value"],
+                          "ref": "dom"
+                        }
+                      }
+                    }
+                  }
+                },
+                "tag": "input",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "id": "notes.NotesBoard/9",
+                "ifFalse": [],
+                "ifTrue": [
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "id": "notes.NotesBoard/9/ifTrue/0/0",
+                        "kind": "text",
+                        "value": {
+                          "arg": {
+                            "object": {
+                              "0": {
+                                "literal": "Tagged "
+                              },
+                              "1": {
+                                "path": ["tag"],
+                                "ref": "search"
+                              }
+                            }
+                          },
+                          "fn": "%concat"
+                        }
+                      },
+                      {
+                        "attrs": {
+                          "href": {
+                            "link": "home",
+                            "params": {
+                              "literal": null
+                            },
+                            "search": {
+                              "literal": {}
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "notes.NotesBoard/9/ifTrue/0/1/0",
+                            "kind": "text",
+                            "value": {
+                              "literal": "All notes"
+                            }
+                          }
+                        ],
+                        "class": "text-indigo-700 underline",
+                        "id": "notes.NotesBoard/9/ifTrue/0/1",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "a",
+                        "toggle": {},
+                        "vars": {}
+                      }
+                    ],
+                    "class": "flex gap-3 text-sm",
+                    "id": "notes.NotesBoard/9/ifTrue/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "kind": "if",
+                "motion": null,
+                "test": {
+                  "left": {
+                    "path": ["tag"],
+                    "ref": "search"
+                  },
+                  "op": "neq",
+                  "right": {
+                    "literal": ""
+                  }
+                }
+              },
+              {
+                "failed": {
+                  "Unauthorized": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "notes.NotesBoard/10/failed/Unauthorized/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Signed out"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "notes.NotesBoard/10/failed/Unauthorized",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "notes.NotesBoard/10/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Notes are unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "notes.NotesBoard/10/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "notes.NotesBoard/10",
+                "input": {
+                  "literal": {}
+                },
+                "kind": "query",
+                "pending": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "notes.NotesBoard/10/pending/0",
+                      "kind": "text",
+                      "value": {
+                        "literal": "Loading…"
+                      }
+                    }
+                  ],
+                  "class": null,
+                  "id": "notes.NotesBoard/10/pending",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "p",
+                  "toggle": {},
+                  "vars": {}
+                },
+                "query": "notes.listNotes",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "notes.NotesBoard/10/ready/0/0",
+                          "kind": "text",
+                          "value": {
+                            "literal": "Notes: "
+                          }
+                        },
+                        {
+                          "id": "notes.NotesBoard/10/ready/0/1",
+                          "kind": "text",
+                          "value": {
+                            "arg": {
+                              "object": {
+                                "items": {
+                                  "depth": 0,
+                                  "path": [],
+                                  "ref": "binding"
+                                }
+                              }
+                            },
+                            "fn": "notes.total"
+                          }
+                        }
+                      ],
+                      "class": "text-sm text-slate-600",
+                      "id": "notes.NotesBoard/10/ready/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    },
+                    {
+                      "id": "notes.NotesBoard/10/ready/1",
+                      "ifFalse": [
+                        {
+                          "attrs": {},
+                          "children": [
+                            {
+                              "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0",
+                              "item": {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/0",
+                                    "ifFalse": [
+                                      {
+                                        "attrs": {},
+                                        "children": [
+                                          {
+                                            "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/0/ifFalse/0/0",
+                                            "kind": "text",
+                                            "value": {
+                                              "depth": 1,
+                                              "path": ["title"],
+                                              "ref": "binding"
+                                            }
+                                          }
+                                        ],
+                                        "class": "flex-1",
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/0/ifFalse/0",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "span",
+                                        "toggle": {},
+                                        "vars": {}
+                                      }
+                                    ],
+                                    "ifTrue": [
+                                      {
+                                        "attrs": {},
+                                        "children": [
+                                          {
+                                            "attrs": {
+                                              "name": {
+                                                "literal": "id"
+                                              },
+                                              "type": {
+                                                "literal": "hidden"
+                                              },
+                                              "value": {
+                                                "depth": 1,
+                                                "path": ["id"],
+                                                "ref": "binding"
+                                              }
+                                            },
+                                            "children": [],
+                                            "class": null,
+                                            "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/0/ifTrue/0/0",
+                                            "kind": "el",
+                                            "on": {},
+                                            "tag": "input",
+                                            "toggle": {},
+                                            "vars": {}
+                                          },
+                                          {
+                                            "attrs": {
+                                              "aria-label": {
+                                                "literal": "Edit title"
+                                              },
+                                              "maxlength": {
+                                                "literal": 60
+                                              },
+                                              "name": {
+                                                "literal": "title"
+                                              },
+                                              "required": {
+                                                "literal": true
+                                              },
+                                              "value": {
+                                                "depth": 1,
+                                                "path": ["title"],
+                                                "ref": "binding"
+                                              }
+                                            },
+                                            "children": [],
+                                            "class": "flex-1 rounded border px-2 py-1",
+                                            "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/0/ifTrue/0/1",
+                                            "kind": "el",
+                                            "on": {},
+                                            "tag": "input",
+                                            "toggle": {},
+                                            "vars": {}
+                                          },
+                                          {
+                                            "attrs": {
+                                              "type": {
+                                                "literal": "submit"
+                                              }
+                                            },
+                                            "children": [
+                                              {
+                                                "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/0/ifTrue/0/2/0",
+                                                "kind": "text",
+                                                "value": {
+                                                  "literal": "Save"
+                                                }
+                                              }
+                                            ],
+                                            "class": "text-sm text-indigo-700 underline",
+                                            "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/0/ifTrue/0/2",
+                                            "kind": "el",
+                                            "on": {},
+                                            "tag": "button",
+                                            "toggle": {},
+                                            "vars": {}
+                                          }
+                                        ],
+                                        "class": "flex flex-1 gap-2",
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/0/ifTrue/0",
+                                        "kind": "el",
+                                        "on": {
+                                          "submit": {
+                                            "event": "notes.Save",
+                                            "payload": {
+                                              "object": {
+                                                "id": {
+                                                  "path": ["form", "id"],
+                                                  "ref": "dom"
+                                                },
+                                                "title": {
+                                                  "path": ["form", "title"],
+                                                  "ref": "dom"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "tag": "form",
+                                        "toggle": {},
+                                        "vars": {}
+                                      },
+                                      {
+                                        "attrs": {},
+                                        "children": [
+                                          {
+                                            "attrs": {
+                                              "type": {
+                                                "literal": "submit"
+                                              }
+                                            },
+                                            "children": [
+                                              {
+                                                "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/0/ifTrue/1/0/0",
+                                                "kind": "text",
+                                                "value": {
+                                                  "literal": "Cancel"
+                                                }
+                                              }
+                                            ],
+                                            "class": "text-sm text-slate-600 underline",
+                                            "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/0/ifTrue/1/0",
+                                            "kind": "el",
+                                            "on": {},
+                                            "tag": "button",
+                                            "toggle": {},
+                                            "vars": {}
+                                          }
+                                        ],
+                                        "class": null,
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/0/ifTrue/1",
+                                        "kind": "el",
+                                        "on": {
+                                          "submit": {
+                                            "event": "notes.CancelEdit",
+                                            "payload": {
+                                              "literal": {}
+                                            }
+                                          }
+                                        },
+                                        "tag": "form",
+                                        "toggle": {},
+                                        "vars": {}
+                                      }
+                                    ],
+                                    "kind": "if",
+                                    "motion": null,
+                                    "test": {
+                                      "left": {
+                                        "path": ["editing"],
+                                        "ref": "context"
+                                      },
+                                      "op": "eq",
+                                      "right": {
+                                        "depth": 1,
+                                        "path": ["id"],
+                                        "ref": "binding"
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/1",
+                                    "item": {
+                                      "attrs": {
+                                        "href": {
+                                          "link": "home",
+                                          "params": {
+                                            "literal": null
+                                          },
+                                          "search": {
+                                            "object": {
+                                              "tag": {
+                                                "depth": 2,
+                                                "path": [],
+                                                "ref": "binding"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "children": [
+                                        {
+                                          "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/1/item/0",
+                                          "kind": "text",
+                                          "value": {
+                                            "arg": {
+                                              "object": {
+                                                "0": {
+                                                  "literal": "#"
+                                                },
+                                                "1": {
+                                                  "depth": 2,
+                                                  "path": [],
+                                                  "ref": "binding"
+                                                }
+                                              }
+                                            },
+                                            "fn": "%concat"
+                                          }
+                                        }
+                                      ],
+                                      "class": "text-xs text-indigo-700",
+                                      "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/1/item",
+                                      "kind": "el",
+                                      "on": {},
+                                      "tag": "a",
+                                      "toggle": {},
+                                      "vars": {}
+                                    },
+                                    "key": null,
+                                    "kind": "each",
+                                    "motion": null,
+                                    "source": {
+                                      "depth": 1,
+                                      "path": ["tags"],
+                                      "ref": "binding"
+                                    }
+                                  },
+                                  {
+                                    "attrs": {
+                                      "datetime": {
+                                        "depth": 1,
+                                        "path": ["createdAt"],
+                                        "ref": "binding"
+                                      }
+                                    },
+                                    "children": [
+                                      {
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/2/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Added "
+                                        }
+                                      },
+                                      {
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/2/1",
+                                        "kind": "text",
+                                        "value": {
+                                          "arg": {
+                                            "object": {
+                                              "at": {
+                                                "depth": 1,
+                                                "path": ["createdAt"],
+                                                "ref": "binding"
+                                              }
+                                            }
+                                          },
+                                          "fn": "notes.addedDay"
+                                        }
+                                      }
+                                    ],
+                                    "class": "text-xs text-slate-500",
+                                    "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/2",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "time",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/3",
+                                    "ifFalse": [],
+                                    "ifTrue": [
+                                      {
+                                        "attrs": {},
+                                        "children": [
+                                          {
+                                            "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/3/ifTrue/0/0",
+                                            "kind": "text",
+                                            "value": {
+                                              "literal": "pinned"
+                                            }
+                                          }
+                                        ],
+                                        "class": "text-xs text-amber-700",
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/3/ifTrue/0",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "span",
+                                        "toggle": {},
+                                        "vars": {}
+                                      }
+                                    ],
+                                    "kind": "if",
+                                    "motion": null,
+                                    "test": {
+                                      "left": {
+                                        "depth": 1,
+                                        "path": ["pinned"],
+                                        "ref": "binding"
+                                      },
+                                      "op": "eq",
+                                      "right": {
+                                        "literal": true
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "attrs": {
+                                          "name": {
+                                            "literal": "id"
+                                          },
+                                          "type": {
+                                            "literal": "hidden"
+                                          },
+                                          "value": {
+                                            "depth": 1,
+                                            "path": ["id"],
+                                            "ref": "binding"
+                                          }
+                                        },
+                                        "children": [],
+                                        "class": null,
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/4/0",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "input",
+                                        "toggle": {},
+                                        "vars": {}
+                                      },
+                                      {
+                                        "attrs": {
+                                          "type": {
+                                            "literal": "submit"
+                                          }
+                                        },
+                                        "children": [
+                                          {
+                                            "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/4/1/0",
+                                            "ifFalse": [
+                                              {
+                                                "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/4/1/0/ifFalse/0",
+                                                "kind": "text",
+                                                "value": {
+                                                  "literal": "Pin"
+                                                }
+                                              }
+                                            ],
+                                            "ifTrue": [
+                                              {
+                                                "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/4/1/0/ifTrue/0",
+                                                "kind": "text",
+                                                "value": {
+                                                  "literal": "Unpin"
+                                                }
+                                              }
+                                            ],
+                                            "kind": "if",
+                                            "motion": null,
+                                            "test": {
+                                              "left": {
+                                                "depth": 1,
+                                                "path": ["pinned"],
+                                                "ref": "binding"
+                                              },
+                                              "op": "eq",
+                                              "right": {
+                                                "literal": true
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "class": "text-sm text-slate-600 underline",
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/4/1",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "button",
+                                        "toggle": {},
+                                        "vars": {}
+                                      }
+                                    ],
+                                    "class": null,
+                                    "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/4",
+                                    "kind": "el",
+                                    "on": {
+                                      "submit": {
+                                        "event": "notes.Pin",
+                                        "payload": {
+                                          "object": {
+                                            "id": {
+                                              "path": ["form", "id"],
+                                              "ref": "dom"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "tag": "form",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "attrs": {
+                                          "name": {
+                                            "literal": "id"
+                                          },
+                                          "type": {
+                                            "literal": "hidden"
+                                          },
+                                          "value": {
+                                            "depth": 1,
+                                            "path": ["id"],
+                                            "ref": "binding"
+                                          }
+                                        },
+                                        "children": [],
+                                        "class": null,
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/5/0",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "input",
+                                        "toggle": {},
+                                        "vars": {}
+                                      },
+                                      {
+                                        "attrs": {
+                                          "type": {
+                                            "literal": "submit"
+                                          }
+                                        },
+                                        "children": [
+                                          {
+                                            "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/5/1/0",
+                                            "kind": "text",
+                                            "value": {
+                                              "literal": "Edit"
+                                            }
+                                          }
+                                        ],
+                                        "class": "text-sm text-slate-600 underline",
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/5/1",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "button",
+                                        "toggle": {},
+                                        "vars": {}
+                                      }
+                                    ],
+                                    "class": null,
+                                    "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/5",
+                                    "kind": "el",
+                                    "on": {
+                                      "submit": {
+                                        "event": "notes.Edit",
+                                        "payload": {
+                                          "object": {
+                                            "id": {
+                                              "path": ["form", "id"],
+                                              "ref": "dom"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "tag": "form",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "attrs": {
+                                          "name": {
+                                            "literal": "id"
+                                          },
+                                          "type": {
+                                            "literal": "hidden"
+                                          },
+                                          "value": {
+                                            "depth": 1,
+                                            "path": ["id"],
+                                            "ref": "binding"
+                                          }
+                                        },
+                                        "children": [],
+                                        "class": null,
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/6/0",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "input",
+                                        "toggle": {},
+                                        "vars": {}
+                                      },
+                                      {
+                                        "attrs": {
+                                          "type": {
+                                            "literal": "submit"
+                                          }
+                                        },
+                                        "children": [
+                                          {
+                                            "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/6/1/0",
+                                            "kind": "text",
+                                            "value": {
+                                              "literal": "Archive"
+                                            }
+                                          }
+                                        ],
+                                        "class": "text-sm text-slate-600 underline",
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/6/1",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "button",
+                                        "toggle": {},
+                                        "vars": {}
+                                      }
+                                    ],
+                                    "class": null,
+                                    "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/6",
+                                    "kind": "el",
+                                    "on": {
+                                      "submit": {
+                                        "event": "notes.Archive",
+                                        "payload": {
+                                          "object": {
+                                            "id": {
+                                              "path": ["form", "id"],
+                                              "ref": "dom"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "tag": "form",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "attrs": {
+                                          "name": {
+                                            "literal": "id"
+                                          },
+                                          "type": {
+                                            "literal": "hidden"
+                                          },
+                                          "value": {
+                                            "depth": 1,
+                                            "path": ["id"],
+                                            "ref": "binding"
+                                          }
+                                        },
+                                        "children": [],
+                                        "class": null,
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/7/0",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "input",
+                                        "toggle": {},
+                                        "vars": {}
+                                      },
+                                      {
+                                        "attrs": {
+                                          "type": {
+                                            "literal": "submit"
+                                          }
+                                        },
+                                        "children": [
+                                          {
+                                            "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/7/1/0",
+                                            "kind": "text",
+                                            "value": {
+                                              "literal": "Delete"
+                                            }
+                                          }
+                                        ],
+                                        "class": "text-sm text-slate-600 underline",
+                                        "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/7/1",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "button",
+                                        "toggle": {},
+                                        "vars": {}
+                                      }
+                                    ],
+                                    "class": null,
+                                    "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item/7",
+                                    "kind": "el",
+                                    "on": {
+                                      "submit": {
+                                        "event": "notes.Remove",
+                                        "payload": {
+                                          "object": {
+                                            "id": {
+                                              "path": ["form", "id"],
+                                              "ref": "dom"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "tag": "form",
+                                    "toggle": {},
+                                    "vars": {}
+                                  }
+                                ],
+                                "class": "flex flex-wrap items-center gap-3 px-4 py-3",
+                                "id": "notes.NotesBoard/10/ready/1/ifFalse/0/0/item",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "li",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              "key": "id",
+                              "kind": "each",
+                              "motion": null,
+                              "source": {
+                                "arg": {
+                                  "object": {
+                                    "items": {
+                                      "depth": 0,
+                                      "path": [],
+                                      "ref": "binding"
+                                    },
+                                    "query": {
+                                      "path": ["query"],
+                                      "ref": "context"
+                                    },
+                                    "tag": {
+                                      "path": ["tag"],
+                                      "ref": "search"
+                                    }
+                                  }
+                                },
+                                "fn": "notes.visible"
+                              }
+                            }
+                          ],
+                          "class": "divide-y rounded border",
+                          "id": "notes.NotesBoard/10/ready/1/ifFalse/0",
+                          "kind": "el",
+                          "on": {},
+                          "tag": "ul",
+                          "toggle": {},
+                          "vars": {}
+                        }
+                      ],
+                      "ifTrue": [
+                        {
+                          "attrs": {},
+                          "children": [
+                            {
+                              "id": "notes.NotesBoard/10/ready/1/ifTrue/0/0",
+                              "kind": "text",
+                              "value": {
+                                "literal": "No notes match"
+                              }
+                            }
+                          ],
+                          "class": "text-slate-500",
+                          "id": "notes.NotesBoard/10/ready/1/ifTrue/0",
+                          "kind": "el",
+                          "on": {},
+                          "tag": "p",
+                          "toggle": {},
+                          "vars": {}
+                        }
+                      ],
+                      "kind": "if",
+                      "motion": null,
+                      "test": {
+                        "arg": {
+                          "object": {
+                            "v": {
+                              "arg": {
+                                "object": {
+                                  "items": {
+                                    "depth": 0,
+                                    "path": [],
+                                    "ref": "binding"
+                                  },
+                                  "query": {
+                                    "path": ["query"],
+                                    "ref": "context"
+                                  },
+                                  "tag": {
+                                    "path": ["tag"],
+                                    "ref": "search"
+                                  }
+                                }
+                              },
+                              "fn": "notes.noMatch"
+                            }
+                          }
+                        },
+                        "fn": "%truthy",
+                        "op": "fn"
+                      }
+                    }
+                  ],
+                  "class": "space-y-3",
+                  "id": "notes.NotesBoard/10/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "section",
+                  "toggle": {},
+                  "vars": {}
+                }
+              }
+            ],
+            "class": "mx-auto max-w-xl space-y-6 px-4 py-8",
+            "id": "notes.NotesBoard",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": "home",
+          "seed": null
+        }
+      },
+      "widgets": {}
+    }
+  },
+  "http": {
+    "basePath": "",
+    "headers": [],
+    "redirects": [],
+    "trailingSlash": "never"
+  },
+  "irVersion": 1,
+  "notFound": null,
+  "pages": {
+    "archive": {
+      "assert": null,
+      "entries": null,
+      "head": {
+        "description": {
+          "literal": ""
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": true,
+        "published": {
+          "literal": null
+        },
+        "query": {
+          "input": {
+            "literal": {}
+          },
+          "ref": "account.me"
+        },
+        "redirects": {
+          "Unauthorized": "login"
+        },
+        "title": {
+          "literal": "Archive"
+        },
+        "type": "website"
+      },
+      "views": ["account.AccountBar", "notes.ArchiveBoard"]
+    },
+    "home": {
+      "assert": null,
+      "entries": null,
+      "head": {
+        "description": {
+          "literal": ""
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": true,
+        "published": {
+          "literal": null
+        },
+        "query": {
+          "input": {
+            "literal": {}
+          },
+          "ref": "account.me"
+        },
+        "redirects": {
+          "Unauthorized": "login"
+        },
+        "title": {
+          "literal": "Notes"
+        },
+        "type": "website"
+      },
+      "views": ["account.AccountBar", "notes.NotesBoard"]
+    },
+    "login": {
+      "assert": null,
+      "entries": null,
+      "head": {
+        "description": {
+          "literal": ""
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "redirects": {},
+        "title": {
+          "literal": "Sign in"
+        },
+        "type": "website"
+      },
+      "views": ["account.Login"]
+    }
+  },
+  "routes": {
+    "archive": {
+      "params": null,
+      "path": "/archive",
+      "search": null
+    },
+    "home": {
+      "params": null,
+      "path": "/",
+      "search": {
+        "additionalProperties": false,
+        "properties": {
+          "tag": {
+            "default": "",
+            "type": "string"
+          }
+        },
+        "required": ["tag"],
+        "type": "object"
+      }
+    },
+    "login": {
+      "params": null,
+      "path": "/login",
+      "search": null
+    }
+  },
+  "session": {
+    "additionalProperties": false,
+    "properties": {
+      "user": {
+        "type": "string"
+      }
+    },
+    "required": ["user"],
+    "type": "object"
+  },
+  "site": {
+    "icon": null,
+    "lang": "en",
+    "locales": null,
+    "name": "Notes",
+    "offline": null,
+    "themeColor": null,
+    "url": "http://localhost:3000"
+  }
+}

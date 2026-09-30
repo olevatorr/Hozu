@@ -1,0 +1,1846 @@
+{
+  "env": null,
+  "error": null,
+  "features": {
+    "posts": {
+      "contracts": {},
+      "endpoints": {},
+      "events": {},
+      "exports": {
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": ["listPosts"],
+        "tags": [],
+        "views": ["PostList"]
+      },
+      "fns": {},
+      "id": "posts",
+      "imports": [],
+      "intent": {
+        "invariants": ["Only public data", "Articles are static until their tag is revalidated"],
+        "summary": "Public blog posts: the index and one page per article. Fully cacheable, ships no JavaScript."
+      },
+      "machine": null,
+      "messages": {
+        "base": "en",
+        "text": {
+          "en": {
+            "byline": "By {author} · {date}",
+            "description": "Articles about building verifiable, AI-friendly web apps with Hozu.",
+            "heading": "Hozu Blog",
+            "languages": "Language",
+            "loading": "Loading posts…",
+            "notFound": "Post not found",
+            "offline": "You are offline",
+            "offlineHint": "This page will come back when your connection does.",
+            "postUnavailable": "Post unavailable",
+            "title": "Hozu Blog — notes on AI-first frontends",
+            "unavailable": "Posts are unavailable"
+          },
+          "zh-TW": {
+            "byline": "{author} · {date}",
+            "description": "用 Hozu 打造可驗證、對 AI 友善的網頁應用。",
+            "heading": "Hozu 部落格",
+            "languages": "語言",
+            "loading": "文章載入中…",
+            "notFound": "找不到這篇文章",
+            "offline": "目前離線",
+            "offlineHint": "恢復連線後就能繼續閱讀。",
+            "postUnavailable": "目前無法顯示這篇文章",
+            "title": "Hozu 部落格 — AI 優先前端筆記",
+            "unavailable": "目前無法取得文章"
+          }
+        }
+      },
+      "mutations": {},
+      "queries": {
+        "getPost": {
+          "errors": {
+            "NotFound": "s_794d099560f69716"
+          },
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_794d099560f69716",
+          "output": "s_ea944c9b0ce2a6df",
+          "scope": "public",
+          "tags": [
+            {
+              "param": {
+                "path": ["slug"],
+                "ref": "input"
+              },
+              "tag": "posts.postTag"
+            }
+          ]
+        },
+        "listPosts": {
+          "errors": {},
+          "freshness": {
+            "kind": "revalidate",
+            "seconds": 300
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_719c0ffe0bc64b64",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "posts.postsTag"
+            }
+          ]
+        }
+      },
+      "schemas": {
+        "s_00404e686415370f": {
+          "type": "string"
+        },
+        "s_719c0ffe0bc64b64": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "excerpt": {
+                "type": "string"
+              },
+              "publishedAt": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": ["slug", "title", "excerpt", "publishedAt"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "s_794d099560f69716": {
+          "additionalProperties": false,
+          "properties": {
+            "slug": {
+              "type": "string"
+            }
+          },
+          "required": ["slug"],
+          "type": "object"
+        },
+        "s_99334726611ccf58": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "s_ea944c9b0ce2a6df": {
+          "additionalProperties": false,
+          "properties": {
+            "author": {
+              "type": "string"
+            },
+            "excerpt": {
+              "type": "string"
+            },
+            "html": {
+              "type": "string"
+            },
+            "publishedAt": {
+              "type": "string"
+            },
+            "slug": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["slug", "title", "excerpt", "publishedAt", "author", "html"],
+          "type": "object"
+        }
+      },
+      "tags": {
+        "postTag": {
+          "param": "s_00404e686415370f"
+        },
+        "postsTag": {
+          "param": null
+        }
+      },
+      "views": {
+        "Article": {
+          "machine": null,
+          "root": {
+            "failed": {
+              "NotFound": {
+                "attrs": {
+                  "role": {
+                    "literal": "alert"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "posts.Article/failed/NotFound/0",
+                    "kind": "text",
+                    "value": {
+                      "arg": {
+                        "literal": null
+                      },
+                      "fn": "#msg:posts.notFound"
+                    }
+                  }
+                ],
+                "class": null,
+                "id": "posts.Article/failed/NotFound",
+                "kind": "el",
+                "on": {},
+                "tag": "p",
+                "toggle": {},
+                "vars": {}
+              },
+              "Unexpected": {
+                "attrs": {
+                  "role": {
+                    "literal": "alert"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "posts.Article/failed/Unexpected/0",
+                    "kind": "text",
+                    "value": {
+                      "arg": {
+                        "literal": null
+                      },
+                      "fn": "#msg:posts.postUnavailable"
+                    }
+                  }
+                ],
+                "class": null,
+                "id": "posts.Article/failed/Unexpected",
+                "kind": "el",
+                "on": {},
+                "tag": "p",
+                "toggle": {},
+                "vars": {}
+              }
+            },
+            "id": "posts.Article",
+            "input": {
+              "object": {
+                "slug": {
+                  "path": ["slug"],
+                  "ref": "params"
+                }
+              }
+            },
+            "kind": "query",
+            "pending": null,
+            "query": "posts.getPost",
+            "ready": {
+              "attrs": {},
+              "children": [
+                {
+                  "attrs": {
+                    "aria-label": {
+                      "arg": {
+                        "literal": null
+                      },
+                      "fn": "#msg:posts.languages"
+                    }
+                  },
+                  "children": [
+                    {
+                      "attrs": {
+                        "href": {
+                          "path": ["en"],
+                          "ref": "alternate"
+                        },
+                        "hreflang": {
+                          "literal": "en"
+                        },
+                        "lang": {
+                          "literal": "en"
+                        }
+                      },
+                      "children": [
+                        {
+                          "id": "posts.Article/ready/0/0/0",
+                          "kind": "text",
+                          "value": {
+                            "literal": "English"
+                          }
+                        }
+                      ],
+                      "class": null,
+                      "id": "posts.Article/ready/0/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "a",
+                      "toggle": {},
+                      "vars": {}
+                    },
+                    {
+                      "attrs": {
+                        "href": {
+                          "path": ["zh-TW"],
+                          "ref": "alternate"
+                        },
+                        "hreflang": {
+                          "literal": "zh-TW"
+                        },
+                        "lang": {
+                          "literal": "zh-TW"
+                        }
+                      },
+                      "children": [
+                        {
+                          "id": "posts.Article/ready/0/1/0",
+                          "kind": "text",
+                          "value": {
+                            "literal": "中文"
+                          }
+                        }
+                      ],
+                      "class": null,
+                      "id": "posts.Article/ready/0/1",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "a",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  ],
+                  "class": "flex gap-3 text-sm",
+                  "id": "posts.Article/ready/0",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "nav",
+                  "toggle": {},
+                  "vars": {}
+                },
+                {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "posts.Article/ready/1/0",
+                      "kind": "text",
+                      "value": {
+                        "depth": 0,
+                        "path": ["title"],
+                        "ref": "binding"
+                      }
+                    }
+                  ],
+                  "class": null,
+                  "id": "posts.Article/ready/1",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "h1",
+                  "toggle": {},
+                  "vars": {}
+                },
+                {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "posts.Article/ready/2/0",
+                      "kind": "text",
+                      "value": {
+                        "arg": {
+                          "object": {
+                            "author": {
+                              "depth": 0,
+                              "path": ["author"],
+                              "ref": "binding"
+                            },
+                            "date": {
+                              "arg": {
+                                "object": {
+                                  "o": {
+                                    "literal": {
+                                      "dateStyle": "long"
+                                    }
+                                  },
+                                  "v": {
+                                    "depth": 0,
+                                    "path": ["publishedAt"],
+                                    "ref": "binding"
+                                  }
+                                }
+                              },
+                              "fn": "#date"
+                            }
+                          }
+                        },
+                        "fn": "#msg:posts.byline"
+                      }
+                    }
+                  ],
+                  "class": "text-sm text-gray-500",
+                  "id": "posts.Article/ready/2",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "p",
+                  "toggle": {},
+                  "vars": {}
+                },
+                {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "posts.Article/ready/3/0",
+                      "kind": "html",
+                      "value": {
+                        "depth": 0,
+                        "path": ["html"],
+                        "ref": "binding"
+                      }
+                    }
+                  ],
+                  "class": null,
+                  "id": "posts.Article/ready/3",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "div",
+                  "toggle": {},
+                  "vars": {}
+                }
+              ],
+              "class": "prose prose-lg mx-auto px-4 py-12 dark:prose-invert",
+              "id": "posts.Article/ready",
+              "kind": "el",
+              "on": {},
+              "tag": "article",
+              "toggle": {},
+              "vars": {}
+            }
+          },
+          "route": "post",
+          "seed": null
+        },
+        "Offline": {
+          "machine": null,
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "posts.Offline/0/0",
+                    "kind": "text",
+                    "value": {
+                      "arg": {
+                        "literal": null
+                      },
+                      "fn": "#msg:posts.offline"
+                    }
+                  }
+                ],
+                "class": "text-2xl font-bold",
+                "id": "posts.Offline/0",
+                "kind": "el",
+                "on": {},
+                "tag": "h1",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "posts.Offline/1/0",
+                    "kind": "text",
+                    "value": {
+                      "arg": {
+                        "literal": null
+                      },
+                      "fn": "#msg:posts.offlineHint"
+                    }
+                  }
+                ],
+                "class": null,
+                "id": "posts.Offline/1",
+                "kind": "el",
+                "on": {},
+                "tag": "p",
+                "toggle": {},
+                "vars": {}
+              }
+            ],
+            "class": "mx-auto max-w-2xl space-y-4 px-4 py-12",
+            "id": "posts.Offline",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": null,
+          "seed": null
+        },
+        "PostList": {
+          "machine": null,
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {
+                  "aria-label": {
+                    "arg": {
+                      "literal": null
+                    },
+                    "fn": "#msg:posts.languages"
+                  }
+                },
+                "children": [
+                  {
+                    "attrs": {
+                      "href": {
+                        "path": ["en"],
+                        "ref": "alternate"
+                      },
+                      "hreflang": {
+                        "literal": "en"
+                      },
+                      "lang": {
+                        "literal": "en"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "posts.PostList/0/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "English"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "posts.PostList/0/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "href": {
+                        "path": ["zh-TW"],
+                        "ref": "alternate"
+                      },
+                      "hreflang": {
+                        "literal": "zh-TW"
+                      },
+                      "lang": {
+                        "literal": "zh-TW"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "posts.PostList/0/1/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "中文"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "posts.PostList/0/1",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "flex gap-3 text-sm",
+                "id": "posts.PostList/0",
+                "kind": "el",
+                "on": {},
+                "tag": "nav",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {
+                  "alt": {
+                    "literal": ""
+                  },
+                  "height": {
+                    "literal": 600
+                  },
+                  "src": {
+                    "literal": "/_hozu/a/2ea52ea9eec9e42a.jpg"
+                  },
+                  "width": {
+                    "literal": 1600
+                  }
+                },
+                "children": [],
+                "class": "h-auto w-full rounded-2xl",
+                "id": "posts.PostList/1",
+                "kind": "el",
+                "on": {},
+                "tag": "img",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "posts.PostList/2/0",
+                    "kind": "text",
+                    "value": {
+                      "arg": {
+                        "literal": null
+                      },
+                      "fn": "#msg:posts.heading"
+                    }
+                  }
+                ],
+                "class": "text-4xl font-bold tracking-tight text-gray-900 dark:text-white",
+                "id": "posts.PostList/2",
+                "kind": "el",
+                "on": {},
+                "tag": "h1",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "failed": {
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "posts.PostList/3/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "arg": {
+                            "literal": null
+                          },
+                          "fn": "#msg:posts.unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "posts.PostList/3/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "posts.PostList/3",
+                "input": {
+                  "literal": {}
+                },
+                "kind": "query",
+                "pending": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "posts.PostList/3/pending/0",
+                      "kind": "text",
+                      "value": {
+                        "arg": {
+                          "literal": null
+                        },
+                        "fn": "#msg:posts.loading"
+                      }
+                    }
+                  ],
+                  "class": null,
+                  "id": "posts.PostList/3/pending",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "p",
+                  "toggle": {},
+                  "vars": {}
+                },
+                "query": "posts.listPosts",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "posts.PostList/3/ready/0",
+                      "item": {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "attrs": {
+                                  "href": {
+                                    "link": "post",
+                                    "params": {
+                                      "object": {
+                                        "slug": {
+                                          "depth": 1,
+                                          "path": ["slug"],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    },
+                                    "search": {
+                                      "literal": null
+                                    }
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "id": "posts.PostList/3/ready/0/item/0/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "depth": 1,
+                                      "path": ["title"],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                ],
+                                "class": "focus-visible:outline-2 focus-visible:outline-brand-600",
+                                "id": "posts.PostList/3/ready/0/item/0/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "a",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "class": "text-xl font-semibold group-hover:text-brand-700",
+                            "id": "posts.PostList/3/ready/0/item/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "h2",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "id": "posts.PostList/3/ready/0/item/1/0",
+                                "kind": "text",
+                                "value": {
+                                  "depth": 1,
+                                  "path": ["excerpt"],
+                                  "ref": "binding"
+                                }
+                              }
+                            ],
+                            "class": "mt-2 text-gray-600 dark:text-gray-300",
+                            "id": "posts.PostList/3/ready/0/item/1",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "p",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "id": "posts.PostList/3/ready/0/item/2/0",
+                                "kind": "text",
+                                "value": {
+                                  "arg": {
+                                    "object": {
+                                      "o": {
+                                        "literal": {
+                                          "dateStyle": "medium"
+                                        }
+                                      },
+                                      "v": {
+                                        "depth": 1,
+                                        "path": ["publishedAt"],
+                                        "ref": "binding"
+                                      }
+                                    }
+                                  },
+                                  "fn": "#date"
+                                }
+                              }
+                            ],
+                            "class": "mt-4 block text-xs uppercase tracking-wide text-gray-500",
+                            "id": "posts.PostList/3/ready/0/item/2",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "small",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        ],
+                        "class": "group rounded-2xl border border-gray-200 p-6 transition hover:-translate-y-0.5 hover:border-brand-600 hover:shadow-lg dark:border-gray-800",
+                        "id": "posts.PostList/3/ready/0/item",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "li",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      "key": "slug",
+                      "kind": "each",
+                      "motion": null,
+                      "source": {
+                        "depth": 0,
+                        "path": [],
+                        "ref": "binding"
+                      }
+                    }
+                  ],
+                  "class": "grid gap-6 sm:grid-cols-2",
+                  "id": "posts.PostList/3/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "ul",
+                  "toggle": {},
+                  "vars": {}
+                }
+              }
+            ],
+            "class": "mx-auto max-w-2xl space-y-8 px-4 py-12 font-sans",
+            "id": "posts.PostList",
+            "kind": "el",
+            "on": {},
+            "tag": "section",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": null,
+          "seed": null
+        }
+      },
+      "widgets": {}
+    },
+    "saved": {
+      "contracts": {
+        "refusesWhenFull": {
+          "expect": {
+            "context": {
+              "error": "Reading list is full",
+              "slug": "x"
+            },
+            "effects": [
+              {
+                "effect": "saved.savePost",
+                "input": {
+                  "slug": "x"
+                }
+              }
+            ],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "error": null,
+              "slug": ""
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "slug": "x"
+              },
+              "send": "saved.Save"
+            },
+            {
+              "data": {
+                "limit": 20
+              },
+              "error": "LimitReached",
+              "failed": "saved.savePost"
+            }
+          ]
+        },
+        "removeFails": {
+          "expect": {
+            "context": {
+              "error": "offline",
+              "slug": "x"
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "error": null,
+              "slug": "x"
+            },
+            "state": "removing"
+          },
+          "when": [
+            {
+              "data": {
+                "message": "offline"
+              },
+              "error": "Unexpected",
+              "failed": "saved.unsavePost"
+            }
+          ]
+        },
+        "removesPost": {
+          "expect": {
+            "context": {
+              "error": null,
+              "slug": "x"
+            },
+            "effects": [
+              {
+                "effect": "saved.unsavePost",
+                "input": {
+                  "slug": "x"
+                }
+              }
+            ],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "error": null,
+              "slug": ""
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "slug": "x"
+              },
+              "send": "saved.Unsave"
+            },
+            {
+              "done": "saved.unsavePost",
+              "result": []
+            }
+          ]
+        },
+        "saveFails": {
+          "expect": {
+            "context": {
+              "error": "offline",
+              "slug": "x"
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "error": null,
+              "slug": "x"
+            },
+            "state": "saving"
+          },
+          "when": [
+            {
+              "data": {
+                "message": "offline"
+              },
+              "error": "Unexpected",
+              "failed": "saved.savePost"
+            }
+          ]
+        },
+        "savesPost": {
+          "expect": {
+            "context": {
+              "error": null,
+              "slug": "hello-hozu"
+            },
+            "effects": [
+              {
+                "effect": "saved.savePost",
+                "input": {
+                  "slug": "hello-hozu"
+                }
+              }
+            ],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "error": null,
+              "slug": ""
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "slug": "hello-hozu"
+              },
+              "send": "saved.Save"
+            },
+            {
+              "done": "saved.savePost",
+              "result": ["hello-hozu"]
+            }
+          ]
+        }
+      },
+      "endpoints": {},
+      "events": {
+        "Save": {
+          "payload": "s_794d099560f69716"
+        },
+        "Unsave": {
+          "payload": "s_794d099560f69716"
+        }
+      },
+      "exports": {
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": [],
+        "tags": [],
+        "views": []
+      },
+      "fns": {},
+      "id": "saved",
+      "imports": ["posts"],
+      "intent": {
+        "invariants": ["Reading lists are private to each user", "At most 20 saved posts"],
+        "summary": "Signed-in reading list: save and remove posts."
+      },
+      "machine": {
+        "context": "s_d46eff784889870c",
+        "initial": "idle",
+        "initialContext": {
+          "error": null,
+          "slug": ""
+        },
+        "states": {
+          "idle": {
+            "after": [],
+            "final": false,
+            "ignore": [],
+            "invoke": null,
+            "on": {
+              "saved.Save": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["slug"],
+                      "value": {
+                        "path": ["slug"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "saving"
+                }
+              ],
+              "saved.Unsave": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["slug"],
+                      "value": {
+                        "path": ["slug"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "removing"
+                }
+              ]
+            }
+          },
+          "removing": {
+            "after": [],
+            "final": false,
+            "ignore": ["saved.Save", "saved.Unsave"],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "saved.unsavePost",
+              "failed": {
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "slug": {
+                    "path": ["slug"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          },
+          "saving": {
+            "after": [],
+            "final": false,
+            "ignore": ["saved.Save", "saved.Unsave"],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "saved.savePost",
+              "failed": {
+                "LimitReached": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "Reading list is full"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "slug": {
+                    "path": ["slug"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          }
+        }
+      },
+      "messages": {
+        "base": "en",
+        "text": {
+          "en": {
+            "count": "{count, plural, =0 {Nothing saved yet} one {# post saved} other {# posts saved}}",
+            "heading": "Your reading list",
+            "loading": "Loading your list…",
+            "postsUnavailable": "Posts unavailable",
+            "remove": "Remove",
+            "save": "Save",
+            "saving": "Saving…",
+            "unavailable": "Could not load your list"
+          },
+          "zh-TW": {
+            "count": "{count, plural, =0 {還沒有儲存任何文章} other {已儲存 # 篇}}",
+            "heading": "我的閱讀清單",
+            "loading": "清單載入中…",
+            "postsUnavailable": "目前無法取得文章",
+            "remove": "移除",
+            "save": "儲存",
+            "saving": "儲存中…",
+            "unavailable": "無法載入你的清單"
+          }
+        }
+      },
+      "mutations": {
+        "savePost": {
+          "errors": {
+            "LimitReached": "s_49f813cd79e4917d"
+          },
+          "input": "s_794d099560f69716",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "saved.savedTag"
+            }
+          ],
+          "output": "s_681004346c78d5f3"
+        },
+        "unsavePost": {
+          "errors": {},
+          "input": "s_794d099560f69716",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "saved.savedTag"
+            }
+          ],
+          "output": "s_681004346c78d5f3"
+        }
+      },
+      "queries": {
+        "savedPosts": {
+          "errors": {},
+          "freshness": {
+            "kind": "live"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_681004346c78d5f3",
+          "scope": "user",
+          "tags": [
+            {
+              "param": null,
+              "tag": "saved.savedTag"
+            }
+          ]
+        }
+      },
+      "schemas": {
+        "s_49f813cd79e4917d": {
+          "additionalProperties": false,
+          "properties": {
+            "limit": {
+              "type": "number"
+            }
+          },
+          "required": ["limit"],
+          "type": "object"
+        },
+        "s_681004346c78d5f3": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "s_794d099560f69716": {
+          "additionalProperties": false,
+          "properties": {
+            "slug": {
+              "type": "string"
+            }
+          },
+          "required": ["slug"],
+          "type": "object"
+        },
+        "s_99334726611ccf58": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "s_d46eff784889870c": {
+          "additionalProperties": false,
+          "properties": {
+            "error": {
+              "type": ["string", "null"]
+            },
+            "slug": {
+              "type": "string"
+            }
+          },
+          "required": ["slug", "error"],
+          "type": "object"
+        }
+      },
+      "tags": {
+        "savedTag": {
+          "param": null
+        }
+      },
+      "views": {
+        "ReadingList": {
+          "machine": "saved",
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "saved.ReadingList/0/0",
+                    "kind": "text",
+                    "value": {
+                      "arg": {
+                        "literal": null
+                      },
+                      "fn": "#msg:saved.heading"
+                    }
+                  }
+                ],
+                "class": "text-lg font-semibold",
+                "id": "saved.ReadingList/0",
+                "kind": "el",
+                "on": {},
+                "tag": "h2",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "failed": {
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "saved.ReadingList/1/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "arg": {
+                            "literal": null
+                          },
+                          "fn": "#msg:saved.unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "saved.ReadingList/1/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "saved.ReadingList/1",
+                "input": {
+                  "literal": {}
+                },
+                "kind": "query",
+                "pending": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "saved.ReadingList/1/pending/0",
+                      "kind": "text",
+                      "value": {
+                        "arg": {
+                          "literal": null
+                        },
+                        "fn": "#msg:saved.loading"
+                      }
+                    }
+                  ],
+                  "class": null,
+                  "id": "saved.ReadingList/1/pending",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "p",
+                  "toggle": {},
+                  "vars": {}
+                },
+                "query": "saved.savedPosts",
+                "ready": {
+                  "failed": {
+                    "Unexpected": {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "saved.ReadingList/1/ready/failed/Unexpected/0",
+                          "kind": "text",
+                          "value": {
+                            "arg": {
+                              "literal": null
+                            },
+                            "fn": "#msg:saved.postsUnavailable"
+                          }
+                        }
+                      ],
+                      "class": null,
+                      "id": "saved.ReadingList/1/ready/failed/Unexpected",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  },
+                  "id": "saved.ReadingList/1/ready",
+                  "input": {
+                    "literal": {}
+                  },
+                  "kind": "query",
+                  "pending": null,
+                  "query": "posts.listPosts",
+                  "ready": {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "id": "saved.ReadingList/1/ready/ready/0",
+                        "item": {
+                          "attrs": {},
+                          "children": [
+                            {
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "id": "saved.ReadingList/1/ready/ready/0/item/0/0",
+                                  "kind": "text",
+                                  "value": {
+                                    "depth": 2,
+                                    "path": ["title"],
+                                    "ref": "binding"
+                                  }
+                                }
+                              ],
+                              "class": "flex-1",
+                              "id": "saved.ReadingList/1/ready/ready/0/item/0",
+                              "kind": "el",
+                              "on": {},
+                              "tag": "span",
+                              "toggle": {},
+                              "vars": {}
+                            },
+                            {
+                              "children": [
+                                {
+                                  "attrs": {
+                                    "type": {
+                                      "literal": "button"
+                                    }
+                                  },
+                                  "children": [
+                                    {
+                                      "id": "saved.ReadingList/1/ready/ready/0/item/1/0/0",
+                                      "kind": "text",
+                                      "value": {
+                                        "arg": {
+                                          "literal": null
+                                        },
+                                        "fn": "#msg:saved.save"
+                                      }
+                                    }
+                                  ],
+                                  "class": "rounded-md bg-brand-600 px-2 py-0.5 text-xs text-white hover:bg-brand-700",
+                                  "id": "saved.ReadingList/1/ready/ready/0/item/1/0",
+                                  "kind": "el",
+                                  "on": {
+                                    "click": {
+                                      "event": "saved.Save",
+                                      "payload": {
+                                        "object": {
+                                          "slug": {
+                                            "depth": 2,
+                                            "path": ["slug"],
+                                            "ref": "binding"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "tag": "button",
+                                  "toggle": {},
+                                  "vars": {}
+                                },
+                                {
+                                  "attrs": {
+                                    "type": {
+                                      "literal": "button"
+                                    }
+                                  },
+                                  "children": [
+                                    {
+                                      "id": "saved.ReadingList/1/ready/ready/0/item/1/1/0",
+                                      "kind": "text",
+                                      "value": {
+                                        "arg": {
+                                          "literal": null
+                                        },
+                                        "fn": "#msg:saved.remove"
+                                      }
+                                    }
+                                  ],
+                                  "class": "rounded-md border px-2 py-0.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800",
+                                  "id": "saved.ReadingList/1/ready/ready/0/item/1/1",
+                                  "kind": "el",
+                                  "on": {
+                                    "click": {
+                                      "event": "saved.Unsave",
+                                      "payload": {
+                                        "object": {
+                                          "slug": {
+                                            "depth": 2,
+                                            "path": ["slug"],
+                                            "ref": "binding"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "tag": "button",
+                                  "toggle": {},
+                                  "vars": {}
+                                }
+                              ],
+                              "id": "saved.ReadingList/1/ready/ready/0/item/1",
+                              "kind": "when",
+                              "motion": null,
+                              "states": ["idle"]
+                            }
+                          ],
+                          "class": "flex items-center gap-2 py-1",
+                          "id": "saved.ReadingList/1/ready/ready/0/item",
+                          "kind": "el",
+                          "on": {},
+                          "tag": "li",
+                          "toggle": {},
+                          "vars": {}
+                        },
+                        "key": "slug",
+                        "kind": "each",
+                        "motion": null,
+                        "source": {
+                          "depth": 1,
+                          "path": [],
+                          "ref": "binding"
+                        }
+                      },
+                      {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "id": "saved.ReadingList/1/ready/ready/1/0",
+                            "kind": "text",
+                            "value": {
+                              "arg": {
+                                "object": {
+                                  "count": {
+                                    "depth": 0,
+                                    "path": ["length"],
+                                    "ref": "binding"
+                                  }
+                                }
+                              },
+                              "fn": "#msg:saved.count"
+                            }
+                          }
+                        ],
+                        "class": null,
+                        "id": "saved.ReadingList/1/ready/ready/1",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "li",
+                        "toggle": {},
+                        "vars": {}
+                      }
+                    ],
+                    "class": null,
+                    "id": "saved.ReadingList/1/ready/ready",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "ul",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                }
+              },
+              {
+                "children": [
+                  {
+                    "attrs": {
+                      "aria-live": {
+                        "literal": "polite"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "saved.ReadingList/2/0/0",
+                        "kind": "text",
+                        "value": {
+                          "arg": {
+                            "literal": null
+                          },
+                          "fn": "#msg:saved.saving"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "saved.ReadingList/2/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "id": "saved.ReadingList/2",
+                "kind": "when",
+                "motion": null,
+                "states": ["removing", "saving"]
+              },
+              {
+                "attrs": {
+                  "role": {
+                    "literal": "alert"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "saved.ReadingList/3/0",
+                    "kind": "text",
+                    "value": {
+                      "path": ["error"],
+                      "ref": "context"
+                    }
+                  }
+                ],
+                "class": null,
+                "id": "saved.ReadingList/3",
+                "kind": "el",
+                "on": {},
+                "tag": "p",
+                "toggle": {},
+                "vars": {}
+              }
+            ],
+            "class": "reading-list mx-auto mt-8 max-w-2xl",
+            "id": "saved.ReadingList",
+            "kind": "el",
+            "on": {},
+            "tag": "aside",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": null,
+          "seed": null
+        }
+      },
+      "widgets": {}
+    }
+  },
+  "http": {
+    "basePath": "",
+    "headers": [],
+    "redirects": [],
+    "trailingSlash": "never"
+  },
+  "irVersion": 1,
+  "notFound": null,
+  "pages": {
+    "home": {
+      "assert": null,
+      "entries": null,
+      "head": {
+        "description": {
+          "arg": {
+            "literal": null
+          },
+          "fn": "#msg:posts.description"
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "redirects": {},
+        "title": {
+          "arg": {
+            "literal": null
+          },
+          "fn": "#msg:posts.title"
+        },
+        "type": "website"
+      },
+      "views": ["posts.PostList", "saved.ReadingList"]
+    },
+    "offline": {
+      "assert": "static",
+      "entries": null,
+      "head": {
+        "description": {
+          "arg": {
+            "literal": null
+          },
+          "fn": "#msg:posts.offlineHint"
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": true,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "redirects": {},
+        "title": {
+          "arg": {
+            "literal": null
+          },
+          "fn": "#msg:posts.offline"
+        },
+        "type": "website"
+      },
+      "views": ["posts.Offline"]
+    },
+    "post": {
+      "assert": "static",
+      "entries": {
+        "input": {
+          "literal": {}
+        },
+        "params": {
+          "object": {
+            "slug": {
+              "depth": 0,
+              "path": ["slug"],
+              "ref": "binding"
+            }
+          }
+        },
+        "query": "posts.listPosts"
+      },
+      "head": {
+        "description": {
+          "depth": 0,
+          "path": ["excerpt"],
+          "ref": "binding"
+        },
+        "image": {
+          "arg": {
+            "object": {
+              "subtitle": {
+                "depth": 0,
+                "path": ["excerpt"],
+                "ref": "binding"
+              },
+              "title": {
+                "depth": 0,
+                "path": ["title"],
+                "ref": "binding"
+              }
+            }
+          },
+          "fn": "#og"
+        },
+        "noindex": false,
+        "published": {
+          "depth": 0,
+          "path": ["publishedAt"],
+          "ref": "binding"
+        },
+        "query": {
+          "input": {
+            "object": {
+              "slug": {
+                "path": ["slug"],
+                "ref": "params"
+              }
+            }
+          },
+          "ref": "posts.getPost"
+        },
+        "redirects": {},
+        "title": {
+          "depth": 0,
+          "path": ["title"],
+          "ref": "binding"
+        },
+        "type": "article"
+      },
+      "views": ["posts.Article"]
+    }
+  },
+  "routes": {
+    "home": {
+      "params": null,
+      "path": "/",
+      "search": null
+    },
+    "offline": {
+      "params": null,
+      "path": "/offline",
+      "search": null
+    },
+    "post": {
+      "params": {
+        "additionalProperties": false,
+        "properties": {
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": ["slug"],
+        "type": "object"
+      },
+      "path": "/posts/:slug",
+      "search": null
+    }
+  },
+  "session": {
+    "additionalProperties": false,
+    "properties": {
+      "userId": {
+        "type": "string"
+      }
+    },
+    "required": ["userId"],
+    "type": "object"
+  },
+  "site": {
+    "icon": null,
+    "lang": "en",
+    "locales": ["en", "zh-TW"],
+    "name": "Hozu Blog",
+    "offline": "offline",
+    "themeColor": null,
+    "url": "https://blog.hozu.dev"
+  }
+}

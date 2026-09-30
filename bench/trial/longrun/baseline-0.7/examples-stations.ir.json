@@ -1,0 +1,2143 @@
+{
+  "env": null,
+  "error": null,
+  "features": {
+    "stations": {
+      "contracts": {
+        "startsTour": {
+          "expect": {
+            "context": {
+              "district": "",
+              "q": "",
+              "selected": "s4",
+              "target": "",
+              "tour": ["s4", "s1"]
+            },
+            "effects": [],
+            "state": "touring"
+          },
+          "given": {
+            "context": {
+              "district": "",
+              "q": "",
+              "selected": "",
+              "target": "",
+              "tour": []
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "ids": ["s4", "s1"]
+              },
+              "send": "stations.StartTour"
+            }
+          ]
+        },
+        "tourAdvancesAndWraps": {
+          "expect": {
+            "context": {
+              "district": "",
+              "q": "",
+              "selected": "s4",
+              "target": "",
+              "tour": ["s4", "s1"]
+            },
+            "effects": [],
+            "state": "touring"
+          },
+          "given": {
+            "context": {
+              "district": "",
+              "q": "",
+              "selected": "s1",
+              "target": "",
+              "tour": ["s4", "s1"]
+            },
+            "state": "touring"
+          },
+          "when": [
+            {
+              "elapse": 1500
+            }
+          ]
+        }
+      },
+      "endpoints": {},
+      "events": {
+        "PickDistrict": {
+          "payload": "s_0ee380f9829a4986"
+        },
+        "Search": {
+          "payload": "s_54669b5e6a1bfebb"
+        },
+        "Select": {
+          "payload": "s_7717dd85c2e5ff93"
+        },
+        "StartTour": {
+          "payload": "s_2af3411551f0d61f"
+        },
+        "StopTour": {
+          "payload": "s_99334726611ccf58"
+        },
+        "ToggleFavorite": {
+          "payload": "s_7717dd85c2e5ff93"
+        }
+      },
+      "exports": {
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": [],
+        "tags": [],
+        "views": []
+      },
+      "fns": {
+        "byDistrict": {
+          "input": "s_abc387384cfb5596",
+          "output": "s_0733f2acfaf8ecc4",
+          "sourceHash": "a50fd0874ed453a9"
+        },
+        "districts": {
+          "input": "s_73e566d2a807a82c",
+          "output": "s_681004346c78d5f3",
+          "sourceHash": "7df9a95f8a65adba"
+        },
+        "idsOf": {
+          "input": "s_73e566d2a807a82c",
+          "output": "s_681004346c78d5f3",
+          "sourceHash": "076423bbe5b1513b"
+        },
+        "nextStop": {
+          "input": "s_12da894a217c753b",
+          "output": "s_00404e686415370f",
+          "sourceHash": "dde845315e533bd2"
+        },
+        "selected": {
+          "input": "s_4cfb7c0a294c0428",
+          "output": "s_09cb06faeafb25d7",
+          "sourceHash": "b7e0c60278e9842f"
+        },
+        "total": {
+          "input": "s_abc387384cfb5596",
+          "output": "s_cddf8275afa15408",
+          "sourceHash": "8baf42e799431f30"
+        },
+        "visible": {
+          "input": "s_abc387384cfb5596",
+          "output": "s_09cb06faeafb25d7",
+          "sourceHash": "9c4cfe1dbc0705de"
+        }
+      },
+      "id": "stations",
+      "imports": [],
+      "intent": {
+        "invariants": [],
+        "summary": "Bike stations on a list, a map, a chart and a globe, with favourites and a tour"
+      },
+      "machine": {
+        "context": "s_a028a31beae01907",
+        "initial": "idle",
+        "initialContext": {
+          "district": "",
+          "q": "",
+          "selected": "",
+          "target": "",
+          "tour": []
+        },
+        "states": {
+          "favoriting": {
+            "after": [],
+            "final": false,
+            "ignore": [
+              "stations.PickDistrict",
+              "stations.Search",
+              "stations.Select",
+              "stations.StartTour",
+              "stations.StopTour",
+              "stations.ToggleFavorite"
+            ],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "stations.toggleFavorite",
+              "failed": {
+                "Unexpected": [
+                  {
+                    "assign": [],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "id": {
+                    "path": ["target"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          },
+          "idle": {
+            "after": [],
+            "final": false,
+            "ignore": [],
+            "invoke": null,
+            "on": {
+              "stations.PickDistrict": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["district"],
+                      "value": {
+                        "path": ["district"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "stations.Search": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["q"],
+                      "value": {
+                        "path": ["text"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "stations.Select": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["selected"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "stations.StartTour": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["tour"],
+                      "value": {
+                        "path": ["ids"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["selected"],
+                      "value": {
+                        "arg": {
+                          "object": {
+                            "a": {
+                              "path": ["ids", "0"],
+                              "ref": "event"
+                            },
+                            "b": {
+                              "literal": ""
+                            }
+                          }
+                        },
+                        "fn": "%coalesce"
+                      }
+                    }
+                  ],
+                  "guard": {
+                    "left": {
+                      "path": ["ids", "length"],
+                      "ref": "event"
+                    },
+                    "op": "gt",
+                    "right": {
+                      "literal": 0
+                    }
+                  },
+                  "navigate": null,
+                  "target": "touring"
+                }
+              ],
+              "stations.ToggleFavorite": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["target"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "favoriting"
+                }
+              ]
+            }
+          },
+          "touring": {
+            "after": [
+              {
+                "ms": 1500,
+                "transition": {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["selected"],
+                      "value": {
+                        "arg": {
+                          "object": {
+                            "current": {
+                              "path": ["selected"],
+                              "ref": "context"
+                            },
+                            "ids": {
+                              "path": ["tour"],
+                              "ref": "context"
+                            }
+                          }
+                        },
+                        "fn": "stations.nextStop"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "touring"
+                }
+              }
+            ],
+            "final": false,
+            "ignore": [],
+            "invoke": null,
+            "on": {
+              "stations.PickDistrict": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["district"],
+                      "value": {
+                        "path": ["district"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "stations.Search": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["q"],
+                      "value": {
+                        "path": ["text"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "stations.Select": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["selected"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "touring"
+                }
+              ],
+              "stations.StopTour": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "stations.ToggleFavorite": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["target"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "favoriting"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "messages": null,
+      "mutations": {
+        "toggleFavorite": {
+          "errors": {},
+          "input": "s_7717dd85c2e5ff93",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "stations.stationsTag"
+            }
+          ],
+          "output": "s_00419afed5af03c3"
+        }
+      },
+      "queries": {
+        "listStations": {
+          "errors": {},
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_09cb06faeafb25d7",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "stations.stationsTag"
+            }
+          ]
+        }
+      },
+      "schemas": {
+        "s_00404e686415370f": {
+          "type": "string"
+        },
+        "s_00419afed5af03c3": {
+          "additionalProperties": false,
+          "properties": {
+            "favorite": {
+              "type": "boolean"
+            },
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": ["id", "favorite"],
+          "type": "object"
+        },
+        "s_0733f2acfaf8ecc4": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "bikes": {
+                "type": "number"
+              },
+              "district": {
+                "type": "string"
+              }
+            },
+            "required": ["district", "bikes"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "s_09cb06faeafb25d7": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "bikes": {
+                "type": "number"
+              },
+              "district": {
+                "type": "string"
+              },
+              "docks": {
+                "type": "number"
+              },
+              "favorite": {
+                "type": "boolean"
+              },
+              "id": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lng": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "district", "lat", "lng", "bikes", "docks", "favorite"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "s_0ee380f9829a4986": {
+          "additionalProperties": false,
+          "properties": {
+            "district": {
+              "type": "string"
+            }
+          },
+          "required": ["district"],
+          "type": "object"
+        },
+        "s_12da894a217c753b": {
+          "additionalProperties": false,
+          "properties": {
+            "current": {
+              "type": "string"
+            },
+            "ids": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["ids", "current"],
+          "type": "object"
+        },
+        "s_2af3411551f0d61f": {
+          "additionalProperties": false,
+          "properties": {
+            "ids": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["ids"],
+          "type": "object"
+        },
+        "s_2c3b6f52cf59051a": {
+          "additionalProperties": false,
+          "properties": {
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": ["value"],
+          "type": "object"
+        },
+        "s_4cfb7c0a294c0428": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "stations": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "bikes": {
+                    "type": "number"
+                  },
+                  "district": {
+                    "type": "string"
+                  },
+                  "docks": {
+                    "type": "number"
+                  },
+                  "favorite": {
+                    "type": "boolean"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lng": {
+                    "type": "number"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "district", "lat", "lng", "bikes", "docks", "favorite"],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["stations", "id"],
+          "type": "object"
+        },
+        "s_4dc6f53c7b9ec8a0": {
+          "additionalProperties": false,
+          "properties": {
+            "points": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lng": {
+                    "type": "number"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "lat", "lng"],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["points"],
+          "type": "object"
+        },
+        "s_54669b5e6a1bfebb": {
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": ["text"],
+          "type": "object"
+        },
+        "s_673957d8495ab1ab": {
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "type": "string"
+            }
+          },
+          "required": ["key"],
+          "type": "object"
+        },
+        "s_681004346c78d5f3": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "s_73e566d2a807a82c": {
+          "additionalProperties": false,
+          "properties": {
+            "stations": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "bikes": {
+                    "type": "number"
+                  },
+                  "district": {
+                    "type": "string"
+                  },
+                  "docks": {
+                    "type": "number"
+                  },
+                  "favorite": {
+                    "type": "boolean"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lng": {
+                    "type": "number"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "district", "lat", "lng", "bikes", "docks", "favorite"],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["stations"],
+          "type": "object"
+        },
+        "s_7717dd85c2e5ff93": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": ["id"],
+          "type": "object"
+        },
+        "s_9194623cbdc71409": {
+          "additionalProperties": false,
+          "properties": {
+            "rows": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "bikes": {
+                    "type": "number"
+                  },
+                  "district": {
+                    "type": "string"
+                  }
+                },
+                "required": ["district", "bikes"],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["rows"],
+          "type": "object"
+        },
+        "s_99334726611ccf58": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "s_a028a31beae01907": {
+          "additionalProperties": false,
+          "properties": {
+            "district": {
+              "type": "string"
+            },
+            "q": {
+              "type": "string"
+            },
+            "selected": {
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            },
+            "tour": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["q", "district", "selected", "tour", "target"],
+          "type": "object"
+        },
+        "s_abc387384cfb5596": {
+          "additionalProperties": false,
+          "properties": {
+            "district": {
+              "type": "string"
+            },
+            "q": {
+              "type": "string"
+            },
+            "stations": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "bikes": {
+                    "type": "number"
+                  },
+                  "district": {
+                    "type": "string"
+                  },
+                  "docks": {
+                    "type": "number"
+                  },
+                  "favorite": {
+                    "type": "boolean"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lng": {
+                    "type": "number"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "district", "lat", "lng", "bikes", "docks", "favorite"],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["stations", "q", "district"],
+          "type": "object"
+        },
+        "s_cddf8275afa15408": {
+          "type": "number"
+        },
+        "s_fc9fb7ec5770dc83": {
+          "additionalProperties": false,
+          "properties": {
+            "points": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lng": {
+                    "type": "number"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "lat", "lng"],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "selected": {
+              "type": "string"
+            }
+          },
+          "required": ["points", "selected"],
+          "type": "object"
+        }
+      },
+      "tags": {
+        "stationsTag": {
+          "param": null
+        }
+      },
+      "views": {
+        "Explorer": {
+          "machine": "stations",
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "stations.Explorer/0/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "City bikes"
+                    }
+                  }
+                ],
+                "class": "text-3xl font-bold",
+                "id": "stations.Explorer/0",
+                "kind": "el",
+                "on": {},
+                "tag": "h1",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "failed": {
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "stations.Explorer/1/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Stations are unavailable."
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "stations.Explorer/1/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "stations.Explorer/1",
+                "input": {
+                  "literal": {}
+                },
+                "kind": "query",
+                "pending": null,
+                "query": "stations.listStations",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "attrs": {
+                        "method": {
+                          "literal": "get"
+                        }
+                      },
+                      "children": [
+                        {
+                          "attrs": {
+                            "aria-label": {
+                              "literal": "Search"
+                            },
+                            "name": {
+                              "literal": "q"
+                            },
+                            "placeholder": {
+                              "literal": "Search stations"
+                            },
+                            "type": {
+                              "literal": "search"
+                            },
+                            "value": {
+                              "path": ["q"],
+                              "ref": "context"
+                            }
+                          },
+                          "children": [],
+                          "class": "flex-1 rounded border px-3 py-2",
+                          "id": "stations.Explorer/1/ready/0/0",
+                          "kind": "el",
+                          "on": {
+                            "input": {
+                              "event": "stations.Search",
+                              "payload": {
+                                "object": {
+                                  "text": {
+                                    "path": ["value"],
+                                    "ref": "dom"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "tag": "input",
+                          "toggle": {},
+                          "vars": {}
+                        },
+                        {
+                          "attrs": {
+                            "aria-label": {
+                              "literal": "District"
+                            },
+                            "name": {
+                              "literal": "district"
+                            }
+                          },
+                          "children": [
+                            {
+                              "attrs": {
+                                "selected": {
+                                  "test": {
+                                    "left": {
+                                      "path": ["district"],
+                                      "ref": "context"
+                                    },
+                                    "op": "eq",
+                                    "right": {
+                                      "literal": ""
+                                    }
+                                  }
+                                },
+                                "value": {
+                                  "literal": ""
+                                }
+                              },
+                              "children": [
+                                {
+                                  "id": "stations.Explorer/1/ready/0/1/0/0",
+                                  "kind": "text",
+                                  "value": {
+                                    "literal": "All districts"
+                                  }
+                                }
+                              ],
+                              "class": null,
+                              "id": "stations.Explorer/1/ready/0/1/0",
+                              "kind": "el",
+                              "on": {},
+                              "tag": "option",
+                              "toggle": {},
+                              "vars": {}
+                            },
+                            {
+                              "id": "stations.Explorer/1/ready/0/1/1",
+                              "item": {
+                                "attrs": {
+                                  "selected": {
+                                    "test": {
+                                      "left": {
+                                        "depth": 1,
+                                        "path": [],
+                                        "ref": "binding"
+                                      },
+                                      "op": "eq",
+                                      "right": {
+                                        "path": ["district"],
+                                        "ref": "context"
+                                      }
+                                    }
+                                  },
+                                  "value": {
+                                    "depth": 1,
+                                    "path": [],
+                                    "ref": "binding"
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "id": "stations.Explorer/1/ready/0/1/1/item/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "depth": 1,
+                                      "path": [],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                ],
+                                "class": null,
+                                "id": "stations.Explorer/1/ready/0/1/1/item",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "option",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              "key": null,
+                              "kind": "each",
+                              "motion": null,
+                              "source": {
+                                "arg": {
+                                  "object": {
+                                    "stations": {
+                                      "depth": 0,
+                                      "path": [],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                },
+                                "fn": "stations.districts"
+                              }
+                            }
+                          ],
+                          "class": "rounded border px-3 py-2",
+                          "id": "stations.Explorer/1/ready/0/1",
+                          "kind": "el",
+                          "on": {
+                            "change": {
+                              "event": "stations.PickDistrict",
+                              "payload": {
+                                "object": {
+                                  "district": {
+                                    "path": ["value"],
+                                    "ref": "dom"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "tag": "select",
+                          "toggle": {},
+                          "vars": {}
+                        },
+                        {
+                          "children": [
+                            {
+                              "attrs": {
+                                "type": {
+                                  "literal": "button"
+                                }
+                              },
+                              "children": [
+                                {
+                                  "id": "stations.Explorer/1/ready/0/2/0/0",
+                                  "kind": "text",
+                                  "value": {
+                                    "literal": "Stop tour"
+                                  }
+                                }
+                              ],
+                              "class": "rounded border px-3 py-2",
+                              "id": "stations.Explorer/1/ready/0/2/0",
+                              "kind": "el",
+                              "on": {
+                                "click": {
+                                  "event": "stations.StopTour",
+                                  "payload": {
+                                    "literal": {}
+                                  }
+                                }
+                              },
+                              "tag": "button",
+                              "toggle": {},
+                              "vars": {}
+                            }
+                          ],
+                          "id": "stations.Explorer/1/ready/0/2",
+                          "kind": "when",
+                          "motion": null,
+                          "states": ["touring"]
+                        },
+                        {
+                          "children": [
+                            {
+                              "attrs": {
+                                "type": {
+                                  "literal": "button"
+                                }
+                              },
+                              "children": [
+                                {
+                                  "id": "stations.Explorer/1/ready/0/3/0/0",
+                                  "kind": "text",
+                                  "value": {
+                                    "literal": "Start tour"
+                                  }
+                                }
+                              ],
+                              "class": "rounded bg-indigo-600 px-3 py-2 text-white",
+                              "id": "stations.Explorer/1/ready/0/3/0",
+                              "kind": "el",
+                              "on": {
+                                "click": {
+                                  "event": "stations.StartTour",
+                                  "payload": {
+                                    "object": {
+                                      "ids": {
+                                        "arg": {
+                                          "object": {
+                                            "stations": {
+                                              "arg": {
+                                                "object": {
+                                                  "district": {
+                                                    "path": ["district"],
+                                                    "ref": "context"
+                                                  },
+                                                  "q": {
+                                                    "path": ["q"],
+                                                    "ref": "context"
+                                                  },
+                                                  "stations": {
+                                                    "depth": 0,
+                                                    "path": [],
+                                                    "ref": "binding"
+                                                  }
+                                                }
+                                              },
+                                              "fn": "stations.visible"
+                                            }
+                                          }
+                                        },
+                                        "fn": "stations.idsOf"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "tag": "button",
+                              "toggle": {},
+                              "vars": {}
+                            }
+                          ],
+                          "id": "stations.Explorer/1/ready/0/3",
+                          "kind": "when",
+                          "motion": null,
+                          "states": ["favoriting", "idle"]
+                        }
+                      ],
+                      "class": "flex flex-wrap gap-3",
+                      "id": "stations.Explorer/1/ready/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "form",
+                      "toggle": {},
+                      "vars": {}
+                    },
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "stations.Explorer/1/ready/1/0",
+                          "kind": "text",
+                          "value": {
+                            "literal": "Available bikes: "
+                          }
+                        },
+                        {
+                          "children": [
+                            {
+                              "id": "stations.Explorer/1/ready/1/1/0",
+                              "kind": "text",
+                              "value": {
+                                "arg": {
+                                  "object": {
+                                    "district": {
+                                      "path": ["district"],
+                                      "ref": "context"
+                                    },
+                                    "q": {
+                                      "path": ["q"],
+                                      "ref": "context"
+                                    },
+                                    "stations": {
+                                      "depth": 0,
+                                      "path": [],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                },
+                                "fn": "stations.total"
+                              }
+                            }
+                          ],
+                          "class": null,
+                          "id": "stations.Explorer/1/ready/1/1",
+                          "kind": "widget",
+                          "on": {},
+                          "props": {
+                            "object": {
+                              "value": {
+                                "arg": {
+                                  "object": {
+                                    "district": {
+                                      "path": ["district"],
+                                      "ref": "context"
+                                    },
+                                    "q": {
+                                      "path": ["q"],
+                                      "ref": "context"
+                                    },
+                                    "stations": {
+                                      "depth": 0,
+                                      "path": [],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                },
+                                "fn": "stations.total"
+                              }
+                            }
+                          },
+                          "toggle": {},
+                          "vars": {},
+                          "widget": "stations.Counter"
+                        }
+                      ],
+                      "class": "text-lg font-semibold",
+                      "id": "stations.Explorer/1/ready/1",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    },
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "attrs": {
+                            "aria-label": {
+                              "literal": "Stations"
+                            }
+                          },
+                          "children": [
+                            {
+                              "id": "stations.Explorer/1/ready/2/0/0",
+                              "item": {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "attrs": {
+                                      "type": {
+                                        "literal": "button"
+                                      }
+                                    },
+                                    "children": [
+                                      {
+                                        "id": "stations.Explorer/1/ready/2/0/0/item/0/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "depth": 1,
+                                          "path": ["name"],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    ],
+                                    "class": "font-medium underline",
+                                    "id": "stations.Explorer/1/ready/2/0/0/item/0",
+                                    "kind": "el",
+                                    "on": {
+                                      "click": {
+                                        "event": "stations.Select",
+                                        "payload": {
+                                          "object": {
+                                            "id": {
+                                              "depth": 1,
+                                              "path": ["id"],
+                                              "ref": "binding"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "tag": "button",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "id": "stations.Explorer/1/ready/2/0/0/item/1/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "depth": 1,
+                                          "path": ["district"],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    ],
+                                    "class": "text-sm text-slate-500",
+                                    "id": "stations.Explorer/1/ready/2/0/0/item/1",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "span",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "id": "stations.Explorer/1/ready/2/0/0/item/2/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "arg": {
+                                            "object": {
+                                              "0": {
+                                                "depth": 1,
+                                                "path": ["bikes"],
+                                                "ref": "binding"
+                                              },
+                                              "1": {
+                                                "literal": " bikes"
+                                              }
+                                            }
+                                          },
+                                          "fn": "%concat"
+                                        }
+                                      }
+                                    ],
+                                    "class": "ml-auto text-sm",
+                                    "id": "stations.Explorer/1/ready/2/0/0/item/2",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "span",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "attrs": {
+                                          "name": {
+                                            "literal": "id"
+                                          },
+                                          "type": {
+                                            "literal": "hidden"
+                                          },
+                                          "value": {
+                                            "depth": 1,
+                                            "path": ["id"],
+                                            "ref": "binding"
+                                          }
+                                        },
+                                        "children": [],
+                                        "class": null,
+                                        "id": "stations.Explorer/1/ready/2/0/0/item/3/0",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "input",
+                                        "toggle": {},
+                                        "vars": {}
+                                      },
+                                      {
+                                        "attrs": {
+                                          "aria-pressed": {
+                                            "depth": 1,
+                                            "path": ["favorite"],
+                                            "ref": "binding"
+                                          },
+                                          "type": {
+                                            "literal": "submit"
+                                          }
+                                        },
+                                        "children": [
+                                          {
+                                            "id": "stations.Explorer/1/ready/2/0/0/item/3/1/0",
+                                            "ifFalse": [
+                                              {
+                                                "id": "stations.Explorer/1/ready/2/0/0/item/3/1/0/ifFalse/0",
+                                                "kind": "text",
+                                                "value": {
+                                                  "literal": "Favorite"
+                                                }
+                                              }
+                                            ],
+                                            "ifTrue": [
+                                              {
+                                                "id": "stations.Explorer/1/ready/2/0/0/item/3/1/0/ifTrue/0",
+                                                "kind": "text",
+                                                "value": {
+                                                  "literal": "Unfavorite"
+                                                }
+                                              }
+                                            ],
+                                            "kind": "if",
+                                            "motion": null,
+                                            "test": {
+                                              "arg": {
+                                                "object": {
+                                                  "v": {
+                                                    "depth": 1,
+                                                    "path": ["favorite"],
+                                                    "ref": "binding"
+                                                  }
+                                                }
+                                              },
+                                              "fn": "%truthy",
+                                              "op": "fn"
+                                            }
+                                          }
+                                        ],
+                                        "class": "rounded border px-2 text-sm",
+                                        "id": "stations.Explorer/1/ready/2/0/0/item/3/1",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "button",
+                                        "toggle": {},
+                                        "vars": {}
+                                      }
+                                    ],
+                                    "class": null,
+                                    "id": "stations.Explorer/1/ready/2/0/0/item/3",
+                                    "kind": "el",
+                                    "on": {
+                                      "submit": {
+                                        "event": "stations.ToggleFavorite",
+                                        "payload": {
+                                          "object": {
+                                            "id": {
+                                              "path": ["form", "id"],
+                                              "ref": "dom"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "tag": "form",
+                                    "toggle": {},
+                                    "vars": {}
+                                  }
+                                ],
+                                "class": "flex items-center gap-3 px-3 py-2",
+                                "id": "stations.Explorer/1/ready/2/0/0/item",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "li",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              "key": "id",
+                              "kind": "each",
+                              "motion": null,
+                              "source": {
+                                "arg": {
+                                  "object": {
+                                    "district": {
+                                      "path": ["district"],
+                                      "ref": "context"
+                                    },
+                                    "q": {
+                                      "path": ["q"],
+                                      "ref": "context"
+                                    },
+                                    "stations": {
+                                      "depth": 0,
+                                      "path": [],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                },
+                                "fn": "stations.visible"
+                              }
+                            }
+                          ],
+                          "class": "divide-y rounded border",
+                          "id": "stations.Explorer/1/ready/2/0",
+                          "kind": "el",
+                          "on": {},
+                          "tag": "ul",
+                          "toggle": {},
+                          "vars": {}
+                        },
+                        {
+                          "attrs": {
+                            "aria-label": {
+                              "literal": "Map"
+                            },
+                            "role": {
+                              "literal": "region"
+                            }
+                          },
+                          "children": [
+                            {
+                              "children": [],
+                              "class": "h-80 w-full",
+                              "id": "stations.Explorer/1/ready/2/1/0",
+                              "kind": "widget",
+                              "on": {
+                                "select": {
+                                  "event": "stations.Select",
+                                  "payload": {
+                                    "object": {
+                                      "id": {
+                                        "path": ["detail", "id"],
+                                        "ref": "dom"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "props": {
+                                "object": {
+                                  "points": {
+                                    "arg": {
+                                      "object": {
+                                        "district": {
+                                          "path": ["district"],
+                                          "ref": "context"
+                                        },
+                                        "q": {
+                                          "path": ["q"],
+                                          "ref": "context"
+                                        },
+                                        "stations": {
+                                          "depth": 0,
+                                          "path": [],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    },
+                                    "fn": "stations.visible"
+                                  },
+                                  "selected": {
+                                    "path": ["selected"],
+                                    "ref": "context"
+                                  }
+                                }
+                              },
+                              "toggle": {},
+                              "vars": {},
+                              "widget": "stations.StationMap"
+                            }
+                          ],
+                          "class": "h-80 overflow-hidden rounded border",
+                          "id": "stations.Explorer/1/ready/2/1",
+                          "kind": "el",
+                          "on": {},
+                          "tag": "div",
+                          "toggle": {},
+                          "vars": {}
+                        }
+                      ],
+                      "class": "grid gap-6 lg:grid-cols-2",
+                      "id": "stations.Explorer/1/ready/2",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "div",
+                      "toggle": {},
+                      "vars": {}
+                    },
+                    {
+                      "id": "stations.Explorer/1/ready/3",
+                      "item": {
+                        "children": [
+                          {
+                            "attrs": {
+                              "aria-label": {
+                                "literal": "Station details"
+                              },
+                              "role": {
+                                "literal": "region"
+                              }
+                            },
+                            "children": [
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "stations.Explorer/1/ready/3/item/0/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "depth": 1,
+                                      "path": ["name"],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                ],
+                                "class": "text-xl font-semibold",
+                                "id": "stations.Explorer/1/ready/3/item/0/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "h2",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "stations.Explorer/1/ready/3/item/0/1/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "arg": {
+                                        "object": {
+                                          "0": {
+                                            "literal": "Bikes: "
+                                          },
+                                          "1": {
+                                            "depth": 1,
+                                            "path": ["bikes"],
+                                            "ref": "binding"
+                                          }
+                                        }
+                                      },
+                                      "fn": "%concat"
+                                    }
+                                  }
+                                ],
+                                "class": null,
+                                "id": "stations.Explorer/1/ready/3/item/0/1",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "p",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "stations.Explorer/1/ready/3/item/0/2/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "arg": {
+                                        "object": {
+                                          "0": {
+                                            "literal": "Docks: "
+                                          },
+                                          "1": {
+                                            "depth": 1,
+                                            "path": ["docks"],
+                                            "ref": "binding"
+                                          }
+                                        }
+                                      },
+                                      "fn": "%concat"
+                                    }
+                                  }
+                                ],
+                                "class": null,
+                                "id": "stations.Explorer/1/ready/3/item/0/2",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "p",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "class": "rounded border p-4",
+                            "id": "stations.Explorer/1/ready/3/item/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "section",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        ],
+                        "class": null,
+                        "id": "stations.Explorer/1/ready/3/item",
+                        "kind": "widget",
+                        "on": {},
+                        "props": {
+                          "object": {
+                            "key": {
+                              "depth": 1,
+                              "path": ["id"],
+                              "ref": "binding"
+                            }
+                          }
+                        },
+                        "toggle": {},
+                        "vars": {},
+                        "widget": "stations.FadeIn"
+                      },
+                      "key": "id",
+                      "kind": "each",
+                      "motion": null,
+                      "source": {
+                        "arg": {
+                          "object": {
+                            "id": {
+                              "path": ["selected"],
+                              "ref": "context"
+                            },
+                            "stations": {
+                              "depth": 0,
+                              "path": [],
+                              "ref": "binding"
+                            }
+                          }
+                        },
+                        "fn": "stations.selected"
+                      }
+                    },
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "attrs": {},
+                          "children": [
+                            {
+                              "children": [],
+                              "class": "h-64",
+                              "id": "stations.Explorer/1/ready/4/0/0",
+                              "kind": "widget",
+                              "on": {},
+                              "props": {
+                                "object": {
+                                  "rows": {
+                                    "arg": {
+                                      "object": {
+                                        "district": {
+                                          "path": ["district"],
+                                          "ref": "context"
+                                        },
+                                        "q": {
+                                          "path": ["q"],
+                                          "ref": "context"
+                                        },
+                                        "stations": {
+                                          "depth": 0,
+                                          "path": [],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    },
+                                    "fn": "stations.byDistrict"
+                                  }
+                                }
+                              },
+                              "toggle": {},
+                              "vars": {},
+                              "widget": "stations.DistrictChart"
+                            },
+                            {
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "id": "stations.Explorer/1/ready/4/0/1/0/0",
+                                      "kind": "text",
+                                      "value": {
+                                        "literal": "Bikes by district"
+                                      }
+                                    }
+                                  ],
+                                  "class": "text-left font-medium",
+                                  "id": "stations.Explorer/1/ready/4/0/1/0",
+                                  "kind": "el",
+                                  "on": {},
+                                  "tag": "caption",
+                                  "toggle": {},
+                                  "vars": {}
+                                },
+                                {
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "id": "stations.Explorer/1/ready/4/0/1/1/0",
+                                      "item": {
+                                        "attrs": {},
+                                        "children": [
+                                          {
+                                            "attrs": {
+                                              "scope": {
+                                                "literal": "row"
+                                              }
+                                            },
+                                            "children": [
+                                              {
+                                                "id": "stations.Explorer/1/ready/4/0/1/1/0/item/0/0",
+                                                "kind": "text",
+                                                "value": {
+                                                  "depth": 1,
+                                                  "path": ["district"],
+                                                  "ref": "binding"
+                                                }
+                                              }
+                                            ],
+                                            "class": "text-left",
+                                            "id": "stations.Explorer/1/ready/4/0/1/1/0/item/0",
+                                            "kind": "el",
+                                            "on": {},
+                                            "tag": "th",
+                                            "toggle": {},
+                                            "vars": {}
+                                          },
+                                          {
+                                            "attrs": {},
+                                            "children": [
+                                              {
+                                                "id": "stations.Explorer/1/ready/4/0/1/1/0/item/1/0",
+                                                "kind": "text",
+                                                "value": {
+                                                  "depth": 1,
+                                                  "path": ["bikes"],
+                                                  "ref": "binding"
+                                                }
+                                              }
+                                            ],
+                                            "class": null,
+                                            "id": "stations.Explorer/1/ready/4/0/1/1/0/item/1",
+                                            "kind": "el",
+                                            "on": {},
+                                            "tag": "td",
+                                            "toggle": {},
+                                            "vars": {}
+                                          }
+                                        ],
+                                        "class": null,
+                                        "id": "stations.Explorer/1/ready/4/0/1/1/0/item",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "tr",
+                                        "toggle": {},
+                                        "vars": {}
+                                      },
+                                      "key": "district",
+                                      "kind": "each",
+                                      "motion": null,
+                                      "source": {
+                                        "arg": {
+                                          "object": {
+                                            "district": {
+                                              "path": ["district"],
+                                              "ref": "context"
+                                            },
+                                            "q": {
+                                              "path": ["q"],
+                                              "ref": "context"
+                                            },
+                                            "stations": {
+                                              "depth": 0,
+                                              "path": [],
+                                              "ref": "binding"
+                                            }
+                                          }
+                                        },
+                                        "fn": "stations.byDistrict"
+                                      }
+                                    }
+                                  ],
+                                  "class": null,
+                                  "id": "stations.Explorer/1/ready/4/0/1/1",
+                                  "kind": "el",
+                                  "on": {},
+                                  "tag": "tbody",
+                                  "toggle": {},
+                                  "vars": {}
+                                }
+                              ],
+                              "class": "w-full text-sm",
+                              "id": "stations.Explorer/1/ready/4/0/1",
+                              "kind": "el",
+                              "on": {},
+                              "tag": "table",
+                              "toggle": {},
+                              "vars": {}
+                            }
+                          ],
+                          "class": "space-y-3",
+                          "id": "stations.Explorer/1/ready/4/0",
+                          "kind": "el",
+                          "on": {},
+                          "tag": "div",
+                          "toggle": {},
+                          "vars": {}
+                        },
+                        {
+                          "attrs": {
+                            "aria-label": {
+                              "literal": "Globe"
+                            },
+                            "role": {
+                              "literal": "region"
+                            }
+                          },
+                          "children": [
+                            {
+                              "children": [],
+                              "class": "h-72 w-72",
+                              "id": "stations.Explorer/1/ready/4/1/0",
+                              "kind": "widget",
+                              "on": {},
+                              "props": {
+                                "object": {
+                                  "points": {
+                                    "arg": {
+                                      "object": {
+                                        "district": {
+                                          "path": ["district"],
+                                          "ref": "context"
+                                        },
+                                        "q": {
+                                          "path": ["q"],
+                                          "ref": "context"
+                                        },
+                                        "stations": {
+                                          "depth": 0,
+                                          "path": [],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    },
+                                    "fn": "stations.visible"
+                                  }
+                                }
+                              },
+                              "toggle": {},
+                              "vars": {},
+                              "widget": "stations.Globe"
+                            }
+                          ],
+                          "class": "flex justify-center",
+                          "id": "stations.Explorer/1/ready/4/1",
+                          "kind": "el",
+                          "on": {},
+                          "tag": "div",
+                          "toggle": {},
+                          "vars": {}
+                        }
+                      ],
+                      "class": "grid gap-6 lg:grid-cols-2",
+                      "id": "stations.Explorer/1/ready/4",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "div",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  ],
+                  "class": "space-y-6",
+                  "id": "stations.Explorer/1/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "div",
+                  "toggle": {},
+                  "vars": {}
+                }
+              }
+            ],
+            "class": "mx-auto max-w-6xl space-y-6 px-4 py-8",
+            "id": "stations.Explorer",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": "home",
+          "seed": {
+            "district": {
+              "path": ["district"],
+              "ref": "search"
+            },
+            "q": {
+              "path": ["q"],
+              "ref": "search"
+            }
+          }
+        }
+      },
+      "widgets": {
+        "Counter": {
+          "events": {},
+          "load": "eager",
+          "props": "s_2c3b6f52cf59051a",
+          "sourceHash": "209851e2e9f04e5f",
+          "tag": "span",
+          "wraps": false
+        },
+        "DistrictChart": {
+          "events": {},
+          "load": "eager",
+          "props": "s_9194623cbdc71409",
+          "sourceHash": "67574c043e09aecc",
+          "tag": "div",
+          "wraps": false
+        },
+        "FadeIn": {
+          "events": {},
+          "load": "eager",
+          "props": "s_673957d8495ab1ab",
+          "sourceHash": "589cc010b5683d15",
+          "tag": "div",
+          "wraps": true
+        },
+        "Globe": {
+          "events": {},
+          "load": "eager",
+          "props": "s_4dc6f53c7b9ec8a0",
+          "sourceHash": "34afb73b83d33c9d",
+          "tag": "div",
+          "wraps": false
+        },
+        "StationMap": {
+          "events": {
+            "select": "s_7717dd85c2e5ff93"
+          },
+          "load": "eager",
+          "props": "s_fc9fb7ec5770dc83",
+          "sourceHash": "730026972961fdf0",
+          "tag": "div",
+          "wraps": false
+        }
+      }
+    }
+  },
+  "http": {
+    "basePath": "",
+    "headers": [],
+    "redirects": [],
+    "trailingSlash": "never"
+  },
+  "irVersion": 1,
+  "notFound": null,
+  "pages": {
+    "home": {
+      "assert": null,
+      "entries": null,
+      "head": {
+        "description": {
+          "literal": ""
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "redirects": {},
+        "title": {
+          "literal": "City bikes"
+        },
+        "type": "website"
+      },
+      "views": ["stations.Explorer"]
+    }
+  },
+  "routes": {
+    "home": {
+      "params": null,
+      "path": "/",
+      "search": {
+        "additionalProperties": false,
+        "properties": {
+          "district": {
+            "default": "",
+            "type": "string"
+          },
+          "q": {
+            "default": "",
+            "type": "string"
+          }
+        },
+        "required": ["q", "district"],
+        "type": "object"
+      }
+    }
+  },
+  "session": null,
+  "site": {
+    "icon": null,
+    "lang": "en",
+    "locales": null,
+    "name": "City bikes",
+    "offline": null,
+    "themeColor": null,
+    "url": "http://localhost:3000"
+  }
+}
