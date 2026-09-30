@@ -17,6 +17,7 @@ export type {
   ErrorInfo,
   FileLike,
   OnError,
+  RequestData,
 } from './runtime.ts'
 export { createDataRuntime, DataRuntimeError } from './runtime.ts'
 export type * from './types.ts'

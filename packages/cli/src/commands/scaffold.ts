@@ -73,7 +73,7 @@ export function model(n: Names, w: With): string {
     `  output: z.array(${n.Item}),`,
     w.auth && `  errors: { Unauthorized: z.object({}) },`,
     `  scope: '${w.auth ? 'user' : 'public'}',`,
-    `  freshness: 'static',`,
+    `  freshness: '${w.auth ? 'request' : 'static'}',`,
     `  tags: () => [${n.tag}()],`,
     '})',
     w.detail &&
@@ -83,7 +83,7 @@ export const ${n.get} = query({
   output: ${n.Item},
   errors: { NotFound: ${n.Key} },
   scope: '${w.auth ? 'user' : 'public'}',
-  freshness: 'static',
+  freshness: '${w.auth ? 'request' : 'static'}',
   tags: () => [${n.tag}()],
 })`,
     '',
@@ -341,8 +341,10 @@ export function server(n: Names, w: With): string {
   const Row = `{ id: string; title: string${w.toggle ? '; done: boolean' : ''} }`
   const ctx = (rest: string) =>
     w.auth ? `{ ${[...rest.split(', ').filter(Boolean), 'session'].join(', ')} }` : `{ ${rest} }`
-  const take = w.auth ? '      const items = itemsOf(session)\n' : ''
-  const scoped = (body: string) => (w.auth ? `{\n${take}${body}\n    }` : `{\n${body}\n    }`)
+  const scoped = (body: string, own = true) =>
+    w.auth
+      ? `{\n      const items = ${own ? 'ownListOf' : 'listOf'}(session)\n${body}\n    }`
+      : `{\n${body}\n    }`
   return `${lines(
     `import type { Implement } from '@hozu/data'`,
     `import { ${imports.sort().join(', ')} } from './model.ts'`,
@@ -352,7 +354,8 @@ export function server(n: Names, w: With): string {
       : `export function ${n.resolvers}<Session, Env>(implement: Implement<Session, Env>) {`,
     w.auth
       ? `  const store = new Map<string, ${Row}[]>()
-  const itemsOf = (session: { user: string } | null) => {
+  const listOf = (session: { user: string } | null): ${Row}[] => (session ? (store.get(session.user) ?? []) : [])
+  const ownListOf = (session: { user: string } | null) => {
     if (!session) return []
     const list = store.get(session.user) ?? []
     store.set(session.user, list)
@@ -364,12 +367,15 @@ export function server(n: Names, w: With): string {
     '  return [',
     w.auth
       ? `    implement(${n.list}, (_, { session, fail }) =>
-      session ? itemsOf(session).map((item) => ({ ...item })) : fail('Unauthorized', {}),
+      session ? listOf(session).map((item) => ({ ...item })) : fail('Unauthorized', {}),
     ),`
       : `    implement(${n.list}, () => items.map((item) => ({ ...item }))),`,
     w.detail &&
-      `    implement(${n.get}, ({ id }, ${ctx('fail')}) => ${scoped(`      const item = find(items, id)
-      return item ? { ...item } : fail('NotFound', { id })`)}),`,
+      `    implement(${n.get}, ({ id }, ${ctx('fail')}) => ${scoped(
+        `      const item = find(items, id)
+      return item ? { ...item } : fail('NotFound', { id })`,
+        false,
+      )}),`,
     `    implement(${n.add}, ({ title }, ${ctx('fail')}) => ${scoped(`${
       w.auth
         ? `      if (!session) return fail('Invalid', { message: 'Signed out', fields: { title: 'Sign in first' } })\n`
@@ -411,7 +417,7 @@ export const me = query({
   output: z.object({ name: z.string() }),
   errors: { Unauthorized: z.object({}) },
   scope: 'user',
-  freshness: 'static',
+  freshness: 'request',
 })
 
 export const signIn = mutation({ input: Name, output: z.object({}) })

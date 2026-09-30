@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { catalogTag } from '../../../examples/cart/features/catalog/effects.ts'
 import { start } from './support.ts'
 
 let close: (() => Promise<void>) | null = null
@@ -19,7 +20,7 @@ describe('node adapter', () => {
     expect(await cache()).toBe('stale')
     await new Promise((r) => setTimeout(r, 10))
     expect(await cache()).toBe('hit')
-    expect(await app.server.revalidate(['catalog.catalogTag'])).toBe(1)
+    expect(await app.server.revalidate([catalogTag()])).toMatchObject({ pages: 1 })
     expect(await cache()).toBe('miss')
   })
 
@@ -40,7 +41,7 @@ describe('node adapter', () => {
     expect(bob.body).toContain('Total: $<!---->0')
   })
 
-  it('effects return the result plus server-pushed data for invalidated payload keys', async () => {
+  it("effects return the result plus the payload's per-request and invalidated keys", async () => {
     const app = start()
     close = app.close
     const res = await app.call('POST', '/_hozu/effect', {
@@ -64,7 +65,7 @@ describe('node adapter', () => {
     )
     expect(failed).toEqual({
       result: { ok: false, error: 'OutOfStock', data: { sku: 'tee', available: 0 } },
-      refreshed: [],
+      refreshed: body.refreshed,
     })
   })
 

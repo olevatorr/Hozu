@@ -160,7 +160,7 @@ The extra cost is mostly reading the guide of a framework the model has not seen
 | [`@hozu/dev`](https://www.npmjs.com/package/@hozu/dev) · [`@hozu/bundle`](https://www.npmjs.com/package/@hozu/bundle) | Development server; widget bundling |
 
 ## Also included
-- Soft navigation that keeps UI alive between pages.
+- Document navigation with prerender and cross-document view transitions.
 - Typed search parameters, and forms that work without JavaScript.
 - Field errors, and a pattern for optimistic updates.
 - i18n with typed messages.

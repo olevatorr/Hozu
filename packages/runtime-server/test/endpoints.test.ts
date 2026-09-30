@@ -1,7 +1,7 @@
 import { endpoint, feature, project, route, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { resolvers } from '@hozu/data'
-import { createHandler, sessionCookie } from '@hozu/runtime-server'
+import { createHandler, memorySessions } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { validate } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
@@ -44,7 +44,7 @@ const received: string[] = []
 const handler = () =>
   createHandler({
     build: buildProject(app, { sources: false }),
-    session: sessionCookie({ name: 'sid', secret: 'x'.repeat(32), secure: false }),
+    session: memorySessions({ secret: 'x'.repeat(32), secure: false }),
     resolvers: resolvers(app, (implement) => [
       implement(status, ({ verbose }, { session }) => ({
         ok: true,

@@ -309,6 +309,15 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
     })
     await send('Fetch.enable', { patterns: [{ urlPattern: `${ORIGIN}/*` }] })
     await send('Network.enable')
+    if (parts.cookie) {
+      const eq = parts.cookie.indexOf('=')
+      await send('Network.setCookie', {
+        name: parts.cookie.slice(0, eq),
+        value: parts.cookie.slice(eq + 1),
+        url: ORIGIN,
+        httpOnly: true,
+      })
+    }
     await send('Runtime.enable')
     await send('Page.enable')
     await send('Emulation.setDeviceMetricsOverride', {

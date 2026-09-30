@@ -1,18 +1,7 @@
 import type { FeatureIR, Json, MachineIR, ViewNode } from '@hozu/core/ir'
 import { compileMachine, type Snapshot } from '@hozu/machine'
 import { uploads } from './dom.ts'
-import {
-  type App,
-  createApp,
-  type Motion,
-  type Result,
-  type Store,
-  type WidgetRef,
-  type WidgetSetup,
-} from './mount.ts'
-import type { mountWidget } from './widget.ts'
-
-type MountWidget = typeof mountWidget
+import { type App, createApp, type Result, type Store, type WidgetRef, type WidgetSetup } from './mount.ts'
 
 declare global {
   var __HOZU_DEV__: boolean | undefined
@@ -39,7 +28,6 @@ export interface PagePayload {
   widgets: Record<string, WidgetRef>
   routes: Record<string, string>
   live: Record<string, LiveQuery>
-  soft?: Record<string, string[]>
 }
 
 export interface LiveQuery {
@@ -90,7 +78,7 @@ export const fetchQuery: QueryTransport = async (query, input) => {
 export interface HydrateOptions {
   transport?: Transport
   query?: QueryTransport
-  live?: (onTags: (tags: string[]) => void) => void
+  live?: (onTags: (tags: string[]) => void, tags: string[]) => void
   loadFns?: (url: string) => Promise<Record<string, never>>
   loadWidget?: (url: string) => Promise<WidgetSetup>
 }
@@ -100,13 +88,6 @@ const importWidget = async (url: string) =>
 
 const importFns = async (url: string) =>
   ((await import(/* @vite-ignore */ url)) as { fns: Record<string, never> }).fns
-
-export interface Session {
-  doc: Document
-  apps: Map<string, App>
-  mount(payload: PagePayload, markers: (Comment | undefined)[]): Promise<void>
-  islands(payload: PagePayload): IslandRef[]
-}
 
 export async function hydrate(
   doc: Document,
@@ -121,18 +102,13 @@ export async function hydrate(
   const apps = new Map<string, App>()
   const script = doc.getElementById('hozu-payload')
   if (!script?.textContent) return apps
-  const shared: Store = { data: new Map(), versions: new Map() }
-  const fns: Record<string, never> = {}
-  const widgets: Record<string, WidgetRef> = {}
-  const routes: Record<string, string> = {}
-  const liveKeys = new Map<string, LiveQuery>()
-  const loaded: {
-    motion?: Motion
-    mountWidget?: MountWidget
-    fns?: boolean
-    live?: boolean
-    visible?: boolean
-  } = {}
+  const payload = JSON.parse(script.textContent) as PagePayload
+  const shared: Store = { data: new Map(payload.data), versions: new Map() }
+  const fns: Record<string, never> = payload.fns ? await loadFns(payload.fns) : {}
+  const { widgets, routes } = payload
+  const motion = payload.motion ? await import('./motion.ts') : undefined
+  const mountWidget = Object.keys(widgets).length ? (await import('./widget.ts')).mountWidget : undefined
+  if (payload.visible) void import('./visible.ts').then((m) => m.watch(doc))
   const inflight = new Map<string, Promise<Result>>()
   const onQuery = (q: string, input: Json) => {
     const key = q + JSON.stringify(input)
@@ -143,92 +119,76 @@ export async function hydrate(
     }
     return pending
   }
+  const liveKeys = Object.entries(payload.live ?? {})
+  const onTags = async (tags: string[]) => {
+    if (busy) return void queued.push(...tags)
+    const stale = liveKeys.filter(([, l]) => l.tags.some((t) => tags.includes(t)))
+    for (const [key, l] of stale) shared.data.set(key, await query(l.query, l.input))
+    if (stale.length) for (const app of apps.values()) app.sync()
+  }
+  let busy = 0
+  let queued: string[] = []
   const onInvoke = async (effect: string, input: Json) => {
-    const { result, refreshed } = await transport(effect, input, [...shared.data.keys()])
+    busy++
+    const { result, refreshed, session } = await transport(effect, input, [...shared.data.keys()]).finally(
+      () => busy--,
+    )
+    if (session) {
+      shared.data.clear()
+      queued = []
+    }
     for (const [key, value] of refreshed) {
       shared.data.set(key, value)
       shared.versions.set(key, (shared.versions.get(key) ?? 0) + 1)
     }
-    if (refreshed.length) for (const app of apps.values()) app.sync()
+    if (refreshed.length || session) for (const app of apps.values()) app.sync()
+    if (!busy && queued.length) onTags(queued.splice(0))
     return result
   }
   const dev = globalThis.__HOZU_DEV__
     ? { restore: (await import('./dev.ts')).restore(doc), machines: new Map<string, MachineIR | null>() }
     : null
-  const session: Session = {
-    doc,
-    apps,
-    islands: islandsOf,
-    async mount(payload, markers) {
-      if (!loaded.motion && payload.motion) loaded.motion = await import('./motion.ts')
-      if (payload.visible) void import('./visible.ts').then((m) => m.watch(doc))
-      if (!loaded.mountWidget && Object.keys(payload.widgets).length)
-        loaded.mountWidget = (await import('./widget.ts')).mountWidget
-      if (!loaded.fns && payload.fns) {
-        Object.assign(fns, await loadFns(payload.fns))
-        loaded.fns = true
-      }
-      Object.assign(widgets, payload.widgets)
-      Object.assign(routes, payload.routes)
-      for (const [key, value] of payload.data) {
-        if (shared.data.has(key)) shared.versions.set(key, (shared.versions.get(key) ?? 0) + 1)
-        shared.data.set(key, value)
-      }
-      const created: App[] = []
-      for (const [id, machine] of Object.entries(payload.features)) {
-        if (apps.has(id)) continue
-        const snapshot = (globalThis.__HOZU_DEV__ && dev?.restore(id, machine)) || payload.snapshots?.[id]
-        if (globalThis.__HOZU_DEV__) dev?.machines.set(id, machine)
-        const app = createApp(doc, {
-          machine: machine ? compileMachine({ id, machine } as FeatureIR, fns, routes) : null,
-          payload: shared,
-          params: payload.params,
-          search: payload.search,
-          ...(snapshot ? { snapshot } : {}),
-          fns,
-          widgets,
-          routes,
-          get motion() {
-            return loaded.motion
-          },
-          get mountWidget() {
-            return loaded.mountWidget
-          },
-          loadWidget,
-          onQuery,
-          onInvoke,
-          onNavigate: (url) => doc.defaultView?.location.assign(url),
-        })
-        apps.set(id, app)
-        created.push(app)
-      }
-      islandsOf(payload).forEach((island, i) => {
-        const at = markers[i]
-        const node = payload.nodes[island.node]
-        if (at?.parentNode && node)
-          apps.get(island.feature)?.attach(at.parentNode, at.nextSibling, node, island.scope, true)
-      })
-      for (const app of apps.values()) app.sync()
-      for (const app of created) app.start()
-      for (const [key, l] of Object.entries(payload.live ?? {})) liveKeys.set(key, l)
-      if (liveKeys.size && !loaded.live) {
-        loaded.live = true
-        ;(live ?? (await import('./live.ts')).liveStream(doc))(async (tags) => {
-          const stale = [...liveKeys].filter(([, l]) => l.tags.some((t) => tags.includes(t)))
-          for (const [key, l] of stale) shared.data.set(key, await query(l.query, l.input))
-          if (stale.length) for (const app of apps.values()) app.sync()
-        })
-      }
-    },
+  for (const [id, machine] of Object.entries(payload.features)) {
+    const snapshot = (globalThis.__HOZU_DEV__ && dev?.restore(id, machine)) || payload.snapshots?.[id]
+    if (globalThis.__HOZU_DEV__) dev?.machines.set(id, machine)
+    apps.set(
+      id,
+      createApp(doc, {
+        machine: machine ? compileMachine({ id, machine } as FeatureIR, fns, routes) : null,
+        payload: shared,
+        params: payload.params,
+        search: payload.search,
+        ...(snapshot ? { snapshot } : {}),
+        fns,
+        widgets,
+        routes,
+        motion,
+        mountWidget,
+        loadWidget,
+        onQuery,
+        onInvoke,
+        onNavigate: (url) => doc.defaultView?.location.assign(url),
+      }),
+    )
   }
-  const payload = JSON.parse(script.textContent) as PagePayload
   const markers: Comment[] = []
   const walker = doc.createTreeWalker(doc.body ?? doc, 128)
   while (walker.nextNode())
     if ((walker.currentNode as Comment).data === 'i') markers.push(walker.currentNode as Comment)
-  await session.mount(payload, markers)
+  islandsOf(payload).forEach((island, i) => {
+    const at = markers[i]
+    const node = payload.nodes[island.node]
+    if (at?.parentNode && node)
+      apps.get(island.feature)?.attach(at.parentNode, at.nextSibling, node, island.scope, true)
+  })
+  for (const app of apps.values()) app.sync()
+  for (const app of apps.values()) app.start()
+  if (liveKeys.length)
+    (live ?? (await import('./live.ts')).liveStream(doc))(
+      onTags,
+      liveKeys.flatMap(([, l]) => l.tags),
+    )
   if (globalThis.__HOZU_DEV__ && dev) (await import('./dev.ts')).expose(doc, apps, dev.machines)
-  if (payload.soft) void import('./navigate.ts').then((m) => m.soft(session))
   doc.documentElement.setAttribute('data-hozu-ready', '')
   return apps
 }

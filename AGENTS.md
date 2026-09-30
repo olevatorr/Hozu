@@ -77,16 +77,18 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `ui.use(W, { props, on, class }, children)`, client module `export default implement<typeof W>(setup)` from
   `@hozu/core/widget` (type-only import of the declaration). Bundled by `@hozu/bundle` (esbuild), HZ029.
 - Server capabilities (ADR 0010): client fetch of new query keys, live queries over SSE, `head.redirects`,
-  `sessionCookie` + `setSession`, `project({ notFound })`, `site.icon` / `themeColor`, uploads via `ctx.file`.
+  `setSession` with a server-side store (`memorySessions()` by default: opaque signed id, revoked on sign-out;
+  production needs `SESSION_SECRET`; ADR 0043 B), `project({ notFound })`, `site.icon` / `themeColor`, uploads via
+  `ctx.file`.
 - Routes: `route({ path: '/posts/:slug', params: schema | null, search: schema | null })` (search: flat scalars with
   defaults, HZ035; canonical URLs, ISR keyed by canonical URL); `ui.link(route, params, search?)` is the only internal
   URL form, also for `navigate: (arg) => ui.link(...)` on transitions (contracts expect `{ navigate: url }`).
   Forms whose submit reads only `ui.dom.form(name)`/context/params/search also work without JS: the server runs the
   machine for a native post (HZ036 warns otherwise). `project({ notFound, error })`; adapter-node sends CSP (script
   hashes), nosniff and rejects cross-site POSTs; `createServer({ onError, csp })` (ADR 0014).
-- Soft navigation (ADR 0015): a view with an island that is listed on both pages and never reads `params`/`search`
-  keeps its DOM and machine across a link (derived, `hozu plan` shows it; Navigation API, lazy `navigate.js`
-  chunk, budget P8). Pages without such views keep document navigation + prerender.
+- Navigation (ADR 0043 I, supersedes ADR 0015): every internal link is a document navigation with speculation
+  prerender and the cross-document View Transition opt-in; state across pages lives in the URL (seed), on the server
+  (queries) or in a widget's own storage. There is no soft navigation and no budget P8.
 - HTTP (ADR 0016): the server is `createHandler(options).fetch(Request): Response` in `@hozu/runtime-server`
   (no `node:*` in the runtime import graph; `@hozu/adapter-node` is a bridge + `publicDir`). `project({ http })`:
   `basePath`, `trailingSlash` (308 to the canonical form), `redirects` keyed by path (HZ037), per-route `headers`

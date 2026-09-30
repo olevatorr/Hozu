@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { createApp } from 'create-hozu'
 import { afterAll, describe, expect, it } from 'vitest'
+import { findBrowser } from '../src/cdp.ts'
 import { namesOf, server } from '../src/commands/scaffold.ts'
 import { main } from '../src/main.ts'
 
@@ -36,7 +37,7 @@ const hozu = (args: string[], cwd: string) =>
     .catch((e: { code: number; stdout: string }) => ({ code: e.code, out: JSON.parse(e.stdout) }))
 
 describe('ADR 0043 B (scaffold)', () => {
-  it.fails('ADR 0043 D9d: the query resolvers scaffolded by --with auth never write', () => {
+  it('ADR 0043 D9d: the query resolvers scaffolded by --with auth never write', () => {
     const n = namesOf('notes')
     const source = stripTypeScriptTypes(
       server(n, { auth: true, detail: true, toggle: true, filter: true, remove: true }),
@@ -62,6 +63,37 @@ describe('ADR 0043 B (scaffold)', () => {
     impl.get(n.get)!({ id: 'n1' }, ctx)
     expect(writes).toEqual([])
   })
+})
+
+describe('ADR 0043 B (tools)', () => {
+  it('hozu get/post --session mint a real session, so signing out inside the chain works', async () => {
+    const dir = await authApp()
+    const signedIn = await hozu(['get', '/', '--session', '{"user":"ada"}'], dir)
+    expect(signedIn.out.steps[0]).toMatchObject({
+      status: 200,
+      text: expect.stringContaining('Signed in as ada'),
+    })
+    const { code, out } = await hozu(
+      ['post', '/', '--button', 'Sign out', '--session', '{"user":"ada"}', '--next', '/'],
+      dir,
+    )
+    expect(code).toBe(0)
+    const steps = out.steps as { method: string; path: string; status: number; location: string | null }[]
+    expect(steps.slice(-2)).toMatchObject([
+      { method: 'GET', path: '/', status: 303, location: '/login' },
+      { method: 'GET', path: '/login', status: 200 },
+    ])
+  }, 60_000)
+})
+
+describe.skipIf(!findBrowser())('ADR 0043 B (browse)', () => {
+  it('hozu browse --session starts signed in with a real session and can sign out', async () => {
+    const dir = await authApp()
+    const signedIn = await hozu(['browse', '/', '--session', '{"user":"ada"}'], dir)
+    expect([signedIn.out.url, signedIn.out.text]).toEqual(['/', expect.stringContaining('Signed in as ada')])
+    const { out } = await hozu(['browse', '/', '--session', '{"user":"ada"}', '--do', 'click Sign out'], dir)
+    expect([out.steps[0].ok, out.url, out.title]).toEqual([true, '/login', 'Sign in'])
+  }, 60_000)
 })
 
 describe('ADR 0043 D and J (tools)', () => {

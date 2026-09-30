@@ -47,7 +47,7 @@ Options:
   --field <name=value> post: a form field (repeatable); other fields keep their defaults
   --button <label>     post: the form whose submit button reads <label> (for forms without fields)
   --next <step>        post: next '<path>', 'GET <path>', 'POST <path> a=1&b=2' or 'POST <path> @Label' (repeatable)
-  --session <json>     get/post/browse: the session value for user-scoped queries
+  --session <json>     get/post/browse: start the chain signed in with this session (a real one: sign-out works)
   --full               get/post/browse: print the whole visible text
   --select <selector>  get/post/browse: print matching elements with their attributes: button, #id, [role=alert], a[href]
   --forms              get/post: list the page's forms: action, fields with defaults, submit buttons

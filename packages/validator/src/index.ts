@@ -3,7 +3,7 @@ import { Ctx } from './context.ts'
 import type { Lockfile } from './contracts/lock.ts'
 import { verifyContracts } from './contracts/verify.ts'
 import { classNames } from './rules/classes.ts'
-import { invalidations, sessions } from './rules/data.ts'
+import { getEndpointWrites, invalidations, queryFreshness, sessions } from './rules/data.ts'
 import { domFields } from './rules/dom.ts'
 import { endpoints } from './rules/endpoints.ts'
 import { declaredErrors } from './rules/errors.ts'
@@ -57,6 +57,8 @@ const rules = [
   deadEnds,
   invalidations,
   sessions,
+  queryFreshness,
+  getEndpointWrites,
   rendering,
   routeParams,
   searchSchemas,

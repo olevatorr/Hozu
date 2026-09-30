@@ -8,7 +8,7 @@ export const getCart = query({
   input: NoInput,
   output: Cart,
   scope: 'user',
-  freshness: { swr: 30 },
+  freshness: 'request',
   tags: () => [cartTag()],
 })
 

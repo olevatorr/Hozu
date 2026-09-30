@@ -5,7 +5,7 @@ import { buildProject } from '@hozu/core/ir'
 import { hydrate } from '@hozu/runtime-client'
 import { Window } from 'happy-dom'
 import { describe, expect, it } from 'vitest'
-import { liveResolvers, site } from './support-live.ts'
+import { clockTag, liveResolvers, site } from './support-live.ts'
 
 const post = (base: string, path: string, body: unknown) =>
   new Promise<string>((resolve, reject) => {
@@ -82,7 +82,7 @@ describe('client fetch for new query keys (G4) and live queries (G11)', () => {
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
     try {
       const received = await new Promise<string>((resolve) => {
-        get(`${base}/_hozu/live`, (res) => {
+        get(`${base}/_hozu/live?tag=finder.clockTag`, (res) => {
           expect(res.headers['content-type']).toBe('text/event-stream')
           res.on('data', (c: Buffer) => {
             const m = /data: (.*)\n\n/.exec(c.toString())
@@ -91,7 +91,7 @@ describe('client fetch for new query keys (G4) and live queries (G11)', () => {
               res.destroy()
             }
           })
-          setTimeout(() => server.revalidate(['finder.clockTag']), 50)
+          setTimeout(() => server.revalidate([clockTag()]), 50)
         })
       })
       expect(JSON.parse(received)).toEqual(['finder.clockTag'])

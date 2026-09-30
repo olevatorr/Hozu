@@ -1,7 +1,7 @@
 import { feature, mutation, project, query, route, tag, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { resolvers } from '@hozu/data'
-import { createHandler, sessionCookie } from '@hozu/runtime-server'
+import { createHandler, memorySessions } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
@@ -66,7 +66,7 @@ function setup(extra: Parameters<typeof app>[0] = {}) {
   const seen: (string | null)[] = []
   const handler = createHandler({
     build: buildProject(p, { sources: false }),
-    session: sessionCookie({ name: 'sid', secret: 'x'.repeat(40), secure: false }),
+    session: memorySessions({ secret: 'x'.repeat(40), secure: false }),
     csp: false,
     preview: { secret: 's'.repeat(32) },
     resolvers: resolvers(p, (implement) => [
@@ -110,7 +110,7 @@ function setup(extra: Parameters<typeof app>[0] = {}) {
 }
 
 describe('ADR 0043 B (sessions)', () => {
-  it.fails('ADR 0043 D9a: the effect response recomputes queries with the post-mutation session', async () => {
+  it('ADR 0043 D9a: the effect response recomputes queries with the post-mutation session', async () => {
     const { effect, cookieOf, seen } = setup()
     const zed = cookieOf(await effect('signIn', { name: 'zed' }))
     seen.length = 0
@@ -120,10 +120,12 @@ describe('ADR 0043 B (sessions)', () => {
     expect(body.refreshed.map(([, r]) => r.value)).not.toContainEqual(['Mine'])
   })
 
-  it.fails('ADR 0043 D9b: the SSE tag message is sent after the effect response is built', async () => {
+  it('ADR 0043 D9b: the SSE tag message is sent after the effect response is built', async () => {
     const { handler, effect, cookieOf } = setup()
     const zed = cookieOf(await effect('signIn', { name: 'zed' }))
-    const reader = (await handler.fetch(new Request(`${origin}/_hozu/live`))).body!.getReader()
+    const reader = (
+      await handler.fetch(new Request(`${origin}/_hozu/live?tag=notes.notesTag`))
+    ).body!.getReader()
     const order: string[] = []
     const message = (async () => {
       for (;;) {
@@ -140,7 +142,7 @@ describe('ADR 0043 B (sessions)', () => {
     expect(order).toEqual(['response', 'sse'])
   })
 
-  it.fails('ADR 0043 D9c: a cookie issued before sign-out is rejected afterwards', async () => {
+  it('ADR 0043 D9c: a cookie issued before sign-out is rejected afterwards', async () => {
     const { effect, post, cookieOf } = setup()
     const zed = cookieOf(await effect('signIn', { name: 'zed' }))
     await effect('signOut', {}, zed)

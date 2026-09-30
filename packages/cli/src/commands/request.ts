@@ -199,16 +199,12 @@ export async function appParts(loaded: Loaded, command: string, sessionJson: str
     } catch {
       throw new HozuCliError('usage', '--session must be JSON', [`--session '{"userId":"ada"}'`])
     }
-  const store =
-    sessionJson === undefined
-      ? (
-          await importFrom<{ sessionCookie(o: { name: string; secret: string; secure: boolean }): unknown }>(
-            '@hozu/runtime-server',
-            ['npm install @hozu/runtime-server'],
-          )
-        ).sessionCookie({ name: 'sid', secret: randomBytes(24).toString('hex'), secure: false })
-      : () => session
-  return { importFrom, resolvers: server.createResolvers() as unknown, session: store }
+  const { memorySessions } = await importFrom<{
+    memorySessions(o: { secret: string; secure: boolean }): { issue(value: unknown): Promise<string> }
+  }>('@hozu/runtime-server', ['npm install @hozu/runtime-server'])
+  const store = memorySessions({ secret: randomBytes(24).toString('hex'), secure: false })
+  const cookie = sessionJson === undefined ? null : await store.issue(session)
+  return { importFrom, resolvers: server.createResolvers() as unknown, session: store, cookie }
 }
 
 export async function runRequest(loaded: Loaded, options: RequestOptions): Promise<RequestOutput> {
@@ -221,6 +217,10 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
     session: parts.session,
   })
   const cookies = new Map<string, string>()
+  if (parts.cookie) {
+    const eq = parts.cookie.indexOf('=')
+    cookies.set(parts.cookie.slice(0, eq), parts.cookie.slice(eq + 1))
+  }
   const init = (): RequestInit => ({
     headers: cookies.size ? { cookie: [...cookies].map(([k, v]) => `${k}=${v}`).join('; ') } : {},
   })
