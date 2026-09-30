@@ -829,7 +829,9 @@ findings and are assigned only by amending this table. Severity is one per code.
   - `packages/cli/src/commands/migrate*.ts`, one module per rewrite. Step 1 runs in a child process that registers
     the app's own 0.7 transform hook and loads its installed `@hozu/core` / `@hozu/validator` (from the app, else
     from its `@hozu/cli`); "0.7" means the build is IR v1, since the workspace packages still read `0.7.0`. It also
-    caches the 0.7 IR in `node_modules/.cache/hozu/`. Run again after the upgrade, migrate rewrites nothing, compares
+    records the 0.7 IR in `.hozu/migrate-0.7.json` next to `hozu.config.ts`, which a reinstall keeps (the run says
+    to keep it, and the comparing run says to delete it; without it the comparison is printed as skipped). Run
+    again after the upgrade, migrate rewrites nothing, compares
     `normalize07(0.7 IR)` with the 0.8 IR and prints each differing pointer as a behaviour change, then runs
     `hozu check`. So a D2 site is reported only when its IR really changed.
   - Parts come from `@hozu/transform`'s own HZ059 sites (local helpers) and its `__hozu.call` sites (imported

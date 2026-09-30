@@ -154,7 +154,7 @@ export interface MigrateOutput {
   removed: string[]
   notes: MigrateNote[]
   guide: MigrateGuide[]
-  ir: { compared: boolean; differences: string[] }
+  ir: { compared: boolean; skipped: string | null; differences: string[] }
   next: string[]
   check: CheckOutput | null
 }

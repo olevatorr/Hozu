@@ -21,6 +21,7 @@ import { migrateParts } from './migrate-parts.ts'
 import type { Stale07 } from './migrate-stale.ts'
 
 const SKIP = /(^|\/)(node_modules|dist|\.[^/]+)(\/|$)/
+const RECORD = '.hozu/migrate-0.7.json'
 
 export function sources(dir: string): Map<string, string> {
   const out = new Map<string, string>()
@@ -165,10 +166,10 @@ export async function runMigrate(
   const dir = dirname(config)
   const rel = (f: string) => relative(cwd, f) || '.'
   const on07 = checkOn07(config)
-  const cache = join(dir, 'node_modules/.cache/hozu/migrate-0.7.ir.json')
+  const record = join(dir, RECORD)
   if (on07.ir) {
-    mkdirSync(dirname(cache), { recursive: true })
-    writeFileSync(cache, JSON.stringify(on07.ir))
+    mkdirSync(dirname(record), { recursive: true })
+    writeFileSync(record, JSON.stringify(on07.ir))
   }
 
   const before = sources(dir)
@@ -219,17 +220,22 @@ export async function runMigrate(
   const installed = on07.core ?? installedCore(config)
   const next: string[] = []
   let check: CheckOutput | null = null
-  const ir: MigrateOutput['ir'] = { compared: false, differences: [] }
+  const ir: MigrateOutput['ir'] = { compared: false, skipped: null, differences: [] }
   if (on07.irVersion !== 2) {
     next.push(`upgrade every @hozu/* dependency to 0.8: ${upgradeCommand(dir)}`)
     next.push('npx hozu migrate 0.8   # again after the upgrade: nothing to rewrite, then it runs hozu check')
+    if (on07.ir)
+      next.push(
+        `keep ${RECORD} until that second run: it holds the 0.7 IR it compares with (a reinstall keeps it; delete it afterwards)`,
+      )
   } else if (options.runCheck !== false) {
     const loaded = await load(configArg, cwd)
-    if (existsSync(cache)) {
-      const before = normalize07(JSON.parse(readFileSync(cache, 'utf8')))
+    if (existsSync(record)) {
+      const before = normalize07(JSON.parse(readFileSync(record, 'utf8')))
       ir.compared = true
       ir.differences = differences(before, loaded.build(false).ir)
-    }
+      next.push(`delete ${RECORD}: the IR comparison with 0.7 is done`)
+    } else ir.skipped = `${RECORD} is missing: it is written by the run on the 0.7 app, before the upgrade`
     check = await runCheck(loaded, cwd, false)
     if (!check.ok) next.push('npx hozu check   # fix each diagnostic; accept the lock with --update-lock')
   }
@@ -317,6 +323,7 @@ export function describeMigrate(r: MigrateOutput): string {
         : `   ${g.file}: Hozu block ${g.state}`,
     )
   let step = 3
+  if (r.ir.skipped) lines.push(`${step++}. IR comparison with 0.7: skipped (${r.ir.skipped})`)
   if (r.ir.compared)
     lines.push(
       r.ir.differences.length

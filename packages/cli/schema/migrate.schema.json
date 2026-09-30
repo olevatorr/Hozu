@@ -66,6 +66,12 @@
             "compared": {
               "type": "boolean"
             },
+            "skipped": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "differences": {
               "type": "array",
               "items": {
@@ -75,6 +81,7 @@
           },
           "required": [
             "compared",
+            "skipped",
             "differences"
           ],
           "additionalProperties": false

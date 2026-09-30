@@ -73,8 +73,13 @@ describe('hozu migrate 0.8, end to end', () => {
       )
       expect(readFileSync(join(dir, 'hozu.lock.json'), 'utf8')).toBe(lock)
       expect(contracts(dir)).toEqual(before)
-      expect(existsSync(join(run2, 'node_modules/.cache/hozu/migrate-0.7.ir.json'))).toBe(false)
+      expect(existsSync(join(dir, '.hozu/migrate-0.7.json'))).toBe(true)
+      expect(r1.next).toContain(
+        'keep .hozu/migrate-0.7.json until that second run: it holds the 0.7 IR it compares with (a reinstall keeps it; delete it afterwards)',
+      )
 
+      rmSync(join(dir, 'node_modules'), { recursive: true })
+      shim(join(run2, 'node_modules'), join(dir, 'node_modules'))
       for (const m of ['@hozu', 'zod']) {
         rmSync(join(dir, 'node_modules', m))
         symlinkSync(join(modules08, m), join(dir, 'node_modules', m))
@@ -83,7 +88,8 @@ describe('hozu migrate 0.8, end to end', () => {
       const r2 = parsed(second.stdout)
       expect(r2.stale.skipped).toContain('the stale check runs on 0.7, before the upgrade')
       expect(r2.changed).toEqual([])
-      expect(r2.ir).toEqual({ compared: true, differences: [] })
+      expect(r2.ir).toEqual({ compared: true, skipped: null, differences: [] })
+      expect(r2.next).toContain('delete .hozu/migrate-0.7.json: the IR comparison with 0.7 is done')
       expect([...new Set(r2.check!.validate.diagnostics.map((d) => d.code))].sort()).toEqual([
         'HZ057',
         'HZ058',
@@ -100,6 +106,24 @@ describe('hozu migrate 0.8, end to end', () => {
     },
     300_000,
   )
+
+  it('says so when the 0.7 IR record is missing on the run after the upgrade', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-migrate-norecord-'))
+    execFileSync('sh', ['-c', `git -C "${root}" archive HEAD examples/bookmarks | tar -x -C "${dir}"`])
+    const app = join(dir, 'examples/bookmarks')
+    shim(join(root, 'examples/bookmarks/node_modules'), join(app, 'node_modules'))
+    const json = parsed((await cli(['migrate', '0.8', '--json'], app)).stdout)
+    expect(json.ir).toEqual({
+      compared: false,
+      skipped:
+        '.hozu/migrate-0.7.json is missing: it is written by the run on the 0.7 app, before the upgrade',
+      differences: [],
+    })
+    const text = (await cli(['migrate', '0.8'], app)).stdout
+    expect(text).toContain(
+      '3. IR comparison with 0.7: skipped (.hozu/migrate-0.7.json is missing: it is written by the run on the 0.7 app, before the upgrade)',
+    )
+  }, 120_000)
 
   it('prints the block and exits 1 when CLAUDE.md is not a Hozu template, and rejects other versions', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'hozu-migrate-guide-'))
