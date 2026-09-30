@@ -472,8 +472,9 @@ None of these is bent quietly; each needs the owner's explicit yes.
     time, and the IR is identical to the inline form.
   - It can produce a view subtree, a value or a guard, never an assign.
   - A plain helper that receives a reference is HZ059, whose fix is to make it a part, so there is one spelling.
-  - A part that references no feature declaration may live in a shared module. A part that references a declaration
-    belongs to that feature, and inlining it from another feature is HZ006 at record time. `hozu map` lists parts
+  - A part that references no feature declaration may live in a shared module. A part follows the same boundary rule as
+    inline code: it may reference a declaration of feature Y only where Y exports it and the calling feature imports Y
+    (principle 6); otherwise inlining it is HZ006 at record time. `hozu map` lists parts
     with file:line.
   - Why (b): views are the largest category of the trial apps (342 lines of run 1's s20), and (a) would push reuse
     into `ui.view` splits, which change the render plan.
