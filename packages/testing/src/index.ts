@@ -20,7 +20,7 @@ export interface TestPage {
 
 export interface TestApp {
   get(path: string, init?: RequestInit): Promise<TestPage>
-  post(path: string, form: Record<string, string>, init?: RequestInit): Promise<TestPage>
+  post(path: string, form: Record<string, string> | [string, string][], init?: RequestInit): Promise<TestPage>
 }
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' ' }

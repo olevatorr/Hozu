@@ -136,7 +136,7 @@ export interface CheckOutput {
 }
 
 export interface RequestStep {
-  method: 'GET' | 'POST'
+  method: 'GET'
   path: string
   status: number
   location: string | null
@@ -156,10 +156,35 @@ export interface RequestElement {
   text: string
 }
 
+export interface RequestFormField {
+  name: string
+  value: string
+  kind: string
+  outside: boolean
+}
+
+export interface RequestFormGroup {
+  name: string
+  type: 'checkbox' | 'radio' | 'select'
+  options: { value: string; checked: boolean }[]
+  outside: boolean
+}
+
+export interface RequestFormButton {
+  text: string
+  name: string | null
+  value: string | null
+  outside: boolean
+}
+
 export interface RequestForm {
   action: string
-  fields: Record<string, string>
-  buttons: string[]
+  method: 'get' | 'post'
+  id: string | null
+  label: string | null
+  fields: RequestFormField[]
+  groups: RequestFormGroup[]
+  buttons: RequestFormButton[]
 }
 
 export interface RequestOutput {
@@ -250,10 +275,33 @@ export interface BrowseWidget {
   hint: string | null
 }
 
+export interface BrowseChange {
+  mode: BrowseMode
+  ok: boolean
+  note: string | null
+  jsOnly: string | null
+  requested: boolean
+  navigated: boolean
+  url: string
+  added: string[]
+  removed: string[]
+}
+
+export interface BrowseElsewhere {
+  actor: string
+  mode: BrowseMode
+  added: string[]
+  removed: string[]
+}
+
 export interface BrowseStep {
   step: string
   ok: boolean
   note: string | null
+  actor?: string
+  modes?: BrowseChange[]
+  differs?: boolean
+  elsewhere?: BrowseElsewhere[]
 }
 
 export interface BrowseOutput {
@@ -269,6 +317,7 @@ export interface BrowseOutput {
   truncated: boolean
   elements: RequestElement[]
   screenshot: string | null
+  modes?: BrowseMode[]
   actors?: BrowseActor[]
 }
 
@@ -280,4 +329,5 @@ export interface BrowseActor {
   steps: BrowseStep[]
   errors: BrowseError[]
   text: string
+  mode?: BrowseMode
 }

@@ -6,6 +6,7 @@ import { promisify } from 'node:util'
 import { Ajv } from 'ajv'
 import { createApp } from 'create-hozu'
 import { afterAll, describe, expect, it } from 'vitest'
+import { findBrowser } from '../src/cdp.ts'
 import { bundleSpec } from '../src/commands/add-widget.ts'
 import { formsOf } from '../src/commands/request.ts'
 import { main } from '../src/main.ts'
@@ -31,6 +32,12 @@ const json = async (name: string, args: string[], cwd: string) => {
   return { code, out }
 }
 
+const chrome = findBrowser() !== null
+const browse = (args: string[], cwd: string) => json('browse', ['browse', ...args], cwd)
+const steps = (...list: string[]) => list.flatMap((step) => ['--do', step])
+const addedBy = (out: { steps: { modes: { added: string[] }[] }[] }, i: number) =>
+  out.steps[i]!.modes.map((m) => m.added)
+
 const created: string[] = []
 afterAll(() => {
   for (const dir of created) rmSync(dir, { recursive: true, force: true })
@@ -47,7 +54,7 @@ async function freshApp() {
 const dirname = (p: string) => p.slice(0, p.lastIndexOf('/'))
 
 describe('the agent loop (ADR 0027)', () => {
-  it('scaffolds a feature on the home page that checks clean and works through get and post', async () => {
+  it('scaffolds a feature on the home page that checks clean and renders through get', async () => {
     const app = await freshApp()
     const added = await json('add', ['add', 'feature', 'tasks', '--page', '/'], app)
     expect(added.out.created).toHaveLength(5)
@@ -61,24 +68,26 @@ describe('the agent loop (ADR 0027)', () => {
     const home = await json('request', ['get', '/'], app)
     expect(home.out.steps[0]).toMatchObject({ method: 'GET', path: '/', status: 200, alerts: [] })
     expect(home.out.steps[0].text).toContain('Tasks')
+  })
 
-    const flow = await json(
-      'request',
-      ['post', '/', '--field', 'title=  Ship it ', '--next', 'POST / title=ship IT', '--next', 'GET /'],
+  it.skipIf(!chrome)('adds through the scaffolded form with and without JS, with the same alerts', async () => {
+    const app = await freshApp()
+    await run(['add', 'feature', 'tasks', '--page', '/'], app)
+    const flow = await browse(
+      [
+        '/',
+        ...steps('fill Title=  Ship it ', 'press Enter', 'fill Title=ship IT', 'press Enter', 'fill Title=x'),
+        ...steps('press Enter'),
+      ],
       app,
     )
-    expect(flow.out.steps.map((s: { method: string; status: number }) => `${s.method} ${s.status}`)).toEqual([
-      'POST 303',
-      'GET 200',
-      'POST 200',
-      'GET 200',
-    ])
-    expect(flow.out.steps[1].text).toContain('Ship it')
-    expect(flow.out.steps[2].alerts).toEqual(['This task already exists'])
-
-    const invalid = await json('request', ['post', '/', '--field', 'title=x'], app)
-    expect(invalid.out.steps[0].text).toContain('Use at least 2 characters')
-  })
+    expect(flow.code).toBe(0)
+    expect(flow.out.modes).toEqual(['on', 'off'])
+    expect(addedBy(flow.out, 1)).toEqual([expect.arrayContaining(['Ship it']), expect.arrayContaining(['Ship it'])])
+    expect(addedBy(flow.out, 3)).toEqual([['This task already exists'], ['This task already exists']])
+    expect(addedBy(flow.out, 5)).toEqual([['Use at least 2 characters'], ['Use at least 2 characters']])
+    expect(flow.out.steps.some((s: { differs?: boolean }) => s.differs)).toBe(false)
+  }, 60_000)
 
   it('adds a second feature on its own route', async () => {
     const app = await freshApp()
@@ -98,20 +107,50 @@ describe('the agent loop (ADR 0027)', () => {
     expect(check.code).toBe(1)
     expect(check.out.types.errors[0]).toMatchObject({ file: 'broken.ts', line: 1, code: 'TS2322' })
     expect((await run(['add', 'feature', 'Bad'], app)).code).toBe(2)
-    expect((await run(['post', '/', '--field', 'nope=1'], app)).code).toBe(2)
+    const post = await run(['post', '/', '--json'], app)
+    expect([post.code, JSON.parse(post.stdout).error.message]).toEqual([
+      2,
+      expect.stringContaining('replaced by hozu browse'),
+    ])
   })
 
-  it('reads forms like a browser: defaults, selected options and submit buttons', () => {
+  it('reads forms like a browser: defaults, checkbox groups, form= controls and submit buttons', () => {
     const html = `
       <form method="post" action="/?__hozu=a"><input name="title" value="x"><select name="kind"><option value="a">A</option><option value="b" selected>B</option></select><button type="submit">Add</button></form>
       <form method="post" action="/?__hozu=b"><input type="hidden" name="id" value="t1"><button>Mark done</button></form>
-      <form method="post" action="/?__hozu=c"><button type="submit">Clear done</button><button type="button">Cancel</button></form>
-      <form action="/search"><input name="q"></form>`
-    expect(formsOf(html, '/')).toEqual([
-      { action: '/?__hozu=a', fields: { title: 'x', kind: 'b' }, buttons: ['Add'] },
-      { action: '/?__hozu=b', fields: { id: 't1' }, buttons: ['Mark done'] },
-      { action: '/?__hozu=c', fields: {}, buttons: ['Clear done'] },
+      <form method="post" action="/?__hozu=c" id="bulk" aria-label="Bulk"><input type="checkbox" name="ids" value="n1" checked><input type="checkbox" name="ids" value="n2"><button type="submit" name="action" value="delete">Delete</button><button type="button">Cancel</button></form>
+      <ul><li><input type="checkbox" name="ids" value="n3" form="bulk"></li></ul><button type="submit" name="action" value="archive" form="bulk">Archive</button>
+      <form action="/search"><input name="q" type="search"></form>`
+    const [add, done, bulk, search] = formsOf(html, '/')
+    const field = (name: string, value: string, kind = 'text') => ({ name, value, kind, outside: false })
+    expect(add).toEqual({
+      action: '/?__hozu=a',
+      method: 'post',
+      id: null,
+      label: null,
+      fields: [field('title', 'x'), field('kind', 'b', 'select')],
+      groups: [],
+      buttons: [{ text: 'Add', name: null, value: null, outside: false }],
+    })
+    expect(done!.fields).toEqual([field('id', 't1', 'hidden')])
+    expect(bulk).toMatchObject({ id: 'bulk', label: 'Bulk', fields: [] })
+    expect(bulk!.groups).toEqual([
+      {
+        name: 'ids',
+        type: 'checkbox',
+        options: [
+          { value: 'n1', checked: true },
+          { value: 'n2', checked: false },
+          { value: 'n3', checked: false },
+        ],
+        outside: true,
+      },
     ])
+    expect(bulk!.buttons).toEqual([
+      { text: 'Delete', name: 'action', value: 'delete', outside: false },
+      { text: 'Archive', name: 'action', value: 'archive', outside: true },
+    ])
+    expect(search).toMatchObject({ method: 'get', fields: [field('q', '', 'search')], buttons: [] })
   })
 
   it('checks clean for every combination of --with parts', async () => {
@@ -135,32 +174,31 @@ describe('the agent loop (ADR 0027)', () => {
     }
   }, 120_000)
 
-  it('runs the full scaffold like a user: toggle, detail, remove and a 404', async () => {
+  it.skipIf(!chrome)('runs the full scaffold like a user: toggle, detail, remove and a 404', async () => {
     const app = await freshApp()
     await run(['add', 'feature', 'tasks', '--page', '/', '--with', 'detail,toggle,filter,remove'], app)
-    const flow = await json(
-      'request',
+    const flow = await browse(
       [
-        'post',
         '/',
-        '--field',
-        'title=Ship it',
-        '--next',
-        'POST / id=t1@Mark done',
-        '--next',
-        '/tasks/t1',
-        '--next',
-        'POST / id=t1@Delete',
-        '--next',
-        '/tasks/t1',
+        ...steps('fill Title=Ship it', 'press Enter', 'click Mark done in "Ship it"', 'click Ship it'),
+        ...steps('goto /', 'click Delete in "Ship it"', 'goto /tasks/t1'),
       ],
       app,
     )
-    const steps = flow.out.steps as { method: string; path: string; status: number; text: string | null }[]
-    expect(steps.find((s) => s.method === 'GET' && s.path === '/tasks/t1')?.text).toContain('Status: done')
-    expect(steps.at(-1)).toMatchObject({ path: '/tasks/t1', status: 404 })
-    expect(steps.at(-1)?.text).toContain('Not found')
-  })
+    expect(addedBy(flow.out, 3)).toEqual([
+      ['Ship it', 'Status: done', 'Back'],
+      ['Ship it', 'Status: done', 'Back'],
+    ])
+    expect(flow.out.steps[5].modes.map((m: { removed: string[] }) => m.removed)).toEqual([
+      expect.arrayContaining(['Ship it']),
+      expect.arrayContaining(['Ship it']),
+    ])
+    expect(addedBy(flow.out, 6)).toEqual([expect.arrayContaining(['Not found']), expect.arrayContaining(['Not found'])])
+    expect(flow.out.errors.map((e: { text: string; mode: string }) => `${e.mode} ${e.text}`)).toEqual([
+      'on 404 /tasks/t1',
+      'off 404 /tasks/t1',
+    ])
+  }, 60_000)
 
   it('maps an app in a couple of kilobytes, with file:line for every declaration', async () => {
     for (const example of ['bookmarks', 'trial-0007']) {
@@ -197,26 +235,11 @@ describe('the agent loop (ADR 0027)', () => {
     )
     for (const t of added.out.texts as { file: string; line: number; text: string }[])
       expect(readFileSync(join(app, t.file), 'utf8').split('\n')[t.line - 1], t.text).toContain(t.text)
-    const page = await json(
-      'request',
-      [
-        'post',
-        '/',
-        '--field',
-        'title=Ship it',
-        '--select',
-        'button[aria-pressed=true]',
-        '--select',
-        'a',
-        '--forms',
-      ],
-      app,
-    )
+    const page = await json('request', ['get', '/', '--select', 'button[aria-pressed=true]', '--forms'], app)
     const last = page.out.steps.at(-1)
     expect(last.elements[0]).toMatchObject({ tag: 'button', attrs: { 'aria-pressed': 'true' }, text: 'All' })
-    expect(last.elements[1]).toMatchObject({ tag: 'a', attrs: { href: '/tasks/t1' }, text: 'Ship it' })
-    expect(last.forms.map((f: { buttons: string[] }) => f.buttons[0])).toEqual(['Add', 'Mark done', 'Delete'])
-    expect(last.forms[1].fields).toEqual({ id: 't1' })
+    expect(last.forms.map((f: { buttons: { text: string }[] }) => f.buttons[0]?.text)).toEqual(['Add'])
+    expect(last.forms[0].fields.map((f: { name: string }) => f.name)).toEqual(['title'])
     expect((await run(['get', '/', '--select', 'div > p'], app)).code).toBe(2)
   })
 
@@ -238,29 +261,23 @@ describe('the agent loop (ADR 0027)', () => {
     expect(readFileSync(join(app, 'app.ts'), 'utf8')).not.toContain('session:')
     const signedOut = await json('request', ['get', '/'], app)
     expect(signedOut.out.steps[0]).toMatchObject({ status: 303, location: '/login' })
-    const flow = await json(
-      'request',
-      [
-        'post',
-        '/login',
-        '--field',
-        'name=ada',
-        '--next',
-        'POST / title=Milk',
-        '--next',
-        'POST / @Sign out',
-        '--next',
-        'POST /login name=bob',
-        '--next',
-        '/',
-        '--next',
-        '/notes/n1',
-      ],
-      app,
-    )
-    const steps = flow.out.steps as { method: string; path: string; status: number; text: string | null }[]
-    expect(steps.some((s) => s.text?.includes('Signed in as ada') && s.text.includes('Milk'))).toBe(true)
-    expect(steps.at(-1)).toMatchObject({ path: '/notes/n1', status: 404 })
+    if (chrome) {
+      const flow = await browse(
+        [
+          '/login',
+          ...steps('fill Name=ada', 'press Enter', 'fill Title=Milk', 'press Enter', 'click Sign out'),
+          ...steps('fill Name=bob', 'press Enter', 'goto /notes/n1'),
+        ],
+        app,
+      )
+      expect(addedBy(flow.out, 1)).toEqual([
+        expect.arrayContaining(['Signed in as ada']),
+        expect.arrayContaining(['Signed in as ada']),
+      ])
+      expect(addedBy(flow.out, 3)).toEqual([expect.arrayContaining(['Milk']), expect.arrayContaining(['Milk'])])
+      expect(flow.out.steps[4].modes.map((m: { url: string }) => m.url)).toEqual(['/login', '/login'])
+      expect(addedBy(flow.out, 7)).toEqual([expect.arrayContaining(['Not found']), expect.arrayContaining(['Not found'])])
+    }
     const second = await json('add', ['add', 'feature', 'tasks', '--page', '/tasks', '--with', 'auth'], app)
     expect(second.out.created.some((f: string) => f.startsWith('features/account/'))).toBe(false)
     const again = await checkFresh(app)
@@ -411,55 +428,9 @@ describe('the guide compiles (ADR 0037 D2)', () => {
     )
     const check = await checkFresh(app)
     expect([check.validate.diagnostics, check.validate.lock]).toEqual([[], 'current'])
-    const { stdout } = await promisify(execFile)(
-      process.execPath,
-      [
-        `${root}packages/cli/bin/hozu.js`,
-        'post',
-        '/',
-        '--field',
-        'title=Milk',
-        '--next',
-        'POST / title=Milk',
-        '--json',
-      ],
-      { cwd: app },
-    )
-    const steps = JSON.parse(stdout).steps as { text: string | null; alerts: string[] }[]
-    expect(steps.some((s) => s.text?.includes('Milk'))).toBe(true)
-    expect(steps.at(-1)!.alerts).toEqual(['Already listed'])
+    if (!chrome) return
+    const flow = await browse(['/', ...steps('fill Title=Milk', 'press Enter', 'fill Title=Milk', 'press Enter')], app)
+    expect(addedBy(flow.out, 1)).toEqual([expect.arrayContaining(['Milk']), expect.arrayContaining(['Milk'])])
+    expect(addedBy(flow.out, 3)).toEqual([['Already listed'], ['Already listed']])
   }, 60_000)
-})
-
-describe('hozu post friction found by trial 0015', () => {
-  const notes = `${root}examples/notes`
-  const cli = (args: string[]) =>
-    promisify(execFile)(process.execPath, [`${root}packages/cli/bin/hozu.js`, ...args], { cwd: notes }).catch(
-      (e: { stdout: string; stderr: string }) => e,
-    )
-
-  it('accepts a button after & in a --next step, and a comma-separated --select', async () => {
-    const { stdout } = await cli([
-      'post',
-      '/login',
-      '--field',
-      'name=ada',
-      '--next',
-      'POST / id=n1&@Pin',
-      '--next',
-      '/',
-      '--select',
-      'button,label',
-      '--json',
-    ])
-    const last = JSON.parse(stdout).steps.at(-1)
-    expect(last.elements.map((e: { tag: string; text: string }) => e.tag)).toContain('label')
-    expect(last.elements.some((e: { text: string }) => e.text === 'Unpin')).toBe(true)
-  })
-
-  it('says a page redirected instead of "no form"', async () => {
-    const { stderr } = await cli(['post', '/', '--field', 'text=x'])
-    expect(stderr).toContain('GET / redirects to /login')
-    expect(stderr).toContain("hozu post /login --field name=ada --next 'POST / …'")
-  })
 })

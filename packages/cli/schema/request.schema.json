@@ -22,10 +22,7 @@
       "properties": {
         "method": {
           "type": "string",
-          "enum": [
-            "GET",
-            "POST"
-          ]
+          "const": "GET"
         },
         "path": {
           "type": "string"
@@ -127,23 +124,151 @@
         "action": {
           "type": "string"
         },
+        "method": {
+          "type": "string",
+          "enum": [
+            "get",
+            "post"
+          ]
+        },
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "fields": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RequestFormField"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RequestFormGroup"
           }
         },
         "buttons": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/RequestFormButton"
           }
         }
       },
       "required": [
         "action",
+        "method",
+        "id",
+        "label",
         "fields",
+        "groups",
         "buttons"
+      ],
+      "additionalProperties": false
+    },
+    "RequestFormField": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "outside": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "value",
+        "kind",
+        "outside"
+      ],
+      "additionalProperties": false
+    },
+    "RequestFormGroup": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "checkbox",
+            "radio",
+            "select"
+          ]
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string"
+              },
+              "checked": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "value",
+              "checked"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "outside": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "options",
+        "outside"
+      ],
+      "additionalProperties": false
+    },
+    "RequestFormButton": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "outside": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text",
+        "name",
+        "value",
+        "outside"
       ],
       "additionalProperties": false
     }

@@ -66,23 +66,20 @@ describe('ADR 0043 B (scaffold)', () => {
 })
 
 describe('ADR 0043 B (tools)', () => {
-  it('hozu get/post --session mint a real session, so signing out inside the chain works', async () => {
+  it('hozu get --session mints a real session, and browse --js off signs out inside the chain', async () => {
     const dir = await authApp()
     const signedIn = await hozu(['get', '/', '--session', '{"user":"ada"}'], dir)
     expect(signedIn.out.steps[0]).toMatchObject({
       status: 200,
       text: expect.stringContaining('Signed in as ada'),
     })
+    if (!findBrowser()) return
     const { code, out } = await hozu(
-      ['post', '/', '--button', 'Sign out', '--session', '{"user":"ada"}', '--next', '/'],
+      ['browse', '/', '--js', 'off', '--session', '{"user":"ada"}', '--do', 'click Sign out', '--do', 'goto /'],
       dir,
     )
     expect(code).toBe(0)
-    const steps = out.steps as { method: string; path: string; status: number; location: string | null }[]
-    expect(steps.slice(-2)).toMatchObject([
-      { method: 'GET', path: '/', status: 303, location: '/login' },
-      { method: 'GET', path: '/login', status: 200 },
-    ])
+    expect(out.steps.map((s: { modes: { url: string }[] }) => s.modes[0]!.url)).toEqual(['/login', '/login'])
   }, 60_000)
 })
 

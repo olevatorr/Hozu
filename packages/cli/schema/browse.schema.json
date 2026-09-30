@@ -56,6 +56,12 @@
             "null"
           ]
         },
+        "modes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BrowseMode"
+          }
+        },
         "actors": {
           "type": "array",
           "items": {
@@ -93,12 +99,123 @@
             "string",
             "null"
           ]
+        },
+        "actor": {
+          "type": "string"
+        },
+        "modes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BrowseChange"
+          }
+        },
+        "differs": {
+          "type": "boolean"
+        },
+        "elsewhere": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BrowseElsewhere"
+          }
         }
       },
       "required": [
         "step",
         "ok",
         "note"
+      ],
+      "additionalProperties": false
+    },
+    "BrowseChange": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/BrowseMode"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "jsOnly": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requested": {
+          "type": "boolean"
+        },
+        "navigated": {
+          "type": "boolean"
+        },
+        "url": {
+          "type": "string"
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "mode",
+        "ok",
+        "note",
+        "jsOnly",
+        "requested",
+        "navigated",
+        "url",
+        "added",
+        "removed"
+      ],
+      "additionalProperties": false
+    },
+    "BrowseMode": {
+      "type": "string",
+      "enum": [
+        "on",
+        "off"
+      ]
+    },
+    "BrowseElsewhere": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/definitions/BrowseMode"
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "actor",
+        "mode",
+        "added",
+        "removed"
       ],
       "additionalProperties": false
     },
@@ -141,13 +258,6 @@
         "at"
       ],
       "additionalProperties": false
-    },
-    "BrowseMode": {
-      "type": "string",
-      "enum": [
-        "on",
-        "off"
-      ]
     },
     "BrowseWidget": {
       "type": "object",
@@ -255,6 +365,9 @@
         },
         "text": {
           "type": "string"
+        },
+        "mode": {
+          "$ref": "#/definitions/BrowseMode"
         }
       },
       "required": [

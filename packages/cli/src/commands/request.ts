@@ -1,5 +1,13 @@
 import { randomBytes } from 'node:crypto'
-import type { RequestElement, RequestOutput, RequestStep } from '../contract.ts'
+import type {
+  RequestElement,
+  RequestForm,
+  RequestFormButton,
+  RequestFormField,
+  RequestFormGroup,
+  RequestOutput,
+  RequestStep,
+} from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { importer, requireApp } from './app.ts'
@@ -13,7 +21,6 @@ interface TestPage {
 
 interface TestApp {
   get(path: string, init?: RequestInit): Promise<TestPage>
-  post(path: string, form: Record<string, string>, init?: RequestInit): Promise<TestPage>
 }
 
 type TestingModule = { testApp(app: unknown, options: Record<string, unknown>): TestApp }
@@ -39,47 +46,88 @@ const plain = (html: string) =>
     .replace(/\s+/g, ' ')
     .trim()
 
-interface Form {
-  action: string
-  fields: Record<string, string>
-  buttons: string[]
+interface Owned {
+  form: number | null
+  outside: boolean
 }
 
-export function formsOf(html: string, at: string): Form[] {
-  const forms: Form[] = []
-  for (const m of html.matchAll(/<form\b([^>]*)>([\s\S]*?)<\/form>/g)) {
+export function formsOf(html: string, at: string): RequestForm[] {
+  const source = html.replace(/<(script|style|template)\b[\s\S]*?<\/\1>/gi, (m) => ' '.repeat(m.length))
+  const forms: RequestForm[] = []
+  const byId = new Map<string, number>()
+  for (const m of source.matchAll(/<form\b([^>]*)>/gi)) {
     const attrs = attrsOf(m[1]!)
-    if ((attrs.method ?? 'get').toLowerCase() !== 'post') continue
-    const body = m[2]!
-    const fields: Record<string, string> = {}
-    for (const i of body.matchAll(/<input\b([^>]*)>/g)) {
-      const a = attrsOf(i[1]!)
-      if (!a.name || ['submit', 'button', 'reset', 'file'].includes(a.type ?? '')) continue
-      if (['checkbox', 'radio'].includes(a.type ?? '') && !('checked' in a)) continue
-      fields[a.name] = a.value ?? (a.type === 'checkbox' ? 'on' : '')
+    if (attrs.id) byId.set(attrs.id, forms.length)
+    forms.push({
+      action: attrs.action || at,
+      method: (attrs.method ?? 'get').toLowerCase() === 'post' ? 'post' : 'get',
+      id: attrs.id ?? null,
+      label: attrs['aria-label'] ?? null,
+      fields: [],
+      groups: [],
+      buttons: [],
+    })
+  }
+  let current: number | null = null
+  let seen = -1
+  const owner = (attrs: Record<string, string>): Owned => {
+    if (attrs.form === undefined) return { form: current, outside: false }
+    const form = byId.get(attrs.form) ?? null
+    return { form, outside: form !== current }
+  }
+  const closing = (tag: string, from: number) => {
+    const end = source.slice(from).search(new RegExp(`</${tag}>`, 'i'))
+    return end < 0 ? source.length : from + end
+  }
+  for (const m of source.matchAll(/<(\/?)(form|input|select|textarea|button)\b([^>]*)>/gi)) {
+    const [, slash, raw, rest] = m
+    const tag = raw!.toLowerCase()
+    if (tag === 'form') {
+      current = slash ? null : ++seen
+      continue
     }
-    for (const s of body.matchAll(/<select\b([^>]*)>([\s\S]*?)<\/select>/g)) {
-      const name = attrsOf(s[1]!).name
-      if (!name) continue
-      const options = [...s[2]!.matchAll(/<option\b([^>]*)>([\s\S]*?)<\/option>/g)].map((o) => {
+    if (slash) continue
+    const attrs = attrsOf(rest!)
+    const { form, outside } = owner(attrs)
+    if (form === null || (!attrs.name && tag !== 'button' && attrs.type !== 'submit')) continue
+    const f = forms[form]!
+    const start = m.index + m[0].length
+    const field = (value: string, kind: string): RequestFormField => ({
+      name: attrs.name!,
+      value,
+      kind,
+      outside,
+    })
+    if (tag === 'textarea') f.fields.push(field(decode(source.slice(start, closing('textarea', start))), 'textarea'))
+    else if (tag === 'select') {
+      const body = source.slice(start, closing('select', start))
+      const options = [...body.matchAll(/<option\b([^>]*)>([\s\S]*?)(?=<option\b|<\/option>|$)/gi)].map((o) => {
         const a = attrsOf(o[1]!)
-        return { value: a.value ?? plain(o[2]!), selected: 'selected' in a }
+        return { value: a.value ?? plain(o[2]!), checked: 'selected' in a }
       })
-      const chosen = options.find((o) => o.selected) ?? options[0]
-      if (chosen) fields[name] = chosen.value
+      if ('multiple' in attrs) f.groups.push({ name: attrs.name!, type: 'select', options, outside })
+      else {
+        const chosen = options.find((o) => o.checked) ?? options[0]
+        f.fields.push(field(chosen?.value ?? '', 'select'))
+      }
+    } else if (tag === 'button' || ['submit', 'image'].includes(attrs.type ?? '')) {
+      const type = attrs.type ?? 'submit'
+      if (!['submit', 'image'].includes(type)) continue
+      const text = tag === 'button' ? plain(source.slice(start, closing('button', start))) : (attrs.value ?? 'Submit')
+      f.buttons.push({ text, name: attrs.name ?? null, value: attrs.name ? (attrs.value ?? '') : null, outside })
+    } else {
+      const type = (attrs.type ?? 'text').toLowerCase()
+      if (['button', 'reset', 'file'].includes(type)) continue
+      if (type === 'checkbox' || type === 'radio') {
+        let group = f.groups.find((g) => g.name === attrs.name && g.type === type)
+        if (!group) {
+          group = { name: attrs.name!, type, options: [], outside }
+          f.groups.push(group)
+        }
+        group.outside ||= outside
+        group.options.push({ value: attrs.value ?? 'on', checked: 'checked' in attrs })
+      } else f.fields.push(field(attrs.value ?? '', type))
     }
-    for (const t of body.matchAll(/<textarea\b([^>]*)>([\s\S]*?)<\/textarea>/g)) {
-      const name = attrsOf(t[1]!).name
-      if (name) fields[name] = decode(t[2]!)
-    }
-    const buttons: string[] = []
-    for (const b of body.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g))
-      if ((attrsOf(b[1]!).type ?? 'submit') === 'submit') buttons.push(plain(b[2]!))
-    for (const i of body.matchAll(/<input\b([^>]*)>/g)) {
-      const a = attrsOf(i[1]!)
-      if (a.type === 'submit') buttons.push(a.value ?? 'Submit')
-    }
-    forms.push({ action: attrs.action || at, fields, buttons })
   }
   return forms
 }
@@ -164,50 +212,51 @@ const alertsOf = (html: string) =>
     .filter((t) => t !== '')
 
 export interface RequestOptions {
-  method: 'GET' | 'POST'
   paths: string[]
-  fields: string[]
-  next: string[]
-  button: string | undefined
   select: string[]
   forms: boolean
   session: string | undefined
   full: boolean
 }
 
-export async function appParts(loaded: Loaded, command: string, sessionJson: string | undefined) {
+export const parseSession = (json: string): unknown => {
+  try {
+    return JSON.parse(json)
+  } catch {
+    throw new HozuCliError('usage', '--session must be JSON', [`--session '{"userId":"ada"}'`])
+  }
+}
+
+export async function appParts(loaded: Loaded, command: string, sessions: (string | undefined)[]) {
   const importFrom = importer(loaded, command)
   const build = loaded.build()
   const module = await requireApp(loaded, command, build)
-  let session: unknown = null
-  if (sessionJson !== undefined)
-    try {
-      session = JSON.parse(sessionJson)
-    } catch {
-      throw new HozuCliError('usage', '--session must be JSON', [`--session '{"userId":"ada"}'`])
-    }
+  const values = sessions.map((json) => (json === undefined ? undefined : parseSession(json)))
   const { memorySessions } = await importFrom<{
     memorySessions(o: { secret: string; secure: boolean }): { issue(value: unknown): Promise<string> }
   }>('@hozu/runtime-server', ['npm install @hozu/runtime-server'])
-  const store =
-    sessionJson === undefined
-      ? null
-      : memorySessions({ secret: randomBytes(24).toString('hex'), secure: false })
-  const cookie = store ? await store.issue(session) : null
-  return { importFrom, build, module, session: store, cookie }
+  const store = values.some((v) => v !== undefined)
+    ? memorySessions({ secret: randomBytes(24).toString('hex'), secure: false })
+    : null
+  const cookies = await Promise.all(
+    values.map((v) => (store && v !== undefined ? store.issue(v) : Promise.resolve(null))),
+  )
+  return { importFrom, build, module, session: store, cookies }
 }
 
 export async function runRequest(loaded: Loaded, options: RequestOptions): Promise<RequestOutput> {
-  const parts = await appParts(loaded, options.method.toLowerCase(), options.session)
+  if (!options.paths.length) throw new HozuCliError('usage', 'hozu get needs a path', ['hozu get /'])
+  const parts = await appParts(loaded, 'get', [options.session])
   const { testApp } = await parts.importFrom<TestingModule>('@hozu/testing', ['npm install -D @hozu/testing'])
   const app = testApp(parts.module.app, {
     env: process.env,
     ...(parts.session ? { session: parts.session } : {}),
   })
   const cookies = new Map<string, string>()
-  if (parts.cookie) {
-    const eq = parts.cookie.indexOf('=')
-    cookies.set(parts.cookie.slice(0, eq), parts.cookie.slice(eq + 1))
+  const [cookie] = parts.cookies
+  if (cookie) {
+    const eq = cookie.indexOf('=')
+    cookies.set(cookie.slice(0, eq), cookie.slice(eq + 1))
   }
   const init = (): RequestInit => ({
     headers: cookies.size ? { cookie: [...cookies].map(([k, v]) => `${k}=${v}`).join('; ') } : {},
@@ -220,11 +269,11 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
     }
   }
   const steps: RequestStep[] = []
-  const record = (method: 'GET' | 'POST', path: string, page: TestPage, final: boolean) => {
+  const record = (path: string, page: TestPage, final: boolean) => {
     const location = page.headers.get('location')
     const text = page.text.length > LIMIT && !options.full ? `${page.text.slice(0, LIMIT)}…` : page.text
     steps.push({
-      method,
+      method: 'GET',
       path,
       status: page.status,
       location,
@@ -237,100 +286,42 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
       forms: final && options.forms ? formsOf(page.html, path) : [],
     })
   }
-  const get = async (path: string): Promise<void> => {
+  for (let path of options.paths)
     for (let hops = 0; hops < 5; hops++) {
       const page = await app.get(path, init())
       remember(page)
       const location = page.headers.get('location')
       const redirect = page.status >= 300 && page.status < 400 && location
-      record('GET', path, page, !redirect)
-      if (!redirect) return
-      path = new URL(location, 'http://localhost/').pathname + new URL(location, 'http://localhost/').search
-    }
-  }
-  if (options.method === 'GET') {
-    if (!options.paths.length) throw new HozuCliError('usage', 'hozu get needs a path', ['hozu get /'])
-    for (const path of options.paths) await get(path)
-    return { steps }
-  }
-  const fieldsOf = (list: string[]) => {
-    const given: Record<string, string> = {}
-    for (const f of list) {
-      const eq = f.indexOf('=')
-      if (eq <= 0)
-        throw new HozuCliError('usage', `Field "${f}" must be name=value`, ['--field title=Ship it'])
-      given[f.slice(0, eq)] = f.slice(eq + 1)
-    }
-    return given
-  }
-  const post = async (path: string, given: Record<string, string>, button: string | undefined) => {
-    const page = await app.get(path, init())
-    remember(page)
-    const moved = page.status >= 300 && page.status < 400 ? page.headers.get('location') : null
-    if (moved)
-      throw new HozuCliError('usage', `GET ${path} redirects to ${moved}, so it has no form to post`, [
-        moved.startsWith('/login')
-          ? `sign in first in the same command: hozu post /login --field name=ada --next 'POST ${path} …'`
-          : `post to ${moved} instead`,
-      ])
-    const forms = formsOf(page.html, path)
-    const label = button?.trim().toLowerCase()
-    const form = forms.find(
-      (f) =>
-        Object.keys(given).every((k) => k in f.fields) &&
-        (label === undefined || f.buttons.some((b) => b.toLowerCase() === label)),
-    )
-    if (!form)
-      throw new HozuCliError(
-        'usage',
-        forms.length
-          ? `No form on ${path} has ${[
-              Object.keys(given).length ? `the fields ${Object.keys(given).join(', ')}` : '',
-              label ? `a "${button}" button` : '',
-            ]
-              .filter(Boolean)
-              .join(' and ')}`
-          : `${path} has no form that posts`,
-        forms.map(
-          (f) =>
-            `form fields: ${Object.keys(f.fields).join(', ') || '(none)'} · buttons: ${f.buttons.join(', ') || '(none)'}`,
-        ),
-      )
-    const posted = await app.post(form.action, { ...form.fields, ...given }, init())
-    remember(posted)
-    const location = posted.headers.get('location')
-    const redirect = posted.status >= 300 && posted.status < 400 && location
-    record('POST', path, posted, !redirect)
-    if (redirect) {
+      record(path, page, !redirect)
+      if (!redirect) break
       const next = new URL(location, 'http://localhost/')
-      await get(next.pathname + next.search)
+      path = next.pathname + next.search
     }
-  }
-  const [path] = options.paths
-  if (!path) throw new HozuCliError('usage', 'hozu post needs a path', ['hozu post / --field title=Ship'])
-  await post(path, fieldsOf(options.fields), options.button)
-  for (const next of options.next) {
-    const m = /^(GET|POST)\s+(\S+)\s*(.*)$/.exec(next.trim())
-    if (!m) await get(next.trim())
-    else if (m[1] === 'GET') await get(m[2]!)
-    else {
-      const rest = m[3]!.trim()
-      const [fields, button] = rest.startsWith('@')
-        ? ['', rest.slice(1)]
-        : (rest.split('@') as [string, string?])
-      await post(
-        m[2]!,
-        fieldsOf(
-          fields
-            .split('&')
-            .map((f) => f.trim())
-            .filter(Boolean),
-        ),
-        button?.trim(),
-      )
-    }
-  }
   return { steps }
+}
+
+const quoted = (v: string) => JSON.stringify(v.length > 40 ? `${v.slice(0, 40)}…` : v)
+
+export function describeForm(f: RequestForm): string {
+  const via = (outside: boolean) => (outside ? ' (form=)' : '')
+  const parts = [
+    f.fields.length
+      ? `fields: ${f.fields.map((x: RequestFormField) => `${x.name}=${quoted(x.value)}${via(x.outside)}`).join(' ')}`
+      : 'fields: (none)',
+    ...f.groups.map(
+      (g: RequestFormGroup) =>
+        `${g.type} ${g.name}${via(g.outside)}: ${g.options.map((o) => `${o.value}${o.checked ? ' ✓' : ''}`).join(', ')}`,
+    ),
+    `buttons: ${
+      f.buttons
+        .map(
+          (b: RequestFormButton) =>
+            `${b.text || '(no text)'}${b.name ? ` (${b.name}=${b.value})` : ''}${via(b.outside)}`,
+        )
+        .join(', ') || '(none)'
+    }`,
+  ]
+  return `form ${f.method.toUpperCase()} ${f.action}${f.id ? ` #${f.id}` : ''}${f.label ? ` "${f.label}"` : ''} ${parts.join(' · ')}`
 }
 
 export function describeRequest(out: RequestOutput): string {
@@ -342,21 +333,14 @@ export function describeRequest(out: RequestOutput): string {
     if (s.title) lines.push(`  title: ${s.title}`)
     for (const a of s.alerts) lines.push(`  alert: ${a}`)
     lines.push(`  text: ${s.text}${s.truncated ? ' (truncated; --full shows all)' : ''}`)
-    for (const e of s.elements)
-      lines.push(
-        `  ${e.selector}: <${e.tag}${Object.entries(e.attrs)
-          .filter(([k]) => k !== 'class')
-          .map(([k, v]) => (v === '' ? ` ${k}` : ` ${k}="${v}"`))
-          .join('')}>${e.text ? ` ${e.text}` : ''}`,
-      )
-    for (const f of s.forms)
-      lines.push(
-        `  form ${f.action} fields: ${
-          Object.entries(f.fields)
-            .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
-            .join(' ') || '(none)'
-        } buttons: ${f.buttons.join(', ') || '(none)'}`,
-      )
+    for (const e of s.elements) lines.push(`  ${describeElement(e)}`)
+    for (const f of s.forms) lines.push(`  ${describeForm(f)}`)
   }
   return `${lines.join('\n')}\n`
 }
+
+export const describeElement = (e: RequestElement) =>
+  `${e.selector}: <${e.tag}${Object.entries(e.attrs)
+    .filter(([k]) => k !== 'class' && k !== 'style')
+    .map(([k, v]) => (v === '' ? ` ${k}` : ` ${k}="${v}"`))
+    .join('')}>${e.text ? ` ${e.text}` : ''}`

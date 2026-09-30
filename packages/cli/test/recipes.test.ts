@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createApp } from 'create-hozu'
 import { afterAll, describe, expect, it } from 'vitest'
+import { findBrowser } from '../src/cdp.ts'
 import { main } from '../src/main.ts'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
@@ -137,25 +138,18 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
     const out = JSON.parse(check.stdout)
     expect(out.validate.summary).toEqual({ errors: 0, warnings: 0 })
     expect(out.validate.lock).toBe('current')
+    if (!findBrowser()) return
     const flow = await run([
-      'post',
+      'browse',
       '/',
-      '--field',
-      'title=Alpha',
-      '--field',
-      'priority=high',
-      '--next',
-      '/items/i1',
-      '--next',
-      'POST / id=i1@Mark done',
-      '--next',
-      'POST / @Clear done',
-      '--next',
-      '/items/i1',
+      ...['fill Title=Alpha', 'select Priority=high', 'submit Add', 'click Alpha', 'goto /']
+        .concat(['click Mark done in "Alpha"', 'click Clear done', 'goto /items/i1'])
+        .flatMap((step) => ['--do', step]),
       '--json',
     ])
-    const steps = JSON.parse(flow.stdout).steps as { path: string; status: number; text: string | null }[]
-    expect(steps.find((x) => x.path === '/items/i1')?.text).toContain('Priority: high')
-    expect(steps.at(-1)).toMatchObject({ path: '/items/i1', status: 404 })
+    const steps = JSON.parse(flow.stdout).steps as { modes: { added: string[]; url: string }[] }[]
+    for (const m of steps[3]!.modes) expect([m.url, m.added]).toEqual(['/items/i1', expect.arrayContaining(['Priority: high'])])
+    for (const m of steps[6]!.modes) expect(m.added).toEqual([])
+    for (const m of steps[7]!.modes) expect(m.added).toContain('Not found')
   }, 60_000)
 })
