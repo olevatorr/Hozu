@@ -2,13 +2,88 @@
   "features": {
     "feed": {
       "idle/on/feed.More/0": {
-        "behavior": "5be54dc11631b6a3",
+        "behavior": "bfacf617e3eaacd8",
         "contracts": {
-          "loadsNextPage": "c5ddf967f1067bac"
+          "loadsNextPage": "5f1b7e919a68ba3a"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "append",
+              "path": [
+                "cursors"
+              ],
+              "value": {
+                "path": [
+                  "cursor"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "last"
+              ],
+              "value": {
+                "path": [
+                  "cursor"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": {
+            "args": [
+              {
+                "left": {
+                  "path": [
+                    "last"
+                  ],
+                  "ref": "context"
+                },
+                "op": "neq",
+                "right": {
+                  "path": [
+                    "cursor"
+                  ],
+                  "ref": "event"
+                }
+              },
+              {
+                "left": {
+                  "path": [
+                    "cursor"
+                  ],
+                  "ref": "event"
+                },
+                "op": "neq",
+                "right": {
+                  "literal": null
+                }
+              }
+            ],
+            "op": "and"
+          },
+          "navigate": null
         },
         "summary": "idle --More--> idle · if (ctx.last neq event.cursor and event.cursor neq null) · cursors append event.cursor, last := event.cursor"
       }
     }
   },
-  "version": 1
+  "pages": {
+    "endpoints": {},
+    "head": {},
+    "redirects": {}
+  },
+  "version": 2
 }

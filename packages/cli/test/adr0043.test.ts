@@ -121,7 +121,7 @@ describe('ADR 0043 D and J (tools)', () => {
     expect([page.code, page.out.steps]).toEqual([1, undefined])
   }, 90_000)
 
-  it.fails('ADR 0043 R4: a missing lock in a project with a machine is HZ057, not a skipped review', async () => {
+  it('ADR 0043 R4: a missing lock in a project with a machine is HZ057, not a skipped review', async () => {
     const app = await authApp()
     rmSync(join(app, 'hozu.lock.json'), { force: true })
     expect(existsSync(join(app, 'hozu.lock.json'))).toBe(false)

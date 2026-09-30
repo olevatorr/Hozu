@@ -15,6 +15,22 @@ const has = (path: string) =>
   )
 const base = { name: 'demo', version: '0.1.0', runner: 'pnpm exec' as const, skillSource }
 
+const repo = (path: string) => readFile(fileURLToPath(new URL(`../../../${path}`, import.meta.url)), 'utf8')
+
+describe('the guide states the contract rule of ADR 0037 D3 and ADR 0043 G', () => {
+  it('asks for contracts only where a transition decides, with the ADR definition', async () => {
+    const guide = await repo('packages/create-hozu/templates/guide.md')
+    const adr37 = await repo('docs/adr/0037-0-5-lower-reading-and-writing-cost.md')
+    const adr43 = await repo('docs/adr/0043-0-8-close-the-escape-hatches.md')
+    expect(adr37).toContain('## D3. Contracts only for decisions')
+    expect(adr43).toContain('a transition decides when it has a guard or a navigate')
+    const rule = /^- A contract only where a transition decides \((.*?)\)\./m.exec(guide)?.[1]
+    expect(rule).toBe('a guard, a `navigate`, a computed value')
+    expect(guide).not.toMatch(/every behaviou?r change comes with a contract/i)
+    expect(guide).toContain('--update-lock')
+  })
+})
+
 describe('create-hozu', () => {
   it('keeps the skill example and AGENTS.md generated from their sources', async () => {
     expect(await sync(false)).toEqual([])

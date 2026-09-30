@@ -2,113 +2,548 @@
   "features": {
     "cart": {
       "adding/invoke/done/0": {
-        "behavior": "594a2c5f650e3ba7",
+        "behavior": "ee86400c5f22f52f",
         "contracts": {
-          "addsItem": "fb34f47c1478f1a6"
+          "addsItem": "2f209af7097d37cb"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "adding --done addItem--> idle"
       },
       "adding/invoke/failed/OutOfStock/0": {
-        "behavior": "bd51ed198fb52519",
+        "behavior": "3cc49008cb761c2d",
         "contracts": {
-          "rejectsOutOfStock": "3e6c2eeb1a8fc68a"
+          "rejectsOutOfStock": "96dc48bcd3bbee49"
         },
-        "summary": "adding --failed addItem.OutOfStock--> error · error := \"Out of stock\""
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "Out of stock"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "error",
+            "timers": [
+              5000
+            ]
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "adding --failed addItem.OutOfStock--> error · error := \"Out of stock\" · after 5000ms"
       },
       "adding/invoke/failed/Unexpected/0": {
-        "behavior": "2f42fbd67756abc4",
+        "behavior": "490bdc3236d4a692",
         "contracts": {
-          "addFailsUnexpectedly": "353eef76f0afab59"
+          "addFailsUnexpectedly": "0470328ddcf9a9f9"
         },
-        "summary": "adding --failed addItem.Unexpected--> error · error := error.message"
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "error",
+            "timers": [
+              5000
+            ]
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "adding --failed addItem.Unexpected--> error · error := error.message · after 5000ms"
       },
       "checkingOut/invoke/done/0": {
-        "behavior": "9e4bf4e776def1b5",
+        "behavior": "196c91c76eed1424",
         "contracts": {
-          "placesOrder": "60a087c9e1d2211d"
+          "placesOrder": "b9a7083a57df8a4a"
         },
-        "summary": "checkingOut --done checkout--> placed · orderId := result.orderId · navigate link(orderPlaced, null)"
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "orderId"
+              ],
+              "value": {
+                "path": [
+                  "orderId"
+                ],
+                "ref": "result"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": true,
+            "input": null,
+            "state": "placed",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": {
+            "link": "orderPlaced",
+            "params": {
+              "literal": null
+            },
+            "search": {
+              "literal": null
+            }
+          }
+        },
+        "summary": "checkingOut --done checkout--> placed · orderId := result.orderId · navigate link(orderPlaced, null) · final"
       },
       "checkingOut/invoke/failed/PaymentDeclined/0": {
-        "behavior": "562a1e0982514be4",
+        "behavior": "8b9e380968be1c54",
         "contracts": {
-          "paymentDeclined": "35a2b1cca87dda36"
+          "paymentDeclined": "7943b4e3336b6345"
         },
-        "summary": "checkingOut --failed checkout.PaymentDeclined--> error · error := error.reason"
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "reason"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "error",
+            "timers": [
+              5000
+            ]
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "checkingOut --failed checkout.PaymentDeclined--> error · error := error.reason · after 5000ms"
       },
       "checkingOut/invoke/failed/Unexpected/0": {
-        "behavior": "e00715b2a7ec5868",
+        "behavior": "e3558da402ee5835",
         "contracts": {
-          "checkoutFails": "06e3c42dbbff1f01"
+          "checkoutFails": "76c12d8a5b61f625"
         },
-        "summary": "checkingOut --failed checkout.Unexpected--> error · error := error.message"
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "error",
+            "timers": [
+              5000
+            ]
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "checkingOut --failed checkout.Unexpected--> error · error := error.message · after 5000ms"
       },
       "error/after/0": {
-        "behavior": "15af36cebbfcd151",
+        "behavior": "0eeb884362027bb4",
         "contracts": {
-          "errorAutoDismisses": "27acd7b98522de18"
+          "errorAutoDismisses": "1a62fe6fcca4d313"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "error --after 5000ms--> idle · error := null"
       },
       "error/on/cart.Dismiss/0": {
-        "behavior": "9ef5ac34a1d98e7e",
+        "behavior": "2482ca1b7e8d0fa7",
         "contracts": {
-          "dismissesError": "1e635a95db49d33b"
+          "dismissesError": "f8f8a28b83178191"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "error --Dismiss--> idle · error := null"
       },
       "idle/on/cart.AddItem/0": {
-        "behavior": "bcf8b553faaf3b81",
+        "behavior": "627adf95c388a2a1",
         "contracts": {
-          "addFailsUnexpectedly": "353eef76f0afab59",
-          "addsItem": "fb34f47c1478f1a6",
-          "rejectsOutOfStock": "3e6c2eeb1a8fc68a"
+          "addFailsUnexpectedly": "0470328ddcf9a9f9",
+          "addsItem": "2f209af7097d37cb",
+          "rejectsOutOfStock": "96dc48bcd3bbee49"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "pending"
+              ],
+              "value": {
+                "path": [],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": "cart.addItem",
+            "final": false,
+            "input": {
+              "path": [
+                "pending"
+              ],
+              "ref": "context"
+            },
+            "state": "adding",
+            "timers": []
+          },
+          "fns": {},
+          "guard": {
+            "left": {
+              "path": [
+                "qty"
+              ],
+              "ref": "event"
+            },
+            "op": "lte",
+            "right": {
+              "literal": 10
+            }
+          },
+          "navigate": null
         },
         "summary": "idle --AddItem--> adding · if event.qty lte 10 · pending := event · invoke addItem(ctx.pending)"
       },
       "idle/on/cart.AddItem/1": {
-        "behavior": "0af6847198f544aa",
+        "behavior": "34c701b295492da9",
         "contracts": {
-          "rejectsTooMany": "e9c4b870bf7a517f"
+          "rejectsTooMany": "c22c95cebc76ad31"
         },
-        "summary": "idle --AddItem--> error · error := \"At most 10 per item\""
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "At most 10 per item"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "error",
+            "timers": [
+              5000
+            ]
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --AddItem--> error · error := \"At most 10 per item\" · after 5000ms"
       },
       "idle/on/cart.Checkout/0": {
-        "behavior": "ae752587bca4e86f",
+        "behavior": "b1fd6843e8c329e0",
         "contracts": {
-          "placesOrder": "60a087c9e1d2211d"
+          "placesOrder": "b9a7083a57df8a4a"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": "cart.checkout",
+            "final": false,
+            "input": {
+              "literal": {}
+            },
+            "state": "checkingOut",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "idle --Checkout--> checkingOut · invoke checkout({})"
       },
       "idle/on/cart.RemoveItem/0": {
-        "behavior": "9448898f42796ffa",
+        "behavior": "9e570f5078b8c38d",
         "contracts": {
-          "removesItem": "097e12321afb306e"
+          "removesItem": "47abe9f4d660f299"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "pending",
+                "sku"
+              ],
+              "value": {
+                "path": [
+                  "sku"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": "cart.removeItem",
+            "final": false,
+            "input": {
+              "object": {
+                "sku": {
+                  "path": [
+                    "pending",
+                    "sku"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "removing",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "idle --RemoveItem--> removing · pending.sku := event.sku · invoke removeItem({ sku: ctx.pending.sku })"
       },
       "idle/on/cart.SetQuantity/0": {
-        "behavior": "0f714296a4146742",
+        "behavior": "1b6e62e7cddf4bef",
         "contracts": {
-          "setsQuantity": "9db490ef6b09c941"
+          "setsQuantity": "5d2a72f303d25e7c"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "pending",
+                "qty"
+              ],
+              "value": {
+                "path": [
+                  "qty"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": {
+            "args": [
+              {
+                "left": {
+                  "path": [
+                    "qty"
+                  ],
+                  "ref": "event"
+                },
+                "op": "gte",
+                "right": {
+                  "literal": 1
+                }
+              },
+              {
+                "left": {
+                  "path": [
+                    "qty"
+                  ],
+                  "ref": "event"
+                },
+                "op": "lte",
+                "right": {
+                  "literal": 10
+                }
+              }
+            ],
+            "op": "and"
+          },
+          "navigate": null
         },
         "summary": "idle --SetQuantity--> idle · if (event.qty gte 1 and event.qty lte 10) · pending.qty := event.qty"
       },
       "removing/invoke/done/0": {
-        "behavior": "e54a61bbf262f9f9",
+        "behavior": "161009426fbd8484",
         "contracts": {
-          "removesItem": "097e12321afb306e"
+          "removesItem": "47abe9f4d660f299"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "removing --done removeItem--> idle"
       },
       "removing/invoke/failed/Unexpected/0": {
-        "behavior": "9ff271b4277654e6",
+        "behavior": "ed1fde3c60351534",
         "contracts": {
-          "removeFails": "734f2a95087604a7"
+          "removeFails": "e7c30d548e7c30c7"
         },
-        "summary": "removing --failed removeItem.Unexpected--> error · error := error.message"
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "error",
+            "timers": [
+              5000
+            ]
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "removing --failed removeItem.Unexpected--> error · error := error.message · after 5000ms"
       }
     }
   },
-  "version": 1
+  "pages": {
+    "endpoints": {},
+    "head": {},
+    "redirects": {}
+  },
+  "version": 2
 }

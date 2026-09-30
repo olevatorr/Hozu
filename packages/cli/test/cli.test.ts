@@ -52,11 +52,11 @@ describe('A5 CLI contract', () => {
     expect(code).toBe(0)
     expect(out).toMatchObject({
       ok: true,
-      summary: { errors: 0, warnings: 0 },
+      summary: { errors: 0, warnings: 1 },
       coverage: { cart: expect.objectContaining({ transitions: 15 }) },
-      lock: 'checked',
-      diagnostics: [],
+      lock: 'current',
     })
+    expect(out.diagnostics.map((d: { code: string }) => d.code)).toEqual(['HZ058'])
     expectSchema('validate', out)
   })
 
@@ -167,9 +167,9 @@ describe('A5 CLI contract', () => {
     const out = JSON.parse(stdout)
     expect(code).toBe(1)
     expectSchema('validate', out)
-    expect(out.lock).toBe('missing')
-    expect(out.diagnostics).toHaveLength(1)
-    expect(out.diagnostics[0]).toMatchObject({
+    expect(out.lock).toBe('stale')
+    expect(out.diagnostics.map((d: { code: string }) => d.code).sort()).toEqual(['HZ011', 'HZ057'])
+    expect(out.diagnostics.find((d: { code: string }) => d.code === 'HZ011')).toMatchObject({
       code: 'HZ011',
       location: {
         feature: 'dice',

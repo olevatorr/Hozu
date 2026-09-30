@@ -2,76 +2,375 @@
   "features": {
     "bookmarks": {
       "adding/invoke/done/0": {
-        "behavior": "afe929fa589b1dfc",
+        "behavior": "fa03982714335dd2",
         "contracts": {
-          "addsBookmark": "17272b4141928bfb"
+          "addsBookmark": "39ba85d31e946877"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "literal": ""
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": {
+            "link": "bookmarkPage",
+            "params": {
+              "object": {
+                "id": {
+                  "path": [
+                    "id"
+                  ],
+                  "ref": "result"
+                }
+              }
+            },
+            "search": {
+              "literal": null
+            }
+          }
         },
         "summary": "adding --done addBookmark--> idle · draft := \"\" · navigate link(bookmarkPage, { id: result.id })"
       },
       "adding/invoke/failed/Duplicate/0": {
-        "behavior": "511792f991e45d85",
-        "contracts": {
-          "rejectsDuplicate": "9e701ab27c855dd7"
+        "behavior": "bc562af55ba2cd21",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "This bookmark already exists"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "adding --failed addBookmark.Duplicate--> idle · error := \"This bookmark already exists\""
       },
       "adding/invoke/failed/Invalid/0": {
-        "behavior": "3ba8e3c9bc908103",
-        "contracts": {
-          "rejectsInvalidTitle": "17b46df8654d0dd5"
+        "behavior": "ca57038820978ece",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "fields"
+              ],
+              "value": {
+                "path": [
+                  "fields"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "adding --failed addBookmark.Invalid--> idle · fields := error.fields"
       },
       "adding/invoke/failed/Unexpected/0": {
-        "behavior": "6606d67832662c72",
-        "contracts": {
-          "addFails": "2d2e070cae4ac23b"
+        "behavior": "5768648eda6c6baa",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "adding --failed addBookmark.Unexpected--> idle · error := error.message"
       },
       "idle/on/bookmarks.Add/0": {
-        "behavior": "e7ca9e7a5aa50e2f",
+        "behavior": "175961e1416f806b",
         "contracts": {
-          "addsBookmark": "17272b4141928bfb"
+          "addsBookmark": "39ba85d31e946877"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "path": [
+                  "title"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "kind"
+              ],
+              "value": {
+                "path": [
+                  "kind"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "fields"
+              ],
+              "value": {
+                "literal": {
+                  "kind": null,
+                  "title": null
+                }
+              }
+            }
+          ],
+          "enters": {
+            "effect": "bookmarks.addBookmark",
+            "final": false,
+            "input": {
+              "object": {
+                "kind": {
+                  "path": [
+                    "kind"
+                  ],
+                  "ref": "context"
+                },
+                "title": {
+                  "path": [
+                    "draft"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "adding",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "idle --Add--> adding · draft := event.title, kind := event.kind, error := null, fields := {\"title\":null,\"kind\":null} · invoke addBookmark({ title: ctx.draft, kind: ctx.kind })"
       },
       "idle/on/bookmarks.Draft/0": {
-        "behavior": "87006650bba9254c",
-        "contracts": {
-          "typesDraft": "5de3765b86ba8658"
+        "behavior": "de525f7a56260498",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "path": [
+                  "text"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "idle --Draft--> idle · draft := event.text"
       },
       "idle/on/bookmarks.ToggleRead/0": {
-        "behavior": "279030126191b3b4",
-        "contracts": {
-          "togglesRead": "947048ae3e0cede1"
+        "behavior": "441bb3e4b437d54e",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "target"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": "bookmarks.toggleRead",
+            "final": false,
+            "input": {
+              "object": {
+                "id": {
+                  "path": [
+                    "target"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "toggling",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "idle --ToggleRead--> toggling · target := event.id · invoke toggleRead({ id: ctx.target })"
       },
       "toggling/invoke/done/0": {
-        "behavior": "49f254475f7985d1",
-        "contracts": {
-          "togglesRead": "947048ae3e0cede1"
+        "behavior": "aec3805a8d262d3e",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "toggling --done toggleRead--> idle"
       },
       "toggling/invoke/failed/NotFound/0": {
-        "behavior": "7630795452b08180",
-        "contracts": {
-          "toggleMissing": "de17dceedb26b301"
+        "behavior": "d3d52f3d5d1c8949",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "toggling --failed toggleRead.NotFound--> idle"
       },
       "toggling/invoke/failed/Unexpected/0": {
-        "behavior": "57a2233b096a690e",
-        "contracts": {
-          "toggleFails": "f9a7ff2b2369d3fa"
+        "behavior": "f398d0af23875ad1",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "toggling --failed toggleRead.Unexpected--> idle · error := error.message"
       }
     }
   },
-  "version": 1
+  "pages": {
+    "endpoints": {},
+    "head": {},
+    "redirects": {}
+  },
+  "version": 2
 }

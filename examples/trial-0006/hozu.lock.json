@@ -2,104 +2,507 @@
   "features": {
     "tasks": {
       "adding/invoke/done/0": {
-        "behavior": "170f7afe0ca84f49",
+        "behavior": "47efa2a7a4c56e38",
         "contracts": {
-          "addsTask": "af7fb8dcbb8653b7"
+          "addsTask": "1dd9bdd38285545e"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "literal": ""
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "priority"
+              ],
+              "value": {
+                "literal": "normal"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "adding --done addTask--> idle · draft := \"\", priority := \"normal\""
       },
       "adding/invoke/failed/Duplicate/0": {
-        "behavior": "fa931adf13e44418",
+        "behavior": "a387982222429442",
         "contracts": {
-          "rejectsDuplicate": "733fdab2da337e21"
+          "rejectsDuplicate": "908db21b7e546801"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "A task with this title already exists"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "adding --failed addTask.Duplicate--> idle · error := \"A task with this title already exists\""
       },
       "adding/invoke/failed/Invalid/0": {
-        "behavior": "3ba8e3c9bc908103",
+        "behavior": "ca57038820978ece",
         "contracts": {
-          "rejectsInvalidTitle": "5598a27a5d335bef"
+          "rejectsInvalidTitle": "71f9146641594783"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "fields"
+              ],
+              "value": {
+                "path": [
+                  "fields"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "adding --failed addTask.Invalid--> idle · fields := error.fields"
       },
       "adding/invoke/failed/Unexpected/0": {
-        "behavior": "6606d67832662c72",
+        "behavior": "5768648eda6c6baa",
         "contracts": {
-          "addFails": "7e3aeb7ef0915582"
+          "addFails": "d3a839377134777f"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "adding --failed addTask.Unexpected--> idle · error := error.message"
       },
       "clearing/invoke/done/0": {
-        "behavior": "3a0a768ed95dcbe0",
+        "behavior": "b4e9cca4201978c1",
         "contracts": {
-          "clearsDone": "daea10d5819fb46b"
+          "clearsDone": "de1735671515dbc7"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "clearing --done clearDone--> idle"
       },
       "clearing/invoke/failed/Unexpected/0": {
-        "behavior": "0f2f0fb11a153b4a",
+        "behavior": "0130e487e3466a4d",
         "contracts": {
-          "clearFails": "e824392e31f3c481"
+          "clearFails": "0228d81126907bfe"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "clearing --failed clearDone.Unexpected--> idle · error := error.message"
       },
       "idle/on/tasks.Add/0": {
-        "behavior": "357a2a420c5a5a99",
+        "behavior": "c8cda99185107be9",
         "contracts": {
-          "addsTask": "af7fb8dcbb8653b7"
+          "addsTask": "1dd9bdd38285545e"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "path": [
+                  "title"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "priority"
+              ],
+              "value": {
+                "path": [
+                  "priority"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "fields"
+              ],
+              "value": {
+                "literal": {
+                  "priority": null,
+                  "title": null
+                }
+              }
+            }
+          ],
+          "enters": {
+            "effect": "tasks.addTask",
+            "final": false,
+            "input": {
+              "object": {
+                "priority": {
+                  "path": [
+                    "priority"
+                  ],
+                  "ref": "context"
+                },
+                "title": {
+                  "path": [
+                    "draft"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "adding",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "idle --Add--> adding · draft := event.title, priority := event.priority, error := null, fields := {\"title\":null,\"priority\":null} · invoke addTask({ title: ctx.draft, priority: ctx.priority })"
       },
       "idle/on/tasks.ClearDone/0": {
-        "behavior": "c80ae579dea172b9",
+        "behavior": "c825482e6be8a921",
         "contracts": {
-          "clearsDone": "daea10d5819fb46b"
+          "clearsDone": "de1735671515dbc7"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "tasks.clearDone",
+            "final": false,
+            "input": {
+              "literal": {}
+            },
+            "state": "clearing",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "idle --ClearDone--> clearing · error := null · invoke clearDone({})"
       },
       "idle/on/tasks.Draft/0": {
-        "behavior": "1bf8a242e4e428fe",
+        "behavior": "d293de25b0616c82",
         "contracts": {
-          "typesDraft": "0fe69f4a7f638653"
+          "typesDraft": "7a4edefde37e0652"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "path": [
+                  "text"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "idle --Draft--> idle · draft := event.text"
       },
       "idle/on/tasks.SetShow/0": {
-        "behavior": "accdaafa6d7b598a",
+        "behavior": "8ab5b2b1900cc2c3",
         "contracts": {
-          "filtersDone": "1fe2223f9f4e7052"
+          "filtersDone": "991f8c843d73eb73"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "show"
+              ],
+              "value": {
+                "path": [
+                  "show"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "idle --SetShow--> idle · show := event.show"
       },
       "idle/on/tasks.Toggle/0": {
-        "behavior": "e0d07094a3016415",
+        "behavior": "14e3c6c6f5eecf56",
         "contracts": {
-          "togglesTask": "6e3e68d5718a8feb"
+          "togglesTask": "de8bf22869a0be79"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "target"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": "tasks.toggleTask",
+            "final": false,
+            "input": {
+              "object": {
+                "id": {
+                  "path": [
+                    "target"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "toggling",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "idle --Toggle--> toggling · target := event.id · invoke toggleTask({ id: ctx.target })"
       },
       "toggling/invoke/done/0": {
-        "behavior": "49f254475f7985d1",
+        "behavior": "aec3805a8d262d3e",
         "contracts": {
-          "togglesTask": "6e3e68d5718a8feb"
+          "togglesTask": "de8bf22869a0be79"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "toggling --done toggleTask--> idle"
       },
       "toggling/invoke/failed/NotFound/0": {
-        "behavior": "7630795452b08180",
+        "behavior": "d3d52f3d5d1c8949",
         "contracts": {
-          "toggleMissing": "353f91cb35698fc3"
+          "toggleMissing": "f9840d734fddf3da"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "toggling --failed toggleTask.NotFound--> idle"
       },
       "toggling/invoke/failed/Unexpected/0": {
-        "behavior": "57a2233b096a690e",
+        "behavior": "f398d0af23875ad1",
         "contracts": {
-          "toggleFails": "83c19395cdb77b5d"
+          "toggleFails": "7d37b9f7c735a857"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
         },
         "summary": "toggling --failed toggleTask.Unexpected--> idle · error := error.message"
       }
     }
   },
-  "version": 1
+  "pages": {
+    "endpoints": {},
+    "head": {},
+    "redirects": {}
+  },
+  "version": 2
 }
