@@ -1,6 +1,6 @@
 {
   "name": "@hozu/runtime-server",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Hozu server runtime: generated render functions, in-order streaming SSR and a web-standard handler",
   "keywords": [
     "hozu",
