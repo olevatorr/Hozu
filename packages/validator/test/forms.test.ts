@@ -59,7 +59,9 @@ describe('ADR 0043 C form rules', () => {
         render: ({ ctx }) =>
           ui.div({}, [
             ui.form(
-              { on: { submit: ui.send(Bulk, { ids: ui.dom.formAll('ids'), action: ui.dom.form('action') }) } },
+              {
+                on: { submit: ui.send(Bulk, { ids: ui.dom.formAll('ids'), action: ui.dom.form('action') }) },
+              },
               [
                 ui.input({ type: 'checkbox', name: 'ids', value: 'a' }),
                 ui.input({ type: 'checkbox', name: 'ids', value: 'b' }),
@@ -109,7 +111,9 @@ describe('ADR 0043 C form rules', () => {
           machine: lists,
           render: () =>
             ui.form(
-              { on: { submit: ui.send(Bulk, { ids: ui.dom.formAll('ids'), action: ui.dom.form('action') }) } },
+              {
+                on: { submit: ui.send(Bulk, { ids: ui.dom.formAll('ids'), action: ui.dom.form('action') }) },
+              },
               [
                 ui.input({ type: 'checkbox', name: 'ids', value: 'a' }),
                 ui.button({ type: 'submit', name: 'action', value: 'delete' }, ['Delete']),
@@ -207,7 +211,9 @@ describe('ADR 0043 C formRef', () => {
       { bulk },
     )
     expect(found(b, ['HZ007', 'HZ014', 'HZ033', 'HZ036', 'HZ054', 'HZ055'])).toEqual([])
-    const root = b.ir.features.f!.views.View!.root as { children: { attrs: Record<string, unknown>; ref?: unknown }[] }
+    const root = b.ir.features.f!.views.View!.root as {
+      children: { attrs: Record<string, unknown>; ref?: unknown }[]
+    }
     expect(root.children[0]!.ref).toEqual({ formRef: 'f.View/0' })
     expect(root.children[0]!.attrs.id).toEqual({ formRef: 'f.View/0' })
     expect(JSON.stringify(root.children[1])).toContain('"form":{"formRef":"f.View/0"}')
@@ -245,8 +251,9 @@ describe('ADR 0043 C formRef', () => {
       }),
     )
     expect(found(b, ['HZ007', 'HZ014', 'HZ055'])).toEqual([])
-    const item = (b.ir.features.f!.views.View!.root as { item: { children: { attrs: { form?: unknown } }[] } })
-      .item
+    const item = (
+      b.ir.features.f!.views.View!.root as { item: { children: { attrs: { form?: unknown } }[] } }
+    ).item
     expect(item.children[1]!.attrs.form).toEqual({
       fn: '%concat',
       arg: {

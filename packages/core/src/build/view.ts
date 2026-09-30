@@ -92,7 +92,15 @@ function element(
       })
     } else if (attrAllowed(d.tag, key)) {
       attrs[key] = scope.attempt(at(p, 'attrs', key), () => scope.value(value, p), { literal: null })
-      if (key === 'form') formUse(scope, typeof value === 'string' ? value : '', p, () => {})
+      if (key === 'form' && typeof value === 'string') formUse(scope, value, p, () => {})
+      else if (key === 'form')
+        scope.report(
+          'HZ014',
+          at(p, 'attrs', 'form'),
+          'form takes a ui.formRef()',
+          'A control outside a form names it by a declared identity: const bulk = ui.formRef(), then form: bulk.',
+          { summary: 'Pass the formRef the form holds: form: bulk', snippet: 'form: bulk', patch: null },
+        )
     } else {
       scope.report(
         'HZ014',
