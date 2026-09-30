@@ -2,10 +2,11 @@ import { builtinOf } from '../builders/i18n.ts'
 import { type NodeDef, sendOf, type ViewDef, when } from '../builders/ui.ts'
 import { htmlGlobalAttrs, svgGlobalAttrs, svgTags, tagAttrs, voidTags } from '../ir/dom-data.ts'
 import { domEvents } from '../ir/events.ts'
-import type { SendIR, ValueExpr, ViewIR, ViewNode } from '../ir/types.ts'
+import type { FormRefIR, SendIR, ValueExpr, ViewIR, ViewNode } from '../ir/types.ts'
 import { transformedDecls } from '../lower.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
 import { createRef, exprOf, refProxy } from '../model/expr.ts'
+import { formUse, holdForm, inEach, literalForm } from './forms.ts'
 import { type At, at, type FeatureScope } from './scope.ts'
 
 const eventSet = new Set<string>(domEvents)
@@ -35,6 +36,8 @@ function element(
   const vars: Record<string, ValueExpr> = {}
   const attrs: Record<string, ValueExpr> = {}
   const on: Record<string, SendIR> = {}
+  let ref: FormRefIR | null = null
+  let held: ValueExpr | null = null
   if (!allowed.has(d.tag))
     scope.report(
       'HZ014',
@@ -71,8 +74,33 @@ function element(
             payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
           }
       }
+    } else if (key === 'ref') {
+      if (d.tag === 'form' && infoOf(value)?.kind === 'formRef') {
+        ref = { formRef: id }
+        held = holdForm(scope, value as object, id, p)
+      } else
+        scope.report(
+          'HZ014',
+          at(p, 'ref'),
+          'ref takes a ui.formRef() and belongs on a <form>',
+          'A formRef names the form that controls outside it submit with: ui.form({ ref: bulk }) and ui.input({ form: bulk }).',
+        )
+    } else if (key === 'form' && infoOf(value)?.kind === 'formRef' && attrAllowed(d.tag, key)) {
+      attrs.form = { formRef: '' }
+      formUse(scope, value as object, p, (v) => {
+        attrs.form = v
+      })
     } else if (attrAllowed(d.tag, key)) {
       attrs[key] = scope.attempt(at(p, 'attrs', key), () => scope.value(value, p), { literal: null })
+      if (key === 'form' && typeof value === 'string') formUse(scope, value, p, () => {})
+      else if (key === 'form')
+        scope.report(
+          'HZ014',
+          at(p, 'attrs', 'form'),
+          'form takes a ui.formRef()',
+          'A control outside a form names it by a declared identity: const bulk = ui.formRef(), then form: bulk.',
+          { summary: 'Pass the formRef the form holds: form: bulk', snippet: 'form: bulk', patch: null },
+        )
     } else {
       scope.report(
         'HZ014',
@@ -94,7 +122,30 @@ function element(
     node(scope, c, `${id}/${i}`, at(p, 'children', i), depth),
   )
   if (on.visible) attrs['data-hozu-visible'] = { literal: '' }
-  return { id, kind: 'el', tag: d.tag, class: cls, toggle, vars, attrs, on, children }
+  if (d.tag === 'form' && d.props?.id !== undefined) {
+    if (ref)
+      scope.report(
+        'HZ014',
+        at(p, 'attrs', 'id'),
+        'A form that holds a formRef takes its id from it',
+        'The framework derives the id from the form node (one per item key inside ui.each).',
+        { summary: 'Remove the id', snippet: null, patch: null },
+      )
+    else if (typeof d.props.id === 'string') literalForm(scope, d.props.id, id, p)
+  }
+  if (held) attrs.id = held
+  return {
+    id,
+    kind: 'el',
+    tag: d.tag,
+    class: cls,
+    toggle,
+    vars,
+    attrs,
+    on,
+    children,
+    ...(ref ? { ref } : {}),
+  }
 }
 
 function classOf(scope: FeatureScope, value: unknown, p: At): string | null {
@@ -262,7 +313,9 @@ function nodeOf(scope: FeatureScope, value: unknown, id: string, p: At, depth: n
           source: scope.attempt(at(p, 'source'), () => scope.value(d.source, p), { literal: [] }),
           key: d.key === null ? null : String(d.key),
           motion: motionOf(scope, d.motion, at(p, 'motion')),
-          item: branch(d.item, `${id}/item`, at(p, 'item')),
+          item: inEach(scope, { id, depth, key: d.key === null ? null : String(d.key) }, () =>
+            branch(d.item, `${id}/item`, at(p, 'item')),
+          ),
         }
       case 'query': {
         const failed: Record<string, ViewNode> = {}

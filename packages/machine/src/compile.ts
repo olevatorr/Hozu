@@ -15,8 +15,8 @@ export class CompileError extends Error {
 }
 
 export function compileValue(v: ValueExpr, fns: Fns): Getter {
-  if ('literal' in v) {
-    const literal = v.literal
+  if ('literal' in v || 'formRef' in v) {
+    const literal = 'literal' in v ? v.literal : v.formRef
     return () => literal
   }
   if ('object' in v) {
@@ -56,7 +56,8 @@ export function compileValue(v: ValueExpr, fns: Fns): Getter {
   }
   if (r.ref === 'dom') {
     const [field, ...rest] = path
-    return (env) => (env.dom && field ? getIn(env.dom(field), rest) : null)
+    return (env) =>
+      env.dom && field ? (getIn(env.dom(field), rest) ?? (field === 'formAll' ? [] : null)) : null
   }
   const ref = r.ref as 'context' | 'input' | 'event' | 'result' | 'error' | 'params' | 'search'
   if (path.length === 0) return (env) => env[ref] ?? null

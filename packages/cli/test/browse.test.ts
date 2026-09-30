@@ -161,6 +161,33 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     ])
   }, 60_000)
 
+  it('checks form= checkboxes and submits with the clicked button, with and without JS', async () => {
+    const { code, out } = await browse(
+      [
+        '/',
+        '--session',
+        ADA,
+        ...steps(
+          'check Select Buy milk',
+          'check Select Call Bob',
+          'uncheck Select Call Bob',
+          'click Pin selected',
+        ),
+        ...steps('check Select Call Bob', 'click Delete selected'),
+      ],
+      example('notes'),
+    )
+    expect(code).toBe(0)
+    const [pin, remove] = [out.steps[3], out.steps[5]]
+    for (const m of pin.modes)
+      expect([m.added, m.removed]).toEqual([
+        expect.arrayContaining(['pinned', 'Unpin']),
+        expect.arrayContaining(['Pin']),
+      ])
+    for (const m of remove.modes) expect(m.removed).toEqual(expect.arrayContaining(['Call Bob']))
+    expect(out.actors.map((a: { text: string }) => a.text.includes('Call Bob'))).toEqual([false, false])
+  }, 60_000)
+
   it('reports a difference only when both modes made a request and the resulting text differs', async () => {
     const copy = copyOf('notes', 'features/notes/views.ts', (s) =>
       s.replace("ui.send(Add, { text: ui.dom.form('text') })", 'ui.send(Add, { text: ctx.draft })'),

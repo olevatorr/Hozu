@@ -4,6 +4,7 @@ export interface DomFields {
   valueAsNumber: number | null
   files: { name: string; size: number; type: string; token: string }[]
   form: (name: string) => string
+  formAll: (name: string) => string[]
   key: string
   code: string
   repeat: boolean
@@ -113,7 +114,7 @@ export const eventFields = {
   select: ['value'],
   invalid: ['value'],
   reset: none,
-  submit: ['form'],
+  submit: ['form', 'formAll'],
   focus: ['value'],
   blur: ['value'],
   focusin: ['value'],

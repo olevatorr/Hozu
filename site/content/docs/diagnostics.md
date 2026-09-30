@@ -22,9 +22,9 @@ Start with `npx hozu check`. Resolve TypeScript errors first, then address each 
 | HZ028 | An image lacks dimensions. | Supply its width and height. |
 | HZ030 | Raw HTML comes from an untrusted value. | Use text rendering or a trusted content source. |
 | HZ032 | An internal link is a string path. | Use `ui.link` with the declared route and parameters. |
-| HZ033 | A DOM string feeds an enum without known options. | Use literal select or radio options matching the enum. |
+| HZ033 | A DOM string feeds an enum, number or boolean field without known options. | Use literal select, radio or submit button values matching the enum; in a form, send a flag with `ui.dom.formAll` and parse numbers in the mutation input. |
 | HZ035 | A search schema cannot be canonicalized. | Use flat scalar fields with defaults or nullable values. |
-| HZ036 | A form cannot run without JavaScript. | Read named form fields with `ui.dom.form` when a native form is required. |
+| HZ036 | A form cannot run without JavaScript. | Read named form fields with `ui.dom.form` or `ui.dom.formAll` when a native form is required. |
 
 `hozu docs diagnostics` prints the version-matched table of the full rule set, and every diagnostic names its topic (`see: hozu docs …`). Historical trial records use the old `TN` prefix; current Hozu diagnostics use `HZ`.
 

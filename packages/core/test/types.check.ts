@@ -205,6 +205,8 @@ ui.page(slugRoute, {
 })
 
 const Typed = event({ payload: z.object({ text: z.string(), n: z.number().nullable() }) })
+const Picked = event({ payload: z.object({ ids: z.array(z.string()), kinds: z.array(z.enum(['a', 'b'])) }) })
+const picked = ui.formRef()
 
 ui.view({
   render: () =>
@@ -221,6 +223,20 @@ ui.view({
       ui.button({ on: { tap: ui.send(Typed, { text: '', n: null }) } }, []),
       // @ts-expect-error DOM field type must match the payload
       ui.input({ on: { input: ui.send(Typed, { text: ui.dom.checked, n: null }) } }),
+      ui.form(
+        {
+          ref: picked,
+          on: { submit: ui.send(Picked, { ids: ui.dom.formAll('ids'), kinds: ui.dom.formAll('k') }) },
+        },
+        [],
+      ),
+      ui.input({ type: 'checkbox', form: picked, name: 'ids', value: 'x' }),
+      // @ts-expect-error formAll is a list, not one value
+      ui.form({ on: { submit: ui.send(Typed, { text: ui.dom.formAll('title'), n: null }) } }, []),
+      // @ts-expect-error form takes a ui.formRef(), not a string
+      ui.input({ form: 'picked', name: 'ids' }),
+      // @ts-expect-error ref belongs on a form
+      ui.div({ ref: picked }, []),
       ui.svg({ viewBox: '0 0 1 1' }, [ui.path({ d: 'M0 0', 'stroke-width': 2 }, [])]),
       ui.button({ 'aria-pressed': ui.dom.key === 'x', 'data-state': 'open' }, []),
     ]),

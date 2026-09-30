@@ -3,14 +3,18 @@ import {
   at,
   type ElementNode,
   type Json,
+  type JsonPatchOp,
   type JsonSchema,
+  resolveAt,
   type ValueExpr,
   type ViewNode,
 } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { eventSchema } from '../env.ts'
-import { resolvePath } from '../schema.ts'
+import { itemsOf, resolvePath } from '../schema.ts'
 import { walkView } from '../walk.ts'
+import { type FormModel, formsOf } from './form-model.ts'
+import { schemaPointer } from './forms.ts'
 
 const obj = (v: Json | undefined): JsonSchema | null =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as JsonSchema) : null
@@ -70,32 +74,63 @@ function optionsOf(control: ElementNode): { values: string[]; fixed: boolean } {
   return { values, fixed }
 }
 
-function namedChoices(form: ElementNode, name: string): { values: string[]; fixed: boolean; found: boolean } {
-  const values: string[] = []
-  let found = false
-  let fixed = true
-  descendants(form, (el) => {
-    if (literal(el.attrs.name) !== name) return
-    found = true
+const nullable = (s: JsonSchema): boolean => {
+  const t = s.type
+  if (t === 'null' || (Array.isArray(t) && t.includes('null'))) return true
+  return (['anyOf', 'oneOf'] as const).some(
+    (k) =>
+      Array.isArray(s[k]) &&
+      (s[k] as Json[]).some((v) => {
+        const o = obj(v)
+        return o !== null && nullable(o)
+      }),
+  )
+}
+
+interface Named {
+  values: string[]
+  fixed: boolean
+  found: boolean
+  unnamed: boolean
+}
+
+function namedChoices(form: FormModel | undefined, name: string): Named {
+  const out: Named = { values: [], fixed: true, found: false, unnamed: false }
+  if (!form) return out
+  const submits = form.controls.filter((c) => c.submit)
+  for (const c of form.controls) {
+    if (c.name !== name) continue
+    out.found = true
+    const el = c.node
     if (el.tag === 'select') {
       const o = optionsOf(el)
-      values.push(...o.values)
-      fixed &&= o.fixed
-    } else if (el.tag === 'input' && literal(el.attrs.type) === 'radio') {
-      const v = literal(el.attrs.value)
-      if (v === null) fixed = false
-      else values.push(v)
-    } else fixed = false
-  })
-  return { values, fixed, found }
+      out.values.push(...o.values)
+      out.fixed &&= o.fixed
+    } else if (c.radio || c.submit || (el.tag === 'input' && literal(el.attrs.type) === 'checkbox')) {
+      const v = literal(el.attrs.value) ?? (c.submit ? null : el.attrs.value === undefined ? 'on' : null)
+      if (v === null) out.fixed = false
+      else out.values.push(v)
+    } else out.fixed = false
+  }
+  out.unnamed =
+    submits.some((c) => c.name === name) &&
+    submits.some((c) => c.name !== name || literal(c.node.attrs.value) === null)
+  return out
 }
+
+const nullablePatch = (path: string | null, schema: JsonSchema): JsonPatchOp[] | null =>
+  path === null ? null : [{ op: 'replace', path, value: { anyOf: [schema, { type: 'null' }] } }]
+
+const quoted = (xs: string[]) => xs.map((x) => `"${x}"`).join(', ')
 
 export function domText(ctx: Ctx) {
   const { ir } = ctx
-  for (const f of Object.values(ir.features))
+  for (const f of Object.values(ir.features)) {
+    const forms = formsOf(f)
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer }) => {
         if (node.kind !== 'el') return
+        const form = forms.find((m) => m.node === node)
         for (const [dom, send] of Object.entries(node.on)) {
           const root = eventSchema(ir, send.event)
           const visit = (v: ValueExpr, path: string[], p: At) => {
@@ -103,54 +138,97 @@ export function domText(ctx: Ctx) {
               for (const [k, x] of Object.entries(v.object)) visit(x, [...path, k], at(p, 'object', k))
               return
             }
-            if (!('ref' in v) || v.ref !== 'dom' || (v.path[0] !== 'value' && v.path[0] !== 'form')) return
+            if (!('ref' in v) || v.ref !== 'dom') return
+            const kindOfRead = v.path[0]
+            if (kindOfRead !== 'value' && kindOfRead !== 'form' && kindOfRead !== 'formAll') return
             const r = resolvePath(root, path)
-            const schema = r.ok ? r.schema : null
-            if (!schema) return
+            const resolved = r.ok ? r.schema : null
+            const schema = kindOfRead === 'formAll' ? itemsOf(resolved) : resolved
+            if (!schema || !resolved) return
             const kind = kindOf(schema)
             if (kind === 'text') return
+            const name = v.path[1] ?? ''
             const field = path.join('.') || 'payload'
-            const source = v.path[0] === 'form' ? `ui.dom.form('${v.path[1]}')` : 'ui.dom.value'
-            const report = (message: string, cause: string, summary: string) =>
-              ctx.report('HZ033', f.id, p, message, cause, { summary, snippet: null, patch: null })
-            if (kind === 'number') {
+            const source = kindOfRead === 'value' ? 'ui.dom.value' : `ui.dom.${kindOfRead}('${name}')`
+            const report = (
+              message: string,
+              cause: string,
+              summary: string,
+              patch: JsonPatchOp[] | null = null,
+            ) => ctx.report('HZ033', f.id, p, message, cause, { summary, snippet: null, patch })
+            if (kind === 'number' || kind === 'boolean') {
+              const noun = kind === 'number' ? 'a number' : 'a boolean'
+              if (kindOfRead === 'value') {
+                report(
+                  `${source} is text, but ${send.event}.${field} is ${noun}`,
+                  `DOM values are strings; ${noun} field would receive text.`,
+                  kind === 'number'
+                    ? 'Send ui.dom.valueAsNumber from the input’s own event instead'
+                    : 'Send ui.dom.checked from the input’s own change event instead',
+                )
+                return
+              }
+              const at0 = resolveAt(at(p, 'path', 0))
+              const target = schemaPointer(ir, send.event, resolved)
               report(
-                `${source} is text, but ${send.event}.${field} is a number`,
-                'DOM values are strings; a number field would receive text.',
-                'Send ui.dom.valueAsNumber from the input’s own event instead',
-              )
-              return
-            }
-            if (kind === 'boolean') {
-              report(
-                `${source} is text, but ${send.event}.${field} is a boolean`,
-                'DOM values are strings; a boolean field would receive text.',
-                'Send ui.dom.checked instead',
+                `${source} is text, but ${send.event}.${field} is ${kindOfRead === 'formAll' ? `a list of ${kind}s` : noun}`,
+                kind === 'number'
+                  ? 'A form posts text; parse it where the input is checked, so both modes get the same Invalid.'
+                  : 'A form posts a checkbox only while it is checked, and as the text "on".',
+                kind === 'number'
+                  ? `Send the text (z.string()) and parse it in the mutation input (z.coerce.number())`
+                  : `Read ui.dom.formAll('${name}') into a list field (checked = ['on']), or use a literal radio pair`,
+                target === null
+                  ? null
+                  : kind === 'number'
+                    ? [
+                        {
+                          op: 'replace',
+                          path: target,
+                          value:
+                            kindOfRead === 'formAll'
+                              ? { type: 'array', items: { type: 'string' } }
+                              : { type: 'string' },
+                        },
+                      ]
+                    : [
+                        { op: 'replace', path: at0, value: 'formAll' },
+                        { op: 'replace', path: target, value: { type: 'array', items: { type: 'string' } } },
+                      ],
               )
               return
             }
             const allowed = choices(schema)!
-            const found =
-              v.path[0] === 'form'
-                ? namedChoices(node, v.path[1] ?? '')
-                : node.tag === 'select'
-                  ? { ...optionsOf(node), found: true }
-                  : { values: [], fixed: false, found: false }
+            const found: Named =
+              kindOfRead === 'value'
+                ? node.tag === 'select'
+                  ? { ...optionsOf(node), found: true, unnamed: false }
+                  : { values: [], fixed: false, found: false, unnamed: false }
+                : namedChoices(form, name)
             const outside = found.values.filter((x) => !allowed.includes(x))
-            if (found.found && found.fixed && !outside.length && found.values.length) return
+            const unnamed = found.unnamed && kindOfRead === 'form' && !nullable(resolved)
+            if (found.found && found.fixed && !outside.length && found.values.length && !unnamed) return
             report(
-              `${source} may not be one of ${allowed.map((x) => `"${x}"`).join(', ')} (${send.event}.${field})`,
+              `${source} may not be one of ${quoted(allowed)} (${send.event}.${field})`,
               !found.found
-                ? v.path[0] === 'form'
-                  ? `No select or radio group named "${v.path[1]}" was found in this form.`
-                  : 'Only a <select> guarantees its value; free text can be anything.'
+                ? kindOfRead === 'value'
+                  ? 'Only a <select> guarantees its value; free text can be anything.'
+                  : `No select, radio group, checkbox or submit button named "${name}" was found in this form.`
                 : outside.length
-                  ? `These option values are not allowed: ${outside.map((x) => `"${x}"`).join(', ')}.`
-                  : 'The options are not all literal, so they cannot be checked.',
-              `Use a <select> (or radio inputs) whose literal option values are exactly ${allowed.map((x) => `"${x}"`).join(', ')}`,
+                  ? `These option values are not allowed: ${quoted(outside)}.`
+                  : unnamed
+                    ? `Not every submit button of this form sends "${name}" with a literal value, so pressing another one, or Enter, posts no "${name}".`
+                    : 'The options are not all literal, so they cannot be checked.',
+              unnamed
+                ? `Give every submit button name: '${name}' and a literal value from ${quoted(allowed)}, or make ${send.event}.${field} nullable`
+                : `Use a <select>, radio inputs or submit buttons whose literal values are exactly ${quoted(allowed)}`,
+              unnamed && !outside.length && found.fixed
+                ? nullablePatch(schemaPointer(ir, send.event, resolved), resolved)
+                : null,
             )
           }
           visit(send.payload, [], at(pointer, 'on', dom, 'payload'))
         }
       })
+  }
 }

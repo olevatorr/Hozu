@@ -1,8 +1,8 @@
 # Forms
 
-- **Works without JavaScript** when the submit payload reads only `ui.dom.form('name')`, literals, context, params
-  and search (else HZ036 warns): the server runs the same machine for a native post, then redirects or re-renders
-  with the result. Put every value the submit needs in a named field (a `<select name="kind">`).
+- **Works without JavaScript** when the submit payload reads only `ui.dom.form('name')`, `ui.dom.formAll('name')`,
+  literals, context, params and search (else HZ036 warns): the server runs the same machine for a native post, then
+  redirects or re-renders with the result. Put every value the submit needs in a named field (a `<select name="kind">`).
 ```ts
 ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title'), kind: ui.dom.form('kind') }) } }, [
   ui.label({ for: 'title' }, ['Title']),
@@ -22,3 +22,14 @@ ui.p({ id: 'title-error', class: 'text-sm text-rose-600' }, [ctx.fields.title])
 - **Per-item actions without JS:** wrap each button in its own small form.
 - **Enum from a select:** `ui.dom.form('kind')` or `ui.dom.value` fills an enum field only when every literal
   option value is a member (HZ033).
+- **Several values:** `ui.dom.formAll('ids')` is every value of the name in tree order (`[]` when none) for checkbox
+  groups, `select multiple` and controls inside `ui.each`, into a list field; `ui.dom.form(name)` is the first (HZ054).
+- **Which button:** give submit buttons `name` and a literal `value` and read `ui.dom.form('action')` in the form's
+  submit; JS and no-JS read the same value. Into an enum only when every submit button of the form has that name and
+  a member value, else make the field nullable (HZ033). No `on.click` on a submit button (HZ056).
+- **Controls outside the form** (forms cannot nest): `const bulk = ui.formRef()` at module level,
+  `ui.form({ ref: bulk, … })`, `ui.input({ form: bulk, … })`; a string `form` is HZ014, a name no control has HZ055.
+- **A flag or a number:** a checkbox posts `'on'` only while checked: `ui.dom.formAll('remember')` into
+  `z.array(z.string())`, or a radio pair. Send numbers as text and parse them in the mutation input (`z.coerce.number()`).
+- **Invalid without JS:** a native post whose payload or mutation input fails re-renders with 400 through
+  `failed.Invalid`, like the JS submit. Keep limits out of the event payload (HZ061).

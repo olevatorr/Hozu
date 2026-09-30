@@ -46,6 +46,24 @@ ui.form({ on: { submit: ui.send(Toggle, { id: ui.dom.form('id') }) } }, [
 // toggling: { invoke: invoke(toggleItem, { input: { id: ctx.target }, done: 'idle', failed: { Unexpected: 'idle' } }) }
 ```
   Try it without a server: `hozu browse / --do 'fill Title=x' --do 'press Enter' --do 'click Done in "x"'`.
+- **Select many, then act** (bulk delete): checkboxes in the list join one form through a formRef; the invoke
+  state drops events, so the checkboxes are disabled while it runs:
+```ts
+const bulk = ui.formRef()   // module level; context { selected: z.array(z.string()), busy: z.boolean() }
+ui.form({ ref: bulk, on: { submit: ui.send(Bulk, { ids: ui.dom.formAll('ids'), action: ui.dom.form('action') }) } }, [
+  ui.button({ type: 'submit', name: 'action', value: 'delete' }, ['Delete selected']),
+  ui.button({ type: 'submit', name: 'action', value: 'pin' }, ['Pin selected']),
+])
+ui.each(items, 'id', (item) => ui.li({}, [ui.input({ type: 'checkbox', form: bulk, name: 'ids', value: item.id,
+  'aria-label': `Select ${item.text}`, checked: ctx.selected.includes(item.id), disabled: ctx.busy,
+  on: { change: ui.send(Select, { id: item.id, checked: ui.dom.checked }) } }), item.text]))
+// on(Select, { target: 'idle', guard: (e) => e.checked === true, assign: (e) => { ctx.selected.push(e.id) } }),
+// on(Select, { target: 'idle', assign: (e) => { ctx.selected = ctx.selected.filter((id) => id !== e.id) } }),
+// on(Bulk, { target: 'removingMany', guard: (e) => e.action === 'delete', assign: (e) => { ctx.selected = e.ids; ctx.busy = true } }),
+// removingMany: invoke(removeNotes, { input: { ids: ctx.selected }, done/failed: reset selected and busy })
+```
+  The mutation input holds the limit (`z.array(z.string()).min(1, 'Select at least one note')`). Reference app:
+  `examples/notes`.
 - **Sorted or pinned first:** sort in the resolver (the list query returns items in display order), or in a `fn`.
 - **Refresh after a mutation:** tag the query, list the tag in the mutation's `invalidates`.
 - **Go to what was just created:** `done: { target: 'idle', navigate: (r) => ui.link(itemPage, { id: r.id }) }`.

@@ -1,9 +1,11 @@
 import {
   type BuildResult,
   type ElementNode,
-  FORM_FIELD,
+  type FormEntries,
+  formEntries,
   formRunnable,
   type Json,
+  type JsonSchema,
   type ViewNode,
 } from '@hozu/core/ir'
 import type { RequestData } from '@hozu/data'
@@ -59,8 +61,22 @@ export interface FormOutcome {
   snapshots: Record<string, Snapshot>
   unchanged: boolean
   unexpected: boolean
+  invalid: boolean
   invalidated: string[]
   session: { value: unknown } | null
+}
+
+const invalidOf = (issues: string[], payload: Json): { message: string; fields: Record<string, Json> } => {
+  const fields: Record<string, Json> =
+    payload && typeof payload === 'object' && !Array.isArray(payload)
+      ? Object.fromEntries(Object.keys(payload).map((k) => [k, null]))
+      : {}
+  for (const issue of issues) {
+    const at = issue.indexOf(': ')
+    const key = at < 0 ? '' : (issue.slice(0, at).split('.')[0] ?? '')
+    if (key in fields && fields[key] === null) fields[key] = issue.slice(at + 2)
+  }
+  return { message: issues.join('; '), fields }
 }
 
 export async function runForm(options: {
@@ -68,7 +84,7 @@ export async function runForm(options: {
   data: RequestData
   routes: Record<string, string>
   form: ElementNode
-  fields: Record<string, string>
+  fields: FormEntries
   route: string
   params: Json
   search: Json
@@ -91,13 +107,15 @@ export async function runForm(options: {
     params,
     search,
     routes,
-    dom: (field) => (field === 'form' ? fields : null),
+    dom: (field) => (field === 'form' ? fields.first : field === 'formAll' ? fields.all : null),
   })
+  const issues = build.bindings.checks[`${send.event}#payload`]?.(payload) ?? null
   const outcome: FormOutcome = {
     navigate: null,
     snapshots: {},
     unchanged: false,
     unexpected: false,
+    invalid: issues !== null,
     invalidated: [],
     session: null,
   }
@@ -107,7 +125,13 @@ export async function runForm(options: {
     for (const e of step.effects) {
       if (e.type === 'navigate') outcome.navigate = e.url
       if (e.type !== 'invoke') continue
-      const result = (await data.run(e.effect, e.input)) as {
+      if (issues && next) break
+      const own = issues ? build.bindings.checks[`${e.effect}#input`]?.(e.input) : null
+      const result = (
+        issues && !own
+          ? { ok: false, error: 'Invalid', data: invalidOf(issues, payload) }
+          : await data.run(e.effect, e.input)
+      ) as {
         ok: boolean
         value?: Json
         error?: string
@@ -116,6 +140,7 @@ export async function runForm(options: {
       }
       outcome.invalidated.push(...(result.invalidated ?? []))
       if (!result.ok && result.error === 'Unexpected') outcome.unexpected = true
+      if (!result.ok && result.error === 'Invalid') outcome.invalid = true
       next = transition(
         machine,
         step.snapshot,
@@ -131,6 +156,7 @@ export async function runForm(options: {
     }
     if (!next) break
     step = next
+    if (issues) break
   }
   outcome.session = data.written
   outcome.snapshots[feature.id] = step.snapshot
@@ -138,12 +164,30 @@ export async function runForm(options: {
   return outcome
 }
 
-export async function formFields(request: Request): Promise<Record<string, string>> {
-  const out: Record<string, string> = {}
+async function entriesOf(request: Request): Promise<Iterable<readonly [string, unknown]>> {
   const type = request.headers.get('content-type') ?? ''
-  const entries: Iterable<[string, unknown]> = type.startsWith('multipart/form-data')
+  return type.startsWith('multipart/form-data')
     ? ((await request.formData()) as unknown as Iterable<[string, unknown]>)
     : new URLSearchParams(await request.text())
-  for (const [k, v] of entries) if (k !== FORM_FIELD && !(k in out)) out[k] = typeof v === 'string' ? v : ''
+}
+
+export const formFields = async (request: Request): Promise<FormEntries> =>
+  formEntries(await entriesOf(request))
+
+const isList = (s: Json | undefined): boolean => {
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return false
+  const o = s as JsonSchema
+  if (o.type === 'array' || (Array.isArray(o.type) && o.type.includes('array'))) return true
+  return (['anyOf', 'oneOf'] as const).some((k) => Array.isArray(o[k]) && (o[k] as Json[]).some(isList))
+}
+
+/** An endpoint form body: a field is multi-valued exactly where its input schema property is an array. */
+export async function endpointForm(schema: JsonSchema | null, request: Request): Promise<Json> {
+  const { first, all } = formEntries(await entriesOf(request))
+  const props = (schema?.properties ?? {}) as Record<string, Json>
+  const out: Record<string, Json> = {}
+  for (const k of Object.keys(all)) out[k] = isList(props[k]) ? all[k]! : first[k]!
+  for (const [k, p] of Object.entries(props))
+    if (!(k in out) && isList(p) && !('default' in (p as JsonSchema))) out[k] = []
   return out
 }

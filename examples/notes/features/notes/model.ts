@@ -13,6 +13,10 @@ export const Add = event({ payload: z.object({ text: z.string() }) })
 export const Remove = event({ payload: NoteKey })
 export const Pin = event({ payload: NoteKey })
 export const Search = event({ payload: z.object({ query: z.string() }) })
+export const Select = event({ payload: z.object({ id: z.string(), checked: z.boolean() }) })
+export const Bulk = event({
+  payload: z.object({ ids: z.array(z.string()), action: z.enum(['delete', 'pin']) }),
+})
 
 export const notesTag = tag({ param: null })
 
@@ -53,6 +57,13 @@ export const togglePin = mutation({
   invalidates: () => [notesTag()],
 })
 
+const NoteIds = z.object({ ids: z.array(z.string()).min(1, 'Select at least one note') })
+const Count = z.object({ count: z.number() })
+
+export const removeNotes = mutation({ input: NoteIds, output: Count, invalidates: () => [notesTag()] })
+
+export const pinNotes = mutation({ input: NoteIds, output: Count, invalidates: () => [notesTag()] })
+
 const Visible = z.object({ items: Notes, query: z.string() })
 
 export const visible = fn({
@@ -83,8 +94,18 @@ export const notesMachine = machine({
     target: z.string(),
     error: z.string().nullable(),
     fields: z.object({ text: z.string().nullable() }),
+    selected: z.array(z.string()),
+    busy: z.boolean(),
   }),
-  initialContext: { draft: '', query: '', target: '', error: null, fields: { text: null } },
+  initialContext: {
+    draft: '',
+    query: '',
+    target: '',
+    error: null,
+    fields: { text: null },
+    selected: [],
+    busy: false,
+  },
   initial: 'idle',
   states: ({ ctx }) => ({
     idle: {
@@ -123,7 +144,93 @@ export const notesMachine = machine({
             ctx.query = e.query
           },
         }),
+        on(Select, {
+          target: 'idle',
+          guard: (e) => e.checked === true,
+          assign: (e) => {
+            ctx.selected.push(e.id)
+          },
+        }),
+        on(Select, {
+          target: 'idle',
+          assign: (e) => {
+            ctx.selected = ctx.selected.filter((id) => id !== e.id)
+          },
+        }),
+        on(Bulk, {
+          target: 'removingMany',
+          guard: (e) => e.action === 'delete',
+          assign: (e) => {
+            ctx.selected = e.ids
+            ctx.busy = true
+            ctx.error = null
+          },
+        }),
+        on(Bulk, {
+          target: 'pinningMany',
+          assign: (e) => {
+            ctx.selected = e.ids
+            ctx.busy = true
+            ctx.error = null
+          },
+        }),
       ],
+    },
+    removingMany: {
+      invoke: invoke(removeNotes, {
+        input: { ids: ctx.selected },
+        done: {
+          target: 'idle',
+          assign: () => {
+            ctx.selected = []
+            ctx.busy = false
+          },
+        },
+        failed: {
+          Invalid: {
+            target: 'idle',
+            assign: (e) => {
+              ctx.error = e.fields.ids
+              ctx.busy = false
+            },
+          },
+          Unexpected: {
+            target: 'idle',
+            assign: (e) => {
+              ctx.error = e.message
+              ctx.busy = false
+            },
+          },
+        },
+      }),
+    },
+    pinningMany: {
+      invoke: invoke(pinNotes, {
+        input: { ids: ctx.selected },
+        done: {
+          target: 'idle',
+          assign: () => {
+            ctx.selected = []
+            ctx.busy = false
+          },
+        },
+        failed: {
+          Invalid: {
+            target: 'idle',
+            assign: (e) => {
+              ctx.error = e.fields.ids
+              ctx.busy = false
+            },
+          },
+          Unexpected: {
+            target: 'idle',
+            assign: (e) => {
+              ctx.error = e.message
+              ctx.busy = false
+            },
+          },
+        },
+      }),
     },
     adding: {
       invoke: invoke(addNote, {

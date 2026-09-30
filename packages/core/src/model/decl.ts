@@ -24,6 +24,7 @@ export type DeclKind =
   | 'messages'
   | 'endpoint'
   | 'part'
+  | 'formRef'
 
 export interface DeclInfo<K extends DeclKind = DeclKind, D = unknown> {
   readonly kind: K

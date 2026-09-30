@@ -91,6 +91,6 @@ describe('@hozu/testing (ADR 0021)', () => {
     const b = testApp((await import('../../../examples/bookmarks/app.ts')).default)
     const action = /<form[^>]* action="([^"]+)"/.exec((await b.get('/')).html)![1]!.replace(/&amp;/g, '&')
     const page = await b.post(action, { title: 'x', kind: 'article' })
-    expect([page.status, page.text]).toEqual([200, expect.stringContaining('Use at least 2 characters')])
+    expect([page.status, page.text]).toEqual([400, expect.stringContaining('Use at least 2 characters')])
   })
 })

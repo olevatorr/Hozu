@@ -137,7 +137,7 @@ class Emitter {
     if ('test' in v) return this.guard(v.test)
     if ('endpoint' in v)
       return `h.pathOf(s.routes?.[${q(v.endpoint)}] ?? '', null, ${v.input ? this.value(v.input) : 'null'})`
-    if ('formRef' in v) throw new Error('HZ014: formRef values are not supported yet (ADR 0043)')
+    if ('formRef' in v) return q(v.formRef)
     const path = this.const(q(v.path))
     if (v.ref === 'binding') {
       const b = this.binding(v.depth)

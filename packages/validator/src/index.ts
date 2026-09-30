@@ -8,7 +8,7 @@ import { domFields } from './rules/dom.ts'
 import { endpointLinks, endpoints } from './rules/endpoints.ts'
 import { declaredErrors } from './rules/errors.ts'
 import { conflictingIgnores, unhandledEvents, viewEvents } from './rules/events.ts'
-import { progressiveForms } from './rules/forms.ts'
+import { formFields, progressiveForms } from './rules/forms.ts'
 import { unsafeHtml } from './rules/html.ts'
 import { httpRules } from './rules/http.ts'
 import { i18n } from './rules/i18n.ts'
@@ -74,6 +74,7 @@ const rules = [
   conflictingIgnores,
   domText,
   progressiveForms,
+  formFields,
   httpRules,
   i18n,
   offlinePage,

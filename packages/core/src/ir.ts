@@ -23,7 +23,7 @@ export {
   voidTags,
 } from './ir/dom-data.ts'
 export { domEvents, eventFields, passiveEvents } from './ir/events.ts'
-export { FORM_FIELD, formRunnable } from './ir/forms.ts'
+export { FORM_FIELD, type FormEntries, formEntries, formRefOf, formRunnable } from './ir/forms.ts'
 export { type Operator, operators, unimplementedOperators } from './ir/operators.ts'
 export { anyGuardRef, anyRef, eachGuardRef, eachRef, type RefExpr } from './ir/refs.ts'
 export type { PageTables, RouteKey, RouteModifier } from './ir/routes.ts'
