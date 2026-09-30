@@ -1,0 +1,2095 @@
+{
+  "features": {
+    "account": {
+      "deleting/invoke/done/0": {
+        "behavior": "3738bc601e17db9d",
+        "contracts": {
+          "deletesAccount": "60a1a2c6cdb07617"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": {
+            "link": "login",
+            "params": {
+              "literal": null
+            },
+            "search": {
+              "literal": {
+                "deleted": true
+              }
+            }
+          }
+        },
+        "summary": "deleting --done deleteAccount--> idle · navigate link(login, null, {\"deleted\":true})"
+      },
+      "deleting/invoke/failed/Unexpected/0": {
+        "behavior": "252f974a2753f079",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "deleting --failed deleteAccount.Unexpected--> idle · error := error.message"
+      },
+      "idle/on/account.DeleteAccount/0": {
+        "behavior": "168a8e19bff250f6",
+        "contracts": {
+          "deletesAccount": "60a1a2c6cdb07617"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": "account.deleteAccount",
+            "final": false,
+            "input": {
+              "literal": {}
+            },
+            "state": "deleting",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --DeleteAccount--> deleting · invoke deleteAccount({})"
+      },
+      "idle/on/account.SignIn/0": {
+        "behavior": "1a94e70341218677",
+        "contracts": {
+          "signsInToList": "281c543fa2102c08"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "path": [
+                  "name"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "fields"
+              ],
+              "value": {
+                "literal": {
+                  "name": null
+                }
+              }
+            }
+          ],
+          "enters": {
+            "effect": "account.signIn",
+            "final": false,
+            "input": {
+              "object": {
+                "name": {
+                  "path": [
+                    "draft"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "signingIn",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --SignIn--> signingIn · draft := event.name, error := null, fields := {\"name\":null} · invoke signIn({ name: ctx.draft })"
+      },
+      "idle/on/account.SignOut/0": {
+        "behavior": "b4dc3e756f5fe0f4",
+        "contracts": {
+          "signsOutToLogin": "ed8794dd255decc0"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": "account.signOut",
+            "final": false,
+            "input": {
+              "literal": {}
+            },
+            "state": "signingOut",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --SignOut--> signingOut · invoke signOut({})"
+      },
+      "signingIn/invoke/done/0": {
+        "behavior": "cb04dae028d070f7",
+        "contracts": {
+          "signsInToList": "281c543fa2102c08"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": {
+            "link": "list",
+            "params": {
+              "literal": null
+            },
+            "search": {
+              "literal": null
+            }
+          }
+        },
+        "summary": "signingIn --done signIn--> idle · navigate link(list, null)"
+      },
+      "signingIn/invoke/failed/Invalid/0": {
+        "behavior": "5ffabc99c70d2c92",
+        "contracts": {
+          "rejectsName": "aeb0dac0017d7a73"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "fields"
+              ],
+              "value": {
+                "path": [
+                  "fields"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "signingIn --failed signIn.Invalid--> idle · fields := error.fields"
+      },
+      "signingIn/invoke/failed/Unexpected/0": {
+        "behavior": "ba2dcc21efeb21ca",
+        "contracts": {
+          "signInFails": "f398e70d7816c976"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "signingIn --failed signIn.Unexpected--> idle · error := error.message"
+      },
+      "signingOut/invoke/done/0": {
+        "behavior": "c9686bc0312b1370",
+        "contracts": {
+          "signsOutToLogin": "ed8794dd255decc0"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": {
+            "link": "login",
+            "params": {
+              "literal": null
+            },
+            "search": {
+              "literal": null
+            }
+          }
+        },
+        "summary": "signingOut --done signOut--> idle · navigate link(login, null)"
+      },
+      "signingOut/invoke/failed/Unexpected/0": {
+        "behavior": "1df99df97306e375",
+        "contracts": {
+          "signOutFails": "dcf93da158974bc2"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "signingOut --failed signOut.Unexpected--> idle · error := error.message"
+      }
+    },
+    "notes": {
+      "adding/invoke/done/0": {
+        "behavior": "11ead2562ff8dcf2",
+        "contracts": {
+          "adds": "a8465bab24691f17"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "literal": ""
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "adding --done addNote--> idle · draft := \"\""
+      },
+      "adding/invoke/failed/Duplicate/0": {
+        "behavior": "5565ed15146073da",
+        "contracts": {
+          "rejectsDuplicate": "d24adb61102acf0e"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "You already have a note with this title"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "adding --failed addNote.Duplicate--> idle · error := \"You already have a note with this title\""
+      },
+      "adding/invoke/failed/Invalid/0": {
+        "behavior": "2e22d932a8b7d0ad",
+        "contracts": {
+          "rejectsInvalid": "1057de58a4b87785"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "fields"
+              ],
+              "value": {
+                "object": {
+                  "title": {
+                    "arg": {
+                      "object": {
+                        "a": {
+                          "path": [
+                            "fields",
+                            "title"
+                          ],
+                          "ref": "error"
+                        },
+                        "b": {
+                          "literal": null
+                        }
+                      }
+                    },
+                    "fn": "%coalesce"
+                  }
+                }
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "adding --failed addNote.Invalid--> idle · fields := { title: (error.fields.title ?? null) }"
+      },
+      "adding/invoke/failed/TooMany/0": {
+        "behavior": "92a1104126598fcb",
+        "contracts": {
+          "rejectsTooMany": "32e21bade92e337b"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "Too many notes, try again in a minute"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "adding --failed addNote.TooMany--> idle · error := \"Too many notes, try again in a minute\""
+      },
+      "adding/invoke/failed/Unexpected/0": {
+        "behavior": "5768648eda6c6baa",
+        "contracts": {
+          "addFails": "e14b8edb35fa0dfc"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "adding --failed addNote.Unexpected--> idle · error := error.message"
+      },
+      "archiving/invoke/done/0": {
+        "behavior": "3194c18360929215",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "archiving --done archiveNote--> idle"
+      },
+      "archiving/invoke/failed/NotFound/0": {
+        "behavior": "45c0a1fc68e8547f",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "This note no longer exists"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "archiving --failed archiveNote.NotFound--> idle · error := \"This note no longer exists\""
+      },
+      "archiving/invoke/failed/Unexpected/0": {
+        "behavior": "059626b58d606f20",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "archiving --failed archiveNote.Unexpected--> idle · error := error.message"
+      },
+      "idle/on/notes.Add/0": {
+        "behavior": "ae997f7ed4ace34a",
+        "contracts": {
+          "adds": "a8465bab24691f17",
+          "rejectsTooMany": "32e21bade92e337b"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "path": [
+                  "title"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "fields"
+              ],
+              "value": {
+                "literal": {
+                  "title": null
+                }
+              }
+            }
+          ],
+          "enters": {
+            "effect": "notes.addNote",
+            "final": false,
+            "input": {
+              "object": {
+                "title": {
+                  "path": [
+                    "draft"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "adding",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Add--> adding · draft := event.title, error := null, fields := {\"title\":null} · invoke addNote({ title: ctx.draft })"
+      },
+      "idle/on/notes.Archive/0": {
+        "behavior": "0be4c5bd7e044f5d",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "target"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "notes.archiveNote",
+            "final": false,
+            "input": {
+              "object": {
+                "id": {
+                  "path": [
+                    "target"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "archiving",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Archive--> archiving · target := event.id, error := null · invoke archiveNote({ id: ctx.target })"
+      },
+      "idle/on/notes.CancelEdit/0": {
+        "behavior": "2bcebad82c0e9e6b",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "editing"
+              ],
+              "value": {
+                "literal": ""
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --CancelEdit--> idle · editing := \"\""
+      },
+      "idle/on/notes.Draft/0": {
+        "behavior": "505397a4a67caf49",
+        "contracts": {
+          "typesDraft": "9566ddd10f10adbe"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "path": [
+                  "title"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Draft--> idle · draft := event.title"
+      },
+      "idle/on/notes.Edit/0": {
+        "behavior": "e9dab447a9406edb",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "editing"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Edit--> idle · editing := event.id, error := null"
+      },
+      "idle/on/notes.Pin/0": {
+        "behavior": "6c7e210b48f5c988",
+        "contracts": {
+          "pins": "414b6b9eae087278"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "target"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "notes.togglePin",
+            "final": false,
+            "input": {
+              "object": {
+                "id": {
+                  "path": [
+                    "target"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "pinning",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Pin--> pinning · target := event.id, error := null · invoke togglePin({ id: ctx.target })"
+      },
+      "idle/on/notes.Remove/0": {
+        "behavior": "db343c3957741169",
+        "contracts": {
+          "removes": "d787241cba95e6f1"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "target"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "notes.removeNote",
+            "final": false,
+            "input": {
+              "object": {
+                "id": {
+                  "path": [
+                    "target"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "removing",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Remove--> removing · target := event.id, error := null · invoke removeNote({ id: ctx.target })"
+      },
+      "idle/on/notes.Restore/0": {
+        "behavior": "e3a5e89cf3b9a8a1",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "target"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "notes.restoreNote",
+            "final": false,
+            "input": {
+              "object": {
+                "id": {
+                  "path": [
+                    "target"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "restoring",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Restore--> restoring · target := event.id, error := null · invoke restoreNote({ id: ctx.target })"
+      },
+      "idle/on/notes.Save/0": {
+        "behavior": "53859f052396325b",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "target"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "editing"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "editTitle"
+              ],
+              "value": {
+                "path": [
+                  "title"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "notes.renameNote",
+            "final": false,
+            "input": {
+              "object": {
+                "id": {
+                  "path": [
+                    "target"
+                  ],
+                  "ref": "context"
+                },
+                "title": {
+                  "path": [
+                    "editTitle"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "saving",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Save--> saving · target := event.id, editing := event.id, editTitle := event.title, error := null · invoke renameNote({ id: ctx.target, title: ctx.editTitle })"
+      },
+      "idle/on/notes.Search/0": {
+        "behavior": "650430da5cbd7bea",
+        "contracts": {
+          "searches": "fa0db13667630e04"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "query"
+              ],
+              "value": {
+                "path": [
+                  "query"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Search--> idle · query := event.query"
+      },
+      "idle/on/notes.Select/0": {
+        "behavior": "55f2789bdcbeda7a",
+        "contracts": {
+          "selects": "dc77e09037b094f9"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "append",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "object": {
+                  "id": {
+                    "path": [
+                      "id"
+                    ],
+                    "ref": "event"
+                  }
+                }
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": {
+            "left": {
+              "path": [
+                "checked"
+              ],
+              "ref": "event"
+            },
+            "op": "eq",
+            "right": {
+              "literal": true
+            }
+          },
+          "navigate": null
+        },
+        "summary": "idle --Select--> idle · if event.checked eq true · selected append { id: event.id }"
+      },
+      "idle/on/notes.Select/1": {
+        "behavior": "514446c1e3395d9a",
+        "contracts": {
+          "unselects": "6504f69340ecb807"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "key": "id",
+              "op": "removeWhere",
+              "path": [
+                "selected"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Select--> idle · selected -= where id = event.id"
+      },
+      "idle/on/notes.Share/0": {
+        "behavior": "86b87938c1c660d6",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "target"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "shareTo"
+              ],
+              "value": {
+                "path": [
+                  "to"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "notes.shareNote",
+            "final": false,
+            "input": {
+              "object": {
+                "id": {
+                  "path": [
+                    "target"
+                  ],
+                  "ref": "context"
+                },
+                "to": {
+                  "path": [
+                    "shareTo"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "sharing",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Share--> sharing · target := event.id, shareTo := event.to, error := null · invoke shareNote({ id: ctx.target, to: ctx.shareTo })"
+      },
+      "idle/on/notes.Undo/0": {
+        "behavior": "533d28ddcdc505fc",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "notes.undoDelete",
+            "final": false,
+            "input": {
+              "literal": {}
+            },
+            "state": "undoing",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Undo--> undoing · error := null · invoke undoDelete({})"
+      },
+      "idle/on/notes.Unshare/0": {
+        "behavior": "678f5c53745c30c2",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "target"
+              ],
+              "value": {
+                "path": [
+                  "id"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "shareTo"
+              ],
+              "value": {
+                "path": [
+                  "to"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "notes.unshareNote",
+            "final": false,
+            "input": {
+              "object": {
+                "id": {
+                  "path": [
+                    "target"
+                  ],
+                  "ref": "context"
+                },
+                "to": {
+                  "path": [
+                    "shareTo"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "unsharing",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Unshare--> unsharing · target := event.id, shareTo := event.to, error := null · invoke unshareNote({ id: ctx.target, to: ctx.shareTo })"
+      },
+      "pinning/invoke/done/0": {
+        "behavior": "e70ffaeac4248998",
+        "contracts": {
+          "pins": "414b6b9eae087278"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "pinning --done togglePin--> idle"
+      },
+      "pinning/invoke/failed/NotFound/0": {
+        "behavior": "755b89ddc3a985db",
+        "contracts": {
+          "pinMissing": "2fd68045cb49202f"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "This note no longer exists"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "pinning --failed togglePin.NotFound--> idle · error := \"This note no longer exists\""
+      },
+      "pinning/invoke/failed/Unexpected/0": {
+        "behavior": "51bedd441926fbed",
+        "contracts": {
+          "pinFails": "2644f93ad1d04871"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "pinning --failed togglePin.Unexpected--> idle · error := error.message"
+      },
+      "removing/invoke/done/0": {
+        "behavior": "161009426fbd8484",
+        "contracts": {
+          "removes": "d787241cba95e6f1"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "removing --done removeNote--> idle"
+      },
+      "removing/invoke/failed/NotFound/0": {
+        "behavior": "8344277ea7816672",
+        "contracts": {
+          "removeMissing": "2ef6c0d5d46b85bb"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "This note no longer exists"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "removing --failed removeNote.NotFound--> idle · error := \"This note no longer exists\""
+      },
+      "removing/invoke/failed/Unexpected/0": {
+        "behavior": "e371f013b54e7dca",
+        "contracts": {
+          "removeFails": "61d40c4d5937dccc"
+        },
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "removing --failed removeNote.Unexpected--> idle · error := error.message"
+      },
+      "restoring/invoke/done/0": {
+        "behavior": "bbf47e6665a14ec4",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "restoring --done restoreNote--> idle"
+      },
+      "restoring/invoke/failed/NotFound/0": {
+        "behavior": "1d8f0fdc35de4e6b",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "This note no longer exists"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "restoring --failed restoreNote.NotFound--> idle · error := \"This note no longer exists\""
+      },
+      "restoring/invoke/failed/Unexpected/0": {
+        "behavior": "8174813670816aea",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "restoring --failed restoreNote.Unexpected--> idle · error := error.message"
+      },
+      "saving/invoke/done/0": {
+        "behavior": "9268e8bd37945645",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "editing"
+              ],
+              "value": {
+                "literal": ""
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "saving --done renameNote--> idle · editing := \"\""
+      },
+      "saving/invoke/failed/Duplicate/0": {
+        "behavior": "ea06751b61140596",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "You already have a note with this title"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "saving --failed renameNote.Duplicate--> idle · error := \"You already have a note with this title\""
+      },
+      "saving/invoke/failed/Invalid/0": {
+        "behavior": "6244b223888d6d4e",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "saving --failed renameNote.Invalid--> idle · error := error.message"
+      },
+      "saving/invoke/failed/NotFound/0": {
+        "behavior": "07fd1b5364b30353",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "This note no longer exists"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "editing"
+              ],
+              "value": {
+                "literal": ""
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "saving --failed renameNote.NotFound--> idle · error := \"This note no longer exists\", editing := \"\""
+      },
+      "saving/invoke/failed/Unexpected/0": {
+        "behavior": "a9be53fb995f0773",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "saving --failed renameNote.Unexpected--> idle · error := error.message"
+      },
+      "sharing/invoke/done/0": {
+        "behavior": "afa466af0632c06d",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "sharing --done shareNote--> idle"
+      },
+      "sharing/invoke/failed/Invalid/0": {
+        "behavior": "ffefdc7dfbd62a53",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "sharing --failed shareNote.Invalid--> idle · error := error.message"
+      },
+      "sharing/invoke/failed/NotFound/0": {
+        "behavior": "9d09e7b617fc1052",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "This note no longer exists"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "sharing --failed shareNote.NotFound--> idle · error := \"This note no longer exists\""
+      },
+      "sharing/invoke/failed/Self/0": {
+        "behavior": "021b08b8ddb2fe89",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "You cannot share with yourself"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "sharing --failed shareNote.Self--> idle · error := \"You cannot share with yourself\""
+      },
+      "sharing/invoke/failed/Unexpected/0": {
+        "behavior": "14540959c6f5b909",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "sharing --failed shareNote.Unexpected--> idle · error := error.message"
+      },
+      "undoing/invoke/done/0": {
+        "behavior": "e7c50efb61da62e1",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "undoing --done undoDelete--> idle"
+      },
+      "undoing/invoke/failed/NotFound/0": {
+        "behavior": "244ead6afbe5a6d8",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "This note no longer exists"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "undoing --failed undoDelete.NotFound--> idle · error := \"This note no longer exists\""
+      },
+      "undoing/invoke/failed/Unexpected/0": {
+        "behavior": "d30c80f92197c8db",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "undoing --failed undoDelete.Unexpected--> idle · error := error.message"
+      },
+      "unsharing/invoke/done/0": {
+        "behavior": "085cf0a71e5766b9",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "unsharing --done unshareNote--> idle"
+      },
+      "unsharing/invoke/failed/NotFound/0": {
+        "behavior": "c870278d687f04a2",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "This note no longer exists"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "unsharing --failed unshareNote.NotFound--> idle · error := \"This note no longer exists\""
+      },
+      "unsharing/invoke/failed/Unexpected/0": {
+        "behavior": "042c993315ed4647",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "unsharing --failed unshareNote.Unexpected--> idle · error := error.message"
+      }
+    }
+  },
+  "pages": {
+    "endpoints": {
+      "account.landing": {
+        "failed": {},
+        "mode": "redirect"
+      },
+      "notes.bulkNotes": {
+        "failed": {},
+        "mode": "redirect"
+      },
+      "notes.exportAll": {
+        "failed": {
+          "Unauthorized": 401
+        },
+        "mode": "json"
+      },
+      "notes.notesApi": {
+        "failed": {},
+        "mode": "json"
+      }
+    },
+    "head": {
+      "accountDelete": {
+        "Unauthorized": {
+          "redirect": "login"
+        }
+      },
+      "admin": {
+        "Forbidden": {
+          "status": 403
+        },
+        "Unauthorized": {
+          "redirect": "login"
+        }
+      },
+      "archive": {
+        "Unauthorized": {
+          "redirect": "login"
+        }
+      },
+      "list": {
+        "Unauthorized": {
+          "redirect": "login"
+        }
+      }
+    },
+    "redirects": {}
+  },
+  "version": 2
+}
