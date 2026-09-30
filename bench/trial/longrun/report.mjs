@@ -1,11 +1,26 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
+import { parseArgs } from 'node:util'
 
-const dir = join(import.meta.dirname, 'results')
+const { values: opt } = parseArgs({
+  options: {
+    results: { type: 'string', default: 'results' },
+    from: { type: 'string', default: '0' },
+    to: { type: 'string', default: '20' },
+    svg: {
+      type: 'string',
+      default: join(import.meta.dirname, '..', '..', '..', 'docs', 'trials', '0020-long-run.svg'),
+    },
+    title: { type: 'string', default: 'Trial 0020 per-step curves' },
+    metrics: { type: 'string', default: 'metrics.jsonl' },
+  },
+})
+const [from, to] = [Number(opt.from), Number(opt.to)]
+const dir = resolve(import.meta.dirname, opt.results)
 const runs = []
 for (const fw of existsSync(dir) ? readdirSync(dir) : [])
   for (const run of readdirSync(join(dir, fw))) {
-    const f = join(dir, fw, run, 'metrics.jsonl')
+    const f = join(dir, fw, run, opt.metrics)
     if (!existsSync(f)) continue
     const rows = readFileSync(f, 'utf8')
       .trim()
@@ -13,7 +28,8 @@ for (const fw of existsSync(dir) ? readdirSync(dir) : [])
       .filter(Boolean)
       .map((l) => JSON.parse(l))
     const byStep = new Map(rows.map((r) => [r.step, r]))
-    runs.push({ fw, run, key: `${fw}-${run}`, rows: [...byStep.values()].sort((a, b) => a.step - b.step) })
+    const inRange = [...byStep.values()].filter((r) => r.step >= from && r.step <= to)
+    runs.push({ fw, run, key: `${fw}-${run}`, rows: inRange.sort((a, b) => a.step - b.step) })
   }
 
 const k = (n) => (n == null ? '–' : `${(n / 1000).toFixed(1)} k`)
@@ -26,7 +42,7 @@ const slope = (xs, ys) => {
   const den = xs.reduce((s, x) => s + (x - mx) ** 2, 0)
   return den ? num / den : null
 }
-const changes = (r) => r.rows.filter((x) => x.step >= 1)
+const changes = (r) => r.rows.filter((x) => x.step >= Math.max(1, from))
 const out = []
 for (const r of runs) {
   out.push(`### ${r.key}`, '')
@@ -38,12 +54,12 @@ for (const r of runs) {
       ? `check ${x.hozu.checkOk ? 'ok' : `✗ ${x.hozu.errors}e`}${x.hozu.warnings ? ` ${x.hozu.warnings}w` : ''}, lock ${x.hozu.lockEntries} (${x.hozu.lockChanged}Δ), ${x.hozu.states}s/${x.hozu.transitions}t`
       : `tc ${x.nuxt.typecheckOk ? 'ok' : '✗'}, build ${x.nuxt.buildOk ? 'ok' : '✗'}`
     out.push(
-      `| ${x.step} | ${a ? `${a.new.passed}/${a.new.total}` : '–'} | ${a?.regression.total ? `${a.regression.passed}/${a.regression.total}` : '–'} | ${x.silentFailure ? 'yes' : ''} | ${k(x.cost?.weighted)} | ${x.cost?.calls ?? '–'} | ${x.size.lines} | +${x.size.added}/−${x.size.removed} | ${(x.duplication.ratio * 100).toFixed(1)} | ${x.js?.list ?? '–'} | ${status} |`,
+      `| ${x.step} | ${a ? `${a.new.passed}/${a.new.total}` : '–'} | ${a?.regression.total ? `${a.regression.passed}/${a.regression.total}` : '–'} | ${(x.silentHint ?? x.silentFailure) ? 'yes' : ''} | ${k(x.cost?.weighted)} | ${x.cost?.calls ?? '–'} | ${x.size.lines} | +${x.size.added}/−${x.size.removed} | ${(x.duplication.ratio * 100).toFixed(1)} | ${x.js?.list ?? '–'} | ${status} |`,
     )
   }
   out.push('')
 }
-out.push('### Slopes over steps 1–20', '')
+out.push(`### Slopes over steps ${Math.max(1, from)}–${to}`, '')
 out.push(
   '| Run | Cost / step (k per step) | Cost per 100 lines of app | Regression failures | Silent failures | Lines / step | Dup pp / step | JS bytes / step |',
 )
@@ -55,7 +71,7 @@ for (const r of runs) {
     (s, x) => s + (x.accept ? x.accept.regression.total - x.accept.regression.passed : 0),
     0,
   )
-  const silent = changes(r).filter((x) => x.silentFailure).length
+  const silent = changes(r).filter((x) => x.silentHint ?? x.silentFailure).length
   out.push(
     `| ${r.key} | ${(
       slope(
@@ -101,7 +117,7 @@ const W = 320
 const H = 180
 const pad = 34
 const colors = { hozu: ['#2563eb', '#60a5fa'], nuxt: ['#16a34a', '#86efac'] }
-let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W * 3} ${H * 2 + 30}" font-family="system-ui, sans-serif" font-size="10" role="img" aria-label="Trial 0020 per-step curves"><title>Trial 0020 per-step curves</title>`
+let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W * 3} ${H * 2 + 30}" font-family="system-ui, sans-serif" font-size="10" role="img" aria-label="${opt.title}"><title>${opt.title}</title>`
 svg += `<rect width="100%" height="100%" fill="#fff"/>`
 panels.forEach(([title, get], p) => {
   const ox = (p % 3) * W
@@ -111,12 +127,13 @@ panels.forEach(([title, get], p) => {
     pts: r.rows.map((x) => [x.step, get(x)]).filter(([, y]) => y != null),
   }))
   const max = Math.max(1, ...series.flatMap((s) => s.pts.map(([, y]) => y)))
-  const sx = (s) => ox + pad + (s / 20) * (W - pad - 12)
+  const sx = (s) => ox + pad + ((s - from) / Math.max(1, to - from)) * (W - pad - 12)
   const sy = (y) => oy + H - 22 - (y / max) * (H - 50)
   svg += `<text x="${ox + pad}" y="${oy + 16}" font-weight="600">${title}</text>`
-  svg += `<line x1="${sx(0)}" y1="${sy(0)}" x2="${sx(20)}" y2="${sy(0)}" stroke="#999"/>`
+  svg += `<line x1="${sx(from)}" y1="${sy(0)}" x2="${sx(to)}" y2="${sy(0)}" stroke="#999"/>`
   svg += `<text x="${ox + 4}" y="${sy(max) + 3}">${max >= 1000 ? `${Math.round(max / 1000)}k` : +max.toFixed(1)}</text><text x="${ox + 4}" y="${sy(0) + 3}">0</text>`
-  for (const s of [0, 5, 10, 15, 20]) svg += `<text x="${sx(s) - 3}" y="${sy(0) + 12}">${s}</text>`
+  for (const s of [0, 1, 2, 3, 4].map((i) => Math.round(from + ((to - from) * i) / 4)))
+    svg += `<text x="${sx(s) - 3}" y="${sy(0) + 12}">${s}</text>`
   const seen = {}
   for (const { r, pts } of series) {
     const i = (seen[r.fw] ?? -1) + 1
@@ -130,4 +147,4 @@ runs.forEach((r, i) => {
   svg += `<rect x="${pad + i * 110}" y="${H * 2 + 12}" width="12" height="3" fill="${color}"/><text x="${pad + i * 110 + 16}" y="${H * 2 + 17}">${r.key}</text>`
 })
 svg += '</svg>'
-writeFileSync(join(import.meta.dirname, '..', '..', '..', 'docs', 'trials', '0020-long-run.svg'), svg)
+writeFileSync(resolve(opt.svg), svg)

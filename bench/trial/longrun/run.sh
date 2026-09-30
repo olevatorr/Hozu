@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: run.sh prepare | run.sh <hozu|nuxt> <run-id> <port> [from-step] [to-step]
+# Usage: run.sh prepare | [FROM_TAG=s12m] [FROM_APP=dir] [RESULTS=results-0021] run.sh <hozu|nuxt> <run-id> <port> [from-step] [to-step]
 set -uo pipefail
 
 LR="$(cd "$(dirname "$0")" && pwd)"
@@ -24,7 +24,8 @@ fi
 FW="$1" RUN="$2" PORT="$3" FROM="${4:-0}" TO="${5:-20}"
 W="$R/$FW-$RUN"
 APP="$W/app"
-OUT="$LR/results/$FW/$RUN"
+OUT="$LR/${RESULTS:-results}/$FW/$RUN"
+CHANGES="${CHANGES:-$LR/changes}"
 mkdir -p "$OUT"
 log() { echo "[$(date '+%F %T')] $FW/$RUN $*" | tee -a "$OUT/run.log"; }
 
@@ -72,7 +73,7 @@ agent() {
       cp "$ROOT/bench/trial/notes/spec.md" spec.md
       prompt="$LR/prompts/build.md"
     else
-      cp "$LR/changes/$nn.md" change.md
+      cp "$CHANGES/$nn.md" change.md
       prompt="$LR/prompts/change.md"
     fi
     log "step $nn attempt $attempt"
@@ -102,8 +103,8 @@ measure() {
   local k="$1" nn entry
   nn=$(printf '%02d' "$k")
   cd "$APP" || return 1
+  entry=$(node "$LR/entry.mjs" "$FW" "$APP")
   if [ "$FW" = hozu ]; then
-    entry=serve.ts
     npx hozu check --json > "$OUT/$nn.check.json" 2> /dev/null
     node -e '
       const { execFileSync } = require("child_process")
@@ -115,17 +116,36 @@ measure() {
     npx hozu build --out "$tmp" > "$OUT/$nn.build.txt" 2>&1; echo $? > "$OUT/$nn.build.exit"
     rm -rf "$tmp"
   else
-    entry=.output/server/index.mjs
     pnpm typecheck > "$OUT/$nn.typecheck.txt" 2>&1; echo $? > "$OUT/$nn.typecheck.exit"
     pnpm build > "$OUT/$nn.build.txt" 2>&1; echo $? > "$OUT/$nn.build.exit"
   fi
   node "$LR/accept.mjs" "$FW" "$APP" "$entry" "$PORT" "$k" > "$OUT/$nn.accept.json" 2> "$OUT/$nn.accept.err"
   for p in $(lsof -ti tcp:"$PORT" 2>/dev/null); do kill "$p" 2>/dev/null; done
-  node "$LR/metrics.mjs" "$FW" "$APP" "$k" "$OUT" >> "$OUT/metrics.jsonl"
+  local prev=""
+  [ -n "${FROM_TAG:-}" ] && [ "$k" = "$FROM" ] && prev="$FROM_TAG"
+  PREV_TAG="$prev" node "$LR/metrics.mjs" "$FW" "$APP" "$k" "$OUT" >> "$OUT/metrics.jsonl"
   node "$LR/summary.mjs" < "$OUT/$nn.accept.json" | tee -a "$OUT/run.log"
 }
 
-if [ ! -d "$APP/.git" ]; then
+from_tag() {
+  if [ ! -d "$APP/.git" ]; then
+    [ -n "${FROM_APP:-}" ] || { log "no app at $APP and no FROM_APP"; return 1; }
+    mkdir -p "$W" && git clone -q "$FROM_APP" "$APP" || return 1
+    (cd "$APP" && git fetch -q --tags "$FROM_APP") || return 1
+    printf 'spec.md\nchange.md\n' >> "$APP/.git/info/exclude"
+  fi
+  cd "$APP" || return 1
+  git rev-parse -q --verify "refs/tags/$FROM_TAG" > /dev/null || { log "no tag $FROM_TAG in $APP"; return 1; }
+  git reset -q --hard "$FROM_TAG" && git clean -qfd
+  if [ ! -d node_modules ]; then
+    if [ "$FW" = hozu ]; then npm install --no-audit --no-fund; else pnpm install --ignore-workspace; fi
+  fi > "$OUT/install.txt" 2>&1
+}
+
+if [ -n "${FROM_TAG:-}" ]; then
+  log "start from $FROM_TAG"
+  from_tag || { log "cannot start from $FROM_TAG"; exit 1; }
+elif [ ! -d "$APP/.git" ]; then
   [ "$FROM" = 0 ] || { log "no app at $APP"; exit 1; }
   log scaffold
   scaffold || { log "scaffold failed"; exit 1; }

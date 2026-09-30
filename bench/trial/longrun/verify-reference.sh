@@ -12,8 +12,7 @@ steps=$ref/$fw-steps
 work=$ref/.verify-$fw
 
 case $fw in
-  hozu) entry=serve.ts first=0 ;;
-  nuxt) entry=.output/server/index.mjs first=0 ;;
+  hozu | nuxt) first=0 ;;
   *) echo "unknown framework: $fw" >&2 && exit 2 ;;
 esac
 [[ -d $base ]] || { echo "missing $base" >&2; exit 2; }
@@ -27,7 +26,7 @@ failed=0
 accept() {
   local k=$1 out
   [[ $fw == nuxt ]] && (cd "$work" && corepack pnpm build >/dev/null)
-  out=$(node "$here/accept.mjs" "$fw" "$work" "$entry" "$port" "$k")
+  out=$(node "$here/accept.mjs" "$fw" "$work" "$(node "$here/entry.mjs" "$fw" "$work")" "$port" "$k")
   node "$here/summary.mjs" <<<"$out"
   node -e 'const r = JSON.parse(process.argv[1]); process.exit(r.total > 0 && r.passed === r.total ? 0 : 1)' "$out" ||
     failed=1
@@ -49,6 +48,8 @@ for patch in "$steps"/[0-9][0-9].patch; do
   accept "$k"
   last=$k
 done
+
+for k in ${EXTRA_STEPS:-}; do accept "$k"; done
 
 rm -rf "$work"
 exit $failed
