@@ -447,6 +447,24 @@ None of these is bent quietly; each needs the owner's explicit yes.
   - The 0.8 validator never hashes v1: any v1 file is HZ057.
   - Nothing is accepted implicitly.
 
+- **Implementation notes (wave 3 G):**
+  - "Decides" follows the list above exactly: `%truthy`, the `#…` i18n builtins and `and` / `or` / `not` alone do
+    not decide; an `inc` assign does.
+  - The previous record is replayed by patching the transition and its entered state (effect, input, timers,
+    `final`) into the current machine. If that machine cannot compile, the change counts as specified.
+  - A change whose only deciding difference is a `fn` body cannot be replayed (the old body is not stored), so it is
+    accepted when a covering contract has a normalised body hash the previous entry did not have.
+  - HZ058 skips contracts that fire no transition (an ignored event is a negative specification) and failing ones.
+  - HZ057 points at the owning state of its first entry; a `pages` difference is its own HZ057 at `/pages`. A lock is
+    required only with a machine; without one, `pages` is reviewed once a lock file exists.
+  - Human output prints at most 10 lines of any cause, with `… N more (--json lists all)`; HZ058 is one diagnostic
+    per feature whose cause lists every contract.
+  - `hozu add feature` writes the first lock, or adds its features' entries and new `pages` keys to an existing v2
+    lock. It runs in a worker, so the app modules never enter the CLI's module cache.
+  - `examples/bookmarks` keeps only `addsBookmark`. The other examples' HZ058 contracts are left for wave 4
+    ("the examples"): blog 5, cart 6, notes 15, trial-0006 / trial-0007 / trial-tasks 11 each, the site 36.
+  - `hozu.lock.json` is excluded from Biome, like the generated schemas.
+
 ## H. Authoring: no silent JavaScript on references
 **Problem:**
 - **D2:** a plain helper called from a render callback evaluates `?:`, `&&` and `===` on the placeholder (every note
