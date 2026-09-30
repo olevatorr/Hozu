@@ -27,7 +27,6 @@ import { widgetEvents } from './rules/widgets.ts'
 
 export type { ChangeKind, LockChange } from './contracts/lock.ts'
 export { decides, summaryOf } from './contracts/mechanical.ts'
-export { behaviorOf, contractHash, pagesOf, recordOf } from './contracts/record.ts'
 export type {
   BehaviorRecord,
   EndpointLockV2,
@@ -36,6 +35,7 @@ export type {
   LockfileV2,
   PagesLockV2,
 } from './contracts/record.ts'
+export { behaviorOf, contractHash, pagesOf, recordOf } from './contracts/record.ts'
 export type { ContractRun, Failure } from './contracts/run.ts'
 export { runContract } from './contracts/run.ts'
 export type { Impact, ImpactKind, ImpactQuery, ImpactUse } from './impact.ts'

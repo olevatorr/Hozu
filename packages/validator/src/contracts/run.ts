@@ -27,7 +27,14 @@ function tracing(machine: CompiledMachine, evaluated: Set<string>): CompiledMach
   const wrap = (ts: CompiledTransition[]) =>
     ts.map((t) => {
       const guard = t.guard
-      return guard ? { ...t, guard: (env: Parameters<typeof guard>[0]) => (evaluated.add(t.id), guard(env)) } : t
+      if (!guard) return t
+      return {
+        ...t,
+        guard: (env: Parameters<typeof guard>[0]) => {
+          evaluated.add(t.id)
+          return guard(env)
+        },
+      }
     })
   const each = <K>(m: Map<K, CompiledTransition[]>) => new Map([...m].map(([k, ts]) => [k, wrap(ts)]))
   return {

@@ -71,7 +71,10 @@ const CAUSE_LINES = 10
 const cap = (cause: string): string => {
   const lines = cause.split('\n')
   if (lines.length <= CAUSE_LINES + 1) return lines.join('\n    ')
-  return [...lines.slice(0, CAUSE_LINES + 1), `… ${lines.length - CAUSE_LINES - 1} more (--json lists all)`].join('\n    ')
+  return [
+    ...lines.slice(0, CAUSE_LINES + 1),
+    `… ${lines.length - CAUSE_LINES - 1} more (--json lists all)`,
+  ].join('\n    ')
 }
 
 export function human(d: Diagnostic): string {

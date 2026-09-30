@@ -366,3 +366,52 @@ describe('busy states by rule (ADR 0037)', () => {
     expect(d.fix?.patch).toEqual([{ op: 'remove', path: '/features/f/machine/states/saving/ignore' }])
   })
 })
+
+describe('link search folding (ADR 0043 G)', () => {
+  const Go = event({ payload: z.object({ tag: z.string() }) })
+  const listing = route({
+    path: '/',
+    params: null,
+    search: z.object({ tag: z.string().default(''), page: z.number().default(1) }),
+  })
+  const navigateOf = (to: unknown) => {
+    const m = machine({
+      context: Context,
+      initialContext: { n: 0, label: '' },
+      initial: 'idle',
+      states: () => ({ idle: { on: [on(Go, { target: 'idle', navigate: to as never })] } }),
+    })
+    const { ir, diagnostics } = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { listing },
+        pages: [],
+        features: [feature({ id: 'f', declarations: [{ Go, m }], ...base })],
+      }),
+    )
+    expect(diagnostics).toEqual([])
+    return ir.features.f!.machine!.states.idle!.on['f.Go']![0]!.navigate
+  }
+  const omitted = { link: 'listing', params: { literal: null }, search: { literal: null } }
+
+  it('folds literals equal to the defaults, and null, into the omitted search', () => {
+    expect(navigateOf(part(() => ui.link(listing, null)))).toEqual(omitted)
+    expect(navigateOf(part(() => ui.link(listing, null, { tag: '' })))).toEqual(omitted)
+    expect(navigateOf(part(() => ui.link(listing, null, { tag: '', page: 1 })))).toEqual(omitted)
+    expect(navigateOf(part(() => ui.link(listing, null, { tag: null as never })))).toEqual(omitted)
+    expect(navigateOf(part(() => ui.link(listing, null, {} as never)))).toEqual(omitted)
+  })
+
+  it('keeps fields that differ from the default and every non-literal value', () => {
+    expect(navigateOf(part(() => ui.link(listing, null, { tag: 'x', page: 1 })))).toEqual({
+      ...omitted,
+      search: { literal: { tag: 'x' } },
+    })
+    expect(navigateOf(part((e: { tag: string }) => ui.link(listing, null, { tag: e.tag, page: 1 })))).toEqual(
+      {
+        ...omitted,
+        search: { object: { tag: { ref: 'event', path: ['tag'] } } },
+      },
+    )
+  })
+})

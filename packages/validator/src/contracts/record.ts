@@ -143,7 +143,9 @@ export function pagesOf(ir: ProjectIR): PagesLockV2 {
   }
   const endpoints: PagesLockV2['endpoints'] = {}
   for (const fid of Object.keys(ir.features).sort())
-    for (const [name, e] of Object.entries(ir.features[fid]!.endpoints).sort(([a], [b]) => a.localeCompare(b)))
+    for (const [name, e] of Object.entries(ir.features[fid]!.endpoints).sort(([a], [b]) =>
+      a.localeCompare(b),
+    ))
       endpoints[`${fid}.${name}`] = {
         mode: e.mode ?? (e.output === null ? 'response' : 'json'),
         failed: e.failed ?? {},

@@ -1,6 +1,6 @@
 import type { Diagnostic, DiagnosticCode, ProjectIR, ValueExpr } from '@hozu/core/ir'
 import { compileMachine } from '@hozu/machine'
-import { runContract, verify } from '@hozu/validator'
+import { type BehaviorRecord, behaviorOf, recordOf, runContract, summaryOf, verify } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
 import { cartBuild, cartIR } from './support/cart.ts'
 
@@ -95,9 +95,15 @@ const catalog: Case[] = [
 describe('Phase 1 behavior catalog', () => {
   it('the cart passes every contract with full coverage', () => {
     const { diagnostics, lock } = run(cartIR())
-    expect(diagnostics.map((d) => [d.code, d.cause.split('\n').slice(1).map((l) => l.split(':')[0])])).toEqual([
-      ['HZ058', CART_WITHOUT_DECISION],
-    ])
+    expect(
+      diagnostics.map((d) => [
+        d.code,
+        d.cause
+          .split('\n')
+          .slice(1)
+          .map((l) => l.split(':')[0]),
+      ]),
+    ).toEqual([['HZ058', CART_WITHOUT_DECISION]])
     const entries = Object.values(lock!.features.cart!)
     expect(entries).toHaveLength(15)
     expect(entries.every((e) => Object.keys(e.contracts).length > 0)).toBe(true)
@@ -232,7 +238,9 @@ describe('Phase 1 behavior catalog', () => {
     )
     expect(diagnostics[0]!.fix?.summary).toContain('--update-lock')
     const { sources, bindings } = cartBuild()
-    expect(decisive(verify(after, { sources, bindings, lock: baseline, accept: true }).diagnostics)).toEqual([])
+    expect(decisive(verify(after, { sources, bindings, lock: baseline, accept: true }).diagnostics)).toEqual(
+      [],
+    )
   })
 
   it('HZ015 on effects gives the list to paste, in authoring form (ADR 0038 R2)', () => {
@@ -280,5 +288,84 @@ describe('contract runner', () => {
       bindings.checks,
     )
     expect(r.failure).toBeNull()
+  })
+})
+
+describe('lock v2 summary (ADR 0043 G)', () => {
+  const ir = cartIR()
+  const id = 'checkingOut/invoke/done/0'
+  const record = recordOf(ir, cart(ir), id)
+  const variants: [string, (r: BehaviorRecord) => void][] = [
+    [
+      'guard',
+      (r) => (r.guard = { op: 'eq', left: { ref: 'context', path: ['error'] }, right: { literal: null } }),
+    ],
+    ['assign', (r) => (r.assign = [])],
+    ['navigate search', (r) => ((r.navigate as { search: ValueExpr }).search = { literal: { page: 2 } })],
+    ['navigate', (r) => (r.navigate = null)],
+    ['enters.state', (r) => (r.enters.state = 'idle')],
+    ['enters.effect', (r) => (r.enters.effect = 'cart.addItem')],
+    [
+      'enters.input',
+      (r) => {
+        r.enters.effect = 'cart.addItem'
+        r.enters.input = { ref: 'context', path: ['pending'] }
+      },
+    ],
+    ['enters.timers', (r) => (r.enters.timers = [5000])],
+    ['enters.final', (r) => (r.enters.final = !r.enters.final)],
+    ['fns', (r) => (r.fns = { 'cart.total': 'abcdef0123456789' })],
+    ['fn sourceHash', (r) => (r.fns = { 'cart.total': 'fedcba9876543210' })],
+  ]
+
+  it('prints every hashed field, so a changed hash never shows identical was/now', () => {
+    const seen = new Map([[summaryOf(cart(ir), id, record), 'original']])
+    const hashes = new Set([behaviorOf(id, record)])
+    for (const [name, change] of variants) {
+      const r = structuredClone(record)
+      change(r)
+      const summary = summaryOf(cart(ir), id, r)
+      expect(seen.get(summary), `${name} renders like ${seen.get(summary)}`).toBeUndefined()
+      seen.set(summary, name)
+      hashes.add(behaviorOf(id, r))
+    }
+    expect(hashes.size).toBe(variants.length + 1)
+  })
+
+  it('stores contracts as normalised bodies: context growth and renames keep the hash', () => {
+    const before = run(cartIR()).lock!.features.cart!
+    const grown = cartIR()
+    const f = cart(grown)
+    ;(f.machine!.initialContext as Record<string, unknown>).extra = 0
+    for (const c of Object.values(f.contracts)) {
+      ;(c.given.context as Record<string, unknown>).extra = 0
+      if (c.expect.context) (c.expect.context as Record<string, unknown>).extra = 0
+    }
+    const after = run(grown).lock!.features.cart!
+    for (const [id, entry] of Object.entries(before))
+      expect(after[id]!.contracts, id).toEqual(entry.contracts)
+    const hashOf = (lock: typeof before) => lock['idle/on/cart.SetQuantity/0']!.contracts.setsQuantity
+    const renamed = cartIR()
+    const { setsQuantity, ...rest } = cart(renamed).contracts
+    cart(renamed).contracts = { ...rest, setsQuantityRenamed: setsQuantity! }
+    const moved = run(renamed).lock!.features.cart!['idle/on/cart.SetQuantity/0']!.contracts
+    expect(moved.setsQuantityRenamed).toBe(hashOf(before))
+  })
+
+  it('the pages section reviews who gets a 403 (ADR 0043 D)', () => {
+    const page = (ir: ProjectIR) => ir.pages[Object.keys(ir.pages)[0]!]!
+    const before = cartIR()
+    page(before).head.failed = { NotFound: { status: 404 } }
+    const baseline = run(before).lock!
+    expect(Object.values(baseline.pages.head)).toEqual([{ NotFound: { status: 404 } }])
+    const after = cartIR()
+    page(after).head.failed = { NotFound: { status: 403 } }
+    const stale = decisive(run(after, baseline).diagnostics)
+    expect(stale.map((d) => [d.code, d.location.pointer])).toEqual([['HZ057', '/pages']])
+    expect(stale[0]!.cause).toContain('was {"NotFound":{"status":404}}; now {"NotFound":{"status":403}}')
+    const { sources, bindings } = cartBuild()
+    expect(decisive(verify(after, { sources, bindings, lock: baseline, accept: true }).diagnostics)).toEqual(
+      [],
+    )
   })
 })

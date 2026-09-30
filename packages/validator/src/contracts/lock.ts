@@ -58,7 +58,11 @@ export function changedFields(before: BehaviorRecord, after: BehaviorRecord): (k
 }
 
 /** Every difference between the lock on disk and the computed one, for the features that were computed. */
-export function lockChanges(previous: LockfileV2 | null, next: LockfileV2, removedFeatures: string[]): LockChange[] {
+export function lockChanges(
+  previous: LockfileV2 | null,
+  next: LockfileV2,
+  removedFeatures: string[],
+): LockChange[] {
   const out: LockChange[] = []
   const features = [...new Set([...Object.keys(next.features), ...removedFeatures])].sort()
   for (const fid of features) {
@@ -70,7 +74,14 @@ export function lockChanges(previous: LockfileV2 | null, next: LockfileV2, remov
       if (!b) out.push({ feature: fid, id, kind: 'new', before: null, after: a, fields: [] })
       else if (!a) out.push({ feature: fid, id, kind: 'removed', before: b, after: null, fields: [] })
       else if (b.behavior !== a.behavior || !same(b.fields, a.fields) || b.summary !== a.summary)
-        out.push({ feature: fid, id, kind: 'changed', before: b, after: a, fields: changedFields(b.fields, a.fields) })
+        out.push({
+          feature: fid,
+          id,
+          kind: 'changed',
+          before: b,
+          after: a,
+          fields: changedFields(b.fields, a.fields),
+        })
       else if (!same(b.contracts, a.contracts) || b.decides !== a.decides)
         out.push({ feature: fid, id, kind: 'contracts', before: b, after: a, fields: [] })
     }

@@ -1,12 +1,14 @@
 import { execFile } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { Ajv } from 'ajv'
 import { describe, expect, it } from 'vitest'
+import { withHints } from '../src/commands/check.ts'
 import { main } from '../src/main.ts'
+import { human } from '../src/output.ts'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const cart = `${root}examples/cart`
@@ -188,5 +190,49 @@ describe('built binary', () => {
     expect(result.stdout).toContain(
       'packages/cli/test/fixtures/nondeterministic.config.ts:14:9  error  HZ011',
     )
+  })
+})
+
+describe('ADR 0043 G output', () => {
+  it('translates the TS error for ui.link(route, params, null) and {}, and nothing else', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-hint-'))
+    writeFileSync(
+      join(dir, 'views.ts'),
+      [
+        'ui.link(home, null, null)',
+        'ui.link(home, null, {})',
+        'save(null)',
+        'ui.link(item, { id: f(x) }, null)',
+      ].join('\n'),
+    )
+    const issue = (line: number, column: number) => ({
+      file: 'views.ts',
+      line,
+      column,
+      code: 'TS2345',
+      message: 'm',
+    })
+    const hinted = withHints([issue(1, 21), issue(2, 21), issue(3, 6), issue(4, 29)], dir)
+    expect(hinted.map((e) => e.message.includes('omit the third argument of ui.link'))).toEqual([
+      true,
+      true,
+      false,
+      true,
+    ])
+  })
+
+  it('prints at most ten entries of a long cause; --json keeps all of them', () => {
+    const cause = ['why', ...Array.from({ length: 14 }, (_, i) => `new entry ${i}`)].join('\n')
+    const text = human({
+      code: 'HZ057',
+      severity: 'error',
+      message: 'm',
+      location: { feature: 'f', pointer: '/features/f/machine', source: null },
+      cause,
+      fix: null,
+    })
+    expect(text).toContain('new entry 9')
+    expect(text).not.toContain('new entry 10')
+    expect(text).toContain('… 4 more (--json lists all)')
   })
 })

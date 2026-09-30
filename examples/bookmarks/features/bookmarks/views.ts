@@ -149,4 +149,3 @@ export const addsBookmark = contract(bookmarksMachine, {
     ],
   },
 })
-

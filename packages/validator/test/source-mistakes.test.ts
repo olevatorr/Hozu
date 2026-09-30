@@ -118,7 +118,10 @@ const submitsAgain = contract(drafts, {
 })
 const refusesEmpty = contract(drafts, {
   given: { state: 'editing' },
-  when: [{ send: Draft, payload: { text: '' } }, { send: Submit, payload: {} }],
+  when: [
+    { send: Draft, payload: { text: '' } },
+    { send: Submit, payload: {} },
+  ],
   expect: { state: 'editing' },
 })
 

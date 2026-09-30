@@ -57,7 +57,7 @@ function withoutDecision(ctx: Ctx, feature: FeatureIR, found: { name: string; ta
     'HZ058',
     feature.id,
     join('', 'features', feature.id, 'contracts', names[0]!),
-    `${names.length} contract${names.length === 1 ? '' : 's'} cover no decision: ${shown}`,
+    `${names.length} contract${names.length === 1 ? ' covers' : 's cover'} no decision: ${shown}`,
     [
       'Every transition these contracts fire only copies values, and they evaluate no guard; hozu.lock.json already reviews those transitions (ADR 0043 G).',
       ...found.map((c) => `${c.name}: ${c.taken.join(' → ')}`),
@@ -99,7 +99,11 @@ function specified(ctx: Ctx, bindings: Bindings, feature: FeatureIR, change: Loc
   }
   let machine: CompiledMachine
   try {
-    machine = compileMachine(previousFeature(feature, change.id, before.fields), bindings.fns, routeTable(ctx.ir))
+    machine = compileMachine(
+      previousFeature(feature, change.id, before.fields),
+      bindings.fns,
+      routeTable(ctx.ir),
+    )
   } catch {
     return true
   }
@@ -124,7 +128,9 @@ function unspecified(ctx: Ctx, feature: FeatureIR, change: LockChange) {
     transitionPointer(feature.id, change.id),
     `Behavior of ${change.id} changed (${change.fields.join(', ')}) and no covering contract specifies it`,
     [
-      ...change.fields.map((k) => `${k}: was ${fieldText[k](before.fields)}; now ${fieldText[k](after.fields)}`),
+      ...change.fields.map(
+        (k) => `${k}: was ${fieldText[k](before.fields)}; now ${fieldText[k](after.fields)}`,
+      ),
       `was: ${before.summary}`,
       `now: ${after.summary}`,
       covering.length

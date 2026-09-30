@@ -152,7 +152,11 @@ export const featuresCreated = (created: string[]): string[] =>
 type Seeded = { path: string; created: boolean } | null
 
 /** Runs in a worker so the app modules it imports never enter this process's module cache. */
-export const seedLockIsolated = (config: string | undefined, cwd: string, features: string[]): Promise<Seeded> =>
+export const seedLockIsolated = (
+  config: string | undefined,
+  cwd: string,
+  features: string[],
+): Promise<Seeded> =>
   new Promise((resolve) => {
     const self = fileURLToPath(import.meta.url)
     const worker = new Worker(joinPath(dirname(self), `seed-lock${extname(self)}`), {

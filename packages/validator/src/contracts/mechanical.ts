@@ -32,7 +32,15 @@ export function locate(feature: FeatureIR, id: string): Located {
   return { from, trigger, transition, target: feature.machine!.states[transition.target] }
 }
 
-const computingBuiltins = new Set(['%plus', '%minus', '%concat', '%cond', '%coalesce', '%includes', '%length'])
+const computingBuiltins = new Set([
+  '%plus',
+  '%minus',
+  '%concat',
+  '%cond',
+  '%coalesce',
+  '%includes',
+  '%length',
+])
 
 const computingFn = (fn: string) => computingBuiltins.has(fn) || !/^[%#]/.test(fn)
 
