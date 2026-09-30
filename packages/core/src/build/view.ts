@@ -427,7 +427,7 @@ function nodeOf(scope: FeatureScope, value: unknown, id: string, p: At, depth: n
       : typeof value === 'function'
         ? 'A function was passed instead of calling it, or a callback where a node belongs. Children must be ui nodes, strings, numbers or references.'
         : Array.isArray(value)
-          ? 'A list of children is valid only as a branch: c ? [a, b] : null or c && [a, b].'
+          ? 'A list of children is valid only as a branch of ?: or &&: c ? [a, b] : null or c && [a, b]. A query branch, an each item or a view that always shows several nodes wraps them in one element.'
           : 'Children must be ui nodes, strings, numbers or references; write conditional content as c ? a : b.',
   )
   return { id, kind: 'text', value: { literal: '' } }

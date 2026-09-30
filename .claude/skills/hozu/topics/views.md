@@ -15,7 +15,7 @@ export const Board = ui.view({
 - **Classes:** `class` is a static string of Tailwind classes that must exist (HZ026). Conditional classes:
   `toggle: { 'bg-indigo-600 text-white': ctx.tab === t }`. CSS variables: `vars: { '--hue': item.hue }`. No `style`.
 - **Conditions:** `ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error])`, `item.done ? 'done' : 'open'`,
-  `list.length === 0 ? ui.p({}, ['Empty']) : ui.ul({}, [...])`; a branch may be a list: `open ? [a, b] : null`.
+  `list.length === 0 ? ui.p({}, ['Empty']) : ui.ul({}, [...])`; a branch may be a list: `open ? [a, b] : null`, also as what a query branch or an each item returns.
   With an enter/leave animation: `ui.if(cond, [then], [else], 'fade')` (the motion name is required).
 - **By machine state:** `when(['adding', 'saving'], [ui.p({}, ['Saving…'])])`.
 - **Lists:** `ui.each(items, 'id', (item) => ui.li({}, [item.title]))`; `ui.each(tags, null, (t) => …)` for primitives.

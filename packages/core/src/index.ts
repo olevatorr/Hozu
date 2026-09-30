@@ -45,6 +45,7 @@ export type { TagDecl, TagUse } from './builders/tag.ts'
 export { tag } from './builders/tag.ts'
 export type {
   AttrValue,
+  Branch,
   Child,
   DomRef,
   Href,

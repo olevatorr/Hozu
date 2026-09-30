@@ -71,6 +71,9 @@ export type Child =
   | Expr<string | number | null>
   | readonly Child[]
 
+/** What a query branch or an each item returns: one node, or `c ? a : [b, c]`. */
+export type Branch = NodeDecl | readonly Child[]
+
 export type AttrValue = Val<string | number | boolean | null> | Guard | Asset
 
 export type Props<T extends Tag = Tag> = TagProps[T] & {
@@ -143,7 +146,7 @@ type Elements = {
 }
 
 type QueryErrors<E> = {
-  [K in keyof E | 'Unexpected']: (error: Ref<K extends keyof E ? E[K] : UnexpectedError>) => NodeDecl | null
+  [K in keyof E | 'Unexpected']: (error: Ref<K extends keyof E ? E[K] : UnexpectedError>) => Branch | null
 }
 
 function view<C, S extends string, P = null, Q = null>(config: {
@@ -204,13 +207,13 @@ export const ui = Object.freeze({
   each: <T>(
     source: Expr<readonly T[]> | readonly T[],
     key: [T] extends [object] ? keyof T & string : null,
-    item: (item: Ref<T>) => NodeDecl,
+    item: (item: Ref<T>) => Branch,
     motion?: string,
   ): NodeDecl => node({ kind: 'each', source, key, item, motion: motion ?? null }),
   query: <I, O, E>(
     query: QueryDecl<I, O, E>,
     input: NoInfer<Val<I>>,
-    branches: { ready: (data: Ref<O>) => NodeDecl | null; pending?: NodeDecl | null; failed: QueryErrors<E> },
+    branches: { ready: (data: Ref<O>) => Branch | null; pending?: Branch | null; failed: QueryErrors<E> },
   ): NodeDecl => node({ kind: 'query', query, input, ...branches, pending: branches.pending ?? null }),
   embed: (view: ViewDecl): NodeDecl => node({ kind: 'embed', view }),
   widget,
