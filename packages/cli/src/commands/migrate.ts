@@ -214,9 +214,10 @@ export async function runMigrate(
         existsSync(join(dir, t.guide)) ? readFileSync(join(dir, t.guide), 'utf8') : null,
       ]),
     )
+    const skills = new Map(targets.map((t) => [t.skill, contentOf(join(dir, t.skill))]))
     await writeAgentFiles(dir, agent, { name: dir.split('/').pop()!, runner })
     for (const t of targets) {
-      changed.push(rel(join(dir, t.skill)))
+      if (contentOf(join(dir, t.skill)) !== skills.get(t.skill)) changed.push(rel(join(dir, t.skill)))
       const file = join(dir, t.guide)
       const r = migrateGuide(existing.get(t.guide) ?? null, t, dir, runner)
       if (r.kind === 'custom') {
@@ -258,6 +259,19 @@ export async function runMigrate(
     next,
     check,
   }
+}
+
+function contentOf(dir: string): string {
+  const out: string[] = []
+  const visit = (d: string) => {
+    for (const name of readdirSync(d).sort()) {
+      const path = join(d, name)
+      if (statSync(path).isDirectory()) visit(path)
+      else out.push(`${relative(dir, path)}\n${readFileSync(path, 'utf8')}`)
+    }
+  }
+  if (existsSync(dir)) visit(dir)
+  return out.join('\u0000')
 }
 
 function installedCore(config: string): string | null {
@@ -316,17 +330,17 @@ export function describeMigrate(r: MigrateOutput): string {
         : `   ${g.file}: Hozu block ${g.state}`,
     )
   let step = 3
-  for (const n of r.next) lines.push(`${step++}. ${n}`)
   if (r.ir.compared)
     lines.push(
       r.ir.differences.length
-        ? `   The IR differs from 0.7 (after the mapping every rewrite allows) at ${r.ir.differences.length} ${r.ir.differences.length === 1 ? 'place' : 'places'}: each is a behaviour change to review\n${r.ir.differences.map((d) => `   ! ${d}`).join('\n')}`
-        : '   The IR equals the 0.7 IR apart from the mapping every rewrite allows (ADR 0043 Migration)',
+        ? `${step++}. the IR differs from 0.7 (after the mapping every rewrite allows) at ${r.ir.differences.length} ${r.ir.differences.length === 1 ? 'place' : 'places'}; each is a behaviour change to review:\n${r.ir.differences.map((d) => `   ! ${d}`).join('\n')}`
+        : `${step++}. the IR equals the 0.7 IR apart from the mapping every rewrite allows (ADR 0043 Migration)`,
     )
   if (r.check)
     lines.push(
-      `${step}. hozu check: ${r.check.ok ? 'ok' : 'failed'} · ${r.check.validate.summary.errors} errors, ${r.check.validate.summary.warnings} warnings · lock ${r.check.validate.lock}`,
+      `${step++}. hozu check: ${r.check.ok ? 'ok' : 'failed'} · ${r.check.validate.summary.errors} errors, ${r.check.validate.summary.warnings} warnings · lock ${r.check.validate.lock}`,
     )
+  for (const n of r.next) lines.push(`${step++}. ${n}`)
   lines.push('Migrate never writes hozu.lock.json and never deletes a contract.')
   return `${lines.join('\n')}\n`
 }
