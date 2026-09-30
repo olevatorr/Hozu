@@ -2,14 +2,9 @@ import { existsSync, readFileSync } from 'node:fs'
 import { createRequire, register } from 'node:module'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import type { MigrateStaleEntry } from '../contract.ts'
 
-export interface StaleEntry {
-  feature: string
-  id: string
-  kind: 'missing' | 'removed' | 'behavior' | 'contracts'
-  was: string | null
-  now: string | null
-}
+export type StaleEntry = MigrateStaleEntry
 
 export interface Stale07 {
   core: string | null

@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import { dirname, extname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runnerOf, writeAgentFiles } from 'create-hozu'
-import type { CheckOutput } from '../contract.ts'
+import type { CheckOutput, MigrateOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import { load } from '../load.ts'
 import { runCheck } from './check.ts'
@@ -18,20 +18,7 @@ import { migrateLists } from './migrate-lists.ts'
 import { differences, normalize07 } from './migrate-normalize.ts'
 import { migrateOps } from './migrate-ops.ts'
 import { migrateParts } from './migrate-parts.ts'
-import type { Stale07, StaleEntry } from './migrate-stale.ts'
-
-export interface MigrateOutput {
-  ok: boolean
-  installed: string | null
-  stale: { skipped: string | null; entries: StaleEntry[] }
-  changed: string[]
-  removed: string[]
-  notes: Note[]
-  guide: { file: string; state: string; block: string | null }[]
-  ir: { compared: boolean; differences: string[] }
-  next: string[]
-  check: CheckOutput | null
-}
+import type { Stale07 } from './migrate-stale.ts'
 
 const SKIP = /(^|\/)(node_modules|dist|\.[^/]+)(\/|$)/
 

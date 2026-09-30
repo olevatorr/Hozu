@@ -12,15 +12,24 @@ import {
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { Ajv } from 'ajv'
 import { describe, expect, it } from 'vitest'
-import type { MigrateOutput } from '../src/commands/migrate.ts'
 import { sources } from '../src/commands/migrate.ts'
+import type { MigrateOutput } from '../src/contract.ts'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const run2 = join(homedir(), 'hozu-trial-0020/hozu-run2/app')
 const modules08 = join(root, 'examples/notes/node_modules')
 
 const bin = join(root, 'packages/cli/bin/hozu.js')
+const ajv = new Ajv({ allErrors: true, strict: false })
+const migrateSchema = JSON.parse(readFileSync(join(root, 'packages/cli/schema/migrate.schema.json'), 'utf8'))
+const parsed = (stdout: string): MigrateOutput => {
+  const out = JSON.parse(stdout)
+  ajv.validate(migrateSchema, out)
+  expect(ajv.errors ?? []).toEqual([])
+  return out
+}
 
 const cli = (args: string[], cwd: string) =>
   new Promise<{ code: number; stdout: string }>((resolve) =>
@@ -50,7 +59,7 @@ describe('hozu migrate 0.8, end to end', () => {
       const before = contracts(dir)
 
       const first = await cli(['migrate', '0.8', '--json'], dir)
-      const r1 = JSON.parse(first.stdout) as MigrateOutput
+      const r1 = parsed(first.stdout)
       expect(first.code).toBe(0)
       expect(r1.stale.skipped).toBeNull()
       const kinds: Record<string, number> = {}
@@ -71,7 +80,7 @@ describe('hozu migrate 0.8, end to end', () => {
         symlinkSync(join(modules08, m), join(dir, 'node_modules', m))
       }
       const second = await cli(['migrate', '0.8', '--json'], dir)
-      const r2 = JSON.parse(second.stdout) as MigrateOutput
+      const r2 = parsed(second.stdout)
       expect(r2.stale.skipped).toContain('the stale check runs on 0.7, before the upgrade')
       expect(r2.changed).toEqual([])
       expect(r2.ir).toEqual({ compared: true, differences: [] })
@@ -84,7 +93,7 @@ describe('hozu migrate 0.8, end to end', () => {
 
       expect((await cli(['check', '--update-lock'], dir)).code).toBe(0)
       const third = await cli(['migrate', '0.8', '--json'], dir)
-      const r3 = JSON.parse(third.stdout) as MigrateOutput
+      const r3 = parsed(third.stdout)
       expect(r3.check!.ok).toBe(true)
       expect(third.code).toBe(0)
       expect(contracts(dir)).toEqual(before)

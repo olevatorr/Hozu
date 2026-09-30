@@ -123,6 +123,42 @@ export interface SkillOutput {
   custom: { guide: string; block: string }[]
 }
 
+export interface MigrateStaleEntry {
+  feature: string
+  id: string
+  kind: 'missing' | 'removed' | 'behavior' | 'contracts'
+  was: string | null
+  now: string | null
+}
+
+export interface MigrateNote {
+  file: string
+  line: number
+  rule: string
+  message: string
+  see?: string
+  behaviour?: boolean
+}
+
+export interface MigrateGuide {
+  file: string
+  state: 'written' | 'current' | 'replaced' | 'marked' | 'custom'
+  block: string | null
+}
+
+export interface MigrateOutput {
+  ok: boolean
+  installed: string | null
+  stale: { skipped: string | null; entries: MigrateStaleEntry[] }
+  changed: string[]
+  removed: string[]
+  notes: MigrateNote[]
+  guide: MigrateGuide[]
+  ir: { compared: boolean; differences: string[] }
+  next: string[]
+  check: CheckOutput | null
+}
+
 export interface TypeIssue {
   file: string
   line: number

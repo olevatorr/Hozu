@@ -1,17 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire, stripTypeScriptTypes } from 'node:module'
 import { dirname, resolve } from 'node:path'
+import type { MigrateNote } from '../contract.ts'
 
 export type Node = { type: string; start: number; end: number; [key: string]: any }
 
-export interface Note {
-  file: string
-  line: number
-  rule: string
-  message: string
-  see?: string
-  behaviour?: boolean
-}
+export type Note = MigrateNote
 
 export interface Rewrite {
   code: string
