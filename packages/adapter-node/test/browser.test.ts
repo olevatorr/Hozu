@@ -64,43 +64,34 @@ describe.skipIf(!existsSync(chrome))('in Chromium', () => {
     }
   }, 30_000)
 
-  it('soft navigation keeps the cart island alive, restores scroll and never refetches (ADR 0015)', async () => {
+  it('an internal link is a document navigation and the cart re-renders from server data (ADR 0043 I)', async () => {
+    const fresh = start()
+    await new Promise<void>((r) => (fresh.server.listening ? r() : fresh.server.once('listening', () => r())))
     const browser = await chromium.launch({ executablePath: chrome })
     try {
-      const page = await browser.newPage({ viewport: { width: 800, height: 400 } })
+      const page = await browser.newPage()
       const requests: string[] = []
       page.on('request', (r) => requests.push(`${r.resourceType()} ${new URL(r.url()).pathname}`))
-      await page.goto(url)
-      await page.waitForFunction(() => document.querySelector('input[name="qty"]') !== null)
-      await page.waitForLoadState('networkidle')
-      await page.fill('input[name="qty"]', '5')
+      await page.goto(`http://127.0.0.1:${(fresh.server.address() as AddressInfo).port}/`)
+      await page.waitForFunction(() => document.documentElement.hasAttribute('data-hozu-ready'))
+      await page.getByRole('button', { name: 'Add' }).first().click()
+      await page.waitForFunction(() => document.querySelector('ul.divide-y')?.textContent === 'Mug × 1Remove')
       await page.evaluate(() => {
         ;(window as unknown as { __alive: boolean }).__alive = true
-        document.body.style.minHeight = '3000px'
-        window.scrollTo(0, 900)
       })
       requests.length = 0
 
       await page.evaluate(() => (document.querySelector('a[href="/products/mug"]') as HTMLElement).click())
       await page.waitForFunction(() => document.querySelector('h2')?.textContent === 'Mug — $12')
-      expect(await page.evaluate(() => window.scrollY)).toBe(0)
-      expect(await page.evaluate(() => (window as unknown as { __alive?: boolean }).__alive)).toBe(true)
+      await page.waitForFunction(() => document.documentElement.hasAttribute('data-hozu-ready'))
+      expect(await page.evaluate(() => (window as unknown as { __alive?: boolean }).__alive)).toBeUndefined()
+      expect(requests).toContain('document /products/mug')
+      expect(requests.filter((r) => r.includes('/_hozu/query') || r.includes('navigate'))).toEqual([])
+      expect(await page.locator('ul.divide-y').textContent()).toBe('Mug × 1Remove')
       expect(await page.title()).toBe('Mug')
-      expect(new URL(page.url()).pathname).toBe('/products/mug')
-      expect(await page.inputValue('input[name="qty"]')).toBe('5')
-      expect(await page.evaluate(() => document.querySelector('div[aria-live]')?.textContent)).toBe('Mug')
-      expect(requests).toEqual(['fetch /products/mug'])
-
-      await page.evaluate(() => window.scrollTo(0, 0))
-      await page.goBack()
-      await page.waitForFunction(() => document.querySelector('h2')?.textContent === 'Products')
-      await page.waitForFunction(() => window.scrollY > 0)
-      expect(await page.evaluate(() => window.scrollY)).toBe(900)
-      expect(await page.evaluate(() => (window as unknown as { __alive?: boolean }).__alive)).toBe(true)
-      expect(await page.inputValue('input[name="qty"]')).toBe('5')
-      expect(requests.filter((r) => r.includes('/_hozu/query'))).toEqual([])
     } finally {
       await browser.close()
+      fresh.close()
     }
   }, 30_000)
 })

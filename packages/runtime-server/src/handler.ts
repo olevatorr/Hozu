@@ -229,7 +229,7 @@ export function createHandler({
     (secure ??=
       csp === false
         ? Promise.resolve(base)
-        : inlineScriptHashes(ir).then((hashes) => ({
+        : inlineScriptHashes().then((hashes) => ({
             ...base,
             'content-security-policy': contentSecurityPolicy(csp, hashes),
           })))

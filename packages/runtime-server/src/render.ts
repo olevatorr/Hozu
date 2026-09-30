@@ -1,4 +1,4 @@
-import { planRoute, type RoutePlan, softTargets } from '@hozu/compiler'
+import { planRoute, type RoutePlan } from '@hozu/compiler'
 import {
   type BuildResult,
   canonicalStringify,
@@ -399,7 +399,6 @@ export async function renderPage({
   let preloaded = plan.js !== 'conditional'
   const head = headHtml(
     ir,
-    route,
     page.head,
     (v) => value(v, headScope),
     path,
@@ -408,24 +407,18 @@ export async function renderPage({
     plan.js === 'always' ? scripts : [],
     lang,
     alternate,
-    locale,
   )
 
   void (async () => {
     try {
       buffer += `<!doctype html><html${ir.site ? ` lang="${escapeHtml(lang)}"` : ''}><head>${head}</head><body>`
-      const soft = softTargets(ir, route)
-      const bounded = Object.keys(soft).length > 0
       for (const ref of plan.views) {
         const dot = ref.indexOf('.')
         const feature = ir.features[ref.slice(0, dot)]
         const view = feature?.views[ref.slice(dot + 1)]
         if (!feature || !view) continue
-        if (bounded) buffer += `<!--v:${ref}-->`
         await render(prepare(view.root), featureScope(feature, view.machine === feature.id), false)
-        if (bounded) buffer += '<!--/v-->'
       }
-      if (bounded) payload.soft = soft
       if (payload.islands.length) {
         payload.fns = hasFns ? assets.fns : null
         payload.routes = routes
@@ -596,53 +589,22 @@ function channel(): Channel {
 
 export { pathOf }
 
-const speculationMemo = new WeakMap<ProjectIR, Map<string, string>>()
+const speculationRules = JSON.stringify({
+  prerender: [
+    {
+      where: { and: [{ href_matches: '/*' }, { not: { href_matches: '/_hozu/*' } }] },
+      eagerness: 'moderate',
+    },
+  ],
+})
 
-function speculationRules(ir: ProjectIR, route: string, locale: string | null): string {
-  let byRoute = speculationMemo.get(ir)
-  if (!byRoute) {
-    byRoute = new Map()
-    speculationMemo.set(ir, byRoute)
-  }
-  const key = `${locale ?? ''} ${route}`
-  let rules = byRoute.get(key)
-  if (rules === undefined) {
-    const table = routesOf(ir, locale)
-    const soft = Object.keys(softTargets(ir, route)).map((r) => ({
-      not: { href_matches: { pathname: (table[r] ?? r).split('?')[0]! } },
-    }))
-    rules = JSON.stringify({
-      prerender: [
-        {
-          where: { and: [{ href_matches: '/*' }, { not: { href_matches: '/_hozu/*' } }, ...soft] },
-          eagerness: 'moderate',
-        },
-      ],
-    })
-    byRoute.set(key, rules)
-  }
-  return rules
-}
-
-export async function inlineScriptHashes(ir: ProjectIR): Promise<string[]> {
-  const locales = ir.site?.locales ?? [null]
-  const rules = new Set(
-    Object.keys(ir.pages).flatMap((route) =>
-      locales.map((l) => speculationRules(ir, route, localeOf(ir, l))),
-    ),
-  )
-  const digest = async (text: string) =>
-    btoa(
-      String.fromCharCode(
-        ...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))),
-      ),
-    )
-  return Promise.all([...rules].map(async (r) => `sha256-${await digest(r)}`))
+export async function inlineScriptHashes(): Promise<string[]> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(speculationRules))
+  return [`sha256-${btoa(String.fromCharCode(...new Uint8Array(digest)))}`]
 }
 
 function headHtml(
   ir: ProjectIR,
-  route: string,
   h: HeadIR,
   value: (v: ValueExpr) => Json,
   path: string,
@@ -651,7 +613,6 @@ function headHtml(
   scripts: string[],
   lang: string,
   alternate: Record<string, string>,
-  locale: string | null,
 ): string {
   const str = (v: ValueExpr) => {
     const x = value(v)
@@ -688,7 +649,7 @@ function headHtml(
       (href) => `<link rel="preload" href="${escapeHtml(href)}" as="font" type="font/woff2" crossorigin>`,
     ),
     styles ? `<link rel="stylesheet" href="${escapeHtml(styles)}">` : '',
-    `<script type="speculationrules">${speculationRules(ir, route, locale)}</script>`,
+    `<script type="speculationrules">${speculationRules}</script>`,
     `<title>${escapeHtml(title)}</title>`,
     meta('name', 'description', description),
     h.noindex || status !== 200 ? '<meta name="robots" content="noindex">' : '',
