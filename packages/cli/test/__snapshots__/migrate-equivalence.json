@@ -256,9 +256,10 @@
       "freshness": 3,
       "head": 2,
       "op": 4,
-      "part": 3
+      "part": 3,
+      "resolvers": 2
     },
-    "behaviour": 2
+    "behaviour": 4
   },
   "reference-hozu-s08": {
     "mappings": {
@@ -275,9 +276,10 @@
       "freshness": 3,
       "head": 2,
       "op": 4,
-      "part": 3
+      "part": 3,
+      "resolvers": 2
     },
-    "behaviour": 2
+    "behaviour": 4
   },
   "reference-hozu-s09": {
     "mappings": {
@@ -295,9 +297,10 @@
       "head": 2,
       "op": 4,
       "part": 3,
-      "print": 1
+      "print": 1,
+      "resolvers": 2
     },
-    "behaviour": 3
+    "behaviour": 5
   },
   "reference-hozu-s10": {
     "mappings": {
@@ -315,9 +318,10 @@
       "head": 2,
       "op": 4,
       "part": 3,
-      "print": 1
+      "print": 1,
+      "resolvers": 2
     },
-    "behaviour": 3
+    "behaviour": 5
   },
   "reference-hozu-s11": {
     "mappings": {
@@ -335,9 +339,10 @@
       "head": 2,
       "op": 4,
       "part": 3,
-      "print": 1
+      "print": 1,
+      "resolvers": 2
     },
-    "behaviour": 3
+    "behaviour": 5
   },
   "reference-hozu-s12": {
     "mappings": {
@@ -355,9 +360,10 @@
       "head": 2,
       "op": 4,
       "part": 3,
-      "print": 1
+      "print": 1,
+      "resolvers": 2
     },
-    "behaviour": 3
+    "behaviour": 5
   },
   "reference-hozu-s13": {
     "mappings": {
@@ -377,9 +383,10 @@
       "head": 2,
       "op": 4,
       "part": 3,
-      "print": 1
+      "print": 2,
+      "resolvers": 2
     },
-    "behaviour": 3
+    "behaviour": 6
   },
   "reference-hozu-s14": {
     "mappings": {
@@ -399,9 +406,10 @@
       "head": 2,
       "op": 4,
       "part": 3,
-      "print": 1
+      "print": 2,
+      "resolvers": 2
     },
-    "behaviour": 3
+    "behaviour": 6
   },
   "reference-hozu-s15": {
     "mappings": {
@@ -421,9 +429,10 @@
       "head": 2,
       "op": 4,
       "part": 3,
-      "print": 1
+      "print": 2,
+      "resolvers": 2
     },
-    "behaviour": 3
+    "behaviour": 6
   },
   "reference-hozu-s16": {
     "mappings": {
@@ -443,9 +452,10 @@
       "head": 2,
       "op": 4,
       "part": 3,
-      "print": 2
+      "print": 3,
+      "resolvers": 2
     },
-    "behaviour": 4
+    "behaviour": 7
   },
   "reference-hozu-s17": {
     "mappings": {
@@ -465,9 +475,10 @@
       "head": 3,
       "op": 4,
       "part": 3,
-      "print": 2
+      "print": 3,
+      "resolvers": 2
     },
-    "behaviour": 4
+    "behaviour": 7
   },
   "reference-hozu-s18": {
     "mappings": {
@@ -487,9 +498,10 @@
       "head": 3,
       "op": 4,
       "part": 4,
-      "print": 3
+      "print": 4,
+      "resolvers": 2
     },
-    "behaviour": 10
+    "behaviour": 13
   },
   "reference-hozu-s19": {
     "mappings": {
@@ -509,9 +521,10 @@
       "head": 3,
       "op": 4,
       "part": 4,
-      "print": 3
+      "print": 5,
+      "resolvers": 2
     },
-    "behaviour": 10
+    "behaviour": 14
   },
   "reference-hozu-s20": {
     "mappings": {
@@ -531,9 +544,10 @@
       "head": 3,
       "op": 4,
       "part": 4,
-      "print": 3
+      "print": 5,
+      "resolvers": 2
     },
-    "behaviour": 10
+    "behaviour": 14
   },
   "site": {
     "mappings": {

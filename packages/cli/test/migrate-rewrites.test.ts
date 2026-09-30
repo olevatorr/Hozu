@@ -200,6 +200,48 @@ export function itemResolvers<Env>(implement: Implement<{ user: string }, Env>) 
   })
 })
 
+describe('migrate: create-on-read in another module', () => {
+  it('prints a query resolver whose store method writes, through an imported factory', () => {
+    const dir = fixture({
+      'model.ts': model,
+      'store.ts': `export function createStore() {
+  const notes = new Map<string, string[]>()
+  const of = (user: string) => {
+    const list = notes.get(user) ?? []
+    notes.set(user, list)
+    return list
+  }
+  return {
+    of,
+    active: (user: string) => of(user).filter(Boolean),
+    peek: (user: string) => notes.get(user) ?? [],
+  }
+}
+`,
+    })
+    const server = `import { resolvers } from '@hozu/data'
+import { listItems, me } from './model.ts'
+import { createStore } from './store.ts'
+
+const store = createStore()
+export default resolvers(project, (implement) => [
+  implement(listItems, (_, { session }) => store.active(session.user)),
+  implement(me, (_, { session }) => ({ name: store.peek(session.user).join() })),
+])
+`
+    const r = migrateLists(server, join(dir, 'app.ts'))
+    expect(r.code).toBe(server)
+    expect(r.notes.map((n) => [n.line, n.message, n.see, n.behaviour])).toEqual([
+      [
+        7,
+        'the resolver of query listItems calls store.active, which calls .set() (store.ts:5): query resolvers only read; move the write into a mutation',
+        'data',
+        true,
+      ],
+    ])
+  })
+})
+
 describe('migrate: plain helpers that receive references → part()', () => {
   it('wraps local and imported helpers, and a helper that only a new part calls', () => {
     const dir = fixture({
@@ -259,9 +301,42 @@ describe('migrate: what it cannot rewrite is printed with its topic', () => {
       ['serve.ts', 1, 'i18n'],
       ['serve.ts', 2, 'i18n'],
       ['server.ts', 1, 'pages'],
-      ['server.ts', 2, 'pages'],
+      ['server.ts', 2, 'endpoints'],
     ])
     expect(notes.every((n) => n.behaviour)).toBe(true)
     expect(notes[3]!.message).toContain('HZ053')
+  })
+
+  it('every hand-built redirect or 4xx Response of a resolver module, in any argument order', () => {
+    const source = `const redirect = (location: string) => new Response(null, { status: 302, headers: { location } })
+export default resolvers(project, (implement) => [
+  implement(landing, (_, { session }) => redirect(session ? '/notes' : '/login')),
+  implement(bulk, () => {
+    return new Response(null, { headers: { location: '/notes' }, status: 303 })
+  }),
+  implement(exportAll, (_, { session }) => {
+    if (!session) return Response.json({ message: 'Sign in first' }, { status: 401 })
+    return Response.json({})
+  }),
+  implement(gone, () => new Response('gone', { status: 410 })),
+  implement(ok, () => new Response('x', { status: 200 })),
+  implement(back, () => Response.redirect('/x', 307)),
+])
+`
+    expect(printed('app.ts', source).map((n) => [n.line, n.message, n.see])).toEqual([
+      [1, "a redirect Response: declare output: 'redirect' and return redirect(ui.link(…))", 'endpoints'],
+      [5, "a redirect Response: declare output: 'redirect' and return redirect(ui.link(…))", 'endpoints'],
+      [
+        8,
+        "a 401 Response: declare errors: { Name: schema } and failed: { Name: 401 }, and return fail('Name', …)",
+        'endpoints',
+      ],
+      [
+        11,
+        "a 410 Response: declare errors: { Name: schema } and failed: { Name: 410 }, and return fail('Name', …)",
+        'endpoints',
+      ],
+      [13, "a redirect Response: declare output: 'redirect' and return redirect(ui.link(…))", 'endpoints'],
+    ])
   })
 })

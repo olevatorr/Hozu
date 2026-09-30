@@ -9,7 +9,7 @@ import { load } from '../load.ts'
 import { runCheck } from './check.ts'
 import { migrateGuide, skillTargets } from './migrate-agent.ts'
 import { type AppRewrite, migrateApp, migratePackage } from './migrate-app.ts'
-import { forget, lineOf, type Note, type Rewrite } from './migrate-ast.ts'
+import { forget, lineOf, type Node, type Note, parse, type Rewrite, walk } from './migrate-ast.ts'
 import { migrateForms } from './migrate-forms.ts'
 import { migrateFreshness } from './migrate-freshness.ts'
 import { migrateHead } from './migrate-head.ts'
@@ -85,13 +85,52 @@ const PRINTS: [Where, RegExp, string, string][] = [
     'HTML from a resolver is HZ053: make it a ui.page with head.failed',
     'pages',
   ],
-  [
-    'resolvers',
-    /new Response\(null,\s*\{\s*status:\s*30[1237]/,
-    "a redirect Response: declare output: 'redirect' and return redirect(ui.link(…))",
-    'pages',
-  ],
 ]
+
+const REDIRECT = "a redirect Response: declare output: 'redirect' and return redirect(ui.link(…))"
+
+const statusOf = (n: Node | undefined): number | null => {
+  if (n?.type === 'Literal' && typeof n.value === 'number') return n.value
+  if (n?.type !== 'ObjectExpression') return null
+  const p = n.properties.find((x: Node) => x.type === 'Property' && (x.key.name ?? x.key.value) === 'status')
+  return p?.value.type === 'Literal' && typeof p.value.value === 'number' ? p.value.value : null
+}
+
+function responses(file: string, source: string): Note[] {
+  let program: Node
+  try {
+    program = parse(source)
+  } catch {
+    return []
+  }
+  const out: Note[] = []
+  walk(program, (n) => {
+    const c = n.callee
+    const built = n.type === 'NewExpression' && c.type === 'Identifier' && c.name === 'Response'
+    const helper =
+      n.type === 'CallExpression' &&
+      c.type === 'MemberExpression' &&
+      c.object.type === 'Identifier' &&
+      c.object.name === 'Response' &&
+      ['json', 'redirect'].includes(c.property.name)
+    if (!built && !helper) return
+    const status = statusOf(n.arguments[1]) ?? (helper && c.property.name === 'redirect' ? 302 : null)
+    if (status === null || status < 300 || status >= 500) return
+    const message =
+      status < 400
+        ? REDIRECT
+        : `a ${status} Response: declare errors: { Name: schema } and failed: { Name: ${status} }, and return fail('Name', …)`
+    out.push({
+      file,
+      line: lineOf(source, n.start),
+      rule: 'print',
+      message,
+      see: 'endpoints',
+      behaviour: true,
+    })
+  })
+  return out
+}
 
 /** What migrate cannot rewrite and check cannot see (ADR 0043 Migration). */
 export function printed(file: string, source: string): Note[] {
@@ -102,7 +141,7 @@ export function printed(file: string, source: string): Note[] {
     const m = re.exec(source)
     if (m) out.push({ file, line: lineOf(source, m.index), rule: 'print', message, see, behaviour: true })
   }
-  return out
+  return resolvers ? [...out, ...responses(file, source)] : out
 }
 
 /** Every source rewrite of `hozu migrate 0.8`, in memory: removed files are absent from `files`. */

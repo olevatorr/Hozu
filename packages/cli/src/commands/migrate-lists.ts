@@ -1,3 +1,4 @@
+import { basename } from 'node:path'
 import {
   apply,
   declaration,
@@ -79,6 +80,85 @@ const kindOf = (file: string, program: Node, ref: Node) => {
   return d?.init.type === 'CallExpression' && d.init.callee.type === 'Identifier' ? d.init.callee.name : null
 }
 
+interface Scope {
+  file: string
+  source: string
+  functions: Map<string, Node>
+  values: Map<string, Node>
+  program: Node
+}
+
+interface Write {
+  at: Node
+  method: string
+  via: string | null
+  where: string | null
+}
+
+function scopeOf(file: string, program: Node, source: string): Scope {
+  const functions = new Map<string, Node>()
+  const values = new Map<string, Node>()
+  walk(program, (n) => {
+    if (n.type === 'FunctionDeclaration' && n.id) functions.set(n.id.name, n)
+    if (n.type === 'VariableDeclarator' && n.id.type === 'Identifier' && n.init)
+      (/Function/.test(n.init.type) ? functions : values).set(n.id.name, n.init)
+  })
+  return { file, source, functions, values, program }
+}
+
+const where = (mod: Scope, n: Node) => `${basename(mod.file)}:${lineOf(mod.source, n.start)}`
+
+const isFunction = (n: Node | undefined) => /Function/.test(n?.type ?? '')
+
+const scopes = new WeakMap<Node, Scope>()
+
+function imported(ref: Node, mod: Scope): { fn: Node; mod: Scope } | { value: Node; mod: Scope } | null {
+  const d = declaration(mod.file, mod.program, ref)
+  if (!d) return null
+  if (!scopes.has(d.program)) scopes.set(d.program, scopeOf(d.file, d.program, d.source))
+  const other = scopes.get(d.program)!
+  return isFunction(d.init) ? { fn: d.init, mod: other } : { value: d.init, mod: other }
+}
+
+function functionOf(ref: Node, mod: Scope): { fn: Node; mod: Scope } | null {
+  if (ref.type === 'Identifier' && mod.functions.has(ref.name))
+    return { fn: mod.functions.get(ref.name)!, mod }
+  const found = imported(ref, mod)
+  return found && 'fn' in found ? found : null
+}
+
+function returned(fn: Node): Node | null {
+  if (fn.body.type === 'ObjectExpression') return fn.body
+  if (fn.body.type !== 'BlockStatement') return null
+  const ret = fn.body.body.find((s: Node) => s.type === 'ReturnStatement')
+  return ret?.argument?.type === 'ObjectExpression' ? ret.argument : null
+}
+
+function objectOf(value: Node, mod: Scope): { object: Node; mod: Scope } | null {
+  if (value.type === 'ObjectExpression') return { object: value, mod }
+  if (value.type !== 'CallExpression') return null
+  const f = functionOf(value.callee, mod)
+  const object = f && returned(f.fn)
+  return object && f ? { object, mod: f.mod } : null
+}
+
+/** The function a call runs: a local or imported function, or a method of an object a factory returns. */
+function callee(c: Node, mod: Scope): { fn: Node; mod: Scope } | null {
+  if (c.type === 'Identifier') return functionOf(c, mod)
+  if (c.type !== 'MemberExpression' || c.computed || c.object.type !== 'Identifier') return null
+  const local = mod.values.get(c.object.name)
+  const found = local ? { value: local, mod } : imported(c.object, mod)
+  if (!found) return imported(c, mod) && functionOf(c, mod)
+  if ('fn' in found) return null
+  const owner = objectOf(found.value, found.mod)
+  const p = owner?.object.properties.find(
+    (x: Node) => x.type === 'Property' && (x.key.name ?? x.key.value) === c.property.name,
+  )
+  if (!owner || !p) return null
+  if (isFunction(p.value)) return { fn: p.value, mod: owner.mod }
+  return p.value.type === 'Identifier' ? functionOf(p.value, owner.mod) : null
+}
+
 /** Query resolvers only read (ADR 0043 B): split the scaffold's create-on-read helper, print other writes. */
 export function migrateLists(source: string, file: string): Rewrite {
   if (!/\bimplement\s*\(/.test(source)) return { code: source, notes: [] }
@@ -132,23 +212,23 @@ export function migrateLists(source: string, file: string): Rewrite {
       see: 'data',
     })
   }
-  const local = new Map<string, Node>()
-  walk(program, (n) => {
-    if (n.type === 'FunctionDeclaration' && n.id) local.set(n.id.name, n)
-    if (n.type === 'VariableDeclarator' && n.id.type === 'Identifier' && /Function/.test(n.init?.type ?? ''))
-      local.set(n.id.name, n.init)
-  })
-  const writes = (body: Node, seen: Set<string>): { at: Node; method: string; via: string | null }[] => {
-    const out: { at: Node; method: string; via: string | null }[] = []
+  const here = scopeOf(file, program, source)
+  const writes = (body: Node, mod: Scope, seen: Set<Node>): Write[] => {
+    const out: Write[] = []
     walk(body, (x) => {
       if (x.type !== 'CallExpression') return
       const c = x.callee
-      if (c.type === 'MemberExpression' && !c.computed && WRITES.has(c.property.name))
-        out.push({ at: x, method: c.property.name, via: null })
-      if (c.type === 'Identifier' && local.has(c.name) && !seen.has(c.name) && !helpers.has(c.name)) {
-        seen.add(c.name)
-        for (const w of writes(local.get(c.name)!.body, seen)) out.push({ ...w, at: x, via: w.via ?? c.name })
+      if (c.type === 'MemberExpression' && !c.computed && WRITES.has(c.property.name)) {
+        out.push({ at: x, method: c.property.name, via: null, where: mod === here ? null : where(mod, x) })
+        return
       }
+      if (c.type === 'Identifier' && mod === here && helpers.has(c.name)) return
+      const target = callee(c, mod)
+      if (!target || seen.has(target.fn)) return
+      seen.add(target.fn)
+      const via = mod.source.slice(c.start, c.end)
+      for (const w of writes(target.fn.body, target.mod, seen))
+        out.push(mod === here ? { ...w, at: x, via } : w)
     })
     return out
   }
@@ -157,7 +237,7 @@ export function migrateLists(source: string, file: string): Rewrite {
     if (kindOf(file, program, n.arguments[0]) !== 'query' || !n.arguments[1]) return
     const query = source.slice(n.arguments[0].start, n.arguments[0].end)
     const seen = new Set<string>()
-    for (const w of writes(n.arguments[1], new Set())) {
+    for (const w of writes(n.arguments[1], here, new Set())) {
       const key = `${w.via}.${w.method}`
       if (seen.has(key)) continue
       seen.add(key)
@@ -165,7 +245,7 @@ export function migrateLists(source: string, file: string): Rewrite {
         file,
         line: lineOf(source, w.at.start),
         rule: 'resolvers',
-        message: `the resolver of query ${query} ${w.via ? `calls ${w.via}, which calls` : 'calls'} .${w.method}(): query resolvers only read; move the write into a mutation`,
+        message: `the resolver of query ${query} ${w.via ? `calls ${w.via}, which calls` : 'calls'} .${w.method}()${w.where ? ` (${w.where})` : ''}: query resolvers only read; move the write into a mutation`,
         see: 'data',
         behaviour: true,
       })
