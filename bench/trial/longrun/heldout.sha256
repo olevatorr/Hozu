@@ -1,0 +1,11 @@
+# SHA-256 of the held-out changes 21-28 and their checks (ADR 0044), kept outside the repository in ~/hozu-trial-0021/heldout/.
+# Written 2026-09-30 by an isolated agent session; the coordinator saw only its one-line summary of each change.
+b0bc9f6bae3517cc8db68af1a0cbb2a4053cfbd18ae13b9c0ad766d90901881c  changes/21.md
+79385653821da23d74e08660421891f0ce684e5f4294e7abd9c65a5156cca103  changes/22.md
+e7d54a71b7895f1f266d5ce4398829a624f97d10fd0e5d9d452b9e2d8a4ab725  changes/23.md
+edb6d96cedf76fc150b3281a6df453debe558964f25e818ad339f6dc72b66a94  changes/24.md
+e73318165b0763c3abbf5a29346f71a67be212847a05043c8e7ec0ea585c0bd4  changes/25.md
+f865cd0be79c9d3e60f1e5d1d700a1a71c3113c17da484e4db715b0d33b7e796  changes/26.md
+2580f2ae595cf218dbd9552aa9b54b7c2c5352bd12d500e1f20ed5db8a48f9c8  changes/27.md
+49105df839f51691629834ea2415cfa1fd21b8ffb3f920b6c88501a24bd7fb77  changes/28.md
+386e738952ea5cd19e17e0e9df3157e12405f5cf33411e60e037eb40dffe9f46  accept-heldout.mjs
