@@ -4,7 +4,8 @@
   `hozu post / --field title=A --next 'POST / @Delete' --next /`.
   - `post` submits like a browser **without JavaScript** (a native form post), so it also checks no-JS behaviour.
   - Each step prints its status, redirect and `set-cookie` attributes (`HttpOnly`, `SameSite`); the session cookie
-    is kept across `--next` steps. Two users: run two commands.
+    is kept across `--next` steps. `--session '{"user":"ada"}'` starts the chain signed in with a real session, so a
+    sign-out inside the chain signs out.
   - Endpoints: `hozu get '/api/items?x=1'`.
 - **In a real browser, still without a server:** `hozu browse / --do 'fill Search=park' --do 'click Tech Park'`.
   - It uses the installed Chrome / Chromium / Edge (`HOZU_CHROME=/path` to choose), loads the page, waits for

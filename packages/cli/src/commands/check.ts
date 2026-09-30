@@ -60,15 +60,6 @@ export function serverEntryIssues(root: string, ir: ProjectIR): Diagnostic[] {
         'widgets: await bundleWidgets(build),',
       ),
     )
-  if (ir.session && !/\bsession\s*[:,}]/.test(text))
-    out.push(
-      issue(
-        'The project declares a session, but serve.ts passes none to createServer',
-        'Without a session store every request is signed out, so user-scoped queries fail.',
-        "Pass session: sessionCookie({ name: 'sid', secret: process.env.SESSION_SECRET }) from @hozu/runtime-server",
-        "session: sessionCookie({ name: 'sid', secret: process.env.SESSION_SECRET ?? '' }),",
-      ),
-    )
   return out
 }
 

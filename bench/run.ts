@@ -144,14 +144,6 @@ record(
   8 * 1024,
 )
 
-record(
-  'P8',
-  '@hozu/runtime-client soft-navigation chunk beyond the initial JS, min+gz',
-  clientBytes('navigate.js'),
-  'bytes',
-  3 * 1024,
-)
-
 const hook = ['--import', join(root, 'packages/transform/dist/register.js')]
 const p9 = spawnSync(process.execPath, [...hook, join(root, 'bench/p9.ts')], { encoding: 'utf8' })
 if (p9.status !== 0) throw new Error(`bench/p9.ts: ${p9.stderr}`)

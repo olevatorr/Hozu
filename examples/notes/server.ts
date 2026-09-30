@@ -21,7 +21,8 @@ export function createResolvers() {
     ['bob', [{ id: 'n3', text: "Bob's secret", pinned: false }]],
   ])
   let seq = 3
-  const notesOf = (user: string) => {
+  const listOf = (user: string) => store.get(user) ?? []
+  const ownListOf = (user: string) => {
     const list = store.get(user) ?? []
     store.set(user, list)
     return list
@@ -39,17 +40,17 @@ export function createResolvers() {
     }),
     implement(notesApi, (_, { session }) => ({
       signedIn: session !== null,
-      notes: session ? ordered(notesOf(session.user)).map((n) => ({ ...n })) : [],
+      notes: session ? ordered(listOf(session.user)).map((n) => ({ ...n })) : [],
     })),
     implement(listNotes, (_, { session, fail }) =>
-      session ? ordered(notesOf(session.user)).map((n) => ({ ...n })) : fail('Unauthorized', {}),
+      session ? ordered(listOf(session.user)).map((n) => ({ ...n })) : fail('Unauthorized', {}),
     ),
     implement(addNote, ({ text }, { session, fail }) => {
       if (!session) return fail('Invalid', { message: 'Signed out', fields: { text: 'Sign in first' } })
       const clean = text.trim()
       if (!clean)
         return fail('Invalid', { message: 'text: Write something', fields: { text: 'Write something' } })
-      const list = notesOf(session.user)
+      const list = ownListOf(session.user)
       if (list.some((n) => n.text.toLowerCase() === clean.toLowerCase()))
         return fail('Duplicate', { text: clean })
       const note = { id: `n${++seq}`, text: clean, pinned: false }
@@ -57,14 +58,14 @@ export function createResolvers() {
       return { ...note }
     }),
     implement(removeNote, ({ id }, { session, fail }) => {
-      const list = session ? notesOf(session.user) : []
+      const list = session ? ownListOf(session.user) : []
       const at = list.findIndex((n) => n.id === id)
       if (at < 0) return fail('NotFound', { id })
       list.splice(at, 1)
       return { id }
     }),
     implement(togglePin, ({ id }, { session, fail }) => {
-      const note = (session ? notesOf(session.user) : []).find((n) => n.id === id)
+      const note = (session ? ownListOf(session.user) : []).find((n) => n.id === id)
       if (!note) return fail('NotFound', { id })
       note.pinned = !note.pinned
       return { ...note }

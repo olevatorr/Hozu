@@ -29,14 +29,14 @@ Live freshness makes a region request-time and uses the framework’s live-query
 
 ## User scope is a hard boundary
 
-A user-scoped query belongs to the request’s session identity. Its data must never enter a shared cacheable region. Setting its freshness to static does not make the data public or permit a shared cache. Scope is an ownership constraint, not a hint for the compiler to weigh against performance.
+A user-scoped query belongs to the request’s session identity. Its data must never enter a shared cacheable region, and it is not cached across requests at all: its freshness is `'request'` (read once per request) or `'live'` (also pushed). Any other freshness is a diagnostic. Scope is an ownership constraint, not a hint for the compiler to weigh against performance.
 
 ```ts
 export const myNotes = query({
   input: z.object({}),
   output: z.array(Note),
   scope: 'user',
-  freshness: 'static',
+  freshness: 'request',
 })
 ```
 
@@ -52,9 +52,9 @@ Hozu derives islands from machine-bound nodes: events, state-dependent visibilit
 
 A page assertion such as `assert: 'static'` asks the validator to confirm the derived result. It cannot override an incompatible query or force private data into a cached page. Read the plan when the result surprises you; changing an assertion is not a substitute for understanding the dependency that caused it.
 
-## Two kinds of navigation
+## One kind of navigation
 
-Soft navigation solves a state-preservation problem. If compatible pages share a route-independent view with an island, the compiler can derive that the view should survive navigation. Its DOM and machine can remain in place while other content changes. A view that reads route parameters or search data cannot be kept as though those inputs were unchanged. [ADR 0015](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0015-phase-7a-soft-navigation.md) details the conditions.
+Every internal link loads a document. Speculation rules let supported browsers prerender the target on hover, so the load is usually instant, and no client router decides what survives a link. State that must outlive a page lives in the URL (a seed), on the server (a query) or in a widget's own storage. Hozu 0.8 removed the derived soft navigation of [ADR 0015](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0015-phase-7a-soft-navigation.md), because neither the checker nor the lock could see what it kept ([ADR 0043](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0043-0-8-close-the-escape-hatches.md)).
 
 Cross-document view transitions solve a visual problem. Hozu 0.4.0 emits `@view-transition { navigation: auto }`, allowing supported browsers to transition between ordinary documents without adding a client router. Reduced-motion preferences remove the animation. This does not preserve an application machine merely because two headers look alike.
 

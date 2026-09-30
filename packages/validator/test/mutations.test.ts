@@ -283,6 +283,22 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'user-scoped query cached across requests',
+    code: 'HZ049',
+    mutate: (ir) => {
+      cart(ir).queries.getCart!.freshness = { kind: 'swr', seconds: 30 }
+    },
+  },
+  {
+    name: 'live query without tags',
+    code: 'HZ050',
+    mutate: (ir) => {
+      const q = cart(ir).queries.getCart!
+      q.freshness = { kind: 'live' }
+      q.tags = []
+    },
+  },
+  {
     name: 'page renders a view that does not exist',
     code: 'HZ007',
     mutate: (ir) => {
@@ -419,6 +435,22 @@ describe('A2 judgement codes', () => {
     expect(found.map((d) => d.location.pointer)).toEqual(['/features/cart/queries/getCart/scope'])
     expect(found[0]!.location.source?.file).toMatch(/examples\/cart\/.+\.ts$/)
     expect(found[0]!.fix?.patch).toBeNull()
+  })
+})
+
+describe('ADR 0043 A endpoint codes', () => {
+  it('HZ062 — a GET endpoint that invalidates is a warning with a patch to POST', async () => {
+    const { buildProject } = await import('@hozu/core/ir')
+    const notes = buildProject((await import('../../../examples/notes/hozu.config.ts')).default)
+    const ir = structuredClone(notes.ir)
+    ir.features.notes!.endpoints.notesApi!.invalidates = [{ tag: 'notes.notesTag', param: null }]
+    const found = validate(ir, { sources: notes.sources }).filter((d) => d.code === 'HZ062')
+    expect(found.map((d) => [d.location.pointer, d.severity])).toEqual([
+      ['/features/notes/endpoints/notesApi/method', 'warning'],
+    ])
+    expect(found[0]!.location.source?.file).toMatch(/examples\/notes\/.+\.ts$/)
+    const fixed = applyPatch(ir, found[0]!.fix!.patch!)
+    expect(validate(fixed).filter((d) => d.code === 'HZ062')).toEqual([])
   })
 })
 

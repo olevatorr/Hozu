@@ -9,4 +9,5 @@
   './dist/server/render.js'`.
 - **Static host (GitHub Pages):** `exportStatic({ build, styles, resolvers, outDir })` from `@hozu/adapter-static`
   writes every page without per-request data plus the files they link to, and lists skipped routes.
-- Set `SESSION_SECRET` (and `SESSION_SECURE=true`) when the app has sessions.
+- Set `SESSION_SECRET` when the app has sessions (production refuses to start without it). The default store keeps
+  sessions in memory per process; an edge or multi-instance deployment passes a shared store to `createHandler`.

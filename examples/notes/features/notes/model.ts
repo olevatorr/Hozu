@@ -28,7 +28,7 @@ export const listNotes = query({
   output: Notes,
   errors: { Unauthorized: z.object({}) },
   scope: 'user',
-  freshness: 'static',
+  freshness: 'request',
   tags: () => [notesTag()],
 })
 

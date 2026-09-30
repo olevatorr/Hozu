@@ -1,4 +1,4 @@
-import { planRoute, softTargets } from '@hozu/compiler'
+import { planRoute } from '@hozu/compiler'
 import { closest } from '@hozu/validator'
 import type { PlanOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
@@ -12,7 +12,7 @@ export function runPlan(loaded: Loaded, route: string | undefined): PlanOutput {
     const guess = closest(route, routes)
     throw new HozuCliError('unknown-feature', `No page renders route "${route}"`, guess ? [guess] : routes)
   }
-  return { ...planRoute(ir, route).plan, soft: softTargets(ir, route) }
+  return planRoute(ir, route).plan
 }
 
 export function describePlan(plan: PlanOutput): string {
@@ -26,10 +26,6 @@ export function describePlan(plan: PlanOutput): string {
     ),
     'islands:',
     ...(plan.islands.length ? plan.islands.map((i) => `  ${i}`) : ['  (none)']),
-    'soft navigation (target route → kept views):',
-    ...(Object.keys(plan.soft).length
-      ? Object.entries(plan.soft).map(([r, views]) => `  ${r} → ${views.join(', ')}`)
-      : ['  (none: links from this page are document navigations)']),
     '',
   ].join('\n')
 }

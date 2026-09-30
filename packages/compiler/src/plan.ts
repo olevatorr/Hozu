@@ -39,7 +39,6 @@ export interface RoutePlan {
   islands: string[]
   js: 'always' | 'conditional' | false
   nodes: NodePlan[]
-  persistent: string[]
 }
 
 export interface PlanIssue {
@@ -201,13 +200,18 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
         const q = owner?.queries[symbol]
         if (!q) return
         const combined = combine(region, own(q))
-        if (q.scope === 'public' && q.freshness.kind !== 'live' && readsBinding(node.input, tainted))
+        if (
+          q.scope === 'public' &&
+          q.freshness.kind !== 'live' &&
+          q.freshness.kind !== 'request' &&
+          readsBinding(node.input, tainted)
+        )
           issues.push({
             code: 'HZ022',
             feature: feature.id,
             pointer: join(pointer, 'input'),
             message: `Public query ${node.query} is keyed by user-scoped data`,
-            cause: `Its result is cached in the shared public partition (${q.freshness.kind}), so user-derived input would reach a cacheable region.`,
+            cause: `Its result is cached for every visitor (${q.freshness.kind}), so user-derived input would reach a cacheable region.`,
           })
         const child: RegionPlan = {
           id: node.id,
@@ -246,14 +250,11 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     }
   }
 
-  const persistent: string[] = []
   for (const ref of page.views) {
     const { feature, symbol } = resolve(ir, ref)
     const view = feature?.views[symbol]
     if (!feature || !view) continue
-    const before = islands.length
     walk(feature, view.root, join('', 'features', feature.id, 'views', symbol, 'root'), shell, [], false)
-    if (islands.length > before && !readsRoute(ir, ref)) persistent.push(ref)
   }
 
   const cacheable = !regions.some((r) => r.mode === 'request')
@@ -267,7 +268,6 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     islands,
     js: islands.length === 0 ? false : certain ? 'always' : 'conditional',
     nodes,
-    persistent,
   }
   const offending =
     page.assert === 'static'
@@ -284,53 +284,4 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
       cause: 'Render assertions are validated against the derived plan, never obeyed (principle 8).',
     })
   return { plan, issues }
-}
-
-const routeMemo = new WeakMap<object, boolean>()
-
-function readsRoute(ir: ProjectIR, ref: string, seen = new Set<string>()): boolean {
-  if (seen.has(ref)) return false
-  seen.add(ref)
-  const { feature, symbol } = resolve(ir, ref)
-  const view = feature?.views[symbol]
-  if (!feature || !view) return false
-  const hit = routeMemo.get(view)
-  if (hit !== undefined) return hit
-  const scan = (x: unknown): boolean => {
-    if (typeof x !== 'object' || x === null) return false
-    if (Array.isArray(x)) return x.some(scan)
-    const o = x as Record<string, unknown>
-    if (o.ref === 'params' || o.ref === 'search') return true
-    if (o.kind === 'embed' && typeof o.view === 'string' && readsRoute(ir, o.view, seen)) return true
-    return Object.values(o).some(scan)
-  }
-  const result = scan(view.root) || scan(view.seed) || (view.machine !== null && scan(feature.machine))
-  routeMemo.set(view, result)
-  return result
-}
-
-const softMemo = new WeakMap<ProjectIR, Map<string, string[]>>()
-
-export function softTargets(ir: ProjectIR, route: string): Record<string, string[]> {
-  let persistent = softMemo.get(ir)
-  if (!persistent) {
-    persistent = new Map(Object.keys(ir.pages).map((r) => [r, planRoute(ir, r).plan.persistent]))
-    softMemo.set(ir, persistent)
-  }
-  const from = persistent.get(route) ?? []
-  const out: Record<string, string[]> = {}
-  if (!from.length) return out
-  for (const [target, views] of persistent) {
-    const kept: string[] = []
-    let last = -1
-    for (const ref of from) {
-      const at = views.indexOf(ref)
-      if (at > last) {
-        kept.push(ref)
-        last = at
-      }
-    }
-    if (kept.length) out[target] = kept
-  }
-  return out
 }

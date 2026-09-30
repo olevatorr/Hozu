@@ -29,11 +29,14 @@ Export both from a module the feature lists in `declarations`. Render the query 
 | Field | Meaning |
 | --- | --- |
 | `scope: 'public'` | Data is safe to share between visitors. |
-| `scope: 'user'` | Data belongs to a session and cannot enter a shared cache. |
-| `freshness: 'static'` | Data can be computed ahead of time. |
+| `scope: 'user'` | Data belongs to a session; it is read per request and never cached. |
+| `freshness: 'static'` | Data can be computed ahead of time; tags and invalidations keep it current. |
+| `freshness: 'request'` | Read once per request. For public data it makes the page uncacheable. |
 | `freshness: { revalidate: 60 }` | Revalidate on the declared interval in seconds. |
 | `freshness: { swr: 60 }` | Serve stale content while refreshing according to the policy. |
-| `freshness: 'live'` | Receive updates through the framework's live-query transport. |
+| `freshness: 'live'` | Read per request, and push updates through the live-query transport. It needs tags. |
+
+User-scoped queries take `'request'` or `'live'`; any other freshness is HZ049. Public data is `'static'` with tags unless it changes without a declared writer.
 
 Session-aware applications declare the session schema on the project. Only user-scoped resolvers receive the session identity.
 
@@ -42,6 +45,8 @@ Session-aware applications declare the session schema on the project. Only user-
 A mutation declares its input, output, possible errors and invalidated tags. It runs when a machine enters a state that invokes it. Cover both successful and failed outcomes with transitions and contracts.
 
 For example, an `addArticle` mutation can declare `invalidates: () => [articlesTag()]`. Hozu owns the refresh of queries carrying that tag, so your UI does not need a second handwritten synchronization mechanism.
+
+Endpoints declare `invalidates` the same way; it applies when the endpoint succeeds. A write that happens outside Hozu, such as a job, calls `await server.revalidate([articlesTag()])`, which returns the number of dropped cache entries and pages as `{ entries, pages }`.
 
 Every mutation also has the framework error `Invalid`, with a message and field errors. Schema validation can produce it, or your resolver can call `fail('Invalid', ...)`. Handle it explicitly when you want field-level feedback; otherwise the unexpected-error path handles it.
 
