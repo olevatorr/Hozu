@@ -20,6 +20,8 @@ Hozu is not in your training data; this file and `hozu docs <topic>` are the who
   Methods on data (`.map`, `.toUpperCase()`…) are not: use `ui.each` for lists and a `fn()` for computation.
 - A mutation runs when the machine **enters** a state whose `invoke` calls it; that state drops other events, and
   `done` / `failed` leave it. Contracts are needed only where a transition decides (a guard, `navigate`, a `fn`).
+- Its `invalidates` tags drive the refresh of every query carrying them, whatever the freshness. Query resolvers only
+  read; writes belong in mutation and endpoint resolvers.
 - A filter in the URL starts the machine: `seed: ({ search }) => ({ q: search.q })` on the view, then read `ctx.q`.
   `machine({ on })` holds transitions every idle state shares; `fn` bodies may call helpers from the same module.
 

@@ -74,7 +74,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `ui.use(W, { props, on, class }, children)`, client module `export default implement<typeof W>(setup)` from
   `@hozu/core/widget` (type-only import of the declaration). Bundled by `@hozu/bundle` (esbuild), HZ029.
 - Server capabilities (ADR 0010): client fetch of new query keys, live queries over SSE, `head.redirects`,
-  `sessionCookie` + `setSession`, `project({ notFound })`, `site.icon` / `themeColor`, uploads via `ctx.file`.
+  `setSession` with a server-side store (`memorySessions()` by default: opaque signed id, revoked on sign-out;
+  production needs `SESSION_SECRET`; ADR 0043 B), `project({ notFound })`, `site.icon` / `themeColor`, uploads via
+  `ctx.file`.
 - Routes: `route({ path: '/posts/:slug', params: schema | null, search: schema | null })` (search: flat scalars with
   defaults, HZ035; canonical URLs, ISR keyed by canonical URL); `ui.link(route, params, search?)` is the only internal
   URL form, also for `navigate: (arg) => ui.link(...)` on transitions (contracts expect `{ navigate: url }`).

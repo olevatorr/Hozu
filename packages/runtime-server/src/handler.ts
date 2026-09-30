@@ -34,7 +34,7 @@ import { instantiate, type RenderModule } from './rendered.ts'
 import { matcher } from './routing.ts'
 import { parseSearch } from './search.ts'
 import { type CspSources, contentSecurityPolicy, crossSite, ERROR_HTML } from './security.ts'
-import { type SessionStore, sessionCookie } from './session.ts'
+import { memorySessions, type SessionStore, signedCookie } from './session.ts'
 import { publicAssets } from './static.ts'
 import { assertWidgetBundle } from './widgets.ts'
 
@@ -132,7 +132,7 @@ const readEffect = async (request: Request) => {
 export function createHandler({
   build,
   resolvers,
-  session: sessionOption = () => null,
+  session: sessionOption,
   now = Date.now,
   styles = null,
   widgets = null,
@@ -169,7 +169,7 @@ export function createHandler({
   }
   if (preview && preview.secret.length < 32) throw new Error('preview.secret must be at least 32 characters')
   const previewCookie = preview
-    ? sessionCookie({
+    ? signedCookie({
         name: 'hozu_preview',
         secret: preview.secret,
         maxAge: 60 * 60,
@@ -186,11 +186,26 @@ export function createHandler({
     throw new Error('The build manifest does not match this project; run `hozu build` again')
   const untransformed = build.diagnostics.find((d) => d.code === 'HZ044' || d.code === 'HZ047')
   if (untransformed) throw new Error(`${untransformed.message}. ${untransformed.fix?.summary ?? ''}`)
-  const store = typeof sessionOption === 'function' ? null : sessionOption
+  const { ir } = build
+  if (sessionOption === undefined && ir.session && !rawEnv.SESSION_SECRET && rawEnv.NODE_ENV === 'production')
+    throw new Error(
+      'This project declares a session: set SESSION_SECRET, or pass createHandler({ session: memorySessions({ secret }) })',
+    )
+  const store: SessionStore | null =
+    typeof sessionOption === 'function'
+      ? null
+      : (sessionOption ??
+        (ir.session
+          ? memorySessions({
+              secret: rawEnv.SESSION_SECRET,
+              secure: rawEnv.SESSION_SECURE
+                ? rawEnv.SESSION_SECURE === 'true'
+                : rawEnv.NODE_ENV === 'production',
+            })
+          : null))
   const session = store
     ? (request: Request) => store.read(request)
-    : async (request: Request) => (sessionOption as (r: Request) => unknown)(request)
-  const { ir } = build
+    : async (request: Request) => (sessionOption as ((r: Request) => unknown) | undefined)?.(request) ?? null
   const { basePath, redirects, headers: headerRules } = ir.http
   const assets = manifest
     ? publicAssets(
@@ -282,6 +297,13 @@ export function createHandler({
     })
   }
   const queries = Object.values(ir.features).flatMap((f) => Object.keys(f.queries).map((q) => `${f.id}.${q}`))
+  const perRequest = new Set(
+    Object.values(ir.features).flatMap((f) =>
+      Object.entries(f.queries)
+        .filter(([, q]) => q.freshness.kind === 'request')
+        .map(([q]) => `${f.id}.${q}`),
+    ),
+  )
   const regenerating = new Map<string, Promise<void>>()
   const fns = fnsModule(build)
   const manifestText = webManifest(ir)
@@ -365,11 +387,16 @@ export function createHandler({
     if (generating) for (const t of tags) revalidatedAt.set(t, epoch)
     return cache.deleteTags(tags)
   }
-  const listeners = new Set<ReadableStreamDefaultController<Uint8Array>>()
+  const listeners = new Map<ReadableStreamDefaultController<Uint8Array>, Set<string>>()
   const broadcast = (tags: string[]) => {
     if (!tags.length) return
-    const message = encoder.encode(`data: ${JSON.stringify(tags)}\n\n`)
-    for (const c of listeners) c.enqueue(message)
+    for (const [c, subscribed] of listeners) {
+      const mine = tags.filter((t) => subscribed.has(t))
+      if (mine.length) c.enqueue(encoder.encode(`data: ${JSON.stringify(mine)}\n\n`))
+    }
+  }
+  const after = (tags: string[]) => {
+    if (tags.length) setTimeout(() => broadcast(tags), 0)
   }
   const TAG_USE = Symbol.for('hozu.tagUse')
   const tagKeyOf = (use: TagUse) => {
@@ -408,19 +435,23 @@ export function createHandler({
     }
     const invalidated = result.invalidated ?? []
     await dropPages(invalidated)
+    const changed = new Set(invalidated)
     const refreshed: [string, Result][] = []
-    if (invalidated.length)
-      for (const key of keys) {
-        const ref = queries.find(
-          (q) => key.startsWith(q) && '{["tfn0123456789-'.includes(key[q.length] ?? ''),
-        )
-        if (ref)
-          refreshed.push([key, (await scope.run(ref, JSON.parse(key.slice(ref.length)) as Json)) as Result])
-      }
-    const cookie = store && scope.written ? await store.write(scope.written.value) : null
+    for (const key of keys) {
+      const ref = queries.find((q) => key.startsWith(q) && '{["tfn0123456789-'.includes(key[q.length] ?? ''))
+      if (!ref) continue
+      const input = JSON.parse(key.slice(ref.length)) as Json
+      if (perRequest.has(ref) || data.tagsOf(ref, input).some((t) => changed.has(t)))
+        refreshed.push([key, (await scope.run(ref, input)) as Result])
+    }
+    const cookie = store && scope.written ? await store.write(scope.written.value, request) : null
     const { invalidated: _, session: __, ...rest } = result
-    const response: EffectResponse = { result: rest as Result, refreshed }
-    broadcast(invalidated)
+    const response: EffectResponse = {
+      result: rest as Result,
+      refreshed,
+      ...(scope.written ? { session: true as const } : {}),
+    }
+    after(invalidated)
     return json(response, { ...privately(true), ...(cookie ? { 'set-cookie': cookie } : {}) })
   }
 
@@ -515,11 +546,11 @@ export function createHandler({
     })
     if (!outcome) return notAllowed()
     await dropPages(outcome.invalidated)
-    const cookie = store && outcome.session ? await store.write(outcome.session.value) : null
+    const cookie = store && outcome.session ? await store.write(outcome.session.value, request) : null
     const back = pathOf(tableOf(locale)[found.route] ?? url.pathname, found.params, search)
     const target = outcome.navigate ?? (outcome.unchanged ? back : null)
     if (target) {
-      broadcast(outcome.invalidated)
+      after(outcome.invalidated)
       return see(target, cookie)
     }
     const rendered = await renderPage({
@@ -549,7 +580,7 @@ export function createHandler({
         },
       },
     )
-    broadcast(outcome.invalidated)
+    after(outcome.invalidated)
     return response
   }
 
@@ -573,12 +604,12 @@ export function createHandler({
       headers: { 'content-type': type, ...(cacheControl ? { 'cache-control': cacheControl } : {}) },
     })
 
-  const live = () => {
+  const live = (url: URL) => {
     let self: ReadableStreamDefaultController<Uint8Array> | null = null
     const body = new ReadableStream<Uint8Array>({
       start(controller) {
         self = controller
-        listeners.add(controller)
+        listeners.set(controller, new Set(url.searchParams.getAll('tag')))
         controller.enqueue(encoder.encode(': live\n\n'))
       },
       cancel() {
@@ -616,7 +647,7 @@ export function createHandler({
     }
     const scope = await dataFor(request)
     const result = await scope.endpoint(ref, input, { request })
-    const cookie = store && scope.written ? await store.write(scope.written.value) : null
+    const cookie = store && scope.written ? await store.write(scope.written.value, request) : null
     const finish = (response: Response) => {
       const out = new Response(response.body, response)
       if (cookie) out.headers.append('set-cookie', cookie)
@@ -633,7 +664,7 @@ export function createHandler({
       )
     await dropPages(result.invalidated)
     const response = finish(result.value instanceof Response ? result.value : json(result.value))
-    broadcast(result.invalidated)
+    after(result.invalidated)
     return response
   }
 
@@ -650,7 +681,7 @@ export function createHandler({
       const result = await scope.run(query, input)
       return json(result, privately(scope.readSession))
     }
-    if (path === '/_hozu/live') return live()
+    if (path === '/_hozu/live') return live(url)
     if (path === '/manifest.webmanifest' && manifestText)
       return text('application/manifest+json', manifestText, request.method === 'HEAD')
     if (path === '/sw.js' && worker)

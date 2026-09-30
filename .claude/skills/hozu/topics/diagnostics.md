@@ -37,7 +37,7 @@ around the rule.
 | HZ041 | a machine uses a message, `ui.format` or `locale` | store a code in context; choose the message in the view |
 | HZ043 | `site.offline` has params, no page, or per-request data | point it at a static page, or remove `offline` |
 | HZ044 | a feature file was loaded without the Hozu transform | run node with `--import @hozu/transform/register` (`npm start` does), or add `hozuTransform()` to Vite / Vitest |
-| HZ045 | `serve.ts` misses the widget bundle or the session store | add `widgets: await bundleWidgets(build)` / `session: sessionCookie(…)` |
+| HZ045 | `serve.ts` misses the widget bundle | add `widgets: await bundleWidgets(build)` |
 | HZ046 | an endpoint path is reserved, has params, or collides with a page, redirect or endpoint | use a static path such as `/api/…` (patch) |
 | HZ047 | a `fn` body uses an imported name or `let` state (it is sent to the browser as source) | pass the value as input, or write it as a `const` helper in the module |
 | HZ048 | `seed` names a field the context lacks, has no machine or route, or two views on one page seed a machine | seed top-level context fields, on one view per page |

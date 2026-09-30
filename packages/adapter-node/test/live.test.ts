@@ -82,7 +82,7 @@ describe('client fetch for new query keys (G4) and live queries (G11)', () => {
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
     try {
       const received = await new Promise<string>((resolve) => {
-        get(`${base}/_hozu/live`, (res) => {
+        get(`${base}/_hozu/live?tag=finder.clockTag`, (res) => {
           expect(res.headers['content-type']).toBe('text/event-stream')
           res.on('data', (c: Buffer) => {
             const m = /data: (.*)\n\n/.exec(c.toString())

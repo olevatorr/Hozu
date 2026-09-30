@@ -7,7 +7,7 @@ import { createServer } from '@hozu/adapter-node'
 import { feature, mutation, project, query, route, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { resolvers } from '@hozu/data'
-import { sessionCookie } from '@hozu/runtime-server'
+import { memorySessions } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { validate } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
@@ -109,7 +109,7 @@ describe('redirects, sessions, custom 404, icon (G5, G6, G7, G12)', () => {
     const server = createServer({
       build,
       resolvers: impl,
-      session: sessionCookie({ name: 'sid', secret: 'x'.repeat(32), secure: false }),
+      session: memorySessions({ secret: 'x'.repeat(32), secure: false }),
     })
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()))
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
@@ -129,7 +129,7 @@ describe('redirects, sessions, custom 404, icon (G5, G6, G7, G12)', () => {
       const signed = await effect('login', { name: 'ada' })
       const cookie = signed.headers.get('set-cookie')!
       expect(cookie).toMatch(/^sid=[\w-]+\.[\w-]+; Path=\/; HttpOnly; SameSite=Lax; Max-Age=2592000$/)
-      expect(await signed.json()).toEqual({ result: { ok: true, value: {} }, refreshed: [] })
+      expect(await signed.json()).toEqual({ result: { ok: true, value: {} }, refreshed: [], session: true })
       const session = cookie.split(';')[0]!
       const page = await get('/account', session)
       expect(page.status).toBe(200)
@@ -141,6 +141,7 @@ describe('redirects, sessions, custom 404, icon (G5, G6, G7, G12)', () => {
 
       const out = await effect('logout', {}, session)
       expect(out.headers.get('set-cookie')).toBe('sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0')
+      expect((await get('/account', session)).status).toBe(303)
 
       const lost = await get('/nowhere')
       expect(lost.status).toBe(404)

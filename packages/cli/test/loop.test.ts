@@ -227,14 +227,12 @@ describe('the agent loop (ADR 0027)', () => {
     expect(added.out.created).toEqual(
       expect.arrayContaining(['features/account/model.ts', 'features/account/views.ts']),
     )
-    expect(added.out.edited).toEqual(
-      expect.arrayContaining(['serve.ts', 'server.ts', 'routes.ts', 'hozu.config.ts']),
-    )
+    expect(added.out.edited).toEqual(expect.arrayContaining(['server.ts', 'routes.ts', 'hozu.config.ts']))
     expect(added.out.manual).toEqual([])
     const check = await json('check', ['check'], app)
     expect(check.out.types.errors).toEqual([])
     expect(check.out.validate.summary).toEqual({ errors: 0, warnings: 0 })
-    expect(readFileSync(join(app, 'serve.ts'), 'utf8')).toContain('sessionCookie({')
+    expect(readFileSync(join(app, 'serve.ts'), 'utf8')).not.toContain('session:')
     const signedOut = await json('request', ['get', '/'], app)
     expect(signedOut.out.steps[0]).toMatchObject({ status: 303, location: '/login' })
     const flow = await json(

@@ -142,7 +142,9 @@ describe('ADR 0043 A (data)', () => {
     }
     expect(await page()).toEqual(['miss', false])
     expect(await page()).toEqual(['hit', false])
-    const reader = (await handler.fetch(new Request(`${origin}/_hozu/live`))).body!.getReader()
+    const reader = (
+      await handler.fetch(new Request(`${origin}/_hozu/live?tag=notes.notesTag`))
+    ).body!.getReader()
     await reader.read()
     const hook = await handler.fetch(
       new Request(`${origin}/api/notes`, {

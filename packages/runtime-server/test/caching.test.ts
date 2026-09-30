@@ -1,7 +1,7 @@
 import { endpoint, feature, mutation, project, query, route, tag, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { resolvers } from '@hozu/data'
-import { createHandler, sessionCookie } from '@hozu/runtime-server'
+import { createHandler, memorySessions } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
@@ -80,7 +80,7 @@ function setup() {
   const gates: (() => void)[] = []
   let gated = false
   const seen: unknown[] = []
-  const store = sessionCookie({ name: 'sid', secret: 'x'.repeat(40), secure: false })
+  const store = memorySessions({ secret: 'x'.repeat(40), secure: false })
   const handler = createHandler({
     build: buildProject(app, { sources: false }),
     session: store,
@@ -106,7 +106,7 @@ function setup() {
     handler,
     list,
     seen,
-    cookie: () => store.write({ user: 'ada' }),
+    cookie: () => store.issue({ user: 'ada' }),
     gate: (on: boolean) => {
       gated = on
     },

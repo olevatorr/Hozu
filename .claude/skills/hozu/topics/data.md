@@ -32,6 +32,9 @@ export const visible = fn({                   // computation: pure JS; may call 
   dropped and the page's queries with those tags are re-read. `endpoint({ …, invalidates: (input) => [tag()] })`
   applies when it succeeds (use POST; a GET write is HZ062).
 - Writes from outside (a webhook, a job): `await server.revalidate([itemsTag()])` → `{ entries, pages }`.
+- **Query resolvers only read.** Writes happen in mutation and endpoint resolvers: a query that creates a row on read
+  runs again on every request, on prefetch and after a delete (the account comes back). Keep two helpers:
+  `listOf(user)` returns the stored list or `[]` for queries; `ownListOf(user)` creates it, for mutations only.
 - **Resolvers** (`server.ts`, or `features/<name>/server.ts` from the scaffold) get the schema-parsed input
   (defaults and transforms applied):
 ```ts

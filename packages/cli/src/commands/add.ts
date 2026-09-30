@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
@@ -154,18 +153,6 @@ export async function runAddFeature(
     },
     `import { ${n.resolvers} } from './features/${name}/server.ts' and add ...${n.resolvers}(implement) to resolvers(project, (implement) => [...])`,
   )
-  if (newAccount)
-    await edit(
-      'serve.ts',
-      (s) => {
-        const next = s.replace(
-          /resolvers: createResolvers\(\),/,
-          `resolvers: createResolvers(),\n  session: sessionCookie({\n    name: 'sid',\n    secret: process.env.SESSION_SECRET ?? '${randomBytes(24).toString('hex')}',\n    secure: process.env.SESSION_SECURE === 'true',\n  }),`,
-        )
-        return next === s ? null : addImport(next, `import { sessionCookie } from '@hozu/runtime-server'\n`)
-      },
-      "createServer({ ..., session: sessionCookie({ name: 'sid', secret: process.env.SESSION_SECRET, secure: false }) }) with sessionCookie from '@hozu/runtime-server'",
-    )
   const newRoutes = [
     ...(newLogin ? [`export const login = route({ path: '/login', params: null, search: null })`] : []),
     ...(newRoute

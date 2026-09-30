@@ -41,7 +41,7 @@ describe('node adapter', () => {
     expect(bob.body).toContain('Total: $<!---->0')
   })
 
-  it('effects return the result plus server-pushed data for invalidated payload keys', async () => {
+  it("effects return the result plus the payload's per-request and invalidated keys", async () => {
     const app = start()
     close = app.close
     const res = await app.call('POST', '/_hozu/effect', {
@@ -65,7 +65,7 @@ describe('node adapter', () => {
     )
     expect(failed).toEqual({
       result: { ok: false, error: 'OutOfStock', data: { sku: 'tee', available: 0 } },
-      refreshed: [],
+      refreshed: body.refreshed,
     })
   })
 

@@ -78,7 +78,7 @@ export const fetchQuery: QueryTransport = async (query, input) => {
 export interface HydrateOptions {
   transport?: Transport
   query?: QueryTransport
-  live?: (onTags: (tags: string[]) => void) => void
+  live?: (onTags: (tags: string[]) => void, tags: string[]) => void
   loadFns?: (url: string) => Promise<Record<string, never>>
   loadWidget?: (url: string) => Promise<WidgetSetup>
 }
@@ -119,13 +119,30 @@ export async function hydrate(
     }
     return pending
   }
+  const liveKeys = Object.entries(payload.live ?? {})
+  const onTags = async (tags: string[]) => {
+    if (busy) return void queued.push(...tags)
+    const stale = liveKeys.filter(([, l]) => l.tags.some((t) => tags.includes(t)))
+    for (const [key, l] of stale) shared.data.set(key, await query(l.query, l.input))
+    if (stale.length) for (const app of apps.values()) app.sync()
+  }
+  let busy = 0
+  let queued: string[] = []
   const onInvoke = async (effect: string, input: Json) => {
-    const { result, refreshed } = await transport(effect, input, [...shared.data.keys()])
+    busy++
+    const { result, refreshed, session } = await transport(effect, input, [...shared.data.keys()]).finally(
+      () => busy--,
+    )
+    if (session) {
+      shared.data.clear()
+      queued = []
+    }
     for (const [key, value] of refreshed) {
       shared.data.set(key, value)
       shared.versions.set(key, (shared.versions.get(key) ?? 0) + 1)
     }
-    if (refreshed.length) for (const app of apps.values()) app.sync()
+    if (refreshed.length || session) for (const app of apps.values()) app.sync()
+    if (!busy && queued.length) onTags(queued.splice(0))
     return result
   }
   const dev = globalThis.__HOZU_DEV__
@@ -166,13 +183,11 @@ export async function hydrate(
   })
   for (const app of apps.values()) app.sync()
   for (const app of apps.values()) app.start()
-  const liveKeys = Object.entries(payload.live ?? {})
   if (liveKeys.length)
-    (live ?? (await import('./live.ts')).liveStream(doc))(async (tags) => {
-      const stale = liveKeys.filter(([, l]) => l.tags.some((t) => tags.includes(t)))
-      for (const [key, l] of stale) shared.data.set(key, await query(l.query, l.input))
-      if (stale.length) for (const app of apps.values()) app.sync()
-    })
+    (live ?? (await import('./live.ts')).liveStream(doc))(
+      onTags,
+      liveKeys.flatMap(([, l]) => l.tags),
+    )
   if (globalThis.__HOZU_DEV__ && dev) (await import('./dev.ts')).expose(doc, apps, dev.machines)
   doc.documentElement.setAttribute('data-hozu-ready', '')
   return apps
