@@ -3,10 +3,7 @@
     "saved": {
       "idle/on/saved.Save/0": {
         "behavior": "bb3a888b5be35438",
-        "contracts": {
-          "refusesWhenFull": "346cdb9bd64e4c10",
-          "savesPost": "70cb706af7dc41ac"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -56,9 +53,7 @@
       },
       "idle/on/saved.Unsave/0": {
         "behavior": "08ae759a085e48a6",
-        "contracts": {
-          "removesPost": "f92c8590f685fabe"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -108,9 +103,7 @@
       },
       "removing/invoke/done/0": {
         "behavior": "161009426fbd8484",
-        "contracts": {
-          "removesPost": "f92c8590f685fabe"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [],
@@ -129,9 +122,7 @@
       },
       "removing/invoke/failed/Unexpected/0": {
         "behavior": "e371f013b54e7dca",
-        "contracts": {
-          "removeFails": "3571aaab023068f5"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -163,9 +154,7 @@
       },
       "saving/invoke/done/0": {
         "behavior": "19c6d6166e38b7c8",
-        "contracts": {
-          "savesPost": "70cb706af7dc41ac"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [],
@@ -184,9 +173,7 @@
       },
       "saving/invoke/failed/LimitReached/0": {
         "behavior": "c9567f908377cd08",
-        "contracts": {
-          "refusesWhenFull": "346cdb9bd64e4c10"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -215,9 +202,7 @@
       },
       "saving/invoke/failed/Unexpected/0": {
         "behavior": "a9be53fb995f0773",
-        "contracts": {
-          "saveFails": "506e4460dff22c7b"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [

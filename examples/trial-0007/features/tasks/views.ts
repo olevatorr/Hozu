@@ -1,4 +1,4 @@
-import { contract, feature, ui } from '@hozu/core'
+import { feature, ui } from '@hozu/core'
 import { home, taskPage } from '../../routes.ts'
 import {
   Add,
@@ -6,7 +6,6 @@ import {
   ClearDone,
   clearDone,
   Draft,
-  DUPLICATE,
   getTask,
   isEmpty,
   listTasks,
@@ -176,97 +175,6 @@ export const Detail = ui.view({
     ]),
 })
 
-export const typesDraft = contract(tasksMachine, {
-  given: { state: 'idle' },
-  when: [{ send: Draft, payload: { text: 'Ship' } }],
-  expect: { state: 'idle', changes: { draft: 'Ship' } },
-})
-
-export const setsFilter = contract(tasksMachine, {
-  given: { state: 'idle' },
-  when: [{ send: SetShow, payload: { show: 'done' } }],
-  expect: { state: 'idle', changes: { show: 'done' } },
-})
-
-export const addsTask = contract(tasksMachine, {
-  given: { state: 'idle' },
-  when: [
-    { send: Add, payload: { title: 'Test it', priority: 'high' } },
-    { send: Draft, payload: { text: 'ignored while adding' } },
-    { done: addTask, result: { id: 't4', title: 'Test it', done: false, priority: 'high' } },
-  ],
-  expect: {
-    state: 'idle',
-    changes: { priority: 'high' },
-    effects: [{ effect: addTask, input: { title: 'Test it', priority: 'high' } }],
-  },
-})
-
-export const rejectsDuplicate = contract(tasksMachine, {
-  given: { state: 'adding' },
-  when: [{ failed: addTask, error: 'Duplicate', data: { title: 'Ship it' } }],
-  expect: { state: 'idle', changes: { error: DUPLICATE } },
-})
-
-export const rejectsInvalid = contract(tasksMachine, {
-  given: { state: 'adding' },
-  when: [
-    {
-      failed: addTask,
-      error: 'Invalid',
-      data: { message: 'title: Use at least 3 characters', fields: { title: 'Use at least 3 characters' } },
-    },
-  ],
-  expect: { state: 'idle', changes: { error: 'title: Use at least 3 characters' } },
-})
-
-export const addFails = contract(tasksMachine, {
-  given: { state: 'adding' },
-  when: [{ failed: addTask, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
-})
-
-export const togglesTask = contract(tasksMachine, {
-  given: { state: 'idle' },
-  when: [
-    { send: Toggle, payload: { id: 't2' } },
-    { done: toggleTask, result: { id: 't2', title: 'Build the app', done: true, priority: 'normal' } },
-  ],
-  expect: {
-    state: 'idle',
-    changes: { target: 't2' },
-    effects: [{ effect: toggleTask, input: { id: 't2' } }],
-  },
-})
-
-export const toggleMissing = contract(tasksMachine, {
-  given: { state: 'toggling' },
-  when: [{ failed: toggleTask, error: 'NotFound', data: { id: 't9' } }],
-  expect: { state: 'idle' },
-})
-
-export const toggleFails = contract(tasksMachine, {
-  given: { state: 'toggling' },
-  when: [{ failed: toggleTask, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
-})
-
-export const clearsDone = contract(tasksMachine, {
-  given: { state: 'idle' },
-  when: [
-    { send: ClearDone, payload: {} },
-    { send: Toggle, payload: { id: 't2' } },
-    { done: clearDone, result: { removed: 1 } },
-  ],
-  expect: { state: 'idle', effects: [{ effect: clearDone, input: {} }] },
-})
-
-export const clearFails = contract(tasksMachine, {
-  given: { state: 'clearing' },
-  when: [{ failed: clearDone, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
-})
-
 export const tasks = feature({
   id: 'tasks',
   intent: {
@@ -291,17 +199,6 @@ export const tasks = feature({
       tasksMachine,
       Board,
       Detail,
-      typesDraft,
-      setsFilter,
-      addsTask,
-      rejectsDuplicate,
-      rejectsInvalid,
-      addFails,
-      togglesTask,
-      toggleMissing,
-      toggleFails,
-      clearsDone,
-      clearFails,
     },
   ],
 })

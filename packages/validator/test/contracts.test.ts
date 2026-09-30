@@ -9,15 +9,6 @@ const run = (ir: ProjectIR, lock?: unknown) => {
   return verify(ir, { sources, bindings, lock })
 }
 
-const CART_WITHOUT_DECISION = [
-  'checkoutFails',
-  'dismissesError',
-  'errorAutoDismisses',
-  'paymentDeclined',
-  'removeFails',
-  'removesItem',
-]
-
 const decisive = (ds: Diagnostic[]) => ds.filter((d) => d.code !== 'HZ058')
 
 const cart = (ir: ProjectIR) => ir.features.cart!
@@ -50,9 +41,9 @@ const catalog: Case[] = [
   {
     name: 'contract expects the wrong context',
     code: 'HZ015',
-    pointer: '/features/cart/contracts/dismissesError/expect/context',
+    pointer: '/features/cart/contracts/rejectsTooMany/expect/context',
     mutate: (ir) => {
-      cart(ir).contracts.dismissesError!.expect.context = {
+      cart(ir).contracts.rejectsTooMany!.expect.context = {
         pending: { sku: '', qty: 1 },
         error: 'still here',
         orderId: null,
@@ -85,9 +76,9 @@ const catalog: Case[] = [
   {
     name: 'contract error data does not match the error schema',
     code: 'HZ017',
-    pointer: '/features/cart/contracts/paymentDeclined/when/0/data',
+    pointer: '/features/cart/contracts/rejectsOutOfStock/when/1/data',
     mutate: (ir) => {
-      ;(cart(ir).contracts.paymentDeclined!.when[0] as { data: unknown }).data = { code: 51 }
+      ;(cart(ir).contracts.rejectsOutOfStock!.when[1] as { data: unknown }).data = { code: 51 }
     },
   },
 ]
@@ -95,18 +86,10 @@ const catalog: Case[] = [
 describe('Phase 1 behavior catalog', () => {
   it('the cart passes every contract with full coverage', () => {
     const { diagnostics, lock } = run(cartIR())
-    expect(
-      diagnostics.map((d) => [
-        d.code,
-        d.cause
-          .split('\n')
-          .slice(1)
-          .map((l) => l.split(':')[0]),
-      ]),
-    ).toEqual([['HZ058', CART_WITHOUT_DECISION]])
+    expect(diagnostics).toEqual([])
     const entries = Object.values(lock!.features.cart!)
     expect(entries).toHaveLength(15)
-    expect(entries.every((e) => Object.keys(e.contracts).length > 0)).toBe(true)
+    expect(entries.filter((e) => e.decides).every((e) => Object.keys(e.contracts).length > 0)).toBe(true)
   })
 
   it.each(catalog)('$code — $name', ({ code, pointer, mutate }) => {

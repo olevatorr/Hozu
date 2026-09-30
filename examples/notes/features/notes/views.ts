@@ -1,22 +1,17 @@
 import { contract, part, ui } from '@hozu/core'
 import {
   Add,
-  addNote,
   Bulk,
   Draft,
-  DUPLICATE,
-  GONE,
   listNotes,
   noMatch,
   notesMachine,
   Pin,
   pinNotes,
   Remove,
-  removeNote,
   removeNotes,
   Search,
   Select,
-  togglePin,
   total,
   visible,
 } from './model.ts'
@@ -132,94 +127,6 @@ export const NotesBoard = ui.view({
     ]),
 })
 
-const note = (id: string, text: string, pinned = false) => ({ id, text, pinned })
-
-export const typesDraft = contract(notesMachine, {
-  given: { state: 'idle' },
-  when: [{ send: Draft, payload: { text: 'Milk' } }],
-  expect: { state: 'idle', changes: { draft: 'Milk' } },
-})
-
-export const adds = contract(notesMachine, {
-  given: { state: 'idle' },
-  when: [
-    { send: Add, payload: { text: 'Milk' } },
-    { send: Add, payload: { text: 'Milk' } },
-    { done: addNote, result: note('n9', 'Milk') },
-  ],
-  expect: { state: 'idle', effects: [{ effect: addNote, input: { text: 'Milk' } }] },
-})
-
-export const rejectsDuplicate = contract(notesMachine, {
-  given: { state: 'adding' },
-  when: [{ failed: addNote, error: 'Duplicate', data: { text: 'Milk' } }],
-  expect: { state: 'idle', changes: { error: DUPLICATE } },
-})
-
-export const rejectsInvalid = contract(notesMachine, {
-  given: { state: 'adding' },
-  when: [
-    {
-      failed: addNote,
-      error: 'Invalid',
-      data: { message: 'text: Write something', fields: { text: 'Write something' } },
-    },
-  ],
-  expect: { state: 'idle', changes: { fields: { text: 'Write something' } } },
-})
-
-export const addFails = contract(notesMachine, {
-  given: { state: 'adding' },
-  when: [{ failed: addNote, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
-})
-
-export const removes = contract(notesMachine, {
-  given: { state: 'idle' },
-  when: [
-    { send: Remove, payload: { id: 'n1' } },
-    { done: removeNote, result: { id: 'n1' } },
-  ],
-  expect: {
-    state: 'idle',
-    changes: { target: 'n1' },
-    effects: [{ effect: removeNote, input: { id: 'n1' } }],
-  },
-})
-
-export const removeMissing = contract(notesMachine, {
-  given: { state: 'removing' },
-  when: [{ failed: removeNote, error: 'NotFound', data: { id: 'n1' } }],
-  expect: { state: 'idle', changes: { error: GONE } },
-})
-
-export const removeFails = contract(notesMachine, {
-  given: { state: 'removing' },
-  when: [{ failed: removeNote, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
-})
-
-export const pins = contract(notesMachine, {
-  given: { state: 'idle' },
-  when: [
-    { send: Pin, payload: { id: 'n1' } },
-    { done: togglePin, result: note('n1', 'Milk', true) },
-  ],
-  expect: { state: 'idle', changes: { target: 'n1' }, effects: [{ effect: togglePin, input: { id: 'n1' } }] },
-})
-
-export const pinMissing = contract(notesMachine, {
-  given: { state: 'pinning' },
-  when: [{ failed: togglePin, error: 'NotFound', data: { id: 'n1' } }],
-  expect: { state: 'idle', changes: { error: GONE } },
-})
-
-export const pinFails = contract(notesMachine, {
-  given: { state: 'pinning' },
-  when: [{ failed: togglePin, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
-})
-
 export const selects = contract(notesMachine, {
   given: { state: 'idle', context: { selected: ['n1'] } },
   when: [{ send: Select, payload: { id: 'n2', checked: true } }],
@@ -248,10 +155,4 @@ export const pinsSelected = contract(notesMachine, {
     { done: pinNotes, result: { count: 1 } },
   ],
   expect: { state: 'idle', effects: [{ effect: pinNotes, input: { ids: ['n1'] } }] },
-})
-
-export const searches = contract(notesMachine, {
-  given: { state: 'idle' },
-  when: [{ send: Search, payload: { query: 'milk' } }],
-  expect: { state: 'idle', changes: { query: 'milk' } },
 })

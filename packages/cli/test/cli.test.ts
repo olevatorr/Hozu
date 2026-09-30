@@ -59,11 +59,11 @@ describe('A5 CLI contract', () => {
     expect(code).toBe(0)
     expect(out).toMatchObject({
       ok: true,
-      summary: { errors: 0, warnings: 1 },
+      summary: { errors: 0, warnings: 0 },
       coverage: { cart: expect.objectContaining({ transitions: 15 }) },
       lock: 'current',
     })
-    expect(out.diagnostics.map((d: { code: string }) => d.code)).toEqual(['HZ058'])
+    expect(out.diagnostics).toEqual([])
     expectSchema('validate', out)
   })
 

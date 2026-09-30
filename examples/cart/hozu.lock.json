@@ -135,9 +135,7 @@
       },
       "checkingOut/invoke/failed/PaymentDeclined/0": {
         "behavior": "8b9e380968be1c54",
-        "contracts": {
-          "paymentDeclined": "7943b4e3336b6345"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -171,9 +169,7 @@
       },
       "checkingOut/invoke/failed/Unexpected/0": {
         "behavior": "e3558da402ee5835",
-        "contracts": {
-          "checkoutFails": "76c12d8a5b61f625"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -207,9 +203,7 @@
       },
       "error/after/0": {
         "behavior": "0eeb884362027bb4",
-        "contracts": {
-          "errorAutoDismisses": "1a62fe6fcca4d313"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -238,9 +232,7 @@
       },
       "error/on/cart.Dismiss/0": {
         "behavior": "2482ca1b7e8d0fa7",
-        "contracts": {
-          "dismissesError": "f8f8a28b83178191"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -375,9 +367,7 @@
       },
       "idle/on/cart.RemoveItem/0": {
         "behavior": "9e570f5078b8c38d",
-        "contracts": {
-          "removesItem": "47abe9f4d660f299"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -483,9 +473,7 @@
       },
       "removing/invoke/done/0": {
         "behavior": "161009426fbd8484",
-        "contracts": {
-          "removesItem": "47abe9f4d660f299"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [],
@@ -504,9 +492,7 @@
       },
       "removing/invoke/failed/Unexpected/0": {
         "behavior": "ed1fde3c60351534",
-        "contracts": {
-          "removeFails": "e7c30d548e7c30c7"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [

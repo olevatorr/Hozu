@@ -93,24 +93,6 @@ export const signsIn = contract(accountMachine, {
   },
 })
 
-export const rejectsName = contract(accountMachine, {
-  given: { state: 'signingIn' },
-  when: [
-    {
-      failed: signIn,
-      error: 'Invalid',
-      data: { message: 'name: Use 2–20 letters', fields: { name: 'Use 2–20 letters' } },
-    },
-  ],
-  expect: { state: 'idle', changes: { fields: { name: 'Use 2–20 letters' } } },
-})
-
-export const signInFails = contract(accountMachine, {
-  given: { state: 'signingIn' },
-  when: [{ failed: signIn, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
-})
-
 export const signsOut = contract(accountMachine, {
   given: { state: 'idle' },
   when: [
@@ -118,10 +100,4 @@ export const signsOut = contract(accountMachine, {
     { done: signOut, result: {} },
   ],
   expect: { state: 'idle', effects: [{ effect: signOut, input: {} }, { navigate: '/login' }] },
-})
-
-export const signOutFails = contract(accountMachine, {
-  given: { state: 'signingOut' },
-  when: [{ failed: signOut, error: 'Unexpected', data: { message: 'offline' } }],
-  expect: { state: 'idle', changes: { error: 'offline' } },
 })

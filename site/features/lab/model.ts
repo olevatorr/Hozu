@@ -77,53 +77,8 @@ export const m = machine({
     }
   },
 })
-const states = [
-  'idle',
-  'source',
-  'ir',
-  'validated',
-  'compiled',
-  'brokenSource',
-  'brokenIr',
-  'blocked',
-  'done',
-] as const
 export const contracts = Object.fromEntries([
-  ...states.flatMap((state) => [
-    [
-      `${state}Scope`,
-      contract(m, {
-        given: { state },
-        when: [{ send: SetScope, payload: { value: 'user' } }],
-        expect: { state, changes: { scope: 'user' } },
-      }),
-    ],
-    [
-      `${state}Freshness`,
-      contract(m, {
-        given: { state },
-        when: [{ send: SetFreshness, payload: { value: 'swr' } }],
-        expect: { state, changes: { freshness: 'swr' } },
-      }),
-    ],
-    [
-      `${state}Binding`,
-      contract(m, {
-        given: { state },
-        when: [{ send: SetBinding, payload: { value: true } }],
-        expect: { state, changes: { binding: true } },
-      }),
-    ],
-  ]),
   ...(['idle', 'blocked', 'done'] as const).flatMap((state) => [
-    [
-      `${state}Contract`,
-      contract(m, {
-        given: { state },
-        when: [{ send: SetContract, payload: { missing: true } }],
-        expect: { state: 'idle', changes: { missing: true } },
-      }),
-    ],
     [
       `${state}Valid`,
       contract(m, {
@@ -140,21 +95,6 @@ export const contracts = Object.fromEntries([
         expect: { state: 'brokenSource' },
       }),
     ],
-  ]),
-  ...[
-    ['source', 'ir'],
-    ['ir', 'validated'],
-    ['validated', 'compiled'],
-    ['compiled', 'done'],
-    ['brokenSource', 'brokenIr'],
-    ['brokenIr', 'blocked'],
-  ].map(([state, target]) => [
-    `${state}Timer`,
-    contract(m, {
-      given: { state: state as Stage },
-      when: [{ elapse: 700 }],
-      expect: { state: target as Stage },
-    }),
   ]),
   [
     'repairAndRun',

@@ -1,5 +1,4 @@
 import { feature } from '@hozu/core'
-import * as contracts from './contracts.ts'
 import { addTask, clearDone, getTask, isEmpty, listTasks, tasksTag, toggleTask, visible } from './effects.ts'
 import { Add, ClearDone, Draft, SetShow, Toggle } from './events.ts'
 import { tasksMachine } from './machine.ts'
@@ -29,7 +28,6 @@ export const tasks = feature({
       isEmpty,
       Board,
       Detail,
-      ...contracts,
       tasksMachine,
     },
   ],

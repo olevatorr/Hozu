@@ -3,9 +3,7 @@
     "tasks": {
       "adding/invoke/done/0": {
         "behavior": "11ead2562ff8dcf2",
-        "contracts": {
-          "addsTask": "53122a50e00dab10"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -34,9 +32,7 @@
       },
       "adding/invoke/failed/Duplicate/0": {
         "behavior": "a387982222429442",
-        "contracts": {
-          "rejectsDuplicate": "67df5bf7f27aab9d"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -65,9 +61,7 @@
       },
       "adding/invoke/failed/Invalid/0": {
         "behavior": "cae301dbdc321b19",
-        "contracts": {
-          "rejectsInvalid": "2510ff7b0777a98b"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -99,9 +93,7 @@
       },
       "adding/invoke/failed/Unexpected/0": {
         "behavior": "5768648eda6c6baa",
-        "contracts": {
-          "addFails": "d3a839377134777f"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -133,9 +125,7 @@
       },
       "clearing/invoke/done/0": {
         "behavior": "b4e9cca4201978c1",
-        "contracts": {
-          "clearsDone": "de1735671515dbc7"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [],
@@ -154,9 +144,7 @@
       },
       "clearing/invoke/failed/Unexpected/0": {
         "behavior": "0130e487e3466a4d",
-        "contracts": {
-          "clearFails": "0228d81126907bfe"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -188,9 +176,7 @@
       },
       "idle/on/tasks.Add/0": {
         "behavior": "229b176db4e049e5",
-        "contracts": {
-          "addsTask": "53122a50e00dab10"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -258,9 +244,7 @@
       },
       "idle/on/tasks.ClearDone/0": {
         "behavior": "c825482e6be8a921",
-        "contracts": {
-          "clearsDone": "de1735671515dbc7"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -291,9 +275,7 @@
       },
       "idle/on/tasks.Draft/0": {
         "behavior": "d293de25b0616c82",
-        "contracts": {
-          "typesDraft": "7a4edefde37e0652"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -325,9 +307,7 @@
       },
       "idle/on/tasks.SetShow/0": {
         "behavior": "8ab5b2b1900cc2c3",
-        "contracts": {
-          "setsFilter": "991f8c843d73eb73"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -359,9 +339,7 @@
       },
       "idle/on/tasks.Toggle/0": {
         "behavior": "14e3c6c6f5eecf56",
-        "contracts": {
-          "togglesTask": "de8bf22869a0be79"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
@@ -402,9 +380,7 @@
       },
       "toggling/invoke/done/0": {
         "behavior": "aec3805a8d262d3e",
-        "contracts": {
-          "togglesTask": "de8bf22869a0be79"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [],
@@ -423,9 +399,7 @@
       },
       "toggling/invoke/failed/NotFound/0": {
         "behavior": "d3d52f3d5d1c8949",
-        "contracts": {
-          "toggleMissing": "97d21a10443171ba"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [],
@@ -444,9 +418,7 @@
       },
       "toggling/invoke/failed/Unexpected/0": {
         "behavior": "f398d0af23875ad1",
-        "contracts": {
-          "toggleFails": "7d37b9f7c735a857"
-        },
+        "contracts": {},
         "decides": false,
         "fields": {
           "assign": [
