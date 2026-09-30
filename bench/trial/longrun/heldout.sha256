@@ -1,5 +1,6 @@
 # SHA-256 of the held-out changes 21-28 and their checks (ADR 0044), kept outside the repository in ~/hozu-trial-0021/heldout/.
 # Written 2026-09-30 by an isolated agent session; the coordinator saw only its one-line summary of each change.
+# Validated 2026-09-30 on the Nuxt reference (steps 21-28 at 100 %, twice): no check amended, hashes unchanged.
 b0bc9f6bae3517cc8db68af1a0cbb2a4053cfbd18ae13b9c0ad766d90901881c  changes/21.md
 79385653821da23d74e08660421891f0ce684e5f4294e7abd9c65a5156cca103  changes/22.md
 e7d54a71b7895f1f266d5ce4398829a624f97d10fd0e5d9d452b9e2d8a4ab725  changes/23.md
