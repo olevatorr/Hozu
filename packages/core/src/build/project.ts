@@ -14,13 +14,14 @@ import { buildFeature } from './feature.ts'
 import { buildHttp } from './http.ts'
 import type { Manifest } from './manifest.ts'
 import { buildPages } from './page.ts'
-import { filePath, IDENTIFIER, ProjectScope } from './scope.ts'
+import { filePath, IDENTIFIER, type PartUse, ProjectScope } from './scope.ts'
 
 export interface BuildResult {
   ir: ProjectIR
   bindings: Bindings
   sources: SourceIndex
   diagnostics: Diagnostic[]
+  parts: PartUse[]
 }
 
 export const INVALID_ERROR_SCHEMA: JsonSchema = {
@@ -437,5 +438,11 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
   const ir: ProjectIR = { irVersion: 2, site, session, routes, pages, notFound, error, http, env, features }
   scope.bindings.assetOrder = scope.assetList
   for (const d of scope.diagnostics) d.location.source ??= resolveSource(scope.sources, d.location.pointer)
-  return { ir, bindings: scope.bindings, sources: scope.sources, diagnostics: scope.diagnostics }
+  return {
+    ir,
+    bindings: scope.bindings,
+    sources: scope.sources,
+    diagnostics: scope.diagnostics,
+    parts: [...scope.parts.values()],
+  }
 }

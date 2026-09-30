@@ -119,7 +119,6 @@ function assign(a: AssignOp, fns: Fns): Update {
         setIn(ctx, path, Number(getIn(ctx, path) ?? 0) + Number(v({ ...env, context: ctx })))
     case 'removeWhere': {
       const key = a.key
-      if (key === null) throw new CompileError('HZ014')
       return (ctx, env) => {
         const list = getIn(ctx, path)
         const match = v({ ...env, context: ctx })
@@ -130,7 +129,11 @@ function assign(a: AssignOp, fns: Fns): Update {
           items.filter(
             (item) =>
               !equal(
-                item !== null && typeof item === 'object' && !Array.isArray(item) ? item[key] : null,
+                key === null
+                  ? item
+                  : item !== null && typeof item === 'object' && !Array.isArray(item)
+                    ? item[key]
+                    : null,
                 match,
               ),
           ),

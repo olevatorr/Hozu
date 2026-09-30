@@ -1,4 +1,4 @@
-import { event, feature, machine, on, project, query, route, ui } from '@hozu/core'
+import { contract, event, feature, machine, on, project, query, route, ui } from '@hozu/core'
 import { resolvers } from '@hozu/data'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
@@ -57,11 +57,19 @@ const Page = ui.view({
       ui.p({}, ['Cart: ', ctx.count, ' items']),
     ]),
 })
+const counts = contract(cart, {
+  given: { state: 'ready' },
+  when: [
+    { send: Add, payload: { sku: 'a' } },
+    { send: Add, payload: { sku: 'b' } },
+  ],
+  expect: { state: 'ready', changes: { count: 2 } },
+})
 const home = route({ path: '/', params: null, search: null })
 const shop = feature({
   id: 'shop',
   intent: { summary: 'Benchmark page' },
-  declarations: [{ Add, listProducts, Page, cart }],
+  declarations: [{ Add, listProducts, Page, cart, counts }],
 })
 const headFields = {
   title: 'Products',

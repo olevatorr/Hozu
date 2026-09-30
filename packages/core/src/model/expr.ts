@@ -62,7 +62,7 @@ export class ReferenceEscape extends RecorderError {
   }
 }
 
-const escape = (what: string, how: string): never => {
+const leak = (what: string, how: string): never => {
   throw new ReferenceEscape(
     `${what} was evaluated as JavaScript (${how}). References are recorded, not evaluated: write the logic in a builder callback, or make the helper a part()`,
   )
@@ -71,11 +71,11 @@ const escape = (what: string, how: string): never => {
 const PRIMITIVE = new Set<PropertyKey>([Symbol.toPrimitive, 'toString', 'valueOf', 'toJSON'])
 
 const traps = (what: () => string) => ({
-  set: () => escape(what(), 'assignment'),
-  defineProperty: () => escape(what(), 'assignment'),
-  deleteProperty: () => escape(what(), 'delete'),
-  ownKeys: () => escape(what(), 'its keys were read: Object.keys, a spread or a for…in'),
-  has: (_: object, key: PropertyKey) => (typeof key === 'symbol' ? false : escape(what(), `"${key}" in`)),
+  set: () => leak(what(), 'assignment'),
+  defineProperty: () => leak(what(), 'assignment'),
+  deleteProperty: () => leak(what(), 'delete'),
+  ownKeys: () => leak(what(), 'its keys were read: Object.keys, a spread or a for…in'),
+  has: (_: object, key: PropertyKey) => (typeof key === 'symbol' ? false : leak(what(), `"${key}" in`)),
 })
 
 const roots = new Map<string, unknown>()
@@ -86,10 +86,10 @@ export function createRef(ref: RefSource | 'binding', depth: number, path: reado
   const what = () => `Reference "${path.join('.') || '<root>'}"`
   return new Proxy(Object.create(null), {
     ...traps(what),
-    has: (_, key) => (key === EXPR ? true : typeof key === 'symbol' ? false : escape(what(), `"${key}" in`)),
+    has: (_, key) => (key === EXPR ? true : typeof key === 'symbol' ? false : leak(what(), `"${key}" in`)),
     get(_, key) {
       if (key === EXPR) return expr
-      if (PRIMITIVE.has(key)) return () => escape(what(), 'it was converted to a string or a number')
+      if (PRIMITIVE.has(key)) return () => leak(what(), 'it was converted to a string or a number')
       if (typeof key === 'symbol' || key === 'then') return undefined
       let child = children.get(key)
       if (child === undefined) {
@@ -113,16 +113,16 @@ export function callExpr(fn: object, arg: unknown): any {
   let length: unknown
   const self: object = new Proxy(Object.create(null), {
     ...traps(what),
-    has: (_, key) => (key === EXPR ? true : typeof key === 'symbol' ? false : escape(what(), `"${key}" in`)),
+    has: (_, key) => (key === EXPR ? true : typeof key === 'symbol' ? false : leak(what(), `"${key}" in`)),
     get(_, key) {
       if (key === EXPR) return expr
-      if (PRIMITIVE.has(key)) return () => escape(what(), 'it was converted to a string or a number')
+      if (PRIMITIVE.has(key)) return () => leak(what(), 'it was converted to a string or a number')
       if (typeof key === 'symbol' || key === 'then') return undefined
       if (key === 'length') {
         length ??= lengthOf!(self)
         return length
       }
-      return escape(what(), `its ".${key}" was read; only .length lowers (to %length)`)
+      return leak(what(), `its ".${key}" was read; only .length lowers (to %length)`)
     },
   })
   return self

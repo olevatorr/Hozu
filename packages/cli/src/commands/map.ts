@@ -97,6 +97,12 @@ export function runMap(loaded: Loaded, cwd: string): MapOutput {
         route: v.route,
         at: at(`${base}/views/${name}`),
       })),
+      parts: build.parts
+        .filter((u) => u.features.includes(f.id))
+        .map((u) => ({
+          name: u.name,
+          at: u.source ? `${relative(cwd, u.source.file)}:${u.source.line}` : null,
+        })),
       contracts: Object.keys(f.contracts).length,
       contractsAt: at(`${base}/contracts/${Object.keys(f.contracts)[0] ?? ''}`),
     }
@@ -145,6 +151,8 @@ export function describeMap(out: MapOutput): string {
       lines.push(
         `  view ${v.name}${v.machine ? ' (machine)' : ''}${v.route ? ` route ${v.route}` : ''}${where(v.at)}`,
       )
+    if (f.parts?.length)
+      lines.push(`  parts ${f.parts.map((p) => `${p.name ?? 'part'}${p.at ? ` ${p.at}` : ''}`).join(', ')}`)
     lines.push(`  contracts ${f.contracts}${where(f.contractsAt)}`)
   }
   return `${lines.join('\n')}\n`

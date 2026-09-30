@@ -1,5 +1,5 @@
 import { feature } from '@hozu/core'
-import { interactions } from './contracts.ts'
+import { addingCountsIds, interactions } from './contracts.ts'
 import { pick, reversed, slideLabel, slides, stats, todoId } from './effects.ts'
 import {
   AddTodo,
@@ -45,6 +45,7 @@ export const site = feature({
       Smooth,
       About,
       Showcase,
+      addingCountsIds,
       interactions,
       siteMachine,
     },

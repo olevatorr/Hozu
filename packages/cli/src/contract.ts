@@ -206,6 +206,7 @@ export interface MapFeature {
   machineAt: string | null
   states: MapState[]
   views: { name: string; machine: boolean; route: string | null; at: string | null }[]
+  parts?: { name: string | null; at: string | null }[]
   contracts: number
   contractsAt: string | null
 }

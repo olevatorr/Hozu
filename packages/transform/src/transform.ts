@@ -12,6 +12,18 @@ const H = '__hozu'
 const HEADER = `import { lower as ${H} } from '@hozu/core/lower';`
 const BUILDERS = new Set(['machine', 'on', 'invoke', 'query', 'mutation', 'endpoint', 'part'])
 const UI_REFS = new Set(['env', 'alternate'])
+const UI_VALUES = new Set([
+  'env',
+  'alternate',
+  'link',
+  'asset',
+  'send',
+  'og',
+  'page',
+  'messages',
+  'widget',
+  'view',
+])
 const COMPARE: Record<string, string> = {
   '===': 'eq',
   '==': 'eq',
@@ -317,7 +329,8 @@ export function transform(source: string, _file = ''): TransformResult {
   const nodeLike = (n: Node | null): boolean =>
     !!n &&
     ((n.type === 'CallExpression' &&
-      (isUiMember(n.callee) || (n.callee.type === 'Identifier' && n.callee.name === 'when'))) ||
+      ((isUiMember(n.callee) && !UI_VALUES.has(n.callee.property.name)) ||
+        (n.callee.type === 'Identifier' && n.callee.name === 'when'))) ||
       n.type === 'ArrayExpression' ||
       (n.type === 'ConditionalExpression' && (nodeLike(n.consequent) || nodeLike(n.alternate))))
   const childPosition = (n: Node): boolean => {
@@ -342,7 +355,7 @@ export function transform(source: string, _file = ''): TransformResult {
       if (up.type === 'CallExpression' && isBuilderCall(up)) found = up
     return found
   }
-  const escape = (site: Node, kind: string, name: string) => {
+  const leak = (site: Node, kind: string, name: string) => {
     const owner = outerBuilder(site)
     const list = escapes.get(owner) ?? []
     list.push([kind, name, ...position(site.start)])
@@ -360,7 +373,7 @@ export function transform(source: string, _file = ''): TransformResult {
         : 'call'
   const callbacks = (call: Node, s: Scope) => {
     const check = (v: Node) => {
-      if (v.type === 'Identifier' && !local(s, v.name) && plainFunction(v.name)) escape(v, 'callback', v.name)
+      if (v.type === 'Identifier' && !local(s, v.name) && plainFunction(v.name)) leak(v, 'callback', v.name)
       else if (v.type === 'ObjectExpression')
         for (const p of v.properties) if (p.type === 'Property') check(p.value)
     }
@@ -477,7 +490,7 @@ export function transform(source: string, _file = ''): TransformResult {
     }
     if (n.type === 'UnaryExpression' && n.operator === 'typeof') {
       visit(n.argument, s, false, guardFn)
-      if (isRef(n.argument, s)) escape(n, 'typeof', `typeof ${nameOf(n.argument)}`)
+      if (isRef(n.argument, s)) leak(n, 'typeof', `typeof ${nameOf(n.argument)}`)
       return
     }
     if (n.type === 'NewExpression') {
@@ -489,7 +502,7 @@ export function transform(source: string, _file = ''): TransformResult {
         !moduleHelpers.has(n.callee.name) &&
         n.arguments.some((a: Node) => holdsRef(a, s))
       )
-        escape(n, 'global', `new ${n.callee.name}`)
+        leak(n, 'global', `new ${n.callee.name}`)
       return
     }
     if (n.type === 'UnaryExpression' && n.operator === '!') {
@@ -563,14 +576,14 @@ export function transform(source: string, _file = ''): TransformResult {
       const root = callee.type === 'MemberExpression' ? callee.object : callee
       if (root.type !== 'Identifier' || local(s, root.name)) return
       const name = nameOf(callee)
-      if (callee.type === 'Identifier' && plainFunction(root.name)) escape(n, 'helper', name)
+      if (callee.type === 'Identifier' && plainFunction(root.name)) leak(n, 'helper', name)
       else if (imported.has(root.name))
         replace(
           n,
           `${H}.call(${gen(callee)}, ${JSON.stringify(name)}${n.arguments.map((a: Node) => `, ${gen(a)}`).join('')})`,
           false,
         )
-      else if (GLOBALS.has(root.name) && !moduleHelpers.has(root.name)) escape(n, 'global', name)
+      else if (GLOBALS.has(root.name) && !moduleHelpers.has(root.name)) leak(n, 'global', name)
       return
     }
     for (const c of children(n)) visit(c, s, false, guardFn)
@@ -579,18 +592,18 @@ export function transform(source: string, _file = ''): TransformResult {
   visit(program, { names: new Map(), up: null }, false)
   for (const [owner, sites] of escapes)
     replace(owner, `${H}.escapes(${gen(owner)}, ${JSON.stringify(sites)})`, false)
-  for (const stmt of program.body) {
-    const d = stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt
-    if (d?.type !== 'VariableDeclaration') continue
-    for (const v of d.declarations)
-      if (
-        v.id.type === 'Identifier' &&
-        v.init?.type === 'CallExpression' &&
-        v.init.callee.type === 'Identifier' &&
-        locals.get(v.init.callee.name) === 'part'
-      )
-        replace(v.init, `${H}.name(${gen(v.init)}, ${JSON.stringify(v.id.name)})`, false)
+  const named = (n: Node) => {
+    for (const c of children(n)) named(c)
+    if (
+      n.type === 'VariableDeclarator' &&
+      n.id.type === 'Identifier' &&
+      n.init?.type === 'CallExpression' &&
+      n.init.callee.type === 'Identifier' &&
+      locals.get(n.init.callee.name) === 'part'
+    )
+      replace(n.init, `${H}.name(${gen(n.init)}, ${JSON.stringify(n.id.name)})`, false)
   }
+  named(program)
   let code = source
   for (const e of edits.sort((a, b) => b.start - a.start))
     code = code.slice(0, e.start) + e.text + code.slice(e.end)

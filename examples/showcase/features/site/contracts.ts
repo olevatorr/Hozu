@@ -48,3 +48,23 @@ export const interactions = contract(siteMachine, {
     },
   },
 })
+
+export const addingCountsIds = contract(siteMachine, {
+  given: { state: 'ready', context: { next: 7 } },
+  when: [
+    { send: AddTodo, payload: { title: 'C' } },
+    { send: AddTodo, payload: { title: 'D' } },
+  ],
+  expect: {
+    state: 'ready',
+    changes: {
+      todos: [
+        { id: 't1', title: 'Sketch the layout' },
+        { id: 't2', title: 'Pick the palette' },
+        { id: 't7', title: 'C' },
+        { id: 't8', title: 'D' },
+      ],
+      next: 9,
+    },
+  },
+})

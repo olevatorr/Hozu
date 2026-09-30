@@ -1,4 +1,12 @@
-import { type At, at, type ProjectIR, resolveAt, routeParams, routePattern } from '@hozu/core/ir'
+import {
+  type At,
+  at,
+  type ProjectIR,
+  resolveAt,
+  routeParams,
+  routePattern,
+  type ValueExpr,
+} from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { closest, didYouMean } from '../suggest.ts'
 import { walkView } from '../walk.ts'
@@ -56,6 +64,38 @@ function report(ctx: Ctx, feature: string, pointer: At, href: string) {
   )
 }
 
+const internal = (v: string) => v.startsWith('/') && !v.startsWith('//') && !v.startsWith('/_hozu/')
+
+function concatHref(value: ValueExpr): string | null {
+  if (!('fn' in value) || value.fn !== '%concat' || !('object' in value.arg)) return null
+  const parts = Object.values(value.arg.object)
+  const first = parts[0]
+  if (!first || !('literal' in first) || typeof first.literal !== 'string' || !internal(first.literal))
+    return null
+  return parts.map((p) => ('literal' in p ? String(p.literal) : '…')).join('')
+}
+
+function reportConcat(ctx: Ctx, feature: string, pointer: At, href: string) {
+  const match = matchRoute(ctx.ir, href.replaceAll('…', 'x').split(/[?#]/)[0]!)
+  const call = match
+    ? `ui.link(${match.id}, ${
+        match.params
+          ? `{ ${Object.keys(match.params)
+              .map((k) => `${k}: …`)
+              .join(', ')} }`
+          : 'null'
+      })`
+    : 'ui.link(route, params)'
+  ctx.report(
+    'HZ032',
+    feature,
+    pointer,
+    `Internal link \`${href}\` is built from a template string; use ${call}`,
+    'Internal paths are typed references to a route, so a renamed route or a wrong parameter is caught; a template string is not checked.',
+    { summary: `Use ${call}`, snippet: call, patch: null },
+  )
+}
+
 export function internalLinks(ctx: Ctx) {
   const { ir } = ctx
   for (const f of Object.values(ir.features))
@@ -63,9 +103,11 @@ export function internalLinks(ctx: Ctx) {
       walkView(ir, f, vid, view, ({ node, pointer }) => {
         if (node.kind !== 'el' || (node.tag !== 'a' && node.tag !== 'area')) return
         const href = node.attrs.href
-        if (!href || !('literal' in href) || typeof href.literal !== 'string') return
+        if (!href) return
+        const built = concatHref(href)
+        if (built) reportConcat(ctx, f.id, at(pointer, 'attrs', 'href'), built)
+        if (!('literal' in href) || typeof href.literal !== 'string') return
         const v = href.literal
-        if (v.startsWith('/') && !v.startsWith('//') && !v.startsWith('/_hozu/'))
-          report(ctx, f.id, at(pointer, 'attrs', 'href'), v)
+        if (internal(v)) report(ctx, f.id, at(pointer, 'attrs', 'href'), v)
       })
 }

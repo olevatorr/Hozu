@@ -41,4 +41,5 @@ around the rule.
 | HZ046 | an endpoint path is reserved, has params, or collides with a page, redirect or endpoint | use a static path such as `/api/…` (patch) |
 | HZ047 | a `fn` body uses an imported name or `let` state (it is sent to the browser as source) | pass the value as input, or write it as a `const` helper in the module |
 | HZ048 | `seed` names a field the context lacks, has no machine or route, or two views on one page seed a machine | seed top-level context fields, on one view per page |
+| HZ059 | data reached plain JavaScript: a plain helper, a global (`Boolean`, `Object.keys`, `String`…), `typeof`, a spread or `in` | make the helper a `part()`; for a global use an operator or a `fn()` |
 | HZ042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

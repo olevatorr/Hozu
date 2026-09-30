@@ -2,11 +2,12 @@
   "features": {
     "site": {
       "ready/on/site.AddTodo/0": {
-        "behavior": "83da65dec2939e82",
+        "behavior": "bcb5b5a7343a63b3",
         "contracts": {
+          "addingCountsIds": "00be56a6d98d7201",
           "interactions": "b9730b984add547c"
         },
-        "summary": "ready --AddTodo--> ready · if event.title neq \"\" · todos append { id: todoId(ctx.next), title: event.title }, next += 1, draft := \"\""
+        "summary": "ready --AddTodo--> ready · if event.title neq \"\" · todos append { id: todoId(ctx.next), title: event.title }, next := %plus({ a: ctx.next, b: 1 }), draft := \"\""
       },
       "ready/on/site.Draft/0": {
         "behavior": "d0dc08d9e138f769",

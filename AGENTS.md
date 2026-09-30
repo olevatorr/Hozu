@@ -13,7 +13,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 1. One canonical form per concept. No syntax sugar, no aliases. Formatter normalizes.
 2. Explicit over implicit. No auto-imports, no global injection, no file-based magic.
 3. No stringly-typed cross references where a declaration identity is possible.
-4. Closed world: views are constrained `ui()` trees, never arbitrary functions.
+4. Closed world: views are constrained `ui()` trees, never arbitrary functions; reusable view logic is a `part()`,
+   lowered like a builder callback and inlined at record time, so the IR holds no function (ADR 0043 H).
    Side effects only via declared `query` / `mutation`, plus the framework-owned
    `navigate` (on a transition) and `after(ms)` (on a state). Logic is data: operators and
    assignments in builder callbacks are lowered by `@hozu/transform` to the `op.*` IR (ADR 0039);
@@ -59,8 +60,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - Views: every HTML/SVG element with per-tag typed attributes, all DOM events, `ui.dom.*` event fields (HZ027),
   `class` (static) + `toggle` (guarded class groups) + `vars` (CSS custom properties). No `style`, no free
   functions. Stylesheets: `project({ styles })` Tailwind entry + `feature({ styles })`; classes must produce CSS
-  (HZ026), hooks use `data-*`. `when`/`ui.if`/`ui.each` take an optional motion name (enter/leave/move classes).
-  Also `ui.if`, `ui.link(route, params)`, `ui.window`/`ui.document`, `ui.html` (HZ030 for untrusted values),
+  (HZ026), hooks use `data-*`. `when`/`ui.each` take an optional motion name (enter/leave/move classes); conditions are
+  `c ? a : b` / `c && a` (a branch may be a list), and `ui.if(c, a, b, motion)` exists only with a motion. Also
+  `part((…) => …)` (reusable view logic, inlined at record time; a plain helper that receives data is HZ059, ADR 0043 H),
+  `ui.link(route, params)`, `ui.window`/`ui.document`, `ui.html` (HZ030 for untrusted values),
   `ui.asset(url)` (HZ028 for img without dimensions).
   Literals are checked against their schema (HZ031); enumerated attributes (`type`, `method`, `loading`…) are typed.
   Internal links are `ui.link` only: a string `href` starting with `/` is HZ032 (ADR 0012).

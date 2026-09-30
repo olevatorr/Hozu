@@ -194,7 +194,7 @@ export function migrate(source, file = '') {
   if (opName) {
     const left = new RegExp(`\\b${opName}\\.`).test(code.replace(/^import[^\n]*\n/gm, ''))
     if (!left)
-      code = code.replace(/import \{([^}]*)\} from '@hozu\/core'/, (all, names) => {
+      code = code.replace(/import \{([^}]*)\} from '@hozu\/core'/, (_, names) => {
         const kept = names
           .split(',')
           .map((x) => x.trim())

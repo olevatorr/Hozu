@@ -270,6 +270,31 @@
             "additionalProperties": false
           }
         },
+        "parts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "at"
+            ],
+            "additionalProperties": false
+          }
+        },
         "contracts": {
           "type": "number"
         },

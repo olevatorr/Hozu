@@ -27,4 +27,7 @@ export const operatorFns: Record<string, Impl> & Partial<Record<Operator, Impl>>
   '%minus': function minus(input: { a: number; b: number }): Json {
     return input.a - input.b
   },
+  '%includes': function includes(input: { l: string | Json[] | null; v: never }): Json {
+    return input.l?.includes(input.v) ?? false
+  },
 }
