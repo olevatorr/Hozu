@@ -34,7 +34,7 @@ test('the fixture registers its checks and retires TG1 from step 22', async () =
   assert.deepEqual(at(23), ['N1', 'X21a', 'X21b'])
 })
 
-test('a held-out id that repeats an earlier id is refused', async () => {
+test('a held-out id outside the X range is refused', async () => {
   await assert.rejects(
     loadHeldout(fixture('heldout-bad.mjs'), { ...registry(), helpers }),
     /must start with X/,

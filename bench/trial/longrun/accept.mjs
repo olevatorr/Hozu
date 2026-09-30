@@ -1396,6 +1396,7 @@ const mainText = async (page) =>
       return (document.querySelector('main') ?? document.body).innerText
     }),
   )
+const jsOnly = (t) => (step >= 13 ? norm(t.replace(/Selected: \d+/g, '')) : t)
 const firstDiff = (a, b) => {
   let i = 0
   while (i < a.length && a[i] === b[i]) i++
@@ -1405,7 +1406,7 @@ check(
   'N16',
   0,
   'after each JS internal link the main text equals a no-JS GET of the same URL',
-  'Everything it does today must keep working, with and without JavaScript',
+  'Everything it does today must keep working, with and without JavaScript (change 13: Selected: <n> is shown with JavaScript)',
   async () => {
     const page = await fresh('N16')
     await add(page, 'Parity note')
@@ -1416,7 +1417,7 @@ check(
       const res = await plain.goto(url, { waitUntil: 'networkidle' })
       if (res?.status() === 400) return
       await settle(plain, 300)
-      const [a, b] = [await mainText(page), await mainText(plain)]
+      const [a, b] = [jsOnly(await mainText(page)), jsOnly(await mainText(plain))]
       assert(a === b, `${label} ${new URL(url).pathname}: ${firstDiff(a, b)}`)
     }
     await compare('list')
@@ -1510,8 +1511,10 @@ const transform = existsSync(join(cwd, 'node_modules/@hozu/transform'))
   ? ['--import', '@hozu/transform/register']
   : []
 const [bin, ...args] = entry.split(' ')
-const command = args.length ? [join(cwd, 'node_modules/.bin', bin), ...args] : [...transform, entry]
-const server = spawn(process.execPath, command, {
+const [exe, command] = args.length
+  ? [join(cwd, 'node_modules/.bin', bin), args]
+  : [process.execPath, [...transform, entry]]
+const server = spawn(exe, command, {
   cwd,
   env: { ...process.env, PORT: port, HOST: '127.0.0.1', NITRO_HOST: '127.0.0.1', NODE_ENV: 'production' },
 })
