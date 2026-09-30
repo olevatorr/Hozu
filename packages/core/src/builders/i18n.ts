@@ -1,6 +1,6 @@
 import { placeholders } from '../i18n/runtime.ts'
 import { brand, type Decl } from '../model/decl.ts'
-import { createRef, EXPR, type Expr, type Val } from '../model/expr.ts'
+import { callExpr, createRef, type Expr, setLength, type Val } from '../model/expr.ts'
 import type { Href } from './ui.ts'
 
 type Trim<S extends string> = S extends ` ${infer T}` ? Trim<T> : S extends `${infer T} ` ? Trim<T> : S
@@ -39,6 +39,7 @@ export interface MessagesDef {
 }
 
 const keys = new WeakMap<object, { decl: object; key: string }>()
+export const recorderFns = new WeakSet<object>()
 const builtins = new WeakMap<object, string>()
 
 export const messageKeyOf = (fn: object) => keys.get(fn) ?? null
@@ -53,7 +54,8 @@ export function messages<const D extends string, const M extends Record<string, 
   for (const [key, template] of Object.entries((all as Record<string, Record<string, string>>)[base] ?? {})) {
     const marker = {}
     markers.push([marker, key])
-    const call = (arg: unknown) => Object.freeze({ [EXPR]: { kind: 'call', fn: marker, arg } })
+    const call = (arg: unknown) => callExpr(marker, arg)
+    recorderFns.add(call)
     decl[key] = placeholders(template).length ? call : call(null)
   }
   const branded = brand(decl, 'messages', { base, text: all } satisfies MessagesDef)
@@ -64,7 +66,7 @@ export function messages<const D extends string, const M extends Record<string, 
 const builtin = (name: string) => {
   const marker = {}
   builtins.set(marker, name)
-  return (arg: unknown): Expr<string> => Object.freeze({ [EXPR]: { kind: 'call', fn: marker, arg } }) as never
+  return (arg: unknown): Expr<string> => callExpr(marker, arg)
 }
 
 const operatorMarkers = new Map<string, (arg: unknown) => Expr<string>>()
@@ -80,6 +82,8 @@ const operator = (name: string) => {
 export const builtinCall = (name: string, arg: unknown): Expr<unknown> => operator(name)(arg) as never
 
 export const builtinGuard = (name: string, arg: unknown): Expr<boolean> => operator(name)(arg) as never
+
+setLength((v) => builtinCall('%length', { v }))
 
 type NumberOptions = Pick<
   Intl.NumberFormatOptions,

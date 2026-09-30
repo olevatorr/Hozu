@@ -1,4 +1,4 @@
-import { op, ui } from '@hozu/core'
+import { ui } from '@hozu/core'
 import { home, taskPage } from '../../routes.ts'
 import { getTask, isEmpty, listTasks, visible } from './effects.ts'
 import { Add, ClearDone, Draft, SetShow, Toggle } from './events.ts'
@@ -59,21 +59,14 @@ export const Board = ui.view({
           ),
         ],
       ),
-      ui.if(
-        op.neq(ctx.error, null),
-        [
-          ui.p({ role: 'alert', class: 'rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700' }, [
-            ctx.error,
-          ]),
-        ],
-        [],
-      ),
+      ctx.error !== null &&
+        ui.p({ role: 'alert', class: 'rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700' }, [ctx.error]),
       ui.div({ class: 'flex items-center gap-2' }, [
         ...shows.map((s) =>
           ui.button(
             {
               type: 'button',
-              'aria-pressed': op.eq(ctx.show, s.value),
+              'aria-pressed': ctx.show === s.value,
               class:
                 'rounded-full border border-slate-300 px-3 py-1 text-sm aria-pressed:border-indigo-600 aria-pressed:bg-indigo-600 aria-pressed:text-white',
               on: { click: ui.send(SetShow, { show: s.value }) },
@@ -96,11 +89,9 @@ export const Board = ui.view({
         {},
         {
           ready: (items) =>
-            ui.if(
-              isEmpty({ items, show: ctx.show }),
-              [ui.p({ class: 'text-slate-500' }, ['No tasks'])],
-              [
-                ui.ul(
+            isEmpty({ items, show: ctx.show })
+              ? ui.p({ class: 'text-slate-500' }, ['No tasks'])
+              : ui.ul(
                   {
                     class: 'divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white shadow-sm',
                   },
@@ -118,19 +109,19 @@ export const Board = ui.view({
                           {
                             class: 'rounded-full px-2 py-0.5 text-xs font-medium',
                             toggle: {
-                              'bg-emerald-100 text-emerald-700': op.eq(t.done, true),
-                              'bg-amber-100 text-amber-700': op.eq(t.done, false),
+                              'bg-emerald-100 text-emerald-700': t.done === true,
+                              'bg-amber-100 text-amber-700': t.done === false,
                             },
                           },
-                          [ui.if(op.eq(t.done, true), ['done'], ['open'])],
+                          [t.done === true ? 'done' : 'open'],
                         ),
                         ui.span(
                           {
                             class: 'rounded-full px-2 py-0.5 text-xs font-medium',
                             toggle: {
-                              'bg-slate-100 text-slate-600': op.eq(t.priority, 'low'),
-                              'bg-sky-100 text-sky-700': op.eq(t.priority, 'normal'),
-                              'bg-rose-100 text-rose-700': op.eq(t.priority, 'high'),
+                              'bg-slate-100 text-slate-600': t.priority === 'low',
+                              'bg-sky-100 text-sky-700': t.priority === 'normal',
+                              'bg-rose-100 text-rose-700': t.priority === 'high',
                             },
                           },
                           [t.priority],
@@ -141,14 +132,12 @@ export const Board = ui.view({
                             class: 'rounded-md border border-slate-300 px-2 py-1 text-sm hover:bg-slate-50',
                             on: { click: ui.send(Toggle, { id: t.id }) },
                           },
-                          [ui.if(op.eq(t.done, true), ['Mark open'], ['Mark done'])],
+                          [t.done === true ? 'Mark open' : 'Mark done'],
                         ),
                       ]),
                     ),
                   ],
                 ),
-              ],
-            ),
           pending: ui.p({}, ['Loading…']),
           failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Tasks are unavailable']) },
         },
@@ -167,9 +156,7 @@ export const Detail = ui.view({
           ready: (t) =>
             ui.article({ class: 'space-y-2' }, [
               ui.h1({ class: 'text-3xl font-bold tracking-tight text-slate-900' }, [t.title]),
-              ui.p({ class: 'text-slate-600' }, [
-                ui.if(op.eq(t.done, true), ['Status: done'], ['Status: open']),
-              ]),
+              ui.p({ class: 'text-slate-600' }, [t.done === true ? 'Status: done' : 'Status: open']),
               ui.p({ class: 'text-slate-600' }, ['Priority: ', t.priority]),
             ]),
           pending: null,

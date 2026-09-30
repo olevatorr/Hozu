@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { runInContext } from 'node:vm'
 import { build } from 'esbuild'
 import { describe, expect, it } from 'vitest'
+import { hozuTransform } from '../../transform/src/esbuild.ts'
 
 const cart = fileURLToPath(new URL('../../../examples/cart/', import.meta.url))
 const cli = fileURLToPath(new URL('../../cli/bin/hozu.js', import.meta.url))
@@ -64,6 +65,7 @@ describe('edge build (ADR 0016)', () => {
       mainFields: ['module', 'main'],
       define: { 'import.meta.url': '"https://edge.example/worker.js"' },
       metafile: true,
+      plugins: [hozuTransform()],
       write: false,
       logLevel: 'silent',
     })

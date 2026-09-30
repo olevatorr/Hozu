@@ -15,12 +15,14 @@ export const Board = ui.view({
 - **Classes:** `class` is a static string of Tailwind classes that must exist (HZ026). Conditional classes:
   `toggle: { 'bg-indigo-600 text-white': ctx.tab === t }`. CSS variables: `vars: { '--hue': item.hue }`. No `style`.
 - **Conditions:** `ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error])`, `item.done ? 'done' : 'open'`,
-  `list.length === 0 ? ui.p({}, ['Empty']) : ui.ul({}, [...])`. With an enter/leave animation:
-  `ui.if(cond, [then], [else], 'fade')`.
+  `list.length === 0 ? ui.p({}, ['Empty']) : ui.ul({}, [...])`; a branch may be a list: `open ? [a, b] : null`.
+  With an enter/leave animation: `ui.if(cond, [then], [else], 'fade')` (the motion name is required).
 - **By machine state:** `when(['adding', 'saving'], [ui.p({}, ['Saving…'])])`.
 - **Lists:** `ui.each(items, 'id', (item) => ui.li({}, [item.title]))`; `ui.each(tags, null, (t) => …)` for primitives.
   Never `.map` over data (only over constants: `['a', 'b'].map((k) => ui.option({ value: k }, [k]))`).
 - **Text:** template strings work: `` `${n} items` ``.
+- **Reuse:** `export const row = part((item: Item) => ui.li({}, [item.done ? 'Done' : item.title]))`, called as
+  `row(item)`; it is inlined, so the IR equals the inline form. A plain function that receives data is HZ059.
 - **Events:** `on: { click: ui.send(Event, payload) }`, any DOM event name plus `visible` (entered the viewport).
   Payload fields: literals, data, `ui.dom.value`, `ui.dom.form('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`,
   `ui.dom.key`. `ui.dom.value` / `ui.dom.form` fill an enum field only from a `<select>` or radios whose literal

@@ -1,4 +1,4 @@
-import { contract, event, feature, machine, on, op, project, query, route, ui } from '@hozu/core'
+import { contract, event, feature, machine, on, project, query, route, ui } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
@@ -24,9 +24,24 @@ const extras = machine({
   states: ({ ctx }) => ({
     ready: {
       on: [
-        on(Draft, { target: 'ready', assign: (d) => [op.set(ctx.draft, d.text)] }),
-        on(Resize, { target: 'ready', assign: (r) => [op.set(ctx.width, r.width)] }),
-        on(Tag, { target: 'ready', assign: (t) => [op.append(ctx.tags, t.tag)] }),
+        on(Draft, {
+          target: 'ready',
+          assign: (d) => {
+            ctx.draft = d.text
+          },
+        }),
+        on(Resize, {
+          target: 'ready',
+          assign: (r) => {
+            ctx.width = r.width
+          },
+        }),
+        on(Tag, {
+          target: 'ready',
+          assign: (t) => {
+            ctx.tags.push(t.tag)
+          },
+        }),
       ],
     },
   }),
@@ -38,7 +53,7 @@ const Page = ui.view({
     ui.main({}, [
       ui.input({ name: 'draft', value: ctx.draft, on: { input: ui.send(Draft, { text: ui.dom.value }) } }),
       ui.if(
-        op.eq(ctx.draft, ''),
+        ctx.draft === '',
         [ui.p({ class: 'empty' }, ['Nothing yet'])],
         [ui.p({ class: 'draft' }, ['Draft: ', ctx.draft])],
         'fade',

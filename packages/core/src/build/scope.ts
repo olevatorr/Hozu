@@ -1,16 +1,19 @@
 import { assetName, assetUrl, readAsset } from '../builders/asset.ts'
+import type { FeatureParts } from '../builders/feature.ts'
 import { builtinOf, messageKeyOf } from '../builders/i18n.ts'
 import { operatorFns } from '../builders/operators.ts'
+import { onInline, type PartDecl } from '../builders/part.ts'
 import { linkOf } from '../builders/ui.ts'
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import { type At, at, join, resolveAt } from '../canonical/pointer.ts'
 import { i18nFns } from '../i18n/runtime.ts'
 import type { Bindings } from '../ir/bindings.ts'
 import { codes } from '../ir/codes.ts'
-import type { Diagnostic, DiagnosticCode, Fix, SourceIndex } from '../ir/diagnostic.ts'
+import type { Diagnostic, DiagnosticCode, Fix, SourceIndex, SourceLoc } from '../ir/diagnostic.ts'
 import type { GuardExpr, Json, JsonSchema, ValueExpr } from '../ir/types.ts'
+import { type EscapeSite, escapesOf, loweredOf, partNamesOf } from '../lower.ts'
 import { type DeclKind, infoOf } from '../model/decl.ts'
-import { exprOf, guardOf, RecorderError } from '../model/expr.ts'
+import { exprOf, guardOf, RecorderError, ReferenceEscape } from '../model/expr.ts'
 import { fileUrlToPath } from '../platform.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
 import { toCheck } from '../schema/check.ts'
@@ -21,6 +24,12 @@ export interface Owner {
   feature: string
   symbol: string
   kind: DeclKind
+}
+
+export interface PartUse {
+  name: string | null
+  source: SourceLoc | null
+  features: string[]
 }
 
 export const IDENTIFIER = /^[A-Za-z][A-Za-z0-9_]*$/
@@ -47,6 +56,9 @@ export class ProjectScope {
   manifest: Manifest | null = null
   readonly assetList: ManifestAsset[] = []
   readonly resolved = new WeakMap<object, ManifestAsset>()
+  readonly configs = new Map<string, FeatureParts>()
+  readonly parts = new Map<object, PartUse>()
+  readonly escaped = new WeakSet<object>()
   readonly bindings: Bindings = {
     fns: {},
     fnHelpers: {},
@@ -71,12 +83,13 @@ export class ProjectScope {
     message: string,
     cause: string,
     fix: Fix | null = null,
+    source: SourceLoc | null = null,
   ) {
     this.diagnostics.push({
       code,
       severity: codes[code].severity,
       message,
-      location: { feature, pointer: resolveAt(pointer), source: null },
+      location: { feature, pointer: resolveAt(pointer), source },
       cause,
       fix,
     })
@@ -114,6 +127,29 @@ const isPlainObject = (v: object): boolean => {
   return (proto === Object.prototype || proto === null) && Object.getOwnPropertySymbols(v).length === 0
 }
 
+const where = (s: SourceLoc | null) => (s ? `${s.file.split('/').pop()}:${s.line}` : null)
+
+const ESCAPE_FIX: Fix = {
+  summary:
+    'Make a helper that receives references a part(): const row = part((note) => …), called as row(note). For a global (Boolean, Array.isArray, Object.keys, String…) use an operator (!!x, x === y, x.length) or a fn()',
+  snippet: 'export const row = part((note: Note) => ui.li({}, [note.pinned ? "Unpin" : "Pin"]))',
+  patch: null,
+}
+
+const siteText: Record<EscapeSite[0], string> = {
+  helper: 'a plain function received a reference',
+  global: 'a global received a reference',
+  callback: 'a plain function is used as a builder callback',
+  typeof: 'typeof on a reference',
+}
+
+const partOf = new WeakMap<object, PartDecl>()
+const reported = new WeakMap<object, Set<object>>()
+let current: PartDecl | null = null
+
+const TRUE: GuardExpr = { op: 'and', args: [] }
+const FALSE: GuardExpr = { op: 'or', args: [] }
+
 const describe = (v: unknown): string =>
   typeof v === 'function'
     ? 'function'
@@ -127,6 +163,7 @@ export class FeatureScope {
   readonly base: string
   readonly schemas: Record<string, JsonSchema> = {}
   stateNames: string[] = []
+  lowering = false
 
   constructor(project: ProjectScope, id: string) {
     this.project = project
@@ -143,25 +180,124 @@ export class FeatureScope {
   }
 
   attempt<T>(pointer: At, run: () => T, fallback: T): T {
+    const previous = onInline((p, out) => this.inline(p, out, pointer))
     try {
       return run()
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      this.report(
-        'HZ014',
-        pointer,
-        message,
-        error instanceof RecorderError
-          ? 'Builder callbacks are recorded once with reference proxies; they cannot compute values.'
-          : 'A builder callback threw while being recorded.',
-      )
+      if (error instanceof ReferenceEscape)
+        this.project.report(
+          'HZ059',
+          this.id,
+          pointer,
+          message,
+          'A reference is a recorded placeholder: evaluating it as JavaScript gives the same answer for every value.',
+          ESCAPE_FIX,
+          error.source,
+        )
+      else
+        this.report(
+          'HZ014',
+          pointer,
+          message,
+          error instanceof RecorderError
+            ? 'Builder callbacks are recorded once with reference proxies; they cannot compute values.'
+            : 'A builder callback threw while being recorded.',
+        )
       return fallback
+    } finally {
+      onInline(previous)
     }
+  }
+
+  callback<T>(cb: T): T {
+    if (this.lowering && typeof cb === 'function' && !loweredOf().has(cb) && infoOf(cb)?.kind !== 'part')
+      throw new ReferenceEscape(
+        'This callback was not lowered: it is written outside the builder call and passed in through a variable or a helper, so its operators run on the placeholder. Write it inline in the builder call, or declare it with part((…) => …)',
+        null,
+      )
+    return cb
+  }
+
+  within<T>(value: unknown, run: () => T): T {
+    const part = typeof value === 'object' && value !== null ? partOf.get(value) : undefined
+    if (!part) return run()
+    const previous = current
+    current = part
+    try {
+      return run()
+    } finally {
+      current = previous
+    }
+  }
+
+  private inline(part: PartDecl, out: unknown, pointer: At): unknown {
+    const info = infoOf(part)
+    const use = this.project.parts.get(part) ?? {
+      name: partNamesOf().get(part) ?? null,
+      source: info?.source ?? null,
+      features: [],
+    }
+    if (!use.features.includes(this.id)) use.features.push(this.id)
+    this.project.parts.set(part, use)
+    this.escapes(part, pointer)
+    if (typeof out === 'object' && out !== null && !partOf.has(out)) partOf.set(out, part)
+    return out
+  }
+
+  escapes(value: unknown, pointer: At) {
+    if (typeof value !== 'object' && typeof value !== 'function') return
+    const sites = value === null ? undefined : escapesOf().get(value)
+    if (!sites || this.project.escaped.has(value as object)) return
+    this.project.escaped.add(value as object)
+    const file = infoOf(value)?.source?.file ?? null
+    const list = sites.map(
+      ([kind, name, line, column]) =>
+        `\`${name}\` at ${file ? `${file.split('/').pop()}:` : 'line '}${line}:${column} (${siteText[kind]})`,
+    )
+    this.project.report(
+      'HZ059',
+      this.id,
+      pointer,
+      `References are evaluated as JavaScript: ${list.join('; ')}`,
+      'Only builder callbacks and parts are lowered to IR. A plain function or a global that receives a reference computes on the placeholder, so every value gets the same answer (a note list that always shows "Unpin").',
+      ESCAPE_FIX,
+      file ? { file, line: sites[0]![2], column: sites[0]![3] } : null,
+    )
+  }
+
+  private foreign(decl: object, owner: Owner, pointer: At) {
+    if (!current || owner.feature === this.id) return
+    const mine = this.project.configs.get(this.id)
+    const theirs = this.project.configs.get(owner.feature)
+    const imported = (mine?.imports ?? []).some((f) => this.project.features.get(f) === owner.feature)
+    const exported = Object.values(theirs?.exports ?? {}).some((list) => (list as object[]).includes(decl))
+    if (imported && exported) return
+    const seen = reported.get(current) ?? new Set()
+    reported.set(current, seen)
+    if (seen.has(decl)) return
+    seen.add(decl)
+    const use = this.project.parts.get(current)
+    const name = use?.name ?? 'part'
+    this.report(
+      'HZ006',
+      pointer,
+      `${name}${where(use?.source ?? null) ? ` (${where(use!.source)})` : ''} uses ${owner.feature}.${owner.symbol}, which "${this.id}" may not use`,
+      'A part that references a declaration belongs to that feature: another feature may inline it only when the owner exports the declaration and the caller imports the owner (principle 6).',
+      {
+        summary: `Export ${owner.symbol} from ${owner.feature} and import ${owner.feature}, or pass what the part needs as arguments`,
+        snippet: `imports: [${owner.feature}]`,
+        patch: null,
+      },
+    )
   }
 
   ref(decl: unknown, kinds: DeclKind[], pointer: At): string {
     const owner = this.project.owners.get(decl as object)
-    if (owner && kinds.includes(owner.kind)) return `${owner.feature}.${owner.symbol}`
+    if (owner && kinds.includes(owner.kind)) {
+      this.foreign(decl as object, owner, pointer)
+      return `${owner.feature}.${owner.symbol}`
+    }
     const info = infoOf(decl)
     const expected = kinds.join(' | ')
     if (!info) {
@@ -233,26 +369,69 @@ export class FeatureScope {
   }
 
   guard(g: unknown, p: At): GuardExpr {
+    return this.within(g, () => this.guardOf(g, p))
+  }
+
+  private guardOf(g: unknown, p: At): GuardExpr {
     const raw = guardOf(g)
     if (raw) {
-      if (raw.op === 'and' || raw.op === 'or')
-        return { op: raw.op, args: raw.args.map((a) => this.guard(a, p)) }
+      if (raw.op === 'and' || raw.op === 'or') {
+        const args = raw.args.map((a) => this.guard(a, p))
+        return { op: raw.op, args: args.flatMap((a) => (a.op === raw.op ? a.args : [a])) }
+      }
       if (raw.op === 'not') return { op: 'not', arg: this.guard(raw.arg, p) }
       if ('left' in raw) return { op: raw.op, left: this.value(raw.left, p), right: this.value(raw.right, p) }
     }
     const expr = exprOf(g)
     if (expr?.kind === 'call') {
       const name = builtinOf(expr.fn)
+      if (name === '%cond') return this.condGuard(expr.arg as { c: unknown; a: unknown; b: unknown }, p)
       if (name?.startsWith('%')) {
         this.project.bindings.fns[name] = operatorFns[name]!
         return { op: 'fn', fn: name, arg: this.value(expr.arg, p) }
       }
       return { op: 'fn', fn: this.ref(expr.fn, ['fn'], p), arg: this.value(expr.arg, p) }
     }
-    throw new RecorderError('A guard must be an op.* comparison or a boolean fn() call')
+    throw new RecorderError(
+      'A guard must be a comparison (===, <, …), a combination with && / || / !, or a boolean fn() call',
+    )
+  }
+
+  private test(x: unknown, p: At): GuardExpr {
+    if (x === true) return TRUE
+    if (x === false) return FALSE
+    if (guardOf(x) || exprOf(x)?.kind === 'call') return this.guard(x, p)
+    this.project.bindings.fns['%truthy'] = operatorFns['%truthy']!
+    return { op: 'fn', fn: '%truthy', arg: this.value({ v: x }, p) }
+  }
+
+  private condGuard({ c, a, b }: { c: unknown; a: unknown; b: unknown }, p: At): GuardExpr {
+    const same = (x: unknown) => {
+      const e = exprOf(c)
+      return (
+        x === c || (e?.kind === 'call' && builtinOf(e.fn) === '%truthy' && (e.arg as { v: unknown }).v === x)
+      )
+    }
+    const test = this.guard(c, p)
+    const not: GuardExpr = { op: 'not', arg: test }
+    const both = (x: GuardExpr, y: GuardExpr, op: 'and' | 'or'): GuardExpr => ({
+      op,
+      args: [x, y].flatMap((g) => (g.op === op ? g.args : [g])),
+    })
+    if (a === true && b === false) return test
+    if (a === false && b === true) return not
+    if (same(b) || b === false) return both(test, this.test(a, p), 'and')
+    if (same(a) || a === true) return both(test, this.test(b, p), 'or')
+    if (a === false) return both(not, this.test(b, p), 'and')
+    if (b === true) return both(not, this.test(a, p), 'or')
+    return both(both(test, this.test(a, p), 'and'), both(not, this.test(b, p), 'and'), 'or')
   }
 
   value(v: unknown, pointer: At): ValueExpr {
+    return this.within(v, () => this.valueOf(v, pointer))
+  }
+
+  private valueOf(v: unknown, pointer: At): ValueExpr {
     if (guardOf(v)) return { test: this.guard(v, pointer) }
     const link = linkOf(v)
     if (link) {
@@ -280,6 +459,7 @@ export class FeatureScope {
         if (name) {
           this.project.bindings.fns[name] = (i18nFns[name] ?? operatorFns[name])!
           const owner = message ? this.project.owners.get(message.decl) : null
+          if (message && owner) this.foreign(message.decl, owner, pointer)
           if (message && !owner)
             this.report(
               'HZ007',

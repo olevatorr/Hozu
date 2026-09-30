@@ -1,4 +1,4 @@
-import { contract, op, ui } from '@hozu/core'
+import { contract, part, ui } from '@hozu/core'
 import {
   Add,
   addNote,
@@ -17,11 +17,12 @@ import {
   visible,
 } from './model.ts'
 
-const itemForm = (event: typeof Pin | typeof Remove, id: unknown, label: unknown) =>
+const itemForm = part((event: typeof Pin | typeof Remove, id: string, label: string) =>
   ui.form({ on: { submit: ui.send(event, { id: ui.dom.form('id') }) } }, [
-    ui.input({ type: 'hidden', name: 'id', value: id as string }),
-    ui.button({ type: 'submit', class: 'text-sm text-slate-600 underline' }, [label as string]),
-  ])
+    ui.input({ type: 'hidden', name: 'id', value: id }),
+    ui.button({ type: 'submit', class: 'text-sm text-slate-600 underline' }, [label]),
+  ]),
+)
 
 export const NotesBoard = ui.view({
   machine: notesMachine,
@@ -37,7 +38,7 @@ export const NotesBoard = ui.view({
           maxlength: 100,
           value: ctx.draft,
           placeholder: 'New note',
-          'aria-invalid': op.neq(ctx.fields.text, null),
+          'aria-invalid': ctx.fields.text !== null,
           'aria-describedby': 'note-error',
           class: 'flex-1 rounded border px-3 py-2',
           on: { input: ui.send(Draft, { text: ui.dom.value }) },
@@ -45,7 +46,7 @@ export const NotesBoard = ui.view({
         ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
       ]),
       ui.p({ id: 'note-error', class: 'text-sm text-rose-600' }, [ctx.fields.text]),
-      ui.if(op.neq(ctx.error, null), [ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error])], []),
+      ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),
       when(['adding'], [ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…'])]),
       ui.label({ for: 'search', class: 'block text-sm font-medium' }, ['Search']),
       ui.input({
@@ -62,26 +63,18 @@ export const NotesBoard = ui.view({
           ready: (notes) =>
             ui.section({ class: 'space-y-3' }, [
               ui.p({ class: 'text-sm text-slate-600' }, ['Notes: ', total({ items: notes })]),
-              ui.if(
-                noMatch({ items: notes, query: ctx.query }),
-                [ui.p({ class: 'text-slate-500' }, ['No notes match'])],
-                [
-                  ui.ul({ class: 'divide-y rounded border' }, [
+              noMatch({ items: notes, query: ctx.query })
+                ? ui.p({ class: 'text-slate-500' }, ['No notes match'])
+                : ui.ul({ class: 'divide-y rounded border' }, [
                     ui.each(visible({ items: notes, query: ctx.query }), 'id', (note) =>
                       ui.li({ class: 'flex items-center gap-3 px-4 py-3' }, [
                         ui.span({ class: 'flex-1' }, [note.text]),
-                        ui.if(
-                          op.eq(note.pinned, true),
-                          [ui.span({ class: 'text-xs text-amber-700' }, ['pinned'])],
-                          [],
-                        ),
-                        itemForm(Pin, note.id, ui.if(op.eq(note.pinned, true), ['Unpin'], ['Pin'])),
+                        note.pinned === true && ui.span({ class: 'text-xs text-amber-700' }, ['pinned']),
+                        itemForm(Pin, note.id, note.pinned === true ? 'Unpin' : 'Pin'),
                         itemForm(Remove, note.id, 'Delete'),
                       ]),
                     ),
                   ]),
-                ],
-              ),
             ]),
           pending: ui.p({}, ['Loading…']),
           failed: {

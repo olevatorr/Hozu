@@ -1,4 +1,4 @@
-import { event, feature, invoke, machine, mutation, on, op, project, route, ui } from '@hozu/core'
+import { event, feature, invoke, machine, mutation, on, part, project, route, ui } from '@hozu/core'
 import { buildProject, type DiagnosticCode } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
@@ -84,7 +84,7 @@ describe('builder diagnostics', () => {
       ],
     })
     expect(t.assign.map((a) => [a.op, a.path.join('.')])).toEqual([
-      ['inc', 'n'],
+      ['set', 'n'],
       ['set', 'label'],
     ])
     const root = b.ir.features.f!.views.V!.root as { children: { kind: string }[] }
@@ -102,7 +102,7 @@ describe('builder diagnostics', () => {
     const f = feature({ id: 'f', declarations: [{ m, V }], ...base })
     expectBuildError(
       project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }),
-      'HZ014',
+      'HZ059',
       /Method "toUpperCase" cannot run on a reference.*fn\(\)/,
     )
   })
@@ -269,10 +269,17 @@ describe('builder diagnostics', () => {
           on: [
             on(Ping, {
               target: 'idle',
-              guard: (p) => op.gt(p.n, 0),
-              assign: (p) => [op.set(ctx.pair, { a: p.n, b: 2 })],
+              guard: (p) => p.n > 0,
+              assign: (p) => {
+                ctx.pair = { a: p.n, b: 2 }
+              },
             }),
-            on(Ping, { target: 'idle', assign: () => [op.set(ctx.pair, { a: 1, b: 2 })] }),
+            on(Ping, {
+              target: 'idle',
+              assign: () => {
+                ctx.pair = { a: 1, b: 2 }
+              },
+            }),
           ],
         },
       }),
@@ -315,17 +322,26 @@ describe('busy states by rule (ADR 0037)', () => {
   }
 
   it('a state with invoke drops the events it does not handle, and done / failed accept a state name', () => {
-    const b = build((ctx) => ({
-      idle: { on: [on(Go, { target: 'saving' }), on(Tick, { target: 'idle' })] },
-      saving: {
-        on: [on(Tick, { target: 'saving', assign: (e) => [op.set(ctx.n, e.n)] })],
-        invoke: invoke(save, {
-          input: { n: ctx.n },
-          done: 'idle',
-          failed: { Unexpected: { target: 'idle' } },
-        }),
-      },
-    }))
+    const b = build(
+      part((ctx) => ({
+        idle: { on: [on(Go, { target: 'saving' }), on(Tick, { target: 'idle' })] },
+        saving: {
+          on: [
+            on(Tick, {
+              target: 'saving',
+              assign: (e) => {
+                ctx.n = e.n
+              },
+            }),
+          ],
+          invoke: invoke(save, {
+            input: { n: ctx.n },
+            done: 'idle',
+            failed: { Unexpected: { target: 'idle' } },
+          }),
+        },
+      })),
+    )
     expect(b.diagnostics).toEqual([])
     const saving = b.ir.features.f!.machine!.states.saving!
     expect(saving.ignore).toEqual(['f.Go'])
@@ -336,13 +352,15 @@ describe('busy states by rule (ADR 0037)', () => {
   })
 
   it('HZ014 — ignore listed in a state with invoke, with a patch that removes it', () => {
-    const b = build((ctx) => ({
-      idle: { on: [on(Go, { target: 'saving' })] },
-      saving: {
-        ignore: [Go],
-        invoke: invoke(save, { input: { n: ctx.n }, done: 'idle', failed: { Unexpected: 'idle' } }),
-      },
-    }))
+    const b = build(
+      part((ctx) => ({
+        idle: { on: [on(Go, { target: 'saving' })] },
+        saving: {
+          ignore: [Go],
+          invoke: invoke(save, { input: { n: ctx.n }, done: 'idle', failed: { Unexpected: 'idle' } }),
+        },
+      })),
+    )
     const d = b.diagnostics.find((x) => x.code === 'HZ014')!
     expect(d.message).toBe('A state with invoke must not list ignore')
     expect(d.fix?.patch).toEqual([{ op: 'remove', path: '/features/f/machine/states/saving/ignore' }])

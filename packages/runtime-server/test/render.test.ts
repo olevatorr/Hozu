@@ -1,5 +1,5 @@
 import { buildProject } from '@hozu/core/ir'
-import { createDataRuntime, type DataRuntime } from '@hozu/data'
+import { createDataRuntime, type DataRuntime, type RequestData } from '@hozu/data'
 import type { PagePayload } from '@hozu/runtime-client'
 import { renderPage, renderToString } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
@@ -86,8 +86,14 @@ describe('server rendering', () => {
     })
     const data: DataRuntime = {
       ...real,
-      run: async (ref, input, s) =>
-        ref === 'cart.getCart' ? gate.then(() => real.run(ref, input, s)) : real.run(ref, input, s),
+      scope: (who, options) => {
+        const request = real.scope(who, options)
+        const run: RequestData['run'] = (ref, input, files) =>
+          ref === 'cart.getCart'
+            ? gate.then(() => request.run(ref, input, files))
+            : request.run(ref, input, files)
+        return new Proxy(request, { get: (t, k) => (k === 'run' ? run : Reflect.get(t, k)) })
+      },
     }
     const chunks = (await renderPage({ build, data, route: 'home', session })).chunks[Symbol.asyncIterator]()
     let before = ''
@@ -96,8 +102,8 @@ describe('server rendering', () => {
         chunks.next(),
         new Promise<null>((r) => setTimeout(() => r(null), 20)),
       ])
-      if (!next) break
-      before += (next as IteratorResult<string>).value
+      if (!next || next.done) break
+      before += next.value
     }
     expect(before).toContain('T-shirt')
     expect(before).not.toContain('cart.CartPanel/1/ready')

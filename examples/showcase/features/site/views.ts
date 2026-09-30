@@ -1,4 +1,4 @@
-import { op, ui } from '@hozu/core'
+import { ui } from '@hozu/core'
 import { about, home } from '../../routes.ts'
 import { pick, slideLabel, slides, stats } from './effects.ts'
 import {
@@ -85,7 +85,7 @@ export const Showcase = ui.view({
                     'aria-pressed': ctx.spin,
                     on: { click: ui.send(ToggleSpin, {}) },
                   },
-                  [ui.if(op.eq(ctx.spin, true), ['Pause globe'], ['Spin globe'])],
+                  [ctx.spin === true ? 'Pause globe' : 'Spin globe'],
                 ),
               ]),
             ]),
@@ -138,12 +138,9 @@ export const Showcase = ui.view({
                       class:
                         'rounded-full px-4 py-1.5 text-sm font-medium capitalize text-slate-600 transition dark:text-slate-300',
                       toggle: {
-                        'bg-white text-slate-900 shadow dark:bg-slate-950 dark:text-white': op.eq(
-                          ctx.tab,
-                          tab,
-                        ),
+                        'bg-white text-slate-900 shadow dark:bg-slate-950 dark:text-white': ctx.tab === tab,
                       },
-                      'aria-selected': op.eq(ctx.tab, tab),
+                      'aria-selected': ctx.tab === tab,
                       on: { click: ui.send(SelectTab, { tab }) },
                     },
                     [tab],
@@ -153,7 +150,7 @@ export const Showcase = ui.view({
             ),
             ui.div({ role: 'tabpanel', class: 'relative min-h-24' }, [
               ui.if(
-                op.eq(ctx.tab, 'design'),
+                ctx.tab === 'design',
                 [
                   ui.p({ class: 'panel' }, [
                     'Describe features as data: events, queries, machines and views.',
@@ -161,7 +158,7 @@ export const Showcase = ui.view({
                 ],
                 [
                   ui.if(
-                    op.eq(ctx.tab, 'build'),
+                    ctx.tab === 'build',
                     [
                       ui.p({ class: 'panel' }, [
                         'The validator checks every reference, state and class before you run it.',
@@ -251,11 +248,9 @@ export const Showcase = ui.view({
                   ),
                 ],
               ),
-              ui.if(
-                op.eq(ctx.todos.length, 0),
-                [ui.p({ class: 'text-slate-500' }, ['Nothing left. Nice.'])],
-                [
-                  ui.ul({ class: 'relative space-y-2' }, [
+              ctx.todos.length === 0
+                ? ui.p({ class: 'text-slate-500' }, ['Nothing left. Nice.'])
+                : ui.ul({ class: 'relative space-y-2' }, [
                     ui.each(
                       ctx.todos,
                       'id',
@@ -282,8 +277,6 @@ export const Showcase = ui.view({
                       'list',
                     ),
                   ]),
-                ],
-              ),
               ui.button(
                 {
                   type: 'button',
@@ -304,8 +297,8 @@ export const Showcase = ui.view({
                     on: { change: ui.send(SelectMetric, { metric: ui.dom.value }) },
                   },
                   [
-                    ui.option({ value: 'visits', selected: op.eq(ctx.metric, 'visits') }, ['Visits']),
-                    ui.option({ value: 'signups', selected: op.eq(ctx.metric, 'signups') }, ['Sign-ups']),
+                    ui.option({ value: 'visits', selected: ctx.metric === 'visits' }, ['Visits']),
+                    ui.option({ value: 'signups', selected: ctx.metric === 'signups' }, ['Sign-ups']),
                   ],
                 ),
               ]),

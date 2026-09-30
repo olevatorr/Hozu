@@ -184,7 +184,7 @@ export function createHandler({
   const variants = manifest?.images ?? images?.variants ?? null
   if (manifest && manifest.irHash !== hashJson(build.ir))
     throw new Error('The build manifest does not match this project; run `hozu build` again')
-  const untransformed = build.diagnostics.find((d) => d.code === 'HZ044' || d.code === 'HZ047')
+  const untransformed = build.diagnostics.find((d) => ['HZ044', 'HZ047', 'HZ059'].includes(d.code))
   if (untransformed) throw new Error(`${untransformed.message}. ${untransformed.fix?.summary ?? ''}`)
   const { ir } = build
   if (sessionOption === undefined && ir.session && !rawEnv.SESSION_SECRET && rawEnv.NODE_ENV === 'production')

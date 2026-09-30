@@ -1,4 +1,4 @@
-import { event, invoke, machine, mutation, on, op, query, ui } from '@hozu/core'
+import { event, invoke, machine, mutation, on, query, ui } from '@hozu/core'
 import { z } from 'zod'
 import { home, login } from '../../routes.ts'
 
@@ -34,11 +34,11 @@ export const accountMachine = machine({
       on: [
         on(SignIn, {
           target: 'signingIn',
-          assign: (e) => [
-            op.set(ctx.draft, e.name),
-            op.set(ctx.error, null),
-            op.set(ctx.fields, { name: null }),
-          ],
+          assign: (e) => {
+            ctx.draft = e.name
+            ctx.error = null
+            ctx.fields = { name: null }
+          },
         }),
         on(SignOut, { target: 'signingOut' }),
       ],
@@ -48,8 +48,22 @@ export const accountMachine = machine({
         input: { name: ctx.draft },
         done: [{ target: 'idle', navigate: () => ui.link(home, null) }],
         failed: {
-          Invalid: [{ target: 'idle', assign: (e) => [op.set(ctx.fields, e.fields)] }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }],
+          Invalid: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.fields = e.fields
+              },
+            },
+          ],
+          Unexpected: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.error = e.message
+              },
+            },
+          ],
         },
       }),
     },
@@ -57,7 +71,16 @@ export const accountMachine = machine({
       invoke: invoke(signOut, {
         input: {},
         done: [{ target: 'idle', navigate: () => ui.link(login, null) }],
-        failed: { Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.error, e.message)] }] },
+        failed: {
+          Unexpected: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.error = e.message
+              },
+            },
+          ],
+        },
       }),
     },
   }),

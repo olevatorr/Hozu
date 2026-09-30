@@ -1,7 +1,9 @@
+import { builtinOf } from '../builders/i18n.ts'
 import { type NodeDef, sendOf, type ViewDef, when } from '../builders/ui.ts'
 import { htmlGlobalAttrs, svgGlobalAttrs, svgTags, tagAttrs, voidTags } from '../ir/dom-data.ts'
 import { domEvents } from '../ir/events.ts'
 import type { SendIR, ValueExpr, ViewIR, ViewNode } from '../ir/types.ts'
+import { transformedDecls } from '../lower.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
 import { createRef, exprOf, refProxy } from '../model/expr.ts'
 import { type At, at, type FeatureScope } from './scope.ts'
@@ -79,7 +81,7 @@ function element(
         key === 'style'
           ? 'Style lives in CSS: use class for static styling.'
           : key === 'value' && d.tag === 'select'
-            ? 'Select the option instead: option({ selected: op.eq(…) }).'
+            ? 'Select the option instead: option({ selected: ctx.choice === "a" }).'
             : `Allowed on <${d.tag}>: ${[...(allowed.get(d.tag) ?? [])].join(', ') || 'global attributes only'}, aria-*, data-*.`,
       )
     }
@@ -151,7 +153,7 @@ function widgetNode(
     const ep = at(p, 'on', name)
     const s =
       typeof handler === 'function'
-        ? scope.attempt(ep, () => sendOf(handler(createRef('dom', 0, ['detail']))), null)
+        ? scope.attempt(ep, () => sendOf(scope.callback(handler)(createRef('dom', 0, ['detail']))), null)
         : null
     if (!s) {
       scope.report(
@@ -195,14 +197,49 @@ function motionOf(scope: FeatureScope, motion: unknown, p: At): string | null {
 }
 
 function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: number): ViewNode {
+  return scope.within(value, () => nodeOf(scope, value, id, p, depth))
+}
+
+const listOf = (x: unknown): unknown[] =>
+  x === null || x === undefined || x === false ? [] : Array.isArray(x) ? x : [x]
+
+function condNode(
+  scope: FeatureScope,
+  arg: { c: unknown; a: unknown; b: unknown },
+  id: string,
+  p: At,
+  depth: number,
+) {
+  const tested = exprOf(arg.c)
+  const same = (x: unknown) =>
+    x === arg.c ||
+    (tested?.kind === 'call' && builtinOf(tested.fn) === '%truthy' && (tested.arg as { v: unknown }).v === x)
+  const branch = (items: unknown[], key: string) =>
+    items.map((c, i) => node(scope, c, `${id}/${key}/${i}`, at(p, key, i), depth))
+  return {
+    id,
+    kind: 'if' as const,
+    test: scope.attempt(at(p, 'test'), () => scope.guard(arg.c, at(p, 'test')), {
+      op: 'eq' as const,
+      left: { literal: true },
+      right: { literal: true },
+    }),
+    motion: null,
+    ifTrue: branch(listOf(arg.a), 'ifTrue'),
+    ifFalse: branch(same(arg.b) ? [] : listOf(arg.b), 'ifFalse'),
+  }
+}
+
+function nodeOf(scope: FeatureScope, value: unknown, id: string, p: At, depth: number): ViewNode {
   const info = infoOf(value)
   if (info?.kind === 'node') {
     scope.project.mark(p, value)
+    scope.escapes(value, p)
     const d = info.def as NodeDef
     const binding = () => refProxy('binding', depth)
     const branch = (render: (x: unknown) => unknown, bid: string, bp: At): ViewNode => {
       const failed = Symbol('failed')
-      const rendered = scope.attempt<unknown>(bp, () => render(binding()), failed)
+      const rendered = scope.attempt<unknown>(bp, () => scope.callback(render)(binding()), failed)
       return rendered === null || rendered === failed
         ? { id: bid, kind: 'if', test: { op: 'and', args: [] }, motion: null, ifTrue: [], ifFalse: [] }
         : node(scope, rendered, bid, bp, depth + 1)
@@ -247,6 +284,18 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
       case 'widget':
         return widgetNode(scope, d, id, p, depth)
       case 'if': {
+        if (d.motion === undefined)
+          scope.report(
+            'HZ014',
+            at(p, 'motion'),
+            'ui.if needs a motion name',
+            'Without a motion, a condition is written as c ? a : b or c && a (a branch may be a list of children).',
+            {
+              summary: 'Write the condition as c ? [a] : [b]',
+              snippet: 'ctx.open ? [ui.p({}, ["Open"])] : null',
+              patch: null,
+            },
+          )
         const list = (items: readonly unknown[], key: string) =>
           (Array.isArray(items) ? items : []).map((c, i) =>
             node(scope, c, `${id}/${key}/${i}`, at(p, key, i), depth),
@@ -295,7 +344,10 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
   }
   if (typeof value === 'string' || typeof value === 'number')
     return { id, kind: 'text', value: { literal: value } }
-  if (exprOf(value))
+  const expr = exprOf(value)
+  if (expr?.kind === 'call' && builtinOf(expr.fn) === '%cond')
+    return condNode(scope, expr.arg as { c: unknown; a: unknown; b: unknown }, id, p, depth)
+  if (expr)
     return { id, kind: 'text', value: scope.attempt(p, () => scope.value(value, p), { literal: null }) }
   const got =
     value === undefined
@@ -304,9 +356,11 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
         ? 'null'
         : typeof value === 'function'
           ? 'a function'
-          : typeof value === 'object'
-            ? 'an object'
-            : typeof value
+          : Array.isArray(value)
+            ? 'a list'
+            : typeof value === 'object'
+              ? 'an object'
+              : typeof value
   scope.report(
     'HZ014',
     p,
@@ -315,7 +369,9 @@ function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: num
       ? 'A required field was left out, or a callback returned nothing. Children must be ui nodes, strings, numbers or references.'
       : typeof value === 'function'
         ? 'A function was passed instead of calling it, or a callback where a node belongs. Children must be ui nodes, strings, numbers or references.'
-        : 'Children must be ui nodes, strings, numbers or references; use ui.if for conditional content.',
+        : Array.isArray(value)
+          ? 'A list of children is valid only as a branch: c ? [a, b] : null or c && [a, b].'
+          : 'Children must be ui nodes, strings, numbers or references; write conditional content as c ? a : b.',
   )
   return { id, kind: 'text', value: { literal: '' } }
 }
@@ -355,10 +411,17 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
   }
   const params = refProxy('params', 0)
   const search = refProxy('search', 0)
+  scope.lowering = transformedDecls().has(decl)
   const render = () =>
     d.machine
-      ? d.render({ ctx: refProxy('context', 0), when, params, search, locale: refProxy('locale', 0) })
-      : d.render({ params, search, locale: refProxy('locale', 0) })
+      ? scope.callback(d.render)({
+          ctx: refProxy('context', 0),
+          when,
+          params,
+          search,
+          locale: refProxy('locale', 0),
+        })
+      : scope.callback(d.render)({ params, search, locale: refProxy('locale', 0) })
   const root = scope.attempt(at(p, 'root'), render, null)
   let seed: Record<string, ValueExpr> | null = null
   if (d.seed) {
@@ -370,7 +433,7 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
         'seed needs a view with both a machine and a route',
         'seed starts the machine from the page URL, so the view must bind a machine and declare the route it reads.',
       )
-    const fields = scope.attempt(sp, () => d.seed!({ params, search }), null)
+    const fields = scope.attempt(sp, () => scope.callback(d.seed!)({ params, search }), null)
     if (fields === null || typeof fields !== 'object' || Array.isArray(fields) || exprOf(fields))
       scope.report(
         'HZ048',
@@ -384,5 +447,7 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
         seed[key] = scope.attempt(at(sp, key), () => scope.value(v, at(sp, key)), { literal: null })
     }
   }
-  return { machine, route, seed, root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0) }
+  const out = { machine, route, seed, root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0) }
+  scope.lowering = false
+  return out
 }

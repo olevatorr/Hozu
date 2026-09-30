@@ -198,6 +198,9 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     ]),
   ) as unknown as ExportsIR
 
+  for (const key of ['queries', 'mutations', 'endpoints', 'views', 'contracts', 'fns'] as const)
+    for (const [sym, decl] of Object.entries(config[key] ?? {})) scope.escapes(decl, scope.at(key, sym))
+  if (config.machine) scope.escapes(config.machine, scope.at('machine'))
   const machine = buildMachine(scope, config.machine)
   const own = Object.keys(config.events).map((sym) => `${id}.${sym}`)
   for (const state of Object.values(machine?.states ?? {}))

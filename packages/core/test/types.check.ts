@@ -6,7 +6,6 @@ import {
   machine,
   mutation,
   on,
-  op,
   project,
   query,
   route,
@@ -30,14 +29,37 @@ export const ok = machine({
   initialContext: { items: [], note: null },
   initial: 'idle',
   states: ({ ctx }) => ({
-    idle: { on: [on(Add, { target: 'saving', assign: (item) => [op.append(ctx.items, item)] })] },
+    idle: {
+      on: [
+        on(Add, {
+          target: 'saving',
+          assign: (item) => {
+            ctx.items.push(item)
+          },
+        }),
+      ],
+    },
     saving: {
       invoke: invoke(save, {
         input: { sku: 'a', qty: 1 },
-        done: [{ target: 'idle', assign: (r) => [op.set(ctx.note, r.id)] }],
+        done: [
+          {
+            target: 'idle',
+            assign: (r) => {
+              ctx.note = r.id
+            },
+          },
+        ],
         failed: {
           Busy: [{ target: 'idle' }],
-          Unexpected: [{ target: 'idle', assign: (e) => [op.set(ctx.note, e.message)] }],
+          Unexpected: [
+            {
+              target: 'idle',
+              assign: (e) => {
+                ctx.note = e.message
+              },
+            },
+          ],
         },
       }),
     },
@@ -67,8 +89,17 @@ machine({
   initialContext: { items: [], note: null },
   initial: 'idle',
   states: ({ ctx }) => ({
-    // @ts-expect-error misspelled payload field
-    idle: { on: [on(Add, { target: 'idle', assign: (item) => [op.set(ctx.note, item.skuu)] })] },
+    idle: {
+      on: [
+        on(Add, {
+          target: 'idle',
+          assign: (item) => {
+            // @ts-expect-error misspelled payload field
+            ctx.note = item.skuu
+          },
+        }),
+      ],
+    },
   }),
 })
 
@@ -77,8 +108,17 @@ machine({
   initialContext: { items: [], note: null },
   initial: 'idle',
   states: ({ ctx }) => ({
-    // @ts-expect-error wrong value type for a context path
-    idle: { on: [on(Add, { target: 'idle', assign: (item) => [op.set(ctx.note, item.qty)] })] },
+    idle: {
+      on: [
+        on(Add, {
+          target: 'idle',
+          assign: (item) => {
+            // @ts-expect-error wrong value type for a context path
+            ctx.note = item.qty
+          },
+        }),
+      ],
+    },
   }),
 })
 
@@ -182,7 +222,7 @@ ui.view({
       // @ts-expect-error DOM field type must match the payload
       ui.input({ on: { input: ui.send(Typed, { text: ui.dom.checked, n: null }) } }),
       ui.svg({ viewBox: '0 0 1 1' }, [ui.path({ d: 'M0 0', 'stroke-width': 2 }, [])]),
-      ui.button({ 'aria-pressed': op.eq(ui.dom.key, 'x'), 'data-state': 'open' }, []),
+      ui.button({ 'aria-pressed': ui.dom.key === 'x', 'data-state': 'open' }, []),
     ]),
 })
 

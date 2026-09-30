@@ -1,4 +1,4 @@
-import { event, feature, machine, on, op, project, query, route, ui } from '@hozu/core'
+import { event, feature, machine, on, project, query, route, ui } from '@hozu/core'
 import { resolvers } from '@hozu/data'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
@@ -28,7 +28,16 @@ const copier = machine({
   initialContext: { copied: null },
   initial: 'idle',
   states: ({ ctx }) => ({
-    idle: { on: [on(Copy, { target: 'idle', assign: (e) => [op.set(ctx.copied, e.id)] })] },
+    idle: {
+      on: [
+        on(Copy, {
+          target: 'idle',
+          assign: (e) => {
+            ctx.copied = e.id
+          },
+        }),
+      ],
+    },
   }),
 })
 const Doc = ui.view({
@@ -62,16 +71,11 @@ const Note = ui.view({
   render: ({ ctx, search }) =>
     ui.main({}, [
       ui.h1({}, ['Note']),
-      ui.if(
-        op.eq(search.pinned, true),
-        [
-          ui.button({ type: 'button', on: { click: ui.send(Copy, { id: 'pin' }) } }, [
-            'Unpin',
-            ui.span({ 'data-copied': '' }, [ctx.copied]),
-          ]),
-        ],
-        [],
-      ),
+      search.pinned === true &&
+        ui.button({ type: 'button', on: { click: ui.send(Copy, { id: 'pin' }) } }, [
+          'Unpin',
+          ui.span({ 'data-copied': '' }, [ctx.copied]),
+        ]),
     ]),
 })
 const docs = feature({

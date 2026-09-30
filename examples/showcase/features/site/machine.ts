@@ -1,4 +1,4 @@
-import { machine, on, op } from '@hozu/core'
+import { machine, on } from '@hozu/core'
 import { reversed, todoId } from './effects.ts'
 import {
   AddTodo,
@@ -30,27 +30,64 @@ export const siteMachine = machine({
   states: ({ ctx }) => ({
     ready: {
       on: [
-        on(SelectTab, { target: 'ready', assign: (e) => [op.set(ctx.tab, e.tab)] }),
-        on(Draft, { target: 'ready', assign: (e) => [op.set(ctx.draft, e.text)] }),
+        on(SelectTab, {
+          target: 'ready',
+          assign: (e) => {
+            ctx.tab = e.tab
+          },
+        }),
+        on(Draft, {
+          target: 'ready',
+          assign: (e) => {
+            ctx.draft = e.text
+          },
+        }),
         on(AddTodo, {
           target: 'ready',
-          guard: (e) => op.neq(e.title, ''),
-          assign: (e) => [
-            op.append(ctx.todos, { id: todoId(ctx.next), title: e.title }),
-            op.inc(ctx.next, 1),
-            op.set(ctx.draft, ''),
-          ],
+          guard: (e) => e.title !== '',
+          assign: (e) => {
+            ctx.todos.push({ id: todoId(ctx.next), title: e.title })
+            ctx.next += 1
+            ctx.draft = ''
+          },
         }),
-        on(RemoveTodo, { target: 'ready', assign: (e) => [op.removeWhere(ctx.todos, 'id', e.id)] }),
-        on(Shuffle, { target: 'ready', assign: () => [op.set(ctx.todos, reversed(ctx.todos))] }),
+        on(RemoveTodo, {
+          target: 'ready',
+          assign: (e) => {
+            ctx.todos = ctx.todos.filter((item) => item.id !== e.id)
+          },
+        }),
+        on(Shuffle, {
+          target: 'ready',
+          assign: () => {
+            ctx.todos = reversed(ctx.todos)
+          },
+        }),
         on(SelectMetric, {
           target: 'ready',
-          guard: (e) => op.eq(e.metric, 'signups'),
-          assign: () => [op.set(ctx.metric, 'signups')],
+          guard: (e) => e.metric === 'signups',
+          assign: () => {
+            ctx.metric = 'signups'
+          },
         }),
-        on(SelectMetric, { target: 'ready', assign: () => [op.set(ctx.metric, 'visits')] }),
-        on(SlideChanged, { target: 'ready', assign: (e) => [op.set(ctx.slide, e.index)] }),
-        on(ToggleSpin, { target: 'ready', assign: () => [op.set(ctx.spin, op.eq(ctx.spin, false))] }),
+        on(SelectMetric, {
+          target: 'ready',
+          assign: () => {
+            ctx.metric = 'visits'
+          },
+        }),
+        on(SlideChanged, {
+          target: 'ready',
+          assign: (e) => {
+            ctx.slide = e.index
+          },
+        }),
+        on(ToggleSpin, {
+          target: 'ready',
+          assign: () => {
+            ctx.spin = ctx.spin === false
+          },
+        }),
       ],
     },
   }),

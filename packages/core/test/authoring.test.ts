@@ -1,4 +1,4 @@
-import { contract, event, feature, invoke, machine, mutation, on, op, project } from '@hozu/core'
+import { contract, event, feature, invoke, machine, mutation, on, project } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
@@ -15,7 +15,16 @@ const m = machine({
   initialContext: { n: 0, meta: { label: 'a', seen: 0 }, tags: ['x'] },
   initial: 'idle',
   states: ({ ctx }) => ({
-    idle: { on: [on(SetN, { target: 'saving', assign: (e) => [op.set(ctx.n, e.n)] })] },
+    idle: {
+      on: [
+        on(SetN, {
+          target: 'saving',
+          assign: (e) => {
+            ctx.n = e.n
+          },
+        }),
+      ],
+    },
     saving: {
       invoke: invoke(save, {
         input: { n: ctx.n },
@@ -125,10 +134,27 @@ describe('machine-wide transitions (ADR 0041 D)', () => {
     context: z.object({ q: z.string(), n: z.number() }),
     initialContext: { q: '', n: 0 },
     initial: 'idle',
-    on: ({ ctx }) => [on(Search, { assign: (e) => [op.set(ctx.q, e.q)] }), on(Pause, { target: 'idle' })],
+    on: ({ ctx }) => [
+      on(Search, {
+        assign: (e) => {
+          ctx.q = e.q
+        },
+      }),
+      on(Pause, { target: 'idle' }),
+    ],
     states: ({ ctx }) => ({
       idle: { ignore: [Pause] },
-      touring: { after: [{ ms: 1000, target: 'touring', assign: () => [op.inc(ctx.n, 1)] }] },
+      touring: {
+        after: [
+          {
+            ms: 1000,
+            target: 'touring',
+            assign: () => {
+              ctx.n += 1
+            },
+          },
+        ],
+      },
       editing: { on: [on(Search, { target: 'idle' })] },
       saving: {
         invoke: invoke(save, { input: { n: ctx.n }, done: 'idle', failed: { Unexpected: 'idle' } }),

@@ -22,7 +22,7 @@ For example, a view can record whether an error message exists:
 ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error])
 ```
 
-The transform turns this into a conditional node whose test (`error ≠ null`) and branch remain visible in the IR, exactly as the explicit `ui.if(op.neq(ctx.error, null), […], [])` form would. The transform only rewrites operators that touch recorded values, keeps every line in place so diagnostics point at the author's code, and refuses what it cannot record (a method on data) with a diagnostic. For computation outside the operator vocabulary, a named `fn()` supplies input and output schemas and a pure implementation. It is an explicit boundary the tools can identify ([ADR 0039](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0039-ordinary-typescript-in-builders.md)).
+The transform turns this into a conditional node whose test (`error ≠ null`) and branch remain visible in the IR. The transform only rewrites operators that touch recorded values, keeps every line in place so diagnostics point at the author's code, and refuses what it cannot record (a method on data) with a diagnostic. For computation outside the operator vocabulary, a named `fn()` supplies input and output schemas and a pure implementation. It is an explicit boundary the tools can identify ([ADR 0039](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0039-ordinary-typescript-in-builders.md)).
 
 ## Validation checks the relationships
 

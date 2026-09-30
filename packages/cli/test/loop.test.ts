@@ -171,6 +171,8 @@ describe('the agent loop (ADR 0027)', () => {
       expect(stdout).toMatch(/model\.ts:\d+/)
       await json('map', ['map'], cwd)
     }
+    const notes = await run(['map'], join(root, 'examples', 'notes'))
+    expect(notes.stdout).toMatch(/^ {2}parts itemForm features\/notes\/views\.ts:\d+$/m)
   })
 
   it('shows attributes and forms without a server, and lists the texts a scaffold wants edited', async () => {
@@ -312,7 +314,7 @@ describe('ordinary TypeScript in a scaffolded app (ADR 0039)', () => {
       readFileSync(views, 'utf8').replace("ctx.error ? 'Failed' : 'Fine'", 'ctx.draft.toUpperCase()'),
     )
     const bad = await checkFresh(app)
-    const d = bad.validate.diagnostics.find((x: { code: string }) => x.code === 'HZ014')
+    const d = bad.validate.diagnostics.find((x: { code: string }) => x.code === 'HZ059')
     expect(d.message).toMatch(/Method "toUpperCase" cannot run on a reference/)
     expect(d.location.source.file).toBe('features/tasks/views.ts')
   }, 60_000)

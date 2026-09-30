@@ -7,6 +7,7 @@ import type {
   TransitionConfig,
 } from '../builders/machine.ts'
 import type { AssignOp, GuardExpr, InvokeIR, MachineIR, StateIR, TransitionIR } from '../ir/types.ts'
+import { transformedDecls } from '../lower.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
 import { assignOf, exprOf, RecorderError, refProxy } from '../model/expr.ts'
 import { type At, at, type FeatureScope, IDENTIFIER, resolveAt } from './scope.ts'
@@ -16,7 +17,9 @@ const guard = (scope: FeatureScope, g: unknown, p: At): GuardExpr => scope.guard
 function assign(scope: FeatureScope, a: unknown, p: At): AssignOp {
   const raw = assignOf(a)
   if (!raw)
-    throw new RecorderError('assign must return an array of op.set / op.append / op.inc / op.removeWhere')
+    throw new RecorderError(
+      'assign must be a block of context writes: ctx.x = v, ctx.list.push(v), ctx.list = ctx.list.filter((x) => x !== v)',
+    )
   const target = exprOf(raw.target)
   if (target?.kind !== 'ref' || target.ref !== 'context')
     throw new RecorderError('An assign target must be a context path (ctx.…)')
@@ -43,11 +46,11 @@ function transition(
   return {
     target: String(target ?? '?'),
     guard: t.guard
-      ? scope.attempt(at(p, 'guard'), () => guard(scope, t.guard!(arg), at(p, 'guard')), null)
+      ? scope.attempt(at(p, 'guard'), () => guard(scope, scope.callback(t.guard!)(arg), at(p, 'guard')), null)
       : null,
     assign: t.assign
       ? scope.attempt(at(p, 'assign'), () => {
-          const ops = t.assign!(arg)
+          const ops = scope.callback(t.assign!)(arg)
           if (!Array.isArray(ops)) throw new RecorderError('assign must return an array')
           return ops.map((a, i) => assign(scope, a, at(p, 'assign', i)))
         }, [])
@@ -56,7 +59,7 @@ function transition(
       ? scope.attempt(
           at(p, 'navigate'),
           () => {
-            const v = scope.value(t.navigate!(arg), at(p, 'navigate'))
+            const v = scope.value(scope.callback(t.navigate!)(arg), at(p, 'navigate'))
             if (!('link' in v)) throw new RecorderError('navigate must return ui.link(route, params, search)')
             return v
           },
@@ -87,6 +90,7 @@ function invoke(scope: FeatureScope, decl: unknown, p: At): InvokeIR | null {
     return null
   }
   scope.project.mark(p, decl)
+  scope.escapes(decl, p)
   const d = info.def as InvokeDef
   const failed: Record<string, TransitionIR[]> = {}
   for (const [name, list] of Object.entries(d.failed ?? {}))
@@ -120,6 +124,7 @@ function state(scope: FeatureScope, config: StateConfig<string>, p: At): StateIR
     const list = on[event]
     const tp = at(p, 'on', event, list.length)
     scope.project.mark(tp, entry)
+    scope.escapes(entry, tp)
     list.push(transition(scope, d.transition, refProxy('event', 0), tp))
   }
   const after = [...(config.after ?? [])].sort((a, b) => a.ms - b.ms)
@@ -161,8 +166,11 @@ export function buildMachine(scope: FeatureScope, decl: Decl | null): MachineIR 
   const p = scope.at('machine')
   scope.project.mark(p, decl)
   const d = defOf<MachineDef>(decl)
-  const configs = scope.attempt(p, () => d.states({ ctx: refProxy('context', 0) }), {})
-  const shared = d.on ? scope.attempt(at(p, 'on'), () => d.on!({ ctx: refProxy('context', 0) }), []) : []
+  scope.lowering = transformedDecls().has(decl)
+  const configs = scope.attempt(p, () => scope.callback(d.states)({ ctx: refProxy('context', 0) }), {})
+  const shared = d.on
+    ? scope.attempt(at(p, 'on'), () => scope.callback(d.on!)({ ctx: refProxy('context', 0) }), [])
+    : []
   const states: Record<string, StateIR> = {}
   for (const [name, config] of Object.entries(configs)) {
     if (!IDENTIFIER.test(name))
@@ -188,6 +196,7 @@ export function buildMachine(scope: FeatureScope, decl: Decl | null): MachineIR 
       return
     }
     scope.project.mark(sp, entry)
+    scope.escapes(entry, sp)
     const def = info.def as OnDef
     const event = scope.ref(def.event, ['event'], sp)
     byEvent.set(event, [...(byEvent.get(event) ?? []), { def, at: sp }])
@@ -198,6 +207,7 @@ export function buildMachine(scope: FeatureScope, decl: Decl | null): MachineIR 
       if (!s.on[event] && !s.ignore.includes(event))
         s.on[event] = list.map((e) => transition(scope, e.def.transition, refProxy('event', 0), e.at, name))
   }
+  scope.lowering = false
   scope.stateNames = Object.keys(states)
   scope.bind(`${scope.id}#context`, d.context)
   return {

@@ -59,6 +59,7 @@ const TOPICS: Record<string, string> = {
   HZ048: 'machine',
   HZ049: 'data',
   HZ050: 'data',
+  HZ059: 'views',
   HZ062: 'endpoints',
 }
 

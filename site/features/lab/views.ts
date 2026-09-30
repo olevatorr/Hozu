@@ -1,4 +1,4 @@
-import { feature, op, ui } from '@hozu/core'
+import { feature, ui } from '@hozu/core'
 import { chapter, doc, how, trials } from '../../routes.ts'
 import { listChapters } from '../content/model.ts'
 import { content } from '../content/views.ts'
@@ -52,20 +52,14 @@ export const How = ui.view({
                 ui.span({}, ['contracts.ts']),
                 ui.span({}, ['The off → on transition']),
               ]),
-              ui.if(
-                op.eq(ctx.missing, false),
-                [
-                  code(
+              ctx.missing === false
+                ? code(
                     "contract(m, {\n  given: { state: 'off' },\n  when: [{ send: Toggle, payload: {} }],\n  expect: { state: 'on' },\n})",
-                  ),
-                ],
-                [
-                  ui.div({ 'data-missing-contract': '' }, [
+                  )
+                : ui.div({ 'data-missing-contract': '' }, [
                     ui.strong({}, ['Contract removed']),
                     ui.p({}, ['The transition still exists. Its expected behaviour is no longer covered.']),
                   ]),
-                ],
-              ),
               ui.p({ 'data-excerpt-note': '' }, [
                 'Excerpts: imports, feature registration and the reverse-transition contract are omitted.',
               ]),
@@ -172,9 +166,9 @@ export const How = ui.view({
                 {
                   type: 'button',
                   'data-lab-secondary': '',
-                  on: { click: ui.send(SetContract, { missing: op.eq(ctx.missing, false) }) },
+                  on: { click: ui.send(SetContract, { missing: ctx.missing === false }) },
                 },
-                [ui.if(op.eq(ctx.missing, false), ['Remove contract'], ['Restore contract'])],
+                [ctx.missing === false ? 'Remove contract' : 'Restore contract'],
               ),
               when(
                 ['source', 'ir', 'validated', 'compiled', 'brokenSource', 'brokenIr'],
@@ -210,7 +204,7 @@ export const How = ui.view({
                 ui.button(
                   {
                     type: 'button',
-                    'aria-pressed': op.eq(ctx.scope, value),
+                    'aria-pressed': ctx.scope === value,
                     on: { click: ui.send(SetScope, { value }) },
                   },
                   [value],
@@ -223,7 +217,7 @@ export const How = ui.view({
                 ui.button(
                   {
                     type: 'button',
-                    'aria-pressed': op.eq(ctx.freshness, value),
+                    'aria-pressed': ctx.freshness === value,
                     on: { click: ui.send(SetFreshness, { value }) },
                   },
                   [value],
@@ -236,7 +230,7 @@ export const How = ui.view({
                 ui.button(
                   {
                     type: 'button',
-                    'aria-pressed': op.eq(ctx.binding, value),
+                    'aria-pressed': ctx.binding === value,
                     on: { click: ui.send(SetBinding, { value }) },
                   },
                   [value ? 'Bound' : 'None'],
@@ -254,75 +248,51 @@ export const How = ui.view({
                 ui.span({}, ['Static shell']),
                 ui.small({}, ['Navigation, headings, article']),
               ]),
-              ui.div({ 'data-preview-data': '', toggle: { 'lab-private': op.eq(ctx.scope, 'user') } }, [
+              ui.div({ 'data-preview-data': '', toggle: { 'lab-private': ctx.scope === 'user' } }, [
                 ui.small({}, ['Query region']),
-                ui.if(
-                  op.eq(ctx.scope, 'user'),
-                  [
-                    ui.h3({}, ['Private · request-time']),
-                    ui.p({}, ['Never in a shared cache. User scope takes priority over freshness.']),
-                  ],
-                  [
-                    ui.if(
-                      op.eq(ctx.freshness, 'static'),
-                      [
+                ctx.scope === 'user'
+                  ? [
+                      ui.h3({}, ['Private · request-time']),
+                      ui.p({}, ['Never in a shared cache. User scope takes priority over freshness.']),
+                    ]
+                  : [
+                      ctx.freshness === 'static' && [
                         ui.h3({}, ['Static HTML']),
                         ui.p({}, ['Public, static data can be rendered ahead of time.']),
                       ],
-                      [],
-                    ),
-                    ui.if(
-                      op.eq(ctx.freshness, 'revalidate'),
-                      [
+                      ctx.freshness === 'revalidate' && [
                         ui.h3({}, ['ISR']),
                         ui.p({}, ['A server regenerates the cached region on its revalidation schedule.']),
                       ],
-                      [],
-                    ),
-                    ui.if(
-                      op.eq(ctx.freshness, 'swr'),
-                      [
+                      ctx.freshness === 'swr' && [
                         ui.h3({}, ['Stale while revalidate']),
                         ui.p({}, ['Serve cached public data while the server refreshes it.']),
                       ],
-                      [],
-                    ),
-                    ui.if(
-                      op.eq(ctx.freshness, 'live'),
-                      [
+                      ctx.freshness === 'live' && [
                         ui.h3({}, ['Request-time data']),
                         ui.p({}, ['Live freshness needs a server and the framework’s live transport.']),
                       ],
-                      [],
-                    ),
-                  ],
-                ),
+                    ],
               ]),
-              ui.div({ 'data-preview-island': '', toggle: { 'lab-bound': op.eq(ctx.binding, true) } }, [
-                ui.if(
-                  op.eq(ctx.binding, true),
-                  [
-                    ui.strong({}, ['Interactive island']),
-                    ui.p({}, ['This machine-bound node needs client JavaScript.']),
-                  ],
-                  [
-                    ui.strong({}, ['Plain HTML']),
-                    ui.p({}, ['No machine binding. This node does not hydrate.']),
-                  ],
-                ),
+              ui.div({ 'data-preview-island': '', toggle: { 'lab-bound': ctx.binding === true } }, [
+                ctx.binding === true
+                  ? [
+                      ui.strong({}, ['Interactive island']),
+                      ui.p({}, ['This machine-bound node needs client JavaScript.']),
+                    ]
+                  : [
+                      ui.strong({}, ['Plain HTML']),
+                      ui.p({}, ['No machine binding. This node does not hydrate.']),
+                    ],
               ]),
             ]),
             ui.div({ 'data-plan-summary': '' }, [
-              ui.if(
-                op.and(op.eq(ctx.scope, 'public'), op.eq(ctx.freshness, 'static')),
-                [ui.span({}, ['Data: static export possible'])],
-                [ui.span({}, ['Data: server required'])],
-              ),
-              ui.if(
-                op.eq(ctx.binding, true),
-                [ui.span({}, ['Interaction: client JS'])],
-                [ui.span({}, ['Interaction: no hydration'])],
-              ),
+              ctx.scope === 'public' && ctx.freshness === 'static'
+                ? ui.span({}, ['Data: static export possible'])
+                : ui.span({}, ['Data: server required']),
+              ctx.binding === true
+                ? ui.span({}, ['Interaction: client JS'])
+                : ui.span({}, ['Interaction: no hydration']),
             ]),
           ]),
           ui.p({ 'data-lab-note': '' }, [

@@ -11,4 +11,4 @@ export const operators = [
 
 export type Operator = (typeof operators)[number]
 
-export const unimplementedOperators: readonly Operator[] = ['%includes']
+export const unimplementedOperators: readonly Operator[] = []

@@ -24,8 +24,7 @@ export const op = Object.freeze({
   set: <T>(target: Ref<T>, value: NoInfer<Val<T> | Val<NonNullable<T> | null>>): Assign =>
     assign({ op: 'set', target, value }),
   append: <T>(target: Ref<T[]>, value: NoInfer<Val<T>>): Assign => assign({ op: 'append', target, value }),
-  inc: (target: Ref<number>, by: Val<number>): Assign => assign({ op: 'inc', target, value: by }),
-  removeWhere: <T, K extends keyof T & string>(target: Ref<T[]>, key: K, value: NoInfer<Val<T[K]>>): Assign =>
+  removeWhere: <T>(target: Ref<T[]>, key: string | null, value: unknown): Assign =>
     assign({ op: 'removeWhere', target, key, value }),
   eq: compare('eq'),
   neq: compare('neq'),

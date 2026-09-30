@@ -1,5 +1,5 @@
 import { brand, type Decl } from '../model/decl.ts'
-import { EXPR, type Val } from '../model/expr.ts'
+import { callExpr, type Val } from '../model/expr.ts'
 import type { Infer, Schema } from '../schema/standard.ts'
 
 export interface FnDef {
@@ -17,6 +17,6 @@ export function fn<I extends Schema, O extends Schema>(config: {
   output: O
   impl: (input: Infer<I>) => Infer<O>
 }): FnDecl<Infer<I>, Infer<O>> {
-  const call = (arg: unknown) => Object.freeze({ [EXPR]: { kind: 'call', fn: call, arg } })
+  const call = (arg: unknown) => callExpr(call, arg)
   return brand(call, 'fn', { ...config } satisfies FnDef) as never
 }
