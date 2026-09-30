@@ -18,6 +18,16 @@ export const me = query({
   freshness: 'request',
 })
 
+export const ADMIN = 'admin'
+
+export const accounts = query({
+  input: z.object({}),
+  output: z.array(z.object({ name: z.string(), notes: z.number() })),
+  errors: { Unauthorized: z.object({}), Forbidden: z.object({}) },
+  scope: 'user',
+  freshness: 'request',
+})
+
 export const signIn = mutation({ input: Name, output: z.object({}) })
 export const signOut = mutation({ input: z.object({}), output: z.object({}) })
 
@@ -84,4 +94,9 @@ export const accountMachine = machine({
       }),
     },
   }),
+})
+
+export const text = ui.messages('en', {
+  en: { signIn: 'Sign in', signOut: 'Sign out', other: 'Deutsch' },
+  de: { signIn: 'Anmelden', signOut: 'Abmelden', other: 'English' },
 })

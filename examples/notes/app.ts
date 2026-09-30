@@ -1,6 +1,6 @@
 import { resolvers } from '@hozu/data'
 import { app } from '@hozu/runtime-server'
-import { me, signIn, signOut } from './features/account/model.ts'
+import { ADMIN, accounts, me, signIn, signOut } from './features/account/model.ts'
 import { addNote, listNotes, notesApi, removeNote, togglePin } from './features/notes/model.ts'
 import project from './hozu.config.ts'
 
@@ -28,9 +28,17 @@ const ownListOf = (user: string) => {
   return list
 }
 const ordered = (list: Note[]) => [...list.filter((n) => n.pinned), ...list.filter((n) => !n.pinned)]
+
 export default app({
   resolvers: resolvers(project, (implement) => [
     implement(me, (_, { session, fail }) => (session ? { name: session.user } : fail('Unauthorized', {}))),
+    implement(accounts, (_, { session, fail }) =>
+      !session
+        ? fail('Unauthorized', {})
+        : session.user !== ADMIN
+          ? fail('Forbidden', {})
+          : [...store].map(([name, list]) => ({ name, notes: list.length })),
+    ),
     implement(signIn, ({ name }, { setSession }) => {
       setSession({ user: name.trim().toLowerCase() })
       return {}

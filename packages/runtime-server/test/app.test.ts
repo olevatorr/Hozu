@@ -54,3 +54,20 @@ describe('app() (ADR 0043 E)', () => {
     expect(() => testApp(appWith({ revalidate: 0 }))).toThrow(/HZ014 .*freshness/)
   })
 })
+
+describe('examples/notes answers 403 through head.failed (ADR 0043 D)', () => {
+  it('redirects a signed-out visitor, forbids a user and shows the admin the accounts', async () => {
+    const notes = (await import('../../../examples/notes/app.ts')).default
+    const store = memorySessions({ secret: 'n'.repeat(40), secure: false })
+    const as = async (user: string | null) => {
+      const cookie = user ? (await store.issue({ user })).split(';')[0]! : ''
+      return testApp(notes, { session: store }).get('/admin', { headers: { cookie } })
+    }
+    const out = await as(null)
+    expect([out.status, out.headers.get('location')]).toEqual([303, '/login'])
+    const ada = await as('ada')
+    expect([ada.status, ada.text]).toEqual([403, expect.stringContaining('Admins only')])
+    const root = await as('admin')
+    expect([root.status, root.text]).toEqual([200, expect.stringContaining('ada: 2 notes')])
+  })
+})

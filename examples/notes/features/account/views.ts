@@ -1,13 +1,18 @@
-import { contract, ui } from '@hozu/core'
+import { contract, part, ui } from '@hozu/core'
 import { login } from '../../routes.ts'
-import { accountMachine, me, SignIn, SignOut, signIn, signOut } from './model.ts'
+import { accountMachine, accounts, me, SignIn, SignOut, signIn, signOut, text } from './model.ts'
+
+const language = part((locale: string) =>
+  ui.a({ href: locale === 'en' ? ui.alternate('de') : ui.alternate('en'), class: 'underline' }, [text.other]),
+)
 
 export const Login = ui.view({
   machine: accountMachine,
   route: login,
-  render: ({ ctx }) =>
+  render: ({ ctx, locale }) =>
     ui.main({ class: 'mx-auto max-w-sm space-y-6 px-4 py-16' }, [
-      ui.h1({ class: 'text-3xl font-bold' }, ['Sign in']),
+      language(locale),
+      ui.h1({ class: 'text-3xl font-bold' }, [text.signIn]),
       ui.form({ class: 'space-y-3', on: { submit: ui.send(SignIn, { name: ui.dom.form('name') }) } }, [
         ui.label({ for: 'name', class: 'block text-sm font-medium' }, ['Name']),
         ui.input({
@@ -23,7 +28,7 @@ export const Login = ui.view({
         }),
         ui.p({ id: 'name-error', class: 'text-sm text-rose-600' }, [ctx.fields.name]),
         ui.button({ type: 'submit', class: 'w-full rounded bg-indigo-600 px-4 py-2 text-white' }, [
-          'Sign in',
+          text.signIn,
         ]),
       ]),
       ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),
@@ -32,7 +37,7 @@ export const Login = ui.view({
 
 export const AccountBar = ui.view({
   machine: accountMachine,
-  render: () =>
+  render: ({ locale }) =>
     ui.header(
       { class: 'mx-auto flex max-w-xl items-center justify-between px-4 pt-8 text-sm text-slate-600' },
       [
@@ -45,11 +50,34 @@ export const AccountBar = ui.view({
             failed: { Unauthorized: () => ui.p({}, ['Signed out']), Unexpected: () => ui.p({}, ['']) },
           },
         ),
+        language(locale),
         ui.form({ on: { submit: ui.send(SignOut, {}) } }, [
-          ui.button({ type: 'submit', class: 'underline' }, ['Sign out']),
+          ui.button({ type: 'submit', class: 'underline' }, [text.signOut]),
         ]),
       ],
     ),
+})
+
+export const Admin = ui.view({
+  render: () =>
+    ui.main({ class: 'mx-auto max-w-xl space-y-4 px-4 py-8' }, [
+      ui.h1({ class: 'text-3xl font-bold' }, ['Accounts']),
+      ui.query(
+        accounts,
+        {},
+        {
+          ready: (list) =>
+            ui.ul({ class: 'divide-y rounded border' }, [
+              ui.each(list, 'name', (a) => ui.li({ class: 'px-4 py-2' }, [a.name, ': ', a.notes, ' notes'])),
+            ]),
+          failed: {
+            Unauthorized: () => ui.p({ role: 'alert' }, ['Signed out']),
+            Forbidden: () => ui.p({ role: 'alert' }, ['Admins only']),
+            Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']),
+          },
+        },
+      ),
+    ]),
 })
 
 export const signsIn = contract(accountMachine, {
