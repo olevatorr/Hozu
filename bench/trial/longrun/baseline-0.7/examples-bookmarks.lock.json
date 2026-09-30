@@ -1,0 +1,157 @@
+{
+  "committed": {
+    "features": {
+      "bookmarks": {
+        "adding/invoke/done/0": {
+          "behavior": "afe929fa589b1dfc",
+          "contracts": {
+            "addsBookmark": "17272b4141928bfb"
+          },
+          "summary": "adding --done addBookmark--> idle · draft := \"\" · navigate link(bookmarkPage, { id: result.id })"
+        },
+        "adding/invoke/failed/Duplicate/0": {
+          "behavior": "511792f991e45d85",
+          "contracts": {
+            "rejectsDuplicate": "9e701ab27c855dd7"
+          },
+          "summary": "adding --failed addBookmark.Duplicate--> idle · error := \"This bookmark already exists\""
+        },
+        "adding/invoke/failed/Invalid/0": {
+          "behavior": "3ba8e3c9bc908103",
+          "contracts": {
+            "rejectsInvalidTitle": "17b46df8654d0dd5"
+          },
+          "summary": "adding --failed addBookmark.Invalid--> idle · fields := error.fields"
+        },
+        "adding/invoke/failed/Unexpected/0": {
+          "behavior": "6606d67832662c72",
+          "contracts": {
+            "addFails": "2d2e070cae4ac23b"
+          },
+          "summary": "adding --failed addBookmark.Unexpected--> idle · error := error.message"
+        },
+        "idle/on/bookmarks.Add/0": {
+          "behavior": "e7ca9e7a5aa50e2f",
+          "contracts": {
+            "addsBookmark": "17272b4141928bfb"
+          },
+          "summary": "idle --Add--> adding · draft := event.title, kind := event.kind, error := null, fields := {\"title\":null,\"kind\":null} · invoke addBookmark({ title: ctx.draft, kind: ctx.kind })"
+        },
+        "idle/on/bookmarks.Draft/0": {
+          "behavior": "87006650bba9254c",
+          "contracts": {
+            "typesDraft": "5de3765b86ba8658"
+          },
+          "summary": "idle --Draft--> idle · draft := event.text"
+        },
+        "idle/on/bookmarks.ToggleRead/0": {
+          "behavior": "279030126191b3b4",
+          "contracts": {
+            "togglesRead": "947048ae3e0cede1"
+          },
+          "summary": "idle --ToggleRead--> toggling · target := event.id · invoke toggleRead({ id: ctx.target })"
+        },
+        "toggling/invoke/done/0": {
+          "behavior": "49f254475f7985d1",
+          "contracts": {
+            "togglesRead": "947048ae3e0cede1"
+          },
+          "summary": "toggling --done toggleRead--> idle"
+        },
+        "toggling/invoke/failed/NotFound/0": {
+          "behavior": "7630795452b08180",
+          "contracts": {
+            "toggleMissing": "de17dceedb26b301"
+          },
+          "summary": "toggling --failed toggleRead.NotFound--> idle"
+        },
+        "toggling/invoke/failed/Unexpected/0": {
+          "behavior": "57a2233b096a690e",
+          "contracts": {
+            "toggleFails": "f9a7ff2b2369d3fa"
+          },
+          "summary": "toggling --failed toggleRead.Unexpected--> idle · error := error.message"
+        }
+      }
+    },
+    "version": 1
+  },
+  "computed": {
+    "features": {
+      "bookmarks": {
+        "adding/invoke/done/0": {
+          "behavior": "afe929fa589b1dfc",
+          "contracts": {
+            "addsBookmark": "17272b4141928bfb"
+          },
+          "summary": "adding --done addBookmark--> idle · draft := \"\" · navigate link(bookmarkPage, { id: result.id })"
+        },
+        "adding/invoke/failed/Duplicate/0": {
+          "behavior": "511792f991e45d85",
+          "contracts": {
+            "rejectsDuplicate": "9e701ab27c855dd7"
+          },
+          "summary": "adding --failed addBookmark.Duplicate--> idle · error := \"This bookmark already exists\""
+        },
+        "adding/invoke/failed/Invalid/0": {
+          "behavior": "3ba8e3c9bc908103",
+          "contracts": {
+            "rejectsInvalidTitle": "17b46df8654d0dd5"
+          },
+          "summary": "adding --failed addBookmark.Invalid--> idle · fields := error.fields"
+        },
+        "adding/invoke/failed/Unexpected/0": {
+          "behavior": "6606d67832662c72",
+          "contracts": {
+            "addFails": "2d2e070cae4ac23b"
+          },
+          "summary": "adding --failed addBookmark.Unexpected--> idle · error := error.message"
+        },
+        "idle/on/bookmarks.Add/0": {
+          "behavior": "e7ca9e7a5aa50e2f",
+          "contracts": {
+            "addsBookmark": "17272b4141928bfb"
+          },
+          "summary": "idle --Add--> adding · draft := event.title, kind := event.kind, error := null, fields := {\"title\":null,\"kind\":null} · invoke addBookmark({ title: ctx.draft, kind: ctx.kind })"
+        },
+        "idle/on/bookmarks.Draft/0": {
+          "behavior": "87006650bba9254c",
+          "contracts": {
+            "typesDraft": "5de3765b86ba8658"
+          },
+          "summary": "idle --Draft--> idle · draft := event.text"
+        },
+        "idle/on/bookmarks.ToggleRead/0": {
+          "behavior": "279030126191b3b4",
+          "contracts": {
+            "togglesRead": "947048ae3e0cede1"
+          },
+          "summary": "idle --ToggleRead--> toggling · target := event.id · invoke toggleRead({ id: ctx.target })"
+        },
+        "toggling/invoke/done/0": {
+          "behavior": "49f254475f7985d1",
+          "contracts": {
+            "togglesRead": "947048ae3e0cede1"
+          },
+          "summary": "toggling --done toggleRead--> idle"
+        },
+        "toggling/invoke/failed/NotFound/0": {
+          "behavior": "7630795452b08180",
+          "contracts": {
+            "toggleMissing": "de17dceedb26b301"
+          },
+          "summary": "toggling --failed toggleRead.NotFound--> idle"
+        },
+        "toggling/invoke/failed/Unexpected/0": {
+          "behavior": "57a2233b096a690e",
+          "contracts": {
+            "toggleFails": "f9a7ff2b2369d3fa"
+          },
+          "summary": "toggling --failed toggleRead.Unexpected--> idle · error := error.message"
+        }
+      }
+    },
+    "version": 1
+  },
+  "stale": {}
+}

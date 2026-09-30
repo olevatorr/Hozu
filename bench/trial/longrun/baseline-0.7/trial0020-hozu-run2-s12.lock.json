@@ -1,0 +1,634 @@
+{
+  "committed": {
+    "features": {
+      "account": {
+        "idle/on/account.SignIn/0": {
+          "behavior": "8d2b600fa526e41a",
+          "contracts": {
+            "signsIn": "c44ede1b3bdcc2fc",
+            "signsInToAllNotes": "a33e3b88c68568aa"
+          },
+          "summary": "idle --SignIn--> signingIn · draft := event.name, error := null, fields := {\"name\":null} · invoke signIn({ name: ctx.draft })"
+        },
+        "idle/on/account.SignOut/0": {
+          "behavior": "e82aedd52c0e5186",
+          "contracts": {
+            "signsOut": "1aff8c28d9db651f"
+          },
+          "summary": "idle --SignOut--> signingOut · invoke signOut({})"
+        },
+        "signingIn/invoke/done/0": {
+          "behavior": "569d6db4f763c2f2",
+          "contracts": {
+            "signsIn": "c44ede1b3bdcc2fc",
+            "signsInToAllNotes": "a33e3b88c68568aa"
+          },
+          "summary": "signingIn --done signIn--> idle · navigate link(home, null)"
+        },
+        "signingIn/invoke/failed/Invalid/0": {
+          "behavior": "3adac45963ae399a",
+          "contracts": {},
+          "summary": "signingIn --failed signIn.Invalid--> idle · fields := error.fields"
+        },
+        "signingIn/invoke/failed/Unexpected/0": {
+          "behavior": "8ee6315677d953da",
+          "contracts": {},
+          "summary": "signingIn --failed signIn.Unexpected--> idle · error := error.message"
+        },
+        "signingOut/invoke/done/0": {
+          "behavior": "6fd5c9e6a2149dde",
+          "contracts": {
+            "signsOut": "1aff8c28d9db651f"
+          },
+          "summary": "signingOut --done signOut--> idle · navigate link(login, null)"
+        },
+        "signingOut/invoke/failed/Unexpected/0": {
+          "behavior": "9ae8bb06af1922b5",
+          "contracts": {},
+          "summary": "signingOut --failed signOut.Unexpected--> idle · error := error.message"
+        }
+      },
+      "notes": {
+        "adding/invoke/done/0": {
+          "behavior": "b6de72cc7e8c30c5",
+          "contracts": {
+            "addsTaggedNote": "b1d71d7121a7c02d"
+          },
+          "summary": "adding --done addNote--> idle · draft := \"\", tags := \"\""
+        },
+        "adding/invoke/failed/BadTags/0": {
+          "behavior": "4fce6191a72c49e8",
+          "contracts": {
+            "rejectsBadTags": "a734a905c3c6bdf2"
+          },
+          "summary": "adding --failed addNote.BadTags--> idle · error := \"Tags use letters, digits and -\""
+        },
+        "adding/invoke/failed/Duplicate/0": {
+          "behavior": "f276033e70cceab3",
+          "contracts": {
+            "rejectsDuplicateTitle": "625d3d02e4414f1c"
+          },
+          "summary": "adding --failed addNote.Duplicate--> idle · error := \"You already have a note with this title\""
+        },
+        "adding/invoke/failed/Invalid/0": {
+          "behavior": "3ba8e3c9bc908103",
+          "contracts": {
+            "rejectsLongNote": "4a33fff3ddb6fb56"
+          },
+          "summary": "adding --failed addNote.Invalid--> idle · fields := error.fields"
+        },
+        "adding/invoke/failed/Unexpected/0": {
+          "behavior": "6606d67832662c72",
+          "contracts": {},
+          "summary": "adding --failed addNote.Unexpected--> idle · error := error.message"
+        },
+        "archiving/invoke/done/0": {
+          "behavior": "2806ce0cefceef90",
+          "contracts": {
+            "archivesNote": "7fdc5fffd91b3484"
+          },
+          "summary": "archiving --done archiveNote--> idle"
+        },
+        "archiving/invoke/failed/Archived/0": {
+          "behavior": "dad79bcdd590d2a9",
+          "contracts": {
+            "archiveRefusesArchived": "de8fcf5a8269f5ff"
+          },
+          "summary": "archiving --failed archiveNote.Archived--> idle · error := \"This note is archived\""
+        },
+        "archiving/invoke/failed/NotFound/0": {
+          "behavior": "94273ce5d17af36d",
+          "contracts": {},
+          "summary": "archiving --failed archiveNote.NotFound--> idle · error := \"This note no longer exists\""
+        },
+        "archiving/invoke/failed/Unexpected/0": {
+          "behavior": "3b3b630dee1bbab5",
+          "contracts": {},
+          "summary": "archiving --failed archiveNote.Unexpected--> idle · error := error.message"
+        },
+        "idle/on/notes.Add/0": {
+          "behavior": "996edd0dd346d478",
+          "contracts": {
+            "addsTaggedNote": "b1d71d7121a7c02d",
+            "rejectsBadTags": "a734a905c3c6bdf2",
+            "rejectsDuplicateTitle": "625d3d02e4414f1c",
+            "rejectsLongNote": "4a33fff3ddb6fb56"
+          },
+          "summary": "idle --Add--> adding · draft := event.title, tags := event.tags, error := null, fields := {\"title\":null} · invoke addNote({ title: ctx.draft, tags: ctx.tags })"
+        },
+        "idle/on/notes.Archive/0": {
+          "behavior": "829330b42fa5b0bd",
+          "contracts": {
+            "archiveRefusesArchived": "de8fcf5a8269f5ff",
+            "archivesNote": "7fdc5fffd91b3484"
+          },
+          "summary": "idle --Archive--> archiving · target := event.id, error := null · invoke archiveNote({ id: ctx.target })"
+        },
+        "idle/on/notes.Cancel/0": {
+          "behavior": "42781a4f554ff9b1",
+          "contracts": {
+            "cancelsEdit": "ae140023f94b08b3"
+          },
+          "summary": "idle --Cancel--> idle · editing := \"\", editTitle := \"\", editField := null, error := null"
+        },
+        "idle/on/notes.Draft/0": {
+          "behavior": "bb0e04a3b1f4e70d",
+          "contracts": {},
+          "summary": "idle --Draft--> idle · draft := event.title"
+        },
+        "idle/on/notes.DraftTags/0": {
+          "behavior": "f28d71919926a6f0",
+          "contracts": {},
+          "summary": "idle --DraftTags--> idle · tags := event.tags"
+        },
+        "idle/on/notes.Edit/0": {
+          "behavior": "d236e218791f6b27",
+          "contracts": {
+            "cancelsEdit": "ae140023f94b08b3",
+            "renameRefusesArchived": "4afd565e7a118deb",
+            "renameRejectsDuplicate": "ae874a6a51bdccea",
+            "renamesNote": "c95f1563c40b7375"
+          },
+          "summary": "idle --Edit--> idle · editing := event.id, editTitle := \"\", editField := null, error := null"
+        },
+        "idle/on/notes.Pin/0": {
+          "behavior": "dc820360da23289a",
+          "contracts": {
+            "pinRefusesArchived": "f06bcf76d37c1d72",
+            "pinReportsMissing": "09d9796ba6b611b9",
+            "pinsNote": "28a38d8a1fa33c05"
+          },
+          "summary": "idle --Pin--> pinning · target := event.id, error := null · invoke pinNote({ id: ctx.target })"
+        },
+        "idle/on/notes.Remove/0": {
+          "behavior": "e0adba678eed2897",
+          "contracts": {},
+          "summary": "idle --Remove--> removing · target := event.id, error := null · invoke removeNote({ id: ctx.target })"
+        },
+        "idle/on/notes.Restore/0": {
+          "behavior": "5840554d2a561a2d",
+          "contracts": {
+            "restoresNote": "fe88f2ba593e00fd"
+          },
+          "summary": "idle --Restore--> restoring · target := event.id, error := null · invoke restoreNote({ id: ctx.target })"
+        },
+        "idle/on/notes.Save/0": {
+          "behavior": "99ab5c8b6bb1d473",
+          "contracts": {
+            "renameRefusesArchived": "4afd565e7a118deb",
+            "renameRejectsDuplicate": "ae874a6a51bdccea",
+            "renamesNote": "c95f1563c40b7375"
+          },
+          "summary": "idle --Save--> saving · editing := event.id, editTitle := event.title, editField := null, error := null · invoke renameNote({ id: ctx.editing, title: ctx.editTitle })"
+        },
+        "idle/on/notes.Search/0": {
+          "behavior": "17fa9f8495f5044b",
+          "contracts": {
+            "searchesAsYouType": "150ad48b7b34e4d8"
+          },
+          "summary": "idle --Search--> idle · search := event.text"
+        },
+        "pinning/invoke/done/0": {
+          "behavior": "2bff26500adc2814",
+          "contracts": {
+            "pinsNote": "28a38d8a1fa33c05"
+          },
+          "summary": "pinning --done pinNote--> idle"
+        },
+        "pinning/invoke/failed/Archived/0": {
+          "behavior": "092bc809f2677d56",
+          "contracts": {
+            "pinRefusesArchived": "f06bcf76d37c1d72"
+          },
+          "summary": "pinning --failed pinNote.Archived--> idle · error := \"This note is archived\""
+        },
+        "pinning/invoke/failed/NotFound/0": {
+          "behavior": "a7d1ce36cbdb54e3",
+          "contracts": {
+            "pinReportsMissing": "09d9796ba6b611b9"
+          },
+          "summary": "pinning --failed pinNote.NotFound--> idle · error := \"This note no longer exists\""
+        },
+        "pinning/invoke/failed/Unexpected/0": {
+          "behavior": "f2e84ebd5e7b6484",
+          "contracts": {},
+          "summary": "pinning --failed pinNote.Unexpected--> idle · error := error.message"
+        },
+        "removing/invoke/done/0": {
+          "behavior": "e54a61bbf262f9f9",
+          "contracts": {},
+          "summary": "removing --done removeNote--> idle"
+        },
+        "removing/invoke/failed/Archived/0": {
+          "behavior": "316afedb4d8c02d6",
+          "contracts": {},
+          "summary": "removing --failed removeNote.Archived--> idle · error := \"This note is archived\""
+        },
+        "removing/invoke/failed/NotFound/0": {
+          "behavior": "2406737070881788",
+          "contracts": {},
+          "summary": "removing --failed removeNote.NotFound--> idle · error := \"This note no longer exists\""
+        },
+        "removing/invoke/failed/Unexpected/0": {
+          "behavior": "5fbd09f5a2ecb8ee",
+          "contracts": {},
+          "summary": "removing --failed removeNote.Unexpected--> idle · error := error.message"
+        },
+        "restoring/invoke/done/0": {
+          "behavior": "09405288725c51c2",
+          "contracts": {
+            "restoresNote": "fe88f2ba593e00fd"
+          },
+          "summary": "restoring --done restoreNote--> idle"
+        },
+        "restoring/invoke/failed/NotFound/0": {
+          "behavior": "f0d983ed4bec414c",
+          "contracts": {},
+          "summary": "restoring --failed restoreNote.NotFound--> idle · error := \"This note no longer exists\""
+        },
+        "restoring/invoke/failed/Unexpected/0": {
+          "behavior": "66cc43efad8d4af6",
+          "contracts": {},
+          "summary": "restoring --failed restoreNote.Unexpected--> idle · error := error.message"
+        },
+        "saving/invoke/done/0": {
+          "behavior": "26a52eb845079d9c",
+          "contracts": {
+            "renamesNote": "c95f1563c40b7375"
+          },
+          "summary": "saving --done renameNote--> idle · editing := \"\", editTitle := \"\""
+        },
+        "saving/invoke/failed/Archived/0": {
+          "behavior": "5f02e3c2fdf9777b",
+          "contracts": {
+            "renameRefusesArchived": "4afd565e7a118deb"
+          },
+          "summary": "saving --failed renameNote.Archived--> idle · editing := \"\", error := \"This note is archived\""
+        },
+        "saving/invoke/failed/Duplicate/0": {
+          "behavior": "a71418b1fed2dd70",
+          "contracts": {
+            "renameRejectsDuplicate": "ae874a6a51bdccea"
+          },
+          "summary": "saving --failed renameNote.Duplicate--> idle · error := \"You already have a note with this title\""
+        },
+        "saving/invoke/failed/Invalid/0": {
+          "behavior": "f356dae73b6db9ca",
+          "contracts": {},
+          "summary": "saving --failed renameNote.Invalid--> idle · editField := error.fields.title"
+        },
+        "saving/invoke/failed/NotFound/0": {
+          "behavior": "70fcd1653fcb2469",
+          "contracts": {},
+          "summary": "saving --failed renameNote.NotFound--> idle · editing := \"\", error := \"This note no longer exists\""
+        },
+        "saving/invoke/failed/Unexpected/0": {
+          "behavior": "396d4e12f567dab4",
+          "contracts": {},
+          "summary": "saving --failed renameNote.Unexpected--> idle · error := error.message"
+        }
+      }
+    },
+    "version": 1
+  },
+  "computed": {
+    "features": {
+      "account": {
+        "idle/on/account.SignIn/0": {
+          "behavior": "bd9394d5a732530f",
+          "contracts": {
+            "signsIn": "aa5b800932d57946",
+            "signsInToAllNotes": "5a5edb2425e61341"
+          },
+          "summary": "idle --SignIn--> signingIn · draft := event.name, error := null, fields := {\"name\":null} · invoke signIn({ name: ctx.draft })"
+        },
+        "idle/on/account.SignOut/0": {
+          "behavior": "e82aedd52c0e5186",
+          "contracts": {
+            "signsOut": "1aff8c28d9db651f"
+          },
+          "summary": "idle --SignOut--> signingOut · invoke signOut({})"
+        },
+        "signingIn/invoke/done/0": {
+          "behavior": "4238e0848b45be81",
+          "contracts": {
+            "signsIn": "aa5b800932d57946",
+            "signsInToAllNotes": "5a5edb2425e61341"
+          },
+          "summary": "signingIn --done signIn--> idle · navigate link(notesList, null)"
+        },
+        "signingIn/invoke/failed/Invalid/0": {
+          "behavior": "3adac45963ae399a",
+          "contracts": {},
+          "summary": "signingIn --failed signIn.Invalid--> idle · fields := error.fields"
+        },
+        "signingIn/invoke/failed/Unexpected/0": {
+          "behavior": "8ee6315677d953da",
+          "contracts": {},
+          "summary": "signingIn --failed signIn.Unexpected--> idle · error := error.message"
+        },
+        "signingOut/invoke/done/0": {
+          "behavior": "6fd5c9e6a2149dde",
+          "contracts": {
+            "signsOut": "1aff8c28d9db651f"
+          },
+          "summary": "signingOut --done signOut--> idle · navigate link(login, null)"
+        },
+        "signingOut/invoke/failed/Unexpected/0": {
+          "behavior": "9ae8bb06af1922b5",
+          "contracts": {},
+          "summary": "signingOut --failed signOut.Unexpected--> idle · error := error.message"
+        }
+      },
+      "notes": {
+        "adding/invoke/done/0": {
+          "behavior": "b6de72cc7e8c30c5",
+          "contracts": {
+            "addsNoteOnce": "a17c7afc5371523c",
+            "addsTaggedNote": "b1d71d7121a7c02d"
+          },
+          "summary": "adding --done addNote--> idle · draft := \"\", tags := \"\""
+        },
+        "adding/invoke/failed/BadTags/0": {
+          "behavior": "4fce6191a72c49e8",
+          "contracts": {
+            "rejectsBadTags": "a734a905c3c6bdf2"
+          },
+          "summary": "adding --failed addNote.BadTags--> idle · error := \"Tags use letters, digits and -\""
+        },
+        "adding/invoke/failed/Duplicate/0": {
+          "behavior": "f276033e70cceab3",
+          "contracts": {
+            "rejectsDuplicateTitle": "625d3d02e4414f1c"
+          },
+          "summary": "adding --failed addNote.Duplicate--> idle · error := \"You already have a note with this title\""
+        },
+        "adding/invoke/failed/Invalid/0": {
+          "behavior": "3ba8e3c9bc908103",
+          "contracts": {
+            "rejectsLongNote": "4a33fff3ddb6fb56"
+          },
+          "summary": "adding --failed addNote.Invalid--> idle · fields := error.fields"
+        },
+        "adding/invoke/failed/Unexpected/0": {
+          "behavior": "6606d67832662c72",
+          "contracts": {},
+          "summary": "adding --failed addNote.Unexpected--> idle · error := error.message"
+        },
+        "archiving/invoke/done/0": {
+          "behavior": "2806ce0cefceef90",
+          "contracts": {
+            "archivesNote": "7fdc5fffd91b3484"
+          },
+          "summary": "archiving --done archiveNote--> idle"
+        },
+        "archiving/invoke/failed/Archived/0": {
+          "behavior": "dad79bcdd590d2a9",
+          "contracts": {
+            "archiveRefusesArchived": "de8fcf5a8269f5ff"
+          },
+          "summary": "archiving --failed archiveNote.Archived--> idle · error := \"This note is archived\""
+        },
+        "archiving/invoke/failed/NotFound/0": {
+          "behavior": "94273ce5d17af36d",
+          "contracts": {},
+          "summary": "archiving --failed archiveNote.NotFound--> idle · error := \"This note no longer exists\""
+        },
+        "archiving/invoke/failed/Unexpected/0": {
+          "behavior": "3b3b630dee1bbab5",
+          "contracts": {},
+          "summary": "archiving --failed archiveNote.Unexpected--> idle · error := error.message"
+        },
+        "idle/on/notes.Add/0": {
+          "behavior": "996edd0dd346d478",
+          "contracts": {
+            "addsNoteOnce": "a17c7afc5371523c",
+            "addsTaggedNote": "b1d71d7121a7c02d",
+            "rejectsBadTags": "a734a905c3c6bdf2",
+            "rejectsDuplicateTitle": "625d3d02e4414f1c",
+            "rejectsLongNote": "4a33fff3ddb6fb56"
+          },
+          "summary": "idle --Add--> adding · draft := event.title, tags := event.tags, error := null, fields := {\"title\":null} · invoke addNote({ title: ctx.draft, tags: ctx.tags })"
+        },
+        "idle/on/notes.Archive/0": {
+          "behavior": "829330b42fa5b0bd",
+          "contracts": {
+            "archiveRefusesArchived": "de8fcf5a8269f5ff",
+            "archivesNote": "7fdc5fffd91b3484"
+          },
+          "summary": "idle --Archive--> archiving · target := event.id, error := null · invoke archiveNote({ id: ctx.target })"
+        },
+        "idle/on/notes.Cancel/0": {
+          "behavior": "42781a4f554ff9b1",
+          "contracts": {
+            "cancelsEdit": "ae140023f94b08b3"
+          },
+          "summary": "idle --Cancel--> idle · editing := \"\", editTitle := \"\", editField := null, error := null"
+        },
+        "idle/on/notes.Draft/0": {
+          "behavior": "bb0e04a3b1f4e70d",
+          "contracts": {},
+          "summary": "idle --Draft--> idle · draft := event.title"
+        },
+        "idle/on/notes.DraftTags/0": {
+          "behavior": "f28d71919926a6f0",
+          "contracts": {},
+          "summary": "idle --DraftTags--> idle · tags := event.tags"
+        },
+        "idle/on/notes.Edit/0": {
+          "behavior": "d236e218791f6b27",
+          "contracts": {
+            "cancelsEdit": "ae140023f94b08b3",
+            "renameRefusesArchived": "4afd565e7a118deb",
+            "renameRejectsDuplicate": "ae874a6a51bdccea",
+            "renamesNote": "c95f1563c40b7375"
+          },
+          "summary": "idle --Edit--> idle · editing := event.id, editTitle := \"\", editField := null, error := null"
+        },
+        "idle/on/notes.Pin/0": {
+          "behavior": "dc820360da23289a",
+          "contracts": {
+            "pinRefusesArchived": "f06bcf76d37c1d72",
+            "pinReportsMissing": "09d9796ba6b611b9",
+            "pinsNote": "28a38d8a1fa33c05"
+          },
+          "summary": "idle --Pin--> pinning · target := event.id, error := null · invoke pinNote({ id: ctx.target })"
+        },
+        "idle/on/notes.Remove/0": {
+          "behavior": "e0adba678eed2897",
+          "contracts": {},
+          "summary": "idle --Remove--> removing · target := event.id, error := null · invoke removeNote({ id: ctx.target })"
+        },
+        "idle/on/notes.Restore/0": {
+          "behavior": "5840554d2a561a2d",
+          "contracts": {
+            "restoresNote": "fe88f2ba593e00fd"
+          },
+          "summary": "idle --Restore--> restoring · target := event.id, error := null · invoke restoreNote({ id: ctx.target })"
+        },
+        "idle/on/notes.Save/0": {
+          "behavior": "99ab5c8b6bb1d473",
+          "contracts": {
+            "renameRefusesArchived": "4afd565e7a118deb",
+            "renameRejectsDuplicate": "ae874a6a51bdccea",
+            "renamesNote": "c95f1563c40b7375"
+          },
+          "summary": "idle --Save--> saving · editing := event.id, editTitle := event.title, editField := null, error := null · invoke renameNote({ id: ctx.editing, title: ctx.editTitle })"
+        },
+        "idle/on/notes.Search/0": {
+          "behavior": "17fa9f8495f5044b",
+          "contracts": {
+            "searchesAsYouType": "150ad48b7b34e4d8"
+          },
+          "summary": "idle --Search--> idle · search := event.text"
+        },
+        "idle/on/notes.Undo/0": {
+          "behavior": "8ffba51c81aae608",
+          "contracts": {
+            "undoReportsNothing": "7abfb1f6913b6a78",
+            "undoesDelete": "32419032f1558b2d"
+          },
+          "summary": "idle --Undo--> undoing · error := null · invoke undoRemove({})"
+        },
+        "pinning/invoke/done/0": {
+          "behavior": "2bff26500adc2814",
+          "contracts": {
+            "pinsNote": "28a38d8a1fa33c05"
+          },
+          "summary": "pinning --done pinNote--> idle"
+        },
+        "pinning/invoke/failed/Archived/0": {
+          "behavior": "092bc809f2677d56",
+          "contracts": {
+            "pinRefusesArchived": "f06bcf76d37c1d72"
+          },
+          "summary": "pinning --failed pinNote.Archived--> idle · error := \"This note is archived\""
+        },
+        "pinning/invoke/failed/NotFound/0": {
+          "behavior": "a7d1ce36cbdb54e3",
+          "contracts": {
+            "pinReportsMissing": "09d9796ba6b611b9"
+          },
+          "summary": "pinning --failed pinNote.NotFound--> idle · error := \"This note no longer exists\""
+        },
+        "pinning/invoke/failed/Unexpected/0": {
+          "behavior": "f2e84ebd5e7b6484",
+          "contracts": {},
+          "summary": "pinning --failed pinNote.Unexpected--> idle · error := error.message"
+        },
+        "removing/invoke/done/0": {
+          "behavior": "e54a61bbf262f9f9",
+          "contracts": {},
+          "summary": "removing --done removeNote--> idle"
+        },
+        "removing/invoke/failed/Archived/0": {
+          "behavior": "316afedb4d8c02d6",
+          "contracts": {},
+          "summary": "removing --failed removeNote.Archived--> idle · error := \"This note is archived\""
+        },
+        "removing/invoke/failed/NotFound/0": {
+          "behavior": "2406737070881788",
+          "contracts": {},
+          "summary": "removing --failed removeNote.NotFound--> idle · error := \"This note no longer exists\""
+        },
+        "removing/invoke/failed/Unexpected/0": {
+          "behavior": "5fbd09f5a2ecb8ee",
+          "contracts": {},
+          "summary": "removing --failed removeNote.Unexpected--> idle · error := error.message"
+        },
+        "restoring/invoke/done/0": {
+          "behavior": "09405288725c51c2",
+          "contracts": {
+            "restoresNote": "fe88f2ba593e00fd"
+          },
+          "summary": "restoring --done restoreNote--> idle"
+        },
+        "restoring/invoke/failed/NotFound/0": {
+          "behavior": "f0d983ed4bec414c",
+          "contracts": {},
+          "summary": "restoring --failed restoreNote.NotFound--> idle · error := \"This note no longer exists\""
+        },
+        "restoring/invoke/failed/Unexpected/0": {
+          "behavior": "66cc43efad8d4af6",
+          "contracts": {},
+          "summary": "restoring --failed restoreNote.Unexpected--> idle · error := error.message"
+        },
+        "saving/invoke/done/0": {
+          "behavior": "26a52eb845079d9c",
+          "contracts": {
+            "renamesNote": "c95f1563c40b7375"
+          },
+          "summary": "saving --done renameNote--> idle · editing := \"\", editTitle := \"\""
+        },
+        "saving/invoke/failed/Archived/0": {
+          "behavior": "5f02e3c2fdf9777b",
+          "contracts": {
+            "renameRefusesArchived": "4afd565e7a118deb"
+          },
+          "summary": "saving --failed renameNote.Archived--> idle · editing := \"\", error := \"This note is archived\""
+        },
+        "saving/invoke/failed/Duplicate/0": {
+          "behavior": "a71418b1fed2dd70",
+          "contracts": {
+            "renameRejectsDuplicate": "ae874a6a51bdccea"
+          },
+          "summary": "saving --failed renameNote.Duplicate--> idle · error := \"You already have a note with this title\""
+        },
+        "saving/invoke/failed/Invalid/0": {
+          "behavior": "f356dae73b6db9ca",
+          "contracts": {},
+          "summary": "saving --failed renameNote.Invalid--> idle · editField := error.fields.title"
+        },
+        "saving/invoke/failed/NotFound/0": {
+          "behavior": "70fcd1653fcb2469",
+          "contracts": {},
+          "summary": "saving --failed renameNote.NotFound--> idle · editing := \"\", error := \"This note no longer exists\""
+        },
+        "saving/invoke/failed/Unexpected/0": {
+          "behavior": "396d4e12f567dab4",
+          "contracts": {},
+          "summary": "saving --failed renameNote.Unexpected--> idle · error := error.message"
+        },
+        "undoing/invoke/done/0": {
+          "behavior": "5472bf2a8da7537e",
+          "contracts": {
+            "undoesDelete": "32419032f1558b2d"
+          },
+          "summary": "undoing --done undoRemove--> idle"
+        },
+        "undoing/invoke/failed/NothingToUndo/0": {
+          "behavior": "ac470366a59227da",
+          "contracts": {
+            "undoReportsNothing": "7abfb1f6913b6a78"
+          },
+          "summary": "undoing --failed undoRemove.NothingToUndo--> idle · error := \"There is nothing to undo\""
+        },
+        "undoing/invoke/failed/Unexpected/0": {
+          "behavior": "7ed06cb895f030bb",
+          "contracts": {},
+          "summary": "undoing --failed undoRemove.Unexpected--> idle · error := error.message"
+        }
+      }
+    },
+    "version": 1
+  },
+  "stale": {
+    "account": {
+      "missing": [],
+      "removed": [],
+      "behavior": ["idle/on/account.SignIn/0", "signingIn/invoke/done/0"],
+      "contracts": ["idle/on/account.SignIn/0", "signingIn/invoke/done/0"]
+    },
+    "notes": {
+      "missing": [
+        "idle/on/notes.Undo/0",
+        "undoing/invoke/done/0",
+        "undoing/invoke/failed/NothingToUndo/0",
+        "undoing/invoke/failed/Unexpected/0"
+      ],
+      "removed": [],
+      "behavior": [],
+      "contracts": ["adding/invoke/done/0", "idle/on/notes.Add/0"]
+    }
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "committed": {
+    "features": {
+      "stations": {
+        "favoriting/invoke/done/0": {
+          "behavior": "20047de786c35fbe",
+          "contracts": {},
+          "summary": "favoriting --done toggleFavorite--> idle"
+        },
+        "favoriting/invoke/failed/Unexpected/0": {
+          "behavior": "83f4c075657f8edf",
+          "contracts": {},
+          "summary": "favoriting --failed toggleFavorite.Unexpected--> idle"
+        },
+        "idle/on/stations.PickDistrict/0": {
+          "behavior": "ffcf89e4ce7bf63e",
+          "contracts": {},
+          "summary": "idle --PickDistrict--> idle · district := event.district"
+        },
+        "idle/on/stations.Search/0": {
+          "behavior": "ee259a74de828247",
+          "contracts": {},
+          "summary": "idle --Search--> idle · q := event.text"
+        },
+        "idle/on/stations.Select/0": {
+          "behavior": "3f8666837c63ed45",
+          "contracts": {},
+          "summary": "idle --Select--> idle · selected := event.id"
+        },
+        "idle/on/stations.StartTour/0": {
+          "behavior": "8c6583f90b638022",
+          "contracts": {
+            "startsTour": "237d95457e97d8f0"
+          },
+          "summary": "idle --StartTour--> touring · if event.ids.length gt 0 · tour := event.ids, selected := %coalesce({ a: event.ids.0, b: \"\" })"
+        },
+        "idle/on/stations.ToggleFavorite/0": {
+          "behavior": "6dd24cc78a0d2a4e",
+          "contracts": {},
+          "summary": "idle --ToggleFavorite--> favoriting · target := event.id · invoke toggleFavorite({ id: ctx.target })"
+        },
+        "touring/after/0": {
+          "behavior": "13b2241f88b78015",
+          "contracts": {
+            "tourAdvancesAndWraps": "6b091caa8c9d60c6"
+          },
+          "summary": "touring --after 1500ms--> touring · selected := nextStop({ ids: ctx.tour, current: ctx.selected })"
+        },
+        "touring/on/stations.PickDistrict/0": {
+          "behavior": "59c303aeb94d87ba",
+          "contracts": {},
+          "summary": "touring --PickDistrict--> idle · district := event.district"
+        },
+        "touring/on/stations.Search/0": {
+          "behavior": "b7be9675281079ba",
+          "contracts": {},
+          "summary": "touring --Search--> idle · q := event.text"
+        },
+        "touring/on/stations.Select/0": {
+          "behavior": "01c94df09c548eeb",
+          "contracts": {},
+          "summary": "touring --Select--> touring · selected := event.id"
+        },
+        "touring/on/stations.StopTour/0": {
+          "behavior": "08314871aff3edbb",
+          "contracts": {},
+          "summary": "touring --StopTour--> idle"
+        },
+        "touring/on/stations.ToggleFavorite/0": {
+          "behavior": "868504f7f1903fd3",
+          "contracts": {},
+          "summary": "touring --ToggleFavorite--> favoriting · target := event.id · invoke toggleFavorite({ id: ctx.target })"
+        }
+      }
+    },
+    "version": 1
+  },
+  "computed": {
+    "features": {
+      "stations": {
+        "favoriting/invoke/done/0": {
+          "behavior": "20047de786c35fbe",
+          "contracts": {},
+          "summary": "favoriting --done toggleFavorite--> idle"
+        },
+        "favoriting/invoke/failed/Unexpected/0": {
+          "behavior": "83f4c075657f8edf",
+          "contracts": {},
+          "summary": "favoriting --failed toggleFavorite.Unexpected--> idle"
+        },
+        "idle/on/stations.PickDistrict/0": {
+          "behavior": "ffcf89e4ce7bf63e",
+          "contracts": {},
+          "summary": "idle --PickDistrict--> idle · district := event.district"
+        },
+        "idle/on/stations.Search/0": {
+          "behavior": "ee259a74de828247",
+          "contracts": {},
+          "summary": "idle --Search--> idle · q := event.text"
+        },
+        "idle/on/stations.Select/0": {
+          "behavior": "3f8666837c63ed45",
+          "contracts": {},
+          "summary": "idle --Select--> idle · selected := event.id"
+        },
+        "idle/on/stations.StartTour/0": {
+          "behavior": "8c6583f90b638022",
+          "contracts": {
+            "startsTour": "237d95457e97d8f0"
+          },
+          "summary": "idle --StartTour--> touring · if event.ids.length gt 0 · tour := event.ids, selected := %coalesce({ a: event.ids.0, b: \"\" })"
+        },
+        "idle/on/stations.ToggleFavorite/0": {
+          "behavior": "6dd24cc78a0d2a4e",
+          "contracts": {},
+          "summary": "idle --ToggleFavorite--> favoriting · target := event.id · invoke toggleFavorite({ id: ctx.target })"
+        },
+        "touring/after/0": {
+          "behavior": "13b2241f88b78015",
+          "contracts": {
+            "tourAdvancesAndWraps": "6b091caa8c9d60c6"
+          },
+          "summary": "touring --after 1500ms--> touring · selected := nextStop({ ids: ctx.tour, current: ctx.selected })"
+        },
+        "touring/on/stations.PickDistrict/0": {
+          "behavior": "59c303aeb94d87ba",
+          "contracts": {},
+          "summary": "touring --PickDistrict--> idle · district := event.district"
+        },
+        "touring/on/stations.Search/0": {
+          "behavior": "b7be9675281079ba",
+          "contracts": {},
+          "summary": "touring --Search--> idle · q := event.text"
+        },
+        "touring/on/stations.Select/0": {
+          "behavior": "01c94df09c548eeb",
+          "contracts": {},
+          "summary": "touring --Select--> touring · selected := event.id"
+        },
+        "touring/on/stations.StopTour/0": {
+          "behavior": "08314871aff3edbb",
+          "contracts": {},
+          "summary": "touring --StopTour--> idle"
+        },
+        "touring/on/stations.ToggleFavorite/0": {
+          "behavior": "868504f7f1903fd3",
+          "contracts": {},
+          "summary": "touring --ToggleFavorite--> favoriting · target := event.id · invoke toggleFavorite({ id: ctx.target })"
+        }
+      }
+    },
+    "version": 1
+  },
+  "stale": {}
+}
