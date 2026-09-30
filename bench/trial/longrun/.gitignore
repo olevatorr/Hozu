@@ -2,3 +2,4 @@ results/*/*/*.jsonl
 results/*/*/*.err
 results/*/*/*.txt
 !results/*/*/metrics.jsonl
+!results/*/*/metrics-v2.jsonl

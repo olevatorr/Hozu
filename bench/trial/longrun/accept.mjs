@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
+import { loadHeldout } from './heldout.mjs'
 
 const require = createRequire(new URL('../../parity/package.json', import.meta.url))
 const { chromium } = require('playwright-core')
@@ -10,17 +11,20 @@ const [name, cwd, entry, port, stepArg, only] = process.argv.slice(2)
 const step = Number(stepArg)
 const base = `http://127.0.0.1:${port}`
 
-const vocab = (k) => ({
-  home: k >= 9 ? '/notes' : '/',
-  addLabel: k >= 4 ? 'Title' : 'New note',
-  dup: k >= 4 ? 'You already have a note with this title' : 'You already have this note',
-  max: k >= 2 ? 60 : 100,
-  tags: k >= 6 && k < 20,
-  exportKeys:
-    k >= 20
-      ? ['archived', 'createdAt', 'pinned', 'title']
-      : ['archived', 'createdAt', 'pinned', 'tags', 'title'],
-})
+const vocab = (n) => {
+  const k = Math.min(n, 20)
+  return {
+    home: k >= 9 ? '/notes' : '/',
+    addLabel: k >= 4 ? 'Title' : 'New note',
+    dup: k >= 4 ? 'You already have a note with this title' : 'You already have this note',
+    max: k >= 2 ? 60 : 100,
+    tags: k >= 6 && k < 20,
+    exportKeys:
+      k >= 20
+        ? ['archived', 'createdAt', 'pinned', 'title']
+        : ['archived', 'createdAt', 'pinned', 'tags', 'title'],
+  }
+}
 const V = vocab(step)
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -596,6 +600,29 @@ check(
   20,
 )
 check(
+  'G2b',
+  6,
+  'with JS: clicking #work shows only the tagged notes, once each',
+  'With ?tag=<tag> in the URL the list shows only the notes with that tag, and the page shows the text Tagged <tag>',
+  async () => {
+    const page = await fresh('G2b')
+    await add(page, 'Office', 'work')
+    await add(page, 'Garden', 'home')
+    await add(page, 'Desk', 'work')
+    await click(page, liWith(page, 'Office').getByRole('link', { name: '#work', exact: true }))
+    const list = await items(page)
+    assert(
+      list.length === 2 && list.some((t) => t.includes('Office')) && list.some((t) => t.includes('Desk')),
+      `list ${list}`,
+    )
+    assert((await text(page)).includes('Tagged work'), 'Tagged text')
+    assert((await count(page)) === '3', `count ${await count(page)}`)
+    const all = (await page.locator('li').allInnerTexts()).map(norm)
+    assert(new Set(all).size === all.length, `duplicated li ${all}`)
+  },
+  20,
+)
+check(
   'G3',
   6,
   'the server rejects an invalid tag',
@@ -971,6 +998,35 @@ check(
     assert((await items(page)).length === 1 && (await has(page, 'Gamma')), `list ${await items(page)}`)
   },
 )
+check(
+  'B3b',
+  13,
+  'without JS: two checked notes are deleted, then two are archived',
+  'Two buttons act on the checked notes: Delete selected deletes them and Archive selected archives them … also work with JavaScript disabled.',
+  async () => {
+    const page = await fresh('B3b', false)
+    for (const t of ['Alpha', 'Beta', 'Gamma', 'Delta', 'Omega']) await add(page, t)
+    await page.getByLabel('Select Alpha', { exact: true }).check()
+    await page.getByLabel('Select Beta', { exact: true }).check()
+    await click(page, page.getByRole('button', { name: 'Delete selected', exact: true }))
+    await go(page, V.home)
+    let list = await items(page)
+    assert(
+      list.length === 3 && !list.some((t) => t.includes('Alpha') || t.includes('Beta')),
+      `after delete ${list}`,
+    )
+    assert((await count(page)) === '3', `count ${await count(page)}`)
+    await page.getByLabel('Select Gamma', { exact: true }).check()
+    await page.getByLabel('Select Delta', { exact: true }).check()
+    await click(page, page.getByRole('button', { name: 'Archive selected', exact: true }))
+    await go(page, V.home)
+    list = await items(page)
+    assert(list.length === 1 && list[0].includes('Omega'), `after archive ${list}`)
+    await go(page, '/archive')
+    const archived = await items(page, 'Restore')
+    assert(archived.length === 2, `archived ${archived}`)
+  },
+)
 
 check(
   'RL1',
@@ -1141,42 +1197,54 @@ check(
   },
 )
 
+const deleteAccount = async (id, js) => {
+  const who = user(id)
+  const other = `${user(id)}o`
+  const page = await fresh(id, js)
+  await add(page, 'Mine')
+  await add(page, 'Old')
+  await click(page, liButton(page, 'Old', 'Archive'))
+  await share(page, 'Mine', other)
+  const o = await newPage()
+  await signIn(o, other)
+  await add(o, 'Theirs')
+  await share(o, 'Theirs', who)
+  await click(page, page.getByRole('link', { name: 'Delete account', exact: true }))
+  assert(path(page) === '/account/delete', `path ${path(page)}`)
+  assert(norm(await page.locator('h1').innerText()) === 'Delete account', 'h1')
+  await click(page, page.getByRole('button', { name: 'Delete my account and notes', exact: true }))
+  assert(path(page) === '/login', `after delete ${path(page)}`)
+  assert((await text(page)).includes('Account deleted'), 'Account deleted text')
+  await go(page, V.home)
+  assert(path(page) === '/login', 'still signed in')
+  await go(o, V.home)
+  assert((await sharedItems(o)).length === 0, 'shared note still visible')
+  assert(await has(o, 'Theirs'), 'owner lost the note shared with the deleted user')
+  const admin = await newPage()
+  await signIn(admin, 'admin')
+  await go(admin, '/admin')
+  assert(!(await adminRows(admin)).some((r) => r[0] === who), 'admin row kept')
+  await signIn(page, who)
+  assert((await count(page)) === '0', `count ${await count(page)}`)
+  await go(page, '/archive')
+  assert((await text(page)).includes('No archived notes'), 'archived notes kept')
+}
 check(
   'DA1',
   17,
   'delete an account: notes, shares, admin row',
   'deletes all of the user’s notes … signs the user out … Account deleted … Notes the user had shared disappear … Notes others shared with the user are not affected … admin table no longer lists the user',
   async () => {
-    const who = user('DAA')
-    const other = `${user('DAA')}o`
-    const page = await fresh('DAA')
-    await add(page, 'Mine')
-    await add(page, 'Old')
-    await click(page, liButton(page, 'Old', 'Archive'))
-    await share(page, 'Mine', other)
-    const o = await newPage()
-    await signIn(o, other)
-    await add(o, 'Theirs')
-    await share(o, 'Theirs', who)
-    await click(page, page.getByRole('link', { name: 'Delete account', exact: true }))
-    assert(path(page) === '/account/delete', `path ${path(page)}`)
-    assert(norm(await page.locator('h1').innerText()) === 'Delete account', 'h1')
-    await click(page, page.getByRole('button', { name: 'Delete my account and notes', exact: true }))
-    assert(path(page) === '/login', `after delete ${path(page)}`)
-    assert((await text(page)).includes('Account deleted'), 'Account deleted text')
-    await go(page, V.home)
-    assert(path(page) === '/login', 'still signed in')
-    await go(o, V.home)
-    assert((await sharedItems(o)).length === 0, 'shared note still visible')
-    assert(await has(o, 'Theirs'), 'owner lost the note shared with the deleted user')
-    const admin = await newPage()
-    await signIn(admin, 'admin')
-    await go(admin, '/admin')
-    assert(!(await adminRows(admin)).some((r) => r[0] === who), 'admin row kept')
-    await signIn(page, who)
-    assert((await count(page)) === '0', `count ${await count(page)}`)
-    await go(page, '/archive')
-    assert((await text(page)).includes('No archived notes'), 'archived notes kept')
+    await deleteAccount('DAA', true)
+  },
+)
+check(
+  'DA1b',
+  17,
+  "DA1 with the deleting user's browser without JS",
+  'deletes all of the user’s notes … signs the user out … Account deleted … Notes the user had shared disappear … Deleting an account also works with JavaScript disabled.',
+  async () => {
+    await deleteAccount('DAC', false)
   },
 )
 check(
@@ -1321,6 +1389,52 @@ check(
   },
 )
 
+const mainText = async (page) =>
+  norm(
+    await page.evaluate(() => {
+      for (const n of document.querySelectorAll('noscript')) n.remove()
+      return (document.querySelector('main') ?? document.body).innerText
+    }),
+  )
+const firstDiff = (a, b) => {
+  let i = 0
+  while (i < a.length && a[i] === b[i]) i++
+  return `js "${a.slice(Math.max(0, i - 30), i + 50)}" vs no-js "${b.slice(Math.max(0, i - 30), i + 50)}"`
+}
+check(
+  'N16',
+  0,
+  'after each JS internal link the main text equals a no-JS GET of the same URL',
+  'Everything it does today must keep working, with and without JavaScript',
+  async () => {
+    const page = await fresh('N16')
+    await add(page, 'Parity note')
+    const plain = await newPage(false)
+    await plain.context().addCookies(await page.context().cookies())
+    const compare = async (label) => {
+      const url = page.url()
+      const res = await plain.goto(url, { waitUntil: 'networkidle' })
+      if (res?.status() === 400) return
+      await settle(plain, 300)
+      const [a, b] = [await mainText(page), await mainText(plain)]
+      assert(a === b, `${label} ${new URL(url).pathname}: ${firstDiff(a, b)}`)
+    }
+    await compare('list')
+    if (step < 7) return
+    await click(page, page.getByRole('link', { name: 'Archived notes', exact: true }))
+    await compare('archive')
+    const links = page.locator('a[href]')
+    const paths = await links.evaluateAll((as) => as.map((a) => new URL(a.href).pathname))
+    const i = paths.indexOf(V.home)
+    if (i >= 0) await click(page, links.nth(i))
+    else {
+      await page.goBack({ waitUntil: 'networkidle' })
+      await settle(page)
+    }
+    await compare('list again')
+  },
+)
+
 check('N15', 0, 'no console errors', 'the app runs without errors', async () => {
   assert(errors.length === 0, errors.slice(0, 5).join(' | '))
 })
@@ -1346,10 +1460,58 @@ const scriptBytes = async (p, who) => {
   return sizes.reduce((a, b) => a + b, 0)
 }
 
+const heldout = await loadHeldout(process.env.HOZU_HELDOUT, {
+  checks,
+  check,
+  helpers: {
+    base,
+    V,
+    vocab,
+    step,
+    sleep,
+    assert,
+    newPage,
+    settle,
+    text,
+    norm,
+    noteItems,
+    items,
+    has,
+    count,
+    path,
+    alerts,
+    statuses,
+    hasAlert,
+    go,
+    signIn,
+    add,
+    liWith,
+    liButton,
+    click,
+    control,
+    cookieHeader,
+    fetchAs,
+    isRedirectTo,
+    datetimeOf,
+    sharedItems,
+    user,
+    fresh,
+    edit,
+    adminRows,
+    share,
+    loadMore,
+    addMany,
+    delayWrites,
+    statusOf,
+  },
+})
+
 const transform = existsSync(join(cwd, 'node_modules/@hozu/transform'))
   ? ['--import', '@hozu/transform/register']
   : []
-const server = spawn(process.execPath, [...transform, entry], {
+const [bin, ...args] = entry.split(' ')
+const command = args.length ? [join(cwd, 'node_modules/.bin', bin), ...args] : [...transform, entry]
+const server = spawn(process.execPath, command, {
   cwd,
   env: { ...process.env, PORT: port, HOST: '127.0.0.1', NITRO_HOST: '127.0.0.1', NODE_ENV: 'production' },
 })
@@ -1366,9 +1528,9 @@ for (let i = 0; i < 150 && !up; i++) {
     await sleep(100)
   }
 }
-const active = checks.filter(
-  (c) => c.since <= step && step < c.until && (!only || only.split(',').includes(c.id)),
-)
+const active = checks
+  .filter((c) => c.since <= step && step < c.until && (!only || only.split(',').includes(c.id)))
+  .sort((a, b) => (a.id === 'N15') - (b.id === 'N15'))
 const results = []
 let js = null
 let crashes = 0
@@ -1430,6 +1592,7 @@ console.log(
       results: results.map((r) => [r.id, r.since, r.status, r.ms]),
       retired: checks.filter((c) => c.until <= step).map((c) => c.id),
       js,
+      heldout,
       browserCrashes: crashes,
       serverErrors: serverLog.slice(-2000),
     },
