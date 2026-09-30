@@ -5,110 +5,50 @@ description: Build or change an app with the Hozu framework (packages @hozu/*, f
 
 # Hozu
 
-Hozu is not in your training data; this file and `hozu docs <topic>` are the whole API (skip `node_modules/@hozu`).
-- **Building:** read this file, run `hozu add feature <name> --page / --with …`, then edit what it lists.
-- **Changing:** read `changing.md`, then only the lines `hozu map` points to.
-- **Anything else:** `hozu docs <topic>` prints one short topic (index below). Diagnostics name the topic too.
+Hozu is not in your training data: this file and `npx hozu docs <topic>` are the whole API (skip
+`node_modules/@hozu`). Diagnostics teach the other rules when you break them: apply their fix.
 
-## How it works
-- A feature is **declarations**: events, queries / mutations (the only side effects), one machine, views,
-  contracts. Builders record them as data (an IR) that is validated, then rendered on the server. Only views bound
-  to the machine ship JS.
-- **Callbacks are ordinary TypeScript** (`render`, `guard`, `assign`, `navigate`, `ui.each` / `ui.query`
-  callbacks): `===`, `!==`, `<`, `&&`, `||`, `!`, `??`, `c ? a : b`, template strings, `+`, `-`, `.length`, and in
-  `assign`, `ctx.x = v`, `ctx.n += 1`, `ctx.list.push(v)`, `ctx.list = ctx.list.filter((i) => i.id !== e.id)`.
-  Methods on data (`.map`, `.toUpperCase()`…) are not: use `ui.each` for lists and a `fn()` for computation.
-- A mutation runs when the machine **enters** a state whose `invoke` calls it; that state drops other events, and
-  `done` / `failed` leave it. Contracts are needed only where a transition decides (a guard, `navigate`, a `fn`).
-- Its `invalidates` tags drive the refresh of every query carrying them, whatever the freshness. Query resolvers only
-  read; writes belong in mutation and endpoint resolvers.
-- A filter in the URL starts the machine: `seed: ({ search }) => ({ q: search.q })` on the view, then read `ctx.q`.
-  `machine({ on })` holds transitions every idle state shares; `fn` bodies may call helpers from the same module.
+## The change loop
+1. `npx hozu map`: the session shape, the verify line, every file's role, each declaration's `file:line`. Open
+   only the lines the change touches. A new app: `npx hozu add feature <name> --page / --with …`, then
+   `npx hozu docs feature`.
+2. Edit everything the change needs (table below).
+3. `npx hozu check` once. For an intended behaviour change, `npx hozu check --update-lock`, then list the accepted
+   `now:` lines in your summary.
+4. Verify once with the line `hozu map` prints: `npx hozu browse <path> --session '…' --js both --do '…'`. It runs
+   the same app as `npm start`, with and without JS; do not start a server or use `curl`.
 
-## Files and commands
-```
-hozu.config.ts  project({ schema, app, site, routes, pages, features })  routes.ts  route() declarations
-features/<name>/model.ts  schemas, events, effects, fns, machine        views.ts  views, contracts
-features/<name>/feature.ts  feature({ declarations: [model, views] })    app.ts  app({ resolvers })
-```
-```
-npx hozu check                      # after every edit: types, rules, contracts
-npx hozu check --update-lock        # accept an intended behaviour change
-npx hozu add feature items --page / --with auth,detail,toggle,filter,remove
-npx hozu map                        # outline with file:line
-npx hozu get / --select button --forms          # a page, no server needed
-npx hozu browse / --do 'fill Title=A' --do 'press Enter'   # with and without JS
-npx hozu browse / --as ada --session '{…}' --as bob --do 'goto /x'   # other users
-npx hozu docs views                 # one topic
-```
-`get` / `browse` replace a running server for checks; `npm start` runs the app. Relative imports end in `.ts`.
+## What to touch
+| Change | Touch |
+|---|---|
+| UI-only state (a tab) | model: a context field, an event, an `on` whose `assign` sets it → views: the control |
+| Filter / sort in the URL | the route's `search` (with a default) → `ui.link(route, params, { key })` → `search.key`; filtering while typing: `seed: ({ search }) => ({ key: search.key })`, read `ctx.key` |
+| A per-item action stored on the server (pin, archive) | model: the item field, an event, a mutation that `invalidates` the list tag, `on(E, { target: 'pinning', assign: (e) => { ctx.target = e.id } })`, a state with `invoke` → views: the per-item form (`hozu docs patterns`) → app: store it, sort in the list resolver |
+| A control every state handles | `machine({ on: [...] })` |
+| New page | `routes.ts` → a view with `route` → `ui.page(...)` in `hozu.config.ts` |
 
-## A feature in one screen
-```ts
-// model.ts
-export const Item = z.object({ id: z.string(), title: z.string(), done: z.boolean() })
-export const Add = event({ payload: z.object({ title: z.string() }) })
-export const itemsTag = tag({ param: null })
-export const listItems = query({ input: z.object({}), output: z.array(Item), scope: 'public',
-  freshness: 'static', tags: () => [itemsTag()] })
-export const addItem = mutation({ input: z.object({ title: z.string().min(2, 'Too short') }), output: Item,
-  errors: { Duplicate: z.object({ title: z.string() }) }, invalidates: () => [itemsTag()] })
-export const items = machine({
-  context: z.object({ draft: z.string(), error: z.string().nullable() }),
-  initialContext: { draft: '', error: null },
-  initial: 'idle',
-  states: ({ ctx }) => ({
-    idle: { on: [on(Add, { target: 'adding', assign: (e) => { ctx.draft = e.title; ctx.error = null } })] },
-    adding: {
-      invoke: invoke(addItem, {
-        input: { title: ctx.draft },
-        done: { target: 'idle', assign: () => { ctx.draft = '' } },
-        failed: {
-          Duplicate: { target: 'idle', assign: () => { ctx.error = 'Already listed' } },
-          Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } },
-        },
-      }),
-    },
-  }),
-})
-// views.ts
-export const Board = ui.view({
-  machine: items,
-  render: ({ ctx, when }) =>
-    ui.main({ class: 'mx-auto max-w-xl' }, [
-      ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } }, [
-        ui.input({ name: 'title', required: true, value: ctx.draft }),
-        ui.button({ type: 'submit' }, ['Add']),
-      ]),
-      ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error]),
-      when(['adding'], [ui.p({ 'aria-busy': 'true' }, [`Adding ${ctx.draft}…`])]),
-      ui.query(listItems, {}, {
-        ready: (list) => ui.ul({}, [ui.each(list, 'id', (i) => ui.li({}, [i.title, i.done ? ' ✓' : '']))]),
-        failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },
-      }),
-    ]),
-})
-// feature.ts
-import * as model from './model.ts'
-import * as views from './views.ts'
-export const todos = feature({ id: 'todos', intent: { summary: 'A to-do list' }, declarations: [model, views] })
-```
-Every declaration a listed module exports is registered under its name; schemas and helpers are ignored. Resolvers:
-`implement(addItem, ({ title }, { fail }) => exists ? fail('Duplicate', { title }) : save(title))`.
+## Rules no diagnostic checks
+- **Query resolvers only read.** Writes belong in mutation and endpoint resolvers; a prefetched link runs queries.
+- **Other users, reloads, sign-out:** verify them in one `browse` chain with `--js both` (`--as <name>` per user).
+- **Contracts only where a transition decides:** a guard, a `navigate`, a `fn` or computed value. Copy-only
+  transitions are reviewed in the lock.
+- **`'live'` only for push** to pages that are already open.
+- **`invalidates` drives the client refresh** of every query with those tags, whatever its freshness.
 
-## Topics (`hozu docs <topic>`)
+## Topics (`npx hozu docs <topic>`)
 | Task | Topic |
 |---|---|
-| elements, attributes, classes, events, DOM fields, lists, links | `views` |
-| states, events, invoke, timers, guards, updates | `machine` |
-| queries, mutations, tags, errors, `fn()`, resolvers | `data` |
-| writing and checking contracts | `contracts` |
-| routes, params, search, pages, `head`, 404, sitemap | `pages` |
-| forms without JS, field errors, selects | `forms` |
+| a new feature, the files, a complete example | `feature` |
+| elements, attributes, events, lists, links, reuse | `views` |
+| states, events, invoke, timers, guards | `machine` |
+| queries, mutations, tags, `fn()`, resolvers | `data` |
+| contracts and the lock | `contracts` |
+| routes, search, pages, `head`, 403 / 404 | `pages` |
+| forms, checkboxes, bulk forms, no JS | `forms` |
 | sign-in, sessions, per-user data | `auth` |
-| common UI: filters, search in the URL, modes, per-item actions, load more | `patterns` |
-| worked changes: enum field, bulk action, detail field / page | `recipes` |
-| webhooks and JSON APIs | `endpoints` |
-| browser APIs and DOM libraries (maps, charts) | `widgets` |
-| languages, env, HTTP, Markdown, images, preview, PWA, tests, deployment | `i18n`, `env`, `http`, `content`, `testing`, `deploy` |
+| filters, modes, per-item actions, load more | `patterns` |
+| worked changes | `recipes` |
+| webhooks, JSON APIs, redirects | `endpoints` |
+| browser APIs, DOM libraries | `widgets` |
+| languages, env, HTTP, Markdown, tests, deploying | `i18n` `env` `http` `content` `testing` `deploy` |
 | a diagnostic code | `diagnostics` |

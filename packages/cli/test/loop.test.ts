@@ -232,6 +232,20 @@ describe('the agent loop (ADR 0027)', () => {
     }
     const notes = await run(['map'], join(root, 'examples', 'notes'))
     expect(notes.stdout).toMatch(/^ {2}parts itemForm features\/notes\/views\.ts:\d+$/m)
+    expect(notes.stdout.length).toBeLessThan(3584)
+  })
+
+  it('starts with the session shape, the verify line and the files with their roles (ADR 0043 K)', async () => {
+    const notes = await run(['map'], join(root, 'examples', 'notes'))
+    expect(notes.stdout.split('\n').slice(0, 4)).toEqual([
+      'session { user: string }',
+      `verify npx hozu browse / --session '{"user":"ada"}' --js both --do '…'`,
+      'files',
+      '  app.ts app resolvers',
+    ])
+    expect(notes.stdout).toMatch(/^ {2}features\/notes\/model\.ts .*\bmachine\b/m)
+    const bookmarks = await run(['map'], join(root, 'examples', 'bookmarks'))
+    expect(bookmarks.stdout).toMatch(/^session none\nverify npx hozu browse \/ --js both --do '…'\n/)
   })
 
   it('shows attributes and forms without a server, and lists the texts a scaffold wants edited', async () => {
@@ -408,9 +422,9 @@ describe('hozu add widget (ADR 0037 D5)', () => {
 })
 
 describe('the guide compiles (ADR 0037 D2)', () => {
-  it("SKILL.md's feature example checks clean and works in a fresh app", async () => {
+  it("the feature topic's example checks clean and works in a fresh app", async () => {
     const app = await freshApp()
-    const skill = readFileSync(`${skillSource}/SKILL.md`, 'utf8')
+    const skill = readFileSync(`${skillSource}/topics/feature.md`, 'utf8')
     const block = /## A feature in one screen\n```ts\n([\s\S]*?)```/.exec(skill)![1]!
     const resolver = /`(implement\(addItem, [^`]*)`/.exec(skill)![1]!
     mkdirSync(join(app, 'features/todos'), { recursive: true })

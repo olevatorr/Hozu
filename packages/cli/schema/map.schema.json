@@ -5,6 +5,21 @@
     "MapOutput": {
       "type": "object",
       "properties": {
+        "session": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "verify": {
+          "type": "string"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MapFile"
+          }
+        },
         "routes": {
           "type": "array",
           "items": {
@@ -19,8 +34,30 @@
         }
       },
       "required": [
+        "session",
+        "verify",
+        "files",
         "routes",
         "features"
+      ],
+      "additionalProperties": false
+    },
+    "MapFile": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "file",
+        "roles"
       ],
       "additionalProperties": false
     },

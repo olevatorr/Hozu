@@ -236,7 +236,15 @@ export interface MapFeature {
   contractsAt: string | null
 }
 
+export interface MapFile {
+  file: string
+  roles: string[]
+}
+
 export interface MapOutput {
+  session: string | null
+  verify: string
+  files: MapFile[]
   routes: MapRoute[]
   features: MapFeature[]
 }

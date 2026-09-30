@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -16,6 +16,63 @@ const has = (path: string) =>
 const base = { name: 'demo', version: '0.1.0', runner: 'pnpm exec' as const, skillSource }
 
 const repo = (path: string) => readFile(fileURLToPath(new URL(`../../../${path}`, import.meta.url)), 'utf8')
+
+describe('SKILL.md (ADR 0043 K)', () => {
+  const skillFile = () => repo('.claude/skills/hozu/SKILL.md')
+
+  it('fits 4 096 B with its frontmatter and holds the rules no diagnostic checks', async () => {
+    const skill = await skillFile()
+    expect(Buffer.byteLength(skill)).toBeLessThanOrEqual(4096)
+    expect(skill.startsWith('---\nname: hozu\n')).toBe(true)
+    for (const rule of [
+      '## The change loop',
+      'npx hozu map',
+      'npx hozu check --update-lock',
+      "--session '…' --js both",
+      '## What to touch',
+      '| A per-item action stored on the server',
+      '**Query resolvers only read.**',
+      'in one `browse` chain with `--js both`',
+      '**Contracts only where a transition decides:**',
+      "**`'live'` only for push**",
+      '**`invalidates` drives the client refresh**',
+    ])
+      expect(skill).toContain(rule)
+  })
+
+  it('leaves what a diagnostic teaches to that diagnostic', async () => {
+    const skill = await skillFile()
+    for (const taught of [
+      'formAll',
+      'formRef',
+      'head.failed',
+      'part(',
+      "'request'",
+      "'static'",
+      'ui.if',
+      'op.',
+    ])
+      expect(skill).not.toContain(taught)
+    expect(skill).not.toContain('changing.md')
+    expect(skill).not.toContain('hozu post')
+  })
+
+  it('indexes exactly the topics hozu docs prints', async () => {
+    const skill = await skillFile()
+    const index = skill.slice(skill.indexOf('## Topics'))
+    const rows = index.split('\n').filter((l) => l.startsWith('| ') && !l.startsWith('| Task'))
+    const named = rows.flatMap((r) =>
+      [
+        ...r
+          .split('|')
+          .at(-2)!
+          .matchAll(/`([a-z0-9]+)`/g),
+      ].map((m) => m[1]),
+    )
+    const topics = (await readdir(join(skillSource, 'topics'))).map((f) => f.replace(/\.md$/, ''))
+    expect([...new Set(named)].sort()).toEqual(topics.sort())
+  })
+})
 
 describe('the 0.8 guide (ADR 0043 K)', () => {
   it('leaves the loop and the contract rule to SKILL.md', async () => {

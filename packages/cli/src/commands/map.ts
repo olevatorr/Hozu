@@ -1,6 +1,13 @@
 import { relative } from 'node:path'
-import { type BuildResult, type Freshness, type JsonSchema, resolveSource } from '@hozu/core/ir'
-import type { MapFeature, MapOutput, MapState } from '../contract.ts'
+import {
+  appModuleOf,
+  type BuildResult,
+  type Freshness,
+  type JsonSchema,
+  type ProjectIR,
+  resolveSource,
+} from '@hozu/core/ir'
+import type { MapFeature, MapFile, MapOutput, MapState } from '../contract.ts'
 import type { Loaded } from '../load.ts'
 
 const local = (ref: string) => ref.slice(ref.indexOf('.') + 1)
@@ -12,6 +19,72 @@ const fieldsOf = (schema: JsonSchema | undefined): string[] => {
 }
 
 const freshnessText = (f: Freshness) => ('seconds' in f ? `${f.kind} ${f.seconds}s` : f.kind)
+
+type Schema = {
+  type?: string | string[]
+  properties?: Record<string, Schema>
+  required?: string[]
+  items?: Schema
+  enum?: unknown[]
+  const?: unknown
+  anyOf?: Schema[]
+}
+
+export function shapeOf(schema: Schema): string {
+  if (schema.enum) return schema.enum.map((v) => JSON.stringify(v)).join(' | ')
+  if ('const' in schema) return JSON.stringify(schema.const)
+  if (schema.anyOf) return schema.anyOf.map(shapeOf).join(' | ')
+  const type = Array.isArray(schema.type) ? schema.type.join(' | ') : schema.type
+  if (type === 'object' && schema.properties) {
+    const req = new Set(schema.required ?? [])
+    const fields = Object.entries(schema.properties).map(
+      ([k, v]) => `${k}${req.has(k) ? '' : '?'}: ${shapeOf(v)}`,
+    )
+    return `{ ${fields.join(', ')} }`
+  }
+  if (type === 'array') return `${shapeOf(schema.items ?? {})}[]`
+  return type ?? 'unknown'
+}
+
+export function sampleOf(schema: Schema): unknown {
+  if (schema.enum) return schema.enum[0]
+  if ('const' in schema) return schema.const
+  if (schema.anyOf) return sampleOf(schema.anyOf.find((s) => s.type !== 'null') ?? {})
+  const type = Array.isArray(schema.type) ? schema.type.find((t) => t !== 'null') : schema.type
+  if (type === 'object')
+    return Object.fromEntries(
+      Object.entries(schema.properties ?? {})
+        .filter(([k]) => schema.required?.includes(k))
+        .map(([k, v]) => [k, sampleOf(v)]),
+    )
+  if (type === 'array') return []
+  if (type === 'number' || type === 'integer') return 1
+  if (type === 'boolean') return false
+  return 'ada'
+}
+
+const verifyLine = (ir: ProjectIR) => {
+  const paths = Object.keys(ir.pages).map((id) => ir.routes[id]!.path)
+  const path = paths.find((p) => !p.includes(':')) ?? paths[0] ?? '/'
+  const session = ir.session ? ` --session '${JSON.stringify(sampleOf(ir.session as Schema))}'` : ''
+  return `npx hozu browse ${path}${session} --js both --do '…'`
+}
+
+function filesOf(build: BuildResult, cwd: string, app: string | null): MapFile[] {
+  const roles = new Map<string, Set<string>>()
+  for (const [pointer, source] of Object.entries(build.sources)) {
+    const seg = pointer.split('/')
+    const role = seg[1] === 'features' ? (seg[3] ?? 'feature') : seg[1]!
+    const file = relative(cwd, source.file)
+    if (!roles.has(file)) roles.set(file, new Set())
+    roles.get(file)!.add(role)
+  }
+  if (app) roles.set(relative(cwd, app), new Set(['app', 'resolvers']))
+  const rank = (file: string) => (file.includes('/') ? 1 : 0)
+  return [...roles]
+    .map(([file, set]) => ({ file, roles: [...set] }))
+    .sort((a, b) => rank(a.file) - rank(b.file) || a.file.localeCompare(b.file))
+}
 
 export function runMap(loaded: Loaded, cwd: string): MapOutput {
   const build: BuildResult = loaded.build(true)
@@ -107,13 +180,25 @@ export function runMap(loaded: Loaded, cwd: string): MapOutput {
       contractsAt: at(`${base}/contracts/${Object.keys(f.contracts)[0] ?? ''}`),
     }
   })
-  return { routes, features }
+  return {
+    session: ir.session ? shapeOf(ir.session as Schema) : null,
+    verify: verifyLine(ir),
+    files: filesOf(build, cwd, appModuleOf(loaded.project)),
+    routes,
+    features,
+  }
 }
 
 const where = (s: string | null) => (s ? `  ${s}` : '')
 
 export function describeMap(out: MapOutput): string {
-  const lines: string[] = ['routes']
+  const lines: string[] = [
+    `session ${out.session ?? 'none'}`,
+    `verify ${out.verify}`,
+    'files',
+    ...out.files.map((f) => `  ${f.file} ${f.roles.join(' ')}`),
+    'routes',
+  ]
   for (const r of out.routes)
     lines.push(
       `  ${r.id} ${r.path}${r.search.length ? `?${r.search.join('&')}` : ''} → ${r.views.map(local).join(', ') || '(no page)'}${r.head ? ` · head ${local(r.head)}` : ''}${where(r.at)}`,
