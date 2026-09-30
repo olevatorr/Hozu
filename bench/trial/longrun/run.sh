@@ -9,6 +9,7 @@ TGZ="$R/tgz"
 NODE_BIN="${NODE_BIN:-$HOME/.nvm/versions/node/v22.22.1/bin}"
 export PATH="$NODE_BIN:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 export CHROMIUM_PATH="${CHROMIUM_PATH:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
+export SESSION_SECRET="${SESSION_SECRET:-trial-0021-deployment-session-secret-0123456789}"
 for v in $(env | grep -o '^ORCA_[A-Z_]*'); do unset "$v"; done
 WAIT_VOID="${WAIT_VOID:-1800}"
 mkdir -p "$R/bin"

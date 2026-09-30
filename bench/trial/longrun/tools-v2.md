@@ -21,6 +21,9 @@
 - **`accept.mjs`:** new ids B3b (13), G2b (6–19), DA1b (17), N16 (0); `HOZU_HELDOUT` loads a held-out module
   (`heldout.mjs`, contract in `~/hozu-trial-0021/heldout/CONTRACT.md`); `vocab(k)` for k > 20 is step 20; N15 always
   runs last; an entry with a space (`hozu serve`) runs `node_modules/.bin/<bin>`.
+- **`SESSION_SECRET`:** the acceptance plays the deployment, so `accept.mjs` gives the server a fixed test secret
+  unless the environment sets one, and `run.sh` exports the same value to the agent (0.8 refuses to start in
+  production without it; apps keep no hard-coded fallback). Found in the 0.8 reference replay (PH).
 - **`run.sh`:** `FROM_TAG`, `FROM_APP` (clone when the app is missing), `RESULTS`, `CHANGES`; the entry comes from
   `entry.mjs` (`hozu serve` when `scripts.start` is `hozu serve`, else `serve.ts`).
 - **`report.mjs`:** `--results`, `--from`, `--to`, `--svg`, `--title`, `--metrics`; the defaults reproduce trial 0020's

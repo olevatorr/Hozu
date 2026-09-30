@@ -1516,7 +1516,14 @@ const [exe, command] = args.length
   : [process.execPath, [...transform, entry]]
 const server = spawn(exe, command, {
   cwd,
-  env: { ...process.env, PORT: port, HOST: '127.0.0.1', NITRO_HOST: '127.0.0.1', NODE_ENV: 'production' },
+  env: {
+    SESSION_SECRET: 'trial-0021-deployment-session-secret-0123456789',
+    ...process.env,
+    PORT: port,
+    HOST: '127.0.0.1',
+    NITRO_HOST: '127.0.0.1',
+    NODE_ENV: 'production',
+  },
 })
 let serverLog = ''
 server.stderr.on('data', (d) => {
