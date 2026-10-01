@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from 'node:child_process'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
@@ -202,6 +203,31 @@ record(
   '',
   65_000,
 )
+
+const report = join(tmpdir(), `hozu-browse-budget-${process.pid}.json`)
+const browse = spawnSync(
+  join(root, 'node_modules/.bin/vitest'),
+  ['run', 'packages/cli/test/browse.test.ts'],
+  {
+    cwd: root,
+    encoding: 'utf8',
+    env: { ...process.env, HOZU_BUDGET: '1', HOZU_BUDGET_REPORT: report },
+  },
+)
+if (existsSync(report)) {
+  record(
+    'B1',
+    'hozu browse tests, alone: slowest run (both modes)',
+    JSON.parse(readFileSync(report, 'utf8')).slowest,
+    'ms',
+    20_000,
+  )
+  rmSync(report)
+  if (browse.status !== 0) {
+    results.at(-1)!.ok = false
+    console.log(browse.stdout.slice(-2000))
+  }
+} else console.log(`B1 skipped: ${browse.status === 0 ? 'no Chrome' : browse.stdout.slice(-2000)}`)
 
 const bytes = (dir: string): number =>
   readdirSync(dir).reduce((sum, name) => {
