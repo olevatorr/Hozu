@@ -1,7 +1,7 @@
 # ADR 0045 — 0.9: declared UI components (breaking)
 
-- Status: accepted (2026-10-01). The owner took every gate as recommended (G1–G6). Phase 1 (the contract layer) is
-  done; nothing is emitted yet.
+- Status: accepted (2026-10-01). The owner took every gate as recommended (G1–G6). Phase 1 (the contract layer) and
+  phase 2 (record time) are done; see "Phase 2 notes".
 - **Already decided by the owner, in the design dialogue that produced this ADR:**
   - components are declarations, not conventions;
   - `ui.widget` merges into `ui.component({ client })` in a breaking 0.9;
@@ -230,6 +230,88 @@ unchanged.
 - A client component requires `load`, as `ui.widget` did; `emits` is a type error without `client`.
 - The `see:` topics of HZ070–HZ080 point to existing topics until phase 5.
 - `bench/ui/compare.ts` is new: the equivalence check is a script, so the coordinator and later phases rerun it.
+
+## Phase 2 notes (record time)
+Pure components, kits, `UseIR`, G and the notes kit. Client components stay HZ014 until phase 4; the ownership checks
+(HZ072–HZ079, the `!` rules) are phase 3, so this phase only records `added` and `overrides`.
+
+**Moved by the coordinator:** the `@hozu/variants` runtime entry comes from phase 3 into phase 2, so the notes kit is
+written with `tv` now. `@hozu/variants/config` and the `tv.ts` markers stay in phase 3.
+
+**Amendment to the phase 1 contract (approved by the coordinator):** `KitIR` is `{ schemas, components }`
+(`core/src/ir/types.ts:19`). A kit component's `props` and `emits` refs resolve in its kit's `schemas`, as a feature
+component's resolve in `FeatureIR.schemas`, so a kit is self-contained.
+
+**Implementation:**
+
+| What | Where |
+|---|---|
+| G: an operation with no reference operand runs as JavaScript (`plain`) | `core/src/lower.ts:36`, the operators from `:69` |
+| G: a method call passes its receiver and arguments to `lower.method` | `transform/src/transform.ts:587`, `core/src/lower.ts:98` |
+| `ui.component` is a declaration the transform marks (`lower.done`), so an untransformed render is HZ044 | `transform/src/transform.ts:551`, `core/src/build/project.ts:338` |
+| Feature components: `FeatureParts.components`, owner `feature.Name` | `core/src/build/project.ts:54`, `:196`; built at `core/src/build/feature.ts:289` |
+| Kits: registered after the features, before any view is built; HZ013 for a kit id equal to a feature id or repeated | `core/src/build/project.ts:335`, `:499` |
+| `ProjectIR.kits`, built in a scope rooted at `/kits/<id>` | `core/src/build/project.ts:431` |
+| `ComponentIR` (`variants`, `defaults` and `owned` from the tv config, `client: null`) | `core/src/build/components.ts:104`, `owned` at `:79` |
+| The use: owner checks (HZ007, HZ006), variants (HZ071, HZ031), props defaults, slots, `on`, the render, the root checks (HZ014), the root class and `UseIR` | `core/src/build/view.ts:327`; variants at `:259`, the tv root class at `:313` |
+| HZ070: a closed-render context while the render's own nodes are built; caller values suspend it | `core/src/build/scope.ts:216`, `:290`; hooks in `ref` (`:374`), links (`:534`) and messages (`:563`) |
+| A missing `on.x` leaves no handler; a missing slot is dropped from the children inside a render | `core/src/build/view.ts:57`, `:125` |
+| `@hozu/variants`: `createTV`, `tv` from tailwind-variants 3.3.1 with tailwind-merge 3.7.0 | `packages/variants/src/index.ts` |
+| Notes kit | `examples/notes/ui/` (`kit.ts`, `button.ts`, `input.ts`, `field.ts`, `tv.ts`) |
+
+**Choices the ADR did not fix:**
+1. **G, `branch`:** a literal condition returns the chosen branch when it is one child. An empty or several-item
+   branch keeps today's `if` node, because a bare `null` or list is not a valid child (inline it is HZ014). `==` is
+   evaluated as `===`, since the transform maps both to `eq`.
+2. **HZ070 is found while a use is built**, not by reading the render's source: every declaration the render's own
+   nodes reach through `ref`, a link or a message is reported, once per component and declaration, at the first use.
+   Values the caller passed (props, slots, children, `on`) are exempt by identity. A component that is never used is
+   not checked.
+3. **`owned`** is sorted and de-duplicated. The root's `toggle` keys come from calling the render once with a
+   reference as `props` and no slots, children or events; a render that throws there contributes no toggle keys.
+4. **`sourceHash`** is the fingerprint of the tag, the render's source and the tv config (base, slots, variants,
+   defaults, compound variants).
+5. **Props:** omitted fields are filled from the JSON Schema `default`; a field without a default stays absent, and an
+   absent attribute is not rendered. A whole reference passed as `props` is used as is, without defaults.
+6. **`AttrValue` includes `undefined`** (`core/src/builders/ui.ts:78`). The builder already skips an undefined
+   attribute; without it, a render cannot pass an optional prop to an attribute under `exactOptionalPropertyTypes`.
+7. **Variants:** `UseIR.variant` holds strings, defaults included. A boolean tv variant accepts `true` and `false`
+   whichever keys it declares. An unknown key is HZ031 too. The HZ031 and HZ071 fixes are snippets, because a variant
+   has no IR path to patch.
+8. **Other use mistakes are HZ014:** an unknown `ui.use` key, slot or event, and children for a component without
+   `children: true`. A failed use renders nothing (an empty `if`), as a failed branch does.
+9. **Kit diagnostics** carry the kit id as `location.feature`; HZ044 for a kit component points at
+   `/kits/<id>/components/<Name>`.
+10. **The notes kit:** `ui/tv.ts` is `createTV({})` without markers until phase 3. Button has the tones `primary`,
+    `subtle` and `plain` for the three button looks of 0.8; Input owns `rounded border px-3 py-2` and callers add
+    `flex-1` / `w-full`; Field has the tv slots `base` (`space-y-3`), `label` and `error`.
+11. **A component has one root.** Field needs a wrapper element, so it is used in Login only, where the label, the
+    input and the error text are adjacent; the wrapper carries `space-y-3`, so the spacing is unchanged. NotesBoard's
+    error text sits outside its form, so that group stays raw elements: a group that spans a layout boundary cannot be
+    a component.
+12. **`loop.test.ts`** sets a 30 s timeout for its own tests (`vi.setConfig`): two gate runs timed out at 5.0–5.4 s
+    under load, and the file passes alone. The global `testTimeout` is unchanged.
+
+**Proof:**
+- **G:** the three probes in `transform/test/adr0045.test.ts` are `it` and pass. Each was broken once: `cond` without
+  evaluation fails the `===` / `?:` case; `coalesce` fails the `??` and template cases; `method` fails the template
+  case.
+- **HZ070, HZ071:** catalog cases in `validator/test/source-mistakes.test.ts`, each broken once to red.
+- **Inline form:** `core/test/components.test.ts` builds a `ui.use(Button, …)` and the hand-written `<button>` and
+  compares them apart from `use`; it also covers defaults, absent slots and events, tv slots, kits and every
+  diagnostic of this phase.
+- **Equivalence:** `bench/ui/compare.ts` now lets only notes carry kits and components. For notes it removes `use`,
+  compares each `class` as a token set and unwraps the Field use; it also compares every project's routes (`js`,
+  islands, widgets). **11 / 11 equal.** Without the unwrap notes differs, and one changed class makes it differ.
+- **The one difference in notes:** the Field wrapper `account.Login/2/0`. The login form's children were
+  `label, input, p, button` (`/2/0`–`/2/3`); they are now `div[label, input, p], button` (`/2/0/0`–`/2/0/2`, `/2/1`).
+  The rendered text, and the class sets of the label, input, error text and button, are unchanged.
+- **P7:** 7 893 B. No page gains client JavaScript (the routes summary is equal).
+- `hozu check` on notes: types ok, 0 errors, contracts 4/4, lock current.
+- **Gate** (`pnpm gate`): lint clean (5 existing warnings), typecheck clean, 536 tests: 529 passed, 1 expected fail
+  (HZ079), 6 skipped. P1 0.229 ms, P2 261.88 ms with exponent 1.112 (1.141 at the base), P3 223.171 ms, P5 20.6 M/s,
+  P6 2.87 M/s, P7 7 893 B, P9 10 288 req/s, A4 55 663. The first gate run stopped at typecheck on a test fixture (the
+  catalog's tv stub), which was fixed before the second run; bench ran once.
 
 ## A. One declaration: `ui.component`
 ```ts
