@@ -17,6 +17,7 @@ import { buildHttp } from './http.ts'
 import type { Manifest } from './manifest.ts'
 import { buildPages } from './page.ts'
 import { FeatureScope, filePath, IDENTIFIER, type PartUse, ProjectScope } from './scope.ts'
+import { reportSharedParts } from './shared-parts.ts'
 
 export interface BuildResult {
   ir: ProjectIR
@@ -489,6 +490,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     features,
     kits,
   }
+  reportSharedParts(scope, new Set(Object.keys(features)))
   scope.bindings.assetOrder = scope.assetList
   for (const d of scope.diagnostics) d.location.source ??= resolveSource(scope.sources, d.location.pointer)
   return {

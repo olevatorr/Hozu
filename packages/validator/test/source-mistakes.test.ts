@@ -197,6 +197,31 @@ const PropFromRef = ui.view({
   render: ({ ctx }) => ui.main({}, [ui.use(PressButton, { props: { pressed: ctx.on } })]),
 })
 
+const card = part((title: string) => ui.article({ class: 'rounded p-4' }, [title]))
+const SharedCard = ui.component({
+  tag: 'article',
+  styles: tv({ base: 'rounded p-4' }),
+  props: z.object({ title: z.string() }),
+  render: ({ props }) => ui.article({}, [props.title]),
+})
+const cardKit = ui.kit({ id: 'ui', components: [{ SharedCard }] })
+const twoFeatures = (one: () => unknown, two: () => unknown) => {
+  const View = (child: () => unknown) => ui.view({ render: () => ui.main({}, [child() as never]) })
+  return buildProject(
+    project({
+      schema: zodAdapter,
+      routes: { home },
+      pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'Home' }) } })],
+      kits: [cardKit],
+      features: [
+        feature({ id: 'one', intent: { summary: 'one' }, declarations: [{ Home, One: View(one) }] }),
+        feature({ id: 'two', intent: { summary: 'two' }, declarations: [{ Two: View(two) }] }),
+      ],
+    }),
+    { sources: false },
+  ).diagnostics
+}
+
 const verifyWith = (decls: Record<string, unknown>, lock?: unknown) => {
   const build = buildProject(
     project({
@@ -362,6 +387,21 @@ const catalog: SourceMistake[] = [
     stage: 'transform',
     mistake: () => buildWith({ Pressed, Leaky, LeakyUse }),
     fixed: () => buildWith({ Pressed, Closed, ClosedUse }),
+  },
+  {
+    name: 'a part returning a view is inlined by two features',
+    code: 'HZ080',
+    stage: 'transform',
+    mistake: () =>
+      twoFeatures(
+        () => card('Hi'),
+        () => card('Ho'),
+      ),
+    fixed: () =>
+      twoFeatures(
+        () => ui.use(SharedCard, { props: { title: 'Hi' } }),
+        () => ui.use(SharedCard, { props: { title: 'Ho' } }),
+      ),
   },
   {
     name: 'a variant is chosen from machine state',

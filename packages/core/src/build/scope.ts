@@ -4,7 +4,7 @@ import { builtinOf, messageKeyOf } from '../builders/i18n.ts'
 import { operatorFns } from '../builders/operators.ts'
 import { onInline, type PartDecl } from '../builders/part.ts'
 import type { RouteDef } from '../builders/route.ts'
-import { linkOf } from '../builders/ui.ts'
+import { linkOf, type NodeDef } from '../builders/ui.ts'
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import { type At, at, join, resolveAt } from '../canonical/pointer.ts'
 import { i18nFns } from '../i18n/runtime.ts'
@@ -33,6 +33,9 @@ export interface PartUse {
   name: string | null
   source: SourceLoc | null
   features: string[]
+  /** The element the part returns, when it returns one. */
+  root: { tag: string; class: string | null } | null
+  declarations: boolean
 }
 
 export const IDENTIFIER = /^[A-Za-z][A-Za-z0-9_]*$/
@@ -172,6 +175,7 @@ const siteText: Record<EscapeSite[0], string> = {
 const partOf = new WeakMap<object, PartDecl>()
 const reported = new WeakMap<object, Set<object>>()
 let current: PartDecl | null = null
+const active: PartDecl[] = []
 
 const TRUE: GuardExpr = { op: 'and', args: [] }
 const FALSE: GuardExpr = { op: 'or', args: [] }
@@ -251,19 +255,30 @@ export class FeatureScope {
     if (!part) return run()
     const previous = current
     current = part
+    active.push(part)
     try {
       return run()
     } finally {
+      active.pop()
       current = previous
     }
   }
 
   private inline(part: PartDecl, out: unknown, pointer: At): unknown {
     const info = infoOf(part)
+    const returned = infoOf(out)?.kind === 'node' ? (infoOf(out)!.def as NodeDef) : null
     const use = this.project.parts.get(part) ?? {
       name: partNamesOf().get(part) ?? null,
       source: info?.source ?? null,
       features: [],
+      root:
+        returned?.kind === 'el'
+          ? {
+              tag: returned.tag,
+              class: typeof returned.props.class === 'string' ? returned.props.class : null,
+            }
+          : null,
+      declarations: false,
     }
     if (!use.features.includes(this.id)) use.features.push(this.id)
     this.project.parts.set(part, use)
@@ -294,6 +309,10 @@ export class FeatureScope {
   }
 
   private foreign(decl: object, owner: Owner, pointer: At) {
+    for (const part of active) {
+      const use = this.project.parts.get(part)
+      if (use) use.declarations = true
+    }
     if (!current || owner.feature === this.id) return
     const mine = this.project.configs.get(this.id)
     const theirs = this.project.configs.get(owner.feature)
