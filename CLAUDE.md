@@ -14,9 +14,11 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 3. No stringly-typed cross references where a declaration identity is possible.
 4. Closed world: views are constrained `ui()` trees, never arbitrary functions; reusable view logic is a `part()`,
    lowered like a builder callback and inlined at record time, so the IR holds no function (ADR 0043 H).
+   A component's render is closed: it reads only its props, slots, children and `on` handles; JavaScript runs only
+   in a component's declared `client` module (ADR 0045).
    Side effects only via declared `query` / `mutation` / `endpoint`, plus the framework-owned
    `navigate` (on a transition) and `after(ms)` (on a state). Query resolvers only read; writes happen in mutation and
-   endpoint resolvers. That is not checkable: `hozu migrate`, the scaffold and `hozu docs data` enforce it
+   endpoint resolvers. That is not checkable: the scaffold and `hozu docs data` teach it
    (ADR 0043 B). Logic is data: operators and
    assignments in builder callbacks are lowered by `@hozu/transform` to the `op.*` IR (ADR 0039);
    anything else is a named, schema-typed `fn()` (ADR 0002 D1).
@@ -57,7 +59,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `@hozu/cli`, `@hozu/adapter-node` (ISR page cache + tag revalidation), `@hozu/adapter-static`,
   `@hozu/css` (Tailwind v4 bound, compiled from the IR's class candidates, HZ026, ADR 0009),
   `@hozu/dev` (dev server: CSS hot swap, reload on code changes), `@hozu/image` (optional WebP srcset, ADR 0017),
-  `@hozu/content` (Markdown collections, ADR 0020), `@hozu/testing` (render assertions, ADR 0021)
+  `@hozu/content` (Markdown collections, ADR 0020), `@hozu/testing` (render assertions, ADR 0021),
+  `@hozu/bundle` (client component modules, esbuild), `@hozu/variants` (tailwind-variants run at record time;
+  `/config` generates the tailwind-merge config, ADR 0045 D); `@hozu/ui-kit` is reserved for the official kit
 - Every `@hozu/*` package except `@hozu/schema-zod`, `@hozu/css` (Tailwind), `@hozu/bundle` (esbuild),
   `@hozu/image` (sharp), `@hozu/content` (marked, yaml) and `@hozu/variants` (tailwind-variants, tailwind-merge) has zero
   third-party runtime dependencies.
@@ -79,9 +83,15 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `create-hozu --agent claude|agents|both` and `hozu skill`. `pnpm skill` regenerates `example/` and `AGENTS.md`
   (from this file); a test fails when they are stale; `examples/bookmarks` is its verified reference app. Keep both in sync with any API change. Busy states declare `ignore: [Event]` (HZ005, HZ034);
   `ui.dom.value` / `ui.dom.form(name)` may feed enum fields only from literal `<select>`/radio options (HZ033) (ADR 0013).
-- Widgets (ADR 0009): `ui.widget({ tag, props, events, client, load, wraps })` in the feature's `declarations`,
-  `ui.use(W, { props, on, class }, children)`, client module `export default implement<typeof W>(setup)` from
-  `@hozu/core/widget` (type-only import of the declaration). Bundled by `@hozu/bundle` (esbuild), HZ029.
+- Components (ADR 0045; widgets of ADR 0009 merged in): `ui.component({ tag, styles?, props?, slots?, children?,
+  events?, extend?, render })` in a kit (`ui.kit({ id, components, styles? })` in `project({ kits })`, id `ui.Button`)
+  or private to a feature's `declarations` (`notes.Composer`, HZ006). `ui.use(C, { variant, props, slots, on, class },
+  children)` is the only call form. `styles` is a `tv()` result from the kit's `tv.ts` (`hozu add kit`, HZ078 when
+  stale); variants are literals (HZ071); the render is closed (HZ070) and Hozu sets the root class. A caller's
+  `class` sets no owned property except with a trailing `!` (HZ072–HZ077); two classes of one element setting one
+  property is HZ079; a part's view inlined by two features is HZ080. With `client` + `load` (+ `emits`) a component
+  is browser code: `export default implement<typeof C>(setup)` from `@hozu/core/component` (type-only import),
+  bundled by `@hozu/bundle` (`app({ components: bundleComponents })`), HZ029.
 - Server capabilities (ADR 0010): client fetch of new query keys, live queries over SSE, `head.failed`,
   `setSession` with a server-side store (`memorySessions()` by default: opaque signed id, revoked on sign-out;
   production needs `SESSION_SECRET`; ADR 0043 B), `project({ notFound })`, `site.icon` / `themeColor`, uploads via
@@ -94,7 +104,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   hashes), nosniff and rejects cross-site POSTs; `app({ onError, csp })` (ADR 0014).
 - Navigation (ADR 0043 I, supersedes ADR 0015): every internal link is a document navigation with speculation
   prerender and the cross-document View Transition opt-in; state across pages lives in the URL (seed), on the server
-  (queries) or in a widget's own storage. There is no soft navigation and no budget P8.
+  (queries) or in a client component's own storage. There is no soft navigation and no budget P8.
 - HTTP (ADR 0016): the server is `createHandler(options).fetch(Request): Response` in `@hozu/runtime-server`
   (no `node:*` in the runtime import graph; `@hozu/adapter-node` is a bridge + `publicDir`). `project({ http })`:
   `basePath`, `trailingSlash` (308 to the canonical form), `redirects` keyed by path (HZ037), per-route `headers`
@@ -149,7 +159,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - 0.5 (ADR 0037): contracts only for deciding transitions, the lock summarises every transition (`was/now` in HZ018,
   `--update-lock` accepts copy-only changes); states with `invoke` drop unhandled events (listing `ignore` there is
   HZ014) and `done` / `failed` take a state name, a transition or a guarded list; `ui.query` `pending` is optional;
-  `hozu add widget`; `endpoint({ method, path, input, output })` declarations implemented in resolvers (HZ046).
+  `hozu add widget` (0.9: `hozu add component --client`); `endpoint({ method, path, input, output })` declarations implemented in resolvers (HZ046).
 - 0.5 (ADR 0038, 0039): builder callbacks are ordinary TypeScript (`===`, `?:`, `&&`, `??`, template strings, `+`,
   `ctx.x = v`, `+=`, `.push`, the `.filter` removal) lowered by `@hozu/transform` (acorn + Node's type stripping,
   newline-preserving; Node `--import @hozu/transform/register`, `hozuTransform()` for Vite / esbuild, the CLI
@@ -157,8 +167,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   Operator builtins `%truthy %cond %coalesce %concat %length %plus %minus`. The skill is a short `SKILL.md` plus
   `topics/*.md` printed by `hozu docs <topic>`; diagnostics end with `see: hozu docs <topic>`.
 - 0.6 (ADR 0040): `hozu browse <path> --do '<step>'` drives an installed Chrome / Chromium / Edge over CDP (pipe, no
-  deps, no port; requests go to the in-process handler) and reports errors, widgets (`data-hozu-widget` +
-  `data-hozu-widget-state` on hosts), text, `--select`, `--screenshot`; HZ047 = a `fn` body using names from outside
+  deps, no port; requests go to the in-process handler) and reports errors, client components (`data-hozu-component` +
+  `data-hozu-component-state` on hosts; widgets until 0.9), text, `--select`, `--screenshot`; HZ047 = a `fn` body using names from outside
   `impl` (the server refuses to start); no `site.icon` → `<link rel="icon" href="data:,">`.
 - 0.7 (ADR 0041): `ui.view({ machine, route, seed: ({ params, search }) => ({ field: search.x }) })` starts the page's
   machine from the URL (`ViewIR.seed`; server render, payload `initialContext`, no-JS posts; HZ048); `machine({ on })`
@@ -167,12 +177,12 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   (transform `__hozu.helpers`, shipped in `fns.js`; imports / `let` stay HZ047); `ui.use` `on` optional; query
   branches may return `null`; recipes moved from `changing.md` to `hozu docs recipes`.
 - 0.8 (ADR 0043 D, E): one app module, `project({ app: new URL('./app.ts', import.meta.url) })` default-exporting
-  `app({ resolvers, session?, widgets? })`, run by `hozu serve` (`npm start`), `hozu check` (HZ045, HZ021),
+  `app({ resolvers, session?, components? })` (`widgets?` until 0.9), run by `hozu serve` (`npm start`), `hozu check` (HZ045, HZ021),
   `hozu get` / `browse` and `testApp(app)`; edge: `createHandler(app, { manifest, render })`. Pages answer through
   `head.failed` (a route, 403, 404 or 410; HZ051); endpoints have `errors` + `failed`, `output` schema / `'redirect'`
   / `'response'` (no HTML, HZ053), `input: 'raw'`, `ui.link(endpoint, input)` and `exports`; a route without a page
   is HZ052.
-- 0.8 (ADR 0043, breaking; `hozu migrate 0.8` rewrites 0.7 apps): user data is `freshness: 'request'` or `'live'`
+- 0.8 (ADR 0043, breaking; `hozu migrate 0.8` rewrote 0.7 apps, removed in 0.9): user data is `freshness: 'request'` or `'live'`
   (HZ049; `'request'` also for public data, replacing `{ revalidate: 0 }`; `'live'` needs tags, HZ050), exact
   invalidation, endpoint `invalidates` (HZ062 on GET), `server.revalidate([tag()]) → { entries, pages }`, derived
   `Cache-Control` / `Vary`; a session change is a barrier (post-mutation session, `session: true`, scoped
@@ -185,7 +195,16 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   navigation; `hozu browse --js on|off|both` (default both), `--as <name>` actors, `--session`, `in "<text>"` targets;
   `hozu post` is gone; `hozu get` / `browse` / `testApp` refuse a broken build; `hozu map` starts with the session
   shape, the verify line and the files; the agent's `CLAUDE.md` / `AGENTS.md` block sits between `hozu` markers that
-  `hozu skill` and `hozu migrate 0.8` rewrite.
+  `hozu skill` rewrites (and `hozu migrate 0.8` did, until 0.9 removed it).
+- 0.9 (ADR 0045, breaking): `ui.component` and kits replace `ui.widget` (`@hozu/core/component`, `events` of a
+  client → `emits`, `wraps` derived, `data-hozu-component*`, `/_hozu/c/`, `hozu add component <kit|feature> <Name>
+  [--client]`); IR v3 (`ProjectIR.kits`, `FeatureIR.components`, `ElementNode.use` on a pure use's root,
+  `ComponentNode` for client uses). A pure use is inlined at record time (0 B JS; IR equal to the inline form apart
+  from `use`), and an operation without a reference operand runs as JavaScript at record time. HZ070–HZ080 (the
+  class rules read the properties from Tailwind in the CSS stage); `hozu docs components` (the topic, then the app's
+  list), `hozu render <id>`, `hozu inspect` / `impact <component id>`, `hozu map` `kits:` and per-page components,
+  `hozu check` override counts, `hozu add kit <id> [--sync]`. `hozu migrate` is removed: no migration support before
+  the first stable release (0.8 apps upgrade by hand from the CHANGELOG).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of
@@ -205,7 +224,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `pnpm --filter example-cart validate|inspect|graph|explain|plan|simulate|demo|client|serve|export`
 - `pnpm --filter example-blog validate|plan|seo|serve|dev` — SEO audit against adapter-node
 - `pnpm --filter example-cart dev` — dev server with CSS hot swap
-- `pnpm --filter example-showcase validate|serve|dev` — every presentation capability and widget library
+- `pnpm --filter example-showcase validate|serve|dev` — every presentation capability and client component library
 - `pnpm --filter example-feed validate|plan|serve` — cursor pagination, infinite scroll, `:x+` / `:x?` routes
 - `examples/notes` — sessions (sign in/out), user-scoped data, no-JS forms; reference app for `bench/trial/notes`
 - `node bench/trial/notes/accept.mjs <name> <dir> <entry> <port> [1|2]` — hidden acceptance of the notes trial

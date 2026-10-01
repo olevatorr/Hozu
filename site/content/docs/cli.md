@@ -24,17 +24,20 @@ npx hozu get / --json
 | `hozu check --json` | Check TypeScript, framework rules and contracts. |
 | `hozu validate --json` | Build and validate the IR, including contracts. An optional feature name narrows the target. |
 | `hozu map --json` | Show a compact app outline with source locations. |
-| `hozu inspect tasks --json` | Inspect a feature's canonical IR and summary. |
+| `hozu inspect tasks --json` | Inspect a feature's canonical IR and summary, or a component (`ui.Button`) with every use. |
 | `hozu graph tasks --json` | Inspect state, effect and view relationships; ordinary output is Mermaid. |
 | `hozu explain tasks.idle --json` | Explain a state, its transitions, guards, effects and covering contracts. |
-| `hozu impact tasks.listItems --json` | Find what a declaration affects. Use your actual declaration name. |
+| `hozu impact tasks.listItems --json` | Find what a declaration affects, or who uses a component (`ui.Button`). Use your actual declaration name. |
 | `hozu plan home --json` | Show the derived render plan for a named route. |
 | `hozu get /tasks --json` | Request one or more pages in-process without a server. |
-| `hozu browse /tasks --do 'click Save' --json` | Run steps in headless Chrome without a server, with and without JS: what each step changed, errors and widgets. |
+| `hozu browse /tasks --do 'click Save' --json` | Run steps in headless Chrome without a server, with and without JS: what each step changed, errors and client components. |
 | `hozu build --json` | Write deployment assets, generated server rendering code and the manifest. |
 | `hozu serve` | Start the app module on `PORT` with adapter-node; this is `npm start`. |
 | `hozu docs forms` | Print one topic of the installed guide; `hozu docs` lists the topics. |
-| `hozu add widget tasks Chart --json` | Add a widget: declaration, client module, the bundle in `app.ts` and the `@hozu/bundle` dependency. |
+| `hozu docs components` | Print the components topic, then every component of the app with its tag and variants. |
+| `hozu render ui.Button --variant tone=ghost --json` | Render one component alone: its HTML, root class, owned CSS properties and diagnostics. `--props '<json>'` and `--slot name=text` fill it. |
+| `hozu add kit ui --json` | Add a component kit: `ui/kit.ts`, `ui/tv.ts` and `project({ kits })`; `--sync` regenerates the tailwind-merge config. |
+| `hozu add component ui Button --json` | Add a component to a kit or a feature; `--client` adds the client module, the bundle in `app.ts` and the `@hozu/bundle` dependency. |
 | `hozu skill --agent both --json` | Refresh the installed authoring skill and agent instructions. |
 
 Use `hozu --help` for the options supported by your installed version. `--config` points to a different configuration file, and `build --out` chooses the output directory.
@@ -62,7 +65,7 @@ By default (`--js both`) it runs the `--do` steps twice side by side, with JS an
 
 A step with no native effect prints `js-only (<reason>)` in the no-JS column. A step where both modes made a request and the resulting text differs is marked `≠ DIFFERS`. `--as <name>` starts another actor with its own browser and optional `--session`; all actors share one in-process app, and live updates on their pages are printed under the step that caused them.
 
-It also reports uncaught exceptions, `console.error` calls, CSP violations and failed requests, every widget on the page, the final visible text and any `--select` elements. A passing six-step run prints less than 1.5 KB.
+It also reports uncaught exceptions, `console.error` calls, CSP violations and failed requests, every client component on the page, the final visible text and any `--select` elements. A passing six-step run prints less than 1.5 KB.
 
 The exit code is 1 when anything failed.
 

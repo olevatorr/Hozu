@@ -1,5 +1,131 @@
 # Changelog
 
+## 0.9.0 — declared UI components (ADR 0045, breaking)
+
+A button, a field or a card used by several features had no declaration in 0.8: a `part()` disappears when the view
+is recorded, so no tool could list it, and an agent could not tell it from a helper. Its classes fought by Tailwind's
+sort order, so an override or a toggle silently lost (the showcase tabs worked by luck). 0.9 makes UI a declaration:
+`ui.component` in a kit, used through `ui.use`, styled with tailwind-variants at record time, and checked property by
+property. `ui.widget` is the same declaration with a `client` module.
+
+**Upgrade:** there is no migration tool before the first stable release, and `hozu migrate` is removed. A 0.7 app
+upgrades with the 0.8.0 CLI first (`npx @hozu/cli@0.8 migrate 0.8`). A 0.8 app upgrades by hand with the list
+below, then runs `npx hozu check`, applies the patches HZ079 and HZ074 print, and accepts nothing new in the lock (views
+are not locked).
+
+### Upgrading by hand from 0.8
+1. **`ui.widget` → `ui.component({ client })`.** `events` become `emits`, `wraps` goes, and the render is the server
+   HTML the module takes over:
+   ```ts
+   // 0.8
+   export const Map = ui.widget({ tag: 'div', props: z.object({ lat: z.number() }),
+     events: { picked: z.object({ id: z.string() }) }, client: new URL('./map.client.ts', import.meta.url),
+     load: 'visible', wraps: false })
+   ui.use(Map, { props: { lat: ctx.lat }, on: { picked: (d) => ui.send(Pick, { id: d.id }) } }, [])
+   // 0.9
+   export const Map = ui.component({ tag: 'div', props: z.object({ lat: z.number() }),
+     emits: { picked: z.object({ id: z.string() }) }, client: new URL('./map.client.ts', import.meta.url),
+     load: 'visible', render: () => ui.div({}, []) })
+   ui.use(Map, { props: { lat: ctx.lat }, on: { picked: (d) => ui.send(Pick, { id: d.id }) } })
+   ```
+   - A widget with `wraps: true`, or whose uses passed children, declares `children: true` and renders them:
+     `render: ({ children }) => ui.div({}, children)`. A use without children passes no third argument.
+   - `ui.use` options `toggle` and `vars` are gone (HZ014): the render sets them on its root from a prop.
+   - The root of a client render takes no attributes and no `on` (HZ014): put a role or label on a wrapping element.
+2. **`@hozu/core/widget` → `@hozu/core/component`** in every client module:
+   ```ts
+   import { implement } from '@hozu/core/widget'      // 0.8
+   import { implement } from '@hozu/core/component'   // 0.9
+   ```
+   `WidgetDecl`, `WidgetLoad`, `WidgetUse` are `ComponentDecl`, `ComponentLoad`, `ComponentUse`.
+3. **The bundle in `app.ts`:**
+   ```ts
+   import { bundleWidgets } from '@hozu/bundle'          // 0.8
+   export default app({ resolvers, widgets: bundleWidgets })
+   import { bundleComponents } from '@hozu/bundle'       // 0.9
+   export default app({ resolvers, components: bundleComponents })
+   ```
+   The same rename applies to `createHandler({ widgets })`, `exportStatic({ widgets })`, `AppHost.widgets`,
+   `WidgetBundle` / `assertWidgetBundle` (`ComponentBundle` / `assertComponentBundle`), `usedWidgets` / `widgetsIn`
+   (`usedClientComponents` / `clientComponentsIn`) and `hydrate({ loadWidget })` (`loadComponent`).
+4. **`hozu add widget <feature> <Name>` → `hozu add component <feature> <Name> --client`.** The old form is a usage
+   error naming the new one.
+5. **`data-hozu-widget*` → `data-hozu-component*`** on mounted hosts, in your own browser tests:
+   ```ts
+   page.locator('[data-hozu-widget="stations.StationMap"][data-hozu-widget-state="mounted"]')        // 0.8
+   page.locator('[data-hozu-component="stations.StationMap"][data-hozu-component-state="mounted"]')  // 0.9
+   ```
+   Bundles are served from `/_hozu/c/…` (was `/_hozu/w/…`); `hozu browse` prints `component <id>:` lines and its JSON
+   has `components` (was `widgets`).
+6. **HZ079 on existing code:** two classes of one element that set the same property under the same variant are an
+   error, base classes against toggles included. Apply the patch, or style the state through its attribute:
+   ```ts
+   // 0.8: bg-white always wins over the toggle, by Tailwind's sort order
+   ui.button({ class: 'bg-white', toggle: { 'bg-indigo-600 text-white': ctx.tab === t } }, [t])
+   // 0.9, the patch: a complementary toggle
+   ui.button({ toggle: { 'bg-white': ctx.tab !== t, 'bg-indigo-600 text-white': ctx.tab === t } }, [t])
+   // 0.9, or one source for the look and the accessibility
+   ui.button({ class: 'bg-white aria-selected:bg-indigo-600 aria-selected:text-white', 'aria-selected': ctx.tab === t }, [t])
+   ```
+   A leading `!` is HZ074 anywhere: `!bg-red-500` → `bg-red-500!` (patch).
+7. **`hozu migrate` is removed.** It answers a usage error naming `npx @hozu/cli@0.8 migrate 0.8`. `hozu skill` still
+   rewrites the marked Hozu block of `CLAUDE.md` / `AGENTS.md`; run it after upgrading the packages.
+8. **IR version 3.** Tools that read the IR or the CLI JSON: `FeatureIR.widgets` is `FeatureIR.components`
+   (`ComponentIR`, the client in `client: { load, sourceHash }`), `ProjectIR.kits` is new, a widget node
+   (`kind: 'widget'`, `widget`) is a `ComponentNode` (`kind: 'component'`, `use.component`), and the root of a pure use
+   carries `use`. `hozu inspect` and `hozu impact` output is a union (feature or component), and `hozu check --json`
+   always has `overrides`. The JSON Schemas are regenerated.
+
+### New
+- **Components (A–C):** `ui.component({ tag, styles?, props?, slots?, children?, events?, extend?, render })` in a kit
+  (`ui.kit({ id, components, styles? })`, `project({ kits })`, id `ui.Button`) or private to a feature
+  (`notes.Composer`, HZ006 from another feature). `ui.use(C, { variant, props, slots, on, class }, children)` is the
+  only call form, typed from the declaration. A pure use is inlined at record time: 0 B of client JavaScript, and the
+  IR equals the hand-written tree apart from `use`.
+- **Closed render (C):** a render reads only `props`, `slots`, `children`, `on` and `classes`; a declaration it reaches
+  is HZ070. Variants are literals (HZ071). Every component is rendered once when it is declared, so an unused one is
+  checked too.
+- **Styles (D–F):** `@hozu/variants` (tailwind-variants 3.3.1, tailwind-merge 3.7.0) runs at record time only;
+  `hozu add kit <id>` writes `<id>/tv.ts` with the tailwind-merge config of the project's design tokens, HZ078 when
+  it is stale, `--sync` to regenerate. The CSS stage reads the properties of every class from Tailwind: HZ072 (a
+  caller sets an owned property; a trailing `!` is the one override), HZ073 (`!` inside a component), HZ074, HZ075,
+  HZ076, HZ077, HZ079 on every element, HZ080 (a part's view inlined by two features). `hozu check` prints one line
+  per component with overrides (`ui.Button: 1 override — account`).
+- **Record-time literals (G):** an operation with no reference operand runs as JavaScript, so a part or a render
+  called with literals gives the inline form's IR.
+- **Tools (I):** `hozu docs components` (the topic, then the app's components: id, tag, variants), `hozu render <id>
+  --variant k=v --props '<json>' --slot name=text` (HTML, root class, owned properties, diagnostics; exit 1 on
+  errors), `hozu inspect` / `hozu impact <component id>` (the declaration and every use with its added classes and
+  overrides), `hozu map` (`kits: ui 3` and `· uses ui.Button ui.Input` per page), `hozu add component <kit|feature>
+  <Name> [--client]`.
+- **The guide:** `topics/components.md` replaces `widgets.md`; SKILL.md gains the UI row and stays at 3 519 B.
+- `examples/notes` uses a `ui/` kit (Button, Input, Field) on tv, with one `!` override.
+
+### Measured
+- P7 (initial client JS, min+gz): **7 872 B** (0.8.0: 7 893 B; the client ref lost `wraps`). No page of any example
+  gains client JavaScript.
+- `hozu docs components` on notes: 4 537 B (budget 5 120 B). `hozu map`: notes 3 343 B (budget 3 584 B), bookmarks
+  1 450 B and trial-0007 1 516 B (budget 2 048 B).
+- HZ079 on the 0.8 examples: 6 real pairs (the showcase tabs) and none of the 24 exclusive toggle pairs.
+- `hozu check` cold: notes 0.56 → 0.64 s, showcase 0.60 → 0.77 s (the CSS stage reads class properties).
+
+### Behaviour changes with no diagnostic
+- A client component with children hydrates them on claim and on a client render (`wraps` is derived per node);
+  island roots still ship without children, so every page hydrates what it hydrated before.
+- The browser console says `Component <id> failed`, and `Hozu: component <id> has no client code (bundleComponents)`.
+- The order of the classes on a component's root follows tv: owned classes, then the caller's.
+- `examples/notes`: the sign-in button's corner radius is 0.5rem (the `rounded-lg!` demonstration).
+- `hozu map` puts `kits:` after the files and no longer prints the ignore list of a state with `invoke`: it is
+  derived (every event the state does not handle).
+
+### Also
+- An inline `styles: tv({ … })` next to a destructuring render types correctly: `@hozu/variants` types `tv()` with
+  an intersection result, because TypeScript skips a generic call that returns a plain function type while it
+  infers the surrounding call.
+- `hozu browse`'s 20 s budget per run is asserted only when its test file runs alone (`HOZU_BUDGET=1`); the bench
+  runs it once (row B1).
+- `@hozu/ui-kit` is reserved for the official component library.
+
 ## 0.8.0 — close the escape hatches (ADR 0043, breaking)
 
 Trial 0020 ran twenty sequential changes. Hozu 0.7 kept 10× less client JS than Nuxt, but its cost per change doubled

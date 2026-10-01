@@ -36,7 +36,7 @@ Scaffold common behaviours with `hozu add feature` instead of repeatedly rebuild
 
 Add `--json` when a tool consumes the result. Diagnostics include source locations, causes and fixes; inspection commands expose the same canonical program the runtime uses.
 
-The agent's `CLAUDE.md` / `AGENTS.md` instructions sit between `hozu` markers; `hozu skill` and `hozu migrate 0.8` rewrite that block for the installed version and leave the rest of the file alone. Keep changes to the behaviour lock intentional. A green check is one layer of evidence, alongside page inspection, browser tests where needed and acceptance criteria written by the person requesting the change.
+The agent's `CLAUDE.md` / `AGENTS.md` instructions sit between `hozu` markers; `hozu skill` rewrites that block for the installed version and leave the rest of the file alone. Keep changes to the behaviour lock intentional. A green check is one layer of evidence, alongside page inspection, browser tests where needed and acceptance criteria written by the person requesting the change.
 
 ## Know what the trials establish
 

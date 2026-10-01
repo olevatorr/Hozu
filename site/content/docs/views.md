@@ -35,6 +35,10 @@ Import Tailwind in the project's stylesheet and point `project({ styles })` at t
 
 For your own CSS selectors, use `data-*` hooks. This keeps styling hooks distinct from checked utility classes.
 
+## Reuse UI with components
+
+A button, a field or a card used by several features is a component in a kit: `ui.component({ tag, styles, props, slots, events, render })`, listed in `ui.kit({ id: 'ui', components })` and `project({ kits })`, and used as `ui.use(Button, { variant, props, slots, on, class }, children)`. Variants are fixed looks written as literals; values that change at run time are props. The render reads only its props, slots, children and event handles, and a caller's `class` may not restyle a property the component owns unless it ends with `!`. A pure component is inlined when the view is recorded, so it adds no client JavaScript. A component with a `client` module is browser code for DOM libraries. `hozu docs components` lists an app's components and `hozu render ui.Button` renders one alone.
+
 ## Add interaction deliberately
 
 Bind a view to a machine when it needs state and events. A button can send a declared event with `ui.send(Event, payload)`. DOM values such as `ui.dom.value`, `ui.dom.checked` and `ui.dom.form('title')` provide typed event fields.

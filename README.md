@@ -157,7 +157,8 @@ The extra cost is mostly reading the guide of a framework the model has not seen
 | [`@hozu/content`](https://www.npmjs.com/package/@hozu/content) | Markdown collections with typed front matter |
 | [`@hozu/image`](https://www.npmjs.com/package/@hozu/image) | Optional WebP `srcset` and share-image cards (uses sharp) |
 | [`@hozu/testing`](https://www.npmjs.com/package/@hozu/testing) | Render assertions through the real handler |
-| [`@hozu/dev`](https://www.npmjs.com/package/@hozu/dev) · [`@hozu/bundle`](https://www.npmjs.com/package/@hozu/bundle) | Development server; widget bundling |
+| [`@hozu/dev`](https://www.npmjs.com/package/@hozu/dev) · [`@hozu/bundle`](https://www.npmjs.com/package/@hozu/bundle) | Development server; client component bundling |
+| [`@hozu/variants`](https://www.npmjs.com/package/@hozu/variants) | tailwind-variants for component styles, run at build time (0 B in the browser) |
 
 ## Also included
 - Document navigation with prerender and cross-document view transitions.
@@ -168,7 +169,7 @@ The extra cost is mostly reading the guide of a framework the model has not seen
 - ISR and SWR with tag revalidation, and live queries.
 - A derived head: title, canonical, Open Graph, JSON-LD, sitemap and `robots.txt`.
 - Preview mode, PWA and an offline page.
-- Widgets, which wrap third-party DOM libraries.
+- Components in kits, with variants and owned classes; client components wrap third-party DOM libraries.
 
 The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router is in
 [ADR 0011](docs/adr/0011-mainstream-gap-analysis.md).
