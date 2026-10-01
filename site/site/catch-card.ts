@@ -26,7 +26,7 @@ export const CatchCard = ui.component({
       ui.div({ class: classes.inner }, [
         ui.p({ class: classes.front }, [props.story]),
         ui.div({ class: classes.back }, [
-          ui.p({ class: 'font-bold text-red' }, ['✘ ', props.code, ' ', props.name]),
+          ui.p({ class: 'font-bold text-ember' }, ['✘ ', props.code, ' ', props.name]),
           ui.p({ class: 'mt-2' }, [props.message]),
           ui.p({ class: 'mt-2' }, ['fix: ', props.fix]),
         ]),

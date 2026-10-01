@@ -26,6 +26,10 @@ export const Receipt = ui.component({
 export const ReceiptLine = ui.component({
   tag: 'a',
   styles: tv({ base: 'flex justify-between gap-4 py-1 underline-offset-4 hover:underline' }),
-  props: z.object({ label: z.string(), value: z.string(), href: z.string() }),
-  render: ({ props }) => ui.a({ href: props.href }, [ui.span({}, [props.label]), ui.b({}, [props.value])]),
+  props: z.object({ claim: z.string(), label: z.string(), value: z.string(), href: z.string() }),
+  render: ({ props }) =>
+    ui.a({ href: props.href, 'data-claim': props.claim }, [
+      ui.span({}, [props.label]),
+      ui.b({}, [props.value]),
+    ]),
 })

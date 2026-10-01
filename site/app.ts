@@ -16,7 +16,7 @@ import {
   listDocs,
   listTrials,
 } from './features/content/model.ts'
-import { getPlayground } from './features/play/model.ts'
+import { getPlayground } from './features/home/model.ts'
 import { highlight } from './highlight.ts'
 import project from './hozu.config.ts'
 
@@ -28,7 +28,7 @@ const release = JSON.parse(
 const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const buttonSource = await readFile(new URL('./site/button.ts', import.meta.url), 'utf8')
 const renders = JSON.parse(
-  await readFile(new URL('./features/play/render-snapshot.json', import.meta.url), 'utf8'),
+  await readFile(new URL('./features/home/render-snapshot.json', import.meta.url), 'utf8'),
 )
 const playground = {
   source: highlight(`<pre><code class="language-ts">${escapeHtml(buttonSource)}</code></pre>`),

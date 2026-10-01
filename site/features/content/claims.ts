@@ -11,6 +11,13 @@ export const claims: Claim[] = [
   { id: 'regressions', label: 'Regressions in 16 changes', value: '0', trial: '0021-0-8-long-run' },
   { id: 'silent', label: 'Silent failures in 16 changes', value: '0', trial: '0021-0-8-long-run' },
   { id: 'old', label: 'Regression failures on 0.7, same app', value: '8', trial: '0020-long-run' },
+  { id: 'oldSilent', label: 'Steps with silent failures on 0.7', value: '5', trial: '0020-long-run' },
+  {
+    id: 'oldCost',
+    label: 'Tokens per change against Nuxt on 0.7',
+    value: '2.64–2.73×',
+    trial: '0021-0-8-long-run',
+  },
   { id: 'calls', label: 'Tool calls, steps 13–28', value: '270 vs 193', trial: '0021-0-8-long-run' },
   {
     id: 'js',

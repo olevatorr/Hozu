@@ -13,12 +13,16 @@ export const Ticker = ui.component({
   tag: 'div',
   styles,
   props: z.object({ items: z.array(z.string()) }),
-  render: ({ props, classes }) =>
+  slots: ['source'],
+  render: ({ props, slots, classes }) =>
     ui.div({ 'data-ticker': '' }, [
       ui.div({ class: classes.track, 'data-ticker-track': '', 'aria-hidden': 'true' }, [
         ui.span({ class: 'flex gap-8' }, [ui.each(props.items, null, (i) => ui.span({}, [i, ' ■']))]),
         ui.span({ class: 'flex gap-8' }, [ui.each(props.items, null, (i) => ui.span({}, [i, ' ■']))]),
       ]),
-      ui.label({ class: classes.pause }, [ui.input({ type: 'checkbox' }), 'Pause']),
+      ui.div({ class: classes.pause }, [
+        slots.source,
+        ui.label({}, [ui.input({ type: 'checkbox' }), ' Pause']),
+      ]),
     ]),
 })

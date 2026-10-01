@@ -5,7 +5,7 @@ const twMergeConfig = {
   extend: {
     theme: {
       animate: ['rise', 'ticker', 'turn'],
-      color: ['green', 'ink', 'paper', 'red', 'sand'],
+      color: ['ember', 'green', 'ink', 'paper', 'red', 'sand'],
     },
     classGroups: {
       prose: ['prose'],

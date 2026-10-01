@@ -25,7 +25,7 @@ const articleView = (
               {
                 slots: {
                   nav: ui.nav({ 'aria-label': label }, [
-                    ui.p({ class: 'mb-3 text-xs font-extrabold uppercase tracking-widest text-red' }, [
+                    ui.p({ class: 'mb-3 text-xs font-extrabold uppercase tracking-widest text-ember' }, [
                       label,
                     ]),
                     ui.query(
@@ -78,7 +78,7 @@ const articleView = (
                 ui.a(
                   {
                     href: explain ? ui.link(how, null) : ui.link(doc, { slug: 'getting-started' }),
-                    class: 'font-mono text-xs font-bold text-red no-underline',
+                    class: 'font-mono text-xs font-bold text-ember no-underline',
                   },
                   [label],
                 ),

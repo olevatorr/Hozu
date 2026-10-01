@@ -9,10 +9,13 @@ const styles = tv({
     bar: 'mt-2 h-2 bg-sand',
     fill: 'block h-full bg-red',
     body: 'min-w-0 px-5 py-14 md:px-10',
-    kicker: 'mb-4 font-mono text-xs font-bold text-red',
+    kicker: 'mb-4 font-mono text-xs font-bold',
   },
   variants: {
-    tone: { paper: { base: 'bg-paper text-ink' }, ink: { base: 'bg-ink text-paper', meter: 'border-paper' } },
+    tone: {
+      paper: { base: 'bg-paper text-ink', kicker: 'text-ember' },
+      ink: { base: 'bg-ink text-paper', meter: 'border-paper', kicker: 'text-red' },
+    },
     depth: {
       1: { fill: 'w-1/5' },
       2: { fill: 'w-2/5' },

@@ -1,8 +1,6 @@
 import { feature, ui } from '@hozu/core'
 import { chapter, doc, how, trials } from '../../routes.ts'
 import { Button } from '../../site/button.ts'
-import { Heading } from '../../site/display.ts'
-import { Section } from '../../site/section.ts'
 import { listChapters } from '../content/model.ts'
 import { content } from '../content/views.ts'
 import { contracts, m, Run, SetBinding, SetContract, SetFreshness, SetScope } from './model.ts'
@@ -11,7 +9,7 @@ const code = (text: string) =>
   ui.pre({ tabindex: 0, class: 'overflow-x-auto bg-ink p-4 font-mono text-xs text-paper' }, [
     ui.code({}, [text]),
   ])
-const kicker = 'font-mono text-xs font-bold uppercase text-red'
+const kicker = 'font-mono text-xs font-bold uppercase text-ember'
 const pane = 'border-b-2 border-ink pb-2 flex justify-between font-mono text-xs font-bold'
 const pressed =
   'border-4 border-ink px-3 py-1 font-mono text-xs font-bold aria-pressed:bg-ink aria-pressed:text-paper'
@@ -108,7 +106,7 @@ export const How = ui.view({
                   ['Runtime', 'HTML and islands', ['done']],
                 ].map(([title, description, states], index) =>
                   ui.li({ class: 'flex items-center gap-3 border-4 border-ink px-3 py-2' }, [
-                    ui.span({ class: 'font-mono text-xs font-bold text-red' }, [String(index + 1)]),
+                    ui.span({ class: 'font-mono text-xs font-bold text-ember' }, [String(index + 1)]),
                     ui.div({ class: 'grid flex-1' }, [
                       ui.strong({ class: 'uppercase' }, [title as string]),
                       ui.small({}, [description as string]),
@@ -125,7 +123,7 @@ export const How = ui.view({
                         | 'compiled'
                         | 'done'
                       )[],
-                      [ui.span({ class: 'text-red', 'aria-label': 'Current stage' }, ['●'])],
+                      [ui.span({ class: 'text-ember', 'aria-label': 'Current stage' }, ['●'])],
                     ),
                   ]),
                 ),
@@ -203,7 +201,7 @@ export const How = ui.view({
                 ui.button(
                   {
                     type: 'button',
-                    class: 'bg-red px-4 py-2 font-black uppercase text-paper',
+                    class: 'bg-red px-4 py-2 font-black uppercase text-ink',
                     on: { click: ui.send(Run, {}) },
                   },
                   ['Run example'],
@@ -386,7 +384,7 @@ export const How = ui.view({
       ),
       ui.section({ id: 'design-chapters', class: 'border-t-4 border-ink bg-ink px-5 py-14 text-paper' }, [
         ui.div({}, [
-          ui.p({ class: kicker }, ['Go a little deeper']),
+          ui.p({ class: 'font-mono text-xs font-bold uppercase text-red' }, ['Go a little deeper']),
           ui.h2({ class: 'text-3xl font-black uppercase md:text-5xl' }, ['The reasoning behind the rules.']),
           ui.p({}, ['Six chapters, from the first design decision to the costs that remain.']),
         ]),
@@ -423,7 +421,7 @@ export const How = ui.view({
           ui.a(
             {
               href: ui.link(doc, { slug: 'getting-started' }),
-              class: 'bg-red px-4 py-3 font-black uppercase',
+              class: 'bg-red px-4 py-3 font-black uppercase text-ink',
             },
             ['Build your first feature'],
           ),
@@ -434,47 +432,9 @@ export const How = ui.view({
       ]),
     ]),
 })
-export const LabTeaser = ui.view({
-  render: () =>
-    ui.use(
-      Section,
-      { variant: { depth: 4 }, props: { label: 'Developers', kicker: '06 · Under the hood' } },
-      [
-        ui.use(Heading, {}, ['feature() → IR → validator → compiler → runtime']),
-        ui.p({ class: 'mt-4 max-w-3xl text-lg' }, [
-          'Every page is planned from what its data declares: who may see it and how fresh it must be. Only nodes bound to a machine ship JavaScript. This page ships three islands and nothing else.',
-        ]),
-        ui.div({ class: 'mt-6' }, [
-          ui.use(Button, { props: { href: ui.link(how, null) } }, ['Open the lab →']),
-        ]),
-        ui.query(
-          listChapters,
-          {},
-          {
-            ready: (items) =>
-              ui.ul({ class: 'mt-8 grid gap-2 md:grid-cols-2' }, [
-                ui.each(items, 'slug', (item) =>
-                  ui.li({}, [
-                    ui.a(
-                      {
-                        href: ui.link(chapter, { slug: item.slug }),
-                        class: 'font-bold underline decoration-red',
-                      },
-                      [item.title],
-                    ),
-                  ]),
-                ),
-              ]),
-            pending: null,
-            failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Chapters are unavailable.']) },
-          },
-        ),
-      ],
-    ),
-})
 export const lab = feature({
   id: 'lab',
   intent: { summary: 'Interactive, explicitly illustrative walkthrough of Hozu validation and rendering' },
   imports: [content],
-  declarations: [{ Run, SetContract, SetScope, SetFreshness, SetBinding, m, How, LabTeaser, ...contracts }],
+  declarations: [{ Run, SetContract, SetScope, SetFreshness, SetBinding, m, How, ...contracts }],
 })

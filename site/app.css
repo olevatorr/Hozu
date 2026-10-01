@@ -5,6 +5,7 @@
   --color-paper: #f1ede4;
   --color-ink: #111010;
   --color-red: #fb3a0e;
+  --color-ember: #b52705;
   --color-green: #2fa36b;
   --color-sand: #d8cdbb;
   --font-sans: "Helvetica Neue", Arial, sans-serif;
@@ -76,7 +77,7 @@ body {
   top: 0.5rem;
   right: 0.5rem;
   background: var(--color-red);
-  color: var(--color-paper);
+  color: var(--color-ink);
   font: 700 0.75rem / 1 var(--font-mono);
   padding: 0.35rem 0.6rem;
   border: 0;

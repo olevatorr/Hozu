@@ -6,19 +6,15 @@ import {
   Chapter,
   content,
   Docs,
-  Evidence,
   Footer,
   Header,
-  Home,
   NotFound,
   Trial,
   Trials,
 } from './features/content/views.ts'
-import { hero } from './features/hero/feature.ts'
-import { Hero } from './features/hero/views.ts'
-import { How, LabTeaser, lab } from './features/lab/views.ts'
-import { play } from './features/play/feature.ts'
-import { Play } from './features/play/views.ts'
+import { homePage } from './features/home/feature.ts'
+import { Home } from './features/home/views.ts'
+import { How, lab } from './features/lab/views.ts'
 import { changelog, chapter, doc, home, how, notFound, trial, trials } from './routes.ts'
 import { kit } from './site/kit.ts'
 
@@ -54,7 +50,7 @@ export default project({
       entries: { query: listChapters, input: {}, params: (item) => ({ slug: item.slug }) },
     }),
     ui.page(home, {
-      views: [Header, Hero, Home, Play, LabTeaser, Evidence, Footer],
+      views: [Header, Home, Footer],
       assert: 'static',
       head: {
         render: () => ({
@@ -120,5 +116,5 @@ export default project({
     }),
   ],
   kits: [kit],
-  features: [content, hero, play, lab],
+  features: [content, homePage, lab],
 })

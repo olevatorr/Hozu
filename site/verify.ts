@@ -39,13 +39,28 @@ assert.ok(homePage.includes(`data-version="${release.version}"`), `header shows 
 console.log(`Header version ${release.version} equals packages/core`)
 for (const c of claims) await access(new URL(`./dist/trials/${c.trial}/index.html`, import.meta.url))
 for (const c of catches) assert.equal(codes[c.code]?.name, c.name, `${c.code} is ${c.name} in the registry`)
-for (const c of claims)
-  assert.ok(homePage.includes(`href="/trials/${c.trial}"`), `${c.id} links to its trial`)
+for (const c of claims) {
+  const shown = [...homePage.matchAll(new RegExp(`<a[^>]*data-claim="${c.id}"[^>]*>(.*?)</a>`, 'gs'))]
+  assert.ok(shown.length > 0, `${c.id} is shown on the home page`)
+  for (const [element, inner] of shown) {
+    assert.ok(element.includes(`href="/trials/${c.trial}"`), `${c.id} links to ${c.trial}`)
+    assert.ok(inner!.includes(c.value), `${c.id} shows ${c.value}`)
+  }
+}
+const visible = homePage
+  .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<pre[\s\S]*?<\/pre>/g, ' ')
+  .replace(/<[^>]+>/g, ' ')
+const numbers = visible.match(/\d+(?:\.\d+)?(?:–\d+(?:\.\d+)?)?×|\d+\/\d+|\d+(?:\.\d+)? KB/g) ?? []
+for (const n of numbers)
+  assert.ok(
+    claims.some((c) => c.value.includes(n)),
+    `home number ${n} comes from claims.ts`,
+  )
 console.log(
   `${claims.length} claims link to existing trials; ${catches.length} catch cards match the registry`,
 )
 const snapshot = JSON.parse(
-  await readFile(new URL('./features/play/render-snapshot.json', import.meta.url), 'utf8'),
+  await readFile(new URL('./features/home/render-snapshot.json', import.meta.url), 'utf8'),
 )
 for (const intent of ['solid', 'outline'] as const) {
   const fresh = JSON.parse(
@@ -105,6 +120,7 @@ let pages = 0
 for (const file of files.filter((name) => name.endsWith('.html'))) {
   const html = await readFile(new URL(file, root), 'utf8')
   assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1, `${file}: one main heading`)
+  assert.equal((html.match(/<main[ >]/g) ?? []).length, 1, `${file}: one main landmark`)
   const interactive = file === 'how-it-works/index.html'
   if (interactive) {
     assert.match(html, /<script type="module" src="\/_hozu\/client\.js">/, 'Overview loads its Hozu island')
@@ -159,7 +175,7 @@ assert.ok(
   'Interactive overview has its client runtime',
 )
 const islandFeatures: Record<string, string[]> = {
-  'index.html': ['hero', 'play', 'content'],
+  'index.html': ['home'],
   'how-it-works/index.html': ['lab'],
 }
 for (const file of files.filter((name) => name.endsWith('.html'))) {
@@ -173,7 +189,7 @@ for (const file of files.filter((name) => name.endsWith('.html'))) {
     `${file}: client JavaScript without an island`,
   )
 }
-for (const id of ['"hero.Hero', '"play.Play']) assert.ok(homePage.includes(id), `home binds ${id.slice(1)}`)
+for (const id of ['"home.Home']) assert.ok(homePage.includes(id), `home binds ${id.slice(1)}`)
 const stylesheet = homePage.match(/href="(\/_hozu\/styles\.[0-9a-f]+\.css)"/)?.[1]
 assert.ok(stylesheet, 'home links its stylesheet')
 const css = await readFile(new URL(`.${stylesheet}`, root), 'utf8')
@@ -184,4 +200,4 @@ assert.match(
 )
 for (const name of ['rise', 'ticker', 'turn'])
   assert.ok(css.includes(`@keyframes ${name}`), `keyframes ${name} shipped`)
-console.log('Islands: home (hero, play), how-it-works (lab), CodeBlock on code pages; reduced motion covered')
+console.log('Islands: home (home), how-it-works (lab), CodeBlock on code pages; reduced motion covered')
