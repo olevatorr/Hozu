@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict'
 import { access, readdir, readFile, stat } from 'node:fs/promises'
+import { codes } from '@hozu/core/ir'
 import { testApp } from '@hozu/testing'
 import site from './app.ts'
+import { catches, claims } from './features/content/claims.ts'
 
 const app = testApp(site)
 for (const [path, status, text] of [
-  ['/', 200, 'Public query notes.notesOf is keyed by user-scoped data'],
-  ['/', 200, 'Every run, trials 0016–0019'],
+  ['/', 200, 'Hozu checks it'],
+  ['/', 200, 'Here is the receipt'],
   ['/trials/0019-0-7-write-less', 200, '1.38×'],
   ['/how-it-works', 200, 'Understand the design'],
   ['/how-it-works/why-ai-first', 200, 'Why AI-first?'],
@@ -32,6 +34,13 @@ const release = JSON.parse(await readFile(new URL('../packages/core/package.json
 const homePage = await readFile(new URL('./dist/index.html', import.meta.url), 'utf8')
 assert.ok(homePage.includes(`data-version="${release.version}"`), `header shows ${release.version}`)
 console.log(`Header version ${release.version} equals packages/core`)
+for (const c of claims) await access(new URL(`./dist/trials/${c.trial}/index.html`, import.meta.url))
+for (const c of catches) assert.equal(codes[c.code]?.name, c.name, `${c.code} is ${c.name} in the registry`)
+for (const c of claims)
+  assert.ok(homePage.includes(`href="/trials/${c.trial}"`), `${c.id} links to its trial`)
+console.log(
+  `${claims.length} claims link to existing trials; ${catches.length} catch cards match the registry`,
+)
 const root = new URL('./dist/', import.meta.url)
 assert.equal(await readFile(new URL('CNAME', root), 'utf8'), 'hozu.org\n')
 assert.equal(await readFile(new URL('.nojekyll', root), 'utf8'), '')

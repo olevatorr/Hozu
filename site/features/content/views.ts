@@ -1,10 +1,19 @@
 import { feature, ui } from '@hozu/core'
-import { doc, home, how, trial, trials } from '../../routes.ts'
+import { doc, home, trial, trials } from '../../routes.ts'
+import { Button } from '../../site/button.ts'
+import { CatchCard } from '../../site/catch-card.ts'
 import { CodeBlock } from '../../site/code-block.ts'
+import { Display, Heading } from '../../site/display.ts'
 import { Prose } from '../../site/prose.ts'
+import { Receipt, ReceiptLine } from '../../site/receipt.ts'
+import { Section } from '../../site/section.ts'
+import { StatTable } from '../../site/stat-table.ts'
+import { Steps } from '../../site/steps.ts'
+import { Ticker } from '../../site/ticker.ts'
 import { Chapter, Docs } from './articles.ts'
 import { articleBody } from './body.ts'
 import { Footer, Header } from './chrome.ts'
+import { catches, claim } from './claims.ts'
 import {
   getChangelog,
   getChapter,
@@ -19,207 +28,201 @@ import {
 
 export { Chapter, Docs, Footer, Header }
 
-const catches: {
-  ask: string
-  mistake: string
-  conventional: [boolean, string][]
-  diagnostic: string
-  provenance: string
-}[] = [
-  {
-    ask: '“Make notes private per user.”',
-    mistake: "The agent keeps the notes list cached and keys it by the signed-in user's name.",
-    conventional: [
-      [true, 'TypeScript passes'],
-      [true, 'The build passes'],
-      [false, 'A cache keyed by the URL serves one user’s notes to the next'],
-    ],
-    diagnostic: `features/notes/views.ts:9:14  error  HZ022
-Public query notes.notesOf is keyed by user-scoped data
-cause: Its result is cached in the shared public partition (revalidate), so user-derived input would reach a cacheable region.
-fix: Make the query scope: 'user', or key it by data that does not come from the user`,
-    provenance:
-      'Conventional column: an illustration of the failure. Hozu column: hozu check on this mistake.',
-  },
-  {
-    ask: '“Add pinned notes, listed first.”',
-    mistake: 'The agent sorts and updates the fetched list in place.',
-    conventional: [
-      [true, 'TypeScript passes'],
-      [true, 'The build passes; the agent reports success'],
-      [false, 'New notes stop appearing and deleted notes stay listed'],
-    ],
-    diagnostic: `features/notes/views.ts:9:14  error  HZ014
-Method "sort" cannot run on a reference: references are recorded, not evaluated. For a list use ui.each(list, 'id', (item) => …); for any other computation declare a fn() and call it with the reference.`,
-    provenance:
-      'Conventional column: observed in trial 0012 (Nuxt run 1, a shallow ref mutated in place). Hozu column: hozu check on the same idea.',
-  },
-  {
-    ask: '“Stop saving empty notes.”',
-    mistake:
-      'The agent tightens the rule to three characters, so a two-character note that saved yesterday no longer does.',
-    conventional: [
-      [true, 'TypeScript passes'],
-      [true, 'The build passes'],
-      [false, 'Behaviour changed; nothing flags it unless a test happens to cover it'],
-    ],
-    diagnostic: `features/notes/views.ts:18:31  error  HZ015
-Contract savesLongDraft: Context differs from the expectation
-cause: context.saved: expected true, got false. No transition fired.
-fix: Decide which is intended: fix the machine, or update the contract to specify the new behavior`,
-    provenance:
-      'Conventional column: an illustration. Hozu column: hozu check after the guard changed and its contract did not.',
-  },
-]
-
+const receiptLines = (ids: string[]) =>
+  ui.div(
+    {},
+    ids.map((id) =>
+      ui.use(ReceiptLine, {
+        props: {
+          label: claim(id).label,
+          value: claim(id).value,
+          href: ui.link(trial, { slug: claim(id).trial }),
+        },
+      }),
+    ),
+  )
+const curve = (slug: string, alt: string) =>
+  ui.img({
+    src: ui.asset(new URL(`../../../docs/trials/${slug}.svg`, import.meta.url)),
+    width: 960,
+    height: 390,
+    alt,
+    class: 'mt-6 w-full border-4 border-ink bg-white',
+  })
 export const Home = ui.view({
   render: () =>
-    ui.main({ id: 'main' }, [
-      ui.section({ 'data-hero': '' }, [
-        ui.div({}, [
-          ui.h1({}, ['Built for agents that change software.']),
-          ui.p({ 'data-pitch': '' }, [
-            'Invalid programs are hard to express. Valid programs are cheap to verify.',
-          ]),
-          ui.p({}, [
-            'Hozu is a web framework for coding agents. When a change looks right and still type-checks, Hozu reports what broke, where, and how to fix it.',
-          ]),
-          ui.a({ href: ui.link(doc, { slug: 'getting-started' }), 'data-button': '' }, ['Start building']),
-          ui.a({ href: ui.link(how, null), 'data-secondary': '' }, ['Understand Hozu']),
-        ]),
-        ui.div({ 'data-joint': '' }, [
-          ui.img({
-            src: ui.asset(new URL('../../assets/logo.png', import.meta.url)),
-            width: 256,
-            height: 256,
-            alt: 'The Hozu interlocking joint logo',
+    ui.div({ id: 'main' }, [
+      ui.div({ class: 'bg-paper px-5 py-16' }, [
+        ui.div({ class: 'mx-auto max-w-6xl' }, [
+          ui.use(Display, {
+            props: {
+              words: [
+                { id: '1', text: 'Your AI writes the app.', accent: false },
+                { id: '2', text: 'Hozu checks it.', accent: true },
+              ],
+            },
           }),
-          ui.p({}, ['ほぞ / A joint that fits.']),
         ]),
       ]),
-      ui.section({ 'data-section': '', 'aria-labelledby': 'catches-title' }, [
-        ui.h2({ id: 'catches-title' }, ['What an agent gets wrong, and what Hozu says.']),
-        ui.p({ 'data-lede': '' }, [
-          'Each of these changes type-checks and builds. The diagnostics are the real output of hozu check on the same mistake, wrapped to fit.',
+      ui.use(Section, { variant: { depth: 1 }, props: { label: 'For everyone', kicker: '02 · The bill' } }, [
+        ui.use(Heading, {}, ['Yes, it costs more. Here is the receipt.']),
+        ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[28rem_minmax(0,1fr)]' }, [
+          ui.use(Receipt, {
+            slots: {
+              pay: receiptLines(['tokens', 'calls']),
+              get: receiptLines(['regressions', 'silent', 'js']),
+            },
+          }),
+          ui.div({ class: 'grid content-start gap-4 text-lg' }, [
+            ui.p({}, [
+              'Yes, Hozu eats more tokens. About 1.3–1.7× what Nuxt does for the same change. Your agent reads our guide every session, runs the checker, and fixes what it finds before it says “done”. That’s the bill.',
+            ]),
+            ui.p({}, [
+              'What it buys: in 16 changes, nothing that worked stopped working. Cheaper frameworks let your agent ship the bug and send you the invoice later. In ',
+              ui.a(
+                {
+                  href: ui.link(trial, { slug: claim('nuxt').trial }),
+                  class: 'font-bold underline decoration-red',
+                },
+                ['one trial'],
+              ),
+              ', a single Nuxt change quietly broke three working features. We are not immune either: ',
+              ui.a(
+                {
+                  href: ui.link(trial, { slug: claim('old').trial }),
+                  class: 'font-bold underline decoration-red',
+                },
+                ['Hozu 0.7 missed 8 regressions'],
+              ),
+              ' on a long run, and 0.8 was built to close exactly those gaps.',
+            ]),
+          ]),
         ]),
-        ui.div({ 'data-catches': '' }, [
-          ...catches.map((c) =>
-            ui.article({}, [
-              ui.h3({}, [c.ask]),
-              ui.p({}, [c.mistake]),
-              ui.div({ 'data-versus': '' }, [
-                ui.div({}, [
-                  ui.h4({}, ['A conventional stack']),
-                  ui.ul({}, [
-                    ...c.conventional.map(([ok, text]) =>
-                      ui.li({ 'data-ok': ok ? 'yes' : 'no' }, [`${ok ? '✓' : '✗'} ${text}`]),
-                    ),
-                  ]),
+      ]),
+      ui.use(
+        Section,
+        { variant: { depth: 2 }, props: { label: 'Vibe coders', kicker: '03 · How you work' } },
+        [
+          ui.use(Heading, {}, ['Three steps. Your agent does the typing.']),
+          ui.use(Steps, {
+            class: 'mt-8',
+            props: {
+              items: [
+                {
+                  id: '1',
+                  title: '1 · Create',
+                  body: 'One command makes the app and puts the Hozu guide next to it.',
+                },
+                {
+                  id: '2',
+                  title: '2 · Ask your agent',
+                  body: '“Add sharing to my notes.” It reads the guide that came with the app.',
+                },
+                {
+                  id: '3',
+                  title: '3 · It checks itself',
+                  body: 'It runs hozu check and fixes what it finds before it tells you it is done.',
+                },
+              ],
+            },
+          }),
+          ui.query(
+            getStart,
+            {},
+            {
+              ready: (start) =>
+                ui.div({ class: 'prose mt-8 max-w-none prose-pre:bg-ink prose-pre:text-paper' }, [
+                  ui.use(CodeBlock, {}, [ui.html(start.html)]),
                 ]),
-                ui.div({}, [ui.h4({}, ['hozu check']), ui.pre({}, [ui.code({}, [c.diagnostic])])]),
-              ]),
-              ui.p({ 'data-provenance': '' }, [c.provenance]),
-            ]),
+              pending: null,
+              failed: { Unexpected: () => ui.p({ role: 'alert' }, ['The start commands are unavailable.']) },
+            },
           ),
+        ],
+      ),
+      ui.use(
+        Section,
+        {
+          variant: { tone: 'ink', depth: 3 },
+          props: { label: 'Curious builders', kicker: '04 · What it catches' },
+        },
+        [
+          ui.use(Heading, {}, ['Mistakes that look fine and still break.']),
+          ui.p({ class: 'mt-4 max-w-2xl' }, [
+            'Each of these type-checks and builds. Hozu stops it anyway, and says what to do. Hover or tab to a card to see the real diagnostic.',
+          ]),
+          ui.div(
+            { class: 'mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4' },
+            catches.map((c) =>
+              ui.use(CatchCard, {
+                props: { code: c.code, name: c.name, story: c.story, message: c.message, fix: c.fix },
+              }),
+            ),
+          ),
+        ],
+      ),
+      ui.use(Section, { variant: { depth: 5 }, props: { label: 'Skeptics', kicker: '07 · The trials' } }, [
+        ui.use(Heading, {}, ['Measured, with the rough edges included.']),
+        ui.p({ class: 'mt-4 max-w-3xl' }, [
+          'Cost: 1.34–1.72× Nuxt’s tokens per change (trial 0021, steps 13–20, one run per framework). Outcome: 0 regressions and 0 silent failures over 16 changes, against 8 regression failures on Hozu 0.7. Not met: the cost ratio still rises slightly over the run.',
         ]),
-      ]),
-      ui.section({ 'data-start': '', 'aria-labelledby': 'start-title' }, [
-        ui.div({}, [
-          ui.h2({ id: 'start-title' }, ['Your first 30 seconds']),
-          ui.p({}, ['Create an app, add a feature, check your work. Node 22.18 or newer.']),
-          ui.p({}, ['Use --agent agents for Codex, Cursor or Copilot; --agent claude for Claude Code.']),
-        ]),
-        ui.query(
-          getStart,
-          {},
-          {
-            ready: (start) => ui.use(CodeBlock, {}, [ui.html(start.html)]),
-            pending: null,
-            failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Quick start is unavailable.']) },
+        ui.use(StatTable, {
+          class: 'mt-6',
+          props: {
+            caption: 'The same notes app, changed 16 more times by an agent',
+            rows: [
+              { id: 'r', label: 'Regression failures', before: '8', after: '0' },
+              { id: 's', label: 'Steps with silent failures', before: '5', after: '0' },
+              {
+                id: 'c',
+                label: 'Cost against Nuxt (geometric mean)',
+                before: '2.64–2.73×',
+                after: '1.34–1.72×',
+              },
+            ],
           },
-        ),
-      ]),
-      ui.section({ 'aria-labelledby': 'principles-title', 'data-section': '' }, [
-        ui.h2({ id: 'principles-title' }, ['Structure you can verify.']),
-        ui.div({ 'data-principles': '' }, [
-          ...[
-            [
-              'The IR is the source of truth',
-              'Typed builders describe your app as data. The validator, compiler and runtime share one representation.',
-            ],
-            [
-              'Contracts for every behaviour',
-              'Given a state, when an event happens, expect a result. Every machine transition has a contract.',
-            ],
-            [
-              'Rendering is derived',
-              'Declare who can see data and how fresh it must be. Hozu derives the render plan; only machine-bound views hydrate.',
-            ],
-            [
-              'Diagnostics that lead to a fix',
-              'Each diagnostic carries a location, a cause and a suggested fix. Read it yourself or pass the JSON to your agent.',
-            ],
-          ].map(([title, body]) => ui.article({}, [ui.h3({}, [title!]), ui.p({}, [body!])])),
-        ]),
-      ]),
-      ui.nav({ 'data-reading-path': '', 'aria-label': 'Learn Hozu' }, [
-        ui.a({ href: ui.link(doc, { slug: 'getting-started' }) }, [
-          ui.strong({}, ['Build something']),
-          ui.span({}, ['Start with the docs']),
-        ]),
-        ui.a({ href: ui.link(how, null) }, [
-          ui.strong({}, ['Understand the design']),
-          ui.span({}, ['Explore how it works']),
-        ]),
-        ui.a({ href: ui.link(trials, null) }, [
-          ui.strong({}, ['Examine the evidence']),
-          ui.span({}, ['Read the trials']),
-        ]),
-      ]),
-      ui.p({ 'data-boundaries': '' }, [
-        'Hozu is not a separate SPA mode or a place for arbitrary effects in views. It makes behaviour explicit, and asks you to pay for that structure.',
-      ]),
-      ui.section({ 'data-results': '', 'aria-labelledby': 'results-title' }, [
-        ui.h2({ id: 'results-title' }, ['Measured, with the rough edges included.']),
-        ui.p({}, [
-          'Two tasks, each built from a spec and then changed by an agent, checked by hidden acceptance tests. Notes: accounts, per-user isolation, double submit, forms without JavaScript, HttpOnly sessions. City bikes: a Leaflet map, a Chart.js chart, GSAP animation and a Three.js globe. Every run is also re-checked after the change for regressions.',
-        ]),
-        ui.table({}, [
-          ui.caption({}, [
-            'Trials 0012, 0017 and 0019: the same tasks, prompts and model; agent cost relative to Nuxt',
+        }),
+        curve('0021-0-8-long-run', 'Trial 0021 per-step cost, lines and checks for Hozu 0.8 and Nuxt'),
+        ui.p({ class: 'mt-2 font-mono text-xs' }, [
+          'Raw records; Nuxt step 14 is undercounted there, and the report explains the correction. ',
+          ui.a({ href: ui.link(trial, { slug: claim('tokens').trial }), class: 'underline' }, [
+            'Read trial 0021',
           ]),
-          ui.thead({}, [
-            ui.tr({}, [
-              ui.th({ scope: 'col' }, ['']),
-              ui.th({ scope: 'col' }, ['Hozu 0.7']),
-              ui.th({ scope: 'col' }, ['Nuxt']),
-            ]),
-          ]),
-          ui.tbody({}, [
-            ...[
-              ['Checks passed', 'Every run, trials 0016–0019', 'Notes 67 / 72, city bikes 76 / 76'],
-              ['Notes: build', '1.14×', '1×'],
-              ['Notes: change', '1.38×', '1×'],
-              ['City bikes: build', '1.75×', '1×'],
-              ['City bikes: change', '2.03×', '1×'],
-            ].map(([row, hozu, nuxt]) =>
-              ui.tr({}, [ui.th({ scope: 'row' }, [row!]), ui.td({}, [hozu!]), ui.td({}, [nuxt!])]),
+          ' · ',
+          ui.a({ href: ui.link(trials, null), class: 'underline' }, ['All trials']),
+        ]),
+      ]),
+      ui.use(
+        Section,
+        { variant: { tone: 'ink', depth: 1 }, props: { label: 'Everyone', kicker: '08 · Start' } },
+        [
+          ui.use(Heading, {}, ['Build something. Then try to break it.']),
+          ui.div({ class: 'mt-8 flex flex-wrap gap-4' }, [
+            ui.use(
+              Button,
+              { variant: { intent: 'solid' }, props: { href: ui.link(doc, { slug: 'getting-started' }) } },
+              ['Start building →'],
+            ),
+            ui.a(
+              {
+                href: 'https://github.com/olevatorr/Hozu',
+                class: 'inline-block border-4 border-paper px-4 py-3 text-sm font-extrabold uppercase',
+              },
+              ['GitHub'],
             ),
           ]),
-        ]),
-        ui.p({}, [
-          'One Nuxt change silently broke three working features; no Hozu run did. The price is extra tokens: a guide the model has not seen, and on widget-heavy apps more code to write. Two to four runs per step: small samples, not failure rates.',
-        ]),
-        ui.ul({}, [
-          ...[
-            ['0019-0-7-write-less', '0019: 0.7 on both tasks'],
-            ['0018-widgets-0-6', '0018: city bikes on 0.6, with hozu browse'],
-            ['0017-widgets', '0017: city bikes, the Nuxt baseline'],
-            ['0016-0-5-four-runs', '0016: notes on 0.5, four runs per step and a Codex run'],
-            ['0012-correctness-notes', '0012: notes, correctness, methods and limitations'],
-          ].map(([slug, title]) => ui.li({}, [ui.a({ href: ui.link(trial, { slug: slug! }) }, [title!])])),
-        ]),
-      ]),
+        ],
+      ),
+      ui.use(Ticker, {
+        props: {
+          items: [
+            `${claim('regressions').value} regressions in 16 changes`,
+            `${claim('tokens').value} the tokens of Nuxt`,
+            `${claim('js').value} client JS`,
+            'every change checked',
+          ],
+        },
+      }),
     ]),
 })
 export const Trials = ui.view({

@@ -68,6 +68,20 @@ body {
 [data-rise] > :nth-child(8) {
   animation-delay: 490ms;
 }
+[data-copyable] {
+  position: relative;
+}
+[data-copy] {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--color-red);
+  color: var(--color-paper);
+  font: 700 0.75rem / 1 var(--font-mono);
+  padding: 0.35rem 0.6rem;
+  border: 0;
+  cursor: pointer;
+}
 [data-ticker]:has(input:checked) [data-ticker-track] {
   animation-play-state: paused;
 }
