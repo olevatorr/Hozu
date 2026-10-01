@@ -7,7 +7,7 @@ import {
   voidTags,
 } from '../ir/dom-data.ts'
 import type { DomEvent, DomFields } from '../ir/events.ts'
-import { brand, type Decl, infoOf } from '../model/decl.ts'
+import { brand, type Decl } from '../model/decl.ts'
 import { createRef, type Expr, type Guard, type Ref, refProxy, type Val } from '../model/expr.ts'
 import type { Infer, Schema } from '../schema/standard.ts'
 import { type Asset, asset } from './asset.ts'
@@ -21,7 +21,6 @@ import type { MachineDecl, UnexpectedError } from './machine.ts'
 import type { Condition } from './op.ts'
 import { page } from './page.ts'
 import type { RouteDecl } from './route.ts'
-import { type WidgetDecl, widget } from './widget.ts'
 
 export const SEND = Symbol.for('hozu.send')
 export const LINK = Symbol.for('hozu.link')
@@ -102,25 +101,13 @@ export type NodeDef =
   | { kind: 'if'; test: unknown; ifTrue: readonly unknown[]; ifFalse: readonly unknown[]; motion: unknown }
   | { kind: 'html'; value: unknown }
   | { kind: 'global'; target: 'window' | 'document'; on: Record<string, unknown> }
-  | { kind: 'widget'; widget: WidgetDecl; options: WidgetUse<any, any>; children: readonly unknown[] }
   | { kind: 'component'; component: ComponentDecl; options: unknown; children: readonly unknown[] }
 
-export interface WidgetUse<P, E> {
-  props: Val<P>
-  on?: { [K in keyof E]?: (detail: Ref<E[K]>) => Send }
-  class?: string
-  toggle?: Record<string, Guard | Val<boolean>>
-  vars?: Record<`--${string}`, Val<string | number | null>>
-}
-
-interface Use {
-  <T extends ComponentTypes>(
-    component: ComponentDecl<T>,
-    options: NoInfer<ComponentUse<T>>,
-    ...children: T['children'] extends true ? [children: Child[]] : []
-  ): NodeDecl
-  <P, E>(widget: WidgetDecl<P, E>, options: NoInfer<WidgetUse<P, E>>, children: Child[]): NodeDecl
-}
+type Use = <T extends ComponentTypes>(
+  component: ComponentDecl<T>,
+  options: NoInfer<ComponentUse<T>>,
+  ...children: T['children'] extends true ? [children: Child[]] : []
+) => NodeDecl
 
 export interface ViewDef {
   machine: MachineDecl | null
@@ -143,10 +130,8 @@ export interface ViewScope<C, S extends string, P, Q = null> {
 
 const node = (def: NodeDef): NodeDecl => brand({}, 'node', def)
 
-const use = ((target: ComponentDecl | WidgetDecl, options: never, children: Child[] = []): NodeDecl =>
-  infoOf(target)?.kind === 'component'
-    ? node({ kind: 'component', component: target as ComponentDecl, options, children })
-    : node({ kind: 'widget', widget: target as WidgetDecl, options, children })) as Use
+const use = ((component: ComponentDecl, options: unknown, children: Child[] = []): NodeDecl =>
+  node({ kind: 'component', component, options, children })) as Use
 
 export const ifNode = (test: unknown, then: readonly unknown[], otherwise: readonly unknown[]): NodeDecl =>
   node({ kind: 'if', test, ifTrue: then, ifFalse: otherwise, motion: null })
@@ -232,7 +217,6 @@ export const ui = Object.freeze({
     branches: { ready: (data: Ref<O>) => Branch | null; pending?: Branch | null; failed: QueryErrors<E> },
   ): NodeDecl => node({ kind: 'query', query, input, ...branches, pending: branches.pending ?? null }),
   embed: (view: ViewDecl): NodeDecl => node({ kind: 'embed', view }),
-  widget,
   asset,
   if: (test: Condition, then: Child[], otherwise: Child[], motion: string): NodeDecl =>
     node({ kind: 'if', test, ifTrue: then, ifFalse: otherwise, motion }),

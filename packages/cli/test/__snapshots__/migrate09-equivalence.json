@@ -1,0 +1,60 @@
+{
+  "examples-blog": {
+    "mappings": {
+      "irVersion3": 1
+    },
+    "rewrites": {},
+    "behaviour": 0
+  },
+  "examples-notes": {
+    "mappings": {
+      "irVersion3": 1
+    },
+    "rewrites": {},
+    "behaviour": 0
+  },
+  "examples-showcase": {
+    "mappings": {
+      "clientHash": 6,
+      "irVersion3": 1,
+      "renderHash": 6,
+      "stylePatch": 6,
+      "widgetComponent": 6,
+      "widgetNode": 6
+    },
+    "rewrites": {
+      "bundle": 1,
+      "component": 9,
+      "styles": 6
+    },
+    "behaviour": 3
+  },
+  "examples-stations": {
+    "mappings": {
+      "clientHash": 5,
+      "irVersion3": 1,
+      "renderHash": 5,
+      "widgetComponent": 5,
+      "widgetNode": 5
+    },
+    "rewrites": {
+      "bundle": 1,
+      "component": 6
+    },
+    "behaviour": 1
+  },
+  "site": {
+    "mappings": {
+      "clientHash": 1,
+      "irVersion3": 1,
+      "renderHash": 1,
+      "widgetComponent": 1,
+      "widgetNode": 4
+    },
+    "rewrites": {
+      "bundle": 2,
+      "component": 1
+    },
+    "behaviour": 0
+  }
+}

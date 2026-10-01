@@ -1,6 +1,6 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import { BarController, BarElement, CategoryScale, Chart, LinearScale } from 'chart.js'
-import type { DistrictChart } from './widgets.ts'
+import type { DistrictChart } from './components.ts'
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale)
 

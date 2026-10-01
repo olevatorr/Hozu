@@ -1,6 +1,6 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import gsap from 'gsap'
-import type { Counter } from './widgets.ts'
+import type { Counter } from './components.ts'
 
 export default implement<typeof Counter>(({ el, props }) => {
   const state = { n: props.value }

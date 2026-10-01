@@ -2,6 +2,7 @@ import { feature, ui } from '@hozu/core'
 import { doc, home, how, trial, trials } from '../../routes.ts'
 import { Chapter, Docs } from './articles.ts'
 import { Footer, Header } from './chrome.ts'
+import { CodeCopy } from './components.ts'
 import {
   getChangelog,
   getChapter,
@@ -12,7 +13,6 @@ import {
   listDocs,
   listTrials,
 } from './model.ts'
-import { CodeCopy } from './widgets.ts'
 
 export { Chapter, Docs, Footer, Header }
 

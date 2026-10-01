@@ -170,21 +170,21 @@ export const PAGE = String.raw`(() => {
     snapshot() {
       const clean = (s) => (s ?? '').replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim()
       const text = clean(document.body?.innerText)
-      const widget = [...document.querySelectorAll('[data-hozu-widget]')].flatMap((el) => clean(el.innerText).split('\n').filter(Boolean))
+      const component = [...document.querySelectorAll('[data-hozu-component]')].flatMap((el) => clean(el.innerText).split('\n').filter(Boolean))
       const url = new URL(location.href)
       url.searchParams.delete('__hozu')
-      return { url: url.pathname + url.search, title: document.title, text, widget }
+      return { url: url.pathname + url.search, title: document.title, text, component }
     },
     report(selectors, expected) {
-      const widgets = []
+      const components = []
       const hydrated = document.documentElement.hasAttribute('data-hozu-ready') || !document.getElementById('hozu-payload')
-      for (const el of document.querySelectorAll('[data-hozu-widget]')) {
-        const name = el.getAttribute('data-hozu-widget')
-        const state = el.getAttribute('data-hozu-widget-state')
+      for (const el of document.querySelectorAll('[data-hozu-component]')) {
+        const name = el.getAttribute('data-hozu-component')
+        const state = el.getAttribute('data-hozu-component-state')
         const load = expected.find(([n]) => n === name)?.[1]
         const r = el.getBoundingClientRect()
         const empty = !el.children.length && !el.textContent.trim()
-        widgets.push({
+        components.push({
           name,
           state: state === 'loading' ? 'not mounted' : state,
           width: Math.round(r.width),
@@ -209,7 +209,7 @@ export const PAGE = String.raw`(() => {
       }
       if (!hydrated)
         for (const [name] of expected)
-          widgets.push({
+          components.push({
             name, state: 'not mounted', width: null, height: null, canvases: 0, elements: 0,
             hint: 'the page did not hydrate; see errors',
           })
@@ -221,7 +221,7 @@ export const PAGE = String.raw`(() => {
           const text = (el.innerText ?? el.textContent ?? '').replace(/\s+/g, ' ').trim()
           elements.push({ selector: sel, tag: el.tagName.toLowerCase(), attrs, text: text.length > 120 ? text.slice(0, 120) + '…' : text })
         }
-      return { hydrated, widgets, elements }
+      return { hydrated, components, elements }
     },
   }
 })()`

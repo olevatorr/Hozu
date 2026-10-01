@@ -215,7 +215,7 @@ export function literals(ctx: Ctx) {
               if ('test' in v) checkGuard(ctx, env, v.test, at(pointer, 'toggle', name, 'test'))
             sends(node.on)
             return
-          case 'widget':
+          case 'component':
           case 'global':
             sends(node.on)
             return

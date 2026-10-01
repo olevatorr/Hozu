@@ -41,9 +41,9 @@
       "types": "./dist/ir/forms.d.ts",
       "default": "./dist/ir/forms.js"
     },
-    "./widget": {
-      "types": "./dist/widget.d.ts",
-      "default": "./dist/widget.js"
+    "./component": {
+      "types": "./dist/component.d.ts",
+      "default": "./dist/component.js"
     },
     "./lower": {
       "types": "./dist/lower.d.ts",

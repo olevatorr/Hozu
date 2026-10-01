@@ -41,7 +41,7 @@ export function staleEntries(committed: Lock, computed: NonNullable<Lock>): Stal
   return out
 }
 
-function resolveFrom(req: NodeJS.Require, id: string): string | null {
+export function resolveFrom(req: NodeJS.Require, id: string): string | null {
   try {
     return req.resolve(id)
   } catch {}

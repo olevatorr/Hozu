@@ -17,7 +17,7 @@ import { attrText, classText, domField, passive, properties, SVG_NS, text } from
 
 export type Motion = typeof import('./motion.ts')
 
-import type { WidgetHost } from './widget.ts'
+import type { ComponentHost } from './component.ts'
 
 export type Result = { ok: true; value: Json } | { ok: false; error: string; data: Json }
 
@@ -38,21 +38,20 @@ export interface AppOptions {
   onInvoke?: (effect: string, input: Json) => Promise<Result>
   onQuery?: (query: string, input: Json) => Promise<Result>
   onNavigate?: (url: string) => void
-  widgets?: Record<string, WidgetRef>
+  components?: Record<string, ComponentRef>
   routes?: Record<string, string>
   motion?: Motion | undefined
-  mountWidget?: ((host: WidgetHost) => void) | undefined
-  loadWidget?: (url: string) => Promise<WidgetSetup>
+  mountComponent?: ((host: ComponentHost) => void) | undefined
+  loadComponent?: (url: string) => Promise<ComponentSetup>
 }
 
-export interface WidgetRef {
+export interface ComponentRef {
   url: string
   tag: string
   load: 'eager' | 'visible' | 'idle'
-  wraps: boolean
 }
 
-export type WidgetSetup = (context: {
+export type ComponentSetup = (context: {
   el: HTMLElement
   props: unknown
   emit(event: string, detail: unknown): void
@@ -312,8 +311,8 @@ export function createApp(doc: Document, options: AppOptions): App {
       case 'each':
         each(node, scope, c, block, ns)
         return
-      case 'widget':
-        widget(node, scope, c, block)
+      case 'component':
+        component(node, scope, c, block)
         return
       case 'if': {
         const test = () => value({ test: node.test }, scope) === true
@@ -371,7 +370,7 @@ export function createApp(doc: Document, options: AppOptions): App {
 
   const styling = (
     el: Element,
-    node: Extract<ViewNode, { kind: 'el' | 'widget' }>,
+    node: Extract<ViewNode, { kind: 'el' | 'component' }>,
     scope: Json[],
     block: Block,
   ) => {
@@ -400,8 +399,14 @@ export function createApp(doc: Document, options: AppOptions): App {
       })
   }
 
-  const widget = (node: Extract<ViewNode, { kind: 'widget' }>, scope: Json[], c: Cursor, block: Block) => {
-    const ref = options.widgets?.[node.widget]
+  const component = (
+    node: Extract<ViewNode, { kind: 'component' }>,
+    scope: Json[],
+    c: Cursor,
+    block: Block,
+  ) => {
+    const name = node.use.component
+    const ref = options.components?.[name]
     const tag = ref?.tag ?? 'div'
     let el: HTMLElement
     const claimed = c.claim && c.next?.nodeType === 1 && (c.next as Element).localName === tag
@@ -414,16 +419,16 @@ export function createApp(doc: Document, options: AppOptions): App {
       c.parent.insertBefore(el, c.next)
     }
     styling(el, node, scope, block)
-    if (!claimed || ref?.wraps) {
+    if (!claimed || node.children.length) {
       const inner: Cursor = { parent: el, next: claimed ? el.firstChild : null, claim: claimed }
       for (const child of node.children) render(child, scope, inner, block, null)
     }
-    if (!ref) console.error(`Hozu: widget ${node.widget} has no client code (bundleWidgets)`)
-    if (!ref || !options.loadWidget || !options.mountWidget) return
-    options.mountWidget({
+    if (!ref) console.error(`Hozu: component ${name} has no client code (bundleComponents)`)
+    if (!ref || !options.loadComponent || !options.mountComponent) return
+    options.mountComponent({
       el,
       ref,
-      name: node.widget,
+      name,
       doc,
       props: () => value(node.props, scope),
       emit: (name, detail) => {
@@ -435,7 +440,7 @@ export function createApp(doc: Document, options: AppOptions): App {
             payload: value(send.payload, scope, (f) => (f === 'detail' ? (detail as Json) : null)),
           })
       },
-      load: options.loadWidget,
+      load: options.loadComponent,
       watch: (update) => block.push(update),
       own: (stop) => mounted.add({ el, stop }),
       same: equal,

@@ -34,7 +34,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   HZ026: { name: 'unknown-class', severity: 'error' },
   HZ027: { name: 'invalid-dom-field', severity: 'error' },
   HZ028: { name: 'image-without-dimensions', severity: 'error' },
-  HZ029: { name: 'widget-boundary-mismatch', severity: 'error' },
+  HZ029: { name: 'component-boundary-mismatch', severity: 'error' },
   HZ030: { name: 'unsafe-html', severity: 'error' },
   HZ031: { name: 'invalid-literal', severity: 'error' },
   HZ032: { name: 'untyped-internal-link', severity: 'error' },

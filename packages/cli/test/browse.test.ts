@@ -65,7 +65,7 @@ describe('the testing guide (ADR 0043 J)', () => {
 })
 
 describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
-  it('mounts every widget, runs the steps in order and reports the page after them', async () => {
+  it('mounts every client component, runs the steps in order and reports the page after them', async () => {
     const { code, out } = await browse([
       '/',
       '--js',
@@ -80,7 +80,7 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(out.errors).toEqual([])
     expect(out.steps.map((s: { ok: boolean }) => s.ok)).toEqual([true, true])
     expect(
-      Object.fromEntries(out.widgets.map((w: { name: string; state: string }) => [w.name, w.state])),
+      Object.fromEntries(out.components.map((c: { name: string; state: string }) => [c.name, c.state])),
     ).toEqual({
       'stations.Counter': 'mounted',
       'stations.StationMap': 'mounted',
@@ -117,16 +117,16 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     )
   }, 60_000)
 
-  it('reports a widget whose setup throws, with the error', async () => {
+  it('reports a client component whose setup throws, with the error', async () => {
     const copy = copyOf('stations', 'features/stations/map.client.ts', (s) =>
       s.replace('const map = L.map', "throw new Error('boom')\n  const map = L.map"),
     )
     const { code, out } = await browse(['/', '--js', 'on'], copy)
     expect(code).toBe(1)
     expect(out.errors).toEqual([
-      expect.objectContaining({ kind: 'console', text: 'Widget stations.StationMap failed Error: boom' }),
+      expect.objectContaining({ kind: 'console', text: 'Component stations.StationMap failed Error: boom' }),
     ])
-    expect(out.widgets.find((w: { name: string }) => w.name === 'stations.StationMap')).toMatchObject({
+    expect(out.components.find((c: { name: string }) => c.name === 'stations.StationMap')).toMatchObject({
       state: 'failed',
       hint: 'its setup threw; see errors',
     })

@@ -19,6 +19,6 @@ export interface Manifest {
   irHash: string
   images: Record<string, ImageVariant[]> | null
   assets: ManifestAsset[]
-  widgets: Record<string, { hash: string; url: string }>
+  components: Record<string, { hash: string; url: string }>
   styles: { href: string; preload: string[] } | null
 }

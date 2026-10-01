@@ -1,6 +1,6 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import p5 from 'p5'
-import type { Sketch } from '../widgets.ts'
+import type { Sketch } from '../components.ts'
 
 export default implement<typeof Sketch>(({ el, props }) => {
   let hue = props.hue

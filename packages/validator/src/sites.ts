@@ -92,12 +92,10 @@ export function refSites(ir: ProjectIR): RefSite[] {
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer }) => {
         switch (node.kind) {
-          case 'widget':
+          case 'component':
           case 'el': {
-            if (node.kind === 'widget') {
-              add(node.widget, at(pointer, 'widget'), 'widget')
-              if (hasRefs(node.props)) valueRefs(node.props, at(pointer, 'props'), fnRef)
-            }
+            if (node.kind === 'component' && hasRefs(node.props))
+              valueRefs(node.props, at(pointer, 'props'), fnRef)
             for (const [dom, send] of Object.entries(node.on)) {
               add(send.event, at(pointer, 'on', dom, 'event'), 'event')
               if (hasRefs(send.payload)) valueRefs(send.payload, at(pointer, 'on', dom, 'payload'), fnRef)

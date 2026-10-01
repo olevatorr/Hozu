@@ -12,7 +12,7 @@ export function classCandidates(ir: ProjectIR): Set<string> {
   const walk = (n: ViewNode) => {
     switch (n.kind) {
       case 'el':
-      case 'widget':
+      case 'component':
         if (n.class) for (const c of classesOf(n.class)) out.add(c)
         for (const key in n.toggle) for (const c of classesOf(key)) out.add(c)
         n.children.forEach(walk)

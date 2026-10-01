@@ -25,17 +25,18 @@ import type { EffectResponse, Result } from '@hozu/runtime-client'
 import { type App, type AppHost, appHandlerOptions, appOptionsOf } from './app.ts'
 import { clientBundle } from './assets.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
+import { assertComponentBundle } from './components.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'
 import { endpointForm, formFields, formNode, runForm } from './forms.ts'
 import { serviceWorker, serviceWorkerRegistration, webManifest } from './pwa.ts'
 import {
+  type ComponentBundle,
   fnsModule,
   inlineScriptHashes,
   pathOf,
   renderPage,
   renderToString,
   type Stylesheet,
-  type WidgetBundle,
 } from './render.ts'
 import { instantiate, type RenderModule } from './rendered.ts'
 import { matcher } from './routing.ts'
@@ -43,7 +44,6 @@ import { parseSearch, queryInput } from './search.ts'
 import { type CspSources, contentSecurityPolicy, crossSite, ERROR_HTML, NOT_FOUND_HTML } from './security.ts'
 import { memorySessions, type SessionStore, signedCookie } from './session.ts'
 import { publicAssets } from './static.ts'
-import { assertWidgetBundle } from './widgets.ts'
 
 export interface HandlerOptions {
   build: BuildResult
@@ -51,7 +51,7 @@ export interface HandlerOptions {
   session?: ((request: Request) => unknown) | SessionStore
   now?: () => number
   styles?: Stylesheet | null
-  widgets?: WidgetBundle | null
+  components?: ComponentBundle | null
   onError?: OnError
   csp?: CspSources | false
   cache?: PageCache
@@ -148,7 +148,7 @@ function handlerFor({
   session: sessionOption,
   now = Date.now,
   styles = null,
-  widgets = null,
+  components = null,
   onError = (error, info) => console.error('[hozu]', info, error),
   csp = {},
   cache = memoryCache(),
@@ -224,10 +224,10 @@ function handlerFor({
     ? publicAssets(
         basePath,
         manifest.styles,
-        Object.fromEntries(Object.entries(manifest.widgets).map(([k, w]) => [k, w.url])),
+        Object.fromEntries(Object.entries(manifest.components).map(([k, c]) => [k, c.url])),
       )
-    : publicAssets(basePath, styles, widgets?.urls ?? {})
-  assertWidgetBundle(ir, assets.widgets, Boolean(manifest || widgets))
+    : publicAssets(basePath, styles, components?.urls ?? {})
+  assertComponentBundle(ir, assets.components, Boolean(manifest || components))
   const data = createDataRuntime({ build, resolvers, now, onError, env: rawEnv })
   const scopes = new WeakMap<Request, Promise<RequestData>>()
   const dataFor = (request: Request) => {
@@ -767,7 +767,7 @@ function handlerFor({
           'cache-control': IMMUTABLE,
         },
       })
-    const script = widgets?.files[path]
+    const script = components?.files[path]
     if (script !== undefined) return text('text/javascript', script, head, IMMUTABLE)
     if (styles && path === styles.href) return text('text/css', styles.css, head, IMMUTABLE)
     if (path === '/robots.txt') return text('text/plain; charset=utf-8', robotsTxt(build), head)

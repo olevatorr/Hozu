@@ -162,14 +162,12 @@ describe('builder diagnostics', () => {
     ])
   })
 
-  it('HZ029 — widget module that does not exist', () => {
-    const Ghost = ui.widget({
+  it('HZ029 — a client component module that does not exist', () => {
+    const Ghost = ui.component({
       tag: 'div',
-      props: z.object({}),
-      events: {},
       client: new URL('./missing.client.ts', import.meta.url),
       load: 'visible',
-      wraps: false,
+      render: () => ui.div({}, []),
     })
     const found = buildProject(
       project({
@@ -180,7 +178,7 @@ describe('builder diagnostics', () => {
       }),
     ).diagnostics.filter((d) => d.code === 'HZ029')
     expect(found.map((d) => [d.location.pointer, d.message])).toEqual([
-      ['/features/f/widgets/Ghost/client', expect.stringMatching(/missing\.client\.ts does not exist$/)],
+      ['/features/f/components/Ghost/client', expect.stringMatching(/missing\.client\.ts does not exist$/)],
     ])
   })
 

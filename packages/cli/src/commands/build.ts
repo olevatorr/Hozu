@@ -2,7 +2,7 @@ import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { type BuildResult, hashJson, type ImageSet, type Manifest } from '@hozu/core/ir'
+import { type BuildResult, componentOf, hashJson, type ImageSet, type Manifest } from '@hozu/core/ir'
 import type { BuildOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
@@ -14,7 +14,7 @@ interface Stylesheet {
   preload: string[]
 }
 
-interface Widgets {
+interface Components {
   urls: Record<string, string>
   files: Record<string, string>
 }
@@ -23,7 +23,7 @@ interface ServerModule {
   generateRender(build: BuildResult, images: Record<string, { width: number; href: string }[]> | null): string
   staticFiles(
     build: BuildResult,
-    options: { styles: Stylesheet | null; widgets: Widgets | null; client: boolean },
+    options: { styles: Stylesheet | null; components: Components | null; client: boolean },
   ): { path: string; text: string | null; file: string | null }[]
 }
 
@@ -53,10 +53,10 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
         await from<{ compileStyles(b: BuildResult, o: { base: string }): Promise<Stylesheet> }>('@hozu/css')
       ).compileStyles(build, { base })
     : null
-  const widgets = Object.keys(build.bindings.widgets).length
-    ? await (await from<{ bundleWidgets(b: BuildResult): Promise<Widgets> }>('@hozu/bundle')).bundleWidgets(
-        build,
-      )
+  const components = Object.keys(build.bindings.clients).length
+    ? await (
+        await from<{ bundleComponents(b: BuildResult): Promise<Components> }>('@hozu/bundle')
+      ).bundleComponents(build)
     : null
   const images = await optional<{ optimizeImages(b: BuildResult): Promise<ImageSet> }>('@hozu/image').then(
     (m) => (m ? m.optimizeImages(build) : null),
@@ -64,7 +64,7 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
   const server = await from<ServerModule>('@hozu/runtime-server')
   const dir = resolve(cwd, out ?? 'dist')
   const files: string[] = []
-  for (const f of server.staticFiles(build, { styles, widgets, client: true })) {
+  for (const f of server.staticFiles(build, { styles, components, client: true })) {
     const file = join(dir, 'public', f.path.replace(/^\//, ''))
     await mkdir(dirname(file), { recursive: true })
     if (f.file) await copyFile(f.file, file)
@@ -81,11 +81,11 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
     irHash: hashJson(build.ir),
     images: images && Object.keys(images.variants).length ? images.variants : null,
     assets: build.bindings.assetOrder,
-    widgets: Object.fromEntries(
-      Object.entries(widgets?.urls ?? {}).map(([ref, url]) => {
-        const [feature, symbol] = ref.split('.') as [string, string]
-        return [ref, { hash: build.ir.features[feature]?.widgets[symbol]?.sourceHash ?? '', url }]
-      }),
+    components: Object.fromEntries(
+      Object.entries(components?.urls ?? {}).map(([ref, url]) => [
+        ref,
+        { hash: componentOf(build.ir, ref)?.client?.sourceHash ?? '', url },
+      ]),
     ),
     styles: styles ? { href: styles.href, preload: styles.preload } : null,
   }

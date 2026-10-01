@@ -1,24 +1,14 @@
 import type { ComponentDef } from '../builders/component.ts'
 import { builtinOf, messageKeyOf } from '../builders/i18n.ts'
 import { linkOf, type NodeDef, sendOf } from '../builders/ui.ts'
-import { hashJson } from '../canonical/hash.ts'
-import type { Fix } from '../ir/diagnostic.ts'
+import { hashJson, sha256 } from '../canonical/hash.ts'
 import { htmlTags, svgTags } from '../ir/dom-data.ts'
-import type { ComponentIR, JsonSchema } from '../ir/types.ts'
+import type { ComponentIR, ComponentLoad, JsonSchema } from '../ir/types.ts'
 import { infoOf } from '../model/decl.ts'
 import { createRef, exprOf, guardOf, ReferenceEscape } from '../model/expr.ts'
+import { builtin } from '../platform.ts'
 import { isStandardSchema } from '../schema/standard.ts'
-import { type At, at, type FeatureScope, type ProjectScope } from './scope.ts'
-
-export const notYet = (what: string, phase: number): [message: string, cause: string, fix: Fix] => [
-  `${what} is not supported until ADR 0045 phase ${phase}`,
-  `0.9 records pure components from phase 2; client components arrive in phase ${phase} (docs/adr/0045-0-9-ui-components.md).`,
-  {
-    summary: 'Keep this component pure (no client, load or emits), or keep it a ui.widget until then',
-    snippet: null,
-    patch: null,
-  },
-]
+import { type At, at, type FeatureScope, filePath, type ProjectScope } from './scope.ts'
 
 export interface ComponentOwnerRef {
   kind: 'kit' | 'feature'
@@ -166,7 +156,7 @@ function innerClasses(root: Extract<NodeDef, { kind: 'el' }>): string[] {
         for (const c of tokens(d.props?.class)) out.add(c)
         for (const k of Object.keys((d.props?.toggle ?? {}) as object)) for (const c of tokens(k)) out.add(c)
         d.children.forEach(visit)
-      } else if (d.kind === 'component' || d.kind === 'widget') {
+      } else if (d.kind === 'component') {
         const o = (d.options ?? {}) as Record<string, unknown>
         for (const c of tokens(o.class)) out.add(c)
         visit(o.slots)
@@ -255,10 +245,39 @@ export function schemaJson(project: ProjectScope, schema: unknown): JsonSchema |
   return hit.json
 }
 
+const loads = new Set<unknown>(['eager', 'visible', 'idle'])
+
+function clientOf(scope: FeatureScope, p: At, def: ComponentDef, id: string): ComponentIR['client'] {
+  if (def.client === null) return null
+  const listed = scope.project.manifest?.components[id]
+  const fs = builtin('node:fs')
+  const file = filePath(def.client)
+  let sourceHash = ''
+  if (listed) sourceHash = listed.hash
+  else if (!file || !fs?.existsSync(file))
+    scope.report(
+      'HZ029',
+      at(p, 'client'),
+      file ? `Component module ${file} does not exist` : 'A component client must be a file URL',
+      "Declare it with new URL('./my-component.client.ts', import.meta.url) and default-export implement<typeof MyComponent>(…) from @hozu/core/component.",
+      {
+        summary: 'Create the client module, or point client at it with a file URL',
+        snippet: "client: new URL('./my-component.client.ts', import.meta.url)",
+        patch: null,
+      },
+    )
+  else {
+    scope.project.bindings.clients[id] = file
+    sourceHash = sha256(fs.readFileSync(file, 'utf8')).slice(0, 16)
+  }
+  if (!loads.has(def.load))
+    scope.report('HZ014', at(p, 'load'), `Invalid load "${def.load}"`, "Use 'eager', 'visible' or 'idle'.")
+  return { load: loads.has(def.load) ? (def.load as ComponentLoad) : 'visible', sourceHash }
+}
+
 export function buildComponent(scope: FeatureScope, p: At, decl: object): ComponentIR {
   const def = infoOf(decl)!.def as ComponentDef
   const tv = tvOf(def)
-  if (def.client !== null) scope.report('HZ014', at(p, 'client'), ...notYet('A client ui.component', 4))
   if (!elementTags.has(def.tag))
     scope.report(
       'HZ014',
@@ -285,7 +304,7 @@ export function buildComponent(scope: FeatureScope, p: At, decl: object): Compon
     ),
     extend: def.extend,
     owned: ownedOf(def, root),
-    client: null,
+    client: clientOf(scope, p, def, id),
     sourceHash: scope.fingerprint(
       `${def.tag}\n${String(def.render)}\n${JSON.stringify(tv ? { base: tv.base, slots: tv.slots, variants: tv.variants, defaultVariants: tv.defaultVariants, compoundVariants: tv.compoundVariants } : null)}`,
     ),

@@ -124,7 +124,7 @@ describe('server rendering', () => {
   })
 })
 
-describe('widgets that only appear after client-side state changes', () => {
+describe('client components that only appear after client-side state changes', () => {
   it('are listed in the payload with the island that can render them', async () => {
     const stations = buildProject((await import('../../../examples/stations/hozu.config.ts')).default, {
       sources: false,
@@ -141,16 +141,16 @@ describe('widgets that only appear after client-side state changes', () => {
         fns: null,
         styles: null,
         preload: [],
-        widgets: Object.fromEntries(
-          ['StationMap', 'DistrictChart', 'Counter', 'FadeIn', 'Globe'].map((w) => [
-            `stations.${w}`,
-            `/w/${w}.js`,
+        components: Object.fromEntries(
+          ['StationMap', 'DistrictChart', 'Counter', 'FadeIn', 'Globe'].map((c) => [
+            `stations.${c}`,
+            `/c/${c}.js`,
           ]),
         ),
       },
     })
     expect(html.slice(0, html.indexOf('id="hozu-payload"'))).not.toContain('Station details')
-    expect(Object.keys(payloadOf(html).widgets).sort()).toEqual([
+    expect(Object.keys(payloadOf(html).components).sort()).toEqual([
       'stations.Counter',
       'stations.DistrictChart',
       'stations.FadeIn',

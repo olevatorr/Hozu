@@ -39,7 +39,7 @@ function transform(n: ViewNode, variants: Variants): ViewNode {
         },
       }
     }
-    case 'widget':
+    case 'component':
     case 'when':
       return { ...n, children: list(n.children) }
     case 'if':

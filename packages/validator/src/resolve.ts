@@ -1,17 +1,8 @@
 import type { ExportsIR, FeatureIR, ProjectIR } from '@hozu/core/ir'
 
-export type RefKind =
-  | 'event'
-  | 'query'
-  | 'mutation'
-  | 'effect'
-  | 'tag'
-  | 'fn'
-  | 'view'
-  | 'widget'
-  | 'endpoint'
+export type RefKind = 'event' | 'query' | 'mutation' | 'effect' | 'tag' | 'fn' | 'view' | 'endpoint'
 
-export type Registry = 'events' | 'queries' | 'mutations' | 'tags' | 'fns' | 'views' | 'widgets' | 'endpoints'
+export type Registry = 'events' | 'queries' | 'mutations' | 'tags' | 'fns' | 'views' | 'endpoints'
 
 export const registriesOf: Record<RefKind, Registry[]> = {
   event: ['events'],
@@ -21,7 +12,6 @@ export const registriesOf: Record<RefKind, Registry[]> = {
   tag: ['tags'],
   fn: ['fns'],
   view: ['views'],
-  widget: ['widgets'],
   endpoint: ['endpoints'],
 }
 

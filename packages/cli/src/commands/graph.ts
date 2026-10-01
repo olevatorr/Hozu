@@ -13,7 +13,7 @@ function collectViewEdges(node: ViewNode, from: string, edges: GraphEdge[], node
       for (const child of [...node.ifTrue, ...node.ifFalse]) collectViewEdges(child, from, edges, nodes)
       return
     case 'el':
-    case 'widget':
+    case 'component':
     case 'global':
       for (const send of Object.values(node.on)) {
         add(`event:${send.event}`, 'event', send.event)
@@ -21,7 +21,7 @@ function collectViewEdges(node: ViewNode, from: string, edges: GraphEdge[], node
           from,
           to: `event:${send.event}`,
           kind: 'send',
-          label: node.kind === 'el' ? node.tag : node.kind === 'widget' ? node.widget : node.target,
+          label: node.kind === 'el' ? node.tag : node.kind === 'component' ? node.use.component : node.target,
         })
       }
       if (node.kind !== 'global')

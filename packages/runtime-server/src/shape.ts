@@ -31,7 +31,7 @@ export function bindingUses(n: ViewNode): Uses {
       case 'global':
         for (const k in x.on) valueUses(x.on[k]!.payload, out)
         return
-      case 'widget':
+      case 'component':
         valueUses(x.props, out)
         for (const m of [x.toggle, x.vars]) for (const k in m) valueUses(m[k]!, out)
         for (const k in x.on) valueUses(x.on[k]!.payload, out)

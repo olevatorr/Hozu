@@ -2,6 +2,8 @@ import { planRoute, type RoutePlan } from '@hozu/compiler'
 import {
   type BuildResult,
   canonicalStringify,
+  clientComponentsIn,
+  componentOf,
   type FeatureIR,
   type HeadIR,
   type Json,
@@ -12,8 +14,6 @@ import {
   type TagExprIR,
   type ValueExpr,
   type ViewNode,
-  type WidgetIR,
-  widgetsIn,
 } from '@hozu/core/ir'
 import type { DataRuntime, RequestData } from '@hozu/data'
 import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '@hozu/machine'
@@ -39,7 +39,7 @@ export interface Assets {
   fns: string | null
   styles: string | null
   preload: string[]
-  widgets: Record<string, string>
+  components: Record<string, string>
 }
 
 export interface Stylesheet {
@@ -49,7 +49,7 @@ export interface Stylesheet {
   preload: string[]
 }
 
-export interface WidgetBundle {
+export interface ComponentBundle {
   urls: Record<string, string>
   files: Record<string, string>
 }
@@ -90,7 +90,7 @@ export async function renderPage({
   search = null,
   snapshots = {},
   session,
-  assets = { client: '/_hozu/client.js', fns: '/_hozu/fns.js', styles: null, preload: [], widgets: {} },
+  assets = { client: '/_hozu/client.js', fns: '/_hozu/fns.js', styles: null, preload: [], components: {} },
   locale: requested = null,
   images = null,
   env = NO_ENV,
@@ -115,11 +115,10 @@ export async function renderPage({
     fns: null,
     params,
     search,
-    widgets: {},
+    components: {},
     routes: {},
     live: {},
   }
-  const widgets = widgetsOf(ir)
   const fns = i18n ? fnsFor(build, lang) : (bindings.fns as Record<string, (x: Json) => Json>)
   const getters = gettersFor(fns)
 
@@ -183,8 +182,8 @@ export async function renderPage({
       index = payload.ids.push(n.id) - 1
       nodeIndex.set(n.id, index)
       const node = i18n ? lowerCached(n, lowering) : n
-      payload.nodes[n.id] = node.kind === 'widget' ? { ...node, children: [] } : node
-      for (const ref of widgetsIn(n, ir)) runtime.widget(ref)
+      payload.nodes[n.id] = node.kind === 'component' ? { ...node, children: [] } : node
+      for (const ref of clientComponentsIn(n, ir)) runtime.component(ref)
       const { motion, visible } = loadsOf(node)
       if (motion) payload.motion = true
       if (visible) payload.visible = true
@@ -233,7 +232,7 @@ export async function renderPage({
         break
       case 'el':
       case 'when':
-      case 'widget':
+      case 'component':
         result = n.children.some(suspends)
         break
       case 'if':
@@ -254,12 +253,12 @@ export async function renderPage({
     return result
   }
 
-  const runtime: Pick<RenderRuntime, 'embed' | 'widget'> = {
+  const runtime: Pick<RenderRuntime, 'embed' | 'component'> = {
     embed: (view) => embedded({ kind: 'embed', id: '', view }),
-    widget: (ref) => {
-      const w = widgets[ref]
-      const url = assets.widgets[ref]
-      if (w && url) payload.widgets[ref] ??= { url, tag: w.tag, load: w.load, wraps: w.wraps }
+    component: (ref) => {
+      const c = componentOf(ir, ref)
+      const url = assets.components[ref]
+      if (c?.client && url) payload.components[ref] ??= { url, tag: c.tag, load: c.client.load }
     },
   }
   const table = generated ?? (await renderTableFor(build, images))
@@ -267,7 +266,7 @@ export async function renderPage({
   const generatedRuntime: RenderRuntime = {
     island: (id, scope, scoped) => island(byId.get(id)!, scope, scoped),
     embed: runtime.embed,
-    widget: runtime.widget,
+    component: runtime.component,
   }
   const sync = (n: ViewNode, scope: Scope, island: boolean, sep = false): string => {
     const key = renderKey(route, n.id, island, sep)
@@ -296,11 +295,11 @@ export async function renderPage({
     const [o, c] = island ? [OPEN, CLOSE] : ['', '']
     switch (n.kind) {
       case 'el':
-      case 'widget': {
-        const tag = n.kind === 'el' ? n.tag : (widgets[n.widget]?.tag ?? 'div')
-        if (n.kind === 'widget') runtime.widget(n.widget)
+      case 'component': {
+        const tag = n.kind === 'el' ? n.tag : (componentOf(ir, n.use.component)?.tag ?? 'div')
+        if (n.kind === 'component') runtime.component(n.use.component)
         buffer += n.kind === 'el' ? element(n, scope) : `<${tag}${classAndStyle(n, (v) => value(v, scope))}>`
-        const inner = n.kind === 'widget' && islandIds.has(n.id) ? false : island
+        const inner = n.kind === 'component' && islandIds.has(n.id) ? false : island
         for (let i = 0; i < n.children.length; i++)
           await render(n.children[i]!, scope, inner, separated(n.children, i))
         buffer += `</${tag}>`
@@ -475,18 +474,6 @@ function fnsFor(build: BuildResult, locale: string) {
   if (!hit) {
     hit = localeFns(build.ir, build.bindings.fns as Record<string, (x: Json) => Json>, locale)
     byLocale.set(locale, hit)
-  }
-  return hit
-}
-
-const widgetMemo = new WeakMap<ProjectIR, Record<string, WidgetIR>>()
-function widgetsOf(ir: ProjectIR): Record<string, WidgetIR> {
-  let hit = widgetMemo.get(ir)
-  if (!hit) {
-    hit = {}
-    for (const f of Object.values(ir.features))
-      for (const [sym, w] of Object.entries(f.widgets ?? {})) hit[`${f.id}.${sym}`] = w
-    widgetMemo.set(ir, hit)
   }
   return hit
 }

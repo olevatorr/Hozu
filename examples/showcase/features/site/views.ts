@@ -1,5 +1,6 @@
 import { ui } from '@hozu/core'
 import { about, home } from '../../routes.ts'
+import { Carousel, Chart, Globe, Reveal, Sketch, Smooth } from './components.ts'
 import { pick, slideLabel, slides, stats } from './effects.ts'
 import {
   AddTodo,
@@ -12,7 +13,6 @@ import {
   ToggleSpin,
 } from './events.ts'
 import { siteMachine } from './machine.ts'
-import { Carousel, Chart, Globe, Reveal, Sketch, Smooth } from './widgets.ts'
 
 const container = 'mx-auto max-w-6xl px-4 sm:px-6'
 const heading = 'text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-white'

@@ -14,6 +14,12 @@ export const MAPPINGS = {
   andOr: 'nested and / or flatten (record-time normalisation)',
   condGuard: 'a guard-position %cond → and / or / not (record-time normalisation)',
   formRef: "a string form attribute and its form's id → { formRef } (rewrite form)",
+  irVersion3: 'irVersion 2 → 3 with kits: {} and components: {} (the 0.9 upgrade)',
+  widgetComponent: 'a widget → a client component of its feature (rewrite component)',
+  widgetNode: 'a widget node → a component node with its use (rewrite component)',
+  renderHash:
+    "a migrated widget's component sourceHash, which covers the generated render (rewrite component)",
+  stylePatch: 'an HZ079 or HZ074 patch of the 0.9 style rules (rewrite styles)',
 } as const
 export type Mapping = keyof typeof MAPPINGS
 export type Counts = Partial<Record<Mapping, number>>
@@ -224,13 +230,73 @@ export function normalize07(input: J, into?: Counts): J {
   })
 }
 
-/** The 0.8 IR in 0.9 terms (ADR 0045 L); phase 1 adds only the version and the empty component maps. */
-export function normalize08(input: J): J {
+const classTokens = (c: J): string[] => (typeof c === 'string' ? c.split(/\s+/).filter(Boolean) : [])
+
+/** The 0.8 IR in 0.9 terms (ADR 0045 L): widgets become client components, widget nodes component nodes. */
+export function normalize08(input: J, into?: Counts): J {
+  counts = into ?? {}
   const ir = clone(input)
+  count('irVersion3', ir.irVersion === 3 ? 0 : 1)
   ir.irVersion = 3
   ir.kits ??= {}
-  for (const f of Object.values(ir.features ?? {}) as J[]) f.components ??= {}
-  return ir
+  const given = new Set<string>()
+  walk(ir.features ?? {}, (v) => {
+    if (isObject(v) && v.kind === 'widget' && Array.isArray(v.children) && v.children.length)
+      given.add(v.widget)
+    return v
+  })
+  for (const f of Object.values(ir.features ?? {}) as J[]) {
+    f.components ??= {}
+    for (const [sym, w] of Object.entries((f.widgets ?? {}) as Record<string, J>)) {
+      f.components[sym] = {
+        tag: w.tag,
+        props: w.props,
+        variants: {},
+        defaults: {},
+        slots: [],
+        children: w.wraps === true || given.has(`${f.id}.${sym}`),
+        events: [],
+        emits: w.events ?? {},
+        extend: true,
+        owned: [],
+        client: { load: w.load, sourceHash: w.sourceHash },
+        sourceHash: '',
+      }
+      count('widgetComponent')
+    }
+    delete f.widgets
+  }
+  return walk(ir, (v) => {
+    if (!isObject(v) || v.kind !== 'widget' || typeof v.widget !== 'string') return v
+    count('widgetNode')
+    const added = classTokens(v.class)
+    return {
+      id: v.id,
+      kind: 'component',
+      use: { component: v.widget, variant: {}, added, overrides: added.filter((c) => c.endsWith('!')) },
+      class: added.length ? added.join(' ') : null,
+      toggle: v.toggle,
+      vars: v.vars,
+      props: v.props,
+      on: v.on,
+      children: v.children,
+    }
+  })
+}
+
+/** Takes the render and client hashes of each component `normalize08` made from a widget from the 0.9 build. */
+export function adoptRenderHashes(expected: J, actual: J, into?: Counts): J {
+  for (const [id, f] of Object.entries((expected.features ?? {}) as Record<string, J>))
+    for (const [sym, c] of Object.entries((f.components ?? {}) as Record<string, J>)) {
+      const built = actual.features?.[id]?.components?.[sym]
+      if (c.sourceHash !== '' || !built) continue
+      c.sourceHash = built.sourceHash
+      if (into) into.renderHash = (into.renderHash ?? 0) + 1
+      if (!c.client || !built.client || c.client.sourceHash === built.client.sourceHash) continue
+      c.client.sourceHash = built.client.sourceHash
+      if (into) into.clientHash = (into.clientHash ?? 0) + 1
+    }
+  return expected
 }
 
 /** JSON pointers where two IRs differ, capped per call. */

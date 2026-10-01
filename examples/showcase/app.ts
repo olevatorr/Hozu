@@ -1,4 +1,4 @@
-import { bundleWidgets } from '@hozu/bundle'
+import { bundleComponents } from '@hozu/bundle'
 import { resolvers } from '@hozu/data'
 import { app } from '@hozu/runtime-server'
 import { slides, stats } from './features/site/effects.ts'
@@ -21,5 +21,5 @@ export default app({
       signups: { label: 'Sign-ups', labels: days, values: [12, 18, 15, 26, 31, 22, 17] },
     })),
   ]),
-  widgets: bundleWidgets,
+  components: bundleComponents,
 })

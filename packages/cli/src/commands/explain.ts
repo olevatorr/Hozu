@@ -41,7 +41,7 @@ function sendsIn(feature: FeatureIR, state: string): ExplainSend[] {
         for (const c of [...node.ifTrue, ...node.ifFalse]) walk(c, view, visible)
         return
       case 'el':
-      case 'widget':
+      case 'component':
       case 'global':
         for (const send of Object.values(node.on))
           out.push({

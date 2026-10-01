@@ -1,4 +1,4 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import type { Frame } from './meter.ts'
 
 export default implement<typeof Frame>(({ el, props }) => {

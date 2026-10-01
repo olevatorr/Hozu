@@ -4,7 +4,8 @@ import { planRoute } from '@hozu/compiler'
 import type { BuildResult, ImageSet } from '@hozu/core/ir'
 import { createDataRuntime, type ResolverSet } from '@hozu/data'
 import {
-  assertWidgetBundle,
+  assertComponentBundle,
+  type ComponentBundle,
   pageEntries,
   publicAssets,
   renderToString,
@@ -12,7 +13,6 @@ import {
   type Stylesheet,
   sitemapXml,
   staticFiles,
-  type WidgetBundle,
 } from '@hozu/runtime-server'
 
 export interface StaticExportOptions {
@@ -20,7 +20,7 @@ export interface StaticExportOptions {
   resolvers: ResolverSet
   outDir: string
   styles?: Stylesheet | null
-  widgets?: WidgetBundle | null
+  components?: ComponentBundle | null
   images?: ImageSet | null
 }
 
@@ -39,11 +39,11 @@ export async function exportStatic({
   resolvers,
   outDir,
   styles = null,
-  widgets = null,
+  components = null,
   images = null,
 }: StaticExportOptions): Promise<StaticExport> {
-  const assets = publicAssets(build.ir.http.basePath, styles, widgets?.urls ?? {})
-  assertWidgetBundle(build.ir, assets.widgets, Boolean(widgets))
+  const assets = publicAssets(build.ir.http.basePath, styles, components?.urls ?? {})
+  assertComponentBundle(build.ir, assets.components, Boolean(components))
   const data = createDataRuntime({ build, resolvers })
   const result: StaticExport = { written: [], skipped: [] }
   let js = false
@@ -95,7 +95,7 @@ export async function exportStatic({
   await write(join(outDir, 'robots.txt'), robotsTxt(build))
   await write(join(outDir, 'sitemap.xml'), sitemapXml(build, entries))
   result.written.push(join(outDir, 'robots.txt'), join(outDir, 'sitemap.xml'))
-  for (const f of staticFiles(build, { styles, widgets, client: js })) {
+  for (const f of staticFiles(build, { styles, components, client: js })) {
     const file = join(outDir, f.path.replace(/^\//, ''))
     await mkdir(dirname(file), { recursive: true })
     if (f.file) await copyFile(f.file, file)

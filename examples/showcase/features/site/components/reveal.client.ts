@@ -1,6 +1,6 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import { gsap, reveal, revealTrigger } from '../../../utils/gsap.ts'
-import type { Reveal } from '../widgets.ts'
+import type { Reveal } from '../components.ts'
 
 export default implement<typeof Reveal>(({ el }) => {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined

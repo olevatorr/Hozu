@@ -24,7 +24,7 @@ import { seededContext } from './seed.ts'
 const children = (n: ViewNode): ViewNode[] => {
   switch (n.kind) {
     case 'el':
-    case 'widget':
+    case 'component':
     case 'when':
       return n.children
     case 'if':

@@ -1,7 +1,14 @@
 import type { FeatureIR, Json, MachineIR, ViewNode } from '@hozu/core/ir'
 import { compileMachine, type Snapshot } from '@hozu/machine'
 import { uploads } from './dom.ts'
-import { type App, createApp, type Result, type Store, type WidgetRef, type WidgetSetup } from './mount.ts'
+import {
+  type App,
+  type ComponentRef,
+  type ComponentSetup,
+  createApp,
+  type Result,
+  type Store,
+} from './mount.ts'
 
 declare global {
   var __HOZU_DEV__: boolean | undefined
@@ -25,7 +32,7 @@ export interface PagePayload {
   params: Json
   search: Json
   snapshots?: Record<string, Snapshot>
-  widgets: Record<string, WidgetRef>
+  components: Record<string, ComponentRef>
   routes: Record<string, string>
   live: Record<string, LiveQuery>
 }
@@ -80,11 +87,11 @@ export interface HydrateOptions {
   query?: QueryTransport
   live?: (onTags: (tags: string[]) => void, tags: string[]) => void
   loadFns?: (url: string) => Promise<Record<string, never>>
-  loadWidget?: (url: string) => Promise<WidgetSetup>
+  loadComponent?: (url: string) => Promise<ComponentSetup>
 }
 
-const importWidget = async (url: string) =>
-  ((await import(/* @vite-ignore */ url)) as { default: WidgetSetup }).default
+const importComponent = async (url: string) =>
+  ((await import(/* @vite-ignore */ url)) as { default: ComponentSetup }).default
 
 const importFns = async (url: string) =>
   ((await import(/* @vite-ignore */ url)) as { fns: Record<string, never> }).fns
@@ -96,7 +103,7 @@ export async function hydrate(
     query = fetchQuery,
     live,
     loadFns = importFns,
-    loadWidget = importWidget,
+    loadComponent = importComponent,
   }: HydrateOptions = {},
 ): Promise<Map<string, App>> {
   const apps = new Map<string, App>()
@@ -105,9 +112,11 @@ export async function hydrate(
   const payload = JSON.parse(script.textContent) as PagePayload
   const shared: Store = { data: new Map(payload.data), versions: new Map() }
   const fns: Record<string, never> = payload.fns ? await loadFns(payload.fns) : {}
-  const { widgets, routes } = payload
+  const { components, routes } = payload
   const motion = payload.motion ? await import('./motion.ts') : undefined
-  const mountWidget = Object.keys(widgets).length ? (await import('./widget.ts')).mountWidget : undefined
+  const mountComponent = Object.keys(components).length
+    ? (await import('./component.ts')).mountComponent
+    : undefined
   if (payload.visible) void import('./visible.ts').then((m) => m.watch(doc))
   const inflight = new Map<string, Promise<Result>>()
   const onQuery = (q: string, input: Json) => {
@@ -160,11 +169,11 @@ export async function hydrate(
         search: payload.search,
         ...(snapshot ? { snapshot } : {}),
         fns,
-        widgets,
+        components,
         routes,
         motion,
-        mountWidget,
-        loadWidget,
+        mountComponent,
+        loadComponent,
         onQuery,
         onInvoke,
         onNavigate: (url) => doc.defaultView?.location.assign(url),

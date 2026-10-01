@@ -9,7 +9,8 @@ export interface Bindings {
   parses?: Record<string, Parse>
   refs: Map<object, string>
   styles: StyleFiles
-  widgets: Record<string, string>
+  /** Client module file of each client component, by component id. */
+  clients: Record<string, string>
   assets: Record<string, { file: string | null; width: number | null; height: number | null }>
   assetOrder: { name: string; href: string; width: number | null; height: number | null }[]
   env: { server: Parse | null; public: Parse | null }

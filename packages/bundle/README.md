@@ -2,7 +2,7 @@
 
 # @hozu/bundle
 
-Bundles Hozu widget client modules with esbuild.
+Bundles the client modules of Hozu client components with esbuild.
 
 Part of [Hozu](https://github.com/olevatorr/Hozu#readme), an AI-first web framework. Most apps start from
 `npm create hozu@latest`, which installs the right packages and sets up Claude Code or `AGENTS.md` agents.

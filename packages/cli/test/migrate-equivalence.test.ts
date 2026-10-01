@@ -16,7 +16,14 @@ import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { rewriteSources, sources } from '../src/commands/migrate.ts'
-import { type Counts, differences, normalize07, normalize08 } from '../src/commands/migrate-normalize.ts'
+import {
+  adoptRenderHashes,
+  type Counts,
+  differences,
+  normalize07,
+  normalize08,
+} from '../src/commands/migrate-normalize.ts'
+import { rewriteSources09 } from '../src/commands/migrate09.ts'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const baseline = join(root, 'bench/trial/longrun/baseline-0.7')
@@ -104,7 +111,8 @@ async function migrateAndCompare(s: Snapshot) {
   const ir07 = JSON.parse(readFileSync(join(baseline, `${s.name}.ir.json`), 'utf8'))
   const config = join(s.dir, 'hozu.config.ts')
   const before = sources(s.dir)
-  const { files, notes, app } = rewriteSources(s.dir, config, before, routesOf(ir07))
+  const { files: rewritten, notes, app } = rewriteSources(s.dir, config, before, routesOf(ir07))
+  const { files } = rewriteSources09(rewritten)
   for (const [f, code] of files) if (before.get(f) !== code) writeFileSync(f, code)
   for (const f of app.remove) rmSync(f)
   const { stdout } = await run(
@@ -129,7 +137,7 @@ async function migrateAndCompare(s: Snapshot) {
       rewrites: Object.fromEntries(Object.entries(rewrites).sort()),
       behaviour: notes.filter((n) => n.behaviour).length,
     },
-    differences: differences(expected, built.ir),
+    differences: differences(adoptRenderHashes(expected, built.ir), built.ir),
     diagnostics: built.diagnostics,
   })
 }
@@ -146,7 +154,7 @@ beforeAll(async () => {
 
 afterAll(() => rmSync(work, { recursive: true, force: true }))
 
-describe('hozu migrate 0.8 against the committed 0.7 snapshots (ADR 0043 Migration)', () => {
+describe('hozu migrate 0.8, then the 0.9 source rewrites, against the committed 0.7 snapshots (ADR 0043 Migration)', () => {
   it('reconstructs every snapshot the manifest lists (the trial fixtures when ~/hozu-trial-0020 exists)', () => {
     const manifest = JSON.parse(readFileSync(join(baseline, 'manifest.json'), 'utf8')) as {
       snapshots: { name: string }[]

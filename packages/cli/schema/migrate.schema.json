@@ -8,6 +8,13 @@
         "ok": {
           "type": "boolean"
         },
+        "version": {
+          "type": "string",
+          "enum": [
+            "0.8",
+            "0.9"
+          ]
+        },
         "installed": {
           "type": [
             "string",
@@ -105,6 +112,7 @@
       },
       "required": [
         "ok",
+        "version",
         "installed",
         "stale",
         "changed",

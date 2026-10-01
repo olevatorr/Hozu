@@ -1,6 +1,6 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import L from 'leaflet'
-import type { StationMap } from './widgets.ts'
+import type { StationMap } from './components.ts'
 
 export default implement<typeof StationMap>(({ el, props, emit }) => {
   const map = L.map(el, { zoomControl: true, attributionControl: false }).setView([25.055, 121.545], 12)

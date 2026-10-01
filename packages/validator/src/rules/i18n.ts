@@ -57,7 +57,7 @@ function nodeValues(node: ViewNode, pointer: At, visit: Visit) {
       record(node.vars, 'vars')
       sends(node.on)
       return
-    case 'widget':
+    case 'component':
       scanValue(node.props, at(pointer, 'props'), visit)
       record(node.toggle, 'toggle')
       record(node.vars, 'vars')

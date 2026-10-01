@@ -82,7 +82,7 @@ export function hydrates(node: ViewNode): boolean {
     case 'text':
       return readsContext(node.value)
     case 'when':
-    case 'widget':
+    case 'component':
     case 'global':
       return true
     case 'if':
@@ -171,12 +171,12 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     }
     const island = inIsland || hydrate
     nodes.push({ id: node.id, region: region.id, mode: region.mode, hydrate })
-    const inner = node.kind === 'widget' && !inIsland ? false : island
+    const inner = node.kind === 'component' && !inIsland ? false : island
     const children = (list: ViewNode[], base: string, t = tainted, b = branch) =>
       list.forEach((c, i) => walk(feature, c, join(base, 'children', i), region, t, inner, b))
     switch (node.kind) {
       case 'el':
-      case 'widget':
+      case 'component':
         children(node.children, pointer)
         return
       case 'when':

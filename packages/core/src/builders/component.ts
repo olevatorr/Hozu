@@ -30,6 +30,7 @@ export interface ComponentTypes {
   slots: string
   on: object
   children: boolean
+  client: { props: unknown; emits: object }
 }
 
 export interface ComponentDecl<T extends ComponentTypes = any> extends Decl<'component'>, Typed<T> {}
@@ -73,6 +74,7 @@ type Declared<S, P, Sl extends string, Ev extends string, Em, Ch extends boolean
   slots: Sl
   on: { [K in Ev]?: Send } & EmitsOn<Em>
   children: Ch
+  client: { props: PropsOf<P>; emits: { [K in keyof Em]: Infer<Em[K]> } }
 }>
 
 interface ComponentConfig<S, P, Sl extends string, Ev extends string, Ch extends boolean> {

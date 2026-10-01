@@ -1,5 +1,6 @@
 import { contract, ui } from '@hozu/core'
 import { home } from '../../routes.ts'
+import { Counter, DistrictChart, FadeIn, Globe, StationMap } from './components.ts'
 import {
   byDistrict,
   districts,
@@ -16,7 +17,6 @@ import {
   total,
   visible,
 } from './model.ts'
-import { Counter, DistrictChart, FadeIn, Globe, StationMap } from './widgets.ts'
 
 export const Explorer = ui.view({
   machine: stationsMachine,
@@ -122,15 +122,11 @@ export const Explorer = ui.view({
                 ui.div(
                   { role: 'region', 'aria-label': 'Map', class: 'h-80 overflow-hidden rounded border' },
                   [
-                    ui.use(
-                      StationMap,
-                      {
-                        props: { points: list, selected: ctx.selected },
-                        on: { select: (d) => ui.send(Select, { id: d.id }) },
-                        class: 'h-80 w-full',
-                      },
-                      [],
-                    ),
+                    ui.use(StationMap, {
+                      props: { points: list, selected: ctx.selected },
+                      on: { select: (d) => ui.send(Select, { id: d.id }) },
+                      class: 'h-80 w-full',
+                    }),
                   ],
                 ),
               ]),
@@ -148,7 +144,7 @@ export const Explorer = ui.view({
               ),
               ui.div({ class: 'grid gap-6 lg:grid-cols-2' }, [
                 ui.div({ class: 'space-y-3' }, [
-                  ui.use(DistrictChart, { props: { rows }, on: {}, class: 'h-64' }, []),
+                  ui.use(DistrictChart, { props: { rows }, on: {}, class: 'h-64' }),
                   ui.table({ class: 'w-full text-sm' }, [
                     ui.caption({ class: 'text-left font-medium' }, ['Bikes by district']),
                     ui.tbody({}, [
@@ -162,7 +158,7 @@ export const Explorer = ui.view({
                   ]),
                 ]),
                 ui.div({ role: 'region', 'aria-label': 'Globe', class: 'flex justify-center' }, [
-                  ui.use(Globe, { props: { points: list }, on: {}, class: 'h-72 w-72' }, []),
+                  ui.use(Globe, { props: { points: list }, on: {}, class: 'h-72 w-72' }),
                 ]),
               ]),
             ])

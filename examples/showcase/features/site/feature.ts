@@ -1,4 +1,5 @@
 import { feature } from '@hozu/core'
+import { Carousel, Chart, Globe, Reveal, Sketch, Smooth } from './components.ts'
 import { addingCountsIds, interactions } from './contracts.ts'
 import { pick, reversed, slideLabel, slides, stats, todoId } from './effects.ts'
 import {
@@ -13,7 +14,6 @@ import {
 } from './events.ts'
 import { siteMachine } from './machine.ts'
 import { About, Showcase } from './views.ts'
-import { Carousel, Chart, Globe, Reveal, Sketch, Smooth } from './widgets.ts'
 
 export const site = feature({
   id: 'site',

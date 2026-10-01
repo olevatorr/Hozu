@@ -11,6 +11,7 @@ export function componentUses(
   const walk = (feature: string, n: ViewNode, p: string) => {
     switch (n.kind) {
       case 'el':
+      case 'component':
         if (n.use) {
           const loc = resolveSource(sources, p)
           out.push([
@@ -27,8 +28,6 @@ export function componentUses(
         }
         n.children.forEach((c, i) => walk(feature, c, `${p}/children/${i}`))
         return
-      case 'widget':
-      case 'component':
       case 'when':
         n.children.forEach((c, i) => walk(feature, c, `${p}/children/${i}`))
         return

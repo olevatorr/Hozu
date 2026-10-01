@@ -19,6 +19,7 @@ import { differences, normalize07, normalize08 } from './migrate-normalize.ts'
 import { migrateOps } from './migrate-ops.ts'
 import { migrateParts } from './migrate-parts.ts'
 import type { Stale07 } from './migrate-stale.ts'
+import { runMigrate09 } from './migrate09.ts'
 
 const SKIP = /(^|\/)(node_modules|dist|\.[^/]+)(\/|$)/
 const RECORD = '.hozu/migrate-0.7.json'
@@ -195,8 +196,13 @@ export async function runMigrate(
   version: string | undefined,
   options: MigrateOptions = {},
 ): Promise<MigrateOutput> {
+  if (version === '0.9') return runMigrate09(cwd, configArg, options)
   if (version !== '0.8')
-    throw new HozuCliError('usage', 'hozu migrate upgrades a 0.7 app: hozu migrate 0.8', ['hozu migrate 0.8'])
+    throw new HozuCliError(
+      'usage',
+      'hozu migrate upgrades a 0.7 app (hozu migrate 0.8) or a 0.8 app (hozu migrate 0.9)',
+      ['hozu migrate 0.9', 'hozu migrate 0.8'],
+    )
   const config = resolve(cwd, configArg ?? 'hozu.config.ts')
   if (!existsSync(config))
     throw new HozuCliError('config', `No config found at ${config}`, [
@@ -261,7 +267,7 @@ export async function runMigrate(
   let check: CheckOutput | null = null
   const ir: MigrateOutput['ir'] = { compared: false, skipped: null, differences: [] }
   if (on07.irVersion !== 2) {
-    next.push(`upgrade every @hozu/* dependency to 0.8: ${upgradeCommand(dir)}`)
+    next.push(`upgrade every @hozu/* dependency to 0.8: ${upgradeCommand(dir, '0.8')}`)
     next.push('npx hozu migrate 0.8   # again after the upgrade: nothing to rewrite, then it runs hozu check')
     if (on07.ir)
       next.push(
@@ -281,6 +287,7 @@ export async function runMigrate(
   const ok = !guide.some((g) => g.state === 'custom') && (check?.ok ?? true)
   return {
     ok,
+    version: '0.8',
     installed,
     stale: { skipped: on07.skipped, entries: on07.stale },
     changed: [...new Set(changed)].sort(),
@@ -306,7 +313,7 @@ function contentOf(dir: string): string {
   return out.join('\u0000')
 }
 
-function installedCore(config: string): string | null {
+export function installedCore(config: string): string | null {
   let d = dirname(config)
   for (;;) {
     const pkg = join(d, 'node_modules/@hozu/core/package.json')
@@ -317,7 +324,7 @@ function installedCore(config: string): string | null {
   }
 }
 
-function upgradeCommand(dir: string): string {
+export function upgradeCommand(dir: string, version: string): string {
   const pkg = existsSync(join(dir, 'package.json'))
     ? JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
     : {}
@@ -329,15 +336,16 @@ function upgradeCommand(dir: string): string {
     : existsSync(join(dir, 'yarn.lock'))
       ? 'yarn add'
       : 'npm install'
-  return `${tool} ${names.map((n) => `${n}@^0.8.0`).join(' ')}`
+  return `${tool} ${names.map((n) => `${n}@^${version}.0`).join(' ')}`
 }
 
 export function describeMigrate(r: MigrateOutput): string {
   const lines: string[] = []
+  const from = r.version === '0.9' ? '0.8' : '0.7'
   lines.push(
     r.stale.skipped
-      ? `1. stale under 0.7: skipped (${r.stale.skipped})`
-      : `1. stale under 0.7: ${r.stale.entries.length} lock ${r.stale.entries.length === 1 ? 'entry' : 'entries'}${r.stale.entries.length ? ' (review each before --update-lock):' : ''}`,
+      ? `1. stale under ${from}: skipped (${r.stale.skipped})`
+      : `1. stale under ${from}: ${r.stale.entries.length} lock ${r.stale.entries.length === 1 ? 'entry' : 'entries'}${r.stale.entries.length ? ' (review each before --update-lock):' : ''}`,
   )
   for (const e of r.stale.entries)
     lines.push(
@@ -362,12 +370,12 @@ export function describeMigrate(r: MigrateOutput): string {
         : `   ${g.file}: Hozu block ${g.state}`,
     )
   let step = 3
-  if (r.ir.skipped) lines.push(`${step++}. IR comparison with 0.7: skipped (${r.ir.skipped})`)
+  if (r.ir.skipped) lines.push(`${step++}. IR comparison with ${from}: skipped (${r.ir.skipped})`)
   if (r.ir.compared)
     lines.push(
       r.ir.differences.length
-        ? `${step++}. the IR differs from 0.7 (after the mapping every rewrite allows) at ${r.ir.differences.length} ${r.ir.differences.length === 1 ? 'place' : 'places'}; each is a behaviour change to review:\n${r.ir.differences.map((d) => `   ! ${d}`).join('\n')}`
-        : `${step++}. the IR equals the 0.7 IR apart from the mapping every rewrite allows (ADR 0043 Migration)`,
+        ? `${step++}. the IR differs from ${from} (after the mapping every rewrite allows) at ${r.ir.differences.length} ${r.ir.differences.length === 1 ? 'place' : 'places'}; each is a behaviour change to review:\n${r.ir.differences.map((d) => `   ! ${d}`).join('\n')}`
+        : `${step++}. the IR equals the ${from} IR apart from the mapping every rewrite allows (${r.version === '0.9' ? 'ADR 0045 L' : 'ADR 0043 Migration'})`,
     )
   if (r.check)
     lines.push(

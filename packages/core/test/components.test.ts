@@ -214,6 +214,112 @@ describe('ADR 0045 phase 2: a pure ui.use', () => {
   })
 })
 
+const picker = new URL('./support/picker.client.ts', import.meta.url)
+const Picked = event({ payload: z.object({ id: z.string() }) })
+
+describe('ADR 0045 phase 4: a client ui.use', () => {
+  const Picker = ui.component({
+    tag: 'div',
+    styles: tv({ base: 'rounded border' }),
+    props: z.object({ value: z.string(), open: z.boolean().default(false) }),
+    emits: { picked: z.object({ id: z.string() }) },
+    client: picker,
+    load: 'visible',
+    children: true,
+    render: ({ props, children }) =>
+      ui.div({ toggle: { 'ring-2': props.open }, vars: { '--n': 1 } }, children),
+  })
+
+  it('builds a component node with the use, the render root and the emits handlers; a pure use stays an element', () => {
+    const b = build([
+      {
+        Picker,
+        Picked,
+        board,
+        View: ui.view({
+          machine: board,
+          render: ({ ctx }) =>
+            ui.div({}, [
+              ui.use(
+                Picker,
+                {
+                  props: { value: ctx.label },
+                  on: { picked: (d) => ui.send(Picked, { id: d.id }) },
+                  class: 'w-full',
+                },
+                [ui.span({}, ['Pick'])],
+              ),
+              ui.use(Button, {}, ['Save']),
+            ]),
+        }),
+      },
+    ])
+    expect(b.diagnostics).toEqual([])
+    const root = b.ir.features.f!.views.View!.root as ElementNode
+    const [client, pure] = root.children as [ViewNode, ViewNode]
+    expect(client).toEqual({
+      id: 'f.View/0',
+      kind: 'component',
+      use: { component: 'f.Picker', variant: {}, added: ['w-full'], overrides: [] },
+      class: 'rounded border w-full',
+      toggle: { 'ring-2': { literal: false } },
+      vars: { '--n': { literal: 1 } },
+      props: { object: { open: { literal: false }, value: { ref: 'context', path: ['label'] } } },
+      on: {
+        picked: { event: 'f.Picked', payload: { object: { id: { ref: 'dom', path: ['detail', 'id'] } } } },
+      },
+      children: [
+        {
+          id: 'f.View/0/0',
+          kind: 'el',
+          tag: 'span',
+          class: null,
+          toggle: {},
+          vars: {},
+          attrs: {},
+          on: {},
+          children: [{ id: 'f.View/0/0/0', kind: 'text', value: { literal: 'Pick' } }],
+        },
+      ],
+    })
+    expect(pure).toMatchObject({ kind: 'el', tag: 'button', use: { component: 'ui.Button' } })
+    expect(b.ir.features.f!.components.Picker).toMatchObject({
+      tag: 'div',
+      children: true,
+      owned: ['ring-2', 'border', 'rounded'].sort(),
+      client: { load: 'visible', sourceHash: expect.stringMatching(/^[0-9a-f]{16}$/) },
+    })
+    expect(Object.keys(b.ir.features.f!.components.Picker!.emits)).toEqual(['picked'])
+    expect(b.bindings.clients['f.Picker']).toMatch(/picker\.client\.ts$/)
+  })
+
+  it('HZ014 — a handler for an emitted event that is not (detail) => ui.send, or an event it does not declare', () => {
+    const b = build([
+      {
+        Picker,
+        View: ui.view({
+          render: () =>
+            ui.div({}, [
+              ui.use(
+                Picker,
+                { props: { value: 'a' }, on: { picked: 'x' as never, chosen: 'y' as never } },
+                [],
+              ),
+            ]),
+        }),
+      },
+    ])
+    expect(b.diagnostics.map((d) => [d.code, d.location.pointer, d.message])).toEqual([
+      ['HZ014', '/features/f/views/View/root/children/0/on/chosen', 'f.Picker declares no event "chosen"'],
+      [
+        'HZ014',
+        '/features/f/views/View/root/children/0/on/picked',
+        'Handlers of emitted events must be (detail) => ui.send(Event, payload)',
+      ],
+    ])
+  })
+})
+
 describe('ADR 0045 phase 2 diagnostics', () => {
   const codes = (b: ReturnType<typeof build>) => b.diagnostics.map((d) => [d.code, d.location.pointer])
 
@@ -265,30 +371,38 @@ describe('ADR 0045 phase 2 diagnostics', () => {
     ])
   })
 
-  it('HZ014 — the root tag, a class on the root, and client components', () => {
+  it('HZ014 — the root tag, a class on the root, attributes on a client root; HZ029 — a missing client module', () => {
     const Wrong = ui.component({ tag: 'button', render: () => ui.span({}, []) })
     const Classed = ui.component({ tag: 'span', render: () => ui.span({ class: 'p-2' }, []) })
-    const Client = ui.component({
+    const Missing = ui.component({
       tag: 'div',
       client: new URL('./x.client.ts', import.meta.url),
       load: 'idle',
       render: () => ui.div({}, []),
     })
+    const Labelled = ui.component({
+      tag: 'div',
+      client: picker,
+      load: 'idle',
+      render: () => ui.div({ role: 'img' }, []),
+    })
     const b = build([
       {
         Wrong,
         Classed,
-        Client,
+        Missing,
+        Labelled,
         View: ui.view({
-          render: () => ui.div({}, [ui.use(Wrong, {}), ui.use(Classed, {}), ui.use(Client, {})]),
+          render: () =>
+            ui.div({}, [ui.use(Wrong, {}), ui.use(Classed, {}), ui.use(Missing, {}), ui.use(Labelled, {})]),
         }),
       },
     ])
     expect(b.diagnostics.map((d) => [d.code, d.location.pointer, d.message])).toEqual([
       [
-        'HZ014',
-        '/features/f/components/Client/client',
-        'A client ui.component is not supported until ADR 0045 phase 4',
+        'HZ029',
+        '/features/f/components/Missing/client',
+        expect.stringMatching(/x\.client\.ts does not exist$/),
       ],
       [
         'HZ014',
@@ -302,8 +416,8 @@ describe('ADR 0045 phase 2 diagnostics', () => {
       ],
       [
         'HZ014',
-        '/features/f/views/View/root/children/2',
-        'A client ui.component is not supported until ADR 0045 phase 4',
+        '/features/f/views/View/root/children/3',
+        'The render of client component f.Labelled sets attributes or on on its root',
       ],
     ])
     expect(b.diagnostics.every((d) => d.fix?.summary)).toBe(true)

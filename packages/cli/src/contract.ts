@@ -180,6 +180,7 @@ export interface MigrateGuide {
 
 export interface MigrateOutput {
   ok: boolean
+  version: '0.8' | '0.9'
   installed: string | null
   stale: { skipped: string | null; entries: MigrateStaleEntry[] }
   changed: string[]
@@ -393,7 +394,7 @@ export interface BrowseError {
   mode?: BrowseMode
 }
 
-export interface BrowseWidget {
+export interface BrowseComponent {
   name: string
   state: 'mounted' | 'failed' | 'not mounted'
   width: number | null
@@ -440,7 +441,7 @@ export interface BrowseOutput {
   hydrated: boolean
   steps: BrowseStep[]
   errors: BrowseError[]
-  widgets: BrowseWidget[]
+  components: BrowseComponent[]
   text: string
   truncated: boolean
   elements: RequestElement[]

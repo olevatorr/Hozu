@@ -1,6 +1,6 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import * as THREE from 'three'
-import type { Globe } from './widgets.ts'
+import type { Globe } from './components.ts'
 
 export default implement<typeof Globe>(({ el, props, signal }) => {
   const size = Math.max(el.clientWidth, 240)

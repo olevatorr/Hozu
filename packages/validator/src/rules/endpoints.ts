@@ -100,7 +100,7 @@ const CONTROLS = new Set(['input', 'select', 'textarea', 'button'])
 
 function fieldNames(node: ViewNode, out: Set<string>) {
   const kids: ViewNode[] =
-    node.kind === 'el' || node.kind === 'when' || node.kind === 'widget'
+    node.kind === 'el' || node.kind === 'when' || node.kind === 'component'
       ? node.children
       : node.kind === 'if'
         ? [...node.ifTrue, ...node.ifFalse]

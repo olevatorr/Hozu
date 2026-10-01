@@ -4,6 +4,7 @@ import { Ctx } from './context.ts'
 import type { LockfileV2 } from './contracts/record.ts'
 import { verifyContracts } from './contracts/verify.ts'
 import { classNames } from './rules/classes.ts'
+import { componentEmits } from './rules/clients.ts'
 import { getEndpointWrites, invalidations, queryFreshness, sessions } from './rules/data.ts'
 import { domFields } from './rules/dom.ts'
 import { endpointLinks, endpoints } from './rules/endpoints.ts'
@@ -26,7 +27,6 @@ import { seed } from './rules/seed.ts'
 import { deadEnds, reachability, shadowing, stateNames } from './rules/states.ts'
 import { classConflicts, componentStyles, leadingImportant } from './rules/styles.ts'
 import { domText } from './rules/text.ts'
-import { widgetEvents } from './rules/widgets.ts'
 
 export type { ClassStyle } from './context.ts'
 export type { ChangeKind, LockChange } from './contracts/lock.ts'
@@ -73,7 +73,7 @@ const rules = [
   leadingImportant,
   classConflicts,
   componentStyles,
-  widgetEvents,
+  componentEmits,
   imageDimensions,
   unsafeHtml,
   literals,

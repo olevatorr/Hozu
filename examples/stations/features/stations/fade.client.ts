@@ -1,6 +1,6 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import gsap from 'gsap'
-import type { FadeIn } from './widgets.ts'
+import type { FadeIn } from './components.ts'
 
 export default implement<typeof FadeIn>(({ el }) => {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches

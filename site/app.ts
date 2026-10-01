@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises'
-import { bundleWidgets } from '@hozu/bundle'
+import { bundleComponents } from '@hozu/bundle'
 import { loadCollection } from '@hozu/content'
 import { resolvers } from '@hozu/data'
 import { app } from '@hozu/runtime-server'
@@ -106,5 +106,5 @@ export default app({
     implement(getTrial, ({ slug }, { fail }) => article(trials, slug) ?? fail('NotFound', { slug })),
     implement(getChangelog, () => ({ html: changelogHtml })),
   ]),
-  widgets: bundleWidgets,
+  components: bundleComponents,
 })

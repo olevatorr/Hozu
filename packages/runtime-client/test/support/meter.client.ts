@@ -1,4 +1,4 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import type { Meter } from './meter.ts'
 
 export default implement<typeof Meter>(({ el, props, emit, signal }) => {

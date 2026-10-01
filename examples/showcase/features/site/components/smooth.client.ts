@@ -1,6 +1,6 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import Lenis from 'lenis'
-import type { Smooth } from '../widgets.ts'
+import type { Smooth } from '../components.ts'
 
 export default implement<typeof Smooth>(({ signal }) => {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined

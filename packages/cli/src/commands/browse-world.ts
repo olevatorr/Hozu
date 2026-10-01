@@ -49,10 +49,10 @@ try {
   const server = await parts.importFrom<any>('@hozu/runtime-server', ['npm install @hozu/runtime-server'])
   const css = await parts.importFrom<any>('@hozu/css', ['npm install @hozu/css'])
   const styles = await css.compileStyles(build, { base: root })
-  const widgets = parts.module.options.widgets ? await parts.module.options.widgets(build) : null
+  const components = parts.module.options.components ? await parts.module.options.components(build) : null
   const handler: { fetch(request: Request): Promise<Response> } = server.createHandler(parts.module.app, {
     styles,
-    widgets,
+    components,
     env: process.env,
     readFile: (file: string) => readFile(file),
     ...(parts.session ? { session: parts.session } : {}),

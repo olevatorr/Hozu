@@ -22,7 +22,7 @@ export interface Scope {
 export interface RenderRuntime {
   island(id: string, scope: Scope, scoped: Json[]): string
   embed(view: string): { scope: Scope } | null
-  widget(ref: string): void
+  component(ref: string): void
 }
 
 export type Fns = Record<string, (x: Json) => Json>
@@ -134,7 +134,7 @@ export function nodesById(build: BuildResult, images: Variants | null): Map<stri
       switch (n.kind) {
         case 'el':
         case 'when':
-        case 'widget':
+        case 'component':
           n.children.forEach(walk)
           return
         case 'if':

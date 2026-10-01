@@ -13,13 +13,13 @@ export * as motion from './motion.ts'
 export type {
   App,
   AppOptions,
+  ComponentRef,
+  ComponentSetup,
   Motion,
   Mounted,
   MountOptions,
   Payload,
   Result,
   Store,
-  WidgetRef,
-  WidgetSetup,
 } from './mount.ts'
 export { createApp, mount, payloadKey } from './mount.ts'

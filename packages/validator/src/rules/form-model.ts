@@ -81,8 +81,8 @@ export function formsOf(feature: FeatureIR): FormModel[] {
           n.children.forEach((c, i) => walk(c, at(pointer, 'children', i), chain, form))
           return
         }
-        case 'widget':
-          if (form) form.opaque ??= 'a widget'
+        case 'component':
+          if (form) form.opaque ??= 'a client component'
           n.children.forEach((c, i) => walk(c, at(pointer, 'children', i), chain, form))
           return
         case 'html':

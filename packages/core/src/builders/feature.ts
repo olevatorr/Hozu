@@ -15,7 +15,6 @@ import type { PageDecl } from './page.ts'
 import type { RouteDecl } from './route.ts'
 import type { TagDecl } from './tag.ts'
 import type { ViewDecl } from './ui.ts'
-import type { WidgetDecl } from './widget.ts'
 
 export interface FeatureParts {
   id: string
@@ -29,7 +28,6 @@ export interface FeatureParts {
   fns: Record<string, FnDecl>
   machine: MachineDecl | null
   views: Record<string, ViewDecl>
-  widgets: Record<string, WidgetDecl>
   components: Record<string, ComponentDecl>
   endpoints: Record<string, EndpointDecl>
   contracts: Record<string, ContractDecl>

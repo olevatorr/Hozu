@@ -1,36 +1,36 @@
 import type { Json } from '@hozu/core/ir'
-import type { WidgetRef, WidgetSetup } from './mount.ts'
+import type { ComponentRef, ComponentSetup } from './mount.ts'
 
-export interface WidgetHost {
+export interface ComponentHost {
   el: HTMLElement
-  ref: WidgetRef
+  ref: ComponentRef
   name: string
   doc: Document
   props(): Json
   emit(name: string, detail: unknown): void
-  load(url: string): Promise<WidgetSetup>
+  load(url: string): Promise<ComponentSetup>
   watch(update: () => void): void
   own(stop: () => void): void
   same(a: Json, b: Json): boolean
 }
 
-export function mountWidget(h: WidgetHost) {
+export function mountComponent(h: ComponentHost) {
   const controller = new AbortController()
-  h.el.setAttribute('data-hozu-widget', h.name)
-  h.el.setAttribute('data-hozu-widget-state', 'loading')
+  h.el.setAttribute('data-hozu-component', h.name)
+  h.el.setAttribute('data-hozu-component-state', 'loading')
   let props = h.props()
-  let instance: ReturnType<WidgetSetup>
+  let instance: ReturnType<ComponentSetup>
   const fail = (error: unknown) => {
     instance = undefined
-    h.el.setAttribute('data-hozu-widget-state', 'failed')
-    h.doc.defaultView?.console.error(`Widget ${h.name} failed`, error)
+    h.el.setAttribute('data-hozu-component-state', 'failed')
+    h.doc.defaultView?.console.error(`Component ${h.name} failed`, error)
   }
   const start = () =>
     void h.load(h.ref.url).then((setup) => {
       if (controller.signal.aborted) return
       try {
         instance = setup({ el: h.el, props, emit: h.emit, signal: controller.signal }) ?? undefined
-        h.el.setAttribute('data-hozu-widget-state', 'mounted')
+        h.el.setAttribute('data-hozu-component-state', 'mounted')
       } catch (error) {
         fail(error)
       }

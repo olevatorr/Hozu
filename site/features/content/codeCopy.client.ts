@@ -1,5 +1,5 @@
-import { implement } from '@hozu/core/widget'
-import type { CodeCopy } from './widgets.ts'
+import { implement } from '@hozu/core/component'
+import type { CodeCopy } from './components.ts'
 
 export default implement<typeof CodeCopy>(({ el, signal }) => {
   for (const pre of el.querySelectorAll('pre')) {

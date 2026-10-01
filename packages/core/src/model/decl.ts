@@ -20,7 +20,6 @@ export type DeclKind =
   | 'project'
   | 'page'
   | 'adapter'
-  | 'widget'
   | 'component'
   | 'kit'
   | 'messages'

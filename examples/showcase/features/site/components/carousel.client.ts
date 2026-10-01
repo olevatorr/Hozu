@@ -1,7 +1,7 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import Swiper from 'swiper'
 import { carousel } from '../../../utils/swiper.ts'
-import type { Carousel } from '../widgets.ts'
+import type { Carousel } from '../components.ts'
 
 export default implement<typeof Carousel>(({ el, props, emit }) => {
   const swiper = new Swiper(el, carousel(props.perView))

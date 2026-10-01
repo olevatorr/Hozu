@@ -42,7 +42,7 @@ export function unsafeHtml(ctx: Ctx) {
             return
           case 'el':
           case 'when':
-          case 'widget':
+          case 'component':
             kids(n.children, 'children')
             return
           case 'if':

@@ -1,6 +1,7 @@
 import { planRoute } from '@hozu/compiler'
 import {
   type BuildResult,
+  componentOf,
   FORM_FIELD,
   formRunnable,
   type GuardExpr,
@@ -9,7 +10,6 @@ import {
   type ValueExpr,
   type ViewNode,
   voidTags,
-  type WidgetIR,
 } from '@hozu/core/ir'
 import { attrText, text } from '@hozu/runtime-client'
 import { escapeHtml } from './escape.ts'
@@ -37,17 +37,9 @@ interface Site {
   ir: ProjectIR
   route: string
   islands: Set<string>
-  widgets: Record<string, WidgetIR>
   prepare: (root: ViewNode) => ViewNode
   consts: string[]
   pending: [ViewNode, boolean, boolean, number][]
-}
-
-function widgetsOf(ir: ProjectIR): Record<string, WidgetIR> {
-  const out: Record<string, WidgetIR> = {}
-  for (const f of Object.values(ir.features))
-    for (const [sym, w] of Object.entries(f.widgets ?? {})) out[`${f.id}.${sym}`] = w
-  return out
 }
 
 function embeddedRoot(site: Site, view: string): ViewNode | null {
@@ -64,7 +56,7 @@ function suspends(site: Site, n: ViewNode, seen = new Set<ViewNode>()): boolean 
       return true
     case 'el':
     case 'when':
-    case 'widget':
+    case 'component':
       return n.children.some((c) => suspends(site, c, seen))
     case 'if':
       return [...n.ifTrue, ...n.ifFalse].some((c) => suspends(site, c, seen))
@@ -309,9 +301,9 @@ class Emitter {
       case 'global':
         this.lit('<!--g-->')
         return
-      case 'widget': {
-        const tag = site.widgets[n.widget]?.tag ?? 'div'
-        this.code(`r.widget(${q(n.widget)})`)
+      case 'component': {
+        const tag = componentOf(site.ir, n.use.component)?.tag ?? 'div'
+        this.code(`r.component(${q(n.use.component)})`)
         this.lit(`<${tag}`)
         this.classAndStyle(n)
         this.lit('>')
@@ -345,8 +337,8 @@ function reachable(site: Site, add: (n: ViewNode, island: boolean, sep: boolean,
     }
     switch (n.kind) {
       case 'el':
-      case 'widget': {
-        const inner = n.kind === 'widget' && site.islands.has(n.id) ? false : island
+      case 'component': {
+        const inner = n.kind === 'component' && site.islands.has(n.id) ? false : island
         n.children.forEach((c, i) => {
           walk(c, inner, separated(n.children, i), depth)
         })
@@ -385,7 +377,6 @@ function reachable(site: Site, add: (n: ViewNode, island: boolean, sep: boolean,
 export function generateRender(build: BuildResult, images: Variants | null = null): string {
   const { ir } = build
   const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
-  const widgets = widgetsOf(ir)
   const consts: string[] = []
   const fns: string[] = []
   for (const route of Object.keys(ir.pages)) {
@@ -394,7 +385,6 @@ export function generateRender(build: BuildResult, images: Variants | null = nul
       ir,
       route,
       islands: new Set(plan.islands),
-      widgets,
       prepare,
       consts,
       pending: [],

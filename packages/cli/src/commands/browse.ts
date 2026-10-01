@@ -5,12 +5,12 @@ import { type Cdp, findBrowser, launch } from '../cdp.ts'
 import type {
   BrowseActor,
   BrowseChange,
+  BrowseComponent,
   BrowseElsewhere,
   BrowseError,
   BrowseMode,
   BrowseOutput,
   BrowseStep,
-  BrowseWidget,
   RequestElement,
 } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
@@ -137,7 +137,7 @@ const minus = (a: string[], b: string[]) => {
   })
 }
 
-const comparable = (s: Snapshot) => minus(linesOf(s), s.widget)
+const comparable = (s: Snapshot) => minus(linesOf(s), s.component)
 
 const same = (a: Snapshot, b: Snapshot) => {
   const x = comparable(a)
@@ -310,13 +310,13 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
     const expected = on
       ? Object.entries(
           (await on.evaluate(
-            "(() => { try { return JSON.parse(document.getElementById('hozu-payload')?.textContent ?? '{}').widgets ?? {} } catch { return {} } })()",
+            "(() => { try { return JSON.parse(document.getElementById('hozu-payload')?.textContent ?? '{}').components ?? {} } catch { return {} } })()",
           )) as Record<string, { load: string }>,
-        ).map(([name, w]) => [name, w.load])
+        ).map(([name, c]) => [name, c.load])
       : []
     const report = on
       ? await on.page(`report(${q(options.select)}, ${q(expected)})`)
-      : { hydrated: false, widgets: [], ...(await first.page(`report(${q(options.select)}, [])`)) }
+      : { hydrated: false, components: [], ...(await first.page(`report(${q(options.select)}, [])`)) }
     let screenshot: string | null = null
     if (options.screenshot) {
       const shot = await first.send('Page.captureScreenshot', { format: 'png' })
@@ -335,7 +335,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
       hydrated: on ? report.hydrated : false,
       steps,
       errors,
-      widgets: (on ? report.widgets : []) as BrowseWidget[],
+      components: (on ? report.components : []) as BrowseComponent[],
       text: clip(full),
       truncated: full.length > LIMIT && !options.full,
       elements: (on ? report.elements : report.elements) as RequestElement[],
@@ -366,7 +366,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
 export const browseFailed = (out: BrowseOutput) =>
   out.errors.length > 0 ||
   out.steps.some((s) => !s.ok || s.differs) ||
-  out.widgets.some((w) => w.state === 'failed')
+  out.components.some((c) => c.state === 'failed')
 
 const ITEMS = 6
 const WIDTH = 60
@@ -436,11 +436,11 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
         e.at ? ` at ${e.at}` : ''
       }${e.url && e.url !== e.at ? ` on ${e.url}` : ''}`,
     )
-  for (const w of out.widgets)
+  for (const c of out.components)
     lines.push(
-      `  widget ${w.name}: ${w.state}${w.width === null ? '' : ` ${w.width}×${w.height}`}${
-        w.state === 'mounted' ? `, ${w.canvases} canvas, ${w.elements} elements` : ''
-      }${w.hint ? ` — ${w.hint}` : ''}`,
+      `  component ${c.name}: ${c.state}${c.width === null ? '' : ` ${c.width}×${c.height}`}${
+        c.state === 'mounted' ? `, ${c.canvases} canvas, ${c.elements} elements` : ''
+      }${c.hint ? ` — ${c.hint}` : ''}`,
     )
   const text = out.text.replace(/\n/g, ' · ')
   lines.push(

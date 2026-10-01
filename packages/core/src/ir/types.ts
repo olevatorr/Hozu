@@ -94,7 +94,6 @@ export interface FeatureIR {
   fns: Record<string, FnIR>
   machine: MachineIR | null
   views: Record<string, ViewIR>
-  widgets: Record<string, WidgetIR>
   components: Record<string, ComponentIR>
   endpoints: Record<string, EndpointIR>
   contracts: Record<string, ContractIR>
@@ -116,15 +115,6 @@ export interface EndpointIR {
 export type EndpointMode = 'json' | 'redirect' | 'response'
 
 export type EndpointStatus = 400 | 401 | 403 | 404 | 409 | 410 | 422 | 429
-
-export interface WidgetIR {
-  tag: string
-  props: string
-  events: Record<string, string>
-  load: 'eager' | 'visible' | 'idle'
-  wraps: boolean
-  sourceHash: string
-}
 
 export type ComponentLoad = 'eager' | 'visible' | 'idle'
 
@@ -305,7 +295,6 @@ export type ViewNode =
   | EachNode
   | QueryNode
   | EmbedNode
-  | WidgetNode
   | ComponentNode
   | GlobalNode
   | HtmlNode
@@ -322,18 +311,6 @@ export interface ElementNode {
   children: ViewNode[]
   ref?: FormRefIR
   use?: UseIR
-}
-
-export interface WidgetNode {
-  id: string
-  kind: 'widget'
-  widget: string
-  class: string | null
-  toggle: Record<string, ValueExpr>
-  vars: Record<string, ValueExpr>
-  props: ValueExpr
-  on: Record<string, SendIR>
-  children: ViewNode[]
 }
 
 export interface ComponentNode {

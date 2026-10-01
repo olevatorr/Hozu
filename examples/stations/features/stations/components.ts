@@ -3,43 +3,41 @@ import { z } from 'zod'
 
 const Point = z.object({ id: z.string(), name: z.string(), lat: z.number(), lng: z.number() })
 
-export const StationMap = ui.widget({
+export const StationMap = ui.component({
   tag: 'div',
   props: z.object({ points: z.array(Point), selected: z.string() }),
-  events: { select: z.object({ id: z.string() }) },
+  emits: { select: z.object({ id: z.string() }) },
   client: new URL('./map.client.ts', import.meta.url),
   load: 'eager',
-  wraps: false,
+  render: () => ui.div({}, []),
 })
-export const DistrictChart = ui.widget({
+export const DistrictChart = ui.component({
   tag: 'div',
   props: z.object({ rows: z.array(z.object({ district: z.string(), bikes: z.number() })) }),
-  events: {},
   client: new URL('./chart.client.ts', import.meta.url),
   load: 'eager',
-  wraps: false,
+  render: () => ui.div({}, []),
 })
-export const Counter = ui.widget({
+export const Counter = ui.component({
   tag: 'span',
   props: z.object({ value: z.number() }),
-  events: {},
   client: new URL('./counter.client.ts', import.meta.url),
   load: 'eager',
-  wraps: false,
+  children: true,
+  render: ({ children }) => ui.span({}, children),
 })
-export const FadeIn = ui.widget({
+export const FadeIn = ui.component({
   tag: 'div',
   props: z.object({ key: z.string() }),
-  events: {},
   client: new URL('./fade.client.ts', import.meta.url),
   load: 'eager',
-  wraps: true,
+  children: true,
+  render: ({ children }) => ui.div({}, children),
 })
-export const Globe = ui.widget({
+export const Globe = ui.component({
   tag: 'div',
   props: z.object({ points: z.array(Point) }),
-  events: {},
   client: new URL('./globe.client.ts', import.meta.url),
   load: 'eager',
-  wraps: false,
+  render: () => ui.div({}, []),
 })

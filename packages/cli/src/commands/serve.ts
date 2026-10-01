@@ -26,13 +26,13 @@ export async function runServe(
   const images = await importFrom<{ optimizeImages(build: BuildResult): Promise<unknown> }>(
     '@hozu/image',
   ).catch(() => null)
-  const widgets = module.options.widgets ? await module.options.widgets(build) : null
-  for (const d of widgets?.diagnostics ?? []) log(`${d.code} ${d.message}`)
+  const components = module.options.components ? await module.options.components(build) : null
+  for (const d of components?.diagnostics ?? []) log(`${d.code} ${d.message}`)
   const publicDir = join(root, 'public')
   const server = createServer(module.app, {
     env: process.env,
     styles: await compileStyles(build, { base: root }),
-    ...(widgets ? { widgets } : {}),
+    ...(components ? { components } : {}),
     ...(images ? { images: await images.optimizeImages(build) } : {}),
     ...(existsSync(publicDir) ? { publicDir } : {}),
   })

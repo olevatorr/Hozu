@@ -1,8 +1,8 @@
 import { ui } from '@hozu/core'
 import { chapter, doc, how } from '../../routes.ts'
+import { CodeCopy } from './components.ts'
 import { pipelineDiagram, renderDiagram } from './diagrams.ts'
 import { getChapter, getDoc, listChapters, listDocs } from './model.ts'
-import { CodeCopy } from './widgets.ts'
 
 const articleView = (
   route: typeof doc,

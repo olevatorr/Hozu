@@ -214,12 +214,6 @@
             "$ref": "#/definitions/ViewIR"
           }
         },
-        "widgets": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/WidgetIR"
-          }
-        },
         "components": {
           "type": "object",
           "additionalProperties": {
@@ -262,7 +256,6 @@
         "fns",
         "machine",
         "views",
-        "widgets",
         "components",
         "endpoints",
         "contracts",
@@ -1108,9 +1101,6 @@
           "$ref": "#/definitions/EmbedNode"
         },
         {
-          "$ref": "#/definitions/WidgetNode"
-        },
-        {
           "$ref": "#/definitions/ComponentNode"
         },
         {
@@ -1447,66 +1437,6 @@
       ],
       "additionalProperties": false
     },
-    "WidgetNode": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "kind": {
-          "type": "string",
-          "const": "widget"
-        },
-        "widget": {
-          "type": "string"
-        },
-        "class": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "toggle": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ValueExpr"
-          }
-        },
-        "vars": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ValueExpr"
-          }
-        },
-        "props": {
-          "$ref": "#/definitions/ValueExpr"
-        },
-        "on": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/SendIR"
-          }
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ViewNode"
-          }
-        }
-      },
-      "required": [
-        "id",
-        "kind",
-        "widget",
-        "class",
-        "toggle",
-        "vars",
-        "props",
-        "on",
-        "children"
-      ],
-      "additionalProperties": false
-    },
     "ComponentNode": {
       "type": "object",
       "properties": {
@@ -1617,46 +1547,6 @@
         "id",
         "kind",
         "value"
-      ],
-      "additionalProperties": false
-    },
-    "WidgetIR": {
-      "type": "object",
-      "properties": {
-        "tag": {
-          "type": "string"
-        },
-        "props": {
-          "type": "string"
-        },
-        "events": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "load": {
-          "type": "string",
-          "enum": [
-            "eager",
-            "visible",
-            "idle"
-          ]
-        },
-        "wraps": {
-          "type": "boolean"
-        },
-        "sourceHash": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "tag",
-        "props",
-        "events",
-        "load",
-        "wraps",
-        "sourceHash"
       ],
       "additionalProperties": false
     },

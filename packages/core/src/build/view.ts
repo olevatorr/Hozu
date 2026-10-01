@@ -3,11 +3,20 @@ import { builtinOf } from '../builders/i18n.ts'
 import { type NodeDef, sendOf, type ViewDef, when } from '../builders/ui.ts'
 import { htmlGlobalAttrs, svgGlobalAttrs, svgTags, tagAttrs, voidTags } from '../ir/dom-data.ts'
 import { domEvents } from '../ir/events.ts'
-import type { ElementNode, FormRefIR, SendIR, UseIR, ValueExpr, ViewIR, ViewNode } from '../ir/types.ts'
+import type {
+  ComponentNode,
+  ElementNode,
+  FormRefIR,
+  SendIR,
+  UseIR,
+  ValueExpr,
+  ViewIR,
+  ViewNode,
+} from '../ir/types.ts'
 import { transformedDecls } from '../lower.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
 import { createRef, exprOf, guardOf, refProxy } from '../model/expr.ts'
-import { defaultsOf, notYet, rootClasses, schemaJson, tokens, tvOf, variantsOf } from './components.ts'
+import { defaultsOf, rootClasses, schemaJson, tokens, tvOf, variantsOf } from './components.ts'
 import { formUse, holdForm, inEach, literalForm } from './forms.ts'
 import { type At, at, type FeatureScope } from './scope.ts'
 
@@ -195,54 +204,6 @@ function styling(
   }
 }
 
-function widgetNode(
-  scope: FeatureScope,
-  d: Extract<NodeDef, { kind: 'widget' }>,
-  id: string,
-  p: At,
-  depth: number,
-): ViewNode {
-  const o = d.options ?? ({} as typeof d.options)
-  const toggle: Record<string, ValueExpr> = {}
-  const vars: Record<string, ValueExpr> = {}
-  styling(scope, 'toggle', o.toggle, toggle, p)
-  styling(scope, 'vars', o.vars, vars, p)
-  const on: Record<string, SendIR> = {}
-  for (const [name, handler] of Object.entries((o.on ?? {}) as Record<string, unknown>)) {
-    const ep = at(p, 'on', name)
-    const s =
-      typeof handler === 'function'
-        ? scope.attempt(ep, () => sendOf(scope.callback(handler)(createRef('dom', 0, ['detail']))), null)
-        : null
-    if (!s) {
-      scope.report(
-        'HZ014',
-        ep,
-        'Widget handlers must be (detail) => ui.send(Event, payload)',
-        'Views cannot run arbitrary functions.',
-      )
-      continue
-    }
-    on[name] = {
-      event: scope.ref(s.event, ['event'], ep),
-      payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
-    }
-  }
-  return {
-    id,
-    kind: 'widget',
-    widget: scope.ref(d.widget, ['widget'], at(p, 'widget')),
-    class: o.class === undefined ? null : classOf(scope, o.class, p),
-    toggle,
-    vars,
-    props: scope.attempt(at(p, 'props'), () => scope.value(o.props, p), { literal: null }),
-    on,
-    children: (Array.isArray(d.children) ? d.children : []).map((c, i) =>
-      node(scope, c, `${id}/${i}`, at(p, 'children', i), depth),
-    ),
-  }
-}
-
 const nothing = (id: string): ViewNode => ({
   id,
   kind: 'if',
@@ -347,10 +308,6 @@ function componentUse(
     return nothing(id)
   }
   const def = defOf<ComponentDef>(d.component as never)
-  if (def.client !== null) {
-    scope.report('HZ014', p, ...notYet('A client ui.component', 4))
-    return nothing(id)
-  }
   const o = (d.options ?? {}) as Record<string, unknown>
   for (const key of Object.keys(o))
     if (!useKeys.has(key))
@@ -398,7 +355,9 @@ function componentUse(
     return out
   }
   const slots = named('slots', def.slots)
-  const on = named('on', def.events)
+  const emits = Object.keys(def.emits)
+  const handlers = named('on', [...def.events, ...emits])
+  const on = Object.fromEntries(Object.entries(handlers).filter(([name]) => !emits.includes(name)))
   const given = Array.isArray(d.children) ? d.children : []
   if (given.length && !def.children)
     scope.report(
@@ -466,10 +425,69 @@ function componentUse(
       added,
       overrides: added.filter((c) => c.endsWith('!')),
     }
-    return { ...out, use }
+    if (def.client === null) return { ...out, use }
+    return clientUse(scope, out, use, p, props, handlers, emits)
   } finally {
     scope.inRender--
     scope.lowering = lowering
+  }
+}
+
+function clientUse(
+  scope: FeatureScope,
+  root: ElementNode,
+  use: UseIR,
+  p: At,
+  props: unknown,
+  handlers: Record<string, unknown>,
+  emits: string[],
+): ComponentNode {
+  if (Object.keys(root.attrs).length || Object.keys(root.on).length)
+    scope.report(
+      'HZ014',
+      p,
+      `The render of client component ${use.component} sets attributes or on on its root`,
+      'The client module owns the root of a client component; the server renders it with its class, toggle and vars only (ADR 0045 A).',
+      {
+        summary:
+          'Move the attributes and handlers to an element inside the root, or set them from the client module',
+        snippet: "render: ({ children }) => ui.div({}, [ui.button({ type: 'button' }, children)])",
+        patch: null,
+      },
+    )
+  const on: Record<string, SendIR> = {}
+  for (const name of emits) {
+    const handler = handlers[name]
+    if (handler === undefined) continue
+    const ep = at(p, 'on', name)
+    const s =
+      typeof handler === 'function'
+        ? scope.attempt(ep, () => sendOf(scope.callback(handler)(createRef('dom', 0, ['detail']))), null)
+        : null
+    if (!s) {
+      scope.report(
+        'HZ014',
+        ep,
+        'Handlers of emitted events must be (detail) => ui.send(Event, payload)',
+        'Views cannot run arbitrary functions.',
+      )
+      continue
+    }
+    on[name] = {
+      event: scope.ref(s.event, ['event'], ep),
+      payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
+    }
+  }
+  return {
+    id: root.id,
+    kind: 'component',
+    use,
+    class: root.class,
+    toggle: root.toggle,
+    vars: root.vars,
+    props: scope.attempt(at(p, 'props'), () => scope.value(props, p), { literal: null }),
+    on,
+    children: root.children,
   }
 }
 
@@ -572,8 +590,6 @@ function nodeOf(scope: FeatureScope, value: unknown, id: string, p: At, depth: n
       }
       case 'embed':
         return { id, kind: 'embed', view: scope.ref(d.view, ['view'], at(p, 'view')) }
-      case 'widget':
-        return widgetNode(scope, d, id, p, depth)
       case 'component':
         return componentUse(scope, d, id, p, depth)
       case 'if': {

@@ -2,20 +2,20 @@ import { relative } from 'node:path'
 import { type BuildResult, codes, type Diagnostic, join } from '@hozu/core/ir'
 import { build } from 'esbuild'
 
-export interface WidgetBundle {
+export interface ComponentBundle {
   urls: Record<string, string>
   files: Record<string, string>
   diagnostics: Diagnostic[]
 }
 
-const base = '/_hozu/w'
+const base = '/_hozu/c'
 
-export async function bundleWidgets(
+export async function bundleComponents(
   project: BuildResult,
   { minify = true }: { minify?: boolean } = {},
-): Promise<WidgetBundle> {
-  const entries = Object.entries(project.bindings.widgets)
-  const out: WidgetBundle = { urls: {}, files: {}, diagnostics: [] }
+): Promise<ComponentBundle> {
+  const entries = Object.entries(project.bindings.clients)
+  const out: ComponentBundle = { urls: {}, files: {}, diagnostics: [] }
   if (!entries.length) return out
   const result = await build({
     entryPoints: Object.fromEntries(entries.map(([ref, file]) => [ref.replace('.', '-'), file])),
@@ -40,17 +40,18 @@ export async function bundleWidgets(
     if (!ref) continue
     out.urls[ref] = path.slice(path.indexOf(base))
     if (meta.exports.includes('default')) continue
-    const [feature, symbol] = ref.split('.') as [string, string]
+    const [owner, symbol] = ref.split('.') as [string, string]
+    const kit = !project.ir.features[owner]
     out.diagnostics.push({
       code: 'HZ029',
       severity: codes.HZ029.severity,
-      message: `Widget module for ${ref} has no default export`,
+      message: `Client module of component ${ref} has no default export`,
       location: {
-        feature,
-        pointer: join('', 'features', feature, 'widgets', symbol, 'client'),
+        feature: owner,
+        pointer: join('', kit ? 'kits' : 'features', owner, 'components', symbol, 'client'),
         source: null,
       },
-      cause: 'The runtime mounts the default export of the widget module.',
+      cause: 'The runtime mounts the default export of the client module of a client component.',
       fix: {
         summary: 'Export the setup function',
         snippet: `export default implement<typeof ${symbol}>(({ el, props, emit, signal }) => ({ update(next) {}, destroy() {} }))`,

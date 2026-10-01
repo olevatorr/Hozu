@@ -133,7 +133,7 @@ export interface Snapshot {
   url: string
   title: string
   text: string
-  widget: string[]
+  component: string[]
 }
 
 export interface StepResult {
@@ -159,7 +159,7 @@ export class Tab {
   status = 0
   loaded = false
   requested = false
-  snapshot: Snapshot = { url: '', title: '', text: '', widget: [] }
+  snapshot: Snapshot = { url: '', title: '', text: '', component: [] }
   readonly sessions = new Set<string>()
   private readonly prerender = new Set<string>()
   private readonly tracked = new Map<string, string>()

@@ -7,7 +7,7 @@ import {
   type HandlerOptions,
   type OgCard,
   type SessionStore,
-  usedWidgets,
+  usedClientComponents,
 } from '@hozu/runtime-server'
 
 export interface TestPage {
@@ -73,12 +73,14 @@ export function testApp(
   const errors = rest.build.diagnostics.filter((d) => d.severity === 'error')
   if (errors.length) throw new BuildErrors(errors)
   const handler = createHandler(
-    rest.widgets || rest.manifest
+    rest.components || rest.manifest
       ? rest
       : {
           ...rest,
-          widgets: {
-            urls: Object.fromEntries(usedWidgets(rest.build.ir).map((ref) => [ref, `/_hozu/w/${ref}.js`])),
+          components: {
+            urls: Object.fromEntries(
+              usedClientComponents(rest.build.ir).map((ref) => [ref, `/_hozu/c/${ref}.js`]),
+            ),
             files: {},
           },
         },

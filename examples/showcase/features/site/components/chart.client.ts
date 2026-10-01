@@ -1,10 +1,10 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import { BarController, BarElement, CategoryScale, Chart, LinearScale, Tooltip } from 'chart.js'
-import type { Chart as ChartWidget } from '../widgets.ts'
+import type { Chart as ChartComponent } from '../components.ts'
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip)
 
-export default implement<typeof ChartWidget>(({ el, props }) => {
+export default implement<typeof ChartComponent>(({ el, props }) => {
   const canvas = document.createElement('canvas')
   el.replaceChildren(canvas)
   const color = getComputedStyle(el).color

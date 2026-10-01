@@ -62,7 +62,7 @@ export function lowerNode(n: ViewNode, l: Lowering): ViewNode {
         on: sends(n.on),
         children: list(n.children),
       }
-    case 'widget':
+    case 'component':
       return {
         ...n,
         props: v(n.props),

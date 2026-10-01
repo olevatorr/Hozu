@@ -7,7 +7,7 @@ import { Ajv } from 'ajv'
 import { createApp } from 'create-hozu'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 import { findBrowser } from '../src/cdp.ts'
-import { bundleSpec } from '../src/commands/add-widget.ts'
+import { bundleSpec } from '../src/commands/add-component.ts'
 import { formsOf } from '../src/commands/request.ts'
 import { main } from '../src/main.ts'
 
@@ -381,21 +381,26 @@ describe('ordinary TypeScript in a scaffolded app (ADR 0039)', () => {
   }, 60_000)
 })
 
-describe('hozu add widget (ADR 0037 D5)', () => {
-  it('declares, registers, bundles and depends on the widget, so check is clean and the page renders its host', async () => {
+describe('hozu add component (ADR 0045 I, phase 4)', () => {
+  it('--client declares, registers, bundles and depends on the component, so check is clean', async () => {
     const app = await freshApp()
     await run(['add', 'feature', 'tasks', '--page', '/'], app)
     const before = await json('check', ['check'], app)
     expect(before.out.validate.summary).toEqual({ errors: 0, warnings: 0 })
-    const added = await json('add', ['add', 'widget', 'tasks', 'Chart'], app)
-    expect(added.out.created).toEqual(['features/tasks/widgets.ts', 'features/tasks/chart.client.ts'])
+    const widget = await run(['add', 'widget', 'tasks', 'Chart', '--json'], app)
+    expect([widget.code, JSON.parse(widget.stdout).error.message]).toEqual([
+      2,
+      expect.stringContaining('replaced by hozu add component --client'),
+    ])
+    const added = await json('add', ['add', 'component', 'tasks', 'Chart', '--client'], app)
+    expect(added.out.created).toEqual(['features/tasks/components.ts', 'features/tasks/chart.client.ts'])
     expect(added.out.edited).toEqual([
       'features/tasks/views.ts',
       'features/tasks/feature.ts',
       'app.ts',
       'package.json',
     ])
-    expect(readFileSync(join(app, 'app.ts'), 'utf8')).toContain('widgets: bundleWidgets,')
+    expect(readFileSync(join(app, 'app.ts'), 'utf8')).toContain('components: bundleComponents,')
     const pkg = JSON.parse(readFileSync(join(app, 'package.json'), 'utf8'))
     expect(pkg.dependencies['@hozu/bundle']).toBe(pkg.dependencies['@hozu/core'])
     const views = join(app, 'features/tasks/views.ts')
@@ -404,17 +409,34 @@ describe('hozu add widget (ADR 0037 D5)', () => {
       views,
       readFileSync(views, 'utf8').replace(
         heading,
-        `${heading}\n      ui.use(Chart, { props: {}, on: {}, class: 'h-64 w-full' }, []),`,
+        `${heading}\n      ui.use(Chart, { props: {}, class: 'h-64 w-full' }),`,
       ),
     )
     const check = await checkFresh(app)
     expect(check.types.errors).toEqual([])
     expect(check.validate.summary).toEqual({ errors: 0, warnings: 0 })
     const entry = join(app, 'app.ts')
-    writeFileSync(entry, readFileSync(entry, 'utf8').replace('widgets: bundleWidgets,', ''))
+    writeFileSync(entry, readFileSync(entry, 'utf8').replace('components: bundleComponents,', ''))
     const missing = await checkFresh(app)
     expect(missing.validate.diagnostics.map((d: { code: string }) => d.code)).toEqual(['HZ045'])
     expect(missing.validate.diagnostics[0].message).toContain('tasks.Chart')
+  }, 60_000)
+  it('adds a pure component to a feature and to a kit', async () => {
+    const app = await freshApp()
+    await run(['add', 'feature', 'tasks', '--page', '/'], app)
+    const feature = await json('add', ['add', 'component', 'tasks', 'Badge'], app)
+    expect([feature.out.created, feature.out.edited]).toEqual([
+      ['features/tasks/components.ts'],
+      ['features/tasks/views.ts', 'features/tasks/feature.ts'],
+    ])
+    await run(['add', 'kit', 'ui'], app)
+    const kit = await json('add', ['add', 'component', 'ui', 'Card'], app)
+    expect([kit.out.created, kit.out.edited]).toEqual([['ui/card.ts'], ['ui/kit.ts']])
+    expect(readFileSync(join(app, 'ui/kit.ts'), 'utf8')).toContain('components: [card]')
+    const check = await checkFresh(app)
+    expect(check.types.errors).toEqual([])
+    expect(check.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect((await run(['add', 'component', 'nowhere', 'Card'], app)).code).toBe(2)
   }, 60_000)
   it('depends on the bundle tarball next to a core tarball (ADR 0040 C)', () => {
     expect(bundleSpec('file:/tmp/tgz/hozu-core-0.6.0.tgz')).toBe('file:/tmp/tgz/hozu-bundle-0.6.0.tgz')

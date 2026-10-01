@@ -1,11 +1,11 @@
 import { ui } from '@hozu/core'
 import { z } from 'zod'
 
-export const CodeCopy = ui.widget({
+export const CodeCopy = ui.component({
   tag: 'div',
   props: z.object({}),
-  events: {},
   client: new URL('./codeCopy.client.ts', import.meta.url),
   load: 'visible',
-  wraps: true,
+  children: true,
+  render: ({ children }) => ui.div({}, children),
 })

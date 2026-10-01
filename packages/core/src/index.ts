@@ -69,10 +69,8 @@ export type {
   ViewDecl,
   ViewScope,
   When,
-  WidgetUse,
 } from './builders/ui.ts'
 export { ui } from './builders/ui.ts'
-export type { WidgetDecl, WidgetLoad } from './builders/widget.ts'
 export type { Assign, Call, Expr, Guard, Ref, Val } from './model/expr.ts'
 export type { SchemaAdapter, SchemaAdapterDef } from './schema/adapter.ts'
 export { defineSchemaAdapter } from './schema/adapter.ts'

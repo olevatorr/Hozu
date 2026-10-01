@@ -2,22 +2,23 @@ import { event, feature, machine, on, project, route, ui } from '@hozu/core'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
-export const Meter = ui.widget({
+export const Meter = ui.component({
   tag: 'div',
-  props: z.object({ value: z.number() }),
-  events: { picked: z.object({ n: z.number() }) },
+  props: z.object({ value: z.number(), hot: z.boolean() }),
+  emits: { picked: z.object({ n: z.number() }) },
   client: new URL('./meter.client.ts', import.meta.url),
   load: 'eager',
-  wraps: false,
+  children: true,
+  render: ({ props, children }) => ui.div({ toggle: { 'bg-red-500': props.hot } }, children),
 })
 
-export const Frame = ui.widget({
+export const Frame = ui.component({
   tag: 'section',
   props: z.object({ tone: z.string() }),
-  events: {},
   client: new URL('./frame.client.ts', import.meta.url),
   load: 'eager',
-  wraps: true,
+  children: true,
+  render: ({ children }) => ui.section({}, children),
 })
 
 const Picked = event({ payload: z.object({ n: z.number() }) })
@@ -53,10 +54,9 @@ const Panel = ui.view({
           ui.use(
             Meter,
             {
-              props: { value: ctx.count },
+              props: { value: ctx.count, hot: ctx.count > 1 },
               on: { picked: (d) => ui.send(Picked, { n: d.n }) },
               class: 'h-8',
-              toggle: { 'bg-red-500': ctx.count > 1 },
             },
             [ui.span({}, ['Loading meter…'])],
           ),
@@ -75,13 +75,13 @@ export default project({
   pages: [
     ui.page(home, {
       views: [Panel],
-      head: { render: () => ({ title: 'Meter', description: 'Widget fixture' }) },
+      head: { render: () => ({ title: 'Meter', description: 'Client component fixture' }) },
     }),
   ],
   features: [
     feature({
       id: 'meter',
-      intent: { summary: 'Widget fixture' },
+      intent: { summary: 'Client component fixture' },
       declarations: [
         {
           Picked,

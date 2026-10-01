@@ -113,8 +113,8 @@ const complement = (v: ValueExpr): ValueExpr => {
   return { test: { op: 'not', arg: g } }
 }
 
-type Styled = Extract<ViewNode, { kind: 'el' | 'widget' | 'component' }>
-const styled = (n: ViewNode): n is Styled => n.kind === 'el' || n.kind === 'widget' || n.kind === 'component'
+type Styled = Extract<ViewNode, { kind: 'el' | 'component' }>
+const styled = (n: ViewNode): n is Styled => n.kind === 'el' || n.kind === 'component'
 
 function eachStyled(ctx: Ctx, visit: (feature: string, node: Styled, pointer: At) => void) {
   for (const f of Object.values(ctx.ir.features))

@@ -1,4 +1,4 @@
-import { bundleWidgets } from '@hozu/bundle'
+import { bundleComponents } from '@hozu/bundle'
 import { resolvers } from '@hozu/data'
 import { app } from '@hozu/runtime-server'
 import { listStations, toggleFavorite } from './features/stations/model.ts'
@@ -34,5 +34,5 @@ export default app({
       return { id, favorite: favorites.has(id) }
     }),
   ]),
-  widgets: bundleWidgets,
+  components: bundleComponents,
 })

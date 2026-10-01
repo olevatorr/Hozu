@@ -1,4 +1,4 @@
-import { bundleWidgets } from '@hozu/bundle'
+import { bundleComponents } from '@hozu/bundle'
 import { buildProject } from '@hozu/core/ir'
 import { createDataRuntime, resolvers } from '@hozu/data'
 import { type App, hydrate } from '@hozu/runtime-client'
@@ -12,16 +12,19 @@ const build = buildProject(project)
 const data = createDataRuntime({ build, resolvers: resolvers(project, () => []) })
 const tick = () => new Promise((r) => setTimeout(r, 0))
 
-describe('widgets', () => {
+describe('client components (ADR 0045 A, H)', () => {
   it('declares a typed boundary: IR, validation and bundling', async () => {
     expect(build.diagnostics).toEqual([])
     expect(validate(build.ir, { bindings: build.bindings })).toEqual([])
-    expect(build.ir.features.meter!.widgets.Meter).toMatchObject({ tag: 'div', load: 'eager', wraps: false })
-    expect(Object.keys(build.ir.features.meter!.widgets.Meter!.events)).toEqual(['picked'])
-    const bundle = await bundleWidgets(build)
+    const meter = build.ir.features.meter!.components.Meter!
+    expect(meter).toMatchObject({ tag: 'div', children: true, client: { load: 'eager' } })
+    expect(meter.client!.sourceHash).toMatch(/^[0-9a-f]{16}$/)
+    expect(Object.keys(meter.emits)).toEqual(['picked'])
+    expect(build.bindings.clients['meter.Meter']).toMatch(/meter\.client\.ts$/)
+    const bundle = await bundleComponents(build)
     expect(bundle.diagnostics).toEqual([])
     const url = bundle.urls['meter.Meter']!
-    expect(url).toMatch(/^\/_hozu\/w\/meter-Meter-[A-Z0-9]+\.js$/)
+    expect(url).toMatch(/^\/_hozu\/c\/meter-Meter-[A-Z0-9]+\.js$/)
     expect(bundle.files[url]).toContain('v=')
   })
 
@@ -35,18 +38,18 @@ describe('widgets', () => {
         fns: null,
         styles: null,
         preload: [],
-        widgets: { 'meter.Meter': '/w/meter.js', 'meter.Frame': '/w/frame.js' },
+        components: { 'meter.Meter': '/w/meter.js', 'meter.Frame': '/w/frame.js' },
       },
     })
     expect(html).toContain('<div class="h-8"><span>Loading meter…</span></div>')
-    expect(html).toContain('"meter.Meter":{"url":"/w/meter.js","tag":"div","load":"eager","wraps":false}')
+    expect(html).toContain('"meter.Meter":{"url":"/w/meter.js","tag":"div","load":"eager"}')
     const window = new Window()
     const document = window.document as unknown as Document
     document.write(html.replace(/<script type="module"[^>]*><\/script>/, ''))
     const loaded: string[] = []
     const app: App = (
       await hydrate(document, {
-        loadWidget: async (u) => {
+        loadComponent: async (u) => {
           loaded.push(u)
           return (
             u.includes('frame')
@@ -62,8 +65,8 @@ describe('widgets', () => {
     expect(loaded).toEqual(['/w/meter.js', '/w/frame.js'])
     expect(document.querySelector('section')!.dataset.tone).toBe('calm')
     expect(host.textContent).toBe('v=0')
-    expect(host.getAttribute('data-hozu-widget')).toBe('meter.Meter')
-    expect(host.getAttribute('data-hozu-widget-state')).toBe('mounted')
+    expect(host.getAttribute('data-hozu-component')).toBe('meter.Meter')
+    expect(host.getAttribute('data-hozu-component-state')).toBe('mounted')
     host.click()
     expect(app.snapshot()?.context).toEqual({ count: 1 })
     expect(host.textContent).toBe('v=1')
@@ -75,33 +78,33 @@ describe('widgets', () => {
     expect(host.dataset.destroyed).toBe('yes')
   })
 
-  it('HZ029 — handlers for events the widget does not declare', () => {
+  it('HZ029 — handlers for events the component does not emit', () => {
     const ir = structuredClone(build.ir)
     const json = JSON.stringify(ir).replace('"on":{"picked"', '"on":{"pickd"')
     const found = validate(JSON.parse(json), {}).filter((d) => d.code === 'HZ029')
     expect(found.map((d) => d.message)).toEqual([
-      'Widget meter.Meter does not emit "pickd". Did you mean "picked"?',
+      'Component meter.Meter does not emit "pickd". Did you mean "picked"?',
     ])
     expect(found[0]!.fix?.patch?.map((p) => p.op)).toEqual(['add', 'remove'])
   })
 })
 
-describe('a missing widget bundle', () => {
+describe('a missing component bundle', () => {
   it('fails at startup instead of rendering hosts that never mount', async () => {
     const { createHandler } = await import('@hozu/runtime-server')
     const { exportStatic } = await import('@hozu/adapter-static')
     const options = { build, resolvers: resolvers(project, () => []) }
     const missing =
-      /Widgets meter\.Frame, meter\.Meter are used in views, but no widget bundle was given.*bundleWidgets/
+      /Client components meter\.Frame, meter\.Meter are used in views, but no component bundle was given.*bundleComponents/
     expect(() => createHandler(options)).toThrow(missing)
     await expect(exportStatic({ ...options, outDir: '/nonexistent' })).rejects.toThrow(missing)
     expect(() =>
-      createHandler({ ...options, widgets: { urls: { 'meter.Meter': '/w/m.js' }, files: {} } }),
-    ).toThrow(/no client code for meter\.Frame; check the diagnostics of bundleWidgets \(HZ029\)/)
-    const bundle = await bundleWidgets(build)
-    expect(() => createHandler({ ...options, widgets: bundle })).not.toThrow()
+      createHandler({ ...options, components: { urls: { 'meter.Meter': '/w/m.js' }, files: {} } }),
+    ).toThrow(/no client code for meter\.Frame; check the diagnostics of bundleComponents \(HZ029\)/)
+    const bundle = await bundleComponents(build)
+    expect(() => createHandler({ ...options, components: bundle })).not.toThrow()
     expect(
-      (await createHandler({ ...options, widgets: bundle }).fetch(new Request('http://x/'))).status,
+      (await createHandler({ ...options, components: bundle }).fetch(new Request('http://x/'))).status,
     ).toBe(200)
   })
 })

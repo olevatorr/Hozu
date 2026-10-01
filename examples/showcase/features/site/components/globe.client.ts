@@ -1,4 +1,4 @@
-import { implement } from '@hozu/core/widget'
+import { implement } from '@hozu/core/component'
 import {
   AdditiveBlending,
   BufferAttribute,
@@ -10,7 +10,7 @@ import {
   Scene,
   WebGLRenderer,
 } from 'three'
-import type { Globe } from '../widgets.ts'
+import type { Globe } from '../components.ts'
 
 export default implement<typeof Globe>(({ el, props, signal }) => {
   const renderer = new WebGLRenderer({ antialias: true, alpha: true })

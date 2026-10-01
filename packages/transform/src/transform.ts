@@ -21,7 +21,6 @@ const UI_VALUES = new Set([
   'og',
   'page',
   'messages',
-  'widget',
   'component',
   'kit',
   'view',

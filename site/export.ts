@@ -1,7 +1,7 @@
 import { rm, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { exportStatic } from '@hozu/adapter-static'
-import { bundleWidgets } from '@hozu/bundle'
+import { bundleComponents } from '@hozu/bundle'
 import { buildProject } from '@hozu/core/ir'
 import { compileStyles } from '@hozu/css'
 import { appOptionsOf } from '@hozu/runtime-server'
@@ -14,7 +14,7 @@ await rm(outDir, { recursive: true, force: true })
 const result = await exportStatic({
   build,
   styles: await compileStyles(build),
-  widgets: await bundleWidgets(build),
+  components: await bundleComponents(build),
   resolvers: appOptionsOf(app)!.resolvers,
   outDir,
 })

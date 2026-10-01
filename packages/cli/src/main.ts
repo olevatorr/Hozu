@@ -1,7 +1,7 @@
 import { relative } from 'node:path'
 import { parseArgs } from 'node:util'
 import { describeAdd, runAddFeature } from './commands/add.ts'
-import { describeAddWidget, runAddWidget } from './commands/add-widget.ts'
+import { describeAddComponent, runAddComponent } from './commands/add-component.ts'
 import { BuildFailed } from './commands/app.ts'
 import {
   type BrowseJs,
@@ -48,7 +48,9 @@ Commands:
   get <path>...             Request pages in-process (no server): status, title, alerts, visible text, forms
   browse <path> --do <step> Run the steps in headless Chrome with and without JS (no server): what each step changed
   add feature <name>        Scaffold a working feature (model, views, contracts, resolvers) and wire it in
-  add widget <feature> <Name>  Add a widget: declaration, client module, app.ts bundle, @hozu/bundle dependency
+  add component <kit|feature> <Name> [--client]
+                            Add a component to a kit or a feature; --client adds the client module, the app.ts
+                            bundle and the @hozu/bundle dependency
   add kit <id> [--sync]     Add a component kit: <id>/kit.ts, <id>/tv.ts (tailwind-merge config from the design
                             system) and project({ kits }); --sync regenerates only the config block
   migrate 0.8               Upgrade a 0.7 app: list the lock entries stale under 0.7, rewrite the source, then check
@@ -73,6 +75,7 @@ Options:
   --page <path>        add feature: also add a route and a page at this path
   --with <parts>       add feature: any of detail,toggle,filter,remove (comma-separated)
   --sync               add kit: rewrite the generated block of <id>/tv.ts from the current design system
+  --client             add component: a client component (browser code in its own module)
   -h, --help           Show this help
 `
 
@@ -144,6 +147,7 @@ export async function main(
         page: { type: 'string' },
         with: { type: 'string' },
         sync: { type: 'boolean', default: false },
+        client: { type: 'boolean', default: false },
         select: { type: 'string', multiple: true },
         forms: { type: 'boolean', default: false },
         do: { type: 'string', multiple: true },
@@ -211,9 +215,16 @@ export async function main(
       return result.ok ? 0 : 1
     }
     if (command === 'add') {
-      if (target === 'widget') {
-        const result = await runAddWidget(cwd, values.config, positionals[2], positionals[3])
-        out(asJson ? json(result) : describeAddWidget(result, positionals[3]!))
+      if (target === 'widget')
+        throw new HozuCliError(
+          'usage',
+          'hozu add widget was replaced by hozu add component --client: widgets are client components in 0.9',
+          [`hozu add component ${positionals[2] ?? 'stations'} ${positionals[3] ?? 'StationMap'} --client`],
+        )
+      if (target === 'component') {
+        const client = values.client === true
+        const result = await runAddComponent(cwd, values.config, positionals[2], positionals[3], client)
+        out(asJson ? json(result) : describeAddComponent(result, positionals[3]!, client))
         return 0
       }
       if (target === 'kit') {
@@ -223,9 +234,9 @@ export async function main(
         return 0
       }
       if (target !== 'feature')
-        throw new HozuCliError('usage', 'hozu add supports: feature, widget, kit', [
+        throw new HozuCliError('usage', 'hozu add supports: feature, component, kit', [
           'hozu add feature tasks --page /',
-          'hozu add widget tasks Chart',
+          'hozu add component tasks Chart --client',
           'hozu add kit ui',
         ])
       const result = await runAddFeature(cwd, values.config, positionals[2], values.page, values.with)

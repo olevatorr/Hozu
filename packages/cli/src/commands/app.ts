@@ -9,14 +9,14 @@ import {
   type Diagnostic,
   type Fix,
   resolveSource,
-  usedWidgets,
+  usedClientComponents,
 } from '@hozu/core/ir'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 
 export interface AppOptions {
   resolvers: unknown
-  widgets?: (build: BuildResult) => Promise<{ diagnostics?: Diagnostic[] }>
+  components?: (build: BuildResult) => Promise<{ diagnostics?: Diagnostic[] }>
   [key: string]: unknown
 }
 
@@ -143,9 +143,9 @@ export async function inspectApp(
       diagnostics: [
         hz045(
           `The default export of ${shown} is not app(…)`,
-          'The app module is the one place resolvers, the session store and widgets are named; there is no wrapper position around it.',
+          'The app module is the one place resolvers, the session store and the component bundle are named; there is no wrapper position around it.',
           {
-            summary: 'export default app({ resolvers, session?, widgets? })',
+            summary: 'export default app({ resolvers, session?, components? })',
             snippet: APP_SNIPPET,
             patch: null,
           },
@@ -154,15 +154,16 @@ export async function inspectApp(
       ],
     }
   const diagnostics: Diagnostic[] = []
-  const widgets = usedWidgets(build.ir)
-  if (widgets.length && !options.widgets)
+  const clients = usedClientComponents(build.ir)
+  if (clients.length && !options.components)
     diagnostics.push(
       hz045(
-        `app() has no widgets, but views use ${widgets.join(', ')}`,
-        'Widget client code is bundled separately; without it the server refuses to start.',
+        `app() has no components bundle, but views use the client components ${clients.join(', ')}`,
+        'The client code of client components is bundled separately; without it the server refuses to start.',
         {
-          summary: "Pass widgets: bundleWidgets to app() (import { bundleWidgets } from '@hozu/bundle')",
-          snippet: 'widgets: bundleWidgets,',
+          summary:
+            "Pass components: bundleComponents to app() (import { bundleComponents } from '@hozu/bundle')",
+          snippet: 'components: bundleComponents,',
           patch: null,
         },
         where,
