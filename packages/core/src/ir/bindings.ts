@@ -15,9 +15,12 @@ export interface Bindings {
   env: { server: Parse | null; public: Parse | null }
   /** Transition pointer of each `machine({ on })` copy → pointer of the entry it was copied from. */
   copies: Record<string, string>
+  /** Class tokens of each component render's non-root elements, from the declaration-time render. */
+  components: Record<string, { inner: string[] }>
 }
 
 export interface StyleFiles {
   entry: string | null
+  kits: Record<string, string>
   features: Record<string, string[]>
 }

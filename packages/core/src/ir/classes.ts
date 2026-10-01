@@ -42,3 +42,15 @@ export function classCandidates(ir: ProjectIR): Set<string> {
   for (const f of Object.values(ir.features)) for (const v of Object.values(f.views)) walk(v.root)
   return out
 }
+
+/** The classes whose CSS properties the style rules read: the views' and every component's. */
+export function styledClasses(
+  ir: ProjectIR,
+  components: Record<string, { inner: string[] }> = {},
+): Set<string> {
+  const out = classCandidates(ir)
+  const owners = [...Object.values(ir.features), ...Object.values(ir.kits)]
+  for (const o of owners) for (const c of Object.values(o.components)) for (const x of c.owned) out.add(x)
+  for (const { inner } of Object.values(components)) for (const x of inner) out.add(x)
+  return out
+}

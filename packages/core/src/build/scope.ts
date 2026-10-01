@@ -68,12 +68,13 @@ export class ProjectScope {
     fnHelpers: {},
     checks: {},
     refs: new Map(),
-    styles: { entry: null, features: {} },
+    styles: { entry: null, kits: {}, features: {} },
     widgets: {},
     assets: {},
     assetOrder: [],
     env: { server: null, public: null },
     copies: {},
+    components: {},
   }
   readonly tracking: boolean
 

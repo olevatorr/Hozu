@@ -1,10 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
 import { extname, resolve } from 'node:path'
-import { type BuildResult, classCandidates, sha256 } from '@hozu/core/ir'
+import { type BuildResult, classCandidates, sha256, styledClasses } from '@hozu/core/ir'
+import type { ClassStyle } from '@hozu/validator'
 import { closest } from '@hozu/validator'
 import { __unstable__loadDesignSystem, compile, optimize } from '@tailwindcss/node'
 import { withFallbacks } from './fonts.ts'
+import { classStyles, resolveCss } from './properties.ts'
 
 export interface CompiledStyles {
   css: string
@@ -14,9 +15,8 @@ export interface CompiledStyles {
   files: string[]
   candidates: Set<string>
   unknown: Map<string, string | null>
+  classes: Map<string, ClassStyle>
 }
-
-const require = createRequire(import.meta.url)
 
 export { classCandidates }
 
@@ -46,18 +46,18 @@ const foldDivisions = (css: string) =>
     return Number.isFinite(x) ? String(Number(x.toFixed(5))).replace(/^0\./, '.') : all
   })
 
-const resolveCss = async (id: string) =>
-  id === 'tailwindcss' || id.startsWith('tailwindcss/')
-    ? require.resolve(id === 'tailwindcss' ? 'tailwindcss/index.css' : id)
-    : undefined
+export const stylesSource = (build: BuildResult) => {
+  const { entry, kits, features } = build.bindings.styles
+  return [entry ?? 'tailwindcss', ...Object.values(kits), ...Object.values(features).flat()]
+    .map((file) => `@import ${JSON.stringify(file)};`)
+    .join('\n')
+}
 
 export async function compileStyles(
   build: BuildResult,
   { minify = true, base = process.cwd() }: { minify?: boolean; base?: string } = {},
 ): Promise<CompiledStyles> {
-  const { entry, features } = build.bindings.styles
-  const imports = [entry ?? 'tailwindcss', ...Object.values(features).flat()]
-  const source = [transitions, ...imports.map((file) => `@import ${JSON.stringify(file)};`)].join('\n')
+  const source = [transitions, stylesSource(build)].join('\n')
   const files = new Set<string>()
   const compiler = await compile(source, {
     base,
@@ -91,9 +91,13 @@ export async function compileStyles(
     const m = motion.exec(c)
     if (m && motions.get(c.slice(0, m.index)) === 7) unknown.set(c, null)
   }
+  const styled = [...styledClasses(build.ir, build.bindings.components)].filter(
+    (c) => !unknown.has(c) && !markers.test(c) && !motion.test(c),
+  )
+  const { styles: classes, ds: loaded } = await classStyles(source, base, styled.sort(), raw)
   const typos = missing.filter((c) => !motion.test(c))
   if (typos.length) {
-    const ds = await __unstable__loadDesignSystem(source, { base })
+    const ds = loaded ?? (await __unstable__loadDesignSystem(source, { base }))
     const vocabulary = [...new Set([...ds.getClassList().map(([name]) => name), ...known])]
     for (const c of typos) {
       const cut = c.lastIndexOf(':')
@@ -110,6 +114,7 @@ export async function compileStyles(
     files: [...files],
     candidates,
     unknown,
+    classes,
   }
 }
 

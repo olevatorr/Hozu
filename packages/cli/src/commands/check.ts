@@ -5,6 +5,7 @@ import { dirname, join, relative } from 'node:path'
 import type { CheckOutput, TypeIssue } from '../contract.ts'
 import type { Loaded } from '../load.ts'
 import { relativize } from '../output.ts'
+import { componentUses, overridesOf } from '../uses.ts'
 import { inspectApp } from './app.ts'
 import { runValidate } from './validate.ts'
 
@@ -82,9 +83,11 @@ export async function runCheck(loaded: Loaded, cwd: string, updateLock: boolean)
     }
   }
   const validate = await runValidate(loaded, undefined, cwd, updateLock)
-  const { diagnostics: entry } = await inspectApp(loaded, loaded.build(true))
+  const traced = loaded.build(true)
+  const { diagnostics: entry } = await inspectApp(loaded, traced)
   validate.diagnostics.push(...relativize(entry, cwd))
   for (const d of entry) validate.summary[d.severity === 'error' ? 'errors' : 'warnings']++
   if (entry.some((d) => d.severity === 'error')) validate.ok = false
-  return { ok: types.ok && validate.ok, types, validate }
+  const overrides = overridesOf(componentUses(traced.ir, traced.sources, cwd))
+  return { ok: types.ok && validate.ok, types, validate, overrides }
 }

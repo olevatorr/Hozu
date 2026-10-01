@@ -9,7 +9,7 @@ export { at, join, parsePointer, pointer, resolveAt, resolveSource } from './can
 export { canonicalStringify } from './canonical/stringify.ts'
 export { i18nFns, placeholders } from './i18n/runtime.ts'
 export type * from './ir/bindings.ts'
-export { classCandidates, motionClasses } from './ir/classes.ts'
+export { classCandidates, motionClasses, styledClasses } from './ir/classes.ts'
 export type { CodeInfo } from './ir/codes.ts'
 export { codes } from './ir/codes.ts'
 export type * from './ir/diagnostic.ts'

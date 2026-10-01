@@ -136,10 +136,7 @@ export const Showcase = ui.view({
                       type: 'button',
                       role: 'tab',
                       class:
-                        'rounded-full px-4 py-1.5 text-sm font-medium capitalize text-slate-600 transition dark:text-slate-300',
-                      toggle: {
-                        'bg-white text-slate-900 shadow dark:bg-slate-950 dark:text-white': ctx.tab === tab,
-                      },
+                        'rounded-full px-4 py-1.5 text-sm font-medium capitalize text-slate-600 transition dark:text-slate-300 aria-selected:bg-white aria-selected:text-slate-900 aria-selected:shadow dark:aria-selected:bg-slate-950 dark:aria-selected:text-white',
                       'aria-selected': ctx.tab === tab,
                       on: { click: ui.send(SelectTab, { tab }) },
                     },

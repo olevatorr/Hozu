@@ -12,6 +12,15 @@ import {
 } from '@hozu/core/ir'
 import type { Env } from './env.ts'
 
+export interface ClassStyle {
+  variant: string
+  important: boolean
+  /** Non-custom properties the class sets on the element, or `<descendant part> <property>` for others. */
+  properties: Record<string, string>
+  /** Cascade position among classes of one variant and specificity: a higher order wins. */
+  order: number
+}
+
 export class Ctx {
   readonly ir: ProjectIR
   readonly sources: SourceIndex
@@ -19,6 +28,8 @@ export class Ctx {
   readonly unknownClasses: Map<string, string | null> | null
   readonly assets: Bindings['assets']
   readonly envs = new Map<string, Env>()
+  classes: Map<string, ClassStyle> | null = null
+  components: Bindings['components'] | null = null
 
   constructor(
     ir: ProjectIR,

@@ -27,6 +27,7 @@ import { featuresCreated, runValidate, seedLockIsolated } from './commands/valid
 import { HozuCliError } from './errors.ts'
 import { load } from './load.ts'
 import { human, json } from './output.ts'
+import { describeOverrides } from './uses.ts'
 
 const usage = `Usage: hozu <command> [options]
 
@@ -229,6 +230,8 @@ export async function main(
         for (const e of result.types.errors) out(`${e.file}:${e.line}:${e.column}  ${e.code}  ${e.message}\n`)
         if (result.types.errors.length) out('\n')
         for (const d of result.validate.diagnostics) out(`${human(d)}\n\n`)
+        for (const o of result.overrides) out(`${describeOverrides(o)}\n`)
+        if (result.overrides.length) out('\n')
         const v = result.validate
         const types = result.types.skipped
           ? 'types skipped (npm install -D typescript)'

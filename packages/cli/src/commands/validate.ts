@@ -8,7 +8,7 @@ import type { Coverage, ValidateOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { json, relativize } from '../output.ts'
-import { unknownClasses } from '../styles.ts'
+import { projectStyles } from '../styles.ts'
 
 function firstDifference(a: Json, b: Json, pointer = ''): string | null {
   if (a === b) return null
@@ -52,12 +52,13 @@ export async function runValidate(
   const hash = hashJson(first.ir)
   const lockPath = joinPath(dirname(loaded.path), 'hozu.lock.json')
   const previous = readLock(lockPath)
-  const unknown = await unknownClasses(loaded.path, first)
+  const styles = await projectStyles(loaded.path, first)
   const verified = verify(first.ir, {
     bindings: first.bindings,
     lock: previous,
     accept: updateLock,
-    unknownClasses: unknown,
+    unknownClasses: styles?.unknown ?? null,
+    classes: styles?.classes ?? null,
   })
   const traced = loaded.build(true)
   let diagnostics: Diagnostic[] = [...first.diagnostics, ...verified.diagnostics]
@@ -110,7 +111,7 @@ export async function runValidate(
     summary: { errors, warnings: selected.length - errors },
     coverage,
     lock,
-    styles: unknown ? 'checked' : 'unavailable',
+    styles: styles ? 'checked' : 'unavailable',
     diagnostics: relativize(selected, cwd),
   }
 }

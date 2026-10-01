@@ -259,7 +259,8 @@
       "required": [
         "ok",
         "types",
-        "validate"
+        "validate",
+        "overrides"
       ],
       "additionalProperties": false
     },

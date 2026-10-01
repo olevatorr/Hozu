@@ -209,7 +209,7 @@ export interface CheckOutput {
   ok: boolean
   types: { ok: boolean; skipped: boolean; errors: TypeIssue[] }
   validate: ValidateOutput
-  overrides?: CheckOverrides[]
+  overrides: CheckOverrides[]
 }
 
 export interface RequestStep {

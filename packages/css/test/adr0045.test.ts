@@ -28,11 +28,11 @@ describe('ADR 0045 evidence 2: same-property utilities', () => {
     }
   })
 
-  it.fails('HZ079: a base class and a toggle that set the same property are reported', async () => {
+  it('HZ079: a base class and a toggle that set the same property are reported', async () => {
     const build = withClasses('grid gap-6 bg-white', { 'bg-indigo-600': { literal: true } })
     const styles = await compileStyles(build)
-    const found = validate(build.ir, { unknownClasses: styles.unknown }).filter(
-      (d) => d.code === ('HZ079' as never),
+    const found = validate(build.ir, { unknownClasses: styles.unknown, classes: styles.classes }).filter(
+      (d) => d.code === 'HZ079',
     )
     expect(found).toHaveLength(1)
   })

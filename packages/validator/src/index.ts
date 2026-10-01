@@ -1,4 +1,5 @@
 import type { Bindings, Diagnostic, ProjectIR, SourceIndex } from '@hozu/core/ir'
+import type { ClassStyle } from './context.ts'
 import { Ctx } from './context.ts'
 import type { LockfileV2 } from './contracts/record.ts'
 import { verifyContracts } from './contracts/verify.ts'
@@ -23,9 +24,11 @@ import { rendering } from './rules/rendering.ts'
 import { routeParams, searchSchemas } from './rules/routes.ts'
 import { seed } from './rules/seed.ts'
 import { deadEnds, reachability, shadowing, stateNames } from './rules/states.ts'
+import { classConflicts, componentStyles, leadingImportant } from './rules/styles.ts'
 import { domText } from './rules/text.ts'
 import { widgetEvents } from './rules/widgets.ts'
 
+export type { ClassStyle } from './context.ts'
 export type { ChangeKind, LockChange } from './contracts/lock.ts'
 export { decides, summaryOf } from './contracts/mechanical.ts'
 export type {
@@ -41,6 +44,7 @@ export type { ContractRun, Failure } from './contracts/run.ts'
 export { runContract } from './contracts/run.ts'
 export type { Impact, ImpactKind, ImpactQuery, ImpactUse } from './impact.ts'
 export { impact, UnknownSymbolError } from './impact.ts'
+export { classVariant, exclusive, important } from './rules/styles.ts'
 export { closest, distance } from './suggest.ts'
 
 const rules = [
@@ -66,6 +70,9 @@ const rules = [
   searchSchemas,
   domFields,
   classNames,
+  leadingImportant,
+  classConflicts,
+  componentStyles,
   widgetEvents,
   imageDimensions,
   unsafeHtml,
@@ -96,6 +103,8 @@ export interface ValidateOptions {
   lock?: unknown
   accept?: boolean
   unknownClasses?: Map<string, string | null> | null
+  /** CSS properties per class from the CSS stage (`compileStyles(...).classes`); HZ072, HZ075–HZ077 and HZ079 need it. */
+  classes?: Map<string, ClassStyle> | null
 }
 
 export interface Verification {
@@ -110,6 +119,8 @@ export function verify(ir: ProjectIR, options: ValidateOptions = {}): Verificati
     options.unknownClasses ?? null,
     options.bindings?.assets ?? {},
   )
+  ctx.classes = options.classes ?? null
+  ctx.components = options.bindings?.components ?? null
   for (const rule of rules) rule(ctx)
   const lock = options.bindings
     ? verifyContracts(ctx, options.bindings, options.lock, options.accept === true)

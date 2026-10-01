@@ -86,7 +86,7 @@ describe('page transitions', () => {
     await writeFile(entry, '@import "tailwindcss";\n@view-transition { navigation: none; }\n')
     const { css } = await compileStyles({
       ...build,
-      bindings: { ...build.bindings, styles: { entry, features: {} } },
+      bindings: { ...build.bindings, styles: { entry, kits: {}, features: {} } },
     })
     expect(css.indexOf('@view-transition{navigation:none}')).toBeGreaterThan(
       css.indexOf('@view-transition{navigation:auto}'),

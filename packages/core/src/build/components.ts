@@ -146,6 +146,45 @@ function references(project: ProjectScope, root: unknown): Found {
   return found
 }
 
+function innerClasses(root: Extract<NodeDef, { kind: 'el' }>): string[] {
+  const out = new Set<string>()
+  const seen = new WeakSet<object>()
+  const binding = placeholder('item')
+  const visit = (v: unknown): void => {
+    if (v === null || (typeof v !== 'object' && typeof v !== 'function') || seen.has(v)) return
+    seen.add(v)
+    const expr = exprOf(v)
+    if (expr) {
+      if (expr.kind === 'call') visit(expr.arg)
+      return
+    }
+    if (guardOf(v) || sendOf(v) || linkOf(v)) return
+    const info = infoOf(v)
+    if (info?.kind === 'node') {
+      const d = info.def as NodeDef
+      if (d.kind === 'el') {
+        for (const c of tokens(d.props?.class)) out.add(c)
+        for (const k of Object.keys((d.props?.toggle ?? {}) as object)) for (const c of tokens(k)) out.add(c)
+        d.children.forEach(visit)
+      } else if (d.kind === 'component' || d.kind === 'widget') {
+        const o = (d.options ?? {}) as Record<string, unknown>
+        for (const c of tokens(o.class)) out.add(c)
+        visit(o.slots)
+        d.children.forEach(visit)
+      } else
+        for (const [key, x] of Object.entries(d))
+          if (key === 'kind') continue
+          else if (typeof x === 'function') visit(x(binding))
+          else if (key === 'failed')
+            for (const f of Object.values((x ?? {}) as Record<string, unknown>))
+              visit(typeof f === 'function' ? f(binding) : f)
+          else visit(x)
+    } else if (!info && typeof v === 'object') Object.values(v).forEach(visit)
+  }
+  root.children.forEach(visit)
+  return [...out].sort()
+}
+
 /** Builds the render once under reference props, slots, children and on (ADR 0045 B, C). */
 function declaredRender(scope: FeatureScope, p: At, def: ComponentDef, id: string): NodeDef | null {
   try {
@@ -167,7 +206,9 @@ function declaredRender(scope: FeatureScope, p: At, def: ComponentDef, id: strin
       )
     }
     const info = infoOf(root)
-    return info?.kind === 'node' ? (info.def as NodeDef) : null
+    const node = info?.kind === 'node' ? (info.def as NodeDef) : null
+    if (node?.kind === 'el') scope.project.bindings.components[id] = { inner: innerClasses(node) }
+    return node
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     scope.project.report(

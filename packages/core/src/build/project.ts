@@ -417,6 +417,12 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       'project({ app }) must be a file URL',
       "Name the app module with new URL('./app.ts', import.meta.url).",
     )
+  for (const [i, kit] of (Array.isArray(config.kits) ? config.kits : []).entries()) {
+    const def = infoOf(kit)?.kind === 'kit' ? (infoOf(kit)!.def as KitDef) : null
+    if (!def?.styles || !kitDecls.some(([id]) => id === def.id)) continue
+    const path = file(def.styles, null, join('', 'kits', i, 'styles'))
+    if (path) scope.bindings.styles.kits[def.id] = path
+  }
   for (const [id, fc] of configs)
     scope.bindings.styles.features[id] = (fc.styles ?? []).flatMap(
       (u, i) => file(u, id, join('', 'features', id, 'styles', i)) ?? [],
