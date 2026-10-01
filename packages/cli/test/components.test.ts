@@ -99,6 +99,13 @@ describe('the component tools (ADR 0045 I)', () => {
     )
   })
 
+  it('prints a passing render within 512 B', async () => {
+    const { code, stdout } = await run(['render', 'ui.Button', '--variant', 'tone=subtle'])
+    expect(code).toBe(0)
+    expect(stdout).toMatch(/^✔ ui\.Button tone=subtle\n<button /)
+    expect(stdout.length).toBeLessThanOrEqual(512)
+  })
+
   it('exits 1 with the diagnostic at the declaration when a use is wrong', async () => {
     const { code, out } = await json('render', ['render', 'ui.Button', '--variant', 'tone=loud'])
     expect(code).toBe(1)

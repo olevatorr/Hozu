@@ -1,8 +1,8 @@
 # ADR 0045 — 0.9: declared UI components (breaking)
 
-- Status: accepted (2026-10-01). The owner took every gate as recommended (G1–G6). Phase 1 (the contract layer),
-  phase 2 (record time), phase 3 (styles) and phase 4 (widgets merge) are done; see "Phase 2 notes", "Phase 3 notes"
-  and "Phase 4 notes".
+- Status: accepted (2026-10-01); implemented; release not published. The owner took every gate as recommended
+  (G1–G6). Phases 1–5 are done; see "Phase 2 notes" to "Phase 5 notes". 0.9.0 is packed and rehearsed, not
+  published, tagged or pushed.
 - **Already decided by the owner, in the design dialogue that produced this ADR:**
   - components are declarations, not conventions;
   - `ui.widget` merges into `ui.component({ client })` in a breaking 0.9;
@@ -577,6 +577,165 @@ component. Showcase, stations and the site are migrated by hand.
   336.611 ms with exponent 1.122, P3 274.677 ms, P5 14.1 M/s, P6 2.24 M/s, P7 7 872 B, P9 7 264 req/s, A4 55 663.
   The machine was shared (load average 9–20); the exponent was not re-run. Earlier full test runs under that load
   timed out in Chrome and long CLI tests (`browse.test.ts` passes 10 / 10 alone); the gate run had none.
+
+## Phase 5 notes (tools, guide, release rehearsal)
+I, the guide, the repository docs, the CHANGELOG and the 0.9.0 rehearsal. The release is not published.
+
+**Scope changes (2026-10-01):**
+- **A clash between I and K (coordinator):** I made `hozu docs components` the app's catalog, and K made
+  `topics/components.md` the topic that `hozu docs components` prints and that the `see:` lines of HZ070–HZ080 name.
+  The command now prints the topic, then `In this app:` with one line per component (id, tag, variant keys) and a
+  pointer to `hozu inspect <id>` for the full entry. Outside an app it prints the topic only, without an error.
+  `--json` is the full `DocsComponentsOutput`, `text` included. The size test measures the whole human output.
+- **HZ080 (coordinator):** the phase list had not assigned it (phase 2 lists HZ070 / HZ071, phase 3 HZ072–HZ079), so it
+  had a registry entry and nothing else. Phase 5 implemented it, with the coordinator's conditions below.
+- **Browse budget (owner):** `BUDGET_MS` (20 s per run, unchanged) is asserted only when `cli/test/browse.test.ts`
+  runs alone (`HOZU_BUDGET=1`); otherwise each run is recorded and never fails on time. `bench/run.ts` runs the
+  file alone once with `HOZU_BUDGET=1` and records the slowest run as row B1 (budget 20 000 ms); without Chrome the
+  row is skipped, as the tests are. This amends ADR 0043 J's implementation note on `BUDGET_MS`; ADR 0043 is not
+  edited.
+
+**Implementation:**
+
+| What | Where |
+|---|---|
+| The component list shared by the tools (kits first, then features), props from the schema with defaults | `cli/src/commands/components.ts:32`, `:84` |
+| `hozu docs components`: topic, then the catalog (only when a config is found) | `cli/src/commands/docs.ts:47`, `components.ts:114` |
+| `hozu inspect <id>` / `hozu impact <id>`: an id with a dot that names a component; human output | `components.ts:129`, `:140`, `:164`, `:196`; `inspect.ts`, `impact.ts` |
+| `hozu render`: a one-page project built from the declaration | `core/src/build/isolate.ts:24` (`componentProject`, exported from `@hozu/core/ir`) |
+| `hozu render`: build, render with the app's `@hozu/runtime-server` and `@hozu/data`, root class, owned properties | `cli/src/commands/render.ts:46` |
+| `hozu map`: `kits:` and the components each page uses; invoke states without their derived ignore list | `cli/src/commands/map.ts:101`, `:197`, `:217`, `:248` |
+| `see:` of HZ029 and HZ070–HZ080 → `components` | `cli/src/output.ts` |
+| The inline `tv()` gap: `@hozu/variants` types `tv` / `createTV` with an intersection result | `variants/src/index.ts:21`; case `core/test/types.check.ts:351` |
+| HZ080: the part's root element and whether its subtree references a declaration | `core/src/build/scope.ts:258`, `:274`, `:314` |
+| HZ080: the report and its snippet | `core/src/build/shared-parts.ts:6`, `:21`; called at `core/src/build/project.ts:493` |
+| Browse budget only alone, row B1 | `cli/test/browse.test.ts:15`, `:33`; `bench/run.ts:219` |
+| The guide: `topics/components.md` (replaces `widgets.md`), the SKILL.md row and index, the diagnostics rows | `.claude/skills/hozu/` |
+
+**Choices the ADR did not fix:**
+1. **`hozu render` renders the real thing.** `componentProject` finds the declaration in `project({ kits })` or in
+   the owning feature's modules and builds a project with the app's schema adapter and kits, one page and one view
+   whose render is `ui.use(C, { variant, props, slots })`. A feature component is rendered inside a feature with the
+   owner's id and all its components, so its id is unchanged; a kit component inside a feature `hozuRender`. The HTML
+   comes from the app's own `@hozu/runtime-server` (as `hozu get` does), cut to the `<body>` content. `class` is the
+   root's `class` attribute; `owned` is the union of the properties of the component's owned classes, from the
+   styles cache (empty without `@hozu/css`). Diagnostics of the synthetic view point at the component's declaration.
+   `--props` is not checked against the schema: no use-time props check exists for literals in views either.
+2. **Children:** a component with `children: true` is rendered with none; `--slot` fills slots only.
+3. **`hozu inspect <id>`** treats an argument with a dot as a component id (feature ids have none) and prints the
+   declaration lines and one line per use; `--json` is `InspectComponentOutput`. A feature's output is unchanged.
+   **`hozu impact <id>`** checks the component ids first: a feature's component names are unique in it (HZ013).
+4. **`hozu map`:** `kits: ui 3` comes after the files block, not right after `verify`, because `loop.test.ts` asserts
+   the first four lines and the coordinator ruled it untouchable. `· uses …` lists the components of the page's
+   views (embedded views are not followed). A state with `invoke` no longer prints its ignore list: it is derived
+   (every event the state does not handle, `core/src/build/machine.ts:143`), and dropping it keeps notes within its
+   3 584 B budget (3 537 B at the base, 3 343 B now).
+5. **The inline `tv()` gap was not in the builder types.** In the first inference pass TypeScript skips an argument
+   that is a generic call returning a single-call-signature type; the object literal then holds a context-sensitive
+   render, whose parameter fixes `S` to its default before `styles` is inferred. No signature of `ui.component` can
+   avoid that, so `@hozu/variants` re-declares tailwind-variants' `TV` with the result `TVReturnType<…> & { readonly
+   hozu?: 'tv' }`; an intersection is not a plain function type. `& {}` is simplified away and does not work. A
+   `tv` imported from `tailwind-variants` itself still has the gap; the guide and `hozu add kit` use the kit's
+   `tv.ts`.
+6. **HZ080 (the coordinator's conditions):** a part that returns one element (`infoOf(out).kind === 'node'`, an `el`),
+   whose subtree references no declaration (any `ref` while the part is being built marks it), and that two or more
+   features inline. A part returning a list is not reported: a component has one root. The pointer is
+   `/features/<first feature>`, the source is the part's, the message names at most three features and `+N`. The
+   snippet is a kit component with the part's tag, its root class in `styles: tv({ base })`, empty props and the
+   `ui.use` call; pasted into a kit module it builds without HZ070 or any error
+   (`core/test/shared-parts.test.ts`).
+7. **The guide:** the SKILL.md row is "UI (a button, a field) → `ui.use` of a kit component; the catalog: `npx hozu
+   docs components`"; the index row is "components, kits, browser APIs, DOM libraries → `components`". The
+   diagnostics topic gains HZ029 and HZ070–HZ080 rows. The SKILL.md test also asserts that it names no widget, no
+   `hozu migrate`, no `tv(`, `owned`, `aria-pressed:` or `` `!` `` (rules the diagnostics teach).
+8. **CLAUDE.md:** `@hozu/bundle` was missing from the package list and is added next to `@hozu/variants`.
+9. **The bench row id is B1** (browse); P8 stays retired.
+10. **A literal `null` prop rendered as a child is HZ014** ("Invalid view child: got null"), inline or through a
+    render: `hozu render ui.Field --props '{"error":null,…}'` reports it. Found, not changed: a reference prop is how
+    the apps use it.
+
+**Proof:**
+- **New tests:** `cli/test/components.test.ts` (8: docs components in and outside an app, render ok, its size and
+  failing, inspect, impact, map), `core/test/shared-parts.test.ts` (4), the HZ080 case of the source catalog, the inline
+  `tv()` case in `core/test/types.check.ts`. Broken once each, then restored: the catalog line removed (1 red), the
+  render declaration lookup inverted (2 red), the component branch of inspect (1) and of impact (1), the map
+  components (1), the render budget at 100 B (1); HZ080 not reported (4 red), the declaration mark removed (1), one feature counted as shared (1);
+  `@hozu/variants` back to the plain re-export (the case fails with TS2769, as phase 3 found).
+- **Budget B1:** with `BUDGET_MS = 1`, the file fails 8 of 10 with `HOZU_BUDGET=1` and passes 10 of 10 without it;
+  restored, alone with `HOZU_BUDGET=1`: 10 of 10, slowest run 6 154 ms.
+- **Sizes:** `hozu docs components` on notes 4 537 B (budget 5 120 B: the topic 4 407 B, the catalog 130 B);
+  `hozu render ui.Button --variant tone=subtle` 253 B (budget 512 B); `hozu map` notes 3 343 B (budget 3 584 B),
+  bookmarks 1 450 B and trial-0007 1 516 B (budget 2 048 B). SKILL.md 3 519 B with its frontmatter (≤ 4 096 B).
+- **HZ080 in the repository:** 0 findings in the 10 examples and the site (`hozu validate`: 0 errors, 0 warnings
+  each).
+- **IR:** the 11 projects build to byte-identical IR at `f26b63a` (phase 4, built in a scratch copy) and at this
+  phase. Against `baseline-0.8/summary.json`, the 31 routes of the 11 projects have the same `js` mode, island count
+  and client components.
+- **The guide's example builds:** in the rehearsal app, the Button of `topics/components.md` pasted as `ui/button.ts`
+  and used as the topic shows: `hozu check` 0 errors, 0 warnings.
+- **Mentions** (`git grep -n -i "widget\|hozu migrate"` over the skill, the `create-hozu` templates and source, the
+  scaffold, `CLAUDE.md`, `AGENTS.md`, the READMEs and `site/content/docs`): none in the skill, the templates, the
+  scaffold, the package READMEs or the site docs. `CLAUDE.md` and `AGENTS.md` keep 8 lines each that say what 0.9
+  removed or renamed (the 0.5, 0.6 and 0.8 bullets, the components line, the 0.9 bullet). `bench/ui/README.md` and
+  `bench/trial/longrun/baseline-0.7/README.md` are records. The CLI keeps the usage errors for `hozu migrate` and
+  `hozu add widget` (L, phase 4).
+- **Rehearsal (0.9.0, not published):** `pnpm -r pack` wrote 20 tarballs (19 `@hozu/*` and `create-hozu`) to a
+  scratch directory outside the repository: no `workspace:` left, each with `LICENSE` and `README.md`
+  (`@hozu/transform` has never had a README), no tests or sources. The packed `create-hozu --agent both` created an
+  app; every `@hozu/*` dependency and an `overrides` entry for all 20 named the `file:` tarballs, and
+  `npm install --prefer-offline` installed them (the lockfile resolves 0 `@hozu/*` from the registry). In the app:
+  `hozu check` clean on the fresh app; `hozu add feature tasks --page /`, `hozu add kit ui` (after installing
+  `@hozu/variants`, as its message says), the topic's Button, `hozu add component tasks Chart --client` with
+  `@hozu/bundle`: `hozu check` 0 errors, 0 warnings; `hozu docs components`, `hozu render ui.Button`, `hozu inspect`,
+  `hozu map` (`kits: ui 1`, `· uses ui.Button`), `hozu build` (11 static files, `/_hozu/c/`), `hozu get /` (200),
+  `hozu browse / --js on` (Chart mounted, no errors) and `hozu skill`. `@hozu/adapter-static`, `content`, `dev`,
+  `image`, `variants` (and `/config`), `bundle` and `testing` import. The app's guides name no widget and no
+  `hozu migrate`.
+- **P7:** 7 872 B, unchanged since phase 4.
+- **Gate:** `pnpm gate`, once: lint clean (4 existing warnings), typecheck clean, 537 tests: 531 passed, 6 skipped (12
+  more than phase 4: 7 component tools, 4 HZ080, 1 catalog case). Bench: P1 0.239 ms, P2 334.588 ms with exponent
+  **1.146 (budget ≤ 1.14, failed)**, P3 276.965 ms, P5 16.7 M/s, P6 2.20 M/s, P7 7 872 B, P9 8 384 req/s, A4 55 663,
+  B1 6 235 ms (budget 20 000 ms). The exponent is the only failure and the gate exits 1 on it; it was 1.146 in phase 3
+  and 1.122 in phase 4 and was not re-run. The render size test (the eighth component test) was added after the
+  gate and run alone: 8 / 8, and red once with a 100 B budget.
+
+### Audit of the acceptance conditions (phase 5)
+Checked against the source and the tests on this branch. "Patch" = a JSON patch the IR harness applies; "snippet" =
+text to paste.
+
+| Code | Fix | Where it is checked |
+|---|---|---|
+| HZ070 | snippet: a `Send` through `on`, an `Href` prop, text as a prop or slot | source catalog (transform stage), `core/test/components.test.ts` |
+| HZ071 | snippet: a prop styled through an attribute variant | source catalog (transform stage), `core/test/components.test.ts` |
+| HZ072 | snippet: the variant, then the `!` form (two lines); `extend: false` names the variant only | source catalog (CSS stage, two cases) |
+| HZ073 | patch removing the `!` from the tv class (`owned/<i>`) + a variant snippet; a render class: snippet | source catalog (CSS stage, two cases), `cli/test/cli.test.ts` |
+| HZ074 | patch to the trailing `!` | source catalog (CSS stage) |
+| HZ075 | snippet: a variant, or style the inner element | source catalog (CSS stage), `cli/test/cli.test.ts` |
+| HZ076 | patch removing `owned/<i>` + the caller's snippet | source catalog (CSS stage) |
+| HZ077 | patch rewriting the use root's `class` | source catalog (CSS stage) |
+| HZ078 | snippet `hozu add kit <id> --sync` | source catalog (CSS stage), `cli/test/kits.test.ts` |
+| HZ079 | patch: the complementary toggle, or removing the class that never wins; snippet for two toggles that can hold together | source catalog (CSS stage, three cases), `css/test/adr0045.test.ts` |
+| HZ080 | snippet: the equivalent kit component and its `ui.use` (it builds when pasted) | source catalog (transform stage), `core/test/shared-parts.test.ts` |
+
+- **Changed codes:** HZ006 (a feature component from another feature: snippet `ui.kit`), HZ007 (a component in no
+  kit or feature: snippet), HZ013 (a kit id equal to a feature id or repeated: snippet), HZ014 (root tag, root
+  `class`, unknown `ui.use` keys, client root attributes), HZ029 (components: the module, emits; snippet), HZ031
+  (variant literals: snippet).
+- **Every new code was broken once to red:** HZ070, HZ071 (phase 2), HZ072–HZ079 (phase 3), HZ080 (phase 5).
+
+### Acceptance
+1. **A pure use adds 0 B of client JavaScript on every page:** 31 of 31 routes of the 11 projects have the
+   `js` mode, island count and client components of `baseline-0.8`. The IR with `use` removed equals the inline form
+   (`core/test/components.test.ts`), and notes equals its phase 2 normalised IR apart from the one override (phase 3).
+2. **P7 is unchanged apart from renames:** 7 893 B → 7 872 B (−21 B, phase 4: the client ref lost `wraps`); phase 5
+   leaves it at 7 872 B.
+3. **(Replaced by the owner, L.)** The hand migration of phase 4: 11 / 11 projects equal their phase 3 IR under the
+   widgets → components mapping (showcase 6 / 6 / 6 / 6, stations 5 / 5 / 5 / 5, site 1 / 4 / 1 / 1; 8 projects
+   differ only by the 11 removed empty `widgets`), and the routes summary of all 11 is equal. Phase 5 builds the same
+   IR as phase 4, byte for byte.
+4. **Every new code is broken once to red and carries a patch or a snippet:** 11 of 11 (the audit above).
+5. **Sizes:** `hozu docs components` on notes 4 537 B (≤ 5 120 B); a passing `hozu render ui.Button` 253 B
+   (≤ 512 B).
 
 ## A. One declaration: `ui.component`
 ```ts
