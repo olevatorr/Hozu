@@ -1,4 +1,6 @@
 import { contract, part, ui } from '@hozu/core'
+import { Button } from '../../ui/button.ts'
+import { Input } from '../../ui/input.ts'
 import {
   Add,
   Bulk,
@@ -19,7 +21,7 @@ import {
 const itemForm = part((event: typeof Pin | typeof Remove, id: string, label: string) =>
   ui.form({ on: { submit: ui.send(event, { id: ui.dom.form('id') }) } }, [
     ui.input({ type: 'hidden', name: 'id', value: id }),
-    ui.button({ type: 'submit', class: 'text-sm text-slate-600 underline' }, [label]),
+    ui.use(Button, { variant: { tone: 'subtle' }, props: { type: 'submit' } }, [label]),
   ]),
 )
 
@@ -32,30 +34,30 @@ export const NotesBoard = ui.view({
       ui.h1({ class: 'text-3xl font-bold' }, ['Notes']),
       ui.form({ class: 'flex gap-2', on: { submit: ui.send(Add, { text: ui.dom.form('text') }) } }, [
         ui.label({ for: 'note', class: 'sr-only' }, ['New note']),
-        ui.input({
-          id: 'note',
-          name: 'text',
-          required: true,
-          maxlength: 100,
-          value: ctx.draft,
-          placeholder: 'New note',
-          'aria-invalid': ctx.fields.text !== null,
-          'aria-describedby': 'note-error',
-          class: 'flex-1 rounded border px-3 py-2',
+        ui.use(Input, {
+          props: {
+            id: 'note',
+            name: 'text',
+            required: true,
+            maxlength: 100,
+            value: ctx.draft,
+            placeholder: 'New note',
+            invalid: ctx.fields.text !== null,
+            describedby: 'note-error',
+          },
           on: { input: ui.send(Draft, { text: ui.dom.value }) },
+          class: 'flex-1',
         }),
-        ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
+        ui.use(Button, { props: { type: 'submit' } }, ['Add']),
       ]),
       ui.p({ id: 'note-error', class: 'text-sm text-rose-600' }, [ctx.fields.text]),
       ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),
       when(['adding'], [ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…'])]),
       ui.label({ for: 'search', class: 'block text-sm font-medium' }, ['Search']),
-      ui.input({
-        id: 'search',
-        type: 'search',
-        value: ctx.query,
-        class: 'w-full rounded border px-3 py-2',
+      ui.use(Input, {
+        props: { id: 'search', type: 'search', value: ctx.query },
         on: { input: ui.send(Search, { query: ui.dom.value }) },
+        class: 'w-full',
       }),
       ui.query(
         listNotes,
@@ -74,21 +76,16 @@ export const NotesBoard = ui.view({
                 },
                 [
                   ui.span({ class: 'flex-1 text-sm text-slate-600' }, ['Selected: ', ctx.selected.length]),
-                  ui.button(
-                    {
-                      type: 'submit',
-                      name: 'action',
-                      value: 'pin',
-                      class: 'text-sm text-slate-600 underline',
-                    },
+                  ui.use(
+                    Button,
+                    { variant: { tone: 'subtle' }, props: { type: 'submit', name: 'action', value: 'pin' } },
                     ['Pin selected'],
                   ),
-                  ui.button(
+                  ui.use(
+                    Button,
                     {
-                      type: 'submit',
-                      name: 'action',
-                      value: 'delete',
-                      class: 'text-sm text-slate-600 underline',
+                      variant: { tone: 'subtle' },
+                      props: { type: 'submit', name: 'action', value: 'delete' },
                     },
                     ['Delete selected'],
                   ),

@@ -1,5 +1,8 @@
 import { contract, part, ui } from '@hozu/core'
 import { login } from '../../routes.ts'
+import { Button } from '../../ui/button.ts'
+import { Field } from '../../ui/field.ts'
+import { Input } from '../../ui/input.ts'
 import { accountMachine, accounts, me, SignIn, SignOut, signIn, signOut, text } from './model.ts'
 
 const language = part((locale: string) =>
@@ -14,22 +17,25 @@ export const Login = ui.view({
       language(locale),
       ui.h1({ class: 'text-3xl font-bold' }, [text.signIn]),
       ui.form({ class: 'space-y-3', on: { submit: ui.send(SignIn, { name: ui.dom.form('name') }) } }, [
-        ui.label({ for: 'name', class: 'block text-sm font-medium' }, ['Name']),
-        ui.input({
-          id: 'name',
-          name: 'name',
-          required: true,
-          minlength: 2,
-          maxlength: 20,
-          autocomplete: 'username',
-          'aria-invalid': ctx.fields.name !== null,
-          'aria-describedby': 'name-error',
-          class: 'w-full rounded border px-3 py-2',
+        ui.use(Field, {
+          props: { for: 'name', label: 'Name', error: ctx.fields.name, errorId: 'name-error' },
+          slots: {
+            control: ui.use(Input, {
+              props: {
+                id: 'name',
+                name: 'name',
+                required: true,
+                minlength: 2,
+                maxlength: 20,
+                autocomplete: 'username',
+                invalid: ctx.fields.name !== null,
+                describedby: 'name-error',
+              },
+              class: 'w-full',
+            }),
+          },
         }),
-        ui.p({ id: 'name-error', class: 'text-sm text-rose-600' }, [ctx.fields.name]),
-        ui.button({ type: 'submit', class: 'w-full rounded bg-indigo-600 px-4 py-2 text-white' }, [
-          text.signIn,
-        ]),
+        ui.use(Button, { props: { type: 'submit' }, class: 'w-full' }, [text.signIn]),
       ]),
       ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),
     ]),
@@ -52,7 +58,7 @@ export const AccountBar = ui.view({
         ),
         language(locale),
         ui.form({ on: { submit: ui.send(SignOut, {}) } }, [
-          ui.button({ type: 'submit', class: 'underline' }, [text.signOut]),
+          ui.use(Button, { variant: { tone: 'plain' }, props: { type: 'submit' } }, [text.signOut]),
         ]),
       ],
     ),

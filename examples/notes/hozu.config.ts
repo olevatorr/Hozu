@@ -6,6 +6,7 @@ import { AccountBar, Admin, Login } from './features/account/views.ts'
 import { notes } from './features/notes/feature.ts'
 import { NotesBoard } from './features/notes/views.ts'
 import { admin, home, login } from './routes.ts'
+import { kit } from './ui/kit.ts'
 
 export default project({
   schema: zodAdapter,
@@ -35,5 +36,6 @@ export default project({
       },
     }),
   ],
+  kits: [kit],
   features: [account, notes],
 })

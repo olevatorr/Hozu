@@ -75,7 +75,7 @@ export type Child =
 /** What a query branch or an each item returns: one node, or `c ? a : [b, c]`. */
 export type Branch = NodeDecl | readonly Child[]
 
-export type AttrValue = Val<string | number | boolean | null> | Guard | Asset
+export type AttrValue = Val<string | number | boolean | null> | Guard | Asset | undefined
 
 export type Props<T extends Tag = Tag> = TagProps[T] & {
   class?: string
