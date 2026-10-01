@@ -13,6 +13,7 @@ import {
 } from '@hozu/core'
 import { implement } from '@hozu/core/component'
 import { zodAdapter } from '@hozu/schema-zod'
+import { createTV } from '@hozu/variants'
 import { z } from 'zod'
 
 const Item = z.object({ sku: z.string(), qty: z.number() })
@@ -345,6 +346,15 @@ export const Button = ui.component({
 
 export const Badge = ui.component({ tag: 'span', render: () => ui.span({}, []) })
 
+const tv = createTV({})
+
+export const Chip = ui.component({
+  tag: 'span',
+  styles: tv({ slots: { base: 'rounded', dot: 'size-2' }, variants: { tone: { on: 'bg-white', off: '' } } }),
+  props: z.object({ label: z.string() }),
+  render: ({ props, classes }) => ui.span({}, [ui.i({ class: classes.dot }, []), props.label]),
+})
+
 const Picker = ui.component({
   tag: 'div',
   props: z.object({ value: z.string() }),
@@ -354,7 +364,7 @@ const Picker = ui.component({
   render: () => ui.div({}, []),
 })
 
-export const kitUi = ui.kit({ id: 'ui', components: [{ Button, Badge }] })
+export const kitUi = ui.kit({ id: 'ui', components: [{ Button, Badge, Chip }] })
 
 export const Uses = ui.view({
   render: () =>
@@ -371,6 +381,9 @@ export const Uses = ui.view({
         ['Save'],
       ),
       ui.use(Badge, {}),
+      ui.use(Chip, { variant: { tone: 'on' }, props: { label: 'x' } }),
+      // @ts-expect-error an inline tv() still types its variants
+      ui.use(Chip, { variant: { tone: 'dim' }, props: { label: 'x' } }),
       ui.use(Picker, { props: { value: 'a' }, on: { change: () => ui.send(Save, {}) } }),
       // @ts-expect-error a literal variant outside its values
       ui.use(Button, { variant: { tone: 'danger' } }, []),

@@ -1,12 +1,20 @@
 import { type Impact, impact, UnknownSymbolError } from '@hozu/validator'
+import type { ImpactOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
+import { findComponent, impactComponent } from './components.ts'
 
-export function runImpact(loaded: Loaded, target: string | undefined): Impact {
+export function runImpact(loaded: Loaded, target: string | undefined, cwd: string): ImpactOutput {
   if (!target?.includes('.'))
-    throw new HozuCliError('usage', 'Expected <feature>.<symbol>, e.g. hozu impact cart.addItem')
+    throw new HozuCliError(
+      'usage',
+      'Expected <feature>.<symbol> or a component id, e.g. hozu impact cart.addItem',
+    )
+  const build = loaded.build(true)
+  const component = findComponent(build.ir, target)
+  if (component) return impactComponent(build, cwd, component)
   try {
-    return impact(loaded.build().ir, target)
+    return impact(build.ir, target)
   } catch (error) {
     if (error instanceof UnknownSymbolError)
       throw new HozuCliError('unknown-feature', error.message, error.suggestions)

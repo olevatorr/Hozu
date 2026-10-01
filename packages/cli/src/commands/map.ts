@@ -9,6 +9,7 @@ import {
 } from '@hozu/core/ir'
 import type { MapFeature, MapFile, MapOutput, MapState } from '../contract.ts'
 import type { Loaded } from '../load.ts'
+import { componentUses } from '../uses.ts'
 
 const local = (ref: string) => ref.slice(ref.indexOf('.') + 1)
 
@@ -93,8 +94,15 @@ export function runMap(loaded: Loaded, cwd: string): MapOutput {
     const s = resolveSource(build.sources, pointer)
     return s ? `${relative(cwd, s.file)}:${s.line}` : null
   }
+  const uses = componentUses(ir, build.sources, cwd)
   const routes = Object.entries(ir.routes).map(([id, r]) => {
     const page = ir.pages[id]
+    const views = page?.views ?? []
+    const components = [
+      ...new Set(
+        uses.filter(([, u]) => views.some((v) => u.node.startsWith(`${v}/`))).map(([component]) => component),
+      ),
+    ].sort()
     return {
       id,
       path: r.path,
@@ -102,6 +110,7 @@ export function runMap(loaded: Loaded, cwd: string): MapOutput {
       views: page?.views ?? [],
       head: page?.head.query?.ref ?? null,
       at: at(`/pages/${id}`) ?? at(`/routes/${id}`),
+      ...(components.length ? { components } : {}),
     }
   })
   const features: MapFeature[] = Object.values(ir.features).map((f) => {
@@ -183,6 +192,14 @@ export function runMap(loaded: Loaded, cwd: string): MapOutput {
   return {
     session: ir.session ? shapeOf(ir.session as Schema) : null,
     verify: verifyLine(ir),
+    ...(Object.keys(ir.kits).length
+      ? {
+          kits: Object.entries(ir.kits).map(([id, k]) => ({
+            id,
+            components: Object.keys(k.components).length,
+          })),
+        }
+      : {}),
     files: filesOf(build, cwd, appModuleOf(loaded.project)),
     routes,
     features,
@@ -197,11 +214,12 @@ export function describeMap(out: MapOutput): string {
     `verify ${out.verify}`,
     'files',
     ...out.files.map((f) => `  ${f.file} ${f.roles.join(' ')}`),
+    ...(out.kits?.length ? [`kits: ${out.kits.map((k) => `${k.id} ${k.components}`).join(', ')}`] : []),
     'routes',
   ]
   for (const r of out.routes)
     lines.push(
-      `  ${r.id} ${r.path}${r.search.length ? `?${r.search.join('&')}` : ''} → ${r.views.map(local).join(', ') || '(no page)'}${r.head ? ` · head ${local(r.head)}` : ''}${where(r.at)}`,
+      `  ${r.id} ${r.path}${r.search.length ? `?${r.search.join('&')}` : ''} → ${r.views.map(local).join(', ') || '(no page)'}${r.head ? ` · head ${local(r.head)}` : ''}${r.components ? ` · uses ${r.components.join(' ')}` : ''}${where(r.at)}`,
     )
   for (const f of out.features) {
     lines.push(`feature ${f.id}`)
@@ -227,7 +245,7 @@ export function describeMap(out: MapOutput): string {
             .join(' ')}`,
         )
       for (const a of s.after) parts.push(`after ${a.ms}ms→${a.target}`)
-      if (s.ignore.length) parts.push(`ignore ${s.ignore.join(' ')}`)
+      if (s.ignore.length && !s.invoke) parts.push(`ignore ${s.ignore.join(' ')}`)
       lines.push(
         `  state ${s.name}${s.initial ? '*' : ''}${s.final ? ' (final)' : ''}: ${parts.join('; ')}${where(s.at)}`,
       )

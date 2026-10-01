@@ -1,12 +1,18 @@
 import { existsSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { closest } from '@hozu/validator'
 import { defaultSkill } from 'create-hozu'
-import type { DocsOutput } from '../contract.ts'
+import type { DocsComponentsOutput, DocsOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
+import { load } from '../load.ts'
+import { componentEntries, describeCatalog, docsComponent } from './components.ts'
 
-export async function runDocs(cwd: string, topic: string | undefined): Promise<DocsOutput> {
+export async function runDocs(
+  cwd: string,
+  topic: string | undefined,
+  config?: string,
+): Promise<DocsOutput | DocsComponentsOutput> {
   const dir = [
     join(cwd, '.claude/skills/hozu/topics'),
     join(cwd, '.agents/skills/hozu/topics'),
@@ -37,5 +43,18 @@ export async function runDocs(cwd: string, topic: string | undefined): Promise<D
       `topics: ${topics.map((t) => t.name).join(', ')}`,
     ])
   }
-  return { topic: name, text: await readFile(join(dir, `${name}.md`), 'utf8'), topics }
+  const text = await readFile(join(dir, `${name}.md`), 'utf8')
+  if (name === 'components') return catalog(cwd, config, text)
+  return { topic: name, text, topics }
+}
+
+async function catalog(
+  cwd: string,
+  config: string | undefined,
+  topic: string,
+): Promise<DocsComponentsOutput> {
+  if (!existsSync(resolve(cwd, config ?? 'hozu.config.ts'))) return { text: topic, components: [] }
+  const { ir } = (await load(config, cwd)).build()
+  const components = componentEntries(ir).map(docsComponent)
+  return { text: topic + describeCatalog(components), components }
 }

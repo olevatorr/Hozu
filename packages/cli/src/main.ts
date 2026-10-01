@@ -12,6 +12,7 @@ import {
 } from './commands/browse.ts'
 import { runBuild } from './commands/build.ts'
 import { runCheck } from './commands/check.ts'
+import { describeComponent, describeComponentImpact } from './commands/components.ts'
 import { runDocs } from './commands/docs.ts'
 import { describeExplain, runExplain } from './commands/explain.ts'
 import { mermaid, runGraph } from './commands/graph.ts'
@@ -20,6 +21,7 @@ import { runInspect } from './commands/inspect.ts'
 import { describeAddKit, runAddKit } from './commands/kits.ts'
 import { describeMap, runMap } from './commands/map.ts'
 import { describePlan, runPlan } from './commands/plan.ts'
+import { describeRender, runRender } from './commands/render.ts'
 import { describeRequest, runRequest } from './commands/request.ts'
 import { runServe } from './commands/serve.ts'
 import { runSkill } from './commands/skill.ts'
@@ -33,14 +35,15 @@ const usage = `Usage: hozu <command> [options]
 
 Commands:
   validate [feature]        Build the IR, run contracts, report diagnostics (exit 1 on errors)
-  inspect <feature>         Print a feature's canonical IR and summary
+  inspect <feature|id>      Print a feature's canonical IR and summary, or a component (ui.Button) with its uses
   graph <feature>           Print a feature's state/effect/view graph (Mermaid, or --json)
   explain <feature>.<state> Explain a state: transitions, guards, effects, covering contracts
-  impact <feature>.<symbol> What a query, mutation, tag, event, fn or view affects
+  impact <feature>.<symbol> What a query, mutation, tag, event, fn, view or component (ui.Button) affects
   plan <route>              Derived render plan: regions, cache modes, hydration islands
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
   serve                     Start the app module (project({ app })) on PORT with adapter-node: what npm start runs
-  docs [topic]              Print one topic of the guide (no topic: list them)
+  docs [topic]              Print one topic of the guide (no topic: list them); docs components adds the app's list
+  render <id>               Render one component alone (ui.Button): HTML, root class, owned properties, diagnostics
   skill                     Rewrite the agent skill for this Hozu version (--agent claude|agents|both)
   check                     Type-check the app and validate it: the one command to run after every edit
   map                       Outline the app (routes, queries, mutations, events, states, views) with file:line
@@ -74,6 +77,9 @@ Options:
   --with <parts>       add feature: any of detail,toggle,filter,remove (comma-separated)
   --sync               add kit: rewrite the generated block of <id>/tv.ts from the current design system
   --client             add component: a client component (browser code in its own module)
+  --variant <k=v>      render: a variant value (repeatable)
+  --props <json>       render: the props, a JSON object
+  --slot <name=text>   render: a slot's text (repeatable)
   -h, --help           Show this help
 `
 
@@ -146,6 +152,9 @@ export async function main(
         with: { type: 'string' },
         sync: { type: 'boolean', default: false },
         client: { type: 'boolean', default: false },
+        variant: { type: 'string', multiple: true },
+        props: { type: 'string' },
+        slot: { type: 'string', multiple: true },
         select: { type: 'string', multiple: true },
         forms: { type: 'boolean', default: false },
         do: { type: 'string', multiple: true },
@@ -175,6 +184,7 @@ export async function main(
       'explain',
       'impact',
       'plan',
+      'render',
       'build',
       'serve',
       'skill',
@@ -196,7 +206,7 @@ export async function main(
       )
     if (!commands.includes(command)) throw new HozuCliError('usage', `Unknown command "${command}"`, commands)
     if (command === 'docs') {
-      const result = await runDocs(cwd, target)
+      const result = await runDocs(cwd, target, values.config)
       out(asJson ? json(result) : result.text)
       return 0
     }
@@ -311,12 +321,10 @@ export async function main(
       return result.ok ? 0 : 1
     }
     if (command === 'inspect') {
-      const result = runInspect(loaded, target)
-      out(
-        asJson
-          ? json(result)
-          : `${json({ feature: result.feature, hash: result.hash, summary: result.summary })}`,
-      )
+      const result = runInspect(loaded, target, cwd)
+      if (asJson) out(json(result))
+      else if ('component' in result) out(describeComponent(loaded.build(true), cwd, result))
+      else out(json({ feature: result.feature, hash: result.hash, summary: result.summary }))
       return 0
     }
     if (command === 'build') {
@@ -330,9 +338,24 @@ export async function main(
       return 0
     }
     if (command === 'impact') {
-      const result = runImpact(loaded, target)
-      out(asJson ? json(result) : describeImpact(result))
+      const result = runImpact(loaded, target, cwd)
+      out(
+        asJson
+          ? json(result)
+          : result.kind === 'component'
+            ? describeComponentImpact(result)
+            : describeImpact(result),
+      )
       return 0
+    }
+    if (command === 'render') {
+      const result = await runRender(loaded, cwd, target, {
+        variant: values.variant ?? [],
+        props: values.props,
+        slot: values.slot ?? [],
+      })
+      out(asJson ? json(result) : describeRender(result))
+      return result.ok ? 0 : 1
     }
     if (command === 'explain') {
       const result = runExplain(loaded, target)
