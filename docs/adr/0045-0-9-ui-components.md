@@ -1,7 +1,7 @@
 # ADR 0045 — 0.9: declared UI components (breaking)
 
-- Status: accepted (2026-10-01). The owner took every gate as recommended (G1–G6). Phase 1 (the contract layer) and
-  phase 2 (record time) are done; see "Phase 2 notes".
+- Status: accepted (2026-10-01). The owner took every gate as recommended (G1–G6). Phase 1 (the contract layer),
+  phase 2 (record time) and phase 3 (styles) are done; see "Phase 2 notes" and "Phase 3 notes".
 - **Already decided by the owner, in the design dialogue that produced this ADR:**
   - components are declarations, not conventions;
   - `ui.widget` merges into `ui.component({ client })` in a breaking 0.9;
@@ -328,6 +328,125 @@ component's resolve in `FeatureIR.schemas`, so a kit is self-contained.
   (HZ079), 6 skipped. P1 0.229 ms, P2 261.88 ms with exponent 1.112 (1.141 at the base), P3 223.171 ms, P5 20.6 M/s,
   P6 2.87 M/s, P7 7 893 B, P9 10 288 req/s, A4 55 663. The first gate run stopped at typecheck on a test fixture (the
   catalog's tv stub), which was fixed before the second run; bench ran once.
+
+## Phase 3 notes (styles)
+The CSS stage reads each class's properties, HZ072–HZ079 run on them, `@hozu/variants/config` and `hozu add kit`
+generate `tv.ts`, and the repository is migrated for HZ079. Client components stay HZ014 until phase 4.
+
+**Moved by the coordinator:** `hozu add kit <id> [--sync]` comes from phase 5 into phase 3, because HZ078's fix names
+it. `hozu add component` stays in phase 5.
+
+**Amendments to the phase 1 contract (decided by the coordinator):**
+- `Bindings.components: Record<componentId, { inner: string[] }>` (`core/src/ir/bindings.ts:19`), not IR. It holds
+  the class and toggle tokens of a render's non-root elements, tv slot classes and the `class` of nested uses
+  included. It is recorded by the declaration-time render (`core/src/build/components.ts:149`, `:210`), which runs
+  under placeholders, so a caller's slot and children content is excluded by construction. HZ073 and HZ075 read it.
+  - A component whose declaration-time render throws (HZ059 / HZ014) records no entry
+    (`core/test/components.test.ts`, the HZ059 / HZ014 case).
+  - The only path that runs the CSS rules is `runValidate` (`hozu validate`, `hozu check`), and it passes the
+    bindings (`cli/src/commands/validate.ts:56`). `testApp`, `hozu get` and `hozu browse` run no CSS rule.
+    `cli/test/cli.test.ts:189` fails when the bindings lack `components` (broken once: passing
+    `{ ...bindings, components: {} }` turns it red).
+- `StyleFiles.kits: Record<kitId, file>` (`core/src/ir/bindings.ts:24`, filled at `core/src/build/project.ts:424`):
+  a kit's `styles` is imported after the project entry and before the feature styles (`css/src/index.ts:51`).
+- `CheckOutput.overrides` is required now (`cli/src/contract.ts:212`); `check.schema.json` and `migrate.schema.json`
+  are regenerated.
+
+**Implementation:**
+
+| What | Where |
+|---|---|
+| `ClassStyle` `{ variant, important, properties, order }`, `ValidateOptions.classes` | `validator/src/context.ts:15`, `validator/src/index.ts:107` |
+| The classes read: view candidates, every component's `owned` and `bindings.components` | `core/src/ir/classes.ts:47`, used at `css/src/index.ts:96` |
+| One design system per project (`candidatesToCss`), stylesheets resolved as `compileStyles` does | `css/src/properties.ts:38`, `:236` |
+| The baseline's per-class compile, used only when the design system cannot load | `css/src/properties.ts:227` |
+| Where a declaration lands: the element, or a descendant part | `css/src/properties.ts:136` |
+| Custom classes of the project's stylesheets | `css/src/properties.ts:190` |
+| CLI cache (`node_modules/.cache/hozu/styles.json`) with unknown classes, properties and design tokens | `cli/src/styles.ts:49` |
+| HZ079 | `validator/src/rules/styles.ts:132`; exclusive guards at `:91` |
+| HZ074 | `validator/src/rules/styles.ts:244` |
+| HZ072, HZ073, HZ075, HZ076, HZ077 | `validator/src/rules/styles.ts:308` (HZ072 `:369`, HZ073 `:316` / `:345`, HZ075 `:413`, HZ076 `:330`, HZ077 `:392`) |
+| Inherited properties (HZ075), margins (HZ076) | `validator/src/rules/styles.ts:35`, `:34` |
+| Overrides output: uses, grouping, the human line | `cli/src/uses.ts:5`, `:69`; `cli/src/commands/check.ts:97`; `cli/src/main.ts:245` |
+| `designTokens` (the project's `@theme` keys and `@utility` names minus Tailwind's) | `css/src/tokens.ts:25` |
+| `@hozu/variants/config`: scales, `twMergeConfigOf`, the block, staleness, `--sync` | `variants/src/config.ts:14`, `:41`, `:95`, `:124` |
+| `hozu add kit [--sync]` (in a worker), HZ078 | `cli/src/commands/kits.ts:103`, `:180`, `:54`; called at `cli/src/commands/check.ts:93` |
+| Showcase tabs (owner's option A) | `examples/showcase/features/site/views.ts:139` |
+| Notes: generated `ui/tv.ts`, one override | `examples/notes/ui/tv.ts`, `examples/notes/features/account/views.ts:38` |
+| Baseline scan against HZ079 (`agreement.json`) | `bench/ui/baseline.ts:233` |
+
+**Choices the ADR did not fix:**
+1. **Reading properties.** One Tailwind design system per project, loaded with the core loader and a resolver that
+   maps `tailwindcss` to `@hozu/css`'s copy and other ids through Node's resolution; the per-class compile of
+   `bench/ui/baseline.ts` is the fallback. On the 11 projects both give the same variant, `!` and properties for
+   all 541 classes (custom classes come from the same compiled CSS in both).
+2. **Property keys.** A declaration on the element is keyed by its property; one on a descendant by
+   `<descendant part> <property>`, for example `space-y-3` sets `> :not(:last-child) margin-block-start`. So
+   `space-y-3` is no margin of its own (HZ076) and still conflicts with `space-y-4`. Custom properties,
+   `@property` and `@keyframes` are ignored; `!important` is stripped from values; inside one class the last
+   declaration wins, as in the per-class output (the `@supports` colour-mix of `bg-x/70`).
+3. **Custom classes:** a plain rule `.name` (or `.name <descendant>`) outside any condition, `@layer` allowed.
+   `.name:hover`, `.name[data-x]` and rules under `@media` are states and are skipped. In the cascade, a layered
+   custom class comes before every utility and an unlayered one after (`order`). `panel`, `site-header` and
+   `reading-list` are read; none adds a finding.
+4. **`!`:** both spellings are important for "the same `!`" and for overrides; HZ074 reports the leading one.
+   `UseIR.overrides` keeps phase 2's trailing-only list. Two `!` classes with the same properties conflict too.
+5. **HZ079 reports one diagnostic per pair** (the tabs: 6). The base-against-toggle patch moves every base class that
+   conflicts with that toggle key into one complementary toggle, so the patches of one node are identical and
+   applying both is idempotent. The complement of `x === v` is `x !== v`, of `!c` is `c`, otherwise `not`. Two
+   static classes: the patch removes the one earlier in Tailwind's order (`getClassOrder`). Two toggles whose guards
+   can hold together have no patch kind in F, so they get a snippet.
+6. **Exclusive guards** are exactly F's list. A toggle value that is a plain reference `c` is `%truthy(c)`;
+   `x !== v` / `x === v` match with the operands in either order. Nothing else (no `and` conjuncts) counts.
+7. **HZ072** points at the use root's `class`. Owned properties are the keys of every `ComponentIR.owned` class.
+   With `extend: false` it needs no CSS data. The fix is a two-line snippet: the variant, then the `!` form.
+8. **HZ073** for a tv class points at `…/components/<Name>/owned/<i>` with a patch; for a render class at the
+   component, snippet only (it has no IR path). It and HZ074 need no CSS data.
+9. **HZ075** compares the caller's own inherited properties with the render classes that have no variant.
+   **HZ076** reports any owned class with its own margin, in any variant; its patch removes `owned/<i>`.
+   **HZ077** needs CSS data; its patch rewrites the use root's `class`.
+10. **Overrides output:** one override is one `!` class; the places are feature ids with their counts, at most
+    three, then `+N more`; `at` is the use's `file:line`.
+11. **`hozu add kit <id>`** writes `<id>/kit.ts` and `<id>/tv.ts` (`ui/` for `ui`), imports the kit as `<id>Kit`,
+    adds `kits: [<id>Kit]` before `features:` and `@hozu/variants` to the dependencies. It runs in a worker, like
+    the scaffold's lock seed, so the app modules never enter the CLI process. `--sync` without the marked block is a
+    usage error.
+12. **The block:** markers `// hozu:variants-config <id>` and `// /hozu:variants-config`. Staleness compares the
+    text with whitespace, quotes and trailing commas normalised, so a formatter does not make it stale. HZ078 is
+    reported by `hozu check` only, for a kit in `ProjectIR.kits` whose `<id>/tv.ts` has a block, at `/kits/<id>`
+    with the marker line as source. The tokens come from the styles cache.
+13. **The config:** the project's tokens minus Tailwind's defaults. Sub-keys (`--text-hero--line-height`) are
+    skipped. A static `@utility` is the group `[name]`; a functional one is `{ name: [non-empty value] }`; a plugin's
+    utilities (typography's `prose`) count as the project's.
+14. **Notes override:** `rounded-lg!` on the sign-in button is a deliberate visual change on `/login` (corner radius
+    0.25rem → 0.5rem), the requested demonstration. `bench/trial/notes/accept.mjs` selects by role and name and asserts
+    no class or radius.
+15. `hozu --help` lists `add kit` and `--sync`.
+
+**Proof:**
+- **Catalog** (`validator/test/source-mistakes.test.ts`, stage `css`, 12 cases): HZ072 (two), HZ073 (two), HZ074,
+  HZ075, HZ076, HZ077, HZ078, HZ079 (three). Each rule was broken once and its cases went red: HZ072 never reported
+  (2 red), HZ073 tv / render (1 each), HZ074, HZ075 (variant test), HZ076 (margin test), HZ077, HZ078 (status check),
+  HZ079 base classes skipped (2 red), toggles never compared for exclusivity (1 red), and `exclusive()` always false
+  (the two fixed cases red).
+- **HZ079 agreement** (`bench/ui/baseline.ts --out`): before the showcase fix, the scan's 6 real pairs are exactly
+  the 6 HZ079 findings and none of the 24 exclusive pairs is reported; after it, 0 and 0, the 24 still unreported.
+  The ADR 0045 `it.fails` for HZ079 is an `it` now.
+- **Custom token** (`variants/test/config.test.ts:25`): with `--text-hero` in `@theme`, `tv` keeps
+  `text-hero text-white` with the generated config; with `createTV({})` it returns `text-white`. `hozu check` on
+  notes with `--text-hero` added: HZ078, then `hozu add kit ui --sync` writes `text: ['hero']`, then clean.
+- **IR** (`compare.ts`): the 9 other projects equal; routes (`js`, islands, widgets) equal. Showcase differs only at
+  `/features/site/views/Showcase/root/children/1/children/2/children/1/children/{0,1,2}/class` and the toggle key
+  `bg-white text-slate-900 shadow dark:bg-slate-950 dark:text-white` of the same three nodes (removed). Notes equals
+  phase 2's normalised IR without the override; with it, only `account.Login/2/1` differs (`class`, `use.added`,
+  `use.overrides`).
+- **Tabs look:** in Chromium, the tab buttons' colour, background and shadow are identical before and after, light
+  and dark, selected and not, on the server render and after a click. Selected: `text-slate-900 bg-white shadow`
+  (dark: `text-white bg-slate-950 shadow`); not selected: `text-slate-600` (dark: `text-slate-300`), no background.
+- **P7:** 7 893 B; no page gains client JavaScript.
+- **`hozu check` wall time** (median, cold = no styles cache): notes 0.56 → 0.64 s cold, 0.51 → 0.58 s warm;
+  showcase 0.60 → 0.77 s cold, 0.45 → 0.50 s warm.
+- **Repository:** `hozu check` on the 10 examples and the site: 0 errors, 0 warnings.
 
 ## A. One declaration: `ui.component`
 ```ts
