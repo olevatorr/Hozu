@@ -1,6 +1,6 @@
 # ADR 0045 — 0.9: declared UI components (breaking)
 
-- Status: accepted (2026-10-01); implemented; release not published. The owner took every gate as recommended
+- Status: accepted (2026-10-01); implemented; released as 0.9.0 (2026-10-01). The owner took every gate as recommended
   (G1–G6). Phases 1–5 are done; see "Phase 2 notes" to "Phase 5 notes". 0.9.0 is packed and rehearsed, not
   published, tagged or pushed.
 - **Already decided by the owner, in the design dialogue that produced this ADR:**
@@ -1093,6 +1093,8 @@ Each phase ends with `pnpm gate` once, a report, and a runnable example.
    - `!` overrides per change;
    - raw `ui.button` / `ui.input` written while a kit component exists;
    - lines per change.
+   - **Deferred by the owner (2026-10-01):** 0.9.0 is released without it. The trial runs after the next feature,
+     from ADR 0046's design.
 
 ## Decisions for the owner (all decided 2026-10-01: as recommended)
 | Gate | Question | Recommendation |

@@ -1,7 +1,7 @@
 # ADR 0046 — Trial 0022: do agents use 0.9's components? (pre-registration)
 
-- Status: proposed (2026-10-01). Written before any 0.9 trial run; the targets below are not changed after the runs
-  start.
+- Status: deferred (owner, 2026-10-01): 0.9.0 is released first, and the trial runs after the next feature. The
+  design and targets stay as written. They are reviewed and frozen before that run, then not changed after it starts.
 - **Why:** ADR 0045 acceptance 6. Phases 0–5 proved that components build the same IR, ship 0 B of JS and are
   checked. They did not prove that an agent uses them.
   - An agent might bypass a kit and hand-write `ui.button` with classes.
