@@ -581,7 +581,12 @@ export function transform(source: string, _file = ''): TransformResult {
         const pushInAssign = callee.property.name === 'push' && statement?.type === 'ExpressionStatement'
         if (callee.property.name === 'includes' && n.arguments.length === 1)
           replace(n, `${H}.includes(${gen(callee.object)}, ${gen(n.arguments[0])})`)
-        else if (!pushInAssign) replace(n, `${H}.method(${JSON.stringify(callee.property.name)})`, false)
+        else if (!pushInAssign)
+          replace(
+            n,
+            `${H}.method(${gen(callee.object)}, ${JSON.stringify(callee.property.name)}${n.arguments.map((a: Node) => `, ${gen(a)}`).join('')})`,
+            false,
+          )
         return
       }
       if (!refArgs) return

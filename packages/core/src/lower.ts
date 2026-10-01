@@ -33,6 +33,9 @@ const test = (x: unknown): any =>
 const list = (x: unknown): any[] =>
   x === null || x === undefined || x === false ? [] : Array.isArray(x) ? x : [x]
 
+const live = (x: unknown) => exprOf(x) !== null || guardOf(x) !== null
+const plain = (...xs: unknown[]) => !xs.some(live)
+
 const calls = new Set(['fn', 'part', 'tag'])
 const recordable = (f: unknown) =>
   typeof f !== 'function' || calls.has(infoOf(f)?.kind ?? '') || recorderFns.has(f) || loweredOf().has(f)
@@ -63,28 +66,36 @@ export const lower = Object.freeze({
       )
     return f(...args)
   },
-  eq: (a: any, b: any) => op.eq(a, b),
-  neq: (a: any, b: any) => op.neq(a, b),
-  lt: (a: any, b: any) => op.lt(a, b),
-  lte: (a: any, b: any) => op.lte(a, b),
-  gt: (a: any, b: any) => op.gt(a, b),
-  gte: (a: any, b: any) => op.gte(a, b),
-  and: (...args: unknown[]) => op.and(...args.map(test)),
-  or: (...args: unknown[]) => op.or(...args.map(test)),
-  not: (a: unknown) => op.not(test(a)),
+  eq: (a: any, b: any) => (plain(a, b) ? a === b : op.eq(a, b)),
+  neq: (a: any, b: any) => (plain(a, b) ? a !== b : op.neq(a, b)),
+  lt: (a: any, b: any) => (plain(a, b) ? a < b : op.lt(a, b)),
+  lte: (a: any, b: any) => (plain(a, b) ? a <= b : op.lte(a, b)),
+  gt: (a: any, b: any) => (plain(a, b) ? a > b : op.gt(a, b)),
+  gte: (a: any, b: any) => (plain(a, b) ? a >= b : op.gte(a, b)),
+  and: (...args: any[]) => (plain(...args) ? args.reduce((l, r) => l && r) : op.and(...args.map(test))),
+  or: (...args: any[]) => (plain(...args) ? args.reduce((l, r) => l || r) : op.or(...args.map(test))),
+  not: (a: unknown) => (plain(a) ? !a : op.not(test(a))),
   test,
-  branch: (c: unknown, a: unknown, b: unknown) => ifNode(test(c), list(a), list(b)),
-  cond: (c: unknown, a: unknown, b: unknown): any => builtinCall('%cond', { c: test(c), a, b }),
-  both: (l: unknown, r: unknown): any => builtinCall('%cond', { c: test(l), a: r, b: l }),
-  either: (l: unknown, r: unknown): any => builtinCall('%cond', { c: test(l), a: l, b: r }),
-  coalesce: (a: unknown, b: unknown): any => builtinCall('%coalesce', { a, b }),
+  branch: (c: unknown, a: unknown, b: unknown) => {
+    const chosen = plain(c) ? list(c ? a : b) : null
+    return chosen?.length === 1 ? chosen[0] : ifNode(test(c), list(a), list(b))
+  },
+  cond: (c: unknown, a: unknown, b: unknown): any =>
+    plain(c) ? (c ? a : b) : builtinCall('%cond', { c: test(c), a, b }),
+  both: (l: unknown, r: unknown): any => (plain(l) ? l && r : builtinCall('%cond', { c: test(l), a: r, b: l })),
+  either: (l: unknown, r: unknown): any =>
+    plain(l) ? l || r : builtinCall('%cond', { c: test(l), a: l, b: r }),
+  coalesce: (a: unknown, b: unknown): any => (plain(a) ? (a ?? b) : builtinCall('%coalesce', { a, b })),
   concat: (...p: unknown[]): any =>
-    builtinCall('%concat', Object.fromEntries(p.map((x, i) => [String(i), x]))),
-  length: (v: unknown): any => builtinCall('%length', { v }),
-  plus: (a: unknown, b: unknown): any => builtinCall('%plus', { a, b }),
-  minus: (a: unknown, b: unknown): any => builtinCall('%minus', { a, b }),
-  includes: (l: unknown, v: unknown): any => builtinCall('%includes', { l, v }),
-  method: (name: string): never => {
+    plain(...p)
+      ? p.map((x) => String(x)).join('')
+      : builtinCall('%concat', Object.fromEntries(p.map((x, i) => [String(i), x]))),
+  length: (v: any): any => (plain(v) ? v.length : builtinCall('%length', { v })),
+  plus: (a: any, b: any): any => (plain(a, b) ? a + b : builtinCall('%plus', { a, b })),
+  minus: (a: any, b: any): any => (plain(a, b) ? a - b : builtinCall('%minus', { a, b })),
+  includes: (l: any, v: unknown): any => (plain(l, v) ? l.includes(v) : builtinCall('%includes', { l, v })),
+  method: (target: any, name: string, ...args: unknown[]): any => {
+    if (plain(target, ...args) && typeof target?.[name] === 'function') return target[name](...args)
     throw new ReferenceEscape(
       `Method "${name}" cannot run on a reference: references are recorded, not evaluated. For a list use ui.each(list, 'id', (item) => …); for any other computation declare a fn() and call it with the reference`,
     )

@@ -47,7 +47,7 @@ const byState = part((busy: boolean, label: string) =>
 )
 
 describe('ADR 0045 G: a part called with literals equals the inline form with those literals', () => {
-  it.fails('=== and ?: on literal arguments give a static class', () => {
+  it('=== and ?: on literal arguments give a static class', () => {
     const { codes, node } = button({
       View: ui.view({ render: () => ui.div({}, [byCompare('ghost', 'Go')]) }),
     })
@@ -55,13 +55,13 @@ describe('ADR 0045 G: a part called with literals equals the inline form with th
     expect(node?.class).toBe('text-slate-700')
   })
 
-  it.fails('?? on an omitted argument gives a static class', () => {
+  it('?? on an omitted argument gives a static class', () => {
     const { codes, node } = button({ View: ui.view({ render: () => ui.div({}, [byDefault({}, 'Go')]) }) })
     expect(codes).toEqual([])
     expect(node?.class).toBe('bg-indigo-600 text-white')
   })
 
-  it.fails('a template string over a literal ?? gives a static class', () => {
+  it('a template string over a literal ?? gives a static class', () => {
     const { codes, node } = button({
       View: ui.view({ render: () => ui.div({}, [byTemplate({ extra: 'w-full' }, 'Go')]) }),
     })
