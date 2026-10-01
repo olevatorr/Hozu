@@ -62,6 +62,16 @@ void_result() {
     grep -qiE "hit your (session|usage|weekly) limit|usage limit reached|rate_limit_error|overloaded_error"
 }
 
+fingerprint() {
+  local h=()
+  for f in "$HOME/.claude/CLAUDE.md" CLAUDE.md AGENTS.md "$1"; do
+    h+=("\"$(basename "$f")\": \"$( [ -f "$f" ] && shasum -a 256 "$f" | cut -c1-16 || echo none)\"")
+  done
+  local skill=none
+  [ -d .claude/skills ] && skill=$(find .claude/skills -type f | sort | xargs cat | shasum -a 256 | cut -c1-16)
+  printf '{"step": "%s", %s, "skill": "%s", "managed": "server-side, not fingerprintable"}\n' "$2" "$(IFS=,; echo "${h[*]}")" "$skill" >> "$OUT/fingerprints.jsonl"
+}
+
 agent() {
   local k="$1" nn prompt pre attempt=0 code
   nn=$(printf '%02d' "$k")
@@ -78,6 +88,7 @@ agent() {
       prompt="$LR/prompts/change.md"
     fi
     log "step $nn attempt $attempt"
+    fingerprint "$prompt" "$nn"
     [ -n "${DRY:-}" ] && { : > "$OUT/$nn.jsonl"; : > "$OUT/$nn.err"; } ||
     perl -e 'alarm shift; exec @ARGV' 1800 claude -p "$(sed "s/{{PORT}}/$PORT/g" "$prompt")" \
       --setting-sources project,local --strict-mcp-config --model claude-opus-5-5 \
