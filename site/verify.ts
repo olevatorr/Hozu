@@ -158,6 +158,30 @@ assert.ok(
   files.some((file) => file.endsWith('client.js')),
   'Interactive overview has its client runtime',
 )
-console.log(
-  'Client JavaScript: the overview island, and the copy widget on pages with code blocks; every other page has none.',
+const islandFeatures: Record<string, string[]> = {
+  'index.html': ['hero', 'play', 'content'],
+  'how-it-works/index.html': ['lab'],
+}
+for (const file of files.filter((name) => name.endsWith('.html'))) {
+  const html = await readFile(new URL(file, root), 'utf8')
+  const payload = html.match(/<script type="application\/json" id="hozu-payload">(.*?)<\/script>/s)?.[1]
+  const ids: string[] = payload ? JSON.parse(payload).ids : []
+  const allowed = islandFeatures[file] ?? (html.includes('<pre') ? ['content'] : [])
+  for (const id of ids) assert.ok(allowed.includes(id.split('.')[0]!), `${file}: unexpected island ${id}`)
+  assert.ok(
+    ids.length > 0 || !html.includes('/_hozu/client.js'),
+    `${file}: client JavaScript without an island`,
+  )
+}
+for (const id of ['"hero.Hero', '"play.Play']) assert.ok(homePage.includes(id), `home binds ${id.slice(1)}`)
+const stylesheet = homePage.match(/href="(\/_hozu\/styles\.[0-9a-f]+\.css)"/)?.[1]
+assert.ok(stylesheet, 'home links its stylesheet')
+const css = await readFile(new URL(`.${stylesheet}`, root), 'utf8')
+assert.match(
+  css,
+  /@media \(prefers-reduced-motion: ?reduce\)\{\*,:before,:after\{[^}]*animation-duration:\.01ms!important/,
+  'reduced motion stops every animation',
 )
+for (const name of ['rise', 'ticker', 'turn'])
+  assert.ok(css.includes(`@keyframes ${name}`), `keyframes ${name} shipped`)
+console.log('Islands: home (hero, play), how-it-works (lab), CodeBlock on code pages; reduced motion covered')
