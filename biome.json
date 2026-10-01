@@ -15,6 +15,7 @@
       "!**/*.svelte",
       "!bench/trial/notes/*-run*",
       "!bench/trial/longrun/results",
+      "!bench/trial/longrun/results-0021",
       "!bench/trial/longrun/reference"
     ]
   },
