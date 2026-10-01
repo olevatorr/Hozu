@@ -150,6 +150,45 @@ const refusesEmpty = contract(drafts, {
   expect: { state: 'editing' },
 })
 
+const Pressed = event({ payload: z.object({}) })
+const pressable = machine({
+  context: z.object({ on: z.boolean() }),
+  initialContext: { on: false },
+  initial: 'idle',
+  states: () => ({ idle: { on: [] } }),
+})
+const Leaky = ui.component({
+  tag: 'button',
+  render: () => ui.button({ on: { click: ui.send(Pressed, {}) } }, []),
+})
+const Closed = ui.component({
+  tag: 'button',
+  events: ['press'],
+  render: ({ on }) => ui.button({ on: { click: on.press } }, []),
+})
+const PressButton = ui.component({
+  tag: 'button',
+  styles: Object.assign(() => '', {
+    variants: { tone: { on: '', off: '' } },
+    defaultVariants: { tone: 'off' },
+  }),
+  props: z.object({ pressed: z.boolean().default(false) }),
+  render: ({ props }) => ui.button({ 'aria-pressed': props.pressed }, []),
+})
+const LeakyUse = ui.view({ render: () => ui.main({}, [ui.use(Leaky, {})]) })
+const ClosedUse = ui.view({
+  render: () => ui.main({}, [ui.use(Closed, { on: { press: ui.send(Pressed, {}) } })]),
+})
+const VariantFromRef = ui.view({
+  machine: pressable,
+  render: ({ ctx }) =>
+    ui.main({}, [ui.use(PressButton, { variant: { tone: (ctx.on ? 'on' : 'off') as 'on' } })]),
+})
+const PropFromRef = ui.view({
+  machine: pressable,
+  render: ({ ctx }) => ui.main({}, [ui.use(PressButton, { props: { pressed: ctx.on } })]),
+})
+
 const verifyWith = (decls: Record<string, unknown>, lock?: unknown) => {
   const build = buildProject(
     project({
@@ -200,6 +239,20 @@ const catalog: SourceMistake[] = [
         rows,
         Labelled: labelled(part((row: z.infer<typeof Row>) => (row.done ? 'Done' : 'Open'))),
       }),
+  },
+  {
+    name: 'a component render sends an event instead of taking it through on',
+    code: 'HZ070',
+    stage: 'transform',
+    mistake: () => buildWith({ Pressed, Leaky, LeakyUse }),
+    fixed: () => buildWith({ Pressed, Closed, ClosedUse }),
+  },
+  {
+    name: 'a variant is chosen from machine state',
+    code: 'HZ071',
+    stage: 'transform',
+    mistake: () => buildWith({ pressable, PressButton, VariantFromRef }),
+    fixed: () => buildWith({ pressable, PressButton, PropFromRef }),
   },
   {
     name: 'an endpoint answers a hand-written HTML page',
