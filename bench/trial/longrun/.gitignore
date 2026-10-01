@@ -3,3 +3,7 @@ results/*/*/*.err
 results/*/*/*.txt
 !results/*/*/metrics.jsonl
 !results/*/*/metrics-v2.jsonl
+results-0021/*/*/*.jsonl
+results-0021/*/*/*.err
+results-0021/*/*/*.txt
+!results-0021/*/*/metrics.jsonl
