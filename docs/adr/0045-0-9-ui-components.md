@@ -572,6 +572,11 @@ component. Showcase, stations and the site are migrated by hand.
   on `/docs/cli` (687×3350, 158 elements), `load: 'visible'` on `/`, 0 errors.
 - **`hozu check`:** showcase, stations and the site 0 errors, 0 warnings, types ok.
 - **P7:** 7 893 → **7 872 B (−21)**: the client ref lost `wraps`; the longer names cost less than it saved.
+- **Gate** (`pnpm gate`, once): lint clean (4 existing warnings; the fifth was in a deleted migrate module),
+  typecheck clean, 525 tests: 519 passed, 6 skipped (34 fewer than phase 3: the migrate tests). P1 0.232 ms, P2
+  336.611 ms with exponent 1.122, P3 274.677 ms, P5 14.1 M/s, P6 2.24 M/s, P7 7 872 B, P9 7 264 req/s, A4 55 663.
+  The machine was shared (load average 9–20); the exponent was not re-run. Earlier full test runs under that load
+  timed out in Chrome and long CLI tests (`browse.test.ts` passes 10 / 10 alone); the gate run had none.
 
 ## A. One declaration: `ui.component`
 ```ts
