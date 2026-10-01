@@ -248,7 +248,7 @@ export const How = ui.view({
                 ui.span({}, ['Static shell']),
                 ui.small({}, ['Navigation, headings, article']),
               ]),
-              ui.div({ 'data-preview-data': '', toggle: { 'lab-private': ctx.scope === 'user' } }, [
+              ui.div({ 'data-preview-data': '', toggle: { 'outline-4 outline-red': ctx.scope === 'user' } }, [
                 ui.small({}, ['Query region']),
                 ctx.scope === 'user'
                   ? [
@@ -274,17 +274,20 @@ export const How = ui.view({
                       ],
                     ],
               ]),
-              ui.div({ 'data-preview-island': '', toggle: { 'lab-bound': ctx.binding === true } }, [
-                ctx.binding === true
-                  ? [
-                      ui.strong({}, ['Interactive island']),
-                      ui.p({}, ['This machine-bound node needs client JavaScript.']),
-                    ]
-                  : [
-                      ui.strong({}, ['Plain HTML']),
-                      ui.p({}, ['No machine binding. This node does not hydrate.']),
-                    ],
-              ]),
+              ui.div(
+                { 'data-preview-island': '', toggle: { 'outline-4 outline-green': ctx.binding === true } },
+                [
+                  ctx.binding === true
+                    ? [
+                        ui.strong({}, ['Interactive island']),
+                        ui.p({}, ['This machine-bound node needs client JavaScript.']),
+                      ]
+                    : [
+                        ui.strong({}, ['Plain HTML']),
+                        ui.p({}, ['No machine binding. This node does not hydrate.']),
+                      ],
+                ],
+              ),
             ]),
             ui.div({ 'data-plan-summary': '' }, [
               ctx.scope === 'public' && ctx.freshness === 'static'
