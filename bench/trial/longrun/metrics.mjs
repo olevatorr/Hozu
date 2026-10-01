@@ -15,7 +15,7 @@ const file = (s, n = nn) =>
 const json = (s, n) => (existsSync(file(s, n)) ? JSON.parse(readFileSync(file(s, n), 'utf8')) : null)
 const txt = (s) => (existsSync(file(s)) ? readFileSync(file(s), 'utf8').trim() : null)
 const tag = process.env.TAG ?? `s${nn}`
-const prev = process.env.PREV_TAG ?? (step === 0 ? 'scaffold' : `s${pp}`)
+const prev = process.env.PREV_TAG || (step === 0 ? 'scaffold' : `s${pp}`)
 
 const lines = (ref) => codeFiles(app, ref).reduce((n, f) => n + show(app, ref, f).split('\n').length, 0)
 const diff = git(app, 'diff', '--numstat', prev, tag)
