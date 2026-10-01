@@ -88,11 +88,14 @@ Every section is a `Section` with a depth meter.
      back.
    - The cards: user data on someone else's screen (HZ049), a form that drops what was ticked (HZ054), a route
      nothing serves (HZ052), and a behaviour change nobody reviewed (HZ057).
-   - The diagnostics on the back are generated from the real registry at export, not typed.
+   - On the back, each code and its name come from the diagnostic registry (`codes` in `@hozu/core/ir`), not typed;
+     the message and fix text are written by hand. Verify fails when a card's code is missing from the registry or
+     its name differs.
 5. **Components (0.9): "Declared UI. Checked class by class."**
    - A playground: pick a variant of a kit `Button` and see the rendered element, its `ui.component` source, and what
      `hozu render` prints.
-   - It also shows a class conflict being caught (HZ079).
+     - The render output is a committed snapshot of `hozu render`, and a test fails when it is stale.
+   - A short note explains class conflicts (HZ079) and links to the components docs.
    - The 3D joint returns here as a kit component.
    - One line says this site is built from the same kit.
 6. **Under the hood: "feature() → IR → validator → compiler → runtime"**
@@ -181,7 +184,8 @@ The tone follows the reader's depth.
   - the header version equals `packages/core/package.json`;
   - the islands are exactly the three above (and the copy module on code pages);
   - every number in the bill and the ticker links to a trial page that exists;
-  - the flip cards' back diagnostics exist in the diagnostic registry;
+  - each flip card's code exists in the diagnostic registry under the name it shows;
+  - the playground's `hozu render` snapshot equals a fresh run;
   - a stylesheet rule under `prefers-reduced-motion` covers every animation the kit declares.
 - **`hozu check` on the site:** 0 errors, the lock current.
 - **The interactions** (the demo's split and snap, the flip cards, the playground, the ticker pause) are checked in a
