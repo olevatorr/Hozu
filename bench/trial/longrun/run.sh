@@ -63,10 +63,9 @@ void_result() {
 }
 
 fingerprint() {
-  local h=()
-  for f in "$HOME/.claude/CLAUDE.md" CLAUDE.md AGENTS.md "$1"; do
-    h+=("\"$(basename "$f")\": \"$( [ -f "$f" ] && shasum -a 256 "$f" | cut -c1-16 || echo none)\"")
-  done
+  local h=() sum
+  sum() { [ -f "$1" ] && shasum -a 256 "$1" | cut -c1-16 || echo none; }
+  h+=("\"user\": \"$(sum "$HOME/.claude/CLAUDE.md")\"" "\"app\": \"$(sum CLAUDE.md)\"" "\"agents\": \"$(sum AGENTS.md)\"" "\"prompt\": \"$(sum "$1")\"")
   local skill=none
   [ -d .claude/skills ] && skill=$(find .claude/skills -type f | sort | xargs cat | shasum -a 256 | cut -c1-16)
   printf '{"step": "%s", %s, "skill": "%s", "managed": "server-side, not fingerprintable"}\n' "$2" "$(IFS=,; echo "${h[*]}")" "$skill" >> "$OUT/fingerprints.jsonl"
