@@ -16,7 +16,7 @@ import {
 } from './features/content/views.ts'
 import { hero } from './features/hero/feature.ts'
 import { Hero } from './features/hero/views.ts'
-import { How, lab } from './features/lab/views.ts'
+import { How, LabTeaser, lab } from './features/lab/views.ts'
 import { play } from './features/play/feature.ts'
 import { Play } from './features/play/views.ts'
 import { changelog, chapter, doc, home, how, notFound, trial, trials } from './routes.ts'
@@ -54,7 +54,7 @@ export default project({
       entries: { query: listChapters, input: {}, params: (item) => ({ slug: item.slug }) },
     }),
     ui.page(home, {
-      views: [Header, Hero, Home, Play, Evidence, Footer],
+      views: [Header, Hero, Home, Play, LabTeaser, Evidence, Footer],
       assert: 'static',
       head: {
         render: () => ({
