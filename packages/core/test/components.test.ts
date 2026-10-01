@@ -200,6 +200,17 @@ describe('ADR 0045 phase 2: a pure ui.use', () => {
     expect((n.children[0] as ElementNode).class).toBe('block text-sm sr-only')
     expect(n.use?.component).toBe('f.Field')
     expect(b.ir.features.f!.components.Field!.owned).toEqual(['space-y-3'])
+    const off = build([
+      {
+        Field,
+        View: ui.view({
+          render: () => ui.div({}, [ui.use(Field, { variant: { quiet: false }, props: { label: 'Name' } })]),
+        }),
+      },
+    ])
+    expect(off.diagnostics).toEqual([])
+    expect(((first(off) as ElementNode).children[0] as ElementNode).class).toBe('block text-sm')
+    expect((first(off) as ElementNode).use?.variant).toEqual({ quiet: 'false' })
   })
 })
 

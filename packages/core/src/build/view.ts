@@ -278,7 +278,8 @@ function variantOf(scope: FeatureScope, def: ComponentDef, given: unknown, p: At
     }
     const values = declared[key]
     const text = String(value)
-    if (!values?.includes(text)) {
+    const boolean = typeof value === 'boolean' && (values?.includes('true') || values?.includes('false'))
+    if (!boolean && !values?.includes(text)) {
       scope.report(
         'HZ031',
         vp,
