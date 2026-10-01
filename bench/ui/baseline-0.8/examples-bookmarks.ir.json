@@ -1,0 +1,1735 @@
+{
+  "env": null,
+  "error": null,
+  "features": {
+    "bookmarks": {
+      "contracts": {
+        "addsBookmark": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "error": null,
+              "fields": {
+                "kind": null,
+                "title": null
+              },
+              "kind": "podcast",
+              "target": ""
+            },
+            "effects": [
+              {
+                "effect": "bookmarks.addBookmark",
+                "input": {
+                  "kind": "podcast",
+                  "title": "Hozu talk"
+                }
+              },
+              {
+                "navigate": "/bookmarks/b3"
+              }
+            ],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "error": null,
+              "fields": {
+                "kind": null,
+                "title": null
+              },
+              "kind": "article",
+              "target": ""
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "kind": "podcast",
+                "title": "Hozu talk"
+              },
+              "send": "bookmarks.Add"
+            },
+            {
+              "payload": {
+                "text": "ignored while adding"
+              },
+              "send": "bookmarks.Draft"
+            },
+            {
+              "done": "bookmarks.addBookmark",
+              "result": {
+                "id": "b3",
+                "kind": "podcast",
+                "read": false,
+                "title": "Hozu talk"
+              }
+            }
+          ]
+        }
+      },
+      "endpoints": {},
+      "events": {
+        "Add": {
+          "payload": "s_a3934b07b3d61c53"
+        },
+        "Draft": {
+          "payload": "s_54669b5e6a1bfebb"
+        },
+        "ToggleRead": {
+          "payload": "s_7717dd85c2e5ff93"
+        }
+      },
+      "exports": {
+        "endpoints": [],
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": [],
+        "tags": [],
+        "views": []
+      },
+      "fns": {
+        "isEmpty": {
+          "input": "s_64998f16c64f7292",
+          "output": "s_7cb541e84f226754",
+          "sourceHash": "0d12c32ce7726b9b"
+        },
+        "visible": {
+          "input": "s_64998f16c64f7292",
+          "output": "s_4e21ebe3c0efcc75",
+          "sourceHash": "372cf88f94c9ed6a"
+        }
+      },
+      "id": "bookmarks",
+      "imports": [],
+      "intent": {
+        "invariants": ["Titles are unique, case-insensitive", "New bookmarks are listed first"],
+        "summary": "A shared reading list: add bookmarks with a kind, mark them read, filter unread, one page each."
+      },
+      "machine": {
+        "context": "s_a59e8455e25ca2e0",
+        "initial": "idle",
+        "initialContext": {
+          "draft": "",
+          "error": null,
+          "fields": {
+            "kind": null,
+            "title": null
+          },
+          "kind": "article",
+          "target": ""
+        },
+        "states": {
+          "adding": {
+            "after": [],
+            "final": false,
+            "ignore": ["bookmarks.Add", "bookmarks.Draft", "bookmarks.ToggleRead"],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "literal": ""
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": {
+                    "link": "bookmarkPage",
+                    "params": {
+                      "object": {
+                        "id": {
+                          "path": ["id"],
+                          "ref": "result"
+                        }
+                      }
+                    },
+                    "search": {
+                      "literal": null
+                    }
+                  },
+                  "target": "idle"
+                }
+              ],
+              "effect": "bookmarks.addBookmark",
+              "failed": {
+                "Duplicate": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "This bookmark already exists"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Invalid": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["fields"],
+                        "value": {
+                          "path": ["fields"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "kind": {
+                    "path": ["kind"],
+                    "ref": "context"
+                  },
+                  "title": {
+                    "path": ["draft"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          },
+          "idle": {
+            "after": [],
+            "final": false,
+            "ignore": [],
+            "invoke": null,
+            "on": {
+              "bookmarks.Add": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "path": ["title"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["kind"],
+                      "value": {
+                        "path": ["kind"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["fields"],
+                      "value": {
+                        "literal": {
+                          "kind": null,
+                          "title": null
+                        }
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "adding"
+                }
+              ],
+              "bookmarks.Draft": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "path": ["text"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "bookmarks.ToggleRead": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["target"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "toggling"
+                }
+              ]
+            }
+          },
+          "toggling": {
+            "after": [],
+            "final": false,
+            "ignore": ["bookmarks.Add", "bookmarks.Draft", "bookmarks.ToggleRead"],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "bookmarks.toggleRead",
+              "failed": {
+                "NotFound": [
+                  {
+                    "assign": [],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "id": {
+                    "path": ["target"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          }
+        }
+      },
+      "messages": null,
+      "mutations": {
+        "addBookmark": {
+          "errors": {
+            "Duplicate": "s_c0f00621ba42dc11"
+          },
+          "input": "s_10e40c882f89f9a4",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "bookmarks.bookmarksTag"
+            }
+          ],
+          "output": "s_2c60bba245231d39"
+        },
+        "toggleRead": {
+          "errors": {
+            "NotFound": "s_7717dd85c2e5ff93"
+          },
+          "input": "s_7717dd85c2e5ff93",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "bookmarks.bookmarksTag"
+            }
+          ],
+          "output": "s_2c60bba245231d39"
+        }
+      },
+      "queries": {
+        "getBookmark": {
+          "errors": {
+            "NotFound": "s_7717dd85c2e5ff93"
+          },
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_7717dd85c2e5ff93",
+          "output": "s_2c60bba245231d39",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "bookmarks.bookmarksTag"
+            }
+          ]
+        },
+        "listBookmarks": {
+          "errors": {},
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_4e21ebe3c0efcc75",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "bookmarks.bookmarksTag"
+            }
+          ]
+        }
+      },
+      "schemas": {
+        "s_10e40c882f89f9a4": {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": ["article", "video", "podcast"],
+              "type": "string"
+            },
+            "title": {
+              "maxLength": 80,
+              "minLength": 2,
+              "type": "string"
+            }
+          },
+          "required": ["title", "kind"],
+          "type": "object"
+        },
+        "s_2c60bba245231d39": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "enum": ["article", "video", "podcast"],
+              "type": "string"
+            },
+            "read": {
+              "type": "boolean"
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["id", "title", "kind", "read"],
+          "type": "object"
+        },
+        "s_4e21ebe3c0efcc75": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "enum": ["article", "video", "podcast"],
+                "type": "string"
+              },
+              "read": {
+                "type": "boolean"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "title", "kind", "read"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "s_54669b5e6a1bfebb": {
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": ["text"],
+          "type": "object"
+        },
+        "s_64998f16c64f7292": {
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": ["article", "video", "podcast"],
+                    "type": "string"
+                  },
+                  "read": {
+                    "type": "boolean"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "title", "kind", "read"],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "show": {
+              "enum": ["all", "unread"],
+              "type": "string"
+            }
+          },
+          "required": ["items", "show"],
+          "type": "object"
+        },
+        "s_7717dd85c2e5ff93": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": ["id"],
+          "type": "object"
+        },
+        "s_7cb541e84f226754": {
+          "type": "boolean"
+        },
+        "s_99334726611ccf58": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "s_a3934b07b3d61c53": {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": ["article", "video", "podcast"],
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["title", "kind"],
+          "type": "object"
+        },
+        "s_a59e8455e25ca2e0": {
+          "additionalProperties": false,
+          "properties": {
+            "draft": {
+              "type": "string"
+            },
+            "error": {
+              "type": ["string", "null"]
+            },
+            "fields": {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "type": ["string", "null"]
+                },
+                "title": {
+                  "type": ["string", "null"]
+                }
+              },
+              "required": ["title", "kind"],
+              "type": "object"
+            },
+            "kind": {
+              "enum": ["article", "video", "podcast"],
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            }
+          },
+          "required": ["draft", "kind", "target", "error", "fields"],
+          "type": "object"
+        },
+        "s_c0f00621ba42dc11": {
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["title"],
+          "type": "object"
+        }
+      },
+      "tags": {
+        "bookmarksTag": {
+          "param": null
+        }
+      },
+      "views": {
+        "Board": {
+          "machine": "bookmarks",
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "bookmarks.Board/0/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Bookmarks"
+                    }
+                  }
+                ],
+                "class": "text-3xl font-bold",
+                "id": "bookmarks.Board/0",
+                "kind": "el",
+                "on": {},
+                "tag": "h1",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {
+                      "for": {
+                        "literal": "title"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "bookmarks.Board/1/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Title"
+                        }
+                      }
+                    ],
+                    "class": "sr-only",
+                    "id": "bookmarks.Board/1/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "label",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "aria-describedby": {
+                        "literal": "title-error"
+                      },
+                      "aria-invalid": {
+                        "test": {
+                          "left": {
+                            "path": ["fields", "title"],
+                            "ref": "context"
+                          },
+                          "op": "neq",
+                          "right": {
+                            "literal": null
+                          }
+                        }
+                      },
+                      "id": {
+                        "literal": "title"
+                      },
+                      "maxlength": {
+                        "literal": 80
+                      },
+                      "minlength": {
+                        "literal": 2
+                      },
+                      "name": {
+                        "literal": "title"
+                      },
+                      "required": {
+                        "literal": true
+                      },
+                      "value": {
+                        "path": ["draft"],
+                        "ref": "context"
+                      }
+                    },
+                    "children": [],
+                    "class": "flex-1 rounded border px-3 py-2",
+                    "id": "bookmarks.Board/1/1",
+                    "kind": "el",
+                    "on": {
+                      "input": {
+                        "event": "bookmarks.Draft",
+                        "payload": {
+                          "object": {
+                            "text": {
+                              "path": ["value"],
+                              "ref": "dom"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "tag": "input",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "aria-label": {
+                        "literal": "Kind"
+                      },
+                      "name": {
+                        "literal": "kind"
+                      }
+                    },
+                    "children": [
+                      {
+                        "attrs": {
+                          "selected": {
+                            "test": {
+                              "left": {
+                                "path": ["kind"],
+                                "ref": "context"
+                              },
+                              "op": "eq",
+                              "right": {
+                                "literal": "article"
+                              }
+                            }
+                          },
+                          "value": {
+                            "literal": "article"
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "bookmarks.Board/1/2/0/0",
+                            "kind": "text",
+                            "value": {
+                              "literal": "article"
+                            }
+                          }
+                        ],
+                        "class": null,
+                        "id": "bookmarks.Board/1/2/0",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "option",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "attrs": {
+                          "selected": {
+                            "test": {
+                              "left": {
+                                "path": ["kind"],
+                                "ref": "context"
+                              },
+                              "op": "eq",
+                              "right": {
+                                "literal": "video"
+                              }
+                            }
+                          },
+                          "value": {
+                            "literal": "video"
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "bookmarks.Board/1/2/1/0",
+                            "kind": "text",
+                            "value": {
+                              "literal": "video"
+                            }
+                          }
+                        ],
+                        "class": null,
+                        "id": "bookmarks.Board/1/2/1",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "option",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "attrs": {
+                          "selected": {
+                            "test": {
+                              "left": {
+                                "path": ["kind"],
+                                "ref": "context"
+                              },
+                              "op": "eq",
+                              "right": {
+                                "literal": "podcast"
+                              }
+                            }
+                          },
+                          "value": {
+                            "literal": "podcast"
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "bookmarks.Board/1/2/2/0",
+                            "kind": "text",
+                            "value": {
+                              "literal": "podcast"
+                            }
+                          }
+                        ],
+                        "class": null,
+                        "id": "bookmarks.Board/1/2/2",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "option",
+                        "toggle": {},
+                        "vars": {}
+                      }
+                    ],
+                    "class": "rounded border px-2",
+                    "id": "bookmarks.Board/1/2",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "select",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "type": {
+                        "literal": "submit"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "bookmarks.Board/1/3/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Add"
+                        }
+                      }
+                    ],
+                    "class": "rounded bg-indigo-600 px-4 py-2 text-white",
+                    "id": "bookmarks.Board/1/3",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "button",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "flex gap-2",
+                "id": "bookmarks.Board/1",
+                "kind": "el",
+                "on": {
+                  "submit": {
+                    "event": "bookmarks.Add",
+                    "payload": {
+                      "object": {
+                        "kind": {
+                          "path": ["form", "kind"],
+                          "ref": "dom"
+                        },
+                        "title": {
+                          "path": ["form", "title"],
+                          "ref": "dom"
+                        }
+                      }
+                    }
+                  }
+                },
+                "tag": "form",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {
+                  "id": {
+                    "literal": "title-error"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "bookmarks.Board/2/0",
+                    "kind": "text",
+                    "value": {
+                      "path": ["fields", "title"],
+                      "ref": "context"
+                    }
+                  }
+                ],
+                "class": "text-sm text-rose-600",
+                "id": "bookmarks.Board/2",
+                "kind": "el",
+                "on": {},
+                "tag": "p",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "id": "bookmarks.Board/3",
+                "ifFalse": [],
+                "ifTrue": [
+                  {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "bookmarks.Board/3/ifTrue/0/0",
+                        "kind": "text",
+                        "value": {
+                          "path": ["error"],
+                          "ref": "context"
+                        }
+                      }
+                    ],
+                    "class": "text-rose-600",
+                    "id": "bookmarks.Board/3/ifTrue/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "kind": "if",
+                "motion": null,
+                "test": {
+                  "left": {
+                    "path": ["error"],
+                    "ref": "context"
+                  },
+                  "op": "neq",
+                  "right": {
+                    "literal": null
+                  }
+                }
+              },
+              {
+                "children": [
+                  {
+                    "attrs": {
+                      "aria-busy": {
+                        "literal": "true"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "bookmarks.Board/4/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Adding "
+                        }
+                      },
+                      {
+                        "id": "bookmarks.Board/4/0/1",
+                        "kind": "text",
+                        "value": {
+                          "path": ["draft"],
+                          "ref": "context"
+                        }
+                      },
+                      {
+                        "id": "bookmarks.Board/4/0/2",
+                        "kind": "text",
+                        "value": {
+                          "literal": "…"
+                        }
+                      }
+                    ],
+                    "class": "rounded border px-4 py-3 opacity-50",
+                    "id": "bookmarks.Board/4/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "id": "bookmarks.Board/4",
+                "kind": "when",
+                "motion": null,
+                "states": ["adding"]
+              },
+              {
+                "attrs": {
+                  "aria-label": {
+                    "literal": "Show"
+                  }
+                },
+                "children": [
+                  {
+                    "attrs": {
+                      "aria-current": {
+                        "test": {
+                          "left": {
+                            "path": ["show"],
+                            "ref": "search"
+                          },
+                          "op": "eq",
+                          "right": {
+                            "literal": "all"
+                          }
+                        }
+                      },
+                      "href": {
+                        "link": "home",
+                        "params": {
+                          "literal": null
+                        },
+                        "search": {
+                          "literal": null
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "bookmarks.Board/5/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "All"
+                        }
+                      }
+                    ],
+                    "class": "rounded-full border px-3 py-1 aria-[current=true]:bg-indigo-600 aria-[current=true]:text-white",
+                    "id": "bookmarks.Board/5/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "aria-current": {
+                        "test": {
+                          "left": {
+                            "path": ["show"],
+                            "ref": "search"
+                          },
+                          "op": "eq",
+                          "right": {
+                            "literal": "unread"
+                          }
+                        }
+                      },
+                      "href": {
+                        "link": "home",
+                        "params": {
+                          "literal": null
+                        },
+                        "search": {
+                          "literal": {
+                            "show": "unread"
+                          }
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "bookmarks.Board/5/1/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Unread"
+                        }
+                      }
+                    ],
+                    "class": "rounded-full border px-3 py-1 aria-[current=true]:bg-indigo-600 aria-[current=true]:text-white",
+                    "id": "bookmarks.Board/5/1",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "a",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "flex gap-2",
+                "id": "bookmarks.Board/5",
+                "kind": "el",
+                "on": {},
+                "tag": "nav",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "failed": {
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "bookmarks.Board/6/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Bookmarks are unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "bookmarks.Board/6/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "bookmarks.Board/6",
+                "input": {
+                  "literal": {}
+                },
+                "kind": "query",
+                "pending": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "bookmarks.Board/6/pending/0",
+                      "kind": "text",
+                      "value": {
+                        "literal": "Loading…"
+                      }
+                    }
+                  ],
+                  "class": null,
+                  "id": "bookmarks.Board/6/pending",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "p",
+                  "toggle": {},
+                  "vars": {}
+                },
+                "query": "bookmarks.listBookmarks",
+                "ready": {
+                  "id": "bookmarks.Board/6/ready",
+                  "ifFalse": [
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "bookmarks.Board/6/ready/ifFalse/0/0",
+                          "item": {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "attrs": {
+                                  "href": {
+                                    "link": "bookmarkPage",
+                                    "params": {
+                                      "object": {
+                                        "id": {
+                                          "depth": 1,
+                                          "path": ["id"],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    },
+                                    "search": {
+                                      "literal": null
+                                    }
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "id": "bookmarks.Board/6/ready/ifFalse/0/0/item/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "depth": 1,
+                                      "path": ["title"],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                ],
+                                "class": "flex-1 underline",
+                                "id": "bookmarks.Board/6/ready/ifFalse/0/0/item/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "a",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "bookmarks.Board/6/ready/ifFalse/0/0/item/1/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "depth": 1,
+                                      "path": ["kind"],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                ],
+                                "class": "text-xs text-slate-500",
+                                "id": "bookmarks.Board/6/ready/ifFalse/0/0/item/1",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "span",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {
+                                  "type": {
+                                    "literal": "button"
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "id": "bookmarks.Board/6/ready/ifFalse/0/0/item/2/0",
+                                    "ifFalse": [
+                                      {
+                                        "id": "bookmarks.Board/6/ready/ifFalse/0/0/item/2/0/ifFalse/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Mark read"
+                                        }
+                                      }
+                                    ],
+                                    "ifTrue": [
+                                      {
+                                        "id": "bookmarks.Board/6/ready/ifFalse/0/0/item/2/0/ifTrue/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Mark unread"
+                                        }
+                                      }
+                                    ],
+                                    "kind": "if",
+                                    "motion": null,
+                                    "test": {
+                                      "arg": {
+                                        "object": {
+                                          "v": {
+                                            "depth": 1,
+                                            "path": ["read"],
+                                            "ref": "binding"
+                                          }
+                                        }
+                                      },
+                                      "fn": "%truthy",
+                                      "op": "fn"
+                                    }
+                                  }
+                                ],
+                                "class": "text-sm",
+                                "id": "bookmarks.Board/6/ready/ifFalse/0/0/item/2",
+                                "kind": "el",
+                                "on": {
+                                  "click": {
+                                    "event": "bookmarks.ToggleRead",
+                                    "payload": {
+                                      "object": {
+                                        "id": {
+                                          "depth": 1,
+                                          "path": ["id"],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "tag": "button",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "class": "flex items-center gap-3 px-4 py-3",
+                            "id": "bookmarks.Board/6/ready/ifFalse/0/0/item",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "li",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          "key": "id",
+                          "kind": "each",
+                          "motion": null,
+                          "source": {
+                            "arg": {
+                              "object": {
+                                "items": {
+                                  "depth": 0,
+                                  "path": [],
+                                  "ref": "binding"
+                                },
+                                "show": {
+                                  "path": ["show"],
+                                  "ref": "search"
+                                }
+                              }
+                            },
+                            "fn": "bookmarks.visible"
+                          }
+                        }
+                      ],
+                      "class": "divide-y rounded border",
+                      "id": "bookmarks.Board/6/ready/ifFalse/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "ul",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  ],
+                  "ifTrue": [
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "bookmarks.Board/6/ready/ifTrue/0/0",
+                          "kind": "text",
+                          "value": {
+                            "literal": "No bookmarks"
+                          }
+                        }
+                      ],
+                      "class": "text-slate-500",
+                      "id": "bookmarks.Board/6/ready/ifTrue/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  ],
+                  "kind": "if",
+                  "motion": null,
+                  "test": {
+                    "arg": {
+                      "object": {
+                        "items": {
+                          "depth": 0,
+                          "path": [],
+                          "ref": "binding"
+                        },
+                        "show": {
+                          "path": ["show"],
+                          "ref": "search"
+                        }
+                      }
+                    },
+                    "fn": "bookmarks.isEmpty",
+                    "op": "fn"
+                  }
+                }
+              }
+            ],
+            "class": "mx-auto max-w-xl space-y-6 px-4 py-12",
+            "id": "bookmarks.Board",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": "home",
+          "seed": null
+        },
+        "Detail": {
+          "machine": null,
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "failed": {
+                  "NotFound": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "bookmarks.Detail/0/failed/NotFound/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Bookmark not found"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "bookmarks.Detail/0/failed/NotFound",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "bookmarks.Detail/0/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Bookmark unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "bookmarks.Detail/0/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "bookmarks.Detail/0",
+                "input": {
+                  "object": {
+                    "id": {
+                      "path": ["id"],
+                      "ref": "params"
+                    }
+                  }
+                },
+                "kind": "query",
+                "pending": null,
+                "query": "bookmarks.getBookmark",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "bookmarks.Detail/0/ready/0/0",
+                          "kind": "text",
+                          "value": {
+                            "depth": 0,
+                            "path": ["title"],
+                            "ref": "binding"
+                          }
+                        }
+                      ],
+                      "class": "text-3xl font-bold",
+                      "id": "bookmarks.Detail/0/ready/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "h1",
+                      "toggle": {},
+                      "vars": {}
+                    },
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "bookmarks.Detail/0/ready/1/0",
+                          "kind": "text",
+                          "value": {
+                            "literal": "Kind: "
+                          }
+                        },
+                        {
+                          "id": "bookmarks.Detail/0/ready/1/1",
+                          "kind": "text",
+                          "value": {
+                            "depth": 0,
+                            "path": ["kind"],
+                            "ref": "binding"
+                          }
+                        }
+                      ],
+                      "class": null,
+                      "id": "bookmarks.Detail/0/ready/1",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    },
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "bookmarks.Detail/0/ready/2/0",
+                          "ifFalse": [
+                            {
+                              "id": "bookmarks.Detail/0/ready/2/0/ifFalse/0",
+                              "kind": "text",
+                              "value": {
+                                "literal": "Unread"
+                              }
+                            }
+                          ],
+                          "ifTrue": [
+                            {
+                              "id": "bookmarks.Detail/0/ready/2/0/ifTrue/0",
+                              "kind": "text",
+                              "value": {
+                                "literal": "Read"
+                              }
+                            }
+                          ],
+                          "kind": "if",
+                          "motion": null,
+                          "test": {
+                            "arg": {
+                              "object": {
+                                "v": {
+                                  "depth": 0,
+                                  "path": ["read"],
+                                  "ref": "binding"
+                                }
+                              }
+                            },
+                            "fn": "%truthy",
+                            "op": "fn"
+                          }
+                        }
+                      ],
+                      "class": null,
+                      "id": "bookmarks.Detail/0/ready/2",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  ],
+                  "class": null,
+                  "id": "bookmarks.Detail/0/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "article",
+                  "toggle": {},
+                  "vars": {}
+                }
+              },
+              {
+                "attrs": {
+                  "href": {
+                    "link": "home",
+                    "params": {
+                      "literal": null
+                    },
+                    "search": {
+                      "literal": null
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "id": "bookmarks.Detail/1/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Back"
+                    }
+                  }
+                ],
+                "class": "underline",
+                "id": "bookmarks.Detail/1",
+                "kind": "el",
+                "on": {},
+                "tag": "a",
+                "toggle": {},
+                "vars": {}
+              }
+            ],
+            "class": "mx-auto max-w-xl space-y-4 px-4 py-12",
+            "id": "bookmarks.Detail",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": "bookmarkPage",
+          "seed": null
+        }
+      },
+      "widgets": {}
+    }
+  },
+  "http": {
+    "basePath": "",
+    "headers": [],
+    "redirects": [],
+    "trailingSlash": "never"
+  },
+  "irVersion": 2,
+  "notFound": null,
+  "pages": {
+    "bookmarkPage": {
+      "assert": null,
+      "entries": {
+        "input": {
+          "literal": {}
+        },
+        "params": {
+          "object": {
+            "id": {
+              "depth": 0,
+              "path": ["id"],
+              "ref": "binding"
+            }
+          }
+        },
+        "query": "bookmarks.listBookmarks"
+      },
+      "head": {
+        "description": {
+          "depth": 0,
+          "path": ["title"],
+          "ref": "binding"
+        },
+        "failed": {
+          "NotFound": {
+            "status": 404
+          }
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": {
+          "input": {
+            "object": {
+              "id": {
+                "path": ["id"],
+                "ref": "params"
+              }
+            }
+          },
+          "ref": "bookmarks.getBookmark"
+        },
+        "title": {
+          "depth": 0,
+          "path": ["title"],
+          "ref": "binding"
+        },
+        "type": "article"
+      },
+      "views": ["bookmarks.Detail"]
+    },
+    "home": {
+      "assert": null,
+      "entries": null,
+      "head": {
+        "description": {
+          "literal": "A shared reading list."
+        },
+        "failed": {},
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "title": {
+          "literal": "Bookmarks"
+        },
+        "type": "website"
+      },
+      "views": ["bookmarks.Board"]
+    }
+  },
+  "routes": {
+    "bookmarkPage": {
+      "params": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": ["id"],
+        "type": "object"
+      },
+      "path": "/bookmarks/:id",
+      "search": null
+    },
+    "home": {
+      "params": null,
+      "path": "/",
+      "search": {
+        "additionalProperties": false,
+        "properties": {
+          "show": {
+            "default": "all",
+            "enum": ["all", "unread"],
+            "type": "string"
+          }
+        },
+        "required": ["show"],
+        "type": "object"
+      }
+    }
+  },
+  "session": null,
+  "site": {
+    "icon": null,
+    "lang": "en",
+    "locales": null,
+    "name": "Bookmarks",
+    "offline": null,
+    "themeColor": null,
+    "url": "http://localhost:3000"
+  }
+}

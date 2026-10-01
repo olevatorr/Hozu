@@ -1,0 +1,356 @@
+[
+  {
+    "project": "examples-showcase",
+    "node": "site.Showcase/1/2/1/0",
+    "kind": "class-toggle",
+    "a": "text-slate-600",
+    "b": "text-slate-900",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"tab\"]},\"right\":{\"literal\":\"design\"}}}"
+    ]
+  },
+  {
+    "project": "examples-showcase",
+    "node": "site.Showcase/1/2/1/0",
+    "kind": "class-toggle",
+    "a": "dark:text-slate-300",
+    "b": "dark:text-white",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"tab\"]},\"right\":{\"literal\":\"design\"}}}"
+    ]
+  },
+  {
+    "project": "examples-showcase",
+    "node": "site.Showcase/1/2/1/1",
+    "kind": "class-toggle",
+    "a": "text-slate-600",
+    "b": "text-slate-900",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"tab\"]},\"right\":{\"literal\":\"build\"}}}"
+    ]
+  },
+  {
+    "project": "examples-showcase",
+    "node": "site.Showcase/1/2/1/1",
+    "kind": "class-toggle",
+    "a": "dark:text-slate-300",
+    "b": "dark:text-white",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"tab\"]},\"right\":{\"literal\":\"build\"}}}"
+    ]
+  },
+  {
+    "project": "examples-showcase",
+    "node": "site.Showcase/1/2/1/2",
+    "kind": "class-toggle",
+    "a": "text-slate-600",
+    "b": "text-slate-900",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"tab\"]},\"right\":{\"literal\":\"ship\"}}}"
+    ]
+  },
+  {
+    "project": "examples-showcase",
+    "node": "site.Showcase/1/2/1/2",
+    "kind": "class-toggle",
+    "a": "dark:text-slate-300",
+    "b": "dark:text-white",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"tab\"]},\"right\":{\"literal\":\"ship\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/5/0",
+    "kind": "toggle-toggle",
+    "a": "border-indigo-600",
+    "b": "border-slate-300",
+    "properties": ["border-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"all\"}}}",
+      "{\"test\":{\"op\":\"neq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"all\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/5/0",
+    "kind": "toggle-toggle",
+    "a": "text-white",
+    "b": "text-slate-700",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"all\"}}}",
+      "{\"test\":{\"op\":\"neq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"all\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/5/1",
+    "kind": "toggle-toggle",
+    "a": "border-indigo-600",
+    "b": "border-slate-300",
+    "properties": ["border-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"open\"}}}",
+      "{\"test\":{\"op\":\"neq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"open\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/5/1",
+    "kind": "toggle-toggle",
+    "a": "text-white",
+    "b": "text-slate-700",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"open\"}}}",
+      "{\"test\":{\"op\":\"neq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"open\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/5/2",
+    "kind": "toggle-toggle",
+    "a": "border-indigo-600",
+    "b": "border-slate-300",
+    "properties": ["border-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"done\"}}}",
+      "{\"test\":{\"op\":\"neq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"done\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/5/2",
+    "kind": "toggle-toggle",
+    "a": "text-white",
+    "b": "text-slate-700",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"done\"}}}",
+      "{\"test\":{\"op\":\"neq\",\"left\":{\"ref\":\"context\",\"path\":[\"show\"]},\"right\":{\"literal\":\"done\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/7/ready/ifFalse/0/0/item/1",
+    "kind": "toggle-toggle",
+    "a": "bg-emerald-100",
+    "b": "bg-amber-100",
+    "properties": ["background-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":true}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":false}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/7/ready/ifFalse/0/0/item/1",
+    "kind": "toggle-toggle",
+    "a": "text-emerald-800",
+    "b": "text-amber-800",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":true}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":false}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/7/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "bg-slate-100",
+    "b": "bg-sky-100",
+    "properties": ["background-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"low\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"normal\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/7/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "bg-slate-100",
+    "b": "bg-rose-100",
+    "properties": ["background-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"low\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"high\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/7/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "text-slate-600",
+    "b": "text-sky-800",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"low\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"normal\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/7/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "text-slate-600",
+    "b": "text-rose-800",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"low\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"high\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/7/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "bg-sky-100",
+    "b": "bg-rose-100",
+    "properties": ["background-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"normal\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"high\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0006",
+    "node": "tasks.Board/7/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "text-sky-800",
+    "b": "text-rose-800",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"normal\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"high\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0007",
+    "node": "tasks.Board/5/ready/ifFalse/0/0/item/1",
+    "kind": "toggle-toggle",
+    "a": "bg-emerald-100",
+    "b": "bg-amber-100",
+    "properties": ["background-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":true}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":false}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-0007",
+    "node": "tasks.Board/5/ready/ifFalse/0/0/item/1",
+    "kind": "toggle-toggle",
+    "a": "text-emerald-700",
+    "b": "text-amber-700",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":true}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":false}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-tasks",
+    "node": "tasks.Board/4/ready/ifFalse/0/0/item/1",
+    "kind": "toggle-toggle",
+    "a": "bg-emerald-100",
+    "b": "bg-amber-100",
+    "properties": ["background-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":true}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":false}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-tasks",
+    "node": "tasks.Board/4/ready/ifFalse/0/0/item/1",
+    "kind": "toggle-toggle",
+    "a": "text-emerald-700",
+    "b": "text-amber-700",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":true}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"done\"]},\"right\":{\"literal\":false}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-tasks",
+    "node": "tasks.Board/4/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "bg-slate-100",
+    "b": "bg-sky-100",
+    "properties": ["background-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"low\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"normal\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-tasks",
+    "node": "tasks.Board/4/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "bg-slate-100",
+    "b": "bg-rose-100",
+    "properties": ["background-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"low\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"high\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-tasks",
+    "node": "tasks.Board/4/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "text-slate-600",
+    "b": "text-sky-700",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"low\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"normal\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-tasks",
+    "node": "tasks.Board/4/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "text-slate-600",
+    "b": "text-rose-700",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"low\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"high\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-tasks",
+    "node": "tasks.Board/4/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "bg-sky-100",
+    "b": "bg-rose-100",
+    "properties": ["background-color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"normal\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"high\"}}}"
+    ]
+  },
+  {
+    "project": "examples-trial-tasks",
+    "node": "tasks.Board/4/ready/ifFalse/0/0/item/2",
+    "kind": "toggle-toggle",
+    "a": "text-sky-700",
+    "b": "text-rose-700",
+    "properties": ["color"],
+    "guards": [
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"normal\"}}}",
+      "{\"test\":{\"op\":\"eq\",\"left\":{\"ref\":\"binding\",\"depth\":1,\"path\":[\"priority\"]},\"right\":{\"literal\":\"high\"}}}"
+    ]
+  }
+]

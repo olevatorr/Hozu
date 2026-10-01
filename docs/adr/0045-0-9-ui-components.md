@@ -113,6 +113,17 @@ Measured with Tailwind 4.3.3 (`@import "tailwindcss"`, a fresh compiler per set)
 - A part still gives values, guards and view fragments inside one feature.
 - A view subtree shared by several features is a component (K).
 
+## Phase 0 results (2026-10-01, base `80d55fe`)
+Recorded in `bench/ui/baseline-0.8/`; see its README.
+- P7 is 7 893 B.
+- The per-route `js` mode, island count and widgets are recorded for 11 projects.
+- HZ079 pre-scan: 30 same-property pairs.
+  - 6 are real: the showcase tabs, base against toggle, for `color` and `dark:` `color`, on 3 nodes.
+  - 24 are exclusive toggle pairs (F's exception).
+- The expected failures for G and HZ079 fail for the reason stated. A first draft of the G test failed on HZ059
+  "callback was not lowered", a fixture mistake, and was rewritten. G also covers method calls: `.trim()` on a
+  lowered template string is HZ059 today.
+
 ## A. One declaration: `ui.component`
 ```ts
 // ui/button.ts
@@ -272,8 +283,18 @@ ui.use(Button, {
 ## F. One element, one value per property
 - **HZ079 class-conflict (error), on every element of every view:** two classes of one element (`class` and `toggle`
   keys) set the same property under the same variant stack, and neither is `!`.
-- **Exception:** toggles whose guards are syntactic complements (`c` / `!c`, `x === v` / `x !== v`) never apply
-  together.
+- **Exception:** toggles whose guards are provably exclusive never apply together. That covers:
+  - `c` / `!c`;
+  - `x === v` / `x !== v`;
+  - `x === a` / `x === b` on the same reference with different literals, `true` / `false` included.
+  - Phase 0 found 24 toggle pairs in the examples, all of the last two kinds. The first draft's "syntactic
+    complements" would have reported 16 of them falsely.
+- **Same property:** two utilities conflict only when they set the same set of properties, ignoring custom
+  properties, with different values.
+  - Tailwind orders utilities with different property sets by its own property order, for example `p-4` before
+    `px-2`, and `text-sm` before `leading-6`, so those refine on purpose.
+  - Utilities that compose through custom properties set identical values, for example `blur-sm brightness-50`, so
+    they do not conflict.
 - **Fixes:**
   - for base against toggle: patch the base class into the complementary toggle (`{ 'bg-white': !c }`), or a snippet
     for the attribute variant;

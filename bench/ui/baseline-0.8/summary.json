@@ -1,0 +1,229 @@
+{
+  "base": "80d55fe",
+  "p7": 7893,
+  "projects": {
+    "examples-blog": {
+      "diagnostics": [],
+      "routes": {
+        "home": {
+          "js": "always",
+          "islands": 3,
+          "widgets": []
+        },
+        "offline": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        },
+        "post": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        }
+      }
+    },
+    "examples-bookmarks": {
+      "diagnostics": [],
+      "routes": {
+        "bookmarkPage": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        },
+        "home": {
+          "js": "always",
+          "islands": 5,
+          "widgets": []
+        }
+      }
+    },
+    "examples-cart": {
+      "diagnostics": [],
+      "routes": {
+        "home": {
+          "js": "always",
+          "islands": 7,
+          "widgets": []
+        },
+        "orderPlaced": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        },
+        "product": {
+          "js": "always",
+          "islands": 7,
+          "widgets": []
+        }
+      }
+    },
+    "examples-feed": {
+      "diagnostics": [],
+      "routes": {
+        "archive": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        },
+        "home": {
+          "js": "always",
+          "islands": 1,
+          "widgets": []
+        },
+        "tag": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        }
+      }
+    },
+    "examples-notes": {
+      "diagnostics": [],
+      "routes": {
+        "admin": {
+          "js": "always",
+          "islands": 1,
+          "widgets": []
+        },
+        "home": {
+          "js": "always",
+          "islands": 7,
+          "widgets": []
+        },
+        "login": {
+          "js": "always",
+          "islands": 2,
+          "widgets": []
+        }
+      }
+    },
+    "examples-showcase": {
+      "diagnostics": [],
+      "routes": {
+        "about": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        },
+        "home": {
+          "js": "always",
+          "islands": 16,
+          "widgets": [
+            "site.Carousel",
+            "site.Chart",
+            "site.Globe",
+            "site.Reveal",
+            "site.Sketch",
+            "site.Smooth"
+          ]
+        }
+      }
+    },
+    "examples-stations": {
+      "diagnostics": [],
+      "routes": {
+        "home": {
+          "js": "always",
+          "islands": 1,
+          "widgets": [
+            "stations.Counter",
+            "stations.DistrictChart",
+            "stations.FadeIn",
+            "stations.Globe",
+            "stations.StationMap"
+          ]
+        }
+      }
+    },
+    "examples-trial-0006": {
+      "diagnostics": [],
+      "routes": {
+        "home": {
+          "js": "always",
+          "islands": 9,
+          "widgets": []
+        },
+        "taskPage": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        }
+      }
+    },
+    "examples-trial-0007": {
+      "diagnostics": [],
+      "routes": {
+        "home": {
+          "js": "always",
+          "islands": 7,
+          "widgets": []
+        },
+        "taskPage": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        }
+      }
+    },
+    "examples-trial-tasks": {
+      "diagnostics": [],
+      "routes": {
+        "home": {
+          "js": "always",
+          "islands": 7,
+          "widgets": []
+        },
+        "taskPage": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        }
+      }
+    },
+    "site": {
+      "diagnostics": [],
+      "routes": {
+        "changelog": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        },
+        "chapter": {
+          "js": "conditional",
+          "islands": 1,
+          "widgets": ["content.CodeCopy"]
+        },
+        "doc": {
+          "js": "conditional",
+          "islands": 1,
+          "widgets": ["content.CodeCopy"]
+        },
+        "home": {
+          "js": "conditional",
+          "islands": 1,
+          "widgets": ["content.CodeCopy"]
+        },
+        "how": {
+          "js": "always",
+          "islands": 28,
+          "widgets": []
+        },
+        "notFound": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        },
+        "trial": {
+          "js": "conditional",
+          "islands": 1,
+          "widgets": ["content.CodeCopy"]
+        },
+        "trials": {
+          "js": "false",
+          "islands": 0,
+          "widgets": []
+        }
+      }
+    }
+  }
+}

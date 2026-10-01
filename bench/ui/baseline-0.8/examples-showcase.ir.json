@@ -1,0 +1,3029 @@
+{
+  "env": null,
+  "error": null,
+  "features": {
+    "site": {
+      "contracts": {
+        "addingCountsIds": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "metric": "visits",
+              "next": 9,
+              "slide": 0,
+              "spin": true,
+              "tab": "design",
+              "todos": [
+                {
+                  "id": "t1",
+                  "title": "Sketch the layout"
+                },
+                {
+                  "id": "t2",
+                  "title": "Pick the palette"
+                },
+                {
+                  "id": "t7",
+                  "title": "C"
+                },
+                {
+                  "id": "t8",
+                  "title": "D"
+                }
+              ]
+            },
+            "effects": [],
+            "state": "ready"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "metric": "visits",
+              "next": 7,
+              "slide": 0,
+              "spin": true,
+              "tab": "design",
+              "todos": [
+                {
+                  "id": "t1",
+                  "title": "Sketch the layout"
+                },
+                {
+                  "id": "t2",
+                  "title": "Pick the palette"
+                }
+              ]
+            },
+            "state": "ready"
+          },
+          "when": [
+            {
+              "payload": {
+                "title": "C"
+              },
+              "send": "site.AddTodo"
+            },
+            {
+              "payload": {
+                "title": "D"
+              },
+              "send": "site.AddTodo"
+            }
+          ]
+        },
+        "interactions": {
+          "expect": {
+            "context": {
+              "draft": "",
+              "metric": "signups",
+              "next": 3,
+              "slide": 2,
+              "spin": false,
+              "tab": "ship",
+              "todos": [
+                {
+                  "id": "t2",
+                  "title": "B"
+                }
+              ]
+            },
+            "effects": [],
+            "state": "ready"
+          },
+          "given": {
+            "context": {
+              "draft": "",
+              "metric": "visits",
+              "next": 2,
+              "slide": 0,
+              "spin": true,
+              "tab": "design",
+              "todos": [
+                {
+                  "id": "t1",
+                  "title": "A"
+                }
+              ]
+            },
+            "state": "ready"
+          },
+          "when": [
+            {
+              "payload": {
+                "tab": "ship"
+              },
+              "send": "site.SelectTab"
+            },
+            {
+              "payload": {
+                "text": "B"
+              },
+              "send": "site.Draft"
+            },
+            {
+              "payload": {
+                "title": "B"
+              },
+              "send": "site.AddTodo"
+            },
+            {
+              "payload": {
+                "title": ""
+              },
+              "send": "site.AddTodo"
+            },
+            {
+              "payload": {},
+              "send": "site.Shuffle"
+            },
+            {
+              "payload": {
+                "id": "t1"
+              },
+              "send": "site.RemoveTodo"
+            },
+            {
+              "payload": {
+                "metric": "visits"
+              },
+              "send": "site.SelectMetric"
+            },
+            {
+              "payload": {
+                "metric": "signups"
+              },
+              "send": "site.SelectMetric"
+            },
+            {
+              "payload": {
+                "index": 2
+              },
+              "send": "site.SlideChanged"
+            },
+            {
+              "payload": {},
+              "send": "site.ToggleSpin"
+            }
+          ]
+        }
+      },
+      "endpoints": {},
+      "events": {
+        "AddTodo": {
+          "payload": "s_c0f00621ba42dc11"
+        },
+        "Draft": {
+          "payload": "s_54669b5e6a1bfebb"
+        },
+        "RemoveTodo": {
+          "payload": "s_7717dd85c2e5ff93"
+        },
+        "SelectMetric": {
+          "payload": "s_6f3432d2e25a9d5f"
+        },
+        "SelectTab": {
+          "payload": "s_676dee31d718dc1e"
+        },
+        "Shuffle": {
+          "payload": "s_99334726611ccf58"
+        },
+        "SlideChanged": {
+          "payload": "s_221656c0cefc9b4a"
+        },
+        "ToggleSpin": {
+          "payload": "s_99334726611ccf58"
+        }
+      },
+      "exports": {
+        "endpoints": [],
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": [],
+        "tags": [],
+        "views": []
+      },
+      "fns": {
+        "pick": {
+          "input": "s_dba825f15071162b",
+          "output": "s_c0944f1aa81f8f66",
+          "sourceHash": "071a74b521b69018"
+        },
+        "reversed": {
+          "input": "s_de37c22b7198f882",
+          "output": "s_de37c22b7198f882",
+          "sourceHash": "2a61a8e441807297"
+        },
+        "slideLabel": {
+          "input": "s_648d3947120b55a8",
+          "output": "s_00404e686415370f",
+          "sourceHash": "d8f8259aa7e2f217"
+        },
+        "todoId": {
+          "input": "s_cddf8275afa15408",
+          "output": "s_00404e686415370f",
+          "sourceHash": "9e04495873a61b9d"
+        }
+      },
+      "id": "site",
+      "imports": [],
+      "intent": {
+        "invariants": ["Tasks need a non-empty title"],
+        "summary": "Marketing page and small app that exercise every presentation capability."
+      },
+      "machine": {
+        "context": "s_1974894e2f352302",
+        "initial": "ready",
+        "initialContext": {
+          "draft": "",
+          "metric": "visits",
+          "next": 3,
+          "slide": 0,
+          "spin": true,
+          "tab": "design",
+          "todos": [
+            {
+              "id": "t1",
+              "title": "Sketch the layout"
+            },
+            {
+              "id": "t2",
+              "title": "Pick the palette"
+            }
+          ]
+        },
+        "states": {
+          "ready": {
+            "after": [],
+            "final": false,
+            "ignore": [],
+            "invoke": null,
+            "on": {
+              "site.AddTodo": [
+                {
+                  "assign": [
+                    {
+                      "op": "append",
+                      "path": ["todos"],
+                      "value": {
+                        "object": {
+                          "id": {
+                            "arg": {
+                              "path": ["next"],
+                              "ref": "context"
+                            },
+                            "fn": "site.todoId"
+                          },
+                          "title": {
+                            "path": ["title"],
+                            "ref": "event"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["next"],
+                      "value": {
+                        "arg": {
+                          "object": {
+                            "a": {
+                              "path": ["next"],
+                              "ref": "context"
+                            },
+                            "b": {
+                              "literal": 1
+                            }
+                          }
+                        },
+                        "fn": "%plus"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "literal": ""
+                      }
+                    }
+                  ],
+                  "guard": {
+                    "left": {
+                      "path": ["title"],
+                      "ref": "event"
+                    },
+                    "op": "neq",
+                    "right": {
+                      "literal": ""
+                    }
+                  },
+                  "navigate": null,
+                  "target": "ready"
+                }
+              ],
+              "site.Draft": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "path": ["text"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "ready"
+                }
+              ],
+              "site.RemoveTodo": [
+                {
+                  "assign": [
+                    {
+                      "key": "id",
+                      "op": "removeWhere",
+                      "path": ["todos"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "ready"
+                }
+              ],
+              "site.SelectMetric": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["metric"],
+                      "value": {
+                        "literal": "signups"
+                      }
+                    }
+                  ],
+                  "guard": {
+                    "left": {
+                      "path": ["metric"],
+                      "ref": "event"
+                    },
+                    "op": "eq",
+                    "right": {
+                      "literal": "signups"
+                    }
+                  },
+                  "navigate": null,
+                  "target": "ready"
+                },
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["metric"],
+                      "value": {
+                        "literal": "visits"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "ready"
+                }
+              ],
+              "site.SelectTab": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["tab"],
+                      "value": {
+                        "path": ["tab"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "ready"
+                }
+              ],
+              "site.Shuffle": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["todos"],
+                      "value": {
+                        "arg": {
+                          "path": ["todos"],
+                          "ref": "context"
+                        },
+                        "fn": "site.reversed"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "ready"
+                }
+              ],
+              "site.SlideChanged": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["slide"],
+                      "value": {
+                        "path": ["index"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "ready"
+                }
+              ],
+              "site.ToggleSpin": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["spin"],
+                      "value": {
+                        "test": {
+                          "left": {
+                            "path": ["spin"],
+                            "ref": "context"
+                          },
+                          "op": "eq",
+                          "right": {
+                            "literal": false
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "ready"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "messages": null,
+      "mutations": {},
+      "queries": {
+        "slides": {
+          "errors": {},
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_a2b94853a12f4dc2",
+          "scope": "public",
+          "tags": []
+        },
+        "stats": {
+          "errors": {},
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_be87a945f196bc23",
+          "scope": "public",
+          "tags": []
+        }
+      },
+      "schemas": {
+        "s_00404e686415370f": {
+          "type": "string"
+        },
+        "s_1974894e2f352302": {
+          "additionalProperties": false,
+          "properties": {
+            "draft": {
+              "type": "string"
+            },
+            "metric": {
+              "enum": ["visits", "signups"],
+              "type": "string"
+            },
+            "next": {
+              "type": "number"
+            },
+            "slide": {
+              "type": "number"
+            },
+            "spin": {
+              "type": "boolean"
+            },
+            "tab": {
+              "enum": ["design", "build", "ship"],
+              "type": "string"
+            },
+            "todos": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "title"],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["tab", "todos", "draft", "next", "metric", "slide", "spin"],
+          "type": "object"
+        },
+        "s_221656c0cefc9b4a": {
+          "additionalProperties": false,
+          "properties": {
+            "index": {
+              "type": "number"
+            }
+          },
+          "required": ["index"],
+          "type": "object"
+        },
+        "s_267ce2a594899afc": {
+          "additionalProperties": false,
+          "properties": {
+            "spin": {
+              "type": "boolean"
+            }
+          },
+          "required": ["spin"],
+          "type": "object"
+        },
+        "s_470ad9a71d2c2bb3": {
+          "additionalProperties": false,
+          "properties": {
+            "perView": {
+              "type": "number"
+            }
+          },
+          "required": ["perView"],
+          "type": "object"
+        },
+        "s_54669b5e6a1bfebb": {
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": ["text"],
+          "type": "object"
+        },
+        "s_648d3947120b55a8": {
+          "additionalProperties": false,
+          "properties": {
+            "index": {
+              "type": "number"
+            },
+            "total": {
+              "type": "number"
+            }
+          },
+          "required": ["index", "total"],
+          "type": "object"
+        },
+        "s_676dee31d718dc1e": {
+          "additionalProperties": false,
+          "properties": {
+            "tab": {
+              "enum": ["design", "build", "ship"],
+              "type": "string"
+            }
+          },
+          "required": ["tab"],
+          "type": "object"
+        },
+        "s_6f3432d2e25a9d5f": {
+          "additionalProperties": false,
+          "properties": {
+            "metric": {
+              "type": "string"
+            }
+          },
+          "required": ["metric"],
+          "type": "object"
+        },
+        "s_7717dd85c2e5ff93": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": ["id"],
+          "type": "object"
+        },
+        "s_99334726611ccf58": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "s_9935928b22a88bb9": {
+          "additionalProperties": false,
+          "properties": {
+            "hue": {
+              "type": "number"
+            }
+          },
+          "required": ["hue"],
+          "type": "object"
+        },
+        "s_a2b94853a12f4dc2": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "body": {
+                "type": "string"
+              },
+              "hue": {
+                "type": "number"
+              },
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "title", "body", "hue"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "s_be87a945f196bc23": {
+          "additionalProperties": false,
+          "properties": {
+            "signups": {
+              "additionalProperties": false,
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "labels": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "values": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": ["label", "labels", "values"],
+              "type": "object"
+            },
+            "visits": {
+              "additionalProperties": false,
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "labels": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "values": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": ["label", "labels", "values"],
+              "type": "object"
+            }
+          },
+          "required": ["visits", "signups"],
+          "type": "object"
+        },
+        "s_c0944f1aa81f8f66": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "labels": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "values": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["label", "labels", "values"],
+          "type": "object"
+        },
+        "s_c0f00621ba42dc11": {
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["title"],
+          "type": "object"
+        },
+        "s_cddf8275afa15408": {
+          "type": "number"
+        },
+        "s_dba825f15071162b": {
+          "additionalProperties": false,
+          "properties": {
+            "metric": {
+              "enum": ["visits", "signups"],
+              "type": "string"
+            },
+            "stats": {
+              "additionalProperties": false,
+              "properties": {
+                "signups": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "labels": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "values": {
+                      "items": {
+                        "type": "number"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["label", "labels", "values"],
+                  "type": "object"
+                },
+                "visits": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "labels": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "values": {
+                      "items": {
+                        "type": "number"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["label", "labels", "values"],
+                  "type": "object"
+                }
+              },
+              "required": ["visits", "signups"],
+              "type": "object"
+            }
+          },
+          "required": ["stats", "metric"],
+          "type": "object"
+        },
+        "s_de37c22b7198f882": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "title"],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "tags": {},
+      "views": {
+        "About": {
+          "machine": null,
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "attrs": {
+                          "href": {
+                            "link": "home",
+                            "params": {
+                              "literal": null
+                            },
+                            "search": {
+                              "literal": null
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "site.About/0/0/0/0",
+                            "kind": "text",
+                            "value": {
+                              "literal": "Hozu"
+                            }
+                          }
+                        ],
+                        "class": "text-lg font-bold text-slate-900 dark:text-white",
+                        "id": "site.About/0/0/0",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "a",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "attrs": {
+                              "href": {
+                                "literal": "#features"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "site.About/0/0/1/0/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Features"
+                                }
+                              }
+                            ],
+                            "class": "hover:text-indigo-600",
+                            "id": "site.About/0/0/1/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "a",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {
+                              "href": {
+                                "literal": "#gallery"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "site.About/0/0/1/1/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Gallery"
+                                }
+                              }
+                            ],
+                            "class": "hover:text-indigo-600",
+                            "id": "site.About/0/0/1/1",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "a",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {
+                              "href": {
+                                "link": "about",
+                                "params": {
+                                  "literal": null
+                                },
+                                "search": {
+                                  "literal": null
+                                }
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "site.About/0/0/1/2/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "About"
+                                }
+                              }
+                            ],
+                            "class": "hover:text-indigo-600",
+                            "id": "site.About/0/0/1/2",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "a",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        ],
+                        "class": "flex gap-6 text-sm text-slate-600 dark:text-slate-300",
+                        "id": "site.About/0/0/1",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "div",
+                        "toggle": {},
+                        "vars": {}
+                      }
+                    ],
+                    "class": "mx-auto max-w-6xl px-4 sm:px-6 flex h-16 items-center justify-between",
+                    "id": "site.About/0/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "nav",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "site-header sticky top-0 z-20 border-b border-slate-200/70 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80",
+                "id": "site.About/0",
+                "kind": "el",
+                "on": {},
+                "tag": "header",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "id": "site.About/1/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "About this showcase"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "site.About/1/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "h1",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "id": "site.About/1/1/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "The same page is built with Hozu and with Nuxt, then compared screenshot by screenshot. See docs/benchmarks/0002-parity.md."
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "site.About/1/1",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "mx-auto max-w-6xl px-4 sm:px-6 prose prose-slate py-20 dark:prose-invert",
+                "id": "site.About/1",
+                "kind": "el",
+                "on": {},
+                "tag": "main",
+                "toggle": {},
+                "vars": {}
+              }
+            ],
+            "class": "min-h-screen bg-slate-50 font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100",
+            "id": "site.About",
+            "kind": "el",
+            "on": {},
+            "tag": "div",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": null,
+          "seed": null
+        },
+        "Showcase": {
+          "machine": "site",
+          "root": {
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "attrs": {
+                          "href": {
+                            "link": "home",
+                            "params": {
+                              "literal": null
+                            },
+                            "search": {
+                              "literal": null
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "site.Showcase/0/0/0/0",
+                            "kind": "text",
+                            "value": {
+                              "literal": "Hozu"
+                            }
+                          }
+                        ],
+                        "class": "text-lg font-bold text-slate-900 dark:text-white",
+                        "id": "site.Showcase/0/0/0",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "a",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "attrs": {
+                              "href": {
+                                "literal": "#features"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "site.Showcase/0/0/1/0/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Features"
+                                }
+                              }
+                            ],
+                            "class": "hover:text-indigo-600",
+                            "id": "site.Showcase/0/0/1/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "a",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {
+                              "href": {
+                                "literal": "#gallery"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "site.Showcase/0/0/1/1/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Gallery"
+                                }
+                              }
+                            ],
+                            "class": "hover:text-indigo-600",
+                            "id": "site.Showcase/0/0/1/1",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "a",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {
+                              "href": {
+                                "link": "about",
+                                "params": {
+                                  "literal": null
+                                },
+                                "search": {
+                                  "literal": null
+                                }
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "site.Showcase/0/0/1/2/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "About"
+                                }
+                              }
+                            ],
+                            "class": "hover:text-indigo-600",
+                            "id": "site.Showcase/0/0/1/2",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "a",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        ],
+                        "class": "flex gap-6 text-sm text-slate-600 dark:text-slate-300",
+                        "id": "site.Showcase/0/0/1",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "div",
+                        "toggle": {},
+                        "vars": {}
+                      }
+                    ],
+                    "class": "mx-auto max-w-6xl px-4 sm:px-6 flex h-16 items-center justify-between",
+                    "id": "site.Showcase/0/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "nav",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "site-header sticky top-0 z-20 border-b border-slate-200/70 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80",
+                "id": "site.Showcase/0",
+                "kind": "el",
+                "on": {},
+                "tag": "header",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/0/0/0/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "AI-first, human-facing"
+                                }
+                              }
+                            ],
+                            "class": "text-sm font-semibold uppercase tracking-widest text-indigo-600",
+                            "id": "site.Showcase/1/0/0/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "p",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/0/0/1/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Verified by machines. Built for people."
+                                }
+                              }
+                            ],
+                            "class": "bg-gradient-to-br from-slate-900 to-indigo-600 bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-6xl dark:from-white dark:to-indigo-400",
+                            "id": "site.Showcase/1/0/0/1",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "h1",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/0/0/2/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Every animation, widget and style you expect from a modern site, with a program an AI can check."
+                                }
+                              }
+                            ],
+                            "class": "max-w-prose text-lg text-slate-600 dark:text-slate-300",
+                            "id": "site.Showcase/1/0/0/2",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "p",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "attrs": {
+                                  "href": {
+                                    "literal": "#features"
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "id": "site.Showcase/1/0/0/3/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "literal": "Explore"
+                                    }
+                                  }
+                                ],
+                                "class": "inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500",
+                                "id": "site.Showcase/1/0/0/3/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "a",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {
+                                  "aria-pressed": {
+                                    "path": ["spin"],
+                                    "ref": "context"
+                                  },
+                                  "type": {
+                                    "literal": "button"
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "id": "site.Showcase/1/0/0/3/1/0",
+                                    "ifFalse": [
+                                      {
+                                        "id": "site.Showcase/1/0/0/3/1/0/ifFalse/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Spin globe"
+                                        }
+                                      }
+                                    ],
+                                    "ifTrue": [
+                                      {
+                                        "id": "site.Showcase/1/0/0/3/1/0/ifTrue/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Pause globe"
+                                        }
+                                      }
+                                    ],
+                                    "kind": "if",
+                                    "motion": null,
+                                    "test": {
+                                      "left": {
+                                        "path": ["spin"],
+                                        "ref": "context"
+                                      },
+                                      "op": "eq",
+                                      "right": {
+                                        "literal": true
+                                      }
+                                    }
+                                  }
+                                ],
+                                "class": "inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 border border-slate-300 text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-200",
+                                "id": "site.Showcase/1/0/0/3/1",
+                                "kind": "el",
+                                "on": {
+                                  "click": {
+                                    "event": "site.ToggleSpin",
+                                    "payload": {
+                                      "literal": {}
+                                    }
+                                  }
+                                },
+                                "tag": "button",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "class": "flex flex-wrap gap-3",
+                            "id": "site.Showcase/1/0/0/3",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "div",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        ],
+                        "class": "space-y-6",
+                        "id": "site.Showcase/1/0/0",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "div",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "children": [
+                          {
+                            "attrs": {},
+                            "children": [],
+                            "class": "h-full w-full rounded-full bg-gradient-to-br from-indigo-500/30 to-sky-400/10",
+                            "id": "site.Showcase/1/0/1/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "div",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        ],
+                        "class": "aspect-square w-full text-indigo-500",
+                        "id": "site.Showcase/1/0/1",
+                        "kind": "widget",
+                        "on": {},
+                        "props": {
+                          "object": {
+                            "spin": {
+                              "path": ["spin"],
+                              "ref": "context"
+                            }
+                          }
+                        },
+                        "toggle": {},
+                        "vars": {},
+                        "widget": "site.Globe"
+                      }
+                    ],
+                    "class": "mx-auto max-w-6xl px-4 sm:px-6 grid items-center gap-12 py-20 md:grid-cols-2",
+                    "id": "site.Showcase/1/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "section",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "children": [
+                      {
+                        "attrs": {
+                          "id": {
+                            "literal": "features"
+                          }
+                        },
+                        "children": [
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/1/0/0/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "What you get"
+                                }
+                              }
+                            ],
+                            "class": "text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-white",
+                            "id": "site.Showcase/1/1/0/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "h2",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "attrs": {
+                                  "data-reveal": {
+                                    "literal": true
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "id": "site.Showcase/1/1/0/1/0/0/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Closed views"
+                                        }
+                                      }
+                                    ],
+                                    "class": "text-lg font-semibold",
+                                    "id": "site.Showcase/1/1/0/1/0/0",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "h3",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "id": "site.Showcase/1/1/0/1/0/1/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Every node is data the validator can read."
+                                        }
+                                      }
+                                    ],
+                                    "class": "mt-2 text-slate-600 dark:text-slate-300",
+                                    "id": "site.Showcase/1/1/0/1/0/1",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "p",
+                                    "toggle": {},
+                                    "vars": {}
+                                  }
+                                ],
+                                "class": "rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900",
+                                "id": "site.Showcase/1/1/0/1/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "article",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {
+                                  "data-reveal": {
+                                    "literal": true
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "id": "site.Showcase/1/1/0/1/1/0/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Derived rendering"
+                                        }
+                                      }
+                                    ],
+                                    "class": "text-lg font-semibold",
+                                    "id": "site.Showcase/1/1/0/1/1/0",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "h3",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "id": "site.Showcase/1/1/0/1/1/1/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Static, ISR or streamed: decided, not configured."
+                                        }
+                                      }
+                                    ],
+                                    "class": "mt-2 text-slate-600 dark:text-slate-300",
+                                    "id": "site.Showcase/1/1/0/1/1/1",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "p",
+                                    "toggle": {},
+                                    "vars": {}
+                                  }
+                                ],
+                                "class": "rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900",
+                                "id": "site.Showcase/1/1/0/1/1",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "article",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {
+                                  "data-reveal": {
+                                    "literal": true
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "id": "site.Showcase/1/1/0/1/2/0/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Any library"
+                                        }
+                                      }
+                                    ],
+                                    "class": "text-lg font-semibold",
+                                    "id": "site.Showcase/1/1/0/1/2/0",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "h3",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "id": "site.Showcase/1/1/0/1/2/1/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "three.js, GSAP, Swiper and more, behind typed widgets."
+                                        }
+                                      }
+                                    ],
+                                    "class": "mt-2 text-slate-600 dark:text-slate-300",
+                                    "id": "site.Showcase/1/1/0/1/2/1",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "p",
+                                    "toggle": {},
+                                    "vars": {}
+                                  }
+                                ],
+                                "class": "rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900",
+                                "id": "site.Showcase/1/1/0/1/2",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "article",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "class": "grid gap-6 md:grid-cols-3",
+                            "id": "site.Showcase/1/1/0/1",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "div",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        ],
+                        "class": "mx-auto max-w-6xl px-4 sm:px-6 space-y-10",
+                        "id": "site.Showcase/1/1/0",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "section",
+                        "toggle": {},
+                        "vars": {}
+                      }
+                    ],
+                    "class": "py-16",
+                    "id": "site.Showcase/1/1",
+                    "kind": "widget",
+                    "on": {},
+                    "props": {
+                      "literal": {}
+                    },
+                    "toggle": {},
+                    "vars": {},
+                    "widget": "site.Reveal"
+                  },
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "id": "site.Showcase/1/2/0/0",
+                            "kind": "text",
+                            "value": {
+                              "literal": "How it works"
+                            }
+                          }
+                        ],
+                        "class": "text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-white",
+                        "id": "site.Showcase/1/2/0",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "h2",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "attrs": {
+                          "role": {
+                            "literal": "tablist"
+                          }
+                        },
+                        "children": [
+                          {
+                            "attrs": {
+                              "aria-selected": {
+                                "test": {
+                                  "left": {
+                                    "path": ["tab"],
+                                    "ref": "context"
+                                  },
+                                  "op": "eq",
+                                  "right": {
+                                    "literal": "design"
+                                  }
+                                }
+                              },
+                              "role": {
+                                "literal": "tab"
+                              },
+                              "type": {
+                                "literal": "button"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/2/1/0/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "design"
+                                }
+                              }
+                            ],
+                            "class": "rounded-full px-4 py-1.5 text-sm font-medium capitalize text-slate-600 transition dark:text-slate-300",
+                            "id": "site.Showcase/1/2/1/0",
+                            "kind": "el",
+                            "on": {
+                              "click": {
+                                "event": "site.SelectTab",
+                                "payload": {
+                                  "literal": {
+                                    "tab": "design"
+                                  }
+                                }
+                              }
+                            },
+                            "tag": "button",
+                            "toggle": {
+                              "bg-white text-slate-900 shadow dark:bg-slate-950 dark:text-white": {
+                                "test": {
+                                  "left": {
+                                    "path": ["tab"],
+                                    "ref": "context"
+                                  },
+                                  "op": "eq",
+                                  "right": {
+                                    "literal": "design"
+                                  }
+                                }
+                              }
+                            },
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {
+                              "aria-selected": {
+                                "test": {
+                                  "left": {
+                                    "path": ["tab"],
+                                    "ref": "context"
+                                  },
+                                  "op": "eq",
+                                  "right": {
+                                    "literal": "build"
+                                  }
+                                }
+                              },
+                              "role": {
+                                "literal": "tab"
+                              },
+                              "type": {
+                                "literal": "button"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/2/1/1/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "build"
+                                }
+                              }
+                            ],
+                            "class": "rounded-full px-4 py-1.5 text-sm font-medium capitalize text-slate-600 transition dark:text-slate-300",
+                            "id": "site.Showcase/1/2/1/1",
+                            "kind": "el",
+                            "on": {
+                              "click": {
+                                "event": "site.SelectTab",
+                                "payload": {
+                                  "literal": {
+                                    "tab": "build"
+                                  }
+                                }
+                              }
+                            },
+                            "tag": "button",
+                            "toggle": {
+                              "bg-white text-slate-900 shadow dark:bg-slate-950 dark:text-white": {
+                                "test": {
+                                  "left": {
+                                    "path": ["tab"],
+                                    "ref": "context"
+                                  },
+                                  "op": "eq",
+                                  "right": {
+                                    "literal": "build"
+                                  }
+                                }
+                              }
+                            },
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {
+                              "aria-selected": {
+                                "test": {
+                                  "left": {
+                                    "path": ["tab"],
+                                    "ref": "context"
+                                  },
+                                  "op": "eq",
+                                  "right": {
+                                    "literal": "ship"
+                                  }
+                                }
+                              },
+                              "role": {
+                                "literal": "tab"
+                              },
+                              "type": {
+                                "literal": "button"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/2/1/2/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "ship"
+                                }
+                              }
+                            ],
+                            "class": "rounded-full px-4 py-1.5 text-sm font-medium capitalize text-slate-600 transition dark:text-slate-300",
+                            "id": "site.Showcase/1/2/1/2",
+                            "kind": "el",
+                            "on": {
+                              "click": {
+                                "event": "site.SelectTab",
+                                "payload": {
+                                  "literal": {
+                                    "tab": "ship"
+                                  }
+                                }
+                              }
+                            },
+                            "tag": "button",
+                            "toggle": {
+                              "bg-white text-slate-900 shadow dark:bg-slate-950 dark:text-white": {
+                                "test": {
+                                  "left": {
+                                    "path": ["tab"],
+                                    "ref": "context"
+                                  },
+                                  "op": "eq",
+                                  "right": {
+                                    "literal": "ship"
+                                  }
+                                }
+                              }
+                            },
+                            "vars": {}
+                          }
+                        ],
+                        "class": "inline-flex rounded-full bg-slate-200/70 p-1 dark:bg-slate-800",
+                        "id": "site.Showcase/1/2/1",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "div",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "attrs": {
+                          "role": {
+                            "literal": "tabpanel"
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "site.Showcase/1/2/2/0",
+                            "ifFalse": [
+                              {
+                                "id": "site.Showcase/1/2/2/0/ifFalse/0",
+                                "ifFalse": [
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "id": "site.Showcase/1/2/2/0/ifFalse/0/ifFalse/0/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Ship HTML first; only interactive islands download JavaScript."
+                                        }
+                                      }
+                                    ],
+                                    "class": "panel",
+                                    "id": "site.Showcase/1/2/2/0/ifFalse/0/ifFalse/0",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "p",
+                                    "toggle": {},
+                                    "vars": {}
+                                  }
+                                ],
+                                "ifTrue": [
+                                  {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "id": "site.Showcase/1/2/2/0/ifFalse/0/ifTrue/0/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "The validator checks every reference, state and class before you run it."
+                                        }
+                                      }
+                                    ],
+                                    "class": "panel",
+                                    "id": "site.Showcase/1/2/2/0/ifFalse/0/ifTrue/0",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "p",
+                                    "toggle": {},
+                                    "vars": {}
+                                  }
+                                ],
+                                "kind": "if",
+                                "motion": "fade",
+                                "test": {
+                                  "left": {
+                                    "path": ["tab"],
+                                    "ref": "context"
+                                  },
+                                  "op": "eq",
+                                  "right": {
+                                    "literal": "build"
+                                  }
+                                }
+                              }
+                            ],
+                            "ifTrue": [
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "site.Showcase/1/2/2/0/ifTrue/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "literal": "Describe features as data: events, queries, machines and views."
+                                    }
+                                  }
+                                ],
+                                "class": "panel",
+                                "id": "site.Showcase/1/2/2/0/ifTrue/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "p",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "kind": "if",
+                            "motion": "fade",
+                            "test": {
+                              "left": {
+                                "path": ["tab"],
+                                "ref": "context"
+                              },
+                              "op": "eq",
+                              "right": {
+                                "literal": "design"
+                              }
+                            }
+                          }
+                        ],
+                        "class": "relative min-h-24",
+                        "id": "site.Showcase/1/2/2",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "div",
+                        "toggle": {},
+                        "vars": {}
+                      }
+                    ],
+                    "class": "mx-auto max-w-6xl px-4 sm:px-6 space-y-6 py-16",
+                    "id": "site.Showcase/1/2",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "section",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "id": {
+                        "literal": "gallery"
+                      }
+                    },
+                    "children": [
+                      {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/3/0/0/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Gallery"
+                                }
+                              }
+                            ],
+                            "class": "text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-white",
+                            "id": "site.Showcase/1/3/0/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "h2",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "failed": {
+                              "Unexpected": {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "site.Showcase/1/3/0/1/failed/Unexpected/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "literal": ""
+                                    }
+                                  }
+                                ],
+                                "class": null,
+                                "id": "site.Showcase/1/3/0/1/failed/Unexpected",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "p",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            },
+                            "id": "site.Showcase/1/3/0/1",
+                            "input": {
+                              "literal": {}
+                            },
+                            "kind": "query",
+                            "pending": null,
+                            "query": "site.slides",
+                            "ready": {
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "id": "site.Showcase/1/3/0/1/ready/0",
+                                  "kind": "text",
+                                  "value": {
+                                    "arg": {
+                                      "object": {
+                                        "index": {
+                                          "path": ["slide"],
+                                          "ref": "context"
+                                        },
+                                        "total": {
+                                          "depth": 0,
+                                          "path": ["length"],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    },
+                                    "fn": "site.slideLabel"
+                                  }
+                                }
+                              ],
+                              "class": "text-sm tabular-nums text-slate-500",
+                              "id": "site.Showcase/1/3/0/1/ready",
+                              "kind": "el",
+                              "on": {},
+                              "tag": "p",
+                              "toggle": {},
+                              "vars": {}
+                            }
+                          }
+                        ],
+                        "class": "mx-auto max-w-6xl px-4 sm:px-6 flex items-end justify-between",
+                        "id": "site.Showcase/1/3/0",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "div",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "failed": {
+                          "Unexpected": {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/3/1/failed/Unexpected/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Gallery unavailable"
+                                }
+                              }
+                            ],
+                            "class": null,
+                            "id": "site.Showcase/1/3/1/failed/Unexpected",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "p",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        },
+                        "id": "site.Showcase/1/3/1",
+                        "input": {
+                          "literal": {}
+                        },
+                        "kind": "query",
+                        "pending": null,
+                        "query": "site.slides",
+                        "ready": {
+                          "children": [
+                            {
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "id": "site.Showcase/1/3/1/ready/0/0",
+                                  "item": {
+                                    "attrs": {},
+                                    "children": [
+                                      {
+                                        "attrs": {},
+                                        "children": [],
+                                        "class": "mb-4 h-2 w-12 rounded-full bg-[hsl(var(--hue)_80%_60%)]",
+                                        "id": "site.Showcase/1/3/1/ready/0/0/item/0",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "div",
+                                        "toggle": {},
+                                        "vars": {}
+                                      },
+                                      {
+                                        "attrs": {},
+                                        "children": [
+                                          {
+                                            "id": "site.Showcase/1/3/1/ready/0/0/item/1/0",
+                                            "kind": "text",
+                                            "value": {
+                                              "depth": 1,
+                                              "path": ["title"],
+                                              "ref": "binding"
+                                            }
+                                          }
+                                        ],
+                                        "class": "text-lg font-semibold",
+                                        "id": "site.Showcase/1/3/1/ready/0/0/item/1",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "h3",
+                                        "toggle": {},
+                                        "vars": {}
+                                      },
+                                      {
+                                        "attrs": {},
+                                        "children": [
+                                          {
+                                            "id": "site.Showcase/1/3/1/ready/0/0/item/2/0",
+                                            "kind": "text",
+                                            "value": {
+                                              "depth": 1,
+                                              "path": ["body"],
+                                              "ref": "binding"
+                                            }
+                                          }
+                                        ],
+                                        "class": "mt-2 text-slate-600 dark:text-slate-300",
+                                        "id": "site.Showcase/1/3/1/ready/0/0/item/2",
+                                        "kind": "el",
+                                        "on": {},
+                                        "tag": "p",
+                                        "toggle": {},
+                                        "vars": {}
+                                      }
+                                    ],
+                                    "class": "swiper-slide rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 h-48",
+                                    "id": "site.Showcase/1/3/1/ready/0/0/item",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "article",
+                                    "toggle": {},
+                                    "vars": {
+                                      "--hue": {
+                                        "depth": 1,
+                                        "path": ["hue"],
+                                        "ref": "binding"
+                                      }
+                                    }
+                                  },
+                                  "key": "id",
+                                  "kind": "each",
+                                  "motion": null,
+                                  "source": {
+                                    "depth": 0,
+                                    "path": [],
+                                    "ref": "binding"
+                                  }
+                                }
+                              ],
+                              "class": "swiper-wrapper",
+                              "id": "site.Showcase/1/3/1/ready/0",
+                              "kind": "el",
+                              "on": {},
+                              "tag": "div",
+                              "toggle": {},
+                              "vars": {}
+                            }
+                          ],
+                          "class": "swiper mx-auto max-w-6xl px-4 sm:px-6",
+                          "id": "site.Showcase/1/3/1/ready",
+                          "kind": "widget",
+                          "on": {
+                            "changed": {
+                              "event": "site.SlideChanged",
+                              "payload": {
+                                "object": {
+                                  "index": {
+                                    "path": ["detail", "index"],
+                                    "ref": "dom"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "props": {
+                            "literal": {
+                              "perView": 3
+                            }
+                          },
+                          "toggle": {},
+                          "vars": {},
+                          "widget": "site.Carousel"
+                        }
+                      }
+                    ],
+                    "class": "space-y-6 py-16",
+                    "id": "site.Showcase/1/3",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "section",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/4/0/0/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Tasks"
+                                }
+                              }
+                            ],
+                            "class": "text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-white",
+                            "id": "site.Showcase/1/4/0/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "h2",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "attrs": {
+                                  "for": {
+                                    "literal": "title"
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "id": "site.Showcase/1/4/0/1/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "literal": "New task"
+                                    }
+                                  }
+                                ],
+                                "class": "sr-only",
+                                "id": "site.Showcase/1/4/0/1/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "label",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {
+                                  "id": {
+                                    "literal": "title"
+                                  },
+                                  "minlength": {
+                                    "literal": 2
+                                  },
+                                  "name": {
+                                    "literal": "title"
+                                  },
+                                  "placeholder": {
+                                    "literal": "Add a task"
+                                  },
+                                  "required": {
+                                    "literal": true
+                                  },
+                                  "value": {
+                                    "path": ["draft"],
+                                    "ref": "context"
+                                  }
+                                },
+                                "children": [],
+                                "class": "min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 invalid:[&:not(:placeholder-shown)]:border-rose-400 dark:border-slate-700 dark:bg-slate-900",
+                                "id": "site.Showcase/1/4/0/1/1",
+                                "kind": "el",
+                                "on": {
+                                  "input": {
+                                    "event": "site.Draft",
+                                    "payload": {
+                                      "object": {
+                                        "text": {
+                                          "path": ["value"],
+                                          "ref": "dom"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "tag": "input",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {
+                                  "type": {
+                                    "literal": "submit"
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "id": "site.Showcase/1/4/0/1/2/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "literal": "Add"
+                                    }
+                                  }
+                                ],
+                                "class": "inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 bg-slate-900 text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900",
+                                "id": "site.Showcase/1/4/0/1/2",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "button",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "class": "flex gap-2",
+                            "id": "site.Showcase/1/4/0/1",
+                            "kind": "el",
+                            "on": {
+                              "submit": {
+                                "event": "site.AddTodo",
+                                "payload": {
+                                  "object": {
+                                    "title": {
+                                      "path": ["form", "title"],
+                                      "ref": "dom"
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "tag": "form",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "id": "site.Showcase/1/4/0/2",
+                            "ifFalse": [
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "site.Showcase/1/4/0/2/ifFalse/0/0",
+                                    "item": {
+                                      "attrs": {},
+                                      "children": [
+                                        {
+                                          "attrs": {},
+                                          "children": [
+                                            {
+                                              "id": "site.Showcase/1/4/0/2/ifFalse/0/0/item/0/0",
+                                              "kind": "text",
+                                              "value": {
+                                                "depth": 0,
+                                                "path": ["title"],
+                                                "ref": "binding"
+                                              }
+                                            }
+                                          ],
+                                          "class": null,
+                                          "id": "site.Showcase/1/4/0/2/ifFalse/0/0/item/0",
+                                          "kind": "el",
+                                          "on": {},
+                                          "tag": "span",
+                                          "toggle": {},
+                                          "vars": {}
+                                        },
+                                        {
+                                          "attrs": {
+                                            "aria-label": {
+                                              "literal": "Remove"
+                                            },
+                                            "type": {
+                                              "literal": "button"
+                                            }
+                                          },
+                                          "children": [
+                                            {
+                                              "id": "site.Showcase/1/4/0/2/ifFalse/0/0/item/1/0",
+                                              "kind": "text",
+                                              "value": {
+                                                "literal": "×"
+                                              }
+                                            }
+                                          ],
+                                          "class": "rounded-full p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600",
+                                          "id": "site.Showcase/1/4/0/2/ifFalse/0/0/item/1",
+                                          "kind": "el",
+                                          "on": {
+                                            "click": {
+                                              "event": "site.RemoveTodo",
+                                              "payload": {
+                                                "object": {
+                                                  "id": {
+                                                    "depth": 0,
+                                                    "path": ["id"],
+                                                    "ref": "binding"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "tag": "button",
+                                          "toggle": {},
+                                          "vars": {}
+                                        }
+                                      ],
+                                      "class": "flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900",
+                                      "id": "site.Showcase/1/4/0/2/ifFalse/0/0/item",
+                                      "kind": "el",
+                                      "on": {},
+                                      "tag": "li",
+                                      "toggle": {},
+                                      "vars": {}
+                                    },
+                                    "key": "id",
+                                    "kind": "each",
+                                    "motion": "list",
+                                    "source": {
+                                      "path": ["todos"],
+                                      "ref": "context"
+                                    }
+                                  }
+                                ],
+                                "class": "relative space-y-2",
+                                "id": "site.Showcase/1/4/0/2/ifFalse/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "ul",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "ifTrue": [
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "site.Showcase/1/4/0/2/ifTrue/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "literal": "Nothing left. Nice."
+                                    }
+                                  }
+                                ],
+                                "class": "text-slate-500",
+                                "id": "site.Showcase/1/4/0/2/ifTrue/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "p",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "kind": "if",
+                            "motion": null,
+                            "test": {
+                              "left": {
+                                "path": ["todos", "length"],
+                                "ref": "context"
+                              },
+                              "op": "eq",
+                              "right": {
+                                "literal": 0
+                              }
+                            }
+                          },
+                          {
+                            "attrs": {
+                              "type": {
+                                "literal": "button"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/4/0/3/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Reverse order"
+                                }
+                              }
+                            ],
+                            "class": "text-sm text-indigo-600 hover:underline",
+                            "id": "site.Showcase/1/4/0/3",
+                            "kind": "el",
+                            "on": {
+                              "click": {
+                                "event": "site.Shuffle",
+                                "payload": {
+                                  "literal": {}
+                                }
+                              }
+                            },
+                            "tag": "button",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        ],
+                        "class": "space-y-4",
+                        "id": "site.Showcase/1/4/0",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "div",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "site.Showcase/1/4/1/0/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "literal": "Traffic"
+                                    }
+                                  }
+                                ],
+                                "class": "text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-white",
+                                "id": "site.Showcase/1/4/1/0/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "h2",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {
+                                  "aria-label": {
+                                    "literal": "Metric"
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "attrs": {
+                                      "selected": {
+                                        "test": {
+                                          "left": {
+                                            "path": ["metric"],
+                                            "ref": "context"
+                                          },
+                                          "op": "eq",
+                                          "right": {
+                                            "literal": "visits"
+                                          }
+                                        }
+                                      },
+                                      "value": {
+                                        "literal": "visits"
+                                      }
+                                    },
+                                    "children": [
+                                      {
+                                        "id": "site.Showcase/1/4/1/0/1/0/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Visits"
+                                        }
+                                      }
+                                    ],
+                                    "class": null,
+                                    "id": "site.Showcase/1/4/1/0/1/0",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "option",
+                                    "toggle": {},
+                                    "vars": {}
+                                  },
+                                  {
+                                    "attrs": {
+                                      "selected": {
+                                        "test": {
+                                          "left": {
+                                            "path": ["metric"],
+                                            "ref": "context"
+                                          },
+                                          "op": "eq",
+                                          "right": {
+                                            "literal": "signups"
+                                          }
+                                        }
+                                      },
+                                      "value": {
+                                        "literal": "signups"
+                                      }
+                                    },
+                                    "children": [
+                                      {
+                                        "id": "site.Showcase/1/4/1/0/1/1/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Sign-ups"
+                                        }
+                                      }
+                                    ],
+                                    "class": null,
+                                    "id": "site.Showcase/1/4/1/0/1/1",
+                                    "kind": "el",
+                                    "on": {},
+                                    "tag": "option",
+                                    "toggle": {},
+                                    "vars": {}
+                                  }
+                                ],
+                                "class": "rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900",
+                                "id": "site.Showcase/1/4/1/0/1",
+                                "kind": "el",
+                                "on": {
+                                  "change": {
+                                    "event": "site.SelectMetric",
+                                    "payload": {
+                                      "object": {
+                                        "metric": {
+                                          "path": ["value"],
+                                          "ref": "dom"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "tag": "select",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "class": "flex items-center justify-between",
+                            "id": "site.Showcase/1/4/1/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "div",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "failed": {
+                              "Unexpected": {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "site.Showcase/1/4/1/1/failed/Unexpected/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "literal": "No data"
+                                    }
+                                  }
+                                ],
+                                "class": null,
+                                "id": "site.Showcase/1/4/1/1/failed/Unexpected",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "p",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            },
+                            "id": "site.Showcase/1/4/1/1",
+                            "input": {
+                              "literal": {}
+                            },
+                            "kind": "query",
+                            "pending": null,
+                            "query": "site.stats",
+                            "ready": {
+                              "children": [
+                                {
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "attrs": {},
+                                      "children": [
+                                        {
+                                          "id": "site.Showcase/1/4/1/1/ready/0/0/0",
+                                          "item": {
+                                            "attrs": {},
+                                            "children": [
+                                              {
+                                                "attrs": {},
+                                                "children": [
+                                                  {
+                                                    "id": "site.Showcase/1/4/1/1/ready/0/0/0/item/0/0",
+                                                    "kind": "text",
+                                                    "value": {
+                                                      "depth": 1,
+                                                      "path": [],
+                                                      "ref": "binding"
+                                                    }
+                                                  }
+                                                ],
+                                                "class": "text-left font-normal",
+                                                "id": "site.Showcase/1/4/1/1/ready/0/0/0/item/0",
+                                                "kind": "el",
+                                                "on": {},
+                                                "tag": "th",
+                                                "toggle": {},
+                                                "vars": {}
+                                              }
+                                            ],
+                                            "class": null,
+                                            "id": "site.Showcase/1/4/1/1/ready/0/0/0/item",
+                                            "kind": "el",
+                                            "on": {},
+                                            "tag": "tr",
+                                            "toggle": {},
+                                            "vars": {}
+                                          },
+                                          "key": null,
+                                          "kind": "each",
+                                          "motion": null,
+                                          "source": {
+                                            "depth": 0,
+                                            "path": ["visits", "labels"],
+                                            "ref": "binding"
+                                          }
+                                        }
+                                      ],
+                                      "class": null,
+                                      "id": "site.Showcase/1/4/1/1/ready/0/0",
+                                      "kind": "el",
+                                      "on": {},
+                                      "tag": "tbody",
+                                      "toggle": {},
+                                      "vars": {}
+                                    }
+                                  ],
+                                  "class": "w-full text-sm",
+                                  "id": "site.Showcase/1/4/1/1/ready/0",
+                                  "kind": "el",
+                                  "on": {},
+                                  "tag": "table",
+                                  "toggle": {},
+                                  "vars": {}
+                                }
+                              ],
+                              "class": "h-64 rounded-2xl border border-slate-200 bg-white p-4 text-indigo-500 dark:border-slate-800 dark:bg-slate-900",
+                              "id": "site.Showcase/1/4/1/1/ready",
+                              "kind": "widget",
+                              "on": {},
+                              "props": {
+                                "arg": {
+                                  "object": {
+                                    "metric": {
+                                      "path": ["metric"],
+                                      "ref": "context"
+                                    },
+                                    "stats": {
+                                      "depth": 0,
+                                      "path": [],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                },
+                                "fn": "site.pick"
+                              },
+                              "toggle": {},
+                              "vars": {},
+                              "widget": "site.Chart"
+                            }
+                          }
+                        ],
+                        "class": "space-y-4",
+                        "id": "site.Showcase/1/4/1",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "div",
+                        "toggle": {},
+                        "vars": {}
+                      }
+                    ],
+                    "class": "mx-auto max-w-6xl px-4 sm:px-6 grid gap-10 py-16 md:grid-cols-2",
+                    "id": "site.Showcase/1/4",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "section",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "id": "site.Showcase/1/5/0/0/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "Generative sketch"
+                                }
+                              }
+                            ],
+                            "class": "p-6 text-slate-400",
+                            "id": "site.Showcase/1/5/0/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "p",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        ],
+                        "class": "h-64 overflow-hidden rounded-3xl bg-slate-900",
+                        "id": "site.Showcase/1/5/0",
+                        "kind": "widget",
+                        "on": {},
+                        "props": {
+                          "literal": {
+                            "hue": 230
+                          }
+                        },
+                        "toggle": {},
+                        "vars": {},
+                        "widget": "site.Sketch"
+                      }
+                    ],
+                    "class": "mx-auto max-w-6xl px-4 sm:px-6 py-16",
+                    "id": "site.Showcase/1/5",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "section",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": null,
+                "id": "site.Showcase/1",
+                "kind": "el",
+                "on": {},
+                "tag": "main",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "site.Showcase/2/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "© 2026 Hozu"
+                    }
+                  }
+                ],
+                "class": "mx-auto max-w-6xl px-4 sm:px-6 border-t border-slate-200 py-10 text-sm text-slate-500 dark:border-slate-800",
+                "id": "site.Showcase/2",
+                "kind": "el",
+                "on": {},
+                "tag": "footer",
+                "toggle": {},
+                "vars": {}
+              }
+            ],
+            "class": "min-h-screen bg-slate-50 font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100",
+            "id": "site.Showcase",
+            "kind": "widget",
+            "on": {},
+            "props": {
+              "literal": {}
+            },
+            "toggle": {},
+            "vars": {},
+            "widget": "site.Smooth"
+          },
+          "route": null,
+          "seed": null
+        }
+      },
+      "widgets": {
+        "Carousel": {
+          "events": {
+            "changed": "s_221656c0cefc9b4a"
+          },
+          "load": "visible",
+          "props": "s_470ad9a71d2c2bb3",
+          "sourceHash": "9b6dcd84df4d397a",
+          "tag": "div",
+          "wraps": true
+        },
+        "Chart": {
+          "events": {},
+          "load": "visible",
+          "props": "s_c0944f1aa81f8f66",
+          "sourceHash": "d873989808b47e91",
+          "tag": "div",
+          "wraps": false
+        },
+        "Globe": {
+          "events": {},
+          "load": "visible",
+          "props": "s_267ce2a594899afc",
+          "sourceHash": "472eccad038e6327",
+          "tag": "div",
+          "wraps": false
+        },
+        "Reveal": {
+          "events": {},
+          "load": "eager",
+          "props": "s_99334726611ccf58",
+          "sourceHash": "64a9817631aa5976",
+          "tag": "div",
+          "wraps": true
+        },
+        "Sketch": {
+          "events": {},
+          "load": "visible",
+          "props": "s_9935928b22a88bb9",
+          "sourceHash": "efae9f266618a858",
+          "tag": "div",
+          "wraps": false
+        },
+        "Smooth": {
+          "events": {},
+          "load": "eager",
+          "props": "s_99334726611ccf58",
+          "sourceHash": "caa4084266ad6b0e",
+          "tag": "div",
+          "wraps": true
+        }
+      }
+    }
+  },
+  "http": {
+    "basePath": "",
+    "headers": [],
+    "redirects": [],
+    "trailingSlash": "never"
+  },
+  "irVersion": 2,
+  "notFound": null,
+  "pages": {
+    "about": {
+      "assert": "static",
+      "entries": null,
+      "head": {
+        "description": {
+          "literal": "How the parity check works."
+        },
+        "failed": {},
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "title": {
+          "literal": "About — Hozu Showcase"
+        },
+        "type": "website"
+      },
+      "views": ["site.About"]
+    },
+    "home": {
+      "assert": null,
+      "entries": null,
+      "head": {
+        "description": {
+          "literal": "Every modern presentation capability, verified."
+        },
+        "failed": {},
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "title": {
+          "literal": "Hozu Showcase"
+        },
+        "type": "website"
+      },
+      "views": ["site.Showcase"]
+    }
+  },
+  "routes": {
+    "about": {
+      "params": null,
+      "path": "/about",
+      "search": null
+    },
+    "home": {
+      "params": null,
+      "path": "/",
+      "search": null
+    }
+  },
+  "session": null,
+  "site": {
+    "icon": "/_hozu/a/c7e1b5e4e4a5d7c9.svg",
+    "lang": "en",
+    "locales": null,
+    "name": "Hozu Showcase",
+    "offline": null,
+    "themeColor": "#4f46e5",
+    "url": "https://showcase.hozu.dev"
+  }
+}

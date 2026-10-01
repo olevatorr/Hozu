@@ -1,0 +1,1841 @@
+{
+  "env": null,
+  "error": null,
+  "features": {
+    "tasks": {
+      "contracts": {},
+      "endpoints": {},
+      "events": {
+        "Add": {
+          "payload": "s_840cd3374982d8d8"
+        },
+        "ClearDone": {
+          "payload": "s_99334726611ccf58"
+        },
+        "Draft": {
+          "payload": "s_54669b5e6a1bfebb"
+        },
+        "SetShow": {
+          "payload": "s_00ca7f2dd58901dd"
+        },
+        "Toggle": {
+          "payload": "s_7717dd85c2e5ff93"
+        }
+      },
+      "exports": {
+        "endpoints": [],
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": [],
+        "tags": [],
+        "views": []
+      },
+      "fns": {
+        "isEmpty": {
+          "input": "s_e05fa6a7c691ae15",
+          "output": "s_7cb541e84f226754",
+          "sourceHash": "62609f6a49e92eb2"
+        },
+        "visible": {
+          "input": "s_e05fa6a7c691ae15",
+          "output": "s_fd87673f9c95e0aa",
+          "sourceHash": "0bdd11c6c71e1c48"
+        }
+      },
+      "id": "tasks",
+      "imports": [],
+      "intent": {
+        "invariants": [
+          "Titles are unique, case-insensitive, 3 to 80 characters",
+          "New tasks are listed first"
+        ],
+        "summary": "A task board: add tasks with a priority, toggle them done or open, clear done tasks, filter by status, one page each."
+      },
+      "machine": {
+        "context": "s_227aa04458c360ca",
+        "initial": "idle",
+        "initialContext": {
+          "draft": "",
+          "error": null,
+          "priority": "normal",
+          "show": "all",
+          "target": ""
+        },
+        "states": {
+          "adding": {
+            "after": [],
+            "final": false,
+            "ignore": ["tasks.Add", "tasks.ClearDone", "tasks.Draft", "tasks.SetShow", "tasks.Toggle"],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "literal": ""
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "tasks.addTask",
+              "failed": {
+                "Duplicate": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "A task with this title already exists"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Invalid": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "Titles must be 3 to 80 characters"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "priority": {
+                    "path": ["priority"],
+                    "ref": "context"
+                  },
+                  "title": {
+                    "path": ["draft"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          },
+          "clearing": {
+            "after": [],
+            "final": false,
+            "ignore": ["tasks.Add", "tasks.ClearDone", "tasks.Draft", "tasks.SetShow", "tasks.Toggle"],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "tasks.clearDone",
+              "failed": {
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "literal": {}
+              }
+            },
+            "on": {}
+          },
+          "idle": {
+            "after": [],
+            "final": false,
+            "ignore": [],
+            "invoke": null,
+            "on": {
+              "tasks.Add": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "path": ["title"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["priority"],
+                      "value": {
+                        "path": ["priority"],
+                        "ref": "event"
+                      }
+                    },
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "adding"
+                }
+              ],
+              "tasks.ClearDone": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "clearing"
+                }
+              ],
+              "tasks.Draft": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["draft"],
+                      "value": {
+                        "path": ["text"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "tasks.SetShow": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["show"],
+                      "value": {
+                        "path": ["show"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "tasks.Toggle": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["target"],
+                      "value": {
+                        "path": ["id"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "toggling"
+                }
+              ]
+            }
+          },
+          "toggling": {
+            "after": [],
+            "final": false,
+            "ignore": ["tasks.Add", "tasks.ClearDone", "tasks.Draft", "tasks.SetShow", "tasks.Toggle"],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "tasks.toggleTask",
+              "failed": {
+                "NotFound": [
+                  {
+                    "assign": [],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "idle"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "id": {
+                    "path": ["target"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          }
+        }
+      },
+      "messages": null,
+      "mutations": {
+        "addTask": {
+          "errors": {
+            "Duplicate": "s_c0f00621ba42dc11"
+          },
+          "input": "s_840cd3374982d8d8",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "tasks.tasksTag"
+            }
+          ],
+          "output": "s_d208e9ae15ade16c"
+        },
+        "clearDone": {
+          "errors": {},
+          "input": "s_99334726611ccf58",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "tasks.tasksTag"
+            }
+          ],
+          "output": "s_ef66f5db605c73f3"
+        },
+        "toggleTask": {
+          "errors": {
+            "NotFound": "s_7717dd85c2e5ff93"
+          },
+          "input": "s_7717dd85c2e5ff93",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "tasks.tasksTag"
+            }
+          ],
+          "output": "s_d208e9ae15ade16c"
+        }
+      },
+      "queries": {
+        "getTask": {
+          "errors": {
+            "NotFound": "s_7717dd85c2e5ff93"
+          },
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_7717dd85c2e5ff93",
+          "output": "s_d208e9ae15ade16c",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "tasks.tasksTag"
+            }
+          ]
+        },
+        "listTasks": {
+          "errors": {},
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_fd87673f9c95e0aa",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "tasks.tasksTag"
+            }
+          ]
+        }
+      },
+      "schemas": {
+        "s_00ca7f2dd58901dd": {
+          "additionalProperties": false,
+          "properties": {
+            "show": {
+              "enum": ["all", "open", "done"],
+              "type": "string"
+            }
+          },
+          "required": ["show"],
+          "type": "object"
+        },
+        "s_227aa04458c360ca": {
+          "additionalProperties": false,
+          "properties": {
+            "draft": {
+              "type": "string"
+            },
+            "error": {
+              "type": ["string", "null"]
+            },
+            "priority": {
+              "enum": ["low", "normal", "high"],
+              "type": "string"
+            },
+            "show": {
+              "enum": ["all", "open", "done"],
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            }
+          },
+          "required": ["show", "draft", "priority", "target", "error"],
+          "type": "object"
+        },
+        "s_54669b5e6a1bfebb": {
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": ["text"],
+          "type": "object"
+        },
+        "s_7717dd85c2e5ff93": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": ["id"],
+          "type": "object"
+        },
+        "s_7cb541e84f226754": {
+          "type": "boolean"
+        },
+        "s_840cd3374982d8d8": {
+          "additionalProperties": false,
+          "properties": {
+            "priority": {
+              "enum": ["low", "normal", "high"],
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["title", "priority"],
+          "type": "object"
+        },
+        "s_99334726611ccf58": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "s_c0f00621ba42dc11": {
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["title"],
+          "type": "object"
+        },
+        "s_d208e9ae15ade16c": {
+          "additionalProperties": false,
+          "properties": {
+            "done": {
+              "type": "boolean"
+            },
+            "id": {
+              "type": "string"
+            },
+            "priority": {
+              "enum": ["low", "normal", "high"],
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": ["id", "title", "done", "priority"],
+          "type": "object"
+        },
+        "s_e05fa6a7c691ae15": {
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "done": {
+                    "type": "boolean"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "priority": {
+                    "enum": ["low", "normal", "high"],
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "title", "done", "priority"],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "show": {
+              "enum": ["all", "open", "done"],
+              "type": "string"
+            }
+          },
+          "required": ["items", "show"],
+          "type": "object"
+        },
+        "s_ef66f5db605c73f3": {
+          "additionalProperties": false,
+          "properties": {
+            "removed": {
+              "type": "number"
+            }
+          },
+          "required": ["removed"],
+          "type": "object"
+        },
+        "s_fd87673f9c95e0aa": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "done": {
+                "type": "boolean"
+              },
+              "id": {
+                "type": "string"
+              },
+              "priority": {
+                "enum": ["low", "normal", "high"],
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "title", "done", "priority"],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "tags": {
+        "tasksTag": {
+          "param": null
+        }
+      },
+      "views": {
+        "Board": {
+          "machine": "tasks",
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "tasks.Board/0/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Tasks"
+                    }
+                  }
+                ],
+                "class": "text-3xl font-bold tracking-tight text-slate-900",
+                "id": "tasks.Board/0",
+                "kind": "el",
+                "on": {},
+                "tag": "h1",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "attrs": {
+                          "for": {
+                            "literal": "title"
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "tasks.Board/1/0/0/0",
+                            "kind": "text",
+                            "value": {
+                              "literal": "New task"
+                            }
+                          }
+                        ],
+                        "class": "text-sm font-medium text-slate-700",
+                        "id": "tasks.Board/1/0/0",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "label",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "attrs": {
+                          "id": {
+                            "literal": "title"
+                          },
+                          "maxlength": {
+                            "literal": 80
+                          },
+                          "minlength": {
+                            "literal": 3
+                          },
+                          "name": {
+                            "literal": "title"
+                          },
+                          "required": {
+                            "literal": true
+                          },
+                          "type": {
+                            "literal": "text"
+                          },
+                          "value": {
+                            "path": ["draft"],
+                            "ref": "context"
+                          }
+                        },
+                        "children": [],
+                        "class": "rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none",
+                        "id": "tasks.Board/1/0/1",
+                        "kind": "el",
+                        "on": {
+                          "input": {
+                            "event": "tasks.Draft",
+                            "payload": {
+                              "object": {
+                                "text": {
+                                  "path": ["value"],
+                                  "ref": "dom"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "tag": "input",
+                        "toggle": {},
+                        "vars": {}
+                      }
+                    ],
+                    "class": "flex flex-1 flex-col gap-1",
+                    "id": "tasks.Board/1/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "div",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "attrs": {
+                          "for": {
+                            "literal": "priority"
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "tasks.Board/1/1/0/0",
+                            "kind": "text",
+                            "value": {
+                              "literal": "Priority"
+                            }
+                          }
+                        ],
+                        "class": "text-sm font-medium text-slate-700",
+                        "id": "tasks.Board/1/1/0",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "label",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "attrs": {
+                          "id": {
+                            "literal": "priority"
+                          },
+                          "name": {
+                            "literal": "priority"
+                          }
+                        },
+                        "children": [
+                          {
+                            "attrs": {
+                              "selected": {
+                                "literal": false
+                              },
+                              "value": {
+                                "literal": "low"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "tasks.Board/1/1/1/0/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "low"
+                                }
+                              }
+                            ],
+                            "class": null,
+                            "id": "tasks.Board/1/1/1/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "option",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {
+                              "selected": {
+                                "literal": true
+                              },
+                              "value": {
+                                "literal": "normal"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "tasks.Board/1/1/1/1/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "normal"
+                                }
+                              }
+                            ],
+                            "class": null,
+                            "id": "tasks.Board/1/1/1/1",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "option",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "attrs": {
+                              "selected": {
+                                "literal": false
+                              },
+                              "value": {
+                                "literal": "high"
+                              }
+                            },
+                            "children": [
+                              {
+                                "id": "tasks.Board/1/1/1/2/0",
+                                "kind": "text",
+                                "value": {
+                                  "literal": "high"
+                                }
+                              }
+                            ],
+                            "class": null,
+                            "id": "tasks.Board/1/1/1/2",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "option",
+                            "toggle": {},
+                            "vars": {}
+                          }
+                        ],
+                        "class": "rounded-lg border border-slate-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none",
+                        "id": "tasks.Board/1/1/1",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "select",
+                        "toggle": {},
+                        "vars": {}
+                      }
+                    ],
+                    "class": "flex flex-col gap-1",
+                    "id": "tasks.Board/1/1",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "div",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "type": {
+                        "literal": "submit"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "tasks.Board/1/2/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Add"
+                        }
+                      }
+                    ],
+                    "class": "rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700",
+                    "id": "tasks.Board/1/2",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "button",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "flex items-end gap-2",
+                "id": "tasks.Board/1",
+                "kind": "el",
+                "on": {
+                  "submit": {
+                    "event": "tasks.Add",
+                    "payload": {
+                      "object": {
+                        "priority": {
+                          "path": ["form", "priority"],
+                          "ref": "dom"
+                        },
+                        "title": {
+                          "path": ["form", "title"],
+                          "ref": "dom"
+                        }
+                      }
+                    }
+                  }
+                },
+                "tag": "form",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "id": "tasks.Board/2",
+                "ifFalse": [],
+                "ifTrue": [
+                  {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "tasks.Board/2/ifTrue/0/0",
+                        "kind": "text",
+                        "value": {
+                          "path": ["error"],
+                          "ref": "context"
+                        }
+                      }
+                    ],
+                    "class": "rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700",
+                    "id": "tasks.Board/2/ifTrue/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "kind": "if",
+                "motion": null,
+                "test": {
+                  "left": {
+                    "path": ["error"],
+                    "ref": "context"
+                  },
+                  "op": "neq",
+                  "right": {
+                    "literal": null
+                  }
+                }
+              },
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "attrs": {
+                      "aria-pressed": {
+                        "test": {
+                          "left": {
+                            "path": ["show"],
+                            "ref": "context"
+                          },
+                          "op": "eq",
+                          "right": {
+                            "literal": "all"
+                          }
+                        }
+                      },
+                      "type": {
+                        "literal": "button"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "tasks.Board/3/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "All"
+                        }
+                      }
+                    ],
+                    "class": "rounded-full border border-slate-300 px-3 py-1 text-sm aria-pressed:border-indigo-600 aria-pressed:bg-indigo-600 aria-pressed:text-white",
+                    "id": "tasks.Board/3/0",
+                    "kind": "el",
+                    "on": {
+                      "click": {
+                        "event": "tasks.SetShow",
+                        "payload": {
+                          "literal": {
+                            "show": "all"
+                          }
+                        }
+                      }
+                    },
+                    "tag": "button",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "aria-pressed": {
+                        "test": {
+                          "left": {
+                            "path": ["show"],
+                            "ref": "context"
+                          },
+                          "op": "eq",
+                          "right": {
+                            "literal": "open"
+                          }
+                        }
+                      },
+                      "type": {
+                        "literal": "button"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "tasks.Board/3/1/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Open"
+                        }
+                      }
+                    ],
+                    "class": "rounded-full border border-slate-300 px-3 py-1 text-sm aria-pressed:border-indigo-600 aria-pressed:bg-indigo-600 aria-pressed:text-white",
+                    "id": "tasks.Board/3/1",
+                    "kind": "el",
+                    "on": {
+                      "click": {
+                        "event": "tasks.SetShow",
+                        "payload": {
+                          "literal": {
+                            "show": "open"
+                          }
+                        }
+                      }
+                    },
+                    "tag": "button",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "aria-pressed": {
+                        "test": {
+                          "left": {
+                            "path": ["show"],
+                            "ref": "context"
+                          },
+                          "op": "eq",
+                          "right": {
+                            "literal": "done"
+                          }
+                        }
+                      },
+                      "type": {
+                        "literal": "button"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "tasks.Board/3/2/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Done"
+                        }
+                      }
+                    ],
+                    "class": "rounded-full border border-slate-300 px-3 py-1 text-sm aria-pressed:border-indigo-600 aria-pressed:bg-indigo-600 aria-pressed:text-white",
+                    "id": "tasks.Board/3/2",
+                    "kind": "el",
+                    "on": {
+                      "click": {
+                        "event": "tasks.SetShow",
+                        "payload": {
+                          "literal": {
+                            "show": "done"
+                          }
+                        }
+                      }
+                    },
+                    "tag": "button",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "type": {
+                        "literal": "button"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "tasks.Board/3/3/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Clear done"
+                        }
+                      }
+                    ],
+                    "class": "ml-auto rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-50",
+                    "id": "tasks.Board/3/3",
+                    "kind": "el",
+                    "on": {
+                      "click": {
+                        "event": "tasks.ClearDone",
+                        "payload": {
+                          "literal": {}
+                        }
+                      }
+                    },
+                    "tag": "button",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "class": "flex items-center gap-2",
+                "id": "tasks.Board/3",
+                "kind": "el",
+                "on": {},
+                "tag": "div",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "failed": {
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "tasks.Board/4/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Tasks are unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "tasks.Board/4/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "tasks.Board/4",
+                "input": {
+                  "literal": {}
+                },
+                "kind": "query",
+                "pending": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "tasks.Board/4/pending/0",
+                      "kind": "text",
+                      "value": {
+                        "literal": "Loading…"
+                      }
+                    }
+                  ],
+                  "class": null,
+                  "id": "tasks.Board/4/pending",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "p",
+                  "toggle": {},
+                  "vars": {}
+                },
+                "query": "tasks.listTasks",
+                "ready": {
+                  "id": "tasks.Board/4/ready",
+                  "ifFalse": [
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "tasks.Board/4/ready/ifFalse/0/0",
+                          "item": {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "attrs": {
+                                  "href": {
+                                    "link": "taskPage",
+                                    "params": {
+                                      "object": {
+                                        "id": {
+                                          "depth": 1,
+                                          "path": ["id"],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    },
+                                    "search": {
+                                      "literal": null
+                                    }
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "id": "tasks.Board/4/ready/ifFalse/0/0/item/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "depth": 1,
+                                      "path": ["title"],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                ],
+                                "class": "flex-1 text-slate-900 hover:underline",
+                                "id": "tasks.Board/4/ready/ifFalse/0/0/item/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "a",
+                                "toggle": {},
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "tasks.Board/4/ready/ifFalse/0/0/item/1/0",
+                                    "ifFalse": [
+                                      {
+                                        "id": "tasks.Board/4/ready/ifFalse/0/0/item/1/0/ifFalse/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "open"
+                                        }
+                                      }
+                                    ],
+                                    "ifTrue": [
+                                      {
+                                        "id": "tasks.Board/4/ready/ifFalse/0/0/item/1/0/ifTrue/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "done"
+                                        }
+                                      }
+                                    ],
+                                    "kind": "if",
+                                    "motion": null,
+                                    "test": {
+                                      "left": {
+                                        "depth": 1,
+                                        "path": ["done"],
+                                        "ref": "binding"
+                                      },
+                                      "op": "eq",
+                                      "right": {
+                                        "literal": true
+                                      }
+                                    }
+                                  }
+                                ],
+                                "class": "rounded-full px-2 py-0.5 text-xs font-medium",
+                                "id": "tasks.Board/4/ready/ifFalse/0/0/item/1",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "span",
+                                "toggle": {
+                                  "bg-amber-100 text-amber-700": {
+                                    "test": {
+                                      "left": {
+                                        "depth": 1,
+                                        "path": ["done"],
+                                        "ref": "binding"
+                                      },
+                                      "op": "eq",
+                                      "right": {
+                                        "literal": false
+                                      }
+                                    }
+                                  },
+                                  "bg-emerald-100 text-emerald-700": {
+                                    "test": {
+                                      "left": {
+                                        "depth": 1,
+                                        "path": ["done"],
+                                        "ref": "binding"
+                                      },
+                                      "op": "eq",
+                                      "right": {
+                                        "literal": true
+                                      }
+                                    }
+                                  }
+                                },
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "tasks.Board/4/ready/ifFalse/0/0/item/2/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "depth": 1,
+                                      "path": ["priority"],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                ],
+                                "class": "rounded-full px-2 py-0.5 text-xs font-medium",
+                                "id": "tasks.Board/4/ready/ifFalse/0/0/item/2",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "span",
+                                "toggle": {
+                                  "bg-rose-100 text-rose-700": {
+                                    "test": {
+                                      "left": {
+                                        "depth": 1,
+                                        "path": ["priority"],
+                                        "ref": "binding"
+                                      },
+                                      "op": "eq",
+                                      "right": {
+                                        "literal": "high"
+                                      }
+                                    }
+                                  },
+                                  "bg-sky-100 text-sky-700": {
+                                    "test": {
+                                      "left": {
+                                        "depth": 1,
+                                        "path": ["priority"],
+                                        "ref": "binding"
+                                      },
+                                      "op": "eq",
+                                      "right": {
+                                        "literal": "normal"
+                                      }
+                                    }
+                                  },
+                                  "bg-slate-100 text-slate-600": {
+                                    "test": {
+                                      "left": {
+                                        "depth": 1,
+                                        "path": ["priority"],
+                                        "ref": "binding"
+                                      },
+                                      "op": "eq",
+                                      "right": {
+                                        "literal": "low"
+                                      }
+                                    }
+                                  }
+                                },
+                                "vars": {}
+                              },
+                              {
+                                "attrs": {
+                                  "type": {
+                                    "literal": "button"
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "id": "tasks.Board/4/ready/ifFalse/0/0/item/3/0",
+                                    "ifFalse": [
+                                      {
+                                        "id": "tasks.Board/4/ready/ifFalse/0/0/item/3/0/ifFalse/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Mark done"
+                                        }
+                                      }
+                                    ],
+                                    "ifTrue": [
+                                      {
+                                        "id": "tasks.Board/4/ready/ifFalse/0/0/item/3/0/ifTrue/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Mark open"
+                                        }
+                                      }
+                                    ],
+                                    "kind": "if",
+                                    "motion": null,
+                                    "test": {
+                                      "left": {
+                                        "depth": 1,
+                                        "path": ["done"],
+                                        "ref": "binding"
+                                      },
+                                      "op": "eq",
+                                      "right": {
+                                        "literal": true
+                                      }
+                                    }
+                                  }
+                                ],
+                                "class": "rounded-md border border-slate-300 px-2 py-1 text-sm hover:bg-slate-50",
+                                "id": "tasks.Board/4/ready/ifFalse/0/0/item/3",
+                                "kind": "el",
+                                "on": {
+                                  "click": {
+                                    "event": "tasks.Toggle",
+                                    "payload": {
+                                      "object": {
+                                        "id": {
+                                          "depth": 1,
+                                          "path": ["id"],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "tag": "button",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "class": "flex items-center gap-3 px-4 py-3",
+                            "id": "tasks.Board/4/ready/ifFalse/0/0/item",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "li",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          "key": "id",
+                          "kind": "each",
+                          "motion": null,
+                          "source": {
+                            "arg": {
+                              "object": {
+                                "items": {
+                                  "depth": 0,
+                                  "path": [],
+                                  "ref": "binding"
+                                },
+                                "show": {
+                                  "path": ["show"],
+                                  "ref": "context"
+                                }
+                              }
+                            },
+                            "fn": "tasks.visible"
+                          }
+                        }
+                      ],
+                      "class": "divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white shadow-sm",
+                      "id": "tasks.Board/4/ready/ifFalse/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "ul",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  ],
+                  "ifTrue": [
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "tasks.Board/4/ready/ifTrue/0/0",
+                          "kind": "text",
+                          "value": {
+                            "literal": "No tasks"
+                          }
+                        }
+                      ],
+                      "class": "text-slate-500",
+                      "id": "tasks.Board/4/ready/ifTrue/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  ],
+                  "kind": "if",
+                  "motion": null,
+                  "test": {
+                    "arg": {
+                      "object": {
+                        "items": {
+                          "depth": 0,
+                          "path": [],
+                          "ref": "binding"
+                        },
+                        "show": {
+                          "path": ["show"],
+                          "ref": "context"
+                        }
+                      }
+                    },
+                    "fn": "tasks.isEmpty",
+                    "op": "fn"
+                  }
+                }
+              }
+            ],
+            "class": "mx-auto max-w-xl space-y-6 px-4 py-12",
+            "id": "tasks.Board",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": null,
+          "seed": null
+        },
+        "Detail": {
+          "machine": null,
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "failed": {
+                  "NotFound": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "tasks.Detail/0/failed/NotFound/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Task not found"
+                        }
+                      }
+                    ],
+                    "class": "text-rose-700",
+                    "id": "tasks.Detail/0/failed/NotFound",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "tasks.Detail/0/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Task unavailable"
+                        }
+                      }
+                    ],
+                    "class": "text-rose-700",
+                    "id": "tasks.Detail/0/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "tasks.Detail/0",
+                "input": {
+                  "object": {
+                    "id": {
+                      "path": ["id"],
+                      "ref": "params"
+                    }
+                  }
+                },
+                "kind": "query",
+                "pending": null,
+                "query": "tasks.getTask",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "tasks.Detail/0/ready/0/0",
+                          "kind": "text",
+                          "value": {
+                            "depth": 0,
+                            "path": ["title"],
+                            "ref": "binding"
+                          }
+                        }
+                      ],
+                      "class": "text-3xl font-bold tracking-tight text-slate-900",
+                      "id": "tasks.Detail/0/ready/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "h1",
+                      "toggle": {},
+                      "vars": {}
+                    },
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "tasks.Detail/0/ready/1/0",
+                          "ifFalse": [
+                            {
+                              "id": "tasks.Detail/0/ready/1/0/ifFalse/0",
+                              "kind": "text",
+                              "value": {
+                                "literal": "Status: open"
+                              }
+                            }
+                          ],
+                          "ifTrue": [
+                            {
+                              "id": "tasks.Detail/0/ready/1/0/ifTrue/0",
+                              "kind": "text",
+                              "value": {
+                                "literal": "Status: done"
+                              }
+                            }
+                          ],
+                          "kind": "if",
+                          "motion": null,
+                          "test": {
+                            "left": {
+                              "depth": 0,
+                              "path": ["done"],
+                              "ref": "binding"
+                            },
+                            "op": "eq",
+                            "right": {
+                              "literal": true
+                            }
+                          }
+                        }
+                      ],
+                      "class": "text-slate-600",
+                      "id": "tasks.Detail/0/ready/1",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    },
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "tasks.Detail/0/ready/2/0",
+                          "kind": "text",
+                          "value": {
+                            "literal": "Priority: "
+                          }
+                        },
+                        {
+                          "id": "tasks.Detail/0/ready/2/1",
+                          "kind": "text",
+                          "value": {
+                            "depth": 0,
+                            "path": ["priority"],
+                            "ref": "binding"
+                          }
+                        }
+                      ],
+                      "class": "text-slate-600",
+                      "id": "tasks.Detail/0/ready/2",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  ],
+                  "class": "space-y-2",
+                  "id": "tasks.Detail/0/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "article",
+                  "toggle": {},
+                  "vars": {}
+                }
+              },
+              {
+                "attrs": {
+                  "href": {
+                    "link": "home",
+                    "params": {
+                      "literal": null
+                    },
+                    "search": {
+                      "literal": null
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "id": "tasks.Detail/1/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Back"
+                    }
+                  }
+                ],
+                "class": "text-indigo-600 hover:underline",
+                "id": "tasks.Detail/1",
+                "kind": "el",
+                "on": {},
+                "tag": "a",
+                "toggle": {},
+                "vars": {}
+              }
+            ],
+            "class": "mx-auto max-w-xl space-y-4 px-4 py-12",
+            "id": "tasks.Detail",
+            "kind": "el",
+            "on": {},
+            "tag": "main",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": "taskPage",
+          "seed": null
+        }
+      },
+      "widgets": {}
+    }
+  },
+  "http": {
+    "basePath": "",
+    "headers": [],
+    "redirects": [],
+    "trailingSlash": "never"
+  },
+  "irVersion": 2,
+  "notFound": null,
+  "pages": {
+    "home": {
+      "assert": null,
+      "entries": null,
+      "head": {
+        "description": {
+          "literal": "A small task board."
+        },
+        "failed": {},
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "title": {
+          "literal": "Tasks"
+        },
+        "type": "website"
+      },
+      "views": ["tasks.Board"]
+    },
+    "taskPage": {
+      "assert": null,
+      "entries": {
+        "input": {
+          "literal": {}
+        },
+        "params": {
+          "object": {
+            "id": {
+              "depth": 0,
+              "path": ["id"],
+              "ref": "binding"
+            }
+          }
+        },
+        "query": "tasks.listTasks"
+      },
+      "head": {
+        "description": {
+          "depth": 0,
+          "path": ["title"],
+          "ref": "binding"
+        },
+        "failed": {
+          "NotFound": {
+            "status": 404
+          }
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": {
+          "input": {
+            "object": {
+              "id": {
+                "path": ["id"],
+                "ref": "params"
+              }
+            }
+          },
+          "ref": "tasks.getTask"
+        },
+        "title": {
+          "depth": 0,
+          "path": ["title"],
+          "ref": "binding"
+        },
+        "type": "article"
+      },
+      "views": ["tasks.Detail"]
+    }
+  },
+  "routes": {
+    "home": {
+      "params": null,
+      "path": "/",
+      "search": null
+    },
+    "taskPage": {
+      "params": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": ["id"],
+        "type": "object"
+      },
+      "path": "/tasks/:id",
+      "search": null
+    }
+  },
+  "session": null,
+  "site": {
+    "icon": null,
+    "lang": "en",
+    "locales": null,
+    "name": "Tasks",
+    "offline": null,
+    "themeColor": null,
+    "url": "http://localhost:3000"
+  }
+}

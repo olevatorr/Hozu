@@ -1,0 +1,2234 @@
+{
+  "env": {
+    "public": {
+      "additionalProperties": false,
+      "properties": {
+        "SUPPORT_EMAIL": {
+          "default": "help@cart.hozu.dev",
+          "format": "email",
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string"
+        }
+      },
+      "required": ["SUPPORT_EMAIL"],
+      "type": "object"
+    },
+    "server": {
+      "additionalProperties": false,
+      "properties": {
+        "STOCK_LIMIT": {
+          "default": 10,
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991,
+          "type": "integer"
+        }
+      },
+      "required": ["STOCK_LIMIT"],
+      "type": "object"
+    }
+  },
+  "error": null,
+  "features": {
+    "cart": {
+      "contracts": {
+        "addFailsUnexpectedly": {
+          "expect": {
+            "context": {
+              "error": "Network down",
+              "orderId": null,
+              "pending": {
+                "qty": 1,
+                "sku": "mug"
+              }
+            },
+            "effects": [
+              {
+                "effect": "cart.addItem",
+                "input": {
+                  "qty": 1,
+                  "sku": "mug"
+                }
+              }
+            ],
+            "state": "error"
+          },
+          "given": {
+            "context": {
+              "error": null,
+              "orderId": null,
+              "pending": {
+                "qty": 1,
+                "sku": ""
+              }
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "qty": 1,
+                "sku": "mug"
+              },
+              "send": "cart.AddItem"
+            },
+            {
+              "data": {
+                "message": "Network down"
+              },
+              "error": "Unexpected",
+              "failed": "cart.addItem"
+            }
+          ]
+        },
+        "addsItem": {
+          "expect": {
+            "context": {
+              "error": null,
+              "orderId": null,
+              "pending": {
+                "qty": 2,
+                "sku": "mug"
+              }
+            },
+            "effects": [
+              {
+                "effect": "cart.addItem",
+                "input": {
+                  "qty": 2,
+                  "sku": "mug"
+                }
+              }
+            ],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "error": null,
+              "orderId": null,
+              "pending": {
+                "qty": 1,
+                "sku": ""
+              }
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "qty": 2,
+                "sku": "mug"
+              },
+              "send": "cart.AddItem"
+            },
+            {
+              "done": "cart.addItem",
+              "result": {
+                "items": []
+              }
+            }
+          ]
+        },
+        "placesOrder": {
+          "expect": {
+            "context": {
+              "error": null,
+              "orderId": "o-1",
+              "pending": {
+                "qty": 1,
+                "sku": ""
+              }
+            },
+            "effects": [
+              {
+                "effect": "cart.checkout",
+                "input": {}
+              },
+              {
+                "navigate": "/order/placed"
+              }
+            ],
+            "state": "placed"
+          },
+          "given": {
+            "context": {
+              "error": null,
+              "orderId": null,
+              "pending": {
+                "qty": 1,
+                "sku": ""
+              }
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {},
+              "send": "cart.Checkout"
+            },
+            {
+              "done": "cart.checkout",
+              "result": {
+                "orderId": "o-1"
+              }
+            }
+          ]
+        },
+        "rejectsOutOfStock": {
+          "expect": {
+            "context": {
+              "error": "Out of stock",
+              "orderId": null,
+              "pending": {
+                "qty": 1,
+                "sku": "mug"
+              }
+            },
+            "effects": [
+              {
+                "effect": "cart.addItem",
+                "input": {
+                  "qty": 1,
+                  "sku": "mug"
+                }
+              }
+            ],
+            "state": "error"
+          },
+          "given": {
+            "context": {
+              "error": null,
+              "orderId": null,
+              "pending": {
+                "qty": 1,
+                "sku": ""
+              }
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "qty": 1,
+                "sku": "mug"
+              },
+              "send": "cart.AddItem"
+            },
+            {
+              "data": {
+                "available": 0,
+                "sku": "mug"
+              },
+              "error": "OutOfStock",
+              "failed": "cart.addItem"
+            }
+          ]
+        },
+        "rejectsTooMany": {
+          "expect": {
+            "context": {
+              "error": "At most 10 per item",
+              "orderId": null,
+              "pending": {
+                "qty": 1,
+                "sku": ""
+              }
+            },
+            "effects": [],
+            "state": "error"
+          },
+          "given": {
+            "context": {
+              "error": null,
+              "orderId": null,
+              "pending": {
+                "qty": 1,
+                "sku": ""
+              }
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "qty": 11,
+                "sku": "mug"
+              },
+              "send": "cart.AddItem"
+            }
+          ]
+        },
+        "setsQuantity": {
+          "expect": {
+            "context": {
+              "error": null,
+              "orderId": null,
+              "pending": {
+                "qty": 3,
+                "sku": ""
+              }
+            },
+            "effects": [],
+            "state": "idle"
+          },
+          "given": {
+            "context": {
+              "error": null,
+              "orderId": null,
+              "pending": {
+                "qty": 1,
+                "sku": ""
+              }
+            },
+            "state": "idle"
+          },
+          "when": [
+            {
+              "payload": {
+                "qty": 3
+              },
+              "send": "cart.SetQuantity"
+            },
+            {
+              "payload": {
+                "qty": 0
+              },
+              "send": "cart.SetQuantity"
+            },
+            {
+              "payload": {
+                "qty": null
+              },
+              "send": "cart.SetQuantity"
+            }
+          ]
+        }
+      },
+      "endpoints": {},
+      "events": {
+        "AddItem": {
+          "payload": "s_957ac415c40ea752"
+        },
+        "Checkout": {
+          "payload": "s_99334726611ccf58"
+        },
+        "Dismiss": {
+          "payload": "s_99334726611ccf58"
+        },
+        "RemoveItem": {
+          "payload": "s_88250cc7c21da2d0"
+        },
+        "SetQuantity": {
+          "payload": "s_50e05cf3870f6140"
+        }
+      },
+      "exports": {
+        "endpoints": [],
+        "events": ["AddItem"],
+        "fns": [],
+        "mutations": [],
+        "queries": [],
+        "tags": ["cartTag"],
+        "views": ["CartPanel"]
+      },
+      "fns": {
+        "cartTotal": {
+          "input": "s_ad54ad5982659c40",
+          "output": "s_cddf8275afa15408",
+          "sourceHash": "1e848d9d0d6b6f96"
+        }
+      },
+      "id": "cart",
+      "imports": ["catalog"],
+      "intent": {
+        "invariants": [
+          "Cart data is user-scoped and never cached publicly",
+          "At most 10 units of one item per add",
+          "Checkout navigates to the order confirmation route"
+        ],
+        "summary": "Signed-in shopping cart: add and remove items, then check out."
+      },
+      "machine": {
+        "context": "s_44beaa77bc9918f6",
+        "initial": "idle",
+        "initialContext": {
+          "error": null,
+          "orderId": null,
+          "pending": {
+            "qty": 1,
+            "sku": ""
+          }
+        },
+        "states": {
+          "adding": {
+            "after": [],
+            "final": false,
+            "ignore": [
+              "cart.AddItem",
+              "cart.Checkout",
+              "cart.Dismiss",
+              "cart.RemoveItem",
+              "cart.SetQuantity"
+            ],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "cart.addItem",
+              "failed": {
+                "OutOfStock": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "literal": "Out of stock"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "error"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "error"
+                  }
+                ]
+              },
+              "input": {
+                "path": ["pending"],
+                "ref": "context"
+              }
+            },
+            "on": {}
+          },
+          "checkingOut": {
+            "after": [],
+            "final": false,
+            "ignore": [
+              "cart.AddItem",
+              "cart.Checkout",
+              "cart.Dismiss",
+              "cart.RemoveItem",
+              "cart.SetQuantity"
+            ],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["orderId"],
+                      "value": {
+                        "path": ["orderId"],
+                        "ref": "result"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": {
+                    "link": "orderPlaced",
+                    "params": {
+                      "literal": null
+                    },
+                    "search": {
+                      "literal": null
+                    }
+                  },
+                  "target": "placed"
+                }
+              ],
+              "effect": "cart.checkout",
+              "failed": {
+                "PaymentDeclined": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["reason"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "error"
+                  }
+                ],
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "error"
+                  }
+                ]
+              },
+              "input": {
+                "literal": {}
+              }
+            },
+            "on": {}
+          },
+          "error": {
+            "after": [
+              {
+                "ms": 5000,
+                "transition": {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              }
+            ],
+            "final": false,
+            "ignore": [],
+            "invoke": null,
+            "on": {
+              "cart.Dismiss": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": null
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ]
+            }
+          },
+          "idle": {
+            "after": [],
+            "final": false,
+            "ignore": [],
+            "invoke": null,
+            "on": {
+              "cart.AddItem": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["pending"],
+                      "value": {
+                        "path": [],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": {
+                    "left": {
+                      "path": ["qty"],
+                      "ref": "event"
+                    },
+                    "op": "lte",
+                    "right": {
+                      "literal": 10
+                    }
+                  },
+                  "navigate": null,
+                  "target": "adding"
+                },
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["error"],
+                      "value": {
+                        "literal": "At most 10 per item"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "error"
+                }
+              ],
+              "cart.Checkout": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "checkingOut"
+                }
+              ],
+              "cart.RemoveItem": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["pending", "sku"],
+                      "value": {
+                        "path": ["sku"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "removing"
+                }
+              ],
+              "cart.SetQuantity": [
+                {
+                  "assign": [
+                    {
+                      "op": "set",
+                      "path": ["pending", "qty"],
+                      "value": {
+                        "path": ["qty"],
+                        "ref": "event"
+                      }
+                    }
+                  ],
+                  "guard": {
+                    "args": [
+                      {
+                        "left": {
+                          "path": ["qty"],
+                          "ref": "event"
+                        },
+                        "op": "gte",
+                        "right": {
+                          "literal": 1
+                        }
+                      },
+                      {
+                        "left": {
+                          "path": ["qty"],
+                          "ref": "event"
+                        },
+                        "op": "lte",
+                        "right": {
+                          "literal": 10
+                        }
+                      }
+                    ],
+                    "op": "and"
+                  },
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ]
+            }
+          },
+          "placed": {
+            "after": [],
+            "final": true,
+            "ignore": [],
+            "invoke": null,
+            "on": {}
+          },
+          "removing": {
+            "after": [],
+            "final": false,
+            "ignore": [
+              "cart.AddItem",
+              "cart.Checkout",
+              "cart.Dismiss",
+              "cart.RemoveItem",
+              "cart.SetQuantity"
+            ],
+            "invoke": {
+              "done": [
+                {
+                  "assign": [],
+                  "guard": null,
+                  "navigate": null,
+                  "target": "idle"
+                }
+              ],
+              "effect": "cart.removeItem",
+              "failed": {
+                "Unexpected": [
+                  {
+                    "assign": [
+                      {
+                        "op": "set",
+                        "path": ["error"],
+                        "value": {
+                          "path": ["message"],
+                          "ref": "error"
+                        }
+                      }
+                    ],
+                    "guard": null,
+                    "navigate": null,
+                    "target": "error"
+                  }
+                ]
+              },
+              "input": {
+                "object": {
+                  "sku": {
+                    "path": ["pending", "sku"],
+                    "ref": "context"
+                  }
+                }
+              }
+            },
+            "on": {}
+          }
+        }
+      },
+      "messages": null,
+      "mutations": {
+        "addItem": {
+          "errors": {
+            "OutOfStock": "s_26ea370b32124021"
+          },
+          "input": "s_957ac415c40ea752",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "cart.cartTag"
+            }
+          ],
+          "output": "s_cff65f45f0a56f75"
+        },
+        "checkout": {
+          "errors": {
+            "PaymentDeclined": "s_97463005be667e62"
+          },
+          "input": "s_99334726611ccf58",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "cart.cartTag"
+            }
+          ],
+          "output": "s_20dbfc4d94a3da40"
+        },
+        "removeItem": {
+          "errors": {},
+          "input": "s_88250cc7c21da2d0",
+          "invalidates": [
+            {
+              "param": null,
+              "tag": "cart.cartTag"
+            }
+          ],
+          "output": "s_cff65f45f0a56f75"
+        }
+      },
+      "queries": {
+        "getCart": {
+          "errors": {},
+          "freshness": {
+            "kind": "request"
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_cff65f45f0a56f75",
+          "scope": "user",
+          "tags": [
+            {
+              "param": null,
+              "tag": "cart.cartTag"
+            }
+          ]
+        }
+      },
+      "schemas": {
+        "s_20dbfc4d94a3da40": {
+          "additionalProperties": false,
+          "properties": {
+            "orderId": {
+              "type": "string"
+            }
+          },
+          "required": ["orderId"],
+          "type": "object"
+        },
+        "s_26ea370b32124021": {
+          "additionalProperties": false,
+          "properties": {
+            "available": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            },
+            "sku": {
+              "type": "string"
+            }
+          },
+          "required": ["sku", "available"],
+          "type": "object"
+        },
+        "s_44beaa77bc9918f6": {
+          "additionalProperties": false,
+          "properties": {
+            "error": {
+              "type": ["string", "null"]
+            },
+            "orderId": {
+              "type": ["string", "null"]
+            },
+            "pending": {
+              "additionalProperties": false,
+              "properties": {
+                "qty": {
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "type": "integer"
+                },
+                "sku": {
+                  "type": "string"
+                }
+              },
+              "required": ["sku", "qty"],
+              "type": "object"
+            }
+          },
+          "required": ["pending", "error", "orderId"],
+          "type": "object"
+        },
+        "s_50e05cf3870f6140": {
+          "additionalProperties": false,
+          "properties": {
+            "qty": {
+              "type": ["number", "null"]
+            }
+          },
+          "required": ["qty"],
+          "type": "object"
+        },
+        "s_88250cc7c21da2d0": {
+          "additionalProperties": false,
+          "properties": {
+            "sku": {
+              "type": "string"
+            }
+          },
+          "required": ["sku"],
+          "type": "object"
+        },
+        "s_957ac415c40ea752": {
+          "additionalProperties": false,
+          "properties": {
+            "qty": {
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "type": "integer"
+            },
+            "sku": {
+              "type": "string"
+            }
+          },
+          "required": ["sku", "qty"],
+          "type": "object"
+        },
+        "s_97463005be667e62": {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "type": "string"
+            }
+          },
+          "required": ["reason"],
+          "type": "object"
+        },
+        "s_99334726611ccf58": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "s_ad54ad5982659c40": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "price": {
+                "type": "number"
+              },
+              "qty": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "sku": {
+                "type": "string"
+              }
+            },
+            "required": ["sku", "name", "price", "qty"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "s_cddf8275afa15408": {
+          "type": "number"
+        },
+        "s_cff65f45f0a56f75": {
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "number"
+                  },
+                  "qty": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "sku": {
+                    "type": "string"
+                  }
+                },
+                "required": ["sku", "name", "price", "qty"],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["items"],
+          "type": "object"
+        }
+      },
+      "tags": {
+        "cartTag": {
+          "param": null
+        }
+      },
+      "views": {
+        "CartPanel": {
+          "machine": "cart",
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "cart.CartPanel/0/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Cart"
+                    }
+                  }
+                ],
+                "class": null,
+                "id": "cart.CartPanel/0",
+                "kind": "el",
+                "on": {},
+                "tag": "h2",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "failed": {
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "cart.CartPanel/1/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Could not load your cart"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "cart.CartPanel/1/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "cart.CartPanel/1",
+                "input": {
+                  "literal": {}
+                },
+                "kind": "query",
+                "pending": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "cart.CartPanel/1/pending/0",
+                      "kind": "text",
+                      "value": {
+                        "literal": "Loading cart…"
+                      }
+                    }
+                  ],
+                  "class": null,
+                  "id": "cart.CartPanel/1/pending",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "p",
+                  "toggle": {},
+                  "vars": {}
+                },
+                "query": "cart.getCart",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "cart.CartPanel/1/ready/0/0",
+                          "item": {
+                            "attrs": {},
+                            "children": [
+                              {
+                                "id": "cart.CartPanel/1/ready/0/0/item/0",
+                                "kind": "text",
+                                "value": {
+                                  "depth": 1,
+                                  "path": ["name"],
+                                  "ref": "binding"
+                                }
+                              },
+                              {
+                                "id": "cart.CartPanel/1/ready/0/0/item/1",
+                                "kind": "text",
+                                "value": {
+                                  "literal": " × "
+                                }
+                              },
+                              {
+                                "id": "cart.CartPanel/1/ready/0/0/item/2",
+                                "kind": "text",
+                                "value": {
+                                  "depth": 1,
+                                  "path": ["qty"],
+                                  "ref": "binding"
+                                }
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "attrs": {
+                                      "type": {
+                                        "literal": "button"
+                                      }
+                                    },
+                                    "children": [
+                                      {
+                                        "id": "cart.CartPanel/1/ready/0/0/item/3/0/0",
+                                        "kind": "text",
+                                        "value": {
+                                          "literal": "Remove"
+                                        }
+                                      }
+                                    ],
+                                    "class": null,
+                                    "id": "cart.CartPanel/1/ready/0/0/item/3/0",
+                                    "kind": "el",
+                                    "on": {
+                                      "click": {
+                                        "event": "cart.RemoveItem",
+                                        "payload": {
+                                          "object": {
+                                            "sku": {
+                                              "depth": 1,
+                                              "path": ["sku"],
+                                              "ref": "binding"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "tag": "button",
+                                    "toggle": {},
+                                    "vars": {}
+                                  }
+                                ],
+                                "id": "cart.CartPanel/1/ready/0/0/item/3",
+                                "kind": "when",
+                                "motion": null,
+                                "states": ["idle"]
+                              }
+                            ],
+                            "class": "flex justify-between",
+                            "id": "cart.CartPanel/1/ready/0/0/item",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "li",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          "key": "sku",
+                          "kind": "each",
+                          "motion": "list",
+                          "source": {
+                            "depth": 0,
+                            "path": ["items"],
+                            "ref": "binding"
+                          }
+                        }
+                      ],
+                      "class": "divide-y",
+                      "id": "cart.CartPanel/1/ready/0",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "ul",
+                      "toggle": {},
+                      "vars": {}
+                    },
+                    {
+                      "attrs": {},
+                      "children": [
+                        {
+                          "id": "cart.CartPanel/1/ready/1/0",
+                          "kind": "text",
+                          "value": {
+                            "literal": "Total: $"
+                          }
+                        },
+                        {
+                          "id": "cart.CartPanel/1/ready/1/1",
+                          "kind": "text",
+                          "value": {
+                            "arg": {
+                              "depth": 0,
+                              "path": ["items"],
+                              "ref": "binding"
+                            },
+                            "fn": "cart.cartTotal"
+                          }
+                        }
+                      ],
+                      "class": "font-bold",
+                      "id": "cart.CartPanel/1/ready/1",
+                      "kind": "el",
+                      "on": {},
+                      "tag": "p",
+                      "toggle": {},
+                      "vars": {}
+                    }
+                  ],
+                  "class": null,
+                  "id": "cart.CartPanel/1/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "div",
+                  "toggle": {},
+                  "vars": {}
+                }
+              },
+              {
+                "children": [
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "id": "cart.CartPanel/2/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Quantity"
+                        }
+                      },
+                      {
+                        "attrs": {
+                          "max": {
+                            "literal": 10
+                          },
+                          "min": {
+                            "literal": 1
+                          },
+                          "name": {
+                            "literal": "qty"
+                          },
+                          "type": {
+                            "literal": "number"
+                          },
+                          "value": {
+                            "path": ["pending", "qty"],
+                            "ref": "context"
+                          }
+                        },
+                        "children": [],
+                        "class": null,
+                        "id": "cart.CartPanel/2/0/1",
+                        "kind": "el",
+                        "on": {
+                          "input": {
+                            "event": "cart.SetQuantity",
+                            "payload": {
+                              "object": {
+                                "qty": {
+                                  "path": ["valueAsNumber"],
+                                  "ref": "dom"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "tag": "input",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "attrs": {},
+                            "children": [],
+                            "class": "block h-1 w-[calc(var(--qty)*10%)] rounded bg-blue-600 transition-all",
+                            "id": "cart.CartPanel/2/0/2/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "span",
+                            "toggle": {},
+                            "vars": {
+                              "--qty": {
+                                "path": ["pending", "qty"],
+                                "ref": "context"
+                              }
+                            }
+                          }
+                        ],
+                        "class": "h-1 w-24 rounded bg-gray-200",
+                        "id": "cart.CartPanel/2/0/2",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "span",
+                        "toggle": {},
+                        "vars": {}
+                      }
+                    ],
+                    "class": "flex items-center gap-2",
+                    "id": "cart.CartPanel/2/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "label",
+                    "toggle": {
+                      "font-semibold text-red-600": {
+                        "test": {
+                          "left": {
+                            "path": ["pending", "qty"],
+                            "ref": "context"
+                          },
+                          "op": "gte",
+                          "right": {
+                            "literal": 10
+                          }
+                        }
+                      }
+                    },
+                    "vars": {}
+                  }
+                ],
+                "id": "cart.CartPanel/2",
+                "kind": "when",
+                "motion": null,
+                "states": ["idle"]
+              },
+              {
+                "failed": {
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "cart.CartPanel/3/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Catalog unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "cart.CartPanel/3/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "cart.CartPanel/3",
+                "input": {
+                  "literal": {}
+                },
+                "kind": "query",
+                "pending": null,
+                "query": "catalog.listProducts",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "cart.CartPanel/3/ready/0",
+                      "item": {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "id": "cart.CartPanel/3/ready/0/item/0",
+                            "kind": "text",
+                            "value": {
+                              "depth": 1,
+                              "path": ["name"],
+                              "ref": "binding"
+                            }
+                          },
+                          {
+                            "children": [
+                              {
+                                "attrs": {
+                                  "type": {
+                                    "literal": "button"
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "id": "cart.CartPanel/3/ready/0/item/1/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "literal": "Add"
+                                    }
+                                  }
+                                ],
+                                "class": null,
+                                "id": "cart.CartPanel/3/ready/0/item/1/0",
+                                "kind": "el",
+                                "on": {
+                                  "click": {
+                                    "event": "cart.AddItem",
+                                    "payload": {
+                                      "object": {
+                                        "qty": {
+                                          "path": ["pending", "qty"],
+                                          "ref": "context"
+                                        },
+                                        "sku": {
+                                          "depth": 1,
+                                          "path": ["sku"],
+                                          "ref": "binding"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "tag": "button",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "id": "cart.CartPanel/3/ready/0/item/1",
+                            "kind": "when",
+                            "motion": null,
+                            "states": ["idle"]
+                          }
+                        ],
+                        "class": null,
+                        "id": "cart.CartPanel/3/ready/0/item",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "li",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      "key": "sku",
+                      "kind": "each",
+                      "motion": null,
+                      "source": {
+                        "depth": 0,
+                        "path": [],
+                        "ref": "binding"
+                      }
+                    }
+                  ],
+                  "class": "grid grid-cols-2 gap-2",
+                  "id": "cart.CartPanel/3/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "ul",
+                  "toggle": {},
+                  "vars": {}
+                }
+              },
+              {
+                "children": [
+                  {
+                    "attrs": {
+                      "aria-live": {
+                        "literal": "polite"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "cart.CartPanel/4/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Saving…"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "cart.CartPanel/4/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "id": "cart.CartPanel/4",
+                "kind": "when",
+                "motion": null,
+                "states": ["adding", "checkingOut", "removing"]
+              },
+              {
+                "children": [
+                  {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "cart.CartPanel/5/0/0",
+                        "kind": "text",
+                        "value": {
+                          "path": ["error"],
+                          "ref": "context"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "cart.CartPanel/5/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "id": "cart.CartPanel/5/1/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Need help? "
+                        }
+                      },
+                      {
+                        "id": "cart.CartPanel/5/1/1",
+                        "kind": "text",
+                        "value": {
+                          "path": ["SUPPORT_EMAIL"],
+                          "ref": "env"
+                        }
+                      }
+                    ],
+                    "class": "text-sm text-gray-500",
+                    "id": "cart.CartPanel/5/1",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  {
+                    "attrs": {
+                      "type": {
+                        "literal": "button"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "cart.CartPanel/5/2/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Dismiss"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "cart.CartPanel/5/2",
+                    "kind": "el",
+                    "on": {
+                      "click": {
+                        "event": "cart.Dismiss",
+                        "payload": {
+                          "literal": {}
+                        }
+                      }
+                    },
+                    "tag": "button",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "id": "cart.CartPanel/5",
+                "kind": "when",
+                "motion": "fade",
+                "states": ["error"]
+              },
+              {
+                "children": [
+                  {
+                    "attrs": {
+                      "type": {
+                        "literal": "button"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "cart.CartPanel/6/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Checkout"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "cart.CartPanel/6/0",
+                    "kind": "el",
+                    "on": {
+                      "click": {
+                        "event": "cart.Checkout",
+                        "payload": {
+                          "literal": {}
+                        }
+                      }
+                    },
+                    "tag": "button",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "id": "cart.CartPanel/6",
+                "kind": "when",
+                "motion": null,
+                "states": ["idle"]
+              },
+              {
+                "children": [
+                  {
+                    "attrs": {},
+                    "children": [
+                      {
+                        "id": "cart.CartPanel/7/0/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Order "
+                        }
+                      },
+                      {
+                        "id": "cart.CartPanel/7/0/1",
+                        "kind": "text",
+                        "value": {
+                          "path": ["orderId"],
+                          "ref": "context"
+                        }
+                      },
+                      {
+                        "id": "cart.CartPanel/7/0/2",
+                        "kind": "text",
+                        "value": {
+                          "literal": " placed"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "cart.CartPanel/7/0",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                ],
+                "id": "cart.CartPanel/7",
+                "kind": "when",
+                "motion": null,
+                "states": ["placed"]
+              }
+            ],
+            "class": "grid gap-6",
+            "id": "cart.CartPanel",
+            "kind": "el",
+            "on": {},
+            "tag": "section",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": null,
+          "seed": null
+        }
+      },
+      "widgets": {}
+    },
+    "catalog": {
+      "contracts": {},
+      "endpoints": {},
+      "events": {},
+      "exports": {
+        "endpoints": [],
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": ["listProducts"],
+        "tags": ["catalogTag"],
+        "views": ["ProductGrid"]
+      },
+      "fns": {},
+      "id": "catalog",
+      "imports": [],
+      "intent": {
+        "invariants": ["Only public data", "No machine: every node is static or revalidated"],
+        "summary": "Public product catalog. Read-only, cacheable, ships no JavaScript."
+      },
+      "machine": null,
+      "messages": null,
+      "mutations": {},
+      "queries": {
+        "getProduct": {
+          "errors": {
+            "NotFound": "s_88250cc7c21da2d0"
+          },
+          "freshness": {
+            "kind": "static"
+          },
+          "input": "s_88250cc7c21da2d0",
+          "output": "s_b98fcca275501115",
+          "scope": "public",
+          "tags": [
+            {
+              "param": {
+                "path": ["sku"],
+                "ref": "input"
+              },
+              "tag": "catalog.productTag"
+            }
+          ]
+        },
+        "listProducts": {
+          "errors": {},
+          "freshness": {
+            "kind": "revalidate",
+            "seconds": 60
+          },
+          "input": "s_99334726611ccf58",
+          "output": "s_192b7a44ba836271",
+          "scope": "public",
+          "tags": [
+            {
+              "param": null,
+              "tag": "catalog.catalogTag"
+            }
+          ]
+        }
+      },
+      "schemas": {
+        "s_00404e686415370f": {
+          "type": "string"
+        },
+        "s_192b7a44ba836271": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "price": {
+                "type": "number"
+              },
+              "sku": {
+                "type": "string"
+              }
+            },
+            "required": ["sku", "name", "price"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "s_88250cc7c21da2d0": {
+          "additionalProperties": false,
+          "properties": {
+            "sku": {
+              "type": "string"
+            }
+          },
+          "required": ["sku"],
+          "type": "object"
+        },
+        "s_99334726611ccf58": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        },
+        "s_b98fcca275501115": {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "price": {
+              "type": "number"
+            },
+            "sku": {
+              "type": "string"
+            }
+          },
+          "required": ["sku", "name", "price"],
+          "type": "object"
+        }
+      },
+      "tags": {
+        "catalogTag": {
+          "param": null
+        },
+        "productTag": {
+          "param": "s_00404e686415370f"
+        }
+      },
+      "views": {
+        "ProductDetail": {
+          "machine": null,
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {
+                  "href": {
+                    "link": "home",
+                    "params": {
+                      "literal": null
+                    },
+                    "search": {
+                      "literal": null
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "id": "catalog.ProductDetail/0/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "All products"
+                    }
+                  }
+                ],
+                "class": null,
+                "id": "catalog.ProductDetail/0",
+                "kind": "el",
+                "on": {},
+                "tag": "a",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "failed": {
+                  "NotFound": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "catalog.ProductDetail/1/failed/NotFound/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "No such product"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "catalog.ProductDetail/1/failed/NotFound",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  },
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "catalog.ProductDetail/1/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Catalog unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "catalog.ProductDetail/1/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "catalog.ProductDetail/1",
+                "input": {
+                  "object": {
+                    "sku": {
+                      "path": ["sku"],
+                      "ref": "params"
+                    }
+                  }
+                },
+                "kind": "query",
+                "pending": null,
+                "query": "catalog.getProduct",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "catalog.ProductDetail/1/ready/0",
+                      "kind": "text",
+                      "value": {
+                        "depth": 0,
+                        "path": ["name"],
+                        "ref": "binding"
+                      }
+                    },
+                    {
+                      "id": "catalog.ProductDetail/1/ready/1",
+                      "kind": "text",
+                      "value": {
+                        "literal": " — $"
+                      }
+                    },
+                    {
+                      "id": "catalog.ProductDetail/1/ready/2",
+                      "kind": "text",
+                      "value": {
+                        "depth": 0,
+                        "path": ["price"],
+                        "ref": "binding"
+                      }
+                    }
+                  ],
+                  "class": null,
+                  "id": "catalog.ProductDetail/1/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "h2",
+                  "toggle": {},
+                  "vars": {}
+                }
+              }
+            ],
+            "class": "grid gap-4",
+            "id": "catalog.ProductDetail",
+            "kind": "el",
+            "on": {},
+            "tag": "section",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": "product",
+          "seed": null
+        },
+        "ProductGrid": {
+          "machine": null,
+          "root": {
+            "attrs": {},
+            "children": [
+              {
+                "attrs": {},
+                "children": [
+                  {
+                    "id": "catalog.ProductGrid/0/0",
+                    "kind": "text",
+                    "value": {
+                      "literal": "Products"
+                    }
+                  }
+                ],
+                "class": null,
+                "id": "catalog.ProductGrid/0",
+                "kind": "el",
+                "on": {},
+                "tag": "h2",
+                "toggle": {},
+                "vars": {}
+              },
+              {
+                "failed": {
+                  "Unexpected": {
+                    "attrs": {
+                      "role": {
+                        "literal": "alert"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "catalog.ProductGrid/1/failed/Unexpected/0",
+                        "kind": "text",
+                        "value": {
+                          "literal": "Catalog unavailable"
+                        }
+                      }
+                    ],
+                    "class": null,
+                    "id": "catalog.ProductGrid/1/failed/Unexpected",
+                    "kind": "el",
+                    "on": {},
+                    "tag": "p",
+                    "toggle": {},
+                    "vars": {}
+                  }
+                },
+                "id": "catalog.ProductGrid/1",
+                "input": {
+                  "literal": {}
+                },
+                "kind": "query",
+                "pending": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "catalog.ProductGrid/1/pending/0",
+                      "kind": "text",
+                      "value": {
+                        "literal": "Loading products…"
+                      }
+                    }
+                  ],
+                  "class": null,
+                  "id": "catalog.ProductGrid/1/pending",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "p",
+                  "toggle": {},
+                  "vars": {}
+                },
+                "query": "catalog.listProducts",
+                "ready": {
+                  "attrs": {},
+                  "children": [
+                    {
+                      "id": "catalog.ProductGrid/1/ready/0",
+                      "item": {
+                        "attrs": {},
+                        "children": [
+                          {
+                            "attrs": {
+                              "href": {
+                                "link": "product",
+                                "params": {
+                                  "object": {
+                                    "sku": {
+                                      "depth": 1,
+                                      "path": ["sku"],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                },
+                                "search": {
+                                  "literal": null
+                                }
+                              }
+                            },
+                            "children": [
+                              {
+                                "attrs": {},
+                                "children": [
+                                  {
+                                    "id": "catalog.ProductGrid/1/ready/0/item/0/0/0",
+                                    "kind": "text",
+                                    "value": {
+                                      "depth": 1,
+                                      "path": ["name"],
+                                      "ref": "binding"
+                                    }
+                                  }
+                                ],
+                                "class": null,
+                                "id": "catalog.ProductGrid/1/ready/0/item/0/0",
+                                "kind": "el",
+                                "on": {},
+                                "tag": "strong",
+                                "toggle": {},
+                                "vars": {}
+                              }
+                            ],
+                            "class": null,
+                            "id": "catalog.ProductGrid/1/ready/0/item/0",
+                            "kind": "el",
+                            "on": {},
+                            "tag": "a",
+                            "toggle": {},
+                            "vars": {}
+                          },
+                          {
+                            "id": "catalog.ProductGrid/1/ready/0/item/1",
+                            "kind": "text",
+                            "value": {
+                              "literal": " — $"
+                            }
+                          },
+                          {
+                            "id": "catalog.ProductGrid/1/ready/0/item/2",
+                            "kind": "text",
+                            "value": {
+                              "depth": 1,
+                              "path": ["price"],
+                              "ref": "binding"
+                            }
+                          }
+                        ],
+                        "class": "rounded border p-2",
+                        "id": "catalog.ProductGrid/1/ready/0/item",
+                        "kind": "el",
+                        "on": {},
+                        "tag": "li",
+                        "toggle": {},
+                        "vars": {}
+                      },
+                      "key": "sku",
+                      "kind": "each",
+                      "motion": null,
+                      "source": {
+                        "depth": 0,
+                        "path": [],
+                        "ref": "binding"
+                      }
+                    }
+                  ],
+                  "class": "grid grid-cols-3 gap-2",
+                  "id": "catalog.ProductGrid/1/ready",
+                  "kind": "el",
+                  "on": {},
+                  "tag": "ul",
+                  "toggle": {},
+                  "vars": {}
+                }
+              }
+            ],
+            "class": "grid gap-4",
+            "id": "catalog.ProductGrid",
+            "kind": "el",
+            "on": {},
+            "tag": "section",
+            "toggle": {},
+            "vars": {}
+          },
+          "route": null,
+          "seed": null
+        }
+      },
+      "widgets": {}
+    }
+  },
+  "http": {
+    "basePath": "",
+    "headers": [],
+    "redirects": [],
+    "trailingSlash": "never"
+  },
+  "irVersion": 2,
+  "notFound": null,
+  "pages": {
+    "home": {
+      "assert": null,
+      "entries": null,
+      "head": {
+        "description": {
+          "literal": "A demo store built with Hozu: server-rendered catalog, interactive cart islands."
+        },
+        "failed": {},
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "title": {
+          "literal": "Shop mugs and tees — Hozu Cart"
+        },
+        "type": "website"
+      },
+      "views": ["catalog.ProductGrid", "cart.CartPanel"]
+    },
+    "orderPlaced": {
+      "assert": "cacheable",
+      "entries": null,
+      "head": {
+        "description": {
+          "literal": "Thanks for your order."
+        },
+        "failed": {},
+        "image": {
+          "literal": null
+        },
+        "noindex": true,
+        "published": {
+          "literal": null
+        },
+        "query": null,
+        "title": {
+          "literal": "Order placed — Hozu Cart"
+        },
+        "type": "website"
+      },
+      "views": ["catalog.ProductGrid"]
+    },
+    "product": {
+      "assert": null,
+      "entries": {
+        "input": {
+          "literal": {}
+        },
+        "params": {
+          "object": {
+            "sku": {
+              "depth": 0,
+              "path": ["sku"],
+              "ref": "binding"
+            }
+          }
+        },
+        "query": "catalog.listProducts"
+      },
+      "head": {
+        "description": {
+          "depth": 0,
+          "path": ["name"],
+          "ref": "binding"
+        },
+        "failed": {
+          "NotFound": {
+            "status": 404
+          }
+        },
+        "image": {
+          "literal": null
+        },
+        "noindex": false,
+        "published": {
+          "literal": null
+        },
+        "query": {
+          "input": {
+            "object": {
+              "sku": {
+                "path": ["sku"],
+                "ref": "params"
+              }
+            }
+          },
+          "ref": "catalog.getProduct"
+        },
+        "title": {
+          "depth": 0,
+          "path": ["name"],
+          "ref": "binding"
+        },
+        "type": "website"
+      },
+      "views": ["catalog.ProductDetail", "cart.CartPanel"]
+    }
+  },
+  "routes": {
+    "home": {
+      "params": null,
+      "path": "/",
+      "search": null
+    },
+    "orderPlaced": {
+      "params": null,
+      "path": "/order/placed",
+      "search": null
+    },
+    "product": {
+      "params": {
+        "additionalProperties": false,
+        "properties": {
+          "sku": {
+            "type": "string"
+          }
+        },
+        "required": ["sku"],
+        "type": "object"
+      },
+      "path": "/products/:sku",
+      "search": null
+    }
+  },
+  "session": {
+    "additionalProperties": false,
+    "properties": {
+      "userId": {
+        "type": "string"
+      }
+    },
+    "required": ["userId"],
+    "type": "object"
+  },
+  "site": {
+    "icon": null,
+    "lang": "en",
+    "locales": null,
+    "name": "Hozu Cart",
+    "offline": null,
+    "themeColor": null,
+    "url": "https://cart.hozu.dev"
+  }
+}
