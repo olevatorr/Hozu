@@ -1,21 +1,22 @@
+import type { KitDef } from '../builders/component.ts'
 import type { FeatureConfig, FeatureParts, ProjectConfig } from '../builders/feature.ts'
 import type { RouteDef } from '../builders/route.ts'
 import { join, resolveSource } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
 import type { Diagnostic, SourceIndex } from '../ir/diagnostic.ts'
-import type { FeatureIR, JsonSchema, ProjectIR, RouteIR } from '../ir/types.ts'
+import type { FeatureIR, JsonSchema, KitIR, ProjectIR, RouteIR } from '../ir/types.ts'
 import { freeNamesOf, transformedDecls } from '../lower.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
 import { toCheck, toParse } from '../schema/check.ts'
 import { isStandardSchema } from '../schema/standard.ts'
 import { withCapture } from '../source/capture.ts'
-import { notYet } from './components.ts'
+import { buildComponent } from './components.ts'
 import { buildFeature } from './feature.ts'
 import { buildHttp } from './http.ts'
 import type { Manifest } from './manifest.ts'
 import { buildPages } from './page.ts'
-import { filePath, IDENTIFIER, type PartUse, ProjectScope } from './scope.ts'
+import { FeatureScope, filePath, IDENTIFIER, type PartUse, ProjectScope } from './scope.ts'
 
 export interface BuildResult {
   ir: ProjectIR
@@ -50,6 +51,7 @@ const registries: [keyof FeatureParts, DeclKind][] = [
   ['fns', 'fn'],
   ['views', 'view'],
   ['widgets', 'widget'],
+  ['components', 'component'],
   ['endpoints', 'endpoint'],
   ['contracts', 'contract'],
 ]
@@ -62,6 +64,7 @@ const kindKeys: Partial<Record<DeclKind, keyof FeatureParts>> = {
   fn: 'fns',
   view: 'views',
   widget: 'widgets',
+  component: 'components',
   endpoint: 'endpoints',
   contract: 'contracts',
 }
@@ -109,7 +112,6 @@ function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
     for (const [name, decl] of Object.entries(module as Record<string, unknown>)) {
       const kind = infoOf(decl)?.kind
       const at = join(base, 'declarations', m, name)
-      if (kind === 'component') scope.report('HZ014', id, at, ...notYet('ui.component'))
       if (!kind || (!kindKeys[kind] && kind !== 'machine' && kind !== 'messages')) continue
       const seen = named.get(name)
       if (seen !== undefined) {
@@ -190,6 +192,8 @@ function register(scope: ProjectScope, id: string, config: FeatureParts) {
     }
     scope.owners.set(decl, { feature: id, symbol, kind })
     scope.bindings.refs.set(decl, `${id}.${symbol}`)
+    if (kind === 'component')
+      scope.components.set(decl, { id: `${id}.${symbol}`, owner: { kind: 'feature', id } })
   }
   for (const [key, kind] of registries)
     for (const [symbol, decl] of Object.entries((config[key] ?? {}) as Record<string, object>))
@@ -328,31 +332,43 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     scope.configs.set(id, fc)
     register(scope, id, fc)
   }
+  const kitDecls = registerKits(scope, config.kits, new Set(configs.map(([id]) => id)))
   if (!manifest) {
     const done = transformedDecls()
-    for (const [id, fc] of configs)
-      for (const [symbol, decl] of [
-        ...(fc.machine ? [['machine', fc.machine] as const] : []),
-        ...Object.entries(fc.views),
-      ]) {
-        const file = infoOf(decl)?.source?.file ?? 'A feature file'
-        if (!done.has(decl))
-          scope.report(
-            'HZ044',
-            id,
-            symbol === 'machine'
-              ? join('', 'features', id, 'machine')
-              : join('', 'features', id, 'views', symbol),
-            `${file} was loaded without the Hozu transform`,
-            'Builder callbacks are written in ordinary TypeScript and lowered by @hozu/transform; without it, a comparison such as ctx.x === "a" is silently false.',
-            {
-              summary:
-                'Run node with --import @hozu/transform/register (npm scripts from create-hozu do), or add hozuTransform() from @hozu/transform/vite to Vite / Vitest',
-              snippet: 'node --import @hozu/transform/register serve.ts',
-              patch: null,
-            },
-          )
-      }
+    const checked: [string | null, string, object][] = [
+      ...configs.flatMap(([id, fc]) =>
+        [
+          ...(fc.machine ? [['machine', fc.machine] as const] : []),
+          ...Object.entries(fc.views).map(([s, v]) => [`views/${s}`, v] as const),
+          ...Object.entries(fc.components).map(([s, c]) => [`components/${s}`, c] as const),
+        ].map(
+          ([where, decl]) =>
+            [id, join('', 'features', id, ...where.split('/')), decl] as [string, string, object],
+        ),
+      ),
+      ...kitDecls.flatMap(([kit, decls]) =>
+        Object.entries(decls).map(
+          ([s, c]) => [null, join('', 'kits', kit, 'components', s), c] as [null, string, object],
+        ),
+      ),
+    ]
+    for (const [id, pointer, decl] of checked) {
+      const file = infoOf(decl)?.source?.file ?? 'A feature file'
+      if (!done.has(decl))
+        scope.report(
+          'HZ044',
+          id,
+          pointer,
+          `${file} was loaded without the Hozu transform`,
+          'Builder callbacks are written in ordinary TypeScript and lowered by @hozu/transform; without it, a comparison such as ctx.x === "a" is silently false.',
+          {
+            summary:
+              'Run node with --import @hozu/transform/register (npm scripts from create-hozu do), or add hozuTransform() from @hozu/transform/vite to Vite / Vitest',
+            snippet: 'node --import @hozu/transform/register serve.ts',
+            patch: null,
+          },
+        )
+    }
   }
 
   if (!manifest) {
@@ -406,9 +422,13 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       (u, i) => file(u, id, join('', 'features', id, 'styles', i)) ?? [],
     )
 
-  for (const [i, kit] of (config.kits ?? []).entries()) {
-    scope.mark(join('', 'kits', i), kit)
-    scope.report('HZ014', null, join('', 'kits', i), ...notYet('ui.kit'))
+  const kits: Record<string, KitIR> = {}
+  for (const [kit, decls] of kitDecls) {
+    const ks = new FeatureScope(scope, kit, join('', 'kits', kit))
+    const components = Object.fromEntries(
+      Object.entries(decls).map(([s, c]) => [s, buildComponent(ks, ks.at('components', s), c)]),
+    )
+    kits[kit] = { schemas: ks.schemas, components }
   }
 
   const pages = buildPages(scope, config.pages ?? [])
@@ -463,7 +483,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     http,
     env,
     features,
-    kits: {},
+    kits,
   }
   scope.bindings.assetOrder = scope.assetList
   for (const d of scope.diagnostics) d.location.source ??= resolveSource(scope.sources, d.location.pointer)
@@ -474,6 +494,76 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     diagnostics: scope.diagnostics,
     parts: [...scope.parts.values()],
   }
+}
+
+function registerKits(
+  scope: ProjectScope,
+  list: unknown,
+  features: Set<string>,
+): [string, Record<string, object>][] {
+  const out: [string, Record<string, object>][] = []
+  for (const [i, kit] of (Array.isArray(list) ? list : []).entries()) {
+    const p = join('', 'kits', i)
+    scope.mark(p, kit)
+    const info = infoOf(kit)
+    if (info?.kind !== 'kit') {
+      scope.report(
+        'HZ014',
+        null,
+        p,
+        'kits must contain ui.kit() declarations',
+        `Got ${info?.kind ?? typeof kit}.`,
+      )
+      continue
+    }
+    const def = info.def as KitDef
+    const id = String(def.id)
+    if (!IDENTIFIER.test(id))
+      scope.report(
+        'HZ014',
+        null,
+        join(p, 'id'),
+        `Kit id "${id}" is not an identifier`,
+        'Ids must match /^[A-Za-z][A-Za-z0-9_]*$/.',
+      )
+    if (features.has(id) || out.some(([k]) => k === id)) {
+      scope.report(
+        'HZ013',
+        null,
+        join(p, 'id'),
+        features.has(id) ? `Kit id "${id}" is also a feature id` : `Kit id "${id}" is declared twice`,
+        'Component ids are owner.Name, so kit and feature ids share one namespace (ADR 0045 A).',
+        { summary: `Rename the kit`, snippet: `ui.kit({ id: '${id}Kit', components: [...] })`, patch: null },
+      )
+      continue
+    }
+    const decls: Record<string, object> = {}
+    for (const [m, module] of (Array.isArray(def.components) ? def.components : []).entries())
+      for (const [name, decl] of Object.entries(module as Record<string, unknown>)) {
+        if (infoOf(decl)?.kind !== 'component') continue
+        const at = join(p, 'components', m, name)
+        scope.mark(at, decl)
+        const taken = scope.components.get(decl as object)
+        if (decls[name] !== undefined || taken) {
+          if (decls[name] !== decl || taken)
+            scope.report(
+              'HZ013',
+              null,
+              at,
+              taken
+                ? `This component is already declared as ${taken.id}`
+                : `"${name}" is declared by two of the kit's modules`,
+              'A component has one owner: one kit or one feature.',
+            )
+          continue
+        }
+        decls[name] = decl as object
+        scope.mark(join('', 'kits', id, 'components', name), decl)
+        scope.components.set(decl as object, { id: `${id}.${name}`, owner: { kind: 'kit', id } })
+      }
+    out.push([id, decls])
+  }
+  return out
 }
 
 export function appModuleOf(project: unknown): string | null {

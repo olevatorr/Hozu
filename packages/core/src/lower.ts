@@ -82,7 +82,8 @@ export const lower = Object.freeze({
   },
   cond: (c: unknown, a: unknown, b: unknown): any =>
     plain(c) ? (c ? a : b) : builtinCall('%cond', { c: test(c), a, b }),
-  both: (l: unknown, r: unknown): any => (plain(l) ? l && r : builtinCall('%cond', { c: test(l), a: r, b: l })),
+  both: (l: unknown, r: unknown): any =>
+    plain(l) ? l && r : builtinCall('%cond', { c: test(l), a: r, b: l }),
   either: (l: unknown, r: unknown): any =>
     plain(l) ? l || r : builtinCall('%cond', { c: test(l), a: l, b: r }),
   coalesce: (a: unknown, b: unknown): any => (plain(a) ? (a ?? b) : builtinCall('%coalesce', { a, b })),

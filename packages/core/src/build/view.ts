@@ -1,14 +1,15 @@
+import type { ComponentDef } from '../builders/component.ts'
 import { builtinOf } from '../builders/i18n.ts'
 import { type NodeDef, sendOf, type ViewDef, when } from '../builders/ui.ts'
 import { htmlGlobalAttrs, svgGlobalAttrs, svgTags, tagAttrs, voidTags } from '../ir/dom-data.ts'
 import { domEvents } from '../ir/events.ts'
-import type { FormRefIR, SendIR, ValueExpr, ViewIR, ViewNode } from '../ir/types.ts'
+import type { ElementNode, FormRefIR, SendIR, UseIR, ValueExpr, ViewIR, ViewNode } from '../ir/types.ts'
 import { transformedDecls } from '../lower.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
-import { createRef, exprOf, refProxy } from '../model/expr.ts'
-import { notYet } from './components.ts'
+import { createRef, exprOf, guardOf, refProxy } from '../model/expr.ts'
+import { defaultsOf, notYet, schemaJson, tokens, tvOf, variantsOf } from './components.ts'
 import { formUse, holdForm, inEach, literalForm } from './forms.ts'
-import { type At, at, type FeatureScope } from './scope.ts'
+import { type At, at, type ClosedRender, type FeatureScope } from './scope.ts'
 
 const eventSet = new Set<string>(domEvents)
 const svgSet = new Set<string>(svgTags)
@@ -53,6 +54,7 @@ function element(
       else styling(scope, key, value, key === 'toggle' ? toggle : vars, p)
     } else if (key === 'on') {
       for (const [event, send] of Object.entries(value as object)) {
+        if (send === undefined) continue
         const ep = at(p, 'on', event)
         const s = sendOf(send)
         if (!eventSet.has(event))
@@ -70,10 +72,10 @@ function element(
             'Views cannot run arbitrary functions.',
           )
         else
-          on[event] = {
+          on[event] = scope.within(send, () => ({
             event: scope.ref(s.event, ['event'], ep),
             payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
-          }
+          }))
       }
     } else if (key === 'ref') {
       if (d.tag === 'form' && infoOf(value)?.kind === 'formRef') {
@@ -119,7 +121,8 @@ function element(
     scope.report('HZ014', at(p, 'children'), `<${d.tag}> needs a children array`, 'Pass [] when it has none.')
   else if (voidSet.has(d.tag) && d.children.length)
     scope.report('HZ014', at(p, 'children'), `<${d.tag}> cannot have children`, 'It is a void element.')
-  const children = (Array.isArray(d.children) ? d.children : []).map((c, i) =>
+  const listed = Array.isArray(d.children) ? d.children : []
+  const children = (scope.inRender ? listed.filter((c) => c !== undefined) : listed).map((c, i) =>
     node(scope, c, `${id}/${i}`, at(p, 'children', i), depth),
   )
   if (on.visible) attrs['data-hozu-visible'] = { literal: '' }
@@ -240,6 +243,260 @@ function widgetNode(
   }
 }
 
+const nothing = (id: string): ViewNode => ({
+  id,
+  kind: 'if',
+  test: { op: 'and', args: [] },
+  motion: null,
+  ifTrue: [],
+  ifFalse: [],
+})
+const useKeys = new Set(['variant', 'props', 'slots', 'on', 'class'])
+const reported = new WeakMap<object, Set<object>>()
+
+const isRef = (v: unknown) => exprOf(v) !== null || guardOf(v) !== null
+
+function variantOf(scope: FeatureScope, def: ComponentDef, given: unknown, p: At) {
+  const declared = variantsOf(tvOf(def))
+  const chosen: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries((given ?? {}) as Record<string, unknown>)) {
+    if (value === undefined) continue
+    const vp = at(p, 'variant', key)
+    if (isRef(value)) {
+      scope.report(
+        'HZ071',
+        vp,
+        `Variant ${key} is a reference`,
+        'Variants are resolved when the view is recorded, so their values are literals; state that changes at run time is a prop (ADR 0045 B).',
+        {
+          summary: `Pass the state as a prop and style it through an attribute variant (aria-pressed:, data-[${key}=…]:)`,
+          snippet: `props: { pressed: ctx.on }, // render: 'aria-pressed': props.pressed; styles: 'aria-pressed:bg-indigo-600'`,
+          patch: null,
+        },
+      )
+      continue
+    }
+    const values = declared[key]
+    const text = String(value)
+    if (!values?.includes(text)) {
+      scope.report(
+        'HZ031',
+        vp,
+        values
+          ? `${JSON.stringify(value)} is not a valid value for variant ${key}`
+          : `Variant "${key}" is not declared by this component`,
+        values
+          ? `Expected one of ${values.map((v) => JSON.stringify(v)).join(', ')}.`
+          : `Declared variants: ${Object.keys(declared).join(', ') || 'none'}.`,
+        values
+          ? {
+              summary: `Use one of ${values.join(', ')}`,
+              snippet: `variant: { ${key}: ${JSON.stringify(values[0])} }`,
+              patch: null,
+            }
+          : {
+              summary: `Remove variant "${key}"`,
+              snippet: `variant: { ${Object.keys(declared)
+                .map((k) => `${k}: ${JSON.stringify(declared[k]![0])}`)
+                .join(', ')} }`,
+              patch: null,
+            },
+      )
+      continue
+    }
+    chosen[key] = value
+  }
+  return chosen
+}
+
+function rootClasses(
+  styles: unknown,
+  chosen: Record<string, unknown>,
+): { root: string[]; classes: Record<string, string> } {
+  if (typeof styles !== 'function') return { root: [], classes: {} }
+  const out = styles(chosen)
+  if (typeof out === 'string') return { root: tokens(out), classes: {} }
+  const slots = (out ?? {}) as Record<string, () => string>
+  const classes: Record<string, string> = {}
+  for (const [name, slot] of Object.entries(slots))
+    if (name !== 'base' && typeof slot === 'function') classes[name] = tokens(slot()).join(' ')
+  return { root: tokens(typeof slots.base === 'function' ? slots.base() : ''), classes }
+}
+
+function componentUse(
+  scope: FeatureScope,
+  d: Extract<NodeDef, { kind: 'component' }>,
+  id: string,
+  p: At,
+  depth: number,
+): ViewNode {
+  const entry = scope.project.components.get(d.component)
+  if (!entry) {
+    scope.report(
+      'HZ007',
+      at(p, 'component'),
+      'This component is in no kit or feature',
+      'A component gets its identity from a kit (project({ kits })) or from the declarations of the feature that owns it.',
+      {
+        summary:
+          'Export it from a kit module listed in ui.kit({ components }), or from a module of this feature',
+        snippet: "export const ui = ui.kit({ id: 'ui', components: [button] })  // project({ kits: [ui] })",
+        patch: null,
+      },
+    )
+    return nothing(id)
+  }
+  if (entry.owner.kind === 'feature' && entry.owner.id !== scope.id) {
+    scope.report(
+      'HZ006',
+      at(p, 'component'),
+      `${entry.id} is private to feature "${entry.owner.id}"`,
+      'A component declared by a feature is used only by that feature; components shared by features belong to a kit (ADR 0045 A).',
+      {
+        summary: `Move ${entry.id.split('.')[1]} into a kit module and list the kit in project({ kits })`,
+        snippet: "ui.kit({ id: 'ui', components: [button] })",
+        patch: null,
+      },
+    )
+    return nothing(id)
+  }
+  const def = defOf<ComponentDef>(d.component as never)
+  if (def.client !== null) {
+    scope.report('HZ014', p, ...notYet('A client ui.component', 4))
+    return nothing(id)
+  }
+  const o = (d.options ?? {}) as Record<string, unknown>
+  for (const key of Object.keys(o))
+    if (!useKeys.has(key))
+      scope.report(
+        'HZ014',
+        at(p, key),
+        `ui.use of a component takes no "${key}"`,
+        'The keys are variant, props, slots, on and class (ADR 0045 B).',
+      )
+  const caller = new WeakSet<object>()
+  const hold = (v: unknown) => {
+    if (typeof v === 'object' && v !== null) caller.add(v)
+    return v
+  }
+  const chosen = variantOf(scope, def, o.variant, p)
+  const variant = {
+    ...defaultsOf(tvOf(def)),
+    ...Object.fromEntries(Object.entries(chosen).map(([k, v]) => [k, String(v)])),
+  }
+  const styled = scope.attempt(at(p, 'variant'), () => rootClasses(def.styles, chosen), {
+    root: [],
+    classes: {},
+  })
+  const added = o.class === undefined ? [] : tokens(classOf(scope, o.class, p) ?? '')
+  const json = def.props === null ? null : schemaJson(scope.project, def.props)
+  const fields = (json?.properties ?? {}) as Record<string, { default?: unknown }>
+  let props: unknown
+  if (o.props !== undefined && (isRef(o.props) || typeof o.props !== 'object' || o.props === null))
+    props = hold(o.props)
+  else {
+    const given = (o.props ?? {}) as Record<string, unknown>
+    const filled: Record<string, unknown> = {}
+    for (const [key, field] of Object.entries(fields))
+      if (given[key] === undefined && field && 'default' in field) filled[key] = field.default
+    for (const [key, value] of Object.entries(given)) if (value !== undefined) filled[key] = hold(value)
+    props = filled
+  }
+  const named = (key: 'slots' | 'on', declared: readonly string[]) => {
+    const out: Record<string, unknown> = {}
+    for (const [name, value] of Object.entries((o[key] ?? {}) as Record<string, unknown>)) {
+      if (!declared.includes(name))
+        scope.report(
+          'HZ014',
+          at(p, key, name),
+          `${entry.id} declares no ${key === 'slots' ? 'slot' : 'event'} "${name}"`,
+          `Declared: ${declared.join(', ') || 'none'}.`,
+        )
+      else if (value !== undefined) out[name] = hold(value)
+    }
+    return out
+  }
+  const slots = named('slots', def.slots)
+  const on = named('on', def.events)
+  const given = Array.isArray(d.children) ? d.children : []
+  if (given.length && !def.children)
+    scope.report(
+      'HZ014',
+      at(p, 'children'),
+      `${entry.id} takes no children`,
+      'Declare children: true on the component, or pass the content as a slot.',
+    )
+  const children = def.children ? given.map(hold) : []
+  const seen = reported.get(d.component) ?? new Set<object>()
+  reported.set(d.component, seen)
+  const closed: ClosedRender = { component: entry.id, caller, seen }
+  const before = { lowering: scope.lowering, closed: scope.closed }
+  scope.lowering = transformedDecls().has(d.component)
+  scope.closed = closed
+  scope.inRender++
+  try {
+    const failed = Symbol('failed')
+    const root = scope.attempt<unknown>(
+      p,
+      () => scope.callback(def.render)({ props, slots, children, on, classes: styled.classes }),
+      failed,
+    )
+    if (root === failed) return nothing(id)
+    const info = infoOf(root)
+    const rd = info?.kind === 'node' ? (info.def as NodeDef) : null
+    if (rd?.kind !== 'el' || rd.tag !== def.tag) {
+      scope.report(
+        'HZ014',
+        p,
+        `The render of ${entry.id} must return a <${def.tag}> element`,
+        `tag declares the root element; the render returned ${rd?.kind === 'el' ? `<${rd.tag}>` : 'something else'} (ADR 0045 A).`,
+        {
+          summary: `Return ui.${def.tag}(…) from the render, or change tag`,
+          snippet: `render: () => ui.${def.tag}({}, [])`,
+          patch: null,
+        },
+      )
+      return nothing(id)
+    }
+    if (rd.props?.class !== undefined) {
+      scope.report(
+        'HZ014',
+        at(p, 'class'),
+        `The render of ${entry.id} sets class on its root`,
+        "The root's class comes from the component's styles and the caller's class (ADR 0045 A).",
+        {
+          summary: 'Move the classes into the tv() base of styles and remove class from the root',
+          snippet: "styles: tv({ base: '…' }), render: () => ui.button({}, [])",
+          patch: null,
+        },
+      )
+      return nothing(id)
+    }
+    const cls = [...styled.root, ...added]
+    scope.escapes(root, p)
+    const out = scope.within(root, () =>
+      element(
+        scope,
+        { ...rd, props: { ...rd.props, class: cls.length ? cls.join(' ') : undefined } },
+        id,
+        p,
+        depth,
+      ),
+    ) as ElementNode
+    const use: UseIR = {
+      component: entry.id,
+      variant,
+      added,
+      overrides: added.filter((c) => c.endsWith('!')),
+    }
+    return { ...out, use }
+  } finally {
+    scope.inRender--
+    scope.lowering = before.lowering
+    scope.closed = before.closed
+  }
+}
+
 function motionOf(scope: FeatureScope, motion: unknown, p: At): string | null {
   if (motion === null || motion === undefined) return null
   if (typeof motion === 'string' && /^[a-z][a-z0-9-]*$/.test(motion)) return motion
@@ -342,8 +599,7 @@ function nodeOf(scope: FeatureScope, value: unknown, id: string, p: At, depth: n
       case 'widget':
         return widgetNode(scope, d, id, p, depth)
       case 'component':
-        scope.report('HZ014', p, ...notYet('ui.component'))
-        return { id, kind: 'if', test: { op: 'and', args: [] }, motion: null, ifTrue: [], ifFalse: [] }
+        return componentUse(scope, d, id, p, depth)
       case 'if': {
         if (d.motion === undefined)
           scope.report(

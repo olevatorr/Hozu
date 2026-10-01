@@ -26,6 +26,7 @@ import { RecorderError, refProxy } from '../model/expr.ts'
 import { builtin } from '../platform.ts'
 import { toParse } from '../schema/check.ts'
 import type { Schema } from '../schema/standard.ts'
+import { buildComponent } from './components.ts'
 import { buildContract } from './contract.ts'
 import { finishForms } from './forms.ts'
 import { buildMachine } from './machine.ts'
@@ -285,7 +286,9 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     }),
     machine,
     widgets: mapRecord(config.widgets, (sym, w) => buildWidget(scope, sym, defOf<WidgetDef>(w))),
-    components: {},
+    components: mapRecord(config.components, (sym, c) =>
+      buildComponent(scope, scope.at('components', sym), c),
+    ),
     endpoints: mapRecord(config.endpoints, (sym, e) => buildEndpoint(scope, sym, defOf<EndpointDef>(e))),
     views: mapRecord(config.views, (sym, v) => buildView(scope, sym, v)),
     contracts: mapRecord(config.contracts, (sym, c) => buildContract(scope, sym, c)),

@@ -2,7 +2,7 @@ import { brand, type Decl, type Typed } from '../model/decl.ts'
 import type { SchemaAdapter } from '../schema/adapter.ts'
 import type { Infer, Schema } from '../schema/standard.ts'
 import type { Asset } from './asset.ts'
-import type { KitDecl } from './component.ts'
+import type { ComponentDecl, KitDecl } from './component.ts'
 import type { ContractDecl } from './contract.ts'
 import type { MutationDecl, QueryDecl } from './effects.ts'
 import type { EndpointDecl } from './endpoint.ts'
@@ -30,6 +30,7 @@ export interface FeatureParts {
   machine: MachineDecl | null
   views: Record<string, ViewDecl>
   widgets: Record<string, WidgetDecl>
+  components: Record<string, ComponentDecl>
   endpoints: Record<string, EndpointDecl>
   contracts: Record<string, ContractDecl>
   messages: Decl<'messages'> | null

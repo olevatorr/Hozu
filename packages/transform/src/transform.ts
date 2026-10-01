@@ -548,7 +548,7 @@ export function transform(source: string, _file = ''): TransformResult {
         (callee.type === 'MemberExpression' &&
           callee.object.type === 'Identifier' &&
           uiNames.has(callee.object.name) &&
-          callee.property.name === 'view') ||
+          (callee.property.name === 'view' || callee.property.name === 'component')) ||
         (callee.type === 'Identifier' && [...locals].some(([l, i]) => l === callee.name && i === 'machine'))
       if (declares) {
         callbacks(n, s)

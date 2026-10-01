@@ -32,6 +32,9 @@
       "path": "packages/content"
     },
     {
+      "path": "packages/variants"
+    },
+    {
       "path": "packages/testing"
     },
     {

@@ -16,6 +16,7 @@
     "@hozu/runtime-server": "workspace:*",
     "@hozu/schema-zod": "workspace:*",
     "@hozu/transform": "workspace:*",
+    "@hozu/variants": "workspace:*",
     "zod": "4.6.5"
   }
 }

@@ -2410,6 +2410,12 @@
     "KitIR": {
       "type": "object",
       "properties": {
+        "schemas": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/JsonSchema"
+          }
+        },
         "components": {
           "type": "object",
           "additionalProperties": {
@@ -2418,6 +2424,7 @@
         }
       },
       "required": [
+        "schemas",
         "components"
       ],
       "additionalProperties": false

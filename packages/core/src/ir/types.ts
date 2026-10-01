@@ -17,6 +17,7 @@ export interface ProjectIR {
 }
 
 export interface KitIR {
+  schemas: Record<string, JsonSchema>
   components: Record<string, ComponentIR>
 }
 

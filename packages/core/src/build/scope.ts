@@ -20,6 +20,7 @@ import { fileUrlToPath } from '../platform.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
 import { toCheck } from '../schema/check.ts'
 import { isStandardSchema } from '../schema/standard.ts'
+import type { ComponentEntry } from './components.ts'
 import type { Manifest, ManifestAsset } from './manifest.ts'
 
 export interface Owner {
@@ -60,6 +61,7 @@ export class ProjectScope {
   readonly resolved = new WeakMap<object, ManifestAsset>()
   readonly configs = new Map<string, FeatureParts>()
   readonly parts = new Map<object, PartUse>()
+  readonly components = new Map<object, ComponentEntry>()
   readonly escaped = new WeakSet<object>()
   readonly bindings: Bindings = {
     fns: {},
@@ -173,6 +175,20 @@ let current: PartDecl | null = null
 const TRUE: GuardExpr = { op: 'and', args: [] }
 const FALSE: GuardExpr = { op: 'or', args: [] }
 
+export interface ClosedRender {
+  component: string
+  caller: WeakSet<object>
+  seen: Set<object>
+}
+
+const CLOSED_FIX: Record<string, string> = {
+  event:
+    'Declare an event in the component and pass the Send through on: events: ["press"], then on: { click: on.press }',
+  route:
+    'Take the URL as a prop: props: z.object({ href: z.string() }), and pass href: ui.link(route, params) at the use',
+  messages: 'Take the text as a prop or a slot, and pass the message at the use',
+}
+
 const describe = (v: unknown): string =>
   typeof v === 'function'
     ? 'function'
@@ -187,11 +203,38 @@ export class FeatureScope {
   readonly schemas: Record<string, JsonSchema> = {}
   stateNames: string[] = []
   lowering = false
+  closed: ClosedRender | null = null
+  inRender = 0
 
-  constructor(project: ProjectScope, id: string) {
+  constructor(project: ProjectScope, id: string, base = join('', 'features', id)) {
     this.project = project
     this.id = id
-    this.base = join('', 'features', id)
+    this.base = base
+  }
+
+  /** HZ070: a component render reached a declaration that the caller did not pass in. */
+  closedRender(decl: object, kind: string, name: string, pointer: At) {
+    const closed = this.closed
+    if (!closed || closed.seen.has(decl)) return
+    closed.seen.add(decl)
+    this.report(
+      'HZ070',
+      pointer,
+      `The render of ${closed.component} references ${kind} ${name}`,
+      'A component render is closed: it reads only its props, slots, children and on, so a caller decides every event, query, route, view, fn, message and tag it reaches (ADR 0045 C).',
+      {
+        summary:
+          CLOSED_FIX[kind] ??
+          'Pass what the render needs as a prop, a slot or children instead of referencing it',
+        snippet:
+          kind === 'event'
+            ? "events: ['press'], render: ({ on }) => ui.button({ on: { click: on.press } }, [])"
+            : kind === 'route'
+              ? 'props: z.object({ href: z.string() }), render: ({ props }) => ui.a({ href: props.href }, [])'
+              : "slots: ['label'], render: ({ slots }) => ui.span({}, [slots.label])",
+        patch: null,
+      },
+    )
   }
 
   at(...tokens: (string | number)[]): At {
@@ -243,6 +286,15 @@ export class FeatureScope {
   }
 
   within<T>(value: unknown, run: () => T): T {
+    const closed = this.closed
+    if (closed && typeof value === 'object' && value !== null && closed.caller.has(value)) {
+      this.closed = null
+      try {
+        return this.within(value, run)
+      } finally {
+        this.closed = closed
+      }
+    }
     const part = typeof value === 'object' && value !== null ? partOf.get(value) : undefined
     if (!part) return run()
     const previous = current
@@ -319,6 +371,7 @@ export class FeatureScope {
     const owner = this.project.owners.get(decl as object)
     if (owner && kinds.includes(owner.kind)) {
       this.foreign(decl as object, owner, pointer)
+      this.closedRender(decl as object, owner.kind, `${owner.feature}.${owner.symbol}`, pointer)
       return `${owner.feature}.${owner.symbol}`
     }
     const info = infoOf(decl)
@@ -478,6 +531,7 @@ export class FeatureScope {
       }
     if (link) {
       const route = this.project.routes.get(link.route as object)
+      if (route) this.closedRender(link.route as object, 'route', route, pointer)
       if (!route)
         this.report(
           'HZ007',
@@ -505,6 +559,8 @@ export class FeatureScope {
           this.project.bindings.fns[name] = (i18nFns[name] ?? operatorFns[name])!
           const owner = message ? this.project.owners.get(message.decl) : null
           if (message && owner) this.foreign(message.decl, owner, pointer)
+          if (message && owner)
+            this.closedRender(message.decl, 'messages', `${owner.feature}.${message.key}`, pointer)
           if (message && !owner)
             this.report(
               'HZ007',

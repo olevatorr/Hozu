@@ -7,7 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev packages/bundle packages/image packages/content packages/testing packages/transform packages/create-hozu && node packages/runtime-client/scripts/bundle.ts && node scripts/skill.ts --pack",
+    "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/cli packages/css packages/dev packages/bundle packages/image packages/content packages/variants packages/testing packages/transform packages/create-hozu && node packages/runtime-client/scripts/bundle.ts && node scripts/skill.ts --pack",
     "typecheck": "tsc -b tsconfig.json",
     "test": "pnpm build && vitest run",
     "bench": "pnpm build && node --import ./packages/transform/dist/register.js bench/run.ts",
@@ -38,6 +38,7 @@
     "@hozu/schema-zod": "workspace:*",
     "@hozu/testing": "workspace:*",
     "@hozu/validator": "workspace:*",
+    "@hozu/variants": "workspace:*",
     "@types/node": "22.20.4",
     "ajv": "8.20.0",
     "create-hozu": "workspace:*",
