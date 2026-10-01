@@ -421,7 +421,13 @@ it. `hozu add component` stays in phase 5.
 14. **Notes override:** `rounded-lg!` on the sign-in button is a deliberate visual change on `/login` (corner radius
     0.25rem → 0.5rem), the requested demonstration. `bench/trial/notes/accept.mjs` selects by role and name and asserts
     no class or radius.
-15. `hozu --help` lists `add kit` and `--sync`.
+15. `hozu --help` lists `add kit` and `--sync`. `tsconfig.check.json` now references `packages/css` and
+    `packages/variants`, so their tests are type-checked.
+
+**Found, not fixed (phase 1 types):** `ui.component({ styles: tv({ … }), render: ({ props }) => … })` with the
+`tv()` call inline and a render that destructures its argument is TS2769 "No overload matches this call": the render
+is typed before `S` is inferred from the inline generic call. Binding the result first (`const styles = tv(…)`, as
+A's example and the notes kit do) types correctly. The phase 3 fixtures use that form.
 
 **Proof:**
 - **Catalog** (`validator/test/source-mistakes.test.ts`, stage `css`, 12 cases): HZ072 (two), HZ073 (two), HZ074,
