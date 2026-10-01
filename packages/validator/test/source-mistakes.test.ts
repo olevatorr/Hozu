@@ -1,3 +1,8 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { kitConfigDiagnostics } from '@hozu/cli'
 import { contract, endpoint, event, feature, fn, machine, on, part, project, route, ui } from '@hozu/core'
 import { buildProject, codes, type Diagnostic, type DiagnosticCode } from '@hozu/core/ir'
 import { compileStyles } from '@hozu/css'
@@ -6,6 +11,7 @@ import { createHandler } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { verify } from '@hozu/validator'
 import { tv } from '@hozu/variants'
+import { tvModule, twMergeConfigOf } from '@hozu/variants/config'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
@@ -292,6 +298,26 @@ const styled = async (decls: Record<string, unknown>) => {
   ]
 }
 
+const kitWithTv = async (theme: string[]) => {
+  const root = mkdtempSync(join(tmpdir(), 'hozu-kit-'))
+  mkdirSync(join(root, 'ui'))
+  writeFileSync(
+    join(root, 'ui/tv.ts'),
+    tvModule('ui', twMergeConfigOf({ theme, utilities: [], functional: [] })),
+  )
+  const build = buildProject(
+    project({
+      schema: zodAdapter,
+      routes: { home },
+      pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'Home' }) } })],
+      kits: [ui.kit({ id: 'ui', components: [{ Quiet }] })],
+      features: [feature({ id: 'look', intent: { summary: 'kit' }, declarations: [{ Home }] })],
+    }),
+    { sources: false },
+  )
+  return kitConfigDiagnostics(build, root, fileURLToPath(new URL('../../../package.json', import.meta.url)))
+}
+
 const catalog: SourceMistake[] = [
   {
     name: 'a fn body reads mutable module state',
@@ -420,6 +446,13 @@ const catalog: SourceMistake[] = [
     stage: 'css',
     mistake: () => styled({ Panel, OverlappingToggles }),
     fixed: () => styled({ Panel, LiteralToggles }),
+  },
+  {
+    name: "a kit's generated tailwind-merge config no longer matches the design system",
+    code: 'HZ078',
+    stage: 'css',
+    mistake: () => kitWithTv(['--text-hero']),
+    fixed: () => kitWithTv([]),
   },
   {
     name: 'an endpoint answers a hand-written HTML page',

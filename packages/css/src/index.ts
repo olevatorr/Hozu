@@ -119,3 +119,4 @@ export async function compileStyles(
 }
 
 export { type FontMetrics, fallbackFace, fontMetrics } from './fonts.ts'
+export { type DesignTokens, designTokens } from './tokens.ts'

@@ -7,6 +7,7 @@ import type { Loaded } from '../load.ts'
 import { relativize } from '../output.ts'
 import { componentUses, overridesOf } from '../uses.ts'
 import { inspectApp } from './app.ts'
+import { kitConfigDiagnostics } from './kits.ts'
 import { runValidate } from './validate.ts'
 
 function typescriptBin(from: string): string | null {
@@ -84,7 +85,8 @@ export async function runCheck(loaded: Loaded, cwd: string, updateLock: boolean)
   }
   const validate = await runValidate(loaded, undefined, cwd, updateLock)
   const traced = loaded.build(true)
-  const { diagnostics: entry } = await inspectApp(loaded, traced)
+  const { diagnostics: app } = await inspectApp(loaded, traced)
+  const entry = [...app, ...(await kitConfigDiagnostics(traced, root, loaded.path))]
   validate.diagnostics.push(...relativize(entry, cwd))
   for (const d of entry) validate.summary[d.severity === 'error' ? 'errors' : 'warnings']++
   if (entry.some((d) => d.severity === 'error')) validate.ok = false

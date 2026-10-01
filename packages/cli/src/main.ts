@@ -17,6 +17,7 @@ import { describeExplain, runExplain } from './commands/explain.ts'
 import { mermaid, runGraph } from './commands/graph.ts'
 import { describeImpact, runImpact } from './commands/impact.ts'
 import { runInspect } from './commands/inspect.ts'
+import { describeAddKit, runAddKit } from './commands/kits.ts'
 import { describeMap, runMap } from './commands/map.ts'
 import { describeMigrate, runMigrate } from './commands/migrate.ts'
 import { describePlan, runPlan } from './commands/plan.ts'
@@ -48,6 +49,8 @@ Commands:
   browse <path> --do <step> Run the steps in headless Chrome with and without JS (no server): what each step changed
   add feature <name>        Scaffold a working feature (model, views, contracts, resolvers) and wire it in
   add widget <feature> <Name>  Add a widget: declaration, client module, app.ts bundle, @hozu/bundle dependency
+  add kit <id> [--sync]     Add a component kit: <id>/kit.ts, <id>/tv.ts (tailwind-merge config from the design
+                            system) and project({ kits }); --sync regenerates only the config block
   migrate 0.8               Upgrade a 0.7 app: list the lock entries stale under 0.7, rewrite the source, then check
 
 Options:
@@ -69,6 +72,7 @@ Options:
   --reduced-motion     browse: emulate prefers-reduced-motion: reduce
   --page <path>        add feature: also add a route and a page at this path
   --with <parts>       add feature: any of detail,toggle,filter,remove (comma-separated)
+  --sync               add kit: rewrite the generated block of <id>/tv.ts from the current design system
   -h, --help           Show this help
 `
 
@@ -139,6 +143,7 @@ export async function main(
         full: { type: 'boolean', default: false },
         page: { type: 'string' },
         with: { type: 'string' },
+        sync: { type: 'boolean', default: false },
         select: { type: 'string', multiple: true },
         forms: { type: 'boolean', default: false },
         do: { type: 'string', multiple: true },
@@ -211,10 +216,17 @@ export async function main(
         out(asJson ? json(result) : describeAddWidget(result, positionals[3]!))
         return 0
       }
+      if (target === 'kit') {
+        const sync = values.sync === true
+        const result = await runAddKit(values.config, cwd, positionals[2], sync)
+        out(asJson ? json(result) : describeAddKit(result, positionals[2]!, sync))
+        return 0
+      }
       if (target !== 'feature')
-        throw new HozuCliError('usage', 'hozu add supports: feature, widget', [
+        throw new HozuCliError('usage', 'hozu add supports: feature, widget, kit', [
           'hozu add feature tasks --page /',
           'hozu add widget tasks Chart',
+          'hozu add kit ui',
         ])
       const result = await runAddFeature(cwd, values.config, positionals[2], values.page, values.with)
       const lock = await seedLockIsolated(values.config, cwd, featuresCreated(result.created))

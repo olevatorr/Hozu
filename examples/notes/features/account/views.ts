@@ -35,7 +35,7 @@ export const Login = ui.view({
             }),
           },
         }),
-        ui.use(Button, { props: { type: 'submit' }, class: 'w-full' }, [text.signIn]),
+        ui.use(Button, { props: { type: 'submit' }, class: 'w-full rounded-lg!' }, [text.signIn]),
       ]),
       ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),
     ]),

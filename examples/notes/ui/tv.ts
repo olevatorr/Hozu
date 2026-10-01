@@ -1,3 +1,12 @@
 import { createTV } from '@hozu/variants'
 
-export const tv = createTV({})
+// hozu:variants-config ui
+const twMergeConfig = {
+  extend: {
+    theme: {},
+    classGroups: {},
+  },
+}
+// /hozu:variants-config
+
+export const tv = createTV({ twMergeConfig })

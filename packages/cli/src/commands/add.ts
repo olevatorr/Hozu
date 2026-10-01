@@ -48,7 +48,7 @@ const replacePage = (source: string, route: string, text: string): string | null
   return end < 0 ? null : source.slice(0, m.index) + text + source.slice(end)
 }
 
-const append = (source: string, pattern: RegExp, item: string): string | null => {
+export const append = (source: string, pattern: RegExp, item: string): string | null => {
   const m = pattern.exec(source)
   if (!m) return null
   const inner = m[1]!.trim().replace(/,$/, '')

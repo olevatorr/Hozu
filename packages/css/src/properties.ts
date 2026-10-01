@@ -14,7 +14,10 @@ export const resolveCss = async (id: string) =>
 
 export interface DesignSystem {
   theme: { values: Map<string, { value: string }> }
-  utilities: { keys(kind: 'static' | 'functional'): Iterable<string> }
+  utilities: {
+    keys(kind: 'static' | 'functional'): Iterable<string>
+    has(name: string, kind: 'static' | 'functional'): boolean
+  }
   candidatesToCss(classes: string[]): (string | null)[]
   getClassOrder(classes: string[]): [string, bigint | null][]
   getClassList(): [string, unknown][]
