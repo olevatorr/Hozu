@@ -168,7 +168,7 @@ const Closed = ui.component({
 })
 const PressButton = ui.component({
   tag: 'button',
-  styles: Object.assign(() => '', {
+  styles: Object.assign((_?: { tone?: 'on' | 'off' }) => '', {
     variants: { tone: { on: '', off: '' } },
     defaultVariants: { tone: 'off' },
   }),
