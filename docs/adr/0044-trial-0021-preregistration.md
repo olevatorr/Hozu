@@ -2,6 +2,9 @@
 
 - Status: accepted with ADR 0043 (gate G12). Written before any 0.8 code; the targets below are not changed after the
   runs start.
+- **Deviation (owner, 2026-10-01, after the first pair started):** one run per framework instead of three, and no short
+  variant, so that feature work can start. The targets are unchanged; the report states n = 1, treats a result near a
+  threshold as undecided, and run 2's `s12m` (tagged) stays ready for a later second and third run.
 - Question: does Hozu 0.8 remove what trial 0020 measured? Concretely:
   - the silent regressions;
   - the cost that grew with each change;
