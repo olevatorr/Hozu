@@ -60,8 +60,8 @@ around the rule.
 | HZ064 | two contracts with identical IR | remove one (patch) |
 | HZ070 | a component's render references a declaration (event, query, route, message…) | pass a `Send` through `on`, an `Href` prop, text as a prop or slot |
 | HZ071 | a variant from data | make it a prop, styled through an attribute (`aria-pressed:`, `data-[x=y]:`) |
-| HZ072 | a caller's `class` sets a property the component owns | declare a variant; a one-off ends with `!` (patch) |
-| HZ073 / HZ074 | `!` inside a component / a leading `!x` | remove it (patch) / write `x!` (patch) |
+| HZ072 | a caller's `class` sets a property the component owns | declare a variant; a one-off ends with `!` (snippet) |
+| HZ073 / HZ074 | `!` inside a component / a leading `!x` | remove it (patch in the tv config, snippet in the render) / write `x!` (patch) |
 | HZ075 | (warning) a caller's inherited class (colour, font) is hidden by an inner element | a variant, or style the inner element |
 | HZ076 | (warning) a component owns a margin | remove it (patch); outer spacing is the caller's |
 | HZ077 | (warning) `!` on a property the component does not own | remove the `!` (patch) |
