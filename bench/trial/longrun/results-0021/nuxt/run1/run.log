@@ -1,0 +1,34 @@
+[2026-10-01 09:50:24] nuxt/run1 start from s12
+[2026-10-01 09:50:26] nuxt/run1 step 13 attempt 1
+step 13: 54/54 new 4/4 regression 50/50 js {"login":198547,"list":215796}
+[2026-10-01 09:57:29] nuxt/run1 step 14 attempt 1
+step 14: 55/55 new 1/1 regression 54/54 js {"login":198547,"list":215841}
+[2026-10-01 10:04:59] nuxt/run1 step 15 attempt 1
+step 15: 59/59 new 4/4 regression 55/55 js {"login":198547,"list":218608}
+[2026-10-01 10:13:20] nuxt/run1 step 16 attempt 1
+step 16: 61/61 new 2/2 regression 59/59 js {"login":198683,"list":218937}
+[2026-10-01 10:21:04] nuxt/run1 step 17 attempt 1
+step 17: 64/64 new 3/3 regression 61/61 js {"login":199027,"list":220944}
+[2026-10-01 10:29:13] nuxt/run1 step 18 attempt 1
+step 18: 66/66 new 2/2 regression 64/64 js {"login":203626,"list":225789}
+[2026-10-01 10:39:05] nuxt/run1 step 19 attempt 1
+step 19: 68/68 new 2/2 regression 66/66 js {"login":203658,"list":225927}
+[2026-10-01 10:47:52] nuxt/run1 step 20 attempt 1
+step 20: 64/64 new 1/1 regression 63/63 js {"login":203441,"list":223947}
+[2026-10-01 10:56:21] nuxt/run1 step 21 attempt 1
+step 21: 66/66 new 2/2 regression 64/64 js {"login":203560,"list":224092}
+[2026-10-01 11:04:28] nuxt/run1 step 22 attempt 1
+step 22: 67/67 new 3/3 regression 64/64 js {"login":203715,"list":224253}
+[2026-10-01 11:13:07] nuxt/run1 step 23 attempt 1
+step 23: 68/68 new 2/2 regression 66/66 js {"login":203715,"list":224253}
+[2026-10-01 11:21:13] nuxt/run1 step 24 attempt 1
+step 24: 71/71 new 3/3 regression 68/68 js {"login":204072,"list":224767}
+[2026-10-01 11:30:08] nuxt/run1 step 25 attempt 1
+step 25: 74/74 new 3/3 regression 71/71 js {"login":205382,"list":227910}
+[2026-10-01 11:39:44] nuxt/run1 step 26 attempt 1
+step 26: 76/76 new 2/2 regression 74/74 js {"login":205403,"list":227982}
+[2026-10-01 11:49:36] nuxt/run1 step 27 attempt 1
+step 27: 77/77 new 4/4 regression 73/73 js {"login":205763,"list":230913}
+[2026-10-01 12:01:18] nuxt/run1 step 28 attempt 1
+step 28: 80/80 new 3/3 regression 77/77 js {"login":206209,"list":233937}
+[2026-10-01 12:12:51] nuxt/run1 done

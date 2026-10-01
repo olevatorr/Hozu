@@ -7,3 +7,4 @@ results-0021/*/*/*.jsonl
 results-0021/*/*/*.err
 results-0021/*/*/*.txt
 !results-0021/*/*/metrics.jsonl
+!results-0021/*/*/fingerprints.jsonl
