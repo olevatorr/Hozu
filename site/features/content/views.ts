@@ -1,8 +1,10 @@
 import { feature, ui } from '@hozu/core'
 import { doc, home, how, trial, trials } from '../../routes.ts'
+import { CodeBlock } from '../../site/code-block.ts'
+import { Prose } from '../../site/prose.ts'
 import { Chapter, Docs } from './articles.ts'
+import { articleBody } from './body.ts'
 import { Footer, Header } from './chrome.ts'
-import { CodeCopy } from './components.ts'
 import {
   getChangelog,
   getChapter,
@@ -131,7 +133,7 @@ export const Home = ui.view({
           getStart,
           {},
           {
-            ready: (start) => ui.use(CodeCopy, { props: {}, on: {} }, [ui.html(start.html)]),
+            ready: (start) => ui.use(CodeBlock, {}, [ui.html(start.html)]),
             pending: null,
             failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Quick start is unavailable.']) },
           },
@@ -222,9 +224,9 @@ export const Home = ui.view({
 })
 export const Trials = ui.view({
   render: () =>
-    ui.main({ id: 'main', 'data-reading': '' }, [
+    ui.use(Prose, { variant: { width: 'single' } }, [
       ui.h1({}, ['Trials, not promises.']),
-      ui.p({}, [
+      ui.p({ class: 'text-xl' }, [
         'The original experiments: what worked, what failed, and what it cost. These pages render directly from docs/trials in the repository. Historical records retain the name Tenon.',
       ]),
       ui.query(
@@ -232,18 +234,20 @@ export const Trials = ui.view({
         {},
         {
           ready: (items) =>
-            ui.table({}, [
-              ui.caption({}, ['All trials, newest first']),
-              ui.thead({}, [
-                ui.tr({}, [ui.th({ scope: 'col' }, ['Trial']), ui.th({ scope: 'col' }, ['Source'])]),
-              ]),
-              ui.tbody({}, [
-                ui.each(items, 'slug', (item) =>
-                  ui.tr({}, [
-                    ui.td({}, [ui.a({ href: ui.link(trial, { slug: item.slug }) }, [item.title])]),
-                    ui.td({}, ['Repository record']),
-                  ]),
-                ),
+            ui.div({ class: 'overflow-x-auto' }, [
+              ui.table({}, [
+                ui.caption({}, ['All trials, newest first']),
+                ui.thead({}, [
+                  ui.tr({}, [ui.th({ scope: 'col' }, ['Trial']), ui.th({ scope: 'col' }, ['Source'])]),
+                ]),
+                ui.tbody({}, [
+                  ui.each(items, 'slug', (item) =>
+                    ui.tr({}, [
+                      ui.td({}, [ui.a({ href: ui.link(trial, { slug: item.slug }) }, [item.title])]),
+                      ui.td({}, ['Repository record']),
+                    ]),
+                  ),
+                ]),
               ]),
             ]),
           pending: null,
@@ -255,52 +259,44 @@ export const Trials = ui.view({
 export const Trial = ui.view({
   route: trial,
   render: ({ params }) =>
-    ui.main({ id: 'main', 'data-reading': '' }, [
-      ui.a({ href: ui.link(trials, null) }, ['All trials']),
-      ui.query(
-        getTrial,
-        { slug: params.slug },
-        {
-          ready: (article) =>
-            ui.article({ class: 'prose max-w-none' }, [
-              article.hasCode
-                ? ui.use(CodeCopy, { props: {}, on: {} }, [ui.html(article.html)])
-                : ui.html(article.html),
-            ]),
-          pending: null,
-          failed: {
-            NotFound: () => ui.h1({}, ['Page not found']),
-            Unexpected: () => ui.p({ role: 'alert' }, ['Trial is unavailable.']),
-          },
+    ui.query(
+      getTrial,
+      { slug: params.slug },
+      {
+        ready: (article) =>
+          ui.use(Prose, { variant: { width: 'single' } }, [
+            ui.a(
+              { href: ui.link(trials, null), class: 'font-mono text-xs font-bold text-red no-underline' },
+              ['All trials'],
+            ),
+            articleBody(article),
+          ]),
+        pending: null,
+        failed: {
+          NotFound: () => ui.use(Prose, { variant: { width: 'single' } }, [ui.h1({}, ['Page not found'])]),
+          Unexpected: () => ui.p({ role: 'alert' }, ['Trial is unavailable.']),
         },
-      ),
-    ]),
+      },
+    ),
 })
 export const Changelog = ui.view({
   render: () =>
-    ui.main({ id: 'main', 'data-reading': '' }, [
-      ui.query(
-        getChangelog,
-        {},
-        {
-          ready: (article) =>
-            ui.article({ class: 'prose max-w-none' }, [
-              article.hasCode
-                ? ui.use(CodeCopy, { props: {}, on: {} }, [ui.html(article.html)])
-                : ui.html(article.html),
-            ]),
-          pending: null,
-          failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Changelog is unavailable.']) },
-        },
-      ),
-    ]),
+    ui.query(
+      getChangelog,
+      {},
+      {
+        ready: (article) => ui.use(Prose, { variant: { width: 'single' } }, [articleBody(article)]),
+        pending: null,
+        failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Changelog is unavailable.']) },
+      },
+    ),
 })
 export const NotFound = ui.view({
   render: () =>
-    ui.main({ id: 'main', 'data-reading': '' }, [
+    ui.use(Prose, { variant: { width: 'single' } }, [
       ui.h1({}, ['Page not found']),
       ui.p({}, ['This page does not exist. Start with the documentation or return home.']),
-      ui.a({ href: ui.link(home, null), 'data-button': '' }, ['Return home']),
+      ui.a({ href: ui.link(home, null) }, ['Return home']),
     ]),
 })
 export const content = feature({
@@ -309,7 +305,6 @@ export const content = feature({
   intent: { summary: 'Static official Hozu documentation, trials and releases' },
   declarations: [
     {
-      CodeCopy,
       listChapters,
       getChapter,
       getStart,

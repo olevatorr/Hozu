@@ -76,7 +76,7 @@ for (const file of files.filter((name) => name.endsWith('.html'))) {
       /<script type="module" src="\/_hozu\/client\.js">/,
       `${file}: code blocks get the copy widget`,
     )
-    assert.ok(html.includes('content.CodeCopy'), `${file}: the copy widget is in the payload`)
+    assert.ok(html.includes('site.CodeBlock'), `${file}: the copy widget is in the payload`)
   } else {
     assert.ok(!/<script[^>]+(?:src=|type="module")/.test(html), `${file}: no client scripts`)
     assert.ok(!/rel="modulepreload"/.test(html), `${file}: no hidden JavaScript preloads`)
