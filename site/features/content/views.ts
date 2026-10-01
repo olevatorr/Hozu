@@ -149,6 +149,11 @@ export const Home = ui.view({
           ),
         ],
       ),
+    ]),
+})
+export const Evidence = ui.view({
+  render: () =>
+    ui.div({}, [
       ui.use(Section, { variant: { depth: 5 }, props: { label: 'Skeptics', kicker: '07 · The trials' } }, [
         ui.use(Heading, {}, ['Measured, with the rough edges included.']),
         ui.p({ class: 'mt-4 max-w-3xl' }, [
@@ -309,6 +314,7 @@ export const content = feature({
       Header,
       Footer,
       Home,
+      Evidence,
       Docs,
       Trials,
       Trial,

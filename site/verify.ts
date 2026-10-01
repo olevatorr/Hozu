@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import { access, readdir, readFile, stat } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import { codes } from '@hozu/core/ir'
 import { testApp } from '@hozu/testing'
 import site from './app.ts'
@@ -42,6 +44,34 @@ for (const c of claims)
 console.log(
   `${claims.length} claims link to existing trials; ${catches.length} catch cards match the registry`,
 )
+const snapshot = JSON.parse(
+  await readFile(new URL('./features/play/render-snapshot.json', import.meta.url), 'utf8'),
+)
+for (const intent of ['solid', 'outline'] as const) {
+  const fresh = JSON.parse(
+    execFileSync(
+      'pnpm',
+      [
+        'exec',
+        'hozu',
+        'render',
+        'site.Button',
+        '--variant',
+        `intent=${intent}`,
+        '--props',
+        '{"href":"#"}',
+        '--json',
+      ],
+      { cwd: fileURLToPath(new URL('.', import.meta.url)), encoding: 'utf8' },
+    ),
+  )
+  assert.deepEqual(
+    snapshot[intent],
+    { html: fresh.html, class: fresh.class, owned: fresh.owned },
+    `render snapshot ${intent} is current`,
+  )
+}
+console.log('Playground render snapshot equals hozu render')
 const root = new URL('./dist/', import.meta.url)
 assert.equal(await readFile(new URL('CNAME', root), 'utf8'), 'hozu.org\n')
 assert.equal(await readFile(new URL('.nojekyll', root), 'utf8'), '')

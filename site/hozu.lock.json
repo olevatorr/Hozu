@@ -1394,6 +1394,40 @@
         },
         "summary": "validated --SetScope--> validated · scope := event.value · after 700ms"
       }
+    },
+    "play": {
+      "ready/on/play.Pick/0": {
+        "behavior": "10e0f0639b786266",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "intent"
+              ],
+              "value": {
+                "path": [
+                  "intent"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "ready",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "ready --Pick--> ready · intent := event.intent"
+      }
     }
   },
   "pages": {
