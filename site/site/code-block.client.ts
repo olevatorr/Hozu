@@ -1,7 +1,7 @@
 import { implement } from '@hozu/core/component'
-import type { CodeCopy } from './components.ts'
+import type { CodeBlock } from './code-block.ts'
 
-export default implement<typeof CodeCopy>(({ el, signal }) => {
+export default implement<typeof CodeBlock>(({ el, signal }) => {
   for (const pre of el.querySelectorAll('pre')) {
     const button = document.createElement('button')
     button.type = 'button'

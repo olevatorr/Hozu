@@ -7,7 +7,8 @@
     "check": "hozu check",
     "export": "node --import @hozu/transform/register export.ts",
     "typecheck": "tsc --noEmit -p .",
-    "verify": "node --import @hozu/transform/register verify.ts"
+    "verify": "node --import @hozu/transform/register verify.ts",
+    "verify:browser": "node --import @hozu/transform/register verify-browser.ts"
   },
   "dependencies": {
     "@hozu/adapter-static": "workspace:*",
@@ -21,6 +22,7 @@
     "@hozu/schema-zod": "workspace:*",
     "@hozu/testing": "workspace:*",
     "@hozu/transform": "workspace:*",
+    "@hozu/variants": "workspace:*",
     "@tailwindcss/typography": "0.5.20",
     "tailwindcss": "4.3.3",
     "zod": "4.6.5"

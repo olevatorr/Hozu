@@ -1,6 +1,10 @@
 # Hozu website
 
-The official site at https://hozu.org is a private Hozu workspace application. Every query is public and static. The How it works overview has a Hozu machine for its interactive teaching lab. Other pages have no client scripts. There are no mutations, sessions, analytics or external font requests.
+The official site at https://hozu.org is a Hozu 0.9 application built from its own component kit. Every query is
+public and static. Two machine views ship JavaScript (the home page, with the demo and the playground, and the How it
+works lab); a copy button loads on pages with code. There are no mutations, sessions, analytics or external font requests.
+
+Design: [DESIGN.md](DESIGN.md). Plan: [PLAN.md](PLAN.md). What 0.9 could not express: [FRAMEWORK-GAPS.md](FRAMEWORK-GAPS.md).
 
 ## Build and verify
 
@@ -14,29 +18,36 @@ pnpm --filter hozu-site export
 pnpm --filter hozu-site verify
 ```
 
-The first build compiles workspace packages on a fresh checkout. Export replaces only `site/dist`, reports every skipped route and fails if any route is skipped. Verification checks in-process responses, content coverage, exported links and assets, sitemap origins and Pages metadata. No development server is required.
+Export replaces only `site/dist`, copies the trial images, and fails if any route is skipped. Verify checks:
+- in-process responses, content coverage, exported links and assets, the sitemap and Pages metadata;
+- that the header version equals `packages/core/package.json`;
+- that every claim is shown on the home page with its value and a link to its trial, that every ×, n/n and KB number
+  there comes from `claims.ts`, and that every catch card's code and name exist in the diagnostic registry;
+- that the playground's `hozu render` snapshot equals a fresh run;
+- that each page carries only its declared islands;
+- that every page has one `<main>`, and reduced motion stops every animation.
+
+`pnpm --filter hozu-site verify:browser` (local Chrome) checks text contrast (4.5:1, 3:1 for large text) on seven
+pages.
 
 ## Content sources
 
-- `content/docs/*.md`: human documentation. Front matter declares `title`, `description` and `order`; order controls the sidebar and previous/next navigation.
-- `content/how-it-works/*.md`: ordered explanations of the design, with native interactive pipeline and render-plan controls.
-- `../docs/trials/*.md`: the original trial records, loaded directly with `@hozu/content`. Do not copy them into the site. Relative links to trials resolve to published trial pages; other relative links resolve to GitHub source.
-- `../CHANGELOG.md`: the original changelog, rendered directly.
-- `features/content/views.ts`: home page; `chrome.ts`, `articles.ts` and `diagrams.ts` hold navigation, reading layouts and native interactive diagrams. Measured claims link to trials 0010–0013. The 72/72 versus 67/72 result comes specifically from trial 0012.
-- `assets/`: copies of the repository logo and the sharing icon (`head.image` via `ui.asset`).
+- `content/docs/*.md` and `content/how-it-works/*.md`: front matter declares `title`, `description` and `order`.
+- `../docs/trials/*.md` and their `.svg` images, loaded directly; `../CHANGELOG.md`, rendered directly.
+- `features/content/claims.ts`: every number the home page shows, each with its trial.
+
+## Structure
+
+- `site/`: the `site` kit (`ui.kit({ id: 'site' })`): frame, type, buttons, sections, receipt, catch cards, ticker,
+  the 3D joint, reading layout and the copy button. Styles are `tv()` from `site/tv.ts`; `hozu add kit site --sync`
+  refreshes its tailwind-merge block from `app.css`.
+- `features/content`: pages, queries, the claims and catch cards.
+- `features/home`: the home page, one machine (the "AI change" demo and the component playground) and one view inside
+  `<main>`. Regenerate `render-snapshot.json` after changing `site/button.ts`.
+- `features/lab`: the pipeline and render-plan walkthrough and its contracts.
 
 ## Deployment
 
-`.github/workflows/pages.yml` builds and uploads `site/dist` on the configured main-branch paths or a manual dispatch, then deploys with the GitHub Pages environment. Select GitHub Actions as the repository's Pages source and configure the custom domain `hozu.org` with its DNS records. The workflow does not change repository settings or DNS.
-
-The export includes `CNAME`, `.nojekyll`, `404.html`, `sitemap.xml`, `robots.txt`, a static sharing image and a web manifest.
-
-## Verification record
-
-See [the v2 review](REVIEW.md) for route checks, screenshot findings, article counts and the repository gate. Syntax highlighting runs at build time. The six chapters retain native HTML/CSS explanations. The overview now loads the Hozu client for its pipeline and render-plan lab; see [the interactive review](INTERACTIVE-REVIEW.md) for script measurements and browser checks. The conditional clipboard island attempt is documented in [framework gaps](FRAMEWORK-GAPS.md).
-
-The framework packages remain unchanged.
-
-## Interactive browser verification
-
-Serve the export with a static file server on port 4799, then run `node site/verify-browser.ts` from the repository root. The check uses the repository's existing Playwright dependency and a locally installed Chrome. Set `HOZU_BROWSER_EXECUTABLE` to use a different browser executable and `HOZU_SITE_URL` to use a different local origin. Screenshots and request measurements are saved to `.tmp/site-interactive/`. Stop the static server by its PID when finished.
+`.github/workflows/pages.yml` builds and uploads `site/dist` on the configured main-branch paths or a manual dispatch,
+then deploys with the GitHub Pages environment. The export includes `CNAME`, `.nojekyll`, `404.html`, `sitemap.xml`,
+`robots.txt`, a static sharing image and a web manifest.

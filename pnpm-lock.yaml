@@ -828,6 +828,9 @@ importers:
       '@hozu/transform':
         specifier: workspace:*
         version: link:../packages/transform
+      '@hozu/variants':
+        specifier: workspace:*
+        version: link:../packages/variants
       '@tailwindcss/typography':
         specifier: 0.5.20
         version: 0.5.20(tailwindcss@4.3.3)

@@ -1,0 +1,47 @@
+import { event, machine, on, query } from '@hozu/core'
+import { z } from 'zod'
+
+const Intent = z.enum(['solid', 'outline'])
+export const Break = event({ payload: z.object({}) })
+export const Fix = event({ payload: z.object({}) })
+export const Pick = event({ payload: z.object({ intent: Intent }) })
+export const getPlayground = query({
+  input: z.object({}),
+  output: z.object({ source: z.string(), solid: z.string(), outline: z.string() }),
+  scope: 'public',
+  freshness: 'static',
+})
+export const m = machine({
+  context: z.object({ broken: z.boolean(), intent: Intent }),
+  initialContext: { broken: false, intent: 'solid' },
+  initial: 'clean',
+  on: ({ ctx }) => [
+    on(Pick, {
+      assign: (e) => {
+        ctx.intent = e.intent
+      },
+    }),
+  ],
+  states: ({ ctx }) => ({
+    clean: {
+      on: [
+        on(Break, {
+          target: 'broken',
+          assign: () => {
+            ctx.broken = true
+          },
+        }),
+      ],
+    },
+    broken: {
+      on: [
+        on(Fix, {
+          target: 'clean',
+          assign: () => {
+            ctx.broken = false
+          },
+        }),
+      ],
+    },
+  }),
+})

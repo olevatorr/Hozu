@@ -1,12 +1,17 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import { access, readdir, readFile, stat } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
+import { codes } from '@hozu/core/ir'
 import { testApp } from '@hozu/testing'
 import site from './app.ts'
+import { catches, claims } from './features/content/claims.ts'
 
 const app = testApp(site)
 for (const [path, status, text] of [
-  ['/', 200, 'Public query notes.notesOf is keyed by user-scoped data'],
-  ['/', 200, 'Every run, trials 0016–0019'],
+  ['/', 200, 'Hozu checks it'],
+  ['/', 200, 'Here is the receipt'],
+  ['/', 200, 'AI CHANGE'],
   ['/trials/0019-0-7-write-less', 200, '1.38×'],
   ['/how-it-works', 200, 'Understand the design'],
   ['/how-it-works/why-ai-first', 200, 'Why AI-first?'],
@@ -28,6 +33,60 @@ for (const [path, status, text] of [
   assert.ok(response.text.includes(text), `${path}: missing ${text}`)
   console.log(`${path}: ${status}, expected text present`)
 }
+const release = JSON.parse(await readFile(new URL('../packages/core/package.json', import.meta.url), 'utf8'))
+const homePage = await readFile(new URL('./dist/index.html', import.meta.url), 'utf8')
+assert.ok(homePage.includes(`data-version="${release.version}"`), `header shows ${release.version}`)
+console.log(`Header version ${release.version} equals packages/core`)
+for (const c of claims) await access(new URL(`./dist/trials/${c.trial}/index.html`, import.meta.url))
+for (const c of catches) assert.equal(codes[c.code]?.name, c.name, `${c.code} is ${c.name} in the registry`)
+for (const c of claims) {
+  const shown = [...homePage.matchAll(new RegExp(`<a[^>]*data-claim="${c.id}"[^>]*>(.*?)</a>`, 'gs'))]
+  assert.ok(shown.length > 0, `${c.id} is shown on the home page`)
+  for (const [element, inner] of shown) {
+    assert.ok(element.includes(`href="/trials/${c.trial}"`), `${c.id} links to ${c.trial}`)
+    assert.ok(inner!.includes(c.value), `${c.id} shows ${c.value}`)
+  }
+}
+const visible = homePage
+  .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<pre[\s\S]*?<\/pre>/g, ' ')
+  .replace(/<[^>]+>/g, ' ')
+const numbers = visible.match(/\d+(?:\.\d+)?(?:–\d+(?:\.\d+)?)?×|\d+\/\d+|\d+(?:\.\d+)? KB/g) ?? []
+for (const n of numbers)
+  assert.ok(
+    claims.some((c) => c.value.includes(n)),
+    `home number ${n} comes from claims.ts`,
+  )
+console.log(
+  `${claims.length} claims link to existing trials; ${catches.length} catch cards match the registry`,
+)
+const snapshot = JSON.parse(
+  await readFile(new URL('./features/home/render-snapshot.json', import.meta.url), 'utf8'),
+)
+for (const intent of ['solid', 'outline'] as const) {
+  const fresh = JSON.parse(
+    execFileSync(
+      'pnpm',
+      [
+        'exec',
+        'hozu',
+        'render',
+        'site.Button',
+        '--variant',
+        `intent=${intent}`,
+        '--props',
+        '{"href":"#"}',
+        '--json',
+      ],
+      { cwd: fileURLToPath(new URL('.', import.meta.url)), encoding: 'utf8' },
+    ),
+  )
+  assert.deepEqual(
+    snapshot[intent],
+    { html: fresh.html, class: fresh.class, owned: fresh.owned },
+    `render snapshot ${intent} is current`,
+  )
+}
+console.log('Playground render snapshot equals hozu render')
 const root = new URL('./dist/', import.meta.url)
 assert.equal(await readFile(new URL('CNAME', root), 'utf8'), 'hozu.org\n')
 assert.equal(await readFile(new URL('.nojekyll', root), 'utf8'), '')
@@ -61,6 +120,7 @@ let pages = 0
 for (const file of files.filter((name) => name.endsWith('.html'))) {
   const html = await readFile(new URL(file, root), 'utf8')
   assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1, `${file}: one main heading`)
+  assert.equal((html.match(/<main[ >]/g) ?? []).length, 1, `${file}: one main landmark`)
   const interactive = file === 'how-it-works/index.html'
   if (interactive) {
     assert.match(html, /<script type="module" src="\/_hozu\/client\.js">/, 'Overview loads its Hozu island')
@@ -72,7 +132,7 @@ for (const file of files.filter((name) => name.endsWith('.html'))) {
       /<script type="module" src="\/_hozu\/client\.js">/,
       `${file}: code blocks get the copy widget`,
     )
-    assert.ok(html.includes('content.CodeCopy'), `${file}: the copy widget is in the payload`)
+    assert.ok(html.includes('site.CodeBlock'), `${file}: the copy widget is in the payload`)
   } else {
     assert.ok(!/<script[^>]+(?:src=|type="module")/.test(html), `${file}: no client scripts`)
     assert.ok(!/rel="modulepreload"/.test(html), `${file}: no hidden JavaScript preloads`)
@@ -114,6 +174,30 @@ assert.ok(
   files.some((file) => file.endsWith('client.js')),
   'Interactive overview has its client runtime',
 )
-console.log(
-  'Client JavaScript: the overview island, and the copy widget on pages with code blocks; every other page has none.',
+const islandFeatures: Record<string, string[]> = {
+  'index.html': ['home'],
+  'how-it-works/index.html': ['lab'],
+}
+for (const file of files.filter((name) => name.endsWith('.html'))) {
+  const html = await readFile(new URL(file, root), 'utf8')
+  const payload = html.match(/<script type="application\/json" id="hozu-payload">(.*?)<\/script>/s)?.[1]
+  const ids: string[] = payload ? JSON.parse(payload).ids : []
+  const allowed = islandFeatures[file] ?? (html.includes('<pre') ? ['content'] : [])
+  for (const id of ids) assert.ok(allowed.includes(id.split('.')[0]!), `${file}: unexpected island ${id}`)
+  assert.ok(
+    ids.length > 0 || !html.includes('/_hozu/client.js'),
+    `${file}: client JavaScript without an island`,
+  )
+}
+for (const id of ['"home.Home']) assert.ok(homePage.includes(id), `home binds ${id.slice(1)}`)
+const stylesheet = homePage.match(/href="(\/_hozu\/styles\.[0-9a-f]+\.css)"/)?.[1]
+assert.ok(stylesheet, 'home links its stylesheet')
+const css = await readFile(new URL(`.${stylesheet}`, root), 'utf8')
+assert.match(
+  css,
+  /@media \(prefers-reduced-motion: ?reduce\)\{\*,:before,:after\{[^}]*animation-duration:\.01ms!important/,
+  'reduced motion stops every animation',
 )
+for (const name of ['rise', 'ticker', 'turn'])
+  assert.ok(css.includes(`@keyframes ${name}`), `keyframes ${name} shipped`)
+console.log('Islands: home (home), how-it-works (lab), CodeBlock on code pages; reduced motion covered')

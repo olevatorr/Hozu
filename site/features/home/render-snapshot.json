@@ -1,0 +1,42 @@
+{
+  "solid": {
+    "html": "<a class=\"inline-block px-4 py-3 text-sm font-extrabold uppercase tracking-wide bg-ink text-paper shadow-[6px_6px_0_var(--color-red)]\" href=\"#\"></a>",
+    "class": "inline-block px-4 py-3 text-sm font-extrabold uppercase tracking-wide bg-ink text-paper shadow-[6px_6px_0_var(--color-red)]",
+    "owned": [
+      "background-color",
+      "border-color",
+      "border-style",
+      "border-width",
+      "box-shadow",
+      "color",
+      "display",
+      "font-size",
+      "font-weight",
+      "letter-spacing",
+      "line-height",
+      "padding-block",
+      "padding-inline",
+      "text-transform"
+    ]
+  },
+  "outline": {
+    "html": "<a class=\"inline-block px-4 py-3 text-sm font-extrabold uppercase tracking-wide border-4 border-ink text-ink\" href=\"#\"></a>",
+    "class": "inline-block px-4 py-3 text-sm font-extrabold uppercase tracking-wide border-4 border-ink text-ink",
+    "owned": [
+      "background-color",
+      "border-color",
+      "border-style",
+      "border-width",
+      "box-shadow",
+      "color",
+      "display",
+      "font-size",
+      "font-weight",
+      "letter-spacing",
+      "line-height",
+      "padding-block",
+      "padding-inline",
+      "text-transform"
+    ]
+  }
+}

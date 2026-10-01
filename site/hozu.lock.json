@@ -1,5 +1,129 @@
 {
   "features": {
+    "home": {
+      "broken/on/home.Fix/0": {
+        "behavior": "a4dca426ee545a36",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "broken"
+              ],
+              "value": {
+                "literal": false
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "clean",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "broken --Fix--> clean · broken := false"
+      },
+      "broken/on/home.Pick/0": {
+        "behavior": "bed3225cb3f0dad9",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "intent"
+              ],
+              "value": {
+                "path": [
+                  "intent"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "broken",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "broken --Pick--> broken · intent := event.intent"
+      },
+      "clean/on/home.Break/0": {
+        "behavior": "68dc78c943968fad",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "broken"
+              ],
+              "value": {
+                "literal": true
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "broken",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "clean --Break--> broken · broken := true"
+      },
+      "clean/on/home.Pick/0": {
+        "behavior": "4dd889e7c78ebde1",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "intent"
+              ],
+              "value": {
+                "path": [
+                  "intent"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "clean",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "clean --Pick--> clean · intent := event.intent"
+      }
+    },
     "lab": {
       "blocked/on/lab.Run/0": {
         "behavior": "17f2ee7521128407",

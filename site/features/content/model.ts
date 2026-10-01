@@ -69,3 +69,9 @@ export const getStart = query({
   scope: 'public',
   freshness: 'static',
 })
+export const getRelease = query({
+  input: z.object({}),
+  output: z.object({ version: z.string() }),
+  scope: 'public',
+  freshness: 'static',
+})

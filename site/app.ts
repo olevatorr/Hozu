@@ -9,15 +9,32 @@ import {
   getChangelog,
   getChapter,
   getDoc,
+  getRelease,
   getStart,
   getTrial,
   listChapters,
   listDocs,
   listTrials,
 } from './features/content/model.ts'
+import { getPlayground } from './features/home/model.ts'
 import { highlight } from './highlight.ts'
 import project from './hozu.config.ts'
 
+const release = JSON.parse(
+  await readFile(new URL('../packages/core/package.json', import.meta.url), 'utf8'),
+) as {
+  version: string
+}
+const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const buttonSource = await readFile(new URL('./site/button.ts', import.meta.url), 'utf8')
+const renders = JSON.parse(
+  await readFile(new URL('./features/home/render-snapshot.json', import.meta.url), 'utf8'),
+)
+const playground = {
+  source: highlight(`<pre><code class="language-ts">${escapeHtml(buttonSource)}</code></pre>`),
+  solid: JSON.stringify(renders.solid, null, 2),
+  outline: JSON.stringify(renders.outline, null, 2),
+}
 const repository = 'https://github.com/olevatorr/Hozu/blob/main/'
 const rewriteLinks = (html: string, source: string) =>
   html
@@ -110,6 +127,8 @@ export default app({
     implement(getDoc, ({ slug }, { fail }) => article(docs, slug) ?? fail('NotFound', { slug })),
     implement(listTrials, () => trials.map(summary)),
     implement(getTrial, ({ slug }, { fail }) => article(trials, slug) ?? fail('NotFound', { slug })),
+    implement(getPlayground, () => playground),
+    implement(getRelease, () => ({ version: release.version })),
     implement(getChangelog, () => ({ html: changelogHtml, hasCode: changelogHtml.includes('<pre') })),
   ]),
   components: bundleComponents,

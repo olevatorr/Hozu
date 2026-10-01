@@ -8,13 +8,15 @@ import {
   Docs,
   Footer,
   Header,
-  Home,
   NotFound,
   Trial,
   Trials,
 } from './features/content/views.ts'
+import { homePage } from './features/home/feature.ts'
+import { Home } from './features/home/views.ts'
 import { How, lab } from './features/lab/views.ts'
 import { changelog, chapter, doc, home, how, notFound, trial, trials } from './routes.ts'
+import { kit } from './site/kit.ts'
 
 const icon = ui.asset(new URL('./assets/icon-256.png', import.meta.url))
 export default project({
@@ -113,5 +115,6 @@ export default project({
       head: { render: () => ({ title: 'Page not found — Hozu', noindex: true, image: icon }) },
     }),
   ],
-  features: [content, lab],
+  kits: [kit],
+  features: [content, homePage, lab],
 })

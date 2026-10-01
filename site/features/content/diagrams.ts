@@ -55,19 +55,29 @@ export const pipelineDiagram = () =>
                 width: 118,
                 height: 52,
                 rx: 8,
-                fill: 'var(--surface)',
-                stroke: 'var(--border)',
+                fill: 'var(--color-paper)',
+                stroke: 'var(--color-ink)',
               },
               [],
             ),
             ui.text(
-              { x: index * 130 + 59, y: 46, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 15 },
+              {
+                x: index * 130 + 59,
+                y: 46,
+                'text-anchor': 'middle',
+                fill: 'var(--color-ink)',
+                'font-size': 15,
+              },
               [step[1]],
             ),
             ...(index < 4
               ? [
                   ui.path(
-                    { d: `M${index * 130 + 120} 40h8m-4-4 4 4-4 4`, stroke: 'var(--accent)', fill: 'none' },
+                    {
+                      d: `M${index * 130 + 120} 40h8m-4-4 4 4-4 4`,
+                      stroke: 'var(--color-red)',
+                      fill: 'none',
+                    },
                     [],
                   ),
                 ]
@@ -92,19 +102,25 @@ export const pipelineDiagram = () =>
               width: 220,
               height: 54,
               rx: 8,
-              fill: 'var(--paper)',
-              stroke: 'var(--border)',
+              fill: 'var(--color-paper)',
+              stroke: 'var(--color-ink)',
             },
             [],
           ),
           ui.text(
-            { x: 150, y: index * 72 + 34, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 18 },
+            {
+              x: 150,
+              y: index * 72 + 34,
+              'text-anchor': 'middle',
+              fill: 'var(--color-ink)',
+              'font-size': 18,
+            },
             [step[1]],
           ),
           ...(index < 4
             ? [
                 ui.path(
-                  { d: `M150 ${index * 72 + 57}v12m-5-5 5 5 5-5`, stroke: 'var(--accent)', fill: 'none' },
+                  { d: `M150 ${index * 72 + 57}v12m-5-5 5 5 5-5`, stroke: 'var(--color-red)', fill: 'none' },
                   [],
                 ),
               ]
@@ -159,26 +175,50 @@ export const renderDiagram = () =>
       },
       [
         ui.rect(
-          { x: 0, y: 14, width: 210, height: 52, rx: 8, fill: 'var(--surface)', stroke: 'var(--border)' },
+          {
+            x: 0,
+            y: 14,
+            width: 210,
+            height: 52,
+            rx: 8,
+            fill: 'var(--color-paper)',
+            stroke: 'var(--color-ink)',
+          },
           [],
         ),
-        ui.text({ x: 105, y: 46, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 16 }, [
+        ui.text({ x: 105, y: 46, 'text-anchor': 'middle', fill: 'var(--color-ink)', 'font-size': 16 }, [
           'Scope + freshness',
         ]),
-        ui.path({ d: 'M218 40h38m-6-6 6 6-6 6', stroke: 'var(--accent)', fill: 'none' }, []),
+        ui.path({ d: 'M218 40h38m-6-6 6 6-6 6', stroke: 'var(--color-red)', fill: 'none' }, []),
         ui.rect(
-          { x: 266, y: 14, width: 130, height: 52, rx: 8, fill: 'var(--surface)', stroke: 'var(--border)' },
+          {
+            x: 266,
+            y: 14,
+            width: 130,
+            height: 52,
+            rx: 8,
+            fill: 'var(--color-paper)',
+            stroke: 'var(--color-ink)',
+          },
           [],
         ),
-        ui.text({ x: 331, y: 46, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 16 }, [
+        ui.text({ x: 331, y: 46, 'text-anchor': 'middle', fill: 'var(--color-ink)', 'font-size': 16 }, [
           'Compiler',
         ]),
-        ui.path({ d: 'M404 40h38m-6-6 6 6-6 6', stroke: 'var(--accent)', fill: 'none' }, []),
+        ui.path({ d: 'M404 40h38m-6-6 6 6-6 6', stroke: 'var(--color-red)', fill: 'none' }, []),
         ui.rect(
-          { x: 452, y: 14, width: 188, height: 52, rx: 8, fill: 'var(--surface)', stroke: 'var(--border)' },
+          {
+            x: 452,
+            y: 14,
+            width: 188,
+            height: 52,
+            rx: 8,
+            fill: 'var(--color-paper)',
+            stroke: 'var(--color-ink)',
+          },
           [],
         ),
-        ui.text({ x: 546, y: 46, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 16 }, [
+        ui.text({ x: 546, y: 46, 'text-anchor': 'middle', fill: 'var(--color-ink)', 'font-size': 16 }, [
           'Render region',
         ]),
       ],
@@ -199,19 +239,25 @@ export const renderDiagram = () =>
               width: 250,
               height: 54,
               rx: 8,
-              fill: 'var(--paper)',
-              stroke: 'var(--border)',
+              fill: 'var(--color-paper)',
+              stroke: 'var(--color-ink)',
             },
             [],
           ),
           ui.text(
-            { x: 150, y: index * 72 + 34, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 18 },
+            {
+              x: 150,
+              y: index * 72 + 34,
+              'text-anchor': 'middle',
+              fill: 'var(--color-ink)',
+              'font-size': 18,
+            },
             [label],
           ),
           ...(index < 2
             ? [
                 ui.path(
-                  { d: `M150 ${index * 72 + 57}v12m-5-5 5 5 5-5`, stroke: 'var(--accent)', fill: 'none' },
+                  { d: `M150 ${index * 72 + 57}v12m-5-5 5 5 5-5`, stroke: 'var(--color-red)', fill: 'none' },
                   [],
                 ),
               ]
