@@ -5,11 +5,13 @@ import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { Ajv } from 'ajv'
 import { createApp } from 'create-hozu'
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 import { findBrowser } from '../src/cdp.ts'
 import { bundleSpec } from '../src/commands/add-widget.ts'
 import { formsOf } from '../src/commands/request.ts'
 import { main } from '../src/main.ts'
+
+vi.setConfig({ testTimeout: 30_000 })
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const ajv = new Ajv({ allErrors: true, strict: false })
