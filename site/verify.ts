@@ -28,6 +28,10 @@ for (const [path, status, text] of [
   assert.ok(response.text.includes(text), `${path}: missing ${text}`)
   console.log(`${path}: ${status}, expected text present`)
 }
+const release = JSON.parse(await readFile(new URL('../packages/core/package.json', import.meta.url), 'utf8'))
+const homePage = await readFile(new URL('./dist/index.html', import.meta.url), 'utf8')
+assert.ok(homePage.includes(`data-version="${release.version}"`), `header shows ${release.version}`)
+console.log(`Header version ${release.version} equals packages/core`)
 const root = new URL('./dist/', import.meta.url)
 assert.equal(await readFile(new URL('CNAME', root), 'utf8'), 'hozu.org\n')
 assert.equal(await readFile(new URL('.nojekyll', root), 'utf8'), '')

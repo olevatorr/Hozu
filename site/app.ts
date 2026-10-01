@@ -9,6 +9,7 @@ import {
   getChangelog,
   getChapter,
   getDoc,
+  getRelease,
   getStart,
   getTrial,
   listChapters,
@@ -18,6 +19,11 @@ import {
 import { highlight } from './highlight.ts'
 import project from './hozu.config.ts'
 
+const release = JSON.parse(
+  await readFile(new URL('../packages/core/package.json', import.meta.url), 'utf8'),
+) as {
+  version: string
+}
 const repository = 'https://github.com/olevatorr/Hozu/blob/main/'
 const rewriteLinks = (html: string, source: string) =>
   html
@@ -110,6 +116,7 @@ export default app({
     implement(getDoc, ({ slug }, { fail }) => article(docs, slug) ?? fail('NotFound', { slug })),
     implement(listTrials, () => trials.map(summary)),
     implement(getTrial, ({ slug }, { fail }) => article(trials, slug) ?? fail('NotFound', { slug })),
+    implement(getRelease, () => ({ version: release.version })),
     implement(getChangelog, () => ({ html: changelogHtml, hasCode: changelogHtml.includes('<pre') })),
   ]),
   components: bundleComponents,

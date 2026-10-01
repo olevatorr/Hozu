@@ -1,5 +1,9 @@
 import { ui } from '@hozu/core'
 import { changelog, doc, home, how, trials } from '../../routes.ts'
+import { SiteFooter } from '../../site/footer.ts'
+import { SiteHeader } from '../../site/header.ts'
+import { Tag } from '../../site/tag.ts'
+import { getRelease } from './model.ts'
 
 const links = () => [
   ui.a({ href: ui.link(doc, { slug: 'getting-started' }) }, ['Docs']),
@@ -11,33 +15,49 @@ const links = () => [
 ]
 export const Header = ui.view({
   render: () =>
-    ui.header({ 'data-site-header': '' }, [
-      ui.a({ href: '#main', 'data-skip': '' }, ['Skip to content']),
-      ui.div({ 'data-header': '' }, [
-        ui.a({ href: ui.link(home, null), 'data-brand': '', 'aria-label': 'Hozu home' }, [
-          ui.img({
-            src: ui.asset(new URL('../../assets/logo.png', import.meta.url)),
-            width: 28,
-            height: 28,
-            alt: '',
+    ui.query(
+      getRelease,
+      {},
+      {
+        ready: (release) =>
+          ui.use(SiteHeader, {
+            props: { version: release.version },
+            slots: {
+              brand: ui.a(
+                {
+                  href: ui.link(home, null),
+                  'aria-label': 'Hozu home',
+                  class: 'flex items-center gap-2 font-black',
+                },
+                [
+                  ui.img({
+                    src: ui.asset(new URL('../../assets/logo.png', import.meta.url)),
+                    width: 28,
+                    height: 28,
+                    alt: '',
+                  }),
+                  'HOZU',
+                  ui.use(Tag, { variant: { tone: 'red' } }, [release.version]),
+                ],
+              ),
+              nav: ui.div({ class: 'flex gap-6' }, links()),
+              menu: ui.nav({ 'aria-label': 'Mobile navigation', class: 'mt-3 grid gap-2' }, links()),
+            },
           }),
-          'Hozu',
-        ]),
-        ui.nav({ 'aria-label': 'Main navigation', 'data-desktop-nav': '' }, links()),
-        ui.details({ 'data-mobile-nav': '' }, [
-          ui.summary({}, ['Menu']),
-          ui.nav({ 'aria-label': 'Mobile navigation' }, links()),
-        ]),
-      ]),
-    ]),
+        pending: null,
+        failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Header unavailable.']) },
+      },
+    ),
 })
 export const Footer = ui.view({
   render: () =>
-    ui.footer({ 'data-footer': '' }, [
-      ui.div({}, [
-        ui.p({}, ['Hozu (ほぞ). A precise fit between intent and implementation.']),
-        ui.p({}, ['Built with Hozu. HTML first, with room to explore.']),
+    ui.use(SiteFooter, {}, [
+      ui.p({ class: 'font-black uppercase' }, ['Hozu (ほぞ): the tenon that makes a joint fit.']),
+      ui.p({}, [
+        'Built with Hozu and its own component kit. ',
+        ui.a({ href: 'https://github.com/olevatorr/Hozu/blob/main/LICENSE', class: 'underline' }, [
+          'MIT license',
+        ]),
       ]),
-      ui.a({ href: 'https://github.com/olevatorr/Hozu/blob/main/LICENSE' }, ['MIT license']),
     ]),
 })
