@@ -2,7 +2,16 @@ import { mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { BEGIN, createApp, END, migrateGuide, runnerOf, TARGETS, writeAgentFiles } from 'create-hozu'
+import {
+  BEGIN,
+  createApp,
+  END,
+  guideBlock,
+  migrateGuide,
+  runnerOf,
+  TARGETS,
+  writeAgentFiles,
+} from 'create-hozu'
 import { describe, expect, it } from 'vitest'
 import { sync } from '../../../scripts/skill.ts'
 
@@ -85,18 +94,11 @@ describe('the 0.8 guide (ADR 0043 K)', () => {
   })
 
   const target = TARGETS[0]
-  const released = (file: string) => repo(`packages/create-hozu/test/fixtures/${file}`)
 
-  it('replaces the guides 0.3–0.7 wrote', async () => {
-    expect(migrateGuide(await released('AGENTS-0.5.0-pnpm.md'), TARGETS[1], '/apps/x', 'npx').kind).toBe(
-      'marked',
-    )
-  })
-
-  it('replaces a known 0.7 guide, keeping its runner, and then only the marked block', async () => {
-    const marked = migrateGuide(await released('CLAUDE-0.7.0-npx.md'), target, '/apps/other', 'pnpm exec')
-    expect(marked.kind).toBe('marked')
-    const code = (marked as { code: string }).code
+  it('writes the marked block, then replaces only the marked block', () => {
+    const written = migrateGuide(null, target, '/apps/demo', 'npx')
+    expect(written.kind).toBe('written')
+    const code = (written as { code: string }).code
     expect(code.startsWith(`${BEGIN}\n# demo\n`)).toBe(true)
     expect(code).toContain('npx hozu browse')
     expect(code).not.toContain('The skill writes commands')
@@ -105,6 +107,11 @@ describe('the 0.8 guide (ADR 0043 K)', () => {
     const stale = own.replace('Apply the fix', 'Apply every fix')
     const again = migrateGuide(stale, target, '/apps/demo', 'npx')
     expect(again).toEqual({ kind: 'replaced', code: own })
+  })
+
+  it('treats a guide without markers as custom, an unmarked 0.8 guide included', () => {
+    const unmarked = guideBlock(target, 'demo', 'npx').replace(`${BEGIN}\n`, '').replace(`${END}\n`, '')
+    expect(migrateGuide(unmarked, target, '/apps/demo', 'npx').kind).toBe('custom')
   })
 
   it('never rewrites a guide it does not know', () => {

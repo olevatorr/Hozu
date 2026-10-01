@@ -20,39 +20,6 @@ export const TARGETS = [
 
 export type Target = (typeof TARGETS)[number]
 
-const BROWSE =
-  "__RUN__ hozu browse / --do 'click Save'     # real browser, no server: errors, widgets, text after steps\n"
-
-/** The released 0.3–0.7 guide, as `create-hozu` wrote it (0.6 added the browse line). */
-export const GUIDE_07 = `# __NAME__
-
-A web app built with Hozu (\`@hozu/*\`). Hozu is not in your training data.
-
-## Before writing code
-- __READ__
-- Changing existing code: read \`__SKILL__/changing.md\` first.
-- The files in \`__SKILL__/\` are the whole API. Do not read the framework source in \`node_modules/@hozu\`.
-
-## The loop
-\`\`\`
-__RUN__ hozu add feature tasks --page / --with detail,toggle,filter,remove   # then edit the texts it lists
-                                          # add auth to the list for sign-in and per-user data
-__RUN__ hozu map                           # outline of the app with file:line, before a change
-__RUN__ hozu check                         # after every change: types, rules, contracts
-__RUN__ hozu check --update-lock           # only to accept a clean, intended behaviour change
-__RUN__ hozu get / --select button --forms  # try pages without a server: text, attributes, forms
-__RUN__ hozu post / --field title=Ship --next /   # submit a form like a browser
-${BROWSE}\`\`\`
-__NOTE__
-## Rules
-- After \`hozu add feature\`, do not print the generated files: edit the texts it lists; \`hozu map\` shows the rest.
-- Apply the fix each diagnostic gives; do not work around a rule.
-- Every behaviour change comes with a contract change.
-- Do not edit \`__SKILL__/\`: \`__RUN__ hozu skill\` rewrites it for the installed Hozu version.
-`
-
-const KNOWN = [GUIDE_07, GUIDE_07.replace(BROWSE, '')]
-
 const fill = (text: string, values: Record<string, string>) =>
   Object.entries(values).reduce((out, [key, value]) => out.replaceAll(`__${key}__`, value), text)
 
@@ -79,10 +46,10 @@ export const guideBlock = (target: Target, name: string, runner: Runner, templat
   `${BEGIN}\n${filled(template, target, name, runner, 'npx').trimEnd()}\n${END}\n`
 
 export type BlockResult =
-  | { kind: 'replaced' | 'marked' | 'written' | 'current'; code: string }
+  | { kind: 'replaced' | 'written' | 'current'; code: string }
   | { kind: 'custom'; block: string }
 
-/** The new Hozu block of a CLAUDE.md / AGENTS.md: between markers, or the whole file when it is a known template. */
+/** The new Hozu block of a CLAUDE.md / AGENTS.md, between markers; a file without markers is `custom`. */
 export function migrateGuide(
   existing: string | null,
   target: Target,
@@ -100,11 +67,6 @@ export function migrateGuide(
   if (begin >= 0 && end > begin) {
     const code = existing.slice(0, begin) + block + existing.slice(end + END.length).replace(/^\n/, '')
     return { kind: code === existing ? 'current' : 'replaced', code }
-  }
-  for (const r of RUNNERS) {
-    if (KNOWN.some((known) => existing === filled(known, target, name, r, 'pnpm exec')))
-      return { kind: 'marked', code: block }
-    if (existing === filled(template, target, name, r, 'npx')) return { kind: 'marked', code: block }
   }
   return { kind: 'custom', block }
 }

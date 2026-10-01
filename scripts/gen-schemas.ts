@@ -57,11 +57,6 @@ export const targets = [
   },
   {
     source: 'packages/cli/src/contract.ts',
-    type: 'MigrateOutput',
-    out: 'packages/cli/schema/migrate.schema.json',
-  },
-  {
-    source: 'packages/cli/src/contract.ts',
     type: 'CheckOutput',
     out: 'packages/cli/schema/check.schema.json',
   },

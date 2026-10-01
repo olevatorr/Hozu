@@ -49,7 +49,7 @@ function walk(node: ViewNode, visit: (n: ViewNode) => void) {
   visit(node)
   switch (node.kind) {
     case 'el':
-    case 'widget':
+    case 'component':
     case 'when':
       node.children.forEach((c) => walk(c, visit))
       return
@@ -82,7 +82,7 @@ function routeSummary(ir: ProjectIR) {
     const widgets = new Set<string>()
     for (const id of ir.pages[route]!.views) {
       const r = viewRoot(ir, id)
-      if (r) walk(r, (n) => n.kind === 'widget' && widgets.add(n.widget))
+      if (r) walk(r, (n) => n.kind === 'component' && widgets.add(n.use.component))
     }
     routes[route] = { js: String(plan.js), islands: plan.islands.length, widgets: [...widgets].sort() }
   }
@@ -145,7 +145,7 @@ async function conflicts(
   for (const feature of Object.values(build.ir.features))
     for (const view of Object.values(feature.views))
       walk(view.root, (n) => {
-        if (n.kind !== 'el' && n.kind !== 'widget') return
+        if (n.kind !== 'el' && n.kind !== 'component') return
         for (const c of [n.class ?? '', ...Object.keys(n.toggle)].join(' ').split(/\s+/))
           if (c) pending.add(c)
       })
@@ -172,7 +172,7 @@ async function conflicts(
         : ga === null || gb === null
           ? 'class-toggle'
           : 'toggle-toggle'
-    const el = toggles.kind === 'el' || toggles.kind === 'widget' ? toggles : null
+    const el = toggles.kind === 'el' || toggles.kind === 'component' ? toggles : null
     found.push({
       project: name,
       node,
@@ -186,7 +186,7 @@ async function conflicts(
   for (const feature of Object.values(build.ir.features))
     for (const view of Object.values(feature.views))
       walk(view.root, (n) => {
-        if (n.kind !== 'el' && n.kind !== 'widget') return
+        if (n.kind !== 'el' && n.kind !== 'component') return
         const items: [string, string | null][] = [
           ...(n.class ?? '')
             .split(/\s+/)
@@ -248,7 +248,7 @@ async function agreement(
   const isExclusive = (c: Conflict) => {
     if (c.kind !== 'toggle-toggle') return false
     const n = toggles.get(c.node)
-    if (n?.kind !== 'el' && n?.kind !== 'widget') return false
+    if (n?.kind !== 'el' && n?.kind !== 'component') return false
     const keyOf = (cls: string) => Object.keys(n.toggle).find((k) => k.split(/\s+/).includes(cls))!
     return exclusive(n.toggle[keyOf(c.a)]!, n.toggle[keyOf(c.b)]!)
   }

@@ -127,6 +127,11 @@ describe('the agent loop (ADR 0027)', () => {
       2,
       expect.stringContaining('replaced by hozu browse'),
     ])
+    const migrate = await run(['migrate', '0.9', '--json'], app)
+    expect([migrate.code, JSON.parse(migrate.stdout).error.message]).toEqual([
+      2,
+      expect.stringContaining('0.9 has no migration tool'),
+    ])
   })
 
   it('reads forms like a browser: defaults, checkbox groups, form= controls and submit buttons', () => {

@@ -1,7 +1,8 @@
 # ADR 0045 — 0.9: declared UI components (breaking)
 
 - Status: accepted (2026-10-01). The owner took every gate as recommended (G1–G6). Phase 1 (the contract layer),
-  phase 2 (record time) and phase 3 (styles) are done; see "Phase 2 notes" and "Phase 3 notes".
+  phase 2 (record time), phase 3 (styles) and phase 4 (widgets merge) are done; see "Phase 2 notes", "Phase 3 notes"
+  and "Phase 4 notes".
 - **Already decided by the owner, in the design dialogue that produced this ADR:**
   - components are declarations, not conventions;
   - `ui.widget` merges into `ui.component({ client })` in a breaking 0.9;
@@ -459,6 +460,119 @@ A's example and the notes kit do) types correctly. The phase 3 fixtures use that
   and was not re-run; the style rules add two linear view walks to every validate. The first gate run stopped at
   typecheck on two test fixtures (the inline `tv()` gap and an unreferenced variants test), fixed before this run.
 
+## Phase 4 notes (widgets merge)
+`ui.widget` is gone: a component with `client` is 0.9's widget. The runtime, `@hozu/bundle` and the tools say
+component. Showcase, stations and the site are migrated by hand.
+
+**Scope change (owner, 2026-10-01):** no migration support before the first stable release (L). The phase removed
+`hozu migrate` instead of adding `hozu migrate 0.9`.
+- Deleted: the 13 `packages/cli/src/commands/migrate*.ts` modules (`normalize07` / `normalize08` included), their 8 test
+  files and `__snapshots__/migrate-equivalence.json`, `MigrateOutput` / `MigrateStaleEntry` / `MigrateNote` /
+  `MigrateGuide` (`cli/src/contract.ts`), `cli/schema/migrate.schema.json` and `bench/migrate/`. That is 5 625 lines
+  in 30 files present at the phase base: 2 455 source, 1 793 tests and snapshot, 734 schema, 643 under
+  `bench/migrate/`.
+- `create-hozu/src/guide.ts`: `GUIDE_07` and the `marked` kind are removed (−38 lines), with the two old-guide
+  fixtures (−53) and their tests; `writes the marked block, then replaces only the marked block` and `treats a guide
+  without markers as custom` replace them (`create-hozu/test/create.test.ts:89`, `:103`).
+- `hozu migrate` answers the usage error of L (`cli/src/main.ts:194`), tested next to `hozu post`
+  (`cli/test/loop.test.ts:130`).
+- A first `hozu migrate 0.9` (1 228 lines: rewrites, style patches, equivalence tests) was written before the scope
+  change. It is in commit `cb7f002` only; the next commit deletes it.
+
+**Implementation:**
+
+| What | Where |
+|---|---|
+| `ComponentTypes.client` (`props` = the schema output, `emits` = detail types) for `implement` | `core/src/builders/component.ts:33`, `:77` |
+| `@hozu/core/component`: `implement`, `ComponentContext`, `ComponentInstance`, `ComponentSetup` | `core/src/component.ts:22`; `core/package.json` exports `./component` |
+| `ComponentIR.client`: the module file, its hash, `load`; HZ029 for a missing module, with a fix | `core/src/build/components.ts:250`, `:259`, `:307` |
+| `Bindings.clients` (component id → client file), `Manifest.components` | `core/src/ir/bindings.ts:13`, `core/src/build/manifest.ts:22` |
+| A client use: `on` takes `events` and `emits`; emits handlers lower like the widget's | `core/src/build/view.ts:358`, `:436` |
+| The client use becomes a `ComponentNode` from the render's root | `core/src/build/view.ts:429` |
+| `componentOf`, `clientComponentsIn`, `usedClientComponents` (were `widgetsIn`, `usedWidgets`) | `core/src/ir/clients.ts:21`, `:28`, `:46` |
+| `ui.use` records only component nodes | `core/src/builders/ui.ts:133` |
+| Client mount, children hydrated when the node has them | `runtime-client/src/mount.ts:402`, `:422` |
+| `ComponentRef` `{ url, tag, load }` | `runtime-client/src/mount.ts:48` |
+| Server render, generated render, payload | `runtime-server/src/render.ts:185`, `:258`; `runtime-server/src/generate.ts:304` |
+| HZ029 emits rule on component nodes | `validator/src/rules/clients.ts:6` |
+| `bundleComponents`, `/_hozu/c/` | `bundle/src/index.ts:11`, `:13` |
+| HZ045 without a components bundle | `cli/src/commands/app.ts:157` |
+| `hozu add component <kit\|feature> <Name> [--client]`; `hozu add widget` is a usage error | `cli/src/commands/add-component.ts:41`, `cli/src/main.ts:219` |
+| Client uses in `componentUses` (check overrides, impact) | `cli/src/uses.ts:14` |
+| The phase 3 comparison with the widgets mapping | `bench/ui/compare.ts:9` |
+
+**Renames (user-visible):**
+
+| 0.8 | 0.9 |
+|---|---|
+| `ui.widget({ tag, props, events, client, load, wraps })` | `ui.component({ tag, props, emits, client, load, children?, render })` |
+| `@hozu/core/widget` | `@hozu/core/component` |
+| `WidgetDecl`, `WidgetLoad`, `WidgetUse` (`@hozu/core`) | removed; `ComponentDecl`, `ComponentLoad`, `ComponentUse` |
+| `WidgetIR`, `FeatureIR.widgets`, `WidgetNode` (`kind: 'widget'`, `widget`) | `ComponentIR.client`, `FeatureIR.components`, `ComponentNode` (`kind: 'component'`, `use.component`) |
+| `usedWidgets`, `widgetsIn` (`@hozu/core/ir`; `usedWidgets` also from `@hozu/runtime-server`) | `usedClientComponents`, `clientComponentsIn`, `componentOf` |
+| `bundleWidgets`, `WidgetBundle` (`@hozu/bundle`), URL `/_hozu/w/…` | `bundleComponents`, `ComponentBundle`, `/_hozu/c/…` |
+| `app({ widgets })`, `createHandler({ widgets })`, `exportStatic({ widgets })`, `AppHost.widgets` | `components` |
+| `assertWidgetBundle`, `WidgetBundle` (`@hozu/runtime-server`) | `assertComponentBundle`, `ComponentBundle` |
+| `Manifest.widgets`, `Bindings.widgets`, `Assets.widgets`, payload `widgets` | `Manifest.components`, `Bindings.clients`, `Assets.components`, payload `components` |
+| `WidgetRef`, `WidgetSetup`, `hydrate({ loadWidget })` (`@hozu/runtime-client`) | `ComponentRef`, `ComponentSetup`, `loadComponent` |
+| `data-hozu-widget`, `data-hozu-widget-state` | `data-hozu-component`, `data-hozu-component-state` |
+| console `Widget <id> failed`, `Hozu: widget <id> has no client code (bundleWidgets)` | `Component <id> failed`, `Hozu: component <id> has no client code (bundleComponents)` |
+| `hozu browse` `widget <id>: …` lines, JSON `widgets` (`BrowseWidget`) | `component <id>: …`, `components` (`BrowseComponent`) |
+| HZ029 `widget-boundary-mismatch`, "Widget … does not emit" | `component-boundary-mismatch`, "Component … does not emit" |
+| HZ045 "app() has no widgets" | "app() has no components bundle" |
+| `hozu add widget <feature> <Name>` | `hozu add component <kit\|feature> <Name> --client` |
+| HZ027 "Widget event … carries only its detail" | "Component event …" |
+
+**Choices the ADR did not fix:**
+1. **`wraps` is derived per node:** the client hydrates a component node's children when it has any, both on claim
+   and on a client render (`runtime-client/src/mount.ts:422`). Island roots still ship without children, as widgets
+   did, so a page hydrates what it hydrated before.
+2. **A widget whose uses passed children with `wraps: false`** (showcase Globe, Chart, Sketch; stations Counter)
+   keeps them: `children: true`, render `({ children }) => ui.div({}, children)`. They are the no-JS fallback; an empty
+   root would drop them from the page. All of these are island roots, so nothing new hydrates.
+3. **The root of a client render takes no attributes and no `on`** (HZ014, `core/src/build/view.ts:449`). The client
+   module owns the root; `ComponentNode` has no `attrs`. `toggle` and `vars` are kept.
+4. **`ui.use` options `toggle` / `vars`** (widgets had them, undocumented) are gone: the render sets the root's
+   `toggle` from a prop. The runtime-client fixture does this (`runtime-client/test/support/meter.ts`).
+5. **A use of a component without children** passes no children argument; the empty `[]` the widget form required is
+   removed in the three apps (principle 1).
+6. **HZ029 is reported at the component's `client`** (`/features/<f>/components/<Name>/client`, or under
+   `/kits/<id>`), and its build-time fix is a snippet. The bundle reports a missing default export at the same pointer.
+7. **`hozu add component`:** in a feature, `components.ts` (appended, registered in `declarations`, imported by
+   `views.ts`); in a kit, `<id>/<name>.ts` added to the kit's `components`. `--client` adds the client module, the
+   `app.ts` bundle and `@hozu/bundle`, as `hozu add widget` did. A target that is neither is a usage error.
+8. **The repository:** `widgets.ts` is renamed `components.ts` in the three apps, and showcase's `widgets/` folder
+   `components/`. The visible text "behind typed widgets" on the showcase page is unchanged (look and behaviour).
+9. `bench/ui/baseline.ts` keeps the summary key `widgets` (now the client component ids), so its routes compare with
+   `baseline-0.8/` unchanged.
+
+**Proof:**
+- **Nodes** (`core/test/components.test.ts`): a client use builds the full `ComponentNode` (use, root class from tv and
+  the caller, render `toggle` / `vars`, props with schema defaults, the emits handler, children), and a pure use stays
+  an element with `use`. HZ014 (client root attributes, a bad emits handler, an undeclared event) and HZ029 (missing
+  module) are covered; `core/test/builders.test.ts` keeps its HZ029 case.
+- **Hydration** (`runtime-client/test/component.test.ts`): the server renders the host and fallback, the module mounts,
+  props update, `emit` dispatches, the render's toggle follows a prop, removal destroys it, and a missing bundle fails
+  at startup.
+- **Broken once to red:** the client-root HZ014, the emits-handler HZ014, both HZ029 build cases, the HZ029 emits rule,
+  the client `case 'component'` in `mount.ts`, the component node itself (3 red), and HZ045 (with the CLI rebuilt);
+  each green again after restoring.
+- **Types** (`core/test/types.check.ts`): `implement<typeof Picker>` types `props`, `emit` names and details;
+  `@ts-expect-error` for an undeclared emit and a wrong detail.
+- **IR** (`node bench/ui/compare.ts <phase 4> --base <phase 3>`): **11 / 11 equal.** The 8 projects without widgets
+  differ only by the removed empty `FeatureIR.widgets` (11 features). Showcase: widget → component 6, widget node →
+  component node 6, render hash 6, client module hash 6; stations 5 / 5 / 5 / 5; site 1 / 4 nodes / 1 / 1. The client
+  module hash changes because each module's import moved to `@hozu/core/component`. Dropping the children rule from
+  the mapping makes showcase and stations differ (9 / 11). The routes summary (`js`, islands, client components) of
+  all 11 projects equals phase 3's.
+- **`hozu browse` against the phase base** (`58c9c62` built in a scratch copy, same steps, `--js on`): identical
+  component lines. Showcase: Smooth, Globe, Reveal mounted on load; Chart and Sketch after `click Generative sketch`,
+  Carousel after `click Contracts` (`load: 'visible'`), 0 errors apart from p5's CSP console error that the base
+  reports too. Stations: Counter, StationMap, FadeIn, DistrictChart, Globe mounted, 0 errors. Site: CodeCopy mounted
+  on `/docs/cli` (687×3350, 158 elements), `load: 'visible'` on `/`, 0 errors.
+- **`hozu check`:** showcase, stations and the site 0 errors, 0 warnings, types ok.
+- **P7:** 7 893 → **7 872 B (−21)**: the client ref lost `wraps`; the longer names cost less than it saved.
+
 ## A. One declaration: `ui.component`
 ```ts
 // ui/button.ts
@@ -638,7 +752,8 @@ ui.use(Button, {
   merged string is caught here, not shipped.
 - It runs in the CSS stage (`@hozu/css`, next to HZ026), because only the Tailwind compiler knows which properties a
   class sets. Custom classes from the project's stylesheets are covered the same way.
-- This is breaking: the showcase tabs and similar 0.8 code are reported. `hozu migrate 0.9` applies the patches.
+- This is breaking: the showcase tabs and similar 0.8 code are reported. There is no migration tool (L); the HZ079
+  fix carries the patch.
 
 ## G. Record-time evaluation of literals
 - `@hozu/core/lower` evaluates an operation as JavaScript when none of its operands is a reference. That covers `===`,
@@ -646,7 +761,7 @@ ui.use(Button, {
 - References are recorded as today, so the IR of a part or a render called with literals equals the inline form with
   those literals (evidence 1).
 - **Proof:**
-  - the `migrate-equivalence` snapshots and every example build to the same IR before and after;
+  - every example builds to the same IR before and after;
   - the evidence-1 probes flip from `it.fails` to `it`.
 
 ## H. IR v3, render plan and JavaScript
@@ -708,20 +823,20 @@ ui.use(Button, {
 - A part whose view subtree is inlined by two or more features is **HZ080 shared-part-view** (warning; gate G2). Its
   snippet is the equivalent `ui.component`.
 
-## L. Migration: `hozu migrate 0.9`
-- **Rewrites:**
-  - `ui.widget({ tag, props, events, client, load, wraps })` → `ui.component({ tag, props, emits, client, load,
-    render })`, in the same feature. The render is the empty root, or `children` passed through for `wraps: true`.
-  - `@hozu/core/widget` → `@hozu/core/component`.
-  - `ui.use(W, { props, on, class }, children)` keeps its shape.
-  - The HZ079 and HZ074 patches.
-  - The `CLAUDE.md` / `AGENTS.md` Hozu block (`migrateGuide`).
-- **What it prints:** shared parts (HZ080 candidates) and HZ072 sites, because the fix is an intent decision.
-- **IR equivalence:** `normalize08` maps `widgets` → `components` and `widget` nodes → `component` nodes. Every
-  snapshot must equal after the migration.
-- **Never:** it never writes the lock and never deletes a contract.
+## L. Migration: none before the first stable release
+- **No migration support before the first stable release (owner, 2026-10-01):** `hozu migrate`, the s12m dry-run
+  records and the old-guide recognition are removed.
+  - `hozu migrate` answers a usage error: 0.7 apps upgrade with the 0.8.0 CLI first (`npx @hozu/cli@0.8 migrate
+    0.8`); 0.8 apps upgrade by hand, following the CHANGELOG.
+  - `hozu skill` keeps the marker-based update of the `CLAUDE.md` / `AGENTS.md` block (`migrateGuide`); a file without
+    markers is `custom`.
+- **What replaces acceptance 3:** the three apps that had widgets are compared with their phase 3 IR, with widgets
+  mapped to client components and widget nodes to component nodes (`bench/ui/compare.ts --base`); only the
+  differences that mapping and the hand migration explain are allowed, and they are counted.
 
 ## Rejected or deferred
+- **A 0.9 migration tool:** rejected by the owner (2026-10-01): no migration support before the first stable release
+  (L).
 - **`extend: 'any'`:** rejected (evidence 2, and design drift). `!` is the explicit, counted exception.
 - **A category allowlist for caller classes:** rejected (see Options).
 - **A Hozu-owned subset of `tv()`:** rejected (T1 chosen). It is the fallback if tailwind-merge cannot support the
@@ -790,8 +905,8 @@ Each phase ends with `pnpm gate` once, a report, and a runnable example.
    - Example: the notes kit on tv, with one `!` override.
 4. **Widgets merge:**
    - client components and the runtime renames;
-   - `hozu migrate 0.9`;
-   - showcase, stations and the site migrated;
+   - no migration tool (L; the owner removed `hozu migrate`);
+   - showcase, stations and the site migrated by hand;
    - `hozu add component --client`.
 5. **Tools and guide:**
    - I;
@@ -803,7 +918,9 @@ Each phase ends with `pnpm gate` once, a report, and a runnable example.
 1. A pure use adds 0 B of client JavaScript on every page of every example. The IR with `use` removed equals the
    inline form, and the rendered DOM equals it apart from class order.
 2. Budget P7 is unchanged, or a share is raised before it moves.
-3. Every snapshot is equal under `normalize08` after `hozu migrate 0.9`.
+3. ~~Every snapshot is equal under `normalize08` after `hozu migrate 0.9`.~~ Replaced by the owner (2026-10-01): the
+   apps that had widgets equal their phase 3 IR under the widgets → components mapping, and the other projects equal
+   it apart from the removed empty `widgets` (L).
 4. Every new code is broken once to red, and every new diagnostic carries a patch or a snippet (ADR 0043's AI-first
    conditions).
 5. `hozu docs components` for the notes kit and a passing `hozu render` stay within their size tests.

@@ -29,7 +29,7 @@
             ],
             "additionalProperties": false
           },
-          "description": "Guides with text outside the markers that equals no known template: paste `block` by hand."
+          "description": "Guides without hozu markers: paste `block` by hand."
         }
       },
       "required": [

@@ -5,7 +5,7 @@ import { migrateGuide, type Runner, TARGETS } from './guide.ts'
 
 export type Agent = 'claude' | 'agents' | 'both'
 export type { BlockResult, Runner, Target } from './guide.ts'
-export { BEGIN, currentGuide, END, GUIDE_07, guideBlock, migrateGuide, RUNNERS, TARGETS } from './guide.ts'
+export { BEGIN, currentGuide, END, guideBlock, migrateGuide, RUNNERS, TARGETS } from './guide.ts'
 
 export const AGENTS: readonly Agent[] = ['claude', 'agents', 'both']
 

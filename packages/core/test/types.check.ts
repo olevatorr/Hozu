@@ -11,6 +11,7 @@ import {
   route,
   ui,
 } from '@hozu/core'
+import { implement } from '@hozu/core/component'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
@@ -277,19 +278,18 @@ contract(ok, {
   expect: { state: 'idle' },
 })
 
-const Gauge = ui.widget({
+const Gauge = ui.component({
   tag: 'div',
   props: z.object({ value: z.number() }),
-  events: {},
   client: new URL('./gauge.client.ts', import.meta.url),
   load: 'eager',
-  wraps: false,
+  render: () => ui.div({}, []),
 })
 
 export const NoHandlers = ui.view({
   render: () =>
     ui.main({}, [
-      ui.use(Gauge, { props: { value: 1 } }, []),
+      ui.use(Gauge, { props: { value: 1 } }),
       ui.query(itemQuery, { slug: 'a' }, { ready: () => null, failed: { Unexpected: () => null } }),
     ]),
 })
@@ -409,3 +409,18 @@ ui.component({
 })
 
 project({ schema: zodAdapter, routes: {}, pages: [], features: [], kits: [kitUi] })
+
+export const pickerClient = implement<typeof Picker>(({ el, props, emit, signal }) => {
+  const value: string = props.value
+  emit('change', { value })
+  // @ts-expect-error a client emits only the events it declares
+  emit('chosen', { value })
+  // @ts-expect-error the detail follows the emits schema
+  emit('change', { value: 1 })
+  el.addEventListener('click', () => emit('change', { value }), { signal })
+  return {
+    update(next) {
+      next.value satisfies string
+    },
+  }
+})

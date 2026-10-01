@@ -218,9 +218,10 @@ const picker = new URL('./support/picker.client.ts', import.meta.url)
 const Picked = event({ payload: z.object({ id: z.string() }) })
 
 describe('ADR 0045 phase 4: a client ui.use', () => {
+  const pickerStyles = tv({ base: 'rounded border' })
   const Picker = ui.component({
     tag: 'div',
-    styles: tv({ base: 'rounded border' }),
+    styles: pickerStyles,
     props: z.object({ value: z.string(), open: z.boolean().default(false) }),
     emits: { picked: z.object({ id: z.string() }) },
     client: picker,
@@ -300,11 +301,7 @@ describe('ADR 0045 phase 4: a client ui.use', () => {
         View: ui.view({
           render: () =>
             ui.div({}, [
-              ui.use(
-                Picker,
-                { props: { value: 'a' }, on: { picked: 'x' as never, chosen: 'y' as never } },
-                [],
-              ),
+              ui.use(Picker, { props: { value: 'a' }, on: { picked: 'x', chosen: 'y' } as never }, []),
             ]),
         }),
       },

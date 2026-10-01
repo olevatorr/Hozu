@@ -19,7 +19,6 @@ import { describeImpact, runImpact } from './commands/impact.ts'
 import { runInspect } from './commands/inspect.ts'
 import { describeAddKit, runAddKit } from './commands/kits.ts'
 import { describeMap, runMap } from './commands/map.ts'
-import { describeMigrate, runMigrate } from './commands/migrate.ts'
 import { describePlan, runPlan } from './commands/plan.ts'
 import { describeRequest, runRequest } from './commands/request.ts'
 import { runServe } from './commands/serve.ts'
@@ -53,7 +52,6 @@ Commands:
                             bundle and the @hozu/bundle dependency
   add kit <id> [--sync]     Add a component kit: <id>/kit.ts, <id>/tv.ts (tailwind-merge config from the design
                             system) and project({ kits }); --sync regenerates only the config block
-  migrate 0.8               Upgrade a 0.7 app: list the lock entries stale under 0.7, rewrite the source, then check
 
 Options:
   --json               Machine-readable output (schemas in @hozu/cli/schema)
@@ -180,7 +178,6 @@ export async function main(
       'build',
       'serve',
       'skill',
-      'migrate',
     ]
     if (command === 'post')
       throw new HozuCliError(
@@ -190,6 +187,12 @@ export async function main(
           "hozu browse / --do 'fill Title=Milk' --do 'press Enter'   # runs with and without JS",
           'hozu browse / --js off --do \'click Delete in "Milk"\'',
         ],
+      )
+    if (command === 'migrate')
+      throw new HozuCliError(
+        'usage',
+        '0.9 has no migration tool: upgrade 0.7 apps with `npx @hozu/cli@0.8 migrate 0.8`, then follow the 0.9 CHANGELOG',
+        ['npx @hozu/cli@0.8 migrate 0.8'],
       )
     if (!commands.includes(command)) throw new HozuCliError('usage', `Unknown command "${command}"`, commands)
     if (command === 'docs') {
@@ -208,11 +211,6 @@ export async function main(
           )
       }
       return result.custom.length ? 1 : 0
-    }
-    if (command === 'migrate') {
-      const result = await runMigrate(cwd, values.config, target)
-      out(asJson ? json(result) : describeMigrate(result))
-      return result.ok ? 0 : 1
     }
     if (command === 'add') {
       if (target === 'widget')

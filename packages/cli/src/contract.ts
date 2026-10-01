@@ -151,45 +151,8 @@ export interface BuildOutput {
 
 export interface SkillOutput {
   written: string[]
-  /** Guides with text outside the markers that equals no known template: paste `block` by hand. */
+  /** Guides without hozu markers: paste `block` by hand. */
   custom: { guide: string; block: string }[]
-}
-
-export interface MigrateStaleEntry {
-  feature: string
-  id: string
-  kind: 'missing' | 'removed' | 'behavior' | 'contracts'
-  was: string | null
-  now: string | null
-}
-
-export interface MigrateNote {
-  file: string
-  line: number
-  rule: string
-  message: string
-  see?: string
-  behaviour?: boolean
-}
-
-export interface MigrateGuide {
-  file: string
-  state: 'written' | 'current' | 'replaced' | 'marked' | 'custom'
-  block: string | null
-}
-
-export interface MigrateOutput {
-  ok: boolean
-  version: '0.8' | '0.9'
-  installed: string | null
-  stale: { skipped: string | null; entries: MigrateStaleEntry[] }
-  changed: string[]
-  removed: string[]
-  notes: MigrateNote[]
-  guide: MigrateGuide[]
-  ir: { compared: boolean; skipped: string | null; differences: string[] }
-  next: string[]
-  check: CheckOutput | null
 }
 
 export interface TypeIssue {
