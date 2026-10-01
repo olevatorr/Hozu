@@ -1,13 +1,15 @@
 import { contract, endpoint, event, feature, fn, machine, on, part, project, route, ui } from '@hozu/core'
 import { buildProject, codes, type Diagnostic, type DiagnosticCode } from '@hozu/core/ir'
+import { compileStyles } from '@hozu/css'
 import { resolvers } from '@hozu/data'
 import { createHandler } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { verify } from '@hozu/validator'
+import { tv } from '@hozu/variants'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-type Stage = 'transform' | 'runtime' | 'lock' | 'contract'
+type Stage = 'transform' | 'runtime' | 'lock' | 'contract' | 'css'
 
 interface SourceMistake {
   name: string
@@ -204,6 +206,92 @@ const verifyWith = (decls: Record<string, unknown>, lock?: unknown) => {
   return [...build.diagnostics, ...verify(build.ir, { ...options, lock: current }).diagnostics]
 }
 
+const Panel = machine({
+  context: z.object({ on: z.boolean() }),
+  initialContext: { on: false },
+  initial: 'idle',
+  states: () => ({ idle: { on: [] } }),
+})
+const Btn = ui.component({
+  tag: 'button',
+  styles: tv({ base: 'rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700' }),
+  children: true,
+  render: ({ children }) => ui.button({ type: 'button' }, children),
+})
+const Locked = ui.component({
+  tag: 'span',
+  styles: tv({ base: 'rounded px-2' }),
+  extend: false,
+  render: () => ui.span({}, []),
+})
+const Loud = ui.component({ tag: 'p', styles: tv({ base: 'bg-indigo-600!' }), render: () => ui.p({}, []) })
+const Quiet = ui.component({ tag: 'p', styles: tv({ base: 'bg-indigo-600' }), render: () => ui.p({}, []) })
+const LoudInside = ui.component({
+  tag: 'div',
+  render: () => ui.div({}, [ui.span({ class: 'text-white!' }, [])]),
+})
+const QuietInside = ui.component({
+  tag: 'div',
+  render: () => ui.div({}, [ui.span({ class: 'text-white' }, [])]),
+})
+const Card = ui.component({
+  tag: 'section',
+  styles: tv({ base: 'rounded p-4' }),
+  props: z.object({ title: z.string() }),
+  render: ({ props }) => ui.section({}, [ui.h2({ class: 'font-semibold text-slate-900' }, [props.title])]),
+})
+const Spaced = ui.component({
+  tag: 'div',
+  styles: tv({ base: 'mt-4 rounded' }),
+  render: () => ui.div({}, []),
+})
+const Unspaced = ui.component({ tag: 'div', styles: tv({ base: 'rounded' }), render: () => ui.div({}, []) })
+const using = (render: () => unknown) => ui.view({ render: () => ui.main({}, [render() as never]) })
+const BaseAgainstToggle = ui.view({
+  machine: Panel,
+  render: ({ ctx }) => ui.main({ class: 'p-4 bg-white', toggle: { 'bg-indigo-600': ctx.on } }, []),
+})
+const ComplementaryToggles = ui.view({
+  machine: Panel,
+  render: ({ ctx }) =>
+    ui.main({ class: 'p-4', toggle: { 'bg-indigo-600': ctx.on, 'bg-white': !ctx.on } }, []),
+})
+const OverlappingToggles = ui.view({
+  machine: Panel,
+  render: ({ ctx }) =>
+    ui.main({ class: 'p-4', toggle: { 'text-white': ctx.on, 'text-slate-900': true } }, []),
+})
+const LiteralToggles = ui.view({
+  machine: Panel,
+  render: ({ ctx }) =>
+    ui.main(
+      { class: 'p-4', toggle: { 'text-white': ctx.on === true, 'text-slate-900': ctx.on === false } },
+      [],
+    ),
+})
+
+const styled = async (decls: Record<string, unknown>) => {
+  const build = buildProject(
+    project({
+      schema: zodAdapter,
+      routes: { home },
+      pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'Home' }) } })],
+      features: [feature({ id: 'look', intent: { summary: 'styles' }, declarations: [{ ...decls, Home }] })],
+    }),
+    { sources: true },
+  )
+  const styles = await compileStyles(build)
+  return [
+    ...build.diagnostics,
+    ...verify(build.ir, {
+      sources: build.sources,
+      bindings: build.bindings,
+      unknownClasses: styles.unknown,
+      classes: styles.classes,
+    }).diagnostics,
+  ]
+}
+
 const catalog: SourceMistake[] = [
   {
     name: 'a fn body reads mutable module state',
@@ -253,6 +341,85 @@ const catalog: SourceMistake[] = [
     stage: 'transform',
     mistake: () => buildWith({ pressable, PressButton, VariantFromRef }),
     fixed: () => buildWith({ pressable, PressButton, PropFromRef }),
+  },
+  {
+    name: 'a caller class sets a property the component owns',
+    code: 'HZ072',
+    stage: 'css',
+    mistake: () => styled({ Btn, Uses: using(() => ui.use(Btn, { class: 'bg-red-500' }, ['Save'])) }),
+    fixed: () => styled({ Btn, Uses: using(() => ui.use(Btn, { class: 'bg-red-500!' }, ['Save'])) }),
+  },
+  {
+    name: 'a caller class on a component declared with extend: false',
+    code: 'HZ072',
+    stage: 'css',
+    mistake: () => styled({ Locked, Uses: using(() => ui.use(Locked, { class: 'w-full' })) }),
+    fixed: () => styled({ Locked, Uses: using(() => ui.use(Locked, {})) }),
+  },
+  {
+    name: "a ! in a component's tv config",
+    code: 'HZ073',
+    stage: 'css',
+    mistake: () => styled({ Loud }),
+    fixed: () => styled({ Quiet }),
+  },
+  {
+    name: "a ! in an element of a component's render",
+    code: 'HZ073',
+    stage: 'css',
+    mistake: () => styled({ LoudInside }),
+    fixed: () => styled({ QuietInside }),
+  },
+  {
+    name: 'the important modifier written first',
+    code: 'HZ074',
+    stage: 'css',
+    mistake: () => styled({ Uses: using(() => ui.div({ class: 'p-4 !bg-red-500' }, [])) }),
+    fixed: () => styled({ Uses: using(() => ui.div({ class: 'p-4 bg-red-500!' }, [])) }),
+  },
+  {
+    name: 'a caller colour on a component whose heading sets its own colour',
+    code: 'HZ075',
+    stage: 'css',
+    mistake: () =>
+      styled({ Card, Uses: using(() => ui.use(Card, { props: { title: 'Hi' }, class: 'text-white' })) }),
+    fixed: () =>
+      styled({ Card, Uses: using(() => ui.use(Card, { props: { title: 'Hi' }, class: 'shadow' })) }),
+  },
+  {
+    name: 'a component that sets its own outer margin',
+    code: 'HZ076',
+    stage: 'css',
+    mistake: () => styled({ Spaced, Uses: using(() => ui.use(Spaced, {})) }),
+    fixed: () => styled({ Unspaced, Uses: using(() => ui.use(Unspaced, { class: 'mt-4' })) }),
+  },
+  {
+    name: 'a ! on a property the component does not own',
+    code: 'HZ077',
+    stage: 'css',
+    mistake: () => styled({ Btn, Uses: using(() => ui.use(Btn, { class: 'w-full!' }, ['Save'])) }),
+    fixed: () => styled({ Btn, Uses: using(() => ui.use(Btn, { class: 'w-full' }, ['Save'])) }),
+  },
+  {
+    name: 'a base class and a toggle class set the same property',
+    code: 'HZ079',
+    stage: 'css',
+    mistake: () => styled({ Panel, BaseAgainstToggle }),
+    fixed: () => styled({ Panel, ComplementaryToggles }),
+  },
+  {
+    name: 'two static classes set the same property',
+    code: 'HZ079',
+    stage: 'css',
+    mistake: () => styled({ Uses: using(() => ui.div({ class: 'px-4 px-2' }, [])) }),
+    fixed: () => styled({ Uses: using(() => ui.div({ class: 'px-4' }, [])) }),
+  },
+  {
+    name: 'two toggles that can hold together set the same property',
+    code: 'HZ079',
+    stage: 'css',
+    mistake: () => styled({ Panel, OverlappingToggles }),
+    fixed: () => styled({ Panel, LiteralToggles }),
   },
   {
     name: 'an endpoint answers a hand-written HTML page',

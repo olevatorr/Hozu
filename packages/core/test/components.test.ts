@@ -414,5 +414,38 @@ describe('ADR 0045 phase 2 diagnostics', () => {
       ],
     ])
     expect(b.diagnostics.every((d) => d.fix?.snippet)).toBe(true)
+    expect(Object.keys(b.bindings.components).filter((id) => id.startsWith('f.'))).toEqual([])
+  })
+})
+
+describe('ADR 0045 phase 3: bindings.components', () => {
+  it("records the classes of the render's inner elements, tv slots and nested uses included, not the caller's", () => {
+    const Panel = ui.component({
+      tag: 'section',
+      styles: tv({ slots: { base: 'p-4', title: 'text-lg font-bold' } }),
+      slots: ['body'],
+      children: true,
+      render: ({ slots, children, classes }) =>
+        ui.section({ toggle: { 'ring-2': true } }, [
+          ui.h2({ class: classes.title, toggle: { underline: true } }, ['Title']),
+          ui.use(Button, { class: 'w-full' }, ['Go']),
+          slots.body,
+          ...children,
+        ]),
+    })
+    const View = ui.view({
+      render: () =>
+        ui.div({}, [
+          ui.use(Panel, { slots: { body: ui.p({ class: 'text-rose-600' }, []) } }, [
+            ui.span({ class: 'italic' }, []),
+          ]),
+        ]),
+    })
+    const b = build([{ Panel, View }])
+    expect(b.diagnostics).toEqual([])
+    expect(b.bindings.components['f.Panel']).toEqual({
+      inner: ['font-bold', 'text-lg', 'underline', 'w-full'],
+    })
+    expect(b.bindings.components['ui.Button']).toEqual({ inner: [] })
   })
 })

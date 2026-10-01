@@ -186,6 +186,29 @@ describe('A5 CLI contract', () => {
   })
 })
 
+describe('the CSS stage (ADR 0045 E)', () => {
+  it('reads the render classes from the bindings, so HZ073 and HZ075 see inside a component', async () => {
+    const { code, stdout } = await run([
+      'validate',
+      '--json',
+      '--config',
+      `${root}packages/cli/test/fixtures/styles.config.ts`,
+    ])
+    const out = JSON.parse(stdout)
+    expect(code).toBe(1)
+    expect(out.styles).toBe('checked')
+    expect(
+      out.diagnostics.map((d: { code: string; location: { pointer: string } }) => [
+        d.code,
+        d.location.pointer,
+      ]),
+    ).toEqual([
+      ['HZ073', '/features/look/components/Card'],
+      ['HZ075', '/features/look/views/Home/root/children/0/class'],
+    ])
+  })
+})
+
 describe('built binary', () => {
   it('maps diagnostics to exact source lines and exits 1', async () => {
     const exec = promisify(execFile)
