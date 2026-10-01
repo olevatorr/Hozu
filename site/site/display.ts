@@ -10,8 +10,9 @@ export const Display = ui.component({
   render: ({ props }) =>
     ui.h1({ 'data-rise': '' }, [
       ui.each(props.words, 'id', (w) =>
-        ui.span({ class: 'inline-block animate-rise pr-[0.25em]', toggle: { 'text-red': w.accent } }, [
-          w.text,
+        ui.span({}, [
+          ui.span({ class: 'inline-block animate-rise', toggle: { 'text-red': w.accent } }, [w.text]),
+          ' ',
         ]),
       ),
     ]),

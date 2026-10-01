@@ -3,7 +3,7 @@ import { doc, home, trial, trials } from '../../routes.ts'
 import { Button } from '../../site/button.ts'
 import { CatchCard } from '../../site/catch-card.ts'
 import { CodeBlock } from '../../site/code-block.ts'
-import { Display, Heading } from '../../site/display.ts'
+import { Heading } from '../../site/display.ts'
 import { Prose } from '../../site/prose.ts'
 import { Receipt, ReceiptLine } from '../../site/receipt.ts'
 import { Section } from '../../site/section.ts'
@@ -51,19 +51,7 @@ const curve = (slug: string, alt: string) =>
   })
 export const Home = ui.view({
   render: () =>
-    ui.div({ id: 'main' }, [
-      ui.div({ class: 'bg-paper px-5 py-16' }, [
-        ui.div({ class: 'mx-auto max-w-6xl' }, [
-          ui.use(Display, {
-            props: {
-              words: [
-                { id: '1', text: 'Your AI writes the app.', accent: false },
-                { id: '2', text: 'Hozu checks it.', accent: true },
-              ],
-            },
-          }),
-        ]),
-      ]),
+    ui.div({}, [
       ui.use(Section, { variant: { depth: 1 }, props: { label: 'For everyone', kicker: '02 · The bill' } }, [
         ui.use(Heading, {}, ['Yes, it costs more. Here is the receipt.']),
         ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[28rem_minmax(0,1fr)]' }, [

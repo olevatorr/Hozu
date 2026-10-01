@@ -9,6 +9,7 @@ const app = testApp(site)
 for (const [path, status, text] of [
   ['/', 200, 'Hozu checks it'],
   ['/', 200, 'Here is the receipt'],
+  ['/', 200, 'AI CHANGE'],
   ['/trials/0019-0-7-write-less', 200, '1.38×'],
   ['/how-it-works', 200, 'Understand the design'],
   ['/how-it-works/why-ai-first', 200, 'Why AI-first?'],

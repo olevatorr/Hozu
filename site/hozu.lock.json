@@ -1,5 +1,65 @@
 {
   "features": {
+    "hero": {
+      "broken/on/hero.Fix/0": {
+        "behavior": "70fed3ae31d5d4c9",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "broken"
+              ],
+              "value": {
+                "literal": false
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "clean",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "broken --Fix--> clean · broken := false"
+      },
+      "clean/on/hero.Break/0": {
+        "behavior": "d2e05ed2897d61b2",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "broken"
+              ],
+              "value": {
+                "literal": true
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "broken",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "clean --Break--> broken · broken := true"
+      }
+    },
     "lab": {
       "blocked/on/lab.Run/0": {
         "behavior": "17f2ee7521128407",
