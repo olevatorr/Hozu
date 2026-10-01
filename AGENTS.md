@@ -61,7 +61,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `@hozu/dev` (dev server: CSS hot swap, reload on code changes), `@hozu/image` (optional WebP srcset, ADR 0017),
   `@hozu/content` (Markdown collections, ADR 0020), `@hozu/testing` (render assertions, ADR 0021)
 - Every `@hozu/*` package except `@hozu/schema-zod`, `@hozu/css` (Tailwind), `@hozu/bundle` (esbuild),
-  `@hozu/image` (sharp) and `@hozu/content` (marked, yaml) has zero third-party runtime dependencies.
+  `@hozu/image` (sharp), `@hozu/content` (marked, yaml) and `@hozu/variants` (tailwind-variants, tailwind-merge) has zero
+  third-party runtime dependencies.
 - Views: every HTML/SVG element with per-tag typed attributes, all DOM events, `ui.dom.*` event fields (HZ027),
   `class` (static) + `toggle` (guarded class groups) + `vars` (CSS custom properties). No `style`, no free
   functions. Stylesheets: `project({ styles })` Tailwind entry + `feature({ styles })`; classes must produce CSS
