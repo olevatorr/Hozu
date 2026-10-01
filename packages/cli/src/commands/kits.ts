@@ -38,13 +38,16 @@ const load = async <T>(from: string, id: string): Promise<T | null> => {
 }
 
 /** The tailwind-merge config of the project's current design system, or null without @hozu/css and @hozu/variants. */
-async function generated(build: BuildResult, root: string, from: string) {
+async function generated(build: BuildResult, root: string, from: string, tokens: Tokens | null = null) {
   const [css, config] = await Promise.all([
     load<Css>(from, '@hozu/css'),
     load<Config>(from, '@hozu/variants/config'),
   ])
   if (!css || !config) return null
-  return { config, value: config.twMergeConfigOf(await css.designTokens(css.stylesSource(build), root)) }
+  return {
+    config,
+    value: config.twMergeConfigOf(tokens ?? (await css.designTokens(css.stylesSource(build), root))),
+  }
 }
 
 /** HZ078 for every kit whose `<kit>/tv.ts` has a marked block that differs from the design system. */
@@ -52,12 +55,13 @@ export async function kitConfigDiagnostics(
   build: BuildResult,
   root: string,
   from = join(root, 'hozu.config.ts'),
+  tokens: Tokens | null = null,
 ): Promise<Diagnostic[]> {
   const files = Object.keys(build.ir.kits)
     .map((kit) => [kit, join(root, kit, 'tv.ts')] as const)
     .filter(([, file]) => existsSync(file))
   if (!files.length) return []
-  const gen = await generated(build, root, from)
+  const gen = await generated(build, root, from, tokens)
   if (!gen) return []
   const out: Diagnostic[] = []
   for (const [kit, file] of files) {

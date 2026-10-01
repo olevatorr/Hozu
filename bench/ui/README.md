@@ -16,6 +16,7 @@ instead, and `node bench/ui/compare.ts <dir>` compares that IR with `baseline-0.
 | `<project>.ir.json` | IR v2, canonical key order | `normalize08` equivalence after `hozu migrate 0.9` (acceptance 3) |
 | `summary.json` | P7 (min+gz bytes of `client.js` and its static chunks); per project, the build diagnostics and per route `js` (`always` / `conditional` / `false`), the island count and the widgets | acceptance 1 (no new client JS) and 2 (P7) |
 | `conflicts.json` | Every pair of classes on one element that set the same properties with different values, under the same variant | HZ079 scope (ADR 0045 F, gate G1) |
+| `agreement.json` | Per project, the scan's pairs against the validator's HZ079 (phase 3): real pairs, exclusive toggle pairs, HZ079 findings, and the pairs only one side has | HZ079 agreement (ADR 0045 phase 3) |
 
 ## How a conflict is found
 - Each class is compiled alone with the project's own stylesheet and the production resolver (`@tailwindcss/node`
@@ -40,3 +41,13 @@ instead, and `node bench/ui/compare.ts <dir>` compares that IR with `baseline-0.
 
 - No pair is two static classes.
 - No pair in the other seven projects.
+
+## Agreement with HZ079 (phase 3)
+- Each project is also compiled with `compileStyles` and validated; its HZ079 findings are compared with the scan.
+- A toggle pair whose guards `exclusive()` (`@hozu/validator`) accepts is exclusive; every other pair is real.
+- The last line says `agree` when the real pairs equal the findings and no exclusive pair is reported.
+
+| Run | Real pairs | Exclusive pairs | HZ079 | Verdict |
+|---|---|---|---|---|
+| Showcase tabs at `bf1c7a4` (before the fix) | 6 | 24 | 6 | agree |
+| After the fix (`aria-selected:` variants) | 0 | 24 | 0 | agree |

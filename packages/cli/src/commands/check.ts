@@ -5,6 +5,7 @@ import { dirname, join, relative } from 'node:path'
 import type { CheckOutput, TypeIssue } from '../contract.ts'
 import type { Loaded } from '../load.ts'
 import { relativize } from '../output.ts'
+import { projectStyles } from '../styles.ts'
 import { componentUses, overridesOf } from '../uses.ts'
 import { inspectApp } from './app.ts'
 import { kitConfigDiagnostics } from './kits.ts'
@@ -86,7 +87,10 @@ export async function runCheck(loaded: Loaded, cwd: string, updateLock: boolean)
   const validate = await runValidate(loaded, undefined, cwd, updateLock)
   const traced = loaded.build(true)
   const { diagnostics: app } = await inspectApp(loaded, traced)
-  const entry = [...app, ...(await kitConfigDiagnostics(traced, root, loaded.path))]
+  const tokens = Object.keys(traced.ir.kits).length
+    ? ((await projectStyles(loaded.path, traced))?.tokens ?? null)
+    : null
+  const entry = [...app, ...(await kitConfigDiagnostics(traced, root, loaded.path, tokens))]
   validate.diagnostics.push(...relativize(entry, cwd))
   for (const d of entry) validate.summary[d.severity === 'error' ? 'errors' : 'warnings']++
   if (entry.some((d) => d.severity === 'error')) validate.ok = false

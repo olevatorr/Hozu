@@ -1,4 +1,4 @@
-// ADR 0045 phase 0: node --import ./packages/transform/dist/register.js bench/ui/baseline.ts [--out <dir>]
+// ADR 0045 phase 0 and 3: node --import ./packages/transform/dist/register.js bench/ui/baseline.ts [--out <dir>]
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -6,8 +6,10 @@ import { join, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { gzipSync } from 'node:zlib'
 import { planRoute } from '@hozu/compiler'
-import type { ProjectIR, ValueExpr, ViewNode } from '@hozu/core/ir'
-import { buildProject, canonicalStringify } from '@hozu/core/ir'
+import type { Diagnostic, ProjectIR, ValueExpr, ViewNode } from '@hozu/core/ir'
+import { buildProject, canonicalStringify, parsePointer } from '@hozu/core/ir'
+import { compileStyles } from '@hozu/css'
+import { exclusive, validate } from '@hozu/validator'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const flag = process.argv.indexOf('--out')
@@ -206,9 +208,73 @@ async function conflicts(
   return found
 }
 
+interface Agreement {
+  project: string
+  real: number
+  exclusive: number
+  hz079: number
+  missing: string[]
+  extra: string[]
+  exclusiveReported: string[]
+}
+
+const nodeAt = (ir: ProjectIR, pointer: string): string => {
+  let v: unknown = ir
+  for (const t of parsePointer(pointer)) {
+    if (t === 'class' || t === 'toggle') break
+    v = (v as Record<string, unknown>)[t]
+  }
+  return (v as { id: string }).id
+}
+
+const pairKey = (node: string, a: string, b: string) => `${node} ${[a, b].sort().join(' | ')}`
+
+/** The scan's pairs against the validator's HZ079 (ADR 0045 F): equal sets, exclusive toggle pairs never reported. */
+async function agreement(
+  name: string,
+  dir: string,
+  build: ReturnType<typeof buildProject>,
+  scanned: Conflict[],
+): Promise<Agreement> {
+  const styles = await compileStyles(build, { minify: false, base: join(root, dir) })
+  const found = validate(build.ir, {
+    bindings: build.bindings,
+    unknownClasses: styles.unknown,
+    classes: styles.classes,
+  }).filter((d: Diagnostic) => d.code === 'HZ079')
+  const toggles = new Map<string, ViewNode>()
+  for (const feature of Object.values(build.ir.features))
+    for (const view of Object.values(feature.views)) walk(view.root, (n) => toggles.set(n.id, n))
+  const isExclusive = (c: Conflict) => {
+    if (c.kind !== 'toggle-toggle') return false
+    const n = toggles.get(c.node)
+    if (n?.kind !== 'el' && n?.kind !== 'widget') return false
+    const keyOf = (cls: string) => Object.keys(n.toggle).find((k) => k.split(/\s+/).includes(cls))!
+    return exclusive(n.toggle[keyOf(c.a)]!, n.toggle[keyOf(c.b)]!)
+  }
+  const real = new Set(scanned.filter((c) => !isExclusive(c)).map((c) => pairKey(c.node, c.a, c.b)))
+  const excl = new Set(scanned.filter(isExclusive).map((c) => pairKey(c.node, c.a, c.b)))
+  const reported = new Set(
+    found.map((d) => {
+      const [a, b] = [...d.message.matchAll(/"([^"]+)"/g)].map((m) => m[1]!)
+      return pairKey(nodeAt(build.ir, d.location.pointer), a!, b!)
+    }),
+  )
+  return {
+    project: name,
+    real: real.size,
+    exclusive: excl.size,
+    hz079: reported.size,
+    missing: [...real].filter((k) => !reported.has(k)),
+    extra: [...reported].filter((k) => !real.has(k)),
+    exclusiveReported: [...excl].filter((k) => reported.has(k)),
+  }
+}
+
 mkdirSync(out, { recursive: true })
 const summary: Record<string, unknown> = {}
 const allConflicts: Conflict[] = []
+const agreements: Agreement[] = []
 for (const dir of projects) {
   const name = dir.replaceAll('/', '-')
   const config = (await import(pathToFileURL(join(root, dir, 'hozu.config.ts')).href)).default
@@ -221,7 +287,9 @@ for (const dir of projects) {
     diagnostics: build.diagnostics.map((d) => d.code).sort(),
     routes: routeSummary(build.ir),
   }
-  allConflicts.push(...(await conflicts(name, dir, build)))
+  const scanned = await conflicts(name, dir, build)
+  allConflicts.push(...scanned)
+  agreements.push(await agreement(name, dir, build, scanned))
 }
 
 const base = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
@@ -230,6 +298,12 @@ writeFileSync(
   `${JSON.stringify({ base, p7: clientBytes('client.js'), projects: summary }, null, 2)}\n`,
 )
 writeFileSync(join(out, 'conflicts.json'), `${JSON.stringify(allConflicts, null, 2)}\n`)
+writeFileSync(join(out, 'agreement.json'), `${JSON.stringify(agreements, null, 2)}\n`)
+const sum = (k: 'real' | 'exclusive' | 'hz079') => agreements.reduce((n, a) => n + a[k], 0)
+const disagree = agreements.filter((a) => a.missing.length || a.extra.length || a.exclusiveReported.length)
+console.log(
+  `scan: ${sum('real')} real pairs, ${sum('exclusive')} exclusive; HZ079: ${sum('hz079')}; ${disagree.length ? `DISAGREE in ${disagree.map((a) => a.project).join(', ')}` : 'agree'}`,
+)
 console.log(
   `${projects.length} projects, P7 ${[...clientSeen].length} files, ${allConflicts.length} conflicts`,
 )

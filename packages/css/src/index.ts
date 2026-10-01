@@ -6,6 +6,7 @@ import { closest } from '@hozu/validator'
 import { __unstable__loadDesignSystem, compile, optimize } from '@tailwindcss/node'
 import { withFallbacks } from './fonts.ts'
 import { classStyles, resolveCss } from './properties.ts'
+import { type DesignTokens, defaultDesignSystem, tokensOf } from './tokens.ts'
 
 export interface CompiledStyles {
   css: string
@@ -16,6 +17,7 @@ export interface CompiledStyles {
   candidates: Set<string>
   unknown: Map<string, string | null>
   classes: Map<string, ClassStyle>
+  tokens: DesignTokens | null
 }
 
 export { classCandidates }
@@ -115,6 +117,7 @@ export async function compileStyles(
     candidates,
     unknown,
     classes,
+    tokens: loaded ? tokensOf(loaded, await defaultDesignSystem(base)) : null,
   }
 }
 
