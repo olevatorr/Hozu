@@ -1,0 +1,151 @@
+
+added 36 packages in 2s
+1. stale under 0.7: 10 lock entries (review each before --update-lock):
+   account idle/on/account.SignIn/0 [behavior]
+     was: idle --SignIn--> signingIn · draft := event.name, error := null, fields := {"name":null} · invoke signIn({ name: ctx.draft })
+     now: idle --SignIn--> signingIn · draft := event.name, error := null, fields := {"name":null} · invoke signIn({ name: ctx.draft })
+   account idle/on/account.SignIn/0 [contracts]
+     was: idle --SignIn--> signingIn · draft := event.name, error := null, fields := {"name":null} · invoke signIn({ name: ctx.draft })
+     now: idle --SignIn--> signingIn · draft := event.name, error := null, fields := {"name":null} · invoke signIn({ name: ctx.draft })
+   account signingIn/invoke/done/0 [behavior]
+     was: signingIn --done signIn--> idle · navigate link(home, null)
+     now: signingIn --done signIn--> idle · navigate link(notesList, null)
+   account signingIn/invoke/done/0 [contracts]
+     was: signingIn --done signIn--> idle · navigate link(home, null)
+     now: signingIn --done signIn--> idle · navigate link(notesList, null)
+   notes adding/invoke/done/0 [contracts]
+     was: adding --done addNote--> idle · draft := "", tags := ""
+     now: adding --done addNote--> idle · draft := "", tags := ""
+   notes idle/on/notes.Add/0 [contracts]
+     was: idle --Add--> adding · draft := event.title, tags := event.tags, error := null, fields := {"title":null} · invoke addNote({ title: ctx.draft, tags: ctx.tags })
+     now: idle --Add--> adding · draft := event.title, tags := event.tags, error := null, fields := {"title":null} · invoke addNote({ title: ctx.draft, tags: ctx.tags })
+   notes idle/on/notes.Undo/0 [missing]
+     now: idle --Undo--> undoing · error := null · invoke undoRemove({})
+   notes undoing/invoke/done/0 [missing]
+     now: undoing --done undoRemove--> idle
+   notes undoing/invoke/failed/NothingToUndo/0 [missing]
+     now: undoing --failed undoRemove.NothingToUndo--> idle · error := "There is nothing to undo"
+   notes undoing/invoke/failed/Unexpected/0 [missing]
+     now: undoing --failed undoRemove.Unexpected--> idle · error := error.message
+2. rewrote 8 paths, removed serve.ts, server.ts
+   hozu.config.ts:22  head.redirects → failed: { Unauthorized: login }  (hozu docs pages)
+   hozu.config.ts:31  head.redirects → failed: { Unauthorized: login }  (hozu docs pages)
+   features/account/model.ts:12  user-scoped freshness 'static' → 'request': user data is read on every request  (hozu docs data)
+   features/notes/model.ts:31  user-scoped freshness 'static' → 'request': user data is read on every request  (hozu docs data)
+   features/notes/model.ts:68  user-scoped freshness 'static' → 'request': user data is read on every request  (hozu docs data)
+   features/notes/model.ts:91  user-scoped freshness 'static' → 'request': user data is read on every request  (hozu docs data)
+   features/notes/views.ts:97  ui.link search: dropped tag (null or the route default)  (hozu docs views)
+   features/notes/views.ts:33  savingNote → part() (the IR is unchanged)  (hozu docs views)
+   app.ts:1  ./server.ts and ./serve.ts → ./app.ts (export default app({ resolvers }))  (hozu docs deploy)
+   package.json:1  scripts.start: node --import @hozu/transform/register serve.ts → hozu serve  (hozu docs deploy)
+   Behaviour changes and code to move by hand:
+   ! features/notes/server.ts:38  the resolver of query listNotes calls itemsOf, which calls .set(): query resolvers only read; move the write into a mutation  (hozu docs data)
+   ! features/notes/server.ts:43  the resolver of query listArchived calls itemsOf, which calls .set(): query resolvers only read; move the write into a mutation  (hozu docs data)
+   ! serve.ts:15  sessionCookie(...) dropped: sessions are a server-side store (memorySessions) by default; set SESSION_SECRET in production, and everyone signs in once more after the upgrade  (hozu docs deploy)
+   ! features/account/server.ts:13  a redirect Response: declare output: 'redirect' and return redirect(ui.link(…))  (hozu docs endpoints)
+   CLAUDE.md: Hozu block marked
+3. upgrade every @hozu/* dependency to 0.8: npm install @hozu/adapter-node@^0.8.0 @hozu/cli@^0.8.0 @hozu/core@^0.8.0 @hozu/css@^0.8.0 @hozu/data@^0.8.0 @hozu/runtime-server@^0.8.0 @hozu/schema-zod@^0.8.0 @hozu/testing@^0.8.0 @hozu/transform@^0.8.0
+4. npx hozu migrate 0.8   # again after the upgrade: nothing to rewrite, then it runs hozu check
+5. keep .hozu/migrate-0.7.json until that second run: it holds the 0.7 IR it compares with (a reinstall keeps it; delete it afterwards)
+Migrate never writes hozu.lock.json and never deletes a contract.
+
+added 36 packages in 2s
+== migrate after upgrade
+1. stale under 0.7: skipped (the installed @hozu/core is 0.8.0; the stale check runs on 0.7, before the upgrade)
+2. rewrote 0 paths
+   Behaviour changes and code to move by hand:
+   ! features/notes/server.ts:38  the resolver of query listNotes calls itemsOf, which calls .set(): query resolvers only read; move the write into a mutation  (hozu docs data)
+   ! features/notes/server.ts:43  the resolver of query listArchived calls itemsOf, which calls .set(): query resolvers only read; move the write into a mutation  (hozu docs data)
+   ! features/account/server.ts:13  a redirect Response: declare output: 'redirect' and return redirect(ui.link(…))  (hozu docs endpoints)
+   CLAUDE.md: Hozu block current
+3. the IR equals the 0.7 IR apart from the mapping every rewrite allows (ADR 0043 Migration)
+4. hozu check: failed · 3 errors, 1 warnings · lock stale
+5. delete .hozu/migrate-0.7.json: the IR comparison with 0.7 is done
+6. npx hozu check   # fix each diagnostic; accept the lock with --update-lock
+Migrate never writes hozu.lock.json and never deletes a contract.
+== check --update-lock
+features/notes/views.ts:404:29  warning  HZ058  18 contracts cover no decision: addsNoteOnce, addsTaggedNote, archiveRefusesArchived …
+  at /features/notes/contracts/addsNoteOnce
+  cause: Every transition these contracts fire only copies values, and they evaluate no guard; hozu.lock.json already reviews those transitions (ADR 0043 G).
+    addsNoteOnce: idle/on/notes.Add/0 → adding/invoke/done/0
+    addsTaggedNote: idle/on/notes.Add/0 → adding/invoke/done/0
+    archiveRefusesArchived: idle/on/notes.Archive/0 → archiving/invoke/failed/Archived/0
+    archivesNote: idle/on/notes.Archive/0 → archiving/invoke/done/0
+    cancelsEdit: idle/on/notes.Edit/0 → idle/on/notes.Cancel/0
+    pinRefusesArchived: idle/on/notes.Pin/0 → pinning/invoke/failed/Archived/0
+    pinReportsMissing: idle/on/notes.Pin/0 → pinning/invoke/failed/NotFound/0
+    pinsNote: idle/on/notes.Pin/0 → pinning/invoke/done/0
+    rejectsBadTags: idle/on/notes.Add/0 → adding/invoke/failed/BadTags/0
+    rejectsDuplicateTitle: idle/on/notes.Add/0 → adding/invoke/failed/Duplicate/0
+    … 8 more (--json lists all)
+  fix: Contracts belong where a transition decides (a guard, a navigate, a computed value). The lock entries below review these transitions
+    hozu.lock.json notes adding/invoke/done/0
+    hozu.lock.json notes adding/invoke/failed/BadTags/0
+    hozu.lock.json notes adding/invoke/failed/Duplicate/0
+    hozu.lock.json notes adding/invoke/failed/Invalid/0
+    hozu.lock.json notes archiving/invoke/done/0
+    hozu.lock.json notes archiving/invoke/failed/Archived/0
+    hozu.lock.json notes idle/on/notes.Add/0
+    hozu.lock.json notes idle/on/notes.Archive/0
+    hozu.lock.json notes idle/on/notes.Cancel/0
+    hozu.lock.json notes idle/on/notes.Edit/0
+    hozu.lock.json notes idle/on/notes.Pin/0
+    hozu.lock.json notes idle/on/notes.Restore/0
+    hozu.lock.json notes idle/on/notes.Save/0
+    hozu.lock.json notes idle/on/notes.Search/0
+    hozu.lock.json notes idle/on/notes.Undo/0
+    hozu.lock.json notes pinning/invoke/done/0
+    hozu.lock.json notes pinning/invoke/failed/Archived/0
+    hozu.lock.json notes pinning/invoke/failed/NotFound/0
+    hozu.lock.json notes restoring/invoke/done/0
+    hozu.lock.json notes saving/invoke/done/0
+    hozu.lock.json notes saving/invoke/failed/Archived/0
+    hozu.lock.json notes saving/invoke/failed/Duplicate/0
+    hozu.lock.json notes undoing/invoke/done/0
+    hozu.lock.json notes undoing/invoke/failed/NothingToUndo/0
+  see: hozu docs contracts
+
+✔ types ok · 0 errors, 1 warnings · contracts 2/2 decisions · lock updated
+== check
+features/notes/views.ts:404:29  warning  HZ058  18 contracts cover no decision: addsNoteOnce, addsTaggedNote, archiveRefusesArchived …
+  at /features/notes/contracts/addsNoteOnce
+  cause: Every transition these contracts fire only copies values, and they evaluate no guard; hozu.lock.json already reviews those transitions (ADR 0043 G).
+    addsNoteOnce: idle/on/notes.Add/0 → adding/invoke/done/0
+    addsTaggedNote: idle/on/notes.Add/0 → adding/invoke/done/0
+    archiveRefusesArchived: idle/on/notes.Archive/0 → archiving/invoke/failed/Archived/0
+    archivesNote: idle/on/notes.Archive/0 → archiving/invoke/done/0
+    cancelsEdit: idle/on/notes.Edit/0 → idle/on/notes.Cancel/0
+    pinRefusesArchived: idle/on/notes.Pin/0 → pinning/invoke/failed/Archived/0
+    pinReportsMissing: idle/on/notes.Pin/0 → pinning/invoke/failed/NotFound/0
+    pinsNote: idle/on/notes.Pin/0 → pinning/invoke/done/0
+    rejectsBadTags: idle/on/notes.Add/0 → adding/invoke/failed/BadTags/0
+    rejectsDuplicateTitle: idle/on/notes.Add/0 → adding/invoke/failed/Duplicate/0
+    … 8 more (--json lists all)
+  fix: Contracts belong where a transition decides (a guard, a navigate, a computed value). The lock entries below review these transitions
+    hozu.lock.json notes adding/invoke/done/0
+    hozu.lock.json notes adding/invoke/failed/BadTags/0
+    hozu.lock.json notes adding/invoke/failed/Duplicate/0
+    hozu.lock.json notes adding/invoke/failed/Invalid/0
+    hozu.lock.json notes archiving/invoke/done/0
+    hozu.lock.json notes archiving/invoke/failed/Archived/0
+    hozu.lock.json notes idle/on/notes.Add/0
+    hozu.lock.json notes idle/on/notes.Archive/0
+    hozu.lock.json notes idle/on/notes.Cancel/0
+    hozu.lock.json notes idle/on/notes.Edit/0
+    hozu.lock.json notes idle/on/notes.Pin/0
+    hozu.lock.json notes idle/on/notes.Restore/0
+    hozu.lock.json notes idle/on/notes.Save/0
+    hozu.lock.json notes idle/on/notes.Search/0
+    hozu.lock.json notes idle/on/notes.Undo/0
+    hozu.lock.json notes pinning/invoke/done/0
+    hozu.lock.json notes pinning/invoke/failed/Archived/0
+    hozu.lock.json notes pinning/invoke/failed/NotFound/0
+    hozu.lock.json notes restoring/invoke/done/0
+    hozu.lock.json notes saving/invoke/done/0
+    hozu.lock.json notes saving/invoke/failed/Archived/0
+    hozu.lock.json notes saving/invoke/failed/Duplicate/0
+    hozu.lock.json notes undoing/invoke/done/0
+    hozu.lock.json notes undoing/invoke/failed/NothingToUndo/0
+  see: hozu docs contracts
+
+✔ types ok · 0 errors, 1 warnings · contracts 2/2 decisions · lock current
