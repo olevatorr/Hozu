@@ -453,6 +453,11 @@ A's example and the notes kit do) types correctly. The phase 3 fixtures use that
 - **`hozu check` wall time** (median, cold = no styles cache): notes 0.56 → 0.64 s cold, 0.51 → 0.58 s warm;
   showcase 0.60 → 0.77 s cold, 0.45 → 0.50 s warm.
 - **Repository:** `hozu check` on the 10 examples and the site: 0 errors, 0 warnings.
+- **Gate** (`pnpm gate`): lint clean (5 existing warnings), typecheck clean, 559 tests: 553 passed, 6 skipped. Bench:
+  P1 0.217 ms, P2 289.345 ms with exponent **1.146 (budget ≤ 1.14, failed)**, P3 238.838 ms, P5 17.5 M/s, P6
+  2.64 M/s, P7 7 893 B, P9 10 016 req/s, A4 55 663. The exponent is unstable (1.141 at the base, 1.112 in phase 2)
+  and was not re-run; the style rules add two linear view walks to every validate. The first gate run stopped at
+  typecheck on two test fixtures (the inline `tv()` gap and an unreferenced variants test), fixed before this run.
 
 ## A. One declaration: `ui.component`
 ```ts
