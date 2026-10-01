@@ -1,0 +1,52 @@
+{
+  "ok": true,
+  "types": {
+    "errors": [],
+    "ok": true,
+    "skipped": false
+  },
+  "validate": {
+    "coverage": {
+      "account": {
+        "covered": 3,
+        "total": 3,
+        "transitions": 10
+      },
+      "notes": {
+        "covered": 4,
+        "total": 4,
+        "transitions": 65
+      }
+    },
+    "diagnostics": [
+      {
+        "cause": "Every transition these contracts fire only copies values, and they evaluate no guard; hozu.lock.json already reviews those transitions (ADR 0043 G).\naddsNote: idle/on/notes.Add/0 → adding/invoke/done/0\narchivesNote: idle/on/notes.Archive/0 → archiving/invoke/done/0\ncancelsEdit: idle/on/notes.Edit/0 → idle/on/notes.Cancel/0\ndraftsTitle: idle/on/notes.Draft/0\neditsNote: idle/on/notes.Edit/0\nfiltersByTag: idle/on/notes.FilterTag/0\npinsNote: idle/on/notes.Pin/0 → pinning/invoke/done/0\nrefusesPinOnArchived: idle/on/notes.Pin/0 → pinning/invoke/failed/Archived/0\nrefusesRenameOnArchived: idle/on/notes.Save/0 → saving/invoke/failed/Archived/0\nrefusesStaleUndo: idle/on/notes.Undo/0 → undoing/invoke/failed/NotFound/0\nrejectsBadTag: idle/on/notes.Add/0 → adding/invoke/failed/Invalid/0\nrejectsDuplicate: idle/on/notes.Add/0 → adding/invoke/failed/Duplicate/0\nrejectsDuplicateRename: idle/on/notes.Save/0 → saving/invoke/failed/Duplicate/0\nrejectsLongNote: idle/on/notes.Add/0 → adding/invoke/failed/Invalid/0\nrestoresNote: idle/on/notes.Restore/0 → restoring/invoke/done/0\nsavesNote: idle/on/notes.Edit/0 → idle/on/notes.Save/0 → saving/invoke/done/0\nsearchesNotes: idle/on/notes.Search/0\nsearchesWithinTag: idle/on/notes.Search/0\nshowsAllNotes: idle/on/notes.FilterTag/0\ntagResetsLimit: idle/on/notes.FilterTag/0\nundoesDelete: idle/on/notes.Undo/0 → undoing/invoke/done/0",
+        "code": "HZ058",
+        "fix": {
+          "patch": null,
+          "snippet": "hozu.lock.json notes adding/invoke/done/0\nhozu.lock.json notes adding/invoke/failed/Duplicate/0\nhozu.lock.json notes adding/invoke/failed/Invalid/0\nhozu.lock.json notes archiving/invoke/done/0\nhozu.lock.json notes idle/on/notes.Add/0\nhozu.lock.json notes idle/on/notes.Archive/0\nhozu.lock.json notes idle/on/notes.Cancel/0\nhozu.lock.json notes idle/on/notes.Draft/0\nhozu.lock.json notes idle/on/notes.Edit/0\nhozu.lock.json notes idle/on/notes.FilterTag/0\nhozu.lock.json notes idle/on/notes.Pin/0\nhozu.lock.json notes idle/on/notes.Restore/0\nhozu.lock.json notes idle/on/notes.Save/0\nhozu.lock.json notes idle/on/notes.Search/0\nhozu.lock.json notes idle/on/notes.Undo/0\nhozu.lock.json notes pinning/invoke/done/0\nhozu.lock.json notes pinning/invoke/failed/Archived/0\nhozu.lock.json notes restoring/invoke/done/0\nhozu.lock.json notes saving/invoke/done/0\nhozu.lock.json notes saving/invoke/failed/Archived/0\nhozu.lock.json notes saving/invoke/failed/Duplicate/0\nhozu.lock.json notes undoing/invoke/done/0\nhozu.lock.json notes undoing/invoke/failed/NotFound/0",
+          "summary": "Contracts belong where a transition decides (a guard, a navigate, a computed value). The lock entries below review these transitions"
+        },
+        "location": {
+          "feature": "notes",
+          "pointer": "/features/notes/contracts/addsNote",
+          "source": {
+            "column": 25,
+            "file": "features/notes/views.ts",
+            "line": 387
+          }
+        },
+        "message": "21 contracts cover no decision: addsNote, archivesNote, cancelsEdit …",
+        "severity": "warning"
+      }
+    ],
+    "hash": "3ade5da36af41fb36e879d72d81ed7f4f40552379bf942006cdbda6bac101f8c",
+    "lock": "current",
+    "ok": true,
+    "styles": "checked",
+    "summary": {
+      "errors": 0,
+      "warnings": 1
+    }
+  }
+}
