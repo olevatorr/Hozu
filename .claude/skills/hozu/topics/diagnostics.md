@@ -23,6 +23,7 @@ around the rule.
 | HZ026 | a class produces no CSS | fix the Tailwind class |
 | HZ027 | a DOM field used outside an event, or wrong for this event | read `ui.dom.*` only in `ui.send` payloads |
 | HZ028 | `img` without width/height | add both |
+| HZ029 | a client component's module is missing, or a handler for an event it does not emit | create the module (`hozu add component … --client`); handle declared `emits` only |
 | HZ030 | `ui.html` of untrusted data | render text instead |
 | HZ031 | a literal not allowed by its schema | use an allowed value (the patch suggests one) |
 | HZ032 | internal link or form action written as a string | `ui.link(route, params)` / `ui.link(endpoint)` |
@@ -37,7 +38,7 @@ around the rule.
 | HZ041 | a machine uses a message, `ui.format` or `locale` | store a code in context; choose the message in the view |
 | HZ043 | `site.offline` has params, no page, or per-request data | point it at a static page, or remove `offline` |
 | HZ044 | a feature file was loaded without the Hozu transform | run node with `--import @hozu/transform/register` (`npm start` does), or add `hozuTransform()` to Vite / Vitest |
-| HZ045 | no `project({ app })`, its default export is not `app(…)`, or views use widgets and `app()` has none | `export default app({ resolvers, widgets: bundleWidgets })` |
+| HZ045 | no `project({ app })`, its default export is not `app(…)`, or views use client components and `app()` has no bundle | `export default app({ resolvers, components: bundleComponents })` |
 | HZ046 | an endpoint path is reserved, has params or collides; an error without a status; a form posting to it with another method or an undeclared field | a static path such as `/api/…` (patch); map every error in `failed` |
 | HZ047 | a `fn` body uses an imported name or `let` state (it is sent to the browser as source) | pass the value as input, or write it as a `const` helper in the module |
 | HZ048 | `seed` names a field the context lacks, has no machine or route, or two views on one page seed a machine | seed top-level context fields, on one view per page |
@@ -55,6 +56,16 @@ around the rule.
 | HZ060 | a page route starts with a locale segment (`/de/…` under `site.locales`) | rename the route (patch); the locale prefix is added for you |
 | HZ061 | (warning) a form-fed event payload declares limits | move them to the mutation input |
 | HZ062 | (warning) a GET endpoint declares `invalidates` | `method: 'POST'`, or keep it on purpose (e-mail links) |
-| HZ063 | (warning) as HZ055, in a form holding `ui.html`, a widget or another view | as HZ055 |
+| HZ063 | (warning) as HZ055, in a form holding `ui.html`, a client component or another view | as HZ055 |
 | HZ064 | two contracts with identical IR | remove one (patch) |
+| HZ070 | a component's render references a declaration (event, query, route, message…) | pass a `Send` through `on`, an `Href` prop, text as a prop or slot |
+| HZ071 | a variant from data | make it a prop, styled through an attribute (`aria-pressed:`, `data-[x=y]:`) |
+| HZ072 | a caller's `class` sets a property the component owns | declare a variant; a one-off ends with `!` (patch) |
+| HZ073 / HZ074 | `!` inside a component / a leading `!x` | remove it (patch) / write `x!` (patch) |
+| HZ075 | (warning) a caller's inherited class (colour, font) is hidden by an inner element | a variant, or style the inner element |
+| HZ076 | (warning) a component owns a margin | remove it (patch); outer spacing is the caller's |
+| HZ077 | (warning) `!` on a property the component does not own | remove the `!` (patch) |
+| HZ078 | the kit's `tv.ts` config differs from the design system | `hozu add kit <id> --sync` |
+| HZ079 | two classes of one element set the same property | the patch: a complementary toggle, or remove the one that never wins |
+| HZ080 | (warning) a `part()` view inlined by two features | the snippet: the same `ui.component` in a kit |
 | HZ042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

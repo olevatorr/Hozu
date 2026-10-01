@@ -26,6 +26,7 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 | A per-item action stored on the server (pin, archive) | model: the item field, an event, a mutation that `invalidates` the list tag, `on(E, { target: 'pinning', assign: (e) => { ctx.target = e.id } })`, a state with `invoke` → views: the per-item form (`hozu docs patterns`) → app: store it, sort in the list resolver |
 | A control every state handles | `machine({ on: [...] })` |
 | New page | `routes.ts` → a view with `route` → `ui.page(...)` in `hozu.config.ts` |
+| UI (a button, a field) | `ui.use` of a kit component; the catalog: `npx hozu docs components` |
 
 ## Rules no diagnostic checks
 - **Query resolvers only read.** Writes belong in mutation and endpoint resolvers; a prefetched link runs queries.
@@ -49,6 +50,6 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 | filters, modes, per-item actions, load more | `patterns` |
 | worked changes | `recipes` |
 | webhooks, JSON APIs, redirects | `endpoints` |
-| browser APIs, DOM libraries | `widgets` |
+| components, kits, browser APIs, DOM libraries | `components` |
 | languages, env, HTTP, Markdown, tests, deploying | `i18n` `env` `http` `content` `testing` `deploy` |
 | a diagnostic code | `diagnostics` |

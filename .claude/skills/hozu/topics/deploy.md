@@ -1,7 +1,7 @@
 # Deployment
 
 - **One app module:** `project({ app: new URL('./app.ts', import.meta.url) })`, and `app.ts` default-exports
-  `app({ resolvers: resolvers(project, (implement) => [...]), session?, widgets?, og?, csp?, onError?, preview? })`
+  `app({ resolvers: resolvers(project, (implement) => [...]), session?, components?, og?, csp?, onError?, preview? })`
   from `@hozu/runtime-server`. `hozu serve`, `hozu check`, `hozu get`, `hozu browse` and `testApp(app)` all run this
   module, so what the tools verify is what production serves. There is no wrapper position: headers go through
   `project({ http })`, statuses through `head.failed` and endpoint `failed`, the language through the URL.

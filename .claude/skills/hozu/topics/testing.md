@@ -33,9 +33,9 @@
   - `≠ DIFFERS` marks a step where both modes made a request and the resulting text differs: a no-JS/JS parity bug.
   - Errors: uncaught exceptions, `console.error`s, CSP violations and failed requests, each with the page, the
     resource type and the mode. A 400 re-render of an invalid native post is not an error.
-  - Exit code 1 when a step failed, the modes differ, a widget failed or any error was printed. `--json` has every
+  - Exit code 1 when a step failed, the modes differ, a client component failed or any error was printed. `--json` has every
     line; `--full` prints them all; `--select <css>`, `--screenshot shot.png` and `--reduced-motion` as before.
-  - It also prints the widgets on the page (mounted, failed, size, canvases).
+  - It also prints the client components on the page (mounted, failed, size, canvases).
 - In code: `const page = await testApp(app).get('/')` from `@hozu/testing`, with `app` the default export of
   `app.ts` → `{ status, headers, html, text, payload }`; `.post(path, fields)` submits a native form, with fields as
   a record or as `[name, value]` pairs for repeated names. `testApp(app, { session: store })` may swap only the

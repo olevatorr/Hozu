@@ -60,10 +60,15 @@ describe('SKILL.md (ADR 0043 K)', () => {
       "'static'",
       'ui.if',
       'op.',
+      'tv(',
+      'owned',
+      'aria-pressed:',
+      '`!`',
     ])
       expect(skill).not.toContain(taught)
     expect(skill).not.toContain('changing.md')
     expect(skill).not.toContain('hozu post')
+    expect(skill).not.toMatch(/widget|hozu migrate/i)
   })
 
   it('indexes exactly the topics hozu docs prints', async () => {

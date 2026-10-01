@@ -12,6 +12,6 @@ http: {
   headers: [{ routes: 'all', set: { 'permissions-policy': 'camera=()' } }],   // not cache-control (HZ038)
 },
 ```
-Server options live in the app module: `app({ resolvers, session?, widgets?, onError?, csp?, og?, preview? })`.
+Server options live in the app module: `app({ resolvers, session?, components?, onError?, csp?, og?, preview? })`.
 A strict CSP, `nosniff` and a cross-site POST check are on by default; `csp: { script: ['https://…'] }` adds sources.
 There are no rewrites: one URL has one owner. For your own HTTP routes, see `hozu docs endpoints`.
