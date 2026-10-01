@@ -32,15 +32,15 @@ Hozu 0.7 attacked what remained: the code the surface forced an agent to write (
 
 ## The constraints are part of the product
 
-A closed view tree is useful when you want the framework to inspect dependencies and event bindings. It is less convenient when a component design depends on arbitrary render functions, undeclared effects or a large existing library’s assumptions. Hozu offers typed widget boundaries for imperative DOM integration, but that boundary has an opaque implementation; the IR cannot prove every line inside it.
+A closed view tree is useful when you want the framework to inspect dependencies and event bindings. It is less convenient when a component design depends on arbitrary render functions, undeclared effects or a large existing library’s assumptions. Hozu offers typed client components for imperative DOM integration: their props, events and slots are declared, but the client module is opaque; the IR cannot prove every line inside it.
 
 The framework deliberately has no separate pure-SPA mode. An application dominated by user-scoped data is a case the render planner derives, not a second application model that bypasses the server-first pipeline. Global mutable client stores are also outside the stated design: cross-feature state goes through public feature contracts.
 
-If your existing application relies heavily on those patterns, adopting Hozu may require more than translating component syntax. Assess the migration at the boundaries: data ownership, routing, persistent UI and third-party integrations. Do not treat the existence of a widget escape hatch as proof that a particular integration is inexpensive.
+If your existing application relies heavily on those patterns, adopting Hozu may require more than translating component syntax. Assess the migration at the boundaries: data ownership, routing, persistent UI and third-party integrations. Do not treat the existence of client components as proof that a particular integration is inexpensive.
 
 ## Check the ecosystem fit before committing
 
-Hozu has its own fine-grained DOM runtime rather than compiling to an established component renderer. Existing framework-specific components therefore are not drop-in Hozu views. The relevant question is whether its documented capabilities cover your application and whether the remaining integrations fit the widget boundary. The repository does not provide an ecosystem-size benchmark, so this guide does not invent one.
+Hozu has its own fine-grained DOM runtime rather than compiling to an established component renderer. Existing framework-specific components therefore are not drop-in Hozu views. The relevant question is whether its documented capabilities cover your application and whether the remaining integrations fit a client component's boundary. The repository does not provide an ecosystem-size benchmark, so this guide does not invent one.
 
 A small exploratory feature can answer more than a general promise. Scaffold it, inspect its declarations, make a realistic change and verify the result:
 

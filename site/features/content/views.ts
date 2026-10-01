@@ -282,7 +282,12 @@ export const Changelog = ui.view({
         getChangelog,
         {},
         {
-          ready: (article) => ui.article({ class: 'prose max-w-none' }, [ui.html(article.html)]),
+          ready: (article) =>
+            ui.article({ class: 'prose max-w-none' }, [
+              article.hasCode
+                ? ui.use(CodeCopy, { props: {}, on: {} }, [ui.html(article.html)])
+                : ui.html(article.html),
+            ]),
           pending: null,
           failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Changelog is unavailable.']) },
         },

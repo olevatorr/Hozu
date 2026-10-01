@@ -54,7 +54,7 @@ A page assertion such as `assert: 'static'` asks the validator to confirm the de
 
 ## One kind of navigation
 
-Every internal link loads a document. Speculation rules let supported browsers prerender the target on hover, so the load is usually instant, and no client router decides what survives a link. State that must outlive a page lives in the URL (a seed), on the server (a query) or in a widget's own storage. Hozu 0.8 removed the derived soft navigation of [ADR 0015](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0015-phase-7a-soft-navigation.md), because neither the checker nor the lock could see what it kept ([ADR 0043](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0043-0-8-close-the-escape-hatches.md)).
+Every internal link loads a document. Speculation rules let supported browsers prerender the target on hover, so the load is usually instant, and no client router decides what survives a link. State that must outlive a page lives in the URL (a seed), on the server (a query) or in a client component's own storage. Hozu 0.8 removed the derived soft navigation of [ADR 0015](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0015-phase-7a-soft-navigation.md), because neither the checker nor the lock could see what it kept ([ADR 0043](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0043-0-8-close-the-escape-hatches.md)).
 
 Cross-document view transitions solve a visual problem. Hozu 0.4.0 emits `@view-transition { navigation: auto }`, allowing supported browsers to transition between ordinary documents without adding a client router. Reduced-motion preferences remove the animation. This does not preserve an application machine merely because two headers look alike.
 

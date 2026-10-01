@@ -1,4 +1,4 @@
-import { rm, writeFile } from 'node:fs/promises'
+import { copyFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { exportStatic } from '@hozu/adapter-static'
 import { bundleComponents } from '@hozu/bundle'
@@ -24,5 +24,15 @@ if (result.skipped.length) process.exitCode = 1
 else {
   await writeFile(new URL('./dist/CNAME', import.meta.url), 'hozu.org\n')
   await writeFile(new URL('./dist/.nojekyll', import.meta.url), '')
-  console.log(`Exported ${result.written.length} files; 0 skipped routes. Wrote CNAME and .nojekyll.`)
+  const images = (await readdir(new URL('../docs/trials/', import.meta.url))).filter((f) =>
+    f.endsWith('.svg'),
+  )
+  for (const image of images)
+    await copyFile(
+      new URL(`../docs/trials/${image}`, import.meta.url),
+      new URL(`./dist/trials/${image}`, import.meta.url),
+    )
+  console.log(
+    `Exported ${result.written.length} files; 0 skipped routes. Wrote CNAME, .nojekyll and ${images.length} trial images.`,
+  )
 }

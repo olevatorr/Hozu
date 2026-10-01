@@ -45,7 +45,7 @@ export const getTrial = query({
 })
 export const getChangelog = query({
   input: z.object({}),
-  output: z.object({ html: z.string() }),
+  output: z.object({ html: z.string(), hasCode: z.boolean() }),
   scope: 'public',
   freshness: 'static',
 })

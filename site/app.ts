@@ -20,14 +20,20 @@ import project from './hozu.config.ts'
 
 const repository = 'https://github.com/olevatorr/Hozu/blob/main/'
 const rewriteLinks = (html: string, source: string) =>
-  html.replace(/href="([^"#]+)(#[^"]*)?"/g, (match, href: string, hash = '') => {
-    if (/^(?:[a-z]+:|\/)/i.test(href)) return match
-    const path = new URL(href, `https://source.local/${source}`).pathname.slice(1)
-    if (path.startsWith('docs/trials/') && path.endsWith('.md'))
-      return `href="/trials/${path.slice(12, -3)}${hash}"`
-    if (path === 'CHANGELOG.md') return `href="/changelog${hash}"`
-    return `href="${repository}${path}${hash}"`
-  })
+  html
+    .replace(/href="([^"#]+)(#[^"]*)?"/g, (match, href: string, hash = '') => {
+      if (/^(?:[a-z]+:|\/)/i.test(href)) return match
+      const path = new URL(href, `https://source.local/${source}`).pathname.slice(1)
+      if (path.startsWith('docs/trials/') && path.endsWith('.md'))
+        return `href="/trials/${path.slice(12, -3)}${hash}"`
+      if (path === 'CHANGELOG.md') return `href="/changelog${hash}"`
+      return `href="${repository}${path}${hash}"`
+    })
+    .replace(/src="([^"]+)"/g, (match, src: string) => {
+      if (/^(?:[a-z]+:|\/)/i.test(src)) return match
+      const path = new URL(src, `https://source.local/${source}`).pathname.slice(1)
+      return path.startsWith('docs/trials/') ? `src="/trials/${path.slice(12)}"` : match
+    })
 const docs = (await loadCollection({ dir: new URL('./content/docs/', import.meta.url), schema: Frontmatter }))
   .map(({ slug, data, html, headings }) => ({
     slug,
@@ -104,7 +110,7 @@ export default app({
     implement(getDoc, ({ slug }, { fail }) => article(docs, slug) ?? fail('NotFound', { slug })),
     implement(listTrials, () => trials.map(summary)),
     implement(getTrial, ({ slug }, { fail }) => article(trials, slug) ?? fail('NotFound', { slug })),
-    implement(getChangelog, () => ({ html: changelogHtml })),
+    implement(getChangelog, () => ({ html: changelogHtml, hasCode: changelogHtml.includes('<pre') })),
   ]),
   components: bundleComponents,
 })
