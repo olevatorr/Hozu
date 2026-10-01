@@ -298,6 +298,19 @@ describe('ADR 0045 phase 2 diagnostics', () => {
     expect(b.diagnostics.every((d) => d.fix?.summary)).toBe(true)
   })
 
+  it('HZ044 — a render from untransformed code, in a feature or a kit', () => {
+    const untransformed = ui.component.bind(ui) as typeof ui.component
+    const Raw = untransformed({ tag: 'span', render: () => ui.span({}, []) })
+    const KitRaw = untransformed({ tag: 'span', render: () => ui.span({}, []) })
+    const b = build([{ Raw, View: ui.view({ render: () => ui.div({}, []) }) }], {
+      kits: [kit, ui.kit({ id: 'raw', components: [{ KitRaw }] })],
+    })
+    expect(codes(b)).toEqual([
+      ['HZ044', '/features/f/components/Raw'],
+      ['HZ044', '/kits/raw/components/KitRaw'],
+    ])
+  })
+
   it('HZ070 — the render references a declaration; values the caller passes are not', () => {
     const Leaky = ui.component({
       tag: 'a',
