@@ -1,6 +1,6 @@
 # ADR 0045 — 0.9: declared UI components (breaking)
 
-- Status: proposed (2026-10-01). Nothing is implemented yet.
+- Status: accepted (2026-10-01). The owner took every gate as recommended (G1–G6). Nothing is implemented yet.
 - **Already decided by the owner, in the design dialogue that produced this ADR:**
   - components are declarations, not conventions;
   - `ui.widget` merges into `ui.component({ client })` in a breaking 0.9;
@@ -8,7 +8,6 @@
   - styles use tailwind-variants directly (T1), in a new package `@hozu/variants`;
   - the official component library is reserved as `@hozu/ui-kit`;
   - the caller's classes follow property ownership, with a trailing `!` as the only override.
-- **Still open:** the gates at the end.
 - Builds on 0.8.0 (ADR 0043), which is not merged or published yet. 0.9 is released only after 0.8.0.
 - **Terms:**
   - "principle N" is a principle of `CLAUDE.md`;
@@ -458,7 +457,7 @@ Each phase ends with `pnpm gate` once, a report, and a runnable example.
    - raw `ui.button` / `ui.input` written while a kit component exists;
    - lines per change.
 
-## Decisions for the owner
+## Decisions for the owner (all decided 2026-10-01: as recommended)
 | Gate | Question | Recommendation |
 |---|---|---|
 | G1 | HZ079 on every element of every view (breaking; the migrate patches it), or only on component uses | **every element**: evidence 2 is a silent failure in 0.8 code too |
