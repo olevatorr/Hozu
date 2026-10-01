@@ -5,9 +5,11 @@ import { z } from 'zod'
 
 const home = route({ path: '/', params: null, search: null })
 
+const styles = tv({ base: 'rounded p-4' })
+
 export const Card = ui.component({
   tag: 'section',
-  styles: tv({ base: 'rounded p-4' }),
+  styles,
   props: z.object({ title: z.string() }),
   render: ({ props }) => ui.section({}, [ui.h2({ class: 'font-semibold text-slate-900!' }, [props.title])]),
 })

@@ -218,9 +218,10 @@ const Panel = machine({
   initial: 'idle',
   states: () => ({ idle: { on: [] } }),
 })
+const btnStyles = tv({ base: 'rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700' })
 const Btn = ui.component({
   tag: 'button',
-  styles: tv({ base: 'rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700' }),
+  styles: btnStyles,
   children: true,
   render: ({ children }) => ui.button({ type: 'button' }, children),
 })
@@ -240,9 +241,10 @@ const QuietInside = ui.component({
   tag: 'div',
   render: () => ui.div({}, [ui.span({ class: 'text-white' }, [])]),
 })
+const cardStyles = tv({ base: 'rounded p-4' })
 const Card = ui.component({
   tag: 'section',
-  styles: tv({ base: 'rounded p-4' }),
+  styles: cardStyles,
   props: z.object({ title: z.string() }),
   render: ({ props }) => ui.section({}, [ui.h2({ class: 'font-semibold text-slate-900' }, [props.title])]),
 })

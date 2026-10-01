@@ -55,6 +55,12 @@
     },
     {
       "path": "packages/transform"
+    },
+    {
+      "path": "packages/css"
+    },
+    {
+      "path": "packages/variants"
     }
   ]
 }

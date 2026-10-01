@@ -420,9 +420,10 @@ describe('ADR 0045 phase 2 diagnostics', () => {
 
 describe('ADR 0045 phase 3: bindings.components', () => {
   it("records the classes of the render's inner elements, tv slots and nested uses included, not the caller's", () => {
+    const panelStyles = tv({ slots: { base: 'p-4', title: 'text-lg font-bold' } })
     const Panel = ui.component({
       tag: 'section',
-      styles: tv({ slots: { base: 'p-4', title: 'text-lg font-bold' } }),
+      styles: panelStyles,
       slots: ['body'],
       children: true,
       render: ({ slots, children, classes }) =>
