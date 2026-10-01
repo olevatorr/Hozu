@@ -312,3 +312,100 @@ export const links = [
   // @ts-expect-error a route without search takes no third argument
   ui.link(plain, null, { tag: 'x' }),
 ]
+
+const buttonStyles = Object.assign(
+  (_props?: { tone?: 'primary' | 'ghost'; size?: 'sm' | 'md'; class?: string }) => '',
+  {
+    variants: {
+      tone: { primary: 'bg-indigo-600', ghost: 'text-slate-700' },
+      size: { sm: 'px-2', md: 'px-4' },
+    },
+    defaultVariants: { tone: 'primary', size: 'md' },
+    slots: { base: '', icon: 'size-4' },
+  },
+)
+const Save = event({ payload: z.object({}) })
+
+export const Button = ui.component({
+  tag: 'button',
+  styles: buttonStyles,
+  props: z.object({
+    type: z.enum(['button', 'submit']).default('button'),
+    disabled: z.boolean().default(false),
+  }),
+  slots: ['icon'],
+  children: true,
+  events: ['press'],
+  render: ({ props, slots, children, on, classes }) =>
+    ui.button({ type: props.type, disabled: props.disabled, on: { click: on.press } }, [
+      ui.span({ class: classes.icon }, [slots.icon]),
+      ...children,
+    ]),
+})
+
+export const Badge = ui.component({ tag: 'span', render: () => ui.span({}, []) })
+
+const Picker = ui.component({
+  tag: 'div',
+  props: z.object({ value: z.string() }),
+  emits: { change: z.object({ value: z.string() }) },
+  client: new URL('./picker.client.ts', import.meta.url),
+  load: 'visible',
+  render: () => ui.div({}, []),
+})
+
+export const kitUi = ui.kit({ id: 'ui', components: [{ Button, Badge }] })
+
+export const Uses = ui.view({
+  render: () =>
+    ui.main({}, [
+      ui.use(
+        Button,
+        {
+          variant: { tone: 'ghost', size: 'sm' },
+          props: { disabled: true },
+          slots: { icon: ui.svg({ viewBox: '0 0 1 1' }, []) },
+          on: { press: ui.send(Save, {}) },
+          class: 'w-full bg-red-500!',
+        },
+        ['Save'],
+      ),
+      ui.use(Badge, {}),
+      ui.use(Picker, { props: { value: 'a' }, on: { change: () => ui.send(Save, {}) } }),
+      // @ts-expect-error a literal variant outside its values
+      ui.use(Button, { variant: { tone: 'danger' } }, []),
+      // @ts-expect-error an unknown slot
+      ui.use(Button, { slots: { label: 'x' } }, []),
+      // @ts-expect-error an emits event takes (detail) => Send, not a Send
+      ui.use(Picker, { props: { value: 'a' }, on: { change: ui.send(Save, {}) } }),
+      // @ts-expect-error a required prop
+      ui.use(Picker, {}),
+      // @ts-expect-error a component without children takes no children
+      ui.use(Badge, {}, ['x']),
+      // @ts-expect-error an undeclared DOM event
+      ui.use(Button, { on: { hover: ui.send(Save, {}) } }, []),
+    ]),
+})
+
+// @ts-expect-error a client component declares when it loads
+ui.component({
+  tag: 'div',
+  client: new URL('./picker.client.ts', import.meta.url),
+  render: () => ui.div({}, []),
+})
+
+// @ts-expect-error emits belong to client components
+ui.component({
+  tag: 'div',
+  emits: { change: z.object({}) },
+  render: () => ui.div({}, []),
+})
+
+ui.component({
+  tag: 'div',
+  slots: ['icon'],
+  // @ts-expect-error the render reads declared slots only
+  render: ({ slots }) => ui.div({}, [slots.label]),
+})
+
+project({ schema: zodAdapter, routes: {}, pages: [], features: [], kits: [kitUi] })

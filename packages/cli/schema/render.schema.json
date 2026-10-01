@@ -1,121 +1,33 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$ref": "#/definitions/CheckOutput",
+  "$ref": "#/definitions/RenderOutput",
   "definitions": {
-    "CheckOutput": {
+    "RenderOutput": {
       "type": "object",
       "properties": {
         "ok": {
           "type": "boolean"
         },
-        "types": {
-          "type": "object",
-          "properties": {
-            "ok": {
-              "type": "boolean"
-            },
-            "skipped": {
-              "type": "boolean"
-            },
-            "errors": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/TypeIssue"
-              }
-            }
-          },
-          "required": [
-            "ok",
-            "skipped",
-            "errors"
-          ],
-          "additionalProperties": false
-        },
-        "validate": {
-          "$ref": "#/definitions/ValidateOutput"
-        },
-        "overrides": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CheckOverrides"
-          }
-        }
-      },
-      "required": [
-        "ok",
-        "types",
-        "validate"
-      ],
-      "additionalProperties": false
-    },
-    "TypeIssue": {
-      "type": "object",
-      "properties": {
-        "file": {
+        "component": {
           "type": "string"
         },
-        "line": {
-          "type": "number"
-        },
-        "column": {
-          "type": "number"
-        },
-        "code": {
-          "type": "string"
-        },
-        "message": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "file",
-        "line",
-        "column",
-        "code",
-        "message"
-      ],
-      "additionalProperties": false
-    },
-    "ValidateOutput": {
-      "type": "object",
-      "properties": {
-        "ok": {
-          "type": "boolean"
-        },
-        "hash": {
-          "type": "string"
-        },
-        "summary": {
-          "type": "object",
-          "properties": {
-            "errors": {
-              "type": "number"
-            },
-            "warnings": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "errors",
-            "warnings"
-          ],
-          "additionalProperties": false
-        },
-        "coverage": {
+        "variant": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/Coverage"
+            "type": "string"
           }
         },
-        "lock": {
-          "$ref": "#/definitions/LockState"
+        "html": {
+          "type": "string"
         },
-        "styles": {
-          "type": "string",
-          "enum": [
-            "checked",
-            "unavailable"
-          ]
+        "class": {
+          "type": "string"
+        },
+        "owned": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "diagnostics": {
           "type": "array",
@@ -126,44 +38,14 @@
       },
       "required": [
         "ok",
-        "hash",
-        "summary",
-        "coverage",
-        "lock",
-        "styles",
+        "component",
+        "variant",
+        "html",
+        "class",
+        "owned",
         "diagnostics"
       ],
       "additionalProperties": false
-    },
-    "Coverage": {
-      "type": "object",
-      "properties": {
-        "covered": {
-          "type": "number"
-        },
-        "total": {
-          "type": "number"
-        },
-        "transitions": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "covered",
-        "total",
-        "transitions"
-      ],
-      "additionalProperties": false
-    },
-    "LockState": {
-      "type": "string",
-      "enum": [
-        "missing",
-        "current",
-        "stale",
-        "updated",
-        "skipped"
-      ]
     },
     "Diagnostic": {
       "type": "object",
@@ -446,73 +328,6 @@
           }
         }
       ]
-    },
-    "CheckOverrides": {
-      "type": "object",
-      "properties": {
-        "component": {
-          "type": "string"
-        },
-        "overrides": {
-          "type": "number"
-        },
-        "uses": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ComponentUseSite"
-          }
-        }
-      },
-      "required": [
-        "component",
-        "overrides",
-        "uses"
-      ],
-      "additionalProperties": false
-    },
-    "ComponentUseSite": {
-      "type": "object",
-      "properties": {
-        "feature": {
-          "type": "string"
-        },
-        "node": {
-          "type": "string"
-        },
-        "at": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "variant": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "added": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "overrides": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [
-        "feature",
-        "node",
-        "at",
-        "variant",
-        "added",
-        "overrides"
-      ],
-      "additionalProperties": false
     }
   }
 }

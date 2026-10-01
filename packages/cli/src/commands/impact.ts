@@ -1,9 +1,8 @@
-import { impact, UnknownSymbolError } from '@hozu/validator'
-import type { ImpactOutput } from '../contract.ts'
+import { type Impact, impact, UnknownSymbolError } from '@hozu/validator'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 
-export function runImpact(loaded: Loaded, target: string | undefined): ImpactOutput {
+export function runImpact(loaded: Loaded, target: string | undefined): Impact {
   if (!target?.includes('.'))
     throw new HozuCliError('usage', 'Expected <feature>.<symbol>, e.g. hozu impact cart.addItem')
   try {
@@ -15,7 +14,7 @@ export function runImpact(loaded: Loaded, target: string | undefined): ImpactOut
   }
 }
 
-export function describeImpact(out: ImpactOutput): string {
+export function describeImpact(out: Impact): string {
   const lines = [`${out.target}  (${out.kind})`]
   if (out.tags.length) lines.push(`tags: ${out.tags.join(', ')}`)
   if (out.queries.length)

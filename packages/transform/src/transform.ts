@@ -22,6 +22,8 @@ const UI_VALUES = new Set([
   'page',
   'messages',
   'widget',
+  'component',
+  'kit',
   'view',
 ])
 const COMPARE: Record<string, string> = {

@@ -6,6 +6,7 @@ import type { FormRefIR, SendIR, ValueExpr, ViewIR, ViewNode } from '../ir/types
 import { transformedDecls } from '../lower.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
 import { createRef, exprOf, refProxy } from '../model/expr.ts'
+import { notYet } from './components.ts'
 import { formUse, holdForm, inEach, literalForm } from './forms.ts'
 import { type At, at, type FeatureScope } from './scope.ts'
 
@@ -340,6 +341,9 @@ function nodeOf(scope: FeatureScope, value: unknown, id: string, p: At, depth: n
         return { id, kind: 'embed', view: scope.ref(d.view, ['view'], at(p, 'view')) }
       case 'widget':
         return widgetNode(scope, d, id, p, depth)
+      case 'component':
+        scope.report('HZ014', p, ...notYet('ui.component'))
+        return { id, kind: 'if', test: { op: 'and', args: [] }, motion: null, ifTrue: [], ifFalse: [] }
       case 'if': {
         if (d.motion === undefined)
           scope.report(

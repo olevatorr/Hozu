@@ -1,6 +1,7 @@
 # ADR 0045 — 0.9: declared UI components (breaking)
 
-- Status: accepted (2026-10-01). The owner took every gate as recommended (G1–G6). Nothing is implemented yet.
+- Status: accepted (2026-10-01). The owner took every gate as recommended (G1–G6). Phase 1 (the contract layer) is
+  done; nothing is emitted yet.
 - **Already decided by the owner, in the design dialogue that produced this ADR:**
   - components are declarations, not conventions;
   - `ui.widget` merges into `ui.component({ client })` in a breaking 0.9;
@@ -123,6 +124,112 @@ Recorded in `bench/ui/baseline-0.8/`; see its README.
 - The expected failures for G and HZ079 fail for the reason stated. A first draft of the G test failed on HZ059
   "callback was not lowered", a fixture mistake, and was rewritten. G also covers method calls: `.trim()` on a
   lowered template string is HZ059 today.
+
+## Contract layer (phase 1)
+Types only. Every 0.8 program builds to the same IR apart from `irVersion: 3`, `ProjectIR.kits: {}` and
+`FeatureIR.components: {}`. Later phases build on these names and do not invent their own.
+
+**IR v3** (`packages/core/src/ir/types.ts`, schema `packages/core/schema/project-ir.schema.json`):
+
+| Type | Where | Change |
+|---|---|---|
+| `ProjectIR.irVersion` | `types.ts:6`, emitted at `core/src/build/project.ts:456` | `3` |
+| `ProjectIR.kits` | `types.ts:16`, emitted at `core/src/build/project.ts:466` | `Record<string, KitIR>`, always `{}` |
+| `KitIR` | `types.ts:19` | `{ components: Record<string, ComponentIR> }`. The kit's `styles` file belongs in the bindings, next to the feature styles; phase 3 adds it there, so `Bindings` is unchanged |
+| `FeatureIR.components` | `types.ts:97`, emitted at `core/src/build/feature.ts:288` | `Record<string, ComponentIR>`, always `{}`; `FeatureIR.widgets` stays until phase 4 |
+| `ComponentLoad` | `types.ts:128` | `'eager' \| 'visible' \| 'idle'` |
+| `ComponentIR` | `types.ts:130` | H's fields: `tag`, `props` (schema ref; a component without `props` gets the ref of the empty schema, as `input: 'raw'` does), `variants` (key → values), `defaults` (key → value), `slots`, `children`, `events`, `emits` (name → schema ref), `extend`, `owned` (class list), `client` (`{ load, sourceHash } \| null`), `sourceHash` |
+| `UseIR` | `types.ts:145` | `{ component, variant, added, overrides }`; `component` is the id (`ui.Button`, `notes.Composer`) |
+| `ViewNode` | `types.ts:308` | gains `ComponentNode`. Nothing emits it: widgets emit `kind: 'widget'` until phase 4 |
+| `ElementNode.use?` | `types.ts:323` | `UseIR` on the root of a pure use; never set yet |
+| `ComponentNode` | `types.ts:338` | `{ id, kind: 'component', use: UseIR, class, toggle, vars, props, on, children }` (decision 1) |
+
+- Every `ViewNode` switch in the repository already has a `default`, so adding `ComponentNode` needed no runtime
+  change. The client bundle is byte-identical: budget P7 stays 7 893 B.
+
+**Builders** (`packages/core/src/builders/component.ts`, exported from `@hozu/core`):
+
+| Name | Where | Shape |
+|---|---|---|
+| `TvStyles` | `component.ts:10` | the part of a `tv()` result Hozu reads: callable, with `variants`, `defaultVariants`, `slots`. Declared structurally, so tailwind-variants is not a dependency yet; phase 3's real `tv()` result satisfies it |
+| `VariantProps<S>` | `component.ts:17` | tailwind-variants' definition: the first parameter of `S` without `class` / `className` |
+| `ComponentTypes` | `component.ts:27` | `{ variant, props, slots, on, children }`: what a call site is typed from |
+| `ComponentDecl<T>` | `component.ts:35` | brand `'component'` (`DeclKind`, `core/src/model/decl.ts:24`) |
+| `RenderScope` | `component.ts:37` | `{ props, slots, children, on, classes }` (C). `props` is the schema's output (defaults filled), `children` is `[]` unless `children: true`, `classes` holds the tv slots other than `base` |
+| `ComponentUse<T>` | `component.ts:45` | B's keys: `variant`, `props`, `slots`, `on`, `class`. `props` is the schema's input, so defaulted fields are optional, and the key itself is optional when every field is |
+| `ui.component` | `component.ts:89`, `:98`; `ui.ts:247` | two overloads: pure (no `client`, `load`, `emits`) and client (`client` and `load` required, `emits` optional) |
+| `KitDecl`, `ui.kit` | `component.ts:142`, `:146`; `ui.ts:248` | `ui.kit({ id, components, styles? })`, brand `'kit'` (`decl.ts:25`) |
+| `ui.use` | `ui.ts:116`, `:146` | a component overload (children only when it declares `children: true`) before the widget overload; at run time it records a `component` node for a component (`ui.ts:106`) |
+| `project({ kits })` | `core/src/builders/feature.ts:82` | `KitDecl[]` |
+| `InferInput` | `core/src/schema/standard.ts:14` | the Standard Schema input type, for `ComponentUse.props` |
+
+- The transform treats `ui.component` and `ui.kit` as values, not view nodes, like `ui.widget`
+  (`transform/src/transform.ts:25`).
+- `packages/core/test/types.check.ts` has a Button with a tv-shaped `styles`, a component without props and a client
+  component, and `@ts-expect-error` cases for: a variant literal outside its values, an unknown slot, a `Send` for an
+  `emits` event, a missing required prop, children on a component without `children`, an undeclared DOM event, a
+  client component without `load`, `emits` without `client`, and a render reading an undeclared slot. Each case was
+  checked to fail for its stated reason, not another one.
+
+**Reported as HZ014 until phase 2** (`core/src/build/components.ts:3`, message "… is not supported until ADR 0045
+phase 2", with the location pointer and source; tested in `core/test/builders.test.ts`, broken once to red):
+- a `ui.component` exported from a feature's declarations module (`core/src/build/project.ts:112`);
+- `ui.use` of a component in a view (`core/src/build/view.ts:345`); the node becomes an empty `if`, as a failed
+  branch does;
+- every entry of `project({ kits })`, as "ui.kit is not supported …" (`core/src/build/project.ts:411`).
+
+**Diagnostic codes:** HZ070–HZ080 are registered with the names and severities of the table below
+(`core/src/ir/codes.ts:73-83`, `DiagnosticCode` at `core/src/ir/diagnostic.ts:70-80`). No test requires a registered
+code to have a rule, a fix, a topic file or a catalog case, so they are registered now; each phase that emits a code
+adds its rule, fix and catalog case. Their `see:` topics (`cli/src/output.ts:76-86`) point to `widgets` (HZ070–HZ078)
+and `views` (HZ079, HZ080) until phase 5 adds `topics/components.md`.
+
+**CLI output** (`packages/cli/src/contract.ts`, schemas regenerated under `packages/cli/schema/`):
+
+| Type | Where | Change |
+|---|---|---|
+| `InspectFeatureOutput` | `contract.ts:40` | the former `InspectOutput`; `runInspect` returns it (`cli/src/commands/inspect.ts:5`) |
+| `ComponentOwner` | `contract.ts:47` | `{ kind: 'kit' \| 'feature', id }` |
+| `ComponentUseSite` | `contract.ts:52` | `{ feature, node, at, variant, added, overrides }`: one use, for `inspect`, `impact` and `check` |
+| `InspectComponentOutput` | `contract.ts:61` | `{ component, owner, hash, ir: ComponentIR, uses }` |
+| `InspectOutput` | `contract.ts:69` | `InspectFeatureOutput \| InspectComponentOutput` |
+| `ComponentImpact` | `contract.ts:134` | `{ target, kind: 'component', owner, uses, features }` |
+| `ImpactOutput` | `contract.ts:142` | `Impact \| ComponentImpact`; `runImpact` / `describeImpact` take `Impact` (`cli/src/commands/impact.ts:5,17`) |
+| `CheckOverrides`, `CheckOutput.overrides?` | `contract.ts:202`, `:212` | `{ component, overrides, uses }` per component with overrides (E) |
+| `MapRoute.components?` | `contract.ts:278` | the components a page uses (I) |
+| `MapKit`, `MapOutput.kits?` | `contract.ts:320`, `:328` | `{ id, components }`: the `kits: ui 8, hozu 12` line |
+| `DocsComponentProp`, `DocsComponent`, `DocsComponentsOutput` | `contract.ts:348`, `:355`, `:369` | `hozu docs components`: per component its id, owner, tag, variants with defaults, props with defaults, slots, children, events, emits, `extend` and client load; schema `docs-components.schema.json` |
+| `RenderOutput` | `contract.ts:374` | `hozu render`: `{ ok, component, variant, html, class, owned, diagnostics }`, `owned` = CSS property names; schema `render.schema.json` |
+
+- `overrides`, `kits` and `components` are optional until the phase that emits them, as ADR 0043 wave 1 did with
+  `actors`, so no command's output changes now.
+
+**Migration:** `normalize08` (`cli/src/commands/migrate-normalize.ts:228`) is the 0.8 IR in 0.9 terms. In phase 1 it
+sets `irVersion: 3` and the two empty maps; phase 4 adds widgets → components. `hozu migrate 0.8` and
+`migrate-equivalence.test.ts` compare the build with `normalize08(normalize07(0.7 IR))`
+(`cli/src/commands/migrate.ts:273`, `migrate-equivalence.test.ts:123`); `normalize07` and its mapping counts are
+unchanged.
+
+**Proof:**
+- `node --import ./packages/transform/dist/register.js bench/ui/baseline.ts --out <dir>` (the new `--out`; the
+  default still writes `baseline-0.8/`), then `node bench/ui/compare.ts <dir>`: it checks `irVersion: 3` and the two
+  empty maps, removes them, and compares with `baseline-0.8/`. **11 / 11 equal.** The per-route `js` mode, island
+  count and widgets in `summary.json` and the 30 pairs of `conflicts.json` are equal too.
+- **P7:** 7 893 B, unchanged.
+- The four ADR 0045 `it.fails` (G and HZ079) still fail as expected.
+
+**Decisions made in phase 1** (approved by the coordinator):
+1. `ComponentNode` holds the component id only in `use.component`, the same place as `ElementNode.use` for a pure use,
+   so the id has one spelling.
+2. `normalize08` lives in `cli/src/commands/migrate-normalize.ts` and is composed after `normalize07`.
+3. The two new schemas (`render`, `docs-components`), the `InspectOutput` and `ImpactOutput` unions, and the optional
+   `overrides`, `kits` and `components` fields.
+
+**Other choices the ADR did not fix:**
+- `ComponentIR.props` is always a schema ref; without `props` it is the empty schema's.
+- A client component requires `load`, as `ui.widget` did; `emits` is a type error without `client`.
+- The `see:` topics of HZ070–HZ080 point to existing topics until phase 5.
+- `bench/ui/compare.ts` is new: the equivalence check is a script, so the coordinator and later phases rerun it.
 
 ## A. One declaration: `ui.component`
 ```ts

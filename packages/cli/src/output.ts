@@ -73,6 +73,17 @@ const TOPICS: Record<string, string> = {
   HZ062: 'endpoints',
   HZ063: 'forms',
   HZ064: 'contracts',
+  HZ070: 'widgets',
+  HZ071: 'widgets',
+  HZ072: 'widgets',
+  HZ073: 'widgets',
+  HZ074: 'widgets',
+  HZ075: 'widgets',
+  HZ076: 'widgets',
+  HZ077: 'widgets',
+  HZ078: 'widgets',
+  HZ079: 'views',
+  HZ080: 'views',
 }
 
 const CAUSE_LINES = 10

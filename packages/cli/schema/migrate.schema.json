@@ -248,6 +248,12 @@
         },
         "validate": {
           "$ref": "#/definitions/ValidateOutput"
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CheckOverrides"
+          }
         }
       },
       "required": [
@@ -479,7 +485,18 @@
         "HZ061",
         "HZ062",
         "HZ063",
-        "HZ064"
+        "HZ064",
+        "HZ070",
+        "HZ071",
+        "HZ072",
+        "HZ073",
+        "HZ074",
+        "HZ075",
+        "HZ076",
+        "HZ077",
+        "HZ078",
+        "HZ079",
+        "HZ080"
       ]
     },
     "Severity": {
@@ -644,6 +661,73 @@
           }
         }
       ]
+    },
+    "CheckOverrides": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "type": "string"
+        },
+        "overrides": {
+          "type": "number"
+        },
+        "uses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ComponentUseSite"
+          }
+        }
+      },
+      "required": [
+        "component",
+        "overrides",
+        "uses"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentUseSite": {
+      "type": "object",
+      "properties": {
+        "feature": {
+          "type": "string"
+        },
+        "node": {
+          "type": "string"
+        },
+        "at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "variant": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "feature",
+        "node",
+        "at",
+        "variant",
+        "added",
+        "overrides"
+      ],
+      "additionalProperties": false
     }
   }
 }

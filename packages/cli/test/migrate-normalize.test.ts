@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type Counts, differences, normalize07 } from '../src/commands/migrate-normalize.ts'
+import { type Counts, differences, normalize07, normalize08 } from '../src/commands/migrate-normalize.ts'
 
 const ctx = (...path: string[]) => ({ ref: 'context', path })
 const truthy = (v: unknown) => ({ op: 'fn', fn: '%truthy', arg: { object: { v } } })
@@ -148,5 +148,15 @@ describe('normalize07: the 0.7 IR in 0.8 terms', () => {
     expect(counts).toEqual({})
     expect(differences({ a: { x: 1, y: [1, 2] } }, { a: { y: [1, 3], x: 1 } })).toEqual(['/a/y/1'])
     expect(differences({ 'a/b': 1 }, { 'a/b': 2 })).toEqual(['/a~1b'])
+  })
+})
+
+describe('normalize08: the 0.8 IR in 0.9 terms (ADR 0045 phase 1)', () => {
+  it('sets irVersion 3 and the empty kits and components, idempotently', () => {
+    const once = normalize08(normalize07(ir07()))
+    expect(once.irVersion).toBe(3)
+    expect(once.kits).toEqual({})
+    expect(Object.values(once.features).map((f: any) => f.components)).toEqual([{}])
+    expect(differences(normalize08(once), once)).toEqual([])
   })
 })

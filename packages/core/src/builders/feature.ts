@@ -2,6 +2,7 @@ import { brand, type Decl, type Typed } from '../model/decl.ts'
 import type { SchemaAdapter } from '../schema/adapter.ts'
 import type { Infer, Schema } from '../schema/standard.ts'
 import type { Asset } from './asset.ts'
+import type { KitDecl } from './component.ts'
 import type { ContractDecl } from './contract.ts'
 import type { MutationDecl, QueryDecl } from './effects.ts'
 import type { EndpointDecl } from './endpoint.ts'
@@ -78,6 +79,7 @@ export interface ProjectConfig {
   error?: RouteDecl
   pages: PageDecl[]
   features: FeatureDecl[]
+  kits?: KitDecl[]
   http?: HttpConfig
   env?: { server?: Schema; public?: Schema }
 }

@@ -21,6 +21,8 @@ export type DeclKind =
   | 'page'
   | 'adapter'
   | 'widget'
+  | 'component'
+  | 'kit'
   | 'messages'
   | 'endpoint'
   | 'part'

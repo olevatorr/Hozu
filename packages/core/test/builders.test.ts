@@ -184,6 +184,32 @@ describe('builder diagnostics', () => {
     ])
   })
 
+  it('HZ014 — ui.component, its use and project({ kits }) wait for ADR 0045 phase 2', () => {
+    const Badge = ui.component({ tag: 'span', render: () => ui.span({}, []) })
+    const Page = ui.view({ render: () => ui.main({}, [ui.use(Badge, {})]) })
+    const built = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        kits: [ui.kit({ id: 'ui', components: [{ Badge }] })],
+        features: [feature({ id: 'f', declarations: [{ Badge, Page }], ...base })],
+      }),
+    )
+    expect(built.diagnostics.map((d) => [d.code, d.location.pointer, d.message])).toEqual([
+      ['HZ014', '/features/f/declarations/0/Badge', 'ui.component is not supported until ADR 0045 phase 2'],
+      [
+        'HZ014',
+        '/features/f/views/Page/root/children/0',
+        'ui.component is not supported until ADR 0045 phase 2',
+      ],
+      ['HZ014', '/kits/0', 'ui.kit is not supported until ADR 0045 phase 2'],
+    ])
+    expect(built.diagnostics.every((d) => d.location.source?.file.endsWith('builders.test.ts'))).toBe(true)
+    expect(built.ir.kits).toEqual({})
+    expect(built.ir.features.f!.components).toEqual({})
+  })
+
   it('HZ012 — schema from another vendor', () => {
     const foreign = { '~standard': { version: 1, vendor: 'valibot', validate: () => ({ value: {} }) } }
     const Ping = event({ payload: foreign as never })

@@ -10,6 +10,7 @@ import type { SchemaAdapterDef } from '../schema/adapter.ts'
 import { toCheck, toParse } from '../schema/check.ts'
 import { isStandardSchema } from '../schema/standard.ts'
 import { withCapture } from '../source/capture.ts'
+import { notYet } from './components.ts'
 import { buildFeature } from './feature.ts'
 import { buildHttp } from './http.ts'
 import type { Manifest } from './manifest.ts'
@@ -107,8 +108,9 @@ function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
   for (const [m, module] of (Array.isArray(modules) ? modules : []).entries())
     for (const [name, decl] of Object.entries(module as Record<string, unknown>)) {
       const kind = infoOf(decl)?.kind
-      if (!kind || (!kindKeys[kind] && kind !== 'machine' && kind !== 'messages')) continue
       const at = join(base, 'declarations', m, name)
+      if (kind === 'component') scope.report('HZ014', id, at, ...notYet('ui.component'))
+      if (!kind || (!kindKeys[kind] && kind !== 'machine' && kind !== 'messages')) continue
       const seen = named.get(name)
       if (seen !== undefined) {
         if (seen !== decl)
@@ -404,6 +406,11 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       (u, i) => file(u, id, join('', 'features', id, 'styles', i)) ?? [],
     )
 
+  for (const [i, kit] of (config.kits ?? []).entries()) {
+    scope.mark(join('', 'kits', i), kit)
+    scope.report('HZ014', null, join('', 'kits', i), ...notYet('ui.kit'))
+  }
+
   const pages = buildPages(scope, config.pages ?? [])
 
   const site = config.site
@@ -445,7 +452,19 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       }
     : null
   scope.bindings.env = { server: toParse(config.env?.server), public: toParse(config.env?.public) }
-  const ir: ProjectIR = { irVersion: 2, site, session, routes, pages, notFound, error, http, env, features }
+  const ir: ProjectIR = {
+    irVersion: 3,
+    site,
+    session,
+    routes,
+    pages,
+    notFound,
+    error,
+    http,
+    env,
+    features,
+    kits: {},
+  }
   scope.bindings.assetOrder = scope.assetList
   for (const d of scope.diagnostics) d.location.source ??= resolveSource(scope.sources, d.location.pointer)
   return {

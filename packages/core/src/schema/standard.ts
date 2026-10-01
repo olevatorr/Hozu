@@ -11,6 +11,8 @@ export type Schema<T = unknown> = StandardSchemaV1<any, T>
 
 export type Infer<S> = S extends StandardSchemaV1<any, infer O> ? O : never
 
+export type InferInput<S> = S extends StandardSchemaV1<infer I, any> ? I : never
+
 export const isStandardSchema = (value: unknown): value is StandardSchemaV1 =>
   (typeof value === 'object' || typeof value === 'function') &&
   value !== null &&

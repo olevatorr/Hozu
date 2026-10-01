@@ -6,7 +6,9 @@ node --import ./packages/transform/dist/register.js bench/ui/baseline.ts
 pnpm exec biome format --write bench/ui
 ```
 
-The script writes `baseline-0.8/` from every `examples/*` project and `site`. The base is `80d55fe`, the accepted ADR
+The script writes `baseline-0.8/` from every `examples/*` project and `site`. With `--out <dir>` it writes there
+instead, and `node bench/ui/compare.ts <dir>` compares that IR with `baseline-0.8/` after removing phase 1's
+`irVersion: 3` and empty `kits` / `components` (ADR 0045, contract layer). The base is `80d55fe`, the accepted ADR
 0045 on the 0.8 integration branch.
 
 | File | Content | Used by |

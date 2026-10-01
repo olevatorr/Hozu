@@ -3,7 +3,7 @@ export type Json = null | boolean | number | string | Json[] | { [key: string]: 
 export type JsonSchema = { [key: string]: Json }
 
 export interface ProjectIR {
-  irVersion: 2
+  irVersion: 3
   site: SiteIR | null
   session: JsonSchema | null
   routes: Record<string, RouteIR>
@@ -13,6 +13,11 @@ export interface ProjectIR {
   http: HttpIR
   env: { server: JsonSchema | null; public: JsonSchema | null } | null
   features: Record<string, FeatureIR>
+  kits: Record<string, KitIR>
+}
+
+export interface KitIR {
+  components: Record<string, ComponentIR>
 }
 
 export interface HttpIR {
@@ -89,6 +94,7 @@ export interface FeatureIR {
   machine: MachineIR | null
   views: Record<string, ViewIR>
   widgets: Record<string, WidgetIR>
+  components: Record<string, ComponentIR>
   endpoints: Record<string, EndpointIR>
   contracts: Record<string, ContractIR>
   messages: MessagesIR | null
@@ -117,6 +123,30 @@ export interface WidgetIR {
   load: 'eager' | 'visible' | 'idle'
   wraps: boolean
   sourceHash: string
+}
+
+export type ComponentLoad = 'eager' | 'visible' | 'idle'
+
+export interface ComponentIR {
+  tag: string
+  props: string
+  variants: Record<string, string[]>
+  defaults: Record<string, string>
+  slots: string[]
+  children: boolean
+  events: string[]
+  emits: Record<string, string>
+  extend: boolean
+  owned: string[]
+  client: { load: ComponentLoad; sourceHash: string } | null
+  sourceHash: string
+}
+
+export interface UseIR {
+  component: string
+  variant: Record<string, string>
+  added: string[]
+  overrides: string[]
 }
 
 export interface IntentIR {
@@ -275,6 +305,7 @@ export type ViewNode =
   | QueryNode
   | EmbedNode
   | WidgetNode
+  | ComponentNode
   | GlobalNode
   | HtmlNode
 
@@ -289,12 +320,25 @@ export interface ElementNode {
   on: Record<string, SendIR>
   children: ViewNode[]
   ref?: FormRefIR
+  use?: UseIR
 }
 
 export interface WidgetNode {
   id: string
   kind: 'widget'
   widget: string
+  class: string | null
+  toggle: Record<string, ValueExpr>
+  vars: Record<string, ValueExpr>
+  props: ValueExpr
+  on: Record<string, SendIR>
+  children: ViewNode[]
+}
+
+export interface ComponentNode {
+  id: string
+  kind: 'component'
+  use: UseIR
   class: string | null
   toggle: Record<string, ValueExpr>
   vars: Record<string, ValueExpr>

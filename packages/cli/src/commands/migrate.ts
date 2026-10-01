@@ -15,7 +15,7 @@ import { migrateFreshness } from './migrate-freshness.ts'
 import { migrateHead } from './migrate-head.ts'
 import { migrateLinks, type SearchDefaults } from './migrate-links.ts'
 import { migrateLists } from './migrate-lists.ts'
-import { differences, normalize07 } from './migrate-normalize.ts'
+import { differences, normalize07, normalize08 } from './migrate-normalize.ts'
 import { migrateOps } from './migrate-ops.ts'
 import { migrateParts } from './migrate-parts.ts'
 import type { Stale07 } from './migrate-stale.ts'
@@ -270,7 +270,7 @@ export async function runMigrate(
   } else if (options.runCheck !== false) {
     const loaded = await load(configArg, cwd)
     if (existsSync(record)) {
-      const before = normalize07(JSON.parse(readFileSync(record, 'utf8')))
+      const before = normalize08(normalize07(JSON.parse(readFileSync(record, 'utf8'))))
       ir.compared = true
       ir.differences = differences(before, loaded.build(false).ir)
       next.push(`delete ${RECORD}: the IR comparison with 0.7 is done`)

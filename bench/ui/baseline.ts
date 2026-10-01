@@ -1,8 +1,8 @@
-// ADR 0045 phase 0: node --import ./packages/transform/dist/register.js bench/ui/baseline.ts
+// ADR 0045 phase 0: node --import ./packages/transform/dist/register.js bench/ui/baseline.ts [--out <dir>]
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { join, relative } from 'node:path'
+import { join, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { gzipSync } from 'node:zlib'
 import { planRoute } from '@hozu/compiler'
@@ -10,7 +10,8 @@ import type { ProjectIR, ValueExpr, ViewNode } from '@hozu/core/ir'
 import { buildProject, canonicalStringify } from '@hozu/core/ir'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
-const out = join(root, 'bench/ui/baseline-0.8')
+const flag = process.argv.indexOf('--out')
+const out = flag < 0 ? join(root, 'bench/ui/baseline-0.8') : resolve(process.argv[flag + 1] ?? '')
 const req = createRequire(join(root, 'packages/css/package.json'))
 const tailwind = (await import(pathToFileURL(req.resolve('@tailwindcss/node')).href)) as {
   compile: (css: string, o: object) => Promise<{ build: (candidates: string[]) => string }>

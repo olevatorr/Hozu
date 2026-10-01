@@ -3,6 +3,16 @@
   "$ref": "#/definitions/InspectOutput",
   "definitions": {
     "InspectOutput": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/InspectFeatureOutput"
+        },
+        {
+          "$ref": "#/definitions/InspectComponentOutput"
+        }
+      ]
+    },
+    "InspectFeatureOutput": {
       "type": "object",
       "properties": {
         "feature": {
@@ -210,6 +220,12 @@
             "$ref": "#/definitions/WidgetIR"
           }
         },
+        "components": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ComponentIR"
+          }
+        },
         "endpoints": {
           "type": "object",
           "additionalProperties": {
@@ -247,6 +263,7 @@
         "machine",
         "views",
         "widgets",
+        "components",
         "endpoints",
         "contracts",
         "messages"
@@ -1094,6 +1111,9 @@
           "$ref": "#/definitions/WidgetNode"
         },
         {
+          "$ref": "#/definitions/ComponentNode"
+        },
+        {
           "$ref": "#/definitions/GlobalNode"
         },
         {
@@ -1152,6 +1172,9 @@
         },
         "ref": {
           "$ref": "#/definitions/FormRefIR"
+        },
+        "use": {
+          "$ref": "#/definitions/UseIR"
         }
       },
       "required": [
@@ -1180,6 +1203,39 @@
       "required": [
         "event",
         "payload"
+      ],
+      "additionalProperties": false
+    },
+    "UseIR": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "type": "string"
+        },
+        "variant": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "component",
+        "variant",
+        "added",
+        "overrides"
       ],
       "additionalProperties": false
     },
@@ -1451,6 +1507,66 @@
       ],
       "additionalProperties": false
     },
+    "ComponentNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "component"
+        },
+        "use": {
+          "$ref": "#/definitions/UseIR"
+        },
+        "class": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "toggle": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ValueExpr"
+          }
+        },
+        "vars": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ValueExpr"
+          }
+        },
+        "props": {
+          "$ref": "#/definitions/ValueExpr"
+        },
+        "on": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/SendIR"
+          }
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ViewNode"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "use",
+        "class",
+        "toggle",
+        "vars",
+        "props",
+        "on",
+        "children"
+      ],
+      "additionalProperties": false
+    },
     "GlobalNode": {
       "type": "object",
       "properties": {
@@ -1543,6 +1659,111 @@
         "sourceHash"
       ],
       "additionalProperties": false
+    },
+    "ComponentIR": {
+      "type": "object",
+      "properties": {
+        "tag": {
+          "type": "string"
+        },
+        "props": {
+          "type": "string"
+        },
+        "variants": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "defaults": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "children": {
+          "type": "boolean"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "emits": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "extend": {
+          "type": "boolean"
+        },
+        "owned": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "client": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "load": {
+                  "$ref": "#/definitions/ComponentLoad"
+                },
+                "sourceHash": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "load",
+                "sourceHash"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sourceHash": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "tag",
+        "props",
+        "variants",
+        "defaults",
+        "slots",
+        "children",
+        "events",
+        "emits",
+        "extend",
+        "owned",
+        "client",
+        "sourceHash"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentLoad": {
+      "type": "string",
+      "enum": [
+        "eager",
+        "visible",
+        "idle"
+      ]
     },
     "EndpointIR": {
       "type": "object",
@@ -1814,6 +2035,101 @@
       "required": [
         "base",
         "text"
+      ],
+      "additionalProperties": false
+    },
+    "InspectComponentOutput": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/definitions/ComponentOwner"
+        },
+        "hash": {
+          "type": "string"
+        },
+        "ir": {
+          "$ref": "#/definitions/ComponentIR"
+        },
+        "uses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ComponentUseSite"
+          }
+        }
+      },
+      "required": [
+        "component",
+        "owner",
+        "hash",
+        "ir",
+        "uses"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentOwner": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "kit",
+            "feature"
+          ]
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentUseSite": {
+      "type": "object",
+      "properties": {
+        "feature": {
+          "type": "string"
+        },
+        "node": {
+          "type": "string"
+        },
+        "at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "variant": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "feature",
+        "node",
+        "at",
+        "variant",
+        "added",
+        "overrides"
       ],
       "additionalProperties": false
     }

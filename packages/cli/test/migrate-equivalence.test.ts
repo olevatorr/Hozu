@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { rewriteSources, sources } from '../src/commands/migrate.ts'
-import { type Counts, differences, normalize07 } from '../src/commands/migrate-normalize.ts'
+import { type Counts, differences, normalize07, normalize08 } from '../src/commands/migrate-normalize.ts'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const baseline = join(root, 'bench/trial/longrun/baseline-0.7')
@@ -120,7 +120,7 @@ async function migrateAndCompare(s: Snapshot) {
   )
   const built = JSON.parse(stdout) as { ir: unknown; diagnostics: string[] }
   const mappings: Counts = {}
-  const expected = normalize07(ir07, mappings)
+  const expected = normalize08(normalize07(ir07, mappings))
   const rewrites: Record<string, number> = {}
   for (const n of notes) rewrites[n.rule] = (rewrites[n.rule] ?? 0) + 1
   results.set(s.name, {

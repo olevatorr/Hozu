@@ -224,6 +224,15 @@ export function normalize07(input: J, into?: Counts): J {
   })
 }
 
+/** The 0.8 IR in 0.9 terms (ADR 0045 L); phase 1 adds only the version and the empty component maps. */
+export function normalize08(input: J): J {
+  const ir = clone(input)
+  ir.irVersion = 3
+  ir.kits ??= {}
+  for (const f of Object.values(ir.features ?? {}) as J[]) f.components ??= {}
+  return ir
+}
+
 /** JSON pointers where two IRs differ, capped per call. */
 export function differences(a: J, b: J, limit = 50, path = '', out: string[] = []): string[] {
   if (out.length >= limit || equal(a, b)) return out

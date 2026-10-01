@@ -1,0 +1,197 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/DocsComponentsOutput",
+  "definitions": {
+    "DocsComponentsOutput": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DocsComponent"
+          }
+        }
+      },
+      "required": [
+        "text",
+        "components"
+      ],
+      "additionalProperties": false
+    },
+    "DocsComponent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/definitions/ComponentOwner"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "variants": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "default": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "values",
+              "default"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "props": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DocsComponentProp"
+          }
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "children": {
+          "type": "boolean"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "emits": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extend": {
+          "type": "boolean"
+        },
+        "client": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ComponentLoad"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "owner",
+        "tag",
+        "variants",
+        "props",
+        "slots",
+        "children",
+        "events",
+        "emits",
+        "extend",
+        "client"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentOwner": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "kit",
+            "feature"
+          ]
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "DocsComponentProp": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "default": {
+          "$ref": "#/definitions/Json"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "required"
+      ],
+      "additionalProperties": false
+    },
+    "Json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Json"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Json"
+          }
+        }
+      ]
+    },
+    "ComponentLoad": {
+      "type": "string",
+      "enum": [
+        "eager",
+        "visible",
+        "idle"
+      ]
+    }
+  }
+}

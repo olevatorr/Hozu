@@ -85,6 +85,16 @@ export const targets = [
     type: 'DocsOutput',
     out: 'packages/cli/schema/docs.schema.json',
   },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'DocsComponentsOutput',
+    out: 'packages/cli/schema/docs-components.schema.json',
+  },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'RenderOutput',
+    out: 'packages/cli/schema/render.schema.json',
+  },
 ]
 
 export function generate(target: (typeof targets)[number]): string {

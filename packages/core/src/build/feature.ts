@@ -285,6 +285,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     }),
     machine,
     widgets: mapRecord(config.widgets, (sym, w) => buildWidget(scope, sym, defOf<WidgetDef>(w))),
+    components: {},
     endpoints: mapRecord(config.endpoints, (sym, e) => buildEndpoint(scope, sym, defOf<EndpointDef>(e))),
     views: mapRecord(config.views, (sym, v) => buildView(scope, sym, v)),
     contracts: mapRecord(config.contracts, (sym, c) => buildContract(scope, sym, c)),

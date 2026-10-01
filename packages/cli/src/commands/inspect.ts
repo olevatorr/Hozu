@@ -1,8 +1,8 @@
 import { hashJson } from '@hozu/core/ir'
-import type { InspectOutput } from '../contract.ts'
+import type { InspectFeatureOutput } from '../contract.ts'
 import { type Loaded, requireFeature } from '../load.ts'
 
-export function runInspect(loaded: Loaded, id: string | undefined): InspectOutput {
+export function runInspect(loaded: Loaded, id: string | undefined): InspectFeatureOutput {
   const { ir } = loaded.build()
   const feature = requireFeature(ir, id)
   const states = Object.values(feature.machine?.states ?? {})

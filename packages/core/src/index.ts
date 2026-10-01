@@ -1,4 +1,14 @@
 export type { Asset } from './builders/asset.ts'
+export type {
+  ComponentDecl,
+  ComponentLoad,
+  ComponentTypes,
+  ComponentUse,
+  KitDecl,
+  RenderScope,
+  TvStyles,
+  VariantProps,
+} from './builders/component.ts'
 export type { ContractDecl, EffectCall, Step } from './builders/contract.ts'
 export { contract } from './builders/contract.ts'
 export type { EffectDecl, Freshness, MutationDecl, QueryDecl, Scope } from './builders/effects.ts'
@@ -66,4 +76,4 @@ export type { WidgetDecl, WidgetLoad } from './builders/widget.ts'
 export type { Assign, Call, Expr, Guard, Ref, Val } from './model/expr.ts'
 export type { SchemaAdapter, SchemaAdapterDef } from './schema/adapter.ts'
 export { defineSchemaAdapter } from './schema/adapter.ts'
-export type { Infer, Schema, StandardSchemaV1 } from './schema/standard.ts'
+export type { Infer, InferInput, Schema, StandardSchemaV1 } from './schema/standard.ts'

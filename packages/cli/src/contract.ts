@@ -1,5 +1,5 @@
 import type { RoutePlan } from '@hozu/compiler'
-import type { Diagnostic, ExportsIR, FeatureIR } from '@hozu/core/ir'
+import type { ComponentIR, ComponentLoad, Diagnostic, ExportsIR, FeatureIR, Json } from '@hozu/core/ir'
 import type { Impact } from '@hozu/validator'
 
 export interface CliError {
@@ -37,12 +37,36 @@ export interface InspectSummary {
   exports: ExportsIR
 }
 
-export interface InspectOutput {
+export interface InspectFeatureOutput {
   feature: string
   hash: string
   summary: InspectSummary
   ir: FeatureIR
 }
+
+export interface ComponentOwner {
+  kind: 'kit' | 'feature'
+  id: string
+}
+
+export interface ComponentUseSite {
+  feature: string
+  node: string
+  at: string | null
+  variant: Record<string, string>
+  added: string[]
+  overrides: string[]
+}
+
+export interface InspectComponentOutput {
+  component: string
+  owner: ComponentOwner
+  hash: string
+  ir: ComponentIR
+  uses: ComponentUseSite[]
+}
+
+export type InspectOutput = InspectFeatureOutput | InspectComponentOutput
 
 export type GraphNodeKind = 'state' | 'effect' | 'event' | 'feature' | 'view' | 'query'
 
@@ -107,7 +131,15 @@ export interface ExplainOutput {
   sends: ExplainSend[]
 }
 
-export type ImpactOutput = Impact
+export interface ComponentImpact {
+  target: string
+  kind: 'component'
+  owner: ComponentOwner
+  uses: ComponentUseSite[]
+  features: string[]
+}
+
+export type ImpactOutput = Impact | ComponentImpact
 
 export type PlanOutput = RoutePlan
 
@@ -167,10 +199,17 @@ export interface TypeIssue {
   message: string
 }
 
+export interface CheckOverrides {
+  component: string
+  overrides: number
+  uses: ComponentUseSite[]
+}
+
 export interface CheckOutput {
   ok: boolean
   types: { ok: boolean; skipped: boolean; errors: TypeIssue[] }
   validate: ValidateOutput
+  overrides?: CheckOverrides[]
 }
 
 export interface RequestStep {
@@ -236,6 +275,7 @@ export interface MapRoute {
   views: string[]
   head: string | null
   at: string | null
+  components?: string[]
 }
 
 export interface MapState {
@@ -277,9 +317,15 @@ export interface MapFile {
   roles: string[]
 }
 
+export interface MapKit {
+  id: string
+  components: number
+}
+
 export interface MapOutput {
   session: string | null
   verify: string
+  kits?: MapKit[]
   files: MapFile[]
   routes: MapRoute[]
   features: MapFeature[]
@@ -297,6 +343,42 @@ export interface DocsOutput {
   topic: string | null
   text: string
   topics: { name: string; title: string }[]
+}
+
+export interface DocsComponentProp {
+  name: string
+  type: string
+  required: boolean
+  default?: Json
+}
+
+export interface DocsComponent {
+  id: string
+  owner: ComponentOwner
+  tag: string
+  variants: Record<string, { values: string[]; default: string | null }>
+  props: DocsComponentProp[]
+  slots: string[]
+  children: boolean
+  events: string[]
+  emits: string[]
+  extend: boolean
+  client: ComponentLoad | null
+}
+
+export interface DocsComponentsOutput {
+  text: string
+  components: DocsComponent[]
+}
+
+export interface RenderOutput {
+  ok: boolean
+  component: string
+  variant: Record<string, string>
+  html: string
+  class: string
+  owned: string[]
+  diagnostics: Diagnostic[]
 }
 
 export type BrowseMode = 'on' | 'off'
