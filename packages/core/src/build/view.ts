@@ -7,9 +7,9 @@ import type { ElementNode, FormRefIR, SendIR, UseIR, ValueExpr, ViewIR, ViewNode
 import { transformedDecls } from '../lower.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
 import { createRef, exprOf, guardOf, refProxy } from '../model/expr.ts'
-import { defaultsOf, notYet, schemaJson, tokens, tvOf, variantsOf } from './components.ts'
+import { defaultsOf, notYet, rootClasses, schemaJson, tokens, tvOf, variantsOf } from './components.ts'
 import { formUse, holdForm, inEach, literalForm } from './forms.ts'
-import { type At, at, type ClosedRender, type FeatureScope } from './scope.ts'
+import { type At, at, type FeatureScope } from './scope.ts'
 
 const eventSet = new Set<string>(domEvents)
 const svgSet = new Set<string>(svgTags)
@@ -72,10 +72,10 @@ function element(
             'Views cannot run arbitrary functions.',
           )
         else
-          on[event] = scope.within(send, () => ({
+          on[event] = {
             event: scope.ref(s.event, ['event'], ep),
             payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
-          }))
+          }
       }
     } else if (key === 'ref') {
       if (d.tag === 'form' && infoOf(value)?.kind === 'formRef') {
@@ -252,7 +252,6 @@ const nothing = (id: string): ViewNode => ({
   ifFalse: [],
 })
 const useKeys = new Set(['variant', 'props', 'slots', 'on', 'class'])
-const reported = new WeakMap<object, Set<object>>()
 
 const isRef = (v: unknown) => exprOf(v) !== null || guardOf(v) !== null
 
@@ -310,20 +309,6 @@ function variantOf(scope: FeatureScope, def: ComponentDef, given: unknown, p: At
   return chosen
 }
 
-function rootClasses(
-  styles: unknown,
-  chosen: Record<string, unknown>,
-): { root: string[]; classes: Record<string, string> } {
-  if (typeof styles !== 'function') return { root: [], classes: {} }
-  const out = styles(chosen)
-  if (typeof out === 'string') return { root: tokens(out), classes: {} }
-  const slots = (out ?? {}) as Record<string, () => string>
-  const classes: Record<string, string> = {}
-  for (const [name, slot] of Object.entries(slots))
-    if (name !== 'base' && typeof slot === 'function') classes[name] = tokens(slot()).join(' ')
-  return { root: tokens(typeof slots.base === 'function' ? slots.base() : ''), classes }
-}
-
 function componentUse(
   scope: FeatureScope,
   d: Extract<NodeDef, { kind: 'component' }>,
@@ -375,11 +360,6 @@ function componentUse(
         `ui.use of a component takes no "${key}"`,
         'The keys are variant, props, slots, on and class (ADR 0045 B).',
       )
-  const caller = new WeakSet<object>()
-  const hold = (v: unknown) => {
-    if (typeof v === 'object' && v !== null) caller.add(v)
-    return v
-  }
   const chosen = variantOf(scope, def, o.variant, p)
   const variant = {
     ...defaultsOf(tvOf(def)),
@@ -394,13 +374,13 @@ function componentUse(
   const fields = (json?.properties ?? {}) as Record<string, { default?: unknown }>
   let props: unknown
   if (o.props !== undefined && (isRef(o.props) || typeof o.props !== 'object' || o.props === null))
-    props = hold(o.props)
+    props = o.props
   else {
     const given = (o.props ?? {}) as Record<string, unknown>
     const filled: Record<string, unknown> = {}
     for (const [key, field] of Object.entries(fields))
       if (given[key] === undefined && field && 'default' in field) filled[key] = field.default
-    for (const [key, value] of Object.entries(given)) if (value !== undefined) filled[key] = hold(value)
+    for (const [key, value] of Object.entries(given)) if (value !== undefined) filled[key] = value
     props = filled
   }
   const named = (key: 'slots' | 'on', declared: readonly string[]) => {
@@ -413,7 +393,7 @@ function componentUse(
           `${entry.id} declares no ${key === 'slots' ? 'slot' : 'event'} "${name}"`,
           `Declared: ${declared.join(', ') || 'none'}.`,
         )
-      else if (value !== undefined) out[name] = hold(value)
+      else if (value !== undefined) out[name] = value
     }
     return out
   }
@@ -427,13 +407,9 @@ function componentUse(
       `${entry.id} takes no children`,
       'Declare children: true on the component, or pass the content as a slot.',
     )
-  const children = def.children ? given.map(hold) : []
-  const seen = reported.get(d.component) ?? new Set<object>()
-  reported.set(d.component, seen)
-  const closed: ClosedRender = { component: entry.id, caller, seen }
-  const before = { lowering: scope.lowering, closed: scope.closed }
+  const children = def.children ? given : []
+  const lowering = scope.lowering
   scope.lowering = transformedDecls().has(d.component)
-  scope.closed = closed
   scope.inRender++
   try {
     const failed = Symbol('failed')
@@ -493,8 +469,7 @@ function componentUse(
     return { ...out, use }
   } finally {
     scope.inRender--
-    scope.lowering = before.lowering
-    scope.closed = before.closed
+    scope.lowering = lowering
   }
 }
 

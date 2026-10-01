@@ -1,4 +1,4 @@
-import { event, feature, machine, project, route, ui } from '@hozu/core'
+import { event, feature, machine, project, query, route, ui } from '@hozu/core'
 import { buildProject, type ElementNode, type ViewNode } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import { createTV } from '@hozu/variants'
@@ -348,9 +348,71 @@ describe('ADR 0045 phase 2 diagnostics', () => {
         }),
       },
     ])
-    expect(b.diagnostics.map((d) => [d.code, d.message])).toEqual([
-      ['HZ070', 'The render of f.Leaky references route home'],
-      ['HZ070', 'The render of f.Leaky references event f.Save'],
+    expect(b.diagnostics.map((d) => [d.code, d.location.pointer, d.message])).toEqual([
+      ['HZ070', '/features/f/components/Leaky', 'The render of f.Leaky references route home'],
+      ['HZ070', '/features/f/components/Leaky', 'The render of f.Leaky references event f.Save'],
     ])
+  })
+
+  it('HZ070 — an unused feature component that sends an event', () => {
+    const Unused = ui.component({
+      tag: 'button',
+      render: () => ui.button({ on: { click: ui.send(Save, {}) } }, []),
+    })
+    const b = build([{ Save, Unused, View: ui.view({ render: () => ui.div({}, []) }) }])
+    expect(b.diagnostics.map((d) => [d.code, d.location.pointer, d.message])).toEqual([
+      ['HZ070', '/features/f/components/Unused', 'The render of f.Unused references event f.Save'],
+    ])
+    expect(b.diagnostics[0]!.location.source?.file).toMatch(/components\.test\.ts$/)
+  })
+
+  it('HZ070 — an unused kit component that reads a query', () => {
+    const listItems = query({
+      input: z.object({}),
+      output: z.array(z.string()),
+      scope: 'public',
+      freshness: 'static',
+    })
+    const List = ui.component({
+      tag: 'ul',
+      render: () =>
+        ui.ul({}, [
+          ui.query(
+            listItems,
+            {},
+            { ready: (items) => ui.li({}, [items.length]), failed: { Unexpected: () => null } },
+          ),
+        ]),
+    })
+    const b = build([{ listItems, View: ui.view({ render: () => ui.div({}, []) }) }], {
+      kits: [kit, ui.kit({ id: 'lists', components: [{ List }] })],
+    })
+    expect(b.diagnostics.map((d) => [d.code, d.location.pointer, d.message])).toEqual([
+      ['HZ070', '/kits/lists/components/List', 'The render of lists.List references query f.listItems'],
+    ])
+  })
+
+  it('a render must build under reference props: HZ059 for a reference escape, HZ014 for another throw', () => {
+    const Shout = ui.component({
+      tag: 'p',
+      props: z.object({ text: z.string() }),
+      render: ({ props }) => ui.p({}, [props.text.toUpperCase()]),
+    })
+    const Broken = ui.component({
+      tag: 'p',
+      render: () => {
+        throw new Error('boom')
+      },
+    })
+    const b = build([{ Shout, Broken, View: ui.view({ render: () => ui.div({}, []) }) }])
+    expect(b.diagnostics.map((d) => [d.code, d.location.pointer, d.message.split(':')[0]])).toEqual([
+      ['HZ059', '/features/f/components/Shout', 'The render of f.Shout does not build under reference props'],
+      [
+        'HZ014',
+        '/features/f/components/Broken',
+        'The render of f.Broken does not build under reference props',
+      ],
+    ])
+    expect(b.diagnostics.every((d) => d.fix?.snippet)).toBe(true)
   })
 })

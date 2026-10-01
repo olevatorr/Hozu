@@ -252,9 +252,9 @@ component's resolve in `FeatureIR.schemas`, so a kit is self-contained.
 | Feature components: `FeatureParts.components`, owner `feature.Name` | `core/src/build/project.ts:54`, `:196`; built at `core/src/build/feature.ts:289` |
 | Kits: registered after the features, before any view is built; HZ013 for a kit id equal to a feature id or repeated | `core/src/build/project.ts:335`, `:499` |
 | `ProjectIR.kits`, built in a scope rooted at `/kits/<id>` | `core/src/build/project.ts:431` |
-| `ComponentIR` (`variants`, `defaults` and `owned` from the tv config, `client: null`) | `core/src/build/components.ts:104`, `owned` at `:79` |
-| The use: owner checks (HZ007, HZ006), variants (HZ071, HZ031), props defaults, slots, `on`, the render, the root checks (HZ014), the root class and `UseIR` | `core/src/build/view.ts:327`; variants at `:259`, the tv root class at `:313` |
-| HZ070: a closed-render context while the render's own nodes are built; caller values suspend it | `core/src/build/scope.ts:216`, `:290`; hooks in `ref` (`:374`), links (`:534`) and messages (`:563`) |
+| `ComponentIR` (`variants`, `defaults` and `owned` from the tv config, `client: null`) | `core/src/build/components.ts:217`, `owned` at `:191` |
+| The use: owner checks (HZ007, HZ006), variants (HZ071, HZ031), props defaults, slots, `on`, the render, the root checks (HZ014), the root class and `UseIR` | `core/src/build/view.ts:312`; variants at `:258`, the tv root class at `core/src/build/components.ts:69` |
+| HZ070 and the reference-props rule: the render is built once per declared component, and its output is walked for declaration references | `core/src/build/components.ts:150` (render), `:102` (walk), called from `:233` |
 | A missing `on.x` leaves no handler; a missing slot is dropped from the children inside a render | `core/src/build/view.ts:57`, `:125` |
 | `@hozu/variants`: `createTV`, `tv` from tailwind-variants 3.3.1 with tailwind-merge 3.7.0 | `packages/variants/src/index.ts` |
 | Notes kit | `examples/notes/ui/` (`kit.ts`, `button.ts`, `input.ts`, `field.ts`, `tv.ts`) |
@@ -263,12 +263,23 @@ component's resolve in `FeatureIR.schemas`, so a kit is self-contained.
 1. **G, `branch`:** a literal condition returns the chosen branch when it is one child. An empty or several-item
    branch keeps today's `if` node, because a bare `null` or list is not a valid child (inline it is HZ014). `==` is
    evaluated as `===`, since the transform maps both to `eq`.
-2. **HZ070 is found while a use is built**, not by reading the render's source: every declaration the render's own
-   nodes reach through `ref`, a link or a message is reported, once per component and declaration, at the first use.
-   Values the caller passed (props, slots, children, `on`) are exempt by identity. A component that is never used is
-   not checked.
-3. **`owned`** is sorted and de-duplicated. The root's `toggle` keys come from calling the render once with a
-   reference as `props` and no slots, children or events; a render that throws there contributes no toggle keys.
+2. **A render must build under reference props** (follow-up, decided by the coordinator). Props are the state of a
+   component and may be references (B); a value that must be a literal is a variant. So every declared component,
+   feature-private or in a kit, used or not, is rendered once when it is registered, with references as `props`,
+   `slots`, `children` and `on`, and the tv classes of its defaults.
+   - **HZ070** is checked on that output: every event, query, mutation, route, view, fn, endpoint, widget, tag or
+     message it reaches (sends, links, `ui.query`, `ui.embed`, fn and message calls, `ui.each` / `ui.query` branches
+     called with a reference, nested `ui.use` options) is reported once, at the component's declaration pointer
+     (`/features/<f>/components/<Name>` or `/kits/<kit>/components/<Name>`). Since the placeholders carry no
+     declaration, what a caller passes is exempt by construction.
+   - **There is no use-time HZ070.** The declaration-time render always runs, so no path needs it, and a use never
+     reports a pair again.
+   - **A render that throws there** is an error at the declaration pointer: HZ059 for a reference escape (for example
+     `props.text.toUpperCase()`), HZ014 for anything else. The snippet fix: compute the value in the caller and pass
+     it as a prop, make it a variant when it picks among fixed options, or use a fn() for a value. No render in the
+     repository relied on literal-only props.
+3. **`owned`** is sorted and de-duplicated. The root's `toggle` keys come from the same declaration-time render; a
+   render that throws there is reported (choice 2) and contributes no toggle keys.
 4. **`sourceHash`** is the fingerprint of the tag, the render's source and the tv config (base, slots, variants,
    defaults, compound variants).
 5. **Props:** omitted fields are filled from the JSON Schema `default`; a field without a default stays absent, and an
@@ -297,6 +308,11 @@ component's resolve in `FeatureIR.schemas`, so a kit is self-contained.
   evaluation fails the `===` / `?:` case; `coalesce` fails the `??` and template cases; `method` fails the template
   case.
 - **HZ070, HZ071:** catalog cases in `validator/test/source-mistakes.test.ts`, each broken once to red.
+- **HZ070 at declaration (follow-up):** `core/test/components.test.ts` covers an unused feature component that sends
+  an event, an unused kit component that reads a query, a component used twice and reported once per declaration,
+  and the HZ059 / HZ014 throws. Broken once each: ignoring sends fails the event cases; ignoring queries fails the kit
+  case; re-running the check at the use fails the reported-once case. After it: 539 tests, 532 passed, 1 expected
+  fail (HZ079), 6 skipped; `bench/ui/compare.ts` 11 / 11 equal.
 - **Inline form:** `core/test/components.test.ts` builds a `ui.use(Button, …)` and the hand-written `<button>` and
   compares them apart from `use`; it also covers defaults, absent slots and events, tv slots, kits and every
   diagnostic of this phase.
