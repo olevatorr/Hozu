@@ -1,8 +1,16 @@
 import type { DevLocation, DevNode } from '@hozu/core/ir'
 import { describeFor, friendlyName, questionFor } from '../plain.ts'
-import { type HozuRequest, labelOf, requestMarkdown, type Scope, scopesFor } from '../prompt.ts'
-import { finish, node, one, page, remove, type SavedSummary, save, saved } from './api.ts'
+import {
+  type HozuRequest,
+  labelOf,
+  requestMarkdown,
+  type Scope,
+  type StyleChange,
+  scopesFor,
+} from '../prompt.ts'
+import { finish, node, one, page, remove, type SavedSummary, save, saved, theme } from './api.ts'
 import { h, read, write } from './dom.ts'
+import { lookSection, preview } from './look.ts'
 import { css, outlineCss } from './style.ts'
 
 interface Pick {
@@ -11,6 +19,7 @@ interface Pick {
   note: string
   scope: Scope | null
   visible: string
+  style?: StyleChange[]
 }
 
 type Audience = 'builder' | 'developer'
@@ -145,6 +154,7 @@ async function showHover(el: Element | null) {
 }
 
 function drawPicks() {
+  for (const p of state.picks) preview(elementOf(p), p.style ?? [])
   for (const box of boxes.children) frameOf.get(box as HTMLElement)?.remove()
   boxes.replaceChildren(
     ...state.picks.map((p, i) => {
@@ -532,7 +542,15 @@ async function request(): Promise<HozuRequest> {
     items: state.picks.flatMap((p, i) => {
       const n = nodes[i]
       return n
-        ? [{ node: n, note: p.note, scope: p.scope ?? scopesFor(n)[0]!.scope, visible: p.visible }]
+        ? [
+            {
+              node: n,
+              note: p.note,
+              scope: p.scope ?? scopesFor(n)[0]!.scope,
+              visible: p.visible,
+              style: p.style ?? [],
+            },
+          ]
         : []
     }),
     context: {
@@ -566,6 +584,8 @@ function choose(active: Pick, id: string, visible: string) {
 }
 
 function removeActive() {
+  const gone = state.picks[state.active]
+  if (gone) preview(elementOf(gone), [])
   state.picks.splice(state.active, 1)
   state.active = Math.max(0, state.active - 1)
   if (!state.picks.length) state.panel = null
@@ -616,14 +636,17 @@ function requestSection(n: DevNode, active: Pick) {
     hidden: true,
   }) as HTMLTextAreaElement
   const markdown = async () =>
-    draft.hidden ? requestMarkdown(await request(), { excerpt: state.excerpt }) : draft.value
+    draft.hidden
+      ? requestMarkdown(await request(), { excerpt: state.excerpt, theme: await theme() })
+      : draft.value
   const edit = h(
     'button',
     {
       class: 'link',
       type: 'button',
       onclick: async () => {
-        if (draft.hidden) draft.value = requestMarkdown(await request(), { excerpt: state.excerpt })
+        if (draft.hidden)
+          draft.value = requestMarkdown(await request(), { excerpt: state.excerpt, theme: await theme() })
         draft.hidden = !draft.hidden
         edit.textContent = draft.hidden ? 'Edit before sending' : 'Discard edits'
       },
@@ -875,6 +898,20 @@ async function renderPanel() {
           : null,
       ]),
       ...(state.audience === 'builder' ? builderSections(n) : developerSections(n, active)),
+      n.kind === 'element' || n.kind === 'component'
+        ? lookSection(
+            elementOf(active),
+            active.style ?? [],
+            await theme(),
+            state.audience === 'builder',
+            (changes) => {
+              active.style = changes
+              persist()
+              preview(elementOf(active), changes)
+              void renderPanel()
+            },
+          )
+        : null,
       requestSection(n, active),
     ]),
   )

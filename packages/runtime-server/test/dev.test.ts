@@ -104,6 +104,28 @@ describe('dev endpoint security (ADR 0047)', () => {
   })
 })
 
+describe('dev styles (ADR 0047 P4)', () => {
+  it('answers the Tailwind entry so DevTools can read the project theme', async () => {
+    const root = fileURLToPath(new URL('../../../examples/showcase/', import.meta.url))
+    const app = (await import(join(root, 'app.ts'))).default
+    const build = appHandlerOptions(app, { dev: { root } }).build
+    const bundle = appOptionsOf(app)?.components
+    const components = bundle ? await bundle(build) : null
+    const handler = createHandler(app, {
+      dev: { root },
+      env,
+      readFile,
+      ...(components ? { components } : {}),
+    })
+    const response = await handler.fetch(new Request('http://127.0.0.1/_hozu/dev/styles'))
+    expect(response.status).toBe(200)
+    expect(await response.text()).toContain('@theme')
+    expect((await handler.fetch(new Request('http://evil.example/_hozu/dev/styles'))).status).toBe(403)
+    const prod = createHandler(app, { env, ...(components ? { components } : {}) })
+    expect((await prod.fetch(new Request('http://127.0.0.1/_hozu/dev/styles'))).status).toBe(404)
+  })
+})
+
 describe('client bundle (ADR 0047 G4)', () => {
   it('the production client has no marker code; the dev client stamps data-hz', () => {
     const dist = fileURLToPath(new URL('../../runtime-client/dist/', import.meta.url))

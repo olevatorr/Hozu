@@ -101,6 +101,13 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
       `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll(${JSON.stringify(selector)})].find((b) => b.textContent.includes(${JSON.stringify(text)})).click()`,
     )
 
+  it('serves the theme: Tailwind defaults with the project @theme over them', async () => {
+    const theme = await (await fetch(`${server.url}/_hozu/dev/theme`)).json()
+    expect(theme.text['2xl']).toBe(24)
+    expect(theme.spacing).toBe(4)
+    expect(theme.colors['indigo-600']).toMatch(/^#[0-9a-f]{6}$/)
+  })
+
   it('selects a component use without running the app; Builder speaks plainly, Developer names the source', async () => {
     await open('/login')
     await evaluate(`localStorage.clear()`)
@@ -177,6 +184,27 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
       `(() => { const r = document.querySelector('hozu-devtools').shadowRoot; return r.querySelector('.title')?.textContent === 'Requests' && ![...r.querySelectorAll('.req')].some((b) => b.textContent.includes('Shorter heading')) })()`,
     )
     expect(listed().filter((f) => !before.has(f))).toEqual([])
+  })
+
+  it('a live style edit previews on the page and becomes the theme class to use', async () => {
+    await click('h1')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.look select[aria-label="Text size"]')`,
+    )
+    expect(await evaluate(`getComputedStyle(document.querySelector('h1')).fontSize`)).toBe('30px')
+    await tool(
+      `(() => { const s = $('.look select[aria-label="Text size"]'); s.value = '48px'; s.dispatchEvent(new Event('change')); })()`,
+    )
+    await until(`getComputedStyle(document.querySelector('h1')).fontSize === '48px'`)
+    await shadowClick('.actions button', 'Copy for AI')
+    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.status.ok')`)
+    const copied = (await evaluate('navigator.clipboard.readText()')) as string
+    expect(copied).toContain('- Style: font size 30px → 48px: replace `text-3xl` with `text-5xl`')
+    expect(readFileSync(join(notes, 'features/account/views.ts'), 'utf8')).toContain(
+      "ui.h1({ class: 'text-3xl font-bold' }",
+    )
+    await shadowClick('.row-end button', 'Reset')
+    await until(`getComputedStyle(document.querySelector('h1')).fontSize === '30px'`)
   })
 
   it('Escape returns to Browse; the page button shows its head', async () => {

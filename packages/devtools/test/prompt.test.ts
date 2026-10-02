@@ -1,6 +1,10 @@
+import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
 import type { DevNode } from '@hozu/core/ir'
 import { describe, expect, it } from 'vitest'
 import { requestMarkdown, scopesFor, titleOf } from '../src/prompt.ts'
+import { parseTheme } from '../src/theme.ts'
 
 const at = (file: string, line: number, column = 3) => ({ file, line, column })
 
@@ -255,5 +259,43 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
       ]),
     ).toBe('Make the sign in button much bigger and also change its…')
     expect(titleOf([item(base, ' ')])).toBe('Change <button> · ui.Button')
+  })
+
+  it('turns a live style edit into the theme utility that replaces the current one', () => {
+    const css = createRequire(fileURLToPath(new URL('../../css/package.json', import.meta.url)))
+    const theme = parseTheme(
+      readFileSync(css.resolve('tailwindcss/theme.css'), 'utf8'),
+      '@theme { --color-red: #fb3a0e; }',
+    )
+    const node: DevNode = { ...base, classes: 'rounded bg-indigo-600 px-4 py-2 text-white text-sm' }
+    const md = requestMarkdown(
+      {
+        items: [
+          {
+            ...item(node, 'Bigger and red'),
+            style: [
+              { prop: 'fontSize', from: '14px', to: '24px' },
+              { prop: 'backgroundColor', from: '#4f39f6', to: '#fb3a0e' },
+              { prop: 'paddingInline', from: '16px', to: '22.5px' },
+              { prop: 'fontWeight', from: '400', to: '700' },
+            ],
+          },
+        ],
+        context,
+      },
+      { theme },
+    )
+    expect(md).toContain('- Style: font size 14px → 24px: replace `text-sm` with `text-2xl`')
+    expect(md).toContain('- Style: background #4f39f6 → #fb3a0e: replace `bg-indigo-600` with `bg-red`')
+    expect(md).toContain(
+      '- Style: padding left and right 16px → 22.5px: replace `px-4` with `px-[22.5px]` (nearest theme step `px-5.5`)',
+    )
+    expect(md).toContain('- Style: font weight 400 → 700: add `font-bold`')
+    expect(
+      requestMarkdown({
+        items: [{ ...item(node, 'x'), style: [{ prop: 'fontSize', from: '14px', to: '24px' }] }],
+        context,
+      }),
+    ).toContain('- Style: font size 14px → 24px')
   })
 })

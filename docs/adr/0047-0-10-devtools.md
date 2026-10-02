@@ -204,6 +204,20 @@ Each phase ends with `pnpm gate` and a report.
 - **What a change reaches:** a component use and a message carry the number of source places that use them (part
   call sites count once), so the prompt and the inspector can say "used in 6 places".
 - **Pages** are nodes too (`kind: 'page'`, `hozu locate page:home`): declaration, route, views and the head fields.
+- **Owner feedback, round 1:** requests are compact (Want, Where, Scope, Style, and a Mind line only where a plain
+  edit goes wrong; no JSON block; the excerpt is a setting). Builder (default, plain words, the scope as a question)
+  and Developer (files, excerpt, components, transitions, ids) are switched in the dock's settings or by
+  `hozu dev --devtools developer`. Saved requests can be opened, edited before sending, marked done and deleted.
+- **Order:** P4 came before P3 at the owner's request.
+
+## As built (P4)
+- **Look** in the inspector: font size, weight, text colour, background, padding at the sides and above/below, and
+  corners. The preview is an inline style on the selected element in the browser only; Reset removes it.
+- **Theme:** `@hozu/dev` answers `/_hozu/dev/theme` from Tailwind's `theme.css` with the project's `@theme` blocks over
+  it (the app answers its entry at `/_hozu/dev/styles`). oklch colours are converted to sRGB for matching.
+- **Translation:** each change becomes `- Style: font size 30px → 48px: replace \`text-3xl\` with \`text-5xl\``.
+  A value off the scale gets the exact arbitrary class and the nearest step; a project colour wins over a Tailwind
+  colour; spacing takes any multiple of 0.25 steps, as Tailwind v4 does.
 
 ## Rejected
 - **Shipping source maps or markers in production:** cost and leakage. Dev only.

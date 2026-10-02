@@ -737,9 +737,17 @@ function handlerFor({
       const result = await scope.run(query, input)
       return json(result, privately(scope.readSession))
     }
-    if (dev && (path === '/_hozu/dev/node' || path === '/_hozu/dev/page')) {
+    if (dev && (path === '/_hozu/dev/node' || path === '/_hozu/dev/page' || path === '/_hozu/dev/styles')) {
       if (!/^(127\.0\.0\.1|localhost|\[::1\])$/.test(url.hostname))
         return new Response('Hozu DevTools answers only this machine', { status: 403 })
+      if (path === '/_hozu/dev/styles') {
+        const entry = build.bindings.styles.entry
+        const css =
+          entry && readFile
+            ? new TextDecoder().decode(await readFile(entry).catch(() => new Uint8Array()))
+            : ''
+        return new Response(css, { headers: { 'content-type': 'text/css', 'cache-control': 'no-store' } })
+      }
       const page =
         path === '/_hozu/dev/page' ? match(split(url.searchParams.get('path') ?? '/').rest)?.route : null
       const id =

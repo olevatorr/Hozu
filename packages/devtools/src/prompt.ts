@@ -1,12 +1,20 @@
 import type { DevLocation, DevNode, DevTextSource } from '@hozu/core/ir'
+import { currentUtility, type StyleProp, type Theme, utilityFor } from './theme.ts'
 
 export type Scope = 'this' | 'component' | 'items'
+
+export interface StyleChange {
+  prop: StyleProp
+  from: string
+  to: string
+}
 
 export interface RequestItem {
   node: DevNode
   note: string
   scope: Scope
   visible: string
+  style?: StyleChange[]
 }
 
 export interface RequestContext {
@@ -22,6 +30,26 @@ export interface HozuRequest {
 
 export interface PromptOptions {
   excerpt?: boolean
+  theme?: Theme | null
+}
+
+export const styleNames: Record<StyleProp, string> = {
+  fontSize: 'font size',
+  fontWeight: 'font weight',
+  color: 'text colour',
+  backgroundColor: 'background',
+  paddingInline: 'padding left and right',
+  paddingBlock: 'padding top and bottom',
+  borderRadius: 'corner radius',
+}
+
+function styleLine(change: StyleChange, classes: string | null, theme: Theme | null | undefined): string {
+  const head = `- Style: ${styleNames[change.prop]} ${change.from} → ${change.to}`
+  if (!theme) return head
+  const u = utilityFor(change.prop, change.to, theme)
+  const now = currentUtility(change.prop, classes ?? '', theme)
+  const near = u.exact || !u.nearest ? '' : ` (nearest theme step \`${u.nearest}\`)`
+  return `${head}: ${now ? `replace \`${now}\` with` : 'add'} \`${u.utility}\`${near}`
 }
 
 const loc = (l: DevLocation | null) => (l ? `\`${l.file}:${l.line}:${l.column}\`` : 'an unknown place')
@@ -175,6 +203,7 @@ export function requestMarkdown(request: HozuRequest, options: PromptOptions = {
       `- Where: ${where(node)}`,
       ...(options.excerpt ? excerpt(node) : []),
       `- Scope: ${scopeLabel(item)}`,
+      ...(item.style ?? []).map((c) => styleLine(c, node.classes, options.theme)),
       ...node.conditions
         .filter((c) => c.kind !== 'each')
         .map(

@@ -11,6 +11,7 @@ import {
   devtoolsEntry,
   finishRequest,
   listRequests,
+  parseTheme,
   readRequest,
   saveRequest,
 } from '@hozu/devtools'
@@ -138,6 +139,7 @@ export async function dev({
           .writeHead(403, { 'content-type': 'text/plain' })
           .end('Hozu DevTools answers only this machine')
       if (path.startsWith('/_hozu/devtools/')) return void serveDevtools(path, res)
+      if (path === '/_hozu/dev/theme') return void theme(res, cwd, appPort)
       if (path === '/_hozu/dev/requests' || path.startsWith('/_hozu/dev/requests/'))
         return void requests(req, res, cwd, path.slice('/_hozu/dev/requests/'.length).split('/'))
     }
@@ -248,4 +250,38 @@ function requests(req: IncomingMessage, res: ServerResponse, cwd: string, [numbe
     return json(405, { error: 'GET, DELETE or POST …/done' })
   }
   run().catch((e: Error) => json(/^No request/.test(e.message) ? 404 : 400, { error: e.message }))
+}
+
+function tailwindTheme(cwd: string): string {
+  const from = createRequire(join(cwd, 'package.json'))
+  for (const resolve of [
+    () => from.resolve('tailwindcss/theme.css'),
+    () => createRequire(from.resolve('@hozu/css')).resolve('tailwindcss/theme.css'),
+  ])
+    try {
+      return readFileSync(resolve(), 'utf8')
+    } catch {}
+  return ''
+}
+
+function theme(res: ServerResponse, cwd: string, appPort: number) {
+  const answer = (project: string) =>
+    res
+      .writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' })
+      .end(JSON.stringify(parseTheme(tailwindTheme(cwd), project)))
+  const upstream = request(
+    {
+      host: '127.0.0.1',
+      port: appPort,
+      path: '/_hozu/dev/styles',
+      headers: { host: `127.0.0.1:${appPort}` },
+    },
+    (up) => {
+      let css = ''
+      up.on('data', (chunk: Buffer) => (css += chunk))
+      up.on('end', () => answer(String(up.headers['content-type']).startsWith('text/css') ? css : ''))
+    },
+  )
+  upstream.on('error', () => answer(''))
+  upstream.end()
 }

@@ -1,4 +1,5 @@
 import type { DevNode } from '@hozu/core/ir'
+import type { Theme } from '../theme.ts'
 
 export interface SavedSummary {
   number: string
@@ -74,3 +75,9 @@ export const one = (number: string) => send<SavedRequest>(`/_hozu/dev/requests/$
 export const remove = (number: string) => send<{ deleted: string }>(`/_hozu/dev/requests/${number}`, 'DELETE')
 export const finish = (number: string, result: string) =>
   send<SavedSummary>(`/_hozu/dev/requests/${number}/done`, 'POST', { result })
+
+let themed: Promise<Theme | null> | null = null
+export const theme = () =>
+  (themed ??= fetch('/_hozu/dev/theme')
+    .then((r) => (r.ok ? (r.json() as Promise<Theme>) : null))
+    .catch(() => null))

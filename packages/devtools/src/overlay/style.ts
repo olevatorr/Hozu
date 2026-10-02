@@ -178,6 +178,21 @@ input.outcome:focus { border-color: var(--red); outline: none; box-shadow: 0 0 0
 kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(241, 237, 228, 0.08); border: 1px solid var(--line-2); border-radius: 5px; padding: 3px 6px; min-width: 92px; text-align: center; }
 .dock button.gear { font-size: 14px; padding: 5px 9px; }
 
+.look { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.look + .look { margin-top: 4px; }
+.look .what { flex: none; width: 128px; color: var(--mute); font: 12.5px/1.3 var(--sans); }
+.look select {
+  flex: 1; min-width: 0; height: 28px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--ink-3);
+  color: var(--text); font: 12px/1 var(--mono); padding: 0 6px;
+}
+.look select:focus { border-color: var(--red); outline: none; }
+.look .pick { flex: 1; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.look input[type="color"] { width: 28px; height: 28px; padding: 0; border: 1px solid var(--line-2); border-radius: 6px; background: none; cursor: pointer; }
+.look code { font: 11.5px/1 var(--mono); color: var(--mute); }
+.swatch { width: 18px; height: 18px; border-radius: 999px; border: 1px solid var(--line-2); padding: 0; }
+.swatch:hover { transform: scale(1.12); }
+.hint-text { flex: 1; font: 12px/1.4 var(--sans); color: #6f695f; }
+
 @media (max-width: 720px) { .dock .hint { display: none; } }
 @media (max-width: 420px) {
   .dock button.mode, .dock button.act { padding: 5px 8px; }
