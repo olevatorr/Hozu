@@ -40,7 +40,7 @@ export const How = ui.view({
               ]),
             ]),
           ]),
-          ui.div({ class: 'hidden border-4 border-ink bg-white p-6 md:block', 'aria-hidden': 'true' }, [
+          ui.div({ class: 'hidden md:block', 'aria-hidden': 'true' }, [
             ui.img({
               src: ui.asset(new URL('../../assets/logo.png', import.meta.url)),
               width: 256,
@@ -124,6 +124,7 @@ export const How = ui.view({
                         | 'done'
                       )[],
                       [ui.span({ class: 'text-ember', 'aria-label': 'Current stage' }, ['●'])],
+                      'fade',
                     ),
                   ]),
                 ),
@@ -139,6 +140,7 @@ export const How = ui.view({
                         'Run the valid example first. Then remove its contract and find out where Hozu stops.',
                       ]),
                     ],
+                    'fade',
                   ),
                   when(
                     ['source', 'brokenSource'],
@@ -146,6 +148,7 @@ export const How = ui.view({
                       ui.p({ class: 'font-black uppercase' }, ['Reading the declarations…']),
                       ui.p({}, ['Events, states and transitions describe the program before it executes.']),
                     ],
+                    'fade',
                   ),
                   when(
                     ['ir', 'brokenIr'],
@@ -153,6 +156,7 @@ export const How = ui.view({
                       ui.p({ class: 'font-black uppercase' }, ['Recording the feature IR…']),
                       code('off ── Toggle ──▶ on\non  ── Toggle ──▶ off'),
                     ],
+                    'fade',
                   ),
                   when(
                     ['validated'],
@@ -162,6 +166,7 @@ export const How = ui.view({
                         'The example has a contract for each transition. The pipeline can continue.',
                       ]),
                     ],
+                    'fade',
                   ),
                   when(
                     ['compiled'],
@@ -171,6 +176,7 @@ export const How = ui.view({
                         'The machine-bound toggle becomes an interactive island. The surrounding content remains HTML.',
                       ]),
                     ],
+                    'fade',
                   ),
                   when(
                     ['done'],
@@ -182,6 +188,7 @@ export const How = ui.view({
                         ]),
                       ]),
                     ],
+                    'fade',
                   ),
                   when(
                     ['blocked'],
@@ -194,6 +201,7 @@ export const How = ui.view({
                         ]),
                       ]),
                     ],
+                    'fade',
                   ),
                 ],
               ),

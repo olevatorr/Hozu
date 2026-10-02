@@ -426,14 +426,12 @@ export const Home = ui.view({
           ui.div({ class: 'mt-8 flex flex-wrap gap-4' }, [
             ui.use(
               Button,
-              { variant: { intent: 'solid' }, props: { href: ui.link(doc, { slug: 'getting-started' }) } },
+              { variant: { intent: 'light' }, props: { href: ui.link(doc, { slug: 'getting-started' }) } },
               ['Start building →'],
             ),
-            ui.a(
-              {
-                href: 'https://github.com/olevatorr/Hozu',
-                class: 'inline-block border-4 border-paper px-4 py-3 text-sm font-extrabold uppercase',
-              },
+            ui.use(
+              Button,
+              { variant: { intent: 'lightOutline' }, props: { href: 'https://github.com/olevatorr/Hozu' } },
               ['GitHub'],
             ),
           ]),

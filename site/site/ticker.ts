@@ -4,9 +4,11 @@ import { tv } from './tv.ts'
 
 const styles = tv({
   slots: {
-    base: 'relative overflow-hidden bg-ink py-3 text-sm font-black uppercase text-paper',
-    track: 'flex w-max animate-ticker gap-8 whitespace-nowrap',
-    pause: 'absolute right-0 top-0 flex h-full items-center gap-1 bg-ink px-3 text-xs',
+    base: 'flex items-stretch overflow-hidden bg-ink text-sm font-black uppercase text-paper',
+    source: 'flex shrink-0 items-center border-r-2 border-paper px-4 text-xs',
+    window: 'min-w-0 flex-1 overflow-hidden py-3',
+    track: 'flex w-max animate-ticker whitespace-nowrap',
+    copy: 'flex shrink-0 gap-8 pr-8',
   },
 })
 export const Ticker = ui.component({
@@ -16,13 +18,12 @@ export const Ticker = ui.component({
   slots: ['source'],
   render: ({ props, slots, classes }) =>
     ui.div({ 'data-ticker': '' }, [
-      ui.div({ class: classes.track, 'data-ticker-track': '', 'aria-hidden': 'true' }, [
-        ui.span({ class: 'flex gap-8' }, [ui.each(props.items, null, (i) => ui.span({}, [i, ' ■']))]),
-        ui.span({ class: 'flex gap-8' }, [ui.each(props.items, null, (i) => ui.span({}, [i, ' ■']))]),
-      ]),
-      ui.div({ class: classes.pause }, [
-        slots.source,
-        ui.label({}, [ui.input({ type: 'checkbox' }), ' Pause']),
+      ui.div({ class: classes.source }, [slots.source]),
+      ui.div({ class: classes.window, 'aria-hidden': 'true' }, [
+        ui.div({ class: classes.track, 'data-ticker-track': '' }, [
+          ui.span({ class: classes.copy }, [ui.each(props.items, null, (i) => ui.span({}, [i, ' ■']))]),
+          ui.span({ class: classes.copy }, [ui.each(props.items, null, (i) => ui.span({}, [i, ' ■']))]),
+        ]),
       ]),
     ]),
 })

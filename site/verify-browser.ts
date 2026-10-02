@@ -150,6 +150,61 @@ try {
     tones >= 16,
     `the posts' front and side differ by ${tones.toFixed(1)} luminance levels (at least 16)`,
   )
+  assert.equal(await page.locator('[data-ticker] input').count(), 0, 'the ticker has no pause control')
+  const seam = await page.$eval('[data-ticker-track]', (track) => {
+    const [a, b] = [...track.children] as HTMLElement[]
+    const inside =
+      a!.children[1]!.getBoundingClientRect().left - a!.children[0]!.getBoundingClientRect().right
+    const across =
+      b!.children[0]!.getBoundingClientRect().left - a!.lastElementChild!.getBoundingClientRect().right
+    return [inside, across]
+  })
+  assert.ok(Math.abs(seam[0]! - seam[1]!) < 1, `the ticker's seam keeps the item spacing ${seam}`)
+  const scrollbar = await page.evaluate(() => getComputedStyle(document.documentElement).scrollbarColor)
+  assert.notEqual(scrollbar, 'auto', 'the page scrollbar is styled')
+  const buttons = await page.$$eval('[data-button]', (els) =>
+    els
+      .filter((el) => el.getClientRects().length > 0)
+      .map((el) => {
+        const own = getComputedStyle(el)
+        let parent = el.parentElement
+        while (parent && getComputedStyle(parent).backgroundColor === 'rgba(0, 0, 0, 0)')
+          parent = parent.parentElement
+        const ground = parent ? getComputedStyle(parent).backgroundColor : 'rgb(255, 255, 255)'
+        const edge = Number.parseFloat(own.borderTopWidth) > 0 && own.borderTopColor !== ground
+        return own.backgroundColor !== ground && own.backgroundColor !== 'rgba(0, 0, 0, 0)'
+          ? ''
+          : edge
+            ? ''
+            : el.textContent
+      })
+      .filter(Boolean),
+  )
+  assert.deepEqual(buttons, [], 'every button stands out from its section')
+  const docs = await browser.newPage({ viewport: { width: 360, height: 900 } })
+  await docs.route('https://hozu.test/**', (route) => serve(route))
+  await docs.goto('https://hozu.test/docs/getting-started/')
+  await docs.waitForSelector('[data-copy]', { timeout: 10000 })
+  const moved = await docs.evaluate(() => {
+    const pre = [...document.querySelectorAll('pre')].find((el) => el.scrollWidth > el.clientWidth + 40)!
+    const button = (pre.closest('[data-copyable]') ?? pre).querySelector('[data-copy]')!
+    const at = button.getBoundingClientRect().left
+    pre.scrollLeft = 200
+    return [pre.scrollLeft, at, button.getBoundingClientRect().left]
+  })
+  assert.ok(moved[0]! > 0, 'a code block scrolled sideways')
+  assert.ok(Math.abs(moved[1]! - moved[2]!) < 1, `the copy button stays put when code scrolls ${moved}`)
+  const lab = await browser.newPage({ viewport: { width: 1280, height: 900 } })
+  await lab.route('https://hozu.test/**', (route) => serve(route))
+  await lab.goto('https://hozu.test/how-it-works/')
+  await lab.waitForSelector('html[data-hozu-ready]')
+  await lab.getByRole('button', { name: 'Run example' }).click()
+  const entering = await lab.waitForSelector('.fade-enter-active', { timeout: 1500 })
+  assert.notEqual(
+    await entering.evaluate((el) => getComputedStyle(el).transitionDuration),
+    '0s',
+    'the lab fades its stages in',
+  )
   const off = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1280, height: 900 } })
   const still = await off.newPage()
   await still.route('https://hozu.test/**', (route) => serve(route))
