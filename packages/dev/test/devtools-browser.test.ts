@@ -178,7 +178,7 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.notice code')`)
     const file = (await tool(`$('.notice code').textContent`)) as string
     const saved = readFileSync(join(notes, file), 'utf8')
-    expect(saved).toContain('# Hozu request: Clear the name after signing in')
+    expect(saved).toContain('# Hozu request: Clear the name after signing in + 1 more')
     expect(saved).toContain('`submit` sends `account.SignIn`')
     expect(saved).toContain('## 2. <h1>')
     expect(saved).not.toContain('```')
@@ -191,14 +191,30 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     ).toBe(0)
   })
 
-  it('a saved request opens, and Done removes it', async () => {
-    await shadowClick('.req', 'Clear the name after signing in')
+  it('the saved list copies one line for the agent or all as one prompt, and Done on a row removes it', async () => {
+    await shadowClick('.req .open-req', 'Clear the name after signing in + 1 more')
     await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('pre.md')`)
     expect(await tool(`$('pre.md').textContent`)).toContain('- Want: Shorter heading')
-    await shadowClick('.actions button', 'Done · remove')
-    await shadowClick('.actions button', 'Click again to remove')
+    await shadowClick('.back', 'Saved')
+    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.req')`)
+    const ours = (await tool(
+      `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.req')].find((r) => r.textContent.includes('Clear the name')).querySelector('.n').textContent`,
+    )) as string
+    await shadowClick('.choice button', 'Copy file paths only')
+    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.status.ok')`)
+    const line = (await evaluate('navigator.clipboard.readText()')) as string
+    expect(line).toMatch(new RegExp(`^Do the open Hozu requests: .*\\.hozu/requests/${ours}-clear-the-name`))
+    await shadowClick('.choice button', 'for AI')
+    await until(`navigator.clipboard.readText().then((t) => t.startsWith('# Hozu requests: '))`)
+    const prompt = (await evaluate('navigator.clipboard.readText()')) as string
+    expect(prompt).toContain(`# Hozu request ${ours}: Clear the name after signing in + 1 more`)
+    expect(prompt).toContain('When one is done: `hozu requests done <n>')
+    const done = `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.req')].find((r) => r.textContent.includes('Clear the name')).querySelector('.done')`
+    await tool(`${done}.click()`)
+    expect(await tool(`${done}.textContent`)).toBe('Remove?')
+    await tool(`${done}.click()`)
     await until(
-      `(() => { const r = document.querySelector('hozu-devtools').shadowRoot; return r.querySelector('.title')?.textContent === 'Changes' && ![...r.querySelectorAll('.req')].some((b) => b.textContent.includes('Clear the name')) })()`,
+      `![...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.req')].some((r) => r.textContent.includes('Clear the name'))`,
     )
     expect(listed().filter((f) => !before.has(f) && f !== '.next')).toEqual([])
   })

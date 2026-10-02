@@ -94,9 +94,12 @@ export function titleOf(items: RequestItem[]): string {
     .find((i) => i.note.trim())
     ?.note.trim()
     .split('\n')[0]
-  if (!note) return `Change ${items[0] ? labelOf(items[0].node) : 'the page'}`
-  if (note.length <= 60) return note
-  return `${note.slice(0, 60).replace(/\s+\S*$/, '')}…`
+  const head = !note
+    ? `Change ${items[0] ? labelOf(items[0].node) : 'the page'}`
+    : note.length <= 60
+      ? note
+      : `${note.slice(0, 60).replace(/\s+\S*$/, '')}…`
+  return items.length > 1 ? `${head} + ${items.length - 1} more` : head
 }
 
 function textMinds(node: DevNode): string[] {
@@ -216,4 +219,29 @@ export function requestMarkdown(request: HozuRequest, options: PromptOptions = {
   })
   lines.push('Run `hozu check` after the edits.', '')
   return lines.join('\n')
+}
+
+export function openRequestsLine(list: { file: string }[]): string {
+  return `Do the open Hozu requests: ${list.map((r) => r.file).join(', ')}. For each one: make the change where it says, run \`hozu check\`, then \`hozu requests done <n> --result "<what changed>"\`.`
+}
+
+export function joinRequests(list: { number: string; markdown: string }[]): string {
+  const parts = list.map(
+    (r) =>
+      `${r.markdown
+        .replace(/^# Hozu request: /, `# Hozu request ${r.number}: `)
+        .replace(/\nWhen done: [^\n]*\n?$/, '\n')
+        .trimEnd()}\n`,
+  )
+  return [
+    `# Hozu requests: ${list.length} open`,
+    '',
+    'Do each one below in order. Run `hozu check` after the edits.',
+    '',
+    ...parts.flatMap((p) => ['---', '', p]),
+    '---',
+    '',
+    `When one is done: \`hozu requests done <n> --result "<what changed>"\` (${list.map((r) => r.number).join(', ')}).`,
+    '',
+  ].join('\n')
 }

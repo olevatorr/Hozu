@@ -47,6 +47,23 @@ describe('hozu requests (ADR 0047 D2)', () => {
     expect(closing.requests).toEqual([])
   })
 
+  it('--full prints every open request as one prompt, so an agent needs one command', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-requests-'))
+    cpSync(join(root, 'examples/notes/hozu.config.ts'), join(dir, 'hozu.config.ts'))
+    saveRequest(dir, request('Bigger title'))
+    saveRequest(dir, request('Red delete button'))
+    const { code, stdout } = await run(['requests', '--full'], dir)
+    expect(code).toBe(0)
+    expect(stdout).toContain('# Hozu requests: 2 open')
+    expect(stdout).toContain('# Hozu request 0001: Bigger title')
+    expect(stdout).toContain('# Hozu request 0002: Red delete button')
+    expect(stdout).toContain('`hozu requests done <n> --result "<what changed>"` (0001, 0002)')
+    const json = JSON.parse((await run(['requests', '--full', '--json'], dir)).stdout)
+    expect(new Ajv({ strict: false }).validate(schema, json)).toBe(true)
+    expect(json.prompt).toContain('# Hozu request 0002: Red delete button')
+    expect(JSON.parse((await run(['requests', '--json'], dir)).stdout).prompt).toBeNull()
+  })
+
   it('done needs a number and a result', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'hozu-requests-'))
     expect((await run(['requests', 'done', '0001'], dir)).code).toBe(2)

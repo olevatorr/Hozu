@@ -48,7 +48,8 @@ Commands:
   serve                     Start the app module (project({ app })) on PORT with adapter-node: what npm start runs
   dev                       Start the dev server: reload on edits, hot CSS and Hozu DevTools
                             (--devtools builder|developer picks its mode, --no-devtools hides it)
-  requests [done <n>]       List the change requests saved from DevTools; done <n> --result "<what changed>" closes one
+  requests [done <n>]       The change requests saved from DevTools (--full: all open ones as one prompt);
+                            done <n> --result "<what changed>" removes one
   docs [topic]              Print one topic of the guide (no topic: list them); docs components adds the app's list
   render <id>               Render one component alone (ui.Button): HTML, root class, owned properties, diagnostics
   skill                     Rewrite the agent skill for this Hozu version (--agent claude|agents|both)
@@ -267,7 +268,7 @@ export async function main(
       return 0
     }
     if (command === 'requests') {
-      const result = runRequests(cwd, target, positionals[2], values.result)
+      const result = runRequests(cwd, target, positionals[2], values.result, values.full === true)
       out(asJson ? json(result) : describeRequests(result))
       return 0
     }

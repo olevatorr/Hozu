@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import type { DevNode } from '@hozu/core/ir'
 import { describe, expect, it } from 'vitest'
-import { requestMarkdown, scopesFor, titleOf } from '../src/prompt.ts'
+import { joinRequests, openRequestsLine, requestMarkdown, scopesFor, titleOf } from '../src/prompt.ts'
 import { parseTheme } from '../src/theme.ts'
 
 const at = (file: string, line: number, column = 3) => ({ file, line, column })
@@ -242,7 +242,14 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
     )
   })
 
-  it('several selections are numbered, and titles come from the first description', () => {
+  it('several selections are numbered, and the title names the first description and how many more', () => {
+    const three = [
+      item(base, 'Clear the name after signing in'),
+      item(base, 'Shorter heading'),
+      item(base, ''),
+    ]
+    expect(titleOf(three)).toBe('Clear the name after signing in + 2 more')
+    expect(titleOf([item(base, ''), item(base, '')])).toBe('Change <button> · ui.Button + 1 more')
     const md = requestMarkdown({
       items: [
         item({ ...base, id: 'account.Login/1', tag: 'h1', component: null, children: [] }, ''),
@@ -250,7 +257,7 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
       ],
       context,
     })
-    expect(md).toContain('# Hozu request: Bigger')
+    expect(md).toContain('# Hozu request: Bigger + 1 more')
     expect(md).toContain('## 1. <h1>')
     expect(md).toContain('## 2. <button> · ui.Button')
     expect(
@@ -297,5 +304,43 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
         context,
       }),
     ).toContain('- Style: font size 14px → 24px')
+  })
+
+  it('the saved list gives the agent one line that points at the files, or every request in one prompt', () => {
+    const list = [
+      { number: '0007', file: '.hozu/requests/0007-a.md', title: 'Shorter heading + 1 more' },
+      { number: '0008', file: '.hozu/requests/0008-b.md', title: 'Red button' },
+    ]
+    expect(openRequestsLine(list)).toBe(
+      'Do the open Hozu requests: .hozu/requests/0007-a.md, .hozu/requests/0008-b.md. For each one: make the change where it says, run `hozu check`, then `hozu requests done <n> --result "<what changed>"`.',
+    )
+    const joined = joinRequests([
+      { number: '0007', markdown: '# Hozu request: Shorter heading + 1 more\n\nbody 7\n' },
+      { number: '0008', markdown: '# Hozu request: Red button\n\nbody 8\n' },
+    ])
+    expect(joined).toBe(
+      [
+        '# Hozu requests: 2 open',
+        '',
+        'Do each one below in order. Run `hozu check` after the edits.',
+        '',
+        '---',
+        '',
+        '# Hozu request 0007: Shorter heading + 1 more',
+        '',
+        'body 7',
+        '',
+        '---',
+        '',
+        '# Hozu request 0008: Red button',
+        '',
+        'body 8',
+        '',
+        '---',
+        '',
+        'When one is done: `hozu requests done <n> --result "<what changed>"` (0007, 0008).',
+        '',
+      ].join('\n'),
+    )
   })
 })

@@ -47,6 +47,13 @@ describe('saved requests (ADR 0047 D2)', () => {
     expect(() => finishRequest(root, '0009', 'x')).toThrow('No request 0009')
   })
 
+  it('a title without Latin letters names the file after its parts', () => {
+    const root = mkdtempSync(join(tmpdir(), 'hozu-requests-'))
+    const md =
+      '# Hozu request: 換個字型 + 1 more\n\n## 1. <h1>\n- Want: 換個字型\n\n## 2. <button> · ui.Button\n- Want: hover\n'
+    expect(saveRequest(root, md).file).toBe('.hozu/requests/0001-h1-button-ui-button.md')
+  })
+
   it('an empty project has no requests', () => {
     expect(listRequests(mkdtempSync(join(tmpdir(), 'hozu-requests-')))).toEqual([])
   })

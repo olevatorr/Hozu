@@ -2,7 +2,9 @@ import type { DevLocation, DevNode } from '@hozu/core/ir'
 import { describeFor, friendlyName, questionFor } from '../plain.ts'
 import {
   type HozuRequest,
+  joinRequests,
   labelOf,
+  openRequestsLine,
   requestMarkdown,
   type Scope,
   type StyleChange,
@@ -1052,31 +1054,84 @@ async function renderChanges() {
   if (current === 'saved') {
     const message = notice
     notice = null
+    const result = h('div', { class: 'status', role: 'status' })
+    const row = (r: (typeof list)[number]) => {
+      let armed = false
+      const done = h(
+        'button',
+        {
+          class: 'link done',
+          type: 'button',
+          title: 'Done or not needed: remove it',
+          onclick: async () => {
+            if (!armed) {
+              armed = true
+              done.textContent = 'Remove?'
+              return
+            }
+            await remove(r.number)
+            void renderPanel()
+          },
+        },
+        ['Done'],
+      )
+      return h('div', { class: 'req' }, [
+        h('span', { class: 'n' }, [r.number]),
+        h(
+          'button',
+          { class: 't open-req', type: 'button', onclick: () => open('changes', r.number, 'saved') },
+          [r.title],
+        ),
+        done,
+        r.locations.length ? h('span', { class: 'l' }, [r.locations.join(' · ')]) : null,
+      ])
+    }
     panel.replaceChildren(
       ...present([
         head,
         message ? h('div', { class: 'notice' }, message) : null,
         ...(list.length
-          ? [...list]
-              .reverse()
-              .map((r) =>
+          ? [...list].reverse().map(row)
+          : [h('div', { class: 'empty' }, ['No open requests. Done ones are removed.'])]),
+        list.length
+          ? h('div', { class: 'sec' }, [
+              h('div', { class: 'choice' }, [
                 h(
                   'button',
-                  { class: 'req', type: 'button', onclick: () => open('changes', r.number, 'saved') },
-                  [
-                    h('span', { class: 'n' }, [r.number]),
-                    h('span', { class: 't' }, [r.title]),
-                    h('span', { class: 's open' }, ['open']),
-                    r.locations.length ? h('span', { class: 'l' }, [r.locations.join(' · ')]) : null,
-                  ],
+                  {
+                    class: 'primary',
+                    type: 'button',
+                    onclick: async () => {
+                      const full = await Promise.all(list.map((r) => one(r.number)))
+                      await copy(joinRequests(full))
+                      status(result, 'ok', [
+                        `Copied all ${list.length} as one prompt. Paste it to your agent.`,
+                      ])
+                    },
+                  },
+                  [`Copy all ${list.length} for AI`],
                 ),
-              )
-          : [h('div', { class: 'empty' }, ['No saved requests. Done ones are removed.'])]),
-        h('div', { class: 'tip' }, [
-          'Ask your agent: ',
-          h('q', {}, ['Do the open Hozu requests.']),
-          ' It edits at each place, runs the checks and removes each request when done.',
-        ]),
+                h('span', { class: 'why' }, [
+                  'One prompt with every open request: the fewest tokens and no file reads. Works in any chat.',
+                ]),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    onclick: async () => {
+                      await copy(openRequestsLine(list))
+                      status(result, 'ok', ['Copied the file paths.'])
+                    },
+                  },
+                  ['Copy file paths only'],
+                ),
+                h('span', { class: 'why' }, [
+                  'For an agent in this project that should read the files itself (or run hozu requests --full).',
+                ]),
+              ]),
+              result,
+            ])
+          : null,
       ]),
     )
     return

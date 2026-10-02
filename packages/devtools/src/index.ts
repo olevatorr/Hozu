@@ -2,6 +2,8 @@ import { fileURLToPath } from 'node:url'
 
 export {
   type HozuRequest,
+  joinRequests,
+  openRequestsLine,
   type RequestItem,
   requestMarkdown,
   type Scope,

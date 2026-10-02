@@ -143,6 +143,10 @@ textarea::placeholder { color: #6f695f; }
   border-bottom: 1px solid var(--line); align-items: baseline; width: 100%; text-align: left; background: none;
 }
 .req:hover { background: rgba(241, 237, 228, 0.04); }
+.req .open-req { border: 0; background: none; padding: 0; text-align: left; cursor: pointer; }
+.req .open-req:hover { text-decoration: underline; text-underline-offset: 2px; }
+.req .done { font-size: 12px; }
+.req .done:hover { color: #5fc995; }
 .req .n { font: 11.5px/1 var(--mono); color: var(--mute); }
 .req .t { font: 500 13px/1.35 var(--sans); color: var(--text); }
 .req .s { font: 500 11px/1 var(--sans); border-radius: 999px; padding: 3px 8px; }
@@ -234,6 +238,12 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(241, 23
 .notice code { font: 12px/1.4 var(--mono); color: var(--text); }
 .more { margin-top: 8px; color: var(--mute); font-size: 12.5px; }
 .export { margin-top: 4px; }
+.choice { display: grid; gap: 4px; }
+.choice button { border: 1px solid var(--line-2); background: rgba(241, 237, 228, 0.04); border-radius: 8px; padding: 9px 8px; font: 500 13px/1.2 var(--sans); color: var(--text); }
+.choice button:hover { background: rgba(241, 237, 228, 0.1); }
+.choice button.primary { background: var(--red); border-color: var(--red); color: #fff; }
+.choice button.primary:hover { background: #ff5126; }
+.choice .why { font: 12px/1.4 var(--sans); color: var(--mute); margin-bottom: 8px; }
 
 @media (max-width: 720px) { .dock .hint { display: none; } }
 @media (max-width: 420px) {

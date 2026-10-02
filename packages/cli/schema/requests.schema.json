@@ -76,11 +76,18 @@
               "type": "null"
             }
           ]
+        },
+        "prompt": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
         "requests",
-        "done"
+        "done",
+        "prompt"
       ],
       "additionalProperties": false
     }

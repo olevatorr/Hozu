@@ -21,7 +21,7 @@ const slug = (title: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 48)
-    .replace(/-$/, '') || 'request'
+    .replace(/-$/, '')
 
 const files = (root: string) =>
   existsSync(join(root, folder))
@@ -57,7 +57,9 @@ export function saveRequest(
   const stored = existsSync(counter) ? Number(readFileSync(counter, 'utf8')) || 1 : 1
   const next = Math.max(last ? Number(last.slice(0, 4)) + 1 : 1, stored)
   const number = String(next).padStart(4, '0')
-  const file = `${folder}/${number}-${slug(titleIn(markdown))}.md`
+  const parts = [...markdown.matchAll(/^## \d+\. (.+)$/gm)].slice(0, 2).map((m) => m[1]!)
+  const name = slug(titleIn(markdown).replace(/ \+ \d+ more$/, '')) || slug(parts.join(' ')) || 'request'
+  const file = `${folder}/${number}-${name}.md`
   mkdirSync(join(root, folder), { recursive: true })
   const done = `\nWhen done: \`hozu requests done ${number} --result "<one line: what you changed>"\` removes this file.\n`
   writeFileSync(

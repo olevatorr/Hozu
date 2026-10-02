@@ -1,4 +1,4 @@
-import { finishRequest, listRequests } from '@hozu/devtools'
+import { finishRequest, joinRequests, listRequests, readRequest } from '@hozu/devtools'
 import type { RequestsOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 
@@ -7,6 +7,7 @@ export function runRequests(
   action: string | undefined,
   number: string | undefined,
   result: string | undefined,
+  full = false,
 ): RequestsOutput {
   let done: RequestsOutput['done'] = null
   if (action === 'done') {
@@ -25,10 +26,14 @@ export function runRequests(
       'hozu requests',
       'hozu requests done <n> --result "<what changed>"',
     ])
-  return { requests: listRequests(cwd), done }
+  const requests = listRequests(cwd)
+  const prompt =
+    full && requests.length ? joinRequests(requests.map((r) => readRequest(cwd, r.number))) : null
+  return { requests, done, prompt }
 }
 
 export function describeRequests(out: RequestsOutput): string {
+  if (out.prompt) return out.prompt
   const lines: string[] = []
   if (out.done) lines.push(`${out.done.number} done and removed: ${out.done.result}`, '')
   if (!out.requests.length)
@@ -40,7 +45,7 @@ export function describeRequests(out: RequestsOutput): string {
   else {
     for (const r of out.requests)
       lines.push(`${r.number}  open  ${r.title}${r.locations.length ? `  ${r.locations.join(', ')}` : ''}`)
-    lines.push('', `${out.requests.length} open · read one with: cat ${out.requests[0]!.file}`)
+    lines.push('', `${out.requests.length} open · all of them as one prompt: hozu requests --full`)
   }
   return `${lines.join('\n')}\n`
 }
