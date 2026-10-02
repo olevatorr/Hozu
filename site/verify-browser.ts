@@ -210,12 +210,43 @@ try {
   await lab.route('https://hozu.test/**', (route) => serve(route))
   await lab.goto('https://hozu.test/how-it-works/')
   await lab.waitForSelector('html[data-hozu-ready]')
+  const result = lab.locator('[aria-live="polite"][aria-atomic="true"]').first()
   await lab.getByRole('button', { name: 'Run example' }).click()
-  const entering = await lab.waitForSelector('.fade-enter-active', { timeout: 1500 })
-  assert.notEqual(
-    await entering.evaluate((el) => getComputedStyle(el).transitionDuration),
-    '0s',
-    'the lab fades its stages in',
+  const samples: [number, number][] = []
+  let fades = 0
+  for (let t = 0; t < 30; t++) {
+    samples.push(
+      await result.evaluate((box) => {
+        const visible = Math.max(
+          0,
+          ...[...box.querySelectorAll('p')].map((p) => {
+            let o = 1
+            for (let el: Element | null = p; el && el !== box; el = el.parentElement)
+              o *= Number(getComputedStyle(el).opacity)
+            return o
+          }),
+        )
+        return [Math.round(box.getBoundingClientRect().height), visible]
+      }),
+    )
+    fades += await lab.evaluate(() =>
+      [...document.querySelectorAll('.fade-enter-active')].some(
+        (el) => getComputedStyle(el).transitionDuration !== '0s',
+      )
+        ? 1
+        : 0,
+    )
+    await lab.waitForTimeout(100)
+  }
+  assert.ok(fades > 0, 'the lab fades its stages in')
+  assert.equal(
+    new Set(samples.map(([h]) => h)).size,
+    1,
+    `the lab's result box keeps its height ${samples.map(([h]) => h)}`,
+  )
+  assert.ok(
+    samples.every(([, o]) => o >= 0.5),
+    `the lab never blanks its result ${samples.map(([, o]) => o.toFixed(2))}`,
   )
   const off = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1280, height: 900 } })
   const still = await off.newPage()

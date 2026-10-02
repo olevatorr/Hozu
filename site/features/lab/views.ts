@@ -105,39 +105,53 @@ export const How = ui.view({
                   ['Compiler', 'Derived rendering', ['compiled']],
                   ['Runtime', 'HTML and islands', ['done']],
                 ].map(([title, description, states], index) =>
-                  ui.li({ class: 'flex items-center gap-3 border-4 border-ink px-3 py-2' }, [
-                    ui.span({ class: 'font-mono text-xs font-bold text-ember' }, [String(index + 1)]),
-                    ui.div({ class: 'grid flex-1' }, [
-                      ui.strong({ class: 'uppercase' }, [title as string]),
-                      ui.small({}, [description as string]),
-                    ]),
-                    when(
-                      states as (
-                        | 'idle'
-                        | 'source'
-                        | 'brokenSource'
-                        | 'ir'
-                        | 'brokenIr'
-                        | 'validated'
-                        | 'blocked'
-                        | 'compiled'
-                        | 'done'
-                      )[],
-                      [ui.span({ class: 'text-ember', 'aria-label': 'Current stage' }, ['●'])],
-                      'fade',
-                    ),
-                  ]),
+                  ui.li(
+                    {
+                      class: 'relative flex items-center gap-3 overflow-hidden border-4 border-ink px-3 py-2',
+                    },
+                    [
+                      ui.span({ class: 'font-mono text-xs font-bold text-ember' }, [String(index + 1)]),
+                      ui.div({ class: 'grid flex-1' }, [
+                        ui.strong({ class: 'uppercase' }, [title as string]),
+                        ui.small({}, [description as string]),
+                      ]),
+                      when(
+                        states as (
+                          | 'idle'
+                          | 'source'
+                          | 'brokenSource'
+                          | 'ir'
+                          | 'brokenIr'
+                          | 'validated'
+                          | 'blocked'
+                          | 'compiled'
+                          | 'done'
+                        )[],
+                        [
+                          ui.span({ class: 'absolute inset-0 -z-0 bg-red/15', 'aria-hidden': 'true' }, []),
+                          ui.span({ class: 'relative text-ember', 'aria-label': 'Current stage' }, ['●']),
+                        ],
+                        'fade',
+                      ),
+                    ],
+                  ),
                 ),
               ]),
               ui.div(
-                { class: 'min-h-28 border-4 border-ink p-4', 'aria-live': 'polite', 'aria-atomic': 'true' },
+                {
+                  class: 'grid h-44 overflow-hidden border-4 border-ink p-4 [&>*]:[grid-area:1/1]',
+                  'aria-live': 'polite',
+                  'aria-atomic': 'true',
+                },
                 [
                   when(
                     ['idle'],
                     [
-                      ui.p({ class: 'font-black uppercase' }, ['Your feature is ready.']),
-                      ui.p({}, [
-                        'Run the valid example first. Then remove its contract and find out where Hozu stops.',
+                      ui.div({}, [
+                        ui.p({ class: 'font-black uppercase' }, ['Your feature is ready.']),
+                        ui.p({}, [
+                          'Run the valid example first. Then remove its contract and find out where Hozu stops.',
+                        ]),
                       ]),
                     ],
                     'fade',
@@ -145,25 +159,31 @@ export const How = ui.view({
                   when(
                     ['source', 'brokenSource'],
                     [
-                      ui.p({ class: 'font-black uppercase' }, ['Reading the declarations…']),
-                      ui.p({}, ['Events, states and transitions describe the program before it executes.']),
+                      ui.div({}, [
+                        ui.p({ class: 'font-black uppercase' }, ['Reading the declarations…']),
+                        ui.p({}, ['Events, states and transitions describe the program before it executes.']),
+                      ]),
                     ],
                     'fade',
                   ),
                   when(
                     ['ir', 'brokenIr'],
                     [
-                      ui.p({ class: 'font-black uppercase' }, ['Recording the feature IR…']),
-                      code('off ── Toggle ──▶ on\non  ── Toggle ──▶ off'),
+                      ui.div({}, [
+                        ui.p({ class: 'font-black uppercase' }, ['Recording the feature IR…']),
+                        code('off ── Toggle ──▶ on\non  ── Toggle ──▶ off'),
+                      ]),
                     ],
                     'fade',
                   ),
                   when(
                     ['validated'],
                     [
-                      ui.p({ class: 'font-black uppercase' }, ['The behaviour is covered.']),
-                      ui.p({}, [
-                        'The example has a contract for each transition. The pipeline can continue.',
+                      ui.div({}, [
+                        ui.p({ class: 'font-black uppercase' }, ['The behaviour is covered.']),
+                        ui.p({}, [
+                          'The example has a contract for each transition. The pipeline can continue.',
+                        ]),
                       ]),
                     ],
                     'fade',
@@ -171,9 +191,11 @@ export const How = ui.view({
                   when(
                     ['compiled'],
                     [
-                      ui.p({ class: 'font-black uppercase' }, ['Deriving the render plan…']),
-                      ui.p({}, [
-                        'The machine-bound toggle becomes an interactive island. The surrounding content remains HTML.',
+                      ui.div({}, [
+                        ui.p({ class: 'font-black uppercase' }, ['Deriving the render plan…']),
+                        ui.p({}, [
+                          'The machine-bound toggle becomes an interactive island. The surrounding content remains HTML.',
+                        ]),
                       ]),
                     ],
                     'fade',
@@ -181,10 +203,12 @@ export const How = ui.view({
                   when(
                     ['done'],
                     [
-                      ui.div({ class: 'border-l-8 border-green pl-3' }, [
-                        ui.p({ class: 'font-black uppercase' }, ['Ready to render.']),
-                        ui.p({}, [
-                          'The declarations, contracts and rendering plan agree. Now try removing the contract and run it again.',
+                      ui.div({}, [
+                        ui.div({ class: 'border-l-8 border-green pl-3' }, [
+                          ui.p({ class: 'font-black uppercase' }, ['Ready to render.']),
+                          ui.p({}, [
+                            'The declarations, contracts and rendering plan agree. Now try removing the contract and run it again.',
+                          ]),
                         ]),
                       ]),
                     ],
@@ -193,11 +217,13 @@ export const How = ui.view({
                   when(
                     ['blocked'],
                     [
-                      ui.div({ class: 'border-l-8 border-red pl-3' }, [
-                        ui.p({ class: 'font-black uppercase' }, ['Stopped at validation.']),
-                        ui.code({}, ['HZ016 · uncovered transition']),
-                        ui.p({}, [
-                          'The off → on transition needs a contract. Restore its expected behaviour before continuing.',
+                      ui.div({}, [
+                        ui.div({ class: 'border-l-8 border-red pl-3' }, [
+                          ui.p({ class: 'font-black uppercase' }, ['Stopped at validation.']),
+                          ui.code({}, ['HZ016 · uncovered transition']),
+                          ui.p({}, [
+                            'The off → on transition needs a contract. Restore its expected behaviour before continuing.',
+                          ]),
                         ]),
                       ]),
                     ],
@@ -222,14 +248,17 @@ export const How = ui.view({
                   },
                   [ctx.missing === false ? 'Remove contract' : 'Restore contract'],
                 ),
-                when(
-                  ['source', 'ir', 'validated', 'compiled', 'brokenSource', 'brokenIr'],
-                  [
-                    ui.p({ class: 'font-mono text-xs', role: 'status' }, [
-                      'Running… Controls unlock when this walkthrough finishes.',
-                    ]),
-                  ],
-                ),
+                ui.div({ class: 'h-5 min-w-0 flex-1' }, [
+                  when(
+                    ['source', 'ir', 'validated', 'compiled', 'brokenSource', 'brokenIr'],
+                    [
+                      ui.p({ class: 'font-mono text-xs', role: 'status' }, [
+                        'Running… Controls unlock when this walkthrough finishes.',
+                      ]),
+                    ],
+                    'fade',
+                  ),
+                ]),
               ]),
             ]),
           ]),
