@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url'
 import type { Json } from '@hozu/core/ir'
 import { Ajv } from 'ajv'
 import { afterAll, describe, expect, it } from 'vitest'
-import { runMigrate } from '../src/commands/migrate.ts'
+import { describeMigrate, runMigrate } from '../src/commands/migrate.ts'
+import type { MigrateOutput } from '../src/contract.ts'
 import { load } from '../src/load.ts'
 import { addRunsServer } from '../src/migrate/step-0.11.ts'
 import { chain } from '../src/migrate/steps.ts'
@@ -158,5 +159,38 @@ describe('hozu migrate on a 0.10 app (ADR 0049 §6)', () => {
         versions: { installed: '0.9.2', target: '0.11.0' },
       }),
     ).rejects.toThrow('hozu migrate starts at 0.10.0; this app is on 0.9.2')
+  })
+})
+
+describe('the migrate summary', () => {
+  const base: MigrateOutput = {
+    ok: true,
+    from: '0.10.0',
+    to: '0.11.0',
+    phase: 'rewrite',
+    dryRun: true,
+    steps: [],
+    changed: [],
+    notes: [],
+    packages: [],
+    record: '.hozu/migrate-0.11.json',
+    ir: { compared: false, skipped: null, differences: [] },
+    guide: [],
+    check: null,
+    next: [],
+  }
+
+  it('says a dry run would save the old IR, and why a check failed', () => {
+    expect(describeMigrate(base)).toContain('would save the old IR to .hozu/migrate-0.11.json')
+    expect(describeMigrate({ ...base, dryRun: false })).toContain('  saved the old IR to')
+    const check = {
+      ok: false,
+      types: { ok: false, skipped: true, errors: [] },
+      validate: { summary: { errors: 0, warnings: 0 } },
+      overrides: [],
+    } as unknown as MigrateOutput['check']
+    expect(describeMigrate({ ...base, phase: 'verify', record: null, check })).toContain(
+      'hozu check: failed · types skipped (npm install -D typescript) · 0 errors, 0 warnings',
+    )
   })
 })

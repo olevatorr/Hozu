@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 import { dirname, extname, join, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { Json } from '@hozu/core/ir'
-import type { MigrateOutput } from '../contract.ts'
+import type { CheckOutput, MigrateOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import { load } from '../load.ts'
 import { chain, compareMinor, minorOf, OLDEST } from '../migrate/steps.ts'
@@ -261,6 +261,9 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
   return out
 }
 
+const typesOf = (t: CheckOutput['types']) =>
+  t.skipped ? 'skipped (npm install -D typescript)' : t.ok ? 'ok' : `${t.errors.length} errors`
+
 export function describeMigrate(r: MigrateOutput): string {
   const lines: string[] = []
   const title = r.phase === 'rewrite' ? 'rewrite' : r.phase === 'verify' ? 'verify' : 'nothing to do'
@@ -270,7 +273,7 @@ export function describeMigrate(r: MigrateOutput): string {
     lines.push(`  rewrote ${r.changed.length} ${r.changed.length === 1 ? 'file' : 'files'}`)
     for (const c of r.changed) lines.push(`    ${c.file} (${c.edits} ${c.edits === 1 ? 'edit' : 'edits'})`)
     for (const p of r.packages) lines.push(`  ${p.name}: ${p.from} → ${p.to}`)
-    if (r.record) lines.push(`  saved the old IR to ${r.record}`)
+    if (r.record) lines.push(`  ${r.dryRun ? 'would save' : 'saved'} the old IR to ${r.record}`)
   }
   if (r.notes.length) lines.push('  by hand:')
   for (const n of r.notes)
@@ -284,7 +287,7 @@ export function describeMigrate(r: MigrateOutput): string {
   for (const g of r.guide) lines.push(`  updated ${g}`)
   if (r.check)
     lines.push(
-      `  hozu check: ${r.check.ok ? 'ok' : 'failed'} · ${r.check.validate.summary.errors} errors, ${r.check.validate.summary.warnings} warnings`,
+      `  hozu check: ${r.check.ok ? 'ok' : 'failed'} · types ${typesOf(r.check.types)} · ${r.check.validate.summary.errors} errors, ${r.check.validate.summary.warnings} warnings`,
     )
   for (const n of r.next) lines.push(`next: ${n}`)
   lines.push('Migrate never writes hozu.lock.json and never deletes a contract.')

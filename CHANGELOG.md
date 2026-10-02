@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- `hozu migrate --dry-run` says it *would* save the old IR, and a failed `hozu check` in the verify pass names the
+  type-check state (for example `types skipped (npm install -D typescript)`). Found by migrating the site's 0.10.0
+  source from npm.
+
 ## 0.11.0 — Where queries and mutations run, and `hozu migrate` (ADR 0049)
 
 Before 0.11 every query and mutation ran on a Hozu server. A pure front end on a static host could not read
