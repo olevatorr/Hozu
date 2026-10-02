@@ -7,15 +7,8 @@ type Implementation<D> =
       ? FetchImplementation<I, O, E & { Invalid: { message: string; fields: Record<string, string | null> } }>
       : never
 
-/** Thrown by `fail`; the runner turns it into the declared error result. */
-export class FetchFailure {
-  readonly error: string
-  readonly data: unknown
-  constructor(error: string, data: unknown) {
-    this.error = error
-    this.data = data
-  }
-}
+/** What `fail` throws in every runner (server and browser); the runner turns it into the declared error result. */
+export const FETCH_FAIL = Symbol.for('hozu.fetchFail')
 
 export interface FetchContext<E> {
   /** Ends the call with a declared error (or `Invalid` for a mutation). */

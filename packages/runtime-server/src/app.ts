@@ -1,6 +1,6 @@
 import type { DevOptions } from '@hozu/core/ir'
 import { type BuildResult, buildProject, type ImageSet, type Manifest } from '@hozu/core/ir'
-import { resolverSetOf } from '@hozu/data'
+import { type FetchLoader, resolverSetOf } from '@hozu/data'
 import type { HandlerOptions } from './handler.ts'
 import type { ComponentBundle, Stylesheet } from './render.ts'
 import type { RenderModule } from './rendered.ts'
@@ -30,6 +30,7 @@ export interface AppHost {
   readFile?: (file: string) => Promise<Uint8Array>
   session?: SessionStore
   dev?: DevOptions
+  fetches?: FetchLoader
 }
 
 export const app = (options: AppOptions): App => Object.freeze({ [APP]: options })

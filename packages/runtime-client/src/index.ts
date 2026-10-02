@@ -1,5 +1,6 @@
 export { attrText, classText, domField, SVG_NS, styleText, text } from './dom.ts'
 export type {
+  ClientEffect,
   EffectResponse,
   HydrateOptions,
   IslandRef,

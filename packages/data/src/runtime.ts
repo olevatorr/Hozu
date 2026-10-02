@@ -58,9 +58,22 @@ export interface ErrorInfo {
 
 export type OnError = (error: unknown, info: ErrorInfo) => void
 
+/** A feature's fetch module (ADR 0049): one implementation per `'either'` / `'browser'` effect, by symbol. */
+export type FetchModule = Record<string, unknown>
+
+/** Loads a feature's fetch module; null when this host cannot (an edge without the module bundled in). */
+export type FetchLoader = (feature: string) => Promise<FetchModule | null>
+
+const FETCH_FAIL = Symbol.for('hozu.fetchFail')
+
+const fileUrl = (path: string) =>
+  `file://${path.startsWith('/') ? '' : '/'}${encodeURI(path.replace(/\\/g, '/'))}`
+
 export interface DataRuntimeOptions {
   build: BuildResult
   resolvers: ResolverSet
+  /** How this host loads `fetch.ts` for `'either'` effects; by default, `import()` of the file the build recorded. */
+  fetches?: FetchLoader
   now?: () => number
   onError?: OnError
   env?: unknown
@@ -129,6 +142,7 @@ export function createDataRuntime({
   now = Date.now,
   onError = () => {},
   env: rawEnv = {},
+  fetches,
 }: DataRuntimeOptions): DataRuntime {
   const { ir, bindings } = build
   const parsedEnv = bindings.env.server?.(rawEnv)
@@ -158,6 +172,57 @@ export function createDataRuntime({
       },
     })
 
+  const parsedPublic = bindings.env.public?.(rawEnv)
+  const publicEnv = parsedPublic?.ok ? parsedPublic.value : {}
+  const loaded = new Map<string, Promise<FetchModule | null>>()
+  const loadFetch: FetchLoader =
+    fetches ??
+    (async (feature) => {
+      const file = bindings.fetches[feature]
+      return file ? ((await import(/* @vite-ignore */ fileUrl(file))) as FetchModule) : null
+    })
+  const moduleOf = (feature: string) => {
+    let m = loaded.get(feature)
+    if (!m) {
+      m = loadFetch(feature)
+      loaded.set(feature, m)
+    }
+    return m
+  }
+  /** An `'either'` effect on this server: its fetch.ts implementation, with `fail` turned into a declared error. */
+  const eitherRun =
+    (feature: string, symbol: string): Run =>
+    async (input, ctx) => {
+      const mod = await moduleOf(feature)
+      const impl = mod?.[symbol]
+      if (typeof impl !== 'function')
+        throw new Error(
+          `${feature}.${symbol} runs on either side, but this server cannot load its fetch.ts; pass createHandler(app, { fetches })`,
+        )
+      try {
+        return await (impl as (i: unknown, c: unknown) => unknown)(input, {
+          fail: (error: string, data: unknown) => {
+            throw { [FETCH_FAIL]: { error, data } }
+          },
+          signal: new (
+            globalThis as unknown as { AbortController: new () => { signal: unknown } }
+          ).AbortController().signal,
+          env: publicEnv,
+        })
+      } catch (e) {
+        const marked =
+          typeof e === 'object' && e !== null
+            ? (e as Record<symbol, { error: string; data: unknown }>)[FETCH_FAIL]
+            : undefined
+        if (marked) return ctx.fail(marked.error as never, marked.data as never)
+        throw e
+      }
+    }
+  const runsOf = (ref: string) => {
+    const [f, s] = [ref.slice(0, ref.indexOf('.')), ref.slice(ref.indexOf('.') + 1)]
+    return ir.features[f]?.queries[s]?.runs ?? ir.features[f]?.mutations[s]?.runs ?? 'server'
+  }
+
   const runs = new Map<string, Run>()
   for (const impl of resolverSetOf(resolvers).list) {
     const { decl, run } = implementationOf(impl)
@@ -168,6 +233,15 @@ export function createDataRuntime({
         null,
         'Resolver implements a declaration that is not part of this project',
         'Only registered queries, mutations and endpoints can be implemented.',
+      )
+      continue
+    }
+    if (runsOf(ref) !== 'server') {
+      problem(
+        pointerOf(ir, ref),
+        ref.split('.')[0]!,
+        `${ref} is implemented in the server resolvers, but runs: '${runsOf(ref)}'`,
+        "Effects that are not runs: 'server' are implemented in the feature's fetch.ts (ADR 0049).",
       )
       continue
     }
@@ -205,7 +279,9 @@ export function createDataRuntime({
       fields: string[] = [],
     ) => {
       const ref = `${feature.id}.${symbol}`
-      const run = runs.get(ref)
+      const where = kind === 'query' ? feature.queries[symbol]?.runs : feature.mutations[symbol]?.runs
+      if (where === 'browser') return
+      const run = where === 'either' ? eitherRun(feature.id, symbol) : runs.get(ref)
       if (!run) {
         problem(
           join('', 'features', feature.id, kind === 'query' ? 'queries' : 'mutations', symbol),

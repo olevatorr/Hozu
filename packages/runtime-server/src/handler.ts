@@ -22,7 +22,13 @@ import {
   routePattern,
   routeTable,
 } from '@hozu/core/ir'
-import { createDataRuntime, type OnError, type RequestData, type ResolverSet } from '@hozu/data'
+import {
+  createDataRuntime,
+  type FetchLoader,
+  type OnError,
+  type RequestData,
+  type ResolverSet,
+} from '@hozu/data'
 import { compileValue } from '@hozu/machine'
 import type { EffectResponse, Result } from '@hozu/runtime-client'
 import { type App, type AppHost, appHandlerOptions, appOptionsOf } from './app.ts'
@@ -67,6 +73,8 @@ export interface HandlerOptions {
   og?: ((card: OgCard) => Promise<Uint8Array>) | null
   render?: RenderModule
   dev?: DevOptions
+  /** How this host loads each feature's fetch.ts for runs: 'either' (ADR 0049); by default `import()` of the file. */
+  fetches?: FetchLoader
 }
 
 export interface OgCard {
@@ -165,6 +173,7 @@ function handlerFor({
   og = null,
   render,
   dev,
+  fetches,
 }: HandlerOptions): Handler {
   const generated = render ? instantiate(render) : undefined
   const cards = new Map<string, Promise<Uint8Array>>()
@@ -234,7 +243,14 @@ function handlerFor({
       )
     : publicAssets(basePath, styles, components?.urls ?? {})
   assertComponentBundle(ir, assets.components, Boolean(manifest || components))
-  const data = createDataRuntime({ build, resolvers, now, onError, env: rawEnv })
+  const data = createDataRuntime({
+    build,
+    resolvers,
+    now,
+    onError,
+    env: rawEnv,
+    ...(fetches ? { fetches } : {}),
+  })
   const scopes = new WeakMap<Request, Promise<RequestData>>()
   const dataFor = (request: Request) => {
     let scope = scopes.get(request)
@@ -293,7 +309,19 @@ function handlerFor({
     if (!locales.includes(segment)) return { locale: ir.site!.lang, rest: path }
     return { locale: segment, rest: path.slice(segment.length + 1) || '/' }
   }
-  const queries = Object.values(ir.features).flatMap((f) => Object.keys(f.queries).map((q) => `${f.id}.${q}`))
+  const queries = Object.values(ir.features).flatMap((f) =>
+    Object.entries(f.queries)
+      .filter(([, q]) => q.runs !== 'browser')
+      .map(([q]) => `${f.id}.${q}`),
+  )
+  /** Effects this server never runs: they use the visitor's browser credentials (ADR 0049). */
+  const browserOnly = new Set(
+    Object.values(ir.features).flatMap((f) =>
+      [...Object.entries(f.queries), ...Object.entries(f.mutations)]
+        .filter(([, e]) => e.runs === 'browser')
+        .map(([s]) => `${f.id}.${s}`),
+    ),
+  )
   const perRequest = new Set(
     Object.values(ir.features).flatMap((f) =>
       Object.entries(f.queries)
@@ -426,6 +454,7 @@ function handlerFor({
   const effect = async (request: Request) => {
     const { body, files } = await readEffect(request)
     const { effect, input, keys } = JSON.parse(body) as { effect: string; input: Json; keys: string[] }
+    if (browserOnly.has(effect)) return plain(400, `${effect} runs in the browser; the server never runs it`)
     const scope = await dataFor(request)
     const result = (await scope.run(effect, input, files)) as Result & {
       invalidated?: string[]
@@ -447,6 +476,7 @@ function handlerFor({
     const response: EffectResponse = {
       result: rest as Result,
       refreshed,
+      ...(invalidated.length ? { tags: invalidated } : {}),
       ...(scope.written ? { session: true as const } : {}),
     }
     after(invalidated)
@@ -546,6 +576,8 @@ function handlerFor({
       search,
     })
     if (!outcome) return notAllowed()
+    if (outcome.needsBrowser)
+      return plain(400, `This form needs JavaScript: ${outcome.needsBrowser} runs in the browser`)
     await dropPages(outcome.invalidated)
     const cookie = store && outcome.session ? await store.write(outcome.session.value, request) : null
     const back = pathOf(tableOf(locale)[found.route] ?? url.pathname, found.params, search)
@@ -736,6 +768,7 @@ function handlerFor({
     if (request.method === 'POST' && path === '/_hozu/effect') return effect(request)
     if (request.method === 'POST' && path === '/_hozu/query') {
       const { query, input } = (await request.json()) as { query: string; input: Json }
+      if (browserOnly.has(query)) return plain(400, `${query} runs in the browser; the server never runs it`)
       if (!queries.includes(query)) return plain(400, 'Unknown query')
       const scope = await dataFor(request)
       const result = await scope.run(query, input)

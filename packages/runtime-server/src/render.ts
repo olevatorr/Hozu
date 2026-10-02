@@ -18,7 +18,7 @@ import {
 } from '@hozu/core/ir'
 import type { DataRuntime, RequestData } from '@hozu/data'
 import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '@hozu/machine'
-import type { PagePayload, Result } from '@hozu/runtime-client'
+import type { ClientEffect, PagePayload, Result } from '@hozu/runtime-client'
 import { attrText, text } from '@hozu/runtime-client'
 import { escapeHtml, scriptJson, scriptSafe } from './escape.ts'
 import { CLOSE, OPEN, renderKey, separated } from './generate.ts'
@@ -41,6 +41,8 @@ export interface Assets {
   styles: string | null
   preload: string[]
   components: Record<string, string>
+  /** Each feature's bundled fetch module (ADR 0049), by feature id. */
+  fetches?: Record<string, string>
 }
 
 export interface Stylesheet {
@@ -370,6 +372,11 @@ export async function renderPage({
         const input = value(n.input, scope)
         const dot = n.query.indexOf('.')
         const q = ir.features[n.query.slice(0, dot)]?.queries[n.query.slice(dot + 1)]
+        if (q?.runs === 'browser') {
+          if (n.pending) await render(n.pending, scope, island)
+          buffer += c
+          return
+        }
         const held =
           dev && devState && 'query' in devState && devState.query === n.query ? devState.branch : null
         if (held === 'pending') {
@@ -463,6 +470,16 @@ export async function renderPage({
       if (payload.islands.length) {
         payload.fns = hasFns ? assets.fns : null
         payload.routes = routes
+        const client = clientEffects(ir, payload)
+        if (Object.keys(client).length) {
+          payload.effects = client
+          payload.fetches = Object.fromEntries(
+            [...new Set(Object.keys(client).map((ref) => ref.slice(0, ref.indexOf('.'))))].flatMap((f) =>
+              assets.fetches?.[f] ? [[f, assets.fetches[f]]] : [],
+            ),
+          )
+          payload.env = env
+        }
         buffer += `<script type="application/json" id="hozu-payload">${payloadJson(payload)}</script>`
         buffer += `<script type="module" src="${escapeHtml(assets.client)}"></script>`
       }
@@ -475,6 +492,40 @@ export async function renderPage({
   })()
 
   return { plan, status, path, chunks: out, tags, redirect }
+}
+
+/** The effects an island on this page can call that run in the browser (ADR 0049), with what the browser needs. */
+export function clientEffects(ir: ProjectIR, payload: PagePayload): Record<string, ClientEffect> {
+  const refs = new Set<string>()
+  const visit = (x: unknown): void => {
+    if (!x || typeof x !== 'object') return
+    if (Array.isArray(x)) return x.forEach(visit)
+    const o = x as Record<string, unknown>
+    if (o.kind === 'query' && typeof o.query === 'string') refs.add(o.query)
+    for (const v of Object.values(o)) visit(v)
+  }
+  visit(payload.nodes)
+  for (const machine of Object.values(payload.features))
+    for (const state of Object.values(machine?.states ?? {})) if (state.invoke) refs.add(state.invoke.effect)
+  const out: Record<string, ClientEffect> = {}
+  for (const ref of [...refs].sort()) {
+    const dot = ref.indexOf('.')
+    const feature = ir.features[ref.slice(0, dot)]
+    const symbol = ref.slice(dot + 1)
+    const q = feature?.queries[symbol]
+    const m = feature?.mutations[symbol]
+    const e = q ?? m
+    if (!feature || !e || e.runs === 'server') continue
+    out[ref] = {
+      kind: q ? 'query' : 'mutation',
+      runs: e.runs,
+      input: feature.schemas[e.input] ?? {},
+      output: feature.schemas[e.output] ?? {},
+      errors: Object.fromEntries(Object.entries(e.errors).map(([k, h]) => [k, feature.schemas[h] ?? {}])),
+      tags: q ? q.tags : m!.invalidates,
+    }
+  }
+  return out
 }
 
 const getterCache = new WeakMap<object, WeakMap<ValueExpr, Getter>>()

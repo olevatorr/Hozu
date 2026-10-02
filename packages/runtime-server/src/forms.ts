@@ -64,6 +64,8 @@ export interface FormOutcome {
   invalid: boolean
   invalidated: string[]
   session: { value: unknown } | null
+  /** The browser mutation this post reached: a native post cannot run it (ADR 0049). */
+  needsBrowser?: string
 }
 
 const invalidOf = (issues: string[], payload: Json): { message: string; fields: Record<string, Json> } => {
@@ -125,6 +127,11 @@ export async function runForm(options: {
     for (const e of step.effects) {
       if (e.type === 'navigate') outcome.navigate = e.url
       if (e.type !== 'invoke') continue
+      const dot = e.effect.indexOf('.')
+      if (build.ir.features[e.effect.slice(0, dot)]?.mutations[e.effect.slice(dot + 1)]?.runs === 'browser') {
+        outcome.needsBrowser = e.effect
+        return outcome
+      }
       if (issues && next) break
       const own = issues ? build.bindings.checks[`${e.effect}#input`]?.(e.input) : null
       const result = (

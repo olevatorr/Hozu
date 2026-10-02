@@ -1,4 +1,4 @@
-import type { FeatureIR, Json, MachineIR, ViewNode } from '@hozu/core/ir'
+import type { FeatureIR, Json, JsonSchema, MachineIR, TagExprIR, ViewNode } from '@hozu/core/ir'
 import { compileMachine, type Snapshot } from '@hozu/machine'
 import { uploads } from './dom.ts'
 import {
@@ -36,6 +36,22 @@ export interface PagePayload {
   components: Record<string, ComponentRef>
   routes: Record<string, string>
   live: Record<string, LiveQuery>
+  /** Effects this page can call that run in the browser (ADR 0049). */
+  effects?: Record<string, ClientEffect>
+  /** The bundled fetch module of each feature with such effects. */
+  fetches?: Record<string, string>
+  /** The parsed public environment, for those effects' `env`. */
+  env?: Json
+}
+
+export interface ClientEffect {
+  kind: 'query' | 'mutation'
+  runs: 'browser' | 'either'
+  input: JsonSchema
+  output: JsonSchema
+  errors: Record<string, JsonSchema>
+  /** A query's tags, or a mutation's invalidates. */
+  tags: TagExprIR[]
 }
 
 export interface LiveQuery {
@@ -48,6 +64,8 @@ export interface EffectResponse {
   result: Result
   refreshed: [string, Result][]
   session?: true
+  /** The tags a server mutation invalidated, so browser-run queries re-read too (ADR 0049). */
+  tags?: string[]
 }
 
 export type Transport = (effect: string, input: Json, keys: string[]) => Promise<EffectResponse>

@@ -43,6 +43,12 @@ interface Site {
   dev: boolean
 }
 
+/** A query the server never runs: it renders its `pending` branch (ADR 0049). */
+function runsInBrowser(site: Site, query: string): boolean {
+  const dot = query.indexOf('.')
+  return site.ir.features[query.slice(0, dot)]?.queries[query.slice(dot + 1)]?.runs === 'browser'
+}
+
 function embeddedRoot(site: Site, view: string): ViewNode | null {
   const dot = view.indexOf('.')
   const root = site.ir.features[view.slice(0, dot)]?.views[view.slice(dot + 1)]?.root
@@ -369,7 +375,7 @@ function reachable(site: Site, add: (n: ViewNode, island: boolean, sep: boolean,
       case 'query':
         walk(n.ready, island, false, depth + 1)
         for (const k in n.failed) walk(n.failed[k]!, island, false, depth + 1)
-        if (site.dev && n.pending) walk(n.pending, island, false, depth)
+        if ((site.dev || runsInBrowser(site, n.query)) && n.pending) walk(n.pending, island, false, depth)
         return
       default:
         add(n, island, sep, depth)

@@ -15,6 +15,8 @@ export type {
   DataRuntimeOptions,
   EndpointResult,
   ErrorInfo,
+  FetchLoader,
+  FetchModule,
   FileLike,
   OnError,
   RequestData,
