@@ -152,88 +152,80 @@ export const Home = ui.view({
         }),
       ]),
       ui.div({}, [
-        ui.use(
-          Section,
-          { variant: { depth: 1 }, props: { label: 'For everyone', kicker: '02 · The bill' } },
-          [
-            ui.use(Heading, {}, ['Yes, it costs more. Here is the receipt.']),
-            ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[28rem_minmax(0,1fr)]' }, [
-              ui.use(Receipt, {
-                slots: {
-                  pay: receiptLines(['tokens', 'calls']),
-                  get: receiptLines(['regressions', 'silent', 'js']),
-                },
-              }),
-              ui.div({ class: 'grid content-start gap-4 text-lg' }, [
-                ui.p({}, [
-                  'Yes, Hozu eats more tokens: ',
-                  claimLink('tokens', `${claim('tokens').value} what Nuxt spends`),
-                  ' on the same change (one run). Your agent reads our guide every session, runs the checker, and fixes what it finds before it says “done”. That’s the bill.',
-                ]),
-                ui.p({}, [
-                  'What it buys: in 16 changes, nothing that worked stopped working. Cheaper frameworks let your agent ship the bug and send you the invoice later. In ',
-                  'one trial a single Nuxt change quietly broke three working features (',
-                  claimLink('nuxt', `${claim('nuxt').value} checks`),
-                  '). We are not immune either: on a long run Hozu 0.7 had ',
-                  claimLink('old', `${claim('old').value} regression failures`),
-                  ' on a long run, and 0.8 was built to close exactly those gaps.',
-                ]),
-              ]),
-            ]),
-          ],
-        ),
-        ui.use(
-          Section,
-          { variant: { depth: 2 }, props: { label: 'Vibe coders', kicker: '03 · How you work' } },
-          [
-            ui.use(Heading, {}, ['Three steps. Your agent does the typing.']),
-            ui.use(Steps, {
-              class: 'mt-8',
-              props: {
-                items: [
-                  {
-                    id: '1',
-                    title: '1 · Create',
-                    body: 'One command makes the app and puts the Hozu guide next to it.',
-                  },
-                  {
-                    id: '2',
-                    title: '2 · Ask your agent',
-                    body: '“Add sharing to my notes.” It reads the guide that came with the app.',
-                  },
-                  {
-                    id: '3',
-                    title: '3 · It checks itself',
-                    body: 'It runs hozu check and fixes what it finds before it tells you it is done.',
-                  },
-                ],
+        ui.use(Section, { props: { kicker: 'The bill' } }, [
+          ui.use(Heading, {}, ['Yes, it costs more. Here is the receipt.']),
+          ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[28rem_minmax(0,1fr)]' }, [
+            ui.use(Receipt, {
+              slots: {
+                pay: receiptLines(['tokens', 'calls']),
+                get: receiptLines(['regressions', 'silent', 'js']),
               },
             }),
-            ui.query(
-              getStart,
-              {},
-              {
-                ready: (start) =>
-                  ui.div(
-                    {
-                      class:
-                        'prose mt-8 max-w-none prose-pre:bg-ink prose-pre:text-paper prose-figcaption:text-ink',
-                    },
-                    [ui.use(CodeBlock, {}, [ui.html(start.html)])],
-                  ),
-                pending: null,
-                failed: {
-                  Unexpected: () => ui.p({ role: 'alert' }, ['The start commands are unavailable.']),
+            ui.div({ class: 'grid content-start gap-4 text-lg' }, [
+              ui.p({}, [
+                'Yes, Hozu eats more tokens: ',
+                claimLink('tokens', `${claim('tokens').value} what Nuxt spends`),
+                ' on the same change (one run). Your agent reads our guide every session, runs the checker, and fixes what it finds before it says “done”. That’s the bill.',
+              ]),
+              ui.p({}, [
+                'What it buys: in 16 changes, nothing that worked stopped working. Cheaper frameworks let your agent ship the bug and send you the invoice later. In ',
+                'one trial a single Nuxt change quietly broke three working features (',
+                claimLink('nuxt', `${claim('nuxt').value} checks`),
+                '). We are not immune either: on a long run Hozu 0.7 had ',
+                claimLink('old', `${claim('old').value} regression failures`),
+                ' on a long run, and 0.8 was built to close exactly those gaps.',
+              ]),
+            ]),
+          ]),
+        ]),
+        ui.use(Section, { props: { kicker: 'How you work' } }, [
+          ui.use(Heading, {}, ['Three steps. Your agent does the typing.']),
+          ui.use(Steps, {
+            class: 'mt-8',
+            props: {
+              items: [
+                {
+                  id: '1',
+                  title: '1 · Create',
+                  body: 'One command makes the app and puts the Hozu guide next to it.',
                 },
+                {
+                  id: '2',
+                  title: '2 · Ask your agent',
+                  body: '“Add sharing to my notes.” It reads the guide that came with the app.',
+                },
+                {
+                  id: '3',
+                  title: '3 · It checks itself',
+                  body: 'It runs hozu check and fixes what it finds before it tells you it is done.',
+                },
+              ],
+            },
+          }),
+          ui.query(
+            getStart,
+            {},
+            {
+              ready: (start) =>
+                ui.div(
+                  {
+                    class:
+                      'prose mt-8 max-w-none prose-pre:bg-ink prose-pre:text-paper prose-figcaption:text-ink',
+                  },
+                  [ui.use(CodeBlock, {}, [ui.html(start.html)])],
+                ),
+              pending: null,
+              failed: {
+                Unexpected: () => ui.p({ role: 'alert' }, ['The start commands are unavailable.']),
               },
-            ),
-          ],
-        ),
+            },
+          ),
+        ]),
         ui.use(
           Section,
           {
-            variant: { tone: 'ink', depth: 3 },
-            props: { label: 'Curious builders', kicker: '04 · What it catches' },
+            variant: { tone: 'ink' },
+            props: { kicker: 'What it catches' },
           },
           [
             ui.use(Heading, {}, ['Mistakes that look fine and still break.']),
@@ -254,8 +246,8 @@ export const Home = ui.view({
       ui.use(
         Section,
         {
-          variant: { tone: 'ink', depth: 4 },
-          props: { label: 'Developers', kicker: '05 · Components · 0.9' },
+          variant: { tone: 'ink' },
+          props: { kicker: 'Components · 0.9' },
         },
         [
           ui.use(Heading, {}, ['Declared UI. Checked class by class.']),
@@ -326,43 +318,39 @@ export const Home = ui.view({
           ]),
         ],
       ),
-      ui.use(
-        Section,
-        { variant: { depth: 4 }, props: { label: 'Developers', kicker: '06 · Under the hood' } },
-        [
-          ui.use(Heading, {}, ['feature() → IR → validator → compiler → runtime']),
-          ui.p({ class: 'mt-4 max-w-3xl text-lg' }, [
-            'Every page is planned from what its data declares: who may see it and how fresh it must be. Only nodes bound to a machine ship JavaScript; everything else on this page is plain HTML.',
-          ]),
-          ui.div({ class: 'mt-6' }, [
-            ui.use(Button, { props: { href: ui.link(how, null) } }, ['Open the lab →']),
-          ]),
-          ui.query(
-            listChapters,
-            {},
-            {
-              ready: (items) =>
-                ui.ul({ class: 'mt-8 grid gap-2 md:grid-cols-2' }, [
-                  ui.each(items, 'slug', (item) =>
-                    ui.li({}, [
-                      ui.a(
-                        {
-                          href: ui.link(chapter, { slug: item.slug }),
-                          class: 'font-bold underline decoration-red',
-                        },
-                        [item.title],
-                      ),
-                    ]),
-                  ),
-                ]),
-              pending: null,
-              failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Chapters are unavailable.']) },
-            },
-          ),
-        ],
-      ),
+      ui.use(Section, { props: { kicker: 'Under the hood' } }, [
+        ui.use(Heading, {}, ['feature() → IR → validator → compiler → runtime']),
+        ui.p({ class: 'mt-4 max-w-3xl text-lg' }, [
+          'Every page is planned from what its data declares: who may see it and how fresh it must be. Only nodes bound to a machine ship JavaScript; everything else on this page is plain HTML.',
+        ]),
+        ui.div({ class: 'mt-6' }, [
+          ui.use(Button, { props: { href: ui.link(how, null) } }, ['Open the lab →']),
+        ]),
+        ui.query(
+          listChapters,
+          {},
+          {
+            ready: (items) =>
+              ui.ul({ class: 'mt-8 grid gap-2 md:grid-cols-2' }, [
+                ui.each(items, 'slug', (item) =>
+                  ui.li({}, [
+                    ui.a(
+                      {
+                        href: ui.link(chapter, { slug: item.slug }),
+                        class: 'font-bold underline decoration-red',
+                      },
+                      [item.title],
+                    ),
+                  ]),
+                ),
+              ]),
+            pending: null,
+            failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Chapters are unavailable.']) },
+          },
+        ),
+      ]),
       ui.div({}, [
-        ui.use(Section, { variant: { depth: 5 }, props: { label: 'Skeptics', kicker: '07 · The trials' } }, [
+        ui.use(Section, { props: { kicker: 'The trials' } }, [
           ui.use(Heading, {}, ['Measured, with the rough edges included.']),
           ui.p({ class: 'mt-4 max-w-3xl' }, [
             'Cost: ',
@@ -415,27 +403,23 @@ export const Home = ui.view({
             ui.a({ href: ui.link(trials, null), class: 'underline' }, ['All trials']),
           ]),
         ]),
-        ui.use(
-          Section,
-          { variant: { tone: 'ink', depth: 1 }, props: { label: 'Everyone', kicker: '08 · Start' } },
-          [
-            ui.use(Heading, {}, ['Build something. Then try to break it.']),
-            ui.div({ class: 'mt-8 flex flex-wrap gap-4' }, [
-              ui.use(
-                Button,
-                { variant: { intent: 'solid' }, props: { href: ui.link(doc, { slug: 'getting-started' }) } },
-                ['Start building →'],
-              ),
-              ui.a(
-                {
-                  href: 'https://github.com/olevatorr/Hozu',
-                  class: 'inline-block border-4 border-paper px-4 py-3 text-sm font-extrabold uppercase',
-                },
-                ['GitHub'],
-              ),
-            ]),
-          ],
-        ),
+        ui.use(Section, { variant: { tone: 'ink' }, props: { kicker: 'Start' } }, [
+          ui.use(Heading, {}, ['Build something. Then try to break it.']),
+          ui.div({ class: 'mt-8 flex flex-wrap gap-4' }, [
+            ui.use(
+              Button,
+              { variant: { intent: 'solid' }, props: { href: ui.link(doc, { slug: 'getting-started' }) } },
+              ['Start building →'],
+            ),
+            ui.a(
+              {
+                href: 'https://github.com/olevatorr/Hozu',
+                class: 'inline-block border-4 border-paper px-4 py-3 text-sm font-extrabold uppercase',
+              },
+              ['GitHub'],
+            ),
+          ]),
+        ]),
         ui.use(Ticker, {
           slots: {
             source: ui.a({ href: ui.link(trial, { slug: claim('tokens').trial }), class: 'underline' }, [
