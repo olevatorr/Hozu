@@ -20,6 +20,30 @@
 - Set `SESSION_SECRET` when the app has sessions (production refuses to start without it). The default store keeps
   sessions in memory per process; an edge or multi-instance deployment passes a shared store as `app({ session })`.
 
+## Caches and many instances
+- **Bounded caches:** public query results and cached pages are LRU caches, at most 10,000 entries and 5,000 pages
+  per process. Change the bounds with `app({ dataCache: memoryDataCache({ maxEntries }) })` (`@hozu/data`) and
+  `app({ cache: memoryCache({ maxPages }) })` (`@hozu/runtime-server`). `server.stats()` reports
+  `{ dataEntries, pages, evictions }`.
+- **More than one instance:** each instance caches on its own, so a mutation on one must tell the others. Pass
+  `app({ bus: httpBus({ peers: [every instance's base URL, this one included], secret: process.env.BUS_SECRET }) })`
+  (`@hozu/runtime-server`; signed `POST /_hozu/invalidate`, 32+ character secret). The others drop the tagged pages
+  and data and push to their live clients. Messages carry tags, never data.
+- **A broker instead of peer URLs:** implement `InvalidationBus` (`publish(tags)`, `subscribe(onTags)`):
+  ```ts
+  const pub = createClient({ url }); const sub = pub.duplicate()   // e.g. redis
+  await Promise.all([pub.connect(), sub.connect()])
+  const bus: InvalidationBus = {
+    publish: (tags) => void pub.publish('hozu', JSON.stringify(tags)),
+    subscribe: (onTags) => {
+      void sub.subscribe('hozu', (m) => onTags(JSON.parse(m)))
+      return () => void sub.unsubscribe('hozu')
+    },
+  }
+  ```
+- `app({ staticTtl: 300 })` re-reads `'static'` data and pages after 300 s, in case a bus message is lost; off by
+  default.
+
 ## Upgrading Hozu
 `npx -p @hozu/cli@latest hozu migrate` (preview with `--dry-run`), then run the `next:` lines it prints: install, and
 `npx hozu migrate` again, which checks the IR is unchanged and runs `hozu check`. Never raise `@hozu/*` by hand.

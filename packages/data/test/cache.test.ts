@@ -80,6 +80,26 @@ describe('the bounded data cache (ADR 0050 A)', () => {
     expect(await data.query(byId, { id: 'a' })).toEqual({ ok: true, value: { id: 'a', n: 2 } })
   })
 
+  it("reads 'static' data again after staticTtl, and never without it", async () => {
+    let time = 0
+    let reads = 0
+    const make = (staticTtl?: number) =>
+      createDataRuntime({
+        build,
+        now: () => time,
+        ...(staticTtl === undefined ? {} : { staticTtl }),
+        resolvers: resolvers(app, (implement) => [implement(byId, ({ id }) => ({ id, n: ++reads }))]),
+      })
+    const bounded = make(60)
+    const forever = make()
+    await bounded.query(byId, { id: 'a' })
+    await forever.query(byId, { id: 'a' })
+    time = 60_000
+    await bounded.query(byId, { id: 'a' })
+    await forever.query(byId, { id: 'a' })
+    expect([bounded.stats().fetches, forever.stats().fetches]).toEqual([2, 1])
+  })
+
   it('refuses a bound that is not a positive integer', () => {
     expect(() => new Lru(0)).toThrow('The cache bound must be a positive integer, got 0')
   })

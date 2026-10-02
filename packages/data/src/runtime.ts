@@ -78,6 +78,8 @@ export interface DataRuntimeOptions {
   env?: unknown
   /** Public query results (ADR 0050 A); by default `memoryDataCache()`, at most 10,000 entries. */
   cache?: DataCache
+  /** Seconds after which a `'static'` entry is read again (ADR 0050 B); by default never. */
+  staticTtl?: number
 }
 
 export interface FileLike {
@@ -141,6 +143,7 @@ export function createDataRuntime({
   build,
   resolvers,
   cache = memoryDataCache(),
+  staticTtl,
   now = Date.now,
   onError = () => {},
   env: rawEnv = {},
@@ -391,7 +394,8 @@ export function createDataRuntime({
     const entry = entryOf(effect, key, input)
     const f = effect.freshness as Exclude<Freshness, { kind: 'request' } | { kind: 'live' }>
     if (entry.value) {
-      if (f.kind === 'static' || now() - entry.at < f.seconds * 1000) {
+      const ttl = f.kind === 'static' ? (staticTtl ?? Number.POSITIVE_INFINITY) : f.seconds
+      if (now() - entry.at < ttl * 1000) {
         stats.hits++
         return entry.value
       }

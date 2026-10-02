@@ -34,6 +34,7 @@ import { compileValue } from '@hozu/machine'
 import type { EffectResponse, Result } from '@hozu/runtime-client'
 import { type App, type AppHost, appHandlerOptions, appOptionsOf } from './app.ts'
 import { clientBundle } from './assets.ts'
+import { type InvalidationBus, localBus } from './bus.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
 import { assertComponentBundle, assertFetchBundle } from './components.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'
@@ -68,6 +69,10 @@ export interface HandlerOptions {
   cache?: PageCache
   /** Public query results (ADR 0050 A); by default `memoryDataCache()`. */
   dataCache?: DataCache
+  /** Tells the other instances which tags were invalidated (ADR 0050 B); by default `localBus()`. */
+  bus?: InvalidationBus
+  /** Seconds after which `'static'` public data and pages are read again, as a safety net when bus messages can be lost; off by default. */
+  staticTtl?: number
   readFile?: (file: string) => Promise<Uint8Array>
   manifest?: Manifest
   images?: ImageSet | null
@@ -177,6 +182,8 @@ function handlerFor({
   csp = {},
   cache = memoryCache(),
   dataCache,
+  bus = localBus(),
+  staticTtl,
   readFile,
   manifest,
   images = null,
@@ -265,6 +272,7 @@ function handlerFor({
     env: rawEnv,
     ...(fetches ? { fetches } : {}),
     ...(dataCache ? { cache: dataCache } : {}),
+    ...(staticTtl === undefined ? {} : { staticTtl }),
   })
   const scopes = new WeakMap<Request, Promise<RequestData>>()
   const dataFor = (request: Request) => {
@@ -384,7 +392,8 @@ function handlerFor({
     const seconds = planRoute(ir, route)
       .plan.regions.map((r) => r.seconds)
       .filter((s): s is number => s !== null)
-    return seconds.length ? Math.min(...seconds) * 1000 : Number.POSITIVE_INFINITY
+    if (seconds.length) return Math.min(...seconds) * 1000
+    return staticTtl === undefined ? Number.POSITIVE_INFINITY : staticTtl * 1000
   }
 
   const generate = async (
@@ -436,9 +445,24 @@ function handlerFor({
       if (mine.length) c.enqueue(encoder.encode(`data: ${JSON.stringify(mine)}\n\n`))
     }
   }
-  const after = (tags: string[]) => {
-    if (tags.length) setTimeout(() => broadcast(tags), 0)
+  const publish = (tags: string[]) => {
+    if (!tags.length) return
+    Promise.resolve(bus.publish(tags)).catch((error) => onError(error, { path: '/_hozu/invalidate' }))
   }
+  const after = (tags: string[]) => {
+    if (!tags.length) return
+    publish(tags)
+    setTimeout(() => broadcast(tags), 0)
+  }
+  const apply = async (tags: string[]): Promise<Revalidated> => {
+    const entries = data.invalidate(tags)
+    const pages = await dropPages(tags)
+    broadcast(tags)
+    return { entries, pages }
+  }
+  bus.subscribe((tags) => {
+    apply(tags).catch((error) => onError(error, { path: '/_hozu/invalidate' }))
+  })
   const TAG_USE = Symbol.for('hozu.tagUse')
   const tagKeyOf = (use: TagUse) => {
     const u = (use as unknown as Record<symbol, { tag: object; param: unknown } | undefined>)[TAG_USE]
@@ -452,10 +476,9 @@ function handlerFor({
   }
   const revalidate = async (uses: TagUse[]): Promise<Revalidated> => {
     const tags = [...new Set(uses.map(tagKeyOf))]
-    const entries = data.invalidate(tags)
-    const pages = await dropPages(tags)
-    broadcast(tags)
-    return { entries, pages }
+    const done = await apply(tags)
+    publish(tags)
+    return done
   }
 
   const json = (body: unknown, headers: Record<string, string> = {}) =>
@@ -776,6 +799,7 @@ function handlerFor({
   }
 
   const route = async (request: Request, url: URL, path: string): Promise<Response> => {
+    if (path === '/_hozu/invalidate' && bus.accept) return bus.accept(request)
     if (request.method === 'POST' && crossSite(request)) return plain(403, 'Cross-site request rejected')
     const endpointRef = endpointRefs.get(`${request.method === 'HEAD' ? 'GET' : request.method} ${path}`)
     if (endpointRef) return endpointCall(request, url, endpointRef)
