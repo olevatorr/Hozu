@@ -4,7 +4,7 @@ import { Button } from '../../site/button.ts'
 import { CatchCard } from '../../site/catch-card.ts'
 import { CodeBlock } from '../../site/code-block.ts'
 import { Display, Heading } from '../../site/display.ts'
-import { Joint3D } from '../../site/joint.ts'
+import { Joint } from '../../site/joint.ts'
 import { Receipt, ReceiptLine } from '../../site/receipt.ts'
 import { Section } from '../../site/section.ts'
 import { StatTable } from '../../site/stat-table.ts'
@@ -134,7 +134,7 @@ export const Home = ui.view({
               ],
             ),
           ]),
-          ui.use(Joint3D, { props: { split: ctx.broken } }),
+          ui.use(Joint, { props: { split: ctx.broken } }),
         ]),
         ui.use(Ticker, {
           slots: {

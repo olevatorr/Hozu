@@ -103,9 +103,10 @@ world.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.9
 bpy.ops.object.light_add(type='SUN', rotation=(math.radians(55), math.radians(-15), math.radians(30)))
 bpy.context.object.data.energy = 1.7
 bpy.ops.object.camera_add(location=(5.4, -6.6, 3.4)); cam = bpy.context.object; cam.name = 'camera'
-cam.rotation_euler = (Vector((0, 0, -0.6)) - cam.location).to_track_quat('-Z', 'Y').to_euler(); cam.data.lens = 48
+cam.rotation_euler = (Vector((0, 0, -0.6)) - cam.location).to_track_quat('-Z', 'Y').to_euler(); cam.data.lens = 62
 scene.camera = cam
 
+scene.render.resolution_x = scene.render.resolution_y = 900
 bpy.ops.export_scene.gltf(
     filepath=f'{out}/joint.glb', export_format='GLB', export_apply=True, export_cameras=True,
     export_lights=False, export_animations=True, export_animation_mode='NLA_TRACKS', export_yup=True,

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { access, readdir, readFile, stat } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
+import { gzipSync } from 'node:zlib'
 import { codes } from '@hozu/core/ir'
 import { testApp } from '@hozu/testing'
 import site from './app.ts'
@@ -212,6 +213,16 @@ assert.match(
   /@media \(prefers-reduced-motion: ?reduce\)\{\*,:before,:after\{[^}]*animation-duration:\.01ms!important/,
   'reduced motion stops every animation',
 )
-for (const name of ['rise', 'ticker', 'turn'])
+for (const name of ['rise', 'ticker'])
   assert.ok(css.includes(`@keyframes ${name}`), `keyframes ${name} shipped`)
+const jointBundle = homePage.match(/\/_hozu\/c\/site-Joint-[A-Z0-9]+\.js/)?.[0]
+assert.ok(jointBundle, 'the home page references the joint bundle')
+const jointBytes = gzipSync(await readFile(new URL(`.${jointBundle}`, root))).length
+assert.ok(jointBytes <= 180 * 1024, `joint bundle is ${jointBytes} B gzip, limit 180 KB`)
+for (const file of files.filter((name) => name.endsWith('.html') && name !== 'index.html'))
+  assert.ok(
+    !(await readFile(new URL(file, root), 'utf8')).includes('site-Joint-'),
+    `${file}: no joint bundle`,
+  )
+console.log(`Joint bundle ${(jointBytes / 1024).toFixed(1)} KB gzip (limit 180), home page only`)
 console.log('Islands: home (home), how-it-works (lab), CodeBlock on code pages; reduced motion covered')
