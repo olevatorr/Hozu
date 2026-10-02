@@ -8,3 +8,4 @@ bench/frameworks/out
 .tmp
 .agents
 .hozu/
+bench/scale/out

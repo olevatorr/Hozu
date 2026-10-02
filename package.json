@@ -15,6 +15,7 @@
     "format": "biome format --write .",
     "schema": "node scripts/gen-schemas.ts",
     "gate": "pnpm lint && pnpm typecheck && pnpm test && pnpm bench",
+    "bench:scale": "pnpm build && node --import ./packages/transform/dist/register.js bench/scale/run.ts",
     "bench:frameworks": "pnpm build && pnpm --filter bench-frameworks run run",
     "bench:parity": "pnpm build && pnpm --filter bench-parity build:nuxt && pnpm --filter bench-parity run run",
     "skill": "node scripts/skill.ts"
