@@ -12,6 +12,7 @@
   --font-mono: ui-monospace, Menlo, monospace;
   --animate-rise: rise 0.7s cubic-bezier(0.2, 0.9, 0.2, 1) both;
   --animate-ticker: ticker 28s linear infinite;
+  --animate-nudge: nudge 1.8s ease-out infinite;
   @keyframes rise {
     from {
       transform: translateY(110%) skewY(8deg);
@@ -20,6 +21,14 @@
     to {
       transform: none;
       opacity: 1;
+    }
+  }
+  @keyframes nudge {
+    from {
+      box-shadow: 0 0 0 0 rgb(251 58 14 / 0.55);
+    }
+    to {
+      box-shadow: 0 0 0 12px rgb(251 58 14 / 0);
     }
   }
   @keyframes ticker {
@@ -34,6 +43,11 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+button:not(:disabled),
+summary,
+label:has(input) {
+  cursor: pointer;
 }
 :focus-visible {
   outline: 3px solid var(--color-red);

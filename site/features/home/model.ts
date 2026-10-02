@@ -12,8 +12,8 @@ export const getPlayground = query({
   freshness: 'static',
 })
 export const m = machine({
-  context: z.object({ broken: z.boolean(), intent: Intent }),
-  initialContext: { broken: false, intent: 'solid' },
+  context: z.object({ broken: z.boolean(), tried: z.boolean(), intent: Intent }),
+  initialContext: { broken: false, tried: false, intent: 'solid' },
   initial: 'clean',
   on: ({ ctx }) => [
     on(Pick, {
@@ -29,6 +29,7 @@ export const m = machine({
           target: 'broken',
           assign: () => {
             ctx.broken = true
+            ctx.tried = true
           },
         }),
       ],

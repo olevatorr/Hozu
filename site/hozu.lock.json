@@ -63,7 +63,7 @@
         "summary": "broken --Pick--> broken · intent := event.intent"
       },
       "clean/on/home.Break/0": {
-        "behavior": "68dc78c943968fad",
+        "behavior": "1e6b82d1814e5ae9",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -72,6 +72,15 @@
               "op": "set",
               "path": [
                 "broken"
+              ],
+              "value": {
+                "literal": true
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "tried"
               ],
               "value": {
                 "literal": true
@@ -89,7 +98,7 @@
           "guard": null,
           "navigate": null
         },
-        "summary": "clean --Break--> broken · broken := true"
+        "summary": "clean --Break--> broken · broken := true, tried := true"
       },
       "clean/on/home.Pick/0": {
         "behavior": "4dd889e7c78ebde1",

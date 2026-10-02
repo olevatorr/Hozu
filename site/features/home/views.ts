@@ -80,8 +80,11 @@ export const Home = ui.view({
                 'See the proof',
               ]),
             ]),
+            ui.p({ class: 'mt-8 font-mono text-xs font-bold text-ember' }, [
+              '↓ Press AI CHANGE: an agent edits this app, and Hozu checks the change.',
+            ]),
             ui.div(
-              { class: 'mt-8 max-w-md border-4 border-ink bg-white shadow-[8px_8px_0_var(--color-ink)]' },
+              { class: 'mt-3 max-w-md border-4 border-ink bg-white shadow-[8px_8px_0_var(--color-ink)]' },
               [
                 ui.div(
                   {
@@ -109,6 +112,7 @@ export const Home = ui.view({
                           {
                             type: 'button',
                             class: 'bg-red px-3 py-1 font-black text-ink',
+                            toggle: { 'animate-nudge': !ctx.tried },
                             on: { click: ui.send(Break, {}) },
                           },
                           ['AI CHANGE'],

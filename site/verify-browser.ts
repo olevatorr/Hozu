@@ -92,6 +92,18 @@ try {
   await page.waitForSelector(`${joint}[data-hozu-component-state="mounted"]`, { timeout: 15000 })
   assert.equal(await page.locator(`${joint} canvas`).count(), 1, 'the joint renders one canvas')
   await page.waitForSelector(`${joint}[data-pose="joined"]`, { timeout: 15000 })
+  const change = page.getByRole('button', { name: 'AI CHANGE' })
+  assert.equal(
+    await change.evaluate((el) => getComputedStyle(el).cursor),
+    'pointer',
+    'AI CHANGE shows a pointer cursor',
+  )
+  assert.notEqual(
+    await change.evaluate((el) => getComputedStyle(el).animationName),
+    'none',
+    'AI CHANGE invites a click',
+  )
+  assert.ok(await page.getByText('Press AI CHANGE').count(), 'the demo says what the button does')
   await page.getByRole('button', { name: 'AI CHANGE' }).click()
   await page.waitForSelector(`${joint}[data-pose="split"]`, { timeout: 5000 })
   await page.getByRole('button', { name: 'APPLY FIX' }).click()

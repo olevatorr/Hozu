@@ -213,7 +213,7 @@ assert.match(
   /@media \(prefers-reduced-motion: ?reduce\)\{\*,:before,:after\{[^}]*animation-duration:\.01ms!important/,
   'reduced motion stops every animation',
 )
-for (const name of ['rise', 'ticker'])
+for (const name of ['rise', 'ticker', 'nudge'])
   assert.ok(css.includes(`@keyframes ${name}`), `keyframes ${name} shipped`)
 const jointBundle = homePage.match(/\/_hozu\/c\/site-Joint-[A-Z0-9]+\.js/)?.[0]
 assert.ok(jointBundle, 'the home page references the joint bundle')
