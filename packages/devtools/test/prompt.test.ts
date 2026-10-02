@@ -343,4 +343,13 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
       ].join('\n'),
     )
   })
+
+  it('a text the user tried on the page is part of the request', () => {
+    const md = requestMarkdown({
+      items: [{ ...item(base, 'Use this wording'), text: { from: 'Sign in', to: '登入帳號' } }],
+      context,
+    })
+    expect(md).toContain('- Text: “Sign in” → “登入帳號”')
+    expect(md).toContain('its text is message `account.signIn`')
+  })
 })

@@ -15,6 +15,7 @@ export interface RequestItem {
   scope: Scope
   visible: string
   style?: StyleChange[]
+  text?: { from: string; to: string }
 }
 
 export interface RequestContext {
@@ -207,6 +208,9 @@ export function requestMarkdown(request: HozuRequest, options: PromptOptions = {
       ...(options.excerpt ? excerpt(node) : []),
       `- Scope: ${scopeLabel(item)}`,
       ...(item.style ?? []).map((c) => styleLine(c, node.classes, options.theme)),
+      ...(item.text && item.text.to !== item.text.from
+        ? [`- Text: “${item.text.from}” → “${item.text.to}”`]
+        : []),
       ...node.conditions
         .filter((c) => c.kind !== 'each')
         .map(

@@ -176,6 +176,105 @@ describe.skipIf(!findBrowser())('Workbench in a real browser (ADR 0047 P3)', () 
     expect(await inFrame(`d.body.innerText.includes('Preview text')`)).toBe(false)
   })
 
+  const frameClick = async (pick: string, mouse: 'mouseMoved' | 'click' = 'click') => {
+    const { x, y } = await evaluate(`(() => {
+      const f = document.querySelector('hozu-devtools').shadowRoot.querySelector('iframe')
+      const el = (${pick})(f.contentDocument)
+      const fr = f.getBoundingClientRect(), r = el.getBoundingClientRect(), s = fr.width / f.offsetWidth
+      return { x: fr.x + (r.x + r.width / 2) * s, y: fr.y + (r.y + r.height / 2) * s }
+    })()`)
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y }, session)
+    if (mouse === 'click')
+      for (const type of ['mousePressed', 'mouseReleased'])
+        await cdp.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: 1 }, session)
+  }
+
+  it('the hover label stays inside the frame next to its right edge', async () => {
+    await tool(
+      `(() => { const s = $('.bench-bar select'); s.value = 'Phone'; s.dispatchEvent(new Event('change')); })()`,
+    )
+    await frameReady()
+    await shadowClick('.bench-bar .act', '⚙')
+    await shadowClick('.option', 'Developer')
+    await shadowClick('.bench-bar .mode', 'Select')
+    await frameClick(
+      `(d) => [...d.querySelectorAll('span')].find((e) => e.textContent === 'Sprint 12')`,
+      'mouseMoved',
+    )
+    await until(
+      `(() => { const d = document.querySelector('hozu-devtools').shadowRoot.querySelector('iframe').contentDocument; const t = d.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.box:not([hidden]) .tag'); return t && t.textContent.includes('views.ts') })()`,
+    )
+    await new Promise((r) => setTimeout(r, 100))
+    const [right, width] = await inFrame(
+      `(() => { const t = d.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.box:not([hidden]) .tag').getBoundingClientRect(); return [t.right, d.defaultView.innerWidth] })()`,
+    )
+    expect(right).toBeLessThanOrEqual(width)
+    await shadowClick('.option', 'Builder')
+  })
+
+  it('resizing keeps following the pointer outside the stage, and stops on release', async () => {
+    const at = await tool(
+      `(() => { const r = $('.resize').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 } })()`,
+    )
+    const before = await tool(`$('iframe').offsetWidth`)
+    await cdp.send(
+      'Input.dispatchMouseEvent',
+      { type: 'mousePressed', x: at.x, y: at.y, button: 'left', clickCount: 1 },
+      session,
+    )
+    for (const dx of [20, 60, 120])
+      await cdp.send(
+        'Input.dispatchMouseEvent',
+        { type: 'mouseMoved', x: at.x + dx, y: at.y, button: 'left', buttons: 1 },
+        session,
+      )
+    await cdp.send(
+      'Input.dispatchMouseEvent',
+      { type: 'mouseMoved', x: 1420, y: at.y, button: 'left', buttons: 1 },
+      session,
+    )
+    await cdp.send(
+      'Input.dispatchMouseEvent',
+      { type: 'mouseReleased', x: 1420, y: at.y, button: 'left', clickCount: 1 },
+      session,
+    )
+    await new Promise((r) => setTimeout(r, 100))
+    const after = (await tool(`$('iframe').offsetWidth`)) as number
+    expect(after).toBeGreaterThan((before as number) + 100)
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 300, y: at.y }, session)
+    await new Promise((r) => setTimeout(r, 100))
+    expect(await tool(`$('iframe').offsetWidth`)).toBe(after)
+    expect(await tool(`$('.bench-bar select').value`)).toBe('Custom')
+  })
+
+  it('a text can be replaced on the page to test long or other-language copy, and goes into the request', async () => {
+    await tool(
+      `(() => { const s = $('.bench-bar select'); s.value = 'Phone'; s.dispatchEvent(new Event('change')); })()`,
+    )
+    await frameClick(`(d) => [...d.querySelectorAll('button')].find((e) => e.textContent === 'Add task')`)
+    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.chip-button')`)
+    await tool(
+      `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.chip-button')].find((b) => b.textContent === '中文').click()`,
+    )
+    await until(
+      `(() => { const d = document.querySelector('hozu-devtools').shadowRoot.querySelector('iframe').contentDocument; return [...d.querySelectorAll('button')].some((b) => b.textContent.startsWith('這是一段')) })()`,
+    )
+    await tool(
+      `(() => { const i = $('input[aria-label="Text on the page"]'); i.value = '新增任務'; i.dispatchEvent(new Event('change')); })()`,
+    )
+    await until(
+      `(() => { const d = document.querySelector('hozu-devtools').shadowRoot.querySelector('iframe').contentDocument; return [...d.querySelectorAll('button')].some((b) => b.textContent === '新增任務') })()`,
+    )
+    await shadowClick('.actions button', 'Copy for AI')
+    await until(`navigator.clipboard.readText().then((t) => t.includes('- Text: “Add task” → “新增任務”'))`)
+    await tool(
+      `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.chip-button')].find((b) => b.textContent === 'Reset').click()`,
+    )
+    await until(
+      `(() => { const d = document.querySelector('hozu-devtools').shadowRoot.querySelector('iframe').contentDocument; return [...d.querySelectorAll('button')].some((b) => b.textContent === 'Add task') })()`,
+    )
+  })
+
   it('Exit returns to the overlay on the same page', async () => {
     await shadowClick('.bench-bar .act', 'Exit workbench')
     await until(`!document.querySelector('hozu-devtools').shadowRoot.querySelector('iframe')`)

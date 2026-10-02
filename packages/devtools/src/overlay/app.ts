@@ -16,6 +16,7 @@ import { previewLabel, renderLayers } from './layers.ts'
 import { logo } from './logo.ts'
 import { lookSection, preview } from './look.ts'
 import { css, outlineCss } from './style.ts'
+import { firstText, previewText, restoreText, type TextChange, textSection } from './text.ts'
 
 interface Pick {
   id: string
@@ -24,6 +25,7 @@ interface Pick {
   scope: Scope | null
   visible: string
   style?: StyleChange[]
+  text?: TextChange
 }
 
 type Audience = 'builder' | 'developer'
@@ -145,7 +147,15 @@ function place(box: HTMLElement, el: Element | null) {
     target.style.width = `${r.width + 4}px`
     target.style.height = `${r.height + 4}px`
   }
-  box.classList.toggle('below', r.top < 28)
+  const tag = box.firstElementChild as HTMLElement | null
+  if (!tag?.classList.contains('tag')) return
+  tag.style.left = ''
+  const below = r.top < 28 || r.top - tag.offsetHeight - 8 < 0
+  box.classList.toggle('below', below)
+  const view = win.innerWidth
+  const overflow = r.left - 3 + tag.offsetWidth - (view - 4)
+  tag.style.left =
+    overflow > 0 ? `${Math.max(-r.left + 4, -1 - overflow)}px` : r.left < 2 ? `${2 - r.left}px` : ''
 }
 
 let hovered: Element | null = null
@@ -183,7 +193,10 @@ async function showHover(el: Element | null, force = false) {
 }
 
 function drawPicks() {
-  for (const p of state.picks) preview(elementOf(p), p.style ?? [])
+  for (const p of state.picks) {
+    preview(elementOf(p), p.style ?? [])
+    previewText(elementOf(p), p.text)
+  }
   for (const box of boxes.children) frameOf.get(box as HTMLElement)?.remove()
   boxes.replaceChildren(
     ...state.picks.map((p, i) => {
@@ -212,7 +225,7 @@ function frame() {
   requestAnimationFrame(frame)
 }
 
-const hasContent = (p: Pick) => p.note.trim() !== '' || (p.style?.length ?? 0) > 0
+const hasContent = (p: Pick) => p.note.trim() !== '' || (p.style?.length ?? 0) > 0 || !!p.text
 const drafted = () => state.picks.filter(hasContent)
 
 function select(pick: Omit<Pick, 'note' | 'scope'>, add: boolean) {
@@ -685,6 +698,7 @@ async function request(): Promise<HozuRequest> {
               scope: p.scope ?? scopesFor(n)[0]!.scope,
               visible: p.visible,
               style: p.style ?? [],
+              ...(p.text ? { text: p.text } : {}),
             },
           ]
         : []
@@ -723,6 +737,7 @@ function choose(active: Pick, id: string, visible: string) {
 function removeActive() {
   const gone = state.picks[state.active]
   if (gone) preview(elementOf(gone), [])
+  if (gone) restoreText(elementOf(gone), gone.text)
   state.picks.splice(state.active, 1)
   state.active = Math.max(0, state.active - 1)
   if (!state.picks.length) state.panel = null
@@ -759,7 +774,10 @@ function scopeField(n: DevNode, active: Pick) {
 let notice: (Node | string)[] | null = null
 
 function clearDraft() {
-  for (const p of state.picks) preview(elementOf(p), [])
+  for (const p of state.picks) {
+    preview(elementOf(p), [])
+    restoreText(elementOf(p), p.text)
+  }
   state.picks = []
   state.active = 0
   persist()
@@ -847,6 +865,22 @@ function exportBlock() {
     ]),
     result,
   ])
+}
+
+function textFor(n: DevNode, active: Pick) {
+  const from =
+    active.text?.from ?? (n.kind === 'text' ? active.visible || null : firstText(elementOf(active)))
+  if (!from || n.page) return null
+  return textSection(from, active.text, state.audience === 'builder', (change) => {
+    const had = hasContent(active)
+    restoreText(elementOf(active), active.text)
+    if (change) active.text = change
+    else delete active.text
+    previewText(elementOf(active), active.text)
+    persist()
+    if (had !== hasContent(active)) renderDock()
+    void renderPanel()
+  })
 }
 
 function requestSection(n: DevNode, active: Pick) {
@@ -1070,6 +1104,7 @@ async function renderPanel() {
           : null,
       ]),
       ...(state.audience === 'builder' ? builderSections(n) : developerSections(n, active)),
+      textFor(n, active),
       n.kind === 'element' || n.kind === 'component'
         ? lookSection(
             elementOf(active),
@@ -1247,6 +1282,7 @@ async function renderChanges() {
                     type: 'button',
                     onclick: () => {
                       preview(elementOf(p), [])
+                      restoreText(elementOf(p), p.text)
                       state.picks.splice(state.picks.indexOf(p), 1)
                       state.active = Math.max(0, Math.min(state.active, state.picks.length - 1))
                       persist()
@@ -1463,11 +1499,13 @@ function retarget(frame: HTMLIFrameElement | null) {
   drawPicks()
 }
 
+let dragScale: number | null = null
+
 function layout() {
   if (!frameEl) return
   const box = stage.getBoundingClientRect()
   const { width, height } = state.device
-  const scale = Math.min(1, (box.width - 48) / width, (box.height - 48) / height)
+  const scale = dragScale ?? Math.min(1, (box.width - 48) / width, (box.height - 48) / height)
   sizer.style.width = `${width * scale}px`
   sizer.style.height = `${height * scale}px`
   frameEl.style.width = `${width}px`
@@ -1594,20 +1632,38 @@ function openBench() {
   })
   const grip = h('div', { class: 'resize', title: 'Drag to resize', 'aria-hidden': 'true' })
   grip.addEventListener('pointerdown', (event) => {
+    event.preventDefault()
+    grip.setPointerCapture(event.pointerId)
     const start = { x: event.clientX, y: event.clientY, ...state.device }
-    const scale = sizer.getBoundingClientRect().width / state.device.width
-    const move = (e: PointerEvent) =>
-      setDevice({
+    dragScale = sizer.getBoundingClientRect().width / state.device.width
+    sizer.classList.add('dragging')
+    let next = { ...state.device }
+    let queued = 0
+    const move = (e: PointerEvent) => {
+      next = {
         name: 'Custom',
-        width: start.width + (e.clientX - start.x) / scale,
-        height: start.height + (e.clientY - start.y) / scale,
+        width: Math.max(320, Math.round(start.width + (e.clientX - start.x) / (dragScale ?? 1))),
+        height: Math.max(400, Math.round(start.height + (e.clientY - start.y) / (dragScale ?? 1))),
+      }
+      if (queued) return
+      queued = requestAnimationFrame(() => {
+        queued = 0
+        state.device = next
+        layout()
       })
-    const up = () => {
-      removeEventListener('pointermove', move)
-      removeEventListener('pointerup', up)
     }
-    addEventListener('pointermove', move)
-    addEventListener('pointerup', up)
+    const up = () => {
+      grip.removeEventListener('pointermove', move)
+      grip.removeEventListener('pointerup', up)
+      grip.removeEventListener('pointercancel', up)
+      cancelAnimationFrame(queued)
+      dragScale = null
+      sizer.classList.remove('dragging')
+      setDevice(next)
+    }
+    grip.addEventListener('pointermove', move)
+    grip.addEventListener('pointerup', up)
+    grip.addEventListener('pointercancel', up)
   })
   sizer.replaceChildren(frame, grip)
   stage.replaceChildren(sizer)

@@ -61,9 +61,11 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
   background-image: radial-gradient(rgba(var(--tint), 0.07) 1px, transparent 1px); background-size: 16px 16px; }
 .sizer { position: relative; box-shadow: 0 0 0 1px var(--line-2), 0 20px 60px rgba(0, 0, 0, 0.45); border-radius: 6px; background: #fff; }
 .sizer iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #fff; border-radius: 6px; }
+.sizer.dragging iframe { pointer-events: none; }
+.sizer.dragging { user-select: none; }
 .resize {
   position: absolute; right: -10px; bottom: -10px; width: 20px; height: 20px; border-radius: 999px; cursor: nwse-resize;
-  background: var(--red); box-shadow: 0 0 0 3px var(--bench);
+  background: var(--red); box-shadow: 0 0 0 3px var(--bench); touch-action: none;
 }
 .root.benching .panel {
   top: 0; right: 0; bottom: 0; width: 400px; max-height: none; border-radius: 0; border-width: 0 0 0 1px;
@@ -241,6 +243,9 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .look code { font: 11.5px/1 var(--mono); color: var(--mute); }
 .swatch { width: 18px; height: 18px; border-radius: 999px; border: 1px solid var(--line-2); padding: 0; }
 .swatch:hover { transform: scale(1.12); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip-button { border: 1px solid var(--line-2); background: rgba(var(--tint), 0.04); border-radius: 999px; padding: 3px 10px; font: 500 12px/1.3 var(--sans); color: var(--text); }
+.chip-button:hover { background: rgba(var(--tint), 0.1); }
 .hint-text { flex: 1; font: 12px/1.4 var(--sans); color: var(--faint); }
 
 .find { margin-top: 10px; }
@@ -265,6 +270,8 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .badge-ref { font: 11px/1 var(--mono); color: var(--accent); }
 .badge-off { font: 11px/1 var(--sans); color: var(--faint); }
 .state { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; font: 13px/1.35 var(--sans); }
+.state > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.state > button { flex: none; white-space: nowrap; }
 .state + .state { border-top: 1px solid var(--line); }
 .state.on span { color: var(--accent); }
 .dock .previewing {
