@@ -369,6 +369,7 @@ function reachable(site: Site, add: (n: ViewNode, island: boolean, sep: boolean,
       case 'query':
         walk(n.ready, island, false, depth + 1)
         for (const k in n.failed) walk(n.failed[k]!, island, false, depth + 1)
+        if (site.dev && n.pending) walk(n.pending, island, false, depth)
         return
       default:
         add(n, island, sep, depth)

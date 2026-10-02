@@ -6,9 +6,14 @@ export {
   type DevNode,
   type DevOptions,
   type DevPage,
+  type DevPageTree,
+  type DevPreview,
+  type DevScenario,
   type DevTextSource,
   type DevTransition,
+  type DevTreeNode,
   locateNode,
+  pageTree,
 } from './build/locate.ts'
 export type { ImageSet, ImageVariant, Manifest, ManifestAsset } from './build/manifest.ts'
 export type { BuildOptions, BuildResult } from './build/project.ts'

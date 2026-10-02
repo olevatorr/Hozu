@@ -8,8 +8,23 @@ import {
   type StyleChange,
   scopesFor,
 } from '../prompt.ts'
-import { finish, node, one, page, remove, type SavedSummary, save, saved, theme } from './api.ts'
+import {
+  finish,
+  held,
+  hold,
+  node,
+  one,
+  page,
+  remove,
+  type SavedSummary,
+  save,
+  saved,
+  theme,
+  tree,
+} from './api.ts'
 import { h, read, write } from './dom.ts'
+import { previewLabel, renderLayers } from './layers.ts'
+import { logo } from './logo.ts'
 import { lookSection, preview } from './look.ts'
 import { css, outlineCss } from './style.ts'
 
@@ -28,11 +43,12 @@ interface State {
   mode: 'browse' | 'select'
   picks: Pick[]
   active: number
-  panel: 'inspector' | 'requests' | 'settings' | null
+  panel: 'inspector' | 'requests' | 'settings' | 'layers' | null
   opened: string | null
   dock: { x: number; y: number } | null
   audience: Audience
   excerpt: boolean
+  folded: boolean
 }
 
 const key = `hozu-devtools:${location.host}`
@@ -47,6 +63,7 @@ const state: State = {
   dock: null,
   audience: given === 'developer' ? 'developer' : 'builder',
   excerpt: false,
+  folded: false,
   ...read<Partial<State>>(key, {}),
 }
 const persist = () => write(key, state)
@@ -67,17 +84,10 @@ shadow.append(h('style', {}, [css]), root)
 root.append(boxes, hover, panel, dock)
 
 const outline = document.createElement('hozu-devtools-outline')
-outline.style.cssText =
-  'all:initial;position:fixed;inset:0;pointer-events:none;z-index:2147483646;mix-blend-mode:difference'
+outline.style.cssText = 'all:initial;position:fixed;inset:0;pointer-events:none;z-index:2147483646'
 const frames = h('div')
 outline.attachShadow({ mode: 'open' }).append(h('style', {}, [outlineCss]), frames)
 document.documentElement.append(outline, host)
-
-const clear = (color: string) => color === 'transparent' || /rgba\(.*,\s*0\)$/.test(color)
-if (clear(getComputedStyle(document.documentElement).backgroundColor)) {
-  const body = document.body ? getComputedStyle(document.body).backgroundColor : 'transparent'
-  document.documentElement.style.backgroundColor = clear(body) ? 'Canvas' : body
-}
 
 const frameOf = new WeakMap<HTMLElement, HTMLElement>()
 const framed = (box: HTMLElement, selected: boolean) => {
@@ -114,10 +124,10 @@ function place(box: HTMLElement, el: Element | null) {
   if (frame) frame.hidden = hide
   if (!r || hide) return
   for (const target of frame ? [box, frame] : [box]) {
-    target.style.left = `${r.left - 3}px`
-    target.style.top = `${r.top - 3}px`
-    target.style.width = `${r.width + 6}px`
-    target.style.height = `${r.height + 6}px`
+    target.style.left = `${r.left - 2}px`
+    target.style.top = `${r.top - 2}px`
+    target.style.width = `${r.width + 4}px`
+    target.style.height = `${r.height + 4}px`
   }
   box.classList.toggle('below', r.top < 28)
 }
@@ -138,9 +148,12 @@ function tagText(n: DevNode | null, el: Element): (Node | string)[] {
   ]
 }
 
-async function showHover(el: Element | null) {
+let forced = false
+
+async function showHover(el: Element | null, force = false) {
   hovered = el
-  if (!el || state.mode !== 'select') {
+  forced = force
+  if (!el || (state.mode !== 'select' && !force)) {
     hover.hidden = true
     const frame = frameOf.get(hover)
     if (frame) frame.hidden = true
@@ -178,7 +191,7 @@ function frame() {
       if (p) place(box as HTMLElement, elementOf(p))
     }
   }
-  if (hovered && state.mode === 'select') place(hover, hovered)
+  if (hovered && (state.mode === 'select' || forced)) place(hover, hovered)
   requestAnimationFrame(frame)
 }
 
@@ -290,6 +303,7 @@ function walk(direction: 'up' | 'down') {
 
 function setMode(mode: State['mode']) {
   state.mode = mode
+  if (mode === 'select') state.folded = false
   if (mode === 'browse') void showHover(null)
   persist()
   renderDock()
@@ -336,9 +350,34 @@ function renderDock() {
       },
       [label],
     )
+  const grip = h(
+    'div',
+    {
+      class: 'grip',
+      role: 'button',
+      tabindex: '0',
+      'aria-expanded': String(!state.folded),
+      'aria-label': state.folded ? 'Open Hozu DevTools' : 'Fold Hozu DevTools',
+      title: 'Hozu DevTools · click to fold · drag to move · Alt+Shift+S toggles Select',
+      onkeydown: (e) => {
+        const key = (e as KeyboardEvent).key
+        if (key === 'Enter' || key === ' ') {
+          e.preventDefault()
+          fold()
+        }
+      },
+    },
+    [h('img', { src: logo, alt: '', width: '20', height: '20', draggable: 'false' })],
+  )
+  dock.classList.toggle('folded', state.folded)
+  if (state.folded) {
+    dock.replaceChildren(grip)
+    placeDock()
+    return
+  }
   dock.replaceChildren(
     ...present([
-      h('div', { class: 'grip', title: 'Hozu DevTools · drag to move · Alt+Shift+S toggles Select' }, ['H']),
+      grip,
       h('div', { class: 'seg' }, [button('Browse', 'browse'), button('Select', 'select')]),
       h(
         'button',
@@ -374,6 +413,20 @@ function renderDock() {
       h(
         'button',
         {
+          class: 'act',
+          type: 'button',
+          title: 'The parts of this page, and its states that are not on screen',
+          onclick: () => {
+            state.panel = state.panel === 'layers' ? (state.picks.length ? 'inspector' : null) : 'layers'
+            persist()
+            void renderPanel()
+          },
+        },
+        ['Layers'],
+      ),
+      h(
+        'button',
+        {
           class: 'act gear',
           type: 'button',
           title: 'Settings',
@@ -386,11 +439,24 @@ function renderDock() {
         },
         ['⚙'],
       ),
-      state.mode === 'select'
+      held()
+        ? h(
+            'button',
+            { class: 'previewing', type: 'button', title: 'Exit the preview', onclick: () => hold(null) },
+            [h('span', { 'data-preview': true }, ['Preview']), ' · Exit'],
+          )
+        : null,
+      state.mode === 'select' && !held()
         ? h('div', { class: 'hint' }, ['Click selects · Shift adds · Alt goes up · Esc stops'])
         : null,
     ]),
   )
+  const holding = held()
+  if (holding)
+    void tree(location.pathname).then((t) => {
+      const label = dock.querySelector('[data-preview]')
+      if (label) label.textContent = `Preview: ${previewLabel(t, holding)}`
+    })
   void saved().then((list) => {
     const count = dock.querySelector('[data-count]')
     const open = list.filter((r) => r.status === 'open').length
@@ -411,17 +477,33 @@ function placeDock() {
   dock.style.top = `${y}px`
 }
 
+function fold() {
+  state.folded = !state.folded
+  if (state.folded) {
+    state.mode = 'browse'
+    state.panel = null
+    void showHover(null)
+    void renderPanel()
+  }
+  persist()
+  renderDock()
+}
+
 dock.addEventListener('pointerdown', (event) => {
   if (!(event.target as Element).closest('.grip')) return
   const r = dock.getBoundingClientRect()
   const dx = event.clientX - r.left
   const dy = event.clientY - r.top
+  let moved = false
   const move = (e: PointerEvent) => {
+    if (!moved && Math.hypot(e.clientX - event.clientX, e.clientY - event.clientY) < 4) return
+    moved = true
     state.dock = { x: e.clientX - dx, y: e.clientY - dy }
     placeDock()
   }
   const up = () => {
-    persist()
+    if (moved) persist()
+    else fold()
     removeEventListener('pointermove', move)
     removeEventListener('pointerup', up)
   }
@@ -556,7 +638,7 @@ async function request(): Promise<HozuRequest> {
     context: {
       path: location.pathname + location.search,
       viewport: { width: innerWidth, height: innerHeight },
-      preview: null,
+      preview: held() ? previewLabel(await tree(location.pathname), held()!) : null,
     },
   }
 }
@@ -849,6 +931,17 @@ async function renderPanel() {
   if (state.panel === 'requests')
     return state.opened ? renderRequest(state.opened) : renderRequests(await saved())
   if (state.panel === 'settings') return renderSettings()
+  if (state.panel === 'layers')
+    return renderLayers(panel, await tree(location.pathname), {
+      plain: state.audience === 'builder',
+      shown: (id) => document.querySelector(`[data-hz="${CSS.escape(id)}"]`),
+      hover: (el) => void showHover(el, true),
+      pick: (id, el) => {
+        void showHover(null)
+        select({ id, index: indexOf(el), visible: visibleOf(el) }, false)
+      },
+      close: () => open(state.picks.length ? 'inspector' : null),
+    })
   const active = state.picks[state.active]
   if (state.panel !== 'inspector' || !active) {
     panel.hidden = true

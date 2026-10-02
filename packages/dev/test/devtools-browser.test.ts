@@ -217,4 +217,110 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     expect(await tool(`$('.title').textContent`)).toBe('Sign in')
     expect(errors).toEqual([])
   })
+
+  it('outlines sit 2px outside the element', async () => {
+    await key('KeyS', 'S', 1 | 8)
+    await click('h1')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.panel:not([hidden]) .title')`,
+    )
+    const [frame, el] = await evaluate(`(() => {
+      const f = document.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.frame.selected').getBoundingClientRect()
+      const e = document.querySelector('h1').getBoundingClientRect()
+      return [[f.x, f.y, f.width, f.height], [e.x - 2, e.y - 2, e.width + 4, e.height + 4]]
+    })()`)
+    expect(frame).toEqual(el)
+    await key('Escape', 'Escape', 0)
+  })
+
+  it('Layers lists the parts and previews the states that are not on screen', async () => {
+    await evaluate(
+      `(() => { const i = document.querySelector('input[name=name]'); i.value = 'devtools'; i.form.requestSubmit(); })()`,
+    )
+    await until(
+      `location.pathname === '/' && !!document.querySelector('hozu-devtools')?.shadowRoot?.querySelector('.dock button')`,
+    )
+    await until(`document.documentElement.hasAttribute('data-hozu-ready')`)
+    await shadowClick('.dock .act', 'Layers')
+    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.layer')`)
+    const states = (await tool(
+      `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.state span')].map((s) => s.textContent)`,
+    )) as string[]
+    expect(states).toEqual(expect.arrayContaining(['Adding', 'Loading list notes']))
+    await shadowClick('.state', 'Loading list notes')
+    const reloaded = new Promise<void>((resolve) => loads.push(resolve))
+    await tool(
+      `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.state')].find((s) => s.textContent.includes('Loading list notes')).querySelector('button').click()`,
+    )
+    await reloaded
+    await until(`document.documentElement.hasAttribute('data-hozu-ready')`)
+    expect(await evaluate(`document.body.innerText.includes('Loading…')`)).toBe(true)
+    await new Promise((r) => setTimeout(r, 400))
+    expect(await evaluate(`document.body.innerText.includes('Loading…')`)).toBe(true)
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.previewing')?.textContent.includes('Loading list notes')`,
+    )
+    const back = new Promise<void>((resolve) => loads.push(resolve))
+    await tool(`$('.previewing').click()`)
+    await back
+    await until(`document.documentElement.hasAttribute('data-hozu-ready')`)
+    expect(await evaluate(`document.body.innerText.includes('Loading…')`)).toBe(false)
+    expect(await tool(`$('.previewing')`)).toBeNull()
+  })
+
+  it('a machine state preview starts the island in that state without running its effect', async () => {
+    await evaluate(
+      `document.cookie = 'hozu-dev-state=' + encodeURIComponent(JSON.stringify({ feature: 'notes', state: 'adding' })) + '; path=/'`,
+    )
+    const reloaded = new Promise<void>((resolve) => loads.push(resolve))
+    await evaluate('location.reload()')
+    await reloaded
+    await until(`document.documentElement.hasAttribute('data-hozu-ready')`)
+    expect(await evaluate(`!!document.querySelector('[aria-busy="true"]')`)).toBe(true)
+    await new Promise((r) => setTimeout(r, 400))
+    expect(await evaluate(`!!document.querySelector('[aria-busy="true"]')`)).toBe(true)
+    await evaluate(`document.cookie = 'hozu-dev-state=; path=/; max-age=0'`)
+    expect(errors).toEqual([])
+  })
+
+  it('the logo folds the dock to itself and opens it again; dragging it does not fold', async () => {
+    const at = async () =>
+      evaluate(
+        `(() => { const r = document.querySelector('hozu-devtools').shadowRoot.querySelector('.grip').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 } })()`,
+      )
+    const press = async (moveBy = 0) => {
+      const { x, y } = await at()
+      await cdp.send(
+        'Input.dispatchMouseEvent',
+        { type: 'mousePressed', x, y, button: 'left', clickCount: 1 },
+        session,
+      )
+      if (moveBy)
+        await cdp.send(
+          'Input.dispatchMouseEvent',
+          { type: 'mouseMoved', x: x - moveBy, y, button: 'left', buttons: 1 },
+          session,
+        )
+      await cdp.send(
+        'Input.dispatchMouseEvent',
+        { type: 'mouseReleased', x: x - moveBy, y, button: 'left', clickCount: 1 },
+        session,
+      )
+    }
+    const buttons = () =>
+      tool(`document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.dock button').length`)
+    expect(await buttons()).toBeGreaterThan(3)
+    await press()
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.dock button').length === 0`,
+    )
+    expect(await tool(`$('.grip').getAttribute('aria-expanded')`)).toBe('false')
+    await press()
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.dock button').length > 3`,
+    )
+    await press(40)
+    await new Promise((r) => setTimeout(r, 200))
+    expect(await buttons()).toBeGreaterThan(3)
+  })
 })

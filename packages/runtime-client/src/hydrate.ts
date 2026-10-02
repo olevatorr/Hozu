@@ -32,6 +32,7 @@ export interface PagePayload {
   params: Json
   search: Json
   snapshots?: Record<string, Snapshot>
+  devState?: { query: string; branch: string } | { feature: string; state: string }
   components: Record<string, ComponentRef>
   routes: Record<string, string>
   live: Record<string, LiveQuery>
@@ -120,6 +121,10 @@ export async function hydrate(
   if (payload.visible) void import('./visible.ts').then((m) => m.watch(doc))
   const inflight = new Map<string, Promise<Result>>()
   const onQuery = (q: string, input: Json) => {
+    if (globalThis.__HOZU_DEV__) {
+      const held = payload.devState
+      if (held && 'query' in held && held.query === q) return new Promise<Result>(() => {})
+    }
     const key = q + JSON.stringify(input)
     let pending = inflight.get(key)
     if (!pending) {

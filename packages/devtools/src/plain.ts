@@ -26,6 +26,11 @@ const words = (name: string) => {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
+export function tagName(tag: string): string {
+  if (/^h[1-6]$/.test(tag)) return 'Heading'
+  return tags[tag] ?? 'Area'
+}
+
 export function friendlyName(node: DevNode): string {
   if (node.page) return 'This page'
   if (node.kind === 'text') return node.source?.kind === 'data' ? 'Text from your data' : 'Text'

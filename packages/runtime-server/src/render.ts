@@ -1,4 +1,5 @@
 import { planRoute, type RoutePlan } from '@hozu/compiler'
+import type { DevPreview } from '@hozu/core/ir'
 import {
   type BuildResult,
   canonicalStringify,
@@ -69,6 +70,7 @@ export interface RenderOptions {
   env?: Json
   render?: RenderTable
   dev?: boolean
+  devState?: DevPreview | null
 }
 
 export interface RenderedPage {
@@ -97,6 +99,7 @@ export async function renderPage({
   env = NO_ENV,
   render: generated,
   dev = false,
+  devState = null,
 }: RenderOptions): Promise<RenderedPage> {
   const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
   const data = given ?? dataRuntime.scope(session)
@@ -120,6 +123,7 @@ export async function renderPage({
     components: {},
     routes: {},
     live: {},
+    ...(dev && devState ? { devState } : {}),
   }
   const fns = i18n ? fnsFor(build, lang) : (bindings.fns as Record<string, (x: Json) => Json>)
   const getters = gettersFor(fns)
@@ -159,7 +163,18 @@ export async function renderPage({
     return seeds.get(feature.id)!
   }
   const featureScope = (feature: FeatureIR, bound: boolean): Scope => {
-    const snap = bound ? snapshots[feature.id] : undefined
+    const held =
+      dev && bound && devState && 'feature' in devState && devState.feature === feature.id ? devState : null
+    const snap = held
+      ? {
+          state: held.state,
+          context:
+            snapshots[feature.id]?.context ?? seedOf(feature) ?? feature.machine?.initialContext ?? null,
+          entry: 0,
+        }
+      : bound
+        ? snapshots[feature.id]
+        : undefined
     if (snap) payload.snapshots = { ...payload.snapshots, [feature.id]: snap }
     return {
       feature,
@@ -345,7 +360,16 @@ export async function renderPage({
         const input = value(n.input, scope)
         const dot = n.query.indexOf('.')
         const q = ir.features[n.query.slice(0, dot)]?.queries[n.query.slice(dot + 1)]
-        const pending = data.run(n.query, input)
+        const held =
+          dev && devState && 'query' in devState && devState.query === n.query ? devState.branch : null
+        if (held === 'pending') {
+          if (n.pending) await render(n.pending, scope, island)
+          buffer += c
+          return
+        }
+        const pending = held
+          ? Promise.resolve({ ok: false, error: held.slice('failed.'.length), data: null } as Result)
+          : data.run(n.query, input)
         flush()
         const result = (await pending) as Result
         if (q) for (const t of tagKeys(q.tags, input, scope)) tags.add(t)

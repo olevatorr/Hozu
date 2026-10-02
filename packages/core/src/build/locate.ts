@@ -365,3 +365,85 @@ export function locateNode(build: BuildResult, target: string, dev: DevOptions):
     page: null,
   }
 }
+
+export interface DevTreeNode {
+  id: string
+  kind: DevNode['kind']
+  label: string
+  component: string | null
+  children: DevTreeNode[]
+}
+
+export type DevPreview = { query: string; branch: string } | { feature: string; state: string }
+
+export interface DevScenario {
+  label: string
+  node: string
+  preview: DevPreview
+}
+
+export interface DevPageTree {
+  route: string
+  views: DevTreeNode[]
+  scenarios: DevScenario[]
+}
+
+const spaced = (name: string) => {
+  const s = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+export function pageTree(build: BuildResult, route: string): DevPageTree | null {
+  const page = build.ir.pages[route]
+  if (!page) return null
+  const scenarios: DevScenario[] = []
+  const seen = new Set<string>()
+  const add = (label: string, node: string, preview: DevPreview) => {
+    const key = JSON.stringify(preview)
+    if (seen.has(key)) return
+    seen.add(key)
+    scenarios.push({ label, node, preview })
+  }
+  const views = page.views.flatMap((ref) => {
+    const [feature, view] = ref.split('.') as [string, string]
+    const f = build.ir.features[feature]
+    const root = f?.views?.[view]?.root
+    if (!f || !root) return []
+    const { describe } = describeWith(build, [], '')
+    const walk = (n: ViewNode): DevTreeNode => {
+      const use = useOf(n)
+      if (n.kind === 'query') {
+        const name = spaced(n.query.slice(n.query.indexOf('.') + 1))
+        if (n.pending)
+          add(`Loading ${name.toLowerCase()}`, n.pending.id, { query: n.query, branch: 'pending' })
+        for (const [error, branch] of Object.entries(n.failed))
+          add(`${name} failed: ${error}`, branch.id, { query: n.query, branch: `failed.${error}` })
+      }
+      if (n.kind === 'when' && f.machine)
+        for (const state of n.states)
+          if (state !== f.machine.initial) add(spaced(state), n.id, { feature, state })
+      const label = use
+        ? (use.component.split('.').pop() ?? use.component)
+        : n.kind === 'el'
+          ? n.tag
+          : n.kind === 'text'
+            ? describe(n.value).slice(0, 40)
+            : n.kind === 'query'
+              ? `query ${n.query}`
+              : n.kind === 'when'
+                ? `while ${n.states.join(' | ')}`
+                : n.kind === 'each'
+                  ? `list ${describe(n.source)}`
+                  : n.kind
+      return {
+        id: n.id,
+        kind: kindOf(n),
+        label,
+        component: use?.component ?? null,
+        children: childrenOf(n).map(walk),
+      }
+    }
+    return [{ ...walk(root), id: ref, label: ref }]
+  })
+  return { route, views, scenarios }
+}

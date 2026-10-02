@@ -5,8 +5,7 @@
   language), not the prototype's.
 - Look (owner, 2026-10-02, after the first P2 build): the poster style was too strong. The tool follows the calm,
   widely accepted look of framework dev overlays such as Next.js's (rounded, thin borders, soft shadows, normal
-  weights) in Hozu's colours: ink surfaces, paper text, red accents. Outlines sit on a `mix-blend-mode: difference`
-  layer so they show on any background, with a thin red inner line where difference fails (mid grey).
+  weights) in Hozu's colours: ink surfaces, paper text, red accents, and the Hozu logo in the dock.
 - Basis:
   - the standalone prototype in `~/Developer/hozu-devtools-demo` (ADRs 0001–0004 there);
   - the source index Hozu already records in development builds.
@@ -218,6 +217,21 @@ Each phase ends with `pnpm gate` and a report.
 - **Translation:** each change becomes `- Style: font size 30px → 48px: replace \`text-3xl\` with \`text-5xl\``.
   A value off the scale gets the exact arbitrary class and the nearest step; a project colour wins over a Tailwind
   colour; spacing takes any multiple of 0.25 steps, as Tailwind v4 does.
+
+## As built (Layers and states: P3 tree, P5)
+- **Layers** in the dock (Overlay mode): the page's views as a tree from the IR (`GET /_hozu/dev/tree?path=`,
+  `pageTree` in core). Component uses fold their internals; hovering a row outlines the element, clicking selects
+  it; parts of the tree that are not in the DOM are marked "not on screen".
+- **States** below the tree, derived from the IR: each `ui.query` `pending` and `failed.<Error>` branch and each
+  `when` state other than the initial one. Preview sets the dev-only cookie `hozu-dev-state`; under `hozu dev` the
+  server renders that query branch without running the resolver (a dev render table includes `pending` branches)
+  or starts the feature's machine in that state through `payload.snapshots`, so no effect runs. The dev client
+  holds a previewed query instead of fetching it. The dock shows "Preview: <state> · Exit"; requests record it.
+  Production ignores the cookie and has no tree endpoint. Named "dev state", not "preview", because preview mode
+  (ADR 0021) already exists.
+- **Not yet:** `?:` / `ui.if` on context values and empty lists, which need synthesised data; the Workbench's
+  exact viewport.
+- **Outlines** (owner): Hozu red, 2px outside the element, with a thin white halo; no blend layer.
 
 ## Rejected
 - **Shipping source maps or markers in production:** cost and leakage. Dev only.

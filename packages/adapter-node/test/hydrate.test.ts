@@ -9,8 +9,6 @@ afterEach(async () => {
   close = null
 })
 
-const settle = () => new Promise((r) => setTimeout(r, 30))
-
 describe('end-to-end hydration', () => {
   it('hydrates only islands, never fetches queries, and applies server-pushed data after a mutation', async () => {
     const app = start()
@@ -39,9 +37,8 @@ describe('end-to-end hydration', () => {
     const checkout = [...document.querySelectorAll('button')].find((b) => b.textContent === 'Checkout')!
     add.click()
     expect(apps.get('cart')!.snapshot()?.state).toBe('adding')
-    await settle()
+    await vi.waitFor(() => expect(apps.get('cart')!.snapshot()?.state).toBe('idle'))
     expect(transport).toHaveBeenCalledWith('cart.addItem', { sku: 'mug', qty: 1 }, ['cart.getCart{}'])
-    expect(apps.get('cart')!.snapshot()?.state).toBe('idle')
     expect(document.body.textContent).toContain('Mug × 1')
     expect(document.body.textContent).toContain('Total: $12')
     expect(fetchSpy).not.toHaveBeenCalled()
@@ -53,7 +50,7 @@ describe('end-to-end hydration', () => {
     const list = document.querySelector('ul.divide-y')!
     const line = list.querySelector('li')!
     ;[...document.querySelectorAll('button')].find((b) => b.textContent === 'Add')!.click()
-    await settle()
+    await vi.waitFor(() => expect(line.textContent).toContain('Mug × 2'))
     expect(document.querySelector('ul.divide-y')).toBe(list)
     expect(list.querySelector('li')).toBe(line)
     expect(line.textContent).toContain('Mug × 2')

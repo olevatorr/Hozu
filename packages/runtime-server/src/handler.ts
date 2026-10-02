@@ -1,10 +1,11 @@
 import { planRoute } from '@hozu/compiler'
 import type { TagUse } from '@hozu/core'
-import type { DevOptions } from '@hozu/core/ir'
 import {
   type BuildResult,
   canonicalStringify,
   codes,
+  type DevOptions,
+  type DevPreview,
   type Diagnostic,
   type EndpointIR,
   type FeatureIR,
@@ -14,6 +15,7 @@ import {
   type Json,
   join,
   type Manifest,
+  pageTree,
   publicPath,
   resolveSource,
   routeParams,
@@ -468,12 +470,13 @@ function handlerFor({
     const head = request.method === 'HEAD'
     const statusOf = (s: number) => (missing ? 404 : s)
     const inPreview = previewing.get(request) === true
+    const devState = dev ? devStateOf(request) : null
     const plan = planRoute(ir, route).plan
     if (inPreview) Object.assign(headers, { 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex' })
     else if (plan.cacheable) Object.assign(headers, { 'cache-control': 'public, max-age=0, must-revalidate' })
     else if (plan.regions.some((r) => r.scope === 'user')) Object.assign(headers, privately(true))
     else Object.assign(headers, { 'cache-control': 'no-cache' })
-    if (!inPreview && plan.cacheable) {
+    if (!inPreview && !devState && plan.cacheable) {
       let cached = await cache.get(path)
       let state = 'hit'
       if (!cached) {
@@ -501,6 +504,7 @@ function handlerFor({
     const rendered = await renderPage({
       build,
       dev: dev !== undefined,
+      devState,
       data,
       scope: await dataFor(request),
       route,
@@ -737,9 +741,23 @@ function handlerFor({
       const result = await scope.run(query, input)
       return json(result, privately(scope.readSession))
     }
-    if (dev && (path === '/_hozu/dev/node' || path === '/_hozu/dev/page' || path === '/_hozu/dev/styles')) {
+    if (
+      dev &&
+      (path === '/_hozu/dev/node' ||
+        path === '/_hozu/dev/page' ||
+        path === '/_hozu/dev/styles' ||
+        path === '/_hozu/dev/tree')
+    ) {
       if (!/^(127\.0\.0\.1|localhost|\[::1\])$/.test(url.hostname))
         return new Response('Hozu DevTools answers only this machine', { status: 403 })
+      if (path === '/_hozu/dev/tree') {
+        const found = match(split(url.searchParams.get('path') ?? '/').rest)
+        const tree = found ? pageTree(build, found.route) : null
+        return new Response(JSON.stringify(tree), {
+          status: tree ? 200 : 404,
+          headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+        })
+      }
       if (path === '/_hozu/dev/styles') {
         const entry = build.bindings.styles.entry
         const css =
@@ -856,4 +874,17 @@ function handlerFor({
       }
     },
   }
+}
+
+function devStateOf(request: Request): DevPreview | null {
+  const raw = /(?:^|;\s*)hozu-dev-state=([^;]+)/.exec(request.headers.get('cookie') ?? '')?.[1]
+  if (!raw) return null
+  try {
+    const v = JSON.parse(decodeURIComponent(raw)) as Record<string, unknown>
+    if (typeof v.query === 'string' && typeof v.branch === 'string')
+      return { query: v.query, branch: v.branch }
+    if (typeof v.feature === 'string' && typeof v.state === 'string')
+      return { feature: v.feature, state: v.state }
+  } catch {}
+  return null
 }

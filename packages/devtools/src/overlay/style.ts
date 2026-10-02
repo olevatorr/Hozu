@@ -12,7 +12,7 @@ export const css = `
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
-.box { position: fixed; pointer-events: none; }
+.box { position: fixed; box-sizing: border-box; pointer-events: none; }
 .box[hidden], .panel[hidden] { display: none; }
 .tag {
   position: absolute; left: -1px; bottom: 100%; margin-bottom: 6px; white-space: nowrap;
@@ -34,9 +34,12 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
   user-select: none; touch-action: none;
 }
 .grip {
-  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; cursor: grab;
-  background: var(--red); color: #fff; font: 700 13px/1 var(--sans); margin-right: 4px;
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 999px; cursor: grab; flex: none;
+  background: #fff; box-shadow: inset 0 0 0 1px rgba(17, 16, 16, 0.08); margin-right: 4px;
 }
+.grip img { width: 18px; height: 18px; display: block; pointer-events: none; }
+.dock.folded { padding: 4px; }
+.dock.folded .grip { margin-right: 0; }
 .grip:active { cursor: grabbing; }
 .dock .seg { display: flex; background: rgba(241, 237, 228, 0.06); border-radius: 999px; padding: 2px; }
 .dock button.mode, .dock button.act {
@@ -193,6 +196,31 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(241, 23
 .swatch:hover { transform: scale(1.12); }
 .hint-text { flex: 1; font: 12px/1.4 var(--sans); color: #6f695f; }
 
+.find { margin-top: 10px; }
+.find input { width: 100%; }
+.layers { padding: 6px 8px 10px; border-bottom: 1px solid var(--line); }
+.layer { display: flex; align-items: center; min-height: 26px; }
+.layer .indent { flex: none; }
+.layer .fold { flex: none; width: 18px; height: 22px; border: 0; background: none; color: var(--mute); padding: 0; font: 11px/1 var(--sans); }
+.layer .name {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; text-align: left; border: 0; border-radius: 6px;
+  background: none; padding: 3px 6px; font: 12.5px/1.35 var(--mono); color: var(--text); overflow: hidden; white-space: nowrap;
+}
+.layer .name:hover:not(:disabled) { background: rgba(241, 237, 228, 0.07); }
+.layer .name:disabled { cursor: default; }
+.layer.off .name { color: #6f695f; }
+.layer.group .name { color: var(--mute); font-family: var(--sans); font-size: 12px; }
+.badge-ref { font: 11px/1 var(--mono); color: #ff8a66; }
+.badge-off { font: 11px/1 var(--sans); color: #6f695f; }
+.state { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; font: 13px/1.35 var(--sans); }
+.state + .state { border-top: 1px solid var(--line); }
+.state.on span { color: #ff8a66; }
+.dock .previewing {
+  border: 0; border-radius: 999px; background: var(--red); color: #fff; padding: 5px 12px; margin-left: 4px;
+  font: 500 12.5px/1.2 var(--sans); white-space: nowrap;
+}
+.dock .previewing:hover { background: #ff5126; }
+
 @media (max-width: 720px) { .dock .hint { display: none; } }
 @media (max-width: 420px) {
   .dock button.mode, .dock button.act { padding: 5px 8px; }
@@ -202,7 +230,10 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(241, 23
 `
 
 export const outlineCss = `
-.frame { position: fixed; pointer-events: none; border: 1.5px solid #fff; border-radius: 4px; }
-.frame.selected { border-width: 2px; }
+.frame {
+  position: fixed; box-sizing: border-box; pointer-events: none; border: 1.5px solid #fb3a0e; border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85);
+}
+.frame.selected { border-width: 2px; background: rgba(251, 58, 14, 0.06); }
 .frame[hidden] { display: none; }
 `
