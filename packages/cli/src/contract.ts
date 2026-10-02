@@ -433,3 +433,16 @@ export interface BrowseActor {
 }
 
 export type LocateOutput = DevNode
+
+export interface RequestsOutput {
+  requests: {
+    number: string
+    file: string
+    title: string
+    status: 'open' | 'done'
+    created: string
+    result: string | null
+    locations: string[]
+  }[]
+  done: string | null
+}

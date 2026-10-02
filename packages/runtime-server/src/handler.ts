@@ -737,8 +737,14 @@ function handlerFor({
       const result = await scope.run(query, input)
       return json(result, privately(scope.readSession))
     }
-    if (dev && path === '/_hozu/dev/node') {
-      const found = await devNode(build, url.searchParams.get('id') ?? '', dev, readFile)
+    if (dev && (path === '/_hozu/dev/node' || path === '/_hozu/dev/page')) {
+      if (!/^(127\.0\.0\.1|localhost|\[::1\])$/.test(url.hostname))
+        return new Response('Hozu DevTools answers only this machine', { status: 403 })
+      const page =
+        path === '/_hozu/dev/page' ? match(split(url.searchParams.get('path') ?? '/').rest)?.route : null
+      const id =
+        path === '/_hozu/dev/page' ? (page ? `page:${page}` : '') : (url.searchParams.get('id') ?? '')
+      const found = await devNode(build, id, dev, readFile)
       return new Response(JSON.stringify(found), {
         status: found ? 200 : 404,
         headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },

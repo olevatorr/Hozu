@@ -1,5 +1,5 @@
-import { mkdtempSync, writeFileSync } from 'node:fs'
-import { get } from 'node:http'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { get, request } from 'node:http'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -42,7 +42,9 @@ describe('dev server', () => {
       expect(await fetchText(`${server.url}/_hozu/client.js`)).toContain('hozu:snapshots')
       const html = await fetchText(`${server.url}/`)
       expect(html).toContain('<link rel="stylesheet" href="/s16.css">')
-      expect(html).toContain('<script type="module" src="/_hozu/dev.js"></script></body>')
+      expect(html).toMatch(
+        /<script type="module" src="\/_hozu\/dev.js"><\/script>(<script[^>]*><\/script>)*<\/body>/,
+      )
       const events: string[] = []
       const stream = await new Promise<import('node:http').IncomingMessage>((resolve) =>
         get(`${server.url}/_hozu/dev`, resolve),
@@ -65,4 +67,108 @@ describe('dev server', () => {
       await server.close()
     }
   }, 20_000)
+
+  it('shows DevTools: injects the overlay, serves its modules and saves requests from this origin only', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-'))
+    writeFileSync(join(dir, 'style.css'), 'p { color: red }')
+    writeFileSync(join(dir, 'app.ts'), app)
+    const server = await dev({ entry: 'app.ts', cwd: dir, port: 0, appPort: await freePort(), log: () => {} })
+    try {
+      const html = await fetchText(`${server.url}/`)
+      expect(html).toContain('<script type="module" src="/_hozu/devtools/overlay/index.js"></script>')
+      expect(await fetchText(`${server.url}/_hozu/devtools/overlay/index.js`)).toContain('hozu-devtools')
+      expect(await fetchText(`${server.url}/_hozu/devtools/prompt.js`)).toContain('requestMarkdown')
+      expect((await send(server.url, 'GET', '/_hozu/devtools/../../package.json')).status).toBe(404)
+      const markdown = '# Hozu request: Bigger button\n\nbody\n'
+      const saved = await send(
+        server.url,
+        'POST',
+        '/_hozu/dev/requests',
+        { markdown },
+        { origin: server.url },
+      )
+      expect(saved).toEqual({
+        status: 200,
+        body: { number: '0001', file: '.hozu/requests/0001-bigger-button.md' },
+      })
+      expect(readFileSync(join(dir, '.hozu/requests/0001-bigger-button.md'), 'utf8')).toContain(
+        'Bigger button',
+      )
+      const listed = await send(server.url, 'GET', '/_hozu/dev/requests')
+      expect(listed.body).toMatchObject([{ number: '0001', status: 'open', title: 'Bigger button' }])
+      expect(
+        (
+          await send(
+            server.url,
+            'POST',
+            '/_hozu/dev/requests',
+            { markdown },
+            { origin: 'https://evil.example' },
+          )
+        ).status,
+      ).toBe(403)
+      expect(
+        (await send(server.url, 'GET', '/_hozu/dev/requests', undefined, { host: 'evil.example' })).status,
+      ).toBe(403)
+      expect(existsSync(join(dir, '.hozu/requests/0002-bigger-button.md'))).toBe(false)
+    } finally {
+      await server.close()
+    }
+  }, 20_000)
+
+  it('leaves DevTools out when it is turned off', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-'))
+    writeFileSync(join(dir, 'style.css'), 'p { color: red }')
+    writeFileSync(join(dir, 'app.ts'), app)
+    const server = await dev({
+      entry: 'app.ts',
+      cwd: dir,
+      port: 0,
+      appPort: await freePort(),
+      log: () => {},
+      devtools: false,
+    })
+    try {
+      const html = await fetchText(`${server.url}/`)
+      expect(html).toContain('/_hozu/dev.js')
+      expect(html).not.toContain('devtools')
+      expect((await send(server.url, 'GET', '/_hozu/dev/requests')).body).toContain('<p>hi</p>')
+    } finally {
+      await server.close()
+    }
+  }, 20_000)
 })
+
+function send(
+  base: string,
+  method: string,
+  path: string,
+  body?: unknown,
+  headers: Record<string, string> = {},
+) {
+  const url = new URL(path, base)
+  return new Promise<{ status: number; body: unknown }>((resolve, reject) => {
+    const req = request(
+      {
+        host: url.hostname,
+        port: url.port,
+        path,
+        method,
+        headers: { 'content-type': 'application/json', ...headers },
+      },
+      (res) => {
+        let text = ''
+        res.on('data', (c) => (text += c))
+        res.on('end', () => {
+          let parsed: unknown = text
+          try {
+            parsed = JSON.parse(text)
+          } catch {}
+          resolve({ status: res.statusCode ?? 0, body: parsed })
+        })
+      },
+    )
+    req.on('error', reject)
+    req.end(body === undefined ? undefined : JSON.stringify(body))
+  })
+}

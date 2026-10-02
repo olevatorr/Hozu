@@ -383,6 +383,10 @@ importers:
       zod:
         specifier: 4.6.5
         version: 4.6.5
+    devDependencies:
+      '@hozu/dev':
+        specifier: workspace:*
+        version: link:../../packages/dev
 
   examples/showcase:
     dependencies:
@@ -643,6 +647,9 @@ importers:
       '@hozu/core':
         specifier: workspace:*
         version: link:../core
+      '@hozu/devtools':
+        specifier: workspace:*
+        version: link:../devtools
       '@hozu/machine':
         specifier: workspace:*
         version: link:../machine
@@ -704,9 +711,18 @@ importers:
 
   packages/dev:
     dependencies:
+      '@hozu/devtools':
+        specifier: workspace:*
+        version: link:../devtools
       '@hozu/runtime-client':
         specifier: workspace:*
         version: link:../runtime-client
+
+  packages/devtools:
+    dependencies:
+      '@hozu/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/image:
     dependencies:

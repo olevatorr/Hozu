@@ -38,7 +38,7 @@ export async function runServe(
     ...(existsSync(publicDir) ? { publicDir } : {}),
   })
   const port = Number(process.env.PORT ?? 3000)
-  const host = process.env.HOST
+  const host = process.env.HOST ?? (process.env.HOZU_DEV === '1' ? '127.0.0.1' : undefined)
   const name = (build.ir.site?.name ?? 'Hozu').trim() || 'Hozu'
   await new Promise<void>((ready) => (host ? server.listen(port, host, ready) : server.listen(port, ready)))
   const url = `http://${host ?? 'localhost'}:${port}`

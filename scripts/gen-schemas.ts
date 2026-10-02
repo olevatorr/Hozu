@@ -95,6 +95,11 @@ export const targets = [
     type: 'LocateOutput',
     out: 'packages/cli/schema/locate.schema.json',
   },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'RequestsOutput',
+    out: 'packages/cli/schema/requests.schema.json',
+  },
 ]
 
 export function generate(target: (typeof targets)[number]): string {

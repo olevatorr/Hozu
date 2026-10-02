@@ -65,12 +65,42 @@ describe('dev markers (ADR 0047 G1, G4)', () => {
     const button = markers(html).find(
       (id) => html.includes(`data-hz="${id}" type="submit"`) || id.endsWith('/2/1'),
     )!
-    const node = await (await handler.fetch(new Request(`http://local/_hozu/dev/node?id=${button}`))).json()
+    const node = await (
+      await handler.fetch(new Request(`http://127.0.0.1/_hozu/dev/node?id=${button}`))
+    ).json()
     expect(node.component.ref).toBe('ui.Button')
     expect(node.component.declaration.file).toBe('ui/button.ts')
     expect(node.location.file).toBe('features/account/views.ts')
     const line = readFileSync(join(root, node.location.file), 'utf8').split('\n')[node.location.line - 1]
     expect(node.excerpt.lines).toContain(line)
+  })
+})
+
+describe('dev endpoint security (ADR 0047)', () => {
+  it('answers only requests addressed to this machine', async () => {
+    const root = fileURLToPath(new URL('../../../examples/notes/', import.meta.url))
+    const app = (await import(join(root, 'app.ts'))).default
+    const handler = createHandler(app, { dev: { root }, env, readFile })
+    const ask = (base: string) => handler.fetch(new Request(`${base}/_hozu/dev/node?id=account.Login`))
+    expect((await ask('http://127.0.0.1:3000')).status).toBe(200)
+    expect((await ask('http://localhost:3000')).status).toBe(200)
+    expect((await ask('http://evil.example')).status).toBe(403)
+  })
+
+  it('names the page a path renders, also under a locale prefix', async () => {
+    const root = fileURLToPath(new URL('../../../examples/notes/', import.meta.url))
+    const app = (await import(join(root, 'app.ts'))).default
+    const handler = createHandler(app, { dev: { root }, env, readFile })
+    const page = async (path: string) =>
+      (
+        await handler.fetch(new Request(`http://127.0.0.1/_hozu/dev/page?path=${encodeURIComponent(path)}`))
+      ).json()
+    expect(await page('/login')).toMatchObject({
+      id: 'page:login',
+      page: { route: 'login', head: { title: 'Sign in' } },
+    })
+    expect(await page('/de/login')).toMatchObject({ id: 'page:login' })
+    expect((await handler.fetch(new Request('http://127.0.0.1/_hozu/dev/page?path=/nope'))).status).toBe(404)
   })
 })
 

@@ -53,7 +53,7 @@ describe('IR JSON Schema', () => {
 })
 
 describe('P4 dependencies', () => {
-  it.each(['core', 'machine', 'data', 'compiler', 'runtime-client', 'validator', 'cli', 'dev'])(
+  it.each(['core', 'machine', 'data', 'compiler', 'runtime-client', 'validator', 'cli', 'dev', 'devtools'])(
     '@hozu/%s has no third-party runtime dependencies',
     (pkg) => {
       const manifest = JSON.parse(read(`packages/${pkg}/package.json`))

@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "hozu dev",
     "validate": "hozu validate",
     "serve": "hozu serve",
     "start": "hozu serve"
@@ -18,5 +19,8 @@
     "@hozu/transform": "workspace:*",
     "@hozu/variants": "workspace:*",
     "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@hozu/dev": "workspace:*"
   }
 }

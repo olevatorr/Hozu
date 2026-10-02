@@ -1,10 +1,11 @@
 import { type ChildProcess, spawn } from 'node:child_process'
 import { existsSync, type FSWatcher, readFileSync, statSync, watch } from 'node:fs'
-import { createServer, request, type Server, type ServerResponse } from 'node:http'
+import { createServer, type IncomingMessage, request, type Server, type ServerResponse } from 'node:http'
 import { createRequire } from 'node:module'
 import type { AddressInfo } from 'node:net'
-import { dirname, join } from 'node:path'
+import { dirname, join, normalize, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { devtoolsDir, devtoolsEntry, listRequests, saveRequest } from '@hozu/devtools'
 import { devClient } from './client.ts'
 
 let bundle: string | null = null
@@ -20,6 +21,7 @@ export interface DevOptions {
   port?: number
   appPort?: number
   debounce?: number
+  devtools?: boolean
   log?: (line: string) => void
 }
 
@@ -37,6 +39,7 @@ export async function dev({
   port = 3000,
   appPort = port + 1,
   debounce = 60,
+  devtools = true,
   log = (line) => console.log(line),
 }: DevOptions): Promise<DevServer> {
   const clients = new Set<ServerResponse>()
@@ -109,7 +112,24 @@ export async function dev({
   start()
   await ready
 
+  const local = (host: string | undefined) => !!host && /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/.test(host)
+  const allowed = (req: IncomingMessage) => {
+    if (!local(req.headers.host)) return false
+    const origin = req.headers.origin
+    return req.method === 'GET' || origin === `http://${req.headers.host}`
+  }
+  const tag = `<script type="module" src="/_hozu/dev.js"></script>${devtools ? `<script type="module" src="${devtoolsEntry}"></script>` : ''}`
+
   const server = createServer((req, res) => {
+    const path = req.url?.split('?')[0] ?? '/'
+    if (devtools && (path.startsWith('/_hozu/devtools/') || path.startsWith('/_hozu/dev/'))) {
+      if (!allowed(req))
+        return void res
+          .writeHead(403, { 'content-type': 'text/plain' })
+          .end('Hozu DevTools answers only this machine')
+      if (path.startsWith('/_hozu/devtools/')) return void serveDevtools(path, res)
+      if (path === '/_hozu/dev/requests') return void requests(req, res, cwd)
+    }
     if (req.url === '/_hozu/dev') {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' })
       res.write(': connected\n\n')
@@ -137,11 +157,7 @@ export async function dev({
           res.writeHead(up.statusCode ?? 502, headers)
           up.on('data', (chunk: Buffer) => {
             const text = chunk.toString()
-            res.write(
-              text.includes('</body>')
-                ? text.replace('</body>', '<script type="module" src="/_hozu/dev.js"></script></body>')
-                : text,
-            )
+            res.write(text.includes('</body>') ? text.replace('</body>', `${tag}</body>`) : text)
           })
           up.on('end', () => res.end())
         },
@@ -163,4 +179,41 @@ export async function dev({
       await new Promise<void>((resolve) => server.close(() => resolve()))
     },
   }
+}
+
+function serveDevtools(path: string, res: ServerResponse) {
+  const file = normalize(join(devtoolsDir, path.slice('/_hozu/devtools/'.length)))
+  if (
+    !file.startsWith(devtoolsDir.endsWith(sep) ? devtoolsDir : devtoolsDir + sep) ||
+    !file.endsWith('.js') ||
+    !existsSync(file)
+  )
+    return void res.writeHead(404, { 'content-type': 'text/plain' }).end('Not found')
+  res
+    .writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store' })
+    .end(readFileSync(file))
+}
+
+function requests(req: IncomingMessage, res: ServerResponse, cwd: string) {
+  const json = (status: number, body: unknown) =>
+    res
+      .writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' })
+      .end(JSON.stringify(body))
+  if (req.method === 'GET') return json(200, listRequests(cwd))
+  if (req.method !== 'POST') return json(405, { error: 'GET or POST' })
+  let body = ''
+  req.on('data', (chunk: Buffer) => {
+    body += chunk
+    if (body.length > 1_000_000) req.destroy()
+  })
+  req.on('end', () => {
+    try {
+      const { markdown } = JSON.parse(body) as { markdown?: unknown }
+      if (typeof markdown !== 'string' || !markdown.startsWith('# Hozu request: '))
+        return json(400, { error: 'Expected { markdown } starting with "# Hozu request: "' })
+      json(200, saveRequest(cwd, markdown))
+    } catch (e) {
+      json(400, { error: (e as Error).message })
+    }
+  })
 }

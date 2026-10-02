@@ -3,6 +3,10 @@
 - Status: **accepted** (2026-10-02). The owner took D1–D3, D5 and D6 as recommended. D4 changed: the tool UI is
   English only, like everything Hozu ships. The look follows Hozu's own style (the site's paper / ink / red poster
   language), not the prototype's.
+- Look (owner, 2026-10-02, after the first P2 build): the poster style was too strong. The tool follows the calm,
+  widely accepted look of framework dev overlays such as Next.js's (rounded, thin borders, soft shadows, normal
+  weights) in Hozu's colours: ink surfaces, paper text, red accents. Outlines sit on a `mix-blend-mode: difference`
+  layer so they show on any background, with a thin red inner line where difference fails (mid grey).
 - Basis:
   - the standalone prototype in `~/Developer/hozu-devtools-demo` (ADRs 0001–0004 there);
   - the source index Hozu already records in development builds.
@@ -189,6 +193,17 @@ Each phase ends with `pnpm gate` and a report.
 | P4 | Style edits with theme-utility translation and ownership rules | "Make this bigger" becomes `text-2xl` at the right place |
 | P5 | State previews: machine states, query branches, lists | Every state, without breaking the app |
 | P6 | Docs, skill topic, site page, `create-hozu` notes; trial 0023 registered separately (ADR 0048) before any run | Release 0.10.0 |
+
+## As built (P1, P2)
+- **Markers are node ids, not indexes:** `data-hz="account.Login/2/1"`. The id is already in the IR, readable in a
+  request and stable across reloads; the HTML cost is dev only.
+- **Endpoints:** `GET /_hozu/dev/node?id=<id | page:<route>>` and `GET /_hozu/dev/page?path=<path>` on the app (dev
+  only, loopback `Host` only); `GET|POST /_hozu/dev/requests` and `/_hozu/devtools/*` on `@hozu/dev`, which refuses a
+  non-loopback `Host` and a cross-origin `POST`. Under `HOZU_DEV=1`, `hozu serve` binds 127.0.0.1 unless `HOST` is set.
+- **`hozu dev`** starts `@hozu/dev` from the app (`--no-devtools`); the scaffold gets the script in P6.
+- **What a change reaches:** a component use and a message carry the number of source places that use them (part
+  call sites count once), so the prompt and the inspector can say "used in 6 places".
+- **Pages** are nodes too (`kind: 'page'`, `hozu locate page:home`): declaration, route, views and the head fields.
 
 ## Rejected
 - **Shipping source maps or markers in production:** cost and leakage. Dev only.

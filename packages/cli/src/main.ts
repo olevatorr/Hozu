@@ -13,6 +13,7 @@ import {
 import { runBuild } from './commands/build.ts'
 import { runCheck } from './commands/check.ts'
 import { describeComponent, describeComponentImpact } from './commands/components.ts'
+import { runDev } from './commands/dev.ts'
 import { runDocs } from './commands/docs.ts'
 import { describeExplain, runExplain } from './commands/explain.ts'
 import { mermaid, runGraph } from './commands/graph.ts'
@@ -24,6 +25,7 @@ import { describeMap, runMap } from './commands/map.ts'
 import { describePlan, runPlan } from './commands/plan.ts'
 import { describeRender, runRender } from './commands/render.ts'
 import { describeRequest, runRequest } from './commands/request.ts'
+import { describeRequests, runRequests } from './commands/requests.ts'
 import { runServe } from './commands/serve.ts'
 import { runSkill } from './commands/skill.ts'
 import { featuresCreated, runValidate, seedLockIsolated } from './commands/validate.ts'
@@ -44,6 +46,8 @@ Commands:
   plan <route>              Derived render plan: regions, cache modes, hydration islands
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
   serve                     Start the app module (project({ app })) on PORT with adapter-node: what npm start runs
+  dev                       Start the dev server: reload on edits, hot CSS and Hozu DevTools (--no-devtools hides it)
+  requests [done <n>]       List the change requests saved from DevTools; done <n> --result "<what changed>" closes one
   docs [topic]              Print one topic of the guide (no topic: list them); docs components adds the app's list
   render <id>               Render one component alone (ui.Button): HTML, root class, owned properties, diagnostics
   skill                     Rewrite the agent skill for this Hozu version (--agent claude|agents|both)
@@ -164,6 +168,8 @@ export async function main(
         js: { type: 'string' },
         screenshot: { type: 'string' },
         'reduced-motion': { type: 'boolean', default: false },
+        result: { type: 'string' },
+        'no-devtools': { type: 'boolean', default: false },
         help: { type: 'boolean', short: 'h' },
       },
     })
@@ -190,6 +196,8 @@ export async function main(
       'render',
       'build',
       'serve',
+      'dev',
+      'requests',
       'skill',
     ]
     if (command === 'post')
@@ -256,7 +264,16 @@ export async function main(
       out(asJson ? json(result) : describeAdd(result))
       return 0
     }
+    if (command === 'requests') {
+      const result = runRequests(cwd, target, positionals[2], values.result)
+      out(asJson ? json(result) : describeRequests(result))
+      return 0
+    }
     const loaded = await load(values.config, cwd)
+    if (command === 'dev') {
+      await runDev(loaded, values['no-devtools'] !== true, (line) => out(`${line}\n`))
+      return 0
+    }
     if (command === 'check') {
       const result = await runCheck(loaded, cwd, values['update-lock'] === true)
       if (asJson) out(json(result))

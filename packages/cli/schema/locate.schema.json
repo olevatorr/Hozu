@@ -29,6 +29,7 @@
             "list",
             "html",
             "embed",
+            "page",
             "other"
           ]
         },
@@ -84,12 +85,16 @@
                       "type": "null"
                     }
                   ]
+                },
+                "uses": {
+                  "type": "number"
                 }
               },
               "required": [
                 "ref",
                 "variant",
-                "declaration"
+                "declaration",
+                "uses"
               ],
               "additionalProperties": false
             },
@@ -120,6 +125,16 @@
             "null"
           ]
         },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevTextSource"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "events": {
           "type": "array",
           "items": {
@@ -130,11 +145,18 @@
               },
               "event": {
                 "type": "string"
+              },
+              "transitions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/DevTransition"
+                }
               }
             },
             "required": [
               "dom",
-              "event"
+              "event",
+              "transitions"
             ],
             "additionalProperties": false
           }
@@ -171,12 +193,23 @@
                   "string",
                   "null"
                 ]
+              },
+              "source": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/DevTextSource"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             },
             "required": [
               "id",
               "kind",
-              "text"
+              "text",
+              "source"
             ],
             "additionalProperties": false
           }
@@ -206,6 +239,16 @@
               "type": "null"
             }
           ]
+        },
+        "page": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevPage"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -218,11 +261,13 @@
         "location",
         "classes",
         "text",
+        "source",
         "events",
         "conditions",
         "machine",
         "children",
-        "excerpt"
+        "excerpt",
+        "page"
       ],
       "additionalProperties": false
     },
@@ -243,6 +288,83 @@
         "file",
         "line",
         "column"
+      ],
+      "additionalProperties": false
+    },
+    "DevTextSource": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "literal",
+            "message",
+            "data",
+            "context",
+            "route",
+            "computed"
+          ]
+        },
+        "detail": {
+          "type": "string"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "uses": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "detail",
+        "location",
+        "uses"
+      ],
+      "additionalProperties": false
+    },
+    "DevTransition": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "guarded": {
+          "type": "boolean"
+        },
+        "navigates": {
+          "type": "boolean"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "guarded",
+        "navigates",
+        "location"
       ],
       "additionalProperties": false
     },
@@ -276,6 +398,89 @@
         "kind",
         "detail",
         "location"
+      ],
+      "additionalProperties": false
+    },
+    "DevPage": {
+      "type": "object",
+      "properties": {
+        "route": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "routeLocation": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "views": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "head": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "image": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "website",
+                "article"
+              ]
+            },
+            "noindex": {
+              "type": "boolean"
+            },
+            "query": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "title",
+            "description",
+            "image",
+            "type",
+            "noindex",
+            "query"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "route",
+        "path",
+        "routeLocation",
+        "views",
+        "head"
       ],
       "additionalProperties": false
     }

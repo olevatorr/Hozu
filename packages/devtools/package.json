@@ -1,35 +1,36 @@
 {
-  "name": "@hozu/dev",
+  "name": "@hozu/devtools",
   "version": "0.9.0",
-  "description": "Hozu development server: CSS hot swap, state-keeping reloads and Hozu DevTools",
+  "description": "Hozu DevTools: point at the screen, get a request that points the agent at the source",
   "keywords": [
     "hozu",
     "framework",
     "ai",
     "agents",
-    "ssr",
-    "islands",
+    "devtools",
+    "inspector",
     "typescript"
   ],
-  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/dev#readme",
+  "homepage": "https://github.com/olevatorr/Hozu/tree/main/packages/devtools#readme",
   "bugs": {
     "url": "https://github.com/olevatorr/Hozu/issues"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/olevatorr/Hozu.git",
-    "directory": "packages/dev"
+    "directory": "packages/devtools"
   },
   "license": "MIT",
   "author": "olevatorr",
   "type": "module",
-  "bin": {
-    "hozu-dev": "./dist/bin.js"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./prompt": {
+      "types": "./dist/prompt.d.ts",
+      "default": "./dist/prompt.js"
     }
   },
   "files": [
@@ -42,8 +43,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@hozu/devtools": "workspace:*",
-    "@hozu/runtime-client": "workspace:*"
+    "@hozu/core": "workspace:*"
   },
   "sideEffects": false
 }
