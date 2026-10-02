@@ -140,8 +140,10 @@
         "static",
         "isr",
         "swr",
-        "request"
-      ]
+        "request",
+        "browser"
+      ],
+      "description": "`browser`: read in the browser after hydration (ADR 0049); the server renders `pending` and never sees the data."
     },
     "NodePlan": {
       "type": "object",

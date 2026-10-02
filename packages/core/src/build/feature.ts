@@ -135,7 +135,30 @@ function runsOf(scope: FeatureScope, runs: unknown, effectScope: unknown, p: At)
   return runs as Runs
 }
 
-function fetchOf(scope: FeatureScope, url: URL | null): FeatureIR['fetch'] {
+/** The names a module exports (`export const x`, `export function x`, `export { a, b as c }`). */
+export function exportNames(source: string): string[] {
+  const out = new Set<string>()
+  for (const m of source.matchAll(
+    /export\s+(?:const|let|var|async\s+function|function)\s+([A-Za-z_$][\w$]*)/g,
+  ))
+    out.add(m[1]!)
+  for (const m of source.matchAll(/export\s*\{([^}]*)\}/g))
+    for (const part of m[1]!.split(',')) {
+      const name = part
+        .trim()
+        .split(/\s+as\s+/)
+        .pop()
+        ?.trim()
+      if (name) out.add(name)
+    }
+  return [...out]
+}
+
+function fetchOf(
+  scope: FeatureScope,
+  url: URL | null,
+  found: { exports: string[] | null },
+): FeatureIR['fetch'] {
   if (!url) return null
   const listed = scope.project.manifest?.fetches?.[scope.id]
   if (listed) return { sourceHash: listed.hash }
@@ -156,10 +179,13 @@ function fetchOf(scope: FeatureScope, url: URL | null): FeatureIR['fetch'] {
     return null
   }
   scope.project.bindings.fetches[scope.id] = file
-  return { sourceHash: sha256(fs.readFileSync(file, 'utf8')).slice(0, 16) }
+  const text = fs.readFileSync(file, 'utf8')
+  found.exports = exportNames(text)
+  return { sourceHash: sha256(text).slice(0, 16) }
 }
 
 export function buildFeature(project: ProjectScope, id: string, config: FeatureParts): FeatureIR {
+  const fetched: { exports: string[] | null } = { exports: null }
   const scope = new FeatureScope(project, id)
   if (typeof config.intent?.summary !== 'string' || !config.intent.summary.trim())
     scope.report(
@@ -297,11 +323,47 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     views: mapRecord(config.views, (sym, v) => buildView(scope, sym, v)),
     contracts: mapRecord(config.contracts, (sym, c) => buildContract(scope, sym, c)),
     messages: config.messages ? buildMessages(defOf<MessagesDef>(config.messages)) : null,
-    fetch: fetchOf(scope, config.fetch),
+    fetch: fetchOf(scope, config.fetch, fetched),
   }
-  const local = [...Object.values(ir.queries), ...Object.values(ir.mutations)].some(
-    (e) => e.runs !== 'server',
-  )
+  const effects = [
+    ...Object.entries(ir.queries).map(([sym, e]) => [sym, 'queries', e.runs] as const),
+    ...Object.entries(ir.mutations).map(([sym, e]) => [sym, 'mutations', e.runs] as const),
+  ]
+  if (fetched.exports) {
+    const exported = new Set(fetched.exports)
+    for (const [sym, kind, runs] of effects)
+      if (runs !== 'server' && !exported.has(sym))
+        scope.report(
+          'HZ081',
+          scope.at(kind, sym, 'runs'),
+          `${id}.${sym} runs ${runs === 'browser' ? 'in the browser' : 'on either side'} but fetch.ts exports no ${sym}`,
+          "Effects that do not run only on the server are implemented in the feature's fetch.ts, one export per effect under its name (ADR 0049).",
+          {
+            summary: `export const ${sym} = implement<typeof model.${sym}>(…) in fetch.ts, or runs: 'server' with a resolver in app.ts`,
+            snippet: `export const ${sym} = implement<typeof model.${sym}>(async (input, { fail, signal }) => { … })`,
+            patch: null,
+          },
+        )
+    const runsOfName = new Map(effects.map(([sym, , runs]) => [sym, runs]))
+    for (const name of exported)
+      if (runsOfName.get(name) !== 'browser' && runsOfName.get(name) !== 'either')
+        scope.report(
+          'HZ081',
+          scope.at('fetch'),
+          runsOfName.has(name)
+            ? `fetch.ts implements ${id}.${name}, which has runs: 'server'`
+            : `fetch.ts exports ${name}, which is not a query or mutation of ${id}`,
+          'fetch.ts exports exactly the effects that run in the browser or on either side, under their names.',
+          {
+            summary: runsOfName.has(name)
+              ? `Remove ${name} from fetch.ts (its resolver is in app.ts), or drop runs: 'server'`
+              : `Rename or remove ${name}: each export must be named after an effect of ${id}`,
+            snippet: null,
+            patch: null,
+          },
+        )
+  }
+  const local = effects.some(([, , runs]) => runs !== 'server')
   if (local && !ir.fetch && !config.fetch)
     scope.report(
       'HZ081',

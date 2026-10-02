@@ -23,6 +23,7 @@ import { offlinePage } from './rules/pwa.ts'
 import { featureLinks, references, routes } from './rules/refs.ts'
 import { rendering } from './rules/rendering.ts'
 import { routeParams, searchSchemas } from './rules/routes.ts'
+import { effectRuntimes } from './rules/runtime.ts'
 import { seed } from './rules/seed.ts'
 import { deadEnds, reachability, shadowing, stateNames } from './rules/states.ts'
 import { classConflicts, componentStyles, leadingImportant } from './rules/styles.ts'
@@ -49,6 +50,7 @@ export { closest, distance } from './suggest.ts'
 
 const rules = [
   endpoints,
+  effectRuntimes,
   seed,
   featureLinks,
   references,

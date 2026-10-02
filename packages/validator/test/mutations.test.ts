@@ -340,6 +340,13 @@ const catalog: Mutation[] = [
     },
   },
   {
+    name: 'page head read from a query that runs in the browser',
+    code: 'HZ082',
+    mutate: (ir) => {
+      ir.features.catalog!.queries.getProduct!.runs = 'browser'
+    },
+  },
+  {
     name: 'live query without tags',
     code: 'HZ050',
     mutate: (ir) => {

@@ -24,12 +24,42 @@ const fieldsOf = (payload: ValueExpr) =>
     .map((k) => `${k}: ui.dom.form('${k}')`)
     .join(', ')
 
+/** The browser-run mutation that this event can start, entering a state that invokes it (ADR 0049). */
+function browserMutationOf(ir: ProjectIR, f: FeatureIR, event: string): string | null {
+  const states = f.machine?.states ?? {}
+  for (const state of Object.values(states))
+    for (const t of state.on[event] ?? []) {
+      const effect = states[t.target]?.invoke?.effect
+      if (!effect) continue
+      const r = resolveRef(ir, effect, 'mutation')
+      if (r && r.feature.mutations[r.symbol]?.runs === 'browser') return effect
+    }
+  return null
+}
+
 export function progressiveForms(ctx: Ctx) {
   const { ir } = ctx
   for (const f of Object.values(ir.features))
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer }) => {
         if (node.kind !== 'el' || node.tag !== 'form' || !node.on.submit) return
+        const browser = browserMutationOf(ir, f, node.on.submit.event)
+        if (browser) {
+          ctx.report(
+            'HZ036',
+            f.id,
+            at(pointer, 'on', 'submit'),
+            `This form only works with JavaScript: ${node.on.submit.event} starts ${browser}, which runs in the browser`,
+            "A mutation with runs: 'browser' uses the visitor's browser credentials, so a native post cannot run it (ADR 0049).",
+            {
+              summary:
+                "Keep it (the form needs JavaScript), or use runs: 'either' / 'server' if the mutation needs no browser credentials",
+              snippet: null,
+              patch: null,
+            },
+          )
+          return
+        }
         if (formRunnable(node.on.submit.payload)) return
         ctx.report(
           'HZ036',

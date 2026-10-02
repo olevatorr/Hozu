@@ -45,6 +45,10 @@
       "types": "./dist/component.d.ts",
       "default": "./dist/component.js"
     },
+    "./fetch": {
+      "types": "./dist/fetch.d.ts",
+      "default": "./dist/fetch.js"
+    },
     "./lower": {
       "types": "./dist/lower.d.ts",
       "default": "./dist/lower.js"

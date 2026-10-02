@@ -9,7 +9,8 @@ import {
   type ViewNode,
 } from '@hozu/core/ir'
 
-export type Mode = 'static' | 'isr' | 'swr' | 'request'
+/** `browser`: read in the browser after hydration (ADR 0049); the server renders `pending` and never sees the data. */
+export type Mode = 'static' | 'isr' | 'swr' | 'request' | 'browser'
 
 export interface RegionPlan {
   id: string
@@ -49,9 +50,10 @@ export interface PlanIssue {
   cause: string
 }
 
-const rank: Record<Mode, number> = { static: 0, isr: 1, swr: 2, request: 3 }
+const rank: Record<Mode, number> = { static: 0, isr: 1, swr: 2, request: 3, browser: 4 }
 
 function own(q: QueryIR): { mode: Mode; seconds: number | null } {
+  if (q.runs === 'browser') return { mode: 'browser', seconds: null }
   if (q.scope === 'user' || q.freshness.kind === 'live' || q.freshness.kind === 'request')
     return { mode: 'request', seconds: null }
   if (q.freshness.kind === 'static') return { mode: 'static', seconds: null }
@@ -134,6 +136,10 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     const { feature, symbol } = resolve(ir, ref)
     return feature?.queries[symbol]?.freshness.kind === 'live'
   }
+  const browserQuery = (ref: string) => {
+    const { feature, symbol } = resolve(ir, ref)
+    return feature?.queries[symbol]?.runs === 'browser'
+  }
   const regions: RegionPlan[] = [shell]
   if (page.head.query) {
     const { feature: owner, symbol } = resolve(ir, page.head.query.ref)
@@ -164,7 +170,9 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
     branch = false,
   ) => {
     const hydrate =
-      hydrates(node) || (node.kind === 'query' && (reactiveQuery(node.query) || liveQuery(node.query)))
+      hydrates(node) ||
+      (node.kind === 'query' &&
+        (reactiveQuery(node.query) || liveQuery(node.query) || browserQuery(node.query)))
     if (hydrate && !inIsland) {
       islands.push(node.id)
       if (!branch) certain = true
@@ -223,7 +231,7 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
           pointer,
         }
         regions.push(child)
-        const userData = q.scope === 'user'
+        const userData = q.scope === 'user' || q.runs === 'browser'
         walk(feature, node.ready, join(pointer, 'ready'), child, [...tainted, userData], island, true)
         if (node.pending) walk(feature, node.pending, join(pointer, 'pending'), child, tainted, island, true)
         for (const [name, n] of Object.entries(node.failed))
@@ -271,7 +279,7 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
   }
   const offending =
     page.assert === 'static'
-      ? regions.filter((r) => r.mode !== 'static')
+      ? regions.filter((r) => r.mode !== 'static' && r.mode !== 'browser')
       : page.assert === 'cacheable'
         ? regions.filter((r) => r.mode === 'request')
         : []
