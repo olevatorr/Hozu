@@ -40,6 +40,7 @@ interface Site {
   prepare: (root: ViewNode) => ViewNode
   consts: string[]
   pending: [ViewNode, boolean, boolean, number][]
+  dev: boolean
 }
 
 function embeddedRoot(site: Site, view: string): ViewNode | null {
@@ -234,6 +235,7 @@ class Emitter {
       }
       case 'el': {
         this.lit(`<${n.tag}`)
+        if (this.site.dev) this.lit(staticAttr('data-hz', n.id))
         this.classAndStyle(n)
         let content: ValueExpr | null = null
         for (const [name, v] of Object.entries(n.attrs)) {
@@ -305,6 +307,7 @@ class Emitter {
         const tag = componentOf(site.ir, n.use.component)?.tag ?? 'div'
         this.code(`r.component(${q(n.use.component)})`)
         this.lit(`<${tag}`)
+        if (this.site.dev) this.lit(staticAttr('data-hz', n.id))
         this.classAndStyle(n)
         this.lit('>')
         const own = island && site.islands.has(n.id)
@@ -374,7 +377,7 @@ function reachable(site: Site, add: (n: ViewNode, island: boolean, sep: boolean,
   return walk
 }
 
-export function generateRender(build: BuildResult, images: Variants | null = null): string {
+export function generateRender(build: BuildResult, images: Variants | null = null, dev = false): string {
   const { ir } = build
   const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
   const consts: string[] = []
@@ -388,6 +391,7 @@ export function generateRender(build: BuildResult, images: Variants | null = nul
       prepare,
       consts,
       pending: [],
+      dev,
     }
     const done = new Set<string>()
     const add = (n: ViewNode, island: boolean, sep: boolean, depth: number) => {

@@ -68,6 +68,7 @@ export interface RenderOptions {
   images?: Variants | null
   env?: Json
   render?: RenderTable
+  dev?: boolean
 }
 
 export interface RenderedPage {
@@ -95,6 +96,7 @@ export async function renderPage({
   images = null,
   env = NO_ENV,
   render: generated,
+  dev = false,
 }: RenderOptions): Promise<RenderedPage> {
   const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
   const data = given ?? dataRuntime.scope(session)
@@ -210,7 +212,7 @@ export async function renderPage({
       const x = attrText(name, value(n.attrs[name]!, scope))
       if (x !== null) attrs += x === '' ? ` ${name}` : ` ${name}="${escapeHtml(x)}"`
     }
-    return `<${n.tag}${attrs}>`
+    return `<${n.tag}${dev ? ` data-hz="${escapeHtml(n.id)}"` : ''}${attrs}>`
   }
 
   const embedded = (n: Extract<ViewNode, { kind: 'embed' }>) => {
@@ -261,7 +263,7 @@ export async function renderPage({
       if (c?.client && url) payload.components[ref] ??= { url, tag: c.tag, load: c.client.load }
     },
   }
-  const table = generated ?? (await renderTableFor(build, images))
+  const table = generated ?? (await renderTableFor(build, images, dev))
   const byId = nodesById(build, images)
   const generatedRuntime: RenderRuntime = {
     island: (id, scope, scoped) => island(byId.get(id)!, scope, scoped),
@@ -298,7 +300,10 @@ export async function renderPage({
       case 'component': {
         const tag = n.kind === 'el' ? n.tag : (componentOf(ir, n.use.component)?.tag ?? 'div')
         if (n.kind === 'component') runtime.component(n.use.component)
-        buffer += n.kind === 'el' ? element(n, scope) : `<${tag}${classAndStyle(n, (v) => value(v, scope))}>`
+        buffer +=
+          n.kind === 'el'
+            ? element(n, scope)
+            : `<${tag}${dev ? ` data-hz="${escapeHtml(n.id)}"` : ''}${classAndStyle(n, (v) => value(v, scope))}>`
         const inner = n.kind === 'component' && islandIds.has(n.id) ? false : island
         for (let i = 0; i < n.children.length; i++)
           await render(n.children[i]!, scope, inner, separated(n.children, i))

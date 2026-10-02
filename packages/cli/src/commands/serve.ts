@@ -31,6 +31,7 @@ export async function runServe(
   const publicDir = join(root, 'public')
   const server = createServer(module.app, {
     env: process.env,
+    ...(process.env.HOZU_DEV === '1' ? { dev: { root } } : {}),
     styles: await compileStyles(build, { base: root }),
     ...(components ? { components } : {}),
     ...(images ? { images: await images.optimizeImages(build) } : {}),

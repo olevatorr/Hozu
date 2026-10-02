@@ -19,6 +19,7 @@ import { mermaid, runGraph } from './commands/graph.ts'
 import { describeImpact, runImpact } from './commands/impact.ts'
 import { runInspect } from './commands/inspect.ts'
 import { describeAddKit, runAddKit } from './commands/kits.ts'
+import { describeLocate, runLocate } from './commands/locate.ts'
 import { describeMap, runMap } from './commands/map.ts'
 import { describePlan, runPlan } from './commands/plan.ts'
 import { describeRender, runRender } from './commands/render.ts'
@@ -38,6 +39,7 @@ Commands:
   inspect <feature|id>      Print a feature's canonical IR and summary, or a component (ui.Button) with its uses
   graph <feature>           Print a feature's state/effect/view graph (Mermaid, or --json)
   explain <feature>.<state> Explain a state: transitions, guards, effects, covering contracts
+  locate <id|pointer>       Where a view node is: file:line, owner, component, conditions, events (DevTools ids)
   impact <feature>.<symbol> What a query, mutation, tag, event, fn, view or component (ui.Button) affects
   plan <route>              Derived render plan: regions, cache modes, hydration islands
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
@@ -182,6 +184,7 @@ export async function main(
       'inspect',
       'graph',
       'explain',
+      'locate',
       'impact',
       'plan',
       'render',
@@ -356,6 +359,11 @@ export async function main(
       })
       out(asJson ? json(result) : describeRender(result))
       return result.ok ? 0 : 1
+    }
+    if (command === 'locate') {
+      const result = runLocate(loaded, target)
+      out(asJson ? json(result) : describeLocate(result))
+      return 0
     }
     if (command === 'explain') {
       const result = runExplain(loaded, target)

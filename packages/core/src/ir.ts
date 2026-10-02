@@ -1,5 +1,12 @@
 export type { IsolatedUse } from './build/isolate.ts'
 export { componentProject } from './build/isolate.ts'
+export {
+  type DevCondition,
+  type DevLocation,
+  type DevNode,
+  type DevOptions,
+  locateNode,
+} from './build/locate.ts'
 export type { ImageSet, ImageVariant, Manifest, ManifestAsset } from './build/manifest.ts'
 export type { BuildOptions, BuildResult } from './build/project.ts'
 export { appModuleOf, buildProject, INVALID_ERROR_SCHEMA, UNEXPECTED_ERROR_SCHEMA } from './build/project.ts'

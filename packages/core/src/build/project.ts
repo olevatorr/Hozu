@@ -23,6 +23,7 @@ export interface BuildResult {
   ir: ProjectIR
   bindings: Bindings
   sources: SourceIndex
+  nodes?: Record<string, string>
   diagnostics: Diagnostic[]
   parts: PartUse[]
 }
@@ -497,6 +498,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     ir,
     bindings: scope.bindings,
     sources: scope.sources,
+    nodes: scope.nodes,
     diagnostics: scope.diagnostics,
     parts: [...scope.parts.values()],
   }

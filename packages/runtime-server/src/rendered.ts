@@ -103,16 +103,22 @@ export async function loadRender(source: string): Promise<RenderTable> {
 }
 
 const loaded = new WeakMap<BuildResult, Map<Variants | null, Promise<RenderTable>>>()
+const loadedDev = new WeakMap<BuildResult, Map<Variants | null, Promise<RenderTable>>>()
 
-export function renderTableFor(build: BuildResult, images: Variants | null): Promise<RenderTable> {
-  let byImages = loaded.get(build)
+export function renderTableFor(
+  build: BuildResult,
+  images: Variants | null,
+  dev = false,
+): Promise<RenderTable> {
+  const cache = dev ? loadedDev : loaded
+  let byImages = cache.get(build)
   if (!byImages) {
     byImages = new Map()
-    loaded.set(build, byImages)
+    cache.set(build, byImages)
   }
   let table = byImages.get(images)
   if (!table) {
-    table = loadRender(generateRender(build, images))
+    table = loadRender(generateRender(build, images, dev))
     byImages.set(images, table)
   }
   return table

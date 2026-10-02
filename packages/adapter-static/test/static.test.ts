@@ -1,4 +1,4 @@
-import { access, mkdtemp, readdir, readFile } from 'node:fs/promises'
+import { access, copyFile, mkdtemp, readdir, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { exportStatic } from '@hozu/adapter-static'
@@ -93,6 +93,9 @@ describe('static export of the official site', () => {
       outDir,
     })
     expect(result.skipped).toEqual([])
+    const trials = new URL('../../../docs/trials/', import.meta.url)
+    for (const image of (await readdir(trials)).filter((f) => f.endsWith('.svg')))
+      await copyFile(new URL(image, trials), join(outDir, 'trials', image))
     expect(await missingFiles(outDir)).toEqual([])
     const html = await readFile(join(outDir, 'index.html'), 'utf8')
     const image =

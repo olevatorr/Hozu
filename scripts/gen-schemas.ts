@@ -90,6 +90,11 @@ export const targets = [
     type: 'RenderOutput',
     out: 'packages/cli/schema/render.schema.json',
   },
+  {
+    source: 'packages/cli/src/contract.ts',
+    type: 'LocateOutput',
+    out: 'packages/cli/schema/locate.schema.json',
+  },
 ]
 
 export function generate(target: (typeof targets)[number]): string {

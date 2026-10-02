@@ -504,6 +504,7 @@ function motionOf(scope: FeatureScope, motion: unknown, p: At): string | null {
 }
 
 function node(scope: FeatureScope, value: unknown, id: string, p: At, depth: number): ViewNode {
+  scope.project.markNode(id, p)
   return scope.within(value, () => nodeOf(scope, value, id, p, depth))
 }
 

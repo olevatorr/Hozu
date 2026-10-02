@@ -1,3 +1,4 @@
+import type { DevOptions } from '@hozu/core/ir'
 import { type BuildResult, buildProject, type ImageSet, type Manifest } from '@hozu/core/ir'
 import { resolverSetOf } from '@hozu/data'
 import type { HandlerOptions } from './handler.ts'
@@ -28,6 +29,7 @@ export interface AppHost {
   images?: ImageSet | null
   readFile?: (file: string) => Promise<Uint8Array>
   session?: SessionStore
+  dev?: DevOptions
 }
 
 export const app = (options: AppOptions): App => Object.freeze({ [APP]: options })
@@ -40,7 +42,7 @@ export const projectOfApp = (a: App): unknown => resolverSetOf(a[APP].resolvers)
 export function appHandlerOptions(a: App, host: AppHost = {}): HandlerOptions {
   const { components: _, ...options } = a[APP]
   const build = buildProject(projectOfApp(a), {
-    sources: false,
+    sources: host.dev !== undefined,
     ...(host.manifest ? { manifest: host.manifest } : {}),
   })
   return { ...options, ...host, build }

@@ -234,6 +234,7 @@ export function createApp(doc: Document, options: AppOptions): App {
           c.next = el.nextSibling
         } else {
           el = space ? doc.createElementNS(space, tag) : doc.createElement(tag)
+          if (globalThis.__HOZU_DEV__) el.setAttribute('data-hz', node.id)
           if (node.class) el.setAttribute('class', node.class)
           c.parent.insertBefore(el, c.next)
         }
@@ -415,6 +416,7 @@ export function createApp(doc: Document, options: AppOptions): App {
       c.next = el.nextSibling
     } else {
       el = doc.createElement(tag)
+      if (globalThis.__HOZU_DEV__) el.setAttribute('data-hz', node.id)
       if (node.class) el.setAttribute('class', node.class)
       c.parent.insertBefore(el, c.next)
     }

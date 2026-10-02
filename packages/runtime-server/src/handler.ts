@@ -1,5 +1,6 @@
 import { planRoute } from '@hozu/compiler'
 import type { TagUse } from '@hozu/core'
+import type { DevOptions } from '@hozu/core/ir'
 import {
   type BuildResult,
   canonicalStringify,
@@ -27,6 +28,7 @@ import { clientBundle } from './assets.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
 import { assertComponentBundle } from './components.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'
+import { devNode } from './dev-node.ts'
 import { endpointForm, formFields, formNode, runForm } from './forms.ts'
 import { serviceWorker, serviceWorkerRegistration, webManifest } from './pwa.ts'
 import {
@@ -62,6 +64,7 @@ export interface HandlerOptions {
   preview?: { secret: string; secure?: boolean }
   og?: ((card: OgCard) => Promise<Uint8Array>) | null
   render?: RenderModule
+  dev?: DevOptions
 }
 
 export interface OgCard {
@@ -159,6 +162,7 @@ function handlerFor({
   preview,
   og = null,
   render,
+  dev,
 }: HandlerOptions): Handler {
   const generated = render ? instantiate(render) : undefined
   const cards = new Map<string, Promise<Uint8Array>>()
@@ -351,6 +355,7 @@ function handlerFor({
     try {
       const { html, tags, status, redirect } = await renderToString({
         build,
+        dev: dev !== undefined,
         data,
         route,
         params,
@@ -495,6 +500,7 @@ function handlerFor({
     }
     const rendered = await renderPage({
       build,
+      dev: dev !== undefined,
       data,
       scope: await dataFor(request),
       route,
@@ -546,6 +552,7 @@ function handlerFor({
     }
     const rendered = await renderPage({
       build,
+      dev: dev !== undefined,
       data,
       scope,
       route: found.route,
@@ -730,6 +737,13 @@ function handlerFor({
       const result = await scope.run(query, input)
       return json(result, privately(scope.readSession))
     }
+    if (dev && path === '/_hozu/dev/node') {
+      const found = await devNode(build, url.searchParams.get('id') ?? '', dev, readFile)
+      return new Response(JSON.stringify(found), {
+        status: found ? 200 : 404,
+        headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+      })
+    }
     if (path === '/_hozu/live') return live(url)
     if (path === '/manifest.webmanifest' && manifestText)
       return text('application/manifest+json', manifestText, request.method === 'HEAD')
@@ -809,6 +823,7 @@ function handlerFor({
             html = (
               await renderToString({
                 build,
+                dev: dev !== undefined,
                 data,
                 route: ir.error,
                 assets,

@@ -53,6 +53,7 @@ export { type At, at, resolveAt }
 export class ProjectScope {
   readonly diagnostics: Diagnostic[] = []
   readonly sources: SourceIndex = {}
+  readonly nodes: Record<string, string> = {}
   readonly owners = new Map<object, Owner>()
   readonly features = new Map<object, string>()
   readonly routes = new Map<object, string>()
@@ -120,6 +121,10 @@ export class ProjectScope {
     this.assetList.push({ ...hit, href: listed?.href ?? file!.href })
     this.bindings.assets[href] = { file: file?.file ?? null, width: hit.width, height: hit.height }
     return hit
+  }
+
+  markNode(id: string, pointer: At) {
+    if (this.tracking) this.nodes[id] = resolveAt(pointer)
   }
 
   mark(pointer: At, value: unknown) {

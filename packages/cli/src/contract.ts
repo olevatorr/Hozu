@@ -1,5 +1,13 @@
 import type { RoutePlan } from '@hozu/compiler'
-import type { ComponentIR, ComponentLoad, Diagnostic, ExportsIR, FeatureIR, Json } from '@hozu/core/ir'
+import type {
+  ComponentIR,
+  ComponentLoad,
+  DevNode,
+  Diagnostic,
+  ExportsIR,
+  FeatureIR,
+  Json,
+} from '@hozu/core/ir'
 import type { Impact } from '@hozu/validator'
 
 export interface CliError {
@@ -423,3 +431,5 @@ export interface BrowseActor {
   text: string
   mode?: BrowseMode
 }
+
+export type LocateOutput = DevNode
