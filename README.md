@@ -9,7 +9,11 @@ coding agent can build and change an app with checks instead of guesses.
 
 [![npm](https://img.shields.io/npm/v/@hozu/core?label=%40hozu%2Fcore)](https://www.npmjs.com/package/@hozu/core)
 [![create-hozu](https://img.shields.io/npm/v/create-hozu?label=create-hozu)](https://www.npmjs.com/package/create-hozu)
+[![downloads](https://img.shields.io/npm/dm/create-hozu?label=downloads)](https://www.npmjs.com/package/create-hozu)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+[Website](https://hozu.org) · [Docs](https://hozu.org/docs/getting-started/) ·
+[DevTools](https://hozu.org/devtools/) · [Trials](https://hozu.org/trials/) · [Changelog](CHANGELOG.md)
 
 ```sh
 npm create hozu@latest my-app
@@ -42,6 +46,9 @@ npm install
 npm run dev                          # http://localhost:3000, with Hozu DevTools
 ```
 
+New to the terminal? [Getting started](https://hozu.org/docs/getting-started/) has a prompt to paste into your
+agent: it checks Node, creates the app, reads the skill and builds your first page.
+
 **Hozu DevTools** comes with `npm run dev`: choose Select in the dock, click what should change and describe it.
 The request you copy or save names the file, line and the Hozu way to make the change; it can preview other
 states, styles and wording first, in an exact-size Workbench too. Give it to your agent, or tell the agent
@@ -58,10 +65,9 @@ states, styles and wording first, in an exact-size Workbench too. Give it to you
 The skill is the whole authoring reference, with a verified example app. It is versioned with the framework:
 after upgrading, `npx hozu skill` rewrites it for the installed version.
 
-Checks, which an agent runs after every change:
+The one check an agent runs after every change:
 ```sh
-npx tsc --noEmit -p .
-npx hozu validate          # every rule and every contract; --json for agents
+npx hozu check             # types, every rule and every contract; --json for agents
 ```
 
 ## A feature, end to end
@@ -123,7 +129,8 @@ export const Board = ui.view({
 **Same model and same task, Hozu against Nuxt:** a notes app with accounts, built from a spec, then changed. Each app
 was checked by a hidden acceptance test covering per-user isolation, double submit, forms without JavaScript,
 `HttpOnly` sessions, and a regression pass after the change ([trial 0016](docs/trials/0016-0-5-four-runs.md),
-[trial 0012](docs/trials/0012-correctness-notes.md)).
+[trial 0012](docs/trials/0012-correctness-notes.md)). Measured on 0.5; every later trial is on
+[hozu.org/trials](https://hozu.org/trials/).
 
 | | Hozu 0.5 | Nuxt |
 |---|---|---|
@@ -150,7 +157,8 @@ The extra cost is mostly reading the guide of a framework the model has not seen
 |---|---|
 | [`create-hozu`](https://www.npmjs.com/package/create-hozu) | Creates an app, set up for Claude Code or `AGENTS.md` agents |
 | [`@hozu/core`](https://www.npmjs.com/package/@hozu/core) | IR types and the builders you write apps with |
-| [`@hozu/cli`](https://www.npmjs.com/package/@hozu/cli) | `hozu validate`, `inspect`, `graph`, `explain`, `impact`, `plan`, `build`, `skill` (all `--json`) |
+| [`@hozu/cli`](https://www.npmjs.com/package/@hozu/cli) | `hozu check`, `get`, `browse`, `map`, `add`, `requests`, `locate`, `impact`, `plan`, `build`, `dev`, `serve`, `docs`, `skill` (all `--json`) |
+| [`@hozu/transform`](https://www.npmjs.com/package/@hozu/transform) | Lowers the ordinary TypeScript in views and machines to the checked IR form |
 | [`@hozu/schema-zod`](https://www.npmjs.com/package/@hozu/schema-zod) | Zod schemas (the default adapter) |
 | [`@hozu/data`](https://www.npmjs.com/package/@hozu/data) | Resolvers, cache, tags, invalidation |
 | [`@hozu/adapter-node`](https://www.npmjs.com/package/@hozu/adapter-node) | Node server with an ISR page cache |
@@ -182,7 +190,8 @@ The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router 
 
 ## Requirements and status
 - **Node 22.18 or newer.** Config and app code are TypeScript run with Node's type stripping.
-- **Version 0.1.0 is the first public release.** The API may change before 1.0. Every design decision is recorded in
+- **Version 0.10.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
+  and designers and the trial that checks DevTools requests. Every design decision is recorded in
   [`docs/adr`](docs/adr).
 
 ## Developing Hozu
