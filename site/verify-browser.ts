@@ -97,6 +97,59 @@ try {
   await page.getByRole('button', { name: 'APPLY FIX' }).click()
   await page.waitForSelector(`${joint}[data-pose="joined"]`, { timeout: 5000 })
   assert.deepEqual(errors, [], 'no console errors on the home page')
+  const slow = await browser.newPage({ viewport: { width: 1280, height: 900 } })
+  await slow.route('https://hozu.test/**', async (route) => {
+    if (route.request().url().endsWith('.glb')) await new Promise((done) => setTimeout(done, 2500))
+    await serve(route)
+  })
+  await slow.goto('https://hozu.test/')
+  await slow.locator(joint).scrollIntoViewIfNeeded()
+  await slow.waitForSelector(`${joint}[data-hozu-component-state="mounted"]`, { timeout: 15000 })
+  await slow.getByRole('button', { name: 'AI CHANGE' }).click()
+  await slow.waitForSelector(`${joint}[data-pose="split"]`, { timeout: 10000 })
+  const canvas = page.locator(`${joint} canvas`)
+  const box = (await canvas.boundingBox())!
+  await page.mouse.move(5, 5)
+  await page.waitForTimeout(900)
+  const rest = await canvas.screenshot()
+  await page.waitForTimeout(700)
+  assert.ok(rest.equals(await canvas.screenshot()), 'the joint holds still without a pointer')
+  await page.mouse.move(box.x + box.width * 0.9, box.y + box.height * 0.2)
+  await page.waitForTimeout(500)
+  assert.ok(!rest.equals(await canvas.screenshot()), 'the joint tilts toward the pointer')
+  const still3d = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' })
+  await still3d.route('https://hozu.test/**', (route) => serve(route))
+  await still3d.goto('https://hozu.test/')
+  await still3d.locator(joint).scrollIntoViewIfNeeded()
+  await still3d.waitForSelector(`${joint}[data-pose="joined"]`, { timeout: 15000 })
+  await still3d.waitForTimeout(300)
+  const shot = await still3d.locator(`${joint} canvas`).screenshot()
+  const tones = await still3d.evaluate(async (png) => {
+    const image = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob())
+    const c = new OffscreenCanvas(image.width, image.height)
+    const x = c.getContext('2d')!
+    x.drawImage(image, 0, 0)
+    const d = x.getImageData(0, 0, image.width, image.height).data
+    const counts = new Map<string, number>()
+    for (let i = 0; i < d.length; i += 4) {
+      const [r, g, b] = [d[i]!, d[i + 1]!, d[i + 2]!]
+      if (r > 150 && r - b > 18 && r - g < 40) {
+        const key = `${r >> 3},${g >> 3},${b >> 3}`
+        counts.set(key, (counts.get(key) ?? 0) + 1)
+      }
+    }
+    const faces = [...counts.entries()]
+      .filter(([, n]) => n > (image.width * image.height) / 50)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2)
+      .map(([key]) => key.split(',').map((v) => Number(v) * 8))
+      .map(([r, g, b]) => 0.2126 * r! + 0.7152 * g! + 0.0722 * b!)
+    return faces.length < 2 ? 0 : Math.abs(faces[0]! - faces[1]!)
+  }, shot.toString('base64'))
+  assert.ok(
+    tones >= 16,
+    `the posts' front and side differ by ${tones.toFixed(1)} luminance levels (at least 16)`,
+  )
   const off = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1280, height: 900 } })
   const still = await off.newPage()
   await still.route('https://hozu.test/**', (route) => serve(route))
@@ -107,7 +160,9 @@ try {
     'without JS the joint is its poster',
   )
   assert.equal(await still.locator('canvas').count(), 0, 'without JS there is no canvas')
-  console.log('Joint: mounted, one canvas, split and joined on the demo, 0 console errors, poster without JS')
+  console.log(
+    'Joint: mounted, one canvas, split and joined on the demo, a click during load kept, still at rest, tilts on hover, faces shaded apart, 0 console errors, poster without JS',
+  )
 } finally {
   await browser.close()
 }

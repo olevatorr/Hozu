@@ -5,7 +5,7 @@ from mathutils import Vector
 out = sys.argv[sys.argv.index('--') + 1]
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
-PX, POST, FRAMES = 1.4, 0.7, 24
+PX, POST, MID, END = 1.4, 0.7, 14, 30
 
 def box(size, loc):
     bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
@@ -63,7 +63,7 @@ for o in [beam, *posts, *pegs]:
     shell = o.copy(); shell.data = o.data.copy(); shell.name = f'{o.name}-ink'
     scene.collection.objects.link(shell)
     shell.data.materials.clear(); shell.data.materials.append(ink)
-    d = o.dimensions; t = 0.022
+    d = o.dimensions; t = 0.012
     shell.parent = o; shell.location = (0, 0, 0); shell.rotation_euler = (0, 0, 0)
     shell.scale = tuple(1 + 2 * t / max(v, 1e-6) for v in d)
     bpy.context.view_layer.objects.active = shell
@@ -75,12 +75,11 @@ for o in [beam, *posts, *pegs]:
 
 rest = {}
 
-def track(obj, clip, start, end):
+def track(obj, clip, keys):
     obj.animation_data_create()
-    obj.location, obj.rotation_euler = start
-    obj.keyframe_insert('location', frame=1); obj.keyframe_insert('rotation_euler', frame=1)
-    obj.location, obj.rotation_euler = end
-    obj.keyframe_insert('location', frame=FRAMES); obj.keyframe_insert('rotation_euler', frame=FRAMES)
+    for frame, (loc, rot) in keys:
+        obj.location, obj.rotation_euler = loc, rot
+        obj.keyframe_insert('location', frame=frame); obj.keyframe_insert('rotation_euler', frame=frame)
     action = obj.animation_data.action; action.name = f'{obj.name}-{clip}'
     t = obj.animation_data.nla_tracks.new(); t.name = clip
     t.strips.new(clip, 1, action)
@@ -88,14 +87,15 @@ def track(obj, clip, start, end):
 
 for side, p in zip((-1, 1), posts):
     joined = (p.location.copy(), p.rotation_euler.copy()); rest[p.name] = joined
-    split = (p.location + Vector((side * 0.55, 0, 0)), (0, side * math.radians(4), 0))
-    track(p, 'split', joined, split); track(p, 'join', split, joined)
-    p.location, p.rotation_euler = joined
+    apart = (p.location + Vector((side * 0.55, 0, 0)), (0, side * math.radians(4), 0))
+    track(p, 'split', [(1, joined), (MID, joined), (END, apart)])
+    track(p, 'join', [(1, apart), (MID, joined), (END, joined)])
 for side, g in zip((-1, 1), pegs):
     joined = (g.location.copy(), g.rotation_euler.copy()); rest[g.name] = joined
-    split = (g.location + Vector((side * 0.55, -0.8, 0.4)), (math.pi / 2, 0, math.radians(25 * side)))
-    track(g, 'split', joined, split); track(g, 'join', split, joined)
-    g.location, g.rotation_euler = joined
+    pulled = (g.location + Vector((0, -0.95, 0)), g.rotation_euler.copy())
+    away = (g.location + Vector((side * 0.55, -0.95, 0)), g.rotation_euler.copy())
+    track(g, 'split', [(1, joined), (MID, pulled), (END, away)])
+    track(g, 'join', [(1, away), (MID, pulled), (END, joined)])
 
 world = bpy.data.worlds.new('w'); scene.world = world; world.use_nodes = True
 world.node_tree.nodes['Background'].inputs['Color'].default_value = (*srgb('#f1ede4'), 1)
@@ -126,7 +126,7 @@ scene.render.use_freestyle = True
 fs = scene.view_layers[0].freestyle_settings
 ls = fs.linesets[0] if len(fs.linesets) else fs.linesets.new('ink')
 if ls.linestyle is None: ls.linestyle = bpy.data.linestyles.new('ink')
-ls.linestyle.thickness = 3.5; ls.linestyle.color = srgb('#111010')
+ls.linestyle.thickness = 2.4; ls.linestyle.color = srgb('#111010')
 ls.select_by_visibility = True; ls.select_silhouette = True; ls.select_border = True; ls.select_crease = True
 fs.crease_angle = math.radians(120)
 scene.frame_set(1)

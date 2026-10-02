@@ -7,7 +7,7 @@ const model = ui.asset(new URL('../assets/joint.glb', import.meta.url))
 
 export const Joint = ui.component({
   tag: 'div',
-  styles: tv({ base: 'relative aspect-square w-full max-w-[34rem] cursor-grab touch-pan-y select-none' }),
+  styles: tv({ base: 'relative aspect-square w-full max-w-[34rem] select-none' }),
   props: z.object({ split: z.boolean() }),
   client: new URL('./joint.client.ts', import.meta.url),
   load: 'visible',
