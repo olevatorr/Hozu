@@ -94,6 +94,7 @@ label:has(input) {
 }
 
 html {
+  scroll-padding-top: 6rem;
   scrollbar-width: thin;
   scrollbar-color: var(--color-ink) var(--color-paper);
 }

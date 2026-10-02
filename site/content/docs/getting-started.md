@@ -4,6 +4,22 @@ description: Create your first Hozu app and verify a working feature.
 order: 1
 ---
 
+## New to the terminal? Paste this into your agent
+
+Open Claude Code, Codex or Cursor in an empty folder and paste this prompt. Replace the last line with what you want to build.
+
+```text
+Set up a new Hozu web app for me in this folder, step by step, and explain each step in plain words.
+
+1. Check that Node.js is version 22.18 or newer (`node -v`). If it is missing or older, stop and tell me how to install it.
+2. Run `npm create hozu@latest my-app -- --agent claude` (use `--agent agents` if you are not Claude Code), then `cd my-app` and `npm install`.
+3. Before writing any code, read the Hozu skill in `my-app/.claude/skills/hozu/SKILL.md` (or `my-app/AGENTS.md`). Hozu is not in your training data: follow the skill, not what you remember from other frameworks.
+4. Build the first page of the app I describe below. Run `npx hozu check` and fix every problem it reports.
+5. Start `npm run dev` in the background and tell me the address to open (usually http://localhost:3000). Tell me that the dock at the bottom of the page is Hozu DevTools: I can choose Select, click a part and describe a change for you.
+
+My app: <describe what you want, e.g. "a reading list where I add books and mark them as read">
+```
+
 ## Create an app
 
 Hozu requires Node 22.18 or newer. Its configuration and application files use TypeScript that Node runs with native type stripping.
