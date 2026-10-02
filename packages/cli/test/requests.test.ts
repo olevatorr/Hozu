@@ -22,7 +22,7 @@ const request = (title: string) =>
   `# Hozu request: ${title}\n\n## 1. <h1>\n- Want: x\n- Where: \`features/notes/views.ts:61:14\` (view \`notes.NotesBoard\`)\n`
 
 describe('hozu requests (ADR 0047 D2)', () => {
-  it('lists saved requests, open first, and marks one done with its result', async () => {
+  it('lists open requests and closes one with its result, which removes it', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'hozu-requests-'))
     cpSync(join(root, 'examples/notes/hozu.config.ts'), join(dir, 'hozu.config.ts'))
     saveRequest(dir, request('Bigger title'), new Date('2026-10-02T10:00:00Z'))
@@ -35,12 +35,16 @@ describe('hozu requests (ADR 0047 D2)', () => {
 
     const done = await run(['requests', 'done', '0001', '--result', 'h1 is text-4xl'], dir)
     expect(done.code).toBe(0)
-    expect(done.stdout).toContain('0001 done: h1 is text-4xl')
+    expect(done.stdout).toContain('0001 done and removed: h1 is text-4xl')
 
     const json = JSON.parse((await run(['requests', '--json'], dir)).stdout)
     expect(new Ajv({ strict: false }).validate(schema, json)).toBe(true)
-    expect(json.requests.map((r: { status: string }) => r.status)).toEqual(['done', 'open'])
-    expect(json.requests[0].result).toBe('h1 is text-4xl')
+    expect(json.requests.map((r: { number: string }) => r.number)).toEqual(['0002'])
+    const closing = JSON.parse(
+      (await run(['requests', 'done', '2', '--result', 'red', '--json'], dir)).stdout,
+    )
+    expect(closing.done).toEqual({ number: '0002', result: 'red' })
+    expect(closing.requests).toEqual([])
   })
 
   it('done needs a number and a result', async () => {

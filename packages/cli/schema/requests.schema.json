@@ -55,9 +55,26 @@
           }
         },
         "done": {
-          "type": [
-            "string",
-            "null"
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "number": {
+                  "type": "string"
+                },
+                "result": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "number",
+                "result"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },

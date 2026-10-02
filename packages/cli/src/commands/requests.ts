@@ -8,13 +8,15 @@ export function runRequests(
   number: string | undefined,
   result: string | undefined,
 ): RequestsOutput {
+  let done: RequestsOutput['done'] = null
   if (action === 'done') {
     if (!number || !result?.trim())
       throw new HozuCliError('usage', 'hozu requests done needs the request number and --result', [
         'hozu requests done 0001 --result "h1 is text-4xl now"',
       ])
     try {
-      finishRequest(cwd, number, result.trim())
+      const closed = finishRequest(cwd, number, result.trim())
+      done = { number: closed.number, result: result.trim() }
     } catch (e) {
       throw new HozuCliError('usage', (e as Error).message, ['hozu requests   # lists the numbers'])
     }
@@ -23,25 +25,22 @@ export function runRequests(
       'hozu requests',
       'hozu requests done <n> --result "<what changed>"',
     ])
-  const requests = listRequests(cwd).sort((a, b) =>
-    a.status === b.status ? a.number.localeCompare(b.number) : a.status === 'done' ? -1 : 1,
-  )
-  return { requests, done: action === 'done' ? (number ?? '').padStart(4, '0') : null }
+  return { requests: listRequests(cwd), done }
 }
 
 export function describeRequests(out: RequestsOutput): string {
-  if (!out.requests.length)
-    return 'No requests yet. Run hozu dev, choose Select in the Hozu DevTools dock, click what should change, describe it and press Save request.\n'
   const lines: string[] = []
-  if (out.done) {
-    const r = out.requests.find((x) => x.number === out.done)
-    lines.push(`${out.done} done: ${r?.result ?? ''}`, '')
-  }
-  for (const r of out.requests)
+  if (out.done) lines.push(`${out.done.number} done and removed: ${out.done.result}`, '')
+  if (!out.requests.length)
     lines.push(
-      `${r.number}  ${r.status.padEnd(4)}  ${r.title}${r.locations.length ? `  ${r.locations.join(', ')}` : ''}`,
+      out.done
+        ? 'No open requests left.'
+        : 'No requests yet. Run hozu dev, choose Select in the Hozu DevTools dock, click what should change, describe it and press Save request.',
     )
-  const open = out.requests.filter((r) => r.status === 'open')
-  lines.push('', `${open.length} open · read one with: cat ${open[0]?.file ?? '.hozu/requests/<file>'}`)
+  else {
+    for (const r of out.requests)
+      lines.push(`${r.number}  open  ${r.title}${r.locations.length ? `  ${r.locations.join(', ')}` : ''}`)
+    lines.push('', `${out.requests.length} open · read one with: cat ${out.requests[0]!.file}`)
+  }
   return `${lines.join('\n')}\n`
 }

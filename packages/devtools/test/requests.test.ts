@@ -33,14 +33,17 @@ describe('saved requests (ADR 0047 D2)', () => {
     ])
   })
 
-  it('marks a request done with its result, and refuses an unknown number', () => {
+  it('done removes the request and answers its result; numbers are never reused', () => {
     const root = mkdtempSync(join(tmpdir(), 'hozu-requests-'))
     saveRequest(root, md('One'), new Date('2026-10-02T10:00:00Z'))
-    finishRequest(root, '1', 'Added text-2xl to the button', new Date('2026-10-02T11:00:00Z'))
-    expect(listRequests(root)[0]).toMatchObject({ status: 'done', result: 'Added text-2xl to the button' })
-    expect(readFileSync(join(root, '.hozu/requests/0001-one.md'), 'utf8')).toMatch(
-      /^---\nstatus: done\ncreated: 2026-10-02T10:00:00.000Z\ndone: 2026-10-02T11:00:00.000Z\nresult: "Added text-2xl to the button"\n---\n/,
-    )
+    saveRequest(root, md('Two'), new Date('2026-10-02T10:00:00Z'))
+    expect(finishRequest(root, '2', 'Added text-2xl to the button')).toMatchObject({
+      number: '0002',
+      status: 'done',
+      result: 'Added text-2xl to the button',
+    })
+    expect(listRequests(root).map((r) => r.number)).toEqual(['0001'])
+    expect(saveRequest(root, md('Three')).number).toBe('0003')
     expect(() => finishRequest(root, '0009', 'x')).toThrow('No request 0009')
   })
 

@@ -123,13 +123,22 @@ describe('dev server', () => {
         { origin: server.url },
       )
       expect(done.body).toMatchObject({ number: '0001', status: 'done', result: 'text-xl' })
-      expect((await send(server.url, 'DELETE', '/_hozu/dev/requests/0001')).status).toBe(403)
+      expect((await send(server.url, 'GET', '/_hozu/dev/requests')).body).toEqual([])
+      expect((await send(server.url, 'GET', '/_hozu/dev/requests/0001')).status).toBe(404)
+      const again = await send(
+        server.url,
+        'POST',
+        '/_hozu/dev/requests',
+        { markdown },
+        { origin: server.url },
+      )
+      expect(again.body).toMatchObject({ number: '0002' })
+      expect((await send(server.url, 'DELETE', '/_hozu/dev/requests/0002')).status).toBe(403)
       expect(
-        (await send(server.url, 'DELETE', '/_hozu/dev/requests/0001', undefined, { origin: server.url }))
+        (await send(server.url, 'DELETE', '/_hozu/dev/requests/0002', undefined, { origin: server.url }))
           .status,
       ).toBe(200)
       expect((await send(server.url, 'GET', '/_hozu/dev/requests')).body).toEqual([])
-      expect((await send(server.url, 'GET', '/_hozu/dev/requests/0001')).status).toBe(404)
     } finally {
       await server.close()
     }

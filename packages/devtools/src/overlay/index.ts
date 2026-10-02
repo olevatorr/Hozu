@@ -8,20 +8,7 @@ import {
   type StyleChange,
   scopesFor,
 } from '../prompt.ts'
-import {
-  finish,
-  held,
-  hold,
-  node,
-  one,
-  page,
-  remove,
-  type SavedSummary,
-  save,
-  saved,
-  theme,
-  tree,
-} from './api.ts'
+import { held, hold, node, one, page, remove, save, saved, theme, tree } from './api.ts'
 import { h, read, write } from './dom.ts'
 import { previewLabel, renderLayers } from './layers.ts'
 import { logo } from './logo.ts'
@@ -43,7 +30,8 @@ interface State {
   mode: 'browse' | 'select'
   picks: Pick[]
   active: number
-  panel: 'inspector' | 'requests' | 'settings' | 'layers' | null
+  panel: 'inspector' | 'changes' | 'settings' | 'layers' | null
+  tab: 'draft' | 'saved'
   opened: string | null
   dock: { x: number; y: number } | null
   audience: Audience
@@ -60,6 +48,7 @@ const state: State = {
   active: 0,
   panel: null,
   opened: null,
+  tab: 'draft',
   dock: null,
   audience: given === 'developer' ? 'developer' : 'builder',
   excerpt: false,
@@ -177,7 +166,7 @@ function drawPicks() {
         ]),
         true,
       )
-      place(box, elementOf(p))
+      place(box, state.mode === 'select' ? elementOf(p) : null)
       return box
     }),
   )
@@ -188,23 +177,25 @@ function frame() {
     let i = 0
     for (const box of boxes.children) {
       const p = state.picks[i++]
-      if (p) place(box as HTMLElement, elementOf(p))
+      if (p && state.mode === 'select') place(box as HTMLElement, elementOf(p))
+      else place(box as HTMLElement, null)
     }
   }
   if (hovered && (state.mode === 'select' || forced)) place(hover, hovered)
   requestAnimationFrame(frame)
 }
 
+const hasContent = (p: Pick) => p.note.trim() !== '' || (p.style?.length ?? 0) > 0
+const drafted = () => state.picks.filter(hasContent)
+
 function select(pick: Omit<Pick, 'note' | 'scope'>, add: boolean) {
-  const existing = state.picks.findIndex((p) => p.id === pick.id && p.index === pick.index)
-  if (add && existing >= 0) state.active = existing
-  else if (add) {
+  const same = (p: Pick) => p.id === pick.id && p.index === pick.index
+  if (!add) state.picks = state.picks.filter((p) => hasContent(p) || same(p))
+  const existing = state.picks.findIndex(same)
+  if (existing >= 0) state.active = existing
+  else {
     state.picks.push({ ...pick, note: '', scope: null })
     state.active = state.picks.length - 1
-  } else {
-    const keep = state.picks[state.active]
-    state.picks = [{ ...pick, note: keep && !state.picks[1] ? keep.note : '', scope: null }]
-    state.active = 0
   }
   state.panel = 'inspector'
   persist()
@@ -385,13 +376,11 @@ function renderDock() {
           class: 'act',
           type: 'button',
           onclick: () => {
-            state.panel = state.panel === 'requests' ? (state.picks.length ? 'inspector' : null) : 'requests'
-            state.opened = null
-            persist()
-            void renderPanel()
+            if (state.panel === 'changes') open(state.picks.length ? 'inspector' : null)
+            else open('changes', null, drafted().length ? 'draft' : 'saved')
           },
         },
-        ['Requests', h('span', { class: 'count', 'data-count': true })],
+        ['Changes', h('span', { class: 'count', 'data-count': true })],
       ),
       h(
         'button',
@@ -457,11 +446,8 @@ function renderDock() {
       const label = dock.querySelector('[data-preview]')
       if (label) label.textContent = `Preview: ${previewLabel(t, holding)}`
     })
-  void saved().then((list) => {
-    const count = dock.querySelector('[data-count]')
-    const open = list.filter((r) => r.status === 'open').length
-    if (count) count.textContent = open ? String(open) : ''
-  })
+  const count = dock.querySelector('[data-count]')
+  if (count) count.textContent = drafted().length ? String(drafted().length) : ''
   placeDock()
 }
 
@@ -619,9 +605,11 @@ async function copy(text: string) {
 }
 
 async function request(): Promise<HozuRequest> {
-  const nodes = await Promise.all(state.picks.map((p) => node(p.id)))
+  const active = state.picks[state.active]
+  const chosen = drafted().length ? drafted() : active ? [active] : []
+  const nodes = await Promise.all(chosen.map((p) => node(p.id)))
   return {
-    items: state.picks.flatMap((p, i) => {
+    items: chosen.flatMap((p, i) => {
       const n = nodes[i]
       return n
         ? [
@@ -648,9 +636,10 @@ function status(el: HTMLElement, kind: 'ok' | 'err', parts: (Node | string)[]) {
   el.replaceChildren(...parts)
 }
 
-const open = (panelName: State['panel'], opened: string | null = null) => {
+const open = (panelName: State['panel'], opened: string | null = null, tab: State['tab'] = state.tab) => {
   state.panel = panelName
   state.opened = opened
+  state.tab = tab
   persist()
   void renderPanel()
 }
@@ -701,48 +690,42 @@ function scopeField(n: DevNode, active: Pick) {
   ])
 }
 
-function requestSection(n: DevNode, active: Pick) {
-  const note = h('textarea', {
-    'aria-label': 'What should change?',
-    placeholder: 'What should change? For example: “Make it bigger and use the brand red”',
-    oninput: (event) => {
-      active.note = (event.target as HTMLTextAreaElement).value
-      persist()
-    },
-  }) as HTMLTextAreaElement
-  note.value = active.note
+let notice: (Node | string)[] | null = null
+
+function clearDraft() {
+  for (const p of state.picks) preview(elementOf(p), [])
+  state.picks = []
+  state.active = 0
+  persist()
+  drawPicks()
+}
+
+function exportBlock() {
+  const count = (drafted().length || (state.picks[state.active] ? 1 : 0)) as number
   const result = h('div', { class: 'status', role: 'status' })
   const draft = h('textarea', {
     class: 'draft',
     'aria-label': 'The request, as the agent will read it',
     hidden: true,
   }) as HTMLTextAreaElement
-  const markdown = async () =>
-    draft.hidden
-      ? requestMarkdown(await request(), { excerpt: state.excerpt, theme: await theme() })
-      : draft.value
+  const generate = async () =>
+    requestMarkdown(await request(), { excerpt: state.excerpt, theme: await theme() })
+  const markdown = async () => (draft.hidden ? generate() : draft.value)
   const edit = h(
     'button',
     {
       class: 'link',
       type: 'button',
       onclick: async () => {
-        if (draft.hidden)
-          draft.value = requestMarkdown(await request(), { excerpt: state.excerpt, theme: await theme() })
+        if (draft.hidden) draft.value = await generate()
         draft.hidden = !draft.hidden
         edit.textContent = draft.hidden ? 'Edit before sending' : 'Discard edits'
       },
     },
     ['Edit before sending'],
   )
-  return h('div', { class: 'sec' }, [
-    h('div', { class: 'label' }, [
-      state.picks.length > 1
-        ? `Request · ${state.picks.length} items · this is item ${state.active + 1}`
-        : 'Request',
-    ]),
-    scopeField(n, active),
-    note,
+  const many = count > 1 ? ` (${count})` : ''
+  return h('div', { class: 'export' }, [
     h('div', { class: 'row-end' }, [edit]),
     draft,
     h('div', { class: 'actions' }, [
@@ -753,10 +736,12 @@ function requestSection(n: DevNode, active: Pick) {
           type: 'button',
           onclick: async () => {
             await copy(await markdown())
-            status(result, 'ok', ['Copied. Paste it to your agent.'])
+            status(result, 'ok', [
+              `Copied ${count === 1 ? 'the change' : `all ${count} changes`}. Paste it to your agent.`,
+            ])
           },
         },
-        ['Copy for AI'],
+        [`Copy for AI${many}`],
       ),
       h(
         'button',
@@ -767,20 +752,16 @@ function requestSection(n: DevNode, active: Pick) {
               const done = await save(await markdown())
               const ask = `Do the Hozu request ${done.file}`
               await copy(ask)
-              status(result, 'ok', [
-                'Saved ',
-                h('code', {}, [done.file]),
-                '. Copied “',
-                ask,
-                '”: paste it to your agent.',
-              ])
+              notice = ['Saved ', h('code', {}, [done.file]), `. Copied “${ask}”: paste it to your agent.`]
+              clearDraft()
               renderDock()
+              open('changes', null, 'saved')
             } catch (e) {
               status(result, 'err', [`Not saved: ${(e as Error).message}`])
             }
           },
         },
-        ['Save request'],
+        [`Save request${many}`],
       ),
       h(
         'button',
@@ -799,6 +780,37 @@ function requestSection(n: DevNode, active: Pick) {
       ),
     ]),
     result,
+  ])
+}
+
+function requestSection(n: DevNode, active: Pick) {
+  const others = state.picks.filter((p) => p !== active && hasContent(p)).length
+  const note = h('textarea', {
+    'aria-label': 'What should change?',
+    placeholder: 'What should change? For example: “Make it bigger and use the brand red”',
+    oninput: (event) => {
+      const had = hasContent(active)
+      active.note = (event.target as HTMLTextAreaElement).value
+      persist()
+      if (had !== hasContent(active)) renderDock()
+    },
+  }) as HTMLTextAreaElement
+  note.value = active.note
+  return h('div', { class: 'sec' }, [
+    h('div', { class: 'label' }, ['Change']),
+    scopeField(n, active),
+    note,
+    others
+      ? h('div', { class: 'plain more' }, [
+          `This request also has ${others} other ${others === 1 ? 'change' : 'changes'}. `,
+          h('button', { class: 'link', type: 'button', onclick: () => open('changes', null, 'draft') }, [
+            'Review all',
+          ]),
+        ])
+      : h('div', { class: 'hint-text' }, [
+          'Described parts stay in this request when you select the next one.',
+        ]),
+    exportBlock(),
   ])
 }
 
@@ -928,8 +940,7 @@ function developerSections(n: DevNode, active: Pick) {
 }
 
 async function renderPanel() {
-  if (state.panel === 'requests')
-    return state.opened ? renderRequest(state.opened) : renderRequests(await saved())
+  if (state.panel === 'changes') return state.opened ? renderRequest(state.opened) : renderChanges()
   if (state.panel === 'settings') return renderSettings()
   if (state.panel === 'layers')
     return renderLayers(panel, await tree(location.pathname), {
@@ -1010,35 +1021,129 @@ async function renderPanel() {
   )
 }
 
-function renderRequests(list: SavedSummary[]) {
+function tabs(current: 'draft' | 'saved', saved: number) {
+  const tab = (name: 'draft' | 'saved', label: string) =>
+    h(
+      'button',
+      {
+        class: 'tab',
+        type: 'button',
+        'aria-pressed': String(current === name),
+        onclick: () => open('changes', null, name),
+      },
+      [label],
+    )
+  return h('div', { class: 'tabs' }, [
+    tab('draft', `This request · ${drafted().length}`),
+    tab('saved', `Saved · ${saved}`),
+  ])
+}
+
+async function renderChanges() {
+  const list = await saved()
+  const current = state.tab
   panel.hidden = false
-  panel.replaceChildren(
-    h('div', { class: 'head' }, [
-      h('div', { class: 'kicker' }, ['.hozu/requests']),
-      h('h2', { class: 'title' }, ['Requests']),
-      closeButton(() => open(state.picks.length ? 'inspector' : null)),
-    ]),
-    ...(list.length
-      ? [...list]
-          .reverse()
-          .map((r) =>
-            h('button', { class: 'req', type: 'button', onclick: () => open('requests', r.number) }, [
-              h('span', { class: 'n' }, [r.number]),
-              h('span', { class: 't' }, [r.title]),
-              h('span', { class: `s ${r.status}` }, [r.status]),
-              r.locations.length ? h('span', { class: 'l' }, [r.locations.join(' · ')]) : null,
-            ]),
-          )
-      : [
-          h('div', { class: 'empty' }, [
-            h('b', {}, ['No requests yet. ']),
-            'Choose Select, click what should change, describe it, then Save request.',
-          ]),
+  const head = h('div', { class: 'head' }, [
+    h('div', { class: 'kicker' }, [current === 'draft' ? 'Not sent yet' : '.hozu/requests']),
+    h('h2', { class: 'title' }, ['Changes']),
+    closeButton(() => open(state.picks.length ? 'inspector' : null)),
+    tabs(current, list.length),
+  ])
+  if (current === 'saved') {
+    const message = notice
+    notice = null
+    panel.replaceChildren(
+      ...present([
+        head,
+        message ? h('div', { class: 'notice' }, message) : null,
+        ...(list.length
+          ? [...list]
+              .reverse()
+              .map((r) =>
+                h(
+                  'button',
+                  { class: 'req', type: 'button', onclick: () => open('changes', r.number, 'saved') },
+                  [
+                    h('span', { class: 'n' }, [r.number]),
+                    h('span', { class: 't' }, [r.title]),
+                    h('span', { class: 's open' }, ['open']),
+                    r.locations.length ? h('span', { class: 'l' }, [r.locations.join(' · ')]) : null,
+                  ],
+                ),
+              )
+          : [h('div', { class: 'empty' }, ['No saved requests. Done ones are removed.'])]),
+        h('div', { class: 'tip' }, [
+          'Ask your agent: ',
+          h('q', {}, ['Do the open Hozu requests.']),
+          ' It edits at each place, runs the checks and removes each request when done.',
         ]),
-    h('div', { class: 'tip' }, [
-      'Ask your agent: ',
-      h('q', {}, ['Do the open Hozu requests.']),
-      ' It reads each one, edits at the location and runs the checks.',
+      ]),
+    )
+    return
+  }
+  const items = drafted()
+  const nodes = await Promise.all(items.map((p) => node(p.id)))
+  panel.replaceChildren(
+    ...present([
+      head,
+      items.length
+        ? h(
+            'div',
+            { class: 'sec' },
+            items.map((p, i) => {
+              const n = nodes[i]
+              return h('div', { class: 'item' }, [
+                h('span', { class: 'n' }, [String(i + 1)]),
+                h('div', { class: 'what' }, [
+                  h('b', {}, [n ? (state.audience === 'builder' ? friendlyName(n) : labelOf(n)) : p.id]),
+                  h('span', {}, [
+                    [
+                      p.note.trim(),
+                      p.style?.length
+                        ? `${p.style.length} style ${p.style.length === 1 ? 'change' : 'changes'}`
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · '),
+                  ]),
+                ]),
+                h(
+                  'button',
+                  {
+                    class: 'link',
+                    type: 'button',
+                    onclick: () => {
+                      state.active = state.picks.indexOf(p)
+                      open('inspector')
+                    },
+                  },
+                  ['Edit'],
+                ),
+                h(
+                  'button',
+                  {
+                    class: 'link',
+                    type: 'button',
+                    onclick: () => {
+                      preview(elementOf(p), [])
+                      state.picks.splice(state.picks.indexOf(p), 1)
+                      state.active = Math.max(0, Math.min(state.active, state.picks.length - 1))
+                      persist()
+                      drawPicks()
+                      renderDock()
+                      void renderPanel()
+                    },
+                  },
+                  ['Remove'],
+                ),
+              ])
+            }),
+          )
+        : h('div', { class: 'empty' }, [
+            h('b', {}, ['Nothing yet. ']),
+            'Choose Select, click a part and describe the change. Every described part is added here.',
+          ]),
+      items.length ? h('div', { class: 'sec' }, [exportBlock()]) : null,
     ]),
   )
 }
@@ -1049,15 +1154,9 @@ async function renderRequest(number: string) {
   try {
     r = await one(number)
   } catch {
-    return open('requests')
+    return open('changes', null, 'saved')
   }
   const result = h('div', { class: 'status', role: 'status' })
-  const outcome = h('input', {
-    type: 'text',
-    class: 'outcome',
-    placeholder: 'What was changed? (optional)',
-    'aria-label': 'What was changed',
-  }) as HTMLInputElement
   let armed = false
   const del = h(
     'button',
@@ -1067,71 +1166,54 @@ async function renderRequest(number: string) {
       onclick: async () => {
         if (!armed) {
           armed = true
-          del.textContent = 'Click again to delete'
+          del.textContent = 'Click again to remove'
           return
         }
         await remove(r.number)
         renderDock()
-        open('requests')
+        open('changes', null, 'saved')
       },
     },
-    ['Delete'],
+    ['Done · remove'],
   )
   panel.replaceChildren(
-    ...present([
-      h('div', { class: 'head' }, [
-        h('button', { class: 'back', type: 'button', onclick: () => open('requests') }, ['← Requests']),
-        h('h2', { class: 'title' }, [r.title]),
-        h('div', { class: 'kicker' }, [`${r.number} · ${r.status}${r.result ? ` · ${r.result}` : ''}`]),
-        closeButton(() => open(state.picks.length ? 'inspector' : null)),
+    h('div', { class: 'head' }, [
+      h('button', { class: 'back', type: 'button', onclick: () => open('changes', null, 'saved') }, [
+        '← Saved',
       ]),
-      h('div', { class: 'sec' }, [h('pre', { class: 'md' }, [r.markdown])]),
-      h('div', { class: 'sec' }, [
-        h('div', { class: 'actions' }, [
-          h(
-            'button',
-            {
-              class: 'primary',
-              type: 'button',
-              onclick: async () => {
-                await copy(`Do the Hozu request ${r.file}`)
-                status(result, 'ok', [`Copied “Do the Hozu request ${r.file}”.`])
-              },
+      h('h2', { class: 'title' }, [r.title]),
+      h('div', { class: 'kicker' }, [r.file]),
+      closeButton(() => open(state.picks.length ? 'inspector' : null)),
+    ]),
+    h('div', { class: 'sec' }, [h('pre', { class: 'md' }, [r.markdown])]),
+    h('div', { class: 'sec' }, [
+      h('div', { class: 'actions' }, [
+        h(
+          'button',
+          {
+            class: 'primary',
+            type: 'button',
+            onclick: async () => {
+              await copy(`Do the Hozu request ${r.file}`)
+              status(result, 'ok', [`Copied “Do the Hozu request ${r.file}”.`])
             },
-            ['Copy “do this request”'],
-          ),
-          h(
-            'button',
-            {
-              type: 'button',
-              onclick: async () => {
-                await copy(r.markdown)
-                status(result, 'ok', ['Copied the whole request.'])
-              },
+          },
+          ['Copy “do this request”'],
+        ),
+        h(
+          'button',
+          {
+            type: 'button',
+            onclick: async () => {
+              await copy(r.markdown)
+              status(result, 'ok', ['Copied the whole request.'])
             },
-            ['Copy request'],
-          ),
-          del,
-        ]),
-        r.status === 'open'
-          ? h('div', { class: 'finish' }, [
-              outcome,
-              h(
-                'button',
-                {
-                  type: 'button',
-                  onclick: async () => {
-                    await finish(r.number, outcome.value.trim() || 'Done')
-                    renderDock()
-                    open('requests', r.number)
-                  },
-                },
-                ['Mark done'],
-              ),
-            ])
-          : null,
-        result,
+          },
+          ['Copy request'],
+        ),
+        del,
       ]),
+      result,
     ]),
   )
 }

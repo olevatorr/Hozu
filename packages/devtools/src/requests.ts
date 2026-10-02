@@ -53,10 +53,13 @@ export function saveRequest(
   now = new Date(),
 ): { number: string; file: string } {
   const last = files(root).at(-1)
-  const number = String((last ? Number(last.slice(0, 4)) : 0) + 1).padStart(4, '0')
+  const counter = join(root, folder, '.next')
+  const stored = existsSync(counter) ? Number(readFileSync(counter, 'utf8')) || 1 : 1
+  const next = Math.max(last ? Number(last.slice(0, 4)) + 1 : 1, stored)
+  const number = String(next).padStart(4, '0')
   const file = `${folder}/${number}-${slug(titleIn(markdown))}.md`
   mkdirSync(join(root, folder), { recursive: true })
-  const done = `\nWhen done: \`hozu requests done ${number} --result "<one line: what you changed>"\`\n`
+  const done = `\nWhen done: \`hozu requests done ${number} --result "<one line: what you changed>"\` removes this file.\n`
   writeFileSync(
     join(root, file),
     `${front({ status: 'open', created: now.toISOString() })}${markdown}${done}`,
@@ -64,6 +67,7 @@ export function saveRequest(
       flag: 'wx',
     },
   )
+  writeFileSync(counter, String(next + 1))
   return { number, file }
 }
 
@@ -101,14 +105,13 @@ export function deleteRequest(root: string, number: string): void {
   rmSync(join(root, folder, named(root, number)))
 }
 
-export function finishRequest(root: string, number: string, result: string, now = new Date()): SavedRequest {
+export function finishRequest(root: string, number: string, result: string): SavedRequest {
   const name = named(root, number)
-  const padded = name.slice(0, 4)
-  const path = join(root, folder, name)
-  const { head, body } = split(readFileSync(path, 'utf8'))
-  writeFileSync(
-    path,
-    `${front({ status: 'done', created: head.created ?? '', done: now.toISOString(), result: JSON.stringify(result) })}${body}`,
-  )
-  return listRequests(root).find((r) => r.number === padded)!
+  const done = {
+    ...summary(name, readFileSync(join(root, folder, name), 'utf8')),
+    status: 'done' as const,
+    result,
+  }
+  rmSync(join(root, folder, name))
+  return done
 }

@@ -221,6 +221,20 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(241, 23
 }
 .dock .previewing:hover { background: #ff5126; }
 
+.tabs { display: flex; gap: 4px; margin-top: 10px; }
+.tab { border: 1px solid var(--line-2); background: none; border-radius: 999px; padding: 4px 10px; font: 500 12px/1.2 var(--sans); color: var(--mute); }
+.tab[aria-pressed="true"] { background: rgba(241, 237, 228, 0.12); color: var(--text); border-color: transparent; }
+.item { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: baseline; padding: 8px 0; }
+.item + .item { border-top: 1px solid var(--line); }
+.item .n { font: 11.5px/1 var(--mono); color: var(--mute); }
+.item .what { display: grid; gap: 2px; min-width: 0; }
+.item .what b { font: 500 13px/1.3 var(--sans); color: var(--text); }
+.item .what span { font: 12.5px/1.4 var(--sans); color: var(--mute); overflow-wrap: anywhere; }
+.notice { margin: 12px 16px 0; padding: 10px 12px; border-radius: 8px; background: rgba(47, 163, 107, 0.14); color: #8fe0b6; font: 12.5px/1.45 var(--sans); }
+.notice code { font: 12px/1.4 var(--mono); color: var(--text); }
+.more { margin-top: 8px; color: var(--mute); font-size: 12.5px; }
+.export { margin-top: 4px; }
+
 @media (max-width: 720px) { .dock .hint { display: none; } }
 @media (max-width: 420px) {
   .dock button.mode, .dock button.act { padding: 5px 8px; }

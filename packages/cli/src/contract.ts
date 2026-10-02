@@ -444,5 +444,5 @@ export interface RequestsOutput {
     result: string | null
     locations: string[]
   }[]
-  done: string | null
+  done: { number: string; result: string } | null
 }

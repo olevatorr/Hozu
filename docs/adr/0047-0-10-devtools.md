@@ -231,7 +231,16 @@ Each phase ends with `pnpm gate` and a report.
   (ADR 0021) already exists.
 - **Not yet:** `?:` / `ui.if` on context values and empty lists, which need synthesised data; the Workbench's
   exact viewport.
-- **Outlines** (owner): Hozu red, 2px outside the element, with a thin white halo; no blend layer.
+- **Outlines** (owner): Hozu red, 2px outside the element, with a thin white halo; no blend layer. Browse hides
+  them.
+
+## As built (owner feedback, round 3)
+- **One request, many parts:** a part with a description or a style change stays in the request when the next
+  part is clicked; a part with neither is dropped. The dock's **Changes** shows the count and opens two tabs:
+  This request (review, edit, remove) and Saved. Copy and Save always send the whole request; Save clears it and
+  copies "Do the Hozu request <file>".
+- **Done removes:** `hozu requests done <n> --result` and the panel's "Done · remove" delete the file, so only open
+  requests remain. `.hozu/requests/.next` keeps numbers from being reused.
 
 ## Rejected
 - **Shipping source maps or markers in production:** cost and leakage. Dev only.

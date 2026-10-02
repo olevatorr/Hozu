@@ -93,7 +93,7 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
   afterAll(async () => {
     await cdp?.close()
     await server?.close()
-    for (const f of listed()) if (!before.has(f)) rmSync(join(requests, f))
+    for (const f of listed()) if (!before.has(f) && f !== '.next') rmSync(join(requests, f))
   })
 
   const shadowClick = (selector: string, text: string) =>
@@ -137,53 +137,85 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     expect(await tool(`$('pre .on').textContent`)).toContain('ui.use(Button')
   })
 
-  it('Alt+click goes to the parent, Shift+click adds, and Save copies the line to give the agent', async () => {
+  it('Alt+click goes to the parent; described parts stay when the next one is clicked', async () => {
     await click('button[type=submit]', 1)
     await until(
       `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent === '<form>'`,
     )
-    await click('h1', 8)
+    await tool(
+      `(() => { const t = $('textarea'); t.value = 'Clear the name after signing in'; t.dispatchEvent(new Event('input')); })()`,
+    )
+    await click('h1')
     await until(
-      `document.querySelectorAll && document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.picks button').length === 2`,
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent === '<h1>'`,
     )
     await tool(
       `(() => { const t = $('textarea'); t.value = 'Shorter heading'; t.dispatchEvent(new Event('input')); })()`,
     )
+    await click('label')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.picks button').length === 3`,
+    )
+    await click('h1')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.picks button').length === 2`,
+    )
+    expect(await tool(`$('.dock [data-count]').textContent`)).toBe('2')
+    expect(await tool(`$('.more').textContent`)).toContain('1 other change')
+  })
+
+  it('Copy and Save send every described part as one request; Save clears it and copies the line for the agent', async () => {
     await cdp.send('Browser.grantPermissions', {
       permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
       origin: server.url,
     })
-    await shadowClick('.actions button', 'Save request')
+    await shadowClick('.actions button', 'Copy for AI (2)')
     await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.status.ok')`)
-    const file = (await tool(`$('.status code').textContent`)) as string
+    const copied = (await evaluate('navigator.clipboard.readText()')) as string
+    expect(copied).toContain('## 1. <form>\n- Want: Clear the name after signing in')
+    expect(copied).toContain('## 2. <h1>\n- Want: Shorter heading')
+    await shadowClick('.actions button', 'Save request (2)')
+    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.notice code')`)
+    const file = (await tool(`$('.notice code').textContent`)) as string
     const saved = readFileSync(join(notes, file), 'utf8')
-    expect(saved).toContain('# Hozu request: Shorter heading')
-    expect(saved).toContain(
-      '## 1. <form>\n- Want: (not described: ask the user what should change)\n- Where: `features/account/views.ts:19:10`',
-    )
+    expect(saved).toContain('# Hozu request: Clear the name after signing in')
     expect(saved).toContain('`submit` sends `account.SignIn`')
-    expect(saved).toContain('shared by 2 places')
+    expect(saved).toContain('## 2. <h1>')
     expect(saved).not.toContain('```')
     expect(await evaluate('navigator.clipboard.readText()')).toBe(`Do the Hozu request ${file}`)
+    expect(await tool(`$('.dock [data-count]').textContent`)).toBe('')
+    expect(
+      await evaluate(
+        `document.querySelector('hozu-devtools-outline').shadowRoot.querySelectorAll('.frame.selected').length`,
+      ),
+    ).toBe(0)
   })
 
-  it('a saved request opens, can be marked done and deleted', async () => {
-    await shadowClick('.dock button', 'Requests')
-    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.req')`)
-    await shadowClick('.req', 'Shorter heading')
+  it('a saved request opens, and Done removes it', async () => {
+    await shadowClick('.req', 'Clear the name after signing in')
     await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('pre.md')`)
     expect(await tool(`$('pre.md').textContent`)).toContain('- Want: Shorter heading')
-    await tool(`(() => { const i = $('input.outcome'); i.value = 'h1 is text-2xl'; })()`)
-    await shadowClick('.finish button', 'Mark done')
+    await shadowClick('.actions button', 'Done · remove')
+    await shadowClick('.actions button', 'Click again to remove')
     await until(
-      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.kicker')?.textContent.includes('done · h1 is text-2xl')`,
+      `(() => { const r = document.querySelector('hozu-devtools').shadowRoot; return r.querySelector('.title')?.textContent === 'Changes' && ![...r.querySelectorAll('.req')].some((b) => b.textContent.includes('Clear the name')) })()`,
     )
-    await shadowClick('.actions button', 'Delete')
-    await shadowClick('.actions button', 'Click again to delete')
+    expect(listed().filter((f) => !before.has(f) && f !== '.next')).toEqual([])
+  })
+
+  it('Browse hides the selection outlines and Select shows them again', async () => {
+    await click('h1')
     await until(
-      `(() => { const r = document.querySelector('hozu-devtools').shadowRoot; return r.querySelector('.title')?.textContent === 'Requests' && ![...r.querySelectorAll('.req')].some((b) => b.textContent.includes('Shorter heading')) })()`,
+      `document.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.frame.selected:not([hidden])')`,
     )
-    expect(listed().filter((f) => !before.has(f))).toEqual([])
+    await key('Escape', 'Escape', 0)
+    await until(
+      `!document.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.frame.selected:not([hidden])')`,
+    )
+    await key('KeyS', 'S', 1 | 8)
+    await until(
+      `document.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.frame.selected:not([hidden])')`,
+    )
   })
 
   it('a live style edit previews on the page and becomes the theme class to use', async () => {
