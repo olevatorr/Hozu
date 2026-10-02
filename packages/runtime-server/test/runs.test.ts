@@ -121,6 +121,7 @@ const handler = () =>
     build: buildProject(app, { sources: false }),
     resolvers: resolvers(app, (implement) => [implement(save, () => ({}))]),
     env: { API: 'the public API' },
+    components: { urls: {}, files: {}, fetches: { repos: '/_hozu/c/fetch-repos.js' } },
     onError: () => {},
   })
 const html = async (path: string) =>
@@ -194,6 +195,7 @@ describe('where effects run on a server (ADR 0049 phase 2)', () => {
       createHandler({
         build: buildProject(app, { sources: false }),
         resolvers: resolvers(app, (implement) => [implement(save, () => ({})), implement(search, () => [])]),
+        components: { urls: {}, files: {}, fetches: { repos: '/_hozu/c/fetch-repos.js' } },
       }),
     ).toThrow("repos.search is implemented in the server resolvers, but runs: 'either'")
   })

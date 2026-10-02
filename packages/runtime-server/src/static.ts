@@ -13,6 +13,7 @@ export function publicAssets(
   basePath: string,
   styles: { href: string; preload: string[] } | null,
   components: Record<string, string>,
+  fetches: Record<string, string> = {},
 ): Assets {
   return {
     client: `${basePath}/_hozu/client.js`,
@@ -20,6 +21,7 @@ export function publicAssets(
     styles: styles ? basePath + styles.href : null,
     preload: (styles?.preload ?? []).map((href) => basePath + href),
     components: Object.fromEntries(Object.entries(components).map(([k, v]) => [k, basePath + v])),
+    fetches: Object.fromEntries(Object.entries(fetches).map(([k, v]) => [k, basePath + v])),
   }
 }
 

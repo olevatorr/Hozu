@@ -55,6 +55,8 @@ export interface Stylesheet {
 export interface ComponentBundle {
   urls: Record<string, string>
   files: Record<string, string>
+  /** Each feature's fetch module for the browser (ADR 0049), by feature id. */
+  fetches?: Record<string, string>
 }
 
 export interface RenderOptions {

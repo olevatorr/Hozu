@@ -34,7 +34,7 @@ import type { EffectResponse, Result } from '@hozu/runtime-client'
 import { type App, type AppHost, appHandlerOptions, appOptionsOf } from './app.ts'
 import { clientBundle } from './assets.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
-import { assertComponentBundle } from './components.ts'
+import { assertComponentBundle, assertFetchBundle } from './components.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'
 import { devNode } from './dev-node.ts'
 import { endpointForm, formFields, formNode, runForm } from './forms.ts'
@@ -240,9 +240,11 @@ function handlerFor({
         basePath,
         manifest.styles,
         Object.fromEntries(Object.entries(manifest.components).map(([k, c]) => [k, c.url])),
+        Object.fromEntries(Object.entries(manifest.fetches ?? {}).map(([k, c]) => [k, c.url])),
       )
-    : publicAssets(basePath, styles, components?.urls ?? {})
+    : publicAssets(basePath, styles, components?.urls ?? {}, components?.fetches ?? {})
   assertComponentBundle(ir, assets.components, Boolean(manifest || components))
+  assertFetchBundle(ir, assets.fetches ?? {}, Boolean(manifest || components))
   const data = createDataRuntime({
     build,
     resolvers,

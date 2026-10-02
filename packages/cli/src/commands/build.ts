@@ -17,6 +17,7 @@ interface Stylesheet {
 interface Components {
   urls: Record<string, string>
   files: Record<string, string>
+  fetches?: Record<string, string>
 }
 
 interface ServerModule {
@@ -53,11 +54,12 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
         await from<{ compileStyles(b: BuildResult, o: { base: string }): Promise<Stylesheet> }>('@hozu/css')
       ).compileStyles(build, { base })
     : null
-  const components = Object.keys(build.bindings.clients).length
-    ? await (
-        await from<{ bundleComponents(b: BuildResult): Promise<Components> }>('@hozu/bundle')
-      ).bundleComponents(build)
-    : null
+  const components =
+    Object.keys(build.bindings.clients).length + Object.keys(build.bindings.fetches).length
+      ? await (
+          await from<{ bundleComponents(b: BuildResult): Promise<Components> }>('@hozu/bundle')
+        ).bundleComponents(build)
+      : null
   const images = await optional<{ optimizeImages(b: BuildResult): Promise<ImageSet> }>('@hozu/image').then(
     (m) => (m ? m.optimizeImages(build) : null),
   )
@@ -88,6 +90,12 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
       ]),
     ),
     styles: styles ? { href: styles.href, preload: styles.preload } : null,
+    fetches: Object.fromEntries(
+      Object.entries(components?.fetches ?? {}).map(([feature, url]) => [
+        feature,
+        { hash: build.ir.features[feature]?.fetch?.sourceHash ?? '', url },
+      ]),
+    ),
   }
   const renderFile = join(dir, 'server', 'render.js')
   await mkdir(dirname(renderFile), { recursive: true })

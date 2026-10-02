@@ -6,6 +6,8 @@ export interface ComponentBundle {
   urls: Record<string, string>
   files: Record<string, string>
   diagnostics: Diagnostic[]
+  /** Each feature's fetch module for the browser (ADR 0049), by feature id. */
+  fetches: Record<string, string>
 }
 
 const base = '/_hozu/c'
@@ -15,7 +17,8 @@ export async function bundleComponents(
   { minify = true }: { minify?: boolean } = {},
 ): Promise<ComponentBundle> {
   const entries = Object.entries(project.bindings.clients)
-  const out: ComponentBundle = { urls: {}, files: {}, diagnostics: [] }
+  const out: ComponentBundle = { urls: {}, files: {}, diagnostics: [], fetches: {} }
+  await bundleFetches(project, out, minify)
   if (!entries.length) return out
   const result = await build({
     entryPoints: Object.fromEntries(entries.map(([ref, file]) => [ref.replace('.', '-'), file])),
@@ -60,4 +63,48 @@ export async function bundleComponents(
     })
   }
   return out
+}
+
+/** Each feature's fetch.ts, for the browser: one entry per feature, so a Node-only import names its feature (HZ081). */
+async function bundleFetches(project: BuildResult, out: ComponentBundle, minify: boolean): Promise<void> {
+  for (const [feature, file] of Object.entries(project.bindings.fetches ?? {}).sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
+    try {
+      const result = await build({
+        entryPoints: { [`fetch-${feature}`]: file },
+        bundle: true,
+        format: 'esm',
+        platform: 'browser',
+        target: 'es2022',
+        minify,
+        outdir: base,
+        entryNames: '[name]-[hash]',
+        define: { 'process.env.NODE_ENV': '"production"' },
+        metafile: true,
+        write: false,
+        logLevel: 'silent',
+      })
+      for (const f of result.outputFiles) out.files[f.path.slice(f.path.indexOf(base))] = f.text
+      const entry = Object.entries(result.metafile.outputs).find(([, meta]) => meta.entryPoint)
+      if (entry) out.fetches[feature] = entry[0].slice(entry[0].indexOf(base))
+    } catch (error) {
+      const message =
+        (error as { errors?: { text: string }[] }).errors?.map((e) => e.text).join('; ') ?? String(error)
+      out.diagnostics.push({
+        code: 'HZ081',
+        severity: codes.HZ081.severity,
+        message: `fetch.ts of ${feature} does not bundle for the browser: ${message}`,
+        location: { feature, pointer: join('', 'features', feature, 'fetch'), source: null },
+        cause:
+          "fetch.ts runs in the browser (and on the server for runs: 'either'), so it cannot import Node-only modules.",
+        fix: {
+          summary:
+            "Move what needs Node (a database, node:fs, a secret) into a server resolver and mark that effect runs: 'server'",
+          snippet: "runs: 'server'",
+          patch: null,
+        },
+      })
+    }
+  }
 }

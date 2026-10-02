@@ -169,6 +169,27 @@ export async function inspectApp(
         where,
       ),
     )
+  const fetching = Object.values(build.ir.features)
+    .filter(
+      (f) =>
+        f.fetch &&
+        [...Object.values(f.queries), ...Object.values(f.mutations)].some((e) => e.runs !== 'server'),
+    )
+    .map((f) => f.id)
+  if (fetching.length && !options.components && !clients.length)
+    diagnostics.push(
+      hz045(
+        `app() has no components bundle, but ${fetching.join(', ')} ${fetching.length === 1 ? 'implements' : 'implement'} effects in fetch.ts`,
+        'fetch.ts is bundled for the browser with the client components (ADR 0049); without the bundle the server refuses to start.',
+        {
+          summary:
+            "Pass components: bundleComponents to app() (import { bundleComponents } from '@hozu/bundle')",
+          snippet: 'components: bundleComponents,',
+          patch: null,
+        },
+        where,
+      ),
+    )
   const data = await importer(
     loaded,
     'check',
