@@ -8,7 +8,12 @@ const styles = tv({
     bar: 'mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4',
     skip: 'sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:bg-ink focus:px-3 focus:py-2 focus:text-paper',
     desktop: 'hidden gap-6 text-xs font-extrabold uppercase tracking-widest md:flex',
-    mobile: 'md:hidden',
+    mobile: 'group md:hidden',
+    toggle:
+      'flex list-none items-center gap-2 border-4 border-ink px-3 py-1.5 text-xs font-black uppercase tracking-widest select-none group-open:bg-ink group-open:text-paper [&::-webkit-details-marker]:hidden',
+    bars: 'grid w-4 gap-[3px] [&>i]:block [&>i]:h-[3px] [&>i]:bg-current',
+    panel:
+      'absolute inset-x-0 top-full border-y-4 border-ink bg-paper px-5 pb-4 shadow-[0_10px_0_0_rgb(17_16_16_/_0.12)]',
   },
 })
 export const SiteHeader = ui.component({
@@ -22,7 +27,18 @@ export const SiteHeader = ui.component({
       ui.div({ class: classes.bar, 'data-version': props.version }, [
         slots.brand,
         ui.nav({ 'aria-label': 'Main navigation', class: classes.desktop }, [slots.nav]),
-        ui.details({ class: classes.mobile }, [ui.summary({}, ['Menu']), slots.menu]),
+        ui.details({ class: classes.mobile }, [
+          ui.summary({ class: classes.toggle }, [
+            ui.span({ class: classes.bars, 'aria-hidden': 'true' }, [
+              ui.i({}, []),
+              ui.i({}, []),
+              ui.i({}, []),
+            ]),
+            ui.span({ class: 'group-open:hidden' }, ['Menu']),
+            ui.span({ class: 'hidden group-open:inline' }, ['Close']),
+          ]),
+          ui.div({ class: classes.panel }, [slots.menu]),
+        ]),
       ]),
     ]),
 })

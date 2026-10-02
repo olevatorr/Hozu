@@ -42,7 +42,14 @@ export const Header = ui.view({
                 ],
               ),
               nav: ui.div({ class: 'flex gap-6' }, links()),
-              menu: ui.nav({ 'aria-label': 'Mobile navigation', class: 'mt-3 grid gap-2' }, links()),
+              menu: ui.nav(
+                {
+                  'aria-label': 'Mobile navigation',
+                  class:
+                    "grid [&>a]:flex [&>a]:items-center [&>a]:justify-between [&>a]:border-b-2 [&>a]:border-ink [&>a]:py-3 [&>a]:text-2xl [&>a]:font-black [&>a]:uppercase [&>a]:tracking-tight [&>a]:after:text-red [&>a]:after:content-['→'] [&>a:last-child]:border-b-0 [&>a:hover]:text-red",
+                },
+                links(),
+              ),
             },
           }),
         pending: null,
