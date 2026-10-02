@@ -87,6 +87,20 @@ for (const intent of ['solid', 'outline'] as const) {
   )
 }
 console.log('Playground render snapshot equals hozu render')
+const glb = await readFile(new URL('./assets/joint.glb', import.meta.url))
+assert.equal(glb.toString('ascii', 0, 4), 'glTF', 'joint.glb is binary glTF')
+const gltf = JSON.parse(glb.toString('utf8', 20, 20 + glb.readUInt32LE(12)))
+for (const name of ['split', 'join'])
+  assert.ok(
+    gltf.animations?.some((a: { name: string }) => a.name === name),
+    `joint.glb has the ${name} action`,
+  )
+for (const name of ['beam', 'post-l', 'post-r', 'peg-l', 'peg-r'])
+  assert.ok(
+    gltf.nodes.some((n: { name: string }) => n.name === name),
+    `joint.glb has the ${name} node`,
+  )
+console.log(`joint.glb: ${glb.length} bytes, actions split and join, ${gltf.nodes.length} nodes`)
 const root = new URL('./dist/', import.meta.url)
 assert.equal(await readFile(new URL('CNAME', root), 'utf8'), 'hozu.org\n')
 assert.equal(await readFile(new URL('.nojekyll', root), 'utf8'), '')
