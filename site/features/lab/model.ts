@@ -62,7 +62,7 @@ export const m = machine({
     const running = (state: Stage, target: Stage) => ({
       on: settings(state),
       ignore: [Run, SetContract],
-      after: [{ ms: 700, target }],
+      after: [{ ms: 2400, target }],
     })
     return {
       idle: { on: controls('idle') },
@@ -83,19 +83,27 @@ export const contracts = Object.fromEntries([
       `${state}Valid`,
       contract(m, {
         given: { state },
-        when: [{ send: Run, payload: {} }],
-        expect: { state: 'source' },
+        when: [{ send: Run, payload: {} }, { elapse: 2500 }],
+        expect: { state: 'ir' },
       }),
     ],
     [
       `${state}Invalid`,
       contract(m, {
         given: { state, context: { missing: true, scope: 'public', freshness: 'static', binding: false } },
-        when: [{ send: Run, payload: {} }],
-        expect: { state: 'brokenSource' },
+        when: [{ send: Run, payload: {} }, { elapse: 2500 }],
+        expect: { state: 'brokenIr' },
       }),
     ],
   ]),
+  [
+    'holdEachStage',
+    contract(m, {
+      given: { state: 'idle' },
+      when: [{ send: Run, payload: {} }, { elapse: 2300 }],
+      expect: { state: 'source' },
+    }),
+  ],
   [
     'repairAndRun',
     contract(m, {
@@ -106,7 +114,7 @@ export const contracts = Object.fromEntries([
       when: [
         { send: SetContract, payload: { missing: false } },
         { send: Run, payload: {} },
-        { elapse: 2800 },
+        { elapse: 9600 },
       ],
       expect: { state: 'done', changes: { missing: false } },
     }),
