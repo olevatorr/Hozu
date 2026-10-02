@@ -1,6 +1,8 @@
 # ADR 0047 — 0.10: Hozu DevTools — point at the screen, get a prompt that points at the source
 
-- Status: **proposed** (2026-10-02). No code until the owner decides D1–D6 below.
+- Status: **accepted** (2026-10-02). The owner took D1–D3, D5 and D6 as recommended. D4 changed: the tool UI is
+  English only, like everything Hozu ships. The look follows Hozu's own style (the site's paper / ink / red poster
+  language), not the prototype's.
 - Basis:
   - the standalone prototype in `~/Developer/hozu-devtools-demo` (ADRs 0001–0004 there);
   - the source index Hozu already records in development builds.
@@ -148,7 +150,8 @@ should change.
 - **New package `@hozu/devtools`:**
   - the overlay and workbench UI, in a shadow root so the app's CSS and the tool never touch;
   - zero third-party dependencies;
-  - UI in Traditional Chinese and English, following the browser (D4).
+  - UI in English only (D4);
+  - the site's paper / ink / red poster style, with thick rules and monospace metadata.
 - **`@hozu/runtime-server`:** dev markers in `generateRender`, and the branch override.
 - **`@hozu/runtime-client`:** dev markers on client renders, and state-preview hooks.
 - **`@hozu/dev`:** injects DevTools and serves `/_hozu/dev/node/*` and `/_hozu/dev/requests`.
@@ -211,6 +214,6 @@ Each phase ends with `pnpm gate` and a report.
 | D1 | The two modes are Overlay (demo v2) and Workbench (demo v1), each with Browse/Select | yes |
 | D2 | Save requests to `.hozu/requests/`, with `hozu requests` and a skill topic | yes |
 | D3 | The tool never edits application source | yes |
-| D4 | Tool UI in Traditional Chinese and English, following the browser | yes |
+| D4 | Tool UI in English only | decided: English only |
 | D5 | Trial 0023: vibe-coder change requests with DevTools prompts against plain descriptions, pre-registered as ADR 0048 | yes, after P5 |
 | D6 | Package name `@hozu/devtools`, shown by default in `hozu dev` | yes |
