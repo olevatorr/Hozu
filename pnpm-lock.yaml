@@ -275,9 +275,16 @@ importers:
       '@hozu/transform':
         specifier: workspace:*
         version: link:../../packages/transform
+      '@hozu/variants':
+        specifier: workspace:*
+        version: link:../../packages/variants
       zod:
         specifier: 4.6.5
         version: 4.6.5
+    devDependencies:
+      '@hozu/dev':
+        specifier: workspace:*
+        version: link:../../packages/dev
 
   examples/cart:
     dependencies:

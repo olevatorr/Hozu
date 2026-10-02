@@ -1,5 +1,9 @@
 import { contract, ui } from '@hozu/core'
 import { bookmarkPage, home } from '../../routes.ts'
+import { Badge } from '../../ui/badge.ts'
+import { Button } from '../../ui/button.ts'
+import { Field } from '../../ui/field.ts'
+import { Input } from '../../ui/input.ts'
 import {
   Add,
   addBookmark,
@@ -26,31 +30,35 @@ export const Board = ui.view({
       ui.h1({ class: 'text-3xl font-bold' }, ['Bookmarks']),
       ui.form(
         {
-          class: 'flex gap-2',
+          class: 'flex items-start gap-2',
           on: { submit: ui.send(Add, { title: ui.dom.form('title'), kind: ui.dom.form('kind') }) },
         },
         [
-          ui.label({ for: 'title', class: 'sr-only' }, ['Title']),
-          ui.input({
-            id: 'title',
-            name: 'title',
-            required: true,
-            minlength: 2,
-            maxlength: 80,
-            value: ctx.draft,
-            'aria-invalid': ctx.fields.title !== null,
-            'aria-describedby': 'title-error',
-            class: 'flex-1 rounded border px-3 py-2',
-            on: { input: ui.send(Draft, { text: ui.dom.value }) },
+          ui.use(Field, {
+            props: { for: 'title', label: 'Title', error: ctx.fields.title, errorId: 'title-error' },
+            slots: {
+              control: ui.use(Input, {
+                props: {
+                  id: 'title',
+                  name: 'title',
+                  value: ctx.draft,
+                  required: true,
+                  minlength: 2,
+                  maxlength: 80,
+                  invalid: ctx.fields.title !== null,
+                  describedby: 'title-error',
+                },
+                on: { input: ui.send(Draft, { text: ui.dom.value }) },
+              }),
+            },
           }),
           ui.select(
-            { name: 'kind', 'aria-label': 'Kind', class: 'rounded border px-2' },
+            { name: 'kind', 'aria-label': 'Kind', class: 'rounded border px-2 py-2' },
             kinds.map((k) => ui.option({ value: k, selected: ctx.kind === k }, [k])),
           ),
-          ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),
+          ui.use(Button, { props: { type: 'submit' } }, ['Add']),
         ],
       ),
-      ui.p({ id: 'title-error', class: 'text-sm text-rose-600' }, [ctx.fields.title]),
       ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),
       when(
         ['adding'],
@@ -89,13 +97,10 @@ export const Board = ui.view({
                       ui.a({ href: ui.link(bookmarkPage, { id: b.id }), class: 'flex-1 underline' }, [
                         b.title,
                       ]),
-                      ui.span({ class: 'text-xs text-slate-500' }, [b.kind]),
-                      ui.button(
-                        {
-                          type: 'button',
-                          class: 'text-sm',
-                          on: { click: ui.send(ToggleRead, { id: b.id }) },
-                        },
+                      ui.use(Badge, {}, [b.kind]),
+                      ui.use(
+                        Button,
+                        { variant: { tone: 'quiet' }, on: { press: ui.send(ToggleRead, { id: b.id }) } },
                         [b.read ? 'Mark unread' : 'Mark read'],
                       ),
                     ]),
@@ -120,7 +125,7 @@ export const Detail = ui.view({
             ui.article({}, [
               ui.h1({ class: 'text-3xl font-bold' }, [b.title]),
               ui.p({}, ['Kind: ', b.kind]),
-              ui.p({}, [b.read ? 'Read' : 'Unread']),
+              ui.use(Badge, {}, [b.read ? 'Read' : 'Unread']),
             ]),
           pending: null,
           failed: {

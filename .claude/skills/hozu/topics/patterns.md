@@ -1,6 +1,7 @@
 # Common UI patterns
 
-Each pattern is complete here; there is no need to open other files.
+Each pattern is complete here; there is no need to open other files. The controls are plain elements so they run in
+any app; in an app with a kit, use its components (`ui.use(Button, …)`, `hozu docs components`).
 
 - **Busy state:** render every control once; the state with `invoke` drops repeated submits. Progress:
   `when(['adding'], [ui.p({ 'aria-busy': 'true' }, ['Saving…'])])`. Do not duplicate controls under `when`.
@@ -62,8 +63,7 @@ ui.each(items, 'id', (item) => ui.li({}, [ui.input({ type: 'checkbox', form: bul
 // on(Bulk, { target: 'removingMany', guard: (e) => e.action === 'delete', assign: (e) => { ctx.selected = e.ids; ctx.busy = true } }),
 // removingMany: invoke(removeNotes, { input: { ids: ctx.selected }, done/failed: reset selected and busy })
 ```
-  The mutation input holds the limit (`z.array(z.string()).min(1, 'Select at least one note')`). Reference app:
-  `examples/notes`.
+  The mutation input holds the limit (`z.array(z.string()).min(1, 'Select at least one note')`).
 - **Sorted or pinned first:** sort in the resolver (the list query returns items in display order), or in a `fn`.
 - **Refresh after a mutation:** tag the query, list the tag in the mutation's `invalidates`.
 - **Go to what was just created:** `done: { target: 'idle', navigate: (r) => ui.link(itemPage, { id: r.id }) }`.

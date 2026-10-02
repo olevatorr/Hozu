@@ -23,6 +23,8 @@ export const Board = ui.view({
 - **Text:** template strings work: `` `${n} items` ``.
 - **Reuse:** `export const row = part((item: Item) => ui.li({}, [item.done ? 'Done' : item.title]))`, called as
   `row(item)`; it is inlined, so the IR equals the inline form. A plain function that receives data is HZ059.
+- **Shared UI** (buttons, inputs, fields, badges): `ui.use(Button, { variant, props, on }, ['Save'])` of a kit
+  component, not a styled `ui.button` per page (`hozu docs components`; `example/` uses a kit).
 - **Events:** `on: { click: ui.send(Event, payload) }`, any DOM event name plus `visible` (entered the viewport).
   Payload fields: literals, data, `ui.dom.value`, `ui.dom.form('name')` / `ui.dom.formAll('name')` (submit; `hozu docs
   forms`), `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`. `ui.dom.value` / `ui.dom.form` fill an enum field

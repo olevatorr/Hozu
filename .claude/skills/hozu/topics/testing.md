@@ -44,3 +44,5 @@
   nothing: run `hozu check`.
 - Vitest: add `hozuTransform()` from `@hozu/transform/vite` to `plugins`.
 - Browser tests: wait for `html[data-hozu-ready]` (set after hydration) before clicking.
+- A person checks the result with `npm run dev` (`hozu dev`: reloads and Hozu DevTools); what they ask for from
+  there arrives as requests (`hozu docs requests`). The tools above stay the way you verify.

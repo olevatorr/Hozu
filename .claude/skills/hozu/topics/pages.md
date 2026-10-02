@@ -13,7 +13,7 @@ export const docs = route({ path: '/docs/:path+', params: z.object({ path: z.arr
 ```ts
 // hozu.config.ts
 export default project({
-  schema: zodAdapter, styles: new URL('./app.css', import.meta.url),
+  schema: zodAdapter, app: new URL('./app.ts', import.meta.url), styles: new URL('./app.css', import.meta.url),
   site: { url: 'https://example.com', name: 'Items', lang: 'en' },
   routes: { home, itemPage }, notFound: missing,           // notFound / error: routes rendered for 404 / 500
   pages: [
@@ -29,6 +29,7 @@ export default project({
       entries: { query: listItems, input: {}, params: (item) => ({ id: item.id }) },   // sitemap + static export
     }),
   ],
+  kits: [kit],                                             // shared UI (hozu docs components)
   features: [items],
 })
 ```

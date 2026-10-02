@@ -1,6 +1,7 @@
 # Recipes for common changes
 
-Names follow `hozu add feature items`: `Item`, `NewItem`, `Add`, `addItem`, `itemsMachine`, `ItemsBoard`.
+Names follow `hozu add feature items`: `Item`, `NewItem`, `Add`, `addItem`, `itemsMachine`, `ItemsBoard`. The controls are plain elements; with a
+kit, use its components instead (`ui.use(Button, { variant: { tone: 'quiet' } }, ['Clear done'])`).
 
 ## A field chosen in the add form (an enum)
 - **model:**

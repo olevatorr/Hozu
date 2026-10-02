@@ -13,6 +13,12 @@ export const exampleFiles = [
   'features/bookmarks/model.ts',
   'features/bookmarks/views.ts',
   'features/bookmarks/feature.ts',
+  'ui/kit.ts',
+  'ui/tv.ts',
+  'ui/button.ts',
+  'ui/input.ts',
+  'ui/field.ts',
+  'ui/badge.ts',
 ]
 
 export const agentsMd = (claude: string) =>

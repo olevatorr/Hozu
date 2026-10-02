@@ -4,6 +4,7 @@ import { bookmarks } from './features/bookmarks/feature.ts'
 import { getBookmark, listBookmarks } from './features/bookmarks/model.ts'
 import { Board, Detail } from './features/bookmarks/views.ts'
 import { bookmarkPage, home } from './routes.ts'
+import { kit as uiKit } from './ui/kit.ts'
 
 export default project({
   schema: zodAdapter,
@@ -27,5 +28,6 @@ export default project({
       entries: { query: listBookmarks, input: {}, params: (b) => ({ id: b.id }) },
     }),
   ],
+  kits: [uiKit],
   features: [bookmarks],
 })

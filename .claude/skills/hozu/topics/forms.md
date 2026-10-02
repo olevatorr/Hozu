@@ -14,6 +14,13 @@ ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title'), kind: ui.dom
 ])
 ui.p({ id: 'title-error', class: 'text-sm text-rose-600' }, [ctx.fields.title])
 ```
+- **With the app's kit** (as in `example/`): a `Field` with a `control` slot holds the label, the input and its error.
+```ts
+ui.use(Field, { props: { for: 'title', label: 'Title', error: ctx.fields.title, errorId: 'title-error' },
+  slots: { control: ui.use(Input, { props: { id: 'title', name: 'title', value: ctx.draft, required: true,
+    invalid: ctx.fields.title !== null, describedby: 'title-error' }, on: { input: ui.send(Draft, { text: ui.dom.value }) } }) } }),
+ui.use(Button, { props: { type: 'submit' } }, ['Add']),
+```
 - **Field errors:** context `fields: z.object({ title: z.string().nullable() })`, reset on submit
   (`ctx.fields = { title: null }`), and `failed.Invalid: { target: 'idle', assign: (e) => { ctx.fields = e.fields } }`.
   Limits live in the mutation's input schema: `z.string().min(2, 'Use at least 2 characters')`.

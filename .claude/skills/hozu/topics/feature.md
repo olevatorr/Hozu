@@ -22,8 +22,10 @@ lists. It writes the files below and the first `hozu.lock.json`.
 hozu.config.ts  project({ schema, app, site, routes, pages, features })  routes.ts  route() declarations
 features/<name>/model.ts  schemas, events, effects, fns, machine        views.ts  views, contracts
 features/<name>/feature.ts  feature({ declarations: [model, views] })    app.ts  app({ resolvers })
+ui/kit.ts  ui.kit({ id: 'ui', components }) — Button, Input, Field…      ui/*.ts  one component each
 ```
-Relative imports end in `.ts`.
+Relative imports end in `.ts`. The example below uses plain elements so it runs in any app; with a kit the input
+and button are `ui.use(Input, …)` and `ui.use(Button, …)`, as in `example/` (`hozu docs components`).
 
 ## A feature in one screen
 ```ts

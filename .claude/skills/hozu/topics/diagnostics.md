@@ -13,12 +13,19 @@ around the rule.
 | HZ006 | crossing a feature boundary | import the feature and use its `exports` |
 | HZ008 | a path does not exist in the schema | fix the property name |
 | HZ009 | a guardless transition shadows later ones | put guarded transitions first |
+| HZ010 | a state has no way out (not final; no `on`, `invoke` or `after`) | mark it `final: true` or add a transition out of it |
+| HZ011 | building twice gave different IR | keep time, randomness and mutable state out of builder callbacks |
+| HZ012 | a schema from another library than the project's adapter | write it with the project's schema library (`project({ schema })`) |
+| HZ013 | a declaration registered twice: a second machine (or messages) in a feature, or a name another feature already declares | keep one; reach the other feature through `imports` and its `exports` |
 | HZ014 | wrong builder output, or a method called on data (`.map`, `.toUpperCase()`) | follow the builder signature; lists: `ui.each`; computation: a `fn()` |
 | HZ015 / HZ017 | a contract fails / contract data does not match its schema | fix the machine or the contract (decide the intended behaviour first) |
 | HZ016 | a transition that decides (guard, `navigate`, a `fn`, comparison or `+ - ?? ?: .length .includes` in a value) has no contract | add the contract from the snippet |
 | HZ018 | a deciding transition changed (fields first, then `was:` / `now:`) and no covering contract fails against the old behaviour | change or add a contract that specifies the new behaviour; renaming or copying one does not count |
+| HZ019 | `invalidates` names a tag no query carries | tag the affected query, or remove the invalidation |
+| HZ020 | user-scoped data, but the project declares no session | declare `project({ session })`, or make the query public |
 | HZ021 | a query, mutation or endpoint without a resolver | `implement(...)` it in the resolvers of `app.ts` |
 | HZ022 | user data in a cacheable region | keep `scope: 'user'` queries out of cached pages |
+| HZ023 | a page's `assert` does not hold for its derived render plan | change the data's scope or freshness, or the assertion |
 | HZ024 / HZ025 | route params mismatch (keys, or a schema that does not fit `:x?`/`:x+`/`:x*`) / page with params but no `entries` (a user-scoped head is private: no sitemap, no warning) | align them / add `entries` |
 | HZ026 | a class produces no CSS | fix the Tailwind class |
 | HZ027 | a DOM field used outside an event, or wrong for this event | read `ui.dom.*` only in `ui.send` payloads |
