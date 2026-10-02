@@ -40,6 +40,7 @@ interface State {
   excerpt: boolean
   folded: boolean
   view: 'overlay' | 'workbench'
+  theme: 'system' | 'light' | 'dark'
   device: { name: string; width: number; height: number }
 }
 
@@ -58,6 +59,7 @@ const state: State = {
   excerpt: false,
   folded: false,
   view: 'overlay',
+  theme: 'system',
   device: { name: 'Phone', width: 390, height: 844 },
   ...read<Partial<State>>(key, {}),
 }
@@ -79,6 +81,13 @@ const bench = h('div', { class: 'bench', hidden: true })
 shadow.append(h('style', {}, [css]), root)
 root.append(bench, panel, dock)
 document.documentElement.append(host)
+
+const darkScheme = matchMedia('(prefers-color-scheme: dark)')
+function applyTheme() {
+  root.dataset.theme = state.theme === 'system' ? (darkScheme.matches ? 'dark' : 'light') : state.theme
+}
+darkScheme.addEventListener('change', applyTheme)
+applyTheme()
 
 let doc: Document = document
 let win: Window = window
@@ -1352,6 +1361,38 @@ function renderSettings() {
       h('div', { class: 'kicker' }, ['Hozu DevTools']),
       h('h2', { class: 'title' }, ['Settings']),
       closeButton(() => open(state.picks.length ? 'inspector' : null)),
+    ]),
+    h('div', { class: 'sec' }, [
+      h('div', { class: 'label' }, ['Appearance']),
+      h(
+        'div',
+        { class: 'tabs', role: 'radiogroup', 'aria-label': 'Appearance' },
+        (
+          [
+            ['system', 'System'],
+            ['light', 'Light'],
+            ['dark', 'Dark'],
+          ] as const
+        ).map(([value, label]) =>
+          h(
+            'button',
+            {
+              class: 'tab',
+              type: 'button',
+              role: 'radio',
+              'aria-checked': String(state.theme === value),
+              'aria-pressed': String(state.theme === value),
+              onclick: () => {
+                state.theme = value
+                persist()
+                applyTheme()
+                renderSettings()
+              },
+            },
+            [label],
+          ),
+        ),
+      ),
     ]),
     h('div', { class: 'sec' }, [
       h('div', { class: 'label' }, ['Show']),

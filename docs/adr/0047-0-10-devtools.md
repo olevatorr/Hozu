@@ -5,7 +5,8 @@
   language), not the prototype's.
 - Look (owner, 2026-10-02, after the first P2 build): the poster style was too strong. The tool follows the calm,
   widely accepted look of framework dev overlays such as Next.js's (rounded, thin borders, soft shadows, normal
-  weights) in Hozu's colours: ink surfaces, paper text, red accents, and the Hozu logo in the dock.
+  weights) in Hozu's colours, and the Hozu logo in the dock. Appearance follows the system (light: paper surfaces,
+  ink text; dark: ink surfaces, paper text; red accents in both), or is set to Light or Dark in the settings.
 - Basis:
   - the standalone prototype in `~/Developer/hozu-devtools-demo` (ADRs 0001–0004 there);
   - the source index Hozu already records in development builds.

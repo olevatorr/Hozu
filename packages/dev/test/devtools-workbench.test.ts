@@ -182,4 +182,27 @@ describe.skipIf(!findBrowser())('Workbench in a real browser (ADR 0047 P3)', () 
     expect(await tool(`$('.dock').hidden`)).toBe(false)
     expect(errors).toEqual([])
   })
+
+  it('follows the system light or dark scheme, and a chosen appearance sticks', async () => {
+    const scheme = (value: 'light' | 'dark') =>
+      cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value }] }, session)
+    const theme = () => tool(`$('.root').dataset.theme`)
+    const surface = () => tool(`getComputedStyle($('.dock')).backgroundColor`)
+    await scheme('light')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.root').dataset.theme === 'light'`,
+    )
+    expect(await surface()).toBe('rgb(251, 250, 247)')
+    await scheme('dark')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.root').dataset.theme === 'dark'`,
+    )
+    expect(await surface()).toBe('rgb(17, 16, 16)')
+    await shadowClick('.dock button', '⚙')
+    await shadowClick('.tab', 'Light')
+    await scheme('dark')
+    expect(await theme()).toBe('light')
+    await shadowClick('.tab', 'System')
+    expect(await theme()).toBe('dark')
+  })
 })
