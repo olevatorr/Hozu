@@ -25,12 +25,14 @@
     "@hozu/variants": "workspace:*",
     "@tailwindcss/typography": "0.5.20",
     "tailwindcss": "4.3.3",
+    "three": "0.186.1",
     "zod": "4.6.5"
   },
   "engines": {
     "node": ">=22.18"
   },
   "devDependencies": {
+    "@types/three": "0.186.0",
     "highlight.js": "11.11.1"
   }
 }

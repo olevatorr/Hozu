@@ -29,8 +29,9 @@ export default implement<typeof CodeBlock>(({ el, signal }) => {
       },
       { signal },
     )
-    pre.dataset.copyable = ''
-    pre.append(button)
+    const host = pre.closest('figure') ?? pre.parentElement ?? pre
+    host.dataset.copyable = ''
+    host.append(button)
   }
   return { destroy: () => el.querySelectorAll('[data-copy]').forEach((b) => b.remove()) }
 })

@@ -3,11 +3,13 @@ import { z } from 'zod'
 import { tv } from './tv.ts'
 
 const styles = tv({
-  base: 'inline-block px-4 py-3 text-sm font-extrabold uppercase tracking-wide',
+  base: 'inline-block border-4 px-4 py-2.5 text-sm font-extrabold uppercase tracking-wide transition-colors duration-150',
   variants: {
     intent: {
-      solid: 'bg-ink text-paper shadow-[6px_6px_0_var(--color-red)]',
-      outline: 'border-4 border-ink text-ink',
+      solid: 'border-ink bg-ink text-paper hover:bg-paper hover:text-ink',
+      outline: 'border-ink text-ink hover:bg-ink hover:text-paper',
+      light: 'border-paper bg-paper text-ink hover:bg-transparent hover:text-paper',
+      lightOutline: 'border-paper text-paper hover:bg-paper hover:text-ink',
     },
   },
   defaultVariants: { intent: 'solid' },
@@ -17,5 +19,5 @@ export const Button = ui.component({
   styles,
   props: z.object({ href: z.string() }),
   children: true,
-  render: ({ props, children }) => ui.a({ href: props.href }, children),
+  render: ({ props, children }) => ui.a({ href: props.href, 'data-button': '' }, children),
 })

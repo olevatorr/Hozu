@@ -16,3 +16,10 @@ Each entry: approach → result → root cause. Nothing here is worked around si
   or two machines in one view, is not expressible. The canonical form is one machine per page view: `home` merges the
   demo's `Break`/`Fix` and the playground's machine-wide `Pick`, and its one view renders `<main>` around sections
   01–08.
+
+## An asset cannot be a component prop
+- **Approach:** `Joint` took `model` and `poster` as `z.string()` props, filled with `ui.asset(…)` in the home view.
+- **Result:** TS2322, `Asset` is not assignable to `string`.
+- **Root cause:** `ui.asset` is an attribute value (`AttrValue`), not data. The component now owns its assets: the
+  render uses module constants for `src` and `data-model`, and the client module reads the model URL from the DOM.
+  A component reused with different models would need a prop type for assets.

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { access, readdir, readFile, stat } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
+import { gzipSync } from 'node:zlib'
 import { codes } from '@hozu/core/ir'
 import { testApp } from '@hozu/testing'
 import site from './app.ts'
@@ -87,6 +88,20 @@ for (const intent of ['solid', 'outline'] as const) {
   )
 }
 console.log('Playground render snapshot equals hozu render')
+const glb = await readFile(new URL('./assets/joint.glb', import.meta.url))
+assert.equal(glb.toString('ascii', 0, 4), 'glTF', 'joint.glb is binary glTF')
+const gltf = JSON.parse(glb.toString('utf8', 20, 20 + glb.readUInt32LE(12)))
+for (const name of ['split', 'join'])
+  assert.ok(
+    gltf.animations?.some((a: { name: string }) => a.name === name),
+    `joint.glb has the ${name} action`,
+  )
+for (const name of ['beam', 'post-l', 'post-r', 'peg-l', 'peg-r'])
+  assert.ok(
+    gltf.nodes.some((n: { name: string }) => n.name === name),
+    `joint.glb has the ${name} node`,
+  )
+console.log(`joint.glb: ${glb.length} bytes, actions split and join, ${gltf.nodes.length} nodes`)
 const root = new URL('./dist/', import.meta.url)
 assert.equal(await readFile(new URL('CNAME', root), 'utf8'), 'hozu.org\n')
 assert.equal(await readFile(new URL('.nojekyll', root), 'utf8'), '')
@@ -198,6 +213,16 @@ assert.match(
   /@media \(prefers-reduced-motion: ?reduce\)\{\*,:before,:after\{[^}]*animation-duration:\.01ms!important/,
   'reduced motion stops every animation',
 )
-for (const name of ['rise', 'ticker', 'turn'])
+for (const name of ['rise', 'ticker', 'nudge'])
   assert.ok(css.includes(`@keyframes ${name}`), `keyframes ${name} shipped`)
+const jointBundle = homePage.match(/\/_hozu\/c\/site-Joint-[A-Z0-9]+\.js/)?.[0]
+assert.ok(jointBundle, 'the home page references the joint bundle')
+const jointBytes = gzipSync(await readFile(new URL(`.${jointBundle}`, root))).length
+assert.ok(jointBytes <= 180 * 1024, `joint bundle is ${jointBytes} B gzip, limit 180 KB`)
+for (const file of files.filter((name) => name.endsWith('.html') && name !== 'index.html'))
+  assert.ok(
+    !(await readFile(new URL(file, root), 'utf8')).includes('site-Joint-'),
+    `${file}: no joint bundle`,
+  )
+console.log(`Joint bundle ${(jointBytes / 1024).toFixed(1)} KB gzip (limit 180), home page only`)
 console.log('Islands: home (home), how-it-works (lab), CodeBlock on code pages; reduced motion covered')

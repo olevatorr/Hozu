@@ -28,7 +28,20 @@ Export replaces only `site/dist`, copies the trial images, and fails if any rout
 - that every page has one `<main>`, and reduced motion stops every animation.
 
 `pnpm --filter hozu-site verify:browser` (local Chrome) checks text contrast (4.5:1, 3:1 for large text) on seven
-pages.
+pages, and the 3D joint: mounted with one canvas, split and joined on the demo, no console errors, and its poster
+without JS. Verify also checks `joint.glb` (the `split` and `join` actions) and that the joint's bundle stays under
+180 KB gzip and on the home page only.
+
+## The 3D joint
+
+`site/3d/joint.py` builds the H joint in Blender and writes `assets/joint.glb` and `assets/joint-poster.webp`:
+
+```sh
+blender -b --python site/3d/joint.py -- "$PWD/site/assets"
+```
+
+`site/site/joint.client.ts` renders it with three.js. WebGL makes headless screenshots unreliable; check the joint by
+eye in a real browser after changing it.
 
 ## Content sources
 

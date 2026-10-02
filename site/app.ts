@@ -30,10 +30,24 @@ const buttonSource = await readFile(new URL('./site/button.ts', import.meta.url)
 const renders = JSON.parse(
   await readFile(new URL('./features/home/render-snapshot.json', import.meta.url), 'utf8'),
 )
+const jointSource = await readFile(new URL('./site/joint.ts', import.meta.url), 'utf8')
+const jointClient = await readFile(new URL('./site/joint.client.ts', import.meta.url), 'utf8')
+const jointExcerpt = [
+  jointClient.slice(
+    jointClient.indexOf('export default implement'),
+    jointClient.indexOf('\n', jointClient.indexOf('export default implement')),
+  ),
+  '  // … GLTFLoader, toon materials, ink hulls, idle turn, drag …',
+  jointClient.slice(jointClient.indexOf('  return {'), jointClient.indexOf('    destroy()')).trimEnd(),
+  '    destroy() { … },\n  }\n})',
+].join('\n')
 const playground = {
   source: highlight(`<pre><code class="language-ts">${escapeHtml(buttonSource)}</code></pre>`),
   solid: JSON.stringify(renders.solid, null, 2),
   outline: JSON.stringify(renders.outline, null, 2),
+  joint: highlight(
+    `<pre><code class="language-ts">${escapeHtml(jointSource)}\n// site/joint.client.ts\n${escapeHtml(jointExcerpt)}</code></pre>`,
+  ),
 }
 const repository = 'https://github.com/olevatorr/Hozu/blob/main/'
 const rewriteLinks = (html: string, source: string) =>

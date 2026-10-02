@@ -4,7 +4,7 @@ import { Button } from '../../site/button.ts'
 import { CatchCard } from '../../site/catch-card.ts'
 import { CodeBlock } from '../../site/code-block.ts'
 import { Display, Heading } from '../../site/display.ts'
-import { Joint3D } from '../../site/joint.ts'
+import { Joint } from '../../site/joint.ts'
 import { Receipt, ReceiptLine } from '../../site/receipt.ts'
 import { Section } from '../../site/section.ts'
 import { StatTable } from '../../site/stat-table.ts'
@@ -80,8 +80,11 @@ export const Home = ui.view({
                 'See the proof',
               ]),
             ]),
+            ui.p({ class: 'mt-8 font-mono text-xs font-bold text-ember' }, [
+              '↓ Press AI CHANGE: an agent edits this app, and Hozu checks the change.',
+            ]),
             ui.div(
-              { class: 'mt-8 max-w-md border-4 border-ink bg-white shadow-[8px_8px_0_var(--color-ink)]' },
+              { class: 'mt-3 max-w-md border-4 border-ink bg-white shadow-[8px_8px_0_var(--color-ink)]' },
               [
                 ui.div(
                   {
@@ -109,6 +112,7 @@ export const Home = ui.view({
                           {
                             type: 'button',
                             class: 'bg-red px-3 py-1 font-black text-ink',
+                            toggle: { 'animate-nudge': !ctx.tried },
                             on: { click: ui.send(Break, {}) },
                           },
                           ['AI CHANGE'],
@@ -134,7 +138,7 @@ export const Home = ui.view({
               ],
             ),
           ]),
-          ui.use(Joint3D, { props: { split: ctx.broken } }),
+          ui.use(Joint, { props: { split: ctx.broken } }),
         ]),
         ui.use(Ticker, {
           slots: {
@@ -316,6 +320,24 @@ export const Home = ui.view({
               'Read about components',
             ]),
           ]),
+          ui.h3({ class: 'mt-16 text-2xl font-black uppercase' }, [
+            'The 3D joint at the top is a component too.',
+          ]),
+          ui.p({ class: 'mt-3 max-w-2xl' }, [
+            'A Blender script builds the model, three.js renders it in a client component, and the same machine that runs the demo tells it when to split. Without JavaScript it is a still image.',
+          ]),
+          ui.query(
+            getPlayground,
+            {},
+            {
+              ready: (play) =>
+                ui.div({ class: 'prose prose-invert mt-6 max-w-none prose-figcaption:text-paper' }, [
+                  ui.use(CodeBlock, {}, [ui.html(play.joint)]),
+                ]),
+              pending: null,
+              failed: { Unexpected: () => ui.p({ role: 'alert' }, ['The source is unavailable.']) },
+            },
+          ),
         ],
       ),
       ui.use(Section, { props: { kicker: 'Under the hood' } }, [
@@ -408,14 +430,12 @@ export const Home = ui.view({
           ui.div({ class: 'mt-8 flex flex-wrap gap-4' }, [
             ui.use(
               Button,
-              { variant: { intent: 'solid' }, props: { href: ui.link(doc, { slug: 'getting-started' }) } },
+              { variant: { intent: 'light' }, props: { href: ui.link(doc, { slug: 'getting-started' }) } },
               ['Start building →'],
             ),
-            ui.a(
-              {
-                href: 'https://github.com/olevatorr/Hozu',
-                class: 'inline-block border-4 border-paper px-4 py-3 text-sm font-extrabold uppercase',
-              },
+            ui.use(
+              Button,
+              { variant: { intent: 'lightOutline' }, props: { href: 'https://github.com/olevatorr/Hozu' } },
               ['GitHub'],
             ),
           ]),

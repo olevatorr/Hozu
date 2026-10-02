@@ -7,13 +7,13 @@ export const Fix = event({ payload: z.object({}) })
 export const Pick = event({ payload: z.object({ intent: Intent }) })
 export const getPlayground = query({
   input: z.object({}),
-  output: z.object({ source: z.string(), solid: z.string(), outline: z.string() }),
+  output: z.object({ source: z.string(), solid: z.string(), outline: z.string(), joint: z.string() }),
   scope: 'public',
   freshness: 'static',
 })
 export const m = machine({
-  context: z.object({ broken: z.boolean(), intent: Intent }),
-  initialContext: { broken: false, intent: 'solid' },
+  context: z.object({ broken: z.boolean(), tried: z.boolean(), intent: Intent }),
+  initialContext: { broken: false, tried: false, intent: 'solid' },
   initial: 'clean',
   on: ({ ctx }) => [
     on(Pick, {
@@ -29,6 +29,7 @@ export const m = machine({
           target: 'broken',
           assign: () => {
             ctx.broken = true
+            ctx.tried = true
           },
         }),
       ],
