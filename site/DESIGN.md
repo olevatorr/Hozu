@@ -96,7 +96,7 @@ Every section is a `Section` with a depth meter.
      `hozu render` prints.
      - The render output is a committed snapshot of `hozu render`, and a test fails when it is stale.
    - A short note explains class conflicts (HZ079) and links to the components docs.
-   - The 3D joint returns here as a kit component.
+   - The code shown next to the playground is the `Joint` declaration and an excerpt of its three.js module.
    - One line says this site is built from the same kit.
 6. **Under the hood: "feature() → IR → validator → compiler → runtime"**
    - A new pipeline lab and render-plan lab: derived rendering, 0 JS by default, machines and contracts,
@@ -155,7 +155,7 @@ The tone follows the reader's depth.
 | Action | `Button` | `intent: solid / outline`, `size: md / lg` | hero, start |
 | | `Tag` | `tone: red / ink` | version, section marks |
 | Motion | `Ticker` | items, pausable | hero, start |
-| | `Joint3D` | `state: joined / split` | hero, components |
+| | `Joint` | client component (three.js), props `{ split, model, poster }` | hero, components |
 | Evidence | `Receipt` | lines with source links | the bill |
 | | `CatchCard` | front story, back diagnostic (CSS flip on hover and focus) | what it catches |
 | | `Steps` | — | how you work |
@@ -164,12 +164,45 @@ The tone follows the reader's depth.
 | | `CodeBlock` | client component: the copy button (`load: 'visible'`) | pages with code |
 
 ## JavaScript budget
-- **Only three islands. Every other page ships 0 KB.**
-  1. **The hero demo:** one Hozu machine drives the list, the check output and `Joint3D`'s state.
-  2. **The component playground:** one machine selects a variant and shows its source and render output.
-  3. **The pipeline lab** under the hood.
-- **`CodeBlock`'s copy module** loads only on pages with code, when visible.
-- **Verify asserts this list:** any other page with `/_hozu/client.js` fails.
+- **The home page runs one machine view and one 3D component; How it works runs the lab. Every other page ships
+  0 KB,** except `CodeBlock`'s copy module on pages with code.
+- **The 3D joint's bundle (three.js and its module) loads only on the home page, only when it scrolls into view,** and
+  is at most 180 KB gzip. Verify fails when another page references it or the limit is passed. The framework's own
+  budget P7 is unaffected.
+- **Verify asserts the island list per page.**
+
+## The 3D joint (amendment, 2026-10-02)
+- **Shape:** a square H. Two posts, a beam whose ends are two through tenons, and two red pegs (込み栓) that lock them.
+  It is not the logo's shape.
+- **Style A:** paper `#f6f2ea` and sand `#e4d8c3` flat shading, thick ink outlines, red `#fb3a0e` pegs.
+- **Poses:**
+  - joined;
+  - split: both pegs pop out, the posts slide apart and the tenons show.
+- **Source:** `site/3d/joint.py`, a Blender 5.2 script run headless (`blender -b --python`), re-runnable and reviewed
+  like code. It writes:
+  - `site/assets/joint.glb`: meshes, toon materials, outline shells (inverted hull), and two actions, `split` and
+    `join`;
+  - `site/assets/joint-poster.webp`: the joined pose as a still.
+- **`site.Joint`:** a client component with `load: 'visible'` and props `{ split, model, poster }`, where `model` and
+  `poster` are `ui.asset` URLs.
+  - Its server render is the poster `<img>` with its dimensions: the view without JS, before load, and when WebGL is
+    unavailable.
+  - The client module uses three.js (`WebGLRenderer`, `GLTFLoader`, `AnimationMixer`):
+    - a slow idle turn, and drag to rotate (no OrbitControls);
+    - the `split` / `join` clip when the prop changes, then `data-pose="split" | "joined"` on the host;
+    - under reduced motion, no idle turn and the pose without the clip;
+    - everything disposed on `destroy`.
+  - The home machine's `broken` drives `split`. The CSS `Joint3D` is removed.
+- **Dependency:** `three` at an exact version in `site/package.json` only. No `@hozu/*` package changes.
+- **Verification:** WebGL makes headless screenshots black, so the visual is checked by the owner in real Chrome.
+  The site checks:
+  - `hozu browse /` shows `site.Joint` mounted with one canvas;
+  - after AI CHANGE, `data-pose` is `split`, and after APPLY FIX it is `joined`;
+  - console errors 0;
+  - with JS off, the poster image;
+  - the bundle limit above;
+  - the script re-run produces a `.glb` with both actions (a check reads its JSON chunk).
+- **Out of scope:** shadows, post-processing, Draco compression.
 
 ## Accessibility
 - One `h1` per page, and a skip link.
@@ -200,7 +233,7 @@ The tone follows the reader's depth.
 ## Order of work
 1. Kit and frame: `Header` with the version, `Footer`, `Section`, type, `Button`, `Tag`, and the reading layout,
    so the inner pages are on the new design first.
-2. The home page, section by section; the hero demo and `Joint3D` last.
+2. The home page, section by section; the hero demo and the 3D `Joint` last.
 3. The playground and the pipeline lab.
 4. The new verify checks, each seen red once.
 5. A browser pass, then merge `site-0.9` into `main`. The push, which deploys, is the owner's call.
