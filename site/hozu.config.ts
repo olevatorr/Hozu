@@ -23,7 +23,7 @@ export default project({
   schema: zodAdapter,
   app: new URL('./app.ts', import.meta.url),
   styles: new URL('./app.css', import.meta.url),
-  site: { url: 'https://hozu.org', name: 'Hozu', lang: 'en', icon, themeColor: '#245ca6' },
+  site: { url: 'https://hozu.org', name: 'Hozu', lang: 'en', icon, themeColor: '#f1ede4' },
   notFound,
   routes: { home, doc, trials, trial, changelog, notFound, how, chapter },
   pages: [

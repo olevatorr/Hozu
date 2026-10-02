@@ -224,5 +224,7 @@ for (const file of files.filter((name) => name.endsWith('.html') && name !== 'in
     !(await readFile(new URL(file, root), 'utf8')).includes('site-Joint-'),
     `${file}: no joint bundle`,
   )
+assert.ok(homePage.includes('<meta name="theme-color" content="#f1ede4">'), 'theme-color is the page paper')
+assert.match(css, /html\{[^}]*background:var\(--color-paper\)/, 'the html root has the paper background')
 console.log(`Joint bundle ${(jointBytes / 1024).toFixed(1)} KB gzip (limit 180), home page only`)
 console.log('Islands: home (home), how-it-works (lab), CodeBlock on code pages; reduced motion covered')
