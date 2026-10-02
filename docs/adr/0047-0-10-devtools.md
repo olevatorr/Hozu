@@ -229,8 +229,22 @@ Each phase ends with `pnpm gate` and a report.
   holds a previewed query instead of fetching it. The dock shows "Preview: <state> · Exit"; requests record it.
   Production ignores the cookie and has no tree endpoint. Named "dev state", not "preview", because preview mode
   (ADR 0021) already exists.
-- **Not yet:** `?:` / `ui.if` on context values and empty lists, which need synthesised data; the Workbench's
-  exact viewport.
+- **Context states:** a `?:` / `&&` / `ui.if` whose test reads machine context is solved for a value that shows the
+  other branch ("When error is set" sets `error` to a sample from the context schema); busy states with `invoke`
+  are listed too; a previewed state fills the blank context fields its branch shows with sample text, so a
+  dialog reads "Remove “Preview text”?" instead of "Remove “”?".
+- **Not yet:** branches decided by a `fn` over data (an empty list after filtering), which need synthesised data.
+
+## As built (Workbench, demo v1 layout)
+- **Workbench** in the dock: the page in an iframe at an exact size (Phone 390 × 844, Tablet, Laptop, Desktop,
+  rotate, drag the corner for a custom size), scaled to fit; Layers and its states on the left; the inspector on
+  the right; one toolbar for Browse / Select, the preview, Changes, settings and Exit.
+- The overlay works on a target document: the page itself, or the frame's document in Workbench (outlines are
+  drawn inside it, events are listened to there). The DevTools script does not start inside the Workbench frame.
+  Exit returns to the page the frame shows. Requests record the frame size.
+- **`examples/studio`** is the DevTools test bench: a kit (Button, Badge, Card, Input, Field), counts, filters,
+  search, add with validation, saving, a saved notice that times out, move, remove with a confirmation, a detail
+  page; twelve states on the board and three on the detail page.
 - **Outlines** (owner): Hozu red, 2px outside the element, with a thin white halo; no blend layer. Browse hides
   them.
 

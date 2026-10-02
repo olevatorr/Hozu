@@ -1,6 +1,6 @@
 import type { DevPageTree, DevPreview, DevTreeNode } from '@hozu/core/ir'
 import { tagName } from '../plain.ts'
-import { held, hold } from './api.ts'
+import { held } from './api.ts'
 import { h } from './dom.ts'
 
 export interface LayersHost {
@@ -8,6 +8,7 @@ export interface LayersHost {
   shown(id: string): Element | null
   hover(el: Element | null): void
   pick(id: string, el: Element): void
+  hold(preview: DevPreview | null): void
   close(): void
 }
 
@@ -116,8 +117,12 @@ export function renderLayers(panel: HTMLElement, tree: DevPageTree | null, host:
             h('div', { class: `state${same(current, s.preview) ? ' on' : ''}` }, [
               h('span', {}, [s.label]),
               same(current, s.preview)
-                ? h('button', { class: 'link', type: 'button', onclick: () => hold(null) }, ['Exit preview'])
-                : h('button', { class: 'link', type: 'button', onclick: () => hold(s.preview) }, ['Preview']),
+                ? h('button', { class: 'link', type: 'button', onclick: () => host.hold(null) }, [
+                    'Exit preview',
+                  ])
+                : h('button', { class: 'link', type: 'button', onclick: () => host.hold(s.preview) }, [
+                    'Preview',
+                  ]),
             ]),
           )
         : [h('div', { class: 'plain' }, ['This page has no other states.'])]),
@@ -132,6 +137,17 @@ export function renderLayers(panel: HTMLElement, tree: DevPageTree | null, host:
       h('h2', { class: 'title' }, ['Layers']),
       h('button', { class: 'close', type: 'button', 'aria-label': 'Close', onclick: host.close }, ['×']),
       h('div', { class: 'find' }, [search]),
+      tree?.scenarios.length
+        ? h(
+            'button',
+            {
+              class: 'jump',
+              type: 'button',
+              onclick: () => states.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+            },
+            [`${host.plain ? 'Other states' : 'States'} (${tree.scenarios.length}) ↓`],
+          )
+        : null,
     ]),
     tree ? list : h('div', { class: 'empty' }, ['No page structure: is this a Hozu page under hozu dev?']),
     states,

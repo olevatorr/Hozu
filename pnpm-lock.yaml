@@ -504,6 +504,43 @@ importers:
         specifier: 0.180.0
         version: 0.180.0
 
+  examples/studio:
+    dependencies:
+      '@hozu/adapter-node':
+        specifier: workspace:*
+        version: link:../../packages/adapter-node
+      '@hozu/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@hozu/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@hozu/css':
+        specifier: workspace:*
+        version: link:../../packages/css
+      '@hozu/data':
+        specifier: workspace:*
+        version: link:../../packages/data
+      '@hozu/runtime-server':
+        specifier: workspace:*
+        version: link:../../packages/runtime-server
+      '@hozu/schema-zod':
+        specifier: workspace:*
+        version: link:../../packages/schema-zod
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../../packages/transform
+      '@hozu/variants':
+        specifier: workspace:*
+        version: link:../../packages/variants
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@hozu/dev':
+        specifier: workspace:*
+        version: link:../../packages/dev
+
   examples/trial-0006:
     dependencies:
       '@hozu/adapter-node':

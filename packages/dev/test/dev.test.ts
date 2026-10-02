@@ -78,7 +78,8 @@ describe('dev server', () => {
       expect(html).toContain(
         '<script type="module" src="/_hozu/devtools/overlay/index.js" data-mode="builder"></script>',
       )
-      expect(await fetchText(`${server.url}/_hozu/devtools/overlay/index.js`)).toContain('hozu-devtools')
+      expect(await fetchText(`${server.url}/_hozu/devtools/overlay/index.js`)).toContain('./app.js')
+      expect(await fetchText(`${server.url}/_hozu/devtools/overlay/app.js`)).toContain('hozu-devtools')
       expect(await fetchText(`${server.url}/_hozu/devtools/prompt.js`)).toContain('requestMarkdown')
       expect((await send(server.url, 'GET', '/_hozu/devtools/../../package.json')).status).toBe(404)
       const markdown = '# Hozu request: Bigger button\n\nbody\n'

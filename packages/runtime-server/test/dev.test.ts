@@ -6,7 +6,7 @@ import { locateNode } from '@hozu/core/ir'
 import { describe, expect, it } from 'vitest'
 import { appHandlerOptions, appOptionsOf, createHandler, generateRender } from '../src/index.ts'
 
-const examples = ['blog', 'bookmarks', 'cart', 'feed', 'notes', 'showcase', 'stations']
+const examples = ['blog', 'bookmarks', 'cart', 'feed', 'notes', 'showcase', 'stations', 'studio']
 const env = { SESSION_SECRET: 'devtools-test-secret-0123456789abcdef', PUBLIC_SITE_NAME: 'Test' }
 const markers = (html: string) => [...html.matchAll(/data-hz="([^"]+)"/g)].map((m) => m[1]!)
 
@@ -132,6 +132,7 @@ describe('layers and states (ADR 0047 P3, P5)', () => {
     expect(tree.scenarios.find((s: { label: string }) => s.label === 'Adding').preview).toEqual({
       feature: 'notes',
       state: 'adding',
+      context: { draft: 'Preview text' },
     })
   })
 
@@ -166,6 +167,33 @@ describe('layers and states (ADR 0047 P3, P5)', () => {
     expect(plain).not.toContain('>Notes are unavailable</p>')
     expect(plain).not.toContain('>Loading…</p>')
     expect(plain).toContain('data-hz="notes.NotesBoard/7/ready"')
+  })
+
+  it('derives states from context conditions and busy states, and previews them', async () => {
+    const handler = await handlerFor(true)
+    const tree = await (
+      await handler.fetch(new Request('http://127.0.0.1/_hozu/dev/tree?path=/login'))
+    ).json()
+    const scenarios = Object.fromEntries(
+      tree.scenarios.map((s: { label: string; preview: unknown }) => [s.label, s.preview]),
+    )
+    expect(scenarios['When error is set']).toEqual({
+      feature: 'account',
+      state: 'idle',
+      context: { error: 'Preview text' },
+    })
+    expect(scenarios['Signing in']).toEqual({ feature: 'account', state: 'signingIn' })
+    const html = await (
+      await handler.fetch(
+        new Request('http://127.0.0.1/login', {
+          headers: {
+            cookie: `hozu-dev-state=${encodeURIComponent(JSON.stringify(scenarios['When error is set']))}`,
+          },
+        }),
+      )
+    ).text()
+    expect(html).toMatch(/role="alert"[^>]*>Preview text<\/p>/)
+    expect(html).toContain('"error":"Preview text"')
   })
 
   it('ignores the preview cookie and the tree outside dev', async () => {

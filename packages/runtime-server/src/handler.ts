@@ -884,7 +884,9 @@ function devStateOf(request: Request): DevPreview | null {
     if (typeof v.query === 'string' && typeof v.branch === 'string')
       return { query: v.query, branch: v.branch }
     if (typeof v.feature === 'string' && typeof v.state === 'string')
-      return { feature: v.feature, state: v.state }
+      return v.context && typeof v.context === 'object' && !Array.isArray(v.context)
+        ? { feature: v.feature, state: v.state, context: v.context as { [key: string]: Json } }
+        : { feature: v.feature, state: v.state }
   } catch {}
   return null
 }

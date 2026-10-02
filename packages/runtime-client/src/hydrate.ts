@@ -32,7 +32,7 @@ export interface PagePayload {
   params: Json
   search: Json
   snapshots?: Record<string, Snapshot>
-  devState?: { query: string; branch: string } | { feature: string; state: string }
+  devState?: { query: string; branch: string } | { feature: string; state: string; context?: Json }
   components: Record<string, ComponentRef>
   routes: Record<string, string>
   live: Record<string, LiveQuery>

@@ -1,5 +1,5 @@
 import type { SourceLoc } from '../ir/diagnostic.ts'
-import type { ValueExpr, ViewNode } from '../ir/types.ts'
+import type { GuardExpr, Json, JsonSchema, ValueExpr, ViewNode } from '../ir/types.ts'
 import type { BuildResult } from './project.ts'
 
 export interface DevOptions {
@@ -374,7 +374,9 @@ export interface DevTreeNode {
   children: DevTreeNode[]
 }
 
-export type DevPreview = { query: string; branch: string } | { feature: string; state: string }
+export type DevPreview =
+  | { query: string; branch: string }
+  | { feature: string; state: string; context?: { [key: string]: Json } }
 
 export interface DevScenario {
   label: string
@@ -392,6 +394,97 @@ const spaced = (name: string) => {
   const s = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
+
+function sample(schema: JsonSchema | undefined): Json {
+  const type = schema?.type
+  const types = Array.isArray(type) ? type.filter((t) => t !== 'null') : [type]
+  if (Array.isArray(schema?.enum)) return (schema.enum as Json[]).find((v) => v !== null) ?? null
+  if (types.includes('number') || types.includes('integer')) return 1
+  if (types.includes('boolean')) return true
+  if (types.includes('array')) return [sample(schema?.items as JsonSchema | undefined)]
+  if (types.includes('object')) {
+    const props = (schema?.properties ?? {}) as Record<string, JsonSchema>
+    return Object.fromEntries(Object.entries(props).map(([k, v]) => [k, sample(v)]))
+  }
+  return 'Preview text'
+}
+
+const schemaAt = (schema: JsonSchema | undefined, path: string[]): JsonSchema | undefined =>
+  path.reduce<JsonSchema | undefined>(
+    (s, key) => ((s?.properties as Record<string, JsonSchema> | undefined) ?? {})[key],
+    schema,
+  )
+
+type Patch = { path: string[]; value: Json }
+
+function solve(g: GuardExpr, want: boolean, schema: JsonSchema | undefined): Patch[] | null {
+  if (g.op === 'not') return solve(g.arg, !want, schema)
+  if (g.op === 'and' || g.op === 'or') {
+    const all = (g.op === 'and') === want
+    if (!all) {
+      for (const a of g.args) {
+        const p = solve(a, want, schema)
+        if (p) return p
+      }
+      return null
+    }
+    const parts = g.args.map((a) => solve(a, want, schema))
+    return parts.every(Boolean) ? (parts.flat() as Patch[]) : null
+  }
+  if (g.op === 'fn') {
+    if (g.fn !== '%truthy' || !('ref' in g.arg) || g.arg.ref !== 'context') return null
+    return want ? [{ path: g.arg.path, value: sample(schemaAt(schema, g.arg.path)) }] : null
+  }
+  if (!('left' in g)) return null
+  const [ref, lit] =
+    'ref' in g.left && 'literal' in g.right
+      ? [g.left, g.right.literal]
+      : 'ref' in g.right && 'literal' in g.left
+        ? [g.right, g.left.literal]
+        : [null, null]
+  if (!ref || !('ref' in ref) || ref.ref !== 'context') return null
+  const filled = sample(schemaAt(schema, ref.path))
+  const equal = g.op === 'eq' ? want : g.op === 'neq' ? !want : null
+  if (equal === true) return [{ path: ref.path, value: lit }]
+  if (equal === false) return lit === null ? [{ path: ref.path, value: filled }] : null
+  if (typeof lit !== 'number') return null
+  const above = (g.op === 'gt' || g.op === 'gte') === want
+  return [{ path: ref.path, value: above ? lit + 1 : lit - 1 }]
+}
+
+const patchOf = (patches: Patch[]): { [key: string]: Json } => {
+  const out: { [key: string]: Json } = {}
+  for (const { path, value } of patches) {
+    let at = out
+    path.forEach((key, i) => {
+      if (i === path.length - 1) at[key] = value
+      else {
+        at[key] ??= {}
+        at = at[key] as { [key: string]: Json }
+      }
+    })
+  }
+  return out
+}
+
+function contextRefs(nodes: unknown): string[][] {
+  const found = new Map<string, string[]>()
+  const walk = (x: unknown) => {
+    if (!x || typeof x !== 'object') return
+    if (Array.isArray(x)) return x.forEach(walk)
+    const o = x as Record<string, unknown>
+    if (o.ref === 'context' && Array.isArray(o.path)) found.set(o.path.join('.'), o.path as string[])
+    for (const v of Object.values(o)) walk(v)
+  }
+  walk(nodes)
+  return [...found.values()]
+}
+
+const valueAt = (v: Json, path: string[]): Json | undefined =>
+  path.reduce<Json | undefined>(
+    (x, k) => (x && typeof x === 'object' && !Array.isArray(x) ? x[k] : undefined),
+    v,
+  )
 
 export function pageTree(build: BuildResult, route: string): DevPageTree | null {
   const page = build.ir.pages[route]
@@ -419,9 +512,42 @@ export function pageTree(build: BuildResult, route: string): DevPageTree | null 
         for (const [error, branch] of Object.entries(n.failed))
           add(`${name} failed: ${error}`, branch.id, { query: n.query, branch: `failed.${error}` })
       }
-      if (n.kind === 'when' && f.machine)
+      if (n.kind === 'when' && f.machine) {
+        const schema = f.schemas[f.machine.context]
+        const initial = f.machine.initialContext
+        const blank = contextRefs(n.children).filter((path) => {
+          const v = valueAt(initial, path)
+          return v === '' || v === null
+        })
+        const filled = blank.map((path) => ({ path, value: sample(schemaAt(schema, path)) }))
         for (const state of n.states)
-          if (state !== f.machine.initial) add(spaced(state), n.id, { feature, state })
+          if (state !== f.machine.initial)
+            add(
+              spaced(state),
+              n.id,
+              filled.length ? { feature, state, context: patchOf(filled) } : { feature, state },
+            )
+      }
+      if (n.kind === 'if' && f.machine) {
+        const schema = f.schemas[f.machine.context]
+        const initial = f.machine.initialContext
+        for (const want of [true, false]) {
+          const patches = solve(n.test, want, schema)
+          if (!patches?.length) continue
+          if (patches.every((p) => JSON.stringify(valueAt(initial, p.path)) === JSON.stringify(p.value)))
+            continue
+          const first = patches[0]!
+          const name = spaced(first.path.at(-1) ?? 'value').toLowerCase()
+          const label =
+            first.value === null
+              ? `When ${name} is empty`
+              : typeof first.value === 'string' && first.value === 'Preview text'
+                ? `When ${name} is set`
+                : `When ${name} is ${JSON.stringify(first.value)}`
+          add(label, n.id, { feature, state: f.machine.initial, context: patchOf(patches) })
+          break
+        }
+      }
       const label = use
         ? (use.component.split('.').pop() ?? use.component)
         : n.kind === 'el'
@@ -443,7 +569,18 @@ export function pageTree(build: BuildResult, route: string): DevPageTree | null 
         children: childrenOf(n).map(walk),
       }
     }
-    return [{ ...walk(root), id: ref, label: ref }]
+    const tree = { ...walk(root), id: ref, label: ref }
+    if (f.machine && f.views?.[view]?.machine === f.id)
+      for (const [state, def] of Object.entries(f.machine.states))
+        if (
+          def.invoke &&
+          state !== f.machine.initial &&
+          !scenarios.some(
+            (x) => 'state' in x.preview && x.preview.feature === feature && x.preview.state === state,
+          )
+        )
+          add(spaced(state), root.id, { feature, state })
+    return [tree]
   })
   return { route, views, scenarios }
 }

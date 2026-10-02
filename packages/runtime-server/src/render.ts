@@ -84,6 +84,14 @@ export interface RenderedPage {
 
 const NO_ENV: Json = {}
 
+function patched(base: Json, patch: Json): Json {
+  if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return patch ?? base
+  const from = base && typeof base === 'object' && !Array.isArray(base) ? base : {}
+  const out: { [key: string]: Json } = { ...from }
+  for (const [k, v] of Object.entries(patch)) out[k] = patched(from[k] ?? null, v)
+  return out
+}
+
 export async function renderPage({
   build,
   data: dataRuntime,
@@ -168,8 +176,10 @@ export async function renderPage({
     const snap = held
       ? {
           state: held.state,
-          context:
+          context: patched(
             snapshots[feature.id]?.context ?? seedOf(feature) ?? feature.machine?.initialContext ?? null,
+            held.context ?? null,
+          ),
           entry: 0,
         }
       : bound

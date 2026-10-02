@@ -8,9 +8,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { type Cdp, findBrowser, launch } from '../../cli/src/cdp.ts'
 
 const notes = fileURLToPath(new URL('../../../examples/notes/', import.meta.url))
-const requests = join(notes, '.hozu/requests')
+const scratch = mkdtempSync(join(tmpdir(), 'hozu-devtools-requests-'))
+const requests = join(scratch, '.hozu/requests')
 const listed = () => (existsSync(requests) ? readdirSync(requests) : [])
-const before = new Set(listed())
 
 const freePort = () =>
   new Promise<number>((resolve) => {
@@ -71,7 +71,13 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     )
 
   beforeAll(async () => {
-    server = await dev({ cwd: notes, port: await freePort(), appPort: await freePort(), log: () => {} })
+    server = await dev({
+      cwd: notes,
+      requestsRoot: scratch,
+      port: await freePort(),
+      appPort: await freePort(),
+      log: () => {},
+    })
     cdp = launch(findBrowser()!, mkdtempSync(join(tmpdir(), 'hozu-devtools-chrome-')))
     const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank' })
     session = (await cdp.send('Target.attachToTarget', { targetId, flatten: true })).sessionId
@@ -93,7 +99,6 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
   afterAll(async () => {
     await cdp?.close()
     await server?.close()
-    for (const f of listed()) if (!before.has(f) && f !== '.next') rmSync(join(requests, f))
   })
 
   const shadowClick = (selector: string, text: string) =>
@@ -177,7 +182,7 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     await shadowClick('.actions button', 'Save request (2)')
     await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.notice code')`)
     const file = (await tool(`$('.notice code').textContent`)) as string
-    const saved = readFileSync(join(notes, file), 'utf8')
+    const saved = readFileSync(join(scratch, file), 'utf8')
     expect(saved).toContain('# Hozu request: Clear the name after signing in + 1 more')
     expect(saved).toContain('`submit` sends `account.SignIn`')
     expect(saved).toContain('## 2. <h1>')
@@ -216,7 +221,7 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     await until(
       `![...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.req')].some((r) => r.textContent.includes('Clear the name'))`,
     )
-    expect(listed().filter((f) => !before.has(f) && f !== '.next')).toEqual([])
+    expect(listed().filter((f) => f !== '.next')).toEqual([])
   })
 
   it('Browse hides the selection outlines and Select shows them again', async () => {

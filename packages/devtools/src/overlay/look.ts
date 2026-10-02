@@ -26,7 +26,7 @@ const props = Object.keys(css) as StyleProp[]
 const steps = [0, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 16]
 
 export function current(el: Element, prop: StyleProp): string {
-  const s = getComputedStyle(el)
+  const s = (el.ownerDocument.defaultView ?? window).getComputedStyle(el)
   if (prop === 'color' || prop === 'backgroundColor') return normalHex(s[prop]) ?? s[prop]
   if (prop === 'paddingInline') return s.paddingLeft
   if (prop === 'paddingBlock') return s.paddingTop
@@ -35,9 +35,10 @@ export function current(el: Element, prop: StyleProp): string {
 }
 
 export function preview(el: Element | null, changes: StyleChange[]) {
-  if (!(el instanceof HTMLElement || el instanceof SVGElement)) return
-  for (const prop of props) el.style.removeProperty(css[prop])
-  for (const c of changes) el.style.setProperty(css[c.prop], c.to, 'important')
+  if (!el || !('style' in el)) return
+  const style = (el as HTMLElement).style
+  for (const prop of props) style.removeProperty(css[prop])
+  for (const c of changes) style.setProperty(css[c.prop], c.to, 'important')
 }
 
 function options(prop: StyleProp, theme: Theme | null): [string, string][] {

@@ -32,6 +32,7 @@ export interface DevOptions {
   debounce?: number
   devtools?: boolean
   devtoolsMode?: 'builder' | 'developer'
+  requestsRoot?: string
   log?: (line: string) => void
 }
 
@@ -51,6 +52,7 @@ export async function dev({
   debounce = 60,
   devtools = true,
   devtoolsMode = 'builder',
+  requestsRoot,
   log = (line) => console.log(line),
 }: DevOptions): Promise<DevServer> {
   const clients = new Set<ServerResponse>()
@@ -141,7 +143,12 @@ export async function dev({
       if (path.startsWith('/_hozu/devtools/')) return void serveDevtools(path, res)
       if (path === '/_hozu/dev/theme') return void theme(res, cwd, appPort)
       if (path === '/_hozu/dev/requests' || path.startsWith('/_hozu/dev/requests/'))
-        return void requests(req, res, cwd, path.slice('/_hozu/dev/requests/'.length).split('/'))
+        return void requests(
+          req,
+          res,
+          requestsRoot ?? cwd,
+          path.slice('/_hozu/dev/requests/'.length).split('/'),
+        )
     }
     if (req.url === '/_hozu/dev') {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' })

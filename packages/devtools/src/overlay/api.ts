@@ -99,10 +99,10 @@ export function held(): DevPreview | null {
   }
 }
 
-export function hold(preview: DevPreview | null) {
+export function hold(preview: DevPreview | null, reload: () => void = () => location.reload()) {
   // biome-ignore lint/suspicious/noDocumentCookie: the server must read it on the next load; cookieStore is not in every browser
   document.cookie = preview
     ? `${COOKIE}=${encodeURIComponent(JSON.stringify(preview))}; path=/; SameSite=Strict`
     : `${COOKIE}=; path=/; max-age=0; SameSite=Strict`
-  location.reload()
+  reload()
 }
