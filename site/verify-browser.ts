@@ -206,6 +206,39 @@ try {
   })
   assert.ok(moved[0]! > 0, 'a code block scrolled sideways')
   assert.ok(Math.abs(moved[1]! - moved[2]!) < 1, `the copy button stays put when code scrolls ${moved}`)
+  for (const [width, height] of [
+    [1280, 900],
+    [1024, 700],
+  ] as const) {
+    const wide = await browser.newPage({ viewport: { width, height } })
+    await wide.route('https://hozu.test/**', (route) => serve(route))
+    for (const path of ['/docs/getting-started/', '/docs/devtools/', '/how-it-works/pipeline/']) {
+      await wide.goto(`https://hozu.test${path}`)
+      for (const at of [0.3, 0.6, 1]) {
+        await wide.evaluate((y) => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * y), at)
+        await wide.waitForTimeout(50)
+        const covered = await wide.evaluate(() => {
+          const header = document.querySelector('header')!.getBoundingClientRect()
+          const sticky = [...document.querySelectorAll('main *')].filter(
+            (el) => getComputedStyle(el).position === 'sticky' && el.getBoundingClientRect().height > 0,
+          )
+          return [
+            header.top,
+            sticky.length,
+            ...sticky
+              .map((el) => el.getBoundingClientRect())
+              .filter((box) => box.top < header.bottom || box.height > innerHeight - header.bottom)
+              .map((box) => `${Math.round(box.top)}..${Math.round(box.bottom)} under ${header.bottom}`),
+          ]
+        })
+        assert.equal(covered[0], 0, `${path} ${width}px: the header stays at the top`)
+        assert.ok(Number(covered[1]) > 0, `${path} ${width}px: has sticky sidebars`)
+        assert.deepEqual(covered.slice(2), [], `${path} ${width}px: sidebars clear the sticky header`)
+      }
+    }
+    await wide.close()
+  }
+  console.log('Sticky header: the docs and article sidebars clear it at 1280 and 1024 px on 3 pages')
   const lab = await browser.newPage({ viewport: { width: 1280, height: 900 } })
   await lab.route('https://hozu.test/**', (route) => serve(route))
   await lab.goto('https://hozu.test/how-it-works/')
