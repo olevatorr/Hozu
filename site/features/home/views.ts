@@ -316,6 +316,24 @@ export const Home = ui.view({
               'Read about components',
             ]),
           ]),
+          ui.h3({ class: 'mt-16 text-2xl font-black uppercase' }, [
+            'The 3D joint at the top is a component too.',
+          ]),
+          ui.p({ class: 'mt-3 max-w-2xl' }, [
+            'A Blender script builds the model, three.js renders it in a client component, and the same machine that runs the demo tells it when to split. Without JavaScript it is a still image.',
+          ]),
+          ui.query(
+            getPlayground,
+            {},
+            {
+              ready: (play) =>
+                ui.div({ class: 'prose prose-invert mt-6 max-w-none prose-figcaption:text-paper' }, [
+                  ui.use(CodeBlock, {}, [ui.html(play.joint)]),
+                ]),
+              pending: null,
+              failed: { Unexpected: () => ui.p({ role: 'alert' }, ['The source is unavailable.']) },
+            },
+          ),
         ],
       ),
       ui.use(Section, { props: { kicker: 'Under the hood' } }, [

@@ -7,7 +7,7 @@ export const Fix = event({ payload: z.object({}) })
 export const Pick = event({ payload: z.object({ intent: Intent }) })
 export const getPlayground = query({
   input: z.object({}),
-  output: z.object({ source: z.string(), solid: z.string(), outline: z.string() }),
+  output: z.object({ source: z.string(), solid: z.string(), outline: z.string(), joint: z.string() }),
   scope: 'public',
   freshness: 'static',
 })
