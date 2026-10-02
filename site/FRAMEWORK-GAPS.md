@@ -23,3 +23,14 @@ Each entry: approach → result → root cause. Nothing here is worked around si
 - **Root cause:** `ui.asset` is an attribute value (`AttrValue`), not data. The component now owns its assets: the
   render uses module constants for `src` and `data-model`, and the client module reads the model URL from the DOM.
   A component reused with different models would need a prop type for assets.
+
+## HZ018 cannot see a changed timer duration
+- **Approach:** the lab's stage timer went from `after 700ms` to `after 2400ms`, and each Run contract was changed to
+  expect the first stage after 2.3 s.
+- **Result:** HZ018 on every guarded Run transition: "each passes against the previous behaviour too".
+- **Root cause:** `previousFeature` (`packages/validator/src/contracts/verify.ts`) rebuilds the old target state with
+  `target.after.filter((a) => timers.includes(a.ms))`. A changed duration matches no old value, so the rebuilt
+  "previous" machine has no timer at all and never advances. A contract that holds a stage passes on it, so HZ018
+  cannot tell the change apart. The site specifies the pace in a way the rebuild cannot satisfy (the second stage
+  is reached at 2.5 s), and keeps the 2.3 s lower bound as a separate contract. The fix belongs in the validator:
+  restore the old `ms` values instead of filtering.
