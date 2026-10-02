@@ -41,6 +41,7 @@ interface State {
   audience: Audience
   excerpt: boolean
   folded: boolean
+  spot: { x: number; y: number } | null
   view: 'overlay' | 'workbench'
   theme: 'system' | 'light' | 'dark'
   device: { name: string; width: number; height: number }
@@ -60,6 +61,7 @@ const state: State = {
   audience: given === 'developer' ? 'developer' : 'builder',
   excerpt: false,
   folded: false,
+  spot: null,
   view: 'overlay',
   theme: 'system',
   device: { name: 'Phone', width: 390, height: 844 },
@@ -577,6 +579,54 @@ dock.addEventListener('pointerdown', (event) => {
 })
 addEventListener('resize', placeDock)
 
+function placePanel() {
+  if (state.view === 'workbench' || !state.spot) {
+    panel.style.left = panel.style.top = panel.style.right = ''
+    return
+  }
+  const r = panel.getBoundingClientRect()
+  const x = Math.min(Math.max(0, state.spot.x), innerWidth - Math.min(r.width, innerWidth))
+  const y = Math.min(Math.max(0, state.spot.y), innerHeight - 48)
+  panel.style.right = 'auto'
+  panel.style.left = `${x}px`
+  panel.style.top = `${y}px`
+}
+
+panel.addEventListener('pointerdown', (event) => {
+  const target = event.target as Element
+  if (
+    state.view === 'workbench' ||
+    !target.closest('.head') ||
+    target.closest('button, input, select, textarea, a')
+  )
+    return
+  event.preventDefault()
+  const head = target.closest('.head') as HTMLElement
+  head.setPointerCapture(event.pointerId)
+  const r = panel.getBoundingClientRect()
+  const dx = event.clientX - r.left
+  const dy = event.clientY - r.top
+  const move = (e: PointerEvent) => {
+    state.spot = { x: e.clientX - dx, y: e.clientY - dy }
+    placePanel()
+  }
+  const up = () => {
+    persist()
+    head.removeEventListener('pointermove', move)
+    head.removeEventListener('pointerup', up)
+  }
+  head.addEventListener('pointermove', move)
+  head.addEventListener('pointerup', up)
+})
+panel.addEventListener('dblclick', (event) => {
+  const target = event.target as Element
+  if (!target.closest('.head') || target.closest('button, input, select, textarea, a')) return
+  state.spot = null
+  persist()
+  placePanel()
+})
+addEventListener('resize', placePanel)
+
 const where = (what: string, l: DevLocation | null) =>
   l
     ? h('div', { class: 'loc' }, [
@@ -1040,6 +1090,7 @@ function developerSections(n: DevNode, active: Pick) {
 }
 
 async function renderPanel() {
+  placePanel()
   if (state.panel === 'changes') return state.opened ? renderRequest(state.opened) : renderChanges()
   if (state.panel === 'settings') return renderSettings()
   if (state.panel === 'layers')

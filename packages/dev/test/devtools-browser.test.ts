@@ -376,4 +376,62 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     await new Promise((r) => setTimeout(r, 200))
     expect(await buttons()).toBeGreaterThan(3)
   })
+
+  it('the inspector moves out of the way by its head, stays there after a reload, and a double-click puts it back', async () => {
+    await open('/login')
+    await shadowClick('.dock .mode', 'Select')
+    await click('h1')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.panel:not([hidden]) .head .kicker')`,
+    )
+    const box = () =>
+      tool(
+        `(() => { const r = $('.panel').getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y) } })()`,
+      )
+    const start = (await box()) as { x: number; y: number }
+    const at = (await tool(
+      `(() => { const r = $('.panel .kicker').getBoundingClientRect(); return { x: r.x + 10, y: r.y + 5 } })()`,
+    )) as { x: number; y: number }
+    await cdp.send(
+      'Input.dispatchMouseEvent',
+      { type: 'mousePressed', x: at.x, y: at.y, button: 'left', clickCount: 1 },
+      session,
+    )
+    for (const [dx, dy] of [
+      [-100, 40],
+      [-300, 120],
+      [-500, 200],
+    ] as const)
+      await cdp.send(
+        'Input.dispatchMouseEvent',
+        { type: 'mouseMoved', x: at.x + dx, y: at.y + dy, button: 'left', buttons: 1 },
+        session,
+      )
+    await cdp.send(
+      'Input.dispatchMouseEvent',
+      { type: 'mouseReleased', x: at.x - 500, y: at.y + 200, button: 'left', clickCount: 1 },
+      session,
+    )
+    expect(await box()).toEqual({ x: start.x - 500, y: start.y + 200 })
+    await open('/login')
+    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.panel:not([hidden])')`)
+    expect(await box()).toEqual({ x: start.x - 500, y: start.y + 200 })
+    const head = (await tool(
+      `(() => { const r = $('.panel .kicker').getBoundingClientRect(); return { x: r.x + 10, y: r.y + 5 } })()`,
+    )) as { x: number; y: number }
+    for (const [type, clickCount] of [
+      ['mousePressed', 1],
+      ['mouseReleased', 1],
+      ['mousePressed', 2],
+      ['mouseReleased', 2],
+    ] as const)
+      await cdp.send(
+        'Input.dispatchMouseEvent',
+        { type, x: head.x, y: head.y, button: 'left', clickCount },
+        session,
+      )
+    await until(
+      `(() => { const r = document.querySelector('hozu-devtools').shadowRoot.querySelector('.panel').getBoundingClientRect(); return Math.round(r.x) === ${start.x} })()`,
+    )
+  })
 })

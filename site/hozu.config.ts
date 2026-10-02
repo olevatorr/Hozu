@@ -12,10 +12,11 @@ import {
   Trial,
   Trials,
 } from './features/content/views.ts'
+import { DevToolsPage } from './features/home/devtools.ts'
 import { homePage } from './features/home/feature.ts'
 import { Home } from './features/home/views.ts'
 import { How, lab } from './features/lab/views.ts'
-import { changelog, chapter, doc, home, how, notFound, trial, trials } from './routes.ts'
+import { changelog, chapter, devtools, doc, home, how, notFound, trial, trials } from './routes.ts'
 import { kit } from './site/kit.ts'
 
 const icon = ui.asset(new URL('./assets/icon-256.png', import.meta.url))
@@ -25,7 +26,7 @@ export default project({
   styles: new URL('./app.css', import.meta.url),
   site: { url: 'https://hozu.org', name: 'Hozu', lang: 'en', icon, themeColor: '#f1ede4' },
   notFound,
-  routes: { home, doc, trials, trial, changelog, notFound, how, chapter },
+  routes: { home, doc, trials, trial, changelog, notFound, how, chapter, devtools },
   pages: [
     ui.page(how, {
       views: [Header, How, Footer],
@@ -70,6 +71,18 @@ export default project({
         render: (article) => ({ title: article.title, description: article.description, image: icon }),
       },
       entries: { query: listDocs, input: {}, params: (item) => ({ slug: item.slug }) },
+    }),
+    ui.page(devtools, {
+      views: [Header, DevToolsPage, Footer],
+      assert: 'static',
+      head: {
+        render: () => ({
+          title: 'Hozu DevTools',
+          description:
+            'Point at the screen; your agent gets the file, the line and the Hozu way to change it.',
+          image: ui.asset(new URL('./assets/devtools-select.png', import.meta.url)),
+        }),
+      },
     }),
     ui.page(trials, {
       views: [Header, Trials, Footer],

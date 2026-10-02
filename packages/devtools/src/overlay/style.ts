@@ -106,6 +106,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.18);
   scrollbar-width: thin; scrollbar-color: rgba(var(--tint), 0.2) transparent;
 }
+.root:not(.benching) .head { cursor: move; touch-action: none; }
 .head { position: sticky; top: 0; background: var(--bg); padding: 14px 16px 12px; border-bottom: 1px solid var(--line); z-index: 1; }
 .kicker { font: 500 12px/1.2 var(--sans); color: var(--mute); padding-right: 32px; }
 .title { margin: 4px 0 0; font: 600 16px/1.3 var(--sans); color: var(--text); word-break: break-word; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

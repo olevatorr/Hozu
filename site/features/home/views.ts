@@ -1,5 +1,5 @@
 import { ui } from '@hozu/core'
-import { chapter, doc, home, how, trial, trials } from '../../routes.ts'
+import { chapter, devtools, doc, home, how, trial, trials } from '../../routes.ts'
 import { Button } from '../../site/button.ts'
 import { CatchCard } from '../../site/catch-card.ts'
 import { CodeBlock } from '../../site/code-block.ts'
@@ -12,6 +12,7 @@ import { Steps } from '../../site/steps.ts'
 import { Ticker } from '../../site/ticker.ts'
 import { catches, claim } from '../content/claims.ts'
 import { getStart, listChapters } from '../content/model.ts'
+import { shot } from './devtools.ts'
 import { Break, Fix, getPlayground, m, Pick } from './model.ts'
 
 const claimLink = (id: string, text: string) =>
@@ -196,7 +197,7 @@ export const Home = ui.view({
                 {
                   id: '2',
                   title: '2 · Ask your agent',
-                  body: '“Add sharing to my notes.” It reads the guide that came with the app.',
+                  body: '“Add sharing to my notes.” Or point at the screen with Hozu DevTools: it hands your agent the file and line.',
                 },
                 {
                   id: '3',
@@ -224,6 +225,26 @@ export const Home = ui.view({
               },
             },
           ),
+        ]),
+        ui.use(Section, { props: { kicker: 'DevTools · 0.10' } }, [
+          ui.use(Heading, {}, ['Point at it. Your agent gets the line.']),
+          ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-center' }, [
+            shot(
+              'select',
+              'Hozu DevTools on a task board: the Add task button is selected and the inspector says it is shared by six places',
+            ),
+            ui.div({ class: 'grid content-start gap-4 text-lg' }, [
+              ui.p({}, [
+                'Run npm run dev, choose Select and click what is wrong. Say what should change, try a size, a colour or other words right on the page, and hand it over.',
+              ]),
+              ui.p({}, [
+                'The request names the file, the line and the Hozu way to make the change: one button or every button, a message shared by two places, a state that needs a contract. Your agent stops searching and starts fixing.',
+              ]),
+              ui.div({ class: 'mt-2 flex flex-wrap gap-3' }, [
+                ui.use(Button, { props: { href: ui.link(devtools, null) } }, ['Meet DevTools →']),
+              ]),
+            ]),
+          ]),
         ]),
         ui.use(
           Section,

@@ -1,7 +1,8 @@
 # ADR 0048 — Trial 0023: do DevTools requests make a vibe coder's changes cheaper? (pre-registration)
 
-- Status: proposed (2026-10-02). Nothing runs until the owner approves it; the design and targets are frozen then and
-  not changed after the first run starts.
+- Status: deferred (owner, 2026-10-02): 0.10.0 is released first; the trial runs after a feedback round with
+  engineers, non-engineers and designers and the version it produces, before 1.0.0. The design and targets are
+  reviewed and frozen before that run, then not changed after it starts.
 - **Why:** ADR 0047 G2 and G3. The tests prove that a request names the right file, line and form. They do not prove
   that an agent given one spends less and lands the change more often than an agent given the same sentence alone.
 - **Question:** for the same small change on the same app, does an agent given a DevTools request (arm B) instead of

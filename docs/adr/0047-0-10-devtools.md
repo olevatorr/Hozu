@@ -264,8 +264,10 @@ Each phase ends with `pnpm gate` and a report.
 - **Scaffold:** `npm run dev` (`hozu dev`), `@hozu/dev` as a dev dependency, `.hozu/` in `.gitignore`: requests are
   the person's working notes and are removed when done.
 - **Docs:** CLAUDE.md 0.10, AGENTS.md, CHANGELOG 0.10.0, README, the site page `/docs/devtools`.
-- **Trial 0023** is pre-registered in ADR 0048 (proposed); nothing runs before the owner approves it.
-- **Release** (version 0.10.0, `pnpm -r pack`, npm with the owner's 2FA) waits for the owner.
+- **Trial 0023** is pre-registered in ADR 0048, deferred by the owner: 0.10.0 ships first, then a feedback round with
+  engineers, non-engineers and designers, a revised version and the trial, and then 1.0.0.
+- **Release 0.10.0:** every package at 0.10.0 (`@hozu/devtools` is new); the site has `/devtools`, a home section, a
+  DevTools link and npm pointing at `create-hozu`.
 
 ## Rejected
 - **Shipping source maps or markers in production:** cost and leakage. Dev only.
