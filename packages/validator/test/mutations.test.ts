@@ -596,6 +596,13 @@ describe('A2 judgement codes', () => {
     expect(found[0]!.location.source?.file).toMatch(/examples\/cart\/.+\.ts$/)
     expect(found[0]!.fix?.patch).toBeNull()
   })
+
+  it('HZ020 — a user-scoped query that runs in the browser needs no project session', () => {
+    const ir = cartIR()
+    ir.session = null
+    ir.features.cart!.queries.getCart!.runs = 'browser'
+    expect(validate(ir, { sources: cartBuild().sources }).filter((d) => d.code === 'HZ020')).toEqual([])
+  })
 })
 
 describe('ADR 0043 A endpoint codes', () => {

@@ -1,4 +1,4 @@
-import type { Json, JsonSchema, ValueExpr } from '@hozu/core/ir'
+import type { Json, ValueExpr } from '@hozu/core/ir'
 import type { PagePayload } from './hydrate.ts'
 import type { Result, Store } from './mount.ts'
 

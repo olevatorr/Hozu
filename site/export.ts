@@ -20,7 +20,9 @@ const result = await exportStatic({
 })
 for (const file of result.written) console.log(`wrote   ${file}`)
 for (const { route, reason } of result.skipped) console.error(`skipped ${route}: ${reason}`)
-if (result.skipped.length) process.exitCode = 1
+for (const { path, effect, reason } of result.needsServer)
+  console.error(`needs a server: ${path} calls ${effect} (${reason})`)
+if (result.skipped.length || result.needsServer.length) process.exitCode = 1
 else {
   await writeFile(new URL('./dist/CNAME', import.meta.url), 'hozu.org\n')
   await writeFile(new URL('./dist/.nojekyll', import.meta.url), '')

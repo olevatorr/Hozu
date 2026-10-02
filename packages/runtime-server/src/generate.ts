@@ -46,7 +46,8 @@ interface Site {
 /** A query the server never runs: it renders its `pending` branch (ADR 0049). */
 function runsInBrowser(site: Site, query: string): boolean {
   const dot = query.indexOf('.')
-  return site.ir.features[query.slice(0, dot)]?.queries[query.slice(dot + 1)]?.runs === 'browser'
+  const runs = site.ir.features[query.slice(0, dot)]?.queries[query.slice(dot + 1)]?.runs
+  return runs === 'browser' || runs === 'either'
 }
 
 function embeddedRoot(site: Site, view: string): ViewNode | null {

@@ -1,0 +1,415 @@
+{
+  "features": {
+    "stars": {
+      "idle/on/stars.SaveToken/0": {
+        "behavior": "b589e7fca8d930bc",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "token"
+              ],
+              "value": {
+                "path": [
+                  "token"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "stars.saveToken",
+            "final": false,
+            "input": {
+              "object": {
+                "token": {
+                  "path": [
+                    "token"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "saving",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --SaveToken--> saving · token := event.token, error := null · invoke saveToken({ token: ctx.token })"
+      },
+      "idle/on/stars.Search/0": {
+        "behavior": "dd5d3e22525354fa",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "q"
+              ],
+              "value": {
+                "path": [
+                  "q"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Search--> idle · q := event.q"
+      },
+      "idle/on/stars.Star/0": {
+        "behavior": "45be18a6e4980c0d",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "repo"
+              ],
+              "value": {
+                "path": [
+                  "repo"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "stars.star",
+            "final": false,
+            "input": {
+              "object": {
+                "repo": {
+                  "path": [
+                    "repo"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "starring",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Star--> starring · repo := event.repo, error := null · invoke star({ repo: ctx.repo })"
+      },
+      "idle/on/stars.Unstar/0": {
+        "behavior": "0e2276beaae73635",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "repo"
+              ],
+              "value": {
+                "path": [
+                  "repo"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "stars.unstar",
+            "final": false,
+            "input": {
+              "object": {
+                "repo": {
+                  "path": [
+                    "repo"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "unstarring",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Unstar--> unstarring · repo := event.repo, error := null · invoke unstar({ repo: ctx.repo })"
+      },
+      "saving/invoke/done/0": {
+        "behavior": "01b27fae1c50fecb",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "token"
+              ],
+              "value": {
+                "literal": ""
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "saving --done saveToken--> idle · token := \"\""
+      },
+      "saving/invoke/failed/Unexpected/0": {
+        "behavior": "a9be53fb995f0773",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "saving --failed saveToken.Unexpected--> idle · error := error.message"
+      },
+      "starring/invoke/done/0": {
+        "behavior": "47f98d5bd9ba9707",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "starring --done star--> idle"
+      },
+      "starring/invoke/failed/Unauthorized/0": {
+        "behavior": "93980ca823d91b4d",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "Paste a GitHub token first"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "starring --failed star.Unauthorized--> idle · error := \"Paste a GitHub token first\""
+      },
+      "starring/invoke/failed/Unexpected/0": {
+        "behavior": "ccc4b34540511b32",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "starring --failed star.Unexpected--> idle · error := error.message"
+      },
+      "unstarring/invoke/done/0": {
+        "behavior": "1d43b8070a668f9d",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "unstarring --done unstar--> idle"
+      },
+      "unstarring/invoke/failed/Unauthorized/0": {
+        "behavior": "ad4c53a63c8be21b",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "Paste a GitHub token first"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "unstarring --failed unstar.Unauthorized--> idle · error := \"Paste a GitHub token first\""
+      },
+      "unstarring/invoke/failed/Unexpected/0": {
+        "behavior": "73bebed8ca90cc9e",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "unstarring --failed unstar.Unexpected--> idle · error := error.message"
+      }
+    }
+  },
+  "pages": {
+    "endpoints": {},
+    "head": {},
+    "redirects": {}
+  },
+  "version": 2
+}

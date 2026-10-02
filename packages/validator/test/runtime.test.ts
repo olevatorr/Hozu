@@ -152,7 +152,9 @@ describe('what only the server can do (ADR 0049, HZ082)', () => {
           on: [
             on(Star, {
               target: 'starring',
-              assign: (e) => [ctx.id.length >= 0 ? (ctx.id = e.id) : null].flat() as never,
+              assign: (e) => {
+                ctx.id = e.id
+              },
             }),
           ],
         },

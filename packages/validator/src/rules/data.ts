@@ -33,7 +33,7 @@ export function sessions(ctx: Ctx) {
   if (ctx.ir.session !== null) return
   for (const f of Object.values(ctx.ir.features))
     for (const [sym, q] of Object.entries(f.queries))
-      if (q.scope === 'user')
+      if (q.scope === 'user' && q.runs !== 'browser')
         ctx.report(
           'HZ020',
           f.id,

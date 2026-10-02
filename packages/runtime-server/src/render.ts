@@ -11,6 +11,7 @@ import {
   localeOf,
   type MachineIR,
   type ProjectIR,
+  type QueryIR,
   routeTable,
   type TagExprIR,
   type ValueExpr,
@@ -75,6 +76,11 @@ export interface RenderOptions {
   render?: RenderTable
   dev?: boolean
   devState?: DevPreview | null
+  /**
+   * A static export (ADR 0049): a runs: 'either' query whose data is not cacheable renders its pending branch, and
+   * the browser reads it after hydration, since no server will.
+   */
+  deferEither?: boolean
 }
 
 export interface RenderedPage {
@@ -112,6 +118,7 @@ export async function renderPage({
   render: generated,
   dev = false,
   devState = null,
+  deferEither = false,
 }: RenderOptions): Promise<RenderedPage> {
   const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
   const data = given ?? dataRuntime.scope(session)
@@ -374,7 +381,7 @@ export async function renderPage({
         const input = value(n.input, scope)
         const dot = n.query.indexOf('.')
         const q = ir.features[n.query.slice(0, dot)]?.queries[n.query.slice(dot + 1)]
-        if (q?.runs === 'browser') {
+        if (q?.runs === 'browser' || (deferEither && q?.runs === 'either' && !exportable(q))) {
           if (n.pending) await render(n.pending, scope, island)
           buffer += c
           return
@@ -496,12 +503,19 @@ export async function renderPage({
   return { plan, status, path, chunks: out, tags, redirect }
 }
 
+/** Data a static export can write: public and cacheable, so every visitor may see the export's copy. */
+export const exportable = (q: QueryIR): boolean =>
+  q.scope === 'public' && !['request', 'live'].includes(q.freshness.kind)
+
 /** The effects an island on this page can call that run in the browser (ADR 0049), with what the browser needs. */
 export function clientEffects(ir: ProjectIR, payload: PagePayload): Record<string, ClientEffect> {
   const refs = new Set<string>()
   const visit = (x: unknown): void => {
     if (!x || typeof x !== 'object') return
-    if (Array.isArray(x)) return x.forEach(visit)
+    if (Array.isArray(x)) {
+      for (const y of x) visit(y)
+      return
+    }
     const o = x as Record<string, unknown>
     if (o.kind === 'query' && typeof o.query === 'string') refs.add(o.query)
     for (const v of Object.values(o)) visit(v)

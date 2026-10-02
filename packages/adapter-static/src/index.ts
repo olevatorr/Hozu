@@ -1,7 +1,7 @@
 import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { planRoute } from '@hozu/compiler'
-import type { BuildResult, ImageSet } from '@hozu/core/ir'
+import type { BuildResult, ImageSet, Json } from '@hozu/core/ir'
 import { createDataRuntime, type ResolverSet } from '@hozu/data'
 import {
   assertComponentBundle,
@@ -23,6 +23,8 @@ export interface StaticExportOptions {
   styles?: Stylesheet | null
   components?: ComponentBundle | null
   images?: ImageSet | null
+  /** The raw environment; its `public` part is parsed (defaults applied) and written into pages that need it. */
+  env?: Record<string, string | undefined>
 }
 
 export interface StaticExport {
@@ -55,7 +57,10 @@ function serverCalls(build: BuildResult, html: string): { effect: string; reason
         out.set(state.invoke.effect, 'a machine on this page starts it')
   const visit = (x: unknown): void => {
     if (!x || typeof x !== 'object') return
-    if (Array.isArray(x)) return x.forEach(visit)
+    if (Array.isArray(x)) {
+      for (const y of x) visit(y)
+      return
+    }
     const o = x as Record<string, unknown>
     if (o.kind === 'query' && typeof o.query === 'string' && runsOf(o.query) === 'server')
       out.set(o.query, 'an island on this page can read it again (a new input or a refresh)')
@@ -77,7 +82,12 @@ export async function exportStatic({
   styles = null,
   components = null,
   images = null,
+  env: rawEnv = {},
 }: StaticExportOptions): Promise<StaticExport> {
+  const parsedPublic = build.bindings.env.public?.(rawEnv)
+  if (parsedPublic && !parsedPublic.ok)
+    throw new Error(`Invalid public environment: ${parsedPublic.issues.join('; ')}`)
+  const env = (parsedPublic?.ok ? parsedPublic.value : {}) as Json
   const assets = publicAssets(
     build.ir.http.basePath,
     styles,
@@ -92,7 +102,12 @@ export async function exportStatic({
   const entries = await pageEntries(build, data)
   for (const [route, page] of Object.entries(build.ir.pages).sort(([a], [b]) => a.localeCompare(b))) {
     const { plan } = planRoute(build.ir, route)
-    const dynamic = plan.regions.filter((r) => r.mode === 'request')
+    const deferred = (ref: string | null) => {
+      if (!ref) return false
+      const dot = ref.indexOf('.')
+      return build.ir.features[ref.slice(0, dot)]?.queries[ref.slice(dot + 1)]?.runs === 'either'
+    }
+    const dynamic = plan.regions.filter((r) => r.mode === 'request' && !deferred(r.query))
     if (dynamic.length) {
       result.skipped.push({ route, reason: `per-request regions: ${dynamic.map((r) => r.query).join(', ')}` })
       continue
@@ -111,6 +126,8 @@ export async function exportStatic({
         assets,
         locale: entry.locale,
         images: images?.variants ?? null,
+        env,
+        deferEither: true,
       })
       if (status !== 200) {
         result.skipped.push({ route: entry.path, reason: `status ${status}` })
