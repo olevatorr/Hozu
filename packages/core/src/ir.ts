@@ -5,6 +5,9 @@ export {
   type DevLocation,
   type DevNode,
   type DevOptions,
+  type DevPage,
+  type DevTextSource,
+  type DevTransition,
   locateNode,
 } from './build/locate.ts'
 export type { ImageSet, ImageVariant, Manifest, ManifestAsset } from './build/manifest.ts'

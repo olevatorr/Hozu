@@ -51,3 +51,26 @@ export async function saved(): Promise<SavedSummary[]> {
     return []
   }
 }
+
+export interface SavedRequest extends SavedSummary {
+  markdown: string
+  result: string | null
+}
+
+const send = async <T>(path: string, method: string, body?: unknown): Promise<T> => {
+  const response = await fetch(path, {
+    method,
+    headers: { 'content-type': 'application/json' },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  })
+  if (!response.ok)
+    throw new Error(
+      ((await response.json().catch(() => ({}))) as { error?: string }).error ?? response.statusText,
+    )
+  return response.json() as Promise<T>
+}
+
+export const one = (number: string) => send<SavedRequest>(`/_hozu/dev/requests/${number}`, 'GET')
+export const remove = (number: string) => send<{ deleted: string }>(`/_hozu/dev/requests/${number}`, 'DELETE')
+export const finish = (number: string, result: string) =>
+  send<SavedSummary>(`/_hozu/dev/requests/${number}/done`, 'POST', { result })

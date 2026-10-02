@@ -96,7 +96,12 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     for (const f of listed()) if (!before.has(f)) rmSync(join(requests, f))
   })
 
-  it('selects a component use without running the app, and the inspector names its source', async () => {
+  const shadowClick = (selector: string, text: string) =>
+    tool(
+      `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll(${JSON.stringify(selector)})].find((b) => b.textContent.includes(${JSON.stringify(text)})).click()`,
+    )
+
+  it('selects a component use without running the app; Builder speaks plainly, Developer names the source', async () => {
     await open('/login')
     await evaluate(`localStorage.clear()`)
     await open('/login')
@@ -106,42 +111,78 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     await until(
       `document.querySelector('hozu-devtools').shadowRoot.querySelector('.panel:not([hidden]) .title')`,
     )
-    expect(await tool(`$('.title').textContent`)).toBe('<button>ui.Button')
+    expect(await tool(`$('.title').textContent`)).toBe('Button“Sign in”')
+    expect(await tool(`$('.plain').textContent`)).toBe(
+      'A shared Button: the same design is used in 6 places.',
+    )
+    expect(await tool(`$('legend').textContent`)).toBe('Change only this one, or every Button like it?')
+    expect(await evaluate('location.pathname')).toBe('/login')
+    await shadowClick('.dock button', '⚙')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent === 'Settings'`,
+    )
+    await shadowClick('.option', 'Developer')
+    await shadowClick('.dock button', '⚙')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent === '<button>ui.Button'`,
+    )
     expect(await tool(`$('.loc').textContent`)).toContain('features/account/views.ts:38:12')
     expect(await tool(`$('pre .on').textContent`)).toContain('ui.use(Button')
-    expect(await evaluate('location.pathname')).toBe('/login')
   })
 
-  it('Alt+click goes to the parent, Shift+click adds, and the request is saved for the agent', async () => {
+  it('Alt+click goes to the parent, Shift+click adds, and Save copies the line to give the agent', async () => {
     await click('button[type=submit]', 1)
     await until(
       `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent === '<form>'`,
     )
     await click('h1', 8)
     await until(
-      `document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.picks button').length === 2`,
+      `document.querySelectorAll && document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.picks button').length === 2`,
     )
     await tool(
       `(() => { const t = $('textarea'); t.value = 'Shorter heading'; t.dispatchEvent(new Event('input')); })()`,
     )
-    await tool(
-      `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.actions button')].find((b) => b.textContent === 'Save request').click()`,
-    )
+    await cdp.send('Browser.grantPermissions', {
+      permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
+      origin: server.url,
+    })
+    await shadowClick('.actions button', 'Save request')
     await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.status.ok')`)
     const file = (await tool(`$('.status code').textContent`)) as string
     const saved = readFileSync(join(notes, file), 'utf8')
     expect(saved).toContain('# Hozu request: Shorter heading')
-    expect(saved).toContain('`features/account/views.ts:19:10` — <form>')
-    expect(saved).toContain('On `submit` it sends `account.SignIn`')
-    expect(saved).toContain('used in 2 places')
+    expect(saved).toContain(
+      '## 1. <form>\n- Want: (not described: ask the user what should change)\n- Where: `features/account/views.ts:19:10`',
+    )
+    expect(saved).toContain('`submit` sends `account.SignIn`')
+    expect(saved).toContain('shared by 2 places')
+    expect(saved).not.toContain('```')
+    expect(await evaluate('navigator.clipboard.readText()')).toBe(`Do the Hozu request ${file}`)
   })
 
-  it('Escape returns to Browse and the app works again; the page button shows its head', async () => {
+  it('a saved request opens, can be marked done and deleted', async () => {
+    await shadowClick('.dock button', 'Requests')
+    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.req')`)
+    await shadowClick('.req', 'Shorter heading')
+    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('pre.md')`)
+    expect(await tool(`$('pre.md').textContent`)).toContain('- Want: Shorter heading')
+    await tool(`(() => { const i = $('input.outcome'); i.value = 'h1 is text-2xl'; })()`)
+    await shadowClick('.finish button', 'Mark done')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.kicker')?.textContent.includes('done · h1 is text-2xl')`,
+    )
+    await shadowClick('.actions button', 'Delete')
+    await shadowClick('.actions button', 'Click again to delete')
+    await until(
+      `(() => { const r = document.querySelector('hozu-devtools').shadowRoot; return r.querySelector('.title')?.textContent === 'Requests' && ![...r.querySelectorAll('.req')].some((b) => b.textContent.includes('Shorter heading')) })()`,
+    )
+    expect(listed().filter((f) => !before.has(f))).toEqual([])
+  })
+
+  it('Escape returns to Browse; the page button shows its head', async () => {
     await key('Escape', 'Escape', 0)
     expect(await tool(`$('.mode[aria-pressed="true"]').textContent`)).toBe('Browse')
-    await tool(
-      `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.dock .act')].find((b) => b.textContent === 'Page').click()`,
-    )
+    await shadowClick('.dock .act', 'Page')
     await until(
       `document.querySelector('hozu-devtools').shadowRoot.querySelector('.kicker')?.textContent.startsWith('Page')`,
     )

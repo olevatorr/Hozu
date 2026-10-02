@@ -75,7 +75,9 @@ describe('dev server', () => {
     const server = await dev({ entry: 'app.ts', cwd: dir, port: 0, appPort: await freePort(), log: () => {} })
     try {
       const html = await fetchText(`${server.url}/`)
-      expect(html).toContain('<script type="module" src="/_hozu/devtools/overlay/index.js"></script>')
+      expect(html).toContain(
+        '<script type="module" src="/_hozu/devtools/overlay/index.js" data-mode="builder"></script>',
+      )
       expect(await fetchText(`${server.url}/_hozu/devtools/overlay/index.js`)).toContain('hozu-devtools')
       expect(await fetchText(`${server.url}/_hozu/devtools/prompt.js`)).toContain('requestMarkdown')
       expect((await send(server.url, 'GET', '/_hozu/devtools/../../package.json')).status).toBe(404)
@@ -111,6 +113,42 @@ describe('dev server', () => {
         (await send(server.url, 'GET', '/_hozu/dev/requests', undefined, { host: 'evil.example' })).status,
       ).toBe(403)
       expect(existsSync(join(dir, '.hozu/requests/0002-bigger-button.md'))).toBe(false)
+      const one = await send(server.url, 'GET', '/_hozu/dev/requests/0001')
+      expect(one.body).toMatchObject({ number: '0001', markdown: expect.stringContaining('Bigger button') })
+      const done = await send(
+        server.url,
+        'POST',
+        '/_hozu/dev/requests/1/done',
+        { result: 'text-xl' },
+        { origin: server.url },
+      )
+      expect(done.body).toMatchObject({ number: '0001', status: 'done', result: 'text-xl' })
+      expect((await send(server.url, 'DELETE', '/_hozu/dev/requests/0001')).status).toBe(403)
+      expect(
+        (await send(server.url, 'DELETE', '/_hozu/dev/requests/0001', undefined, { origin: server.url }))
+          .status,
+      ).toBe(200)
+      expect((await send(server.url, 'GET', '/_hozu/dev/requests')).body).toEqual([])
+      expect((await send(server.url, 'GET', '/_hozu/dev/requests/0001')).status).toBe(404)
+    } finally {
+      await server.close()
+    }
+  }, 20_000)
+
+  it('starts DevTools in the mode it was given', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-'))
+    writeFileSync(join(dir, 'style.css'), 'p { color: red }')
+    writeFileSync(join(dir, 'app.ts'), app)
+    const server = await dev({
+      entry: 'app.ts',
+      cwd: dir,
+      port: 0,
+      appPort: await freePort(),
+      log: () => {},
+      devtoolsMode: 'developer',
+    })
+    try {
+      expect(await fetchText(`${server.url}/`)).toContain('data-mode="developer"')
     } finally {
       await server.close()
     }

@@ -19,7 +19,7 @@ async function run(args: string[], cwd: string) {
 }
 
 const request = (title: string) =>
-  `# Hozu request: ${title}\n\n\`\`\`hozu-request\n${JSON.stringify({ items: [{ location: { file: 'features/notes/views.ts', line: 61, column: 14 } }] })}\n\`\`\`\n`
+  `# Hozu request: ${title}\n\n## 1. <h1>\n- Want: x\n- Where: \`features/notes/views.ts:61:14\` (view \`notes.NotesBoard\`)\n`
 
 describe('hozu requests (ADR 0047 D2)', () => {
   it('lists saved requests, open first, and marks one done with its result', async () => {

@@ -13,8 +13,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
 .box { position: fixed; pointer-events: none; }
-.box::after { content: ''; position: absolute; inset: 1.5px; border: 1px solid var(--red); border-radius: 3px; }
-.box.selected::after { inset: 2px; }
 .box[hidden], .panel[hidden] { display: none; }
 .tag {
   position: absolute; left: -1px; bottom: 100%; margin-bottom: 6px; white-space: nowrap;
@@ -137,7 +135,11 @@ textarea::placeholder { color: #6f695f; }
 .status code { font: 12px/1.4 var(--mono); color: var(--text); }
 .empty { padding: 16px; font: 13px/1.5 var(--sans); color: var(--mute); }
 .empty b { color: var(--text); font-weight: 600; }
-.req { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); align-items: baseline; }
+.req {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; padding: 10px 16px; border: 0;
+  border-bottom: 1px solid var(--line); align-items: baseline; width: 100%; text-align: left; background: none;
+}
+.req:hover { background: rgba(241, 237, 228, 0.04); }
 .req .n { font: 11.5px/1 var(--mono); color: var(--mute); }
 .req .t { font: 500 13px/1.35 var(--sans); color: var(--text); }
 .req .s { font: 500 11px/1 var(--sans); border-radius: 999px; padding: 3px 8px; }
@@ -146,6 +148,35 @@ textarea::placeholder { color: #6f695f; }
 .req .l { grid-column: 2 / -1; font: 11.5px/1.4 var(--mono); color: var(--mute); word-break: break-all; }
 .tip { padding: 12px 16px; background: var(--ink-2); color: var(--mute); font: 12.5px/1.5 var(--sans); }
 .tip q { color: var(--text); font-weight: 500; }
+
+.quote { font-weight: 400; color: var(--mute); font-size: 14px; }
+.plain { font: 13px/1.5 var(--sans); color: var(--text); padding: 2px 0; }
+.plain + .plain { border-top: 1px solid var(--line); padding-top: 6px; margin-top: 4px; }
+.file { margin-top: 10px; font: 11.5px/1.4 var(--mono); color: var(--mute); display: flex; gap: 8px; align-items: center; }
+button.link { border: 0; background: none; padding: 0; color: var(--mute); font: 500 12px/1.3 var(--sans); text-decoration: underline; text-underline-offset: 2px; }
+button.link:hover { color: var(--text); }
+.row-end { display: flex; justify-content: flex-end; margin-top: 6px; }
+textarea.draft { margin-top: 8px; min-height: 200px; font: 11.5px/1.5 var(--mono); }
+textarea[hidden], .draft[hidden] { display: none; }
+legend { font: 500 13px/1.3 var(--sans); color: var(--text); padding: 0; margin-bottom: 6px; }
+.meta { font: 11px/1.4 var(--mono); color: #6f695f; word-break: break-all; }
+.back { border: 0; background: none; padding: 0 0 6px; color: var(--mute); font: 500 12px/1 var(--sans); }
+.back:hover { color: var(--text); }
+pre.md { margin: 0; padding: 10px 12px; white-space: pre-wrap; word-break: break-word; max-height: 46vh; color: #d9d3c7; }
+.finish { display: flex; gap: 8px; margin-top: 10px; }
+.finish button { border: 1px solid var(--line-2); background: rgba(241, 237, 228, 0.04); border-radius: 8px; padding: 0 12px; font: 500 13px/1 var(--sans); color: var(--text); }
+.finish button:hover { background: rgba(47, 163, 107, 0.2); border-color: rgba(47, 163, 107, 0.5); }
+input.outcome { flex: 1; min-width: 0; height: 34px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--ink-3); color: var(--text); padding: 0 10px; font: 13px/1 var(--sans); }
+input.outcome:focus { border-color: var(--red); outline: none; box-shadow: 0 0 0 3px rgba(251, 58, 14, 0.2); }
+.actions button.danger:hover { background: rgba(251, 58, 14, 0.16); border-color: rgba(251, 58, 14, 0.5); color: #ff8a66; }
+.option { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; cursor: pointer; }
+.option input { margin-top: 3px; accent-color: var(--red); }
+.option > span { display: grid; gap: 2px; }
+.option b { font: 500 13px/1.3 var(--sans); color: var(--text); }
+.option > span > span { font: 12px/1.4 var(--sans); color: var(--mute); }
+.keyrow { display: flex; gap: 10px; align-items: center; font: 12.5px/1.8 var(--sans); color: var(--mute); }
+kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(241, 237, 228, 0.08); border: 1px solid var(--line-2); border-radius: 5px; padding: 3px 6px; min-width: 92px; text-align: center; }
+.dock button.gear { font-size: 14px; padding: 5px 9px; }
 
 @media (max-width: 720px) { .dock .hint { display: none; } }
 @media (max-width: 420px) {

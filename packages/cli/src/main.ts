@@ -46,7 +46,8 @@ Commands:
   plan <route>              Derived render plan: regions, cache modes, hydration islands
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
   serve                     Start the app module (project({ app })) on PORT with adapter-node: what npm start runs
-  dev                       Start the dev server: reload on edits, hot CSS and Hozu DevTools (--no-devtools hides it)
+  dev                       Start the dev server: reload on edits, hot CSS and Hozu DevTools
+                            (--devtools builder|developer picks its mode, --no-devtools hides it)
   requests [done <n>]       List the change requests saved from DevTools; done <n> --result "<what changed>" closes one
   docs [topic]              Print one topic of the guide (no topic: list them); docs components adds the app's list
   render <id>               Render one component alone (ui.Button): HTML, root class, owned properties, diagnostics
@@ -170,6 +171,7 @@ export async function main(
         'reduced-motion': { type: 'boolean', default: false },
         result: { type: 'string' },
         'no-devtools': { type: 'boolean', default: false },
+        devtools: { type: 'string' },
         help: { type: 'boolean', short: 'h' },
       },
     })
@@ -271,7 +273,9 @@ export async function main(
     }
     const loaded = await load(values.config, cwd)
     if (command === 'dev') {
-      await runDev(loaded, values['no-devtools'] !== true, (line) => out(`${line}\n`))
+      await runDev(loaded, values['no-devtools'] === true ? false : (values.devtools ?? 'builder'), (line) =>
+        out(`${line}\n`),
+      )
       return 0
     }
     if (command === 'check') {

@@ -2,10 +2,10 @@ import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { finishRequest, listRequests, saveRequest } from '../src/requests.ts'
+import { deleteRequest, finishRequest, listRequests, readRequest, saveRequest } from '../src/requests.ts'
 
 const md = (title: string) =>
-  `# Hozu request: ${title}\n\nbody\n\n\`\`\`hozu-request\n${JSON.stringify({ version: 1, title, items: [{ location: { file: 'features/a/views.ts', line: 3, column: 1 } }] })}\n\`\`\`\n`
+  `# Hozu request: ${title}\n\n## 1. <h1>\n- Want: x\n- Where: \`features/a/views.ts:3:1\` (view \`a.B\`)\n`
 
 describe('saved requests (ADR 0047 D2)', () => {
   it('numbers files in order, slugs the title and lists them open', () => {
@@ -46,5 +46,20 @@ describe('saved requests (ADR 0047 D2)', () => {
 
   it('an empty project has no requests', () => {
     expect(listRequests(mkdtempSync(join(tmpdir(), 'hozu-requests-')))).toEqual([])
+  })
+
+  it('reads one request without its front matter, and deletes it', () => {
+    const root = mkdtempSync(join(tmpdir(), 'hozu-requests-'))
+    saveRequest(root, md('One'), new Date('2026-10-02T10:00:00Z'))
+    saveRequest(root, md('Two'), new Date('2026-10-02T10:00:00Z'))
+    expect(readRequest(root, '2')).toMatchObject({
+      number: '0002',
+      title: 'Two',
+      markdown: expect.stringMatching(/^# Hozu request: Two\n/),
+    })
+    deleteRequest(root, '0001')
+    expect(listRequests(root).map((r) => r.number)).toEqual(['0002'])
+    expect(saveRequest(root, md('Three')).number).toBe('0003')
+    expect(() => readRequest(root, '0001')).toThrow('No request 0001')
   })
 })

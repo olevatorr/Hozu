@@ -1,6 +1,6 @@
 import type { DevNode } from '@hozu/core/ir'
 import { describe, expect, it } from 'vitest'
-import { requestJson, requestMarkdown, scopesFor, titleOf } from '../src/prompt.ts'
+import { requestMarkdown, scopesFor, titleOf } from '../src/prompt.ts'
 
 const at = (file: string, line: number, column = 3) => ({ file, line, column })
 
@@ -49,42 +49,71 @@ const base: DevNode = {
 
 const context = { path: '/login', viewport: { width: 1280, height: 800 }, preview: null }
 
+const item = (node: DevNode, note: string, scope: 'this' | 'component' | 'items' = 'this') => ({
+  node,
+  note,
+  scope,
+  visible: '',
+})
+
 describe('the request an agent reads (ADR 0047 G2)', () => {
-  it('names the file and line, the excerpt with the line marked, the component and both scopes', () => {
-    const md = requestMarkdown({
-      items: [{ node: base, note: 'Make it bigger', scope: 'this', visible: 'Sign in' }],
-      context,
-    })
-    expect(md).toContain('# Hozu request: Make it bigger')
-    expect(md).toContain('**Where:** `features/account/views.ts:38:12`')
+  it('is short: where, what, scope, and a reminder only where a plain edit would go wrong', () => {
+    expect(requestMarkdown({ items: [item(base, 'Make it bigger')], context })).toBe(
+      [
+        '# Hozu request: Make it bigger',
+        '',
+        'Page `/login` · 1280 × 800',
+        '',
+        '## 1. <button> · ui.Button',
+        '- Want: Make it bigger',
+        '- Where: `features/account/views.ts:38:12` (view `account.Login`)',
+        '- Scope: only this one',
+        '- Mind: `ui.Button` is used in 6 places. For only this one, change `class` at this use; a property the component owns needs a trailing `!`.',
+        '- Mind: its text is message `account.signIn` (`features/account/model.ts:99:3`), shared by 2 places; to change only this one, give it its own message.',
+        '- Locate: `hozu locate /features/account/views/Login/root/children/2/children/1`',
+        '',
+        'Run `hozu check` after the edits.',
+        '',
+      ].join('\n'),
+    )
+  })
+
+  it('adds the code excerpt only when asked', () => {
+    const md = requestMarkdown({ items: [item(base, 'Bigger')], context }, { excerpt: true })
     expect(md).toContain('> 38 |         ui.use(Button')
     expect(md).toContain('  37 |         }),')
-    expect(md).toContain('`ui.Button`')
-    expect(md).toContain('`ui/button.ts:16:38`')
-    expect(md).toContain('only this one')
-    expect(md).toContain('message `account.signIn`')
-    expect(md).toContain('`features/account/model.ts:99:3`')
-    expect(md).toContain('hozu check')
-    expect(md).toContain('hozu render ui.Button')
-    expect(md).toContain(`hozu browse /login --do 'click "Sign in"'`)
-    expect(md).toContain('hozu locate /features/account/views/Login/root/children/2/children/1')
-    expect(md).toContain('No inline `style`')
-    expect(md).toContain('used in 2 places')
-    expect(md).toContain('give this one its own message')
+    expect(requestMarkdown({ items: [item(base, 'Bigger')], context })).not.toContain('```')
   })
 
-  it('every use of a component points at the declaration and the impact command', () => {
-    const md = requestMarkdown({
-      items: [{ node: base, note: 'Rounder', scope: 'component', visible: '' }],
-      context,
-    })
-    expect(md).toContain('every `ui.Button` (6 places)')
-    expect(md).toContain('**Scope:** every Button like this (6 places)')
-    expect(md).toContain('Change the variant in `ui/button.ts:16:38`')
-    expect(md).toContain('hozu impact ui.Button')
+  it('every use of a component points at the declaration', () => {
+    const md = requestMarkdown({ items: [item(base, 'Rounder', 'component')], context })
+    expect(md).toContain('- Scope: every Button like this (6 places)')
+    expect(md).toContain(
+      '- Mind: change the variant in `ui/button.ts:16:38`; all 6 uses change (`hozu impact ui.Button` lists them).',
+    )
   })
 
-  it('data text says to change the data, not the view, and names the query', () => {
+  it('a plain element with literal text needs no reminder', () => {
+    const node: DevNode = {
+      ...base,
+      id: 'account.Login/1',
+      tag: 'h1',
+      component: null,
+      children: [
+        {
+          id: 'account.Login/1/0',
+          kind: 'text',
+          text: 'Sign in',
+          source: { kind: 'literal', detail: 'Sign in', location: null, uses: null },
+        },
+      ],
+    }
+    const md = requestMarkdown({ items: [item(node, 'Smaller')], context })
+    expect(md).toContain('## 1. <h1>')
+    expect(md).not.toContain('- Mind:')
+  })
+
+  it('data text says to change the data, not the view', () => {
     const node: DevNode = {
       ...base,
       id: 'account.AccountBar/0/ready/1',
@@ -100,20 +129,20 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
       },
       children: [],
     }
-    const md = requestMarkdown({
-      items: [{ node, note: 'Show the full name', scope: 'this', visible: 'otis' }],
-      context,
-    })
-    expect(md).toContain('comes from data `account.me.name`')
-    expect(md).toContain('`features/account/model.ts:13:3`')
+    const md = requestMarkdown({ items: [item(node, 'Show the full name')], context })
+    expect(md).toContain('## 1. text from account.me.name')
+    expect(md).toContain(
+      '- Mind: the text comes from data `account.me.name` (query at `features/account/model.ts:13:3`): change the data or its formatting, not the view.',
+    )
   })
 
-  it('a behaviour chip states the transition and the contract rule', () => {
+  it('behaviour names the transition and the contract rule', () => {
     const node: DevNode = {
       ...base,
       id: 'account.Login/2',
       tag: 'form',
       component: null,
+      children: [],
       events: [
         {
           dom: 'submit',
@@ -129,20 +158,13 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
           ],
         },
       ],
-      children: [],
     }
-    const md = requestMarkdown({
-      items: [{ node, note: 'Also clear the name', scope: 'this', visible: '' }],
-      context,
-    })
-    expect(md).toContain(
-      'On `submit` it sends `account.SignIn`: `idle → signingIn` (`features/account/model.ts:45:3`)',
+    expect(requestMarkdown({ items: [item(node, 'Also clear the name')], context })).toContain(
+      '- Mind: `submit` sends `account.SignIn` (idle → signingIn at `features/account/model.ts:45:3`); a change of behaviour needs a contract when it decides (HZ016), otherwise `hozu check --update-lock`.',
     )
-    expect(md).toContain('needs a contract')
-    expect(md).toContain('hozu check --update-lock')
   })
 
-  it('an item inside a list says whether the change is for every item or needs data', () => {
+  it('a list item says whether every item changes or the item needs data', () => {
     const node: DevNode = {
       ...base,
       component: null,
@@ -151,35 +173,37 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
       ],
     }
     expect(scopesFor(node).map((s) => s.scope)).toEqual(['items', 'this'])
-    const every = requestMarkdown({ items: [{ node, note: 'Bold', scope: 'items', visible: '' }], context })
-    expect(every).toContain('every item of `notes.listNotes`')
-    const one = requestMarkdown({ items: [{ node, note: 'Bold', scope: 'this', visible: '' }], context })
-    expect(one).toContain('needs a field on the item')
+    expect(requestMarkdown({ items: [item(node, 'Bold', 'items')], context })).toContain(
+      '- Mind: it is inside a list of `notes.listNotes` (`features/notes/views.ts:40:3`): every item changes.',
+    )
+    expect(requestMarkdown({ items: [item(node, 'Bold')], context })).toContain(
+      '- Mind: one item of a list (`features/notes/views.ts:40:3`): changing only this one needs a field on the item that tells it apart.',
+    )
   })
 
-  it('several selections become one numbered request, and the JSON block carries pointers', () => {
-    const request = {
-      items: [
-        { node: base, note: 'Bigger', scope: 'this' as const, visible: 'Sign in' },
-        {
-          node: { ...base, id: 'account.Login/1', tag: 'h1', component: null },
-          note: '',
-          scope: 'this' as const,
-          visible: 'Sign in',
-        },
+  it('a branch says when it is shown, and the preview the user saw is on the page line', () => {
+    const node: DevNode = {
+      ...base,
+      component: null,
+      conditions: [
+        { kind: 'when', detail: 'state in signingIn', location: at('features/account/views.ts', 30) },
       ],
-      context,
     }
-    const md = requestMarkdown(request)
-    expect(md).toContain('## 1. Bigger')
-    expect(md).toContain('## 2. Change <h1>')
-    const json = requestJson(request)
-    expect(json.items.map((i) => i.pointer)).toEqual([base.pointer, base.pointer])
-    expect(md).toContain('```hozu-request')
-    expect(JSON.parse(md.split('```hozu-request\n')[1]!.split('\n```')[0]!)).toEqual(json)
+    const md = requestMarkdown({
+      items: [item(node, 'Spinner')],
+      context: { ...context, preview: 'state signingIn' },
+    })
+    expect(md).toContain('Page `/login` · 1280 × 800 · preview state signingIn')
+    expect(md).toContain('- Shown when: state in signingIn (`features/account/views.ts:30:3`)')
   })
 
-  it('a page names its declaration and the closed set of head fields', () => {
+  it('an empty description asks the agent to ask', () => {
+    expect(requestMarkdown({ items: [item(base, '  ')], context })).toContain(
+      '- Want: (not described: ask the user what should change)',
+    )
+  })
+
+  it('a page names its route and the closed set of head fields', () => {
     const page: DevNode = {
       ...base,
       id: 'page:login',
@@ -206,30 +230,30 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
         },
       },
     }
-    const md = requestMarkdown({
-      items: [{ node: page, note: 'Add a description', scope: 'this', visible: '' }],
-      context,
-    })
-    expect(md).toContain('**Where:** `hozu.config.ts:28:5` — page `login`')
-    expect(md).toContain('This is page `login` (route `/login` at `routes.ts:4:3`)')
-    expect(md).toContain('title, description, type, image, published, noindex')
-    expect(md).toContain('title “Sign in”, no description')
-    expect(md).toContain('`hozu get /login`')
+    const md = requestMarkdown({ items: [item(page, 'Add a description')], context })
+    expect(md).toContain('## 1. page login')
+    expect(md).toContain('- Where: `hozu.config.ts:28:5` (route `/login`, `routes.ts:4:3`)')
+    expect(md).toContain(
+      '- Mind: the head is a closed set of fields: title, description, type, image, published, noindex. Now: title “Sign in”, no description.',
+    )
   })
 
-  it('titles come from the first note, cut at a word', () => {
+  it('several selections are numbered, and titles come from the first description', () => {
+    const md = requestMarkdown({
+      items: [
+        item({ ...base, id: 'account.Login/1', tag: 'h1', component: null, children: [] }, ''),
+        item(base, 'Bigger'),
+      ],
+      context,
+    })
+    expect(md).toContain('# Hozu request: Bigger')
+    expect(md).toContain('## 1. <h1>')
+    expect(md).toContain('## 2. <button> · ui.Button')
     expect(
       titleOf([
-        {
-          node: base,
-          note: 'Make the sign in button much bigger and also change its colour to the brand red please',
-          scope: 'this',
-          visible: '',
-        },
+        item(base, 'Make the sign in button much bigger and also change its colour to the brand red please'),
       ]),
     ).toBe('Make the sign in button much bigger and also change its…')
-    expect(titleOf([{ node: base, note: '  ', scope: 'this', visible: '' }])).toBe(
-      'Change <button> · ui.Button',
-    )
+    expect(titleOf([item(base, ' ')])).toBe('Change <button> · ui.Button')
   })
 })

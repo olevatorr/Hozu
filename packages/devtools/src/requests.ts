@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 export interface SavedRequest {
@@ -67,33 +67,43 @@ export function saveRequest(
   return { number, file }
 }
 
-export function listRequests(root: string): SavedRequest[] {
-  return files(root).map((name) => {
-    const { head, body } = split(readFileSync(join(root, folder, name), 'utf8'))
-    const block = /```hozu-request\n([\s\S]*?)\n```/.exec(body)?.[1]
-    let locations: string[] = []
-    try {
-      const items = (block ? JSON.parse(block).items : []) as {
-        location?: { file: string; line: number } | null
-      }[]
-      locations = items.flatMap((i) => (i.location ? [`${i.location.file}:${i.location.line}`] : []))
-    } catch {}
-    return {
-      number: name.slice(0, 4),
-      file: `${folder}/${name}`,
-      title: titleIn(body),
-      status: head.status === 'done' ? 'done' : 'open',
-      created: head.created ?? '',
-      result: head.result ? (JSON.parse(head.result) as string) : null,
-      locations,
-    }
-  })
+const summary = (name: string, text: string): SavedRequest => {
+  const { head, body } = split(text)
+  return {
+    number: name.slice(0, 4),
+    file: `${folder}/${name}`,
+    title: titleIn(body),
+    status: head.status === 'done' ? 'done' : 'open',
+    created: head.created ?? '',
+    result: head.result ? (JSON.parse(head.result) as string) : null,
+    locations: [...body.matchAll(/^- Where: `([^`]+):(\d+):\d+`/gm)].map((m) => `${m[1]}:${m[2]}`),
+  }
 }
 
-export function finishRequest(root: string, number: string, result: string, now = new Date()): SavedRequest {
+const named = (root: string, number: string) => {
   const padded = number.padStart(4, '0')
   const name = files(root).find((f) => f.startsWith(`${padded}-`))
   if (!name) throw new Error(`No request ${padded}`)
+  return name
+}
+
+export function listRequests(root: string): SavedRequest[] {
+  return files(root).map((name) => summary(name, readFileSync(join(root, folder, name), 'utf8')))
+}
+
+export function readRequest(root: string, number: string): SavedRequest & { markdown: string } {
+  const name = named(root, number)
+  const text = readFileSync(join(root, folder, name), 'utf8')
+  return { ...summary(name, text), markdown: split(text).body }
+}
+
+export function deleteRequest(root: string, number: string): void {
+  rmSync(join(root, folder, named(root, number)))
+}
+
+export function finishRequest(root: string, number: string, result: string, now = new Date()): SavedRequest {
+  const name = named(root, number)
+  const padded = name.slice(0, 4)
   const path = join(root, folder, name)
   const { head, body } = split(readFileSync(path, 'utf8'))
   writeFileSync(

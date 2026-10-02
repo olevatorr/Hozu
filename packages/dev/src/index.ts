@@ -5,7 +5,15 @@ import { createRequire } from 'node:module'
 import type { AddressInfo } from 'node:net'
 import { dirname, join, normalize, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { devtoolsDir, devtoolsEntry, listRequests, saveRequest } from '@hozu/devtools'
+import {
+  deleteRequest,
+  devtoolsDir,
+  devtoolsEntry,
+  finishRequest,
+  listRequests,
+  readRequest,
+  saveRequest,
+} from '@hozu/devtools'
 import { devClient } from './client.ts'
 
 let bundle: string | null = null
@@ -22,6 +30,7 @@ export interface DevOptions {
   appPort?: number
   debounce?: number
   devtools?: boolean
+  devtoolsMode?: 'builder' | 'developer'
   log?: (line: string) => void
 }
 
@@ -40,6 +49,7 @@ export async function dev({
   appPort = port + 1,
   debounce = 60,
   devtools = true,
+  devtoolsMode = 'builder',
   log = (line) => console.log(line),
 }: DevOptions): Promise<DevServer> {
   const clients = new Set<ServerResponse>()
@@ -118,7 +128,7 @@ export async function dev({
     const origin = req.headers.origin
     return req.method === 'GET' || origin === `http://${req.headers.host}`
   }
-  const tag = `<script type="module" src="/_hozu/dev.js"></script>${devtools ? `<script type="module" src="${devtoolsEntry}"></script>` : ''}`
+  const tag = `<script type="module" src="/_hozu/dev.js"></script>${devtools ? `<script type="module" src="${devtoolsEntry}" data-mode="${devtoolsMode}"></script>` : ''}`
 
   const server = createServer((req, res) => {
     const path = req.url?.split('?')[0] ?? '/'
@@ -128,7 +138,8 @@ export async function dev({
           .writeHead(403, { 'content-type': 'text/plain' })
           .end('Hozu DevTools answers only this machine')
       if (path.startsWith('/_hozu/devtools/')) return void serveDevtools(path, res)
-      if (path === '/_hozu/dev/requests') return void requests(req, res, cwd)
+      if (path === '/_hozu/dev/requests' || path.startsWith('/_hozu/dev/requests/'))
+        return void requests(req, res, cwd, path.slice('/_hozu/dev/requests/'.length).split('/'))
     }
     if (req.url === '/_hozu/dev') {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' })
@@ -194,26 +205,47 @@ function serveDevtools(path: string, res: ServerResponse) {
     .end(readFileSync(file))
 }
 
-function requests(req: IncomingMessage, res: ServerResponse, cwd: string) {
+function requests(req: IncomingMessage, res: ServerResponse, cwd: string, [number, action]: string[]) {
   const json = (status: number, body: unknown) =>
     res
       .writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' })
       .end(JSON.stringify(body))
-  if (req.method === 'GET') return json(200, listRequests(cwd))
-  if (req.method !== 'POST') return json(405, { error: 'GET or POST' })
-  let body = ''
-  req.on('data', (chunk: Buffer) => {
-    body += chunk
-    if (body.length > 1_000_000) req.destroy()
-  })
-  req.on('end', () => {
-    try {
-      const { markdown } = JSON.parse(body) as { markdown?: unknown }
+  const body = () =>
+    new Promise<Record<string, unknown>>((resolve, reject) => {
+      let text = ''
+      req.on('data', (chunk: Buffer) => {
+        text += chunk
+        if (text.length > 1_000_000) req.destroy()
+      })
+      req.on('end', () => {
+        try {
+          resolve(text ? JSON.parse(text) : {})
+        } catch (e) {
+          reject(e)
+        }
+      })
+    })
+  const run = async () => {
+    if (!number) {
+      if (req.method === 'GET') return json(200, listRequests(cwd))
+      if (req.method !== 'POST') return json(405, { error: 'GET or POST' })
+      const { markdown } = await body()
       if (typeof markdown !== 'string' || !markdown.startsWith('# Hozu request: '))
         return json(400, { error: 'Expected { markdown } starting with "# Hozu request: "' })
-      json(200, saveRequest(cwd, markdown))
-    } catch (e) {
-      json(400, { error: (e as Error).message })
+      return json(200, saveRequest(cwd, markdown))
     }
-  })
+    if (!/^\d{1,4}$/.test(number)) return json(404, { error: `No request ${number}` })
+    if (req.method === 'GET' && !action) return json(200, readRequest(cwd, number))
+    if (req.method === 'DELETE' && !action) {
+      deleteRequest(cwd, number)
+      return json(200, { deleted: number.padStart(4, '0') })
+    }
+    if (req.method === 'POST' && action === 'done') {
+      const { result } = await body()
+      if (typeof result !== 'string' || !result.trim()) return json(400, { error: 'Expected { result }' })
+      return json(200, finishRequest(cwd, number, result.trim()))
+    }
+    return json(405, { error: 'GET, DELETE or POST …/done' })
+  }
+  run().catch((e: Error) => json(/^No request/.test(e.message) ? 404 : 400, { error: e.message }))
 }
