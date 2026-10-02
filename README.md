@@ -199,7 +199,8 @@ The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router 
 pnpm install
 pnpm gate            # lint, typecheck, tests and performance budgets
 ```
-Guides for agents working on this repository: [`CLAUDE.md`](CLAUDE.md) and [`AGENTS.md`](AGENTS.md).
+Pull requests are welcome: read [`CONTRIBUTING.md`](CONTRIBUTING.md) first; security reports go through
+[`SECURITY.md`](SECURITY.md). Guides for agents working on this repository: [`CLAUDE.md`](CLAUDE.md) and [`AGENTS.md`](AGENTS.md).
 
 ## License
 [MIT](LICENSE) © olevatorr.
