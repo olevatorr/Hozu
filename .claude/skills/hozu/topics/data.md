@@ -7,6 +7,7 @@ export const listItems = query({
   scope: 'public',                  // 'user' = the session's data (needs project({ session }))
   freshness: 'static',              // | 'request' | { revalidate: seconds } | { swr: seconds } | 'live'
   tags: () => [itemsTag()],          // optional; (input) => [...]
+  runs: 'server',                   // where the implementation lives: 'server' | 'browser' | 'either' (default); hozu docs fetch
 })
 export const getItem = query({ input: Key, output: Item, errors: { NotFound: Key }, scope: 'public',
   freshness: 'static', tags: (k) => [itemTag(k.id)] })
@@ -14,6 +15,7 @@ export const addItem = mutation({
   input: z.object({ title: z.string().min(2, 'Use at least 2 characters') }), output: Item,
   errors: { Duplicate: z.object({ title: z.string() }) },          // optional: declared failures
   invalidates: () => [itemsTag()],                                  // refreshes queries with these tags
+  runs: 'server',
 })
 export const visible = fn({                   // computation: pure JS; may call const/function helpers of this module
   input: z.object({ items: z.array(Item), show: Show }), output: z.array(Item),
@@ -25,8 +27,9 @@ export const visible = fn({                   // computation: pure JS; may call 
   it. Imported names and `let` state are not (HZ047): pass them as input.
 - Rendering is derived: `scope` and `freshness` decide static, ISR, SWR, streamed or client rendering;
   `scope: 'user'` data never reaches a cached page (HZ022). A mutation's tags can read only its input.
-- Freshness: public data is `'static'` with tags unless it changes without a declared writer. `'request'` reads
-  once per request (any scope; a public one makes its page uncacheable). User data is `'request'` or `'live'` only
+- Freshness describes how the data changes, not where it is read; choose it per query. `'static'` (with tags) is
+  for data only your own declared writers change; `'request'` reads every time it is needed (on the server per
+  request, in the browser on mount and on tags; a public one makes its page uncacheable). User data is `'request'` or `'live'` only
   (HZ049). `'live'` is only for push updates and needs tags (HZ050).
 - `invalidates` drives the refresh: after a mutation or endpoint, cached pages and entries with those tags are
   dropped and the page's queries with those tags are re-read. `endpoint({ …, invalidates: (input) => [tag()] })`
@@ -35,7 +38,8 @@ export const visible = fn({                   // computation: pure JS; may call 
 - **Query resolvers only read.** Writes happen in mutation and endpoint resolvers: a query that creates a row on read
   runs again on every request, on prefetch and after a delete (the account comes back). Keep two helpers:
   `listOf(user)` returns the stored list or `[]` for queries; `ownListOf(user)` creates it, for mutations only.
-- **Resolvers** (in `app.ts`, or `features/<name>/server.ts` from the scaffold, spread into it) get the
+- **Resolvers** of `runs: 'server'` effects (in `app.ts`, or `features/<name>/server.ts` from the scaffold, spread
+  into it; `'browser'` / `'either'` effects are implemented in `fetch.ts`, `hozu docs fetch`) get the
   schema-parsed input (defaults and transforms applied):
 ```ts
 export default app({ resolvers: resolvers(project, (implement) => [

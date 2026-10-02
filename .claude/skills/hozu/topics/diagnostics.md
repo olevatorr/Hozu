@@ -37,7 +37,7 @@ around the rule.
 | HZ033 | DOM text into an enum, number or boolean field | a `<select>`, radios or submit buttons with enum values; in a form, a flag through `ui.dom.formAll` and numbers parsed in the mutation input |
 | HZ034 | a state both handles and ignores an event | remove it from one of the two |
 | HZ035 | search schema is not a flat object of scalars with defaults | `z.object({ key: scalar.default(…) })` |
-| HZ036 | (warning) a form needs JavaScript | read its values with `ui.dom.form('name')` / `ui.dom.formAll('name')` |
+| HZ036 | (warning) a form needs JavaScript: it reads other DOM values, or starts a `runs: 'browser'` mutation | read its values with `ui.dom.form('name')` / `ui.dom.formAll('name')`; a browser mutation needs JS by design |
 | HZ037 | a redirect is not a path, hides a page or another redirect, or targets an unknown route | change or remove the `from` key; point `to` at `ui.link(...)` |
 | HZ038 | `http.headers` sets a header the framework owns, or an invalid name/value | remove it (`cache-control` is derived; CSP is `createServer({ csp })`) |
 | HZ039 | `basePath` is not `''` or `/segment[/segment…]` | e.g. `'/shop'`, no trailing slash |
@@ -75,4 +75,6 @@ around the rule.
 | HZ078 | the kit's `tv.ts` config differs from the design system | `hozu add kit <id> --sync` |
 | HZ079 | two classes of one element set the same property | the patch: a complementary toggle, or remove the one that never wins |
 | HZ080 | (warning) a `part()` view inlined by two features | the snippet: the same `ui.component` in a kit |
+| HZ081 | an effect's `runs` and `fetch.ts` disagree: no export, an extra one, a `'server'` effect in it, `'either'` with user data, a Node-only import | export the effect in `fetch.ts`, or `runs: 'server'` with a resolver (`hozu docs fetch`) |
+| HZ082 | browser data where only the server can go (a page `head`, `entries`), or a browser mutation invalidating a server-cached tag | the patch: `runs: 'server'`; or `freshness: 'request'` on the cached query |
 | HZ042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

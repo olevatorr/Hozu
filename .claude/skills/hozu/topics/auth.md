@@ -13,4 +13,6 @@
 - After a sign-in or sign-out the page's queries are re-read with the new session; nothing from the old one stays.
 - Guard pages: `head: { query: me, …, failed: { Unauthorized: login } }`; a role check answers 403 with
   `failed: { Unauthorized: login, Forbidden: 403 }` (`hozu docs pages`).
-- Calling another API with a token: keep the token in the session (server side) and read it in the resolver.
+- Calling another API with a token: a token your server holds goes in the session and is read in a `runs: 'server'`
+  resolver; a token that lives in the browser (OIDC / SSO, `localStorage`) is read in a `runs: 'browser'` effect
+  (`hozu docs fetch`) and never reaches your server.

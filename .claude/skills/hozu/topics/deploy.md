@@ -11,7 +11,11 @@
   `createHandler(app, { manifest, render, env })` from `@hozu/runtime-server` and
   `export default { fetch: handler.fetch }`, where `render` is `import * as render from './dist/server/render.js'`.
 - **Static host (GitHub Pages):** `exportStatic({ build, styles, resolvers: appOptionsOf(app).resolvers, outDir })`
-  from `@hozu/adapter-static` writes every page without per-request data, and lists skipped routes. With client
-  components, also pass `components: await bundleComponents(build)` (`@hozu/bundle`).
+  from `@hozu/adapter-static` writes every page without per-request server data, and lists skipped routes. With
+  client components or fetch.ts, also pass `components: await bundleComponents(build)` (`@hozu/bundle`). Pages whose
+  data runs in the browser (`runs: 'browser'` / `'either'`) export completely; `result.needsServer` lists the server
+  effects a written page would still call, which a static host cannot answer (HZ082).
+- **Edge and fetch.ts:** a host without `import()` of files passes `createHandler(app, { fetches: async (f) =>
+  modules[f] })` for `runs: 'either'` effects.
 - Set `SESSION_SECRET` when the app has sessions (production refuses to start without it). The default store keeps
   sessions in memory per process; an edge or multi-instance deployment passes a shared store as `app({ session })`.
