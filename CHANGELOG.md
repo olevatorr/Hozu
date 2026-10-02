@@ -1,5 +1,65 @@
 # Changelog
 
+## 0.11.0 — Where queries and mutations run, and `hozu migrate` (ADR 0049)
+
+Before 0.11 every query and mutation ran on a Hozu server. A pure front end on a static host could not read
+per-request data or mutate, a public API was proxied through the app (two hops, twice the egress), and a token that
+lives in the browser had to travel to the server. 0.11 makes where an implementation runs one more declared fact:
+the framework derives the rest, and the schemas, declared errors, tags and states stay.
+
+**Upgrade:** run `npx -p @hozu/cli@latest hozu migrate`, install, then `npx hozu migrate` again. The first run adds
+`runs: 'server'` to every query and mutation (0.11 defaults to `'either'`) and raises `@hozu/*`; the second
+checks that the IR is unchanged and runs `hozu check`. The lock is never written.
+
+### `runs`
+- `query({ …, runs })` / `mutation({ …, runs })`: `'server'` (a database, a secret, the session; resolvers as
+  before), `'browser'` (the visitor's credentials) or `'either'` (the default: a public API or your own API with
+  CORS). `'either'` needs `scope: 'public'`.
+- `feature({ fetch: new URL('./fetch.ts', import.meta.url) })` implements the `'browser'` and `'either'` effects:
+  `export const x = implement<typeof model.x>(async (input, { fail, signal, env }) => …)` from
+  `@hozu/core/fetch`, one export per effect; `env` is the parsed public environment.
+- **`'either'`:** server-rendered on first paint (cached per `freshness`), then in-page reads and mutations call the
+  API from the browser directly, never through the app's server.
+- **`'browser'`:** the server renders the `pending` branch (render-plan mode `browser`) and never runs it:
+  `/_hozu/query`, `/_hozu/effect` and native form posts answer 400.
+- **In the browser:** a lazy runner chunk (P11, 1.9 KB) loads each feature's fetch bundle once, checks input and
+  output against the JSON Schemas (stripping undeclared keys like a parse), turns `fail` into the declared branch,
+  aborts on `pagehide`, and re-reads queries by tag after a local or a server mutation (`EffectResponse.tags`).
+  The initial client stays at 8.0 KB (P7).
+- **Bundling:** `@hozu/bundle` builds `fetch-<feature>-<hash>.js`; the handler refuses to start without it, and
+  `hozu build` writes it to the manifest.
+
+### Static hosts
+- `exportStatic` writes pages whose data is `'browser'`, or `'either'` but not cacheable at export time: those
+  render `pending` and read in the browser. The parsed public env goes into the page (`env` option).
+- `needsServer` lists the server effects a written page still calls; `site/export.ts` and `examples/stars/export.ts`
+  fail on it.
+
+### Diagnostics
+- **HZ081** `invalid-effect-runtime`: a missing or extra `fetch.ts` export, no fetch module, `'either'` with user
+  data, or a Node-only import in `fetch.ts`.
+- **HZ082** `effect-needs-server`: a `'browser'` query in a page `head` or `entries`; a browser mutation that
+  invalidates a tag a server-cached query reads.
+- **HZ036** also warns on a form that starts a `'browser'` mutation; **HZ045** covers an app with `fetch.ts` and no
+  `components`; **HZ020** no longer asks for a session for a user-scoped query that runs in the browser.
+
+### `hozu migrate`
+- Upgrades from 0.10.0 on, one step per release. Pass 1 records the old IR with the app's own installed packages,
+  rewrites the source and raises the ranges; pass 2 compares the IR through each step's normalisation, refreshes
+  the skill and agent guide, and runs `hozu check`. `--dry-run` and `--json` (`migrate.schema.json`).
+
+### Tools and guide
+- `hozu map` shows `runs` per query and mutation and the feature's `fetch.ts`; `hozu add feature` writes
+  `runs: 'server'` for its resolvers.
+- Skill: the `runs` rule in `SKILL.md`; new `hozu docs fetch` (runs, `fetch.ts`, browser tokens, CORS, static
+  hosts); `hozu docs deploy` says how to upgrade; `data`, `auth` and `diagnostics` updated.
+
+### Examples
+- `examples/stars`: a GitHub client that runs entirely in the browser (a token in `localStorage`, an `'either'`
+  search, star / unstar) and exports to a static directory; its test hydrates the export against a fake GitHub API
+  and checks no request reaches `/_hozu/`.
+- Every example, the site and the skill example are migrated (`runs: 'server'`).
+
 ## 0.10.0 — Hozu DevTools (ADR 0047)
 
 A vibe coder sees something wrong on the screen and describes it in words; the agent then searches the code for it.

@@ -217,6 +217,18 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   saved to `.hozu/requests/` (`.next` keeps numbers unique); `hozu requests [--full] [done <n> --result]`
   (done removes the file), `hozu locate <id|pointer|page:route>`, `hozu docs requests`. Dev endpoints answer
   loopback `Host`s only; `examples/studio` is the DevTools test bench.
+- 0.11 (ADR 0049): queries and mutations declare `runs: 'server' | 'browser' | 'either'` (default `'either'`, which
+  needs `scope: 'public'`); `'browser'` / `'either'` are implemented in `feature({ fetch: new URL('./fetch.ts', …) })`
+  (`implement` from `@hozu/core/fetch`, one export per effect, bound by name, `{ fail, signal, env }` with the public
+  env). `'either'` renders on the server and reads / mutates from the browser afterwards; `'browser'` renders
+  `pending` (region mode `browser`) and never runs on the server (400 on `/_hozu/query` / `/_hozu/effect` and native
+  posts). The lazy runner chunk checks every boundary against the JSON Schemas and re-reads by tag (P11 ≤ 3 KB);
+  `@hozu/bundle` builds `fetch-<feature>-<hash>.js`; `exportStatic` defers non-cacheable `'either'` data to the
+  browser and lists `needsServer`. HZ081 (exports, Node-only imports, `'either'` + user scope), HZ082 (browser data
+  in head / entries, browser mutation invalidating server-cached tags), HZ036 for browser mutations.
+  `hozu migrate [--dry-run]` upgrades from 0.10.0 on (records the old IR with the app's own packages, rewrites,
+  raises `@hozu/*`, verifies the IR per step, never writes the lock); 0.10 → 0.11 adds `runs: 'server'`.
+  `examples/stars` is the static-host reference (a GitHub client from the browser alone).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

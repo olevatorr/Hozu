@@ -233,3 +233,24 @@ export const myRepos = implement<typeof model.myRepos>(async ({ page }, { fail, 
   the API, not to the server.
 - Every 0.10.0 example migrates, checks and passes its tests.
 - P7 is unchanged, and P11 ≤ 3 KB.
+
+## Result
+- **Shipped in 0.11.0** on branch `release-0.11`, phases 0–6 (`e6014a6` … `a2605dc`); gate green: 647 tests,
+  P7 8027 B (≤ 8192), P11 1861 B (≤ 3072).
+- **Measure:**
+  - `examples/stars` exports completely (`skipped` and `needsServer` empty); its test hydrates the export in
+    happy-dom against a fake GitHub API: Unauthorized until a token is saved, then the starred list, unstar re-read
+    by tag, a typed search calling the API directly, and no request to `/_hozu/`.
+  - On a server, an `'either'` page renders through `fetch.ts` with the public env (`runtime-server/test/runs.test.ts`),
+    and in-page reads run in the browser (`runtime-client/test/fetch.test.ts`).
+  - The 0.10.0 fixtures (bookmarks, notes) migrate with an unchanged IR and pass `hozu check`; the repo's own apps
+    were migrated with the same command (43 files, 126 edits).
+- **Found by dogfooding `examples/stars`, fixed before release:**
+  - a static export skipped pages with an `'either'` request query → non-cacheable `'either'` data is deferred to
+    the browser (`deferEither`);
+  - HZ020 asked for a session for a `'browser'` user query;
+  - exported pages carried no public env → `exportStatic({ env })`;
+  - hydration did not request data missing from the payload → `readsInBrowser`.
+- **Not done, moved to 0.12** with the scale work, `hozu call` and the DevTools API panel: `runs` in
+  `inspect` / `impact` / `explain` and DevTools Layers (`map` and `plan` show it).
+
