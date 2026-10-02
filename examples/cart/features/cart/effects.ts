@@ -10,6 +10,7 @@ export const getCart = query({
   scope: 'user',
   freshness: 'request',
   tags: () => [cartTag()],
+  runs: 'server',
 })
 
 export const addItem = mutation({
@@ -17,15 +18,22 @@ export const addItem = mutation({
   output: Cart,
   errors: { OutOfStock: z.object({ sku: z.string(), available: z.number().int() }) },
   invalidates: () => [cartTag()],
+  runs: 'server',
 })
 
-export const removeItem = mutation({ input: SkuOnly, output: Cart, invalidates: () => [cartTag()] })
+export const removeItem = mutation({
+  input: SkuOnly,
+  output: Cart,
+  invalidates: () => [cartTag()],
+  runs: 'server',
+})
 
 export const checkout = mutation({
   input: NoInput,
   output: z.object({ orderId: z.string() }),
   errors: { PaymentDeclined: z.object({ reason: z.string() }) },
   invalidates: () => [cartTag()],
+  runs: 'server',
 })
 
 export const cartTotal = fn({

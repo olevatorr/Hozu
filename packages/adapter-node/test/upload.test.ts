@@ -13,6 +13,7 @@ const upload = mutation({
   input: z.object({ file: FileMeta }),
   output: z.object({ size: z.number(), text: z.string() }),
   invalidates: () => [],
+  runs: 'server',
 })
 const home = route({ path: '/', params: null, search: null })
 const Home = ui.view({ render: () => ui.p({}, ['Upload']) })

@@ -129,13 +129,21 @@ describe('resolver wiring', () => {
     scope: 'public',
     freshness: 'live',
     tags: () => [pingTag()],
+    runs: 'server',
   })
-  const stale = query({ input: z.object({}), output: z.number(), scope: 'public', freshness: { swr: 30 } })
+  const stale = query({
+    input: z.object({}),
+    output: z.number(),
+    scope: 'public',
+    freshness: { swr: 30 },
+    runs: 'server',
+  })
   const write = mutation({
     input: z.object({}),
     output: z.number(),
     errors: { Busy: z.object({ retry: z.number() }) },
     invalidates: () => [pingTag()],
+    runs: 'server',
   })
   const p = project({
     schema: zodAdapter,

@@ -98,6 +98,8 @@ export interface FeatureIR {
   endpoints: Record<string, EndpointIR>
   contracts: Record<string, ContractIR>
   messages: MessagesIR | null
+  /** The feature's `fetch.ts` (ADR 0049): implementations of its `'either'` / `'browser'` effects. */
+  fetch: { sourceHash: string } | null
 }
 
 export interface EndpointIR {
@@ -179,6 +181,7 @@ export interface QueryIR {
   scope: Scope
   freshness: Freshness
   tags: TagExprIR[]
+  runs: Runs
 }
 
 export interface MutationIR {
@@ -186,7 +189,11 @@ export interface MutationIR {
   output: string
   errors: Record<string, string>
   invalidates: TagExprIR[]
+  runs: Runs
 }
+
+/** What an effect's implementation needs (ADR 0049): server secrets, browser credentials, or neither. */
+export type Runs = 'server' | 'browser' | 'either'
 
 export interface TagExprIR {
   tag: string

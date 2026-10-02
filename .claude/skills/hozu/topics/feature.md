@@ -34,9 +34,9 @@ export const Item = z.object({ id: z.string(), title: z.string(), done: z.boolea
 export const Add = event({ payload: z.object({ title: z.string() }) })
 export const itemsTag = tag({ param: null })
 export const listItems = query({ input: z.object({}), output: z.array(Item), scope: 'public',
-  freshness: 'static', tags: () => [itemsTag()] })
+  freshness: 'static', tags: () => [itemsTag()], runs: 'server' })        // resolvers in app.ts
 export const addItem = mutation({ input: z.object({ title: z.string().min(2, 'Too short') }), output: Item,
-  errors: { Duplicate: z.object({ title: z.string() }) }, invalidates: () => [itemsTag()] })
+  errors: { Duplicate: z.object({ title: z.string() }) }, invalidates: () => [itemsTag()], runs: 'server' })
 export const items = machine({
   context: z.object({ draft: z.string(), error: z.string().nullable() }),
   initialContext: { draft: '', error: null },

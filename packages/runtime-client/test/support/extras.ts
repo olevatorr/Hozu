@@ -12,6 +12,7 @@ export const note = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [],
+  runs: 'server',
 })
 
 const home = route({ path: '/', params: null, search: null })

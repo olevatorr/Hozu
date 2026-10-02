@@ -5,7 +5,7 @@ import type { FeatureParts } from '../builders/feature.ts'
 import type { FnDef } from '../builders/fn.ts'
 import type { MessagesDef } from '../builders/i18n.ts'
 import { type TagDef, tagUseOf } from '../builders/tag.ts'
-import { hashJson } from '../canonical/hash.ts'
+import { hashJson, sha256 } from '../canonical/hash.ts'
 import type {
   EndpointIR,
   EndpointMode,
@@ -15,18 +15,20 @@ import type {
   Freshness,
   MessagesIR,
   QueryIR,
+  Runs,
   TagExprIR,
 } from '../ir/types.ts'
 import { helpersOf } from '../lower.ts'
 import { type Decl, defOf } from '../model/decl.ts'
 import { RecorderError, refProxy } from '../model/expr.ts'
+import { builtin } from '../platform.ts'
 import { toParse } from '../schema/check.ts'
 import type { Schema } from '../schema/standard.ts'
 import { buildComponent } from './components.ts'
 import { buildContract } from './contract.ts'
 import { finishForms } from './forms.ts'
 import { buildMachine } from './machine.ts'
-import { type At, at, FeatureScope, type ProjectScope } from './scope.ts'
+import { type At, at, FeatureScope, filePath, type ProjectScope } from './scope.ts'
 import { buildView } from './view.ts'
 
 const exportKeys = ['events', 'queries', 'mutations', 'tags', 'fns', 'views', 'endpoints'] as const
@@ -110,6 +112,52 @@ const plainJson = (v: unknown): boolean =>
   (typeof v === 'object' &&
     Object.getPrototypeOf(v) === Object.prototype &&
     Object.values(v).every(plainJson))
+
+const RUNS = new Set<unknown>(['server', 'browser', 'either'])
+
+function runsOf(scope: FeatureScope, runs: unknown, effectScope: unknown, p: At): Runs {
+  if (!RUNS.has(runs)) {
+    scope.report('HZ014', p, `Invalid runs ${JSON.stringify(runs)}`, "Use 'server', 'browser' or 'either'.")
+    return 'server'
+  }
+  if (runs === 'either' && effectScope === 'user')
+    scope.report(
+      'HZ081',
+      p,
+      "A query with scope: 'user' cannot run on either side",
+      "'either' runs on the server and in any browser without credentials, so it is for public data. Per-visitor data needs the server session (runs: 'server') or the visitor's browser credentials (runs: 'browser').",
+      {
+        summary: "Use runs: 'server' (session) or runs: 'browser' (browser credentials)",
+        snippet: "runs: 'server'",
+        patch: null,
+      },
+    )
+  return runs as Runs
+}
+
+function fetchOf(scope: FeatureScope, url: URL | null): FeatureIR['fetch'] {
+  if (!url) return null
+  const listed = scope.project.manifest?.fetches?.[scope.id]
+  if (listed) return { sourceHash: listed.hash }
+  const fs = builtin('node:fs')
+  const file = filePath(url)
+  if (!file || !fs?.existsSync(file)) {
+    scope.report(
+      'HZ081',
+      scope.at('fetch'),
+      file ? `Fetch module ${file} does not exist` : 'fetch must be a file URL',
+      "Declare it with new URL('./fetch.ts', import.meta.url); it exports one implement<typeof model.x>(…) per effect.",
+      {
+        summary: 'Create features/<name>/fetch.ts',
+        snippet: "fetch: new URL('./fetch.ts', import.meta.url)",
+        patch: null,
+      },
+    )
+    return null
+  }
+  scope.project.bindings.fetches[scope.id] = file
+  return { sourceHash: sha256(fs.readFileSync(file, 'utf8')).slice(0, 16) }
+}
 
 export function buildFeature(project: ProjectScope, id: string, config: FeatureParts): FeatureIR {
   const scope = new FeatureScope(project, id)
@@ -199,6 +247,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
         errors: errors(scope, d.errors, at(p, 'errors')),
         scope: d.scope === 'public' ? 'public' : 'user',
         freshness: freshness(scope, d.freshness, at(p, 'freshness')),
+        runs: runsOf(scope, d.runs, d.scope, at(p, 'runs')),
         tags: tagExprs(scope, d.tags, at(p, 'tags')),
       }
     }),
@@ -211,6 +260,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
         output: scope.schema(d.output, at(p, 'output')),
         errors: errors(scope, d.errors, at(p, 'errors'), true),
         invalidates: tagExprs(scope, d.invalidates, at(p, 'invalidates')),
+        runs: runsOf(scope, d.runs, null, at(p, 'runs')),
       }
     }),
     fns: mapRecord(config.fns, (sym, f) => {
@@ -247,7 +297,24 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     views: mapRecord(config.views, (sym, v) => buildView(scope, sym, v)),
     contracts: mapRecord(config.contracts, (sym, c) => buildContract(scope, sym, c)),
     messages: config.messages ? buildMessages(defOf<MessagesDef>(config.messages)) : null,
+    fetch: fetchOf(scope, config.fetch),
   }
+  const local = [...Object.values(ir.queries), ...Object.values(ir.mutations)].some(
+    (e) => e.runs !== 'server',
+  )
+  if (local && !ir.fetch && !config.fetch)
+    scope.report(
+      'HZ081',
+      scope.at('fetch'),
+      `Feature ${id} has effects that run in the browser or either side, but no fetch module`,
+      "An effect without runs: 'server' is implemented in the feature's fetch.ts (ADR 0049); the default is 'either'.",
+      {
+        summary:
+          "Add fetch: new URL('./fetch.ts', import.meta.url) to feature({...}) and implement each effect there, or mark effects that need the server runs: 'server'",
+        snippet: "fetch: new URL('./fetch.ts', import.meta.url)",
+        patch: null,
+      },
+    )
   finishForms(scope)
   return ir
 }

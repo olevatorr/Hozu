@@ -10,6 +10,7 @@ export const listPage = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [itemsTag()],
+  runs: 'server',
 })
 
 export const byTag = query({
@@ -18,6 +19,7 @@ export const byTag = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [itemsTag()],
+  runs: 'server',
 })
 
 export const byYear = query({
@@ -26,6 +28,7 @@ export const byYear = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [itemsTag()],
+  runs: 'server',
 })
 
 export const listTags = query({
@@ -34,6 +37,7 @@ export const listTags = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [itemsTag()],
+  runs: 'server',
 })
 
 export const listYears = query({
@@ -42,4 +46,5 @@ export const listYears = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [itemsTag()],
+  runs: 'server',
 })

@@ -24,7 +24,7 @@ kit, use its components instead (`ui.use(Button, { variant: { tone: 'quiet' } },
 ## An action button that works on many items (e.g. "Clear done")
 - **model:**
   - `export const ClearDone = event({ payload: z.object({}) })`;
-  - `export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()] })`;
+  - `export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()], runs: 'server' })`;
   - in `idle`: `on(ClearDone, { target: 'clearing', assign: () => { ctx.error = null } })`;
   - a state
     `clearing: { invoke: invoke(clearDone, { input: {}, done: 'idle', failed: { Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } } } }) }`

@@ -483,6 +483,7 @@ describe('ADR 0045 phase 2 diagnostics', () => {
       output: z.array(z.string()),
       scope: 'public',
       freshness: 'static',
+      runs: 'server',
     })
     const List = ui.component({
       tag: 'ul',

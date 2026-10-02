@@ -15,7 +15,14 @@
     "scripts",
     "site/**/*.ts"
   ],
-  "exclude": ["**/dist", "**/node_modules", "bench/frameworks", "bench/parity", "bench/trial"],
+  "exclude": [
+    "**/dist",
+    "**/node_modules",
+    "bench/frameworks",
+    "bench/parity",
+    "bench/trial",
+    "packages/cli/test/fixtures/migrate-*"
+  ],
   "references": [
     {
       "path": "packages/core"

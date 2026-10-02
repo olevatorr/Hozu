@@ -447,3 +447,34 @@ export interface RequestsOutput {
   done: { number: string; result: string } | null
   prompt: string | null
 }
+
+export interface MigrateNote {
+  file: string
+  line: number
+  message: string
+  see: string | null
+}
+
+export interface MigrateOutput {
+  ok: boolean
+  /** The installed Hozu version (from node_modules/@hozu/core). */
+  from: string
+  /** The CLI's version: where the chain of steps ends. */
+  to: string
+  /**
+   * `rewrite`: the source was older than the CLI, so it was rewritten and the dependencies raised.
+   * `verify`: the dependencies are current, so the saved IR was compared and the app checked.
+   * `current`: nothing to migrate.
+   */
+  phase: 'rewrite' | 'verify' | 'current'
+  dryRun: boolean
+  steps: { from: string; to: string; summary: string }[]
+  changed: { file: string; edits: number }[]
+  notes: MigrateNote[]
+  packages: { name: string; from: string; to: string }[]
+  record: string | null
+  ir: { compared: boolean; skipped: string | null; differences: string[] }
+  guide: string[]
+  check: CheckOutput | null
+  next: string[]
+}

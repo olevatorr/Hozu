@@ -22,6 +22,7 @@ import { runInspect } from './commands/inspect.ts'
 import { describeAddKit, runAddKit } from './commands/kits.ts'
 import { describeLocate, runLocate } from './commands/locate.ts'
 import { describeMap, runMap } from './commands/map.ts'
+import { describeMigrate, runMigrate } from './commands/migrate.ts'
 import { describePlan, runPlan } from './commands/plan.ts'
 import { describeRender, runRender } from './commands/render.ts'
 import { describeRequest, runRequest } from './commands/request.ts'
@@ -51,6 +52,8 @@ Commands:
   requests [done <n>]       The change requests saved from DevTools (--full: all open ones as one prompt);
                             done <n> --result "<what changed>" removes one
   docs [topic]              Print one topic of the guide (no topic: list them); docs components adds the app's list
+  migrate [--dry-run]       Upgrade the app from Hozu 0.10 or later: rewrite, raise the dependencies, then (run
+                            again after installing) compare the IR and check; never writes the lock
   render <id>               Render one component alone (ui.Button): HTML, root class, owned properties, diagnostics
   skill                     Rewrite the agent skill for this Hozu version (--agent claude|agents|both)
   check                     Type-check the app and validate it: the one command to run after every edit
@@ -173,6 +176,7 @@ export async function main(
         result: { type: 'string' },
         'no-devtools': { type: 'boolean', default: false },
         devtools: { type: 'string' },
+        'dry-run': { type: 'boolean', default: false },
         help: { type: 'boolean', short: 'h' },
       },
     })
@@ -212,12 +216,11 @@ export async function main(
           'hozu browse / --js off --do \'click Delete in "Milk"\'',
         ],
       )
-    if (command === 'migrate')
-      throw new HozuCliError(
-        'usage',
-        '0.9 has no migration tool: upgrade 0.7 apps with `npx @hozu/cli@0.8 migrate 0.8`, then follow the 0.9 CHANGELOG',
-        ['npx @hozu/cli@0.8 migrate 0.8'],
-      )
+    if (command === 'migrate') {
+      const result = await runMigrate(cwd, { config: values.config, dryRun: values['dry-run'] === true })
+      out(asJson ? json(result) : describeMigrate(result))
+      return result.ok ? 0 : 1
+    }
     if (!commands.includes(command)) throw new HozuCliError('usage', `Unknown command "${command}"`, commands)
     if (command === 'docs') {
       const result = await runDocs(cwd, target, values.config)

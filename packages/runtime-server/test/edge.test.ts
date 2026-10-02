@@ -113,7 +113,18 @@ describe('edge build (ADR 0016)', () => {
         entry,
         `import manifest from './manifest.json' with { type: 'json' }\nimport * as render from './server/render.js'\nimport { createEdge } from '${join(cart, 'edge.ts')}'\nconst server = Bun.serve({ port: 0, fetch: createEdge(manifest, render).fetch })\nconsole.log(server.port)\n`,
       )
-      const child = spawn(bun, [entry], { cwd: cart })
+      const bundled = join(out, 'serve.js')
+      await build({
+        entryPoints: [entry],
+        outfile: bundled,
+        bundle: true,
+        platform: 'neutral',
+        format: 'esm',
+        mainFields: ['module', 'main'],
+        plugins: [hozuTransform()],
+        logLevel: 'silent',
+      })
+      const child = spawn(bun, [bundled], { cwd: cart })
       try {
         const port = await new Promise<string>((resolve, reject) => {
           child.stdout.once('data', (d: Buffer) => resolve(d.toString().trim()))

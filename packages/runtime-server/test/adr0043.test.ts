@@ -16,6 +16,7 @@ const me = query({
   scope: 'user',
   freshness: 'live',
   tags: () => [notesTag()],
+  runs: 'server',
 })
 const listNotes = query({
   input: z.object({}),
@@ -23,10 +24,16 @@ const listNotes = query({
   scope: 'user',
   freshness: 'live',
   tags: () => [notesTag()],
+  runs: 'server',
 })
-const signIn = mutation({ input: z.object({ name: z.string() }), output: z.object({}) })
-const signOut = mutation({ input: z.object({}), output: z.object({}) })
-const deleteAccount = mutation({ input: z.object({}), output: z.object({}), invalidates: () => [notesTag()] })
+const signIn = mutation({ input: z.object({ name: z.string() }), output: z.object({}), runs: 'server' })
+const signOut = mutation({ input: z.object({}), output: z.object({}), runs: 'server' })
+const deleteAccount = mutation({
+  input: z.object({}),
+  output: z.object({}),
+  invalidates: () => [notesTag()],
+  runs: 'server',
+})
 const home = route({ path: '/notes', params: null, search: null })
 const login = route({ path: '/login', params: null, search: null })
 const Board = ui.view({ render: () => ui.main({}, ['Notes']) })
@@ -160,6 +167,7 @@ describe('ADR 0043 D (pages)', () => {
       errors: { Forbidden: z.object({}) },
       scope: 'user',
       freshness: 'request',
+      runs: 'server',
     })
     const Admin = ui.view({ render: () => ui.main({}, ['Admin']) })
     const p = project({

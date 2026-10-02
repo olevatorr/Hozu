@@ -14,6 +14,7 @@ const blocks = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [],
+  runs: 'server',
 })
 const docList = query({
   input: z.object({}),
@@ -22,6 +23,7 @@ const docList = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [],
+  runs: 'server',
 })
 const copier = machine({
   context: z.object({ copied: z.string().nullable() }),

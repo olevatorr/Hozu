@@ -73,6 +73,7 @@ function freshProject(rand: Rand): ProjectDecl {
     output: Payload,
     errors: { Busy: z.object({}) },
     invalidates: () => [],
+    runs: 'server',
   })
   const Context = z.object({ n: z.number(), log: z.array(z.number()) })
   const m = machine({

@@ -11,6 +11,8 @@ export interface Bindings {
   styles: StyleFiles
   /** Client module file of each client component, by component id. */
   clients: Record<string, string>
+  /** The fetch module file of each feature that has one (ADR 0049), by feature id. */
+  fetches: Record<string, string>
   assets: Record<string, { file: string | null; width: number | null; height: number | null }>
   assetOrder: { name: string; href: string; width: number | null; height: number | null }[]
   env: { server: Parse | null; public: Parse | null }

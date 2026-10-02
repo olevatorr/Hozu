@@ -16,6 +16,7 @@ const listShared = query({
   scope: 'user',
   freshness: 'request',
   tags: () => [notesTag()],
+  runs: 'server',
 })
 const listPublic = query({
   input: z.object({}),
@@ -23,6 +24,7 @@ const listPublic = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [notesTag()],
+  runs: 'server',
 })
 const listLive = query({
   input: z.object({}),
@@ -30,12 +32,14 @@ const listLive = query({
   scope: 'public',
   freshness: 'live',
   tags: () => [notesTag()],
+  runs: 'server',
 })
 const addNote = mutation({
   input: z.object({ text: z.string() }),
   output: Note,
   errors: {},
   invalidates: () => [notesTag()],
+  runs: 'server',
 })
 const p = project({
   schema: zodAdapter,
@@ -177,7 +181,13 @@ describe('ADR 0043 A (data)', () => {
 const origin = 'http://app.test'
 
 function site() {
-  const clock = query({ input: z.object({}), output: z.number(), scope: 'public', freshness: 'request' })
+  const clock = query({
+    input: z.object({}),
+    output: z.number(),
+    scope: 'public',
+    freshness: 'request',
+    runs: 'server',
+  })
   const hook = endpoint({
     method: 'POST',
     path: '/api/notes',

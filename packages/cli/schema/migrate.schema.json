@@ -1,0 +1,718 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/MigrateOutput",
+  "definitions": {
+    "MigrateOutput": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "from": {
+          "type": "string",
+          "description": "The installed Hozu version (from node_modules/@hozu/core)."
+        },
+        "to": {
+          "type": "string",
+          "description": "The CLI's version: where the chain of steps ends."
+        },
+        "phase": {
+          "type": "string",
+          "enum": [
+            "rewrite",
+            "verify",
+            "current"
+          ],
+          "description": "`rewrite`: the source was older than the CLI, so it was rewritten and the dependencies raised. `verify`: the dependencies are current, so the saved IR was compared and the app checked. `current`: nothing to migrate."
+        },
+        "dryRun": {
+          "type": "boolean"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "to",
+              "summary"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "changed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "type": "string"
+              },
+              "edits": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "file",
+              "edits"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MigrateNote"
+          }
+        },
+        "packages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "from",
+              "to"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "record": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ir": {
+          "type": "object",
+          "properties": {
+            "compared": {
+              "type": "boolean"
+            },
+            "skipped": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "differences": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "compared",
+            "skipped",
+            "differences"
+          ],
+          "additionalProperties": false
+        },
+        "guide": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "check": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CheckOutput"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "next": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "from",
+        "to",
+        "phase",
+        "dryRun",
+        "steps",
+        "changed",
+        "notes",
+        "packages",
+        "record",
+        "ir",
+        "guide",
+        "check",
+        "next"
+      ],
+      "additionalProperties": false
+    },
+    "MigrateNote": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "line": {
+          "type": "number"
+        },
+        "message": {
+          "type": "string"
+        },
+        "see": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "file",
+        "line",
+        "message",
+        "see"
+      ],
+      "additionalProperties": false
+    },
+    "CheckOutput": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "types": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "skipped": {
+              "type": "boolean"
+            },
+            "errors": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TypeIssue"
+              }
+            }
+          },
+          "required": [
+            "ok",
+            "skipped",
+            "errors"
+          ],
+          "additionalProperties": false
+        },
+        "validate": {
+          "$ref": "#/definitions/ValidateOutput"
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CheckOverrides"
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "types",
+        "validate",
+        "overrides"
+      ],
+      "additionalProperties": false
+    },
+    "TypeIssue": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "line": {
+          "type": "number"
+        },
+        "column": {
+          "type": "number"
+        },
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "line",
+        "column",
+        "code",
+        "message"
+      ],
+      "additionalProperties": false
+    },
+    "ValidateOutput": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "hash": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "errors": {
+              "type": "number"
+            },
+            "warnings": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "errors",
+            "warnings"
+          ],
+          "additionalProperties": false
+        },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Coverage"
+          }
+        },
+        "lock": {
+          "$ref": "#/definitions/LockState"
+        },
+        "styles": {
+          "type": "string",
+          "enum": [
+            "checked",
+            "unavailable"
+          ]
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Diagnostic"
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "hash",
+        "summary",
+        "coverage",
+        "lock",
+        "styles",
+        "diagnostics"
+      ],
+      "additionalProperties": false
+    },
+    "Coverage": {
+      "type": "object",
+      "properties": {
+        "covered": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        },
+        "transitions": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "covered",
+        "total",
+        "transitions"
+      ],
+      "additionalProperties": false
+    },
+    "LockState": {
+      "type": "string",
+      "enum": [
+        "missing",
+        "current",
+        "stale",
+        "updated",
+        "skipped"
+      ]
+    },
+    "Diagnostic": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "$ref": "#/definitions/DiagnosticCode"
+        },
+        "severity": {
+          "$ref": "#/definitions/Severity"
+        },
+        "message": {
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/definitions/Location"
+        },
+        "cause": {
+          "type": "string"
+        },
+        "fix": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Fix"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "location",
+        "cause",
+        "fix"
+      ],
+      "additionalProperties": false
+    },
+    "DiagnosticCode": {
+      "type": "string",
+      "enum": [
+        "HZ001",
+        "HZ002",
+        "HZ003",
+        "HZ004",
+        "HZ005",
+        "HZ006",
+        "HZ007",
+        "HZ008",
+        "HZ009",
+        "HZ010",
+        "HZ011",
+        "HZ012",
+        "HZ013",
+        "HZ014",
+        "HZ015",
+        "HZ016",
+        "HZ017",
+        "HZ018",
+        "HZ019",
+        "HZ020",
+        "HZ021",
+        "HZ022",
+        "HZ023",
+        "HZ024",
+        "HZ025",
+        "HZ026",
+        "HZ027",
+        "HZ028",
+        "HZ029",
+        "HZ030",
+        "HZ031",
+        "HZ032",
+        "HZ033",
+        "HZ034",
+        "HZ035",
+        "HZ036",
+        "HZ037",
+        "HZ038",
+        "HZ039",
+        "HZ040",
+        "HZ041",
+        "HZ042",
+        "HZ043",
+        "HZ044",
+        "HZ045",
+        "HZ046",
+        "HZ047",
+        "HZ048",
+        "HZ049",
+        "HZ050",
+        "HZ051",
+        "HZ052",
+        "HZ053",
+        "HZ054",
+        "HZ055",
+        "HZ056",
+        "HZ057",
+        "HZ058",
+        "HZ059",
+        "HZ060",
+        "HZ061",
+        "HZ062",
+        "HZ063",
+        "HZ064",
+        "HZ070",
+        "HZ071",
+        "HZ072",
+        "HZ073",
+        "HZ074",
+        "HZ075",
+        "HZ076",
+        "HZ077",
+        "HZ078",
+        "HZ079",
+        "HZ080",
+        "HZ081",
+        "HZ082"
+      ]
+    },
+    "Severity": {
+      "type": "string",
+      "enum": [
+        "error",
+        "warning"
+      ]
+    },
+    "Location": {
+      "type": "object",
+      "properties": {
+        "feature": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pointer": {
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SourceLoc"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "feature",
+        "pointer",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "SourceLoc": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "line": {
+          "type": "number"
+        },
+        "column": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "file",
+        "line",
+        "column"
+      ],
+      "additionalProperties": false
+    },
+    "Fix": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "snippet": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "patch": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/JsonPatchOp"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "summary",
+        "snippet",
+        "patch"
+      ],
+      "additionalProperties": false
+    },
+    "JsonPatchOp": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "enum": [
+                "add",
+                "replace"
+              ]
+            },
+            "path": {
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/Json"
+            }
+          },
+          "required": [
+            "op",
+            "path",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "remove"
+            },
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "op",
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Json"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Json"
+          }
+        }
+      ]
+    },
+    "CheckOverrides": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "type": "string"
+        },
+        "overrides": {
+          "type": "number"
+        },
+        "uses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ComponentUseSite"
+          }
+        }
+      },
+      "required": [
+        "component",
+        "overrides",
+        "uses"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentUseSite": {
+      "type": "object",
+      "properties": {
+        "feature": {
+          "type": "string"
+        },
+        "node": {
+          "type": "string"
+        },
+        "at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "variant": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "feature",
+        "node",
+        "at",
+        "variant",
+        "added",
+        "overrides"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

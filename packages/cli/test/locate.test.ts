@@ -45,7 +45,7 @@ describe('hozu locate (ADR 0047)', () => {
     expect(out.children[0].source).toEqual({
       kind: 'message',
       detail: 'account.signIn',
-      location: { file: 'features/account/model.ts', line: 99, column: expect.any(Number) },
+      location: { file: 'features/account/model.ts', line: 101, column: expect.any(Number) },
       uses: 2,
     })
   })
@@ -62,7 +62,7 @@ describe('hozu locate (ADR 0047)', () => {
     expect(await source('account.Admin/1/ready/0/item/0')).toEqual({
       kind: 'data',
       detail: 'account.accounts[].name',
-      location: query(23),
+      location: query(24),
       uses: null,
     })
     expect(await source('account.Login/3/ifTrue/0/0')).toEqual({
@@ -85,7 +85,7 @@ describe('hozu locate (ADR 0047)', () => {
             to: 'signingIn',
             guarded: false,
             navigates: false,
-            location: { file: 'features/account/model.ts', line: 45, column: expect.any(Number) },
+            location: { file: 'features/account/model.ts', line: 47, column: expect.any(Number) },
           },
         ],
       },

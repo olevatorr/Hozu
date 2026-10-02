@@ -16,6 +16,7 @@ export const me = query({
   errors: { Unauthorized: z.object({}) },
   scope: 'user',
   freshness: 'request',
+  runs: 'server',
 })
 
 export const ADMIN = 'admin'
@@ -26,10 +27,11 @@ export const accounts = query({
   errors: { Unauthorized: z.object({}), Forbidden: z.object({}) },
   scope: 'user',
   freshness: 'request',
+  runs: 'server',
 })
 
-export const signIn = mutation({ input: Name, output: z.object({}) })
-export const signOut = mutation({ input: z.object({}), output: z.object({}) })
+export const signIn = mutation({ input: Name, output: z.object({}), runs: 'server' })
+export const signOut = mutation({ input: z.object({}), output: z.object({}), runs: 'server' })
 
 export const accountMachine = machine({
   context: z.object({

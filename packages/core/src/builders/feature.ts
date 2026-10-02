@@ -20,6 +20,7 @@ export interface FeatureParts {
   id: string
   intent: { summary: string; invariants: string[] }
   styles: URL[]
+  fetch: URL | null
   imports: FeatureDecl[]
   tags: Record<string, TagDecl<any>>
   events: Record<string, EventDecl<any>>
@@ -54,6 +55,8 @@ export interface FeatureConfig {
   imports?: FeatureDecl[]
   exports?: Decl[]
   styles?: URL[]
+  /** `features/<name>/fetch.ts`: the implementations of the feature's `'either'` / `'browser'` effects (ADR 0049). */
+  fetch?: URL
 }
 
 export const feature = (config: FeatureConfig): FeatureDecl =>

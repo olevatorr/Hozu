@@ -15,6 +15,7 @@ const removeMany = mutation({
   input: z.object({ ids: z.array(z.string()).min(1, 'Select at least one note') }),
   output: z.object({ count: z.number() }),
   invalidates: () => [notesTag()],
+  runs: 'server',
 })
 const importTags = endpoint({
   method: 'POST',

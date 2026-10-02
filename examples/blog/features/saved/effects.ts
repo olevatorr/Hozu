@@ -10,6 +10,7 @@ export const savedPosts = query({
   scope: 'user',
   freshness: 'live',
   tags: () => [savedTag()],
+  runs: 'server',
 })
 
 export const savePost = mutation({
@@ -17,10 +18,12 @@ export const savePost = mutation({
   output: z.array(z.string()),
   errors: { LimitReached: z.object({ limit: z.number() }) },
   invalidates: () => [savedTag()],
+  runs: 'server',
 })
 
 export const unsavePost = mutation({
   input: Slug,
   output: z.array(z.string()),
   invalidates: () => [savedTag()],
+  runs: 'server',
 })

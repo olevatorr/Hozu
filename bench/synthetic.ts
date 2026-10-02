@@ -8,14 +8,28 @@ const Rows = z.array(z.object({ id: z.string(), n: z.number() }))
 const NoInput = z.object({})
 
 const rowsQuery = () =>
-  query({ input: NoInput, output: Rows, scope: 'public', freshness: 'static', tags: () => [] })
+  query({
+    input: NoInput,
+    output: Rows,
+    scope: 'public',
+    freshness: 'static',
+    tags: () => [],
+    runs: 'server',
+  })
 
 export function syntheticProject(features: number, states = 30, events = 10) {
   const decls: FeatureDecl[] = []
   let previous: { feature: FeatureDecl; rows: ReturnType<typeof rowsQuery> } | null = null
   for (let f = 0; f < features; f++) {
     const evs: EventDecl<{ n: number }>[] = Array.from({ length: events }, () => event({ payload: Payload }))
-    const rows = query({ input: NoInput, output: Rows, scope: 'public', freshness: 'static', tags: () => [] })
+    const rows = query({
+      input: NoInput,
+      output: Rows,
+      scope: 'public',
+      freshness: 'static',
+      tags: () => [],
+      runs: 'server',
+    })
     const names = Array.from({ length: states }, (_, s) => `s${s}`)
     const m = machine({
       context: Context,

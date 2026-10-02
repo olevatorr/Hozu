@@ -22,6 +22,7 @@ export const listDocs = query({
   output: z.array(Summary),
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })
 export const getDoc = query({
   input: Slug,
@@ -29,12 +30,14 @@ export const getDoc = query({
   errors: { NotFound: Slug },
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })
 export const listTrials = query({
   input: z.object({}),
   output: z.array(Summary),
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })
 export const getTrial = query({
   input: Slug,
@@ -42,12 +45,14 @@ export const getTrial = query({
   errors: { NotFound: Slug },
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })
 export const getChangelog = query({
   input: z.object({}),
   output: z.object({ html: z.string(), hasCode: z.boolean() }),
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })
 
 export const listChapters = query({
@@ -55,6 +60,7 @@ export const listChapters = query({
   output: z.array(Summary),
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })
 export const getChapter = query({
   input: Slug,
@@ -62,16 +68,19 @@ export const getChapter = query({
   errors: { NotFound: Slug },
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })
 export const getStart = query({
   input: z.object({}),
   output: z.object({ html: z.string() }),
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })
 export const getRelease = query({
   input: z.object({}),
   output: z.object({ version: z.string() }),
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })

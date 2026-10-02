@@ -11,6 +11,7 @@ export const listProducts = query({
   scope: 'public',
   freshness: { revalidate: 60 },
   tags: () => [catalogTag()],
+  runs: 'server',
 })
 
 export const getProduct = query({
@@ -20,4 +21,5 @@ export const getProduct = query({
   scope: 'public',
   freshness: 'static',
   tags: (input) => [productTag(input.sku)],
+  runs: 'server',
 })

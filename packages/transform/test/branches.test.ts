@@ -13,6 +13,7 @@ const words = query({
   errors: { Gone: z.object({}) },
   scope: 'public',
   freshness: 'request',
+  runs: 'server',
 })
 const List = ui.view({
   render: () =>

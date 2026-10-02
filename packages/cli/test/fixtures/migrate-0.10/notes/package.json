@@ -1,0 +1,26 @@
+{
+  "name": "example-notes",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "hozu dev",
+    "validate": "hozu validate",
+    "serve": "hozu serve",
+    "start": "hozu serve"
+  },
+  "dependencies": {
+    "@hozu/adapter-node": "workspace:*",
+    "@hozu/cli": "workspace:*",
+    "@hozu/core": "workspace:*",
+    "@hozu/css": "workspace:*",
+    "@hozu/data": "workspace:*",
+    "@hozu/runtime-server": "workspace:*",
+    "@hozu/schema-zod": "workspace:*",
+    "@hozu/transform": "workspace:*",
+    "@hozu/variants": "workspace:*",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@hozu/dev": "workspace:*"
+  }
+}

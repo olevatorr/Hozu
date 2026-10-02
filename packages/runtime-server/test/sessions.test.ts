@@ -10,13 +10,20 @@ const origin = 'http://app.test'
 const Session = z.object({ user: z.string() })
 const aTag = tag({ param: null })
 const bTag = tag({ param: null })
-const who = query({ input: z.object({}), output: z.string(), scope: 'user', freshness: 'request' })
+const who = query({
+  input: z.object({}),
+  output: z.string(),
+  scope: 'user',
+  freshness: 'request',
+  runs: 'server',
+})
 const listA = query({
   input: z.object({}),
   output: z.number(),
   scope: 'public',
   freshness: 'static',
   tags: () => [aTag()],
+  runs: 'server',
 })
 const listB = query({
   input: z.object({}),
@@ -24,10 +31,21 @@ const listB = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [bTag()],
+  runs: 'server',
 })
-const touchA = mutation({ input: z.object({}), output: z.object({}), invalidates: () => [aTag()] })
-const signIn = mutation({ input: z.object({ name: z.string() }), output: z.object({}) })
-const expire = mutation({ input: z.object({}), output: z.object({}), errors: { Expired: z.object({}) } })
+const touchA = mutation({
+  input: z.object({}),
+  output: z.object({}),
+  invalidates: () => [aTag()],
+  runs: 'server',
+})
+const signIn = mutation({ input: z.object({ name: z.string() }), output: z.object({}), runs: 'server' })
+const expire = mutation({
+  input: z.object({}),
+  output: z.object({}),
+  errors: { Expired: z.object({}) },
+  runs: 'server',
+})
 const SignIn = event({ payload: z.object({ name: z.string() }) })
 const door = machine({
   context: z.object({ name: z.string() }),

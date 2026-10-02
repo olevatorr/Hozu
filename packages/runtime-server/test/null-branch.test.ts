@@ -12,6 +12,7 @@ const districts = query({
   output: z.array(z.string()),
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })
 const Home = ui.view({
   render: () =>

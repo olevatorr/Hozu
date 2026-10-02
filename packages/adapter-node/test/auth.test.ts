@@ -22,9 +22,15 @@ const me = query({
   errors: { Unauthorized: z.object({}) },
   scope: 'user',
   freshness: 'request',
+  runs: 'server',
 })
-const login = mutation({ input: z.object({ name: z.string() }), output: z.object({}), invalidates: () => [] })
-const logout = mutation({ input: z.object({}), output: z.object({}), invalidates: () => [] })
+const login = mutation({
+  input: z.object({ name: z.string() }),
+  output: z.object({}),
+  invalidates: () => [],
+  runs: 'server',
+})
+const logout = mutation({ input: z.object({}), output: z.object({}), invalidates: () => [], runs: 'server' })
 
 const home = route({ path: '/', params: null, search: null })
 const signIn = route({ path: '/login', params: null, search: null })

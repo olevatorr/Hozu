@@ -10,6 +10,7 @@ export const listTasks = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [tasksTag()],
+  runs: 'server',
 })
 
 export const getTask = query({
@@ -19,6 +20,7 @@ export const getTask = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [tasksTag()],
+  runs: 'server',
 })
 
 export const addTask = mutation({
@@ -26,6 +28,7 @@ export const addTask = mutation({
   output: Task,
   errors: { Duplicate: z.object({ title: z.string() }) },
   invalidates: () => [tasksTag()],
+  runs: 'server',
 })
 
 export const toggleTask = mutation({
@@ -33,9 +36,15 @@ export const toggleTask = mutation({
   output: Task,
   errors: { NotFound: TaskKey },
   invalidates: () => [tasksTag()],
+  runs: 'server',
 })
 
-export const clearDone = mutation({ input: NoInput, output: Cleared, invalidates: () => [tasksTag()] })
+export const clearDone = mutation({
+  input: NoInput,
+  output: Cleared,
+  invalidates: () => [tasksTag()],
+  runs: 'server',
+})
 
 const Visible = z.object({ items: Tasks, show: Show })
 

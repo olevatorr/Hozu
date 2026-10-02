@@ -15,7 +15,12 @@ const slug = fn({
   output: z.string(),
   impl: ({ id }) => id.toLowerCase(),
 })
-const save = mutation({ input: z.object({}), output: z.object({}), errors: { Busy: z.object({}) } })
+const save = mutation({
+  input: z.object({}),
+  output: z.object({}),
+  errors: { Busy: z.object({}) },
+  runs: 'server',
+})
 const m = machine({
   context: z.object({ note: z.string() }),
   initialContext: { note: '' },

@@ -74,6 +74,7 @@ export class ProjectScope {
     refs: new Map(),
     styles: { entry: null, kits: {}, features: {} },
     clients: {},
+    fetches: {},
     assets: {},
     assetOrder: [],
     env: { server: null, public: null },

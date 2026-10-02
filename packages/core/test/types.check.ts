@@ -23,6 +23,7 @@ const save = mutation({
   output: z.object({ id: z.string() }),
   errors: { Busy: z.object({}) },
   invalidates: () => [],
+  runs: 'server',
 })
 const Context = z.object({ items: z.array(Item), note: z.string().nullable() })
 
@@ -185,6 +186,7 @@ const itemQuery = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [],
+  runs: 'server',
 })
 
 ui.view({
@@ -244,7 +246,7 @@ ui.view({
     ]),
 })
 
-query({ input: Item, output: Item, scope: 'public', freshness: 'static' })
+query({ input: Item, output: Item, scope: 'public', freshness: 'static', runs: 'server' })
 
 // @ts-expect-error absent values are omitted, never null
 project({ schema: zodAdapter, http: null, routes: {}, pages: [], features: [] })

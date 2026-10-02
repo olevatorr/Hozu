@@ -17,6 +17,7 @@ const pub = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [],
+  runs: 'server',
 })
 const mine = query({
   input: z.object({}),
@@ -24,6 +25,7 @@ const mine = query({
   scope: 'user',
   freshness: 'live',
   tags: () => [],
+  runs: 'server',
 })
 
 resolvers(p, (implement) => [

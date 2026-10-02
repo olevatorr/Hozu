@@ -81,4 +81,6 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   HZ078: { name: 'variants-config-stale', severity: 'error' },
   HZ079: { name: 'class-conflict', severity: 'error' },
   HZ080: { name: 'shared-part-view', severity: 'warning' },
+  HZ081: { name: 'invalid-effect-runtime', severity: 'error' },
+  HZ082: { name: 'effect-needs-server', severity: 'error' },
 }

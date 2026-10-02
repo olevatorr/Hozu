@@ -23,6 +23,7 @@ export const listBookmarks = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [bookmarksTag()],
+  runs: 'server',
 })
 
 export const getBookmark = query({
@@ -32,6 +33,7 @@ export const getBookmark = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [bookmarksTag()],
+  runs: 'server',
 })
 
 export const addBookmark = mutation({
@@ -39,6 +41,7 @@ export const addBookmark = mutation({
   output: Bookmark,
   errors: { Duplicate: z.object({ title: z.string() }) },
   invalidates: () => [bookmarksTag()],
+  runs: 'server',
 })
 
 export const toggleRead = mutation({
@@ -46,6 +49,7 @@ export const toggleRead = mutation({
   output: Bookmark,
   errors: { NotFound: BookmarkKey },
   invalidates: () => [bookmarksTag()],
+  runs: 'server',
 })
 
 const Visible = z.object({ items: Bookmarks, show: Show })

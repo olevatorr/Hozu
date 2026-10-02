@@ -19,6 +19,7 @@ const who = query({
   errors: { Unauthorized: z.object({}), Forbidden: z.object({}) },
   scope: 'user',
   freshness: 'request',
+  runs: 'server',
 })
 const retired = query({
   input: z.object({}),
@@ -26,6 +27,7 @@ const retired = query({
   errors: { Gone: z.object({}) },
   scope: 'public',
   freshness: 'request',
+  runs: 'server',
 })
 const exportNotes = endpoint({
   method: 'GET',

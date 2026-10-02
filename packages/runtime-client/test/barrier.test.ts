@@ -15,6 +15,7 @@ const count = query({
   scope: 'public',
   freshness: 'live',
   tags: () => [countTag()],
+  runs: 'server',
 })
 const whoTag = tag({ param: null })
 const who = query({
@@ -23,8 +24,14 @@ const who = query({
   scope: 'user',
   freshness: 'request',
   tags: () => [whoTag()],
+  runs: 'server',
 })
-const bump = mutation({ input: z.object({}), output: z.object({}), invalidates: () => [whoTag()] })
+const bump = mutation({
+  input: z.object({}),
+  output: z.object({}),
+  invalidates: () => [whoTag()],
+  runs: 'server',
+})
 const Bump = event({ payload: z.object({}) })
 const counter = machine({
   context: z.object({}),

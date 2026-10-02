@@ -78,7 +78,7 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
       ],
       [
         'export const DUPLICATE',
-        'export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()] })\n\nexport const DUPLICATE',
+        "export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()], runs: 'server' })\n\nexport const DUPLICATE",
       ],
       [
         '        on(Toggle, {',

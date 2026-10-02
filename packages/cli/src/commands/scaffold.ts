@@ -75,6 +75,7 @@ export function model(n: Names, w: With): string {
     `  scope: '${w.auth ? 'user' : 'public'}',`,
     `  freshness: '${w.auth ? 'request' : 'static'}',`,
     `  tags: () => [${n.tag}()],`,
+    `  runs: 'server',`,
     '})',
     w.detail &&
       `
@@ -85,6 +86,7 @@ export const ${n.get} = query({
   scope: '${w.auth ? 'user' : 'public'}',
   freshness: '${w.auth ? 'request' : 'static'}',
   tags: () => [${n.tag}()],
+  runs: 'server',
 })`,
     '',
     `export const ${n.add} = mutation({`,
@@ -92,6 +94,7 @@ export const ${n.get} = query({
     `  output: ${n.Item},`,
     `  errors: { Duplicate: z.object({ title: z.string() }) },`,
     `  invalidates: () => [${n.tag}()],`,
+    `  runs: 'server',`,
     '})',
     w.toggle &&
       `
@@ -100,6 +103,7 @@ export const ${n.toggle} = mutation({
   output: ${n.Item},
   errors: { NotFound: ${n.Key} },
   invalidates: () => [${n.tag}()],
+  runs: 'server',
 })`,
     w.remove &&
       `
@@ -108,6 +112,7 @@ export const ${n.remove} = mutation({
   output: ${n.Key},
   errors: { NotFound: ${n.Key} },
   invalidates: () => [${n.tag}()],
+  runs: 'server',
 })`,
     w.filter &&
       `
@@ -418,10 +423,11 @@ export const me = query({
   errors: { Unauthorized: z.object({}) },
   scope: 'user',
   freshness: 'request',
+  runs: 'server',
 })
 
-export const signIn = mutation({ input: Name, output: z.object({}) })
-export const signOut = mutation({ input: z.object({}), output: z.object({}) })
+export const signIn = mutation({ input: Name, output: z.object({}), runs: 'server' })
+export const signOut = mutation({ input: z.object({}), output: z.object({}), runs: 'server' })
 
 export const accountMachine = machine({
   context: z.object({

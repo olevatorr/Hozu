@@ -8,6 +8,7 @@ export const slides = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [],
+  runs: 'server',
 })
 
 export const stats = query({
@@ -16,6 +17,7 @@ export const stats = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [],
+  runs: 'server',
 })
 
 export const todoId = fn({ input: z.number(), output: z.string(), impl: (n) => `t${n}` })

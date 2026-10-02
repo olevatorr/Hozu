@@ -10,6 +10,7 @@ export const getPlayground = query({
   output: z.object({ source: z.string(), solid: z.string(), outline: z.string(), joint: z.string() }),
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })
 export const m = machine({
   context: z.object({ broken: z.boolean(), tried: z.boolean(), intent: Intent }),

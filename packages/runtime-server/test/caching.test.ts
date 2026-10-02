@@ -15,14 +15,16 @@ const items = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [itemsTag()],
+  runs: 'server',
 })
 const mine = query({
   input: z.object({ limit: z.number() }),
   output: z.object({ user: z.string(), limit: z.number() }),
   scope: 'user',
   freshness: 'request',
+  runs: 'server',
 })
-const add = mutation({ input: z.object({ text: z.string().trim() }), output: z.string() })
+const add = mutation({ input: z.object({ text: z.string().trim() }), output: z.string(), runs: 'server' })
 const echo = endpoint({
   method: 'GET',
   path: '/api/echo',

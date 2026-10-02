@@ -11,6 +11,7 @@ const listProducts = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [],
+  runs: 'server',
 })
 const Add = event({ payload: z.object({ sku: z.string() }) })
 const cart = machine({

@@ -11,6 +11,8 @@ type ErrorTypes<E extends ErrorSchemas> = { [K in keyof E]: Infer<E[K]> }
 
 export type Scope = 'public' | 'user'
 
+export type Runs = 'server' | 'browser' | 'either'
+
 export interface EffectTypes<I, O, E, Sc = Scope> {
   input: I
   output: O
@@ -25,6 +27,7 @@ export interface QueryDef {
   scope: 'public' | 'user'
   freshness: Freshness
   tags: (input: any) => TagUse[]
+  runs: Runs
 }
 
 export interface MutationDef {
@@ -32,6 +35,7 @@ export interface MutationDef {
   output: Schema
   errors: ErrorSchemas
   invalidates: (input: any) => TagUse[]
+  runs: Runs
 }
 
 export interface QueryDecl<I = any, O = any, E = any, Sc extends Scope = Scope>
@@ -56,8 +60,9 @@ export const query = <
   scope: Sc
   freshness: Freshness
   tags?: (input: Ref<Infer<I>>) => TagUse[]
+  runs?: Runs
 }): QueryDecl<Infer<I>, Infer<O>, ErrorTypes<E>, Sc> =>
-  brand({}, 'query', { errors: {}, tags: () => [], ...config } as QueryDef)
+  brand({}, 'query', { errors: {}, tags: () => [], runs: 'either', ...config } as QueryDef)
 
 export const mutation = <
   I extends Schema,
@@ -68,5 +73,6 @@ export const mutation = <
   output: O
   errors?: E
   invalidates?: (input: Ref<Infer<I>>) => TagUse[]
+  runs?: Runs
 }): MutationDecl<Infer<I>, Infer<O>, ErrorTypes<E>> =>
-  brand({}, 'mutation', { errors: {}, invalidates: () => [], ...config } as MutationDef)
+  brand({}, 'mutation', { errors: {}, invalidates: () => [], runs: 'either', ...config } as MutationDef)

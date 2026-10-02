@@ -11,6 +11,7 @@ export const search = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [],
+  runs: 'server',
 })
 export const clock = query({
   input: z.object({}),
@@ -18,6 +19,7 @@ export const clock = query({
   scope: 'public',
   freshness: 'live',
   tags: () => [clockTag()],
+  runs: 'server',
 })
 
 const finder = machine({

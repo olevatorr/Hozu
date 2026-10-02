@@ -241,6 +241,26 @@
               "type": "null"
             }
           ]
+        },
+        "fetch": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "sourceHash": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "sourceHash"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The feature's `fetch.ts` (ADR 0049): implementations of its `'either'` / `'browser'` effects."
         }
       },
       "required": [
@@ -259,7 +279,8 @@
         "components",
         "endpoints",
         "contracts",
-        "messages"
+        "messages",
+        "fetch"
       ],
       "additionalProperties": false
     },
@@ -369,6 +390,9 @@
           "items": {
             "$ref": "#/definitions/TagExprIR"
           }
+        },
+        "runs": {
+          "$ref": "#/definitions/Runs"
         }
       },
       "required": [
@@ -377,7 +401,8 @@
         "errors",
         "scope",
         "freshness",
-        "tags"
+        "tags",
+        "runs"
       ],
       "additionalProperties": false
     },
@@ -760,6 +785,15 @@
       ],
       "additionalProperties": false
     },
+    "Runs": {
+      "type": "string",
+      "enum": [
+        "server",
+        "browser",
+        "either"
+      ],
+      "description": "What an effect's implementation needs (ADR 0049): server secrets, browser credentials, or neither."
+    },
     "MutationIR": {
       "type": "object",
       "properties": {
@@ -780,13 +814,17 @@
           "items": {
             "$ref": "#/definitions/TagExprIR"
           }
+        },
+        "runs": {
+          "$ref": "#/definitions/Runs"
         }
       },
       "required": [
         "input",
         "output",
         "errors",
-        "invalidates"
+        "invalidates",
+        "runs"
       ],
       "additionalProperties": false
     },

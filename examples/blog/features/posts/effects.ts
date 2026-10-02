@@ -11,6 +11,7 @@ export const listPosts = query({
   scope: 'public',
   freshness: { revalidate: 300 },
   tags: () => [postsTag()],
+  runs: 'server',
 })
 
 export const getPost = query({
@@ -20,4 +21,5 @@ export const getPost = query({
   scope: 'public',
   freshness: 'static',
   tags: (input) => [postTag(input.slug)],
+  runs: 'server',
 })

@@ -28,11 +28,13 @@ export const listStations = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [stationsTag()],
+  runs: 'server',
 })
 export const toggleFavorite = mutation({
   input: z.object({ id: z.string() }),
   output: z.object({ id: z.string(), favorite: z.boolean() }),
   invalidates: () => [stationsTag()],
+  runs: 'server',
 })
 
 const matches = (s: { name: string; district: string }, q: string, district: string) =>
