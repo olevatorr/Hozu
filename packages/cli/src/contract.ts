@@ -269,9 +269,13 @@ export interface MapFeature {
     freshness: string
     errors: string[]
     tags: string[]
+    /** Where it runs (ADR 0049): 'server', 'browser' or 'either'. */
+    runs: string
     at: string | null
   }[]
-  mutations: { name: string; errors: string[]; invalidates: string[]; at: string | null }[]
+  mutations: { name: string; errors: string[]; invalidates: string[]; runs: string; at: string | null }[]
+  /** The feature's fetch.ts (ADR 0049), when it has one. */
+  fetch: string | null
   endpoints: { name: string; method: string; path: string; at: string | null }[]
   events: { name: string; fields: string[]; at: string | null }[]
   fns: string[]

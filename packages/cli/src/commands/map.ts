@@ -150,14 +150,17 @@ export function runMap(loaded: Loaded, cwd: string): MapOutput {
         freshness: freshnessText(q.freshness),
         errors: Object.keys(q.errors),
         tags: q.tags.map((t) => local(t.tag)),
+        runs: q.runs,
         at: at(`${base}/queries/${name}`),
       })),
       mutations: Object.entries(f.mutations).map(([name, q]) => ({
         name,
         errors: Object.keys(q.errors),
         invalidates: q.invalidates.map((t) => local(t.tag)),
+        runs: q.runs,
         at: at(`${base}/mutations/${name}`),
       })),
+      fetch: f.fetch ? at(`${base}/fetch`) : null,
       endpoints: Object.entries(f.endpoints ?? {}).map(([name, e]) => ({
         name,
         method: e.method,
@@ -225,13 +228,14 @@ export function describeMap(out: MapOutput): string {
     lines.push(`feature ${f.id}`)
     for (const q of f.queries)
       lines.push(
-        `  query ${q.name} ${q.scope} ${q.freshness}${q.errors.length ? ` !${q.errors.join(' !')}` : ''}${q.tags.length ? ` [${q.tags.join(' ')}]` : ''}${where(q.at)}`,
+        `  query ${q.name} ${q.scope} ${q.freshness} runs:${q.runs}${q.errors.length ? ` !${q.errors.join(' !')}` : ''}${q.tags.length ? ` [${q.tags.join(' ')}]` : ''}${where(q.at)}`,
       )
     for (const q of f.mutations)
       lines.push(
-        `  mutation ${q.name}${q.errors.length ? ` !${q.errors.join(' !')}` : ''}${q.invalidates.length ? ` ⟳${q.invalidates.join(' ')}` : ''}${where(q.at)}`,
+        `  mutation ${q.name} runs:${q.runs}${q.errors.length ? ` !${q.errors.join(' !')}` : ''}${q.invalidates.length ? ` ⟳${q.invalidates.join(' ')}` : ''}${where(q.at)}`,
       )
     for (const e of f.endpoints) lines.push(`  endpoint ${e.name} ${e.method} ${e.path}${where(e.at)}`)
+    if (f.fetch) lines.push(`  fetch.ts${where(f.fetch)}`)
     if (f.events.length)
       lines.push(`  events ${f.events.map((e) => `${e.name}{${e.fields.join(',')}}`).join(' ')}`)
     if (f.fns.length) lines.push(`  fns ${f.fns.join(' ')}`)
