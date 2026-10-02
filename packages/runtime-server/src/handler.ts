@@ -24,6 +24,7 @@ import {
 } from '@hozu/core/ir'
 import {
   createDataRuntime,
+  type DataCache,
   type FetchLoader,
   type OnError,
   type RequestData,
@@ -65,6 +66,8 @@ export interface HandlerOptions {
   onError?: OnError
   csp?: CspSources | false
   cache?: PageCache
+  /** Public query results (ADR 0050 A); by default `memoryDataCache()`. */
+  dataCache?: DataCache
   readFile?: (file: string) => Promise<Uint8Array>
   manifest?: Manifest
   images?: ImageSet | null
@@ -87,6 +90,14 @@ export interface OgCard {
 export interface Handler {
   fetch(request: Request): Promise<Response>
   revalidate(tags: TagUse[]): Promise<Revalidated>
+  /** Cache sizes and evictions, for monitoring (ADR 0050 A). */
+  stats(): ServerStats
+}
+
+export interface ServerStats {
+  dataEntries: number
+  pages: number | null
+  evictions: { data: number; pages: number | null }
 }
 
 export interface Revalidated {
@@ -165,6 +176,7 @@ function handlerFor({
   onError = (error, info) => console.error('[hozu]', info, error),
   csp = {},
   cache = memoryCache(),
+  dataCache,
   readFile,
   manifest,
   images = null,
@@ -252,6 +264,7 @@ function handlerFor({
     onError,
     env: rawEnv,
     ...(fetches ? { fetches } : {}),
+    ...(dataCache ? { cache: dataCache } : {}),
   })
   const scopes = new WeakMap<Request, Promise<RequestData>>()
   const dataFor = (request: Request) => {
@@ -875,6 +888,14 @@ function handlerFor({
 
   return {
     revalidate,
+    stats: () => {
+      const d = data.stats()
+      return {
+        dataEntries: d.entries,
+        pages: cache.size ?? null,
+        evictions: { data: d.evictions, pages: cache.evictions ?? null },
+      }
+    },
     async fetch(request) {
       const url = new URL(request.url)
       try {

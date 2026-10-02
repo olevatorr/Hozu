@@ -159,6 +159,23 @@ record(
 )
 
 const hook = ['--import', join(root, 'packages/transform/dist/register.js')]
+const p13 = spawnSync(
+  process.execPath,
+  ['--expose-gc', ...hook, join(root, 'bench/scale/probe.ts'), 'cache', '1000000'],
+  {
+    encoding: 'utf8',
+  },
+)
+if (p13.status !== 0) throw new Error(`bench/scale/probe.ts: ${p13.stderr}`)
+const cacheProbe = JSON.parse(p13.stdout) as { entries: number; heapMB: number }
+record(
+  'P13',
+  'data cache entries after 1,000,000 distinct public keys (ADR 0050 A)',
+  cacheProbe.entries,
+  'entries',
+  10_000,
+)
+record('P13', 'data cache heap growth after 1,000,000 distinct public keys', cacheProbe.heapMB, 'MB', 64)
 const p9 = spawnSync(process.execPath, [...hook, join(root, 'bench/p9.ts')], { encoding: 'utf8' })
 if (p9.status !== 0) throw new Error(`bench/p9.ts: ${p9.stderr}`)
 record(

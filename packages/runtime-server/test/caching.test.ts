@@ -119,6 +119,13 @@ function setup() {
 }
 
 describe('ADR 0043 A: generations, derived HTTP caching, parsed input', () => {
+  it('reports cache sizes through stats (ADR 0050 A)', async () => {
+    const { handler } = setup()
+    expect(handler.stats()).toEqual({ dataEntries: 0, pages: 0, evictions: { data: 0, pages: 0 } })
+    await (await handler.fetch(new Request(`${origin}/`))).text()
+    expect(handler.stats()).toMatchObject({ dataEntries: 1, pages: 1 })
+  })
+
   it('an ISR page rendered while its tag is revalidated is not stored', async () => {
     const { handler, list, gate, release } = setup()
     gate(true)

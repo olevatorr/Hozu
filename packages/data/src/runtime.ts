@@ -11,6 +11,7 @@ import {
   type TagExprIR,
 } from '@hozu/core/ir'
 import { compileValue, type Getter } from '@hozu/machine'
+import { type DataCache, Lru, memoryDataCache } from './cache.ts'
 import {
   fail,
   failureOf,
@@ -46,8 +47,6 @@ interface Effect {
 interface Entry {
   value: Result | null
   at: number
-  stale: boolean
-  gen: number
   refreshing: boolean
 }
 
@@ -77,6 +76,8 @@ export interface DataRuntimeOptions {
   now?: () => number
   onError?: OnError
   env?: unknown
+  /** Public query results (ADR 0050 A); by default `memoryDataCache()`, at most 10,000 entries. */
+  cache?: DataCache
 }
 
 export interface FileLike {
@@ -139,6 +140,7 @@ const tagKey = (tag: TagExprIR, get: Getter | null) => (input: Json) =>
 export function createDataRuntime({
   build,
   resolvers,
+  cache = memoryDataCache(),
   now = Date.now,
   onError = () => {},
   env: rawEnv = {},
@@ -333,10 +335,8 @@ export function createDataRuntime({
   }
   if (problems.length) throw new DataRuntimeError(problems)
 
-  const cache = new Map<string, Entry>()
-  const parsedInputs = new Map<string, { input: Json; key: string }>()
-  const tagIndex = new Map<string, Set<Entry>>()
-  const stats: Stats = { entries: 0, fetches: 0, hits: 0, deduped: 0, invalidated: 0 }
+  const parsedInputs = new Lru<{ input: Json; key: string }>(10_000)
+  const stats = { fetches: 0, hits: 0, deduped: 0, invalidated: 0 }
 
   const check = (key: string, value: unknown): string[] | null => bindings.checks[key]?.(value) ?? null
   const parse = (ref: string, input: Json): { ok: true; value: Json } | { ok: false; issues: string[] } => {
@@ -353,31 +353,20 @@ export function createDataRuntime({
     effect.freshness.kind !== 'live'
 
   function entryOf(effect: Effect, key: string, input: Json): Entry {
-    let entry = cache.get(key)
+    let entry = cache.get(key) as Entry | undefined
     if (!entry) {
-      entry = { value: null, at: 0, stale: false, gen: 0, refreshing: false }
-      cache.set(key, entry)
-      stats.entries++
-      for (const tag of effect.tags.map((t) => t(input))) {
-        let set = tagIndex.get(tag)
-        if (!set) {
-          set = new Set()
-          tagIndex.set(tag, set)
-        }
-        set.add(entry)
-      }
+      entry = { value: null, at: 0, refreshing: false }
+      cache.set(
+        key,
+        entry,
+        effect.tags.map((t) => t(input)),
+      )
     }
     return entry
   }
 
   function invalidate(tags: string[]): number {
-    let count = 0
-    for (const tag of new Set(tags))
-      for (const entry of tagIndex.get(tag) ?? []) {
-        entry.gen++
-        if (!entry.stale) count++
-        entry.stale = true
-      }
+    const count = cache.deleteTags(tags)
     stats.invalidated += count
     return count
   }
@@ -388,13 +377,11 @@ export function createDataRuntime({
   const noFiles = new Map<string, FileLike>()
 
   async function refresh(scope: Scope, effect: Effect, entry: Entry, input: Json): Promise<Result> {
-    const gen = entry.gen
     const started = now()
     const result = await scope.execute(effect, input)
-    if (result.ok && entry.gen === gen) {
+    if (result.ok) {
       entry.value = result
       entry.at = started
-      entry.stale = false
     }
     return result
   }
@@ -403,7 +390,7 @@ export function createDataRuntime({
     if (scope.preview || !cached(effect)) return scope.execute(effect, input)
     const entry = entryOf(effect, key, input)
     const f = effect.freshness as Exclude<Freshness, { kind: 'request' } | { kind: 'live' }>
-    if (entry.value && !entry.stale) {
+    if (entry.value) {
       if (f.kind === 'static' || now() - entry.at < f.seconds * 1000) {
         stats.hits++
         return entry.value
@@ -655,7 +642,7 @@ export function createDataRuntime({
       const parsed = effect ? parse(ref, input) : null
       return effect && parsed?.ok ? effect.tags.map((t) => t(parsed.value)) : []
     },
-    stats: () => ({ ...stats }),
+    stats: () => ({ entries: cache.size, evictions: cache.evictions, ...stats }),
   }
 }
 

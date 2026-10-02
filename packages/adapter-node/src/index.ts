@@ -49,15 +49,15 @@ export async function send(response: ServerResponse, answer: Response): Promise<
   response.end()
 }
 
-export function createServer(options: NodeAdapterOptions): Server & Pick<Handler, 'revalidate'>
+export function createServer(options: NodeAdapterOptions): Server & Pick<Handler, 'revalidate' | 'stats'>
 export function createServer(
   app: App,
   host?: Omit<AppHost, 'readFile'> & { publicDir?: string },
-): Server & Pick<Handler, 'revalidate'>
+): Server & Pick<Handler, 'revalidate' | 'stats'>
 export function createServer(
   first: NodeAdapterOptions | App,
   host: Omit<AppHost, 'readFile'> & { publicDir?: string } = {},
-): Server & Pick<Handler, 'revalidate'> {
+): Server & Pick<Handler, 'revalidate' | 'stats'> {
   const { publicDir: dir, ...appHost } = host
   const options: NodeAdapterOptions = appOptionsOf(first)
     ? { ...appHandlerOptions(first as App, appHost), ...(dir ? { publicDir: dir } : {}) }
@@ -92,5 +92,5 @@ export function createServer(
     }
     await send(response, answer)
   })
-  return Object.assign(server, { revalidate: handler.revalidate })
+  return Object.assign(server, { revalidate: handler.revalidate, stats: handler.stats })
 }

@@ -1,3 +1,5 @@
+export type { CacheEntry, DataCache } from './cache.ts'
+export { Lru, memoryDataCache } from './cache.ts'
 export type {
   EndpointContext,
   Fail,

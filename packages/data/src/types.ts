@@ -13,7 +13,10 @@ export type MutationResult<O = Json, E = Record<string, Json>> = Result<O, E> & 
 }
 
 export interface Stats {
+  /** Entries now in the data cache. */
   entries: number
+  /** Entries the cache dropped to stay within its bound. */
+  evictions: number
   fetches: number
   hits: number
   deduped: number
