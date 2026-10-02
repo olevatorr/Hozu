@@ -149,6 +149,10 @@ describe('create-hozu', () => {
     expect(pkg.dependencies['@hozu/core']).toBe('^0.1.0')
     expect(await readFile(join(dir, 'hozu.config.ts'), 'utf8')).toContain("name: 'demo'")
     expect(await has(join(dir, '.gitignore'))).toBe(true)
+    expect(pkg.scripts.dev).toBe('hozu dev')
+    expect(pkg.devDependencies['@hozu/dev']).toBe('^0.1.0')
+    expect(await readFile(join(dir, '.gitignore'), 'utf8')).toContain('.hozu/')
+    expect(guide).toContain('pnpm exec hozu requests --full')
   })
 
   it('creates an app for agents that read AGENTS.md, with npm commands', async () => {

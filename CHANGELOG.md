@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.10.0 — Hozu DevTools (ADR 0047)
+
+A vibe coder sees something wrong on the screen and describes it in words; the agent then searches the code for it.
+Hozu already knew where every node comes from, so 0.10 lets the person point instead: under `npm run dev` they
+select the part, say what should change, and hand the agent a request that names the file, line and the Hozu way to
+make the change. The tool never edits source; the agent edits and Hozu checks.
+
+**Upgrade:** additive, no change to the authoring surface, the IR or the lock. Add `"dev": "hozu dev"` and the
+`@hozu/dev` dev dependency to an app's `package.json` (new apps have them), and `.hozu/` to `.gitignore`.
+
+### DevTools (`hozu dev`)
+- **Overlay:** a dock with Browse / Select, Changes, Page, Layers, Workbench and settings. Select a part (click; Alt
+  goes up; double-click picks a text) to see where it is, its component and how many places use it, where its text
+  comes from (literal, message, data, context), when it is shown and what it sends.
+- **Look and Text:** preview font size, weight, colours, padding and corners, or other words (Longer, 中文, English),
+  on the page only. A request turns styles into the class to replace and the project's theme utility.
+- **Layers and states:** the page's parts from the IR, and the states that are not on screen — query `pending` and
+  `failed.<Error>` branches, `when` and busy states, and context conditions (`ctx.error !== null`) — each previewed
+  without running a resolver or a mutation.
+- **Workbench:** the page in an exact-size frame (devices, rotate, drag to resize), Layers on the left, the
+  inspector on the right.
+- **Builder or Developer:** plain words by default, or files, excerpts, transitions and node ids
+  (`hozu dev --devtools developer`). Light and dark follow the system.
+
+### Requests
+- One request holds every described part; Copy for AI or Save writes Markdown with Want, Where, Scope, Style, Text,
+  Shown when, Mind (only where a plain edit goes wrong) and Locate.
+- Saved requests live in `.hozu/requests/`. `hozu requests` lists them, `hozu requests --full` prints every open one
+  as one prompt, `hozu requests done <n> --result "<what changed>"` removes one. `hozu docs requests` tells agents how
+  to work them.
+- `hozu locate <id|pointer|page:route>` re-finds a node after edits moved its lines.
+
+### Zero production cost
+- Markers (`data-hz`), the dev endpoints and the DevTools script exist only under `hozu dev`; production renders and
+  the production client carry none, and budget P7 is unchanged (7868 B). Dev endpoints answer loopback `Host`s only,
+  and `hozu serve` binds 127.0.0.1 under `HOZU_DEV`.
+
+### Examples
+- `examples/studio`: a task board with a kit, counts, filters, validation, a saved notice, a confirm dialog and a
+  detail page, to test DevTools.
+
 ## 0.9.0 — declared UI components (ADR 0045, breaking)
 
 A button, a field or a card used by several features had no declaration in 0.8: a `part()` disappears when the view

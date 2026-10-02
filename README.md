@@ -39,8 +39,13 @@ npm create hozu@latest my-app
 npm create hozu@latest my-app      # or: pnpm create hozu my-app
 cd my-app
 npm install
-npm start                            # http://localhost:3000
+npm run dev                          # http://localhost:3000, with Hozu DevTools
 ```
+
+**Hozu DevTools** comes with `npm run dev`: choose Select in the dock, click what should change and describe it.
+The request you copy or save names the file, line and the Hozu way to make the change; it can preview other
+states, styles and wording first, in an exact-size Workbench too. Give it to your agent, or tell the agent
+"do the open Hozu requests" (`npx hozu requests --full`).
 
 `create-hozu` asks which coding agent will work on the app. To skip the question, pass `--agent`:
 
@@ -157,7 +162,8 @@ The extra cost is mostly reading the guide of a framework the model has not seen
 | [`@hozu/content`](https://www.npmjs.com/package/@hozu/content) | Markdown collections with typed front matter |
 | [`@hozu/image`](https://www.npmjs.com/package/@hozu/image) | Optional WebP `srcset` and share-image cards (uses sharp) |
 | [`@hozu/testing`](https://www.npmjs.com/package/@hozu/testing) | Render assertions through the real handler |
-| [`@hozu/dev`](https://www.npmjs.com/package/@hozu/dev) · [`@hozu/bundle`](https://www.npmjs.com/package/@hozu/bundle) | Development server; client component bundling |
+| [`@hozu/dev`](https://www.npmjs.com/package/@hozu/dev) · [`@hozu/devtools`](https://www.npmjs.com/package/@hozu/devtools) | Development server; Hozu DevTools (select, preview, request) |
+| [`@hozu/bundle`](https://www.npmjs.com/package/@hozu/bundle) | Client component bundling |
 | [`@hozu/variants`](https://www.npmjs.com/package/@hozu/variants) | tailwind-variants for component styles, run at build time (0 B in the browser) |
 
 ## Also included

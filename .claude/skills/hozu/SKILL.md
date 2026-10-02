@@ -53,3 +53,4 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 | components, kits, browser APIs, DOM libraries | `components` |
 | languages, env, HTTP, Markdown, tests, deploying | `i18n` `env` `http` `content` `testing` `deploy` |
 | a diagnostic code | `diagnostics` |
+| change requests from Hozu DevTools (`.hozu/requests`) | `requests` |

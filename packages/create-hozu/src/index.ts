@@ -78,6 +78,7 @@ export const packageJson = (name: string, version: string) => ({
   private: true,
   type: 'module',
   scripts: {
+    dev: 'hozu dev',
     check: 'hozu check',
     start: 'hozu serve',
     build: 'hozu build',
@@ -94,6 +95,7 @@ export const packageJson = (name: string, version: string) => ({
     zod: '^4.6.5',
   },
   devDependencies: {
+    '@hozu/dev': `^${version}`,
     '@hozu/testing': `^${version}`,
     '@types/node': '^22.20.4',
     typescript: '^7.0.2',

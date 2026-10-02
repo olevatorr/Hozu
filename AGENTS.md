@@ -63,7 +63,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `@hozu/dev` (dev server: CSS hot swap, reload on code changes), `@hozu/image` (optional WebP srcset, ADR 0017),
   `@hozu/content` (Markdown collections, ADR 0020), `@hozu/testing` (render assertions, ADR 0021),
   `@hozu/bundle` (client component modules, esbuild), `@hozu/variants` (tailwind-variants run at record time;
-  `/config` generates the tailwind-merge config, ADR 0045 D); `@hozu/ui-kit` is reserved for the official kit
+  `/config` generates the tailwind-merge config, ADR 0045 D), `@hozu/devtools` (the DevTools overlay and request
+  files, ADR 0047); `@hozu/ui-kit` is reserved for the official kit
 - Every `@hozu/*` package except `@hozu/schema-zod`, `@hozu/css` (Tailwind), `@hozu/bundle` (esbuild),
   `@hozu/image` (sharp), `@hozu/content` (marked, yaml) and `@hozu/variants` (tailwind-variants, tailwind-merge) has zero
   third-party runtime dependencies.
@@ -207,6 +208,15 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   list), `hozu render <id>`, `hozu inspect` / `impact <component id>`, `hozu map` `kits:` and per-page components,
   `hozu check` override counts, `hozu add kit <id> [--sync]`. `hozu migrate` is removed: no migration support before
   the first stable release (0.8 apps upgrade by hand from the CHANGELOG).
+- 0.10 (ADR 0047): Hozu DevTools under `hozu dev` (`npm run dev`; `--devtools builder|developer`,
+  `--no-devtools`): a dev build stamps `data-hz="<node id>"` on every element (production renders and the
+  production client carry none, P7 unchanged); Select a part to see its file:line, component, text source, branch
+  and behaviour; Look (styles → theme utilities) and Text previews; Layers with the page's states (query branches,
+  `when` and busy states, context conditions) previewed through the dev-only cookie `hozu-dev-state`; Workbench
+  (an exact-size frame). A request is Markdown (Want / Where / Scope / Style / Text / Mind / Locate) copied or
+  saved to `.hozu/requests/` (`.next` keeps numbers unique); `hozu requests [--full] [done <n> --result]`
+  (done removes the file), `hozu locate <id|pointer|page:route>`, `hozu docs requests`. Dev endpoints answer
+  loopback `Host`s only; `examples/studio` is the DevTools test bench.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

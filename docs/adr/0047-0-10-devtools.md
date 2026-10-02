@@ -257,6 +257,16 @@ Each phase ends with `pnpm gate` and a report.
 - **Done removes:** `hozu requests done <n> --result` and the panel's "Done · remove" delete the file, so only open
   requests remain. `.hozu/requests/.next` keeps numbers from being reused.
 
+## As built (P6)
+- **Agents:** `hozu docs requests` (read with `hozu requests --full`, edit at Where, follow Scope / Style / Text /
+  Mind, `hozu check`, close with `hozu requests done <n> --result`); one line in `SKILL.md`'s topic index; the app
+  guide tells agents what to do when asked for "the Hozu requests".
+- **Scaffold:** `npm run dev` (`hozu dev`), `@hozu/dev` as a dev dependency, `.hozu/` in `.gitignore`: requests are
+  the person's working notes and are removed when done.
+- **Docs:** CLAUDE.md 0.10, AGENTS.md, CHANGELOG 0.10.0, README, the site page `/docs/devtools`.
+- **Trial 0023** is pre-registered in ADR 0048 (proposed); nothing runs before the owner approves it.
+- **Release** (version 0.10.0, `pnpm -r pack`, npm with the owner's 2FA) waits for the owner.
+
 ## Rejected
 - **Shipping source maps or markers in production:** cost and leakage. Dev only.
 - **Letting the tool write source** ("apply this change"): it would bypass the agent and the checks, and it could not
