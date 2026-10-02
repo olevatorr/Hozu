@@ -1,5 +1,6 @@
+import { canonicalStringify } from '@hozu/core/canonical'
 import type { FeatureIR, Json, JsonSchema, MachineIR, TagExprIR, ViewNode } from '@hozu/core/ir'
-import { compileMachine, type Snapshot } from '@hozu/machine'
+import { compileMachine, compileValue, type Snapshot } from '@hozu/machine'
 import { uploads } from './dom.ts'
 import {
   type App,
@@ -107,6 +108,8 @@ export interface HydrateOptions {
   live?: (onTags: (tags: string[]) => void, tags: string[]) => void
   loadFns?: (url: string) => Promise<Record<string, never>>
   loadComponent?: (url: string) => Promise<ComponentSetup>
+  /** Loads a feature's fetch bundle (ADR 0049); by default `import(url)`. */
+  loadFetch?: (url: string) => Promise<Record<string, unknown>>
 }
 
 const importComponent = async (url: string) =>
@@ -123,6 +126,7 @@ export async function hydrate(
     live,
     loadFns = importFns,
     loadComponent = importComponent,
+    loadFetch,
   }: HydrateOptions = {},
 ): Promise<Map<string, App>> {
   const apps = new Map<string, App>()
@@ -137,6 +141,15 @@ export async function hydrate(
     ? (await import('./component.ts')).mountComponent
     : undefined
   if (payload.visible) void import('./visible.ts').then((m) => m.watch(doc))
+  const local = payload.effects
+    ? (await import('./fetch.ts')).createRunner(
+        payload,
+        fns,
+        shared,
+        { stringify: canonicalStringify, compile: compileValue as never },
+        loadFetch,
+      )
+    : null
   const inflight = new Map<string, Promise<Result>>()
   const onQuery = (q: string, input: Json) => {
     if (globalThis.__HOZU_DEV__) {
@@ -146,7 +159,7 @@ export async function hydrate(
     const key = q + JSON.stringify(input)
     let pending = inflight.get(key)
     if (!pending) {
-      pending = query(q, input).finally(() => inflight.delete(key))
+      pending = (local?.runs(q) ? local.run(q, input) : query(q, input)).finally(() => inflight.delete(key))
       inflight.set(key, pending)
     }
     return pending
@@ -161,10 +174,17 @@ export async function hydrate(
   let busy = 0
   let queued: string[] = []
   const onInvoke = async (effect: string, input: Json) => {
+    if (local?.runs(effect)) {
+      busy++
+      const { result, changed } = await local.mutate(effect, input).finally(() => busy--)
+      if (changed) for (const app of apps.values()) app.sync()
+      return result
+    }
     busy++
-    const { result, refreshed, session } = await transport(effect, input, [...shared.data.keys()]).finally(
-      () => busy--,
-    )
+    const { result, refreshed, session, tags } = await transport(effect, input, [
+      ...shared.data.keys(),
+    ]).finally(() => busy--)
+    if (tags && local && (await local.reread(tags))) for (const app of apps.values()) app.sync()
     if (session) {
       shared.data.clear()
       queued = []
@@ -199,6 +219,7 @@ export async function hydrate(
         loadComponent,
         onQuery,
         onInvoke,
+        ...(local ? { readsInBrowser: (q: string) => local.runs(q) } : {}),
         onNavigate: (url) => doc.defaultView?.location.assign(url),
       }),
     )

@@ -37,6 +37,8 @@ export interface AppOptions {
   snapshot?: Snapshot
   onInvoke?: (effect: string, input: Json) => Promise<Result>
   onQuery?: (query: string, input: Json) => Promise<Result>
+  /** Queries the server never read (ADR 0049): requested while hydrating too, since the payload cannot hold them. */
+  readsInBrowser?: (query: string) => boolean
   onNavigate?: (url: string) => void
   components?: Record<string, ComponentRef>
   routes?: Record<string, string>
@@ -299,7 +301,7 @@ export function createApp(doc: Document, options: AppOptions): App {
           const result = payload.get(k)
           bound = scope
           if (!result) {
-            if (!cc.claim) request(k, node.query, input)
+            if (!cc.claim || options.readsInBrowser?.(node.query)) request(k, node.query, input)
             if (node.pending) render(node.pending, scope, cc, inner, ns)
             return
           }

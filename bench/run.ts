@@ -145,6 +145,19 @@ record(
   8 * 1024,
 )
 
+const browserDir = join(root, 'packages/runtime-client/dist/browser')
+const fetchChunk = readdirSync(browserDir).find(
+  (f) => f.endsWith('.js') && readFileSync(join(browserDir, f), 'utf8').includes('hozu.fetchFail'),
+)
+if (!fetchChunk) throw new Error('No runtime-client chunk holds the browser-effect runner (ADR 0049)')
+record(
+  'P11',
+  '@hozu/runtime-client browser-effect runner beyond the initial JS (ADR 0049), min+gz',
+  clientBytes(fetchChunk),
+  'bytes',
+  3 * 1024,
+)
+
 const hook = ['--import', join(root, 'packages/transform/dist/register.js')]
 const p9 = spawnSync(process.execPath, [...hook, join(root, 'bench/p9.ts')], { encoding: 'utf8' })
 if (p9.status !== 0) throw new Error(`bench/p9.ts: ${p9.stderr}`)
