@@ -233,7 +233,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of
   the head query answers what `head.failed` maps it to (ADR 0043 D). `assert` is validated, never obeyed (ADR 0008).
-- `fn()` implementations used on the client are shipped by source text (`/_hozu/fns.js`): they must be
+- `fn()` implementations used on the client are shipped by source text (one module per feature,
+  `/_hozu/f/<feature>-<hash>.js`, ADR 0050 C): they must be
   self-contained (no free variables beyond JS globals) — ADR 0007 D5.
 - Query/mutation implementations live in server modules via `resolvers(project, implement => [...])`, bound by
   declaration identity. `project({ session })` declares the identity; public resolvers never see it (ADR 0005).

@@ -39,11 +39,11 @@ import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
 import { assertComponentBundle, assertFetchBundle } from './components.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'
 import { devNode } from './dev-node.ts'
+import { fnModules } from './fn-modules.ts'
 import { endpointForm, formFields, formNode, runForm } from './forms.ts'
 import { serviceWorker, serviceWorkerRegistration, webManifest } from './pwa.ts'
 import {
   type ComponentBundle,
-  fnsModule,
   inlineScriptHashes,
   pathOf,
   renderPage,
@@ -254,14 +254,18 @@ function handlerFor({
     ? (request: Request) => store.read(request)
     : async (request: Request) => (sessionOption as ((r: Request) => unknown) | undefined)?.(request) ?? null
   const { basePath, redirects, headers: headerRules } = ir.http
+  const fnFiles = fnModules(build)
+  const fnUrls = Object.fromEntries(Object.entries(fnFiles).map(([name, m]) => [name, m.path]))
+  const fnSources = new Map(Object.values(fnFiles).map((m) => [m.path, m.source]))
   const assets = manifest
     ? publicAssets(
         basePath,
         manifest.styles,
         Object.fromEntries(Object.entries(manifest.components).map(([k, c]) => [k, c.url])),
         Object.fromEntries(Object.entries(manifest.fetches ?? {}).map(([k, c]) => [k, c.url])),
+        fnUrls,
       )
-    : publicAssets(basePath, styles, components?.urls ?? {}, components?.fetches ?? {})
+    : publicAssets(basePath, styles, components?.urls ?? {}, components?.fetches ?? {}, fnUrls)
   assertComponentBundle(ir, assets.components, Boolean(manifest || components))
   assertFetchBundle(ir, assets.fetches ?? {}, Boolean(manifest || components))
   const data = createDataRuntime({
@@ -353,7 +357,6 @@ function handlerFor({
     ),
   )
   const regenerating = new Map<string, Promise<void>>()
-  const fns = fnsModule(build)
   const manifestText = webManifest(ir)
   const worker = serviceWorker(ir, hashJson(ir).slice(0, 12))
   const fnImpls = build.bindings.fns as Record<string, (x: never) => unknown>
@@ -871,7 +874,8 @@ function handlerFor({
     if (request.method !== 'GET' && !head) return plain(405, null, { allow: 'GET, HEAD, POST' })
     const client = clientBundle()[path]
     if (client !== undefined) return text('text/javascript', client, head)
-    if (path === '/_hozu/fns.js') return text('text/javascript', fns, head)
+    const fnSource = fnSources.get(path)
+    if (fnSource !== undefined) return text('text/javascript', fnSource, head, IMMUTABLE)
     const variant = images?.files[basePath + path]
     if (variant)
       return new Response(head ? null : (variant as ConstructorParameters<typeof Response>[0]), {

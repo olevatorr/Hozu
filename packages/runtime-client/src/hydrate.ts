@@ -29,7 +29,8 @@ export interface PagePayload {
   data: [string, Result][]
   features: Record<string, MachineIR | null>
   nodes: Record<string, ViewNode>
-  fns: string | null
+  /** The page's `fn` modules (ADR 0050 C). */
+  fns: string[] | null
   params: Json
   search: Json
   snapshots?: Record<string, Snapshot>
@@ -134,7 +135,9 @@ export async function hydrate(
   if (!script?.textContent) return apps
   const payload = JSON.parse(script.textContent) as PagePayload
   const shared: Store = { data: new Map(payload.data), versions: new Map() }
-  const fns: Record<string, never> = payload.fns ? await loadFns(payload.fns) : {}
+  const fns: Record<string, never> = payload.fns
+    ? Object.assign({}, ...(await Promise.all(payload.fns.map(loadFns))))
+    : {}
   const { components, routes } = payload
   const motion = payload.motion ? await import('./motion.ts') : undefined
   const mountComponent = Object.keys(components).length

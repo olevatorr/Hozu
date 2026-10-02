@@ -62,10 +62,10 @@ describe('server rendering', () => {
     expect(payload.islands.filter(([n]) => payload.ids[n] === item)).toHaveLength(1)
     expect(payload.data.map(([k]) => k)).toEqual(['cart.getCart{}'])
     expect(Object.keys(payload.features)).toEqual(['cart'])
-    expect(payload.fns).toBe('/_hozu/fns.js')
+    expect(payload.fns).toEqual([expect.stringMatching(/^\/_hozu\/f\/cart-[0-9a-f]{10}\.js$/)])
     const head = html.slice(0, html.indexOf('</head>'))
     expect(head).toContain('<link rel="modulepreload" href="/_hozu/client.js">')
-    expect(head).toContain('<link rel="modulepreload" href="/_hozu/fns.js">')
+    for (const url of payload.fns!) expect(head).toContain(`<link rel="modulepreload" href="${url}">`)
     expect(html.endsWith('<script type="module" src="/_hozu/client.js"></script></body></html>')).toBe(true)
   })
 

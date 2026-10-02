@@ -22,6 +22,7 @@ import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '
 import type { ClientEffect, PagePayload, Result } from '@hozu/runtime-client'
 import { attrText, text } from '@hozu/runtime-client'
 import { escapeHtml, scriptJson, scriptSafe } from './escape.ts'
+import { fnModules, linkTargets, modulesOfPage } from './fn-modules.ts'
 import { CLOSE, OPEN, renderKey, separated } from './generate.ts'
 import { responsive, type Variants } from './images.ts'
 import { type Lowering, localeFns, lowerCached, usesI18n } from './lower.ts'
@@ -38,7 +39,8 @@ import { pruneScope } from './shape.ts'
 
 export interface Assets {
   client: string
-  fns: string | null
+  /** The browser `fn` modules (ADR 0050 C), by module name: a feature id, or `hozu` for builtins. */
+  fns: Record<string, string> | null
   styles: string | null
   preload: string[]
   components: Record<string, string>
@@ -111,7 +113,13 @@ export async function renderPage({
   search = null,
   snapshots = {},
   session,
-  assets = { client: '/_hozu/client.js', fns: '/_hozu/fns.js', styles: null, preload: [], components: {} },
+  assets = {
+    client: '/_hozu/client.js',
+    fns: Object.fromEntries(Object.entries(fnModules(build)).map(([name, m]) => [name, m.path])),
+    styles: null,
+    preload: [],
+    components: {},
+  },
   locale: requested = null,
   images = null,
   env = NO_ENV,
@@ -451,8 +459,8 @@ export async function renderPage({
     }
     headScope = { ...empty, bindings: [result.ok ? result.value : null] }
   }
-  const hasFns = Object.keys(bindings.fns).length > 0
-  const scripts = plan.islands.length ? [assets.client, ...(hasFns && assets.fns ? [assets.fns] : [])] : []
+  const fnUrls = plan.islands.length && assets.fns ? modulesOfPage(ir, plan.views, assets.fns) : []
+  const scripts = plan.islands.length ? [assets.client, ...fnUrls] : []
   let preloaded = plan.js !== 'conditional'
   const head = headHtml(
     ir,
@@ -477,8 +485,9 @@ export async function renderPage({
         await render(prepare(view.root), featureScope(feature, view.machine === feature.id), false)
       }
       if (payload.islands.length) {
-        payload.fns = hasFns ? assets.fns : null
-        payload.routes = routes
+        payload.fns = fnUrls.length ? fnUrls : null
+        const reached = linkTargets([payload.nodes, payload.features])
+        payload.routes = Object.fromEntries(Object.entries(routes).filter(([id]) => reached.has(id)))
         const client = clientEffects(ir, payload)
         if (Object.keys(client).length) {
           payload.effects = client
@@ -812,18 +821,4 @@ export async function renderToString(options: RenderOptions): Promise<{
     path: page.path,
     redirect: page.redirect,
   }
-}
-
-export function fnsModule(build: BuildResult): string {
-  const entries = Object.entries(build.bindings.fns).map(([ref, impl]) => {
-    const source = String(impl)
-    const expression = /^(async\s+)?(function\b|\(|[A-Za-z_$][\w$]*\s*=>)/.test(source)
-      ? source
-      : `function ${source}`
-    const helpers = Object.entries(build.bindings.fnHelpers[ref] ?? {})
-    if (!helpers.length) return `  ${JSON.stringify(ref)}: ${expression},`
-    const locals = helpers.map(([name, src]) => `const ${name} = ${src};`).join(' ')
-    return `  ${JSON.stringify(ref)}: (() => { ${locals} return ${expression} })(),`
-  })
-  return `export const fns = {\n${entries.join('\n')}\n}\n`
 }

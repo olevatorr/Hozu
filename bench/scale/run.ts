@@ -72,3 +72,15 @@ for (const keys of [100_000, 1_000_000]) {
   console.log(JSON.stringify(cache))
 }
 writeFileSync(join(root, 'bench/scale/out/results.json'), `${JSON.stringify(results, null, 2)}\n`)
+const apps = results.filter((r): r is Record<string, number> => typeof r.features === 'number')
+const smallest = apps.at(0)
+const largest = apps.at(-1)
+if (smallest && largest && smallest !== largest) {
+  console.log(
+    `A7 largest page's fn bytes at ${largest.features} features: ${largest.pageFnBytes} (all modules ${largest.fnsBytes})`,
+  )
+  const growth = (largest.payload! / smallest.payload! - 1) * 100
+  console.log(
+    `A8 /f0 payload at ${largest.features} vs ${smallest.features} features: ${growth.toFixed(1)} % (target ≤ 5 %)`,
+  )
+}

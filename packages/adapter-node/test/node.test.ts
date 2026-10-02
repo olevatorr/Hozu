@@ -73,7 +73,9 @@ describe('node adapter', () => {
     const app = start()
     close = app.close
     expect((await app.call('GET', '/_hozu/client.js')).headers['content-type']).toBe('text/javascript')
-    expect((await app.call('GET', '/_hozu/fns.js')).body).toContain('"cart.cartTotal": (items) =>')
+    const page = (await app.call('GET', '/')).body
+    const cart = /href="(\/_hozu\/f\/cart-[0-9a-f]{10}\.js)"/.exec(page)![1]!
+    expect((await app.call('GET', cart)).body).toContain('"cart.cartTotal": (items) =>')
     expect((await app.call('GET', '/nope')).status).toBe(404)
   })
 })

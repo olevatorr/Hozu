@@ -1,7 +1,8 @@
 import { type BuildResult, hashJson } from '@hozu/core/ir'
 import { clientBundle } from './assets.ts'
+import { fnModules } from './fn-modules.ts'
 import { serviceWorker, serviceWorkerRegistration, webManifest } from './pwa.ts'
-import { type Assets, type ComponentBundle, fnsModule, type Stylesheet } from './render.ts'
+import type { Assets, ComponentBundle, Stylesheet } from './render.ts'
 
 export interface StaticFile {
   path: string
@@ -14,10 +15,11 @@ export function publicAssets(
   styles: { href: string; preload: string[] } | null,
   components: Record<string, string>,
   fetches: Record<string, string> = {},
+  fns: Record<string, string> = {},
 ): Assets {
   return {
     client: `${basePath}/_hozu/client.js`,
-    fns: `${basePath}/_hozu/fns.js`,
+    fns: Object.fromEntries(Object.entries(fns).map(([k, v]) => [k, basePath + v])),
     styles: styles ? basePath + styles.href : null,
     preload: (styles?.preload ?? []).map((href) => basePath + href),
     components: Object.fromEntries(Object.entries(components).map(([k, v]) => [k, basePath + v])),
@@ -38,7 +40,7 @@ export function staticFiles(
   const out: StaticFile[] = []
   if (client) {
     for (const [path, code] of Object.entries(clientBundle())) out.push(text(path, code))
-    out.push(text('/_hozu/fns.js', fnsModule(build)))
+    for (const m of Object.values(fnModules(build))) out.push(text(m.path, m.source))
   }
   if (styles) {
     out.push(text(styles.href, styles.css))

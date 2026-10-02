@@ -1,7 +1,7 @@
 import { feature, project, route, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { resolvers } from '@hozu/data'
-import { createHandler } from '@hozu/runtime-server'
+import { createHandler, fnModules } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { validate } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
@@ -67,7 +67,14 @@ describe('HTTP rules as data (ADR 0016)', () => {
       expect([(await get(from!)).status, (await get(from!)).headers.get('location')]).toEqual([308, to])
     expect((await get('/posts/hello/')).status).toBe(404)
     expect((await get('/shopping')).status).toBe(404)
-    expect((await get('/shop/_hozu/fns.js')).status).toBe(200)
+    expect((await get('/shop/_hozu/fns.js')).status).toBe(404)
+    for (const m of Object.values(fnModules(build))) {
+      const served = await get(`/shop${m.path}`)
+      expect([served.status, served.headers.get('cache-control')]).toEqual([
+        200,
+        'public, max-age=31536000, immutable',
+      ])
+    }
   })
 
   it('redirects typed internal targets and external URLs, carrying the query string', async () => {

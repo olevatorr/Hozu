@@ -1,7 +1,7 @@
-import { feature, fn, project, route, ui } from '@hozu/core'
+import { event, feature, fn, machine, on, project, route, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { resolvers } from '@hozu/data'
-import { createHandler, fnsModule } from '@hozu/runtime-server'
+import { createHandler, fnModules } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
@@ -21,6 +21,31 @@ const counted = fn({
   impl: ({ text }) => `${text}${calls}`,
 })
 const Home = ui.view({ render: () => ui.main({}, ['Home']) })
+const Type = event({ payload: z.object({ text: z.string() }) })
+const typing = machine({
+  context: z.object({ text: z.string() }),
+  initialContext: { text: '' },
+  initial: 'idle',
+  states: ({ ctx }) => ({
+    idle: {
+      on: [
+        on(Type, {
+          assign: (e) => {
+            ctx.text = e.text
+          },
+        }),
+      ],
+    },
+  }),
+})
+const Echo = ui.view({
+  machine: typing,
+  render: ({ ctx }) =>
+    ui.main({}, [
+      ui.input({ 'aria-label': 'Text', on: { input: ui.send(Type, { text: ui.dom.value }) } }),
+      ui.p({}, [loud({ text: ctx.text })]),
+    ]),
+})
 
 const appWith = (fns: Record<string, unknown>) =>
   project({
@@ -33,12 +58,16 @@ const appWith = (fns: Record<string, unknown>) =>
 describe('fn bodies and module helpers (ADR 0040 A, ADR 0041 B)', () => {
   it('ships a self-contained helper, and the constants it uses, with the fn', async () => {
     calls++
-    const build = buildProject(appWith({ loud }), { sources: false })
+    const build = buildProject(appWith({ loud, Type, typing, Echo }), { sources: false })
     expect(build.diagnostics.filter((d) => d.code === 'HZ047')).toEqual([])
-    const source = fnsModule(build)
+    const source = fnModules(build).text!.source
     expect(source).toContain('const MARK = "!";')
     const { fns } = await import(`data:text/javascript,${encodeURIComponent(source)}`)
     expect(fns['text.loud']({ text: 'park' })).toBe('PARK!')
+  })
+
+  it('ships no fn that only the server calls (ADR 0050 C)', () => {
+    expect(fnModules(buildProject(appWith({ loud }), { sources: false })).text).toBeUndefined()
   })
 
   it('reports mutable module state as HZ047, and the server refuses to start', () => {

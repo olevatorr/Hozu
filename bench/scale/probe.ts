@@ -4,7 +4,7 @@ import { gzipSync } from 'node:zlib'
 import { feature, project, query } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { createDataRuntime, resolvers } from '@hozu/data'
-import { appOptionsOf, createHandler, fnsModule } from '@hozu/runtime-server'
+import { appOptionsOf, createHandler, fnModules } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
 import { z } from 'zod'
 
@@ -28,8 +28,12 @@ async function appProbe(dir: string) {
   const startMs = performance.now() - handlerStarted
   const html = await response.text()
   const payload = JSON.parse(/id="hozu-payload">([\s\S]*?)<\/script>/.exec(html)![1]!)
-  const fns = fnsModule(build)
-  const ownFns = Object.keys(build.bindings.fns).filter((r) => r.startsWith('f0.')).length
+  const modules = Object.values(fnModules(build))
+  const fns = modules.map((m) => m.source).join('')
+  const pageFns = modules
+    .filter((m) => (payload.fns ?? []).includes(m.path))
+    .map((m) => m.source)
+    .join('')
   return {
     buildMs,
     startMs,
@@ -40,7 +44,9 @@ async function appProbe(dir: string) {
     fnsBytes: Buffer.byteLength(fns),
     fnsGzip: gzipSync(fns).length,
     fnsCount: Object.keys(build.bindings.fns).length,
-    pageFnsCount: ownFns,
+    pageFnModules: (payload.fns ?? []).length,
+    pageFnBytes: Buffer.byteLength(pageFns),
+    routes: Object.keys(payload.routes).length,
   }
 }
 

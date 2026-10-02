@@ -7,6 +7,7 @@ import {
   assertComponentBundle,
   assertFetchBundle,
   type ComponentBundle,
+  fnModules,
   pageEntries,
   publicAssets,
   renderToString,
@@ -93,6 +94,7 @@ export async function exportStatic({
     styles,
     components?.urls ?? {},
     components?.fetches ?? {},
+    Object.fromEntries(Object.entries(fnModules(build)).map(([name, m]) => [name, m.path])),
   )
   assertComponentBundle(build.ir, assets.components, Boolean(components))
   assertFetchBundle(build.ir, assets.fetches ?? {}, Boolean(components))

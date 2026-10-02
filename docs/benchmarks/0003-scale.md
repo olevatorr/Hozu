@@ -98,3 +98,17 @@ largest part of a cold `hozu serve`.
   - P12: `hozu check` after a one-line edit at 500 features ≤ 2.6 s (today 4.6 s);
   - P13: one million keys keep ≤ `maxEntries` entries and ≤ 64 MB of heap growth;
   - A8: the `/f0` payload at 500 features within 5 % of the payload at 50 (today +71 %).
+
+## After phase 3 (2026-10-03)
+Per-feature fn modules (ADR 0050 C) and page-scoped payload routes (E), with the same apps:
+
+| Features | HTML | Payload | Payload `routes` | Fn modules on `/f0` | Their bytes | All fn modules |
+|---|---|---|---|---|---|---|
+| 50 | 22.6 KB | 11.1 KB | 0 | 1 | 237 B | 11.9 KB |
+| 500 | 22.6 KB | 11.1 KB | 0 | 1 | 237 B | 120.3 KB |
+
+- **A8:** the `/f0` payload at 500 features is 0.0 % larger than at 50 (it was +71 %). The page no longer depends
+  on the size of the app.
+- **A7:** the page loads 237 B of `fn`s, its own feature's module (it was the whole app's 161.8 KB).
+- The site exports only the builtins module: its `fn`s run on the server.
+- P7 is 8,047 B (+20 B, the client now loads a list of modules).
