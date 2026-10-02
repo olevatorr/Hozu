@@ -6,7 +6,7 @@ order: 8
 
 ## Start from the render plan
 
-Use `hozu plan` to inspect the routes you intend to deploy. Public static pages can be exported. Sessions, mutations and request-time data need a server. An assertion can verify a static plan, but cannot force a dynamic page to become static.
+Use `hozu plan` to inspect the routes you intend to deploy. Public static pages can be exported, and so can pages whose queries and mutations run in the browser (`runs: 'browser'` or `'either'`, see [Data](/docs/data)). Sessions and effects with `runs: 'server'` need a server. An assertion can verify a static plan, but cannot force a dynamic page to become static.
 
 ## Static hosting
 
@@ -14,6 +14,7 @@ Use `exportStatic` from `@hozu/adapter-static`, passing the build, compiled styl
 
 ```ts
 import { exportStatic } from '@hozu/adapter-static'
+import { bundleComponents } from '@hozu/bundle'
 import { buildProject } from '@hozu/core/ir'
 import { compileStyles } from '@hozu/css'
 import { appOptionsOf } from '@hozu/runtime-server'
@@ -24,14 +25,19 @@ const build = buildProject(project, { sources: false })
 const result = await exportStatic({
   build,
   styles: await compileStyles(build),
+  components: await bundleComponents(build),
   resolvers: appOptionsOf(app)!.resolvers,
   outDir: 'dist',
+  env: process.env,
 })
 for (const { route, reason } of result.skipped) console.error(route, reason)
-if (result.skipped.length) process.exitCode = 1
+for (const { path, effect, reason } of result.needsServer) console.error(path, effect, reason)
+if (result.skipped.length || result.needsServer.length) process.exitCode = 1
 ```
 
 Declare `entries` for every parameterized page and set `site.url` to the production origin. Inspect the output for missing pages before publishing. This website exports to `site/dist`, writes a `CNAME` for `hozu.org`, and includes `.nojekyll` so GitHub Pages serves its underscore-prefixed assets.
+
+Browser-run queries render their `pending` branch, and so do `'either'` queries whose data cannot be cached at export time; both read in the browser after hydration, with the public environment written into the page. `needsServer` lists the server effects a written page would still call. `examples/stars` is a complete static app of this kind.
 
 Static hosts do not run query resolvers after export. Rebuild the site when content changes. For social metadata, pass `ui.asset(...)` as `head.image`; the export copies the file and the page links it by absolute URL. Generated `ui.og` images require a server handler.
 

@@ -20,6 +20,7 @@ export const catalogue = query({
   output: z.array(Product),
   scope: 'public',
   freshness: 'static',
+  runs: 'server',
 })
 ```
 
@@ -37,6 +38,7 @@ export const myNotes = query({
   output: z.array(Note),
   scope: 'user',
   freshness: 'request',
+  runs: 'server',
 })
 ```
 

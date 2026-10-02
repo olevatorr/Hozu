@@ -34,11 +34,13 @@ export const listItems = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [itemsTag()],
+  runs: 'server',
 })
 export const addItem = mutation({
   input: z.object({ title: z.string().min(2) }),
   output: Item,
   invalidates: () => [itemsTag()],
+  runs: 'server',
 })
 ```
 

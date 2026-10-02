@@ -226,6 +226,37 @@ export const Home = ui.view({
             },
           ),
         ]),
+        ui.use(Section, { props: { kicker: 'Data · 0.11' } }, [
+          ui.use(Heading, {}, ['Your API, called from where it belongs.']),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
+            'Each query and mutation says what it needs, and Hozu decides where it runs. A public API is rendered on the server first, then called straight from the browser: no second hop, no double traffic. A token that lives in the browser never travels to your server, and an app without a server exports to GitHub Pages.',
+          ]),
+          ui.use(Steps, {
+            class: 'mt-8',
+            props: {
+              items: [
+                {
+                  id: 'server',
+                  title: "runs: 'server'",
+                  body: 'A database, a secret or the session. The resolver in app.ts, as before.',
+                },
+                {
+                  id: 'either',
+                  title: "runs: 'either' (default)",
+                  body: 'A public API, or your own with CORS. In the HTML on first paint, then from the browser.',
+                },
+                {
+                  id: 'browser',
+                  title: "runs: 'browser'",
+                  body: "The visitor's own token. Loading state on the server, the API call in the browser.",
+                },
+              ],
+            },
+          }),
+          ui.div({ class: 'mt-8 flex flex-wrap gap-3' }, [
+            ui.use(Button, { props: { href: ui.link(doc, { slug: 'data' }) } }, ['Where data runs →']),
+          ]),
+        ]),
         ui.use(Section, { props: { kicker: 'DevTools · 0.10' } }, [
           ui.use(Heading, {}, ['Point at it. Your agent gets the line.']),
           ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-center' }, [

@@ -14,7 +14,7 @@ Hozu's authoring skill ships with the framework version: a core of at most 4 KB 
 | `--agent agents` | `AGENTS.md` and `.agents/skills/hozu/` |
 | `--agent both` | Both sets of instructions and skills |
 
-After upgrading Hozu, run `npx hozu skill` to refresh the guide for the installed version. Review generated instruction changes alongside the upgrade.
+Upgrade with `npx -p @hozu/cli@latest hozu migrate`, then follow the `next:` lines it prints; its second run refreshes the guide for the installed version. Review generated instruction changes alongside the upgrade.
 
 ## Describe behaviour, not just appearance
 

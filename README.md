@@ -32,6 +32,10 @@ npm create hozu@latest my-app
 - **Rendering is derived, never chosen.** Queries declare `scope` and `freshness`; the compiler decides static, ISR,
   SWR, streamed or client rendering per node. User data can never reach a cacheable region. Only views bound to a
   machine ship JavaScript.
+- **Where data runs is declared, too.** A query or mutation says what its implementation needs: `runs: 'server'`
+  for a database or a secret, `'browser'` for the visitor's own token, or the default `'either'` for an API the
+  browser may call. `'either'` renders on the server first and calls the API from the browser afterwards, without
+  a second hop through your server; a front end with no server of its own exports to a static host.
 - **Closed world.**
   - Views are typed element trees, not functions: every HTML attribute and DOM event is typed, and Tailwind
     classes are checked.
@@ -62,8 +66,9 @@ states, styles and wording first, in an exact-size Workbench too. Give it to you
 | `agents` | `AGENTS.md` + `.agents/skills/hozu/` | Codex, Cursor, Copilot and other agents that read `AGENTS.md` |
 | `both` | both | teams that use several agents |
 
-The skill is the whole authoring reference, with a verified example app. It is versioned with the framework:
-after upgrading, `npx hozu skill` rewrites it for the installed version.
+The skill is the whole authoring reference, with a verified example app. It is versioned with the framework.
+To upgrade an app (from 0.10.0 on), run `npx -p @hozu/cli@latest hozu migrate`, then the `next:` lines it prints:
+it rewrites the source, raises `@hozu/*`, checks the IR did not change and refreshes the skill.
 
 The one check an agent runs after every change:
 ```sh
@@ -78,11 +83,11 @@ export const Add = event({ payload: z.object({ title: z.string() }) })
 export const todosTag = tag({ param: null })
 export const listTodos = query({
   input: z.object({}), output: z.array(Todo),
-  scope: 'public', freshness: 'static', tags: () => [todosTag()],
+  scope: 'public', freshness: 'static', tags: () => [todosTag()], runs: 'server',
 })
 export const addTodo = mutation({
   input: z.object({ title: z.string().min(2) }), output: Todo,
-  invalidates: () => [todosTag()],
+  invalidates: () => [todosTag()], runs: 'server',
 })
 export const todos = machine({
   context: z.object({ draft: z.string(), error: z.string().nullable() }),
@@ -121,6 +126,7 @@ export const Board = ui.view({
 - **No contract is needed here,** because every transition only copies values; `hozu.lock.json` lists them
   (`idle --Add--> adding · draft := event.title · invoke addTodo({ title: ctx.draft })`), and a change shows up
   as a diff to accept. A guard or a navigation would need a contract.
+- **Both run on the server** (`runs: 'server'`): the resolvers in `app.ts` hold the list.
 - **The form works without JavaScript too:** the server runs the same machine for a native post.
 - **The list refreshes in place after the mutation,** because the mutation invalidates the query's tag.
 - **Only the parts bound to the machine or to that refresh ship JavaScript.** The rest of the page is plain HTML.
@@ -184,6 +190,8 @@ The extra cost is mostly reading the guide of a framework the model has not seen
 - A derived head: title, canonical, Open Graph, JSON-LD, sitemap and `robots.txt`.
 - Preview mode, PWA and an offline page.
 - Components in kits, with variants and owned classes; client components wrap third-party DOM libraries.
+- Queries and mutations that call an API from the browser (`runs`, a feature's `fetch.ts`), checked against their
+  schemas there too; `examples/stars` is a GitHub client exported to a static directory.
 
 The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router is in
 [ADR 0011](docs/adr/0011-mainstream-gap-analysis.md).

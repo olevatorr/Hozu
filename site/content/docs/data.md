@@ -6,7 +6,7 @@ order: 4
 
 ## Declare a query
 
-A query describes the shape and policy of a read. Its implementation lives on the server.
+A query describes the shape and policy of a read, and where its implementation runs.
 
 ```ts
 import { query, tag } from '@hozu/core'
@@ -19,6 +19,7 @@ export const listArticles = query({
   scope: 'public',
   freshness: 'static',
   tags: () => [articlesTag()],
+  runs: 'server',
 })
 ```
 
@@ -39,6 +40,35 @@ Export both from a module the feature lists in `declarations`. Render the query 
 User-scoped queries take `'request'` or `'live'`; any other freshness is HZ049. Public data is `'static'` with tags unless it changes without a declared writer.
 
 Session-aware applications declare the session schema on the project. Only user-scoped resolvers receive the session identity.
+
+## Choose where it runs
+
+Every query and mutation declares what its implementation needs. Hozu derives where it runs on each deployment.
+
+| `runs` | The implementation needs | Implemented in |
+| --- | --- | --- |
+| `'server'` | a database, a server secret, the session | the resolvers in `app.ts` |
+| `'browser'` | the visitor's own credentials, such as a token in `localStorage` | the feature's `fetch.ts` |
+| `'either'` (default) | nothing special: a public API, or your own API with CORS | the feature's `fetch.ts` |
+
+An `'either'` query is rendered on the server on first paint. Later reads and mutations call the API from the browser directly, never through your server. A `'browser'` query renders its `pending` branch on the server and reads after hydration. `'either'` needs `scope: 'public'`.
+
+```ts
+// feature.ts
+export const repos = feature({ id: 'repos', intent, declarations: [model, views],
+  fetch: new URL('./fetch.ts', import.meta.url) })
+
+// fetch.ts: one export per effect, under its name
+import { implement } from '@hozu/core/fetch'
+import type * as model from './model.ts'
+
+export const searchRepos = implement<typeof model.searchRepos>(async ({ q }, { fail, signal, env }) => {
+  const r = await fetch(`${env.API_URL}/search/repositories?q=${encodeURIComponent(q)}`, { signal })
+  return r.ok ? (await r.json()).items : fail('Unavailable', { status: r.status })
+})
+```
+
+Inputs and outputs are checked against their schemas in the browser too, and `fail` returns a declared error. `env` is the public environment; server secrets and the session never reach `fetch.ts`. The API must allow the page's origin (CORS); otherwise use `runs: 'server'`. The app needs `components: bundleComponents`, which bundles `fetch.ts` for the browser.
 
 ## Write through mutations
 

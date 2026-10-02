@@ -39,6 +39,7 @@ npx hozu get / --json
 | `hozu add kit ui --json` | Add a component kit: `ui/kit.ts`, `ui/tv.ts` and `project({ kits })`; `--sync` regenerates the tailwind-merge config. |
 | `hozu add component ui Button --json` | Add a component to a kit or a feature; `--client` adds the client module, the bundle in `app.ts` and the `@hozu/bundle` dependency. |
 | `hozu skill --agent both --json` | Refresh the installed authoring skill and agent instructions. |
+| `npx -p @hozu/cli@latest hozu migrate --dry-run` | Upgrade the app from 0.10.0 on: rewrite the source and raise `@hozu/*`; after installing, `hozu migrate` again checks the IR did not change, refreshes the skill and runs `hozu check`. It never writes the lock. |
 
 Use `hozu --help` for the options supported by your installed version. `--config` points to a different configuration file, and `build --out` chooses the output directory.
 
