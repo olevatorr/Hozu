@@ -52,8 +52,13 @@ for (const n of sizes.length ? sizes : [50, 200, 500]) {
   const validate = median3(bin('hozu'), ['validate', '--json'], dir)
   const views = join(dir, 'features/f1/views.ts')
   const original = readFileSync(views, 'utf8')
-  writeFileSync(views, original.replace("['Add']", "['Add item']"))
-  const edit = median3(bin('hozu'), ['check', '--json'], dir)
+  const edits = [1, 2, 3].map((n) => {
+    writeFileSync(views, original.replace("['Add']", `['Add item ${n}']`))
+    const run = timed(bin('hozu'), ['check', '--json'], dir)
+    if (run.status !== 0) throw new Error(`check after an edit failed\n${run.stdout}${run.stderr}`)
+    return run.ms
+  })
+  const edit = Math.round(median(edits))
   writeFileSync(views, original)
   const app = probe('app', dir)
   results.push({
@@ -80,6 +85,14 @@ if (smallest && largest && smallest !== largest) {
     `A7 largest page's fn bytes at ${largest.features} features: ${largest.pageFnBytes} (all modules ${largest.fnsBytes})`,
   )
   const growth = (largest.payload! / smallest.payload! - 1) * 100
+  const at500 = apps.find((r) => r.features === 500)
+  if (at500) {
+    const ok = at500.editCheckMs! <= 2600
+    console.log(
+      `${ok ? '✔' : '✖'} P12 hozu check after a one-line edit, 500 features: ${at500.editCheckMs} ms (budget ≤ 2600)`,
+    )
+    if (!ok) process.exitCode = 1
+  }
   console.log(
     `A8 /f0 payload at ${largest.features} vs ${smallest.features} features: ${growth.toFixed(1)} % (target ≤ 5 %)`,
   )

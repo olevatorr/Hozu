@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, relative } from 'node:path'
@@ -56,34 +56,52 @@ export function withHints(errors: TypeIssue[], root: string): TypeIssue[] {
   })
 }
 
-export async function runCheck(loaded: Loaded, cwd: string, updateLock: boolean): Promise<CheckOutput> {
-  const root = dirname(loaded.path)
-  const tsc = typescriptBin(loaded.path)
-  let types: CheckOutput['types']
-  if (!tsc) types = { ok: false, skipped: true, errors: [] }
-  else {
-    const run = spawnSync(process.execPath, [tsc, '--noEmit', '--pretty', 'false', '-p', root], {
-      cwd: root,
-      encoding: 'utf8',
+export interface TypeRun {
+  types: CheckOutput['types']
+  ms: number
+}
+
+/**
+ * Starts the type check in a child process, so it runs while the project loads and validates (ADR 0050 D).
+ * `--incremental` keeps its state in `.hozu/check/`: a run with no change since the last is fast.
+ */
+export function startTypes(config: string): Promise<TypeRun> {
+  const root = dirname(config)
+  const tsc = typescriptBin(config)
+  const started = performance.now()
+  if (!tsc) return Promise.resolve({ types: { ok: false, skipped: true, errors: [] }, ms: 0 })
+  const info = join(root, '.hozu/check/tsconfig.tsbuildinfo')
+  const args = [tsc, '--noEmit', '--pretty', 'false', '--incremental', '--tsBuildInfoFile', info, '-p', root]
+  return new Promise((done) => {
+    const child = spawn(process.execPath, args, { cwd: root })
+    let stdout = ''
+    let stderr = ''
+    child.stdout.on('data', (chunk) => (stdout += chunk))
+    child.stderr.on('data', (chunk) => (stderr += chunk))
+    child.on('close', (status) => {
+      const errors = withHints(typeErrors(`${stdout}\n${stderr}`, root), root)
+      const fallback = { file: '', line: 0, column: 0, code: 'tsc', message: (stderr || stdout).trim() }
+      done({
+        types: {
+          ok: status === 0,
+          skipped: false,
+          errors: status === 0 || errors.length ? errors : [fallback],
+        },
+        ms: performance.now() - started,
+      })
     })
-    const errors = withHints(typeErrors(`${run.stdout}\n${run.stderr}`, root), root)
-    types = {
-      ok: run.status === 0,
-      skipped: false,
-      errors:
-        run.status === 0 || errors.length
-          ? errors
-          : [
-              {
-                file: '',
-                line: 0,
-                column: 0,
-                code: 'tsc',
-                message: (run.stderr || run.stdout).trim(),
-              },
-            ],
-    }
-  }
+  })
+}
+
+export async function runCheck(
+  loaded: Loaded,
+  cwd: string,
+  updateLock: boolean,
+  typeRun: Promise<TypeRun> = startTypes(loaded.path),
+  loadMs = 0,
+): Promise<CheckOutput> {
+  const root = dirname(loaded.path)
+  const validating = performance.now()
   const validate = await runValidate(loaded, undefined, cwd, updateLock)
   const traced = loaded.build(true)
   const { diagnostics: app } = await inspectApp(loaded, traced)
@@ -95,5 +113,13 @@ export async function runCheck(loaded: Loaded, cwd: string, updateLock: boolean)
   for (const d of entry) validate.summary[d.severity === 'error' ? 'errors' : 'warnings']++
   if (entry.some((d) => d.severity === 'error')) validate.ok = false
   const overrides = overridesOf(componentUses(traced.ir, traced.sources, cwd))
-  return { ok: types.ok && validate.ok, types, validate, overrides }
+  const validateMs = performance.now() - validating
+  const { types, ms } = await typeRun
+  return {
+    ok: types.ok && validate.ok,
+    types,
+    validate,
+    overrides,
+    timings: { types: Math.round(ms), load: Math.round(loadMs), validate: Math.round(validateMs) },
+  }
 }

@@ -112,3 +112,16 @@ Per-feature fn modules (ADR 0050 C) and page-scoped payload routes (E), with the
 - **A7:** the page loads 237 B of `fn`s, its own feature's module (it was the whole app's 161.8 KB).
 - The site exports only the builtins module: its `fn`s run on the server.
 - P7 is 8,047 B (+20 B, the client now loads a list of modules).
+
+## After phase 4 (2026-10-03)
+The type check runs in a child process from the start of `hozu check`, in parallel with loading and validating
+(ADR 0050 D). Transformed sources are cached in `.hozu/transform/`, and `tsc --incremental` keeps its state in
+`.hozu/check/`.
+
+| Features | `hozu check`, no change | `hozu check` after a one-line edit (median of 3 different edits) |
+|---|---|---|
+| 50 | 0.39 s (was 0.83) | 0.41 s (was 0.83) |
+| 500 | 1.94 s (was 4.62) | **1.91 s** (was 4.61; P12 ≤ 2.6 s) |
+
+At 500 features, `hozu validate` alone drops from 2.26 s to 1.6 s with a warm transform cache. After an edit, the
+type check (about 2 s, TypeScript 7.0.2) is now the longest path; loading and validating finish inside it.

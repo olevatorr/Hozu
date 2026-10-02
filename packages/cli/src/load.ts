@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import { register } from 'node:module'
-import { resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { type BuildResult, buildProject, type ProjectIR } from '@hozu/core/ir'
 import { closest } from '@hozu/validator'
@@ -19,7 +19,9 @@ export async function load(config: string | undefined, cwd: string): Promise<Loa
       'Create hozu.config.ts exporting project({ ... }) as default, or pass --config <path>',
     ])
   let mod: { default?: unknown }
-  registerTransform()
+  registerTransform(
+    process.env.HOZU_TRANSFORM_CACHE === '0' ? undefined : join(dirname(path), '.hozu/transform'),
+  )
   try {
     mod = await import(pathToFileURL(path).href)
   } catch (error) {
@@ -52,8 +54,9 @@ export function requireFeature(ir: ProjectIR, id: string | undefined) {
 }
 
 let registered = false
-export function registerTransform() {
+/** Registers the transform once per process; `cache` keeps its output for the next run (ADR 0050 D). */
+export function registerTransform(cache?: string) {
   if (registered) return
   registered = true
-  register('@hozu/transform/hook', import.meta.url)
+  register('@hozu/transform/hook', import.meta.url, cache ? { data: { cache } } : undefined)
 }

@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
@@ -66,6 +66,8 @@ describe('the agent loop (ADR 0027)', () => {
     expect(check.code).toBe(0)
     expect(check.out.types).toEqual({ ok: true, skipped: false, errors: [] })
     expect(check.out.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect(Object.keys(check.out.timings).sort()).toEqual(['load', 'types', 'validate'])
+    expect(existsSync(join(app, '.hozu/check/tsconfig.tsbuildinfo'))).toBe(true)
 
     const home = await json('request', ['get', '/'], app)
     expect(home.out.steps[0]).toMatchObject({ method: 'GET', path: '/', status: 200, alerts: [] })

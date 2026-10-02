@@ -236,13 +236,35 @@
           "items": {
             "$ref": "#/definitions/CheckOverrides"
           }
+        },
+        "timings": {
+          "type": "object",
+          "properties": {
+            "types": {
+              "type": "number"
+            },
+            "load": {
+              "type": "number"
+            },
+            "validate": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "types",
+            "load",
+            "validate"
+          ],
+          "additionalProperties": false,
+          "description": "Milliseconds; the type check runs in parallel with loading and validating (ADR 0050 D)."
         }
       },
       "required": [
         "ok",
         "types",
         "validate",
-        "overrides"
+        "overrides",
+        "timings"
       ],
       "additionalProperties": false
     },

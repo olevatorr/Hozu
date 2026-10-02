@@ -1,4 +1,5 @@
-import { relative } from 'node:path'
+import { existsSync } from 'node:fs'
+import { relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { describeAdd, runAddFeature } from './commands/add.ts'
 import { describeAddComponent, runAddComponent } from './commands/add-component.ts'
@@ -11,7 +12,7 @@ import {
   runBrowse,
 } from './commands/browse.ts'
 import { runBuild } from './commands/build.ts'
-import { runCheck } from './commands/check.ts'
+import { runCheck, startTypes } from './commands/check.ts'
 import { describeComponent, describeComponentImpact } from './commands/components.ts'
 import { runDev } from './commands/dev.ts'
 import { runDocs } from './commands/docs.ts'
@@ -275,7 +276,11 @@ export async function main(
       out(asJson ? json(result) : describeRequests(result))
       return 0
     }
+    const configPath = resolve(cwd, values.config ?? 'hozu.config.ts')
+    const typeRun = command === 'check' && existsSync(configPath) ? startTypes(configPath) : undefined
+    const loading = performance.now()
     const loaded = await load(values.config, cwd)
+    const loadMs = performance.now() - loading
     if (command === 'dev') {
       await runDev(loaded, values['no-devtools'] === true ? false : (values.devtools ?? 'builder'), (line) =>
         out(`${line}\n`),
@@ -283,7 +288,7 @@ export async function main(
       return 0
     }
     if (command === 'check') {
-      const result = await runCheck(loaded, cwd, values['update-lock'] === true)
+      const result = await runCheck(loaded, cwd, values['update-lock'] === true, typeRun, loadMs)
       if (asJson) out(json(result))
       else {
         for (const e of result.types.errors) out(`${e.file}:${e.line}:${e.column}  ${e.code}  ${e.message}\n`)

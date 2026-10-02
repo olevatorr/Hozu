@@ -182,6 +182,8 @@ export interface CheckOutput {
   types: { ok: boolean; skipped: boolean; errors: TypeIssue[] }
   validate: ValidateOutput
   overrides: CheckOverrides[]
+  /** Milliseconds; the type check runs in parallel with loading and validating (ADR 0050 D). */
+  timings: { types: number; load: number; validate: number }
 }
 
 export interface RequestStep {
