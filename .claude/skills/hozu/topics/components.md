@@ -62,6 +62,6 @@ export default implement<typeof Map>(({ el, props, emit, signal }) => {
 
 ## Look them up
 - `hozu docs components` (this topic, then the app's list), `hozu inspect ui.Button` (variants, props, owned
-  classes, every use), `hozu impact ui.Button`.
+  classes, every use), `hozu why ui.Button`.
 - `hozu render ui.Button --variant tone=ghost --props '{"busy":true}' --slot icon=+` renders it alone: HTML, root
   class, owned properties, diagnostics.

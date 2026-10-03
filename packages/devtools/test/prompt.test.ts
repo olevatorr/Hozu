@@ -74,7 +74,7 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
         '- Scope: only this one',
         '- Mind: `ui.Button` is used in 6 places. For only this one, change `class` at this use; a property the component owns needs a trailing `!`.',
         '- Mind: its text is message `account.signIn` (`features/account/model.ts:99:3`), shared by 2 places; to change only this one, give it its own message.',
-        '- Locate: `hozu locate /features/account/views/Login/root/children/2/children/1`',
+        '- Locate: `hozu why /features/account/views/Login/root/children/2/children/1`',
         '',
         'Run `hozu check` after the edits.',
         '',
@@ -93,7 +93,7 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
     const md = requestMarkdown({ items: [item(base, 'Rounder', 'component')], context })
     expect(md).toContain('- Scope: every Button like this (6 places)')
     expect(md).toContain(
-      '- Mind: change the variant in `ui/button.ts:16:38`; all 6 uses change (`hozu impact ui.Button` lists them).',
+      '- Mind: change the variant in `ui/button.ts:16:38`; all 6 uses change (`hozu why ui.Button` lists them).',
     )
   })
 

@@ -175,7 +175,7 @@ The data cache keeps at most 10,000 entries by default: one million distinct key
 |---|---|
 | [`create-hozu`](https://www.npmjs.com/package/create-hozu) | Creates an app, set up for Claude Code or `AGENTS.md` agents |
 | [`@hozu/core`](https://www.npmjs.com/package/@hozu/core) | IR types and the builders you write apps with |
-| [`@hozu/cli`](https://www.npmjs.com/package/@hozu/cli) | `hozu check`, `get`, `browse`, `map`, `add`, `requests`, `locate`, `impact`, `plan`, `build`, `dev`, `serve`, `docs`, `skill` (all `--json`) |
+| [`@hozu/cli`](https://www.npmjs.com/package/@hozu/cli) | `hozu check`, `get`, `browse`, `map`, `add`, `requests`, `why`, `plan`, `build`, `dev`, `serve`, `docs`, `skill` (all `--json`) |
 | [`@hozu/transform`](https://www.npmjs.com/package/@hozu/transform) | Lowers the ordinary TypeScript in views and machines to the checked IR form |
 | [`@hozu/schema-zod`](https://www.npmjs.com/package/@hozu/schema-zod) | Zod schemas (the default adapter) |
 | [`@hozu/data`](https://www.npmjs.com/package/@hozu/data) | Resolvers, cache, tags, invalidation |

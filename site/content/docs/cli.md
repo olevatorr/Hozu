@@ -24,9 +24,7 @@ npx hozu get / --json
 | `hozu check --json` | Check TypeScript, framework rules and contracts. `--no-types` skips TypeScript; `--update-lock` accepts a behaviour change. (`hozu validate` was removed in 0.14.) |
 | `hozu map --json` | Show a compact app outline with source locations. |
 | `hozu inspect tasks --json` | Inspect a feature's canonical IR and summary, or a component (`ui.Button`) with every use. |
-| `hozu graph tasks --json` | Inspect state, effect and view relationships; ordinary output is Mermaid. |
-| `hozu explain tasks.idle --json` | Explain a state, its transitions, guards, effects and covering contracts. |
-| `hozu impact tasks.listItems --json` | Find what a declaration affects, or who uses a component (`ui.Button`). Use your actual declaration name. |
+| `hozu why tasks.listItems --json` | What a target is, where it is (file:line), what uses it and what it affects. The target is a declaration, a component (`ui.Button`), a state (`tasks.idle`: its transitions, guards and covering contracts), a view node (a DevTools id or IR pointer) or a page (`page:home`). `explain`, `impact` and `locate` still work in 0.14 with a deprecation, and are removed in 0.15; `graph` was removed. |
 | `hozu plan home --json` | Show the derived render plan for a named route. |
 | `hozu get /tasks --json` | Request one or more pages in-process without a server. |
 | `hozu env --json` | Every env variable: server or public, required, default, whether it is set now, its internal URL; `--example` writes `.env.example`. |

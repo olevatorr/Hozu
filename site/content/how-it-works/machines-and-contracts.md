@@ -74,4 +74,4 @@ The original interpreter and contract design is recorded in [ADR 0004](https://g
 
 A contract checks the machine against an expectation you wrote. It does not prove that the expectation matches the product requirement, that a database persists correctly, or that a button is easy to reach on a phone. Resolver tests, rendered-page checks and browser checks still have jobs to do.
 
-Use `hozu explain feature.state` when you need to understand the transitions and their covering contracts. Run `hozu check` after editing, then exercise the resulting page with `hozu get` or `hozu browse`. The useful outcome is a chain of evidence: an explicit requirement, a checked transition, and a visible result that agrees with both.
+Use `hozu why feature.state` when you need to understand the transitions and their covering contracts. Run `hozu check` after editing, then exercise the resulting page with `hozu get` or `hozu browse`. The useful outcome is a chain of evidence: an explicit requirement, a checked transition, and a visible result that agrees with both.

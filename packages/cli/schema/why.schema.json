@@ -1,0 +1,975 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/WhyOutput",
+  "definitions": {
+    "WhyOutput": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "target": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "const": "state"
+            },
+            "at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "state": {
+              "$ref": "#/definitions/ExplainOutput"
+            }
+          },
+          "required": [
+            "target",
+            "kind",
+            "at",
+            "state"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "target": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "declaration",
+                "component"
+              ]
+            },
+            "at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "impact": {
+              "$ref": "#/definitions/ImpactOutput"
+            }
+          },
+          "required": [
+            "target",
+            "kind",
+            "at",
+            "impact"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "target": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "node",
+                "page"
+              ]
+            },
+            "at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "node": {
+              "$ref": "#/definitions/LocateOutput"
+            }
+          },
+          "required": [
+            "target",
+            "kind",
+            "at",
+            "node"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "`hozu why` (ADR 0053 F): what the target is, where (file:line), and what `explain`, `impact` or `locate` says."
+    },
+    "ExplainOutput": {
+      "type": "object",
+      "properties": {
+        "feature": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "initial": {
+          "type": "boolean"
+        },
+        "final": {
+          "type": "boolean"
+        },
+        "invoke": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "effect": {
+                  "type": "string"
+                },
+                "input": {
+                  "type": "string"
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "runs": {
+                  "$ref": "#/definitions/Runs"
+                }
+              },
+              "required": [
+                "effect",
+                "input",
+                "errors",
+                "runs"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outgoing": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExplainTransition"
+          }
+        },
+        "incoming": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExplainTransition"
+          }
+        },
+        "sends": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExplainSend"
+          }
+        }
+      },
+      "required": [
+        "feature",
+        "state",
+        "initial",
+        "final",
+        "invoke",
+        "outgoing",
+        "incoming",
+        "sends"
+      ],
+      "additionalProperties": false
+    },
+    "Runs": {
+      "type": "string",
+      "enum": [
+        "server",
+        "browser",
+        "either"
+      ],
+      "description": "What an effect's implementation needs (ADR 0049): server secrets, browser credentials, or neither."
+    },
+    "ExplainTransition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "trigger": {
+          "type": "string"
+        },
+        "guard": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "assign": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "navigate": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "coveredBy": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to",
+        "trigger",
+        "guard",
+        "assign",
+        "navigate",
+        "coveredBy"
+      ],
+      "additionalProperties": false
+    },
+    "ExplainSend": {
+      "type": "object",
+      "properties": {
+        "view": {
+          "type": "string"
+        },
+        "node": {
+          "type": "string"
+        },
+        "event": {
+          "type": "string"
+        },
+        "handled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "view",
+        "node",
+        "event",
+        "handled"
+      ],
+      "additionalProperties": false
+    },
+    "ImpactOutput": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Impact"
+        },
+        {
+          "$ref": "#/definitions/ComponentImpact"
+        }
+      ]
+    },
+    "Impact": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/ImpactKind"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "queries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ImpactQuery"
+          }
+        },
+        "invalidatedBy": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "uses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ImpactUse"
+          }
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "runs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Runs"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where a query or mutation runs (ADR 0049); null for other symbols."
+        }
+      },
+      "required": [
+        "target",
+        "kind",
+        "tags",
+        "queries",
+        "invalidatedBy",
+        "uses",
+        "features",
+        "runs"
+      ],
+      "additionalProperties": false
+    },
+    "ImpactKind": {
+      "type": "string",
+      "enum": [
+        "event",
+        "query",
+        "mutation",
+        "tag",
+        "fn",
+        "view"
+      ]
+    },
+    "ImpactQuery": {
+      "type": "object",
+      "properties": {
+        "ref": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "precision": {
+          "type": "string",
+          "enum": [
+            "exact",
+            "param-dependent"
+          ]
+        }
+      },
+      "required": [
+        "ref",
+        "tag",
+        "precision"
+      ],
+      "additionalProperties": false
+    },
+    "ImpactUse": {
+      "type": "object",
+      "properties": {
+        "feature": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string"
+        },
+        "via": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "feature",
+        "at",
+        "via"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentImpact": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "component"
+        },
+        "owner": {
+          "$ref": "#/definitions/ComponentOwner"
+        },
+        "uses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ComponentUseSite"
+          }
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "target",
+        "kind",
+        "owner",
+        "uses",
+        "features"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentOwner": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "kit",
+            "feature"
+          ]
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentUseSite": {
+      "type": "object",
+      "properties": {
+        "feature": {
+          "type": "string"
+        },
+        "node": {
+          "type": "string"
+        },
+        "at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "variant": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "feature",
+        "node",
+        "at",
+        "variant",
+        "added",
+        "overrides"
+      ],
+      "additionalProperties": false
+    },
+    "LocateOutput": {
+      "$ref": "#/definitions/DevNode"
+    },
+    "DevNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "pointer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "element",
+            "component",
+            "text",
+            "query",
+            "when",
+            "if",
+            "list",
+            "html",
+            "embed",
+            "page",
+            "other"
+          ]
+        },
+        "tag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "feature": {
+                  "type": "string"
+                },
+                "view": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "feature",
+                "view"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "component": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "ref": {
+                  "type": "string"
+                },
+                "variant": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "declaration": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/DevLocation"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "uses": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "ref",
+                "variant",
+                "declaration",
+                "uses"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "location": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "classes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevTextSource"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "dom": {
+                "type": "string"
+              },
+              "event": {
+                "type": "string"
+              },
+              "transitions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/DevTransition"
+                }
+              }
+            },
+            "required": [
+              "dom",
+              "event",
+              "transitions"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DevCondition"
+          }
+        },
+        "machine": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "text": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "source": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/DevTextSource"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "text",
+              "source"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "excerpt": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "number"
+                },
+                "lines": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "start",
+                "lines"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "page": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevPage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "pointer",
+        "kind",
+        "tag",
+        "owner",
+        "component",
+        "location",
+        "classes",
+        "text",
+        "source",
+        "events",
+        "conditions",
+        "machine",
+        "children",
+        "excerpt",
+        "page"
+      ],
+      "additionalProperties": false
+    },
+    "DevLocation": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "line": {
+          "type": "number"
+        },
+        "column": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "file",
+        "line",
+        "column"
+      ],
+      "additionalProperties": false
+    },
+    "DevTextSource": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "literal",
+            "message",
+            "data",
+            "context",
+            "route",
+            "computed"
+          ]
+        },
+        "detail": {
+          "type": "string"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "uses": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "detail",
+        "location",
+        "uses"
+      ],
+      "additionalProperties": false
+    },
+    "DevTransition": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "guarded": {
+          "type": "boolean"
+        },
+        "navigates": {
+          "type": "boolean"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "guarded",
+        "navigates",
+        "location"
+      ],
+      "additionalProperties": false
+    },
+    "DevCondition": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "when",
+            "if",
+            "query",
+            "each"
+          ]
+        },
+        "detail": {
+          "type": "string"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "detail",
+        "location"
+      ],
+      "additionalProperties": false
+    },
+    "DevPage": {
+      "type": "object",
+      "properties": {
+        "route": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "routeLocation": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "views": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "head": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "image": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "website",
+                "article"
+              ]
+            },
+            "noindex": {
+              "type": "boolean"
+            },
+            "query": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "title",
+            "description",
+            "image",
+            "type",
+            "noindex",
+            "query"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "route",
+        "path",
+        "routeLocation",
+        "views",
+        "head"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

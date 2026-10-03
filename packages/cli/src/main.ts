@@ -19,7 +19,6 @@ import { runDev } from './commands/dev.ts'
 import { runDocs } from './commands/docs.ts'
 import { describeEnv, runEnv } from './commands/env.ts'
 import { describeExplain, runExplain } from './commands/explain.ts'
-import { mermaid, runGraph } from './commands/graph.ts'
 import { describeImpact, runImpact } from './commands/impact.ts'
 import { runInspect } from './commands/inspect.ts'
 import { describeAddKit, runAddKit } from './commands/kits.ts'
@@ -33,6 +32,7 @@ import { describeRequests, runRequests } from './commands/requests.ts'
 import { runServe } from './commands/serve.ts'
 import { runSkill } from './commands/skill.ts'
 import { featuresCreated, seedLockIsolated } from './commands/validate.ts'
+import { deprecated, describeWhy, runWhy } from './commands/why.ts'
 import { HozuCliError } from './errors.ts'
 import { load } from './load.ts'
 import { human, json } from './output.ts'
@@ -42,10 +42,10 @@ const usage = `Usage: hozu <command> [options]
 
 Commands:
   inspect <feature|id>      Print a feature's canonical IR and summary, or a component (ui.Button) with its uses
-  graph <feature>           Print a feature's state/effect/view graph (Mermaid, or --json)
-  explain <feature>.<state> Explain a state: transitions, guards, effects, covering contracts
-  locate <id|pointer>       Where a view node is: file:line, owner, component, conditions, events (DevTools ids)
-  impact <feature>.<symbol> What a query, mutation, tag, event, fn, view or component (ui.Button) affects
+  why <target>              What it is, where (file:line), what uses it and what it affects: a declaration
+                            (cart.addItem), a component (ui.Button), a state (cart.idle) with its transitions
+                            and contracts, a view node (DevTools id or IR pointer) or a page (page:home)
+  explain | locate | impact Deprecated: hozu why answers each (removed in 0.15)
   plan <route>              Derived render plan: regions, cache modes, hydration islands
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
   serve                     Start the app module (project({ app })) on PORT with adapter-node: what npm start runs
@@ -207,7 +207,7 @@ export async function main(
       'browse',
       'add',
       'inspect',
-      'graph',
+      'why',
       'explain',
       'locate',
       'impact',
@@ -223,6 +223,11 @@ export async function main(
       throw new HozuCliError('usage', 'hozu validate was replaced by hozu check (ADR 0053 B)', [
         'hozu check   # types, rules and contracts',
         'hozu check --no-types   # rules and contracts only',
+      ])
+    if (command === 'graph')
+      throw new HozuCliError('usage', 'hozu graph was removed in 0.14 (ADR 0053 F)', [
+        'hozu why <feature>.<state>   # a state, its transitions and contracts',
+        'hozu inspect <feature> --json   # the whole IR',
       ])
     if (command === 'post')
       throw new HozuCliError(
@@ -395,6 +400,13 @@ export async function main(
       out(asJson ? json(result) : describePlan(result))
       return 0
     }
+    if (command === 'why') {
+      const result = runWhy(loaded, target, cwd)
+      out(asJson ? json(result) : describeWhy(result))
+      return 0
+    }
+    if (command === 'impact' || command === 'locate' || command === 'explain')
+      process.stderr.write(deprecated(command, target))
     if (command === 'impact') {
       const result = runImpact(loaded, target, cwd)
       out(
@@ -425,9 +437,7 @@ export async function main(
       out(asJson ? json(result) : describeExplain(result))
       return 0
     }
-    const graph = runGraph(loaded, target)
-    out(asJson ? json(graph) : mermaid(graph))
-    return 0
+    return 2
   } catch (error) {
     const e =
       error instanceof HozuCliError

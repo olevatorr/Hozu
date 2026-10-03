@@ -14,9 +14,9 @@
   - `Mind`: where a plain edit goes wrong;
   - `Locate`: the IR pointer.
 - **Do it:**
-  - Edit at `Where`. When the lines moved, `npx hozu locate <pointer>` finds the node again.
+  - Edit at `Where`. When the lines moved, `npx hozu why <pointer>` finds the node again.
   - A component use: `class` at the use for this one (a property the component owns needs a trailing `!`), the
-    variant in the kit for every use (`npx hozu impact <ui.X>` lists them).
+    variant in the kit for every use (`npx hozu why <ui.X>` lists them).
   - Style: replace the named class with the given utility. An arbitrary value (`px-[22px]`) only when the line
     says no theme step fits. Never a `style` attribute.
   - A message text changes in every locale; text from data changes the data or its formatting; a behaviour

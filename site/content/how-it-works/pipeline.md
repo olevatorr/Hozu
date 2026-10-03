@@ -47,10 +47,10 @@ Start a change with `hozu map`. It lists routes, data declarations, events, stat
 ```sh
 pnpm exec hozu map
 pnpm exec hozu inspect items
-pnpm exec hozu explain items.idle
+pnpm exec hozu why items.idle
 pnpm exec hozu plan home
 ```
 
-`inspect` exposes a feature's summary and IR. `explain` describes a state's transitions, effects and covering contracts. `plan` shows the rendering decision for a named route, including islands and persistence opportunities. These commands answer different questions, so running all of them for every small edit adds unnecessary work.
+`inspect` exposes a feature's summary and IR. `why` describes a state's transitions, effects and covering contracts. `plan` shows the rendering decision for a named route, including islands and persistence opportunities. These commands answer different questions, so running all of them for every small edit adds unnecessary work.
 
 After an intended change, `hozu check` runs the combined verification. Use `hozu get` for rendered text, attributes and forms, and `hozu browse` for a flow: it runs the steps with and without JS, so one step list checks the native form path and the client together. The [CLI reference](/docs/cli) lists the commands, and [machines and contracts](/how-it-works/machines-and-contracts) explains the behavior checks in detail.

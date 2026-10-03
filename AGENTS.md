@@ -215,7 +215,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `when` and busy states, context conditions) previewed through the dev-only cookie `hozu-dev-state`; Workbench
   (an exact-size frame). A request is Markdown (Want / Where / Scope / Style / Text / Mind / Locate) copied or
   saved to `.hozu/requests/` (`.next` keeps numbers unique); `hozu requests [--full] [done <n> --result]`
-  (done removes the file), `hozu locate <id|pointer|page:route>`, `hozu docs requests`. Dev endpoints answer
+  (done removes the file), `hozu locate <id|pointer|page:route>` (0.14: `hozu why`), `hozu docs requests`. Dev endpoints answer
   loopback `Host`s only; `examples/studio` is the DevTools test bench.
 - 0.11 (ADR 0049): queries and mutations declare `runs: 'server' | 'browser' | 'either'` (default `'either'`, which
   needs `scope: 'public'`); `'browser'` / `'either'` are implemented in `feature({ fetch: new URL('./fetch.ts', …) })`
@@ -264,7 +264,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `pnpm bench:scale [sizes…]` — generated 50/200/500-feature apps (docs/benchmarks/0003); gates P12; not part of the gate
 - `pnpm bench:parity` — screenshot parity of `examples/showcase` against a Nuxt reference (docs/benchmarks/0002)
 - `pnpm schema` — regenerate the JSON Schemas from the IR / CLI types (a test fails if stale)
-- `pnpm --filter example-cart check|inspect|explain|plan|simulate|demo|client|serve|export`
+- `pnpm --filter example-cart check|inspect|why|plan|simulate|demo|client|serve|export`
 - `pnpm --filter example-blog check|plan|seo|serve|dev` — SEO audit against adapter-node
 - `pnpm --filter example-cart dev` — dev server with CSS hot swap
 - `pnpm --filter example-showcase check|serve|dev` — every presentation capability and client component library
@@ -275,8 +275,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `hozu check --update-lock` — accept behavior changes into `hozu.lock.json`; list the accepted `now:` lines
 
 ## CLI (agent-facing, all support --json)
-`hozu inspect <feature>` · `hozu check [--no-types]` · `hozu impact <feature>.<symbol>`
-`hozu plan <route>` · `hozu explain <feature>.<state>`
+`hozu inspect <feature>` · `hozu check [--no-types]` · `hozu why <feature>.<symbol|state> | <node> | page:<route>`
+`hozu plan <route>`
 
 ## Cost rules
 - Do not add CI workflows, scheduled jobs, or any paid/external service without explicit approval.

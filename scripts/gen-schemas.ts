@@ -17,8 +17,8 @@ export const targets = [
   },
   {
     source: 'packages/cli/src/contract.ts',
-    type: 'GraphOutput',
-    out: 'packages/cli/schema/graph.schema.json',
+    type: 'WhyOutput',
+    out: 'packages/cli/schema/why.schema.json',
   },
   {
     source: 'packages/cli/src/contract.ts',

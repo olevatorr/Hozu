@@ -143,7 +143,7 @@ function minds(item: RequestItem): string[] {
   }
   if (c && scope === 'component')
     out.push(
-      `change the variant in ${loc(c.declaration)}; all ${c.uses} uses change (\`hozu impact ${c.ref}\` lists them).`,
+      `change the variant in ${loc(c.declaration)}; all ${c.uses} uses change (\`hozu why ${c.ref}\` lists them).`,
     )
   else if (c && c.uses > 1)
     out.push(
@@ -217,7 +217,7 @@ export function requestMarkdown(request: HozuRequest, options: PromptOptions = {
           (c) => `- Shown when: ${c.kind === 'query' ? `query ${c.detail}` : c.detail} (${loc(c.location)})`,
         ),
       ...minds(item).map((m) => `- Mind: ${m}`),
-      ...(node.pointer ? [`- Locate: \`hozu locate ${node.pointer}\``] : []),
+      ...(node.pointer ? [`- Locate: \`hozu why ${node.pointer}\``] : []),
       '',
     )
   })

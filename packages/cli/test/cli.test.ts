@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { Ajv } from 'ajv'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { withHints } from '../src/commands/check.ts'
 import { main } from '../src/main.ts'
 import { human } from '../src/output.ts'
@@ -87,18 +87,37 @@ describe('A5 CLI contract', () => {
     })
   })
 
-  it('graph --json matches its schema; text mode is Mermaid', async () => {
-    const json = JSON.parse((await run(['graph', 'cart', '--json'])).stdout)
-    expectSchema('graph', json)
-    expect(json.edges).toContainEqual({
-      from: 'state:adding',
-      to: 'state:error',
-      kind: 'failed',
-      label: 'failed.OutOfStock',
-    })
-    const text = (await run(['graph', 'cart'])).stdout
-    expect(text).toMatch(/^stateDiagram-v2\n {2}\[\*\] --> idle\n/)
-    expect(text).toContain('placed --> [*]')
+  it('why answers for a state, a declaration and a page, with file:line; graph is gone', async () => {
+    const state = JSON.parse((await run(['why', 'cart.adding', '--json'])).stdout)
+    expectSchema('why', state)
+    expect(state).toMatchObject({ kind: 'state', at: expect.stringMatching(/^features\/cart\/.+\.ts:\d+$/) })
+    expect(state.state.outgoing).toContainEqual(
+      expect.objectContaining({ trigger: 'failed.OutOfStock', to: 'error' }),
+    )
+    const decl = JSON.parse((await run(['why', 'cart.addItem', '--json'])).stdout)
+    expectSchema('why', decl)
+    expect(decl).toMatchObject({ kind: 'declaration', impact: { kind: 'mutation' } })
+    expect(decl.at).toMatch(/^features\/cart\/.+\.ts:\d+$/)
+    const page = JSON.parse((await run(['why', 'page:home', '--json'])).stdout)
+    expect(page).toMatchObject({ kind: 'page', node: { id: 'page:home' } })
+    const text = (await run(['why', 'cart.addItem'])).stdout
+    expect(text.split('\n')[0]).toMatch(/^cart\.addItem {2}declaration {2}at features\/cart\//)
+    const gone = await run(['graph', 'cart', '--json'])
+    expect([gone.code, JSON.parse(gone.stdout).error.message]).toEqual([
+      2,
+      'hozu graph was removed in 0.14 (ADR 0053 F)',
+    ])
+  })
+
+  it('impact, explain and locate still answer, with a deprecation on stderr', async () => {
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+    const r = await run(['explain', 'cart.idle', '--json'])
+    const written = stderr.mock.calls.map((c) => c[0])
+    stderr.mockRestore()
+    expect([r.code, JSON.parse(r.stdout).state]).toEqual([0, 'idle'])
+    expect(written).toEqual([
+      'hozu explain is deprecated and removed in 0.15: use hozu why cart.idle (ADR 0053 F)\n',
+    ])
   })
 
   it('explain --json matches its schema and lists covering contracts', async () => {

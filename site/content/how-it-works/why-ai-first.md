@@ -57,6 +57,6 @@ A widget-heavy task (a map, a chart, animation and a WebGL globe) then showed th
 
 ## Start with the questions you need answered
 
-An agent can use `hozu map` to locate the relevant declarations, `hozu inspect` to examine a feature and `hozu explain` to understand a state. `hozu check` combines type checking, rules and contracts. `hozu get` then reads rendered pages, and `hozu browse` runs a flow with and without JavaScript, both without starting a server.
+An agent can use `hozu map` to locate the relevant declarations, `hozu inspect` to examine a feature and `hozu why` to understand a state. `hozu check` combines type checking, rules and contracts. `hozu get` then reads rendered pages, and `hozu browse` runs a flow with and without JavaScript, both without starting a server.
 
 That workflow is the practical meaning of AI-first here: expose decisions, make their relationships inspectable and return actionable failures. Continue with [the pipeline](/how-it-works/pipeline), or use the shorter [agent workflow guide](/docs/ai-agents) to try it in an application.

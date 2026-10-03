@@ -5,8 +5,7 @@
   "scripts": {
     "check": "hozu check",
     "inspect": "hozu inspect cart",
-    "graph": "hozu graph cart",
-    "explain": "hozu explain cart.idle",
+    "why": "hozu why cart.idle",
     "simulate": "node simulate.ts",
     "demo": "node demo.ts",
     "plan": "hozu plan home",

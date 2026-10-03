@@ -81,40 +81,6 @@ export interface InspectComponentOutput {
 
 export type InspectOutput = InspectFeatureOutput | InspectComponentOutput
 
-export type GraphNodeKind = 'state' | 'effect' | 'event' | 'feature' | 'view' | 'query'
-
-export type GraphEdgeKind =
-  | 'on'
-  | 'done'
-  | 'failed'
-  | 'after'
-  | 'invoke'
-  | 'import'
-  | 'send'
-  | 'reads'
-  | 'embeds'
-
-export interface GraphNode {
-  id: string
-  kind: GraphNodeKind
-  label: string
-  initial: boolean
-  final: boolean
-}
-
-export interface GraphEdge {
-  from: string
-  to: string
-  kind: GraphEdgeKind
-  label: string
-}
-
-export interface GraphOutput {
-  feature: string
-  nodes: GraphNode[]
-  edges: GraphEdge[]
-}
-
 export interface ExplainTransition {
   id: string
   from: string
@@ -153,6 +119,12 @@ export interface ComponentImpact {
 }
 
 export type ImpactOutput = Impact | ComponentImpact
+
+/** `hozu why` (ADR 0053 F): what the target is, where (file:line), and what `explain`, `impact` or `locate` says. */
+export type WhyOutput =
+  | { target: string; kind: 'state'; at: string | null; state: ExplainOutput }
+  | { target: string; kind: 'declaration' | 'component'; at: string | null; impact: ImpactOutput }
+  | { target: string; kind: 'node' | 'page'; at: string | null; node: LocateOutput }
 
 export type PlanOutput = RoutePlan
 
