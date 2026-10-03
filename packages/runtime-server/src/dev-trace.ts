@@ -50,28 +50,51 @@ export function traceFetch() {
       error: null,
     }
     const started = performance.now()
-    try {
-      const response = await original(request)
-      entry.status = response.status
-      entry.responseHeaders = [...response.headers]
-      entry.responseBody = textual(response.headers.get('content-type'))
-        ? cut(
-            await response
-              .clone()
-              .text()
-              .catch(() => null),
-          )
-        : `(${response.headers.get('content-type')})`
-      return response
-    } catch (error) {
-      entry.error = error instanceof Error ? error.message : String(error)
-      throw error
-    } finally {
+    const done = () => {
       entry.ms = Math.round(performance.now() - started)
       entries.push(entry)
       if (entries.length > LIMIT) entries.shift()
     }
+    let response: Response
+    try {
+      response = await original(request)
+    } catch (error) {
+      entry.error = error instanceof Error ? error.message : String(error)
+      done()
+      throw error
+    }
+    entry.status = response.status
+    entry.responseHeaders = [...response.headers]
+    done()
+    void capture(response.clone()).then((body) => {
+      entry.responseBody = body
+    })
+    return response
   }
+}
+
+/** At most BODY characters of a textual body, read beside the caller; a stream is never waited for. */
+async function capture(response: Response): Promise<string | null> {
+  const type = response.headers.get('content-type')
+  if (!textual(type) || /event-stream/.test(type ?? '')) {
+    void response.body?.cancel().catch(() => {})
+    return `(${type ?? 'body'})`
+  }
+  const reader = response.body?.getReader()
+  if (!reader) return null
+  const decoder = new TextDecoder()
+  let text = ''
+  try {
+    while (text.length <= BODY) {
+      const { done, value } = await reader.read()
+      if (done) break
+      text += decoder.decode(value, { stream: true })
+    }
+  } catch {
+    return cut(text) || null
+  }
+  void reader.cancel().catch(() => {})
+  return cut(text)
 }
 
 /** The requests after `after` (an id), and the last id so far. */

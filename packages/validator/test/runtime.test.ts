@@ -221,7 +221,7 @@ describe('connect: the origins browser-run effects call (ADR 0051)', () => {
   const search = query({ input: z.object({}), output: Repos, scope: 'public', freshness: 'request' })
   const calls = fetchFile(
     'calls.ts',
-    "export const search = implement(async () => (await fetch('https://api.github.com/search?q=x')).json())\n// see http://localhost:8080/docs\n",
+    "export const search = implement(async () => (await fetch('https://api.github.com/search?q=x')).json())\nconst local = 'http://localhost:8080/docs'\n// docs: https://docs.github.com/rest\n/* https://example.com */\n",
   )
   const of = (codes: (readonly [string, string])[], code: string) =>
     codes.filter(([c]) => c === code).map(([, m]) => m)

@@ -27,6 +27,8 @@ project({
 - **`files`** are read by `hozu dev`, `serve`, `check`, `get`, `call`, `browse`, `build` and `env`. On the edge
   (`createHandler`) and on hosting platforms, set the variables in the platform. Keep `.env` and `.env.local` out of
   git.
+- The files are read after `hozu.config.ts` is imported: a value the config itself reads at import time (rare)
+  comes from the shell. Resolvers, views and fetch.ts read the parsed env and see the files.
 - **`npx hozu env`** lists every variable: its side, whether it is required, its default, whether it is set now,
   and its internal mapping. `--example` writes `.env.example`.
 - **Reserved by Hozu:**

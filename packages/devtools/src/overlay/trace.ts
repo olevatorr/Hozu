@@ -24,8 +24,9 @@ function record(win: Window) {
   const original = win.fetch.bind(win)
   win.fetch = async (input: Request | string | URL, init?: RequestInit) => {
     const into = recording
+    if (!into) return original(input, init)
     const request = new Request(input, init)
-    if (!into || new URL(request.url).pathname.startsWith('/_hozu/dev/')) return original(request)
+    if (new URL(request.url).pathname.startsWith('/_hozu/dev/')) return original(request)
     const entry: Traced = {
       id: next++,
       side: 'browser',
@@ -45,22 +46,26 @@ function record(win: Window) {
       error: null,
     }
     const started = performance.now()
+    into.push(entry)
     try {
       const response = await original(request)
       entry.status = response.status
       entry.responseHeaders = [...response.headers]
-      entry.responseBody = await response
-        .clone()
-        .text()
-        .then((t) => (t.length > 8_000 ? `${t.slice(0, 8_000)}…` : t))
-        .catch(() => null)
+      entry.ms = Math.round(performance.now() - started)
+      const type = response.headers.get('content-type') ?? ''
+      if (!/event-stream/.test(type))
+        void response
+          .clone()
+          .text()
+          .then((t) => {
+            entry.responseBody = t.length > 8_000 ? `${t.slice(0, 8_000)}…` : t
+          })
+          .catch(() => {})
       return response
     } catch (error) {
       entry.error = error instanceof Error ? error.message : String(error)
-      throw error
-    } finally {
       entry.ms = Math.round(performance.now() - started)
-      into.push(entry)
+      throw error
     }
   }
 }

@@ -156,12 +156,12 @@ export function exportNames(source: string): string[] {
 }
 
 /** The origins of the absolute URLs written in a fetch module. */
-export const literalOrigins = (source: string): string[] =>
-  [
-    ...new Set(
-      [...source.matchAll(/\bhttps?:\/\/[A-Za-z0-9.-]+(?::\d+)?/g)].map((m) => new URL(m[0]).origin),
-    ),
+export const literalOrigins = (source: string): string[] => {
+  const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1')
+  return [
+    ...new Set([...code.matchAll(/\bhttps?:\/\/[A-Za-z0-9.-]+(?::\d+)?/g)].map((m) => new URL(m[0]).origin)),
   ].sort()
+}
 
 function connectOf(scope: FeatureScope, list: readonly unknown[]): ConnectIR[] {
   const out: ConnectIR[] = []

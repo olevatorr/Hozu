@@ -89,4 +89,24 @@ describe('DevTools API endpoints (ADR 0050 G)', () => {
     const remote = await handler.fetch(new Request('http://10.0.0.5/_hozu/dev/session'))
     expect(remote.status).toBe(403)
   })
+
+  it('never waits for a streamed response while it records one', async () => {
+    const { createServer } = await import('node:http')
+    const server = createServer((_, res) => {
+      res.writeHead(200, { 'content-type': 'text/event-stream' })
+      res.write('data: 1\n\n')
+    })
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
+    try {
+      const { port } = server.address() as { port: number }
+      const answered = await Promise.race([
+        fetch(`http://127.0.0.1:${port}/`).then((r) => r.status),
+        new Promise((r) => setTimeout(() => r('waited'), 2000)),
+      ])
+      expect(answered).toBe(200)
+    } finally {
+      server.closeAllConnections()
+      server.close()
+    }
+  })
 })

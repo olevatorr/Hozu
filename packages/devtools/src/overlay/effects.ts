@@ -217,6 +217,16 @@ async function send(
   }
   try {
     const response = await win.fetch(url, { method: endpoint.method, headers, body, redirect: 'manual' })
+    if (response.type === 'opaqueredirect')
+      return {
+        ...base,
+        ok: true,
+        error: null,
+        value: 'A redirect (the browser does not show where to; open the endpoint URL to follow it)',
+        ms: Math.round(performance.now() - started),
+        status: 0,
+        headers: [],
+      }
     const text = await response.text()
     let value: Json = text
     try {
@@ -725,7 +735,7 @@ export function drawer(host: DrawerHost) {
     const effect = list?.find((e) => e.ref === r.ref)
     const status =
       r.kind === 'endpoint'
-        ? `${r.status ?? 'No answer'}${r.ok ? '' : ` · ${r.error}`}`
+        ? `${r.status === 0 ? 'Redirect' : (r.status ?? 'No answer')}${r.ok ? '' : ` · ${r.error}`}`
         : r.ok
           ? 'OK'
           : r.error === 'Unexpected'
