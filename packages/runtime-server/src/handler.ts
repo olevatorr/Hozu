@@ -15,6 +15,7 @@ import {
   type Json,
   join,
   type Manifest,
+  pageEffects,
   pageTree,
   publicPath,
   resolveSource,
@@ -821,13 +822,18 @@ function handlerFor({
       (path === '/_hozu/dev/node' ||
         path === '/_hozu/dev/page' ||
         path === '/_hozu/dev/styles' ||
-        path === '/_hozu/dev/tree')
+        path === '/_hozu/dev/tree' ||
+        path === '/_hozu/dev/effects')
     ) {
       if (!/^(127\.0\.0\.1|localhost|\[::1\])$/.test(url.hostname))
         return new Response('Hozu DevTools answers only this machine', { status: 403 })
-      if (path === '/_hozu/dev/tree') {
+      if (path === '/_hozu/dev/tree' || path === '/_hozu/dev/effects') {
         const found = match(split(url.searchParams.get('path') ?? '/').rest)
-        const tree = found ? pageTree(build, found.route) : null
+        const tree = found
+          ? path === '/_hozu/dev/tree'
+            ? pageTree(build, found.route)
+            : pageEffects(build, found.route)
+          : null
         return new Response(JSON.stringify(tree), {
           status: tree ? 200 : 404,
           headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },

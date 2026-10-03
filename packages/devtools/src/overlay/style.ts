@@ -273,6 +273,18 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .state { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; font: 13px/1.35 var(--sans); }
 .state > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .state > button { flex: none; white-space: nowrap; }
+.effect { border-top: 1px solid var(--line); padding: 8px 0; }
+.effect summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; cursor: pointer; font: 13px/1.35 var(--sans); }
+.effect .meta { margin: 6px 0; font: 11.5px/1.4 var(--mono); color: var(--mute); overflow-wrap: anywhere; }
+.effect .fields { display: grid; gap: 6px; margin: 8px 0; }
+.effect .field { display: grid; grid-template-columns: minmax(0, 7rem) 1fr; align-items: center; gap: 8px; font: 12px/1.3 var(--mono); }
+.effect .json { width: 100%; margin: 8px 0; font: 12px/1.4 var(--mono); }
+.effect .json[aria-invalid] { outline: 1px solid var(--accent); }
+.effect .actions { display: flex; gap: 8px; }
+.result { margin-top: 8px; border-radius: 8px; padding: 8px; background: rgba(var(--tint), 0.05); }
+.result.ok .label { color: var(--ok); }
+.result.bad .label { color: var(--accent); }
+.result .value { max-height: 14rem; overflow: auto; margin: 6px 0 0; font: 11.5px/1.4 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 .state + .state { border-top: 1px solid var(--line); }
 .state.on span { color: var(--accent); }
 .dock .previewing {

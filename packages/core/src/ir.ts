@@ -2,6 +2,7 @@ export type { IsolatedUse } from './build/isolate.ts'
 export { componentProject } from './build/isolate.ts'
 export {
   type DevCondition,
+  type DevEffect,
   type DevLocation,
   type DevNode,
   type DevOptions,
@@ -13,6 +14,7 @@ export {
   type DevTransition,
   type DevTreeNode,
   locateNode,
+  pageEffects,
   pageTree,
 } from './build/locate.ts'
 export type { ImageSet, ImageVariant, Manifest, ManifestAsset } from './build/manifest.ts'

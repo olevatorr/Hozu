@@ -1,5 +1,5 @@
 import type { SourceLoc } from '../ir/diagnostic.ts'
-import type { GuardExpr, Json, JsonSchema, ValueExpr, ViewNode } from '../ir/types.ts'
+import type { Freshness, GuardExpr, Json, JsonSchema, Runs, ValueExpr, ViewNode } from '../ir/types.ts'
 import type { BuildResult } from './project.ts'
 
 export interface DevOptions {
@@ -486,6 +486,13 @@ const valueAt = (v: Json, path: string[]): Json | undefined =>
     v,
   )
 
+/** Marks a query that does not run on the server (ADR 0049, 0050 H). */
+const runsLabel = (build: BuildResult, ref: string) => {
+  const dot = ref.indexOf('.')
+  const runs = build.ir.features[ref.slice(0, dot)]?.queries[ref.slice(dot + 1)]?.runs
+  return runs && runs !== 'server' ? ` · runs: ${runs}` : ''
+}
+
 export function pageTree(build: BuildResult, route: string): DevPageTree | null {
   const page = build.ir.pages[route]
   if (!page) return null
@@ -555,7 +562,7 @@ export function pageTree(build: BuildResult, route: string): DevPageTree | null 
           : n.kind === 'text'
             ? describe(n.value).slice(0, 40)
             : n.kind === 'query'
-              ? `query ${n.query}`
+              ? `query ${n.query}${runsLabel(build, n.query)}`
               : n.kind === 'when'
                 ? `while ${n.states.join(' | ')}`
                 : n.kind === 'each'
@@ -583,4 +590,69 @@ export function pageTree(build: BuildResult, route: string): DevPageTree | null 
     return [tree]
   })
   return { route, views, scenarios }
+}
+
+/** A query or mutation a page uses, for the DevTools API panel (ADR 0050 G). */
+export interface DevEffect {
+  ref: string
+  kind: 'query' | 'mutation'
+  label: string
+  runs: Runs
+  scope: 'public' | 'user'
+  freshness: string
+  tags: string[]
+  invalidates: string[]
+  input: JsonSchema
+  errors: string[]
+  /** The view nodes that read a query, or the machine states that start the effect. */
+  usedBy: string[]
+}
+
+const freshnessText = (f: Freshness) => ('seconds' in f ? `${f.kind} ${f.seconds}s` : f.kind)
+
+/** The queries a page's views read and the effects its machines start, with their input schemas. */
+export function pageEffects(build: BuildResult, route: string): DevEffect[] | null {
+  const page = build.ir.pages[route]
+  if (!page) return null
+  const uses = new Map<string, string[]>()
+  const use = (ref: string, by: string) => uses.set(ref, [...(uses.get(ref) ?? []), by])
+  const machines = new Set<string>()
+  for (const ref of page.views) {
+    const [feature, view] = ref.split('.') as [string, string]
+    const v = build.ir.features[feature]?.views?.[view]
+    if (!v) continue
+    if (v.machine) machines.add(v.machine)
+    const walk = (n: ViewNode) => {
+      if (n.kind === 'query') use(n.query, n.id)
+      for (const c of childrenOf(n)) walk(c)
+    }
+    walk(v.root)
+  }
+  for (const feature of machines)
+    for (const [state, s] of Object.entries(build.ir.features[feature]?.machine?.states ?? {}))
+      if (s.invoke) use(s.invoke.effect, `${feature}.${state}`)
+  return [...uses].flatMap(([ref, usedBy]) => {
+    const dot = ref.indexOf('.')
+    const f = build.ir.features[ref.slice(0, dot)]
+    const sym = ref.slice(dot + 1)
+    const q = f?.queries[sym]
+    const m = f?.mutations[sym]
+    const e = q ?? m
+    if (!f || !e) return []
+    return [
+      {
+        ref,
+        kind: q ? ('query' as const) : ('mutation' as const),
+        label: spaced(sym),
+        runs: e.runs,
+        scope: q ? q.scope : 'user',
+        freshness: q ? freshnessText(q.freshness) : 'request',
+        tags: q ? q.tags.map((t) => t.tag) : [],
+        invalidates: m ? m.invalidates.map((t) => t.tag) : [],
+        input: (f.schemas[e.input] ?? {}) as JsonSchema,
+        errors: [...Object.keys(e.errors), ...(m ? ['Invalid'] : []), 'Unexpected'],
+        usedBy: [...new Set(usedBy)],
+      },
+    ]
+  })
 }

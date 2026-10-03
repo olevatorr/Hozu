@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { exportStatic } from '@hozu/adapter-static'
-import { buildProject } from '@hozu/core/ir'
+import { buildProject, pageEffects, pageTree } from '@hozu/core/ir'
 import { resolvers } from '@hozu/data'
 import { hydrate } from '@hozu/runtime-client'
 import { Window } from 'happy-dom'
@@ -96,6 +96,20 @@ describe('examples/stars on a static host (ADR 0049)', () => {
       'DELETE https://api.github.com/user/starred/hozu/hozu',
       'GET https://api.github.com/user/starred?per_page=50',
       'GET https://api.github.com/search/repositories?per_page=10&q=tenon',
+    ])
+  })
+
+  it('marks the browser-run queries in DevTools Layers and the API panel (ADR 0050 G, H)', () => {
+    const build = buildProject(project, { sources: false })
+    const labels = JSON.stringify(pageTree(build, 'home'))
+    expect(labels).toContain('query stars.starred · runs: browser')
+    expect(labels).toContain('query stars.searchRepos · runs: either')
+    expect(pageEffects(build, 'home')!.map((e) => [e.ref, e.runs])).toEqual([
+      ['stars.starred', 'browser'],
+      ['stars.searchRepos', 'either'],
+      ['stars.saveToken', 'browser'],
+      ['stars.star', 'browser'],
+      ['stars.unstar', 'browser'],
     ])
   })
 })
