@@ -1,0 +1,452 @@
+{
+  "features": {
+    "lab": {
+      "addingNote/invoke/done/0": {
+        "behavior": "918a88d1f0247c6c",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "note"
+              ],
+              "value": {
+                "literal": ""
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "addingNote --done addNote--> idle · note := \"\""
+      },
+      "addingNote/invoke/failed/Unexpected/0": {
+        "behavior": "a6140ecaaf293895",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "addingNote --failed addNote.Unexpected--> idle · error := error.message"
+      },
+      "clearingDrafts/invoke/done/0": {
+        "behavior": "1789ba199982a709",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "clearingDrafts --done clearDrafts--> idle"
+      },
+      "clearingDrafts/invoke/failed/Unexpected/0": {
+        "behavior": "43033904d14fb08f",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "clearingDrafts --failed clearDrafts.Unexpected--> idle · error := error.message"
+      },
+      "creatingPost/invoke/done/0": {
+        "behavior": "65d3cfef5fd48818",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "title"
+              ],
+              "value": {
+                "literal": ""
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "creatingPost --done createPost--> idle · title := \"\""
+      },
+      "creatingPost/invoke/failed/Unavailable/0": {
+        "behavior": "a59f0ed88bae607a",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": "The posts API is unavailable"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "creatingPost --failed createPost.Unavailable--> idle · error := \"The posts API is unavailable\""
+      },
+      "creatingPost/invoke/failed/Unexpected/0": {
+        "behavior": "eb1a8e9e0dfce8c0",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "creatingPost --failed createPost.Unexpected--> idle · error := error.message"
+      },
+      "idle/on/lab.AddNote/0": {
+        "behavior": "8ba52c705cd21f68",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "note"
+              ],
+              "value": {
+                "path": [
+                  "text"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "lab.addNote",
+            "final": false,
+            "input": {
+              "object": {
+                "text": {
+                  "path": [
+                    "note"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "addingNote",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --AddNote--> addingNote · note := event.text, error := null · invoke addNote({ text: ctx.note })"
+      },
+      "idle/on/lab.ClearDrafts/0": {
+        "behavior": "d3eb4dc5c59603a0",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": "lab.clearDrafts",
+            "final": false,
+            "input": {
+              "literal": {}
+            },
+            "state": "clearingDrafts",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --ClearDrafts--> clearingDrafts · invoke clearDrafts({})"
+      },
+      "idle/on/lab.CreatePost/0": {
+        "behavior": "2a0e9bdfb80df0c0",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "title"
+              ],
+              "value": {
+                "path": [
+                  "title"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "lab.createPost",
+            "final": false,
+            "input": {
+              "object": {
+                "title": {
+                  "path": [
+                    "title"
+                  ],
+                  "ref": "context"
+                },
+                "userId": {
+                  "path": [
+                    "user"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "creatingPost",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --CreatePost--> creatingPost · title := event.title, error := null · invoke createPost({ userId: ctx.user, title: ctx.title })"
+      },
+      "idle/on/lab.SaveDraft/0": {
+        "behavior": "3b98b1aacaad12cb",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "path": [
+                  "text"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "lab.saveDraft",
+            "final": false,
+            "input": {
+              "object": {
+                "text": {
+                  "path": [
+                    "draft"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "savingDraft",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --SaveDraft--> savingDraft · draft := event.text, error := null · invoke saveDraft({ text: ctx.draft })"
+      },
+      "savingDraft/invoke/done/0": {
+        "behavior": "96f6962ab006141b",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "draft"
+              ],
+              "value": {
+                "literal": ""
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "savingDraft --done saveDraft--> idle · draft := \"\""
+      },
+      "savingDraft/invoke/failed/Unexpected/0": {
+        "behavior": "5ccc721e460704f9",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "savingDraft --failed saveDraft.Unexpected--> idle · error := error.message"
+      }
+    }
+  },
+  "pages": {
+    "endpoints": {},
+    "head": {},
+    "redirects": {}
+  },
+  "version": 2
+}

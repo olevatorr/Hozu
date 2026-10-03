@@ -274,6 +274,7 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .state > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .state > button { flex: none; white-space: nowrap; }
 .effect { border-top: 1px solid var(--line); padding: 8px 0; }
+.effect + .label, .plain + .label { margin-top: 18px; }
 .effect summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; cursor: pointer; font: 13px/1.35 var(--sans); }
 .effect .meta { margin: 6px 0; font: 11.5px/1.4 var(--mono); color: var(--mute); overflow-wrap: anywhere; }
 .effect .fields { display: grid; gap: 6px; margin: 8px 0; }

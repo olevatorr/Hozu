@@ -82,6 +82,11 @@ export function testApp(
               usedClientComponents(rest.build.ir).map((ref) => [ref, `/_hozu/c/${ref}.js`]),
             ),
             files: {},
+            fetches: Object.fromEntries(
+              Object.values(rest.build.ir.features)
+                .filter((f) => f.fetch)
+                .map((f) => [f.id, `/_hozu/c/fetch-${f.id}.js`]),
+            ),
           },
         },
   )
