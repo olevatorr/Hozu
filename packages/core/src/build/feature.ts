@@ -156,8 +156,11 @@ export function exportNames(source: string): string[] {
 }
 
 /** The origins of the absolute URLs written in a fetch module. */
+const withoutComments = (source: string) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1')
+
 export const literalOrigins = (source: string): string[] => {
-  const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1')
+  const code = withoutComments(source)
   return [
     ...new Set([...code.matchAll(/\bhttps?:\/\/[A-Za-z0-9.-]+(?::\d+)?/g)].map((m) => new URL(m[0]).origin)),
   ].sort()
@@ -222,6 +225,12 @@ function fetchOf(
   const text = fs.readFileSync(file, 'utf8')
   found.exports = exportNames(text)
   found.origins = literalOrigins(text)
+  scope.project.fetchScans.set(scope.id, {
+    origins: found.origins,
+    env: [
+      ...new Set([...withoutComments(text).matchAll(/\benv\.([A-Za-z_$][\w$]*)/g)].map((m) => m[1]!)),
+    ].sort(),
+  })
   return { sourceHash: sha256(text).slice(0, 16) }
 }
 
@@ -367,20 +376,6 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     fetch: fetchOf(scope, config.fetch, fetched),
     connect: connectOf(scope, config.connect),
   }
-  const declared = new Set(ir.connect.flatMap((c) => ('origin' in c ? [c.origin] : [])))
-  const missing = fetched.origins.filter((o) => !declared.has(o))
-  if (missing.length)
-    scope.report(
-      'HZ083',
-      scope.at('fetch'),
-      `fetch.ts of ${id} calls ${missing.join(', ')} from the browser, but connect does not list ${missing.length === 1 ? 'it' : 'them'}`,
-      "The page's CSP allows the browser to connect only to its own origin and the origins features declare in connect; an undeclared call fails in the browser (ADR 0051).",
-      {
-        summary: `Add ${missing.length === 1 ? 'it' : 'them'} to connect in feature.ts`,
-        snippet: `connect: [${[...ir.connect.map((c) => ('origin' in c ? `'${c.origin}'` : `{ env: '${c.env}' }`)), ...missing.map((o) => `'${o}'`)].join(', ')}]`,
-        patch: null,
-      },
-    )
   const effects = [
     ...Object.entries(ir.queries).map(([sym, e]) => [sym, 'queries', e.runs] as const),
     ...Object.entries(ir.mutations).map(([sym, e]) => [sym, 'mutations', e.runs] as const),

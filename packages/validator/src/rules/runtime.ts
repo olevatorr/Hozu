@@ -127,7 +127,7 @@ export function envConfig(ctx: Ctx) {
         `The public env variable ${name} looks like a secret, and public values are sent to the browser`,
         'Public env is written into pages and island payloads and baked into a static export; anyone can read it.',
         {
-          summary: `Move ${name} to env.server (resolvers read it as ctx.env.${name}), or rename it PUBLIC_${name} if it is meant to be public`,
+          summary: `Move ${name} to env.server; resolvers read it as ctx.env.${name}. Keep it public only if the value is made to be published (a publishable key), and then name it PUBLIC_${name}`,
           snippet: `server: z.object({ ${name}: z.string() })`,
           patch: null,
         },

@@ -162,7 +162,7 @@ export async function inspectApp(
         'The client code of client components is bundled separately; without it the server refuses to start.',
         {
           summary:
-            "Pass components: bundleComponents to app() (import { bundleComponents } from '@hozu/bundle')",
+            "Install @hozu/bundle (npm install @hozu/bundle) and pass components: bundleComponents to app() (import { bundleComponents } from '@hozu/bundle')",
           snippet: 'components: bundleComponents,',
           patch: null,
         },
@@ -183,7 +183,7 @@ export async function inspectApp(
         'fetch.ts is bundled for the browser with the client components (ADR 0049); without the bundle the server refuses to start.',
         {
           summary:
-            "Pass components: bundleComponents to app() (import { bundleComponents } from '@hozu/bundle')",
+            "Install @hozu/bundle (npm install @hozu/bundle) and pass components: bundleComponents to app() (import { bundleComponents } from '@hozu/bundle')",
           snippet: 'components: bundleComponents,',
           patch: null,
         },
@@ -194,11 +194,18 @@ export async function inspectApp(
     loaded,
     'check',
   )<{
-    createDataRuntime(o: { build: BuildResult; resolvers: unknown }): unknown
+    createDataRuntime(o: { build: BuildResult; resolvers: unknown; env: unknown }): unknown
     DataRuntimeError: new (...a: never[]) => Error & { diagnostics: Diagnostic[] }
   }>('@hozu/data')
+  const runtime = (env: unknown) => data.createDataRuntime({ build, resolvers: options.resolvers, env })
   try {
-    data.createDataRuntime({ build, resolvers: options.resolvers })
+    try {
+      runtime(process.env)
+    } catch (error) {
+      if (!(error instanceof Error) || !/^Invalid (server|public) environment/.test(error.message))
+        throw error
+      runtime(null)
+    }
   } catch (error) {
     if (!(error instanceof data.DataRuntimeError)) throw error
     for (const d of error.diagnostics)

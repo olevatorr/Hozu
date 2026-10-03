@@ -45,7 +45,9 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
     try {
       return (await import(pathToFileURL(require.resolve(id)).href)) as T
     } catch {
-      throw new HozuCliError('build', `hozu build needs ${id} installed in the project`, [`pnpm add ${id}`])
+      throw new HozuCliError('build', `hozu build needs ${id} installed in the project`, [
+        `npm install ${id}   # or pnpm add / yarn add`,
+      ])
     }
   }
   const base = dirname(loaded.path)

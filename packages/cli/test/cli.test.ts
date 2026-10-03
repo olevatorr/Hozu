@@ -366,3 +366,37 @@ describe('env files and hozu env (ADR 0052)', () => {
     expect(out.reserved.map((r: { name: string }) => r.name)).toContain('SESSION_SECRET')
   })
 })
+
+describe('required server env (trial 0.13, bug 1)', () => {
+  it('check and get read a required server variable from the env files; check does not need it', async () => {
+    const { cpSync, rmSync, symlinkSync } = await import('node:fs')
+    const dir = join(root, '.tmp', `env-required-${Date.now()}`)
+    cpSync(`${root}examples/playground`, dir, {
+      recursive: true,
+      filter: (from) => !/\/(node_modules|\.hozu)(\/|$)/.test(from) && !from.endsWith('.env.local'),
+    })
+    symlinkSync(`${root}examples/playground/node_modules`, join(dir, 'node_modules'))
+    const config = join(dir, 'hozu.config.ts')
+    writeFileSync(
+      config,
+      readFileSync(config, 'utf8').replace(
+        "USERS_API: z.string().default('https://jsonplaceholder.typicode.com')",
+        'USERS_API: z.string()',
+      ),
+    )
+    try {
+      writeFileSync(join(dir, '.env.local'), 'USERS_API=https://jsonplaceholder.typicode.com\n')
+      const set = JSON.parse((await run(['check', '--json'], dir)).stdout)
+      expect(set.validate.summary.errors).toBe(0)
+      rmSync(join(dir, '.env.local'))
+      delete process.env.USERS_API
+      const unset = JSON.parse((await run(['check', '--json'], dir)).stdout)
+      expect(unset.validate.summary.errors).toBe(0)
+      const page = await run(['get', '/', '--json'], dir)
+      expect(JSON.parse(page.stdout).error.message).toContain('USERS_API')
+    } finally {
+      delete process.env.USERS_API
+      rmSync(dir, { recursive: true, force: true })
+    }
+  }, 120_000)
+})

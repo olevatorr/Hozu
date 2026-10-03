@@ -92,7 +92,7 @@ Options:
   --screenshot <file>  browse: save a PNG of the viewport after the steps
   --reduced-motion     browse: emulate prefers-reduced-motion: reduce
   --page <path>        add feature: also add a route and a page at this path
-  --with <parts>       add feature: any of detail,toggle,filter,remove (comma-separated)
+  --with <parts>       add feature: any of detail,toggle,filter,remove,auth (comma-separated)
   --sync               add kit: rewrite the generated block of <id>/tv.ts from the current design system
   --client             add component: a client component (browser code in its own module)
   --variant <k=v>      render: a variant value (repeatable)

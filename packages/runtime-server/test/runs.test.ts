@@ -184,10 +184,11 @@ describe('where effects run on a server (ADR 0049 phase 2)', () => {
         body: 'id=1',
       }),
     )
-    expect([r.status, await r.text()]).toEqual([
-      400,
-      'This form needs JavaScript: repos.star runs in the browser',
-    ])
+    const body = await r.text()
+    expect([r.status, r.headers.get('content-type')]).toEqual([400, 'text/html; charset=utf-8'])
+    expect(body).toContain('<h1>This form needs JavaScript</h1>')
+    expect(body).toContain('repos.star runs in the browser')
+    expect(body).toContain('<a href="/">Back to the page</a>')
   })
 
   it('refuses a server resolver for an effect that is not runs: server', () => {

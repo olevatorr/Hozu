@@ -63,6 +63,7 @@ import {
   crossSite,
   ERROR_HTML,
   NOT_FOUND_HTML,
+  needsJavaScriptHtml,
 } from './security.ts'
 import { memorySessions, type SessionStore, signedCookie } from './session.ts'
 import { publicAssets } from './static.ts'
@@ -632,11 +633,14 @@ function handlerFor({
       search,
     })
     if (!outcome) return notAllowed()
+    const back = pathOf(tableOf(locale)[found.route] ?? url.pathname, found.params, search)
     if (outcome.needsBrowser)
-      return plain(400, `This form needs JavaScript: ${outcome.needsBrowser} runs in the browser`)
+      return new Response(needsJavaScriptHtml(outcome.needsBrowser, back), {
+        status: 400,
+        headers: { 'content-type': 'text/html; charset=utf-8', ...(await secureHeaders()) },
+      })
     await dropPages(outcome.invalidated)
     const cookie = store && outcome.session ? await store.write(outcome.session.value, request) : null
-    const back = pathOf(tableOf(locale)[found.route] ?? url.pathname, found.params, search)
     const target = outcome.invalid ? null : (outcome.navigate ?? (outcome.unchanged ? back : null))
     if (target) {
       after(outcome.invalidated)

@@ -60,3 +60,13 @@ const fallback = (title: string, text: string) =>
 export const ERROR_HTML = fallback('Something went wrong', 'Please try again later.')
 
 export const NOT_FOUND_HTML = fallback('Not found', 'There is no page at this address.')
+
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+/** A form whose mutation runs in the browser, posted without JavaScript (ADR 0049): what happened and the way back. */
+export const needsJavaScriptHtml = (effect: string, back: string) =>
+  fallback(
+    'This form needs JavaScript',
+    `${escapeHtml(effect)} runs in the browser, so the page must run JavaScript to send it.</p><p><a href="${escapeHtml(back)}">Back to the page</a>`,
+  )

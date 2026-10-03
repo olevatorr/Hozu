@@ -24,13 +24,23 @@ const Star = event({ payload: z.object({ id: z.string() }) })
 
 const build = (
   declarations: Record<string, unknown>,
-  options: { fetch?: URL; head?: unknown; connect?: unknown[]; env?: boolean } = {},
+  options: { fetch?: URL; head?: unknown; connect?: unknown[]; env?: boolean | 'url' } = {},
 ) => {
   const View = ui.view({ render: () => ui.main({}, ['x']) })
   const all = { View, ...declarations }
   const app = project({
     schema: zodAdapter,
-    ...(options.env ? { env: { server: z.object({}), public: z.object({ API_URL: z.string() }) } } : {}),
+    ...(options.env
+      ? {
+          env: {
+            server: z.object({}),
+            public: z.object({
+              API_URL:
+                options.env === 'url' ? z.string().url().default('https://api.github.com') : z.string(),
+            }),
+          },
+        }
+      : {}),
     routes: { home },
     pages: [
       ui.page(home, {
@@ -239,6 +249,26 @@ describe('connect: the origins browser-run effects call (ADR 0051)', () => {
       { origin: 'https://api.github.com' },
       { origin: 'http://localhost:8080' },
     ])
+  })
+
+  it('warns about a public env URL that fetch.ts reads, and takes an env default as declared (HZ083)', () => {
+    const viaEnv = fetchFile(
+      'env.ts',
+      'export const search = implement(async (_, { env }) => (await fetch(`${env.API_URL}/search`)).json())\n',
+    )
+    expect(of(build({ search }, { fetch: viaEnv, env: 'url' }).codes, 'HZ083')).toEqual([
+      'fetch.ts of repos calls env.API_URL from the browser, but connect does not list it',
+    ])
+    expect(
+      of(build({ search }, { fetch: viaEnv, env: 'url', connect: [{ env: 'API_URL' }] }).codes, 'HZ083'),
+    ).toEqual([])
+    const literal = fetchFile(
+      'literal.ts',
+      "export const search = implement(async () => (await fetch('https://api.github.com/x')).json())\n",
+    )
+    expect(
+      of(build({ search }, { fetch: literal, env: 'url', connect: [{ env: 'API_URL' }] }).codes, 'HZ083'),
+    ).toEqual([])
   })
 
   it('refuses an entry that is not an origin, and an env variable the project does not declare (HZ081)', () => {

@@ -43,7 +43,8 @@
 - In code: `const page = await testApp(app).get('/')` from `@hozu/testing`, with `app` the default export of
   `app.ts` → `{ status, headers, html, text, payload }`; `.post(path, fields)` submits a native form, with fields as
   a record or as `[name, value]` pairs for repeated names. `testApp(app, { session: store })` may swap only the
-  session store (a test issuer).
+  session store (a test issuer). `testApp` reads no env files: pass `testApp(app, { env: process.env })` (or a record)
+  for the variables your resolvers need; `hozu get`, `call` and `browse` read `env.files` themselves.
 - `hozu get`, `hozu browse` and `testApp` build the app module; a build with errors exits 1 (throws) and renders
   nothing: run `hozu check`.
 - Vitest: add `hozuTransform()` from `@hozu/transform/vite` to `plugins`.

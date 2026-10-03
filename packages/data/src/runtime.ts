@@ -75,6 +75,7 @@ export interface DataRuntimeOptions {
   fetches?: FetchLoader
   now?: () => number
   onError?: OnError
+  /** The raw environment to parse; `null` skips parsing (tools that check bindings, not a running app). */
   env?: unknown
   /** Public query results (ADR 0050 A); by default `memoryDataCache()`, at most 10,000 entries. */
   cache?: DataCache
@@ -150,7 +151,7 @@ export function createDataRuntime({
   fetches,
 }: DataRuntimeOptions): DataRuntime {
   const { ir, bindings } = build
-  const parsedEnv = bindings.env.server?.(rawEnv)
+  const parsedEnv = rawEnv === null ? undefined : bindings.env.server?.(rawEnv)
   if (parsedEnv && !parsedEnv.ok)
     throw new Error(`Invalid server environment: ${parsedEnv.issues.join('; ')}`)
   const env = parsedEnv?.ok ? parsedEnv.value : {}
@@ -162,6 +163,7 @@ export function createDataRuntime({
     message: string,
     cause: string,
     symbol?: string,
+    fix?: { summary: string; snippet: string | null },
   ) =>
     problems.push({
       code: 'HZ021',
@@ -170,14 +172,16 @@ export function createDataRuntime({
       location: { feature, pointer, source: resolveSource(build.sources, pointer) },
       cause,
       fix: {
-        summary:
-          'Add exactly one implement(decl, …) for every query, mutation and endpoint, in the resolvers of app.ts',
-        snippet: symbol ? `implement(${symbol}, (input, ctx) => …),` : null,
+        ...(fix ?? {
+          summary:
+            'Add exactly one implement(decl, …) for every query, mutation and endpoint, in the resolvers of app.ts',
+          snippet: symbol ? `implement(${symbol}, (input, ctx) => …),` : null,
+        }),
         patch: null,
       },
     })
 
-  const parsedPublic = bindings.env.public?.(rawEnv)
+  const parsedPublic = rawEnv === null ? undefined : bindings.env.public?.(rawEnv)
   const publicEnv = parsedPublic?.ok ? parsedPublic.value : {}
   /** What fetch.ts reads on this server: the public env, with internal URLs where env.internal names one (ADR 0052). */
   const serverSideEnv: Record<string, unknown> = { ...(publicEnv as Record<string, unknown>) }
@@ -253,6 +257,11 @@ export function createDataRuntime({
         ref.split('.')[0]!,
         `${ref} is implemented in the server resolvers, but runs: '${runsOf(ref)}'`,
         "Effects that are not runs: 'server' are implemented in the feature's fetch.ts (ADR 0049).",
+        undefined,
+        {
+          summary: `Add runs: 'server' to ${ref} if it needs the server (a database, a secret, the session); otherwise move this implementation to the feature's fetch.ts`,
+          snippet: "runs: 'server',",
+        },
       )
       continue
     }

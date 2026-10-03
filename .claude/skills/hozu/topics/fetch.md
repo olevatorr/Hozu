@@ -35,6 +35,8 @@ export const myRepos = implement<typeof model.myRepos>(async (_, { fail, signal 
   return r.status === 401 ? fail('Unauthorized', {}) : r.json()
 })
 ```
+- **Scope of browser data:** data only this visitor's browser holds (`localStorage`, a token, the API's own cookies) is
+  `scope: 'user'`; a public API read in the browser (`'either'`) is `scope: 'public'`.
 - **What runs where:** `'either'` is server-rendered on first paint (data in the HTML, cached per `freshness`), and
   later in-page reads and mutations call the API from the browser, never through the server. `'browser'` renders its
   `pending` branch on the server and reads after hydration. `'server'` always goes through the server.

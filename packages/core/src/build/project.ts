@@ -496,6 +496,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     kits,
   }
   reportSharedParts(scope, new Set(Object.keys(features)))
+  reportUndeclaredConnect(scope, features, env?.public ?? null)
   scope.bindings.assetOrder = scope.assetList
   for (const d of scope.diagnostics) d.location.source ??= resolveSource(scope.sources, d.location.pointer)
   return {
@@ -576,6 +577,60 @@ function registerKits(
     out.push([id, decls])
   }
   return out
+}
+
+const originOf = (value: unknown): string | null => {
+  try {
+    return typeof value === 'string' && /^https?:\/\//.test(value) ? new URL(value).origin : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * HZ083 (ADR 0051): what fetch.ts calls from the browser that the feature's `connect` does not cover: an absolute
+ * URL, or a public env variable holding a URL (`format: 'uri'` or an http(s) default) read as `env.NAME`.
+ */
+function reportUndeclaredConnect(
+  scope: ProjectScope,
+  features: Record<string, FeatureIR>,
+  pub: JsonSchema | null,
+) {
+  const props = ((pub as { properties?: Record<string, JsonSchema> } | null)?.properties ?? {}) as Record<
+    string,
+    { format?: string; default?: unknown }
+  >
+  for (const [id, scan] of scope.fetchScans) {
+    const f = features[id]
+    if (!f) continue
+    const connectedEnv = new Set(f.connect.flatMap((c) => ('env' in c ? [c.env] : [])))
+    const covered = new Set([
+      ...f.connect.flatMap((c) => ('origin' in c ? [c.origin] : [])),
+      ...[...connectedEnv].flatMap((name) => originOf(props[name]?.default) ?? []),
+    ])
+    const origins = scan.origins.filter((o) => !covered.has(o))
+    const env = scan.env.filter(
+      (name) =>
+        !connectedEnv.has(name) &&
+        props[name] !== undefined &&
+        (props[name]!.format === 'uri' || originOf(props[name]!.default) !== null),
+    )
+    if (!origins.length && !env.length) continue
+    const missing = [...origins.map((o) => `'${o}'`), ...env.map((name) => `{ env: '${name}' }`)]
+    const listed = f.connect.map((c) => ('origin' in c ? `'${c.origin}'` : `{ env: '${c.env}' }`))
+    scope.report(
+      'HZ083',
+      id,
+      join('', 'features', id, 'fetch'),
+      `fetch.ts of ${id} calls ${[...origins, ...env.map((n) => `env.${n}`)].join(', ')} from the browser, but connect does not list ${missing.length === 1 ? 'it' : 'them'}`,
+      "The page's CSP allows the browser to connect only to its own origin and the origins features declare in connect; an undeclared call fails in the browser (ADR 0051).",
+      {
+        summary: `Add ${missing.join(', ')} to connect in feature.ts`,
+        snippet: `connect: [${[...listed, ...missing].join(', ')}]`,
+        patch: null,
+      },
+    )
+  }
 }
 
 /** The env files a project names (ADR 0052), relative to its config. */

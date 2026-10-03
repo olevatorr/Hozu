@@ -62,6 +62,8 @@ export class ProjectScope {
   basePath = ''
   manifest: Manifest | null = null
   readonly assetList: ManifestAsset[] = []
+  /** What each feature's fetch.ts calls: absolute URLs' origins and the public env variables it reads (ADR 0051). */
+  readonly fetchScans = new Map<string, { origins: string[]; env: string[] }>()
   readonly resolved = new WeakMap<object, ManifestAsset>()
   readonly configs = new Map<string, FeatureParts>()
   readonly parts = new Map<object, PartUse>()

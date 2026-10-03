@@ -7,6 +7,8 @@
     "node": ">=22.12"
   },
   "scripts": {
+    "clean": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo",
+    "pack:release": "pnpm clean && pnpm build && pnpm -r --filter \"./packages/*\" pack --pack-destination .tmp/release",
     "build": "tsc -b packages/core packages/schema-zod packages/machine packages/data packages/compiler packages/validator packages/runtime-client packages/runtime-server packages/adapter-node packages/adapter-static packages/devtools packages/cli packages/css packages/dev packages/bundle packages/image packages/content packages/variants packages/testing packages/transform packages/create-hozu && node packages/runtime-client/scripts/bundle.ts && node scripts/skill.ts --pack",
     "typecheck": "tsc -b tsconfig.json",
     "test": "pnpm build && vitest run",

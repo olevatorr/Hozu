@@ -14,6 +14,10 @@ implement(exportNotes, (input, { session, fail }) =>                            
   from the context (303, with basePath); `'response'`, a web `Response` for files and protocol bodies that are
   neither JSON nor HTML. A `text/html` response is a 500 with HZ053: a page is a `ui.page` with `head.failed`.
 - `input: 'raw'` (POST only) skips parsing and gives the resolver `bytes` (a `Uint8Array`), for signed webhooks.
+- Headers and the raw request: the resolver's context has `request` (a web `Request`). A bearer token:
+  `implement(postItem, (input, { request, fail }) => request.headers.get('authorization') === `Bearer ${token}` ? … : fail('Unauthorized', {}))`
+  with `errors: { Unauthorized: z.object({}) }, failed: { Unauthorized: 401 }`. Try it from the DevTools API drawer
+  (Endpoints: path, body and your own headers) or `curl`. Queries and mutations read no headers: identity is the session.
 - `setSession(value)` works on GET too (auth callbacks); OIDC form_post callbacks use `output: 'redirect'`.
 - `invalidates: (input) => [itemsTag()]` refreshes like a mutation's when the endpoint succeeds. A GET endpoint with
   `invalidates` is HZ062 (warning).

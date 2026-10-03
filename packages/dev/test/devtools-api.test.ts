@@ -102,7 +102,7 @@ describe.skipIf(!findBrowser())('the DevTools API panel (ADR 0050 G)', () => {
   })
 
   const api = (selector: string) =>
-    `document.querySelector('hozu-devtools').shadowRoot.querySelector(${JSON.stringify(selector)})`
+    `document.querySelector('hozu-devtools')?.shadowRoot?.querySelector(${JSON.stringify(selector)})`
   const apiClick = (selector: string, text: string) =>
     tool(
       `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll(${JSON.stringify(selector)})].find((b) => b.textContent.includes(${JSON.stringify(text)})).click()`,
