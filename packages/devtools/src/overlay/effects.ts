@@ -256,6 +256,29 @@ interface Saved {
   history: CallRecord[]
 }
 
+/** A record saved by this or an older DevTools, with every field present; null when it is not one. */
+const normal = (r: unknown): CallRecord | null => {
+  const o = r as Partial<CallRecord> | null
+  if (!o || typeof o.ref !== 'string' || typeof o.id !== 'number') return null
+  return {
+    kind: 'query',
+    runs: 'server',
+    input: null,
+    ok: false,
+    error: null,
+    value: null,
+    ms: 0,
+    where: 'server',
+    tags: [],
+    refreshed: false,
+    status: null,
+    headers: [],
+    requests: [],
+    at: o.id,
+    ...o,
+  } as CallRecord
+}
+
 export function drawer(host: DrawerHost) {
   const saved = read<Partial<Saved>>(KEY, {})
   const ui: Saved = {
@@ -263,8 +286,9 @@ export function drawer(host: DrawerHost) {
     view: saved.view ?? 'table',
     height: saved.height ?? 340,
     open: saved.open ?? false,
-    history: saved.history ?? [],
+    history: (Array.isArray(saved.history) ? saved.history : []).flatMap((r) => normal(r) ?? []),
   }
+  if (!['query', 'mutation', 'endpoint', 'history'].includes(ui.tab)) ui.tab = 'query'
   const persist = () => write(KEY, { ...ui, history: ui.history.slice(0, 50) })
   let list: DevEffect[] | null = null
   let endpoints: DevEndpoint[] = []
@@ -866,6 +890,32 @@ export function drawer(host: DrawerHost) {
   }
 
   function draw() {
+    try {
+      paint()
+    } catch (error) {
+      el.replaceChildren(
+        h('div', { class: 'api-empty', role: 'alert' }, [
+          `The API drawer could not draw: ${error instanceof Error ? error.message : String(error)}. `,
+          h(
+            'button',
+            {
+              type: 'button',
+              class: 'api-link',
+              onclick: () => {
+                ui.history = []
+                selected = null
+                persist()
+                draw()
+              },
+            },
+            ['Clear its saved state'],
+          ),
+        ]),
+      )
+    }
+  }
+
+  function paint() {
     const queries = (list ?? []).filter((e) => e.kind === 'query')
     const mutations = (list ?? []).filter((e) => e.kind === 'mutation')
     const tab = (id: Saved['tab'], label: string, count: number) =>

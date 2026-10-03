@@ -170,6 +170,34 @@ describe.skipIf(!findBrowser())('the DevTools API panel (ADR 0050 G)', () => {
     expect(errors).toEqual([])
   })
 
+  it('draws history saved by an older DevTools', async () => {
+    const key = `hozu-devtools-api:${new URL(server.url).host}`
+    await open('/')
+    const old = {
+      id: 1,
+      ref: 'bookmarks.listBookmarks',
+      kind: 'query',
+      runs: 'server',
+      input: {},
+      ok: true,
+      error: null,
+      value: [],
+      ms: 3,
+      where: 'server',
+      tags: [],
+      refreshed: false,
+      at: 1,
+    }
+    await evaluate(
+      `localStorage.setItem(${JSON.stringify(key)}, ${JSON.stringify(JSON.stringify({ tab: 'history', view: 'table', height: 340, open: true, history: [old] }))})`,
+    )
+    await open('/')
+    await until(`!!${api('.api-head')}`)
+    expect(await tool(`$('.api-tabs button[aria-selected="true"]').textContent`)).toBe('History1')
+    expect(await tool(`$('.api-status').textContent`)).toContain('OK · 3 ms')
+    expect(errors).toEqual([])
+  })
+
   it('opens the drawer from the Workbench too', async () => {
     await shadowClick('.dock button', 'Workbench')
     await until(`!!${api('.bench-bar')}`)
