@@ -176,12 +176,12 @@ export async function hydrate(
   }
   let busy = 0
   let queued: string[] = []
-  const onInvoke = async (effect: string, input: Json) => {
+  const invoke = async (effect: string, input: Json): Promise<{ result: Result; tags: string[] }> => {
     if (local?.runs(effect)) {
       busy++
-      const { result, changed } = await local.mutate(effect, input).finally(() => busy--)
+      const { result, changed, tags } = await local.mutate(effect, input).finally(() => busy--)
       if (changed) for (const app of apps.values()) app.sync()
-      return result
+      return { result, tags }
     }
     busy++
     const { result, refreshed, session, tags } = await transport(effect, input, [
@@ -198,8 +198,9 @@ export async function hydrate(
     }
     if (refreshed.length || session) for (const app of apps.values()) app.sync()
     if (!busy && queued.length) onTags(queued.splice(0))
-    return result
+    return { result, tags: tags ?? [] }
   }
+  const onInvoke = async (effect: string, input: Json) => (await invoke(effect, input)).result
   const dev = globalThis.__HOZU_DEV__
     ? { restore: (await import('./dev.ts')).restore(doc), machines: new Map<string, MachineIR | null>() }
     : null
@@ -244,7 +245,8 @@ export async function hydrate(
       onTags,
       liveKeys.flatMap(([, l]) => l.tags),
     )
-  if (globalThis.__HOZU_DEV__ && dev) (await import('./dev.ts')).expose(doc, apps, dev.machines)
+  if (globalThis.__HOZU_DEV__ && dev)
+    (await import('./dev.ts')).expose(doc, apps, dev.machines, { invoke, query: onQuery })
   doc.documentElement.setAttribute('data-hozu-ready', '')
   return apps
 }

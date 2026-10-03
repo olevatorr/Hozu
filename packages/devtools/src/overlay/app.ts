@@ -12,7 +12,7 @@ import {
 } from '../prompt.ts'
 import { held, hold, node, one, page, remove, save, saved, theme, tree } from './api.ts'
 import { h, read, write } from './dom.ts'
-import { effects, renderEffects } from './effects.ts'
+import { drawer } from './effects.ts'
 import { previewLabel, renderLayers } from './layers.ts'
 import { logo } from './logo.ts'
 import { lookSection, preview } from './look.ts'
@@ -35,7 +35,7 @@ interface State {
   mode: 'browse' | 'select'
   picks: Pick[]
   active: number
-  panel: 'inspector' | 'changes' | 'settings' | 'layers' | 'api' | null
+  panel: 'inspector' | 'changes' | 'settings' | 'layers' | null
   tab: 'draft' | 'saved'
   opened: string | null
   dock: { x: number; y: number } | null
@@ -84,7 +84,20 @@ const panel = h('div', {
 })
 const bench = h('div', { class: 'bench', hidden: true })
 shadow.append(h('style', {}, [css]), root)
-root.append(bench, panel, dock)
+const api = drawer({
+  plain: () => state.audience === 'builder',
+  win: () => win,
+  path: () => win.location.pathname,
+  resized: () => {
+    root.style.setProperty('--api-h', `${api.height()}px`)
+    if (state.view === 'workbench') {
+      renderBar()
+      layout()
+    } else renderDock()
+  },
+  closed: () => {},
+})
+root.append(bench, panel, dock, api.el)
 document.documentElement.append(host)
 
 const darkScheme = matchMedia('(prefers-color-scheme: dark)')
@@ -483,11 +496,8 @@ function renderDock() {
           class: 'act',
           type: 'button',
           title: 'The data this page reads and the changes it can make: run them with your own input',
-          onclick: () => {
-            state.panel = state.panel === 'api' ? (state.picks.length ? 'inspector' : null) : 'api'
-            persist()
-            void renderPanel()
-          },
+          'aria-pressed': api.isOpen() ? 'true' : 'false',
+          onclick: () => api.toggle(),
         },
         ['API'],
       ),
@@ -554,7 +564,7 @@ function placeDock() {
     : (innerWidth - r.width) / 2
   const y = state.dock
     ? Math.min(Math.max(0, state.dock.y), innerHeight - r.height)
-    : innerHeight - r.height - 24
+    : innerHeight - r.height - 24 - api.height()
   dock.style.left = `${x}px`
   dock.style.top = `${y}px`
 }
@@ -1108,13 +1118,6 @@ async function renderPanel() {
   placePanel()
   if (state.panel === 'changes') return state.opened ? renderRequest(state.opened) : renderChanges()
   if (state.panel === 'settings') return renderSettings()
-  if (state.panel === 'api')
-    return renderEffects(panel, await effects(win.location.pathname), {
-      plain: state.audience === 'builder',
-      doc,
-      reload,
-      close: () => open(state.picks.length ? 'inspector' : null),
-    })
   if (state.panel === 'layers')
     return renderLayers(
       panel,
@@ -1673,6 +1676,17 @@ function renderBar() {
         },
         ['⚙'],
       ),
+      h(
+        'button',
+        {
+          class: 'act',
+          type: 'button',
+          title: 'The data this page reads and the changes it can make',
+          'aria-pressed': api.isOpen() ? 'true' : 'false',
+          onclick: () => api.toggle(),
+        },
+        ['API'],
+      ),
       h('button', { class: 'act exit', type: 'button', onclick: () => closeBench() }, ['Exit workbench']),
     ]),
   )
@@ -1698,6 +1712,7 @@ function openBench() {
   }) as HTMLIFrameElement
   frame.addEventListener('load', () => {
     retarget(frame)
+    void api.reload()
     renderBar()
     layout()
     void renderLeft()
@@ -1764,5 +1779,6 @@ addEventListener('resize', layout)
 renderDock()
 drawPicks()
 void renderPanel()
+api.restore()
 requestAnimationFrame(frame)
 if (state.view === 'workbench') openBench()

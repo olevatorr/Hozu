@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased (0.13)
+
+- **DevTools API drawer:** the API tab is a drawer docked at the bottom, in the overlay and the Workbench (which had
+  no API button). Each row shows where the effect runs (coloured), its freshness and the `file:line` that implements
+  it, with its input fields inline; results show as a table or JSON with the status, time and where it ran;
+  **Copy as hozu call**; a History tab for the session. Mutations ask in their row instead of a browser dialog,
+  `Invalid` marks the field, and the page re-reads what a mutation invalidated in place (the development client
+  offers DevTools the machine's own effect path; the production client is unchanged apart from 9 B, P7 8,056 B).
+  Browser-run effects now go through the page's runner, so their input and output are checked too.
+- **`hozu get` / `hozu browse` / `testApp`** start apps that have `fetch.ts` (since 0.11 they failed with "the
+  bundle has no fetch module").
+- **`hozu` and `create-hozu`** say they need Node 22.18 on an older Node instead of failing on an import.
+- **`examples/playground`:** one query and mutation of each `runs` (server data and a server-side external call, a
+  public API on either side, `localStorage` in the browser) for trying the API drawer.
+
 ## 0.12.0 — Large apps and many servers, `hozu call` and the DevTools API tab (ADR 0050)
 
 0.12 measured Hozu at 50, 200 and 500 generated features ([benchmark 0003](docs/benchmarks/0003-scale.md)), then

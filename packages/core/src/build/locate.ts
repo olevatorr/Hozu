@@ -4,6 +4,8 @@ import type { BuildResult } from './project.ts'
 
 export interface DevOptions {
   root: string
+  /** The app module (`project({ app })`), where server resolvers are implemented. */
+  app?: string | null
 }
 
 export interface DevLocation {
@@ -606,6 +608,8 @@ export interface DevEffect {
   errors: string[]
   /** The view nodes that read a query, or the machine states that start the effect. */
   usedBy: string[]
+  /** Where it is implemented: the `implement(...)` in the app module, or the export in `fetch.ts`. */
+  implemented: DevLocation | null
 }
 
 const freshnessText = (f: Freshness) => ('seconds' in f ? `${f.kind} ${f.seconds}s` : f.kind)
@@ -652,6 +656,7 @@ export function pageEffects(build: BuildResult, route: string): DevEffect[] | nu
         input: (f.schemas[e.input] ?? {}) as JsonSchema,
         errors: [...Object.keys(e.errors), ...(m ? ['Invalid'] : []), 'Unexpected'],
         usedBy: [...new Set(usedBy)],
+        implemented: null,
       },
     ]
   })

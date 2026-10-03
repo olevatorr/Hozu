@@ -32,7 +32,7 @@ Layers lists the states the page can be in: loading, failed, empty, saving, a co
 
 ## Try the data
 
-The **API** tab lists the data the page reads and the changes it can make, with where each one runs. Edit the input (it starts from what the page uses) and run it: you see the value or the declared error and how long it took. Changes ask first, because they write your development data; afterwards the tab names what they invalidated and offers a reload. An agent does the same from the terminal with `hozu call`.
+**API** opens a drawer at the bottom (in the Workbench too) with the data the page reads and the changes it can make: where each one runs, how it is cached and the `file:line` that implements it. Edit the input in its row (it starts from what the page uses) and run it: you see the value as a table or JSON, or the declared error with an invalid field marked under it, and how long it took. A change asks in its row first, because it writes your development data; then the page re-reads what it invalidated, in place, as if a button on the page had made the change. History keeps the calls of this session, and **Copy as hozu call** hands one to your agent.
 
 ## Hand it to your agent
 

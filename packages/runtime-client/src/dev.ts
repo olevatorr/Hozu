@@ -1,6 +1,6 @@
-import type { MachineIR } from '@hozu/core/ir'
+import type { Json, MachineIR } from '@hozu/core/ir'
 import type { Snapshot } from '@hozu/machine'
-import type { App } from './mount.ts'
+import type { App, Result } from './mount.ts'
 
 const KEY = 'hozu:snapshots'
 
@@ -28,10 +28,22 @@ export function restore(doc: Document): (id: string, machine: MachineIR | null) 
   }
 }
 
-export function expose(doc: Document, apps: Map<string, App>, machines: Map<string, MachineIR | null>) {
-  const win = doc.defaultView as (Window & { __hozu?: { save(): void } }) | null
+/** What the page offers Hozu DevTools in development: the machine's own effect paths (ADR 0050 G). */
+export interface DevEffects {
+  invoke(effect: string, input: Json): Promise<{ result: Result; tags: string[] }>
+  query(query: string, input: Json): Promise<Result>
+}
+
+export function expose(
+  doc: Document,
+  apps: Map<string, App>,
+  machines: Map<string, MachineIR | null>,
+  effects: DevEffects,
+) {
+  const win = doc.defaultView as (Window & { __hozu?: { save(): void } & DevEffects }) | null
   if (!win) return
   win.__hozu = {
+    ...effects,
     save() {
       const saved: Saved = {}
       for (const [id, app] of apps) {

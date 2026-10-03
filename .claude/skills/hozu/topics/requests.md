@@ -23,7 +23,8 @@
     change that decides needs a contract (`hozu docs contracts`).
 - **Finish:** `npx hozu check`, then `npx hozu requests done <n> --result "<one line: what changed>"` for each one;
   it removes the file. Do not edit request files. Report the result lines to the person.
-- **The API tab** in the same dock lists the queries the page reads and the mutations its machines start, with
-  `runs`, scope, freshness, tags and errors, and runs them with an input the person edits (mutations ask first: they
-  write development data). When a request says "this query returns X", reproduce it with
+- **The API drawer** (the dock's API button) lists the queries the page reads and the mutations its machines start,
+  with `runs`, freshness, errors and the `file:line` that implements each, and runs them with an input the person
+  edits (mutations ask first: they write development data; the page then re-reads in place). A request may carry a
+  `npx hozu call …` line copied from it. When a request says "this query returns X", reproduce it with
   `npx hozu call <feature>.<effect> --input '…'` before changing the resolver.

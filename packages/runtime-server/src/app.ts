@@ -1,5 +1,5 @@
 import type { DevOptions } from '@hozu/core/ir'
-import { type BuildResult, buildProject, type ImageSet, type Manifest } from '@hozu/core/ir'
+import { appModuleOf, type BuildResult, buildProject, type ImageSet, type Manifest } from '@hozu/core/ir'
 import { type FetchLoader, resolverSetOf } from '@hozu/data'
 import type { HandlerOptions } from './handler.ts'
 import type { ComponentBundle, Stylesheet } from './render.ts'
@@ -46,5 +46,6 @@ export function appHandlerOptions(a: App, host: AppHost = {}): HandlerOptions {
     sources: host.dev !== undefined,
     ...(host.manifest ? { manifest: host.manifest } : {}),
   })
-  return { ...options, ...host, build }
+  const dev = host.dev ? { dev: { ...host.dev, app: host.dev.app ?? appModuleOf(projectOfApp(a)) } } : {}
+  return { ...options, ...host, ...dev, build }
 }

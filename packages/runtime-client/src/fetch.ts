@@ -167,9 +167,13 @@ export function createRunner(
     return changed
   }
   /** Runs a browser-run mutation, then re-reads what its tags name. */
-  async function mutate(ref: string, input: Json): Promise<{ result: Result; changed: boolean }> {
+  async function mutate(
+    ref: string,
+    input: Json,
+  ): Promise<{ result: Result; changed: boolean; tags: string[] }> {
     const result = await run(ref, input)
-    return { result, changed: result.ok ? await reread(tagsOf(ref, input)) : false }
+    const tags = result.ok ? tagsOf(ref, input) : []
+    return { result, changed: tags.length ? await reread(tags) : false, tags }
   }
   return { run, mutate, reread, runs: (ref: string) => ref in effects }
 }

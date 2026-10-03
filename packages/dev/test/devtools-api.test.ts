@@ -47,22 +47,6 @@ describe.skipIf(!findBrowser())('the DevTools API panel (ADR 0050 G)', () => {
     await loaded
     await until(`!!document.querySelector('hozu-devtools')?.shadowRoot?.querySelector('.dock button')`)
   }
-  const key = (code: string, key: string, modifiers: number) =>
-    cdp
-      .send('Input.dispatchKeyEvent', { type: 'keyDown', code, key, modifiers }, session)
-      .then(() => cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', code, key, modifiers }, session))
-  const click = async (selector: string, modifiers = 0) => {
-    const { x, y } = await evaluate(
-      `(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 } })()`,
-    )
-    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, modifiers }, session)
-    for (const type of ['mousePressed', 'mouseReleased'])
-      await cdp.send(
-        'Input.dispatchMouseEvent',
-        { type, x, y, button: 'left', clickCount: 1, modifiers },
-        session,
-      )
-  }
   const tool = (expression: string) =>
     evaluate(
       `(() => { const $ = (s) => document.querySelector('hozu-devtools').shadowRoot.querySelector(s); return ${expression} })()`,
@@ -117,45 +101,69 @@ describe.skipIf(!findBrowser())('the DevTools API panel (ADR 0050 G)', () => {
     expect(add.usedBy).toEqual(['bookmarks.adding'])
   })
 
-  it('runs a query and, after a confirm, a mutation from the panel', async () => {
+  const api = (selector: string) =>
+    `document.querySelector('hozu-devtools').shadowRoot.querySelector(${JSON.stringify(selector)})`
+  const apiClick = (selector: string, text: string) =>
+    tool(
+      `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll(${JSON.stringify(selector)})].find((b) => b.textContent.includes(${JSON.stringify(text)})).click()`,
+    )
+
+  it('runs a query from the bottom drawer and shows rows as a table', async () => {
     await open('/')
     await evaluate(`localStorage.clear()`)
     await open('/')
     await shadowClick('.dock button', 'API')
-    await until(
-      `!!document.querySelector('hozu-devtools').shadowRoot.querySelector('[data-effect="bookmarks.listBookmarks"]')`,
+    await until(`!!${api('.api [data-effect="bookmarks.listBookmarks"]')}`)
+    expect(await evaluate(`getComputedStyle(${api('.api')}).position`)).toBe('fixed')
+    expect(await tool(`$('.api [data-effect="bookmarks.listBookmarks"] .api-runs').textContent`)).toBe(
+      'server',
     )
-    expect(await tool(`$('.panel .title').textContent`)).toBe('API')
-    expect(await tool(`$('[data-effect="bookmarks.listBookmarks"] summary').textContent`)).toContain(
-      'List bookmarks',
+    expect(await tool(`$('.api [data-effect="bookmarks.listBookmarks"] .api-where').textContent`)).toMatch(
+      /^app\.ts:\d+$/,
     )
-    await tool(`$('[data-effect="bookmarks.listBookmarks"]').open = true`)
-    await shadowClick('[data-effect="bookmarks.listBookmarks"] button', 'Run')
-    await until(
-      `!!document.querySelector('hozu-devtools').shadowRoot.querySelector('[data-effect="bookmarks.listBookmarks"] .result')`,
+    await apiClick('.api [data-effect="bookmarks.listBookmarks"] button', 'Run')
+    await until(`!!${api('.api-status.ok')}`)
+    expect(await tool(`$('.api-status').textContent`)).toMatch(
+      /^OK · \d+ ms · through the server · List bookmarks$/,
     )
-    expect(await tool(`$('[data-effect="bookmarks.listBookmarks"] .result .label').textContent`)).toMatch(
-      /^OK · \d+ ms · through the server$/,
+    expect(await tool(`[...$('.api-table').querySelectorAll('thead th')].map((t) => t.textContent)`)).toEqual(
+      ['id', 'title', 'kind', 'read'],
     )
-    expect(await tool(`$('[data-effect="bookmarks.listBookmarks"] .result .value').textContent`)).toContain(
-      'Closed-world UI',
-    )
+  })
 
-    await evaluate(`window.confirm = () => true`)
-    await tool(`$('[data-effect="bookmarks.addBookmark"]').open = true`)
+  it('asks in the drawer before a mutation, marks an invalid field, and refreshes the page in place', async () => {
+    await apiClick('.api-tabs button', 'Changes')
+    await until(`!!${api('.api [data-effect="bookmarks.addBookmark"]')}`)
     await tool(
-      `(() => { const i = $('[data-effect="bookmarks.addBookmark"] input'); i.value = 'From the panel'; i.dispatchEvent(new Event('input')) })()`,
+      `(() => { const i = $('.api [data-effect="bookmarks.addBookmark"] input'); i.value = 'x'; i.dispatchEvent(new Event('input')) })()`,
     )
-    await shadowClick('[data-effect="bookmarks.addBookmark"] button', 'writes your development data')
-    await until(
-      `!!document.querySelector('hozu-devtools').shadowRoot.querySelector('[data-effect="bookmarks.addBookmark"] .result')`,
+    await apiClick('.api [data-effect="bookmarks.addBookmark"] button', 'Run')
+    expect(await tool(`$('.api-confirm').textContent`)).toContain('Writes your development data.')
+    await apiClick('.api-confirm button', 'Run')
+    await until(`!!${api('.api-invalid')}`)
+    expect(await tool(`$('.api-invalid').textContent`)).toBe('Use at least 2 characters')
+    expect(await tool(`$('.api-status').textContent`)).toContain('Declared error: Invalid')
+
+    await tool(
+      `(() => { const i = $('.api [data-effect="bookmarks.addBookmark"] input'); i.value = 'From the drawer'; i.dispatchEvent(new Event('input')) })()`,
     )
-    expect(await tool(`$('[data-effect="bookmarks.addBookmark"] .result').textContent`)).toContain(
-      'Invalidated bookmarks.bookmarksTag',
+    await apiClick('.api [data-effect="bookmarks.addBookmark"] button', 'Run')
+    await apiClick('.api-confirm button', 'Run')
+    await until(`document.body.textContent.includes('From the drawer')`)
+    expect(await tool(`$('.api-note').textContent`)).toBe(
+      'Invalidated bookmarks.bookmarksTag · the page re-read it',
     )
-    expect(await tool(`$('[data-effect="bookmarks.addBookmark"] .result .value').textContent`)).toContain(
-      'From the panel',
-    )
+    expect(await tool(`$('.api-tabs button:last-child').textContent`)).toBe('History3')
     expect(errors).toEqual([])
+  })
+
+  it('opens the drawer from the Workbench too', async () => {
+    await shadowClick('.dock button', 'Workbench')
+    await until(`!!${api('.bench-bar')}`)
+    expect(
+      await tool(`[...$('.bench-bar').querySelectorAll('button')].some((b) => b.textContent === 'API')`),
+    ).toBe(true)
+    expect(await tool(`$('.api').hidden`)).toBe(false)
+    await shadowClick('.bench-bar button', 'Exit workbench')
   })
 })

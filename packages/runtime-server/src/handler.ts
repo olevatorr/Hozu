@@ -39,6 +39,7 @@ import { type InvalidationBus, localBus } from './bus.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
 import { assertComponentBundle, assertFetchBundle } from './components.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'
+import { implementedAt } from './dev-effects.ts'
 import { devNode } from './dev-node.ts'
 import { fnModules } from './fn-modules.ts'
 import { endpointForm, formFields, formNode, runForm } from './forms.ts'
@@ -832,7 +833,7 @@ function handlerFor({
         const tree = found
           ? path === '/_hozu/dev/tree'
             ? pageTree(build, found.route)
-            : pageEffects(build, found.route)
+            : await implementedAt(pageEffects(build, found.route), dev, build.bindings.fetches, readFile)
           : null
         return new Response(JSON.stringify(tree), {
           status: tree ? 200 : 404,
