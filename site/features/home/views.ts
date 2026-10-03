@@ -157,7 +157,7 @@ export const Home = ui.view({
               ui.div(
                 {
                   class:
-                    'relative flex h-[123px] w-24 shrink-0 items-end justify-start sm:h-[177px] sm:w-[138px]',
+                    'relative flex h-[136px] w-24 shrink-0 items-end justify-start sm:h-[196px] sm:w-[138px]',
                 },
                 [
                   ui.if(ctx.broken === true, [peg('wait', 96, 'h-auto w-24 sm:w-[138px]')], [], 'pop'),
