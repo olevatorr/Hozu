@@ -32,7 +32,7 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
   const build = loaded.build(false)
   const errors = build.diagnostics.filter((d) => d.severity === 'error')
   if (errors.length)
-    throw new HozuCliError('build', `The project has ${errors.length} build errors`, ['Run hozu validate'])
+    throw new HozuCliError('build', `The project has ${errors.length} build errors`, ['Run hozu check'])
   const require = createRequire(loaded.path)
   const optional = async <T>(id: string): Promise<T | null> => {
     try {

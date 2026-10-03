@@ -27,7 +27,14 @@ function quoteOf(source: string, object: Node): string {
  * `'either'` and every 0.10 implementation lives in the server resolvers. Written in the style of the object: a new
  * line with the indentation of its last property, or `, runs: 'server'` on one line.
  */
-export function addRunsServer(file: string, source: string): { code: string; notes: Note[]; count: number } {
+export const addRunsServer = (file: string, source: string) => addRuns('server', file, source)
+
+/** Adds `runs: '<value>'` to every query and mutation without one, in the object's own style. */
+export function addRuns(
+  value: 'server' | 'either',
+  file: string,
+  source: string,
+): { code: string; notes: Note[]; count: number } {
   if (!source.includes('@hozu/core')) return { code: source, notes: [], count: 0 }
   let program: Node
   let js: string
@@ -47,7 +54,7 @@ export function addRunsServer(file: string, source: string): { code: string; not
       notes.push({
         file,
         line: lineOf(source, n.start),
-        message: `${locals.get(n.callee.name)}(…) without an object literal: add runs: 'server' by hand if its resolver is on the server`,
+        message: `${locals.get(n.callee.name)}(…) without an object literal: add runs: '${value}' by hand`,
         see: 'fetch',
       })
       return
@@ -57,14 +64,14 @@ export function addRunsServer(file: string, source: string): { code: string; not
       notes.push({
         file,
         line: lineOf(source, n.start),
-        message: `${locals.get(n.callee.name)}({ ...spread }): add runs: 'server' by hand if its resolver is on the server`,
+        message: `${locals.get(n.callee.name)}({ ...spread }): add runs: '${value}' by hand`,
         see: 'fetch',
       })
       return
     }
     const q = quoteOf(source, arg)
     const last = arg.properties.at(-1) as Node | undefined
-    const prop = `runs: ${q}server${q}`
+    const prop = `runs: ${q}${value}${q}`
     if (!last) {
       edits.push([arg.start, arg.end, `{ ${prop} }`])
       return

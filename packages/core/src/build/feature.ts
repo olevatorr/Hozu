@@ -117,6 +117,20 @@ const plainJson = (v: unknown): boolean =>
 const RUNS = new Set<unknown>(['server', 'browser', 'either'])
 
 function runsOf(scope: FeatureScope, runs: unknown, effectScope: unknown, p: At): Runs {
+  if (runs === undefined) {
+    scope.report(
+      'HZ081',
+      p,
+      'runs is missing',
+      "Every query and mutation says where its implementation runs (ADR 0053 A): 'server' (a database, a secret, the session; a resolver in app.ts), 'browser' (the visitor's credentials) or 'either' (a public API; both in fetch.ts).",
+      {
+        summary: "Add runs: 'server' when the resolver is in app.ts",
+        snippet: "runs: 'server',",
+        patch: null,
+      },
+    )
+    return 'server'
+  }
   if (!RUNS.has(runs)) {
     scope.report('HZ014', p, `Invalid runs ${JSON.stringify(runs)}`, "Use 'server', 'browser' or 'either'.")
     return 'server'

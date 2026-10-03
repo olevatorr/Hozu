@@ -32,7 +32,7 @@ import { describeRequest, runRequest } from './commands/request.ts'
 import { describeRequests, runRequests } from './commands/requests.ts'
 import { runServe } from './commands/serve.ts'
 import { runSkill } from './commands/skill.ts'
-import { featuresCreated, runValidate, seedLockIsolated } from './commands/validate.ts'
+import { featuresCreated, seedLockIsolated } from './commands/validate.ts'
 import { HozuCliError } from './errors.ts'
 import { load } from './load.ts'
 import { human, json } from './output.ts'
@@ -41,7 +41,6 @@ import { describeOverrides } from './uses.ts'
 const usage = `Usage: hozu <command> [options]
 
 Commands:
-  validate [feature]        Build the IR, run contracts, report diagnostics (exit 1 on errors)
   inspect <feature|id>      Print a feature's canonical IR and summary, or a component (ui.Button) with its uses
   graph <feature>           Print a feature's state/effect/view graph (Mermaid, or --json)
   explain <feature>.<state> Explain a state: transitions, guards, effects, covering contracts
@@ -59,7 +58,8 @@ Commands:
                             again after installing) compare the IR and check; never writes the lock
   render <id>               Render one component alone (ui.Button): HTML, root class, owned properties, diagnostics
   skill                     Rewrite the agent skill for this Hozu version (--agent claude|agents|both)
-  check                     Type-check the app and validate it: the one command to run after every edit
+  check [--no-types]        Type-check the app and validate it: the one command to run after every edit
+                            (--no-types: rules and contracts only)
   map                       Outline the app (routes, queries, mutations, events, states, views) with file:line
   get <path>...             Request pages in-process (no server): status, title, alerts, visible text, forms
   env [--example]           Every env variable the app reads: side, required, default, set now, internal URL;
@@ -77,7 +77,7 @@ Commands:
 Options:
   --json               Machine-readable output (schemas in @hozu/cli/schema)
   --config <path>      Config file (default: hozu.config.ts)
-  --update-lock        validate: rewrite hozu.lock.json when there are no errors
+  --update-lock        check: rewrite hozu.lock.json when there are no errors
   --out <dir>          build: output directory (default: dist)
   --agent <agent>      skill: claude, agents or both (default: the folders that exist)
   --session <json>     get/browse: start signed in with this session (a real one: sign-out works); after --as, that actor's
@@ -162,6 +162,7 @@ export async function main(
         json: { type: 'boolean', default: false },
         config: { type: 'string' },
         'update-lock': { type: 'boolean', default: false },
+        'no-types': { type: 'boolean', default: false },
         out: { type: 'string' },
         agent: { type: 'string' },
         session: { type: 'string' },
@@ -198,7 +199,6 @@ export async function main(
     }
     const commands = [
       'docs',
-      'validate',
       'check',
       'map',
       'get',
@@ -219,6 +219,11 @@ export async function main(
       'requests',
       'skill',
     ]
+    if (command === 'validate')
+      throw new HozuCliError('usage', 'hozu validate was replaced by hozu check (ADR 0053 B)', [
+        'hozu check   # types, rules and contracts',
+        'hozu check --no-types   # rules and contracts only',
+      ])
     if (command === 'post')
       throw new HozuCliError(
         'usage',
@@ -288,7 +293,12 @@ export async function main(
       return 0
     }
     const configPath = resolve(cwd, values.config ?? 'hozu.config.ts')
-    const typeRun = command === 'check' && existsSync(configPath) ? startTypes(configPath) : undefined
+    const typeRun =
+      command !== 'check' || !existsSync(configPath)
+        ? undefined
+        : values['no-types'] === true
+          ? Promise.resolve({ types: { ok: true, skipped: true, errors: [] }, ms: 0 })
+          : startTypes(configPath)
     const loading = performance.now()
     const loaded = await load(values.config, cwd)
     const loadMs = performance.now() - loading
@@ -310,7 +320,9 @@ export async function main(
         if (result.overrides.length) out('\n')
         const v = result.validate
         const types = result.types.skipped
-          ? 'types skipped (npm install -D typescript)'
+          ? values['no-types'] === true
+            ? 'types not checked (--no-types)'
+            : 'types skipped (npm install -D typescript)'
           : `types ${result.types.ok ? 'ok' : `${result.types.errors.length} errors`}`
         out(
           `${result.ok ? '✔' : '✖'} ${types} · ${v.summary.errors} errors, ${v.summary.warnings} warnings${v.summary.accepted ? ` (${v.summary.accepted} accepted)` : ''} · contracts ${Object.values(v.coverage).reduce((n, c) => n + c.covered, 0)}/${Object.values(v.coverage).reduce((n, c) => n + c.total, 0)} decisions · lock ${v.lock}\n`,
@@ -365,20 +377,6 @@ export async function main(
       })
       out(asJson ? json(result) : describeBrowse(result, values.full === true))
       return browseFailed(result) ? 1 : 0
-    }
-    if (command === 'validate') {
-      const result = await runValidate(loaded, target, cwd, values['update-lock'] === true)
-      if (asJson) out(json(result))
-      else {
-        for (const d of result.diagnostics) out(`${human(d)}\n\n`)
-        const coverage = Object.entries(result.coverage)
-          .map(([f, c]) => `${f} ${c.covered}/${c.total} decisions (${c.transitions} transitions)`)
-          .join(', ')
-        out(
-          `${result.ok ? '✔' : '✖'} ${result.summary.errors} errors, ${result.summary.warnings} warnings · contracts cover ${coverage || 'n/a'} · styles ${result.styles} · lock ${result.lock} (ir ${result.hash.slice(0, 12)})\n`,
-        )
-      }
-      return result.ok ? 0 : 1
     }
     if (command === 'inspect') {
       const result = runInspect(loaded, target, cwd)

@@ -20,6 +20,7 @@ const search = query({
   output: z.array(z.string()),
   scope: 'public',
   freshness: 'request',
+  runs: 'either',
 })
 const appWith = (connect: unknown[]) =>
   project({

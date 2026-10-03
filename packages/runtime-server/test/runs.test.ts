@@ -30,6 +30,7 @@ const search = query({
   errors: { Empty: z.object({ q: z.string() }) },
   scope: 'public',
   freshness: 'request',
+  runs: 'either',
 })
 const mine = query({
   input: z.object({}),

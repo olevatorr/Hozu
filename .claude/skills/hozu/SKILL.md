@@ -29,9 +29,9 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 | UI (a button, a field) | `ui.use` of a kit component; the catalog: `npx hozu docs components` |
 
 ## Rules no diagnostic checks
-- **Where each query and mutation runs:** a database, a secret or the session → `runs: 'server'` (resolver in
-  `app.ts`); the visitor's browser credentials → `runs: 'browser'`; anything else → leave the default `'either'` and
-  implement it in the feature's `fetch.ts` (`npx hozu docs fetch`).
+- **Every query and mutation states `runs`:** a database, a secret or the session → `'server'` (resolver in
+  `app.ts`); the visitor's browser credentials → `'browser'`; a public API → `'either'`, implemented in the feature's
+  `fetch.ts` (`npx hozu docs fetch`).
 - **Query resolvers only read.** Writes belong in mutation and endpoint resolvers; a prefetched link runs queries.
 - **Other users, reloads, sign-out:** verify them in one `browse` chain with `--js both` (`--as <name>` per user).
 - **Contracts only where a transition decides:** a guard, a `navigate`, a `fn` or computed value. Copy-only

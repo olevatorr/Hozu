@@ -67,12 +67,14 @@ export const posts = query({
   scope: 'public',
   freshness: 'request',
   tags: (i) => [postsTag(i.userId)],
+  runs: 'either',
 })
 export const createPost = mutation({
   input: z.object({ userId: User, title: z.string().min(1, 'Give it a title') }),
   output: Post,
   errors: { Unavailable },
   invalidates: (i) => [postsTag(i.userId)],
+  runs: 'either',
 })
 
 export const drafts = query({

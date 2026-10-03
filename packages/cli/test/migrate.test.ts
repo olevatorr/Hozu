@@ -281,3 +281,74 @@ describe('the 0.11 → 0.12 step (ADR 0050 D)', () => {
     expect(chain('0.10', '0.12')?.map((s) => s.to)).toEqual(['0.11', '0.12'])
   })
 })
+
+describe('the 0.13 → 0.14 step (ADR 0053)', () => {
+  it('rewrites hozu validate scripts to hozu check and removes hozu graph scripts', async () => {
+    const { rewriteScripts } = await import('../src/migrate/step-0.14.ts')
+    const dir = join(root, '.tmp', `migrate-scripts-${process.pid}`)
+    rmSync(dir, { recursive: true, force: true })
+    mkdirSync(dir, { recursive: true })
+    made.push(dir)
+    const pkg = {
+      name: 'app',
+      scripts: {
+        validate: 'hozu validate',
+        lock: 'hozu validate cart --update-lock',
+        graph: 'hozu graph cart',
+        start: 'hozu serve',
+      },
+    }
+    writeFileSync(join(dir, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`)
+    expect(rewriteScripts(dir, false)).toEqual([{ file: 'package.json', edits: 3 }])
+    expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))).toEqual(pkg)
+    rewriteScripts(dir, true)
+    expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts).toEqual({
+      check: 'hozu check',
+      lock: 'hozu check --update-lock',
+      start: 'hozu serve',
+    })
+    expect(rewriteScripts(dir, true)).toEqual([])
+  })
+
+  it("adds runs: 'either' where runs is omitted, so the IR does not change", () => {
+    const step = chain('0.13', '0.14')![0]!
+    const r = step.rewrite(
+      'm.ts',
+      `${head}export const a = query({ input: I, output: O, scope: 'public', freshness: 'static' })\n`,
+    )
+    expect([r.count, r.code.includes("freshness: 'static', runs: 'either' })")]).toEqual([1, true])
+    expect(step.normalize({ features: {} } as never)).toEqual({ features: {}, accept: [] })
+  })
+
+  it('takes a 0.13 app to 0.14 with an equal IR and a clean check', async () => {
+    const dir = join(root, '.tmp', `migrate-0.13-${Date.now()}`)
+    cpSync(join(root, 'examples/bookmarks'), dir, {
+      recursive: true,
+      filter: (from) => !/\/(node_modules|\.hozu)(\/|$)/.test(from),
+    })
+    symlinkSync(join(root, 'examples/bookmarks/node_modules'), join(dir, 'node_modules'))
+    made.push(dir)
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+    delete pkg.scripts.check
+    pkg.scripts.validate = 'hozu validate'
+    writeFileSync(join(dir, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`)
+    const before = await irOf(dir)
+    const first = await runMigrate(dir, {
+      config: undefined,
+      dryRun: false,
+      versions: { installed: '0.13.0', target: '0.14.0' },
+      recordIR: () => before,
+    })
+    expect(first.changed).toEqual([{ file: 'package.json', edits: 1 }])
+    const second = await runMigrate(dir, {
+      config: undefined,
+      dryRun: false,
+      versions: { installed: '0.14.0', target: '0.14.0' },
+    })
+    expect([second.ir.differences, second.check?.validate.summary, second.ok]).toEqual([
+      [],
+      { errors: 0, warnings: 0, accepted: 0 },
+      true,
+    ])
+  }, 120_000)
+})

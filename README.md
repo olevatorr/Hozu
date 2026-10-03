@@ -33,8 +33,8 @@ npm create hozu@latest my-app
   SWR, streamed or client rendering per node. User data can never reach a cacheable region. Only views bound to a
   machine ship JavaScript.
 - **Where data runs is declared, too.** A query or mutation says what its implementation needs: `runs: 'server'`
-  for a database or a secret, `'browser'` for the visitor's own token, or the default `'either'` for an API the
-  browser may call. `'either'` renders on the server first and calls the API from the browser afterwards, without
+  for a database or a secret, `'browser'` for the visitor's own token, or `'either'` for an API the browser may
+  call; there is no default. `'either'` renders on the server first and calls the API from the browser afterwards, without
   a second hop through your server; a front end with no server of its own exports to a static host.
 - **Closed world.**
   - Views are typed element trees, not functions: every HTML attribute and DOM event is typed, and Tailwind

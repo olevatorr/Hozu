@@ -264,19 +264,19 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `pnpm bench:scale [sizes…]` — generated 50/200/500-feature apps (docs/benchmarks/0003); gates P12; not part of the gate
 - `pnpm bench:parity` — screenshot parity of `examples/showcase` against a Nuxt reference (docs/benchmarks/0002)
 - `pnpm schema` — regenerate the JSON Schemas from the IR / CLI types (a test fails if stale)
-- `pnpm --filter example-cart validate|inspect|graph|explain|plan|simulate|demo|client|serve|export`
-- `pnpm --filter example-blog validate|plan|seo|serve|dev` — SEO audit against adapter-node
+- `pnpm --filter example-cart check|inspect|explain|plan|simulate|demo|client|serve|export`
+- `pnpm --filter example-blog check|plan|seo|serve|dev` — SEO audit against adapter-node
 - `pnpm --filter example-cart dev` — dev server with CSS hot swap
-- `pnpm --filter example-showcase validate|serve|dev` — every presentation capability and client component library
-- `pnpm --filter example-feed validate|plan|serve` — cursor pagination, infinite scroll, `:x+` / `:x?` routes
+- `pnpm --filter example-showcase check|serve|dev` — every presentation capability and client component library
+- `pnpm --filter example-feed check|plan|serve` — cursor pagination, infinite scroll, `:x+` / `:x?` routes
 - `examples/notes` — sessions (sign in/out), user-scoped data, no-JS forms; reference app for `bench/trial/notes`
 - `node bench/trial/notes/accept.mjs <name> <dir> <entry> <port> [1|2]` — hidden acceptance of the notes trial
 - `node bench/trial/accept.mjs <name> <dir> <entry> <port> [1|2]` — hidden acceptance of the AI trial app (docs/trials/0003)
 - `hozu check --update-lock` — accept behavior changes into `hozu.lock.json`; list the accepted `now:` lines
 
 ## CLI (agent-facing, all support --json)
-`hozu inspect <feature>` · `hozu validate [feature]` · `hozu impact <feature>.<symbol>`
-`hozu graph <feature>` · `hozu plan <route>` · `hozu explain <feature>.<state>`
+`hozu inspect <feature>` · `hozu check [--no-types]` · `hozu impact <feature>.<symbol>`
+`hozu plan <route>` · `hozu explain <feature>.<state>`
 
 ## Cost rules
 - Do not add CI workflows, scheduled jobs, or any paid/external service without explicit approval.

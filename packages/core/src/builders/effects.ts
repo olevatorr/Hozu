@@ -60,9 +60,10 @@ export const query = <
   scope: Sc
   freshness: Freshness
   tags?: (input: Ref<Infer<I>>) => TagUse[]
-  runs?: Runs
+  /** Where the implementation runs (ADR 0049); required since 0.14 (ADR 0053 A). */
+  runs: Runs
 }): QueryDecl<Infer<I>, Infer<O>, ErrorTypes<E>, Sc> =>
-  brand({}, 'query', { errors: {}, tags: () => [], runs: 'either', ...config } as QueryDef)
+  brand({}, 'query', { errors: {}, tags: () => [], ...config } as QueryDef)
 
 export const mutation = <
   I extends Schema,
@@ -73,6 +74,7 @@ export const mutation = <
   output: O
   errors?: E
   invalidates?: (input: Ref<Infer<I>>) => TagUse[]
-  runs?: Runs
+  /** Where the implementation runs (ADR 0049); required since 0.14 (ADR 0053 A). */
+  runs: Runs
 }): MutationDecl<Infer<I>, Infer<O>, ErrorTypes<E>> =>
-  brand({}, 'mutation', { errors: {}, invalidates: () => [], runs: 'either', ...config } as MutationDef)
+  brand({}, 'mutation', { errors: {}, invalidates: () => [], ...config } as MutationDef)

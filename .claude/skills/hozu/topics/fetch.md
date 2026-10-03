@@ -6,7 +6,7 @@ Every query and mutation declares what its implementation needs; Hozu derives wh
 |---|---|---|
 | `'server'` | a database, a server secret, the session | `app.ts` / `features/<name>/server.ts` resolvers |
 | `'browser'` | the visitor's browser credentials (a token in `localStorage`, an OIDC library, the API's own cookies) | `features/<name>/fetch.ts` |
-| `'either'` (**default**) | nothing special: a public API, or your own API with CORS | `features/<name>/fetch.ts` |
+| `'either'` | nothing special: a public API, or your own API with CORS | `features/<name>/fetch.ts` |
 
 ```ts
 // model.ts

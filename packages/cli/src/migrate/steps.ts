@@ -1,7 +1,8 @@
 import type { Json } from '@hozu/core/ir'
 import type { Note } from './ast.ts'
-import { addRunsServer, normalize010 } from './step-0.11.ts'
+import { addRuns, addRunsServer, normalize010 } from './step-0.11.ts'
 import { ignoreHozu } from './step-0.12.ts'
+import { rewriteScripts } from './step-0.14.ts'
 
 export interface Step {
   from: string
@@ -48,6 +49,18 @@ export const steps: Step[] = [
       }
       return ir
     },
+  },
+  {
+    from: '0.13',
+    to: '0.14',
+    summary:
+      "runs: 'either' where runs is omitted (0.14 requires it); package.json scripts call hozu check, and hozu graph scripts are removed (ADR 0053)",
+    rewrite: (file, source) => addRuns('either', file, source),
+    normalize: (ir) => {
+      ;(ir as { accept?: unknown[] }).accept ??= []
+      return ir
+    },
+    files: rewriteScripts,
   },
 ]
 

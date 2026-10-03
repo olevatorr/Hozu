@@ -64,7 +64,13 @@ const build = (
 
 describe('runs and fetch.ts (ADR 0049, HZ081)', () => {
   it('defaults to either and needs fetch.ts with an export of the effect', () => {
-    const search = query({ input: z.object({}), output: Repos, scope: 'public', freshness: 'request' })
+    const search = query({
+      input: z.object({}),
+      output: Repos,
+      scope: 'public',
+      freshness: 'request',
+      runs: 'either',
+    })
     expect(build({ search }).b.ir.features.repos!.queries.search!.runs).toBe('either')
     expect(
       build({ search })
@@ -77,7 +83,13 @@ describe('runs and fetch.ts (ADR 0049, HZ081)', () => {
   })
 
   it('reports a missing export, an export of nothing, and a server effect implemented in fetch.ts', () => {
-    const search = query({ input: z.object({}), output: Repos, scope: 'public', freshness: 'request' })
+    const search = query({
+      input: z.object({}),
+      output: Repos,
+      scope: 'public',
+      freshness: 'request',
+      runs: 'either',
+    })
     const list = query({
       input: z.object({}),
       output: Repos,
@@ -101,7 +113,13 @@ describe('runs and fetch.ts (ADR 0049, HZ081)', () => {
   })
 
   it('keeps per-visitor data off either: a user query must run on the server or in the browser', () => {
-    const mine = query({ input: z.object({}), output: Repos, scope: 'user', freshness: 'request' })
+    const mine = query({
+      input: z.object({}),
+      output: Repos,
+      scope: 'user',
+      freshness: 'request',
+      runs: 'either',
+    })
     const ok = fetchFile('mine.ts', 'export const mine = implement(async () => [])\n')
     expect(
       build({ mine }, { fetch: ok })
@@ -228,7 +246,13 @@ describe('the browser region mode (ADR 0049 §3)', () => {
 })
 
 describe('connect: the origins browser-run effects call (ADR 0051)', () => {
-  const search = query({ input: z.object({}), output: Repos, scope: 'public', freshness: 'request' })
+  const search = query({
+    input: z.object({}),
+    output: Repos,
+    scope: 'public',
+    freshness: 'request',
+    runs: 'either',
+  })
   const calls = fetchFile(
     'calls.ts',
     "export const search = implement(async () => (await fetch('https://api.github.com/search?q=x')).json())\nconst local = 'http://localhost:8080/docs'\n// docs: https://docs.github.com/rest\n/* https://example.com */\n",
@@ -331,5 +355,21 @@ describe('environment conventions (ADR 0052)', () => {
     expect(codes.filter(([c]) => c === 'HZ085').map(([, m]) => m)).toEqual([
       'env.internal maps OTHER to MISSING, but OTHER is not a public variable and MISSING is not a server variable',
     ])
+  })
+})
+
+describe('runs is required (ADR 0053 A)', () => {
+  it('reports a query without runs (untyped code) as HZ081', () => {
+    const search = query({
+      input: z.object({}),
+      output: Repos,
+      scope: 'public',
+      freshness: 'request',
+    } as never)
+    expect(
+      build({ search })
+        .codes.filter(([c, m]) => c === 'HZ081' && m === 'runs is missing')
+        .map(([c]) => c),
+    ).toEqual(['HZ081'])
   })
 })

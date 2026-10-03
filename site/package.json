@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "validate": "hozu validate",
     "check": "hozu check",
     "export": "node --import @hozu/transform/register export.ts",
     "typecheck": "tsc --noEmit -p .",

@@ -49,7 +49,7 @@ for (const n of sizes.length ? sizes : [50, 200, 500]) {
   if (setup.status !== 0) throw new Error(`setup failed for ${n}\n${setup.stdout}${setup.stderr}`)
   const check = median3(bin('hozu'), ['check', '--json'], dir)
   const types = median3(bin('tsc'), ['--noEmit', '-p', dir], dir)
-  const validate = median3(bin('hozu'), ['validate', '--json'], dir)
+  const validate = median3(bin('hozu'), ['check', '--no-types', '--json'], dir)
   const views = join(dir, 'features/f1/views.ts')
   const original = readFileSync(views, 'utf8')
   const edits = [1, 2, 3].map((n) => {

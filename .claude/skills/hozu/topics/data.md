@@ -7,7 +7,7 @@ export const listItems = query({
   scope: 'public',                  // 'user' = the session's data (needs project({ session }))
   freshness: 'static',              // | 'request' | { revalidate: seconds } | { swr: seconds } | 'live'
   tags: () => [itemsTag()],          // optional; (input) => [...]
-  runs: 'server',                   // where the implementation lives: 'server' | 'browser' | 'either' (default); hozu docs fetch
+  runs: 'server',                   // where the implementation lives: 'server' | 'browser' | 'either' (required); hozu docs fetch
 })
 export const getItem = query({ input: Key, output: Item, errors: { NotFound: Key }, scope: 'public',
   freshness: 'static', tags: (k) => [itemTag(k.id)] })

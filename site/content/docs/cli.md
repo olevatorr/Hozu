@@ -21,8 +21,7 @@ npx hozu get / --json
 | Command | Purpose |
 | --- | --- |
 | `hozu add feature tasks --page /tasks --json` | Scaffold a feature and optionally its page. `--with detail,toggle,filter,remove,auth` adds composable behaviours. |
-| `hozu check --json` | Check TypeScript, framework rules and contracts. |
-| `hozu validate --json` | Build and validate the IR, including contracts. An optional feature name narrows the target. |
+| `hozu check --json` | Check TypeScript, framework rules and contracts. `--no-types` skips TypeScript; `--update-lock` accepts a behaviour change. (`hozu validate` was removed in 0.14.) |
 | `hozu map --json` | Show a compact app outline with source locations. |
 | `hozu inspect tasks --json` | Inspect a feature's canonical IR and summary, or a component (`ui.Button`) with every use. |
 | `hozu graph tasks --json` | Inspect state, effect and view relationships; ordinary output is Mermaid. |

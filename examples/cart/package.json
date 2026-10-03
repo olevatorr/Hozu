@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "validate": "hozu validate",
+    "check": "hozu check",
     "inspect": "hozu inspect cart",
     "graph": "hozu graph cart",
     "explain": "hozu explain cart.idle",

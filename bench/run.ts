@@ -216,11 +216,14 @@ const bin = join(root, 'packages/cli/bin/hozu.js')
 const cold: number[] = []
 for (let i = 0; i < 10; i++) {
   const start = performance.now()
-  const r = spawnSync(process.execPath, [bin, 'validate', '--json'], { cwd: cartDir, encoding: 'utf8' })
+  const r = spawnSync(process.execPath, [bin, 'check', '--no-types', '--json'], {
+    cwd: cartDir,
+    encoding: 'utf8',
+  })
   cold.push(performance.now() - start)
-  if (r.status !== 0) throw new Error(`hozu validate failed: ${r.stdout}${r.stderr}`)
+  if (r.status !== 0) throw new Error(`hozu check --no-types failed: ${r.stdout}${r.stderr}`)
 }
-record('P3', 'hozu validate --json cold start, median of 10', median(cold), 'ms', 300)
+record('P3', 'hozu check --no-types --json cold start, median of 10', median(cold), 'ms', 300)
 
 const tsc = join(root, 'node_modules/.bin/tsc')
 const diag = execFileSync(tsc, ['-p', join(cartDir, 'tsconfig.json'), '--extendedDiagnostics'], {

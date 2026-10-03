@@ -20,6 +20,7 @@ const where = query({
   output: z.object({ api: z.string() }),
   scope: 'public',
   freshness: 'request',
+  runs: 'either',
 })
 const Page = ui.view({
   render: () =>

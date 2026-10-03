@@ -22,6 +22,7 @@ export const searchRepos = query({
   errors: { Unavailable: z.object({ status: z.number() }) },
   scope: 'public',
   freshness: 'request',
+  runs: 'either',
 })
 export const starred = query({
   input: z.object({}),

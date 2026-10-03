@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "validate": "hozu validate",
+    "check": "hozu check",
     "serve": "hozu serve",
     "dev": "hozu-dev",
     "start": "hozu serve"

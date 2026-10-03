@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "hozu dev",
-    "validate": "hozu validate",
+    "check": "hozu check",
     "serve": "hozu serve",
     "start": "hozu serve"
   },

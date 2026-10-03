@@ -49,7 +49,7 @@ Every query and mutation declares what its implementation needs. Hozu derives wh
 | --- | --- | --- |
 | `'server'` | a database, a server secret, the session | the resolvers in `app.ts` |
 | `'browser'` | the visitor's own credentials, such as a token in `localStorage` | the feature's `fetch.ts` |
-| `'either'` (default) | nothing special: a public API, or your own API with CORS | the feature's `fetch.ts` |
+| `'either'` | nothing special: a public API, or your own API with CORS | the feature's `fetch.ts` |
 
 An `'either'` query is rendered on the server on first paint. Later reads and mutations call the API from the browser directly, never through your server. A `'browser'` query renders its `pending` branch on the server and reads after hydration. `'either'` needs `scope: 'public'`.
 

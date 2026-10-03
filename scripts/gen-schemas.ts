@@ -12,11 +12,6 @@ export const targets = [
   },
   {
     source: 'packages/cli/src/contract.ts',
-    type: 'ValidateOutput',
-    out: 'packages/cli/schema/validate.schema.json',
-  },
-  {
-    source: 'packages/cli/src/contract.ts',
     type: 'InspectOutput',
     out: 'packages/cli/schema/inspect.schema.json',
   },

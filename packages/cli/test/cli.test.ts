@@ -53,18 +53,24 @@ describe('hozu skill', () => {
 })
 
 describe('A5 CLI contract', () => {
-  it('validate --json is clean for the cart and matches its schema', async () => {
-    const { code, stdout } = await run(['validate', '--json'])
+  it('check --no-types --json is clean for the cart and matches its schema; validate is gone', async () => {
+    const { code, stdout } = await run(['check', '--no-types', '--json'])
     const out = JSON.parse(stdout)
     expect(code).toBe(0)
-    expect(out).toMatchObject({
+    expect(out.types).toEqual({ ok: true, skipped: true, errors: [] })
+    expect(out.validate).toMatchObject({
       ok: true,
       summary: { errors: 0, warnings: 0, accepted: 0 },
       coverage: { cart: expect.objectContaining({ transitions: 15 }) },
       lock: 'current',
     })
-    expect(out.diagnostics).toEqual([])
-    expectSchema('validate', out)
+    expect(out.validate.diagnostics).toEqual([])
+    expectSchema('check', out)
+    const gone = await run(['validate', '--json'])
+    expect([gone.code, JSON.parse(gone.stdout).error.message]).toEqual([
+      2,
+      'hozu validate was replaced by hozu check (ADR 0053 B)',
+    ])
   })
 
   it('inspect --json matches its schema and reports hydration', async () => {
@@ -175,16 +181,18 @@ describe('A5 CLI contract', () => {
 
   it('reports HZ011 when a recorder is nondeterministic', async () => {
     const { code, stdout } = await run([
-      'validate',
+      'check',
+      '--no-types',
       '--json',
       '--config',
       `${root}packages/cli/test/fixtures/nondeterministic.config.ts`,
     ])
-    const out = JSON.parse(stdout)
+    const checked = JSON.parse(stdout)
     expect(code).toBe(1)
-    expectSchema('validate', out)
+    expectSchema('check', checked)
+    const out = checked.validate
     expect(out.lock).toBe('stale')
-    expect(out.diagnostics.map((d: { code: string }) => d.code).sort()).toEqual(['HZ011', 'HZ057'])
+    expect(out.diagnostics.map((d: { code: string }) => d.code).sort()).toEqual(['HZ011', 'HZ045', 'HZ057'])
     expect(out.diagnostics.find((d: { code: string }) => d.code === 'HZ011')).toMatchObject({
       code: 'HZ011',
       location: {
@@ -198,12 +206,13 @@ describe('A5 CLI contract', () => {
 describe('the CSS stage (ADR 0045 E)', () => {
   it('reads the render classes from the bindings, so HZ073 and HZ075 see inside a component', async () => {
     const { code, stdout } = await run([
-      'validate',
+      'check',
+      '--no-types',
       '--json',
       '--config',
       `${root}packages/cli/test/fixtures/styles.config.ts`,
     ])
-    const out = JSON.parse(stdout)
+    const out = JSON.parse(stdout).validate
     expect(code).toBe(1)
     expect(out.styles).toBe('checked')
     expect(
@@ -214,6 +223,7 @@ describe('the CSS stage (ADR 0045 E)', () => {
     ).toEqual([
       ['HZ073', '/features/look/components/Card'],
       ['HZ075', '/features/look/views/Home/root/children/0/class'],
+      ['HZ045', '/app'],
     ])
   })
 })
@@ -222,7 +232,9 @@ describe('built binary', () => {
   it('maps diagnostics to exact source lines and exits 1', async () => {
     const exec = promisify(execFile)
     const fixture = `${root}packages/cli/test/fixtures/nondeterministic.config.ts`
-    const result = await exec('node', [bin, 'validate', '--config', fixture], { cwd: root }).catch((e) => e)
+    const result = await exec('node', [bin, 'check', '--no-types', '--config', fixture], { cwd: root }).catch(
+      (e) => e,
+    )
     expect(result.code).toBe(1)
     expect(result.stdout).toContain(
       'packages/cli/test/fixtures/nondeterministic.config.ts:14:9  error  HZ011',
