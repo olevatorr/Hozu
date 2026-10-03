@@ -1,0 +1,11 @@
+# SHA-256 of the held-out changes 21-28 and their checks for trial 0024 (ADR 0055), kept outside the repository in /Users/otischen/Developer/hozu-trial-0024/ until the trial ends.
+# Written 2026-10-04 by an isolated session (spec, changes 1-20, harness and Nuxt reference only); validated at 100 % on the Nuxt reference (heldout-author/out/validation.txt). No check amended.
+2313763ff43866d420d590ac3beeef90321591d4227543e45421163dfaf22e55  changes/21.md
+5b7a355387da9e6b407976d1c0ad7f87647722d4371fadc4d18b4b459de212fe  changes/22.md
+72354cfaa133df497183702c72185479f32cca2ccedfb98db3e3c0e6a987675e  changes/23.md
+eeb491b5be8e6637f6b0f200799265c18553e7e0bde5971807a5effcad69321c  changes/24.md
+0ca64b1806730fd762c0c8b9807b2602492d64096d413c63dcf1048393070216  changes/25.md
+0f923642fd03bf75804a2dd864e2d8618b76ceba98832e38f451b27817a86287  changes/26.md
+587d28b4ba6a8a2ade380352ec2033379766e6c869ea3c798a13401a55f4faa2  changes/27.md
+6cf52f4270be6752bce1a42c3a5a72320f082796057910ed1fac351c80d8e2a9  changes/28.md
+e517b5bc8d4cce81848f59b84457bc01245a4bfcf05784eb7d0e8538fa3c2c67  heldout/accept-heldout.mjs
