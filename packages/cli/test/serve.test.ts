@@ -70,7 +70,7 @@ describe('one app module (ADR 0043 E)', () => {
     expect(pkg.scripts.start).toBe('hozu serve')
     expect(readFileSync(join(app, 'app.ts'), 'utf8')).toContain('export default app({')
     const { code, out } = await check(app)
-    expect([code, out.validate.summary]).toEqual([0, { errors: 0, warnings: 0 }])
+    expect([code, out.validate.summary]).toEqual([0, { errors: 0, warnings: 0, accepted: 0 }])
   }, 60_000)
 
   it('HZ045: a default export that is not app(…), or no app module at all, is an error counted by check', async () => {

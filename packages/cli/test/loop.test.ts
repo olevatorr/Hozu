@@ -65,7 +65,7 @@ describe('the agent loop (ADR 0027)', () => {
     const check = await json('check', ['check'], app)
     expect(check.code).toBe(0)
     expect(check.out.types).toEqual({ ok: true, skipped: false, errors: [] })
-    expect(check.out.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect(check.out.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     expect(Object.keys(check.out.timings).sort()).toEqual(['load', 'types', 'validate'])
     expect(existsSync(join(app, '.hozu/check/tsconfig.tsbuildinfo'))).toBe(true)
 
@@ -189,7 +189,7 @@ describe('the agent loop (ADR 0027)', () => {
       expect(added.out.manual, chosen.join(',')).toEqual([])
       const check = await json('check', ['check'], app)
       expect(check.out.types.errors, chosen.join(',')).toEqual([])
-      expect(check.out.validate.summary, chosen.join(',')).toEqual({ errors: 0, warnings: 0 })
+      expect(check.out.validate.summary, chosen.join(',')).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     }
   }, 120_000)
 
@@ -297,7 +297,7 @@ describe('the agent loop (ADR 0027)', () => {
     expect(added.out.manual).toEqual([])
     const check = await json('check', ['check'], app)
     expect(check.out.types.errors).toEqual([])
-    expect(check.out.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect(check.out.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     expect(readFileSync(join(app, 'app.ts'), 'utf8')).not.toContain('session:')
     const signedOut = await json('request', ['get', '/'], app)
     expect(signedOut.out.steps[0]).toMatchObject({ status: 303, location: '/login' })
@@ -365,7 +365,7 @@ describe('ordinary TypeScript in a scaffolded app (ADR 0039)', () => {
     )
     const check = await checkFresh(app)
     expect(check.types.errors).toEqual([])
-    expect(check.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect(check.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     const page = await promisify(execFile)(
       process.execPath,
       [`${root}packages/cli/bin/hozu.js`, 'get', '/', '--json'],
@@ -390,7 +390,7 @@ describe('hozu add component (ADR 0045 I, phase 4)', () => {
     const app = await freshApp()
     await run(['add', 'feature', 'tasks', '--page', '/'], app)
     const before = await json('check', ['check'], app)
-    expect(before.out.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect(before.out.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     const widget = await run(['add', 'widget', 'tasks', 'Chart', '--json'], app)
     expect([widget.code, JSON.parse(widget.stdout).error.message]).toEqual([
       2,
@@ -418,7 +418,7 @@ describe('hozu add component (ADR 0045 I, phase 4)', () => {
     )
     const check = await checkFresh(app)
     expect(check.types.errors).toEqual([])
-    expect(check.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect(check.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     const entry = join(app, 'app.ts')
     writeFileSync(entry, readFileSync(entry, 'utf8').replace('components: bundleComponents,', ''))
     const missing = await checkFresh(app)
@@ -439,7 +439,7 @@ describe('hozu add component (ADR 0045 I, phase 4)', () => {
     expect(readFileSync(join(app, 'ui/kit.ts'), 'utf8')).toContain('components: [card]')
     const check = await checkFresh(app)
     expect(check.types.errors).toEqual([])
-    expect(check.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect(check.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     expect((await run(['add', 'component', 'nowhere', 'Card'], app)).code).toBe(2)
   }, 60_000)
   it('depends on the bundle tarball next to a core tarball (ADR 0040 C)', () => {

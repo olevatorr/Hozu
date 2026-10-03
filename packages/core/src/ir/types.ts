@@ -19,6 +19,8 @@ export interface ProjectIR {
     /** Public variable → server variable holding its internal URL, read by `'either'` effects on the server. */
     internal: Record<string, string>
   } | null
+  /** Warnings the project keeps on purpose, each with its reason (ADR 0053 C). */
+  accept: AcceptIR[]
   features: Record<string, FeatureIR>
   kits: Record<string, KitIR>
 }
@@ -109,6 +111,13 @@ export interface FeatureIR {
   fetch: { sourceHash: string } | null
   /** The origins its browser-run effects call, added to CSP `connect-src` (ADR 0051). */
   connect: ConnectIR[]
+}
+
+/** A warning kept on purpose: its code, what it is about (a declaration ref or an IR pointer) and why. */
+export interface AcceptIR {
+  code: string
+  at: string
+  reason: string
 }
 
 /** An origin (`https://api.github.com`) or a public env variable holding a URL. */

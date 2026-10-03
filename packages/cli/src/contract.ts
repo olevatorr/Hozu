@@ -26,11 +26,13 @@ export type LockState = 'missing' | 'current' | 'stale' | 'updated' | 'skipped'
 export interface ValidateOutput {
   ok: boolean
   hash: string
-  summary: { errors: number; warnings: number }
+  summary: { errors: number; warnings: number; accepted: number }
   coverage: Record<string, Coverage>
   lock: LockState
   styles: 'checked' | 'unavailable'
   diagnostics: Diagnostic[]
+  /** Warnings the project keeps on purpose (`project({ accept })`, ADR 0053 C), with their reasons. */
+  accepted: { code: string; message: string; at: string; reason: string }[]
 }
 
 export interface InspectSummary {

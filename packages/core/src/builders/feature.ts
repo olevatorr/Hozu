@@ -90,6 +90,8 @@ export interface ProjectConfig {
   pages: PageDecl[]
   features: FeatureDecl[]
   kits?: KitDecl[]
+  /** Warnings kept on purpose (ADR 0053 C): `[{ code: 'HZ036', at: 'notes.SaveDraft', reason: '…' }]`. */
+  accept?: { code: string; at: string; reason: string }[]
   http?: HttpConfig
   env?: EnvConfig
 }

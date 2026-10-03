@@ -19,11 +19,15 @@
             },
             "warnings": {
               "type": "number"
+            },
+            "accepted": {
+              "type": "number"
             }
           },
           "required": [
             "errors",
-            "warnings"
+            "warnings",
+            "accepted"
           ],
           "additionalProperties": false
         },
@@ -48,6 +52,34 @@
           "items": {
             "$ref": "#/definitions/Diagnostic"
           }
+        },
+        "accepted": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "at": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "at",
+              "reason"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Warnings the project keeps on purpose (`project({ accept })`, ADR 0053 C), with their reasons."
         }
       },
       "required": [
@@ -57,7 +89,8 @@
         "coverage",
         "lock",
         "styles",
-        "diagnostics"
+        "diagnostics",
+        "accepted"
       ],
       "additionalProperties": false
     },
@@ -213,7 +246,8 @@
         "HZ083",
         "HZ084",
         "HZ085",
-        "HZ086"
+        "HZ086",
+        "HZ087"
       ]
     },
     "Severity": {

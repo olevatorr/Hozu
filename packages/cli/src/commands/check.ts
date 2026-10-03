@@ -7,6 +7,7 @@ import type { Loaded } from '../load.ts'
 import { relativize } from '../output.ts'
 import { projectStyles } from '../styles.ts'
 import { componentUses, overridesOf } from '../uses.ts'
+import { applyAccepted } from './accept.ts'
 import { inspectApp } from './app.ts'
 import { envFilesIgnored } from './env-ignore.ts'
 import { kitConfigDiagnostics } from './kits.ts'
@@ -115,8 +116,8 @@ export async function runCheck(
     ...envFilesIgnored(loaded, traced.ir.env?.files ?? []),
   ]
   validate.diagnostics.push(...relativize(entry, cwd))
-  for (const d of entry) validate.summary[d.severity === 'error' ? 'errors' : 'warnings']++
-  if (entry.some((d) => d.severity === 'error')) validate.ok = false
+  const counted = applyAccepted(validate, traced.ir.accept, loaded.path)
+  Object.assign(validate, counted, { ok: validate.ok && counted.summary.errors === 0 })
   const overrides = overridesOf(componentUses(traced.ir, traced.sources, cwd))
   const validateMs = performance.now() - validating
   const { types, ms } = await typeRun

@@ -87,3 +87,4 @@ around the rule. `npx hozu docs HZ083` prints one code. A warning you keep on pu
 | HZ084 (warning) | a public env variable named like a secret (`SECRET`, `TOKEN`, `PASSWORD`, `PRIVATE`, `…_KEY`): public values reach the browser | move it to `env.server`; only a value made to be published (a publishable key) stays public, named `PUBLIC_…` |
 | HZ085 | `env.internal` maps a name that is not a public variable, or to one that is not a server variable | declare both: the public URL in `env.public`, the internal one in `env.server` |
 | HZ086 (warning) | an env file listed in `env.files` exists and git does not ignore it | add it to `.gitignore`; commit `.env.example` (`npx hozu env --example`) instead |
+| HZ087 (warning) | an entry of `project({ accept })` matches no warning, names an error, or has no reason | remove the entry when the warning is gone; fix an error instead of accepting it; give every entry a reason |

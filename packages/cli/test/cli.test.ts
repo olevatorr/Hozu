@@ -59,7 +59,7 @@ describe('A5 CLI contract', () => {
     expect(code).toBe(0)
     expect(out).toMatchObject({
       ok: true,
-      summary: { errors: 0, warnings: 0 },
+      summary: { errors: 0, warnings: 0, accepted: 0 },
       coverage: { cart: expect.objectContaining({ transitions: 15 }) },
       lock: 'current',
     })
@@ -468,5 +468,46 @@ describe('diagnostics from the registry (ADR 0053 D)', () => {
     expect(JSON.parse((await run(['docs', 'HZ999', '--json'])).stdout).error.message).toBe(
       'No diagnostic HZ999',
     )
+  })
+})
+
+describe('accepted warnings (ADR 0053 C)', () => {
+  it('keeps an accepted warning out of the count, and reports a stale entry as HZ087', async () => {
+    const out = JSON.parse((await run(['check', '--json'], `${root}examples/playground`)).stdout)
+    expect(out.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 1 })
+    expect(out.validate.accepted[0]).toMatchObject({ code: 'HZ036', at: 'lab.SaveDraft' })
+    const { applyAccepted } = await import('../src/commands/accept.ts')
+    const stale = applyAccepted(
+      { ...out.validate, accepted: [], diagnostics: [] },
+      [{ code: 'HZ036', at: 'lab.Gone', reason: 'old' }],
+      'hozu.config.ts',
+    )
+    expect(stale.diagnostics.map((d: { code: string; message: string }) => [d.code, d.message])).toEqual([
+      ['HZ087', 'accept[0] (HZ036 at lab.Gone) matches no warning any more'],
+    ])
+  })
+
+  it('refuses to accept an error or an entry without a reason (HZ087)', async () => {
+    const { project } = await import('@hozu/core')
+    const { buildProject } = await import('@hozu/core/ir')
+    const { zodAdapter } = await import('@hozu/schema-zod')
+    const b = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [],
+        accept: [
+          { code: 'HZ001', at: 'x.y', reason: 'no' },
+          { code: 'HZ036', at: 'x.y', reason: ' ' },
+        ],
+      }),
+      { sources: false },
+    )
+    expect(b.diagnostics.filter((d) => d.code === 'HZ087').map((d) => d.message)).toEqual([
+      'accept[0] cannot be used: HZ001 is an error, and errors cannot be accepted',
+      'accept[1] cannot be used: it gives no reason',
+    ])
+    expect(b.ir.accept).toEqual([])
   })
 })

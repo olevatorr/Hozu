@@ -305,6 +305,7 @@ export async function main(
         for (const e of result.types.errors) out(`${e.file}:${e.line}:${e.column}  ${e.code}  ${e.message}\n`)
         if (result.types.errors.length) out('\n')
         for (const d of result.validate.diagnostics) out(`${human(d)}\n\n`)
+        for (const a of result.validate.accepted) out(`accepted ${a.code} at ${a.at}: ${a.reason}\n`)
         for (const o of result.overrides) out(`${describeOverrides(o)}\n`)
         if (result.overrides.length) out('\n')
         const v = result.validate
@@ -312,7 +313,7 @@ export async function main(
           ? 'types skipped (npm install -D typescript)'
           : `types ${result.types.ok ? 'ok' : `${result.types.errors.length} errors`}`
         out(
-          `${result.ok ? '✔' : '✖'} ${types} · ${v.summary.errors} errors, ${v.summary.warnings} warnings · contracts ${Object.values(v.coverage).reduce((n, c) => n + c.covered, 0)}/${Object.values(v.coverage).reduce((n, c) => n + c.total, 0)} decisions · lock ${v.lock}\n`,
+          `${result.ok ? '✔' : '✖'} ${types} · ${v.summary.errors} errors, ${v.summary.warnings} warnings${v.summary.accepted ? ` (${v.summary.accepted} accepted)` : ''} · contracts ${Object.values(v.coverage).reduce((n, c) => n + c.covered, 0)}/${Object.values(v.coverage).reduce((n, c) => n + c.total, 0)} decisions · lock ${v.lock}\n`,
         )
       }
       return result.ok ? 0 : 1

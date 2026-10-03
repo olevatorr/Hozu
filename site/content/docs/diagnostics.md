@@ -98,7 +98,20 @@ This table is generated from the diagnostic registry, so it lists every code the
 | HZ084 (warning) | a public env variable named like a secret (`SECRET`, `TOKEN`, `PASSWORD`, `PRIVATE`, `…_KEY`): public values reach the browser | move it to `env.server`; only a value made to be published (a publishable key) stays public, named `PUBLIC_…` |
 | HZ085 | `env.internal` maps a name that is not a public variable, or to one that is not a server variable | declare both: the public URL in `env.public`, the internal one in `env.server` |
 | HZ086 (warning) | an env file listed in `env.files` exists and git does not ignore it | add it to `.gitignore`; commit `.env.example` (`npx hozu env --example`) instead |
+| HZ087 (warning) | an entry of `project({ accept })` matches no warning, names an error, or has no reason | remove the entry when the warning is gone; fix an error instead of accepting it; give every entry a reason |
 <!-- /codes -->
+
+## Keep a warning on purpose
+
+Some warnings describe a choice, not a mistake: a form that saves to the browser's storage needs JavaScript (HZ036). Keep it in the project with the reason, so the next reader sees why and `hozu check` stays at zero warnings:
+
+```ts
+project({
+  accept: [{ code: 'HZ036', at: 'notes.SaveDraft', reason: 'drafts live in localStorage' }],
+})
+```
+
+`at` names the declaration the warning is about, or an IR pointer. `hozu check` prints `0 warnings (1 accepted)` and lists each accepted warning with its reason. Errors cannot be accepted, and an entry that no longer matches a warning is HZ087.
 
 ## Accept an intentional change
 

@@ -135,7 +135,7 @@ describe('hozu migrate on a 0.10 app (ADR 0049 §6)', () => {
     expect(ajv.validate(schema, second), JSON.stringify(ajv.errors)).toBe(true)
     expect(second.phase).toBe('verify')
     expect(second.ir).toEqual({ compared: true, skipped: null, differences: [] })
-    expect(second.check?.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect(second.check?.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     expect(second.ok).toBe(true)
     expect(existsSync(join(after, '.hozu/migrate-0.11.json'))).toBe(false)
   }, 120_000)
@@ -239,7 +239,7 @@ describe('the migrate summary', () => {
     const check = {
       ok: false,
       types: { ok: false, skipped: true, errors: [] },
-      validate: { summary: { errors: 0, warnings: 0 } },
+      validate: { summary: { errors: 0, warnings: 0, accepted: 0 } },
       overrides: [],
     } as unknown as MigrateOutput['check']
     expect(describeMigrate({ ...base, phase: 'verify', record: null, check })).toContain(

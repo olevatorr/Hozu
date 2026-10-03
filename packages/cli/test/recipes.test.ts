@@ -136,7 +136,7 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
     await run(['check', '--update-lock'])
     const check = await run(['check', '--json'])
     const out = JSON.parse(check.stdout)
-    expect(out.validate.summary).toEqual({ errors: 0, warnings: 0 })
+    expect(out.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     expect(out.validate.lock).toBe('current')
     if (!findBrowser()) return
     const flow = await run([

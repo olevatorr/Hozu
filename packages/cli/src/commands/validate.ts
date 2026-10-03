@@ -108,11 +108,12 @@ export async function runValidate(
   return {
     ok: errors === 0,
     hash,
-    summary: { errors, warnings: selected.length - errors },
+    summary: { errors, warnings: selected.length - errors, accepted: 0 },
     coverage,
     lock,
     styles: styles ? 'checked' : 'unavailable',
     diagnostics: relativize(selected, cwd),
+    accepted: [],
   }
 }
 

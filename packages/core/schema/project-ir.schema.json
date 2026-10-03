@@ -109,6 +109,13 @@
             }
           ]
         },
+        "accept": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AcceptIR"
+          },
+          "description": "Warnings the project keeps on purpose, each with its reason (ADR 0053 C)."
+        },
         "features": {
           "type": "object",
           "additionalProperties": {
@@ -132,6 +139,7 @@
         "error",
         "http",
         "env",
+        "accept",
         "features",
         "kits"
       ],
@@ -777,6 +785,27 @@
         "set"
       ],
       "additionalProperties": false
+    },
+    "AcceptIR": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "at",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "description": "A warning kept on purpose: its code, what it is about (a declaration ref or an IR pointer) and why."
     },
     "FeatureIR": {
       "type": "object",

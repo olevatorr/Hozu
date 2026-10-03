@@ -3,8 +3,9 @@ import type { FeatureConfig, FeatureParts, ProjectConfig } from '../builders/fea
 import type { RouteDef } from '../builders/route.ts'
 import { join, resolveSource } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
-import type { Diagnostic, SourceIndex } from '../ir/diagnostic.ts'
-import type { FeatureIR, JsonSchema, KitIR, ProjectIR, RouteIR } from '../ir/types.ts'
+import { codes } from '../ir/codes.ts'
+import type { Diagnostic, DiagnosticCode, SourceIndex } from '../ir/diagnostic.ts'
+import type { AcceptIR, FeatureIR, JsonSchema, KitIR, ProjectIR, RouteIR } from '../ir/types.ts'
 import { freeNamesOf, transformedDecls } from '../lower.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
@@ -494,6 +495,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     env,
     features,
     kits,
+    accept: acceptOf(scope, config.accept ?? []),
   }
   reportSharedParts(scope, new Set(Object.keys(features)))
   reportUndeclaredConnect(scope, features, env?.public ?? null)
@@ -631,6 +633,36 @@ function reportUndeclaredConnect(
       },
     )
   }
+}
+
+/** `project({ accept })` (ADR 0053 C): only warnings, each with a reason; a bad entry is HZ087. */
+function acceptOf(scope: ProjectScope, list: { code: string; at: string; reason: string }[]): AcceptIR[] {
+  return list.flatMap((entry, i) => {
+    const info = codes[entry?.code as DiagnosticCode]
+    const problem = !info
+      ? `${entry?.code} is not a diagnostic code`
+      : info.severity === 'error'
+        ? `${entry.code} is an error, and errors cannot be accepted`
+        : typeof entry.at !== 'string' || !entry.at.trim()
+          ? 'it names nothing in at'
+          : typeof entry.reason !== 'string' || !entry.reason.trim()
+            ? 'it gives no reason'
+            : null
+    if (!problem) return [{ code: entry.code, at: entry.at, reason: entry.reason }]
+    scope.report(
+      'HZ087',
+      null,
+      join('', 'accept', String(i)),
+      `accept[${i}] cannot be used: ${problem}`,
+      'An accepted warning names a warning code, what it is about (a declaration such as notes.SaveDraft, or an IR pointer) and the reason it is kept, so the choice can be reviewed.',
+      {
+        summary: 'Fix the entry or remove it; fix an error instead of accepting it',
+        snippet: "accept: [{ code: 'HZ036', at: 'notes.SaveDraft', reason: 'drafts live in localStorage' }]",
+        patch: null,
+      },
+    )
+    return []
+  })
 }
 
 /** The env files a project names (ADR 0052), relative to its config. */

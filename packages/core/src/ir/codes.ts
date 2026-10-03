@@ -595,4 +595,11 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     summary: 'an env file listed in `env.files` exists and git does not ignore it',
     fix: 'add it to `.gitignore`; commit `.env.example` (`npx hozu env --example`) instead',
   },
+  HZ087: {
+    name: 'stale-accept',
+    severity: 'warning',
+    topic: 'diagnostics',
+    summary: 'an entry of `project({ accept })` matches no warning, names an error, or has no reason',
+    fix: 'remove the entry when the warning is gone; fix an error instead of accepting it; give every entry a reason',
+  },
 }
