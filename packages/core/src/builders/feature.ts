@@ -91,7 +91,17 @@ export interface ProjectConfig {
   features: FeatureDecl[]
   kits?: KitDecl[]
   http?: HttpConfig
-  env?: { server?: Schema; public?: Schema }
+  env?: EnvConfig
+}
+
+/** The app's environment (ADR 0019, 0052). */
+export interface EnvConfig<ES = Schema> {
+  /** Env files the CLI reads, relative to hozu.config.ts: `['.env', '.env.local']`; the shell wins over them. */
+  files?: string[]
+  server?: ES
+  public?: Schema
+  /** `{ API_URL: 'API_URL_INTERNAL' }`: on the server, `'either'` effects read the internal URL when it is set. */
+  internal?: Record<string, string>
 }
 
 export interface ProjectDecl<Session = unknown, Env = unknown>
@@ -102,7 +112,7 @@ export const project = <S extends Schema = never, R = Record<string, never>, ES 
   config: Omit<ProjectConfig, 'session' | 'http' | 'env'> & {
     session?: S
     http?: HttpConfig<R>
-    env?: { server?: ES; public?: Schema }
+    env?: EnvConfig<ES>
   },
 ): ProjectDecl<
   [S] extends [never] ? null : Infer<S>,

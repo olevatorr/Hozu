@@ -36,11 +36,16 @@ export const steps: Step[] = [
     from: '0.12',
     to: '0.13',
     summary:
-      'connect: [] on every feature in the IR (ADR 0051); hozu check warns (HZ083) about undeclared origins',
+      'connect: [] on every feature and env files / internal in the IR (ADR 0051, 0052); new warnings HZ083 and HZ084',
     rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => {
       const features = (ir as { features?: Record<string, Record<string, unknown>> }).features ?? {}
       for (const f of Object.values(features)) f.connect ??= []
+      const env = (ir as { env?: Record<string, unknown> | null }).env
+      if (env) {
+        env.files ??= []
+        env.internal ??= {}
+      }
       return ir
     },
   },

@@ -2,6 +2,15 @@
 
 ## Unreleased (0.13)
 
+- **Environment conventions** (ADR 0052):
+  - `project({ env: { files: ['.env', '.env.local'] } })` names the env files the CLI reads; a later file wins and
+    the shell wins over all. New apps list both and ignore them in git.
+  - `env.internal: { API_URL: 'API_INTERNAL' }`: on the server, `'either'` effects call the internal URL when it is
+    set and the public one otherwise; the browser and CSP only see the public one.
+  - **HZ084** (warning): a public variable named like a secret. **HZ085**: an internal mapping to undeclared
+    variables.
+  - `hozu env [--example]` lists every variable (side, required, default, set now, internal mapping) and the ones
+    Hozu reserves, and writes `.env.example`.
 - **`feature({ connect })`** (ADR 0051): the origins a feature's `fetch.ts` calls from the browser, as
   `'https://host'` or `{ env: 'NAME' }` for a public env URL. Hozu adds them to CSP `connect-src`; until now the
   default `connect-src 'self'` blocked `'browser'` / `'either'` calls to other origins on adapter-node and the edge.

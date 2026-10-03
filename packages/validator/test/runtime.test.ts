@@ -257,3 +257,49 @@ describe('connect: the origins browser-run effects call (ADR 0051)', () => {
     ).toEqual([])
   })
 })
+
+describe('environment conventions (ADR 0052)', () => {
+  const withEnv = (env: Record<string, unknown>) => {
+    const app = project({
+      schema: zodAdapter,
+      env: env as never,
+      routes: { home },
+      pages: [
+        ui.page(home, {
+          views: [ui.view({ render: () => ui.main({}, ['x']) })],
+          head: { render: () => ({ title: 'x' }) },
+        }),
+      ],
+      features: [],
+    })
+    const b = buildProject(app, { sources: false })
+    return validate(b.ir).map((d) => [d.code, d.message] as const)
+  }
+
+  it('warns about a public variable named like a secret (HZ084), unless it says PUBLIC_ or PUBLISHABLE', () => {
+    const codes = withEnv({
+      public: z.object({
+        STRIPE_SECRET_KEY: z.string(),
+        GITHUB_TOKEN: z.string(),
+        STRIPE_PUBLISHABLE_KEY: z.string(),
+        PUBLIC_MAPS_KEY: z.string(),
+        SITE_NAME: z.string(),
+      }),
+    })
+    expect(codes.filter(([c]) => c === 'HZ084').map(([, m]) => m)).toEqual([
+      'The public env variable GITHUB_TOKEN looks like a secret, and public values are sent to the browser',
+      'The public env variable STRIPE_SECRET_KEY looks like a secret, and public values are sent to the browser',
+    ])
+  })
+
+  it('refuses an internal mapping to undeclared variables (HZ085)', () => {
+    const codes = withEnv({
+      public: z.object({ API: z.string() }),
+      server: z.object({ API_INTERNAL: z.string().optional() }),
+      internal: { API: 'API_INTERNAL', OTHER: 'MISSING' },
+    })
+    expect(codes.filter(([c]) => c === 'HZ085').map(([, m]) => m)).toEqual([
+      'env.internal maps OTHER to MISSING, but OTHER is not a public variable and MISSING is not a server variable',
+    ])
+  })
+})

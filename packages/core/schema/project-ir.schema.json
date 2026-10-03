@@ -80,11 +80,27 @@
                       "type": "null"
                     }
                   ]
+                },
+                "files": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "The env files the CLI reads, relative to the config; a later one wins, the shell wins over all (ADR 0052)."
+                },
+                "internal": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Public variable → server variable holding its internal URL, read by `'either'` effects on the server."
                 }
               },
               "required": [
                 "server",
-                "public"
+                "public",
+                "files",
+                "internal"
               ],
               "additionalProperties": false
             },

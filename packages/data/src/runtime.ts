@@ -179,6 +179,12 @@ export function createDataRuntime({
 
   const parsedPublic = bindings.env.public?.(rawEnv)
   const publicEnv = parsedPublic?.ok ? parsedPublic.value : {}
+  /** What fetch.ts reads on this server: the public env, with internal URLs where env.internal names one (ADR 0052). */
+  const serverSideEnv: Record<string, unknown> = { ...(publicEnv as Record<string, unknown>) }
+  for (const [key, server] of Object.entries(ir.env?.internal ?? {})) {
+    const value = (env as Record<string, unknown>)[server]
+    if (value !== undefined && value !== null && value !== '') serverSideEnv[key] = value
+  }
   const loaded = new Map<string, Promise<FetchModule | null>>()
   const loadFetch: FetchLoader =
     fetches ??
@@ -212,7 +218,7 @@ export function createDataRuntime({
           signal: new (
             globalThis as unknown as { AbortController: new () => { signal: unknown } }
           ).AbortController().signal,
-          env: publicEnv,
+          env: serverSideEnv,
         })
       } catch (e) {
         const marked =

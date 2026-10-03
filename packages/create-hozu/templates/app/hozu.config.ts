@@ -8,6 +8,7 @@ export default project({
   schema: zodAdapter,
   styles: new URL('./app.css', import.meta.url),
   app: new URL('./app.ts', import.meta.url),
+  env: { files: ['.env', '.env.local'] },
   site: { url: 'http://localhost:3000', name: '__NAME__', lang: 'en' },
   routes: { home },
   pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: '__NAME__' }) } })],

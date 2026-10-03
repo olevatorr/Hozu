@@ -52,6 +52,11 @@ export const targets = [
   },
   {
     source: 'packages/cli/src/contract.ts',
+    type: 'EnvOutput',
+    out: 'packages/cli/schema/env.schema.json',
+  },
+  {
+    source: 'packages/cli/src/contract.ts',
     type: 'CallOutput',
     out: 'packages/cli/schema/call.schema.json',
   },

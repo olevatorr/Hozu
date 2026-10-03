@@ -19,7 +19,13 @@ export {
 } from './build/locate.ts'
 export type { ImageSet, ImageVariant, Manifest, ManifestAsset } from './build/manifest.ts'
 export type { BuildOptions, BuildResult } from './build/project.ts'
-export { appModuleOf, buildProject, INVALID_ERROR_SCHEMA, UNEXPECTED_ERROR_SCHEMA } from './build/project.ts'
+export {
+  appModuleOf,
+  buildProject,
+  envFilesOf,
+  INVALID_ERROR_SCHEMA,
+  UNEXPECTED_ERROR_SCHEMA,
+} from './build/project.ts'
 export type { PartUse } from './build/scope.ts'
 export { foldSearch } from './build/scope.ts'
 export { hashJson, sha256, sha256Bytes } from './canonical/hash.ts'

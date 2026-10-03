@@ -269,8 +269,11 @@ describe('the 0.11 → 0.12 step (ADR 0050 D)', () => {
 
   it('0.12 → 0.13 adds connect: [] to the old IR', () => {
     const step = chain('0.12', '0.13')![0]!
-    expect(step.normalize({ features: { a: { id: 'a' } } } as never)).toEqual({
+    expect(
+      step.normalize({ features: { a: { id: 'a' } }, env: { server: null, public: null } } as never),
+    ).toEqual({
       features: { a: { id: 'a', connect: [] } },
+      env: { server: null, public: null, files: [], internal: {} },
     })
   })
 

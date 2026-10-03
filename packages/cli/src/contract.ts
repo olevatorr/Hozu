@@ -502,3 +502,28 @@ export interface CallOutput {
   /** The queries those tags refresh. */
   refreshes: string[]
 }
+
+export interface EnvVariable {
+  name: string
+  side: 'server' | 'public'
+  /** No default, so startup refuses without it. */
+  required: boolean
+  default: string | null
+  /** Set now: in the shell or one of the env files. */
+  set: boolean
+  description: string | null
+  /** A public variable: the server variable with its internal URL; a server one: the public variable it serves. */
+  internal: string | null
+}
+
+/** `hozu env` (ADR 0052). */
+export interface EnvOutput {
+  /** project({ env: { files } }). */
+  files: string[]
+  /** The files that existed and were read. */
+  read: string[]
+  variables: EnvVariable[]
+  reserved: { name: string; purpose: string; set: boolean }[]
+  /** `.env.example` when --example wrote it. */
+  example: string | null
+}

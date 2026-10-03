@@ -326,3 +326,43 @@ describe('hozu call (ADR 0050 F)', () => {
     ).toBe('--input must be JSON')
   })
 })
+
+describe('env files and hozu env (ADR 0052)', () => {
+  it('reads the listed files: a later one wins, the shell wins over both', async () => {
+    const { loadEnvFiles } = await import('../src/load.ts')
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-env-files-'))
+    writeFileSync(join(dir, '.env'), 'HZ_TEST_A=env\nHZ_TEST_B=env\nHZ_TEST_C=env\n')
+    writeFileSync(join(dir, '.env.local'), 'HZ_TEST_B=local\nHZ_TEST_C=local\n')
+    process.env.HZ_TEST_C = 'shell'
+    try {
+      expect(loadEnvFiles(dir, ['.env', '.env.local', '.env.missing'])).toEqual(['.env', '.env.local'])
+      expect([process.env.HZ_TEST_A, process.env.HZ_TEST_B, process.env.HZ_TEST_C]).toEqual([
+        'env',
+        'local',
+        'shell',
+      ])
+    } finally {
+      for (const k of ['HZ_TEST_A', 'HZ_TEST_B', 'HZ_TEST_C']) delete process.env[k]
+    }
+  })
+
+  it('lists the playground variables with their side and internal mapping', async () => {
+    const { code, stdout } = await run(['env', '--json'], `${root}examples/playground`)
+    const out = JSON.parse(stdout)
+    expect(code).toBe(0)
+    expectSchema('env', out)
+    expect(out.files).toEqual(['.env', '.env.local'])
+    expect(
+      out.variables.map((v: { name: string; side: string; internal: string | null }) => [
+        v.name,
+        v.side,
+        v.internal,
+      ]),
+    ).toEqual([
+      ['USERS_API', 'server', null],
+      ['POSTS_API_INTERNAL', 'server', 'POSTS_API'],
+      ['POSTS_API', 'public', 'POSTS_API_INTERNAL'],
+    ])
+    expect(out.reserved.map((r: { name: string }) => r.name)).toContain('SESSION_SECRET')
+  })
+})

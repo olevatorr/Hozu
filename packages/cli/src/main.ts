@@ -17,6 +17,7 @@ import { runCheck, startTypes } from './commands/check.ts'
 import { describeComponent, describeComponentImpact } from './commands/components.ts'
 import { runDev } from './commands/dev.ts'
 import { runDocs } from './commands/docs.ts'
+import { describeEnv, runEnv } from './commands/env.ts'
 import { describeExplain, runExplain } from './commands/explain.ts'
 import { mermaid, runGraph } from './commands/graph.ts'
 import { describeImpact, runImpact } from './commands/impact.ts'
@@ -61,6 +62,8 @@ Commands:
   check                     Type-check the app and validate it: the one command to run after every edit
   map                       Outline the app (routes, queries, mutations, events, states, views) with file:line
   get <path>...             Request pages in-process (no server): status, title, alerts, visible text, forms
+  env [--example]           Every env variable the app reads: side, required, default, set now, internal URL;
+                            --example writes .env.example
   call <feature>.<effect>   Run one query or mutation in-process (no server) through the app's own handler:
                             --input '<json>', --session '<json>'; a mutation writes real data and needs --write
   browse <path> --do <step> Run the steps in headless Chrome with and without JS (no server): what each step changed
@@ -164,6 +167,7 @@ export async function main(
         session: { type: 'string' },
         input: { type: 'string' },
         write: { type: 'boolean', default: false },
+        example: { type: 'boolean', default: false },
         full: { type: 'boolean', default: false },
         page: { type: 'string' },
         with: { type: 'string' },
@@ -199,6 +203,7 @@ export async function main(
       'map',
       'get',
       'call',
+      'env',
       'browse',
       'add',
       'inspect',
@@ -319,6 +324,11 @@ export async function main(
     if (command === 'map') {
       const result = runMap(loaded, cwd)
       out(asJson ? json(result) : describeMap(result))
+      return 0
+    }
+    if (command === 'env') {
+      const result = runEnv(loaded, values.example === true)
+      out(asJson ? json(result) : describeEnv(result))
       return 0
     }
     if (command === 'call') {

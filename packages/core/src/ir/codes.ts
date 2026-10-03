@@ -84,4 +84,6 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   HZ081: { name: 'invalid-effect-runtime', severity: 'error' },
   HZ082: { name: 'effect-needs-server', severity: 'error' },
   HZ083: { name: 'undeclared-connect', severity: 'warning' },
+  HZ084: { name: 'public-secret', severity: 'warning' },
+  HZ085: { name: 'invalid-env-config', severity: 'error' },
 }

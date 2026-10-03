@@ -11,7 +11,14 @@ export interface ProjectIR {
   notFound: string | null
   error: string | null
   http: HttpIR
-  env: { server: JsonSchema | null; public: JsonSchema | null } | null
+  env: {
+    server: JsonSchema | null
+    public: JsonSchema | null
+    /** The env files the CLI reads, relative to the config; a later one wins, the shell wins over all (ADR 0052). */
+    files: string[]
+    /** Public variable → server variable holding its internal URL, read by `'either'` effects on the server. */
+    internal: Record<string, string>
+  } | null
   features: Record<string, FeatureIR>
   kits: Record<string, KitIR>
 }

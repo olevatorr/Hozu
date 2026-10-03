@@ -10,8 +10,13 @@ export default project({
   app: new URL('./app.ts', import.meta.url),
   styles: new URL('./app.css', import.meta.url),
   env: {
-    server: z.object({ USERS_API: z.string().default('https://jsonplaceholder.typicode.com') }),
+    files: ['.env', '.env.local'],
+    server: z.object({
+      USERS_API: z.string().default('https://jsonplaceholder.typicode.com'),
+      POSTS_API_INTERNAL: z.string().optional(),
+    }),
     public: z.object({ POSTS_API: z.string().default('https://jsonplaceholder.typicode.com') }),
+    internal: { POSTS_API: 'POSTS_API_INTERNAL' },
   },
   site: { url: 'http://localhost:3000', name: 'API playground', lang: 'en' },
   routes: { home },

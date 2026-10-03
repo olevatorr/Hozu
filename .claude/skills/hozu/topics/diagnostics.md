@@ -77,5 +77,7 @@ around the rule.
 | HZ080 | (warning) a `part()` view inlined by two features | the snippet: the same `ui.component` in a kit |
 | HZ081 | an effect's `runs` and `fetch.ts` disagree: no export, an extra one, a `'server'` effect in it, `'either'` with user data, a Node-only import | export the effect in `fetch.ts`, or `runs: 'server'` with a resolver (`hozu docs fetch`) |
 | HZ083 | fetch.ts calls an origin (an absolute URL in it) that the feature's `connect` does not list: the browser's CSP blocks it | add the origin to `feature({ connect })` (the fix lists the whole line); `{ env: 'NAME' }` for a URL from public env |
+| HZ084 | a public env variable named like a secret (`SECRET`, `TOKEN`, `PASSWORD`, `PRIVATE`, `…_KEY`): public values reach the browser | move it to `env.server`, or rename it `PUBLIC_…` if it is meant to be public |
+| HZ085 | `env.internal` maps a name that is not a public variable, or to one that is not a server variable | declare both: the public URL in `env.public`, the internal one in `env.server` |
 | HZ082 | browser data where only the server can go (a page `head`, `entries`), or a browser mutation invalidating a server-cached tag | the patch: `runs: 'server'`; or `freshness: 'request'` on the cached query |
 | HZ042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |

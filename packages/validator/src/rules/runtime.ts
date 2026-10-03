@@ -107,3 +107,48 @@ export function connectEnv(ctx: Ctx) {
         )
     })
 }
+
+const SECRET = /(SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE|CREDENTIAL)|(^|_)(API_)?KEY$/
+
+/** HZ084: a public variable named like a secret; HZ085: an `internal` mapping to undeclared variables (ADR 0052). */
+export function envConfig(ctx: Ctx) {
+  const env = ctx.ir.env
+  if (!env) return
+  const names = (schema: unknown) =>
+    Object.keys(((schema as { properties?: object } | null)?.properties ?? {}) as object)
+  const pub = names(env.public)
+  const server = names(env.server)
+  for (const name of pub)
+    if (SECRET.test(name) && !name.startsWith('PUBLIC_') && !name.includes('PUBLISHABLE'))
+      ctx.report(
+        'HZ084',
+        null,
+        join('', 'env', 'public', 'properties', name),
+        `The public env variable ${name} looks like a secret, and public values are sent to the browser`,
+        'Public env is written into pages and island payloads and baked into a static export; anyone can read it.',
+        {
+          summary: `Move ${name} to env.server (resolvers read it as ctx.env.${name}), or rename it PUBLIC_${name} if it is meant to be public`,
+          snippet: `server: z.object({ ${name}: z.string() })`,
+          patch: null,
+        },
+      )
+  for (const [key, target] of Object.entries(env.internal ?? {})) {
+    const problems = [
+      ...(pub.includes(key) ? [] : [`${key} is not a public variable`]),
+      ...(server.includes(target) ? [] : [`${target} is not a server variable`]),
+    ]
+    if (problems.length)
+      ctx.report(
+        'HZ085',
+        null,
+        join('', 'env', 'internal', key),
+        `env.internal maps ${key} to ${target}, but ${problems.join(' and ')}`,
+        'env.internal maps a public variable (the URL the browser calls) to a server variable (the internal URL the server calls instead); without the internal value set, the public one is used.',
+        {
+          summary: `Declare ${key} in env.public and ${target} in env.server`,
+          snippet: `public: z.object({ ${key}: z.string().url() }), server: z.object({ ${target}: z.string().url().optional() })`,
+          patch: null,
+        },
+      )
+  }
+}

@@ -477,6 +477,8 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     ? {
         server: projectSchema(scope, config.env.server, '/env/server', '#env:server'),
         public: projectSchema(scope, config.env.public, '/env/public', '#env:public'),
+        files: config.env.files ?? [],
+        internal: config.env.internal ?? {},
       }
     : null
   scope.bindings.env = { server: toParse(config.env?.server), public: toParse(config.env?.public) }
@@ -574,6 +576,12 @@ function registerKits(
     out.push([id, decls])
   }
   return out
+}
+
+/** The env files a project names (ADR 0052), relative to its config. */
+export function envFilesOf(project: unknown): string[] {
+  const info = infoOf(project)
+  return info?.kind === 'project' ? ((info.def as ProjectConfig).env?.files ?? []) : []
 }
 
 export function appModuleOf(project: unknown): string | null {
