@@ -320,6 +320,38 @@ describe('the 0.13 → 0.14 step (ADR 0053)', () => {
     expect(step.normalize({ features: {} } as never)).toEqual({ features: {}, accept: [] })
   })
 
+  it('takes a 0.10 app through every step to 0.14 with an equal IR and a clean check', async () => {
+    const dir = await copyOf('bookmarks')
+    const before = await irOf(dir)
+    const first = await runMigrate(dir, {
+      config: undefined,
+      dryRun: false,
+      versions: { installed: '0.10.0', target: '0.14.0' },
+      recordIR: () => before,
+    })
+    expect(first.steps.map((s) => s.to)).toEqual(['0.11', '0.12', '0.13', '0.14'])
+    expect(first.changed).toEqual([
+      { file: 'features/bookmarks/model.ts', edits: 4 },
+      { file: '.gitignore', edits: 1 },
+      { file: 'package.json', edits: 1 },
+    ])
+    expect(readFileSync(join(dir, 'features/bookmarks/model.ts'), 'utf8')).not.toContain("runs: 'either'")
+    expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts.check).toBe('hozu check')
+    const after = join(root, '.tmp', `migrate-0.14-after-${Date.now()}`)
+    cpSync(dir, after, { recursive: true, verbatimSymlinks: true })
+    made.push(after)
+    const second = await runMigrate(after, {
+      config: undefined,
+      dryRun: false,
+      versions: { installed: '0.14.0', target: '0.14.0' },
+    })
+    expect([second.ir.differences, second.check?.validate.summary, second.ok]).toEqual([
+      [],
+      { errors: 0, warnings: 0, accepted: 0 },
+      true,
+    ])
+  }, 120_000)
+
   it('takes a 0.13 app to 0.14 with an equal IR and a clean check', async () => {
     const dir = join(root, '.tmp', `migrate-0.13-${Date.now()}`)
     cpSync(join(root, 'examples/bookmarks'), dir, {
