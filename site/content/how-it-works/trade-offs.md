@@ -10,6 +10,12 @@ Hozu makes application structure unusually explicit. Queries declare ownership a
 
 The trial records measure that cost instead of assuming the design must be cheaper. They compare particular tasks, models, scaffolds and change requests. A ratio from one trial is not a prediction for every application, and a passing acceptance suite is evidence about the checked behaviour rather than proof of general correctness.
 
+## Why the comparison is with Nuxt
+
+Every cost figure below is Hozu against Nuxt, and the choice is deliberate. Nuxt is the model's home ground: it is in every model's training data, and agents write it fluently. Hozu is not. Each session learns it from the guide. The trials keep everything else equal: the same model, the same spec and the same hidden acceptance. Only the framework differs.
+
+So the ratio mostly measures learning. A study of the transcripts found that most of the extra tokens go to reading the guide, multiplied by every call an agent makes ([ADR 0038](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0038-cost-anatomy.md)). On the long run, 0.8 measured 1.34–1.72× Nuxt per change ([trial 0021](/trials/0021-0-8-long-run)). That gap is expected to shrink as the guide gets shorter, and once models know Hozu. The correctness differences come from structure: what the framework makes hard to write. They are not expected to shrink. Trial 0024, pre-registered in [ADR 0055](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0055-trial-0024-learning-cost.md), separates the two by running the same changes with the guide cold and with it already known.
+
 ## The task-board results vary
 
 Trial 0010 used two runs per arm and step for a task board. Hozu’s mean weighted-token cost was 1.64× Nuxt for the build and 1.44× for the change. Correctness stayed equal in all eight runs. The build missed the stated target, while the change met it. The report points to reading the unfamiliar framework and generated source as remaining costs.

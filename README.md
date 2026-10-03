@@ -145,8 +145,16 @@ was checked by a hidden acceptance test covering per-user isolation, double subm
 | Agent cost to build the app | 1.38× | 1× |
 | Agent cost to change it | 1.45× | 1× |
 
-The extra cost is mostly reading the guide of a framework the model has not seen
-([ADR 0038](docs/adr/0038-cost-anatomy.md)).
+On a longer run (sixteen sequential changes to the same app, eight of them held out), 0.8 measured 1.34–1.72× Nuxt per
+change, depending on how one Nuxt step is counted ([trial 0021](docs/trials/0021-0-8-long-run.md)).
+
+**Why the comparison is with Nuxt:**
+- **Nuxt is the model's home ground.** It is in every model's training data, and models write it well. Hozu is not:
+  each session learns it from the guide ([trial 0020](docs/trials/0020-long-run.md)).
+- **Only the framework differs:** the same model, the same spec and the same hidden acceptance.
+- **Most of the extra cost is that learning** ([ADR 0038](docs/adr/0038-cost-anatomy.md)). It is expected to shrink
+  as the guide gets shorter (0.14 halves what `hozu docs` prints) and once models know Hozu. The correctness gap
+  comes from structure, so it is not expected to shrink.
 
 **Rendering, against React, Vue, Preact and Svelte:** the same 100-item page, 4× CPU throttling
 ([benchmarks](docs/benchmarks/0001-frameworks.md), sixth run).

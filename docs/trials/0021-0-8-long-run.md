@@ -8,6 +8,10 @@
 ADR 0043 is the breaking 0.8.0 that answers it. Does 0.8 remove what was measured, on the same apps and on eight
 changes nobody designing 0.8 saw?
 
+**Why Nuxt:** Nuxt is the model's home ground. It is in the training data, while Hozu is learned from the guide in
+every session. The same model, spec and hidden acceptance are used for both, so the cost ratio mostly measures that
+learning (ADR 0038). Trial 0024 (ADR 0055) separates learning cost from structural cost.
+
 ## Setup
 - **Apps:**
   - Hozu: trial 0020 run 1 at step 12, upgraded with `hozu migrate 0.8` (`s12m`). The stale-under-0.7 review was
