@@ -227,6 +227,15 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `hozu migrate [--dry-run]` upgrades from 0.10.0 on (records the old IR with the app's own packages, rewrites,
   raises `@hozu/*`, verifies the IR per step, never writes the lock); 0.10 → 0.11 adds `runs: 'server'`.
   `examples/stars` is the static-host reference (a GitHub client from the browser alone).
+- 0.12 (ADR 0050, benchmark 0003): bounded LRU caches (`memoryDataCache({ maxEntries })` via `app({ dataCache })`,
+  `memoryCache({ maxPages })`, tag index), `server.stats()`; `app({ bus })` (`InvalidationBus`, `localBus`,
+  `httpBus({ peers, secret })` = signed `POST /_hozu/invalidate`) and `app({ staticTtl })`; per-feature fn modules
+  `/_hozu/f/<feature>-<hash>.js` (`fnModules()`; only client-reachable fns; payload `fns: string[]`) and page-scoped
+  payload `routes`; `hozu check` runs tsc in parallel (`--incremental`, `.hozu/check/`) with a transform cache in
+  `.hozu/transform/` and `--json` timings; `hozu call <feature>.<effect> [--input] [--session] [--write]`; DevTools
+  API tab (`pageEffects`, `/_hozu/dev/effects`); `runs` in inspect / impact / explain / Layers; migrate 0.11 → 0.12
+  adds `.hozu/` to `.gitignore`. Budgets P12 (check after an edit at 500 features ≤ 2.6 s, `pnpm bench:scale`), P13
+  (data cache bounded). `bench/scale` generates the large apps.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of
@@ -242,6 +251,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - `pnpm gate` — lint + typecheck + test + bench; must be green at the end of every phase (ADR 0001)
 - `pnpm test` · `pnpm typecheck` · `pnpm lint` · `pnpm bench`
 - `pnpm bench:frameworks` — React/Vue/Preact/Svelte comparison (docs/benchmarks); not part of the gate
+- `pnpm bench:scale [sizes…]` — generated 50/200/500-feature apps (docs/benchmarks/0003); gates P12; not part of the gate
 - `pnpm bench:parity` — screenshot parity of `examples/showcase` against a Nuxt reference (docs/benchmarks/0002)
 - `pnpm schema` — regenerate the JSON Schemas from the IR / CLI types (a test fails if stale)
 - `pnpm --filter example-cart validate|inspect|graph|explain|plan|simulate|demo|client|serve|export`

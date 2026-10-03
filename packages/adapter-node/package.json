@@ -1,6 +1,6 @@
 {
   "name": "@hozu/adapter-node",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Run a Hozu app on Node: HTTP server, ISR page cache and tag revalidation",
   "keywords": [
     "hozu",

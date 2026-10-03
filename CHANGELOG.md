@@ -1,10 +1,59 @@
 # Changelog
 
-## Unreleased
+## 0.12.0 — Large apps and many servers, `hozu call` and the DevTools API tab (ADR 0050)
 
-- `hozu migrate --dry-run` says it *would* save the old IR, and a failed `hozu check` in the verify pass names the
-  type-check state (for example `types skipped (npm install -D typescript)`). Found by migrating the site's 0.10.0
-  source from npm.
+0.12 measured Hozu at 50, 200 and 500 generated features ([benchmark 0003](docs/benchmarks/0003-scale.md)), then
+fixed what grew with the app instead of the page, and what a deployment of several instances needs.
+
+**Upgrade:** `npx -p @hozu/cli@latest hozu migrate`, install, then `npx hozu migrate` again. The only rewrite is
+`.hozu/` in the app's `.gitignore`, where 0.12 keeps its caches. **One thing to check by hand:** `/_hozu/fns.js` is
+gone (see below); a CDN or CSP rule that names it should name `/_hozu/f/*` instead.
+
+### Caches and many instances
+- **Bounded caches:**
+  - public query results are an LRU of at most 10,000 entries (`app({ dataCache: memoryDataCache({ maxEntries }) })`,
+    `DataCache` interface in `@hozu/data`);
+  - cached pages are an LRU of at most 5,000 pages (`memoryCache({ maxPages })`), and invalidating a tag touches only
+    the pages that carry it;
+  - one million distinct keys hold 5.3 MB instead of 702 MB (budget P13);
+  - `server.stats()` returns `{ dataEntries, pages, evictions }`.
+- **Invalidation bus:**
+  - `app({ bus })` tells the other instances which tags a mutation, an endpoint, a native post or
+    `server.revalidate` invalidated; they drop the same pages and data and push to their own live clients;
+  - `httpBus({ peers, secret })` is built in: a signed `POST /_hozu/invalidate`, zero dependencies;
+  - a broker (Redis, NATS, Postgres `LISTEN`) is a few lines against `InvalidationBus`;
+  - `app({ staticTtl })` re-reads `'static'` data and pages after that many seconds, a safety net for lost messages
+    (off by default).
+
+### Pages no longer grow with the app
+- **`fn` modules:**
+  - `fns.js` becomes one module per feature, `/_hozu/f/<feature>-<hash>.js` (immutable), holding only the `fn`s the
+    browser can call; builtins share a `hozu` module;
+  - a page loads only the modules of its machine-bound views;
+  - module helpers are emitted once.
+- **Routes:** the payload's `routes` lists only what the page's islands link or navigate to.
+- **Result, at 500 features:** the same page's payload equals the one at 50 features (it was 71 % larger), and it
+  loads 237 B of `fn`s instead of 161.8 KB. `fnModules()` replaces `fnsModule()`.
+
+### A faster `hozu check`
+- The type check runs in a child process from the start, in parallel with loading and validating;
+  `tsc --incremental` keeps its state in `.hozu/check/`.
+- `@hozu/transform` caches transformed sources in `.hozu/transform/` (CLI, `hozu serve`, `hozu dev`;
+  `HOZU_TRANSFORM_CACHE=0` turns it off).
+- At 500 features, a check after a one-line edit takes 1.91 s instead of 4.61 s (budget P12, `pnpm bench:scale`); at
+  50 features 0.41 s instead of 0.83 s.
+- `--json` adds `timings: { types, load, validate }`.
+
+### Tools
+- **`hozu call <feature>.<effect>`:** runs one query or mutation through the app's own handler, in process.
+  - It takes `--input` and `--session`, and a mutation needs `--write`.
+  - It prints the value or the declared error, the invalidated tags and the queries they refresh.
+- **DevTools API tab:** the queries a page reads and the mutations its machines start, with `runs`, scope,
+  freshness, tags and errors. It runs them with an input built from their schema; mutations ask first.
+- **`runs` everywhere:** `inspect`, `impact`, `explain` and DevTools Layers show where an effect runs.
+- **`hozu migrate`:**
+  - `--dry-run` says it *would* save the old IR;
+  - a failed check in the verify pass names the type-check state.
 
 ## 0.11.0 — Where queries and mutations run, and `hozu migrate` (ADR 0049)
 

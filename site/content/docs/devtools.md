@@ -30,6 +30,10 @@ Each part of the request names its `file:line`, the scope you chose (only this o
 
 Layers lists the states the page can be in: loading, failed, empty, saving, a confirmation dialog, an error message. **Preview** shows one without running anything; the dock says so until you exit. A request made during a preview records the state.
 
+## Try the data
+
+The **API** tab lists the data the page reads and the changes it can make, with where each one runs. Edit the input (it starts from what the page uses) and run it: you see the value or the declared error and how long it took. Changes ask first, because they write your development data; afterwards the tab names what they invalidated and offers a reload. An agent does the same from the terminal with `hozu call`.
+
 ## Hand it to your agent
 
 ```sh

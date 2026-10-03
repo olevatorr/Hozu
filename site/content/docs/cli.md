@@ -30,6 +30,7 @@ npx hozu get / --json
 | `hozu impact tasks.listItems --json` | Find what a declaration affects, or who uses a component (`ui.Button`). Use your actual declaration name. |
 | `hozu plan home --json` | Show the derived render plan for a named route. |
 | `hozu get /tasks --json` | Request one or more pages in-process without a server. |
+| `hozu call tasks.listItems --input '{}' --json` | Run one query or mutation through the app's handler without a server: the value or the declared error, and for a mutation (`--write`) the tags it invalidated and the queries they refresh. `--session '<json>'` signs in. |
 | `hozu browse /tasks --do 'click Save' --json` | Run steps in headless Chrome without a server, with and without JS: what each step changed, errors and client components. |
 | `hozu build --json` | Write deployment assets, generated server rendering code and the manifest. |
 | `hozu serve` | Start the app module on `PORT` with adapter-node; this is `npm start`. |

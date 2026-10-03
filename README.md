@@ -158,6 +158,17 @@ The extra cost is mostly reading the guide of a framework the model has not seen
 | Server renders per second | 52.6 k | Svelte 94.2 k |
 | HTML | 12.1 KB | 12.6 KB |
 
+**At scale:** generated apps of 50 and 500 features, each with a machine, a contract, queries, mutations and a
+100-row list ([benchmark 0003](docs/benchmarks/0003-scale.md), 0.12).
+
+| | 50 features | 500 features |
+|---|---|---|
+| `hozu check` after a one-line edit | 0.41 s | 1.91 s |
+| A page's payload | 11.1 KB | 11.1 KB |
+| `fn` code that page loads | 237 B | 237 B |
+
+The data cache keeps at most 10,000 entries by default: one million distinct keys hold 5.3 MB, not 702 MB.
+
 ## Packages
 | Package | What it is |
 |---|---|
@@ -192,13 +203,16 @@ The extra cost is mostly reading the guide of a framework the model has not seen
 - Components in kits, with variants and owned classes; client components wrap third-party DOM libraries.
 - Queries and mutations that call an API from the browser (`runs`, a feature's `fetch.ts`), checked against their
   schemas there too; `examples/stars` is a GitHub client exported to a static directory.
+- Bounded LRU caches, and an invalidation bus so several instances drop the same pages and push to their own live
+  clients (`httpBus` built in, or a few lines against Redis or NATS).
+- `hozu call` runs one query or mutation without a page, and the DevTools API tab runs them with your own input.
 
 The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router is in
 [ADR 0011](docs/adr/0011-mainstream-gap-analysis.md).
 
 ## Requirements and status
 - **Node 22.18 or newer.** Config and app code are TypeScript run with Node's type stripping.
-- **Version 0.11.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
+- **Version 0.12.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
   and designers and the trial that checks DevTools requests. Every design decision is recorded in
   [`docs/adr`](docs/adr).
 

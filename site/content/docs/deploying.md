@@ -45,7 +45,22 @@ Static hosts do not run query resolvers after export. Rebuild the site when cont
 
 Node runs the app module with `hozu serve` (the generated `npm start`): adapter-node on `PORT`, with the environment, compiled styles and `public/`. It registers the transform itself; edge bundles add `hozuTransform()` from `@hozu/transform/esbuild`. Without the transform the server refuses to start (HZ044). Run `hozu build` to generate `dist/public`, `dist/manifest.json` and `dist/server/render.js`. There is no server file to write: resolvers, the session store and the client components bundle are named in `app.ts`, headers in `project({ http })`, statuses in `head.failed`.
 
-The adapter includes an ISR page cache, tag revalidation, CSP and cross-site POST checks. Session-based applications must configure their session identity and a stable production secret. Cache and invalidation state are per instance; account for that when running multiple instances.
+The adapter includes an ISR page cache, tag revalidation, CSP and cross-site POST checks. Session-based applications must configure their session identity and a stable production secret.
+
+## Several instances
+
+Each instance keeps its own bounded caches: at most 10,000 query results and 5,000 pages by default (`app({ dataCache: memoryDataCache({ maxEntries }) })`, `app({ cache: memoryCache({ maxPages }) })`; `server.stats()` reports the sizes). When several instances serve one app, a mutation on one must tell the others. Give every instance the same bus:
+
+```ts
+import { app, httpBus } from '@hozu/runtime-server'
+
+export default app({
+  resolvers,
+  bus: httpBus({ peers: ['http://10.0.0.2:3000', 'http://10.0.0.3:3000'], secret: process.env.BUS_SECRET! }),
+})
+```
+
+`httpBus` sends a signed `POST /_hozu/invalidate` to each peer, so the others drop the same pages and data and push to their own live clients. Messages carry tags, never data. With a broker instead of fixed addresses, implement `InvalidationBus` (`publish(tags)`, `subscribe(onTags)`) over Redis, NATS or Postgres `LISTEN`. `app({ staticTtl: 300 })` re-reads `'static'` data after 300 seconds in case a message is lost.
 
 ## Edge and web-standard runtimes
 

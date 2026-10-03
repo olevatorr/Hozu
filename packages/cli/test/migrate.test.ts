@@ -162,6 +162,59 @@ describe('hozu migrate on a 0.10 app (ADR 0049 §6)', () => {
   })
 })
 
+describe('hozu migrate to 0.12 (ADR 0050 I)', () => {
+  it('takes a 0.10 app through both steps, then verifies an equal IR', async () => {
+    const dir = await copyOf('bookmarks')
+    const before = await irOf(dir)
+    const first = await runMigrate(dir, {
+      config: undefined,
+      dryRun: false,
+      versions: { installed: '0.10.0', target: '0.12.0' },
+      recordIR: () => before,
+    })
+    expect(first.steps.map((s) => s.to)).toEqual(['0.11', '0.12'])
+    expect(first.changed).toEqual([
+      { file: 'features/bookmarks/model.ts', edits: 4 },
+      { file: '.gitignore', edits: 1 },
+    ])
+    expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toBe('.hozu/\n')
+    const after = join(root, '.tmp', `migrate-0.12-after-${Date.now()}`)
+    cpSync(dir, after, { recursive: true, verbatimSymlinks: true })
+    made.push(after)
+    const second = await runMigrate(after, {
+      config: undefined,
+      dryRun: false,
+      versions: { installed: '0.12.0', target: '0.12.0' },
+    })
+    expect(second.ir).toEqual({ compared: true, skipped: null, differences: [] })
+    expect(second.ok).toBe(true)
+  }, 120_000)
+
+  it('changes no source of a 0.11 app, only its .gitignore', async () => {
+    const dir = join(root, '.tmp', `migrate-0.11-${Date.now()}`)
+    cpSync(join(root, 'examples/bookmarks'), dir, {
+      recursive: true,
+      filter: (from) => !/\/(node_modules|\.hozu)(\/|$)/.test(from),
+    })
+    symlinkSync(join(root, 'examples/bookmarks/node_modules'), join(dir, 'node_modules'))
+    made.push(dir)
+    const before = await irOf(dir)
+    const first = await runMigrate(dir, {
+      config: undefined,
+      dryRun: false,
+      versions: { installed: '0.11.0', target: '0.12.0' },
+      recordIR: () => before,
+    })
+    expect(first.changed).toEqual([{ file: '.gitignore', edits: 1 }])
+    const second = await runMigrate(dir, {
+      config: undefined,
+      dryRun: false,
+      versions: { installed: '0.12.0', target: '0.12.0' },
+    })
+    expect([second.ir.differences, second.ok]).toEqual([[], true])
+  }, 120_000)
+})
+
 describe('the migrate summary', () => {
   const base: MigrateOutput = {
     ok: true,

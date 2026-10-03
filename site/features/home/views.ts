@@ -257,6 +257,44 @@ export const Home = ui.view({
             ui.use(Button, { props: { href: ui.link(doc, { slug: 'data' }) } }, ['Where data runs →']),
           ]),
         ]),
+        ui.use(Section, { props: { kicker: 'Scale · 0.12' } }, [
+          ui.use(Heading, {}, ['Five hundred features. Same page.']),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
+            'We generated apps of 50 and 500 features and fixed what grew with the app instead of the page. A page now loads only its own code and links, the check after an edit runs the type check alongside everything else, and several servers keep one another’s caches honest.',
+          ]),
+          ui.use(Steps, {
+            class: 'mt-8',
+            props: {
+              items: [
+                {
+                  id: 'check',
+                  title: '1.9 s check',
+                  body: 'hozu check after a one-line edit at 500 features. It was 4.6 s.',
+                },
+                {
+                  id: 'page',
+                  title: 'Same page size',
+                  body: 'A page carries the same data at 50 and at 500 features, and loads only its own code: 237 bytes here.',
+                },
+                {
+                  id: 'servers',
+                  title: 'Many servers',
+                  body: 'A change on one server clears the others’ caches. Memory stays bounded.',
+                },
+              ],
+            },
+          }),
+          ui.div({ class: 'mt-8 flex flex-wrap gap-3' }, [
+            ui.use(Button, { props: { href: ui.link(doc, { slug: 'deploying' }) } }, ['Deploy several →']),
+            ui.a(
+              {
+                href: 'https://github.com/olevatorr/Hozu/blob/main/docs/benchmarks/0003-scale.md',
+                class: 'self-center underline',
+              },
+              ['How we measured'],
+            ),
+          ]),
+        ]),
         ui.use(Section, { props: { kicker: 'DevTools · 0.10' } }, [
           ui.use(Heading, {}, ['Point at it. Your agent gets the line.']),
           ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-center' }, [
