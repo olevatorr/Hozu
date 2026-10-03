@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: run.sh prepare | [ARM=cold|warm] [SETTINGS=file] [FROM_TAG=s12m] [FROM_APP=dir] [RESULTS=results-0021] run.sh <hozu|nuxt> <run-id> <port> [from-step] [to-step]
+# Usage: run.sh prepare | [MODEL=id] [ARM=cold|warm] [SETTINGS=file] [FROM_TAG=s12m] [FROM_APP=dir] [RESULTS=results-0021] run.sh <hozu|nuxt> <run-id> <port> [from-step] [to-step]
 set -uo pipefail
 
 LR="$(cd "$(dirname "$0")" && pwd)"
@@ -102,7 +102,7 @@ The Hozu guide and this app's map are already in your context."
     fingerprint "$prompt" "$nn" "$([ "$ARM" = warm ] && echo "$W/warm/$nn.md")"
     [ -n "${DRY:-}" ] && { : > "$OUT/$nn.jsonl"; : > "$OUT/$nn.err"; } ||
     perl -e 'alarm shift; exec @ARGV' 1800 claude -p "$text" "${extra[@]}" \
-      --setting-sources project,local --strict-mcp-config --model claude-opus-5-5 \
+      --setting-sources project,local --strict-mcp-config --model "${MODEL:-claude-opus-5-5}" \
       --dangerously-skip-permissions --output-format stream-json --verbose \
       > "$OUT/$nn.jsonl" 2> "$OUT/$nn.err"
     code=$?
