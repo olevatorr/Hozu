@@ -12,6 +12,7 @@ import {
   runBrowse,
 } from './commands/browse.ts'
 import { runBuild } from './commands/build.ts'
+import { describeCall, runCall } from './commands/call.ts'
 import { runCheck, startTypes } from './commands/check.ts'
 import { describeComponent, describeComponentImpact } from './commands/components.ts'
 import { runDev } from './commands/dev.ts'
@@ -60,6 +61,8 @@ Commands:
   check                     Type-check the app and validate it: the one command to run after every edit
   map                       Outline the app (routes, queries, mutations, events, states, views) with file:line
   get <path>...             Request pages in-process (no server): status, title, alerts, visible text, forms
+  call <feature>.<effect>   Run one query or mutation in-process (no server) through the app's own handler:
+                            --input '<json>', --session '<json>'; a mutation writes real data and needs --write
   browse <path> --do <step> Run the steps in headless Chrome with and without JS (no server): what each step changed
   add feature <name>        Scaffold a working feature (model, views, contracts, resolvers) and wire it in
   add component <kit|feature> <Name> [--client]
@@ -159,6 +162,8 @@ export async function main(
         out: { type: 'string' },
         agent: { type: 'string' },
         session: { type: 'string' },
+        input: { type: 'string' },
+        write: { type: 'boolean', default: false },
         full: { type: 'boolean', default: false },
         page: { type: 'string' },
         with: { type: 'string' },
@@ -193,6 +198,7 @@ export async function main(
       'check',
       'map',
       'get',
+      'call',
       'browse',
       'add',
       'inspect',
@@ -314,6 +320,16 @@ export async function main(
       const result = runMap(loaded, cwd)
       out(asJson ? json(result) : describeMap(result))
       return 0
+    }
+    if (command === 'call') {
+      const result = await runCall(loaded, {
+        target,
+        input: values.input,
+        session: values.session,
+        write: values.write === true,
+      })
+      out(asJson ? json(result) : describeCall(result))
+      return result.result.ok ? 0 : 1
     }
     if (command === 'get') {
       const result = await runRequest(loaded, {

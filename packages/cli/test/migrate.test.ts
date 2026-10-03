@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Json } from '@hozu/core/ir'
@@ -192,5 +192,29 @@ describe('the migrate summary', () => {
     expect(describeMigrate({ ...base, phase: 'verify', record: null, check })).toContain(
       'hozu check: failed · types skipped (npm install -D typescript) · 0 errors, 0 warnings',
     )
+  })
+})
+
+describe('the 0.11 → 0.12 step (ADR 0050 D)', () => {
+  it('adds .hozu/ to .gitignore once, keeping what is there', async () => {
+    const { ignoreHozu } = await import('../src/migrate/step-0.12.ts')
+    const dir = join(root, '.tmp', `migrate-ignore-${process.pid}`)
+    rmSync(dir, { recursive: true, force: true })
+    mkdirSync(dir, { recursive: true })
+    made.push(dir)
+    expect(ignoreHozu(dir, false)).toEqual([{ file: '.gitignore', edits: 1 }])
+    expect(existsSync(join(dir, '.gitignore'))).toBe(false)
+    expect(ignoreHozu(dir, true)).toEqual([{ file: '.gitignore', edits: 1 }])
+    expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toBe('.hozu/\n')
+    expect(ignoreHozu(dir, true)).toEqual([])
+    writeFileSync(join(dir, '.gitignore'), 'node_modules\ndist')
+    ignoreHozu(dir, true)
+    expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toBe('node_modules\ndist\n.hozu/\n')
+    writeFileSync(join(dir, '.gitignore'), 'node_modules\n/.hozu\n')
+    expect(ignoreHozu(dir, true)).toEqual([])
+  })
+
+  it('chains 0.10 → 0.12 through both steps', () => {
+    expect(chain('0.10', '0.12')?.map((s) => s.to)).toEqual(['0.11', '0.12'])
   })
 })

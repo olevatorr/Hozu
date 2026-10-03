@@ -202,6 +202,7 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
       out.changed.push({ file: rel(file), edits })
       if (!options.dryRun) writeFileSync(file, code)
     }
+    for (const step of plan) out.changed.push(...(step.files?.(dir, !options.dryRun) ?? []))
     out.packages = raisePackages(join(dir, 'package.json'), target, !options.dryRun)
     if (!options.dryRun) {
       mkdirSync(dirname(record), { recursive: true })

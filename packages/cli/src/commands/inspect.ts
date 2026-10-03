@@ -1,7 +1,13 @@
-import { hashJson } from '@hozu/core/ir'
+import { hashJson, type Runs } from '@hozu/core/ir'
 import type { InspectFeatureOutput, InspectOutput } from '../contract.ts'
 import { type Loaded, requireFeature } from '../load.ts'
 import { inspectComponent } from './components.ts'
+
+const effectOf = (kind: 'query' | 'mutation', runs: Runs) => ({
+  kind,
+  runs,
+  implemented: runs === 'server' ? ('resolver' as const) : ('fetch.ts' as const),
+})
 
 export function runInspect(loaded: Loaded, id: string | undefined, cwd: string): InspectOutput {
   if (id?.includes('.')) return inspectComponent(loaded.build(true), cwd, id)
@@ -36,6 +42,10 @@ function inspectFeature(loaded: Loaded, id: string | undefined): InspectFeatureO
       hydrates: Object.values(feature.views).some((v) => v.machine !== null),
       imports: feature.imports,
       exports: feature.exports,
+      effects: Object.fromEntries([
+        ...Object.entries(feature.queries).map(([sym, q]) => [sym, effectOf('query', q.runs)] as const),
+        ...Object.entries(feature.mutations).map(([sym, m]) => [sym, effectOf('mutation', m.runs)] as const),
+      ]),
     },
     ir: feature,
   }

@@ -104,6 +104,7 @@ export function runExplain(loaded: Loaded, target: string | undefined): ExplainO
           effect: s.invoke.effect,
           input: renderValue(s.invoke.input),
           errors: [...Object.keys(declared), 'Unexpected'],
+          runs: effect?.queries[effectSymbol]?.runs ?? effect?.mutations[effectSymbol]?.runs ?? 'server',
         }
       : null,
     outgoing: all.filter((t) => t.from === state),
@@ -125,7 +126,7 @@ export function describeExplain(out: ExplainOutput): string {
   const flags = [out.initial && 'initial', out.final && 'final'].filter(Boolean).join(', ')
   return [
     `${out.feature}.${out.state}${flags ? `  (${flags})` : ''}`,
-    `invoke: ${out.invoke ? `${out.invoke.effect}(${out.invoke.input})  errors: ${out.invoke.errors.join(', ')}` : 'none'}`,
+    `invoke: ${out.invoke ? `${out.invoke.effect}(${out.invoke.input})  runs: ${out.invoke.runs}  errors: ${out.invoke.errors.join(', ')}` : 'none'}`,
     'outgoing:',
     ...(out.outgoing.length ? out.outgoing.map((t) => line(t, 'out')) : ['  (none)']),
     'incoming:',

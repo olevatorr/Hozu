@@ -7,6 +7,7 @@ import type {
   ExportsIR,
   FeatureIR,
   Json,
+  Runs,
 } from '@hozu/core/ir'
 import type { Impact } from '@hozu/validator'
 
@@ -43,6 +44,8 @@ export interface InspectSummary {
   hydrates: boolean
   imports: string[]
   exports: ExportsIR
+  /** Each query and mutation: where it runs and where it is implemented (ADR 0049). */
+  effects: Record<string, { kind: 'query' | 'mutation'; runs: Runs; implemented: 'resolver' | 'fetch.ts' }>
 }
 
 export interface InspectFeatureOutput {
@@ -133,7 +136,7 @@ export interface ExplainOutput {
   state: string
   initial: boolean
   final: boolean
-  invoke: { effect: string; input: string; errors: string[] } | null
+  invoke: { effect: string; input: string; errors: string[]; runs: Runs } | null
   outgoing: ExplainTransition[]
   incoming: ExplainTransition[]
   sends: ExplainSend[]
@@ -483,4 +486,19 @@ export interface MigrateOutput {
   guide: string[]
   check: CheckOutput | null
   next: string[]
+}
+
+/** `hozu call` (ADR 0050 F): one query or mutation through the app's handler. */
+export interface CallOutput {
+  effect: string
+  kind: 'query' | 'mutation'
+  runs: Runs
+  input: Json
+  result: { ok: true; value: Json } | { ok: false; error: string; data: Json }
+  /** Milliseconds for the request. */
+  ms: number
+  /** Tags a mutation invalidated. */
+  invalidated: string[]
+  /** The queries those tags refresh. */
+  refreshes: string[]
 }

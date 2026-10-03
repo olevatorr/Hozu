@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/CallOutput",
+  "definitions": {
+    "CallOutput": {
+      "type": "object",
+      "properties": {
+        "effect": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "query",
+            "mutation"
+          ]
+        },
+        "runs": {
+          "$ref": "#/definitions/Runs"
+        },
+        "input": {
+          "$ref": "#/definitions/Json"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "ok": {
+                  "type": "boolean",
+                  "const": true
+                },
+                "value": {
+                  "$ref": "#/definitions/Json"
+                }
+              },
+              "required": [
+                "ok",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "ok": {
+                  "type": "boolean",
+                  "const": false
+                },
+                "error": {
+                  "type": "string"
+                },
+                "data": {
+                  "$ref": "#/definitions/Json"
+                }
+              },
+              "required": [
+                "ok",
+                "error",
+                "data"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "ms": {
+          "type": "number",
+          "description": "Milliseconds for the request."
+        },
+        "invalidated": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tags a mutation invalidated."
+        },
+        "refreshes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The queries those tags refresh."
+        }
+      },
+      "required": [
+        "effect",
+        "kind",
+        "runs",
+        "input",
+        "result",
+        "ms",
+        "invalidated",
+        "refreshes"
+      ],
+      "additionalProperties": false,
+      "description": "`hozu call` (ADR 0050 F): one query or mutation through the app's handler."
+    },
+    "Runs": {
+      "type": "string",
+      "enum": [
+        "server",
+        "browser",
+        "either"
+      ],
+      "description": "What an effect's implementation needs (ADR 0049): server secrets, browser credentials, or neither."
+    },
+    "Json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Json"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Json"
+          }
+        }
+      ]
+    }
+  }
+}

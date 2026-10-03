@@ -23,7 +23,7 @@ export function runImpact(loaded: Loaded, target: string | undefined, cwd: strin
 }
 
 export function describeImpact(out: Impact): string {
-  const lines = [`${out.target}  (${out.kind})`]
+  const lines = [`${out.target}  (${out.kind}${out.runs ? `, runs: ${out.runs}` : ''})`]
   if (out.tags.length) lines.push(`tags: ${out.tags.join(', ')}`)
   if (out.queries.length)
     lines.push(

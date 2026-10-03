@@ -1,6 +1,7 @@
 import type { Json } from '@hozu/core/ir'
 import type { Note } from './ast.ts'
 import { addRunsServer, normalize010 } from './step-0.11.ts'
+import { ignoreHozu } from './step-0.12.ts'
 
 export interface Step {
   from: string
@@ -10,6 +11,8 @@ export interface Step {
   rewrite(file: string, source: string): { code: string; notes: Note[]; count: number }
   /** The IR of `from` in `to` terms: every difference left after it is a behaviour change to review. */
   normalize(ir: Json): Json
+  /** Changes to files other than sources (`.gitignore`), relative to the app directory. */
+  files?(dir: string, write: boolean): { file: string; edits: number }[]
 }
 
 /** One step per release from 0.11 on (ADR 0049 §6); 0.10.0 is the oldest supported starting point. */
@@ -20,6 +23,14 @@ export const steps: Step[] = [
     summary: "runs: 'server' on every query and mutation without runs (0.11 defaults to 'either')",
     rewrite: addRunsServer,
     normalize: normalize010,
+  },
+  {
+    from: '0.11',
+    to: '0.12',
+    summary: '.hozu/ in .gitignore (0.12 caches the transform and the type check there)',
+    rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+    files: ignoreHozu,
   },
 ]
 

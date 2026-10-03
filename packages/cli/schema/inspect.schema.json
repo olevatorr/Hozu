@@ -71,6 +71,38 @@
         },
         "exports": {
           "$ref": "#/definitions/ExportsIR"
+        },
+        "effects": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "query",
+                  "mutation"
+                ]
+              },
+              "runs": {
+                "$ref": "#/definitions/Runs"
+              },
+              "implemented": {
+                "type": "string",
+                "enum": [
+                  "resolver",
+                  "fetch.ts"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "runs",
+              "implemented"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Each query and mutation: where it runs and where it is implemented (ADR 0049)."
         }
       },
       "required": [
@@ -83,7 +115,8 @@
         "contracts",
         "hydrates",
         "imports",
-        "exports"
+        "exports",
+        "effects"
       ],
       "additionalProperties": false
     },
@@ -143,6 +176,15 @@
         "endpoints"
       ],
       "additionalProperties": false
+    },
+    "Runs": {
+      "type": "string",
+      "enum": [
+        "server",
+        "browser",
+        "either"
+      ],
+      "description": "What an effect's implementation needs (ADR 0049): server secrets, browser credentials, or neither."
     },
     "FeatureIR": {
       "type": "object",
@@ -784,15 +826,6 @@
         "formRef"
       ],
       "additionalProperties": false
-    },
-    "Runs": {
-      "type": "string",
-      "enum": [
-        "server",
-        "browser",
-        "either"
-      ],
-      "description": "What an effect's implementation needs (ADR 0049): server secrets, browser credentials, or neither."
     },
     "MutationIR": {
       "type": "object",

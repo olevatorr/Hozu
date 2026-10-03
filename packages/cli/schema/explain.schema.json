@@ -33,12 +33,16 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                "runs": {
+                  "$ref": "#/definitions/Runs"
                 }
               },
               "required": [
                 "effect",
                 "input",
-                "errors"
+                "errors",
+                "runs"
               ],
               "additionalProperties": false
             },
@@ -77,6 +81,15 @@
         "sends"
       ],
       "additionalProperties": false
+    },
+    "Runs": {
+      "type": "string",
+      "enum": [
+        "server",
+        "browser",
+        "either"
+      ],
+      "description": "What an effect's implementation needs (ADR 0049): server secrets, browser credentials, or neither."
     },
     "ExplainTransition": {
       "type": "object",

@@ -1,4 +1,4 @@
-import { type ProjectIR, resolveAt, type TagExprIR } from '@hozu/core/ir'
+import { type ProjectIR, type Runs, resolveAt, type TagExprIR } from '@hozu/core/ir'
 import { guardRefs, valueRefs } from './sites.ts'
 import { closest } from './suggest.ts'
 import { transitionsOf, walkView } from './walk.ts'
@@ -25,6 +25,8 @@ export interface Impact {
   invalidatedBy: string[]
   uses: ImpactUse[]
   features: string[]
+  /** Where a query or mutation runs (ADR 0049); null for other symbols. */
+  runs: Runs | null
 }
 
 const registries: [ImpactKind, 'events' | 'queries' | 'mutations' | 'tags' | 'fns' | 'views'][] = [
@@ -164,5 +166,13 @@ export function impact(ir: ProjectIR, target: string): Impact {
     invalidatedBy: [...invalidatedBy].sort(),
     uses,
     features: [...touched].sort(),
+    runs: runsOf(ir, target),
   }
+}
+
+function runsOf(ir: ProjectIR, target: string): Runs | null {
+  const dot = target.indexOf('.')
+  const f = ir.features[target.slice(0, dot)]
+  const sym = target.slice(dot + 1)
+  return f?.queries[sym]?.runs ?? f?.mutations[sym]?.runs ?? null
 }

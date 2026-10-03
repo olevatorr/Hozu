@@ -5,6 +5,10 @@
   - `--forms` lists each form: fields with their defaults, checkbox / radio groups with every value (checked ones
     marked ✓), controls that join through `form=` (marked `(form=)`), and submit buttons with their name and value.
   - Endpoints: `hozu get '/api/items?x=1'`. It needs no browser.
+- **Try one query or mutation without a page:** `hozu call notes.listNotes --input '{}' --session '{"user":"ada"}'`
+  runs it through the app's own handler and prints the value or the declared error. A mutation writes real data,
+  so it needs `--write`, and it also prints the tags it invalidated and the queries they refresh. `runs: 'browser'`
+  effects need `hozu browse`.
 - **Drive the app in a real browser, still without a server:**
   `hozu browse / --session '{"user":"ada"}' --do 'fill New note=Milk' --do 'press Enter' --do 'click Pin in "Milk"'`.
   - It uses the installed Chrome / Chromium / Edge (`HOZU_CHROME=/path` to choose); without one it is a config

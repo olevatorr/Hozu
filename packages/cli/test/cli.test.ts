@@ -74,6 +74,11 @@ describe('A5 CLI contract', () => {
     expectSchema('inspect', catalogOut)
     expect(cartOut.summary).toMatchObject({ states: 6, events: 5, hydrates: true, imports: ['catalog'] })
     expect(catalogOut.summary).toMatchObject({ states: 0, hydrates: false })
+    expect(cartOut.summary.effects.addItem).toEqual({
+      kind: 'mutation',
+      runs: 'server',
+      implemented: 'resolver',
+    })
   })
 
   it('graph --json matches its schema; text mode is Mermaid', async () => {
@@ -113,7 +118,9 @@ describe('A5 CLI contract', () => {
       'cart.Checkout',
     ])
     const text = (await run(['explain', 'cart.adding'])).stdout
-    expect(text).toContain('invoke: cart.addItem(context.pending)  errors: OutOfStock, Unexpected')
+    expect(text).toContain(
+      'invoke: cart.addItem(context.pending)  runs: server  errors: OutOfStock, Unexpected',
+    )
   })
 
   it('explain suggests the closest state', async () => {
@@ -133,12 +140,14 @@ describe('A5 CLI contract', () => {
       tags: ['cart.cartTag'],
       queries: [{ ref: 'cart.getCart', tag: 'cart.cartTag', precision: 'exact' }],
       features: ['cart'],
+      runs: 'server',
     })
     expect(out.uses.map((u: { via: string }) => u.via)).toEqual([
       '"adding" invokes cart.addItem',
       'cart.CartPanel/1 reads cart.getCart',
     ])
     const text = (await run(['impact', 'cart.getCart'])).stdout
+    expect(text).toContain('cart.getCart  (query, runs: server)')
     expect(text).toContain('invalidated by: cart.addItem, cart.checkout, cart.removeItem')
     const unknown = await run(['impact', 'cart.addItm', '--json'])
     expect(unknown.code).toBe(2)
@@ -262,5 +271,58 @@ describe('ADR 0043 G output', () => {
     expect(text).toContain('new entry 9')
     expect(text).not.toContain('new entry 10')
     expect(text).toContain('… 4 more (--json lists all)')
+  })
+})
+
+describe('hozu call (ADR 0050 F)', () => {
+  const notes = `${root}examples/notes`
+  const ada = ['--session', '{"user":"ada"}']
+
+  it('runs a query as a session user through the app handler, and reports a declared error without one', async () => {
+    const read = await run(['call', 'notes.listNotes', ...ada, '--json'], notes)
+    const out = JSON.parse(read.stdout)
+    expectSchema('call', out)
+    expect(read.code).toBe(0)
+    expect(out).toMatchObject({ effect: 'notes.listNotes', kind: 'query', runs: 'server', invalidated: [] })
+    expect(out.result.value.map((n: { text: string }) => n.text)).toContain('Buy milk')
+    const anonymous = JSON.parse((await run(['call', 'notes.listNotes', '--json'], notes)).stdout)
+    expect(anonymous.result).toEqual({ ok: false, error: 'Unauthorized', data: {} })
+  })
+
+  it('needs --write for a mutation, then lists what it invalidated and refreshes', async () => {
+    const refused = await run(
+      ['call', 'notes.addNote', '--input', '{"text":"Eggs"}', ...ada, '--json'],
+      notes,
+    )
+    expect([refused.code, JSON.parse(refused.stdout).error.message]).toEqual([
+      2,
+      'notes.addNote is a mutation: it writes real data, so hozu call needs --write',
+    ])
+    const written = await run(
+      ['call', 'notes.addNote', '--input', '{"text":"Eggs"}', ...ada, '--write'],
+      notes,
+    )
+    expect(written.code).toBe(0)
+    expect(written.stdout).toContain('notes.addNote  (mutation, runs: server)')
+    expect(written.stdout).toContain('invalidated: notes.notesTag\nrefreshes: notes.listNotes')
+    const invalid = await run(
+      ['call', 'notes.addNote', '--input', '{"text":""}', ...ada, '--write', '--json'],
+      notes,
+    )
+    expect([invalid.code, JSON.parse(invalid.stdout).result.error]).toEqual([1, 'Invalid'])
+  })
+
+  it('refuses a browser-run effect, an unknown one and bad JSON', async () => {
+    const browser = await run(['call', 'stars.starred', '--json'], `${root}examples/stars`)
+    expect(JSON.parse(browser.stdout).error.message).toBe(
+      "stars.starred runs in the browser (runs: 'browser'); the server never runs it",
+    )
+    expect(JSON.parse((await run(['call', 'notes.nope', '--json'], notes)).stdout).error.message).toBe(
+      'Unknown query or mutation notes.nope',
+    )
+    expect(
+      JSON.parse((await run(['call', 'notes.listNotes', '--input', '{', '--json'], notes)).stdout).error
+        .message,
+    ).toBe('--input must be JSON')
   })
 })

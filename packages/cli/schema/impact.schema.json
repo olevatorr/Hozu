@@ -50,6 +50,17 @@
           "items": {
             "type": "string"
           }
+        },
+        "runs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Runs"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where a query or mutation runs (ADR 0049); null for other symbols."
         }
       },
       "required": [
@@ -59,7 +70,8 @@
         "queries",
         "invalidatedBy",
         "uses",
-        "features"
+        "features",
+        "runs"
       ],
       "additionalProperties": false
     },
@@ -117,6 +129,15 @@
         "via"
       ],
       "additionalProperties": false
+    },
+    "Runs": {
+      "type": "string",
+      "enum": [
+        "server",
+        "browser",
+        "either"
+      ],
+      "description": "What an effect's implementation needs (ADR 0049): server secrets, browser credentials, or neither."
     },
     "ComponentImpact": {
       "type": "object",
