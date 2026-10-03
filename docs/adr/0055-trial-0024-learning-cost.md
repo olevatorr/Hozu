@@ -1,7 +1,7 @@
 # ADR 0055 — Trial 0024: how much of the cost is learning Hozu? (pre-registration)
 
-- **Status:** proposed (2026-10-03), ADR 0053 H. The trial runs after 0.14.0 is released, so it measures the shorter
-  guide. The design and targets are reviewed and frozen before the run, then not changed after it starts.
+- **Status:** accepted and frozen (owner, 2026-10-03): one run per arm, a new sealed held-out set. Not changed after the
+  first session starts. ADR 0053 H. It runs on 0.14.0, so it measures the shorter guide.
 - **Why:** trial 0021 measured 1.34–1.72× Nuxt per change on the long run.
   - ADR 0038 and ADR 0053 attribute most of that to learning: Nuxt is in the training data, while Hozu is read from
     the guide in every session.
@@ -25,23 +25,44 @@
 5. **Three runs per arm.** Deferred to keep the cost down; a result near a threshold reads as undecided.
 
 ## Design
-- **The app:** trial 0021's Hozu app at step 12 (`s12m`), migrated to 0.14 with `hozu migrate`, with an equal IR and
-  a clean check; copied to `~/hozu-trial-0024`. The 0.14.0 tarballs are packed from the release commit, and their
-  SHA-256 is recorded.
-- **The changes:** steps 13–28 of the notes long run: 13–20 as in trial 0020, and 21–28 the sealed held-out set
-  (`bench/trial/longrun/heldout.sha256`). The changes are cumulative, as in trial 0021: each arm continues from its
-  own previous step.
-- **The runner:** one `claude -p` session per step and arm, `claude-opus-5-5`, the same runner as trial 0021
-  (`bench/trial/longrun/run.sh`), instruction fingerprints recorded; never repaired; a void re-runs from the same
-  copy.
-- **Arm A (cold):** as trial 0021. The skill is written by `create-hozu --agent claude`, and the agent reads what it
-  chooses.
-- **Arm B (warm):** the same skill. In addition, `SKILL.md`, every topic printed with `hozu docs <topic> --more`, and
-  the output of `hozu map` at the start of the step are put in the appended system prompt, so they are cached from the
-  first call. The prompt adds one line: "The Hozu guide and this app's map are already in your context."
-- **Arm C (Nuxt):** trial 0020's Nuxt app at step 12, re-run at the same time as the drift control.
-- **Acceptance:** the hidden per-step acceptance and regression pass of trial 0021, unchanged; `hozu check` must be
-  green in arms A and B.
+- **Where:** `/Users/otischen/Developer/hozu-trial-0024/` (`TRIAL_ROOT`). Every session gets
+  `--settings isolation.json` with `claudeMdExcludes` for the owner's `~/.claude/CLAUDE.md` and `~/CLAUDE.md`, and
+  `--setting-sources project,local`, so it sees only the app's own `CLAUDE.md` and skill.
+  - A probe session per arm records which instruction files it sees, before step 0.
+  - **Found while preparing:** trials 0020 and 0021 ran under `~/` with both of those files loaded in both arms. That
+    is a shared confound, and one more reason the Nuxt arm is re-run here.
+- **The app:** each arm builds the notes app from `bench/trial/notes/spec.md` (step 0). It then makes the changes
+  1–20 in order, each from its own previous step, and then the held-out changes 21–28.
+  - **Why from scratch:** trial 0021's step-12 apps and its held-out set were deleted with `~/hozu-trial-0021`; only
+    their hashes remain.
+  - **Steps 1–20 have been seen.** They were read while 0.8–0.14 were designed. The held-out steps are the ones that
+    count for a claim that generalises.
+- **The held-out set 21–28 (new):**
+  - written by an isolated session that sees only the spec, changes 1–20, the acceptance harness and the Nuxt
+    reference, never Hozu, its guide or the research;
+  - validated at 100 % on the Nuxt reference, then sealed by SHA-256 in `heldout-0024.sha256`;
+  - no check is amended after sealing. The files are copied into the repository after the trial, so they are not
+    lost again.
+- **Packages:** the 0.14.0 tarballs from `pnpm pack:release` at the release commit, with their SHA-256 recorded.
+- **The runner:** `bench/trial/longrun/run.sh` with `ARM` and `SETTINGS`, and `trial-0024.sh` to interleave the
+  arms. One `claude -p` session per step and arm, `claude-opus-5-5`, never repaired. A void (a session limit) re-runs
+  from the same commit. The arms run step by step: every arm finishes step k before any starts k + 1. Each arm has
+  its own port.
+- **Arm A (cold):** the skill written by `create-hozu --agent claude`; the agent reads what it chooses.
+- **Arm B (warm):** the same skill. In addition, the appended system prompt holds `SKILL.md`, every topic as
+  `hozu docs <topic> --more` prints it, and `hozu map` at the start of the step. It is cached from the first call.
+  The prompt adds one line: "The Hozu guide and this app's map are already in your context."
+- **Arm C (Nuxt):** `bench/trial/nuxt-0006` as in trial 0020, under the same isolation.
+- **Acceptance:** the hidden per-step acceptance with every earlier check re-run (`accept.mjs`). Before the runs, it
+  is validated on the Nuxt reference for steps 0–20. `hozu check` must be green in arms A and B.
+- **Traceability:** per step and arm, the record keeps:
+  - the transcript (`NN.jsonl`), the exit code and the attempts;
+  - the instruction fingerprints, plus the warm prefix file and its hash;
+  - `hozu check` / typecheck / build output, and the acceptance JSON;
+  - a metrics row (cost anatomy, lines, diagnostics);
+  - a git tag `sNN` in each app.
+
+  `trial-0024.log` records every start, end and void.
 
 ## Measures
 - **Cost:** weighted tokens and tool calls per step, the same weighting as trial 0021.
@@ -58,8 +79,8 @@
 
 ## Registered expectations
 These are the hypotheses the trial tests. They are not targets that a release has to meet.
-- **H1, learning dominates:** A / B ≥ 1.25× over steps 13–28.
-- **H2, little structural cost:** B / C ≤ 1.15× over steps 13–28 (B with the prefix's cache reads subtracted).
+- **H1, learning dominates:** A / B ≥ 1.25× over the held-out steps 21–28 (and reported for 0–20).
+- **H2, little structural cost:** B / C ≤ 1.15× over the held-out steps 21–28 (and reported for 0–20) (B with the prefix's cache reads subtracted).
 - **H3, correctness holds:** arms A and B pass every acceptance check of every step, as 0.8 did in trial 0021.
 - **Reading the result:**
   - **H1 and H2 hold:** the remaining cost is the price of being new, and the next lever is getting known (examples,
@@ -70,6 +91,4 @@ These are the hypotheses the trial tests. They are not targets that a release ha
   - **H3 fails:** it is reported first, before any cost figure.
 
 ## Budget
-- 48 sessions (16 steps × 3 arms), plus the migration check.
-- That is about twice the cost of trial 0021's sixteen Hozu steps. Arm B's prefix is cached, so its calls cost less
-  per call.
+- 87 sessions (steps 0–28 × 3 arms), plus the held-out author's session and the probes.

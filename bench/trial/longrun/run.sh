@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Usage: run.sh prepare | [FROM_TAG=s12m] [FROM_APP=dir] [RESULTS=results-0021] run.sh <hozu|nuxt> <run-id> <port> [from-step] [to-step]
+# Usage: run.sh prepare | [ARM=cold|warm] [SETTINGS=file] [FROM_TAG=s12m] [FROM_APP=dir] [RESULTS=results-0021] run.sh <hozu|nuxt> <run-id> <port> [from-step] [to-step]
 set -uo pipefail
 
 LR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$LR/../../.." && pwd)"
 R="${TRIAL_ROOT:-$HOME/hozu-trial-0020}"
 TGZ="$R/tgz"
-NODE_BIN="${NODE_BIN:-$HOME/.nvm/versions/node/v22.22.1/bin}"
+NODE_BIN="${NODE_BIN:-$HOME/.nvm/versions/node/v22.22.2/bin}"
 export PATH="$NODE_BIN:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 export CHROMIUM_PATH="${CHROMIUM_PATH:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 export SESSION_SECRET="${SESSION_SECRET:-trial-0021-deployment-session-secret-0123456789}"
@@ -23,6 +23,8 @@ if [ "${1:-}" = prepare ]; then
 fi
 
 FW="$1" RUN="$2" PORT="$3" FROM="${4:-0}" TO="${5:-20}"
+ARM="${ARM:-cold}"
+SETTINGS="${SETTINGS:-}"
 W="$R/$FW-$RUN"
 APP="$W/app"
 OUT="$LR/${RESULTS:-results}/$FW/$RUN"
@@ -39,7 +41,7 @@ scaffold() {
       const fs = require("fs"), path = require("path")
       const [pkgFile, dir] = process.argv.slice(1)
       const pkg = JSON.parse(fs.readFileSync(pkgFile, "utf8"))
-      const tgz = Object.fromEntries(fs.readdirSync(dir).filter((f) => f.startsWith("hozu-")).map((f) => [`@hozu/${f.replace(/^hozu-/, "").replace(/-\d+\.\d+\.\d+\.tgz$/, "")}`, `file:${path.join(dir, f)}`]))
+      const tgz = Object.fromEntries(fs.readdirSync(dir).filter((f) => f.startsWith("hozu-") || f.startsWith("create-hozu-")).map((f) => [f.startsWith("create-hozu-") ? "create-hozu" : `@hozu/${f.replace(/^hozu-/, "").replace(/-\d+\.\d+\.\d+\.tgz$/, "")}`, `file:${path.join(dir, f)}`]))
       for (const k of ["dependencies", "devDependencies"]) for (const d of Object.keys(pkg[k] ?? {})) if (tgz[d]) pkg[k][d] = tgz[d]
       pkg.overrides = tgz
       fs.writeFileSync(pkgFile, JSON.stringify(pkg, null, 2) + "\n")
@@ -66,6 +68,7 @@ fingerprint() {
   local h=() sum
   sum() { [ -f "$1" ] && shasum -a 256 "$1" | cut -c1-16 || echo none; }
   h+=("\"user\": \"$(sum "$HOME/.claude/CLAUDE.md")\"" "\"app\": \"$(sum CLAUDE.md)\"" "\"agents\": \"$(sum AGENTS.md)\"" "\"prompt\": \"$(sum "$1")\"")
+  h+=("\"settings\": \"$(sum "$SETTINGS")\"" "\"warm\": \"$(sum "${3:-}")\"" "\"arm\": \"$ARM\"")
   local skill=none
   [ -d .claude/skills ] && skill=$(find .claude/skills -type f | sort | xargs cat | shasum -a 256 | cut -c1-16)
   printf '{"step": "%s", %s, "skill": "%s", "managed": "server-side, not fingerprintable"}\n' "$2" "$(IFS=,; echo "${h[*]}")" "$skill" >> "$OUT/fingerprints.jsonl"
@@ -86,10 +89,19 @@ agent() {
       cp "$CHANGES/$nn.md" change.md
       prompt="$LR/prompts/change.md"
     fi
+    local extra=() text
+    text=$(sed "s/{{PORT}}/$PORT/g" "$prompt")
+    if [ "$ARM" = warm ]; then
+      warm "$nn" || return 1
+      extra+=(--append-system-prompt-file "$W/warm/$nn.md")
+      text="$text
+The Hozu guide and this app's map are already in your context."
+    fi
+    [ -n "$SETTINGS" ] && extra+=(--settings "$SETTINGS")
     log "step $nn attempt $attempt"
-    fingerprint "$prompt" "$nn"
+    fingerprint "$prompt" "$nn" "$([ "$ARM" = warm ] && echo "$W/warm/$nn.md")"
     [ -n "${DRY:-}" ] && { : > "$OUT/$nn.jsonl"; : > "$OUT/$nn.err"; } ||
-    perl -e 'alarm shift; exec @ARGV' 1800 claude -p "$(sed "s/{{PORT}}/$PORT/g" "$prompt")" \
+    perl -e 'alarm shift; exec @ARGV' 1800 claude -p "$text" "${extra[@]}" \
       --setting-sources project,local --strict-mcp-config --model claude-opus-5-5 \
       --dangerously-skip-permissions --output-format stream-json --verbose \
       > "$OUT/$nn.jsonl" 2> "$OUT/$nn.err"
@@ -108,6 +120,22 @@ agent() {
   done
   rm -f spec.md change.md
   git add -A && git commit -qm "step $nn" --allow-empty && git tag -f "s$nn" > /dev/null
+}
+
+warm() {
+  local nn="$1" f="$W/warm/$1.md" t
+  mkdir -p "$W/warm"
+  {
+    printf '# The Hozu guide (already known)\n\n## SKILL.md\n\n'
+    cat .claude/skills/hozu/SKILL.md
+    for t in $(npx hozu docs --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).topics.map(t=>t.name).join(" ")))'); do
+      printf '\n\n## hozu docs %s --more\n\n' "$t"
+      npx hozu docs "$t" --more
+    done
+    printf '\n\n## hozu map (this app, at the start of this step)\n\n'
+    npx hozu map
+  } > "$f" 2> "$W/warm/$1.err"
+  [ -s "$f" ] && wc -c < "$f" > "$OUT/$nn.warm.bytes"
 }
 
 measure() {

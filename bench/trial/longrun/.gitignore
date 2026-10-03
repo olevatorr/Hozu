@@ -8,3 +8,8 @@ results-0021/*/*/*.err
 results-0021/*/*/*.txt
 !results-0021/*/*/metrics.jsonl
 !results-0021/*/*/fingerprints.jsonl
+results-0024/*/*/*.jsonl
+results-0024/*/*/*.err
+results-0024/*/*/*.txt
+!results-0024/*/*/metrics.jsonl
+!results-0024/*/*/fingerprints.jsonl
