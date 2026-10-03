@@ -11,6 +11,8 @@ const types: Record<string, string> = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.webp': 'image/webp',
+  '.jpg': 'image/jpeg',
+  '.mp4': 'video/mp4',
   '.glb': 'model/gltf-binary',
   '.json': 'application/json',
   '.webmanifest': 'application/manifest+json',

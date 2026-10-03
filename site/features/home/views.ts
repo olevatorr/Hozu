@@ -5,6 +5,7 @@ import { CatchCard } from '../../site/catch-card.ts'
 import { CodeBlock } from '../../site/code-block.ts'
 import { Display, Heading } from '../../site/display.ts'
 import { Joint } from '../../site/joint.ts'
+import { peg } from '../../site/peg.ts'
 import { Receipt, ReceiptLine } from '../../site/receipt.ts'
 import { Section } from '../../site/section.ts'
 import { StatTable } from '../../site/stat-table.ts'
@@ -84,60 +85,70 @@ export const Home = ui.view({
             ui.p({ class: 'mt-8 font-mono text-xs font-bold text-ember' }, [
               '↓ Press AI CHANGE: an agent edits this app, and Hozu checks the change.',
             ]),
-            ui.div(
-              { class: 'mt-3 max-w-md border-4 border-ink bg-white shadow-[8px_8px_0_var(--color-ink)]' },
-              [
-                ui.div(
-                  {
-                    class: 'flex items-center justify-between bg-ink px-3 py-2 text-sm font-bold text-paper',
-                  },
-                  [
-                    ui.span({}, ['notes · signed in as ada']),
-                    when(
-                      ['broken'],
-                      [
-                        ui.button(
-                          {
-                            type: 'button',
-                            class: 'bg-green px-3 py-1 font-black text-ink',
-                            on: { click: ui.send(Fix, {}) },
-                          },
-                          ['APPLY FIX'],
-                        ),
-                      ],
-                    ),
-                    when(
-                      ['clean'],
-                      [
-                        ui.button(
-                          {
-                            type: 'button',
-                            class: 'bg-red px-3 py-1 font-black text-ink',
-                            toggle: { 'animate-nudge': !ctx.tried },
-                            on: { click: ui.send(Break, {}) },
-                          },
-                          ['AI CHANGE'],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                ui.p({ class: 'px-3 py-2' }, ['Buy milk']),
-                ctx.broken && ui.p({ class: 'bg-red/10 px-3 py-2' }, ["Bob's secret · bob ⚠"]),
-                ui.p(
-                  {
-                    class: 'border-t-4 border-ink px-3 py-2 font-mono text-xs',
-                    toggle: { 'bg-red text-ink': ctx.broken },
-                    'aria-live': 'polite',
-                  },
-                  [
-                    ctx.broken
-                      ? '✘ HZ049 your notes would be cached and shown to bob'
-                      : '✔ types ok · 0 errors · lock current',
-                  ],
-                ),
-              ],
-            ),
+            ui.div({ class: 'mt-3 flex max-w-xl items-end gap-3' }, [
+              ui.div(
+                { class: 'min-w-0 flex-1 border-4 border-ink bg-white shadow-[8px_8px_0_var(--color-ink)]' },
+                [
+                  ui.div(
+                    {
+                      class:
+                        'flex items-center justify-between bg-ink px-3 py-2 text-sm font-bold text-paper',
+                    },
+                    [
+                      ui.span({}, ['notes · signed in as ada']),
+                      when(
+                        ['broken'],
+                        [
+                          ui.button(
+                            {
+                              type: 'button',
+                              class: 'shrink-0 whitespace-nowrap bg-green px-3 py-1 font-black text-ink',
+                              on: { click: ui.send(Fix, {}) },
+                            },
+                            ['APPLY FIX'],
+                          ),
+                        ],
+                      ),
+                      when(
+                        ['clean'],
+                        [
+                          ui.button(
+                            {
+                              type: 'button',
+                              class: 'shrink-0 whitespace-nowrap bg-red px-3 py-1 font-black text-ink',
+                              toggle: { 'animate-nudge': !ctx.tried },
+                              on: { click: ui.send(Break, {}) },
+                            },
+                            ['AI CHANGE'],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  ui.p({ class: 'px-3 py-2' }, ['Buy milk']),
+                  ctx.broken && ui.p({ class: 'bg-red/10 px-3 py-2' }, ["Bob's secret · bob ⚠"]),
+                  ui.p(
+                    {
+                      class: 'border-t-4 border-ink px-3 py-2 font-mono text-xs',
+                      toggle: { 'bg-red text-ink': ctx.broken },
+                      'aria-live': 'polite',
+                    },
+                    [
+                      ctx.broken
+                        ? '✘ HZ049 your notes would be cached and shown to bob'
+                        : '✔ types ok · 0 errors · lock current',
+                    ],
+                  ),
+                ],
+              ),
+              ui.div({ class: 'flex w-16 shrink-0 justify-center sm:w-[88px]' }, [
+                ctx.broken
+                  ? peg('wait', 96, 'h-auto max-w-full')
+                  : ctx.tried
+                    ? peg('fits', 96, 'h-auto max-w-full')
+                    : peg('happy', 96, 'h-auto max-w-full'),
+              ]),
+            ]),
           ]),
           ui.use(Joint, { props: { split: ctx.broken } }),
         ]),
@@ -157,6 +168,31 @@ export const Home = ui.view({
         }),
       ]),
       ui.div({}, [
+        ui.use(Section, { props: { kicker: 'Watch · 3 min' } }, [
+          ui.use(Heading, {}, ['Three minutes. No code.']),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
+            'You dream it, your AI builds it, and Peg, the red peg that locks the joint, checks every change before it reaches anyone. For vibe coders and designers.',
+          ]),
+          ui.video(
+            {
+              controls: true,
+              preload: 'none',
+              playsinline: true,
+              poster: ui.asset(new URL('../../assets/video/hozu-play-poster.jpg', import.meta.url)),
+              width: 1280,
+              height: 720,
+              class:
+                'mt-8 aspect-video h-auto w-full border-4 border-ink bg-ink shadow-[8px_8px_0_var(--color-ink)]',
+            },
+            [
+              ui.source({
+                src: ui.asset(new URL('../../assets/video/hozu-play.mp4', import.meta.url)),
+                type: 'video/mp4',
+              }),
+            ],
+          ),
+          ui.p({ class: 'mt-3 font-mono text-xs' }, ['English captions · voice generated by elevenlabs.io']),
+        ]),
         ui.use(Section, { props: { kicker: 'The bill' } }, [
           ui.use(Heading, {}, ['Yes, it costs more. Here is the receipt.']),
           ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[28rem_minmax(0,1fr)]' }, [
@@ -242,7 +278,7 @@ export const Home = ui.view({
                 },
                 {
                   id: 'either',
-                  title: "runs: 'either' (default)",
+                  title: "runs: 'either'",
                   body: 'A public API, or your own with CORS. In the HTML on first paint, then from the browser.',
                 },
                 {
@@ -536,7 +572,10 @@ export const Home = ui.view({
           ]),
         ]),
         ui.use(Section, { variant: { tone: 'ink' }, props: { kicker: 'Start' } }, [
-          ui.use(Heading, {}, ['Build something. Then try to break it.']),
+          ui.div({ class: 'flex items-end justify-between gap-6' }, [
+            ui.use(Heading, {}, ['Build something. Then try to break it.']),
+            peg('happy', 120, 'hidden h-auto shrink-0 sm:block', true),
+          ]),
           ui.div({ class: 'mt-8 flex flex-wrap gap-4' }, [
             ui.use(
               Button,

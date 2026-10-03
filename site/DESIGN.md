@@ -204,6 +204,23 @@ The tone follows the reader's depth.
   - the script re-run produces a `.glb` with both actions (a check reads its JSON chunk).
 - **Out of scope:** shadows, post-processing, Draco compression.
 
+## Peg and the films (amendment, 2026-10-03)
+- **Peg** is the red peg (込み栓) that locks the joint: the checker. The SVGs come from the film project
+  (`hozu-devtools-video/public/peg/`) into `assets/peg/`, plus one variant made here, `peg-oops.svg` (the WAIT. sign
+  reading OOPS!). `site/peg.ts` places one by mood, sized by body height, so every Peg keeps the same proportions.
+- **Where Peg appears, and why:**
+  - **The hero demo:** smiling before the first change, **WAIT.** while the change is wrong (HZ049), **FITS!** after
+    APPLY FIX, in step with the joint. It is a branch of the existing machine view, so it adds no JavaScript.
+  - **The back of every catch card:** OOPS!
+  - **404:** WAIT. ("Nothing fits here").
+  - **The diagnostics doc:** a calm Peg with one line on what `hozu check` does.
+  - **Start:** the animated happy Peg, decorative.
+  - Not in the header or the favicon: the logo stays the brand mark.
+- **The films:** `hozu-play` (3:33, for vibe coders and designers) in a Watch section under the hero, and
+  `hozu-devtools` (1:33) in the DevTools hero. Both are 720p H.264 with faststart, `preload="none"` with a poster,
+  never autoplay, so a page loads no video bytes until someone presses play. Verify fails when a film preloads or is
+  over 8 MB.
+
 ## Accessibility
 - One `h1` per page, and a skip link.
 - Every interactive part works with the keyboard; the flip cards flip on focus.

@@ -1,5 +1,6 @@
 import { ui } from '@hozu/core'
 import { chapter, doc, how } from '../../routes.ts'
+import { peg } from '../../site/peg.ts'
 import { Prose } from '../../site/prose.ts'
 import { articleBody } from './body.ts'
 import { pipelineDiagram, renderDiagram } from './diagrams.ts'
@@ -89,7 +90,15 @@ const articleView = (
                       params.slug === 'pipeline' && pipelineDiagram(),
                       params.slug === 'derived-rendering' && renderDiagram(),
                     ]
-                  : []),
+                  : [
+                      params.slug === 'diagnostics' &&
+                        ui.div({ class: 'my-6 flex items-center gap-4' }, [
+                          peg('calm', 80, 'h-auto shrink-0', true),
+                          ui.p({ class: 'font-mono text-sm' }, [
+                            'Peg reads these so you do not have to: hozu check prints each one with its file, line and fix, and your agent applies it.',
+                          ]),
+                        ]),
+                    ]),
                 articleBody(article),
                 ui.a({ href: article.source, class: 'mt-8 inline-block font-bold' }, [
                   'Edit this page on GitHub',

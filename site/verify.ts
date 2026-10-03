@@ -13,6 +13,7 @@ for (const [path, status, text] of [
   ['/', 200, 'Hozu checks it'],
   ['/', 200, 'Here is the receipt'],
   ['/', 200, 'AI CHANGE'],
+  ['/', 200, 'Three minutes. No code.'],
   ['/trials/0019-0-7-write-less', 200, '1.38×'],
   ['/how-it-works', 200, 'Understand the design'],
   ['/how-it-works/why-ai-first', 200, 'Why AI-first?'],
@@ -25,7 +26,7 @@ for (const [path, status, text] of [
   ['/docs/getting-started', 200, 'Create an app'],
   ['/trials/0012-correctness-notes', 200, '67/72'],
   ['/changelog', 200, '0.3.0'],
-  ['/does-not-exist', 404, 'Page not found'],
+  ['/does-not-exist', 404, 'Nothing fits here'],
   ['/docs/does-not-exist', 404, 'Page not found'],
   ['/trials/does-not-exist', 404, 'Page not found'],
 ] as const) {
@@ -38,6 +39,19 @@ const release = JSON.parse(await readFile(new URL('../packages/core/package.json
 const homePage = await readFile(new URL('./dist/index.html', import.meta.url), 'utf8')
 assert.ok(homePage.includes(`data-version="${release.version}"`), `header shows ${release.version}`)
 console.log(`Header version ${release.version} equals packages/core`)
+const devtoolsPage = await readFile(new URL('./dist/devtools/index.html', import.meta.url), 'utf8')
+const film = /<video[^>]*preload="none"[^>]*><source src="(\/_hozu\/a\/[0-9a-f]+\.mp4)" type="video\/mp4">/
+for (const [page, html] of [
+  ['/', homePage],
+  ['/devtools', devtoolsPage],
+] as const) {
+  const src = film.exec(html)?.[1]
+  assert.ok(src, `${page}: a film that does not preload`)
+  const { size } = await stat(new URL(`./dist${src}`, import.meta.url))
+  assert.ok(size <= 8_000_000, `${page}: the film is ${size} B, over 8 MB`)
+}
+assert.ok(homePage.includes('alt="Peg, the red peg that checks, smiling"'), 'Peg in the hero demo')
+console.log('Peg and the two films are on the home and DevTools pages; no film preloads, each under 8 MB')
 for (const c of claims) await access(new URL(`./dist/trials/${c.trial}/index.html`, import.meta.url))
 for (const c of catches) assert.equal(codes[c.code]?.name, c.name, `${c.code} is ${c.name} in the registry`)
 for (const c of claims) {

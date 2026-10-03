@@ -17,7 +17,7 @@ Page \`/\` · 390 × 844
 - Style: font size 14px → 16px: replace \`text-sm\` with \`text-base\`
 - Style: background #111010 → #fb3a0e: replace \`bg-ink\` with \`bg-brand\`
 - Mind: \`ui.Button\` is used in 6 places. For only this one, change \`class\` at this use; a property the component owns needs a trailing \`!\`.
-- Locate: \`hozu locate /features/tasks/views/Board/root/children/2/children/0/children/2\`
+- Locate: \`hozu why /features/tasks/views/Board/root/children/2/children/0/children/2\`
 
 Run \`hozu check\` after the edits.`
 
@@ -80,9 +80,24 @@ export const DevToolsPage = ui.view({
                 ),
               ]),
             ]),
-            shot(
-              'select',
-              'Hozu DevTools on a task board: the Add task button is selected and the inspector shows it is a shared Button used in six places',
+            ui.video(
+              {
+                controls: true,
+                preload: 'none',
+                playsinline: true,
+                poster: ui.asset(new URL('../../assets/video/hozu-devtools-poster.jpg', import.meta.url)),
+                width: 1280,
+                height: 720,
+                'aria-label': 'Hozu DevTools in 93 seconds',
+                class:
+                  'aspect-video h-auto w-full border-4 border-ink bg-ink shadow-[8px_8px_0_var(--color-ink)]',
+              },
+              [
+                ui.source({
+                  src: ui.asset(new URL('../../assets/video/hozu-devtools.mp4', import.meta.url)),
+                  type: 'video/mp4',
+                }),
+              ],
             ),
           ],
         ),
@@ -111,6 +126,12 @@ export const DevToolsPage = ui.view({
             ],
           },
         }),
+        ui.div({ class: 'mt-8 max-w-4xl' }, [
+          shot(
+            'select',
+            'Hozu DevTools on a task board: the Add task button is selected and the inspector shows it is a shared Button used in six places',
+          ),
+        ]),
       ]),
       ui.use(Section, { variant: { tone: 'ink' }, props: { kicker: 'The request' } }, [
         ui.use(Heading, {}, ['What your agent reads.']),

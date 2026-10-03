@@ -1,5 +1,6 @@
 import { feature, ui } from '@hozu/core'
 import { home, trial, trials } from '../../routes.ts'
+import { peg } from '../../site/peg.ts'
 import { Prose } from '../../site/prose.ts'
 import { Chapter, Docs } from './articles.ts'
 import { articleBody } from './body.ts'
@@ -90,8 +91,9 @@ export const Changelog = ui.view({
 export const NotFound = ui.view({
   render: () =>
     ui.use(Prose, { variant: { width: 'single' } }, [
+      peg('wait', 120, 'h-auto'),
       ui.h1({}, ['Page not found']),
-      ui.p({}, ['This page does not exist. Start with the documentation or return home.']),
+      ui.p({}, ['Nothing fits here: this page does not exist. Start with the documentation or return home.']),
       ui.a({ href: ui.link(home, null) }, ['Return home']),
     ]),
 })
