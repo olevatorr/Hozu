@@ -9,7 +9,7 @@ const styles = tv({
     inner:
       'relative h-full transition-transform duration-500 transform-3d group-hover:rotate-y-180 group-focus-within:rotate-y-180',
     front: 'absolute inset-0 flex items-end border-4 border-paper p-4 text-xl font-black backface-hidden',
-    back: 'absolute inset-0 overflow-auto border-4 border-red bg-paper p-4 pr-14 font-mono text-xs text-ink backface-hidden rotate-y-180',
+    back: 'absolute inset-0 overflow-auto border-4 border-red bg-paper p-4 pr-16 font-mono text-xs text-ink backface-hidden rotate-y-180',
   },
 })
 export const CatchCard = ui.component({
@@ -30,7 +30,7 @@ export const CatchCard = ui.component({
           ui.p({ class: 'font-bold text-ember' }, ['✘ ', props.code, ' ', props.name]),
           ui.p({ class: 'mt-2' }, [props.message]),
           ui.p({ class: 'mt-2' }, ['fix: ', props.fix]),
-          peg('oops', 48, 'absolute right-2 bottom-2 h-auto', true),
+          peg('oops', 44, 'absolute right-1 bottom-2 h-auto', true),
         ]),
       ]),
     ]),

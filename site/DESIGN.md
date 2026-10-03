@@ -205,16 +205,20 @@ The tone follows the reader's depth.
 - **Out of scope:** shadows, post-processing, Draco compression.
 
 ## Peg and the films (amendment, 2026-10-03)
-- **Peg** is the red peg (込み栓) that locks the joint: the checker. The SVGs come from the film project
-  (`hozu-devtools-video/public/peg/`) into `assets/peg/`, plus one variant made here, `peg-oops.svg` (the WAIT. sign
-  reading OOPS!). `site/peg.ts` places one by mood, sized by body height, so every Peg keeps the same proportions.
+- **Peg** is the red peg (込み栓) that locks the joint: the checker. The first drawings came from the film project;
+  the site's Peg is redrawn in `assets/peg/` with arms, brows and a sign on a pole, in the same body, palette and
+  stroke: `peg` (calm), `peg-hello-animated` (waves and blinks), `peg-wait-animated` (stern, stomps, shakes the
+  sign), `peg-fits-animated` (hops, sparkles), `peg-oops-animated` (wobbles, a sweat drop). Each SVG stops under
+  `prefers-reduced-motion`. `site/peg.ts` places one by mood, sized by body height, so every Peg keeps one scale.
 - **Where Peg appears, and why:**
-  - **The hero demo:** smiling before the first change, **WAIT.** while the change is wrong (HZ049), **FITS!** after
-    APPLY FIX, in step with the joint. It is a branch of the existing machine view, so it adds no JavaScript.
+  - **The hero demo:** waving before the first change, **WAIT.** while the change is wrong (HZ049), **FITS!** after
+    APPLY FIX, in step with the joint. Each swap pops (`pop` motion); the card shakes, Bob's note slides in on a red
+    flash (`intrude`), and the status line flashes green on the fix. All of it is the existing machine view, so it
+    adds no JavaScript.
   - **The back of every catch card:** OOPS!
   - **404:** WAIT. ("Nothing fits here").
   - **The diagnostics doc:** a calm Peg with one line on what `hozu check` does.
-  - **Start:** the animated happy Peg, decorative.
+  - **Start:** the waving Peg, decorative.
   - Not in the header or the favicon: the logo stays the brand mark.
 - **The films:** `hozu-play` (3:33, for vibe coders and designers) in a Watch section under the hero, and
   `hozu-devtools` (1:33) in the DevTools hero. Both are 720p H.264 with faststart, `preload="none"` with a poster,

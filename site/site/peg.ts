@@ -1,30 +1,23 @@
 import { ui } from '@hozu/core'
 
-type Mood = 'calm' | 'happy' | 'wait' | 'fits' | 'oops'
+type Mood = 'calm' | 'hello' | 'wait' | 'fits' | 'oops'
 
-const files: Record<Mood, string> = {
-  calm: 'peg',
-  happy: 'peg-happy-animated',
-  wait: 'peg-wait',
-  fits: 'peg-fits',
-  oops: 'peg-oops',
+const art: Record<Mood, { file: string; width: number; height: number; alt: string }> = {
+  calm: { file: 'peg', width: 150, height: 250, alt: 'Peg, the red peg that checks' },
+  hello: { file: 'peg-hello-animated', width: 200, height: 250, alt: 'Peg, the red peg that checks, waving' },
+  wait: { file: 'peg-wait-animated', width: 320, height: 460, alt: 'Peg holds up a sign: WAIT.' },
+  fits: { file: 'peg-fits-animated', width: 320, height: 460, alt: 'Peg holds up a sign: FITS!' },
+  oops: { file: 'peg-oops-animated', width: 320, height: 460, alt: 'Peg holds up a sign: OOPS!' },
 }
-const alts: Record<Mood, string> = {
-  calm: 'Peg, the red peg that checks',
-  happy: 'Peg, the red peg that checks, smiling',
-  wait: 'Peg holds up a sign: WAIT.',
-  fits: 'Peg holds up a sign: FITS!',
-  oops: 'Peg holds up a sign: OOPS!',
-}
-const signed = (mood: Mood) => mood === 'wait' || mood === 'fits' || mood === 'oops'
 
 export const peg = (mood: Mood, body: number, className: string, decorative = false) => {
   const scale = body / 250
+  const { file, width, height, alt } = art[mood]
   return ui.img({
-    src: ui.asset(new URL(`../assets/peg/${files[mood]}.svg`, import.meta.url)),
-    width: Math.round((signed(mood) ? 230 : 150) * scale),
-    height: Math.round((signed(mood) ? 410 : 250) * scale),
-    alt: decorative ? '' : alts[mood],
+    src: ui.asset(new URL(`../assets/peg/${file}.svg`, import.meta.url)),
+    width: Math.round(width * scale),
+    height: Math.round(height * scale),
+    alt: decorative ? '' : alt,
     class: className,
   })
 }

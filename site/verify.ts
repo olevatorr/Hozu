@@ -50,7 +50,7 @@ for (const [page, html] of [
   const { size } = await stat(new URL(`./dist${src}`, import.meta.url))
   assert.ok(size <= 8_000_000, `${page}: the film is ${size} B, over 8 MB`)
 }
-assert.ok(homePage.includes('alt="Peg, the red peg that checks, smiling"'), 'Peg in the hero demo')
+assert.ok(homePage.includes('alt="Peg, the red peg that checks, waving"'), 'Peg in the hero demo')
 console.log('Peg and the two films are on the home and DevTools pages; no film preloads, each under 8 MB')
 for (const c of claims) await access(new URL(`./dist/trials/${c.trial}/index.html`, import.meta.url))
 for (const c of catches) assert.equal(codes[c.code]?.name, c.name, `${c.code} is ${c.name} in the registry`)

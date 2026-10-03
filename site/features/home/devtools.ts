@@ -126,7 +126,7 @@ export const DevToolsPage = ui.view({
             ],
           },
         }),
-        ui.div({ class: 'mt-8 max-w-4xl' }, [
+        ui.div({ class: 'mt-8 w-full' }, [
           shot(
             'select',
             'Hozu DevTools on a task board: the Add task button is selected and the inspector shows it is a shared Button used in six places',
@@ -138,7 +138,7 @@ export const DevToolsPage = ui.view({
         ui.p({ class: 'mt-4 max-w-2xl' }, [
           'Where, what and how far the change reaches, the theme class to use, and a reminder only where a plain edit would go wrong. The pointer finds the part again after the lines move.',
         ]),
-        ui.div({ class: 'mt-8 max-w-4xl' }, [requestBlock()]),
+        ui.div({ class: 'mt-8 w-full' }, [requestBlock()]),
       ]),
       ui.use(Section, { props: { kicker: 'Every state' } }, [
         ui.use(Heading, {}, ['See the screens you never get to.']),
@@ -157,7 +157,7 @@ export const DevToolsPage = ui.view({
         ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
           'API opens a drawer with what the page reads and what it can change: where each one runs, how it is cached and the line that implements it. Edit the input, run it and read the answer as a table. A change asks first, then the page updates in place, as if a button had made it.',
         ]),
-        ui.div({ class: 'mt-6 grid max-w-4xl gap-4 md:grid-cols-3' }, [
+        ui.div({ class: 'mt-8 grid w-full gap-6 md:grid-cols-3' }, [
           ui.div({ class: 'border-4 border-ink p-4' }, [
             ui.h3({ class: 'font-black uppercase' }, ['What it sent']),
             ui.p({ class: 'mt-2' }, [

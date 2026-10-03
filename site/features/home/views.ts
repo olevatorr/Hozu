@@ -87,7 +87,10 @@ export const Home = ui.view({
             ]),
             ui.div({ class: 'mt-3 flex max-w-xl items-end gap-3' }, [
               ui.div(
-                { class: 'min-w-0 flex-1 border-4 border-ink bg-white shadow-[8px_8px_0_var(--color-ink)]' },
+                {
+                  class: 'min-w-0 flex-1 border-4 border-ink bg-white shadow-[8px_8px_0_var(--color-ink)]',
+                  toggle: { 'animate-shake': ctx.broken },
+                },
                 [
                   ui.div(
                     {
@@ -95,7 +98,11 @@ export const Home = ui.view({
                         'flex items-center justify-between bg-ink px-3 py-2 text-sm font-bold text-paper',
                     },
                     [
-                      ui.span({}, ['notes · signed in as ada']),
+                      ui.span({}, [
+                        'notes · ',
+                        ui.span({ class: 'hidden sm:inline' }, ['signed in as ']),
+                        'ada',
+                      ]),
                       when(
                         ['broken'],
                         [
@@ -126,11 +133,17 @@ export const Home = ui.view({
                     ],
                   ),
                   ui.p({ class: 'px-3 py-2' }, ['Buy milk']),
-                  ctx.broken && ui.p({ class: 'bg-red/10 px-3 py-2' }, ["Bob's secret · bob ⚠"]),
+                  ui.if(
+                    ctx.broken === true,
+                    [ui.p({ class: 'overflow-hidden bg-red/10 px-3 py-2' }, ["Bob's secret · bob ⚠"])],
+                    [],
+                    'intrude',
+                  ),
                   ui.p(
                     {
-                      class: 'border-t-4 border-ink px-3 py-2 font-mono text-xs',
-                      toggle: { 'bg-red text-ink': ctx.broken },
+                      class:
+                        'border-t-4 border-ink px-3 py-2 font-mono text-xs transition-colors duration-300',
+                      toggle: { 'bg-red text-ink': ctx.broken, 'animate-pass': !ctx.broken && ctx.tried },
                       'aria-live': 'polite',
                     },
                     [
@@ -141,13 +154,17 @@ export const Home = ui.view({
                   ),
                 ],
               ),
-              ui.div({ class: 'flex w-16 shrink-0 justify-center sm:w-[88px]' }, [
-                ctx.broken
-                  ? peg('wait', 96, 'h-auto max-w-full')
-                  : ctx.tried
-                    ? peg('fits', 96, 'h-auto max-w-full')
-                    : peg('happy', 96, 'h-auto max-w-full'),
-              ]),
+              ui.div(
+                {
+                  class:
+                    'relative flex h-[138px] w-24 shrink-0 items-end justify-center sm:h-[177px] sm:w-[123px]',
+                },
+                [
+                  ui.if(ctx.broken === true, [peg('wait', 96, 'h-auto w-24 sm:w-[123px]')], [], 'pop'),
+                  ui.if(!ctx.broken && ctx.tried, [peg('fits', 96, 'h-auto w-24 sm:w-[123px]')], [], 'pop'),
+                  ui.if(!ctx.tried, [peg('hello', 96, 'h-auto w-[60px] sm:w-[77px]')], [], 'pop'),
+                ],
+              ),
             ]),
           ]),
           ui.use(Joint, { props: { split: ctx.broken } }),
@@ -574,7 +591,7 @@ export const Home = ui.view({
         ui.use(Section, { variant: { tone: 'ink' }, props: { kicker: 'Start' } }, [
           ui.div({ class: 'flex items-end justify-between gap-6' }, [
             ui.use(Heading, {}, ['Build something. Then try to break it.']),
-            peg('happy', 120, 'hidden h-auto shrink-0 sm:block', true),
+            peg('hello', 120, 'hidden h-auto shrink-0 sm:block', true),
           ]),
           ui.div({ class: 'mt-8 flex flex-wrap gap-4' }, [
             ui.use(
