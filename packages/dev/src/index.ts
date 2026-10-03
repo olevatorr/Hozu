@@ -2,7 +2,7 @@ import { type ChildProcess, spawn } from 'node:child_process'
 import { existsSync, type FSWatcher, readFileSync, statSync, watch } from 'node:fs'
 import { createServer, type IncomingMessage, request, type Server, type ServerResponse } from 'node:http'
 import { createRequire } from 'node:module'
-import type { AddressInfo } from 'node:net'
+import { type AddressInfo, createServer as createNetServer } from 'node:net'
 import { dirname, join, normalize, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
@@ -44,6 +44,22 @@ export interface DevServer {
 
 const ignored = /(^|[/\\])(node_modules|dist|dist-static|\.git)([/\\]|$)/
 
+const free = (port: number) =>
+  new Promise<boolean>((resolve) => {
+    const probe = createNetServer()
+    probe.once('error', () => resolve(false))
+    probe.listen(port, '127.0.0.1', () => probe.close(() => resolve(true)))
+  })
+
+/** Thrown before anything starts when a port `hozu dev` needs is taken. */
+export class PortInUse extends Error {
+  readonly port: number
+  constructor(port: number, ports: number[]) {
+    super(`Port ${port} is in use; hozu dev needs ${ports.join(' and ')} (the dev server and the app)`)
+    this.port = port
+  }
+}
+
 export async function dev({
   entry,
   cwd = process.cwd(),
@@ -55,6 +71,7 @@ export async function dev({
   requestsRoot,
   log = (line) => console.log(line),
 }: DevOptions): Promise<DevServer> {
+  for (const p of [port, appPort]) if (p && !(await free(p))) throw new PortInUse(p, [port, appPort])
   const clients = new Set<ServerResponse>()
   let child: ChildProcess | null = null
   let ready: Promise<void> = Promise.resolve()

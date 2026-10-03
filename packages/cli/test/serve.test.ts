@@ -52,6 +52,18 @@ describe('one app module (ADR 0043 E)', () => {
     }
   }, 60_000)
 
+  it('hozu serve says the port is in use instead of crashing', async () => {
+    const notes = await load(undefined, join(root, 'examples/notes'))
+    process.env.PORT = '4794'
+    const first = await runServe(notes, () => {})
+    try {
+      await expect(runServe(notes, () => {})).rejects.toThrow('Port 4794 is in use')
+    } finally {
+      delete process.env.PORT
+      await first.close()
+    }
+  }, 60_000)
+
   it('the scaffold starts with hozu serve and checks clean', async () => {
     const app = await fresh()
     const pkg = JSON.parse(readFileSync(join(app, 'package.json'), 'utf8'))

@@ -12,6 +12,8 @@
 - **`hozu get` / `hozu browse` / `testApp`** start apps that have `fetch.ts` (since 0.11 they failed with "the
   bundle has no fetch module").
 - **`hozu` and `create-hozu`** say they need Node 22.18 on an older Node instead of failing on an import.
+- **`hozu dev` and `hozu serve`** say which port is in use and how to pick another, instead of an `EADDRINUSE` stack;
+  `hozu dev` checks both of its ports before starting the app.
 - **`examples/playground`:** one query and mutation of each `runs` (server data and a server-side external call, a
   public API on either side, `localStorage` in the browser) for trying the API drawer.
 

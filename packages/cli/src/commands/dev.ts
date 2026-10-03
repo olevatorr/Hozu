@@ -18,11 +18,19 @@ export async function runDev(
   const { dev } = await importer(loaded, 'dev')<{
     dev(o: { cwd: string; port: number; devtools: boolean; devtoolsMode?: Mode }): Promise<{ url: string }>
   }>('@hozu/dev', ['npm install -D @hozu/dev'])
+  const port = Number(process.env.PORT ?? 3000)
   const { url } = await dev({
     cwd: dirname(loaded.path),
-    port: Number(process.env.PORT ?? 3000),
+    port,
     devtools: devtools !== false,
     ...(devtools ? { devtoolsMode: devtools } : {}),
+  }).catch((error: unknown) => {
+    const busy = (error as { port?: unknown }).port
+    if (typeof busy !== 'number') throw error
+    throw new HozuCliError('usage', (error as Error).message, [
+      `PORT=${port + 10} npm run dev   # another pair of ports`,
+      `lsof -ti:${busy}   # what holds port ${busy}`,
+    ])
   })
   log(`Hozu dev on ${url}${devtools ? ' · DevTools: choose Select in the dock (Alt+Shift+S)' : ''}`)
 }
