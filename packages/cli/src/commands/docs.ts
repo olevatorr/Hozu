@@ -9,10 +9,22 @@ import { HozuCliError } from '../errors.ts'
 import { load } from '../load.ts'
 import { componentEntries, describeCatalog, docsComponent } from './components.ts'
 
+const MORE = '\n<!-- more -->\n'
+
+/** A topic's short form, or all of it with `--more` (ADR 0053 E); the marker line is never printed. */
+export function shortForm(text: string, name: string, more: boolean): string {
+  const at = text.indexOf(MORE)
+  if (at < 0) return text
+  return more
+    ? text.slice(0, at) + text.slice(at + MORE.length)
+    : `${text.slice(0, at).trimEnd()}\n\nMore (options, edge cases): hozu docs ${name} --more\n`
+}
+
 export async function runDocs(
   cwd: string,
   topic: string | undefined,
   config?: string,
+  more = false,
 ): Promise<DocsOutput | DocsComponentsOutput> {
   const local = [join(cwd, '.claude/skills/hozu/topics'), join(cwd, '.agents/skills/hozu/topics')].find((d) =>
     existsSync(d),
@@ -55,10 +67,11 @@ export async function runDocs(
   const fresh = await readFile(join(dir, `${name}.md`), 'utf8')
   const copy =
     local && dir !== local ? await readFile(join(local, `${name}.md`), 'utf8').catch(() => null) : null
+  const shown = shortForm(fresh, name, more)
   const text =
     copy !== null && copy !== fresh
-      ? `${fresh}\n> The skill copy in ${local!.slice(cwd.length + 1, -'/topics'.length)} is older than this Hozu; run npx hozu skill to refresh it.\n`
-      : fresh
+      ? `${shown}\n> The skill copy in ${local!.slice(cwd.length + 1, -'/topics'.length)} is older than this Hozu; run npx hozu skill to refresh it.\n`
+      : shown
   if (name === 'components') return catalog(cwd, config, text)
   return { topic: name, text, topics }
 }

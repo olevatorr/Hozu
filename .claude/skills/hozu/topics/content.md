@@ -3,7 +3,11 @@
 - **Markdown:** `@hozu/content`: `const posts = await loadCollection({ dir: new URL('./content/posts/', import.meta.url), schema })`
   in `app.ts` gives `{ slug, data, html, headings }`; return it from query resolvers and render `ui.html(post.html)`.
 - **Images:** `ui.img({ src: ui.asset(new URL('./hero.jpg', import.meta.url)), alt, width, height })` (HZ028 without
-  dimensions). With `@hozu/image`, `hozu build` adds WebP `srcset` widths.
+  dimensions).
+
+<!-- more -->
+
+- **Images:** with `@hozu/image`, `hozu build` adds WebP `srcset` widths.
 - **Share images:** `head.render → image: ui.og({ title, subtitle })` (needs `app({ og: ogImage })` with `ogImage`
   from `@hozu/image`); on a static host use `image: ui.asset(new URL('./share.png', import.meta.url))`.
 - **Fonts:** a local `@font-face` gets a size-matched fallback automatically.

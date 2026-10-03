@@ -1,8 +1,7 @@
 # Forms
 
 - **Works without JavaScript** when the submit payload reads only `ui.dom.form('name')`, `ui.dom.formAll('name')`,
-  literals, context, params and search (else HZ036 warns): the server runs the same machine for a native post, then
-  redirects or re-renders with the result. Put every value the submit needs in a named field (a `<select name="kind">`).
+  literals, context, params and search (else HZ036 warns). Put every value the submit needs in a named field.
 ```ts
 ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title'), kind: ui.dom.form('kind') }) } }, [
   ui.label({ for: 'title' }, ['Title']),
@@ -14,6 +13,16 @@ ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title'), kind: ui.dom
 ])
 ui.p({ id: 'title-error', class: 'text-sm text-rose-600' }, [ctx.fields.title])
 ```
+- **Field errors:** context `fields: z.object({ title: z.string().nullable() })`, reset on submit
+  (`ctx.fields = { title: null }`), and `failed.Invalid: { target: 'idle', assign: (e) => { ctx.fields = e.fields } }`.
+  Limits live in the mutation's input schema (`z.string().min(2, '…')`), never in the event payload (HZ061).
+- **Server error:** a declared error sets `ctx.error`; show `ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error])`.
+- **Enum from a select:** fills an enum field only when every literal option value is a member (HZ033).
+
+<!-- more -->
+
+- **Without JavaScript,** the server runs the same machine for a native post, then redirects or re-renders with the
+  result (e.g. a `<select name="kind">` carries the kind).
 - **With the app's kit** (as in `example/`): a `Field` with a `control` slot holds the label, the input and its error.
 ```ts
 ui.use(Field, { props: { for: 'title', label: 'Title', error: ctx.fields.title, errorId: 'title-error' },
@@ -21,14 +30,10 @@ ui.use(Field, { props: { for: 'title', label: 'Title', error: ctx.fields.title, 
     invalid: ctx.fields.title !== null, describedby: 'title-error' }, on: { input: ui.send(Draft, { text: ui.dom.value }) } }) } }),
 ui.use(Button, { props: { type: 'submit' } }, ['Add']),
 ```
-- **Field errors:** context `fields: z.object({ title: z.string().nullable() })`, reset on submit
-  (`ctx.fields = { title: null }`), and `failed.Invalid: { target: 'idle', assign: (e) => { ctx.fields = e.fields } }`.
-  Limits live in the mutation's input schema: `z.string().min(2, 'Use at least 2 characters')`.
-- **Server error:** a declared error sets `ctx.error`; show `ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error])`.
+- **Limit messages:** `z.string().min(2, 'Use at least 2 characters')`.
 - **Clear after success:** bind `value: ctx.draft` and reset it in `done`.
 - **Per-item actions without JS:** wrap each button in its own small form.
-- **Enum from a select:** `ui.dom.form('kind')` or `ui.dom.value` fills an enum field only when every literal
-  option value is a member (HZ033).
+- **Enum source:** `ui.dom.form('kind')` or `ui.dom.value`.
 - **Several values:** `ui.dom.formAll('ids')` is every value of the name in tree order (`[]` when none) for checkbox
   groups, `select multiple` and controls inside `ui.each`, into a list field; `ui.dom.form(name)` is the first (HZ054).
 - **Which button:** give submit buttons `name` and a literal `value` and read `ui.dom.form('action')` in the form's
@@ -39,4 +44,4 @@ ui.use(Button, { props: { type: 'submit' } }, ['Add']),
 - **A flag or a number:** a checkbox posts `'on'` only while checked: `ui.dom.formAll('remember')` into
   `z.array(z.string())`, or a radio pair. Send numbers as text and parse them in the mutation input (`z.coerce.number()`).
 - **Invalid without JS:** a native post whose payload or mutation input fails re-renders with 400 through
-  `failed.Invalid`, like the JS submit. Keep limits out of the event payload (HZ061).
+  `failed.Invalid`, like the JS submit.

@@ -1,12 +1,20 @@
 # Deployment
 
-- **One app module:** `project({ app: new URL('./app.ts', import.meta.url) })`, and `app.ts` default-exports
-  `app({ resolvers: resolvers(project, (implement) => [...]), session?, components?, og?, csp?, onError?, preview? })`
-  from `@hozu/runtime-server`. `hozu serve`, `hozu check`, `hozu get`, `hozu browse` and `testApp(app)` all run this
-  module, so what the tools verify is what production serves. There is no wrapper position: headers go through
-  `project({ http })`, statuses through `head.failed` and endpoint `failed`, the language through the URL.
-- **Node:** `npm start` is `hozu serve`: adapter-node on `PORT` (and `HOST`), `process.env`, styles, images and
-  `public/`. `hozu build` writes `dist/public/`, `dist/manifest.json` and `dist/server/render.js`.
+- **One app module:** `project({ app: new URL('./app.ts', import.meta.url) })`; `app.ts` default-exports
+  `app({ resolvers, session?, components?, … })` from `@hozu/runtime-server`. `hozu serve`, `hozu check`, `hozu get`,
+  `hozu browse` and `testApp(app)` all run it, so what the tools verify is what production serves.
+- **Node:** `npm start` is `hozu serve` (adapter-node on `PORT`, `HOST`). `hozu build` writes `dist/`.
+- Set `SESSION_SECRET` when the app has sessions (production refuses to start without it).
+- Edge (Bun, Deno, Workers, Vercel), static hosts, several instances, upgrading: see --more.
+
+<!-- more -->
+
+## Details
+- **App options:** `app({ resolvers: resolvers(project, (implement) => [...]), session?, components?, og?, csp?,
+  onError?, preview? })`. There is no wrapper position: headers go through `project({ http })`, statuses through
+  `head.failed` and endpoint `failed`, the language through the URL.
+- **Node:** adapter-node serves `process.env`, styles, images and `public/`. `hozu build` writes `dist/public/`,
+  `dist/manifest.json` and `dist/server/render.js`.
 - **Edge (Bun, Deno, Workers, Vercel):** bundle with `hozuTransform()` from `@hozu/transform/esbuild`, then
   `createHandler(app, { manifest, render, env })` from `@hozu/runtime-server` and
   `export default { fetch: handler.fetch }`, where `render` is `import * as render from './dist/server/render.js'`.
@@ -17,8 +25,8 @@
   effects a written page would still call, which a static host cannot answer (HZ082).
 - **Edge and fetch.ts:** a host without `import()` of files passes `createHandler(app, { fetches: async (f) =>
   modules[f] })` for `runs: 'either'` effects.
-- Set `SESSION_SECRET` when the app has sessions (production refuses to start without it). The default store keeps
-  sessions in memory per process; an edge or multi-instance deployment passes a shared store as `app({ session })`.
+- **Sessions:** the default store keeps sessions in memory per process; an edge or multi-instance deployment passes
+  a shared store as `app({ session })`.
 
 ## Caches and many instances
 - **Bounded caches:** public query results and cached pages are LRU caches, at most 10,000 entries and 5,000 pages

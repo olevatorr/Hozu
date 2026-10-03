@@ -53,7 +53,8 @@ Commands:
                             (--devtools builder|developer picks its mode, --no-devtools hides it)
   requests [done <n>]       The change requests saved from DevTools (--full: all open ones as one prompt);
                             done <n> --result "<what changed>" removes one
-  docs [topic]              Print one topic of the guide (no topic: list them); docs components adds the app's list
+  docs [topic] [--more]     Print one topic of the guide, its short form (--more: options and edge cases too);
+                            no topic lists them; docs HZ083 prints one diagnostic; docs components adds the app's list
   migrate [--dry-run]       Upgrade the app from Hozu 0.10 or later: rewrite, raise the dependencies, then (run
                             again after installing) compare the IR and check; never writes the lock
   render <id>               Render one component alone (ui.Button): HTML, root class, owned properties, diagnostics
@@ -163,6 +164,7 @@ export async function main(
         config: { type: 'string' },
         'update-lock': { type: 'boolean', default: false },
         'no-types': { type: 'boolean', default: false },
+        more: { type: 'boolean', default: false },
         out: { type: 'string' },
         agent: { type: 'string' },
         session: { type: 'string' },
@@ -245,7 +247,7 @@ export async function main(
     }
     if (!commands.includes(command)) throw new HozuCliError('usage', `Unknown command "${command}"`, commands)
     if (command === 'docs') {
-      const result = await runDocs(cwd, target, values.config)
+      const result = await runDocs(cwd, target, values.config, values.more === true)
       out(asJson ? json(result) : result.text)
       return 0
     }

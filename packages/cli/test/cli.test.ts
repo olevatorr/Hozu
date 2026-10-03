@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -7,6 +7,7 @@ import { promisify } from 'node:util'
 import { Ajv } from 'ajv'
 import { describe, expect, it, vi } from 'vitest'
 import { withHints } from '../src/commands/check.ts'
+import { shortForm } from '../src/commands/docs.ts'
 import { main } from '../src/main.ts'
 import { human } from '../src/output.ts'
 
@@ -430,6 +431,31 @@ describe('required server env (trial 0.13, bug 1)', () => {
       rmSync(dir, { recursive: true, force: true })
     }
   }, 120_000)
+})
+
+describe('short topics (ADR 0053 E)', () => {
+  const dir = `${root}.claude/skills/hozu/topics`
+  const topics = readdirSync(dir).filter((f) => f.endsWith('.md'))
+
+  it('prints at most half of 0.13’s 72.7 KB by default, and every topic has a short form', () => {
+    let shown = 0
+    for (const f of topics) {
+      const text = readFileSync(join(dir, f), 'utf8')
+      expect(text, f).toContain('\n<!-- more -->\n')
+      shown += Buffer.byteLength(shortForm(text, f.slice(0, -3), false))
+    }
+    expect(shown).toBeLessThanOrEqual(36_350)
+  })
+
+  it('--more prints the whole topic without the marker', async () => {
+    const short = (await run(['docs', 'data'])).stdout
+    const more = (await run(['docs', 'data', '--more'])).stdout
+    expect(short).toContain('More (options, edge cases): hozu docs data --more\n')
+    expect(more).not.toContain('<!-- more -->')
+    expect(more).not.toContain('hozu docs data --more')
+    expect(more.length).toBeGreaterThan(short.length)
+    expect(more.startsWith(short.slice(0, short.indexOf('\nMore (')))).toBe(true)
+  })
 })
 
 describe('hozu docs with an older skill copy (trial 0.13)', () => {

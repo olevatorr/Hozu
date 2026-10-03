@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.14.0 — Easier to learn: one form, one check command, quieter checks (ADR 0053)
+
+The largest cost of building with Hozu is that models do not know it yet: every session learns it from the guide.
+0.14 makes less to learn. It removes a hidden default and a duplicate command, and lets a warning be kept on purpose.
+Diagnostics are documented from one registry, and `hozu docs` prints about half as much.
+
+**Upgrade:** `npx -p @hozu/cli@latest hozu migrate`, install, then `npx hozu migrate` again. The step:
+- adds `runs: 'either'` where `runs` is omitted (the old default, so the IR does not change);
+- rewrites `hozu validate` in package.json scripts to `hozu check`;
+- removes `hozu graph` scripts.
+
+### Breaking
+- **`runs` is required** on every `query` and `mutation`: `'server' | 'browser' | 'either'`. A missing `runs` is a
+  type error, and HZ081 in untyped code.
+- **`hozu validate` is removed.** `hozu check --no-types` runs the rules and contracts without TypeScript;
+  `hozu check --update-lock` accepts a behaviour change.
+- **`hozu graph` is removed**, together with `graphOf` / `mermaid` from `@hozu/cli`. Use `hozu why` or
+  `hozu inspect`.
+
+### Keep a warning on purpose
+- `project({ accept: [{ code: 'HZ036', at: 'lab.SaveDraft', reason: 'drafts live in localStorage' }] })`.
+- An accepted warning does not count: `check` prints `0 errors, 0 warnings (1 accepted)` and lists each one with its
+  reason.
+- **HZ087** (warning): an entry that matches no warning, names an error, or has no reason. Errors cannot be accepted.
+
+### Diagnostics from one registry
+- Every code has a summary, a fix and a topic in `@hozu/core`.
+  - `pnpm skill` generates the guide's diagnostics topic and the site's table from them.
+  - A test fails when a code has none.
+- **`hozu docs HZ083`** prints one code: its cause, its fix and the topic to read.
+- **Fixes that matched their cause:**
+  - HZ084 no longer offers a rename as the way out;
+  - HZ021 says to remove one of two implementations, or an implementation of an unknown declaration.
+
+### A shorter guide
+- Each topic is the shortest correct form; **`hozu docs <topic> --more`** adds options and edge cases.
+- What `hozu docs` prints by default is 27.0 KB over every topic, down from 72.7 KB (37 %). The tested examples are unchanged.
+- The `runs` examples in the data and fetch topics now state `runs`.
+
+### `hozu why`
+- `hozu why <target>` says what a target is, where it is (`file:line`), what uses it and what it affects.
+- The target can be a declaration (`cart.addItem`), a component (`ui.Button`), or a state (`cart.idle`, with its
+  transitions and covering contracts). It can also be a view node (a DevTools id or an IR pointer) or a page
+  (`page:home`).
+- **Deprecated:** `hozu impact`, `explain` and `locate` still answer, with a line on stderr; they are removed in 0.15.
+- DevTools requests point at `hozu why`.
+
+### Docs
+- The README, the site and trial 0021 say why the comparison is with Nuxt: Nuxt is in the training data, Hozu is
+  learned in each session, and everything else is equal.
+- ADR 0055 pre-registers trial 0024, which separates the cost of learning Hozu from the cost of its structure. It runs
+  after this release.
+
 ## 0.13.0 — Test your API while you build, and environment conventions (ADR 0051, 0052)
 
 0.13 turns the DevTools API tab into a drawer for testing while you build, fixes the CSP that blocked 0.11's

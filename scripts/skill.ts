@@ -61,12 +61,22 @@ export const codeTable = () =>
     ),
   ].join('\n')
 
+const warnings = () =>
+  Object.entries(codes)
+    .filter(([, c]) => c.severity === 'warning')
+    .map(([code]) => code)
+    .join(', ')
+
 export const diagnosticsTopic = () =>
   `# Hozu diagnostics
 
 Every diagnostic carries \`file:line\`, a cause and a fix, and often a snippet or patch. Apply the fix; do not work
-around the rule. \`npx hozu docs HZ083\` prints one code. A warning you keep on purpose goes in
-\`project({ accept: [{ code, at, reason }] })\`.
+around the rule. \`npx hozu docs HZ083\` prints one code: its cause, its fix and the topic to read.
+
+- Errors fail \`hozu check\`. Warnings (${warnings()}) do not, but each one names something to decide.
+- A warning you keep on purpose goes in \`project({ accept: [{ code, at, reason }] })\`; errors cannot be accepted.
+
+<!-- more -->
 
 ${codeTable()}
 `

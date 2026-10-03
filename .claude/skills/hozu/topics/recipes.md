@@ -1,7 +1,7 @@
 # Recipes for common changes
 
 Names follow `hozu add feature items`: `Item`, `NewItem`, `Add`, `addItem`, `itemsMachine`, `ItemsBoard`. The controls are plain elements; with a
-kit, use its components instead (`ui.use(Button, { variant: { tone: 'quiet' } }, ['Clear done'])`).
+kit, use its components instead. More recipes (an action over many items, a field on the detail page, a detail page): see --more.
 
 ## A field chosen in the add form (an enum)
 - **model:**
@@ -20,6 +20,10 @@ kit, use its components instead (`ui.use(Button, { variant: { tone: 'quiet' } },
 - **Contracts:** if the app has contracts that send `Add` or return an item, add `priority` to their payloads,
   inputs and results. These transitions only copy values, so they need no new contract.
 - **server:** store `priority` (seed items included) and return it.
+
+<!-- more -->
+
+With a kit: `ui.use(Button, { variant: { tone: 'quiet' } }, ['Clear done'])`.
 
 ## An action button that works on many items (e.g. "Clear done")
 - **model:**

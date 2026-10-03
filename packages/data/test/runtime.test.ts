@@ -178,7 +178,7 @@ describe('resolver wiring', () => {
         ['HZ021', '/features/f/queries/read', 'f.read is implemented twice'],
         ['HZ021', '/features/f/mutations/write', 'f.write has no implementation'],
       ])
-      expect(d.map((x) => x.fix.summary)).toEqual([
+      expect(d.map((x) => x.fix?.summary)).toEqual([
         'Remove one of the two implement(read, …) in the resolvers of app.ts',
         'Add exactly one implement(decl, …) for every query, mutation and endpoint, in the resolvers of app.ts',
       ])

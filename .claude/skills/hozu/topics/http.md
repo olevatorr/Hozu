@@ -1,6 +1,11 @@
 # HTTP
 
 Without `http`, the site is served at `/` without trailing slashes (`/about/` answers 308 → `/about`).
+`project({ http: { basePath, trailingSlash, redirects, headers } })` changes that (see --more). There are no
+rewrites: one URL has one owner. Your own HTTP routes: `hozu docs endpoints`.
+
+<!-- more -->
+
 ```ts
 http: {
   basePath: '/shop',                   // every URL and /_hozu/* move under it (HZ039)
@@ -14,4 +19,3 @@ http: {
 ```
 Server options live in the app module: `app({ resolvers, session?, components?, onError?, csp?, og?, preview? })`.
 A strict CSP, `nosniff` and a cross-site POST check are on by default; `csp: { script: ['https://…'] }` adds sources.
-There are no rewrites: one URL has one owner. For your own HTTP routes, see `hozu docs endpoints`.

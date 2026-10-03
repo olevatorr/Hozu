@@ -39,7 +39,7 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 - **`'live'` only for push** to pages that are already open.
 - **`invalidates` drives the client refresh** of every query with those tags, whatever its freshness.
 
-## Topics (`npx hozu docs <topic>`)
+## Topics (`npx hozu docs <topic>`; `--more`: options, edge cases)
 | Task | Topic |
 |---|---|
 | a new feature, the files, a complete example | `feature` |

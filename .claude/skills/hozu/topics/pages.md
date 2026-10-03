@@ -7,8 +7,19 @@ export const itemPage = route({ path: '/items/:id', params: z.object({ id: z.str
 export const docs = route({ path: '/docs/:path+', params: z.object({ path: z.array(z.string()).min(1) }), search: null })
 ```
 - `:x` one segment, `:x?` optional (nullable), `:x+` / `:x*` one-or-more / zero-or-more (string[]) (HZ024).
-- `search`: flat scalars or enums, each with a default or nullable (HZ035). URLs are canonical (keys sorted,
-  defaults left out). Changing `search` is a navigation: a filter in the URL is a plain `ui.link`, no machine.
+- `search`: flat scalars or enums, each with a default or nullable (HZ035).
+- **Pages** go in `project({ routes: { home, itemPage }, pages: [...] })` (the whole config: see --more):
+  `ui.page(home, { views: [Board], head: { render: () => ({ title: 'Items' }) } })`.
+- **Head from a query:** `head: { query: getItem, input: (params) => ({ id: params.id }), render: (item) => ({ title:
+  item.title }), failed: { NotFound: 404 } }`. `failed` maps every declared error of the query (HZ051) to a route
+  without params (303) or to `403`, `404` or `410`.
+- `head.render` fields: `title`, `description`, `type` (`'website' | 'article'`), `image`, `published`, `noindex`.
+- A route no page renders is HZ052.
+
+<!-- more -->
+
+- URLs are canonical (keys sorted, defaults left out). Changing `search` is a navigation: a filter in the URL is a
+  plain `ui.link`, no machine.
 
 ```ts
 // hozu.config.ts
@@ -33,10 +44,8 @@ export default project({
   features: [items],
 })
 ```
-- `head.render` fields: `title`, `description`, `type` (`'website' | 'article'`), `image` (a URL, `ui.asset(...)`
-  or `ui.og({ title })`), `published`, `noindex`.
-- `head.failed` maps each declared error of the head query to a route without params (303) or to `403`, `404` or
-  `410`: `failed: { Unauthorized: login, Forbidden: 403 }`. It is exhaustive (HZ051); `Unexpected` is always 500.
+- `image` is a URL, `ui.asset(...)` or `ui.og({ title })`.
+- `head.failed` example: `failed: { Unauthorized: login, Forbidden: 403 }`. `Unexpected` is always 500.
   It maps declared errors only: a head query that always fails is not a redirect.
 - **Which redirect** (one per purpose):
 
@@ -47,7 +56,7 @@ export default project({
 | a decision on success, e.g. `/` by session | a GET endpoint with `output: 'redirect'` (`hozu docs endpoints`) |
 | after a machine transition | `navigate` |
 
-- A route no page renders is HZ052; link to an endpoint with `ui.link(endpoint, input)` instead.
+- For a route no page renders (HZ052), link to an endpoint with `ui.link(endpoint, input)` instead.
 - A detail view: `ui.view({ route: itemPage, render: ({ params }) => ui.query(getItem, { id: params.id }, { ready,
   failed: { NotFound: () => ui.p({}, ['Not found']), Unexpected: () => … } }) })`.
 - A page loads JS only when a machine-bound part renders on it (`hozu plan <route>`). Every link loads a document;

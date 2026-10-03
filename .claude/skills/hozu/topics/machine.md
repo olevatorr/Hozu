@@ -2,6 +2,36 @@
 
 ```ts
 export const m = machine({
+  context: z.object({ draft: z.string(), error: z.string().nullable() }),
+  initialContext: { draft: '', error: null },
+  initial: 'idle',
+  states: ({ ctx }) => ({
+    idle: { on: [on(Add, { target: 'adding', assign: (e) => { ctx.draft = e.title } })] },
+    adding: {
+      invoke: invoke(addItem, {
+        input: { title: ctx.draft },
+        done: { target: 'idle', assign: () => { ctx.draft = '' } },
+        failed: { Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } } },
+      }),
+    },
+  }),
+})
+```
+- Events: `export const Add = event({ payload: z.object({ title: z.string() }) })`.
+- **assign** writes context: `ctx.x = v`, `ctx.n += 1`, `ctx.list.push(item)`,
+  `ctx.list = ctx.list.filter((i) => i.id !== e.id)`.
+- **guard** returns a condition: `on(Add, { target: 'adding', guard: (e) => e.title.length >= 2 })`; the first
+  matching guard wins.
+- **invoke** runs a mutation on entry; the state drops events it does not handle. `failed` lists every declared error
+  of the mutation plus `Unexpected` (`Invalid` optional, `hozu docs forms`).
+- Do not handle the busy event in the busy state: a transition to the same state re-runs its `invoke`.
+
+<!-- more -->
+
+The full form: shared transitions, guards, `navigate`, errors, a timer.
+
+```ts
+export const m = machine({
   context: z.object({ draft: z.string(), error: z.string().nullable(), target: z.string() }),
   initialContext: { draft: '', error: null, target: '' },
   initial: 'idle',
@@ -29,10 +59,8 @@ export const m = machine({
   }),
 })
 ```
-- **assign** writes context: `ctx.x = v`, `ctx.n += 1`, `ctx.list.push(item)`,
-  `ctx.list = ctx.list.filter((i) => i.id !== e.id)`. Values are event (`e`), result (`r`) or error fields,
-  context, literals, operators and `fn()` calls.
-- **guard** returns a condition: comparisons, `&&`, `||`, `!`, or a boolean `fn()`.
+- **assign** values are event (`e`), result (`r`) or error fields, context, literals, operators and `fn()` calls.
+- **guard** conditions: comparisons, `&&`, `||`, `!`, or a boolean `fn()`.
 - **navigate** sends the browser to `ui.link(route, params, search?)` after the transition.
 - `done` and each `failed` entry take a state name, one transition, or a list of guarded transitions.
 - **Shared transitions:** `machine({ on })` entries are copied into every state that has no `invoke`, is not final,
@@ -41,6 +69,5 @@ export const m = machine({
 - **Start from the URL:** a view with a `route` may declare `seed: ({ params, search }) => ({ q: search.q })`; the
   page's machine then starts with those context fields (server render, hydration and no-JS posts alike). One view
   per page may seed a machine (HZ048).
-- A transition to the same state re-enters it and re-runs its `invoke`: do not handle the busy event in the busy
-  state. Machines never hold translated text (store a code, choose the message in the view).
-- Events: `export const Add = event({ payload: z.object({ title: z.string() }) })`.
+- A transition to the same state re-enters it. Machines never hold translated text (store a code, choose the
+  message in the view).

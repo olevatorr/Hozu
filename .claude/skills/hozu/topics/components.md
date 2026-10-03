@@ -1,8 +1,7 @@
 # Components (shared UI, kits, browser code)
 
-A UI piece used by several features is a component in a kit. Start with `hozu add kit ui` (writes `ui/kit.ts`,
-`ui/tv.ts` and `project({ kits })`), then `hozu add component ui Button`; `hozu add component <feature> <Name>` makes
-one private to that feature.
+A UI piece used by several features is a component in a kit: `hozu add kit ui`, then `hozu add component ui Button`
+(`hozu add component <feature> <Name>` makes one private to that feature).
 ```ts
 // ui/button.ts; ui/kit.ts lists it: ui.kit({ id: 'ui', components: [button, input] })
 const styles = tv({                                            // tv from ./tv.ts
@@ -21,13 +20,22 @@ export const Button = ui.component({
 ui.use(Button, { variant: { tone: 'ghost' }, props: { busy: ctx.saving }, slots: { icon: ui.span({}, ['+']) },
   on: { press: ui.send(Save, {}) }, class: 'w-full' }, ['Save'])           // in a view; its id is ui.Button
 ```
-- **`ui.use` keys:** `variant` (literals), `props` (data), `slots`, `on`, `class`; children only with
-  `children: true`. Every key is optional when the component needs none.
+- **`ui.use` keys** (all optional): `variant` (literals only, HZ071), `props` (anything that changes while the page
+  runs), `slots`, `on`, `class`; children only with `children: true`.
+- **Render** reads only `props`, `slots`, `children`, `on` and `classes`; the caller passes sends, links and text
+  in (HZ070).
+- **`class`** may only add classes that set none of the component's properties (`w-full`, `md:hidden`); to change
+  one, declare a variant (HZ072–HZ077; one-offs: see --more).
+- Browser APIs or DOM libraries: a client component, `hozu add component <kit|feature> <Name> --client` (see --more).
+
+<!-- more -->
+
+## Details
+- `hozu add kit ui` writes `ui/kit.ts`, `ui/tv.ts` and `project({ kits })`.
 - **Variants vs props:** a variant is a fixed look chosen in the view (HZ071 for data); anything that changes while
   the page runs is a prop. Style a state through the attribute that announces it: `disabled:`, `aria-pressed:`,
   `aria-busy:`, `aria-invalid:`, `aria-expanded:`, `open:`. `toggle` is for states without one.
-- **Render:** it reads only `props`, `slots`, `children`, `on` and `classes` (the other tv slots,
-  `classes.label`); the caller passes sends, links and text in (HZ070). Hozu puts the root class on the root.
+- **Render:** `classes` holds the other tv slots (`classes.label`). Hozu puts the root class on the root.
 - **Extension:** `class` may add classes that set none of the component's properties (`w-full`, `relative`,
   `md:hidden`). To change one, declare a variant; a one-off ends with `!` (`rounded-lg!`) (HZ072–HZ077).
   `hozu check` counts the `!` per component; `extend: false` refuses every class.
