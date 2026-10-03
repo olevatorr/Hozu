@@ -1,0 +1,39 @@
+{
+  "ok": true,
+  "overrides": [],
+  "timings": {
+    "load": 91,
+    "types": 141,
+    "validate": 75
+  },
+  "types": {
+    "errors": [],
+    "ok": true,
+    "skipped": false
+  },
+  "validate": {
+    "accepted": [],
+    "coverage": {
+      "account": {
+        "covered": 2,
+        "total": 2,
+        "transitions": 7
+      },
+      "notes": {
+        "covered": 3,
+        "total": 3,
+        "transitions": 63
+      }
+    },
+    "diagnostics": [],
+    "hash": "709b0c2ccf76153effa9995a2ff3b1df8ef031a68ed7dfe88d43d21142a93b41",
+    "lock": "current",
+    "ok": true,
+    "styles": "checked",
+    "summary": {
+      "accepted": 0,
+      "errors": 0,
+      "warnings": 0
+    }
+  }
+}

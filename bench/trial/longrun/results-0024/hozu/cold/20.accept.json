@@ -1,0 +1,769 @@
+{
+ "name": "hozu",
+ "step": 20,
+ "passed": 5,
+ "total": 64,
+ "new": {
+  "passed": 0,
+  "total": 1
+ },
+ "regression": {
+  "passed": 5,
+  "total": 63
+ },
+ "failures": [
+  {
+   "id": "N5",
+   "kind": "regression",
+   "what": "ada and bob at the same time see only their own notes",
+   "error": "FAIL: page.waitForTimeout: Target page, context or browser has been closed"
+  },
+  {
+   "id": "N6",
+   "kind": "regression",
+   "what": "the HTML sent to bob contains none of ada's notes",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "N7",
+   "kind": "regression",
+   "what": "add with JS: first in the list, count updates, input cleared",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "N8",
+   "kind": "regression",
+   "what": "duplicate (any case, spaces) shows the alert and adds nothing",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "N9",
+   "kind": "regression",
+   "what": "the browser limits a note to 60 characters",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "N10",
+   "kind": "regression",
+   "what": "double click on Add adds once, with no error shown",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "N11",
+   "kind": "regression",
+   "what": "delete with JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "N12",
+   "kind": "regression",
+   "what": "changes survive a reload",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "N13",
+   "kind": "regression",
+   "what": "without JS: sign in, add, duplicate alert, delete, sign out",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/notes"
+  },
+  {
+   "id": "N14",
+   "kind": "regression",
+   "what": "sign out with JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "P1",
+   "kind": "regression",
+   "what": "pin with JS moves the note first and marks it pinned",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "P2",
+   "kind": "regression",
+   "what": "pinning survives a reload and does not affect other users",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "P3",
+   "kind": "regression",
+   "what": "unpin",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "P4",
+   "kind": "regression",
+   "what": "search filters in the browser; the count stays the total",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "P5",
+   "kind": "regression",
+   "what": "pin and unpin without JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "L1",
+   "kind": "regression",
+   "what": "the server rejects 61 characters (no JS)",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "L2",
+   "kind": "regression",
+   "what": "a 61-character note is refused with JS too",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "T1",
+   "kind": "regression",
+   "what": "seeded notes show their creation date",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "T2",
+   "kind": "regression",
+   "what": "a new note records the moment it was added",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "R1",
+   "kind": "regression",
+   "what": "the add input is labelled Title",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "E1",
+   "kind": "regression",
+   "what": "edit with JS keeps place, pin and date",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "E2",
+   "kind": "regression",
+   "what": "edit to a duplicate is refused",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "E3",
+   "kind": "regression",
+   "what": "cancel leaves the note unchanged",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "E4",
+   "kind": "regression",
+   "what": "edit without JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "A1",
+   "kind": "regression",
+   "what": "archive and restore with JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "A2",
+   "kind": "regression",
+   "what": "/archive: redirect when signed out, empty text",
+   "error": "FAIL: fetch failed"
+  },
+  {
+   "id": "A3",
+   "kind": "regression",
+   "what": "archived notes are read-only on the server and still duplicates",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "A4",
+   "kind": "regression",
+   "what": "archive and restore without JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "S1",
+   "kind": "regression",
+   "what": "search from the URL and the Search button, without JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "M1",
+   "kind": "regression",
+   "what": "/ redirects to /notes or /login",
+   "error": "FAIL: fetch failed"
+  },
+  {
+   "id": "M2",
+   "kind": "regression",
+   "what": "forms lead to /notes (no JS)",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "U1",
+   "kind": "regression",
+   "what": "undo restores place, pin and date, also after a reload",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "U2",
+   "kind": "regression",
+   "what": "only the most recent delete, cleared by the next change",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "U3",
+   "kind": "regression",
+   "what": "undo without JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "Pg1",
+   "kind": "regression",
+   "what": "five at a time, Showing n of m, Load more",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "Pg2",
+   "kind": "regression",
+   "what": "pinned first across pages; filters count",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "Pg3",
+   "kind": "regression",
+   "what": "Load more without JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "O1",
+   "kind": "regression",
+   "what": "the note appears at once, marked saving",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "O2",
+   "kind": "regression",
+   "what": "a rejected note disappears again with the alert",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "B1",
+   "kind": "regression",
+   "what": "bulk delete with JS, Selected counter, clears undo",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "B2",
+   "kind": "regression",
+   "what": "bulk archive with JS; nothing checked does nothing",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "B3",
+   "kind": "regression",
+   "what": "bulk delete and archive without JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "B3b",
+   "kind": "regression",
+   "what": "without JS: two checked notes are deleted, then two are archived",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "RL1",
+   "kind": "regression",
+   "what": "the 11th add within a minute is refused; rejected adds do not count",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "SH1",
+   "kind": "regression",
+   "what": "share: owner sees it, recipient sees it read-only, HTML isolation",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "SH2",
+   "kind": "regression",
+   "what": "shared notes follow title, archive, restore and delete",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "SH3",
+   "kind": "regression",
+   "what": "unshare, and sharing with yourself",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "SH4",
+   "kind": "regression",
+   "what": "share and unshare without JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "AD1",
+   "kind": "regression",
+   "what": "the admin table lists users and their note counts",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "AD2",
+   "kind": "regression",
+   "what": "others get 403 and no Admin link",
+   "error": "FAIL: fetch failed"
+  },
+  {
+   "id": "DA1",
+   "kind": "regression",
+   "what": "delete an account: notes, shares, admin row",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "DA1b",
+   "kind": "regression",
+   "what": "DA1 with the deleting user's browser without JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "DA2",
+   "kind": "regression",
+   "what": "delete an account without JS; signed out redirect",
+   "error": "FAIL: fetch failed"
+  },
+  {
+   "id": "DE1",
+   "kind": "regression",
+   "what": "German with JS: texts, persistence, HttpOnly",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "DE2",
+   "kind": "regression",
+   "what": "German without JS",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "EX1",
+   "kind": "regression",
+   "what": "export: keys, order, archived, createdAt, link",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "EX2",
+   "kind": "regression",
+   "what": "export: seeded ada, 401 signed out",
+   "error": "FAIL: fetch failed"
+  },
+  {
+   "id": "TG1",
+   "kind": "new",
+   "what": "tags are gone",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  },
+  {
+   "id": "N16",
+   "kind": "regression",
+   "what": "after each JS internal link the main text equals a no-JS GET of the same URL",
+   "error": "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login"
+  }
+ ],
+ "results": [
+  [
+   "N1",
+   0,
+   "pass",
+   971
+  ],
+  [
+   "N2",
+   0,
+   "pass",
+   969
+  ],
+  [
+   "N3",
+   0,
+   "pass",
+   2085
+  ],
+  [
+   "N4",
+   0,
+   "pass",
+   2047
+  ],
+  [
+   "N5",
+   0,
+   "FAIL: page.waitForTimeout: Target page, context or browser has been closed",
+   2956
+  ],
+  [
+   "N6",
+   0,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   176
+  ],
+  [
+   "N7",
+   0,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   140
+  ],
+  [
+   "N8",
+   0,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   137
+  ],
+  [
+   "N9",
+   0,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   134
+  ],
+  [
+   "N10",
+   0,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   128
+  ],
+  [
+   "N11",
+   0,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   129
+  ],
+  [
+   "N12",
+   0,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   119
+  ],
+  [
+   "N13",
+   0,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/notes",
+   117
+  ],
+  [
+   "N14",
+   0,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   120
+  ],
+  [
+   "P1",
+   1,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   124
+  ],
+  [
+   "P2",
+   1,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   121
+  ],
+  [
+   "P3",
+   1,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   118
+  ],
+  [
+   "P4",
+   1,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   118
+  ],
+  [
+   "P5",
+   1,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   126
+  ],
+  [
+   "L1",
+   2,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   117
+  ],
+  [
+   "L2",
+   2,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   123
+  ],
+  [
+   "T1",
+   3,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   111
+  ],
+  [
+   "T2",
+   3,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   113
+  ],
+  [
+   "R1",
+   4,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   111
+  ],
+  [
+   "E1",
+   5,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   111
+  ],
+  [
+   "E2",
+   5,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   120
+  ],
+  [
+   "E3",
+   5,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   123
+  ],
+  [
+   "E4",
+   5,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   132
+  ],
+  [
+   "A1",
+   7,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   119
+  ],
+  [
+   "A2",
+   7,
+   "FAIL: fetch failed",
+   1
+  ],
+  [
+   "A3",
+   7,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   113
+  ],
+  [
+   "A4",
+   7,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   129
+  ],
+  [
+   "S1",
+   8,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   126
+  ],
+  [
+   "M1",
+   9,
+   "FAIL: fetch failed",
+   3
+  ],
+  [
+   "M2",
+   9,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   129
+  ],
+  [
+   "U1",
+   10,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   119
+  ],
+  [
+   "U2",
+   10,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   115
+  ],
+  [
+   "U3",
+   10,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   126
+  ],
+  [
+   "Pg1",
+   11,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   174
+  ],
+  [
+   "Pg2",
+   11,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   128
+  ],
+  [
+   "Pg3",
+   11,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   122
+  ],
+  [
+   "O1",
+   12,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   119
+  ],
+  [
+   "O2",
+   12,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   113
+  ],
+  [
+   "B1",
+   13,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   124
+  ],
+  [
+   "B2",
+   13,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   134
+  ],
+  [
+   "B3",
+   13,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   135
+  ],
+  [
+   "B3b",
+   13,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   122
+  ],
+  [
+   "RL1",
+   14,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   127
+  ],
+  [
+   "SH1",
+   15,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   127
+  ],
+  [
+   "SH2",
+   15,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   128
+  ],
+  [
+   "SH3",
+   15,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   126
+  ],
+  [
+   "SH4",
+   15,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   133
+  ],
+  [
+   "AD1",
+   16,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   112
+  ],
+  [
+   "AD2",
+   16,
+   "FAIL: fetch failed",
+   2
+  ],
+  [
+   "DA1",
+   17,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   120
+  ],
+  [
+   "DA1b",
+   17,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   151
+  ],
+  [
+   "DA2",
+   17,
+   "FAIL: fetch failed",
+   3
+  ],
+  [
+   "DE1",
+   18,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   148
+  ],
+  [
+   "DE2",
+   18,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   166
+  ],
+  [
+   "EX1",
+   19,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   125
+  ],
+  [
+   "EX2",
+   19,
+   "FAIL: fetch failed",
+   4
+  ],
+  [
+   "TG1",
+   20,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   125
+  ],
+  [
+   "N16",
+   0,
+   "FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login",
+   127
+  ],
+  [
+   "N15",
+   0,
+   "pass",
+   0
+  ]
+ ],
+ "retired": [
+  "G1",
+  "G2",
+  "G2b",
+  "G3",
+  "S2"
+ ],
+ "js": {
+  "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4801/login\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:"
+ },
+ "heldout": null,
+ "browserCrashes": 1,
+ "serverErrors": ""
+}

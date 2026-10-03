@@ -1,0 +1,91 @@
+[2026-10-03 23:34:27] nuxt/run1 scaffold
+[2026-10-03 23:34:29] nuxt/run1 step 00 attempt 1
+step 0: 16/16 new 16/16 regression 0/0 js {"login":200331,"list":202192}
+[2026-10-03 23:37:49] nuxt/run1 done
+[2026-10-03 23:37:49] nuxt/run1 step 01 attempt 1
+step 1: 21/21 new 5/5 regression 16/16 js {"login":200331,"list":203758}
+[2026-10-03 23:41:01] nuxt/run1 done
+[2026-10-03 23:41:01] nuxt/run1 step 02 attempt 1
+step 2: 23/23 new 2/2 regression 21/21 js {"login":200331,"list":203833}
+[2026-10-03 23:43:40] nuxt/run1 done
+[2026-10-03 23:43:40] nuxt/run1 step 03 attempt 1
+step 3: 25/25 new 2/2 regression 23/23 js {"login":200331,"list":204037}
+[2026-10-03 23:46:18] nuxt/run1 done
+[2026-10-03 23:46:18] nuxt/run1 step 04 attempt 1
+step 4: 26/26 new 1/1 regression 25/25 js {"login":200331,"list":204053}
+[2026-10-03 23:49:09] nuxt/run1 done
+[2026-10-03 23:49:09] nuxt/run1 step 05 attempt 1
+step 5: 30/30 new 4/4 regression 26/26 js {"login":200331,"list":206427}
+[2026-10-03 23:53:09] nuxt/run1 done
+[2026-10-03 23:53:09] nuxt/run1 step 06 attempt 1
+step 6: 34/34 new 4/4 regression 30/30 js {"login":200331,"list":207898}
+[2026-10-03 23:57:25] nuxt/run1 done
+[2026-10-03 23:57:27] nuxt/run1 step 07 attempt 1
+step 7: 38/38 new 4/4 regression 34/34 js {"login":200469,"list":210755}
+[2026-10-04 00:02:26] nuxt/run1 done
+[2026-10-04 00:03:07] nuxt/run1 step 08 attempt 1
+step 8: 40/40 new 2/2 regression 38/38 js {"login":200469,"list":211158}
+[2026-10-04 00:07:31] nuxt/run1 done
+[2026-10-04 00:07:43] nuxt/run1 step 09 attempt 1
+step 9: 42/42 new 2/2 regression 40/40 js {"login":200728,"list":211486}
+[2026-10-04 00:12:39] nuxt/run1 done
+[2026-10-04 00:12:39] nuxt/run1 step 10 attempt 1
+step 10: 45/45 new 3/3 regression 42/42 js {"login":200728,"list":212216}
+[2026-10-04 00:17:39] nuxt/run1 done
+[2026-10-04 00:18:14] nuxt/run1 step 11 attempt 1
+step 11: 48/48 new 3/3 regression 45/45 js {"login":200728,"list":213302}
+[2026-10-04 00:24:40] nuxt/run1 done
+[2026-10-04 00:24:40] nuxt/run1 step 12 attempt 1
+step 12: 50/50 new 2/2 regression 48/48 js {"login":200728,"list":214238}
+[2026-10-04 00:31:26] nuxt/run1 done
+[2026-10-04 00:33:16] nuxt/run1 step 13 attempt 1
+step 13: 54/54 new 4/4 regression 50/50 js {"login":201496,"list":216598}
+[2026-10-04 00:40:08] nuxt/run1 done
+[2026-10-04 00:40:14] nuxt/run1 step 14 attempt 1
+step 14: 55/55 new 1/1 regression 54/54 js {"login":201496,"list":216659}
+[2026-10-04 00:46:51] nuxt/run1 done
+[2026-10-04 00:46:57] nuxt/run1 step 15 attempt 1
+step 15: 59/59 new 4/4 regression 55/55 js {"login":201496,"list":219607}
+[2026-10-04 00:55:53] nuxt/run1 done
+[2026-10-04 00:55:53] nuxt/run1 step 16 attempt 1
+step 16: 61/61 new 2/2 regression 59/59 js {"login":201632,"list":219992}
+[2026-10-04 01:03:29] nuxt/run1 done
+[2026-10-04 01:03:48] nuxt/run1 step 17 attempt 1
+step 17: 64/64 new 3/3 regression 61/61 js {"login":201957,"list":221637}
+[2026-10-04 01:12:11] nuxt/run1 done
+[2026-10-04 01:13:17] nuxt/run1 step 18 attempt 1
+step 18: 66/66 new 2/2 regression 64/64 js {"login":204617,"list":224521}
+[2026-10-04 01:22:36] nuxt/run1 done
+[2026-10-04 01:23:15] nuxt/run1 step 19 attempt 1
+step 19: 68/68 new 2/2 regression 66/66 js {"login":204617,"list":224609}
+[2026-10-04 01:34:26] nuxt/run1 done
+[2026-10-04 01:34:26] nuxt/run1 step 20 attempt 1
+step 20: 64/64 new 1/1 regression 63/63 js {"login":204578,"list":222744}
+[2026-10-04 01:42:51] nuxt/run1 done
+[2026-10-04 02:03:15] nuxt/run1 step 21 attempt 1
+step 21: 67/67 new 3/3 regression 64/64 js {"login":204578,"list":222823}
+[2026-10-04 02:12:08] nuxt/run1 done
+[2026-10-04 02:12:13] nuxt/run1 step 22 attempt 1
+step 22: 71/71 new 4/4 regression 67/67 js {"login":204733,"list":223115}
+[2026-10-04 02:21:49] nuxt/run1 done
+[2026-10-04 02:22:07] nuxt/run1 step 23 attempt 1
+step 23: 74/75 new 4/4 regression 70/71 js {"login":205011,"list":223695}
+  regression EX1 export: keys, order, archived, createdAt, link: FAIL: keys title,body,pinned,archived,createdAt
+[2026-10-04 02:33:10] nuxt/run1 done
+[2026-10-04 02:33:46] nuxt/run1 step 24 attempt 1
+step 24: 78/79 new 4/4 regression 74/75 js {"login":205015,"list":224445}
+  regression EX1 export: keys, order, archived, createdAt, link: FAIL: keys title,body,pinned,archived,createdAt
+[2026-10-04 02:46:35] nuxt/run1 done
+[2026-10-04 02:47:34] nuxt/run1 step 25 attempt 1
+step 25: 80/81 new 2/2 regression 78/79 js {"login":205015,"list":224743}
+  regression EX1 export: keys, order, archived, createdAt, link: FAIL: keys title,body,pinned,archived,createdAt
+[2026-10-04 02:59:13] nuxt/run1 done
+[2026-10-04 03:00:48] nuxt/run1 step 26 attempt 1
+step 26: 83/83 new 3/3 regression 80/80 js {"login":205015,"list":224846}
+[2026-10-04 03:12:48] nuxt/run1 done
+[2026-10-04 03:13:29] nuxt/run1 step 27 attempt 1
+step 27: 85/85 new 3/3 regression 82/82 js {"login":205015,"list":224907}
+[2026-10-04 03:26:18] nuxt/run1 done
+[2026-10-04 03:26:18] nuxt/run1 step 28 attempt 1
+step 28: 85/85 new 2/2 regression 83/83 js {"login":202421,"list":222169}
+[2026-10-04 03:38:34] nuxt/run1 done

@@ -92,3 +92,19 @@ These are the hypotheses the trial tests. They are not targets that a release ha
 
 ## Budget
 - 87 sessions (steps 0–28 × 3 arms), plus the held-out author's session and the probes.
+
+## Result (2026-10-04, `docs/trials/0024-learning-cost.md`)
+- **Held out 21–28:**
+  - Hozu cold is 1.42× Nuxt;
+  - Hozu warm with the preload removed is 1.06×;
+  - the learning cost (A / B net) is 1.35×.
+- **H1** holds with B net (it fails with B as measured, the cost of carrying a 35 k-token preload). **H2** holds.
+  **H3** holds.
+- **Correctness:**
+  - Both Hozu arms passed every check of every step. Three cold acceptance runs were interrupted by the warm agent's
+    `pkill -f "hozu serve"` on the shared machine, and they pass on re-run of the committed code.
+  - Nuxt silently broke the export at steps 23–25.
+- **Deviations:**
+  - `COREPACK_ENABLE_STRICT=0` in the runner, because `~/package.json` names yarn.
+  - The held-out author's session ended before its final validation, so the coordinator ran it unchanged (100 %).
+  - `accept.mjs` now records the server's exit code, signal and output; pass / fail is unchanged.

@@ -1,0 +1,88 @@
+[2026-10-03 23:34:27] hozu/warm scaffold
+[2026-10-03 23:34:36] hozu/warm step 00 attempt 1
+step 0: 16/16 new 16/16 regression 0/0 js {"login":19602,"list":19602}
+[2026-10-03 23:37:03] hozu/warm done
+[2026-10-03 23:37:54] hozu/warm step 01 attempt 1
+step 1: 21/21 new 5/5 regression 16/16 js {"login":19680,"list":19978}
+[2026-10-03 23:40:40] hozu/warm done
+[2026-10-03 23:41:06] hozu/warm step 02 attempt 1
+step 2: 23/23 new 2/2 regression 21/21 js {"login":19680,"list":19978}
+[2026-10-03 23:43:28] hozu/warm done
+[2026-10-03 23:43:45] hozu/warm step 03 attempt 1
+step 3: 25/25 new 2/2 regression 23/23 js {"login":19680,"list":20050}
+[2026-10-03 23:46:06] hozu/warm done
+[2026-10-03 23:46:22] hozu/warm step 04 attempt 1
+step 4: 26/26 new 1/1 regression 25/25 js {"login":19680,"list":20050}
+[2026-10-03 23:48:38] hozu/warm done
+[2026-10-03 23:49:14] hozu/warm step 05 attempt 1
+step 5: 30/30 new 4/4 regression 26/26 js {"login":19680,"list":20050}
+[2026-10-03 23:52:41] hozu/warm done
+[2026-10-03 23:53:14] hozu/warm step 06 attempt 1
+step 6: 34/34 new 4/4 regression 30/30 js {"login":19680,"list":20153}
+[2026-10-03 23:57:16] hozu/warm done
+[2026-10-03 23:57:32] hozu/warm step 07 attempt 1
+step 7: 38/38 new 4/4 regression 34/34 js {"login":19680,"list":20153}
+[2026-10-04 00:02:55] hozu/warm done
+[2026-10-04 00:03:12] hozu/warm step 08 attempt 1
+step 8: 40/40 new 2/2 regression 38/38 js {"login":19680,"list":20153}
+[2026-10-04 00:07:28] hozu/warm done
+[2026-10-04 00:07:48] hozu/warm step 09 attempt 1
+step 9: 42/42 new 2/2 regression 40/40 js {"login":19680,"list":20153}
+[2026-10-04 00:12:01] hozu/warm done
+[2026-10-04 00:12:43] hozu/warm step 10 attempt 1
+step 10: 45/45 new 3/3 regression 42/42 js {"login":19680,"list":20153}
+[2026-10-04 00:18:11] hozu/warm done
+[2026-10-04 00:18:19] hozu/warm step 11 attempt 1
+step 11: 48/48 new 3/3 regression 45/45 js {"login":19831,"list":20524}
+[2026-10-04 00:23:47] hozu/warm done
+[2026-10-04 00:24:45] hozu/warm step 12 attempt 1
+step 12: 50/50 new 2/2 regression 48/48 js {"login":19831,"list":20524}
+[2026-10-04 00:33:16] hozu/warm done
+[2026-10-04 00:33:21] hozu/warm step 13 attempt 1
+step 13: 54/54 new 4/4 regression 50/50 js {"login":19932,"list":20625}
+[2026-10-04 00:39:59] hozu/warm done
+[2026-10-04 00:40:19] hozu/warm step 14 attempt 1
+step 14: 55/55 new 1/1 regression 54/54 js {"login":19932,"list":20625}
+[2026-10-04 00:46:54] hozu/warm done
+[2026-10-04 00:47:02] hozu/warm step 15 attempt 1
+step 15: 59/59 new 4/4 regression 55/55 js {"login":19932,"list":20625}
+[2026-10-04 00:55:02] hozu/warm done
+[2026-10-04 00:55:58] hozu/warm step 16 attempt 1
+step 16: 61/61 new 2/2 regression 59/59 js {"login":19932,"list":20625}
+[2026-10-04 01:03:28] hozu/warm done
+[2026-10-04 01:03:53] hozu/warm step 17 attempt 1
+step 17: 64/64 new 3/3 regression 61/61 js {"login":19932,"list":20625}
+[2026-10-04 01:12:19] hozu/warm done
+[2026-10-04 01:13:22] hozu/warm step 18 attempt 1
+step 18: 66/66 new 2/2 regression 64/64 js {"login":22531,"list":23224}
+[2026-10-04 01:21:53] hozu/warm done
+[2026-10-04 01:23:35] hozu/warm step 19 attempt 1
+step 19: 68/68 new 2/2 regression 66/66 js {"login":22531,"list":23224}
+[2026-10-04 01:33:39] hozu/warm done
+[2026-10-04 01:34:32] hozu/warm step 20 attempt 1
+step 20: 64/64 new 1/1 regression 63/63 js {"login":22531,"list":23101}
+[2026-10-04 01:43:05] hozu/warm done
+[2026-10-04 02:03:20] hozu/warm step 21 attempt 1
+step 21: 67/67 new 3/3 regression 64/64 js {"login":22531,"list":23101}
+[2026-10-04 02:12:06] hozu/warm done
+[2026-10-04 02:12:18] hozu/warm step 22 attempt 1
+step 22: 71/71 new 4/4 regression 67/67 js {"login":22531,"list":23101}
+[2026-10-04 02:21:31] hozu/warm done
+[2026-10-04 02:22:12] hozu/warm step 23 attempt 1
+step 23: 75/75 new 4/4 regression 71/71 js {"login":22531,"list":23101}
+[2026-10-04 02:33:30] hozu/warm done
+[2026-10-04 02:33:50] hozu/warm step 24 attempt 1
+step 24: 79/79 new 4/4 regression 75/75 js {"login":22531,"list":23101}
+[2026-10-04 02:47:34] hozu/warm done
+[2026-10-04 02:47:39] hozu/warm step 25 attempt 1
+step 25: 81/81 new 2/2 regression 79/79 js {"login":22531,"list":23345}
+[2026-10-04 03:00:44] hozu/warm done
+[2026-10-04 03:00:52] hozu/warm step 26 attempt 1
+step 26: 83/83 new 3/3 regression 80/80 js {"login":22531,"list":23345}
+[2026-10-04 03:13:28] hozu/warm done
+[2026-10-04 03:13:33] hozu/warm step 27 attempt 1
+step 27: 85/85 new 3/3 regression 82/82 js {"login":22531,"list":23345}
+[2026-10-04 03:26:01] hozu/warm done
+[2026-10-04 03:26:23] hozu/warm step 28 attempt 1
+step 28: 85/85 new 2/2 regression 83/83 js {"login":20017,"list":20831}
+[2026-10-04 03:38:39] hozu/warm done

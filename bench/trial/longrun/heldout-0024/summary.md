@@ -1,0 +1,8 @@
+- 21: Every note gets a per-user number, backfilled for existing notes by age.
+- 22: Each note gets its own page at `/notes/<number>`; others get 404.
+- 23: Note page form edits title and new body, validated on the server.
+- 24: Admin can make accounts read-only; the server refuses their changes.
+- 25: "Shared with me" updates live, without a reload, within 5 seconds.
+- 26: Export adds number and body, a CSV format, and download headers.
+- 27: `Delete selected` can be undone, restoring every note exactly.
+- 28: Remove German and language switching completely; always English.

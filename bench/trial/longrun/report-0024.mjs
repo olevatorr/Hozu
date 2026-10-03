@@ -55,7 +55,16 @@ const table = steps.map((step) => {
   const calls = at('B')?.cost?.calls ?? 0
   const bCalls = usage(arms.B, step)
   const bNet = w('B') !== null && prefix !== null && bCalls ? w('B') - prefixCost(bCalls, prefix) : null
-  const ok = (k) => (at(k)?.accept ? `${at(k).accept.passed}/${at(k).accept.total}` : null)
+  const rerun = (k) => {
+    const f = join(root, arms[k], `${String(step).padStart(2, '0')}.accept-rerun.json`)
+    return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : null
+  }
+  const ok = (k) => {
+    const a = at(k)?.accept
+    if (!a) return null
+    const r = rerun(k)
+    return `${a.passed}/${a.total}${r ? ` → ${r.passed}/${r.total} (rerun)` : ''}`
+  }
   return {
     step,
     A: { weighted: w('A'), calls: at('A')?.cost?.calls ?? null, accept: ok('A') },

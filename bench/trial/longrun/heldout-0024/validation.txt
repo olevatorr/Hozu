@@ -1,0 +1,8 @@
+step 21: 67/67 new 3/3 regression 64/64 js {"login":214101,"list":225955}
+step 22: 71/71 new 4/4 regression 67/67 js {"login":214359,"list":226377}
+step 23: 75/75 new 4/4 regression 71/71 js {"login":214536,"list":226554}
+step 24: 79/79 new 4/4 regression 75/75 js {"login":214569,"list":226907}
+step 25: 81/81 new 2/2 regression 79/79 js {"login":214569,"list":227146}
+step 26: 83/83 new 3/3 regression 80/80 js {"login":214624,"list":227309}
+step 27: 85/85 new 3/3 regression 82/82 js {"login":214692,"list":227449}
+step 28: 85/85 new 2/2 regression 83/83 js {"login":199427,"list":212128}
