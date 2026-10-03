@@ -1,0 +1,30 @@
+
+> trial-nuxt-0006@ typecheck /Users/otischen/Developer/hozu-trial-0024/nuxt-sonnet/app
+> nuxt typecheck
+
+[Vue] Resolve plugin path failed: vue-router/volar/sfc-route-blocks Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './volar/sfc-route-blocks' is not defined by "exports" in /Users/otischen/Developer/hozu-trial-0024/nuxt-sonnet/app/node_modules/vue-router/package.json
+    at exportsNotFound (node:internal/modules/esm/resolve:314:10)
+    at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
+    at resolveExports (node:internal/modules/cjs/loader:650:36)
+    at Function._findPath (node:internal/modules/cjs/loader:717:31)
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1369:27)
+    at resolve (node:internal/modules/helpers:157:19)
+    at CompilerOptionsResolver.addConfig (/Users/otischen/Developer/hozu-trial-0024/nuxt-sonnet/app/node_modules/.pnpm/@vue+language-core@3.3.11/node_modules/@vue/language-core/lib/compilerOptions.js:122:59)
+    at Object.createParsedCommandLine (/Users/otischen/Developer/hozu-trial-0024/nuxt-sonnet/app/node_modules/.pnpm/@vue+language-core@3.3.11/node_modules/@vue/language-core/lib/compilerOptions.js:65:26)
+    at /Users/otischen/Developer/hozu-trial-0024/nuxt-sonnet/app/node_modules/.pnpm/vue-tsc@3.3.11_typescript@5.9.3/node_modules/vue-tsc/index.js:47:20
+    at Object.apply (/Users/otischen/Developer/hozu-trial-0024/nuxt-sonnet/app/node_modules/.pnpm/@volar+typescript@2.4.28/node_modules/@volar/typescript/lib/node/proxyCreateProgram.js:51:33) {
+  code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+}
+[Vue] Resolve plugin path failed: vue-router/volar/sfc-route-blocks Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './volar/sfc-route-blocks' is not defined by "exports" in /Users/otischen/Developer/hozu-trial-0024/nuxt-sonnet/app/node_modules/vue-router/package.json
+    at exportsNotFound (node:internal/modules/esm/resolve:314:10)
+    at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
+    at resolveExports (node:internal/modules/cjs/loader:650:36)
+    at Function._findPath (node:internal/modules/cjs/loader:717:31)
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1369:27)
+    at resolve (node:internal/modules/helpers:157:19)
+    at CompilerOptionsResolver.addConfig (/Users/otischen/Developer/hozu-trial-0024/nuxt-sonnet/app/node_modules/.pnpm/@vue+language-core@3.3.11/node_modules/@vue/language-core/lib/compilerOptions.js:122:59)
+    at Object.createParsedCommandLine (/Users/otischen/Developer/hozu-trial-0024/nuxt-sonnet/app/node_modules/.pnpm/@vue+language-core@3.3.11/node_modules/@vue/language-core/lib/compilerOptions.js:65:26)
+    at /Users/otischen/Developer/hozu-trial-0024/nuxt-sonnet/app/node_modules/.pnpm/vue-tsc@3.3.11_typescript@5.9.3/node_modules/vue-tsc/index.js:47:20
+    at Object.apply (/Users/otischen/Developer/hozu-trial-0024/nuxt-sonnet/app/node_modules/.pnpm/@volar+typescript@2.4.28/node_modules/@volar/typescript/lib/node/proxyCreateProgram.js:51:33) {
+  code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+}

@@ -115,3 +115,22 @@ because a cold agent still pays 1.35× for it.
   any agent's work.
 - **Not comparable with trial 0021.** Different start (built from scratch), different isolation (no owner
   instructions), and a new guide.
+
+## Exploratory, not registered: Sonnet 5 on the held-out changes
+- **What ran:** after the registered run, the cold Hozu app and the Nuxt app at step 20 (from the Opus run) made
+  changes 21–28 again, with `claude-sonnet-5` as the agent. The setup was otherwise the same
+  (`results-0024-sonnet/`).
+- **Cost:** Hozu was 1.48× Nuxt (geometric mean over 21–28; Opus: 1.42×). Sonnet used about three to four times
+  Opus's weighted tokens in both frameworks, and Hozu made 424 calls against Nuxt's 277. The weighting counts
+  tokens, not price.
+- **Correctness:** both arms missed parts of change 23 and never repaired them:
+  - **both:** the body was not shown with its line breaks;
+  - **Hozu only:** when the title is a duplicate and the body is too long, only the body message showed. The
+    request asks for both messages, with and without JS.
+  - Hozu ended at 82/85, Nuxt at 84/85. Nothing that already worked broke in either arm, and `hozu check` was clean
+    at every step.
+- **Reading:**
+  - With a smaller model, the cost gap against Nuxt is about the same.
+  - The correctness advantage did not appear: what was missed were details of a new request, which no check of
+    Hozu's can see.
+  - One run of eight steps: this suggests where to look; it is not a result.

@@ -1,0 +1,24 @@
+[2026-10-04 04:35:59] nuxt/sonnet start from s20
+[2026-10-04 04:36:02] nuxt/sonnet step 21 attempt 1
+step 21: 67/67 new 3/3 regression 64/64 js {"login":204578,"list":222823}
+[2026-10-04 04:45:34] nuxt/sonnet step 22 attempt 1
+step 22: 71/71 new 4/4 regression 67/67 js {"login":204733,"list":223115}
+[2026-10-04 04:57:33] nuxt/sonnet step 23 attempt 1
+step 23: 74/75 new 3/4 regression 71/71 js {"login":204754,"list":223248}
+  new X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+[2026-10-04 05:13:09] nuxt/sonnet step 24 attempt 1
+step 24: 78/79 new 4/4 regression 74/75 js {"login":204758,"list":224139}
+  regression X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+[2026-10-04 05:31:03] nuxt/sonnet step 25 attempt 1
+step 25: 80/81 new 2/2 regression 78/79 js {"login":204758,"list":224337}
+  regression X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+[2026-10-04 05:43:54] nuxt/sonnet step 26 attempt 1
+step 26: 82/83 new 3/3 regression 79/80 js {"login":204758,"list":224440}
+  regression X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+[2026-10-04 05:56:37] nuxt/sonnet step 27 attempt 1
+step 27: 84/85 new 3/3 regression 81/82 js {"login":204758,"list":224538}
+  regression X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+[2026-10-04 06:12:01] nuxt/sonnet step 28 attempt 1
+step 28: 84/85 new 2/2 regression 82/83 js {"login":202196,"list":221833}
+  regression X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+[2026-10-04 06:26:02] nuxt/sonnet done

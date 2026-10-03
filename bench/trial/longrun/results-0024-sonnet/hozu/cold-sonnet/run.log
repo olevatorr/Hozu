@@ -1,0 +1,36 @@
+[2026-10-04 04:35:59] hozu/cold-sonnet start from s20
+[2026-10-04 04:36:01] hozu/cold-sonnet step 21 attempt 1
+step 21: 67/67 new 3/3 regression 64/64 js {"login":22531,"list":23216}
+[2026-10-04 04:46:32] hozu/cold-sonnet step 22 attempt 1
+step 22: 71/71 new 4/4 regression 67/67 js {"login":22531,"list":23289}
+[2026-10-04 04:59:02] hozu/cold-sonnet step 23 attempt 1
+step 23: 72/75 new 1/4 regression 71/71 js {"login":22531,"list":23289}
+  new X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+  new X23b without JS: every message shows, typed values stay, nothing is saved: FAIL: no duplicate alert: Use at most 1000 characters in the body
+  new X23c with JS: invalid save keeps the typed values and saves nothing: FAIL: no duplicate alert: Use at most 1000 characters in the body
+[2026-10-04 05:18:29] hozu/cold-sonnet step 24 attempt 1
+step 24: 76/79 new 4/4 regression 72/75 js {"login":22531,"list":23365}
+  regression X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+  regression X23b without JS: every message shows, typed values stay, nothing is saved: FAIL: no duplicate alert: Use at most 1000 characters in the body
+  regression X23c with JS: invalid save keeps the typed values and saves nothing: FAIL: no duplicate alert: Use at most 1000 characters in the body
+[2026-10-04 05:39:36] hozu/cold-sonnet step 25 attempt 1
+step 25: 78/81 new 2/2 regression 76/79 js {"login":22531,"list":23609}
+  regression X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+  regression X23b without JS: every message shows, typed values stay, nothing is saved: FAIL: no duplicate alert: Use at most 1000 characters in the body
+  regression X23c with JS: invalid save keeps the typed values and saves nothing: FAIL: no duplicate alert: Use at most 1000 characters in the body
+[2026-10-04 05:58:28] hozu/cold-sonnet step 26 attempt 1
+step 26: 80/83 new 3/3 regression 77/80 js {"login":22531,"list":23609}
+  regression X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+  regression X23b without JS: every message shows, typed values stay, nothing is saved: FAIL: no duplicate alert: Use at most 1000 characters in the body
+  regression X23c with JS: invalid save keeps the typed values and saves nothing: FAIL: no duplicate alert: Use at most 1000 characters in the body
+[2026-10-04 06:12:37] hozu/cold-sonnet step 27 attempt 1
+step 27: 82/85 new 3/3 regression 79/82 js {"login":22531,"list":23609}
+  regression X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+  regression X23b without JS: every message shows, typed values stay, nothing is saved: FAIL: no duplicate alert: Use at most 1000 characters in the body
+  regression X23c with JS: invalid save keeps the typed values and saves nothing: FAIL: no duplicate alert: Use at most 1000 characters in the body
+[2026-10-04 06:28:17] hozu/cold-sonnet step 28 attempt 1
+step 28: 82/85 new 2/2 regression 80/83 js {"login":22531,"list":23609}
+  regression X23a with JS: save title and body on the note page: FAIL: body not shown with its line break
+  regression X23b without JS: every message shows, typed values stay, nothing is saved: FAIL: no duplicate alert: Use at most 1000 characters in the body
+  regression X23c with JS: invalid save keeps the typed values and saves nothing: FAIL: no duplicate alert: Use at most 1000 characters in the body
+[2026-10-04 06:41:24] hozu/cold-sonnet done
