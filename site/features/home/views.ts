@@ -157,12 +157,12 @@ export const Home = ui.view({
               ui.div(
                 {
                   class:
-                    'relative flex h-[138px] w-24 shrink-0 items-end justify-center sm:h-[177px] sm:w-[123px]',
+                    'relative flex h-[123px] w-24 shrink-0 items-end justify-start sm:h-[177px] sm:w-[138px]',
                 },
                 [
-                  ui.if(ctx.broken === true, [peg('wait', 96, 'h-auto w-24 sm:w-[123px]')], [], 'pop'),
-                  ui.if(!ctx.broken && ctx.tried, [peg('fits', 96, 'h-auto w-24 sm:w-[123px]')], [], 'pop'),
-                  ui.if(!ctx.tried, [peg('hello', 96, 'h-auto w-[60px] sm:w-[77px]')], [], 'pop'),
+                  ui.if(ctx.broken === true, [peg('wait', 96, 'h-auto w-24 sm:w-[138px]')], [], 'pop'),
+                  ui.if(!ctx.broken && ctx.tried, [peg('fits', 96, 'h-auto w-24 sm:w-[138px]')], [], 'pop'),
+                  ui.if(!ctx.tried, [peg('hello', 96, 'h-auto w-[53px] sm:w-[77px]')], [], 'pop'),
                 ],
               ),
             ]),

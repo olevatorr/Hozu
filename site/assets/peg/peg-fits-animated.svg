@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -210 320 460" role="img" aria-label="Peg holds up a sign: FITS!"><style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -210 360 460" role="img" aria-label="Peg holds up a sign: FITS!"><style>
 .peg{animation:hop 1.6s cubic-bezier(.3,0,.3,1) infinite;transform-box:view-box;transform-origin:75px 236px}
 .sign{animation:cheer 1.6s ease-in-out infinite;transform-box:view-box;transform-origin:150px 128px}
 .spark{animation:spark 1.6s ease-out infinite;transform-box:fill-box;transform-origin:center;opacity:0}
 .s2{animation-delay:.25s}.s3{animation-delay:.5s}
 .shadow{animation:shadow 1.6s cubic-bezier(.3,0,.3,1) infinite;transform-box:fill-box;transform-origin:center}
 @keyframes hop{0%,100%{transform:scale(1.08,.92)}12%{transform:none}35%{transform:translateY(-26px) scale(.96,1.05)}60%{transform:none}70%{transform:scale(1.06,.94)}80%{transform:none}}
-@keyframes cheer{0%,60%,100%{transform:rotate(0)}35%{transform:rotate(8deg)}}
+@keyframes cheer{0%,60%,100%{transform:rotate(0)}35%{transform:rotate(6deg)}}
 @keyframes spark{0%{opacity:0;transform:scale(0) rotate(0)}30%{opacity:1;transform:scale(1) rotate(45deg)}70%,100%{opacity:0;transform:scale(.2) rotate(90deg)}}
 @keyframes shadow{0%,12%,60%,100%{transform:none}35%{transform:scale(.7);opacity:.6}}
 @media (prefers-reduced-motion:reduce){.peg,.sign,.spark,.drop,.eyes,.wave,.shadow{animation:none}.spark,.drop{opacity:0}}

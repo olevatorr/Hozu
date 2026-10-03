@@ -175,6 +175,7 @@ pre,
 .pop-leave-active {
   position: absolute;
   bottom: 0;
+  left: 0;
   animation: pop-out 180ms ease-in both;
   transform-origin: 50% 100%;
 }
