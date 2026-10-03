@@ -289,7 +289,7 @@ export const renderDiagram = () =>
       [
         'user',
         'Private, request-time region',
-        'User scope wins over every freshness choice. This data must never reach a shared cacheable region; it needs a server.',
+        "User scope wins over every freshness choice. This data never reaches a shared cacheable region: a server reads it per request, or the browser reads it after the page loads (runs: 'browser').",
       ],
     ].map(([id, title, body]) =>
       ui.div({ 'data-render-result': id! }, [ui.h3({}, [title!]), ui.p({}, [body!])]),

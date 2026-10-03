@@ -131,6 +131,18 @@ export const DevToolsPage = ui.view({
           ),
         ]),
       ]),
+      ui.use(Section, { props: { kicker: 'Your data · 0.12' } }, [
+        ui.use(Heading, {}, ['Try the data without a page.']),
+        ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
+          'The API tab lists what the page reads and what it can change, and where each one runs. Edit the input and run it to see the answer or the error, and how long it took. A change asks first, because it writes your development data. Your agent does the same with hozu call.',
+        ]),
+        ui.div({ class: 'mt-8' }, [
+          shot(
+            'api',
+            'The API tab on the task board: the Summary query ran through the server and returned the counts of tasks to do, doing and done, with the page’s other queries and changes listed below',
+          ),
+        ]),
+      ]),
       ui.use(Section, { variant: { tone: 'ink' }, props: { kicker: 'For everyone' } }, [
         ui.use(Heading, {}, ['Plain words, or the source.']),
         ui.div({ class: 'mt-8 grid gap-6 md:grid-cols-3' }, [
