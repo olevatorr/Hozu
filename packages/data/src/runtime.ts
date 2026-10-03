@@ -248,6 +248,12 @@ export function createDataRuntime({
         null,
         'Resolver implements a declaration that is not part of this project',
         'Only registered queries, mutations and endpoints can be implemented.',
+        undefined,
+        {
+          summary:
+            "Remove this implement(...), or add the declaration to its feature's declarations (a module listed in feature({ declarations }))",
+          snippet: null,
+        },
       )
       continue
     }
@@ -271,6 +277,11 @@ export function createDataRuntime({
         ref.split('.')[0]!,
         `${ref} is implemented twice`,
         'Each effect has exactly one implementation.',
+        undefined,
+        {
+          summary: `Remove one of the two implement(${ref.split('.')[1]}, …) in the resolvers of app.ts`,
+          snippet: null,
+        },
       )
     runs.set(ref, run)
   }
