@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import { codes, type DiagnosticCode } from '@hozu/core/ir'
 import { closest } from '@hozu/validator'
 import { defaultSkill } from 'create-hozu'
 import type { DocsComponentsOutput, DocsOutput } from '../contract.ts'
@@ -33,6 +34,14 @@ export async function runDocs(
     return { topic: null, text, topics }
   }
   const name = topic.toLowerCase()
+  const code = topic.toUpperCase() as DiagnosticCode
+  if (/^HZ\d{3}$/.test(code)) {
+    const c = codes[code]
+    if (!c)
+      throw new HozuCliError('usage', `No diagnostic ${code}`, ['hozu docs diagnostics lists every code'])
+    const text = `${code} ${c.name} (${c.severity})\n\n${c.summary}\n\nfix: ${c.fix}\nread: hozu docs ${c.topic}\n`
+    return { topic: code, text, topics }
+  }
   if (!topics.some((t) => t.name === name)) {
     const guess = closest(
       name,

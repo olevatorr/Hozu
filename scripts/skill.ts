@@ -1,6 +1,7 @@
 import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { codes } from '../packages/core/src/ir/codes.ts'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const skill = join(root, '.claude/skills/hozu')
@@ -40,8 +41,35 @@ export async function sync(write: boolean): Promise<string[]> {
   for (const f of exampleFiles)
     await put(join(skill, 'example', f), await readFile(join(root, 'examples/bookmarks', f), 'utf8'))
   await put(join(root, 'AGENTS.md'), agentsMd(await readFile(join(root, 'CLAUDE.md'), 'utf8')))
+  await put(join(skill, 'topics/diagnostics.md'), diagnosticsTopic())
+  const site = join(root, 'site/content/docs/diagnostics.md')
+  const page = await readFile(site, 'utf8')
+  await put(site, page.replace(/(<!-- codes -->\n)[\s\S]*?(\n<!-- \/codes -->)/, `$1${codeTable()}$2`))
   return stale
 }
+
+const cell = (s: string) => s.replace(/\|/g, '\\|')
+
+/** Every diagnostic code from the registry (ADR 0053 D): the table the guide and the site show. */
+export const codeTable = () =>
+  [
+    '| Code | Meaning | Usual fix |',
+    '| --- | --- | --- |',
+    ...Object.entries(codes).map(
+      ([code, c]) =>
+        `| ${code}${c.severity === 'warning' ? ' (warning)' : ''} | ${cell(c.summary)} | ${cell(c.fix)} |`,
+    ),
+  ].join('\n')
+
+export const diagnosticsTopic = () =>
+  `# Hozu diagnostics
+
+Every diagnostic carries \`file:line\`, a cause and a fix, and often a snippet or patch. Apply the fix; do not work
+around the rule. \`npx hozu docs HZ083\` prints one code. A warning you keep on purpose goes in
+\`project({ accept: [{ code, at, reason }] })\`.
+
+${codeTable()}
+`
 
 export async function pack() {
   const target = join(root, 'packages/create-hozu/skill')

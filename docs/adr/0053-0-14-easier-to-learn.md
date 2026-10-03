@@ -1,6 +1,6 @@
 # ADR 0053 — 0.14: easier to learn (fewer choices, quieter checks, generated diagnostics)
 
-- **Status:** proposed (2026-10-03). Owner decisions D1–D8 below are open.
+- **Status:** accepted (owner, 2026-10-03): D1–D8 as recommended.
 - **Problem:** the largest cost of building with Hozu is that models do not know it yet.
   - Nuxt is in every model's training data; Hozu is learned from the guide in each session (trial 0002, trial
     0020). The measured 1.34–1.72× tokens per change against Nuxt (trial 0021) mostly pays for that learning

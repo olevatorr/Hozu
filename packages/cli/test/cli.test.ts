@@ -447,3 +447,26 @@ describe('HZ086: env files git would commit (ADR 0052)', () => {
     }
   }, 120_000)
 })
+
+describe('diagnostics from the registry (ADR 0053 D)', () => {
+  it('documents every code with a summary, a fix and an existing topic', async () => {
+    const { codes } = await import('@hozu/core/ir')
+    const { readdirSync } = await import('node:fs')
+    const topics = readdirSync(`${root}.claude/skills/hozu/topics`).map((f) => f.replace(/\.md$/, ''))
+    for (const [code, c] of Object.entries(codes)) {
+      expect(c.summary.trim(), `${code} summary`).not.toBe('')
+      expect(c.fix.trim(), `${code} fix`).not.toBe('')
+      expect(topics, `${code} topic ${c.topic}`).toContain(c.topic)
+    }
+  })
+
+  it('prints one code with hozu docs HZ0xx', async () => {
+    const { code, stdout } = await run(['docs', 'hz083'])
+    expect(code).toBe(0)
+    expect(stdout).toContain('HZ083 undeclared-connect (warning)')
+    expect(stdout).toContain('read: hozu docs fetch')
+    expect(JSON.parse((await run(['docs', 'HZ999', '--json'])).stdout).error.message).toBe(
+      'No diagnostic HZ999',
+    )
+  })
+})

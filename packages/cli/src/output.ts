@@ -1,5 +1,5 @@
 import { relative } from 'node:path'
-import { canonicalStringify, type Diagnostic } from '@hozu/core/ir'
+import { canonicalStringify, codes, type Diagnostic } from '@hozu/core/ir'
 
 export const json = (value: unknown): string =>
   `${JSON.stringify(JSON.parse(canonicalStringify(value)), null, 2)}\n`
@@ -16,81 +16,6 @@ export const relativize = (diagnostics: Diagnostic[], cwd: string): Diagnostic[]
         }
       : d,
   )
-
-const TOPICS: Record<string, string> = {
-  HZ001: 'machine',
-  HZ002: 'machine',
-  HZ004: 'machine',
-  HZ005: 'machine',
-  HZ009: 'machine',
-  HZ010: 'machine',
-  HZ003: 'data',
-  HZ021: 'data',
-  HZ022: 'data',
-  HZ023: 'data',
-  HZ014: 'views',
-  HZ026: 'views',
-  HZ027: 'views',
-  HZ028: 'content',
-  HZ030: 'views',
-  HZ031: 'views',
-  HZ032: 'views',
-  HZ033: 'forms',
-  HZ036: 'forms',
-  HZ015: 'contracts',
-  HZ016: 'contracts',
-  HZ017: 'contracts',
-  HZ018: 'contracts',
-  HZ024: 'pages',
-  HZ025: 'pages',
-  HZ035: 'pages',
-  HZ029: 'components',
-  HZ037: 'http',
-  HZ038: 'http',
-  HZ039: 'http',
-  HZ040: 'i18n',
-  HZ041: 'i18n',
-  HZ042: 'i18n',
-  HZ043: 'content',
-  HZ044: 'deploy',
-  HZ045: 'deploy',
-  HZ046: 'endpoints',
-  HZ047: 'data',
-  HZ048: 'machine',
-  HZ049: 'data',
-  HZ050: 'data',
-  HZ051: 'pages',
-  HZ052: 'pages',
-  HZ053: 'endpoints',
-  HZ054: 'forms',
-  HZ055: 'forms',
-  HZ056: 'forms',
-  HZ057: 'contracts',
-  HZ058: 'contracts',
-  HZ059: 'views',
-  HZ060: 'i18n',
-  HZ061: 'forms',
-  HZ062: 'endpoints',
-  HZ063: 'forms',
-  HZ064: 'contracts',
-  HZ070: 'components',
-  HZ071: 'components',
-  HZ072: 'components',
-  HZ073: 'components',
-  HZ074: 'components',
-  HZ075: 'components',
-  HZ076: 'components',
-  HZ077: 'components',
-  HZ078: 'components',
-  HZ079: 'components',
-  HZ080: 'components',
-  HZ081: 'fetch',
-  HZ082: 'fetch',
-  HZ083: 'fetch',
-  HZ084: 'env',
-  HZ085: 'env',
-  HZ086: 'env',
-}
 
 const CAUSE_LINES = 10
 
@@ -114,6 +39,6 @@ export function human(d: Diagnostic): string {
   ]
   if (d.fix) lines.push(`  fix: ${d.fix.summary}${d.fix.patch ? ' (patch available with --json)' : ''}`)
   if (d.fix?.snippet) lines.push(d.fix.snippet.replace(/^/gm, '    '))
-  lines.push(`  see: hozu docs ${TOPICS[d.code] ?? 'diagnostics'}`)
+  lines.push(`  see: hozu docs ${codes[d.code]?.topic ?? 'diagnostics'}`)
   return lines.join('\n')
 }
