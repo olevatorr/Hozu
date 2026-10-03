@@ -7,6 +7,7 @@ import type { MessagesDef } from '../builders/i18n.ts'
 import { type TagDef, tagUseOf } from '../builders/tag.ts'
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import type {
+  ConnectIR,
   EndpointIR,
   EndpointMode,
   EndpointStatus,
@@ -154,10 +155,49 @@ export function exportNames(source: string): string[] {
   return [...out]
 }
 
+/** The origins of the absolute URLs written in a fetch module. */
+export const literalOrigins = (source: string): string[] =>
+  [
+    ...new Set(
+      [...source.matchAll(/\bhttps?:\/\/[A-Za-z0-9.-]+(?::\d+)?/g)].map((m) => new URL(m[0]).origin),
+    ),
+  ].sort()
+
+function connectOf(scope: FeatureScope, list: readonly unknown[]): ConnectIR[] {
+  const out: ConnectIR[] = []
+  list.forEach((entry, i) => {
+    if (entry && typeof entry === 'object' && typeof (entry as { env?: unknown }).env === 'string') {
+      out.push({ env: (entry as { env: string }).env })
+      return
+    }
+    let url: URL | null = null
+    try {
+      url = typeof entry === 'string' ? new URL(entry) : null
+    } catch {}
+    if (
+      url &&
+      /^https?:$/.test(url.protocol) &&
+      (url.pathname === '/' || url.pathname === '') &&
+      !url.search
+    ) {
+      out.push({ origin: url.origin })
+      return
+    }
+    scope.report(
+      'HZ081',
+      scope.at('connect', String(i)),
+      `connect[${i}] of ${scope.id} is not an origin: ${JSON.stringify(entry)}`,
+      "connect lists the origins fetch.ts calls from the browser, as 'https://host' (no path), or { env: 'NAME' } for a public env variable holding a URL.",
+      { summary: 'Use the origin only', snippet: "connect: ['https://api.example.com']", patch: null },
+    )
+  })
+  return out
+}
+
 function fetchOf(
   scope: FeatureScope,
   url: URL | null,
-  found: { exports: string[] | null },
+  found: { exports: string[] | null; origins: string[] },
 ): FeatureIR['fetch'] {
   if (!url) return null
   const listed = scope.project.manifest?.fetches?.[scope.id]
@@ -181,11 +221,12 @@ function fetchOf(
   scope.project.bindings.fetches[scope.id] = file
   const text = fs.readFileSync(file, 'utf8')
   found.exports = exportNames(text)
+  found.origins = literalOrigins(text)
   return { sourceHash: sha256(text).slice(0, 16) }
 }
 
 export function buildFeature(project: ProjectScope, id: string, config: FeatureParts): FeatureIR {
-  const fetched: { exports: string[] | null } = { exports: null }
+  const fetched: { exports: string[] | null; origins: string[] } = { exports: null, origins: [] }
   const scope = new FeatureScope(project, id)
   if (typeof config.intent?.summary !== 'string' || !config.intent.summary.trim())
     scope.report(
@@ -324,7 +365,22 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     contracts: mapRecord(config.contracts, (sym, c) => buildContract(scope, sym, c)),
     messages: config.messages ? buildMessages(defOf<MessagesDef>(config.messages)) : null,
     fetch: fetchOf(scope, config.fetch, fetched),
+    connect: connectOf(scope, config.connect),
   }
+  const declared = new Set(ir.connect.flatMap((c) => ('origin' in c ? [c.origin] : [])))
+  const missing = fetched.origins.filter((o) => !declared.has(o))
+  if (missing.length)
+    scope.report(
+      'HZ083',
+      scope.at('fetch'),
+      `fetch.ts of ${id} calls ${missing.join(', ')} from the browser, but connect does not list ${missing.length === 1 ? 'it' : 'them'}`,
+      "The page's CSP allows the browser to connect only to its own origin and the origins features declare in connect; an undeclared call fails in the browser (ADR 0051).",
+      {
+        summary: `Add ${missing.length === 1 ? 'it' : 'them'} to connect in feature.ts`,
+        snippet: `connect: [${[...ir.connect.map((c) => ('origin' in c ? `'${c.origin}'` : `{ env: '${c.env}' }`)), ...missing.map((o) => `'${o}'`)].join(', ')}]`,
+        patch: null,
+      },
+    )
   const effects = [
     ...Object.entries(ir.queries).map(([sym, e]) => [sym, 'queries', e.runs] as const),
     ...Object.entries(ir.mutations).map(([sym, e]) => [sym, 'mutations', e.runs] as const),

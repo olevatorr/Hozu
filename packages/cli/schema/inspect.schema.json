@@ -303,6 +303,13 @@
             }
           ],
           "description": "The feature's `fetch.ts` (ADR 0049): implementations of its `'either'` / `'browser'` effects."
+        },
+        "connect": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ConnectIR"
+          },
+          "description": "The origins its browser-run effects call, added to CSP `connect-src` (ADR 0051)."
         }
       },
       "required": [
@@ -322,7 +329,8 @@
         "endpoints",
         "contracts",
         "messages",
-        "fetch"
+        "fetch",
+        "connect"
       ],
       "additionalProperties": false
     },
@@ -1998,6 +2006,35 @@
         "text"
       ],
       "additionalProperties": false
+    },
+    "ConnectIR": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "origin": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "origin"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "env": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "env"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "An origin (`https://api.github.com`) or a public env variable holding a URL."
     },
     "InspectComponentOutput": {
       "type": "object",

@@ -1,3 +1,4 @@
+import type { ProjectIR } from '@hozu/core/ir'
 export type CspSources = Partial<
   Record<'script' | 'style' | 'img' | 'connect' | 'font' | 'frame' | 'media', string[]>
 >
@@ -11,6 +12,28 @@ export const crossSite = (request: Request): boolean => {
   } catch {
     return true
   }
+}
+
+/** The origins features declare in `connect` (ADR 0051), with `{ env }` entries read from the public env. */
+export function connectOrigins(ir: ProjectIR, publicEnv: Record<string, unknown>): string[] {
+  const out = new Set<string>()
+  for (const f of Object.values(ir.features))
+    for (const c of f.connect) {
+      if ('origin' in c) {
+        out.add(c.origin)
+        continue
+      }
+      const value = publicEnv[c.env]
+      if (value === undefined || value === null || value === '') continue
+      try {
+        out.add(new URL(String(value)).origin)
+      } catch {
+        throw new Error(
+          `connect of ${f.id} reads the public env variable ${c.env}, which is not a URL: ${String(value)}`,
+        )
+      }
+    }
+  return [...out].sort()
 }
 
 export function contentSecurityPolicy(extra: CspSources, scriptHashes: string[]): string {

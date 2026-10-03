@@ -83,3 +83,27 @@ export function effectRuntimes(ctx: Ctx) {
       })
     }
 }
+
+/** HZ081: a `connect` entry that names a public env variable the project does not declare (ADR 0051). */
+export function connectEnv(ctx: Ctx) {
+  const { ir } = ctx
+  const declared = Object.keys((ir.env?.public?.properties ?? {}) as Record<string, unknown>)
+  for (const f of Object.values(ir.features))
+    f.connect.forEach((c, i) => {
+      if ('env' in c && !declared.includes(c.env))
+        ctx.report(
+          'HZ081',
+          f.id,
+          join('', 'features', f.id, 'connect', String(i)),
+          `connect of ${f.id} names the public env variable ${c.env}, which project({ env: { public } }) does not declare`,
+          'An { env } entry is read from the parsed public environment at startup and its origin is added to CSP connect-src.',
+          {
+            summary: declared.length
+              ? `Use one of ${declared.join(', ')}, or declare ${c.env} in env.public`
+              : `Declare ${c.env} in project({ env: { public } })`,
+            snippet: `env: { public: z.object({ ${c.env}: z.string().url() }) }`,
+            patch: null,
+          },
+        )
+    })
+}

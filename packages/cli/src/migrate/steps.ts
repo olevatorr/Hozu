@@ -32,6 +32,18 @@ export const steps: Step[] = [
     normalize: (ir) => ir,
     files: ignoreHozu,
   },
+  {
+    from: '0.12',
+    to: '0.13',
+    summary:
+      'connect: [] on every feature in the IR (ADR 0051); hozu check warns (HZ083) about undeclared origins',
+    rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => {
+      const features = (ir as { features?: Record<string, Record<string, unknown>> }).features ?? {}
+      for (const f of Object.values(features)) f.connect ??= []
+      return ir
+    },
+  },
 ]
 
 export const OLDEST = steps[0]!.from

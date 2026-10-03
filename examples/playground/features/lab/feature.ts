@@ -10,4 +10,5 @@ export const lab = feature({
   },
   declarations: [model, views],
   fetch: new URL('./fetch.ts', import.meta.url),
+  connect: [{ env: 'POSTS_API' }],
 })

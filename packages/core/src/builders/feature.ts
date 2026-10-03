@@ -21,6 +21,7 @@ export interface FeatureParts {
   intent: { summary: string; invariants: string[] }
   styles: URL[]
   fetch: URL | null
+  connect: Connect[]
   imports: FeatureDecl[]
   tags: Record<string, TagDecl<any>>
   events: Record<string, EventDecl<any>>
@@ -57,7 +58,14 @@ export interface FeatureConfig {
   styles?: URL[]
   /** `features/<name>/fetch.ts`: the implementations of the feature's `'either'` / `'browser'` effects (ADR 0049). */
   fetch?: URL
+  /**
+   * The other origins fetch.ts calls from the browser (ADR 0051): `'https://api.github.com'`, or `{ env: 'API_URL' }`
+   * for a public env variable holding the URL. Hozu adds them to CSP `connect-src`.
+   */
+  connect?: Connect[]
 }
+
+export type Connect = string | { env: string }
 
 export const feature = (config: FeatureConfig): FeatureDecl =>
   brand({ id: config.id }, 'feature', { ...config })

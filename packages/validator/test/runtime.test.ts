@@ -22,11 +22,15 @@ const reposTag = tag({ param: null })
 const Repos = z.array(z.object({ id: z.string(), name: z.string() }))
 const Star = event({ payload: z.object({ id: z.string() }) })
 
-const build = (declarations: Record<string, unknown>, options: { fetch?: URL; head?: unknown } = {}) => {
+const build = (
+  declarations: Record<string, unknown>,
+  options: { fetch?: URL; head?: unknown; connect?: unknown[]; env?: boolean } = {},
+) => {
   const View = ui.view({ render: () => ui.main({}, ['x']) })
   const all = { View, ...declarations }
   const app = project({
     schema: zodAdapter,
+    ...(options.env ? { env: { server: z.object({}), public: z.object({ API_URL: z.string() }) } } : {}),
     routes: { home },
     pages: [
       ui.page(home, {
@@ -40,6 +44,7 @@ const build = (declarations: Record<string, unknown>, options: { fetch?: URL; he
         intent: { summary: 'runs' },
         declarations: [all],
         ...(options.fetch ? { fetch: options.fetch } : {}),
+        ...(options.connect ? { connect: options.connect as never } : {}),
       }),
     ],
   })
@@ -209,5 +214,46 @@ describe('the browser region mode (ADR 0049 §3)', () => {
     expect(plan.regions.map((r) => r.mode)).toEqual(['static', 'browser'])
     expect(plan.cacheable).toBe(true)
     expect(plan.islands).toHaveLength(1)
+  })
+})
+
+describe('connect: the origins browser-run effects call (ADR 0051)', () => {
+  const search = query({ input: z.object({}), output: Repos, scope: 'public', freshness: 'request' })
+  const calls = fetchFile(
+    'calls.ts',
+    "export const search = implement(async () => (await fetch('https://api.github.com/search?q=x')).json())\n// see http://localhost:8080/docs\n",
+  )
+  const of = (codes: (readonly [string, string])[], code: string) =>
+    codes.filter(([c]) => c === code).map(([, m]) => m)
+
+  it('warns about a URL written in fetch.ts whose origin connect does not list (HZ083)', () => {
+    expect(of(build({ search }, { fetch: calls }).codes, 'HZ083')).toEqual([
+      'fetch.ts of repos calls http://localhost:8080, https://api.github.com from the browser, but connect does not list them',
+    ])
+    const declared = build(
+      { search },
+      { fetch: calls, connect: ['https://api.github.com', 'http://localhost:8080/'] },
+    )
+    expect(of(declared.codes, 'HZ083')).toEqual([])
+    expect(declared.b.ir.features.repos!.connect).toEqual([
+      { origin: 'https://api.github.com' },
+      { origin: 'http://localhost:8080' },
+    ])
+  })
+
+  it('refuses an entry that is not an origin, and an env variable the project does not declare (HZ081)', () => {
+    const ok = fetchFile('plain.ts', 'export const search = implement(async () => [])\n')
+    expect(
+      of(build({ search }, { fetch: ok, connect: ['https://api.github.com/v3', 'ftp://x'] }).codes, 'HZ081'),
+    ).toEqual([
+      'connect[0] of repos is not an origin: "https://api.github.com/v3"',
+      'connect[1] of repos is not an origin: "ftp://x"',
+    ])
+    expect(of(build({ search }, { fetch: ok, connect: [{ env: 'API_URL' }] }).codes, 'HZ081')).toEqual([
+      'connect of repos names the public env variable API_URL, which project({ env: { public } }) does not declare',
+    ])
+    expect(
+      of(build({ search }, { fetch: ok, connect: [{ env: 'API_URL' }], env: true }).codes, 'HZ081'),
+    ).toEqual([])
   })
 })

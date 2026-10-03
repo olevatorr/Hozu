@@ -56,7 +56,14 @@ import {
 import { instantiate, type RenderModule } from './rendered.ts'
 import { matcher } from './routing.ts'
 import { parseSearch, queryInput } from './search.ts'
-import { type CspSources, contentSecurityPolicy, crossSite, ERROR_HTML, NOT_FOUND_HTML } from './security.ts'
+import {
+  type CspSources,
+  connectOrigins,
+  contentSecurityPolicy,
+  crossSite,
+  ERROR_HTML,
+  NOT_FOUND_HTML,
+} from './security.ts'
 import { memorySessions, type SessionStore, signedCookie } from './session.ts'
 import { publicAssets } from './static.ts'
 
@@ -231,6 +238,7 @@ function handlerFor({
   if (parsedPublic && !parsedPublic.ok)
     throw new Error(`Invalid public environment: ${parsedPublic.issues.join('; ')}`)
   const publicEnv = (parsedPublic?.ok ? parsedPublic.value : {}) as Json
+  const connect = connectOrigins(build.ir, publicEnv as Record<string, unknown>)
   const variants = manifest?.images ?? images?.variants ?? null
   if (manifest && manifest.irHash !== hashJson(build.ir))
     throw new Error('The build manifest does not match this project; run `hozu build` again')
@@ -327,7 +335,10 @@ function handlerFor({
         ? Promise.resolve(base)
         : inlineScriptHashes(ir).then((hashes) => ({
             ...base,
-            'content-security-policy': contentSecurityPolicy(csp, hashes),
+            'content-security-policy': contentSecurityPolicy(
+              { ...csp, connect: [...new Set([...(csp.connect ?? []), ...connect])] },
+              hashes,
+            ),
           })))
   const match = matcher(build)
   const table = routeTable(ir)

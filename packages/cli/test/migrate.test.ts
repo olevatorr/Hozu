@@ -267,6 +267,13 @@ describe('the 0.11 → 0.12 step (ADR 0050 D)', () => {
     expect(ignoreHozu(dir, true)).toEqual([])
   })
 
+  it('0.12 → 0.13 adds connect: [] to the old IR', () => {
+    const step = chain('0.12', '0.13')![0]!
+    expect(step.normalize({ features: { a: { id: 'a' } } } as never)).toEqual({
+      features: { a: { id: 'a', connect: [] } },
+    })
+  })
+
   it('chains 0.10 → 0.12 through both steps', () => {
     expect(chain('0.10', '0.12')?.map((s) => s.to)).toEqual(['0.11', '0.12'])
   })

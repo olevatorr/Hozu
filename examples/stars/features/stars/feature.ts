@@ -11,4 +11,5 @@ export const stars = feature({
   },
   declarations: [model, views],
   fetch: new URL('./fetch.ts', import.meta.url),
+  connect: [{ env: 'GITHUB_API' }],
 })

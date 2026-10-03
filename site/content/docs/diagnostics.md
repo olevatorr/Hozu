@@ -33,6 +33,7 @@ Start with `npx hozu check`. Resolve TypeScript errors first, then address each 
 | HZ059 | A reference reached plain JavaScript. | Make the helper a `part()`; for a global, use an operator or a `fn()`. |
 | HZ081 | A `fetch.ts` export is missing or extra, a feature with `'browser'` or `'either'` effects has no `fetch.ts`, an `'either'` query reads user data, or `fetch.ts` imports a Node-only module. | Export one implementation per effect under its name; use `runs: 'server'` for user data, secrets and databases. |
 | HZ082 | Something only a server can do reads browser-run data: a page `head` or `entries`, or a server-cached query whose tag a browser mutation invalidates. | Make that query or mutation `runs: 'server'`, or move the read out of the head. |
+| HZ083 | `fetch.ts` calls an origin that the feature's `connect` does not list; the page's CSP blocks it in the browser. | Add the origin to `feature({ connect })`, or `{ env: 'NAME' }` when the URL comes from public env. |
 
 `hozu docs diagnostics` prints the version-matched table of the full rule set, and every diagnostic names its topic (`see: hozu docs …`). Historical trial records use the old `TN` prefix; current Hozu diagnostics use `HZ`.
 

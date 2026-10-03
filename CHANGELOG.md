@@ -2,6 +2,11 @@
 
 ## Unreleased (0.13)
 
+- **`feature({ connect })`** (ADR 0051): the origins a feature's `fetch.ts` calls from the browser, as
+  `'https://host'` or `{ env: 'NAME' }` for a public env URL. Hozu adds them to CSP `connect-src`; until now the
+  default `connect-src 'self'` blocked `'browser'` / `'either'` calls to other origins on adapter-node and the edge.
+  **HZ083** (warning) names a URL in fetch.ts whose origin `connect` does not list; HZ081 covers an entry that is not
+  an origin or names an undeclared env variable. `examples/stars` and `examples/playground` declare theirs.
 - **DevTools API drawer:** the API tab is a drawer docked at the bottom, in the overlay and the Workbench (which had
   no API button). Each row shows where the effect runs (coloured), its freshness and the `file:line` that implements
   it, with its input fields inline; results show as a table or JSON with the status, time and where it ran;

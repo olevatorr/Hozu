@@ -87,6 +87,7 @@ function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
     intent: { summary: config.intent?.summary, invariants: config.intent?.invariants ?? [] },
     styles: config.styles ?? [],
     fetch: config.fetch ?? null,
+    connect: config.connect ?? [],
     imports: config.imports ?? [],
     machine: null,
     messages: null,

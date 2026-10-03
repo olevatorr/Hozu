@@ -44,7 +44,10 @@ export const myRepos = implement<typeof model.myRepos>(async (_, { fail, signal 
   `scope: 'public'` (HZ081).
 - **fetch.ts runs in the browser** (and on the server for `'either'`): no Node-only imports, no secrets. A token
   read in the browser is sent only to the API, never to your own server.
-- **CORS:** the API must allow the page's origin; otherwise use `runs: 'server'`.
+- **CORS and CSP:** the API must allow the page's origin; otherwise use `runs: 'server'`. List every other origin
+  fetch.ts calls in `feature({ connect: ['https://api.github.com', { env: 'API_URL' }] })`: Hozu adds them to the
+  page's CSP `connect-src` (an `{ env }` entry reads that public env variable's URL at startup). An absolute URL in
+  fetch.ts that `connect` does not list is HZ083; a call blocked at run time shows in `hozu browse`.
 - `app()` needs `components: bundleComponents` (HZ045): the bundle carries fetch.ts for the browser.
 - **Rules:** HZ081 (a missing or extra export, or `'either'` with user data), HZ082 (a `'browser'` query in a page
   `head` or `entries`; a browser mutation that invalidates a tag a server-cached query reads), HZ036 (a form that

@@ -100,7 +100,12 @@ export interface FeatureIR {
   messages: MessagesIR | null
   /** The feature's `fetch.ts` (ADR 0049): implementations of its `'either'` / `'browser'` effects. */
   fetch: { sourceHash: string } | null
+  /** The origins its browser-run effects call, added to CSP `connect-src` (ADR 0051). */
+  connect: ConnectIR[]
 }
+
+/** An origin (`https://api.github.com`) or a public env variable holding a URL. */
+export type ConnectIR = { origin: string } | { env: string }
 
 export interface EndpointIR {
   method: 'GET' | 'POST'

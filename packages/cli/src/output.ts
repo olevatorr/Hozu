@@ -86,6 +86,7 @@ const TOPICS: Record<string, string> = {
   HZ080: 'components',
   HZ081: 'fetch',
   HZ082: 'fetch',
+  HZ083: 'fetch',
 }
 
 const CAUSE_LINES = 10
