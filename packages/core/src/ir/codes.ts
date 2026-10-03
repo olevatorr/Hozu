@@ -86,4 +86,5 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
   HZ083: { name: 'undeclared-connect', severity: 'warning' },
   HZ084: { name: 'public-secret', severity: 'warning' },
   HZ085: { name: 'invalid-env-config', severity: 'error' },
+  HZ086: { name: 'env-file-not-ignored', severity: 'warning' },
 }

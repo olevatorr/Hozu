@@ -257,6 +257,26 @@ export const Home = ui.view({
             ui.use(Button, { props: { href: ui.link(doc, { slug: 'data' }) } }, ['Where data runs →']),
           ]),
         ]),
+        ui.use(Section, { props: { kicker: 'Test as you build · 0.13' } }, [
+          ui.use(Heading, {}, ['Run your API next to the page.']),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
+            'npm run dev puts an API drawer under every page: the data it reads, the changes it makes and your endpoints, with the requests each call really sent. The environment is declared once, secrets stay on the server, and the server can call your APIs on the inside.',
+          ]),
+          ui.div({ class: 'mt-8' }, [
+            shot(
+              'api',
+              'The API drawer docked under a task board: a query ran through the server and its answer shows as a table, with the request the page sent listed below',
+            ),
+          ]),
+          ui.div({ class: 'mt-8 flex flex-wrap gap-3' }, [
+            ui.use(Button, { props: { href: ui.link(devtools, null) } }, ['See the drawer →']),
+            ui.use(
+              Button,
+              { variant: { intent: 'outline' }, props: { href: ui.link(doc, { slug: 'environment' }) } },
+              ['Environment'],
+            ),
+          ]),
+        ]),
         ui.use(Section, { props: { kicker: 'Scale · 0.12' } }, [
           ui.use(Heading, {}, ['Five hundred features. Same page.']),
           ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [

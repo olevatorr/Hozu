@@ -1,7 +1,7 @@
 ---
 title: Diagnostics
 description: Turn a failed check into a focused change.
-order: 7
+order: 8
 ---
 
 ## Read the cause before changing code
@@ -36,6 +36,7 @@ Start with `npx hozu check`. Resolve TypeScript errors first, then address each 
 | HZ083 | `fetch.ts` calls an origin that the feature's `connect` does not list; the page's CSP blocks it in the browser. | Add the origin to `feature({ connect })`, or `{ env: 'NAME' }` when the URL comes from public env. |
 | HZ084 | A public env variable is named like a secret; public values are sent to the browser. | Move it to `env.server`, or rename it `PUBLIC_…` when it is meant to be public. |
 | HZ085 | `env.internal` maps undeclared variables. | Declare the public URL in `env.public` and the internal one in `env.server`. |
+| HZ086 | An env file listed in `env.files` exists and git does not ignore it. | Add it to `.gitignore`; commit `.env.example` (`npx hozu env --example`) instead. |
 
 `hozu docs diagnostics` prints the version-matched table of the full rule set, and every diagnostic names its topic (`see: hozu docs …`). Historical trial records use the old `TN` prefix; current Hozu diagnostics use `HZ`.
 

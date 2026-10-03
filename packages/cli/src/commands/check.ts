@@ -8,6 +8,7 @@ import { relativize } from '../output.ts'
 import { projectStyles } from '../styles.ts'
 import { componentUses, overridesOf } from '../uses.ts'
 import { inspectApp } from './app.ts'
+import { envFilesIgnored } from './env-ignore.ts'
 import { kitConfigDiagnostics } from './kits.ts'
 import { runValidate } from './validate.ts'
 
@@ -108,7 +109,11 @@ export async function runCheck(
   const tokens = Object.keys(traced.ir.kits).length
     ? ((await projectStyles(loaded.path, traced))?.tokens ?? null)
     : null
-  const entry = [...app, ...(await kitConfigDiagnostics(traced, root, loaded.path, tokens))]
+  const entry = [
+    ...app,
+    ...(await kitConfigDiagnostics(traced, root, loaded.path, tokens)),
+    ...envFilesIgnored(loaded, traced.ir.env?.files ?? []),
+  ]
   validate.diagnostics.push(...relativize(entry, cwd))
   for (const d of entry) validate.summary[d.severity === 'error' ? 'errors' : 'warnings']++
   if (entry.some((d) => d.severity === 'error')) validate.ok = false

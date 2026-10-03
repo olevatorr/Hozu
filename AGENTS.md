@@ -238,6 +238,14 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   API tab (`pageEffects`, `/_hozu/dev/effects`); `runs` in inspect / impact / explain / Layers; migrate 0.11 → 0.12
   adds `.hozu/` to `.gitignore`. Budgets P12 (check after an edit at 500 features ≤ 2.6 s, `pnpm bench:scale`), P13
   (data cache bounded). `bench/scale` generates the large apps.
+- 0.13 (ADR 0051, 0052): the DevTools API drawer (bottom, overlay and Workbench; read / write rows with inline input
+  or JSON, file:line from `/_hozu/dev/effects`, tables, History, Copy as hozu call / curl; mutations confirm in the row
+  and re-read the page through the dev client's `window.__hozu.invoke`; Requests it sent from a dev fetch trace
+  `/_hozu/dev/trace` and the page; Act as via `/_hozu/dev/session`; Endpoints via `/_hozu/dev/endpoints`);
+  `feature({ connect: [origin | { env }] })` → CSP connect-src (HZ083 for undeclared literal or env URLs);
+  `project({ env: { files, internal } })` (CLI reads files; `'either'` on the server reads internal URLs),
+  `hozu env [--example]`, HZ084 public secret, HZ085 bad internal mapping, HZ086 env file not git-ignored;
+  `examples/playground`; `pnpm pack:release` packs from a clean build.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

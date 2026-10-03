@@ -1,7 +1,7 @@
 ---
 title: Routing
 description: Declare route identities, connect pages and enumerate static URLs.
-order: 5
+order: 6
 ---
 
 ## Declare the URL shape

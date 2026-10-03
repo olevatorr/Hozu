@@ -419,3 +419,31 @@ describe('hozu docs with an older skill copy (trial 0.13)', () => {
     }
   })
 })
+
+describe('HZ086: env files git would commit (ADR 0052)', () => {
+  it('warns about an env file git does not ignore, and not once it is ignored', async () => {
+    const { cpSync, rmSync, symlinkSync } = await import('node:fs')
+    const { execFileSync } = await import('node:child_process')
+    const dir = join(root, '.tmp', `env-ignore-${Date.now()}`)
+    cpSync(`${root}examples/playground`, dir, {
+      recursive: true,
+      filter: (from) => !/\/(node_modules|\.hozu)(\/|$)/.test(from),
+    })
+    symlinkSync(`${root}examples/playground/node_modules`, join(dir, 'node_modules'))
+    execFileSync('git', ['init', '-q'], { cwd: dir })
+    writeFileSync(join(dir, '.gitignore'), 'node_modules\n.hozu/\n')
+    writeFileSync(join(dir, '.env.local'), 'POSTS_API_INTERNAL=http://127.0.0.1:9\n')
+    const hz086 = async () =>
+      JSON.parse((await run(['check', '--json'], dir)).stdout)
+        .validate.diagnostics.filter((d: { code: string }) => d.code === 'HZ086')
+        .map((d: { message: string }) => d.message)
+    try {
+      expect(await hz086()).toEqual(['.env.local is listed in env.files and git does not ignore it'])
+      writeFileSync(join(dir, '.gitignore'), 'node_modules\n.hozu/\n.env\n.env.local\n')
+      expect(await hz086()).toEqual([])
+    } finally {
+      delete process.env.POSTS_API_INTERNAL
+      rmSync(dir, { recursive: true, force: true })
+    }
+  }, 120_000)
+})

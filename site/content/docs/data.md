@@ -68,7 +68,7 @@ export const searchRepos = implement<typeof model.searchRepos>(async ({ q }, { f
 })
 ```
 
-Inputs and outputs are checked against their schemas in the browser too, and `fail` returns a declared error. `env` is the public environment; server secrets and the session never reach `fetch.ts`. The API must allow the page's origin (CORS); otherwise use `runs: 'server'`. The app needs `components: bundleComponents`, which bundles `fetch.ts` for the browser.
+Inputs and outputs are checked against their schemas in the browser too, and `fail` returns a declared error. `env` is the public environment; server secrets and the session never reach `fetch.ts`. The API must allow the page's origin (CORS); otherwise use `runs: 'server'`. List the other origins `fetch.ts` calls in `feature({ connect: ['https://api.github.com', { env: 'POSTS_API' }] })`: Hozu adds them to the page's CSP `connect-src`, which otherwise allows only the page's own origin. An absolute URL, or a public env URL read as `env.NAME`, that `connect` does not list is HZ083. See [Environment](/docs/environment) for API URLs that differ between the browser and the server. The app needs `components: bundleComponents`, which bundles `fetch.ts` for the browser.
 
 ## Write through mutations
 

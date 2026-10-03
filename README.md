@@ -56,7 +56,8 @@ agent: it checks Node, creates the app, reads the skill and builds your first pa
 **Hozu DevTools** comes with `npm run dev`: choose Select in the dock, click what should change and describe it.
 The request you copy or save names the file, line and the Hozu way to make the change; it can preview other
 states, styles and wording first, in an exact-size Workbench too. Give it to your agent, or tell the agent
-"do the open Hozu requests" (`npx hozu requests --full`).
+"do the open Hozu requests" (`npx hozu requests --full`). Its **API** drawer runs the page's queries, mutations
+and endpoints with your own input, so you can test the API while you build it.
 
 `create-hozu` asks which coding agent will work on the app. To skip the question, pass `--agent`:
 
@@ -205,14 +206,19 @@ The data cache keeps at most 10,000 entries by default: one million distinct key
   schemas there too; `examples/stars` is a GitHub client exported to a static directory.
 - Bounded LRU caches, and an invalidation bus so several instances drop the same pages and push to their own live
   clients (`httpBus` built in, or a few lines against Redis or NATS).
-- `hozu call` runs one query or mutation without a page, and the DevTools API tab runs them with your own input.
+- `hozu call` runs one query or mutation without a page. Under `npm run dev`, the DevTools API drawer runs the
+  page's queries, mutations and endpoints with your own input and headers, shows the requests each call really sent
+  (copy as curl), and can act as any session user.
+- Environment declared once (`project({ env: { files, server, public, internal } })`): `hozu env` lists what is set,
+  secrets stay on the server, and the server can call an API at its internal URL while the browser uses the public
+  one. The origins browser code calls are declared (`feature({ connect })`) and go into the CSP.
 
 The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router is in
 [ADR 0011](docs/adr/0011-mainstream-gap-analysis.md).
 
 ## Requirements and status
 - **Node 22.18 or newer.** Config and app code are TypeScript run with Node's type stripping.
-- **Version 0.12.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
+- **Version 0.13.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
   and designers and the trial that checks DevTools requests. Every design decision is recorded in
   [`docs/adr`](docs/adr).
 

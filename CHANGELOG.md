@@ -1,41 +1,78 @@
 # Changelog
 
-## Unreleased (0.13)
+## 0.13.0 — Test your API while you build, and environment conventions (ADR 0051, 0052)
 
-- **Environment conventions** (ADR 0052):
-  - `project({ env: { files: ['.env', '.env.local'] } })` names the env files the CLI reads; a later file wins and
-    the shell wins over all. New apps list both and ignore them in git.
-  - `env.internal: { API_URL: 'API_INTERNAL' }`: on the server, `'either'` effects call the internal URL when it is
-    set and the public one otherwise; the browser and CSP only see the public one.
-  - **HZ084** (warning): a public variable named like a secret. **HZ085**: an internal mapping to undeclared
-    variables.
-  - `hozu env [--example]` lists every variable (side, required, default, set now, internal mapping) and the ones
-    Hozu reserves, and writes `.env.example`.
-- **`feature({ connect })`** (ADR 0051): the origins a feature's `fetch.ts` calls from the browser, as
-  `'https://host'` or `{ env: 'NAME' }` for a public env URL. Hozu adds them to CSP `connect-src`; until now the
-  default `connect-src 'self'` blocked `'browser'` / `'either'` calls to other origins on adapter-node and the edge.
-  **HZ083** (warning) names a URL in fetch.ts whose origin `connect` does not list; HZ081 covers an entry that is not
-  an origin or names an undeclared env variable. `examples/stars` and `examples/playground` declare theirs.
-- **DevTools API drawer:** the API tab is a drawer docked at the bottom, in the overlay and the Workbench (which had
-  no API button). Each row shows where the effect runs (coloured), its freshness and the `file:line` that implements
-  it, with its input fields inline; results show as a table or JSON with the status, time and where it ran;
-  **Copy as hozu call**; a History tab for the session. Mutations ask in their row instead of a browser dialog,
-  `Invalid` marks the field, and the page re-reads what a mutation invalidated in place (the development client
-  offers DevTools the machine's own effect path; the production client is unchanged apart from 9 B, P7 8,056 B).
-  Browser-run effects now go through the page's runner, so their input and output are checked too.
-- **The drawer for testing while you build:** each row says **read** or **write**; **JSON** sends any input, also
-  one the schema rejects; **Requests it sent** lists what a call really sent out from the server (dev `fetch` trace,
-  `/_hozu/dev/trace`) and from the browser, with headers, bodies, status and time, and **Copy as curl**; **Act as**
-  sets the browser's session in development (`/_hozu/dev/session`, checked against the session schema);
-  **Endpoints** sends a request to a declared endpoint with path parameters, a query or JSON body and your own
-  headers (`/_hozu/dev/endpoints`). Queries and mutations still read no request headers: identity is the session.
-- **`hozu get` / `hozu browse` / `testApp`** start apps that have `fetch.ts` (since 0.11 they failed with "the
-  bundle has no fetch module").
-- **`hozu` and `create-hozu`** say they need Node 22.18 on an older Node instead of failing on an import.
-- **`hozu dev` and `hozu serve`** say which port is in use and how to pick another, instead of an `EADDRINUSE` stack;
-  `hozu dev` checks both of its ports before starting the app.
-- **`examples/playground`:** one query and mutation of each `runs` (server data and a server-side external call, a
-  public API on either side, `localStorage` in the browser) for trying the API drawer.
+0.13 turns the DevTools API tab into a drawer for testing while you build, fixes the CSP that blocked 0.11's
+browser-run effects from calling other origins, and sets the conventions for the environment. Two trial apps built
+from scratch with 0.13 found the bugs fixed below.
+
+**Upgrade:** `npx -p @hozu/cli@latest hozu migrate`, install, then `npx hozu migrate` again. Nothing is rewritten.
+- **Browser-run effects:** if `fetch.ts` calls another origin, add `feature({ connect: [...] })`. `hozu check`
+  names each missing origin (HZ083).
+- **Env files:** to have the CLI read `.env` files, add `env: { files: ['.env', '.env.local'] }` and ignore them
+  in git (HZ086).
+
+### DevTools API drawer
+- **The drawer:** **API** opens a drawer docked at the bottom, in the overlay and in the Workbench (which had no
+  API button).
+- **Rows:**
+  - each row says **read** or **write** and where it runs (coloured);
+  - it shows its freshness and the `file:line` that implements it;
+  - input fields are inline, and **JSON** sends any input, also one the schema rejects.
+- **Results:**
+  - a table or JSON, with the status, the time and where it ran;
+  - **Copy as hozu call**;
+  - a **History** tab for the session.
+- **Mutations** ask in their row. `Invalid` marks the field. The page then re-reads what the mutation invalidated
+  in place: the development client offers DevTools the machine's own effect path, and the production client grows
+  by 9 B (P7 8,056 B). Browser-run effects go through the page's runner, so they are schema-checked too.
+- **Requests it sent:** what a call really sent out, from the server (a development `fetch` trace that never waits
+  for a body) and from the browser. It shows headers, bodies, status and time, with **Copy as curl**.
+- **Act as** sets the browser's session in development, checked against the session schema.
+- **Endpoints** sends a request to each declared endpoint with path parameters, a query or JSON body, and your own
+  headers (a bearer token). Queries and mutations still read no request headers: identity is the session.
+
+### Browser-run effects and CSP (ADR 0051)
+- **`feature({ connect })`:** `connect: ['https://api.github.com', { env: 'POSTS_API' }]` lists the origins
+  `fetch.ts` calls from the browser. Hozu adds them to `connect-src`. Until now, the default `connect-src 'self'`
+  blocked `'browser'` and `'either'` calls to other origins on adapter-node and the edge.
+- **HZ083** (warning): an absolute URL in fetch.ts, or a public env URL read as `env.NAME`, that `connect` does not
+  cover (comments are ignored).
+- **HZ081** also covers an entry that is not an origin, and an `{ env }` naming an undeclared variable.
+
+### Environment (ADR 0052)
+- **`env.files`** names the env files the CLI reads. A later file wins, and the shell wins over every file. New
+  apps list `.env` and `.env.local` and ignore both.
+- **`env.internal: { POSTS_API: 'POSTS_API_INTERNAL' }`:** on the server, `'either'` effects call the internal URL
+  when it is set, and the public one otherwise. The browser, the payload and CSP only see the public one.
+- **`hozu env [--example]`** lists every variable (side, required, default, set now, internal URL) and the ones Hozu
+  reserves, and writes `.env.example`.
+- **New diagnostics:**
+  - **HZ084** (warning): a public variable named like a secret;
+  - **HZ085**: an internal mapping to undeclared variables;
+  - **HZ086** (warning): a listed env file that git would commit.
+
+### Fixes
+- **Required server variables:** `hozu check`, `get`, `call` and `browse` failed on a required server variable
+  even when it was set, because they checked the app without its env. `check` no longer needs deployment secrets
+  at all.
+- **`fetch.ts` apps:** `hozu get`, `hozu browse` and `testApp` failed to start an app with `fetch.ts` (since 0.11).
+- **No-JS form posts:** a form whose mutation runs in the browser, posted without JavaScript, answers a page with the
+  reason and a link back (it was one line of text).
+- **CLI startup:**
+  - `hozu` and `create-hozu` say they need Node 22.18, instead of failing on an import;
+  - `hozu dev` and `hozu serve` say which port is in use, instead of an `EADDRINUSE` stack.
+- **`hozu docs`** prints the guide of the installed Hozu and says when the app's skill copy is older.
+- **`hozu browse`** takes quoted targets (`click "Save draft"`).
+- **Releases** pack from a clean build (`pnpm pack:release`): earlier tarballs carried the output of deleted sources.
+- **Messages:** HZ021 suggests `runs: 'server'` for a server resolver of a non-server effect; HZ045 and
+  `hozu build` say to install `@hozu/bundle`.
+- **Docs:** `ctx.request` in endpoints, `testApp(app, { env })`, the scope of browser-held data.
+
+### Examples
+- **`examples/playground`** has an effect of each `runs`, endpoints with a bearer check, and `env.files` /
+  `env.internal`.
+- **`examples/stars`** declares its `connect`.
 
 ## 0.12.0 — Large apps and many servers, `hozu call` and the DevTools API tab (ADR 0050)
 

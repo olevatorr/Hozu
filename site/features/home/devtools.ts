@@ -131,15 +131,35 @@ export const DevToolsPage = ui.view({
           ),
         ]),
       ]),
-      ui.use(Section, { props: { kicker: 'Your data · 0.12' } }, [
-        ui.use(Heading, {}, ['Try the data without a page.']),
+      ui.use(Section, { props: { kicker: 'Your data · 0.13' } }, [
+        ui.use(Heading, {}, ['Test the API while you build it.']),
         ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
-          'The API tab lists what the page reads and what it can change, and where each one runs. Edit the input and run it to see the answer or the error, and how long it took. A change asks first, because it writes your development data. Your agent does the same with hozu call.',
+          'API opens a drawer with what the page reads and what it can change: where each one runs, how it is cached and the line that implements it. Edit the input, run it and read the answer as a table. A change asks first, then the page updates in place, as if a button had made it.',
+        ]),
+        ui.div({ class: 'mt-6 grid max-w-4xl gap-4 md:grid-cols-3' }, [
+          ui.div({ class: 'border-4 border-ink p-4' }, [
+            ui.h3({ class: 'font-black uppercase' }, ['What it sent']),
+            ui.p({ class: 'mt-2' }, [
+              'Every request a call sent out, from the server and the browser: headers, bodies, status, time. Copy it as curl.',
+            ]),
+          ]),
+          ui.div({ class: 'border-4 border-ink p-4' }, [
+            ui.h3({ class: 'font-black uppercase' }, ['Your endpoints']),
+            ui.p({ class: 'mt-2' }, [
+              'Send a request to each endpoint you declared, with a body and your own headers, such as a bearer token.',
+            ]),
+          ]),
+          ui.div({ class: 'border-4 border-ink p-4' }, [
+            ui.h3({ class: 'font-black uppercase' }, ['Act as anyone']),
+            ui.p({ class: 'mt-2' }, [
+              'Set this browser’s session to any user while developing, and see the page as they do.',
+            ]),
+          ]),
         ]),
         ui.div({ class: 'mt-8' }, [
           shot(
             'api',
-            'The API tab on the task board: the Summary query ran through the server and returned the counts of tasks to do, doing and done, with the page’s other queries and changes listed below',
+            'The API drawer docked under the task board: the Summary query ran through the server and its answer shows as a table, with the request the page sent listed below',
           ),
         ]),
       ]),

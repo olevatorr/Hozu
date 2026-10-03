@@ -1,7 +1,7 @@
 ---
 title: Hozu DevTools
 description: Point at the screen; give your agent a request that names the file, the line and the Hozu way to change it.
-order: 10
+order: 11
 ---
 
 ## Start it

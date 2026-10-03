@@ -1,7 +1,7 @@
 ---
 title: Working with AI agents
 description: Give an agent the installed API and a short, verifiable change loop.
-order: 9
+order: 10
 ---
 
 ## Install the matching guide
