@@ -121,3 +121,21 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
     expect(errors).toEqual([])
   }, 30_000)
 })
+
+describe('step parsing', () => {
+  it('takes a quoted target like an unquoted one', () => {
+    expect(parseStep('click "Save draft"')).toEqual(parseStep('click Save draft'))
+    expect(parseStep('fill "Draft"=hello')).toEqual({
+      verb: 'fill',
+      target: 'Draft',
+      value: 'hello',
+      within: null,
+    })
+    expect(parseStep('click "Remove" in "Milk"')).toEqual({
+      verb: 'click',
+      target: 'Remove',
+      value: '',
+      within: 'Milk',
+    })
+  })
+})

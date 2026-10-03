@@ -13,11 +13,11 @@ export async function runDocs(
   topic: string | undefined,
   config?: string,
 ): Promise<DocsOutput | DocsComponentsOutput> {
-  const dir = [
-    join(cwd, '.claude/skills/hozu/topics'),
-    join(cwd, '.agents/skills/hozu/topics'),
-    join(defaultSkill, 'topics'),
-  ].find((d) => existsSync(d))
+  const local = [join(cwd, '.claude/skills/hozu/topics'), join(cwd, '.agents/skills/hozu/topics')].find((d) =>
+    existsSync(d),
+  )
+  const bundled = join(defaultSkill, 'topics')
+  const dir = existsSync(bundled) ? bundled : local
   if (!dir) throw new HozuCliError('config', 'No Hozu topics found; run hozu skill to write the skill', [])
   const topics = await Promise.all(
     (await readdir(dir))
@@ -43,7 +43,13 @@ export async function runDocs(
       `topics: ${topics.map((t) => t.name).join(', ')}`,
     ])
   }
-  const text = await readFile(join(dir, `${name}.md`), 'utf8')
+  const fresh = await readFile(join(dir, `${name}.md`), 'utf8')
+  const copy =
+    local && dir !== local ? await readFile(join(local, `${name}.md`), 'utf8').catch(() => null) : null
+  const text =
+    copy !== null && copy !== fresh
+      ? `${fresh}\n> The skill copy in ${local!.slice(cwd.length + 1, -'/topics'.length)} is older than this Hozu; run npx hozu skill to refresh it.\n`
+      : fresh
   if (name === 'components') return catalog(cwd, config, text)
   return { topic: name, text, topics }
 }

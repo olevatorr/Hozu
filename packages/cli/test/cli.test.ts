@@ -400,3 +400,22 @@ describe('required server env (trial 0.13, bug 1)', () => {
     }
   }, 120_000)
 })
+
+describe('hozu docs with an older skill copy (trial 0.13)', () => {
+  it('prints the installed guide and says the local copy is older', async () => {
+    const { mkdirSync, rmSync } = await import('node:fs')
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-docs-stale-'))
+    mkdirSync(join(dir, '.claude/skills/hozu/topics'), { recursive: true })
+    writeFileSync(join(dir, '.claude/skills/hozu/topics/env.md'), '# Environment\n\nAn older text.\n')
+    try {
+      const { stdout } = await run(['docs', 'env'], dir)
+      expect(stdout).toContain('internal')
+      expect(stdout).not.toContain('An older text.')
+      expect(stdout).toContain(
+        'The skill copy in .claude/skills/hozu is older than this Hozu; run npx hozu skill',
+      )
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})

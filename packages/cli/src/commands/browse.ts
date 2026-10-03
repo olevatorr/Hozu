@@ -46,6 +46,9 @@ interface Parsed {
   within: string | null
 }
 
+/** `click "Save draft"` names the same target as `click Save draft`. */
+const unquote = (s: string) => s.replace(/^"(.*)"$/, '$1')
+
 export function parseStep(text: string): Parsed {
   const space = text.indexOf(' ')
   const verb = space < 0 ? text : text.slice(0, space)
@@ -59,9 +62,9 @@ export function parseStep(text: string): Parsed {
   if (verb === 'fill' || verb === 'select') {
     const eq = rest.indexOf('=')
     if (eq <= 0) throw new Error(`"${text}" needs <label>=<value>`)
-    return { verb, target: rest.slice(0, eq).trim(), value: rest.slice(eq + 1), within }
+    return { verb, target: unquote(rest.slice(0, eq).trim()), value: rest.slice(eq + 1), within }
   }
-  return { verb, target: verb === 'submit' ? rest.replace(/^"(.*)"$/, '$1') : rest, value: '', within }
+  return { verb, target: unquote(rest), value: '', within }
 }
 
 const q = JSON.stringify
