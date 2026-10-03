@@ -1529,6 +1529,15 @@ let serverLog = ''
 server.stderr.on('data', (d) => {
   serverLog += d
 })
+let serverOut = ''
+server.stdout.on('data', (d) => {
+  serverOut = (serverOut + d).slice(-2000)
+})
+const startedAt = Date.now()
+let serverExit = null
+server.on('exit', (code, signal) => {
+  serverExit = { code, signal, afterMs: Date.now() - startedAt }
+})
 let up = false
 for (let i = 0; i < 150 && !up; i++) {
   try {
@@ -1605,6 +1614,8 @@ console.log(
       heldout,
       browserCrashes: crashes,
       serverErrors: serverLog.slice(-2000),
+      serverOutput: serverOut,
+      serverExit,
     },
     null,
     1,

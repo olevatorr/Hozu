@@ -27,6 +27,21 @@ const baseline = (dir, step) => {
   }
 }
 
+const usage = (dir, step) => {
+  const f = join(root, dir, `${String(step).padStart(2, '0')}.jsonl`)
+  if (!existsSync(f)) return null
+  const seen = new Map()
+  for (const line of readFileSync(f, 'utf8').split('\n')) {
+    if (!line.startsWith('{')) continue
+    const r = JSON.parse(line)
+    if (r.type === 'assistant' && !seen.has(r.message.id)) seen.set(r.message.id, r.message.usage)
+  }
+  return [...seen.values()]
+}
+// Per call, the warm prefix is either read from the cache (weight 0.1) or written to it (weight 1).
+const prefixCost = (calls, prefix) =>
+  calls.reduce((sum, u) => sum + ((u.cache_read_input_tokens ?? 0) >= prefix ? 0.1 : 1) * prefix, 0)
+
 const data = Object.fromEntries(Object.entries(arms).map(([k, d]) => [k, rows(d)]))
 const steps = [...new Set(Object.values(data).flatMap((m) => [...m.keys()]))].sort((a, b) => a - b)
 
@@ -38,7 +53,8 @@ const table = steps.map((step) => {
       ? Math.max(0, baseline(arms.B, step) - baseline(arms.A, step))
       : null
   const calls = at('B')?.cost?.calls ?? 0
-  const bNet = w('B') !== null && prefix !== null ? w('B') - prefix * (1 + 0.1 * Math.max(0, calls - 1)) : null
+  const bCalls = usage(arms.B, step)
+  const bNet = w('B') !== null && prefix !== null && bCalls ? w('B') - prefixCost(bCalls, prefix) : null
   const ok = (k) => (at(k)?.accept ? `${at(k).accept.passed}/${at(k).accept.total}` : null)
   return {
     step,
