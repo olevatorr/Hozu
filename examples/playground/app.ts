@@ -1,7 +1,7 @@
 import { bundleComponents } from '@hozu/bundle'
 import { resolvers } from '@hozu/data'
 import { app } from '@hozu/runtime-server'
-import { addNote, listNotes, person } from './features/lab/model.ts'
+import { addNote, listNotes, notesApi, person, postNoteApi } from './features/lab/model.ts'
 import project from './hozu.config.ts'
 
 const notes = [
@@ -17,6 +17,13 @@ export default app({
   resolvers: resolvers(project, (implement) => [
     implement(listNotes, () => notes.map((n) => ({ ...n }))),
     implement(addNote, ({ text }) => {
+      const note = { id: `n${notes.length + 1}`, text: text.trim() }
+      notes.push(note)
+      return { ...note }
+    }),
+    implement(notesApi, () => notes.map((n) => ({ ...n }))),
+    implement(postNoteApi, ({ text }, { fail, request }) => {
+      if (request.headers.get('authorization') !== 'Bearer playground-token') return fail('Unauthorized', {})
       const note = { id: `n${notes.length + 1}`, text: text.trim() }
       notes.push(note)
       return { ...note }

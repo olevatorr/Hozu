@@ -444,7 +444,18 @@
     }
   },
   "pages": {
-    "endpoints": {},
+    "endpoints": {
+      "lab.notesApi": {
+        "failed": {},
+        "mode": "json"
+      },
+      "lab.postNoteApi": {
+        "failed": {
+          "Unauthorized": 401
+        },
+        "mode": "json"
+      }
+    },
     "head": {},
     "redirects": {}
   },

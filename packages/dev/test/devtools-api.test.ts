@@ -126,6 +126,10 @@ describe.skipIf(!findBrowser())('the DevTools API panel (ADR 0050 G)', () => {
     expect(await tool(`$('.api-status').textContent`)).toMatch(
       /^OK · \d+ ms · through the server · List bookmarks$/,
     )
+    expect(await tool(`$('.api [data-effect="bookmarks.listBookmarks"] .api-kind').textContent`)).toBe('read')
+    expect(await tool(`$('.api-sent summary').textContent`)).toMatch(
+      /^POST.*\/_hozu\/query200\d+ ms · from this browser$/,
+    )
     expect(await tool(`[...$('.api-table').querySelectorAll('thead th')].map((t) => t.textContent)`)).toEqual(
       ['id', 'title', 'kind', 'read'],
     )
@@ -154,6 +158,15 @@ describe.skipIf(!findBrowser())('the DevTools API panel (ADR 0050 G)', () => {
       'Invalidated bookmarks.bookmarksTag · the page re-read it',
     )
     expect(await tool(`$('.api-tabs button:last-child').textContent`)).toBe('History3')
+
+    await apiClick('.api [data-effect="bookmarks.addBookmark"] .api-switch', 'JSON')
+    await tool(
+      `(() => { const a = $('.api [data-effect="bookmarks.addBookmark"] textarea'); a.value = '{"title": 7}'; a.dispatchEvent(new Event('input')) })()`,
+    )
+    await apiClick('.api [data-effect="bookmarks.addBookmark"] button', 'Run')
+    await apiClick('.api-confirm button', 'Run')
+    await until(`${api('.api-tabs button:last-child')}.textContent === 'History4'`)
+    expect(await tool(`$('.api-status').textContent`)).toContain('Declared error: Invalid')
     expect(errors).toEqual([])
   })
 

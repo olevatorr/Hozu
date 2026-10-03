@@ -26,5 +26,5 @@
 - **The API drawer** (the dock's API button) lists the queries the page reads and the mutations its machines start,
   with `runs`, freshness, errors and the `file:line` that implements each, and runs them with an input the person
   edits (mutations ask first: they write development data; the page then re-reads in place). A request may carry a
-  `npx hozu call …` line copied from it. When a request says "this query returns X", reproduce it with
+  `npx hozu call …` line or a `curl` command (the requests a call sent out) copied from it. When a request says "this query returns X", reproduce it with
   `npx hozu call <feature>.<effect> --input '…'` before changing the resolver.

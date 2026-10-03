@@ -9,6 +9,12 @@
   `Invalid` marks the field, and the page re-reads what a mutation invalidated in place (the development client
   offers DevTools the machine's own effect path; the production client is unchanged apart from 9 B, P7 8,056 B).
   Browser-run effects now go through the page's runner, so their input and output are checked too.
+- **The drawer for testing while you build:** each row says **read** or **write**; **JSON** sends any input, also
+  one the schema rejects; **Requests it sent** lists what a call really sent out from the server (dev `fetch` trace,
+  `/_hozu/dev/trace`) and from the browser, with headers, bodies, status and time, and **Copy as curl**; **Act as**
+  sets the browser's session in development (`/_hozu/dev/session`, checked against the session schema);
+  **Endpoints** sends a request to a declared endpoint with path parameters, a query or JSON body and your own
+  headers (`/_hozu/dev/endpoints`). Queries and mutations still read no request headers: identity is the session.
 - **`hozu get` / `hozu browse` / `testApp`** start apps that have `fetch.ts` (since 0.11 they failed with "the
   bundle has no fetch module").
 - **`hozu` and `create-hozu`** say they need Node 22.18 on an older Node instead of failing on an import.

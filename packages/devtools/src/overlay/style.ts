@@ -352,6 +352,37 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .api-table thead th { position: sticky; top: 0; background: var(--bg-2); color: var(--mute); font-weight: 600; }
 .api-table.kv th { width: 30%; color: var(--mute); font-weight: 500; }
 .api-empty { padding: 18px 14px; font: 13px/1.4 var(--sans); color: var(--faint); }
+.api-kind { font: 600 10px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 6px; border-radius: 4px; }
+.api-kind.read { background: rgba(var(--tint), 0.08); color: var(--mute); }
+.api-kind.write { background: rgba(251, 58, 14, 0.14); color: var(--accent); }
+.api-switch { margin-left: auto; border: 0; background: none; padding: 2px 4px; font: 500 11px/1 var(--sans); color: var(--faint); text-decoration: underline; text-underline-offset: 2px; }
+.api-switch:hover { color: var(--text); }
+.api-method { font: 700 10.5px/1 var(--mono); padding: 3px 6px; border-radius: 4px; background: rgba(var(--tint), 0.08); color: var(--mute); }
+.api-method.get { background: rgba(47, 163, 107, 0.16); color: var(--ok); }
+.api-method.post { background: rgba(96, 140, 255, 0.16); color: #8fb0ff; }
+.api-method.put, .api-method.patch { background: rgba(230, 170, 60, 0.18); color: #e6b450; }
+.api-method.delete { background: rgba(251, 58, 14, 0.14); color: var(--accent); }
+.root[data-theme="light"] .api-method.post { color: #2c55c9; }
+.root[data-theme="light"] .api-method.put, .root[data-theme="light"] .api-method.patch { color: #9a6a00; }
+.api-row.endpoint, .api-row.session { align-items: start; }
+.api-field.wide { flex-basis: 100%; }
+.api-header { display: grid; grid-template-columns: 1fr 2fr; gap: 6px; }
+.api-header input { height: 28px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--bg-3); color: var(--text); padding: 0 8px; font: 12px/1 var(--mono); }
+.api-session { border: 1px solid var(--line-2); background: none; border-radius: 999px; padding: 4px 10px; font: 12px/1 var(--mono); color: var(--mute); max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.api-session.on, .api-session:hover { color: var(--text); border-color: var(--red); }
+.api-label { font: 500 12px/1 var(--sans); color: var(--mute); margin: 4px 0 6px; }
+.api-sent { display: grid; gap: 4px; }
+.api-request { border: 1px solid var(--line); border-radius: 8px; background: var(--bg-3); }
+.api-request summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 10px; cursor: pointer; font: 12px/1.3 var(--sans); }
+.api-request summary code { flex: 1; min-width: 0; font: 12px/1.3 var(--mono); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.api-request-body { display: grid; gap: 4px; padding: 6px 10px 10px; }
+.api-request-body b, .api-request > pre { font: 600 11px/1.2 var(--sans); color: var(--mute); }
+.api-request pre { margin: 0 0 4px; padding: 6px 8px; background: var(--bg); border-radius: 6px; font: 11.5px/1.4 var(--mono); color: var(--code); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 12rem; overflow: auto; }
+.api-request-body .api-ghost { justify-self: start; }
+.api-code { font: 600 11px/1 var(--mono); }
+.api-code.ok { color: var(--ok); }
+.api-code.bad { color: var(--accent); }
+.api-result { overflow: auto; }
 .state + .state { border-top: 1px solid var(--line); }
 .state.on span { color: var(--accent); }
 .dock .previewing {

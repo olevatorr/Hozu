@@ -1,4 +1,4 @@
-import type { DevEffect, DevOptions } from '@hozu/core/ir'
+import type { DevEffect, DevOptions, ProjectIR } from '@hozu/core/ir'
 
 const literal = (s: string) => s.replace(/[$]/g, '\\$&')
 
@@ -36,5 +36,28 @@ export async function implementedAt(
       const at = (await lines(file))?.findIndex((l) => pattern.test(l)) ?? -1
       return at < 0 ? e : { ...e, implemented: { file: relative(file), line: at + 1, column: 1 } }
     }),
+  )
+}
+
+/** An endpoint for the DevTools API drawer: its declared method, path and input. */
+export interface DevEndpoint {
+  ref: string
+  method: 'GET' | 'POST'
+  path: string
+  input: unknown
+  raw: boolean
+  mode: string
+}
+
+export function projectEndpoints(ir: ProjectIR): DevEndpoint[] {
+  return Object.values(ir.features).flatMap((f) =>
+    Object.entries(f.endpoints).map(([sym, e]) => ({
+      ref: `${f.id}.${sym}`,
+      method: e.method,
+      path: ir.http.basePath + e.path,
+      input: e.raw ? null : (f.schemas[e.input] ?? null),
+      raw: e.raw === true,
+      mode: e.mode,
+    })),
   )
 }

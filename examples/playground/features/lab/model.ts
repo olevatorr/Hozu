@@ -1,4 +1,4 @@
-import { event, invoke, machine, mutation, on, query, tag } from '@hozu/core'
+import { endpoint, event, invoke, machine, mutation, on, query, tag } from '@hozu/core'
 import { z } from 'zod'
 import { User } from '../../routes.ts'
 
@@ -35,6 +35,21 @@ export const addNote = mutation({
   output: Note,
   invalidates: () => [notesTag()],
   runs: 'server',
+})
+export const notesApi = endpoint({
+  method: 'GET',
+  path: '/api/notes',
+  input: z.object({}),
+  output: z.array(Note),
+})
+export const postNoteApi = endpoint({
+  method: 'POST',
+  path: '/api/notes',
+  input: z.object({ text: z.string().min(1, 'Write something') }),
+  output: Note,
+  errors: { Unauthorized: z.object({}) },
+  failed: { Unauthorized: 401 },
+  invalidates: () => [notesTag()],
 })
 export const person = query({
   input: z.object({ id: User }),

@@ -39,8 +39,9 @@ import { type InvalidationBus, localBus } from './bus.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
 import { assertComponentBundle, assertFetchBundle } from './components.ts'
 import { pageEntries, robotsTxt, sitemapXml } from './crawl.ts'
-import { implementedAt } from './dev-effects.ts'
+import { implementedAt, projectEndpoints } from './dev-effects.ts'
 import { devNode } from './dev-node.ts'
+import { traced, traceFetch } from './dev-trace.ts'
 import { fnModules } from './fn-modules.ts'
 import { endpointForm, formFields, formNode, runForm } from './forms.ts'
 import { serviceWorker, serviceWorkerRegistration, webManifest } from './pwa.ts'
@@ -255,6 +256,7 @@ function handlerFor({
   const session = store
     ? (request: Request) => store.read(request)
     : async (request: Request) => (sessionOption as ((r: Request) => unknown) | undefined)?.(request) ?? null
+  if (dev) traceFetch()
   const { basePath, redirects, headers: headerRules } = ir.http
   const fnFiles = fnModules(build)
   const fnUrls = Object.fromEntries(Object.entries(fnFiles).map(([name, m]) => [name, m.path]))
@@ -824,10 +826,38 @@ function handlerFor({
         path === '/_hozu/dev/page' ||
         path === '/_hozu/dev/styles' ||
         path === '/_hozu/dev/tree' ||
-        path === '/_hozu/dev/effects')
+        path === '/_hozu/dev/effects' ||
+        path === '/_hozu/dev/trace' ||
+        path === '/_hozu/dev/endpoints' ||
+        path === '/_hozu/dev/session')
     ) {
       if (!/^(127\.0\.0\.1|localhost|\[::1\])$/.test(url.hostname))
         return new Response('Hozu DevTools answers only this machine', { status: 403 })
+      const devJson = (body: unknown, init: { status?: number; headers?: Record<string, string> } = {}) =>
+        new Response(JSON.stringify(body), {
+          status: init.status ?? 200,
+          headers: { 'content-type': 'application/json', 'cache-control': 'no-store', ...init.headers },
+        })
+      if (path === '/_hozu/dev/trace') {
+        const after = url.searchParams.get('after')
+        return devJson(traced(after === 'latest' ? Number.POSITIVE_INFINITY : Number(after ?? 0)))
+      }
+      if (path === '/_hozu/dev/endpoints') return devJson(projectEndpoints(ir))
+      if (path === '/_hozu/dev/session') {
+        if (!store || !ir.session) return devJson({ declared: false, schema: null, current: null })
+        if (request.method === 'POST') {
+          const { session: value } = (await request.json()) as { session: unknown }
+          const issues = value === null ? null : (build.bindings.checks['#session']?.(value) ?? null)
+          if (issues) return devJson({ error: issues.join('; ') }, { status: 400 })
+          const cookie = await store.write(value, request)
+          return devJson({ current: value }, { headers: { 'set-cookie': cookie } })
+        }
+        return devJson({
+          declared: true,
+          schema: ir.session,
+          current: await store.read(request),
+        })
+      }
       if (path === '/_hozu/dev/tree' || path === '/_hozu/dev/effects') {
         const found = match(split(url.searchParams.get('path') ?? '/').rest)
         const tree = found
