@@ -32,7 +32,8 @@ npx hozu get / --json
 | `hozu browse /tasks --do 'click Save' --json` | Run steps in headless Chrome without a server, with and without JS: what each step changed, errors and client components. |
 | `hozu build --json` | Write deployment assets, generated server rendering code and the manifest. |
 | `hozu serve` | Start the app module on `PORT` with adapter-node; this is `npm start`. |
-| `hozu docs forms` | Print one topic of the installed guide; `hozu docs` lists the topics. |
+| `hozu docs forms` | Print the short form of one topic of the installed guide; `--more` adds its options and edge cases. `hozu docs` lists the topics. |
+| `hozu docs HZ083` | Print one diagnostic: its cause, its fix and the topic to read. |
 | `hozu docs components` | Print the components topic, then every component of the app with its tag and variants. |
 | `hozu render ui.Button --variant tone=ghost --json` | Render one component alone: its HTML, root class, owned CSS properties and diagnostics. `--props '<json>'` and `--slot name=text` fill it. |
 | `hozu add kit ui --json` | Add a component kit: `ui/kit.ts`, `ui/tv.ts` and `project({ kits })`; `--sync` regenerates the tailwind-merge config. |

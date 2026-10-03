@@ -1,6 +1,6 @@
 # ADR 0053 — 0.14: easier to learn (fewer choices, quieter checks, generated diagnostics)
 
-- **Status:** accepted (owner, 2026-10-03): D1–D8 as recommended.
+- **Status:** accepted (owner, 2026-10-03): D1–D8 as recommended. Shipped in 0.14.0.
 - **Problem:** the largest cost of building with Hozu is that models do not know it yet.
   - Nuxt is in every model's training data; Hozu is learned from the guide in each session (trial 0002, trial
     0020). The measured 1.34–1.72× tokens per change against Nuxt (trial 0021) mostly pays for that learning
@@ -21,7 +21,7 @@
   - a fix that offered a rename as the way out (HZ084);
   - a guide copy that went stale silently.
 
-## Decision (proposed)
+## Decision
 
 ### A. `runs` is required (breaking)
 - Every `query` and `mutation` states `runs: 'server' | 'browser' | 'either'`; there is no default. One canonical
@@ -123,3 +123,19 @@ The step makes three changes:
 | D6 | `hozu why` added; `impact` / `explain` / `locate` deprecated (removed in 0.15); `graph` removed now | yes |
 | D7 | README / site explain the Nuxt comparison and the learning cost | yes |
 | D8 | Pre-register trial 0024 (cold against warm) as ADR 0055, run after 0.14 | yes |
+
+## Result
+- **Shipped in 0.14.0:** D1–D8.
+- **Measured:**
+  - **The guide:** `hozu docs` prints 27.0 KB by default over every topic (37 % of 0.13's 72.7 KB), and `--more`
+    prints all of it. `SKILL.md` is 3 981 B. The feature topic's example still compiles in a fresh app (test).
+  - **Examples:** every example checks with 0 warnings. Two warnings are accepted with a reason: HZ036 in
+    `examples/playground` (lab.SaveDraft) and in `examples/stars` (stars.SaveToken).
+  - **Diagnostics:** every code has a registry summary, fix and topic (test). `hozu docs HZ0xx` works for all 82
+    codes.
+  - **Migration:** a 0.10 app migrates through every step to 0.14, and a 0.13 app to 0.14. Both keep an equal IR and
+    a clean check (tests).
+- **Found while building it:**
+  - two topic examples omitted `runs` (data, fetch), now required, and were fixed;
+  - HZ021 told a duplicate implementation to "add" one; its fix now says to remove one.
+- **Not done:** trial 0024 (ADR 0055) runs after the release.

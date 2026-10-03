@@ -215,7 +215,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `when` and busy states, context conditions) previewed through the dev-only cookie `hozu-dev-state`; Workbench
   (an exact-size frame). A request is Markdown (Want / Where / Scope / Style / Text / Mind / Locate) copied or
   saved to `.hozu/requests/` (`.next` keeps numbers unique); `hozu requests [--full] [done <n> --result]`
-  (done removes the file), `hozu locate <id|pointer|page:route>` (0.14: `hozu why`), `hozu docs requests`. Dev endpoints answer
+  (done removes the file), `hozu why <id|pointer|page:route>`, `hozu docs requests`. Dev endpoints answer
   loopback `Host`s only; `examples/studio` is the DevTools test bench.
 - 0.11 (ADR 0049): queries and mutations declare `runs: 'server' | 'browser' | 'either'` (default `'either'`, which
   needs `scope: 'public'`); `'browser'` / `'either'` are implemented in `feature({ fetch: new URL('./fetch.ts', …) })`
@@ -246,6 +246,13 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `project({ env: { files, internal } })` (CLI reads files; `'either'` on the server reads internal URLs),
   `hozu env [--example]`, HZ084 public secret, HZ085 bad internal mapping, HZ086 env file not git-ignored;
   `examples/playground`; `pnpm pack:release` packs from a clean build.
+- 0.14 (ADR 0053, breaking): `runs` required on every query / mutation (migrate adds `'either'`); `hozu validate`
+  removed (`hozu check --no-types`); `project({ accept: [{ code, at, reason }] })` keeps a warning on purpose (HZ087
+  stale entry; errors cannot be accepted); `codes.ts` holds each code's summary / fix / topic, generating the
+  diagnostics topic and the site table (`hozu docs HZ0xx`); topics have a short form above `<!-- more -->`
+  (`hozu docs <topic> --more`, default ≤ half of 0.13's 72.7 KB, tested); `hozu why <declaration | component |
+  state | node | page:route>`; `impact` / `explain` / `locate` deprecated (removed in 0.15), `graph` removed;
+  ADR 0055 pre-registers trial 0024 (cold / warm / Nuxt).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of
