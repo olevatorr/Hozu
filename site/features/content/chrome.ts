@@ -48,7 +48,7 @@ export const Header = ui.view({
                 {
                   'aria-label': 'Mobile navigation',
                   class:
-                    "grid [&>a]:flex [&>a]:items-center [&>a]:justify-between [&>a]:border-b-2 [&>a]:border-ink [&>a]:py-3 [&>a]:text-2xl [&>a]:font-black [&>a]:uppercase [&>a]:tracking-tight [&>a]:after:text-red [&>a]:after:content-['→'] [&>a:last-child]:border-b-0 [&>a:hover]:text-red",
+                    "grid [&>a]:flex [&>a]:items-center [&>a]:justify-between [&>a]:border-b-2 [&>a]:border-ink [&>a]:py-3 [&>a]:text-2xl [&>a]:font-black [&>a]:uppercase [&>a]:tracking-tight [&>a]:after:text-red [&>a]:after:content-['→'] [&>a:last-child]:border-b-0 [&>a:hover]:text-red motion-safe:group-open:[&>a]:animate-menu-item [&>a:nth-child(2)]:[animation-delay:40ms] [&>a:nth-child(3)]:[animation-delay:80ms] [&>a:nth-child(4)]:[animation-delay:120ms] [&>a:nth-child(5)]:[animation-delay:160ms] [&>a:nth-child(6)]:[animation-delay:200ms] [&>a:nth-child(7)]:[animation-delay:240ms]",
                 },
                 links(),
               ),

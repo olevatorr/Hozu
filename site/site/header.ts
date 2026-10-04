@@ -13,7 +13,7 @@ const styles = tv({
       'flex list-none items-center gap-2 border-4 border-ink px-3 py-1.5 text-xs font-black uppercase tracking-widest select-none group-open:bg-ink group-open:text-paper [&::-webkit-details-marker]:hidden',
     bars: 'grid w-4 gap-[3px] [&>i]:block [&>i]:h-[3px] [&>i]:bg-current [&>i]:transition-[transform,opacity] [&>i]:duration-200 group-open:[&>i:nth-child(1)]:translate-y-[6px] group-open:[&>i:nth-child(1)]:rotate-45 group-open:[&>i:nth-child(2)]:opacity-0 group-open:[&>i:nth-child(3)]:-translate-y-[6px] group-open:[&>i:nth-child(3)]:-rotate-45 motion-reduce:[&>i]:transition-none',
     panel:
-      'absolute inset-x-0 top-full origin-top border-y-4 border-ink bg-paper px-5 pb-4 shadow-[0_10px_0_0_rgb(17_16_16_/_0.12)] group-open:animate-menu motion-reduce:animate-none',
+      'absolute inset-x-0 top-full origin-top border-y-4 border-ink bg-paper px-5 pb-4 shadow-[0_10px_0_0_rgb(17_16_16_/_0.12)] motion-safe:group-open:animate-menu',
   },
 })
 export const SiteHeader = ui.component({
