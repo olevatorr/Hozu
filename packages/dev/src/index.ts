@@ -199,7 +199,13 @@ export async function dev({
         .end(devBundle())
     void ready.then(() => {
       const upstream = request(
-        { host: '127.0.0.1', port: appPort, path: req.url, method: req.method, headers: req.headers },
+        {
+          host: '127.0.0.1',
+          port: appPort,
+          path: req.url,
+          method: req.method,
+          headers: { ...req.headers, 'accept-encoding': 'identity' },
+        },
         (up) => {
           const html = String(up.headers['content-type'] ?? '').startsWith('text/html')
           if (!html) {

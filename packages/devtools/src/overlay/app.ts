@@ -1675,6 +1675,19 @@ function renderBar() {
     ...present([
       h('div', { class: 'grip' }, [h('img', { src: logo, alt: 'Hozu', width: '18', height: '18' })]),
       h('div', { class: 'seg' }, [mode('Browse', 'browse'), mode('Select', 'select')]),
+      h(
+        'button',
+        {
+          class: 'act layers-toggle',
+          type: 'button',
+          'aria-pressed': String(bench.classList.contains('layers-open')),
+          onclick: () => {
+            bench.classList.toggle('layers-open')
+            renderBar()
+          },
+        },
+        ['Layers'],
+      ),
       select,
       h(
         'button',

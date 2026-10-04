@@ -220,3 +220,24 @@ function send(
     req.end(body === undefined ? undefined : JSON.stringify(body))
   })
 }
+
+describe('dev server and a compressing app (ADR 0057 B1)', () => {
+  it('a browser that accepts gzip gets the whole page with the dev client', async () => {
+    const notes = new URL('../../../examples/notes/', import.meta.url).pathname
+    const server = await dev({ cwd: notes, port: 0, appPort: await freePort(), log: () => {} })
+    try {
+      const page = await new Promise<{ encoding: string | undefined; body: string }>((resolve, reject) =>
+        get(`${server.url}/login`, { headers: { 'accept-encoding': 'gzip, deflate, br' } }, (res) => {
+          let body = ''
+          res.on('data', (c) => (body += c))
+          res.on('end', () => resolve({ encoding: res.headers['content-encoding'], body }))
+        }).on('error', reject),
+      )
+      expect(page.encoding).toBeUndefined()
+      expect(page.body).toContain('<script type="module" src="/_hozu/dev.js"></script>')
+      expect(page.body).toContain('</html>')
+    } finally {
+      await server.close()
+    }
+  }, 60_000)
+})

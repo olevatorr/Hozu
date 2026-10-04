@@ -275,6 +275,32 @@ describe.skipIf(!findBrowser())('Workbench in a real browser (ADR 0047 P3)', () 
     )
   })
 
+  it('below 1100 px the Layers column folds into a toolbar button (ADR 0057 B4)', async () => {
+    await cdp.send(
+      'Emulation.setDeviceMetricsOverride',
+      { width: 1000, height: 800, deviceScaleFactor: 1, mobile: false },
+      session,
+    )
+    try {
+      const shown = () =>
+        tool(
+          `getComputedStyle(document.querySelector('hozu-devtools').shadowRoot.querySelector('.bench-left')).display`,
+        )
+      expect(await shown()).toBe('none')
+      await shadowClick('.bench-bar .layers-toggle', 'Layers')
+      await until(
+        `getComputedStyle(document.querySelector('hozu-devtools').shadowRoot.querySelector('.bench-left')).display === 'block'`,
+      )
+      expect(await tool(`$('.bench-bar .layers-toggle').getAttribute('aria-pressed')`)).toBe('true')
+    } finally {
+      await cdp.send(
+        'Emulation.setDeviceMetricsOverride',
+        { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false },
+        session,
+      )
+    }
+  })
+
   it('Exit returns to the overlay on the same page', async () => {
     await shadowClick('.bench-bar .act', 'Exit workbench')
     await until(`!document.querySelector('hozu-devtools').shadowRoot.querySelector('iframe')`)

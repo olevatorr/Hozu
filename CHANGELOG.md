@@ -146,6 +146,7 @@ access in the lock.
   - Select's help is a tip above it (`Click`, `Shift`, `Alt`, `Esc` as keys), not a faint line inside it.
 - **The Workbench:** its side columns narrow with the window, and its toolbar takes two rows instead of hiding the
   buttons that do not fit.
+- **The Workbench below 1 100 px:** the Layers column folds into a toolbar button and opens over the page.
 - **`hozu dev` prints one URL:** the app process's own `… on http://127.0.0.1:<port + 1>` line is gone.
 - **`.hozu/` no longer triggers reloads:** changes there (check caches, notes) no longer reload the app under
   `hozu dev`.

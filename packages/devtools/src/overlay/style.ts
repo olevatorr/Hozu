@@ -32,6 +32,17 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
   background: var(--bench); color: var(--text);
 }
 .bench-left { grid-column: 1; overflow: auto; border-right: 1px solid var(--line); background: var(--bg); }
+.bench-bar .layers-toggle { display: none; }
+@media (max-width: 1100px) {
+  .bench { grid-template-columns: 0 minmax(0, 1fr) clamp(260px, 32vw, 400px); }
+  .bench-left {
+    display: none; position: absolute; top: 0; bottom: 0; left: 0; width: min(300px, 80vw); z-index: 3;
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.28);
+  }
+  .bench.layers-open .bench-left { display: block; }
+  .bench-bar .layers-toggle { display: inline-block; }
+  .bench-bar .layers-toggle[aria-pressed="true"] { background: rgba(var(--tint), 0.14); color: var(--text); }
+}
 .bench-left .head { position: static; }
 .bench-left .close { display: none; }
 .bench-center { grid-column: 2; display: grid; grid-template-rows: auto 1fr; min-width: 0; }

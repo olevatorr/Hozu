@@ -130,6 +130,9 @@ so 0.15 apps upgrade without a migration step.
     the stream waits (`setImmediate`), so the head still arrives first and a page that renders at once is one
     deflate. The gzip level did not matter (4 and 6 measured the same).
   - Every HTML page is 12.3 KB raw and 1.8 KB on the wire.
+  - **Found by the Workbench tests:** `hozu dev` forwarded the browser's `Accept-Encoding` to the app, then injected
+    its script into the compressed page, so no page loaded under `hozu dev`. The dev server now asks the app for
+    `identity`; a dev test with a compressing app keeps it so.
 
 ### B3 — what learning costs (analysis first)
 - **What:** trial 0024's cold-arm transcripts, measured as ADR 0038 did. Tokens are counted by what produced them:
