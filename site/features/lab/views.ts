@@ -74,14 +74,14 @@ export const How = ui.view({
           ]),
           ui.div({ class: 'mx-auto mt-8 grid max-w-6xl gap-6 lg:grid-cols-2' }, [
             ui.div({ class: 'grid content-start gap-4' }, [
-              ui.div({ class: pane }, [ui.span({}, ['feature.ts']), ui.span({}, ['A small toggle'])]),
+              ui.div({ class: pane }, [ui.span({}, ['feature.ts']), ui.span({}, ['A guarded toggle'])]),
               code(
-                "const Toggle = event({ payload: z.object({}) })\n\nconst m = machine({\n  context: z.object({}),\n  initialContext: {},\n  initial: 'off',\n  states: () => ({\n    off: { on: [on(Toggle, { target: 'on' })] },\n    on: { on: [on(Toggle, { target: 'off' })] },\n  }),\n})",
+                "const Toggle = event({ payload: z.object({}) })\n\nconst m = machine({\n  context: z.object({ allowed: z.boolean() }),\n  initialContext: { allowed: true },\n  initial: 'off',\n  states: ({ ctx }) => ({\n    off: { on: [on(Toggle, { target: 'on', guard: () => ctx.allowed === true })] },\n    on: { on: [on(Toggle, { target: 'off' })] },\n  }),\n})",
               ),
               ui.div({ class: 'grid gap-3' }, [
                 ui.div({ class: pane }, [
                   ui.span({}, ['contracts.ts']),
-                  ui.span({}, ['The off → on transition']),
+                  ui.span({}, ['The off → on decision']),
                 ]),
                 ctx.missing === false
                   ? code(
@@ -89,10 +89,10 @@ export const How = ui.view({
                     )
                   : ui.div({ class: 'border-4 border-red p-4' }, [
                       ui.strong({}, ['Contract removed']),
-                      ui.p({}, ['The transition still exists. Its expected behaviour is no longer covered.']),
+                      ui.p({}, ['The guard still decides. What it should decide is no longer written down.']),
                     ]),
                 ui.p({ class: 'text-xs' }, [
-                  'Excerpts: imports, feature registration and the reverse-transition contract are omitted.',
+                  'Excerpts: imports and feature registration are omitted. on → off decides nothing, so the lock records it and it needs no contract.',
                 ]),
               ]),
             ]),
@@ -182,7 +182,7 @@ export const How = ui.view({
                       ui.div({}, [
                         ui.p({ class: 'font-black uppercase' }, ['The behaviour is covered.']),
                         ui.p({}, [
-                          'The example has a contract for each transition. The pipeline can continue.',
+                          'Every transition that decides has a contract. The pipeline can continue.',
                         ]),
                       ]),
                     ],
@@ -222,7 +222,7 @@ export const How = ui.view({
                           ui.p({ class: 'font-black uppercase' }, ['Stopped at validation.']),
                           ui.code({}, ['HZ016 · uncovered transition']),
                           ui.p({}, [
-                            'The off → on transition needs a contract. Restore its expected behaviour before continuing.',
+                            'The off → on transition has a guard, so it decides and needs a contract. Restore its expected behaviour before continuing.',
                           ]),
                         ]),
                       ]),

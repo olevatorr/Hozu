@@ -46,7 +46,24 @@ idle --Acknowledge--> acknowledged
 acknowledged --after 2000ms--> idle
 ```
 
-A guarded transition is different. If acknowledging is only allowed once a notice has been read, the contract states that decision:
+A guarded transition is different. If acknowledging is only allowed once a notice has been read, the machine keeps that in its context and the transition guards on it:
+
+```ts
+export const notice = machine({
+  context: z.object({ read: z.boolean() }),
+  initialContext: { read: false },
+  initial: 'idle',
+  states: ({ ctx }) => ({
+    idle: { on: [on(Acknowledge, { target: 'acknowledged', guard: () => ctx.read === true })] },
+    acknowledged: {
+      ignore: [Acknowledge],
+      after: [{ ms: 2000, target: 'idle' }],
+    },
+  }),
+})
+```
+
+Now the transition decides, so a contract states that decision:
 
 ```ts
 import { contract } from '@hozu/core'

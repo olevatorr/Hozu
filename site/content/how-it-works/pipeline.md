@@ -28,7 +28,7 @@ The transform turns this into a conditional node whose test (`error ≠ null`) a
 
 The validator checks more than the shape of individual declarations. It can find a reference to an unregistered mutation, an event that a visible control sends into a state that cannot handle it, or a feature that accesses another feature's private declaration. Render-related checks also prevent user-scoped data from entering a shared cacheable region.
 
-Contracts add execution to those structural checks. They place a machine in a known state, send events or effect results and compare the resulting state, context and effects with the author's expectation. Transition coverage identifies paths that have no contract. The behaviour lock compares changes with the contracts that cover them.
+Contracts add execution to those structural checks. They place a machine in a known state, send events or effect results and compare the resulting state, context and effects with the author's expectation. Transition coverage identifies the transitions that decide (a guard, a navigation, a computed value) and have no contract. The behaviour lock compares changes with the contracts that cover them.
 
 Diagnostics identify a location, cause and suggested fix. The JSON form supports tooling, while the text form makes the same information readable in a terminal. Some failures require a decision about intent, so a useful diagnostic does not always include an automatic patch. The diagnostic design is documented in [ADR 0003](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0003-diagnostics-and-cli.md).
 

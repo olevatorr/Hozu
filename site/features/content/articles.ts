@@ -79,7 +79,7 @@ const articleView = (
                 ui.a(
                   {
                     href: explain ? ui.link(how, null) : ui.link(doc, { slug: 'getting-started' }),
-                    class: 'font-mono text-xs font-bold text-ember no-underline',
+                    class: 'inline-block py-1.5 font-mono text-xs font-bold text-ember no-underline',
                   },
                   [label],
                 ),

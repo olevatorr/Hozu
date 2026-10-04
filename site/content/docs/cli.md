@@ -24,17 +24,17 @@ npx hozu get / --json
 | `hozu check --json` | Check TypeScript, framework rules and contracts. `--no-types` skips TypeScript; `--update-lock` accepts a behaviour change. (`hozu validate` was removed in 0.14.) |
 | `hozu map --json` | Show a compact app outline with source locations. |
 | `hozu inspect tasks --json` | Inspect a feature's canonical IR and summary, or a component (`ui.Button`) with every use. |
-| `hozu why tasks.listItems --json` | What a target is, where it is (file:line), what uses it and what it affects. The target is a declaration, a component (`ui.Button`), a state (`tasks.idle`: its transitions, guards and covering contracts), a view node (a DevTools id or IR pointer) or a page (`page:home`). `explain`, `impact` and `locate` were removed in 0.15, and `graph` in 0.14. |
+| `hozu why tasks.listItems --json` | What a target is, where it is (file:line), what uses it and what it affects. The target is a declaration, a component (`ui.Button`), a state (`tasks.idle`: its transitions, guards and covering contracts), a view node (a DevTools id, an IR pointer, or `views.ts:42`: the outermost node written on that line; a line two files share is refused with both paths) or a page (`page:home`). `explain`, `impact` and `locate` were removed in 0.15, and `graph` in 0.14. |
 | `hozu plan home --json` | Show the derived render plan for a route name, or for a path such as `/products/mug`. |
 | `hozu get /tasks --json` | Request one or more pages in-process without a server. |
 | `hozu env --json` | Every env variable: server or public, required, default, whether it is set now, its internal URL; `--example` writes `.env.example`. |
 | `hozu call tasks.listItems --input '{}' --json` | Run one query or mutation through the app's handler without a server: the value or the declared error, and for a mutation (`--write`) the tags it invalidated and the queries they refresh. `--session '<json>'` signs in. An endpoint takes `--header 'Authorization: Bearer …'` and prints its status; a POST endpoint needs `--write`. |
 | `hozu browse /tasks --do 'click Save' --json` | Run steps in headless Chrome without a server, with and without JS: what each step changed, errors and client components. `--as <name>` adds actors, `--header` adds a request header (to every actor, or to one after its `--as`), `remember <name> from url|<selector>` keeps a value for `$name` in later steps, and `post <path> a=1` forges a native form post. |
 | `hozu build --json` | Write deployment assets, generated server rendering code and the manifest. |
-| `hozu serve` | Start the app module on `PORT` with adapter-node; this is `npm start`. It runs as production unless `NODE_ENV` is set, so an app with sessions needs `SESSION_SECRET`. |
+| `hozu serve` | Start the app module on `PORT` with adapter-node; this is `npm start`, and it prints `stop: kill <pid>`. It runs as production unless `NODE_ENV` is set, so an app with sessions needs `SESSION_SECRET`. |
 | `hozu dev` | Start the app with reloads on every edit and [Hozu DevTools](/docs/devtools); this is `npm run dev`. |
 | `hozu requests` | List the requests saved from DevTools; `done <n> --result` closes one. |
-| `hozu show notes.Board/0/1 --note "…"` | Show the person a note on that part of their page under `hozu dev` (a DevTools id or `page:<route>`); `hozu show` lists the notes, `--done <n>` removes one, `--clear` all. |
+| `hozu show views.ts:42 --note "…"` | Show the person a note on that part of their page under `hozu dev` (a `file:line`, a DevTools id or `page:<route>`; `--in "<text>"` frames one row of a list). `hozu show` lists the notes and marks one `STALE` when its id names another part now; `--done <n>` removes one, `--clear` all. |
 | `hozu <command> --help` | Print one command's usage and options. |
 | `hozu docs forms` | Print the short form of one topic of the installed guide; `--more` adds its options and edge cases. `hozu docs` lists the topics. |
 | `hozu docs HZ083` | Print one diagnostic: its cause, its fix and the topic to read. |
@@ -49,7 +49,7 @@ Use `hozu --help` for the options supported by your installed version. `--config
 
 ## Inspect pages without a server
 
-`get` reports the status, title, alerts and visible text. `--full` removes the text truncation. `--select` inspects matching elements and their attributes; `--forms` lists native forms: fields and defaults, checkbox and radio groups with every value, controls that join a form through `form=`, and submit buttons with their name and value.
+`get` reports the status, title, alerts and visible text. `--full` removes the text truncation. `--select` inspects matching elements and their attributes; `--select script` prints the head's scripts raw, to check the JSON-LD. `--forms` lists native forms: fields and defaults, checkbox and radio groups with every value, controls that join a form through `form=`, and submit buttons with their name and value.
 
 ```sh
 npx hozu get /tasks --select a --forms
@@ -68,7 +68,9 @@ By default (`--js both`) it runs the `--do` steps twice side by side, with JS an
 - `wait <ms>` and `goto <path>`;
 - `post <path> a=1&b=2`: a forged native form post as the current actor, without the page;
 - `remember <name> from url|<selector> [@attr]`: keep a value that later steps read as `$name`;
-- any target may end with `in "<text>"`: the smallest list item, table row or form containing that text.
+- any target may end with `in "<text>"`: the smallest list item, table row or form containing that text (for `fill` and `select`, before or after `=value`).
+
+One `--do` may hold several steps joined with `;` (outside quotes, before a step's verb). A target that is not on the page prints `Did you mean "<closest label>"?`. A step that loads a page answering 401, 403, 404 or 410 shows that status as its answer, such as `→ /notes/n1 (403)`, and is not an error, so an access check exits 0; the start page must still load.
 
 A step with no native effect prints `js-only (<reason>)` in the no-JS column. A step where both modes made a request and the resulting text differs is marked `≠ DIFFERS`. `--as <name>` starts another actor with its own browser and optional `--session`; all actors share one in-process app, and live updates on their pages are printed under the step that caused them. `--header 'Name: value'` adds a request header: before the first `--as` to every actor, after an `--as` to that actor. Another visitor's data is one chain: `--as ada --do 'remember note from li a @href' --as bob --do 'goto $note'`.
 

@@ -35,7 +35,7 @@ for (const { path, effect, reason } of result.needsServer) console.error(path, e
 if (result.skipped.length || result.needsServer.length) process.exitCode = 1
 ```
 
-Declare `entries` for every parameterized page and set `site.url` to the production origin. Inspect the output for missing pages before publishing. This website exports to `site/dist`, writes a `CNAME` for `hozu.org`, and includes `.nojekyll` so GitHub Pages serves its underscore-prefixed assets.
+Declare `entries` for every parameterized page and set `site.url` to the production origin, or to `{ env: 'SITE_URL' }` to read it from a declared variable at startup (HZ085). Inspect the output for missing pages before publishing. This website exports to `site/dist`, writes a `CNAME` for `hozu.org`, and includes `.nojekyll` so GitHub Pages serves its underscore-prefixed assets.
 
 Browser-run queries render their `pending` branch, and so do `'either'` queries whose data cannot be cached at export time; both read in the browser after hydration, with the public environment written into the page. `needsServer` lists the server effects a written page would still call. `examples/stars` is a complete static app of this kind.
 
@@ -45,7 +45,7 @@ Static hosts do not run query resolvers after export. Rebuild the site when cont
 
 Node runs the app module with `hozu serve` (the generated `npm start`): adapter-node on `PORT`, with the environment, compiled styles and every `ui.asset` (hashed under `/_hozu/a/`). There is no `public/` folder served at the root: a file named in data, such as a cover image in front matter, is served by a GET endpoint with `output: 'response'`. It runs as production unless `NODE_ENV` is set, so an app with sessions refuses to start without `SESSION_SECRET`. It registers the transform itself; edge bundles add `hozuTransform()` from `@hozu/transform/esbuild`. Without the transform the server refuses to start (HZ044). Run `hozu build` to generate `dist/public`, `dist/manifest.json` and `dist/server/render.js`. There is no server file to write: resolvers, the session store and the client components bundle are named in `app.ts`, headers in `project({ http })`, statuses in `head.failed`.
 
-The adapter includes an ISR page cache, tag revalidation, CSP and cross-site POST checks. Session-based applications must configure their session identity and a stable production secret.
+The adapter includes an ISR page cache, tag revalidation, CSP and cross-site POST checks. It compresses as it streams (gzip, or brotli when only that is accepted), flushing whenever the stream waits, and serves files from the `.br` and `.gz` that `hozu build` writes next to each file over 1 KB in `dist/public`. Private and cookie-setting answers are compressed per request only; live streams, `HEAD`, 204 and 304 answers and already-compressed types are sent as they are. Session-based applications must configure their session identity and a stable production secret.
 
 ## Environment
 
@@ -80,7 +80,7 @@ const handler = createHandler(app, { manifest, render })
 export default { fetch: handler.fetch }
 ```
 
-Serve the generated public assets through the host's static-asset mechanism. Keep resolver dependencies compatible with the chosen runtime.
+Serve the generated public assets through the host's static-asset mechanism. The web-standard handler leaves compression to the platform. Keep resolver dependencies compatible with the chosen runtime.
 
 ## Understand the design
 

@@ -49,7 +49,7 @@ Every server-run `scope: 'user'` query and every server-run mutation declares `a
 | --- | --- |
 | `'signedIn'` | Any signed-in visitor. The resolver reads that visitor's data by `session`. |
 | `{ owner: { row: (n) => n.owner, session: (s) => s.user } }` | On a query, the framework checks the output: one row that is not the visitor's is `Forbidden`, and a list holding such rows is HZ091 in development (the resolver read too much), dropped and logged once in production. |
-| `{ owner: { load: getNote, input: (i) => ({ id: i.id }), row: …, session: … } }` | On a mutation, the framework reads the row with `load` and checks it before the resolver runs. |
+| `{ owner: { load: getNote, input: (i) => ({ id: i.id }), row: …, session: … } }` | On a mutation, the framework reads the row with `load` and checks it before the resolver runs. If `load` fails for any reason (a declared `NotFound` or an unexpected error), the answer is `Forbidden` and the resolver does not run, so a caller cannot tell a missing row from someone else's. An owner missing on either side never matches. |
 | `{ allow: ({ session, input }) => session.role === 'admin' }` | A condition on the session and the input. |
 | `'anyone'` | No condition: sign-in, a newsletter. On user data it is HZ090. |
 

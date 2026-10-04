@@ -35,12 +35,11 @@ export const shot = (name: string, alt: string) =>
     class: 'w-full border-4 border-ink bg-white shadow-[8px_8px_0_var(--color-ink)]',
   })
 
-const codeBlock = (text: string) =>
+const codeBlock = (text: string, frame: 'border-paper' | 'border-ink') =>
   ui.use(CodeBlock, {}, [
     ui.pre(
       {
-        class:
-          'overflow-x-auto border-4 border-paper bg-ink p-5 font-mono text-xs leading-relaxed text-paper',
+        class: `overflow-x-auto border-4 ${frame} bg-ink p-5 font-mono text-xs leading-relaxed text-paper`,
         tabindex: 0,
       },
       [text],
@@ -143,19 +142,21 @@ export const DevToolsPage = ui.view({
         ui.p({ class: 'mt-4 max-w-2xl' }, [
           'Where, what and how far the change reaches, the theme class to use, and a reminder only where a plain edit would go wrong. The pointer finds the part again after the lines move.',
         ]),
-        ui.div({ class: 'mt-8 w-full' }, [codeBlock(request)]),
+        ui.div({ class: 'mt-8 w-full' }, [codeBlock(request, 'border-paper')]),
       ]),
       ui.use(Section, { props: { kicker: 'The way back' } }, [
         ui.use(Heading, {}, ['See what your agent changed.']),
         ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
           'After a change, your agent points at each part it touched, with a note in your words. You check the result on the page, not in a diff.',
         ]),
-        ui.div({ class: 'mt-8 w-full' }, [codeBlock(notes)]),
+        ui.div({ class: 'mt-8 w-full' }, [codeBlock(notes, 'border-ink')]),
         ui.div({ class: 'mt-8 grid w-full gap-6 md:grid-cols-3' }, [
           ui.div({ class: 'border-4 border-ink p-4' }, [
             ui.h3({ class: 'font-black uppercase' }, ['Numbered frames']),
             ui.p({ class: 'mt-2' }, [
-              'Each part gets a red frame and a number. A file and line is enough; --in "<text>" picks one row of a list.',
+              'Each part gets a red frame and a number. A file and line is enough; ',
+              ui.code({ class: 'whitespace-nowrap font-mono text-sm' }, ['--in "<text>"']),
+              ' picks one row of a list.',
             ]),
           ]),
           ui.div({ class: 'border-4 border-ink p-4' }, [

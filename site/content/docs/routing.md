@@ -30,7 +30,7 @@ A machine transition can navigate with `navigate: result => ui.link(article, { s
 
 ## Connect a page
 
-`ui.page(article, { views, head, entries })` associates a route with views and metadata. A head query loads the article; its `NotFound` failure produces a 404 status. Render its title and description in `head.render`.
+`ui.page(article, { views, head, entries })` associates a route with views and metadata. A head query loads the article, and `head.failed` maps each of its declared errors to what the page answers: `failed: { NotFound: 404 }` (a route without params, `403`, `404` or `410`; HZ051). Render its title and description in `head.render`.
 
 Parameterized static pages also need `entries`, for example:
 
@@ -39,10 +39,13 @@ entries: {
   query: listArticles,
   input: {},
   params: (item) => ({ slug: item.slug }),
+  lastmod: (item) => item.updatedAt,
 }
 ```
 
-The exporter and sitemap now know which concrete URLs exist. A route pattern alone cannot enumerate them.
+The exporter and sitemap now know which concrete URLs exist. A route pattern alone cannot enumerate them. `lastmod` is optional: an ISO date, written as the sitemap's `<lastmod>`.
+
+The head is a closed set of fields: `title`, `description`, `type`, `image`, `published` and `noindex`. Any other field, such as `twitter` or `jsonLd`, is HZ014, because the rest is derived: canonical, Open Graph, `twitter:card` and the JSON-LD. The share card is derived from the image: `og:image:width` and `height` from the file, `og:image:alt` from the title, and a large `twitter:card` from 600 px wide; use a 1200×630 image. `/sitemap.xml`, `/robots.txt` and, with a `site`, `/manifest.webmanifest` are derived too: an endpoint there is HZ046.
 
 ## Search and optional segments
 

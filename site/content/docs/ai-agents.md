@@ -29,6 +29,7 @@ The agent can then change the schemas, event, mutation input, form and contracts
 3. Edit the declarations, resolvers and views together; add a contract only where a transition decides (a guard, a navigation or a computed value).
 4. Run `hozu check` and apply the fix each diagnostic gives. Accept an intended behaviour change with `hozu check --update-lock` and list the accepted `now:` lines for review.
 5. Run `hozu get` or `hozu browse` to verify the intended result without starting a server; verify what other users see, reloads and sign-out once in one `browse` chain with `--js both`.
+6. Show the person what changed: `hozu show <file:line> --note "<in their words>"` frames each changed part on their page under `hozu dev`.
 
 Scaffold common behaviours with `hozu add feature` instead of repeatedly rebuilding their state machines and contracts. The command lists generated declarations and user-facing text to adapt.
 

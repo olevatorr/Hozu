@@ -63,7 +63,10 @@ export const Trial = ui.view({
         ready: (article) =>
           ui.use(Prose, { variant: { width: 'single' } }, [
             ui.a(
-              { href: ui.link(trials, null), class: 'font-mono text-xs font-bold text-ember no-underline' },
+              {
+                href: ui.link(trials, null),
+                class: 'inline-block py-1.5 font-mono text-xs font-bold text-ember no-underline',
+              },
               ['All trials'],
             ),
             articleBody(article),

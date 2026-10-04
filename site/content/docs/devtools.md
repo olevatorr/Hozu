@@ -55,7 +55,7 @@ npx hozu show features/notes/views.ts:51 --in "Buy milk" --note "Pinned notes go
 npx hozu show page:home --note "The page title is shorter"
 ```
 
-The part gets a numbered red frame on your page, and an **Agent** button appears in the dock with the count. A long note is shortened on its frame: click the label to read it in full. Its panel shows each note in order, with Back and Next to step through them and scroll to each part. **Send reply** sends your answer back as a request; **Done** removes the note. Notes live in `.hozu/notes.json` under `hozu dev` only: production builds never see them.
+The part gets a numbered red frame on your page, and an **Agent** button appears in the dock with the count. A long note is shortened on its frame: click the label to read it in full. Its panel shows each note in order, with Back and Next to step through them and scroll to each part. **Send reply** sends your answer back as a request; **Done** removes the note. A `file:line` needs no running dev server to find its part. `hozu show` alone lists the open notes and marks one `STALE` when its part has moved or gone. Notes live in `.hozu/notes.json` under `hozu dev` only: production builds never see them.
 
 ## Builder or Developer
 
