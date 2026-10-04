@@ -2,6 +2,13 @@
 
 ## 0.16.0 — (in progress) Ship less, measure fairly, learn faster (ADR 0057)
 
+### Security: an owner rule's load fails closed
+**Upgrade if a mutation uses `access: { owner: { load, … } }`.** In 0.15.0, when the `load` query failed with a
+declared error (for example `NotFound`), the mutation's resolver still ran, so the owner check could be bypassed
+by naming a row the load refuses. Found by the 0.15 dogfood.
+- **A failing `load` now answers `Forbidden`, whatever the reason, and the resolver does not run.**
+- **An owner both sides lack never matches:** a missing row field and a missing session field are no longer equal.
+
 ### Share cards and the sitemap
 - **The share card is derived from the image:**
   - `og:image:width` and `og:image:height` are read from the file;
