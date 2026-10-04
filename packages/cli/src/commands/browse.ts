@@ -56,9 +56,10 @@ const STEP = /^\s*(?:fill|select|check|uncheck|click|submit|press|wait|goto|post
 export const stepsOf = (text: string): string[] => {
   const steps: string[] = []
   let start = 0
+  const balanced = (text.match(/"/g)?.length ?? 0) % 2 === 0
   let quoted = false
   for (let i = 0; i < text.length; i++) {
-    if (text[i] === '"') quoted = !quoted
+    if (text[i] === '"' && balanced) quoted = !quoted
     else if (text[i] === ';' && !quoted && STEP.test(text.slice(i + 1))) {
       steps.push(text.slice(start, i))
       start = i + 1
@@ -79,11 +80,11 @@ export function parseStep(text: string): Parsed {
     within = scoped[2]!
   }
   if ((verb === 'fill' || verb === 'select') && within === null) {
-    const before = /^([^=]*?)\s+in\s+"([^"]+)"\s*=(.*)$/.exec(rest)
+    const before = /^("[^"]*"|[^="]*?)\s+in\s+"([^"]+)"\s*=(.*)$/.exec(rest)
     if (before) return { verb, target: unquote(before[1]!.trim()), value: before[3]!, within: before[2]! }
   }
   if (verb === 'fill' || verb === 'select') {
-    const eq = rest.indexOf('=')
+    const eq = rest.indexOf('=', rest.startsWith('"') ? Math.max(rest.indexOf('"', 1), 0) : 0)
     if (eq <= 0) throw new Error(`"${text}" needs <label>=<value>`)
     return { verb, target: unquote(rest.slice(0, eq).trim()), value: rest.slice(eq + 1), within }
   }

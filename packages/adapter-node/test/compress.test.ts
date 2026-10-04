@@ -1,7 +1,7 @@
 import { createServer as createHttp, request } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { brotliDecompressSync, gunzipSync } from 'node:zlib'
-import { createServer, send } from '@hozu/adapter-node'
+import { createServer, respond, send } from '@hozu/adapter-node'
 import { appOptionsOf } from '@hozu/runtime-server'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { build } from './support.ts'
@@ -49,6 +49,7 @@ describe('compression in adapter-node (ADR 0057 B1)', () => {
     const plain = await raw('/')
     const zipped = await raw('/', 'gzip, deflate, br')
     expect(plain.headers['content-encoding']).toBeUndefined()
+    expect(String(plain.headers.vary)).toMatch(/Accept-Encoding/)
     expect(zipped.headers['content-encoding']).toBe('gzip')
     expect(String(zipped.headers.vary)).toMatch(/Accept-Encoding/)
     expect(zipped.headers['content-length']).toBeUndefined()
@@ -69,6 +70,7 @@ describe('compression in adapter-node (ADR 0057 B1)', () => {
   it('HEAD and a client that accepts nothing get no encoding', async () => {
     const head = await raw('/', 'gzip', 'HEAD')
     expect([head.headers['content-encoding'], head.body.length]).toEqual([undefined, 0])
+    expect(String(head.headers.vary)).toMatch(/Accept-Encoding/)
     expect((await raw('/', 'identity')).headers['content-encoding']).toBeUndefined()
   })
 })
@@ -179,6 +181,59 @@ describe('compression never mixes visitors or holds back a stream (0.16 review)'
       expect(got.firstAt).toBeLessThan(got.endAt - 250)
     } finally {
       await s.close()
+    }
+  })
+
+  it('Cache-Control: no-transform is sent as it is', async () => {
+    const s = await serve(
+      () =>
+        new Response('x'.repeat(4000), {
+          headers: { 'content-type': 'text/plain', 'cache-control': 'no-transform' },
+        }),
+    )
+    try {
+      expect((await get(s.port, '/api/raw', { 'accept-encoding': 'gzip' })).encoding).toBeUndefined()
+    } finally {
+      await s.close()
+    }
+  })
+
+  it('a body that fails mid-stream cuts the connection instead of rejecting (and crashing the server)', async () => {
+    for (const encoding of ['gzip', 'identity']) {
+      const failing = () =>
+        new Response(
+          new ReadableStream<Uint8Array>({
+            async start(c) {
+              c.enqueue(new TextEncoder().encode('first '))
+              await new Promise((r) => setTimeout(r, 50))
+              c.error(new Error('boom'))
+            },
+          }),
+          { headers: { 'content-type': 'text/plain' } },
+        )
+      const settled: Promise<void>[] = []
+      const s = createHttp((req, res) => void settled.push(respond(res, failing(), req)))
+      await new Promise<void>((r) => s.listen(0, '127.0.0.1', () => r()))
+      try {
+        const port = (s.address() as AddressInfo).port
+        const outcome = await new Promise<string>((resolve) => {
+          const req = request(
+            { host: '127.0.0.1', port, path: '/x', headers: { 'accept-encoding': encoding } },
+            (res) => {
+              res.on('data', () => {})
+              res.on('end', () => resolve('ended'))
+              res.on('error', () => resolve('cut'))
+              res.on('aborted', () => resolve('cut'))
+            },
+          )
+          req.on('error', () => resolve('cut'))
+          req.end()
+        })
+        expect(outcome).toBe('cut')
+        await expect(Promise.all(settled)).resolves.toBeDefined()
+      } finally {
+        await new Promise<void>((r) => s.close(() => r()))
+      }
     }
   })
 })

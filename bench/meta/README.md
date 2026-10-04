@@ -95,7 +95,9 @@ The req/s rounds were stable within about 3 %. Per-load samples are in `out/resu
 - **What is served compressed differs.** By default:
   - Next gzips HTML and JS on the fly.
   - SvelteKit serves precompressed brotli/gzip for its static assets, but not for its HTML.
-  - Nuxt (Nitro `node-server`) and `@hozu/adapter-node` send everything uncompressed.
+  - Nuxt (Nitro `node-server`) sends everything uncompressed.
+  - `@hozu/adapter-node` compresses from 0.16 on (the gzip column); the transferred bytes below were measured
+    uncompressed.
 
   The gz columns therefore use our own gzip for every framework. Bytes actually transferred on the JS first load
   were: Next 134 376 (gzip), Nuxt 204 411 (identity), SvelteKit 30 559 (brotli), Hozu 19 812 (identity). In
@@ -115,7 +117,8 @@ The req/s rounds were stable within about 3 %. Per-load samples are in `out/resu
 - **Server work differs by design.** Next renders an RSC tree and then HTML. Nuxt runs the Vue SSR renderer plus the
   `useFetch` in-process call. SvelteKit runs `load` plus SSR. Hozu runs generated render code (ADR 0024) plus one query
   resolver. Every server is a single Node process, with no cluster mode for any of them.
-- **Hozu's version is the unpublished workspace build of 0.15.0**, not an npm install.
+- **Hozu's version is a workspace build of 0.16 before its release** (e0474b4; the table says 0.15.0 because the
+  version was not raised yet), not an npm install. The site labels it 0.16.0.
 - One unrelated, idle Node process (the site server on port 4401) was running on the machine during the run.
 - These numbers come from one machine and one run. Treat differences under about 5 % as noise.
 

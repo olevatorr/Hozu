@@ -12,7 +12,15 @@ import {
   type Handler,
   type HandlerOptions,
 } from '@hozu/runtime-server'
-import { accepts, compressedCache, type Encoding, encodingFor, streamCompressed, varyOn } from './compress.ts'
+import {
+  accepts,
+  compressedCache,
+  compressibleType,
+  type Encoding,
+  encodingFor,
+  streamCompressed,
+  varyOn,
+} from './compress.ts'
 
 export interface NodeAdapterOptions extends Omit<HandlerOptions, 'readFile'> {
   publicDir?: string
@@ -58,21 +66,24 @@ export async function send(
     /\bimmutable\b/.test(control) &&
     !/\bprivate\b/.test(control) &&
     cookies.length === 0
-  const encoding =
-    request &&
-    answer.body &&
+  const negotiable =
+    !!request &&
     answer.status !== 204 &&
+    answer.status !== 206 &&
     answer.status !== 304 &&
+    compressibleType(type) &&
     !answer.headers.has('content-encoding') &&
-    !type?.startsWith('text/event-stream')
+    !/\bno-transform\b/.test(control)
+  const encoding =
+    request && negotiable && answer.body
       ? shareable
         ? encodingFor(request, type)
         : encodingFor(request, type) && (accepts(request, 'gzip') ? 'gzip' : 'br')
       : null
+  if (negotiable) headers.vary = varyOn(headers.vary)
   if (encoding) {
     delete headers['content-length']
     headers['content-encoding'] = encoding
-    headers.vary = varyOn(headers.vary)
   }
   response.writeHead(answer.status, headers)
   if (!answer.body) return void response.end()
@@ -88,6 +99,17 @@ export async function send(
   }
   response.end()
 }
+
+/** `send` that never rejects: a body that fails before its head is a 500, after it the connection is cut. */
+export const respond = (
+  response: ServerResponse,
+  answer: Response,
+  request?: IncomingMessage,
+): Promise<void> =>
+  send(response, answer, request).catch(() => {
+    if (!response.headersSent) response.writeHead(500, { 'content-type': 'text/plain' }).end('Internal error')
+    else response.destroy()
+  })
 
 /** `hozu build` writes `.br` and `.gz` next to each compressible file; without them, the file is compressed once. */
 async function precompressed(file: string, encoding: Encoding, body: Uint8Array) {
@@ -129,7 +151,8 @@ export function createServer(
       response.writeHead(200, {
         'content-type': type,
         'cache-control': hashed ? 'public, max-age=31536000, immutable' : 'no-cache',
-        ...(packed ? { 'content-encoding': encoding!, vary: 'Accept-Encoding' } : {}),
+        ...(compressibleType(type) ? { vary: 'Accept-Encoding' } : {}),
+        ...(packed ? { 'content-encoding': encoding! } : {}),
       })
       response.end(request.method === 'HEAD' ? undefined : (packed ?? body))
       return true
@@ -145,7 +168,7 @@ export function createServer(
     } catch {
       return void response.writeHead(400, { 'content-type': 'text/plain' }).end('Bad request')
     }
-    await send(response, answer, request)
+    await respond(response, answer, request)
   })
   return Object.assign(server, { revalidate: handler.revalidate, stats: handler.stats })
 }

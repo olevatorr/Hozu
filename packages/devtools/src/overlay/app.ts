@@ -377,10 +377,11 @@ function setMode(mode: State['mode']) {
   renderDock()
 }
 
+const typingIn = (event: KeyboardEvent) =>
+  event.composedPath().some((t) => ['TEXTAREA', 'INPUT', 'SELECT'].includes((t as Element).tagName))
+
 function onKey(event: KeyboardEvent) {
-  const typing = event
-    .composedPath()
-    .some((t) => ['TEXTAREA', 'INPUT', 'SELECT'].includes((t as Element).tagName))
+  const typing = typingIn(event)
   if (event.altKey && event.shiftKey && event.code === 'KeyS') {
     event.preventDefault()
     return setMode(state.mode === 'select' ? 'browse' : 'select')
@@ -1830,7 +1831,7 @@ function closeBench() {
 
 addEventListener('resize', layout)
 addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && bench.classList.contains('layers-open')) closeLayers()
+  if (event.key === 'Escape' && !typingIn(event) && bench.classList.contains('layers-open')) closeLayers()
 })
 
 renderDock()

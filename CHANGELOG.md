@@ -56,7 +56,7 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
   operands to the end, so every node after one reported an earlier line in `hozu why`, `hozu show`, DevTools and
   diagnostics (the dogfood saw a list row reported on its `<tbody>`'s line).
 - **`hozu browse` takes the forms agents write:** `in "<text>"` before or after a fill's value, several steps in one
-  `--do` joined with `;` (outside quotes, before a verb and a space), and a missing target prints `Did you mean "<closest label>"?`. In trial 0024, a quarter
+  `--do` joined with `;` (outside balanced quotes, before a verb and a space), and a missing target prints `Did you mean "<closest label>"?`. In trial 0024, a quarter
   of the agents' browse runs failed on such a guess and re-ran a whole chain.
 - **`hozu browse` treats a page's 401, 403, 404 or 410 as the step's answer:** a step that loads such a page
   shows `→ /notes/n1 (403)` and is not an error, so an access check exits 0. The start page still must load, and
@@ -77,10 +77,12 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
   stream waits, so the head still arrives first and a streamed text answer is never held back.
 - **Framework files are compressed once:** `hozu build` writes `.br` and `.gz` next to each file of `dist/public`
   over 1 KB; an immutable `/_hozu/` file without them is compressed once and kept. Nothing else is kept: an answer
-  that is private or sets a cookie is compressed for its own request only. Answers carry `Content-Encoding` and
-  `Vary: Accept-Encoding`.
-- **Not compressed:** live streams, HEAD, 204 / 304, and already-compressed types. The web-standard handler (edge)
-  leaves compression to the platform.
+  that is private or sets a cookie is compressed for its own request only. Every answer that could be compressed
+  carries `Vary: Accept-Encoding`, compressed or not, so a CDN keeps both.
+- **Not compressed:** live streams, HEAD, 204 / 206 / 304, `Cache-Control: no-transform`, and already-compressed
+  types. The web-standard handler (edge) leaves compression to the platform.
+- **A body that fails mid-stream** (an endpoint's own `Response`) cuts the connection; before, the rejected send
+  could stop the Node process.
 
 ### Faster server rendering
 - **SSR is back at the 0.9 level: 47.3 k → 55.0 k renders/s** on the frameworks bench. 0.11 and 0.12 each added a walk

@@ -281,7 +281,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     severity: 'error',
     topic: 'http',
     summary: '`http.headers` sets a header the framework owns, or an invalid name/value',
-    fix: 'remove it (`cache-control` is derived; CSP is `createServer({ csp })`)',
+    fix: 'remove it (`cache-control` is derived; CSP is `app({ csp })`)',
   },
   HZ039: {
     name: 'invalid-base-path',

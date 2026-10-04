@@ -6,9 +6,11 @@ export type Encoding = 'br' | 'gzip'
 const compressible =
   /^(text\/(html|css|javascript|plain|xml)|application\/(json|javascript|xml|manifest\+json)|image\/svg\+xml)\b/
 
+export const compressibleType = (type: string | null): boolean => !!type && compressible.test(type)
+
 /** The encoding to send, from the request's Accept-Encoding and the answer's type (ADR 0057 B1). */
 export function encodingFor(request: IncomingMessage, type: string | null): Encoding | null {
-  if (request.method === 'HEAD' || !type || !compressible.test(type)) return null
+  if (request.method === 'HEAD' || !compressibleType(type)) return null
   const accepted = String(request.headers['accept-encoding'] ?? '')
     .split(',')
     .map((part) => part.trim().split(';'))
@@ -67,15 +69,24 @@ export async function streamCompressed(
       : createBrotliCompress({ params: { [constants.BROTLI_PARAM_QUALITY]: 4 } })
   const flushing = encoding === 'gzip' ? constants.Z_SYNC_FLUSH : constants.BROTLI_OPERATION_FLUSH
   zip.pipe(response)
-  response.on('close', () => void reader.cancel().catch(() => {}))
+  response.on('close', () => {
+    reader.cancel().catch(() => {})
+    if (!response.writableFinished) zip.destroy()
+  })
   let idle: ReturnType<typeof setImmediate> | null = null
-  for (;;) {
-    const { done, value } = await reader.read()
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (idle) clearImmediate(idle)
+      idle = null
+      if (done) break
+      zip.write(value)
+      idle = setImmediate(() => zip.flush(flushing))
+    }
+  } catch (error) {
     if (idle) clearImmediate(idle)
-    idle = null
-    if (done) break
-    zip.write(value)
-    idle = setImmediate(() => zip.flush(flushing))
+    zip.destroy()
+    throw error
   }
   zip.end()
 }

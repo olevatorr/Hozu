@@ -175,6 +175,14 @@ describe('step parsing', () => {
       value: 'say in "a"=b',
       within: null,
     })
+    expect(stepsOf('fill Size=12"; click Save')).toEqual(['fill Size=12"', 'click Save'])
+    expect(parseStep('fill "a=b" in "Row" = x')).toEqual({
+      verb: 'fill',
+      target: 'a=b',
+      value: ' x',
+      within: 'Row',
+    })
+    expect(parseStep('fill "a=b"=x')).toEqual({ verb: 'fill', target: 'a=b', value: 'x', within: null })
   })
 
   it('post and remember keep their whole target', () => {
