@@ -467,10 +467,21 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     expect(await box()).toMatchObject({ tag: '1 This button now signs you in' })
     const framed = await box()
     expect(framed.left).toBe(framed.at)
-    await shadowClick('.dock button', 'Agent')
+    expect(
+      await evaluate(
+        `document.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.note-tag').getAttribute('title')`,
+      ),
+    ).toBe('This button now signs you in')
+    const tag = await evaluate(
+      `(() => { const r = document.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.note-tag').getBoundingClientRect(); return { x: r.x + 8, y: r.y + r.height / 2 } })()`,
+    )
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...tag }, session)
+    for (const type of ['mousePressed', 'mouseReleased'])
+      await cdp.send('Input.dispatchMouseEvent', { type, ...tag, button: 'left', clickCount: 1 }, session)
     await until(
       `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent === 'Note 1 of 2'`,
     )
+    expect(await evaluate('location.pathname')).toBe('/login')
     expect(await tool(`$('.note-text').textContent`)).toBe('This button now signs you in')
     await shadowClick('.actions button', 'Next')
     await until(

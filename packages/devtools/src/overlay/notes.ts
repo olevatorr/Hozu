@@ -5,6 +5,7 @@ export interface AgentHost {
   doc: () => Document
   win: () => Window
   developer: () => boolean
+  show: () => void
   closeButton: (onclick: () => void) => HTMLElement
   close: () => void
   changed: () => void
@@ -25,7 +26,19 @@ export function agentNotes(host: AgentHost) {
     layer.replaceChildren(
       ...notes.map((n, i) =>
         h('div', { class: i === current ? 'note-box current' : 'note-box', hidden: true }, [
-          h('div', { class: 'note-tag' }, [h('b', {}, [String(n.n)]), ` ${short(n.text)}`]),
+          h(
+            'button',
+            {
+              class: 'note-tag',
+              type: 'button',
+              title: n.text,
+              onclick: () => {
+                go(i)
+                host.show()
+              },
+            },
+            [h('b', {}, [String(n.n)]), ` ${short(n.text)}`],
+          ),
         ]),
       ),
     )

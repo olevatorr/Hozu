@@ -61,6 +61,7 @@ access in the lock.
 - **`hozu show <part> --note "<text>"`:** the part is a DevTools id, an IR pointer or `page:<route>`.
   - Under `hozu dev`, the part gets a numbered red frame on the page, and an **Agent** button appears in the dock.
   - Its panel steps through the notes, scrolling to each part.
+  - Clicking a frame's label opens that note in full; hovering shows it too.
   - **Send reply** saves a request, which the agent reads with `hozu requests`. **Done** removes the note.
 - **Managing notes:** `hozu show` lists them; `--done <n>` removes one, and `--clear` removes them all.
 - **Storage:** notes live in `.hozu/notes.json`, and only `hozu dev` serves them, to this machine. Production has

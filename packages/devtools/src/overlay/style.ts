@@ -456,7 +456,9 @@ export const outlineCss = `
   position: absolute; left: -2px; bottom: 100%; margin-bottom: 6px; max-width: 320px; overflow: hidden;
   white-space: nowrap; text-overflow: ellipsis; background: #fb3a0e; color: #fff;
   font: 600 12px/1.2 system-ui, -apple-system, sans-serif; padding: 5px 8px; border-radius: 6px;
+  border: 0; pointer-events: auto; cursor: pointer; text-align: left;
 }
+.note-tag:hover { background: #d92f08; }
 .note-tag b { margin-right: 2px; }
 .note-box.below .note-tag { bottom: auto; top: 100%; margin: 6px 0 0; }
 `

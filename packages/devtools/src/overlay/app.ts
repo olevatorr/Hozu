@@ -117,6 +117,7 @@ const agent = agentNotes({
   doc: () => doc,
   win: () => win,
   developer: () => state.audience === 'developer',
+  show: () => open('notes'),
   closeButton: (onclick) => closeButton(onclick),
   close: () => open(state.picks.length ? 'inspector' : null),
   changed: () => {
@@ -144,7 +145,8 @@ const framed = (box: HTMLElement, selected: boolean) => {
 }
 framed(hover, false)
 
-const ours = (event: Event) => event.composedPath().includes(host)
+const ours = (event: Event) =>
+  event.composedPath().includes(host) || (outline !== null && event.composedPath().includes(outline))
 const parentId = (id: string) => id.slice(0, id.lastIndexOf('/'))
 const isText = (n: DevNode | null) => n?.kind === 'text'
 

@@ -54,7 +54,7 @@ npx hozu show notes.NotesBoard/0/1 --note "Delete now asks before it removes a n
 npx hozu show page:home --note "The page title is shorter"
 ```
 
-The part gets a numbered red frame on your page, and an **Agent** button appears in the dock with the count. Its panel shows each note in order, with Back and Next to step through them and scroll to each part. **Send reply** sends your answer back as a request; **Done** removes the note. Notes live in `.hozu/notes.json` under `hozu dev` only: production builds never see them.
+The part gets a numbered red frame on your page, and an **Agent** button appears in the dock with the count. A long note is shortened on its frame: click the label to read it in full. Its panel shows each note in order, with Back and Next to step through them and scroll to each part. **Send reply** sends your answer back as a request; **Done** removes the note. Notes live in `.hozu/notes.json` under `hozu dev` only: production builds never see them.
 
 ## Builder or Developer
 
