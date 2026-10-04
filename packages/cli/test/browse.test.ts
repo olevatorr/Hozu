@@ -253,6 +253,28 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     ])
   }, 60_000)
 
+  it('remembers a value per mode, substitutes $name, and sends --header on every request (ADR 0056 C)', async () => {
+    const { code, out } = await browse(
+      [
+        '/login',
+        '--header',
+        'X-Hozu-Test: 1',
+        ...steps(
+          'remember back from url',
+          'remember heading from h1',
+          'goto /',
+          'goto $back',
+          'goto $nothing',
+        ),
+      ],
+      example('notes'),
+    )
+    expect(code).toBe(1)
+    for (const m of out.steps[0].modes) expect(m.note).toBe('back = /login')
+    for (const m of out.steps[3].modes) expect(m.url).toBe('/login')
+    for (const m of out.steps[4].modes) expect(m.note).toBe('$nothing was not remembered before this step')
+  }, 60_000)
+
   it('prints js-only in the off column for a step with no native effect', async () => {
     const { stdout } = await human(['/', ...steps('click Save in "Hello, Hozu"')], example('blog'))
     expect(stdout).toContain(

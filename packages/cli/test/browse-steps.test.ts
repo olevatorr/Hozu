@@ -26,16 +26,27 @@ const PAGE = `<!doctype html><title>Steps</title>
 
 const decode = (body: Uint8Array | null) => new TextDecoder().decode(body ?? new Uint8Array())
 
+const seen: Record<string, string>[] = []
 const world = {
-  fetch: async (r: { url: string; method: string; body: Uint8Array | null }) => ({
-    id: 0,
-    status: 200,
-    stream: false,
-    headers: [['content-type', 'text/html']] as [string, string][],
-    body: new TextEncoder().encode(
-      r.method === 'POST' ? `<title>Posted</title><p>${new URL(r.url).pathname} ${decode(r.body)}</p>` : PAGE,
-    ),
-  }),
+  fetch: async (r: {
+    url: string
+    method: string
+    headers: Record<string, string>
+    body: Uint8Array | null
+  }) => (
+    seen.push(r.headers),
+    {
+      id: 0,
+      status: 200,
+      stream: false,
+      headers: [['content-type', 'text/html']] as [string, string][],
+      body: new TextEncoder().encode(
+        r.method === 'POST'
+          ? `<title>Posted</title><p>${new URL(r.url).pathname} ${decode(r.body)}</p>`
+          : PAGE,
+      ),
+    }
+  ),
   cancel: () => {},
 } as unknown as World
 
@@ -108,6 +119,19 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
     expect(await text(t)).toBe('/echo tag=x&tag=&body=&action=delete')
   }, 30_000)
 
+  for (const mode of ['on', 'off'] as const)
+    it(`${mode}: post sends a native form as the actor, with the actor's headers (ADR 0056 C)`, async () => {
+      const t = await tab(mode)
+      t.headers = { authorization: 'Bearer b' }
+      expect(await run(t, 'post /notes/n1 text=Hi there&done=on')).toMatchObject({
+        ok: true,
+        note: 'posted 2 fields to /notes/n1',
+      })
+      expect(await text(t)).toBe('/notes/n1 text=Hi+there&done=on')
+      expect(seen.at(-1)).toMatchObject({ authorization: 'Bearer b' })
+      await expect(act(t, parseStep('post notes'))).rejects.toThrow('post takes a path')
+    }, 30_000)
+
   it('a step with no native effect is js-only without JS, and runs with JS', async () => {
     const off = await tab('off')
     expect(await run(off, 'click Toggle')).toEqual({ ok: true, note: null, jsOnly: 'a type=button button' })
@@ -123,6 +147,14 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
 })
 
 describe('step parsing', () => {
+  it('post and remember keep their whole target', () => {
+    expect(parseStep('post /a x=1&y=2')).toMatchObject({ verb: 'post', target: '/a x=1&y=2' })
+    expect(parseStep('remember id from li a @href')).toMatchObject({
+      verb: 'remember',
+      target: 'id from li a @href',
+    })
+  })
+
   it('takes a quoted target like an unquoted one', () => {
     expect(parseStep('click "Save draft"')).toEqual(parseStep('click Save draft'))
     expect(parseStep('fill "Draft"=hello')).toEqual({

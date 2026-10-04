@@ -3,13 +3,15 @@
 - **Read a page without a server:** `hozu get /path --select 'button[aria-pressed=true]' --forms` (status, title,
   visible text; `--forms` lists each form's fields and submit buttons). Endpoints: `hozu get '/api/items?x=1'`.
 - **Try one query or mutation without a page:** `hozu call notes.listNotes --input '{}' --session '{"user":"ada"}'`;
-  a mutation writes real data, so it needs `--write`.
+  a mutation writes real data, so it needs `--write`. An endpoint too:
+  `hozu call api.who --input '{"room":"a"}' --header 'Authorization: Bearer t'` (a POST needs `--write`).
 - **Drive the app in a real browser, still without a server:**
   `hozu browse / --session '{"user":"ada"}' --do 'fill New note=Milk' --do 'press Enter' --do 'click Pin in "Milk"'`.
   - `--js both` (the default) runs every step with JS and with JS switched off; submit with `press Enter` or
     `submit "<form>"` so one step list drives both.
   - Steps: `fill <label>=<value>`, `select <label>=<option>`, `check` / `uncheck <label>`, `click <name>`,
-    `submit "<form>"`, `press <key>`, `wait <ms>`, `goto <path>`; a target may end with `in "<text>"`.
+    `submit "<form>"`, `press <key>`, `wait <ms>`, `goto <path>`, `post <path> a=1&b=2`,
+    `remember <name> from url|<selector> [@attr]` (later steps read `$name`); a target may end with `in "<text>"`.
 - **Other users, other pages, after a reload, after sign-out:** verify any such statement once, in one `browse`
   chain with `--js both`. `--as <name>` starts an actor with its own browser; all actors share one app.
 - **The output** is per step only the lines added (`+`) or removed (`−`). A passing six-step run stays under 1.5 KB.
@@ -43,6 +45,11 @@
   writes is what bob reads.
   - Signing out and in again inside one actor's chain also works (`click Sign out`, `fill Name=bob`, `press Enter`).
   - `hozu browse /notes --as ada --session '{"user":"ada"}' --as bob --session '{"user":"bob"}' --as ada --do 'click Share in "Milk"' --as bob --do 'goto /inbox'`
+  - `--header 'Name: value'` adds a header to every request: before the first `--as` for every actor, after an
+    `--as` for that actor.
+  - **Another visitor's data:** `--as ada --do 'remember note from li a @href' --as bob --do 'goto $note'` (bob's page
+    should answer 403), or `--as bob --do 'post /notes/n1 text=x'`: a forged native post, as bob, without the page.
+    Each mode keeps its own remembered values.
 - **The output** is small on purpose: lines print once when both modes agree and per mode where they differ; a
   navigation prints `→ <path>` and the new page's lines; a live update on another actor's page prints under the step
   (`bob: + Milk`).

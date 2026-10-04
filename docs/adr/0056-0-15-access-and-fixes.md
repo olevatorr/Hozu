@@ -3,7 +3,8 @@
 - **Status:**
   - **Scope accepted** (owner, 2026-10-04): declared access as an error, a row check that reports, and all 13
     dogfood findings plus `bench:frameworks`.
-  - **Phase A is decided.** Phases B and C are proposed; the owner confirms each before it starts.
+  - **Decided and implemented** (owner, 2026-10-04: "do the rest to the end, AI-first"): Phases A, B and C, with
+    the changes recorded below. C5 (generated access checks) is deferred.
 - **Sources:**
   - ADR 0054 (the access draft, now decided: option A);
   - the 0.14 dogfood (`hozu-dogfood-0.14/*/FRICTION.md`, each finding reproduced in `hozu-dogfood-0.14/repro`);
@@ -29,21 +30,22 @@
 | A15 | `browse --js both` reports DIFFERS when two modes create different random ids | The parity compare ignores route parameters in the location; text and status are still compared |
 | A16 | Server resolvers do not see public env; `env.internal` applies only to `'either'` effects | Docs: the env topic says so, and shows reading both URLs in a server resolver |
 
-## Phase B — declared access (proposed; confirm before it starts)
+## Phase B — declared access (decided)
 - **The rule:**
   - Every `scope: 'user'` query and every mutation declares `access`.
   - A missing `access` is a type error, and HZ088 in untyped code.
   - `access` on a `scope: 'public'` query is HZ089 (warning).
 - **The forms:** one canonical form per meaning. The callbacks are lowered like guards, so the IR holds paths, not
-  functions.
-  - **`anyone()`:** no condition. On a `scope: 'user'` query it is HZ090 (a warning, which can be accepted with a
+  functions. **As built**, `access` is a literal or an object, like `runs`, not four functions: `@hozu/core` keeps
+  its export budget, and an agent writes the forms without an import.
+  - **`'anyone'`:** no condition. On a `scope: 'user'` query it is HZ090 (a warning, which can be accepted with a
     reason).
-  - **`signedIn()`:** the session is not `null`.
-  - **`allow(({ session, input }) => session.role === 'admin')`:** a guard over the session and the input.
-  - **`owner({ row: (n) => n.owner, session: (s) => s.user })`, on a query:** every row of the output (or the
+  - **`'signedIn'`:** the session is not `null`.
+  - **`{ allow: ({ session, input }) => session.role === 'admin' }`:** a guard over the session and the input.
+  - **`{ owner: { row: (n) => n.owner, session: (s) => s.user } }`, on a query:** every row of the output (or the
     output itself, when it is an object) has `row(…) === session(…)`.
-  - **`owner({ load: getNote, input: (i) => ({ id: i.id }), row: (n) => n.owner, session: (s) => s.user })`, on a
-    mutation:** the framework loads the row with that query first, and the check is made on it.
+  - **`{ owner: { load: getNote, input: (i) => ({ id: i.id }), row: (n) => n.owner, session: (s) => s.user } }`,
+    on a mutation:** the framework loads the row with that query first, and the check is made on it.
 - **At run time:**
   - **Refused:** a failed `signedIn` / `allow` / mutation `owner` answers the framework error `Forbidden`, which is
     optional in `failed`, like `Invalid`. The resolver does not run.
@@ -56,15 +58,17 @@
   - `testApp` and `hozu call --session` exercise it.
   - Phase C adds the cross-user check.
 - **Migration (0.14 → 0.15):**
-  - `access: anyone()` on every effect that needs one. The IR keeps the old behaviour, so the app runs as before.
+  - `access: 'anyone'` on every effect that needs one. The IR keeps the old behaviour, so the app runs as before.
   - The new warnings (HZ090) then list every user query to tighten, or to accept with a reason.
   - Nothing is tightened silently.
 - **Why `owner` needs the row to carry its owner:**
   - Today's apps (`examples/notes`) filter by `session.user` in the resolver and do not return the owner.
   - The framework can check only what it sees, so `owner` asks the output to include the owner field.
-  - Where that is unwanted, `signedIn()` plus resolver scoping is the honest declaration.
+  - Where that is unwanted, `'signedIn'` plus resolver scoping is the honest declaration.
+- **Scope, as built:** access applies where the server enforces it: `runs: 'server'` user queries and mutations.
+  A browser-run effect is guarded by the API it calls, so `access` there is HZ089.
 
-## Phase C — test tools for access and the dogfood's gaps (proposed; confirm before it starts)
+## Phase C — test tools for access and the dogfood's gaps (decided)
 - **`hozu call <endpoint>`:** endpoints with `--header 'Authorization: Bearer …'` and `--body`. Today it refuses
   endpoints.
 - **`hozu browse --header`:** a header on every request of an actor.
@@ -72,8 +76,12 @@
   another's URL or id, so "B cannot open A's note" is one chain.
 - **`hozu browse --do 'post <path> field=value'`:** a forged form post as the current actor, without the page.
   The answer status and text are reported.
-- **Generated access checks:** for every `owner` rule, `hozu check` runs the pattern "user B reads / writes user
-  A's row → `Forbidden` or not listed". It uses the app's resolvers in memory, with two sessions.
+- **Generated access checks: deferred.** For every `owner` rule, `hozu check` would run "user B reads / writes user
+  A's row → `Forbidden` or not listed", with the app's resolvers in memory and two sessions. Building it showed
+  what it needs that the framework does not have: an input naming a row that exists, and two sessions that the
+  app's own sign-in would issue. Inventing either would make a check that passes on data the app never holds.
+  Instead, the runtime checks every request (`Forbidden`, HZ091 in development), and the cross-user chain is one
+  `browse` command with `remember` and `$name` (the auth and testing topics show it).
 
 ## Not in 0.15
 - Option C of ADR 0054 (a declared data layer with derived invalidation).

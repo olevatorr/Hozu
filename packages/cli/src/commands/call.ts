@@ -1,4 +1,4 @@
-import type { Json, ProjectIR, Runs } from '@hozu/core/ir'
+import type { EndpointIR, Json, ProjectIR, Runs } from '@hozu/core/ir'
 import { impact } from '@hozu/validator'
 import type { CallOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
@@ -10,6 +10,8 @@ export interface CallOptions {
   input: string | undefined
   session: string | undefined
   write: boolean
+  /** Request headers for an endpoint, `Name: value` (ADR 0056 C). */
+  headers?: string[]
 }
 
 interface Server {
@@ -29,15 +31,14 @@ function effectOf(ir: ProjectIR, target: string) {
   const sym = target.slice(dot + 1)
   const query = feature?.queries[sym]
   const mutation = feature?.mutations[sym]
-  if (query) return { kind: 'query' as const, runs: query.runs }
-  if (mutation) return { kind: 'mutation' as const, runs: mutation.runs }
-  if (feature?.endpoints[sym])
-    throw new HozuCliError('usage', `${target} is an endpoint; request its URL instead`, [
-      'hozu get <its path> for a GET endpoint, hozu browse for a form that posts to it',
-    ])
+  const endpoint = feature?.endpoints[sym]
+  if (query) return { kind: 'query' as const, runs: query.runs, endpoint: null }
+  if (mutation) return { kind: 'mutation' as const, runs: mutation.runs, endpoint: null }
+  if (endpoint) return { kind: 'endpoint' as const, runs: 'server' as Runs, endpoint }
   const known = Object.values(ir.features).flatMap((f) => [
     ...Object.keys(f.queries).map((s) => `${f.id}.${s}`),
     ...Object.keys(f.mutations).map((s) => `${f.id}.${s}`),
+    ...Object.keys(f.endpoints).map((s) => `${f.id}.${s}`),
   ])
   throw new HozuCliError('usage', `Unknown query or mutation ${target}`, known.slice(0, 20))
 }
@@ -53,19 +54,21 @@ export async function runCall(loaded: Loaded, options: CallOptions): Promise<Cal
       `hozu call notes.listNotes --input '{}'`,
     ])
   const target = options.target
-  const { kind, runs } = effectOf(loaded.build().ir, target)
+  const { kind, runs, endpoint } = effectOf(loaded.build().ir, target)
   if (runs === 'browser')
     throw new HozuCliError(
       'usage',
       `${target} runs in the browser (runs: 'browser'); the server never runs it`,
       ['hozu browse <a page that reads it>'],
     )
-  if (kind === 'mutation' && !options.write)
+  const writes = kind === 'mutation' || (endpoint !== null && endpoint.method !== 'GET')
+  if (writes && !options.write)
     throw new HozuCliError(
       'usage',
-      `${target} is a mutation: it writes real data, so hozu call needs --write`,
+      `${target} is a ${kind === 'endpoint' ? `${endpoint!.method} endpoint` : 'mutation'}: it writes real data, so hozu call needs --write`,
       [`hozu call ${target} --input '…' --write`],
     )
+  const headers = headersOf(options.headers ?? [])
   let input: Json
   try {
     input = JSON.parse(options.input ?? '{}') as Json
@@ -97,6 +100,8 @@ export async function runCall(loaded: Loaded, options: CallOptions): Promise<Cal
         }),
   })
   const [cookie] = parts.cookies
+  if (endpoint)
+    return callEndpoint(handler, target, endpoint, ir, input, { ...headers, ...(cookie ? { cookie } : {}) })
   const started = performance.now()
   const response = await handler.fetch(
     new Request(`${ORIGIN}/_hozu/${kind === 'query' ? 'query' : 'effect'}`, {
@@ -119,8 +124,77 @@ export async function runCall(loaded: Loaded, options: CallOptions): Promise<Cal
   return { effect: target, kind, runs: runs as Runs, input, result, ms, invalidated, refreshes }
 }
 
+function headersOf(lines: string[]): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const line of lines) {
+    const at = line.indexOf(':')
+    if (at <= 0)
+      throw new HozuCliError('usage', `--header takes "Name: value", not "${line}"`, [
+        "--header 'Authorization: Bearer <token>'",
+      ])
+    out[line.slice(0, at).trim().toLowerCase()] = line.slice(at + 1).trim()
+  }
+  return out
+}
+
+const flat = (input: Json): URLSearchParams => {
+  const params = new URLSearchParams()
+  for (const [k, v] of Object.entries((input ?? {}) as Record<string, Json>))
+    for (const x of Array.isArray(v) ? v : [v]) if (x !== null) params.append(k, String(x))
+  return params
+}
+
+/** An endpoint, called through the app's handler like any client would (ADR 0056 C): its URL, method and headers. */
+async function callEndpoint(
+  handler: { fetch(request: Request): Promise<Response> },
+  target: string,
+  e: EndpointIR,
+  ir: ProjectIR,
+  input: Json,
+  headers: Record<string, string>,
+): Promise<CallOutput> {
+  const query = e.method === 'GET' ? flat(input).toString() : ''
+  const url = `${ORIGIN}${ir.http.basePath}${e.path}${query ? `?${query}` : ''}`
+  const started = performance.now()
+  const response = await handler.fetch(
+    new Request(url, {
+      method: e.method,
+      headers: {
+        origin: ORIGIN,
+        ...(e.method === 'GET' ? {} : { 'content-type': 'application/json' }),
+        ...headers,
+      },
+      ...(e.method === 'GET'
+        ? {}
+        : { body: e.raw && typeof input === 'string' ? input : JSON.stringify(input) }),
+    }),
+  )
+  const ms = Math.round(performance.now() - started)
+  const text = await response.text()
+  let body: Json = text
+  try {
+    body = JSON.parse(text) as Json
+  } catch {}
+  const ok = response.status < 400
+  const error =
+    !ok && body && typeof body === 'object' && 'error' in body ? String(body.error) : String(response.status)
+  return {
+    effect: target,
+    kind: 'endpoint',
+    runs: 'server',
+    input,
+    status: response.status,
+    result: ok ? { ok: true, value: body } : { ok: false, error, data: body },
+    ms,
+    invalidated: [],
+    refreshes: [],
+  }
+}
+
 export function describeCall(out: CallOutput): string {
-  const lines = [`${out.effect}  (${out.kind}, runs: ${out.runs})  ${out.ms} ms`]
+  const lines = [
+    `${out.effect}  (${out.kind}${out.kind === 'endpoint' ? '' : `, runs: ${out.runs}`})${out.status ? `  ${out.status}` : ''}  ${out.ms} ms`,
+  ]
   lines.push(out.result.ok ? 'ok' : `failed: ${out.result.error}`)
   lines.push(JSON.stringify(out.result.ok ? out.result.value : out.result.data, null, 2))
   if (out.invalidated.length) lines.push(`invalidated: ${out.invalidated.join(', ')}`)

@@ -391,6 +391,9 @@ export class Tab {
     ).catch(() => {})
   }
 
+  /** Headers added to every request this actor's tab makes (`--header`, ADR 0056 C). */
+  headers: Record<string, string> = {}
+
   private async paused(params: any, session: string) {
     const r = params.request
     const existing = r.method === 'GET' ? this.live.get(r.url) : undefined
@@ -398,7 +401,7 @@ export class Tab {
     let live: Live | null = null
     try {
       const head = await this.world.fetch(
-        { url: r.url, method: r.method, headers: r.headers, body: bodyOf(r) },
+        { url: r.url, method: r.method, headers: { ...r.headers, ...this.headers }, body: bodyOf(r) },
         (chunk) => {
           if (chunk !== null) live?.chunk(chunk)
         },

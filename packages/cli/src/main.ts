@@ -65,8 +65,9 @@ Commands:
   get <path>...             Request pages in-process (no server): status, title, alerts, visible text, forms
   env [--example]           Every env variable the app reads: side, required, default, set now, internal URL;
                             --example writes .env.example
-  call <feature>.<effect>   Run one query or mutation in-process (no server) through the app's own handler:
-                            --input '<json>', --session '<json>'; a mutation writes real data and needs --write
+  call <feature>.<effect>   Run one query, mutation or endpoint in-process (no server) through the app's own
+                            handler: --input '<json>', --session '<json>', --header 'Name: value' (endpoints);
+                            a mutation or a POST endpoint writes real data and needs --write
   browse <path> --do <step> Run the steps in headless Chrome with and without JS (no server): what each step changed
   add feature <name>        Scaffold a working feature (model, views, contracts, resolvers) and wire it in
   add component <kit|feature> <Name> [--client]
@@ -81,13 +82,16 @@ Options:
   --update-lock        check: rewrite hozu.lock.json when there are no errors
   --out <dir>          build: output directory (default: dist)
   --agent <agent>      skill: claude, agents or both (default: the folders that exist)
+  --header <h>         call/browse: a request header, 'Name: value' (repeatable), e.g. a bearer token; in browse,
+                       before the first --as for every actor, after an --as for that actor
   --session <json>     get/browse: start signed in with this session (a real one: sign-out works); after --as, that actor's
   --full               get/browse: print the whole visible text and every changed line
   --select <selector>  get/browse: print matching elements with their attributes: button, #id, [role=alert], a[href]
   --forms              get: list the page's forms: fields with defaults, checkbox groups, form= controls, submit buttons
   --do <step>          browse: 'fill <label>=<value>', 'select <label>=<option>', 'check <label>', 'uncheck <label>',
-                       'click <name>', 'submit "<form>"', 'press <key>', 'wait <ms>', 'goto <path>' (repeatable, in
-                       order); a target may end with in "<text>" (the list item, table row or form containing it)
+                       'click <name>', 'submit "<form>"', 'press <key>', 'wait <ms>', 'goto <path>',
+                       'post <path> a=1&b=2', 'remember <name> from url|<selector> [@attr]' (later steps read $name)
+                       (repeatable, in order); a target may end with in "<text>" (the list item, table row or form)
   --js <on|off|both>   browse: run the steps with JS, without JS, or both side by side (default both)
   --as <name>          browse: the steps after it are this actor's, in its own browser; repeat to switch actors
   --screenshot <file>  browse: save a PNG of the viewport after the steps
@@ -139,9 +143,19 @@ export function browsePlan(tokens: Token[]): Pick<BrowseOptions, 'actors' | 'pla
   const actors: BrowseOptions['actors'] = []
   const plan: BrowseOptions['plan'] = []
   const named = tokens.some((t) => t.kind === 'option' && t.name === 'as')
+  const shared = tokens.filter((t) => t.kind === 'option' && t.name === 'header').map((t) => t.value ?? '')
+  const before = named
+    ? tokens
+        .slice(
+          0,
+          tokens.findIndex((t) => t.kind === 'option' && t.name === 'as'),
+        )
+        .filter((t) => t.kind === 'option' && t.name === 'header')
+        .map((t) => t.value ?? '')
+    : shared
   if (!named) {
     const session = tokens.filter((t) => t.kind === 'option' && t.name === 'session').at(-1)?.value
-    actors.push({ name: null, session })
+    actors.push({ name: null, session, headers: shared })
     plan.push({ open: 0 })
   }
   let current = named ? -1 : 0
@@ -151,7 +165,7 @@ export function browsePlan(tokens: Token[]): Pick<BrowseOptions, 'actors' | 'pla
       const name = t.value ?? ''
       current = actors.findIndex((a) => a.name === name)
       if (current < 0) {
-        current = actors.push({ name, session: undefined }) - 1
+        current = actors.push({ name, session: undefined, headers: [...before] }) - 1
         plan.push({ open: current })
       }
     } else if (named && (t.name === 'do' || t.name === 'session') && current < 0)
@@ -167,7 +181,8 @@ export function browsePlan(tokens: Token[]): Pick<BrowseOptions, 'actors' | 'pla
           [],
         )
       actor.session = t.value
-    } else if (t.name === 'do') plan.push({ actor: current, step: t.value ?? '' })
+    } else if (t.name === 'header' && named && current >= 0) actors[current]!.headers.push(t.value ?? '')
+    else if (t.name === 'do') plan.push({ actor: current, step: t.value ?? '' })
   }
   return { actors, plan }
 }
@@ -193,6 +208,7 @@ export async function main(
         out: { type: 'string' },
         agent: { type: 'string' },
         session: { type: 'string' },
+        header: { type: 'string', multiple: true },
         input: { type: 'string' },
         write: { type: 'boolean', default: false },
         example: { type: 'boolean', default: false },
@@ -393,6 +409,7 @@ export async function main(
         input: values.input,
         session: values.session,
         write: values.write === true,
+        headers: values.header ?? [],
       })
       out(asJson ? json(result) : describeCall(result))
       return result.result.ok ? 0 : 1

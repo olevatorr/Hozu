@@ -27,7 +27,7 @@ export type BrowsePlan = ({ open: number } | { actor: number; step: string })[]
 
 export interface BrowseOptions {
   path: string | undefined
-  actors: { name: string | null; session: string | undefined }[]
+  actors: { name: string | null; session: string | undefined; headers: string[] }[]
   plan: BrowsePlan
   js: BrowseJs
   select: string[]
@@ -38,7 +38,7 @@ export interface BrowseOptions {
 
 const TARGETED = new Set(['fill', 'select', 'check', 'uncheck', 'click', 'submit'])
 const VERBS =
-  'fill <label>=<value>, select <label>=<option>, check <label>, uncheck <label>, click <name>, submit "<form>", press <key>, wait <ms>, goto <path> (targets take in "<text>")'
+  'fill <label>=<value>, select <label>=<option>, check <label>, uncheck <label>, click <name>, submit "<form>", press <key>, wait <ms>, goto <path>, post <path> <a=1&b=2>, remember <name> from url|<selector> [@attr] (targets take in "<text>"; $name reads a remembered value)'
 
 interface Parsed {
   verb: string
@@ -65,7 +65,7 @@ export function parseStep(text: string): Parsed {
     if (eq <= 0) throw new Error(`"${text}" needs <label>=<value>`)
     return { verb, target: unquote(rest.slice(0, eq).trim()), value: rest.slice(eq + 1), within }
   }
-  return { verb, target: unquote(rest), value: '', within }
+  return { verb, target: verb === 'post' || verb === 'remember' ? rest : unquote(rest), value: '', within }
 }
 
 const q = JSON.stringify
@@ -126,7 +126,63 @@ export async function act(tab: Tab, p: Parsed): Promise<StepResult> {
     await tab.open(p.target)
     return done({})
   }
+  if (p.verb === 'post') {
+    const space = p.target.indexOf(' ')
+    const path = space < 0 ? p.target : p.target.slice(0, space)
+    if (!path.startsWith('/'))
+      throw new Error('post takes a path and form fields: post /items title=Milk&done=on')
+    const fields = [...new URLSearchParams(space < 0 ? '' : p.target.slice(space + 1).trim())]
+    tab.mark()
+    await tab.evaluate(`(() => {
+      const f = document.createElement('form')
+      f.method = 'post'
+      f.action = ${q(path)}
+      for (const [name, value] of ${q(fields)}) {
+        const i = document.createElement('input')
+        i.type = 'hidden'
+        i.name = name
+        i.value = value
+        f.append(i)
+      }
+      document.body.append(f)
+      HTMLFormElement.prototype.submit.call(f)
+      return true
+    })()`)
+    await tab.settle()
+    return done({ note: `posted ${fields.length} field${fields.length === 1 ? '' : 's'} to ${path}` })
+  }
   throw new Error(`Unknown step "${p.verb}": use ${VERBS}`)
+}
+
+/**
+ * `remember <name> from url` keeps the page's path; `from <selector>` the first match's text, and
+ * `from <selector> @<attr>` an attribute. Each mode keeps its own values, since each has its own data (ADR 0056 C).
+ */
+async function remember(tab: Tab, target: string, into: Map<string, string>): Promise<StepResult> {
+  const m = /^([A-Za-z_]\w*)\s+from\s+(.+?)(?:\s+@([\w-]+))?$/.exec(target)
+  if (!m) throw new Error('remember takes <name> from url, <selector> or <selector> @<attribute>')
+  const [, name, from, attr] = m as unknown as [string, string, string, string | undefined]
+  const value: string | null =
+    from === 'url'
+      ? await tab.evaluate('location.pathname + location.search')
+      : await tab.evaluate(`(() => {
+          const el = document.querySelector(${q(from)})
+          return el ? ${attr ? `el.getAttribute(${q(attr)})` : 'el.textContent.trim()'} : null
+        })()`)
+  if (value === null || value === undefined)
+    return { ok: false, note: `nothing matches ${from}${attr ? ` @${attr}` : ''}`, jsOnly: null }
+  into.set(name, String(value))
+  return { ok: true, note: `${name} = ${value}`, jsOnly: null }
+}
+
+export function headersOf(lines: string[]): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const line of lines) {
+    const at = line.indexOf(':')
+    if (at <= 0) throw new HozuCliError('usage', `--header takes "Name: value", not "${line}"`, [])
+    out[line.slice(0, at).trim().toLowerCase()] = line.slice(at + 1).trim()
+  }
+  return out
 }
 
 const linesOf = (s: Snapshot) => s.text.split('\n').filter((l) => l.trim())
@@ -185,6 +241,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
   const modes: BrowseMode[] = options.js === 'both' ? ['on', 'off'] : [options.js]
   const sessions = options.actors.map((a) => a.session)
   const worlds = modes.map(() => new World(loaded.path, dirname(loaded.path), sessions))
+  const vars = new Map<BrowseMode, Map<string, string>>(modes.map((m) => [m, new Map()]))
   const pageKey = routeKey(Object.values(loaded.build().ir.routes).map((r) => routePattern(r.path).pattern))
   const profile = await mkdtemp(join(tmpdir(), 'hozu-browse-'))
   let cdp: Cdp | null = null
@@ -212,6 +269,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
         await Promise.all(
           modes.map(async (mode, m) => {
             const tab = new Tab(cdp!, worlds[m]!, mode, nameOf(item.open), errors)
+            tab.headers = headersOf(options.actors[item.open]!.headers)
             tabs.push(tab)
             await tab.start(cookies[m]![item.open] ?? null, options.reducedMotion)
             bySession.set(tab.sessionId, tab)
@@ -263,13 +321,21 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
           let r: StepResult
           let verb = ''
           try {
-            const parsed = parseStep(text)
+            const own = vars.get(mode)!
+            const parsed = parseStep(
+              text.replace(/\$([A-Za-z_]\w*)/g, (_, name: string) => {
+                const value = own.get(name)
+                if (value === undefined) throw new Error(`$${name} was not remembered before this step`)
+                return value
+              }),
+            )
             verb = parsed.verb
-            r = await act(tab, parsed)
+            r = parsed.verb === 'remember' ? await remember(tab, parsed.target, own) : await act(tab, parsed)
           } catch (error) {
             r = { ok: false, note: error instanceof Error ? error.message : String(error), jsOnly: null }
           }
-          const acted = r.ok && !r.jsOnly && verb !== 'wait' && verb !== 'goto'
+          const acted =
+            r.ok && !r.jsOnly && verb !== 'wait' && verb !== 'goto' && verb !== 'remember' && verb !== 'post'
           if (acted) await tab.settle()
           await Promise.all(others.map((o) => o.settle()))
           const after = await tab.look()

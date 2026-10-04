@@ -13,7 +13,9 @@
   - `access: 'anyone'`: sign-in, a newsletter. On user data it is HZ090.
 - **Refused** is the framework error `Forbidden`, before the resolver runs: optional in `failed` (otherwise
   `Unexpected`). A page answers 403, or maps it: `head: { query: me, …, failed: { Forbidden: login } }`.
-- Check it as two visitors: `hozu call <effect> --session '{"user":"bob"}'`, or `hozu browse --as ada … --as bob`.
+- Check it as two visitors: `hozu call <effect> --session '{"user":"bob"}'`, or in one chain: `hozu browse /
+  --as ada --session '{"user":"ada"}' --do 'remember note from li a @href' --as bob --session '{"user":"bob"}'
+  --do 'goto $note'` (bob gets 403). `post <path> a=1` forges a native post as the current actor.
 
 <!-- more -->
 

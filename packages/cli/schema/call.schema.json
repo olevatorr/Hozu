@@ -12,8 +12,13 @@
           "type": "string",
           "enum": [
             "query",
-            "mutation"
+            "mutation",
+            "endpoint"
           ]
+        },
+        "status": {
+          "type": "number",
+          "description": "An endpoint's HTTP status (ADR 0056 C)."
         },
         "runs": {
           "$ref": "#/definitions/Runs"

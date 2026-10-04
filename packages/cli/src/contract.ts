@@ -475,7 +475,9 @@ export interface MigrateOutput {
 /** `hozu call` (ADR 0050 F): one query or mutation through the app's handler. */
 export interface CallOutput {
   effect: string
-  kind: 'query' | 'mutation'
+  kind: 'query' | 'mutation' | 'endpoint'
+  /** An endpoint's HTTP status (ADR 0056 C). */
+  status?: number
   runs: Runs
   input: Json
   result: { ok: true; value: Json } | { ok: false; error: string; data: Json }

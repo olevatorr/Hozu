@@ -606,3 +606,66 @@ describe('browse parity (ADR 0056 A15)', () => {
     expect(key('http://127.0.0.1:1/?a=1')).not.toBe(key('http://127.0.0.1:1/?a=2'))
   })
 })
+
+describe('browse --header (ADR 0056 C)', () => {
+  it('a header before the first --as goes to every actor; one after it goes to that actor', async () => {
+    const { parseArgs } = await import('node:util')
+    const { browsePlan } = await import('../src/main.ts')
+    const { headersOf } = await import('../src/commands/browse.ts')
+    const plan = (args: string[]) =>
+      browsePlan(
+        parseArgs({
+          args,
+          options: { as: { type: 'string', multiple: true }, header: { type: 'string', multiple: true } },
+          tokens: true,
+          strict: false,
+        }).tokens,
+      ).actors.map((a) => [a.name, a.headers])
+    expect(plan(['--header', 'X-A: 1'])).toEqual([[null, ['X-A: 1']]])
+    expect(
+      plan(['--header', 'X-A: 1', '--as', 'ada', '--header', 'Authorization: Bearer a', '--as', 'bob']),
+    ).toEqual([
+      ['ada', ['X-A: 1', 'Authorization: Bearer a']],
+      ['bob', ['X-A: 1']],
+    ])
+    expect(headersOf(['Authorization: Bearer a:b'])).toEqual({ authorization: 'Bearer a:b' })
+    expect(() => headersOf(['nope'])).toThrow('--header takes "Name: value"')
+  })
+})
+
+describe('hozu call on an endpoint (ADR 0056 C)', () => {
+  const app = `${root}packages/cli/test/fixtures/endpoints`
+
+  it('sends the input as a query string and the headers as given', async () => {
+    const out = JSON.parse(
+      (
+        await run(
+          ['call', 'api.who', '--input', '{"room":"blue"}', '--header', 'Authorization: Bearer t1', '--json'],
+          app,
+        )
+      ).stdout,
+    )
+    expect(out).toMatchObject({
+      kind: 'endpoint',
+      status: 200,
+      result: { ok: true, value: { room: 'blue', token: 'Bearer t1' } },
+    })
+    const without = JSON.parse(
+      (await run(['call', 'api.who', '--input', '{"room":"blue"}', '--json'], app)).stdout,
+    )
+    expect(without).toMatchObject({ status: 401, result: { ok: false, error: 'NoToken' } })
+  })
+
+  it('needs --write for a POST endpoint, and refuses a header without a colon', async () => {
+    const refused = await run(['call', 'api.book', '--input', '{"room":"blue"}', '--json'], app)
+    expect(JSON.parse(refused.stdout).error.message).toBe(
+      'api.book is a POST endpoint: it writes real data, so hozu call needs --write',
+    )
+    const booked = JSON.parse(
+      (await run(['call', 'api.book', '--input', '{"room":"blue"}', '--write', '--json'], app)).stdout,
+    )
+    expect(booked).toMatchObject({ status: 200, result: { ok: true, value: { booked: 'blue' } } })
+    const bad = await run(['call', 'api.who', '--header', 'Bearer', '--json'], app)
+    expect(JSON.parse(bad.stdout).error.message).toBe('--header takes "Name: value", not "Bearer"')
+  })
+})
