@@ -76,3 +76,38 @@ describe('links built from context (ADR 0056 A1)', () => {
     expect([href('page'), href('api')]).toEqual(['/?currency=USD', '/api/report?currency=USD'])
   })
 })
+
+describe('fn modules registered before the client (ADR 0056: the hydration regression)', () => {
+  it('hydrates from the registered modules without importing them', async () => {
+    const data = createDataRuntime({
+      build,
+      resolvers: resolvers(app, (implement) => [implement(report, () => ({}))]),
+    })
+    const { html } = await renderToString({
+      build,
+      data,
+      route: 'home',
+      assets: {
+        client: '/c.js',
+        fns: { hozu: '/_hozu/f/hozu-x.js' },
+        styles: null,
+        preload: [],
+        components: {},
+      },
+    })
+    expect(html).toContain('<script type="module" src="/_hozu/f/hozu-x.js"></script>')
+    expect(html.indexOf('src="/_hozu/f/hozu-x.js"')).toBeLessThan(html.indexOf('src="/c.js"'))
+    document.open()
+    document.write(html.replace(/<script type="module"[^>]*><\/script>/g, ''))
+    document.close()
+    const g = globalThis as { __hozuFns?: Record<string, unknown> }
+    g.__hozuFns = { [new URL('/_hozu/f/hozu-x.js', document.baseURI).href]: {} }
+    await hydrate(document, {
+      loadFns: async () => {
+        throw new Error('imported a registered module')
+      },
+    })
+    delete g.__hozuFns
+    expect(document.documentElement.hasAttribute('data-hozu-ready')).toBe(true)
+  })
+})

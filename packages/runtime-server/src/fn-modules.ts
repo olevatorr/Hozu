@@ -95,7 +95,7 @@ function moduleSource(build: BuildResult, refs: string[]): string {
     const locals = own.map(([name, src]) => `const ${name} = ${src};`).join(' ')
     return `  ${JSON.stringify(ref)}: (() => { ${locals} return ${expression} })(),`
   })
-  return `${shared.map(([name, src]) => `const ${name} = ${src};\n`).join('')}export const fns = {\n${entries.join('\n')}\n}\n`
+  return `${shared.map(([name, src]) => `const ${name} = ${src};\n`).join('')}export const fns = {\n${entries.join('\n')}\n}\n;(globalThis.__hozuFns ??= {})[import.meta.url] = fns\n`
 }
 
 /** The browser `fn` modules of a build, by module name, at content-hashed paths under `/_hozu/f/`. */

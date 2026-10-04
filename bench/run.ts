@@ -274,7 +274,7 @@ if (process.env.CHROMIUM_PATH) {
     'framework bench, Hozu row: hydrates and counts 200 clicks (interactive at, 4× CPU, one run)',
     Number(row?.[1] ?? Number.NaN),
     'ms',
-    null,
+    50,
   )
   if (frameworks.status !== 0 || !row) {
     results.at(-1)!.ok = false

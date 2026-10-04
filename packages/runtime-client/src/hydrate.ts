@@ -135,8 +135,15 @@ export async function hydrate(
   if (!script?.textContent) return apps
   const payload = JSON.parse(script.textContent) as PagePayload
   const shared: Store = { data: new Map(payload.data), versions: new Map() }
+  const registered = (globalThis as { __hozuFns?: Record<string, Record<string, never>> }).__hozuFns ?? {}
+  const own = (url: string) => registered[new URL(url, doc.baseURI).href]
   const fns: Record<string, never> = payload.fns
-    ? Object.assign({}, ...(await Promise.all(payload.fns.map(loadFns))))
+    ? Object.assign(
+        {},
+        ...(payload.fns.every(own)
+          ? payload.fns.map(own)
+          : await Promise.all(payload.fns.map((url) => own(url) ?? loadFns(url)))),
+      )
     : {}
   const { components, routes } = payload
   const motion = payload.motion ? await import('./motion.ts') : undefined

@@ -499,6 +499,7 @@ export async function renderPage({
           payload.env = env
         }
         buffer += `<script type="application/json" id="hozu-payload">${payloadJson(payload)}</script>`
+        for (const url of fnUrls) buffer += `<script type="module" src="${escapeHtml(url)}"></script>`
         buffer += `<script type="module" src="${escapeHtml(assets.client)}"></script>`
       }
       buffer += '</body></html>'
