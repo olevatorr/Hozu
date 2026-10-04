@@ -386,6 +386,7 @@ function onKey(event: KeyboardEvent) {
     return setMode(state.mode === 'select' ? 'browse' : 'select')
   }
   if (typing) return
+  if (event.key === 'Escape' && bench.classList.contains('layers-open')) return closeLayers()
   if (event.key === 'Escape' && state.mode === 'select') return setMode('browse')
   if (event.key === 'Escape' && state.panel) {
     state.panel = null
@@ -1745,11 +1746,12 @@ function renderBar() {
 }
 
 async function renderLeft() {
-  await renderLayers(
-    left,
-    await tree(win.location.pathname),
-    layersHost(() => {}),
-  )
+  await renderLayers(left, await tree(win.location.pathname), layersHost(closeLayers))
+}
+
+function closeLayers() {
+  bench.classList.remove('layers-open')
+  renderBar()
 }
 
 function openBench() {
@@ -1827,6 +1829,9 @@ function closeBench() {
 }
 
 addEventListener('resize', layout)
+addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && bench.classList.contains('layers-open')) closeLayers()
+})
 
 renderDock()
 drawPicks()

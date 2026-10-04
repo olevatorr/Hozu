@@ -337,7 +337,11 @@ export function createApp(doc: Document, options: AppOptions): App {
         return
       case 'component':
         if (options.component) options.component(componentApp, node, scope, c, block)
-        else if (c.claim && c.next?.nodeType === 1) c.next = c.next.nextSibling
+        else {
+          if (globalThis.__HOZU_DEV__)
+            console.error(`Hozu: component ${node.use.component} has no client code (bundleComponents)`)
+          if (c.claim && c.next?.nodeType === 1) c.next = c.next.nextSibling
+        }
         return
       case 'if': {
         const test = () => value({ test: node.test }, scope) === true

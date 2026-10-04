@@ -292,6 +292,10 @@ describe.skipIf(!findBrowser())('Workbench in a real browser (ADR 0047 P3)', () 
         `getComputedStyle(document.querySelector('hozu-devtools').shadowRoot.querySelector('.bench-left')).display === 'block'`,
       )
       expect(await tool(`$('.bench-bar .layers-toggle').getAttribute('aria-pressed')`)).toBe('true')
+      await key('Escape', 'Escape', 0)
+      await until(
+        `getComputedStyle(document.querySelector('hozu-devtools').shadowRoot.querySelector('.bench-left')).display === 'none'`,
+      )
     } finally {
       await cdp.send(
         'Emulation.setDeviceMetricsOverride',

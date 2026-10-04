@@ -40,6 +40,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
     box-shadow: 8px 0 24px rgba(0, 0, 0, 0.28);
   }
   .bench.layers-open .bench-left { display: block; }
+  .bench.layers-open .bench-left .close { display: block; }
   .bench-bar .layers-toggle { display: inline-block; }
   .bench-bar .layers-toggle[aria-pressed="true"] { background: rgba(var(--tint), 0.14); color: var(--text); }
 }

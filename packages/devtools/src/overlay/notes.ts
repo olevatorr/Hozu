@@ -11,6 +11,25 @@ export interface AgentHost {
   changed: () => void
 }
 
+const ROWS = 'li, tr, form, [role=listitem], [role=row]'
+const plain = (text: string | null | undefined) => (text ?? '').replace(/\s+/g, ' ').trim().toLowerCase()
+
+/** The element a note frames: with `within`, the one inside the smallest list row whose text holds it, like browse's `in "<text>"`. */
+export function pickTarget(doc: Document, id: string, within: string | null): Element | null {
+  const all = [...doc.querySelectorAll(`[data-hz="${CSS.escape(id)}"]`)]
+  if (!within) return all[0] ?? null
+  const want = plain(within)
+  const rows = [...doc.querySelectorAll(ROWS)].filter((row) =>
+    plain((row as HTMLElement).innerText ?? row.textContent).includes(want),
+  )
+  const row = rows.find((r) => !rows.some((other) => other !== r && r.contains(other)))
+  return (
+    all.find((el) => row?.contains(el)) ??
+    all.find((el) => plain((el as HTMLElement).innerText ?? el.textContent).includes(want)) ??
+    null
+  )
+}
+
 const short = (text: string) => (text.length > 60 ? `${text.slice(0, 57)}…` : text)
 
 /** The notes the agent shows the person with `hozu show` (ADR 0056 D): numbered frames and a panel. */
@@ -19,11 +38,8 @@ export function agentNotes(host: AgentHost) {
   let current = 0
   const layer = h('div')
 
-  const elementFor = (n: AgentNote | undefined): Element | null => {
-    if (!n || n.id.startsWith('page:')) return null
-    const all = [...host.doc().querySelectorAll(`[data-hz="${CSS.escape(n.id)}"]`)]
-    return n.within ? (all.find((el) => el.textContent?.includes(n.within!)) ?? null) : (all[0] ?? null)
-  }
+  const elementFor = (n: AgentNote | undefined): Element | null =>
+    !n || n.id.startsWith('page:') ? null : pickTarget(host.doc(), n.id, n.within)
 
   function draw() {
     layer.replaceChildren(
