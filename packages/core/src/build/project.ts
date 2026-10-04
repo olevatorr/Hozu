@@ -9,7 +9,7 @@ import type { AcceptIR, FeatureIR, JsonSchema, KitIR, ProjectIR, RouteIR } from 
 import { freeNamesOf, transformedDecls } from '../lower.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
-import { toCheck, toParse } from '../schema/check.ts'
+import { toCheck, toEnvParse } from '../schema/check.ts'
 import { isStandardSchema } from '../schema/standard.ts'
 import { withCapture } from '../source/capture.ts'
 import { buildComponent } from './components.ts'
@@ -482,7 +482,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
         internal: config.env.internal ?? {},
       }
     : null
-  scope.bindings.env = { server: toParse(config.env?.server), public: toParse(config.env?.public) }
+  scope.bindings.env = { server: toEnvParse(config.env?.server), public: toEnvParse(config.env?.public) }
   const ir: ProjectIR = {
     irVersion: 3,
     site,

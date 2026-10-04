@@ -51,6 +51,16 @@ describe('typed environment (ADR 0019)', () => {
       createDataRuntime({ build: cartBuild, resolvers: cartResolvers(), env: { STOCK_LIMIT: 'x' } }),
     ).toThrow(/Invalid server environment: STOCK_LIMIT/)
   })
+
+  it('treats a variable set to the empty string as unset, so its default applies (ADR 0056 A3)', async () => {
+    const handler = createHandler({
+      build: cartBuild,
+      resolvers: cartResolvers(),
+      session,
+      env: { STOCK_LIMIT: '', SUPPORT_EMAIL: '' },
+    })
+    expect((await handler.fetch(new Request('https://cart.example/'))).status).toBe(200)
+  })
 })
 
 describe('field-level invalid input (ADR 0019)', () => {

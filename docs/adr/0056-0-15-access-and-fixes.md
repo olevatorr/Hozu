@@ -14,7 +14,7 @@
 |---|---|---|
 | A1 | An `href` built with `ui.link` from machine context keeps its server value after the context changes | Bug: the client re-evaluates link attributes like any other bound attribute. A browser test asserts `/?currency=USD` after the event |
 | A2 | An endpoint `fail('E', { message, extra })` drops `extra` | Bug: the response is `{ error, ...data }`, with every field the error schema declares. The `fail` data is checked against the schema in development |
-| A3 | An optional env variable set to the empty string fails to parse | Bug: the env loader treats `''` as unset (server and public) before parsing. `hozu env --example` writes an optional variable as a comment `# X=` |
+| A3 | An optional env variable set to the empty string fails to parse | Bug: the env parser treats `''` as unset (server and public), so `optional` and `default` apply and the `X=` lines of `hozu env --example` work as written |
 | A4 | `views --more` says a query branch may return a list; HZ014 requires one element | Docs: a list is valid only as a `?:` / `&&` branch. Query branches and each items return one node. The topic is fixed, and a docs test checks the sentence against the rule |
 | A5 | A disallowed endpoint status gives HZ014 and HZ046, and points at `views` | One diagnostic: HZ046 says which statuses an endpoint error may answer, and points at `endpoints` |
 | A6 | `hozu plan /journal` wants a route name | `plan` accepts a path and resolves it to its route; an unknown path suggests the routes |

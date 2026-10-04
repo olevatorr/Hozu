@@ -35,3 +35,15 @@ export function toParse(schema: unknown): Parse | null {
     return { ok: true, value: result.value }
   }
 }
+
+/** An environment parser: a variable set to the empty string counts as unset, so optional and default apply (ADR 0056 A3). */
+export function toEnvParse(schema: unknown): Parse | null {
+  const parse = toParse(schema)
+  if (!parse) return null
+  return (value) =>
+    parse(
+      value && typeof value === 'object'
+        ? Object.fromEntries(Object.entries(value).filter(([, v]) => v !== ''))
+        : value,
+    )
+}
