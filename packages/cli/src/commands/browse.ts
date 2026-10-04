@@ -1,6 +1,7 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
+import { routePattern } from '@hozu/core/ir'
 import { type Cdp, findBrowser, launch } from '../cdp.ts'
 import type {
   BrowseActor,
@@ -142,10 +143,17 @@ const minus = (a: string[], b: string[]) => {
 
 const comparable = (s: Snapshot) => minus(linesOf(s), s.component)
 
-const same = (a: Snapshot, b: Snapshot) => {
+/** Two modes are on the same page when the URLs match one route, whatever its params (ADR 0056 A15). */
+export const routeKey = (patterns: RegExp[]) => (url: string) => {
+  const { pathname, search } = new URL(url, 'http://localhost')
+  const i = patterns.findIndex((p) => p.test(pathname))
+  return i < 0 ? url : `${i}${search}`
+}
+
+const same = (a: Snapshot, b: Snapshot, key: (url: string) => string = (u) => u) => {
   const x = comparable(a)
   const y = comparable(b)
-  return a.url === b.url && x.length === y.length && minus(x, y).length === 0
+  return key(a.url) === key(b.url) && x.length === y.length && minus(x, y).length === 0
 }
 
 const delta = (before: Snapshot, after: Snapshot) =>
@@ -177,6 +185,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
   const modes: BrowseMode[] = options.js === 'both' ? ['on', 'off'] : [options.js]
   const sessions = options.actors.map((a) => a.session)
   const worlds = modes.map(() => new World(loaded.path, dirname(loaded.path), sessions))
+  const pageKey = routeKey(Object.values(loaded.build().ir.routes).map((r) => routePattern(r.path).pattern))
   const profile = await mkdtemp(join(tmpdir(), 'hozu-browse-'))
   let cdp: Cdp | null = null
   const errors: BrowseError[] = []
@@ -288,10 +297,10 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
       const differs =
         on !== undefined &&
         off !== undefined &&
-        same(on.before, off.before) &&
+        same(on.before, off.before, pageKey) &&
         on.change.requested &&
         off.change.requested &&
-        !same(on.after, off.after)
+        !same(on.after, off.after, pageKey)
       const elsewhere = results.flatMap((x) => x.elsewhere)
       const ok = changes.every((c) => c.ok)
       steps.push({

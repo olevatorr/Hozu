@@ -595,3 +595,14 @@ describe('accepted warnings (ADR 0053 C)', () => {
     expect(b.ir.accept).toEqual([])
   })
 })
+
+describe('browse parity (ADR 0056 A15)', () => {
+  it('treats two URLs of one route as the same page, whatever their params', async () => {
+    const { routeKey } = await import('../src/commands/browse.ts')
+    const { routePattern } = await import('@hozu/core/ir')
+    const key = routeKey(['/', '/households/:id'].map((p) => routePattern(p).pattern))
+    expect(key('http://127.0.0.1:1/households/h1fa')).toBe(key('http://127.0.0.1:1/households/h1b7'))
+    expect(key('http://127.0.0.1:1/households/h1fa')).not.toBe(key('http://127.0.0.1:1/'))
+    expect(key('http://127.0.0.1:1/?a=1')).not.toBe(key('http://127.0.0.1:1/?a=2'))
+  })
+})
