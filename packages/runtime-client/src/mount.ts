@@ -113,7 +113,11 @@ const reads = (v: ValueExpr): boolean =>
       ? Object.values(v.object).some(reads)
       : 'fn' in v
         ? reads(v.arg)
-        : 'test' in v && guardReads(v.test)
+        : 'link' in v
+          ? reads(v.params) || reads(v.search)
+          : 'endpoint' in v
+            ? v.input !== undefined && reads(v.input)
+            : 'test' in v && guardReads(v.test)
 
 export const payloadKey = (query: string, input: Json) => query + canonicalStringify(input)
 
