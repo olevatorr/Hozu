@@ -41,3 +41,9 @@
 - Calling another API with a token: a token your server holds goes in the session and is read in a `runs: 'server'`
   resolver; a token that lives in the browser (OIDC / SSO, `localStorage`) is read in a `runs: 'browser'` effect
   (`hozu docs fetch`) and never reaches your server.
+- `SESSION_SECRET` is at least 32 characters: `openssl rand -hex 32`. Keep it in a git-ignored `.env` and list
+  it in `.env.example` (`npx hozu env --example`).
+- **A refused page** renders the page's views with status 403 (the `<title>` falls back to the site name). For a
+  page of its own, map `Forbidden` (or a declared error) to a route: `failed: { Forbidden: login }`.
+- **Order on a mutation:** the input schema first (`Invalid` with field errors), then access (`Forbidden`), then the
+  resolver.

@@ -85,3 +85,6 @@ ui/kit.ts  ui.kit({ id: 'ui', components }) — Button, Input, Field…      ui/
 ```
 Relative imports end in `.ts`. The example above uses plain elements so it runs in any app; with a kit the input
 and button are `ui.use(Input, …)` and `ui.use(Button, …)`, as in `example/` (`hozu docs components`).
+- **Sharing with another feature:** the owner lists what it shares, `exports: [listRooms, roomsTag]`, next to
+  `declarations`; the user lists the owner, `imports: [bookings]`. Imports go one way (each `feature.ts` imports
+  the other's module): when two features need each other's data, one of them owns it and exports it.

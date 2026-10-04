@@ -33,3 +33,6 @@ implement(exportNotes, (input, { session, fail }) =>                            
   `exports` and imported (HZ006).
 - HZ046 for a path comes with a patch. Responses carry `nosniff` and a referrer policy. Cross-site browser POSTs are
   rejected; server-to-server calls (no `Origin`) are accepted.
+- **What an endpoint cannot do yet:** methods are GET and POST; paths are static (a variable part goes in the
+  input: `POST /api/bookings/cancel` with `{ id }`); a success answers 200; an error answers its status with
+  `{ error, ...data }` (nested objects are fine, `error` is reserved); there are no custom response headers.

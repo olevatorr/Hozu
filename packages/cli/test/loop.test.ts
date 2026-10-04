@@ -297,6 +297,9 @@ describe('the agent loop (ADR 0027)', () => {
     expect(check.out.types.errors).toEqual([])
     expect(check.out.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     expect(readFileSync(join(app, 'app.ts'), 'utf8')).not.toContain('session:')
+    const config = readFileSync(join(app, 'hozu.config.ts'), 'utf8')
+    expect(config).toContain('failed: { NotFound: 404, Forbidden: login }')
+    expect(config).not.toContain('entries:')
     const signedOut = await json('request', ['get', '/'], app)
     expect(signedOut.out.steps[0]).toMatchObject({ status: 303, location: '/login' })
     if (chrome) {

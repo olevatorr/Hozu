@@ -80,3 +80,6 @@ ui.each(items, 'id', (item) => ui.li({}, [ui.input({ type: 'checkbox', form: bul
   `ui.each(ctx.cursors, null, (cursor) => ui.query(listPage, { cursor }, { ready: (page) => … }))`; on the last page
   (`cursor === ctx.last && page.next !== null`) a sentinel `on: { visible: ui.send(More, { cursor: page.next }) }`;
   `More` pushes the cursor, guarded by `e.cursor !== null && e.cursor !== ctx.last`.
+- **A link starts the page again:** every internal link is a document navigation, so a machine's context starts
+  from `initialContext` (or `seed`). Keep what must survive in the URL: put both filters in `search` and `seed` the
+  context from it, instead of one in the URL and one in context.

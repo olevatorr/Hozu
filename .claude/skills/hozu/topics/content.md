@@ -29,3 +29,7 @@
 - **Preview:** `app({ preview: { secret } })`; `/_hozu/preview?secret=…&path=/posts/a` turns it on; resolvers
   read `ctx.preview`; preview responses are never cached.
 - **Offline:** `site.offline: route` (a static page) makes a service worker (HZ043).
+- **One collection per language:** a folder per locale (`content/en`, `content/de`), loaded by the query for the
+  page's locale (`head.input`'s second argument).
+- **Images named in front matter** (`cover: night.png`): serve them with a GET endpoint (`output: 'response'`) that
+  reads only the files some entry lists. There is no `public/` folder served at the root.

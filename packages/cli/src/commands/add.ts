@@ -222,7 +222,7 @@ export async function runAddFeature(
         next = next.replace(
           /pages:\s*\[/,
           (m) =>
-            `${m}\n    ui.page(${n.detailRoute}, {\n      views: [${n.Detail}],\n      head: {\n        query: ${n.get},\n        input: (params) => ({ id: params.id }),\n        render: (item) => ({ title: item.title }),\n        failed: { NotFound: 404 },\n      },\n      entries: { query: ${n.list}, input: {}, params: (item) => ({ id: item.id }) },\n    }),`,
+            `${m}\n    ui.page(${n.detailRoute}, {\n      views: [${n.Detail}],\n      head: {\n        query: ${n.get},\n        input: (params) => ({ id: params.id }),\n        render: (item) => ({ title: item.title }),\n        failed: { NotFound: 404${w.auth ? ', Forbidden: login' : ''} },\n      },${w.auth ? '' : `\n      entries: { query: ${n.list}, input: {}, params: (item) => ({ id: item.id }) },`}\n    }),`,
         )
       if (next && newAccount)
         next = next.replace(
