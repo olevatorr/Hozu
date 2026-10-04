@@ -36,7 +36,12 @@ export default project({
           published: article.publishedAt,
         }),
       },
-      entries: { query: listPosts, input: {}, params: (summary) => ({ slug: summary.slug }) },
+      entries: {
+        query: listPosts,
+        input: {},
+        params: (summary) => ({ slug: summary.slug }),
+        lastmod: (summary) => summary.publishedAt,
+      },
     }),
     ui.page(offline, {
       views: [Offline],

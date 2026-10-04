@@ -585,7 +585,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     severity: 'error',
     topic: 'env',
     summary:
-      '`env.internal` maps a name that is not a public variable, or to one that is not a server variable',
+      '`env.internal` maps a name that is not a public variable, or to one that is not a server variable; or `site.url: { env }` names an undeclared variable',
     fix: 'declare both: the public URL in `env.public`, the internal one in `env.server`',
   },
   HZ086: {

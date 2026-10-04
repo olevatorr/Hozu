@@ -95,6 +95,15 @@ function entries(scope: PageScope, d: NonNullable<PageDef['entries']>, p: string
       },
       { literal: null },
     ),
+    ...(d.lastmod
+      ? {
+          lastmod: scope.attempt(
+            join(p, 'lastmod'),
+            () => scope.value(d.lastmod!(refProxy('binding', 0)), join(p, 'lastmod')),
+            { literal: null },
+          ),
+        }
+      : {}),
   }
 }
 

@@ -245,6 +245,7 @@ function handlerFor({
     throw new Error('The build manifest does not match this project; run `hozu build` again')
   const untransformed = build.diagnostics.find((d) => ['HZ044', 'HZ047', 'HZ059'].includes(d.code))
   if (untransformed) throw new Error(`${untransformed.message}. ${untransformed.fix?.summary ?? ''}`)
+  build = withSiteUrl(build, rawEnv)
   const { ir } = build
   if (sessionOption === undefined && ir.session && !rawEnv.SESSION_SECRET && rawEnv.NODE_ENV === 'production')
     throw new Error(
@@ -1026,4 +1027,20 @@ function devStateOf(request: Request): DevPreview | null {
         : { feature: v.feature, state: v.state }
   } catch {}
   return null
+}
+
+/** `site.url: { env }` (ADR 0057 A2): the origin comes from that variable at startup; a missing or bad one stops it. */
+export function withSiteUrl(build: BuildResult, env: Record<string, string | undefined>): BuildResult {
+  const site = build.ir.site
+  if (!site?.urlEnv) return build
+  const raw = env[site.urlEnv]?.trim() ?? ''
+  let url: URL | null = null
+  try {
+    url = raw ? new URL(raw) : null
+  } catch {}
+  if (!url || !/^https?:$/.test(url.protocol) || url.pathname !== '/' || url.search || url.hash)
+    throw new Error(
+      `site.url reads ${site.urlEnv}, which must be set to an origin such as https://example.org (got ${raw ? JSON.stringify(raw) : 'nothing'})`,
+    )
+  return { ...build, ir: { ...build.ir, site: { ...site, url: url.origin } } }
 }

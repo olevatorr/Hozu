@@ -21,6 +21,7 @@
     "directory": "packages/create-hozu"
   },
   "license": "MIT",
+  "funding": "https://ko-fi.com/hozu",
   "author": "olevatorr",
   "type": "module",
   "bin": {

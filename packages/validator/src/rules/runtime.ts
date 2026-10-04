@@ -110,14 +110,13 @@ export function connectEnv(ctx: Ctx) {
 
 const SECRET = /(SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE|CREDENTIAL)|(^|_)(API_)?KEY$/
 
-/** HZ084: a public variable named like a secret; HZ085: an `internal` mapping to undeclared variables (ADR 0052). */
+/** HZ084: a public variable named like a secret; HZ085: an `internal` mapping or `site.url` to undeclared variables (ADR 0052, 0057). */
 export function envConfig(ctx: Ctx) {
   const env = ctx.ir.env
-  if (!env) return
   const names = (schema: unknown) =>
     Object.keys(((schema as { properties?: object } | null)?.properties ?? {}) as object)
-  const pub = names(env.public)
-  const server = names(env.server)
+  const pub = names(env?.public)
+  const server = names(env?.server)
   for (const name of pub)
     if (SECRET.test(name) && !name.startsWith('PUBLIC_') && !name.includes('PUBLISHABLE'))
       ctx.report(
@@ -132,7 +131,21 @@ export function envConfig(ctx: Ctx) {
           patch: null,
         },
       )
-  for (const [key, target] of Object.entries(env.internal ?? {})) {
+  const urlEnv = ctx.ir.site?.urlEnv
+  if (urlEnv && !pub.includes(urlEnv) && !server.includes(urlEnv))
+    ctx.report(
+      'HZ085',
+      null,
+      join('', 'site', 'url'),
+      `site.url reads ${urlEnv}, which is not declared in env.public or env.server`,
+      'The site origin is read from the environment at startup, so the variable is declared like every other (and listed by hozu env --example).',
+      {
+        summary: `Declare ${urlEnv} in env.public`,
+        snippet: `public: z.object({ ${urlEnv}: z.string().url() })`,
+        patch: null,
+      },
+    )
+  for (const [key, target] of Object.entries(env?.internal ?? {})) {
     const problems = [
       ...(pub.includes(key) ? [] : [`${key} is not a public variable`]),
       ...(server.includes(target) ? [] : [`${target} is not a server variable`]),

@@ -1,7 +1,6 @@
 # ADR 0057 — 0.16: room in the client budget, complete share cards, compression, and what learning costs
 
-- **Status:** proposed (owner, 2026-10-04: "A + B, start planning"). Each phase starts after the owner confirms this
-  ADR.
+- **Status:** decided (owner, 2026-10-04: "A + B, start planning", then "ok" on this ADR).
 - **Sources:**
   - the 0.15 gate (P7 at 8 123 of 8 192 B);
   - the site's share images (no `twitter:card`, no image size);
@@ -48,10 +47,14 @@ so 0.15 apps upgrade without a migration step.
     `summary` otherwise.
   - `og:image:width` and `og:image:height` are derived from the image file at build time (PNG, JPEG, WebP and GIF
     headers, read without dependencies). `og:image:alt` is the page title; no new head field.
-  - `lastmod` is the page's `published` date when `entries` render it; otherwise it is omitted (as ADR 0056 A13
-    decided, no guessed dates).
-  - `site.url` takes `{ env: 'SITE_URL' }`, like `feature({ connect })`, parsed with the project's env at startup.
-    A literal URL stays the canonical form; HZ084 / env rules apply.
+  - `lastmod` comes from a new optional `entries.lastmod: (item) => item.updatedAt`, an ISO date of each entry,
+    and is omitted otherwise (as ADR 0056 A13 decided, no guessed dates). **Changed while building:** the plan
+    read the page's `published`, but `published` belongs to the head query (one item by its params), while the
+    sitemap walks the entries query (the list); reading the head for every entry would run a query per URL. The
+    entry says it explicitly.
+  - `site.url` takes `{ env: 'SITE_URL' }`, like `feature({ connect })`. The handler and the static export read
+    it at startup and refuse to start without an origin; the variable must be declared (HZ085, whose summary now
+    covers it). A literal URL stays the usual form.
   - The pages topic says that `hozu get --select 'meta[property^="og:"]'` reads the head.
 
 ### A3 — the DevTools test that fails once in eleven runs

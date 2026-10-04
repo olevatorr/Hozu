@@ -478,6 +478,7 @@ export async function renderPage({
     plan.js === 'always' ? scripts : [],
     lang,
     alternate,
+    build.bindings.assets,
   )
 
   void (async () => {
@@ -744,6 +745,7 @@ function headHtml(
   scripts: string[],
   lang: string,
   alternate: Record<string, string>,
+  sizes: Record<string, { width: number | null; height: number | null }>,
 ): string {
   const str = (v: ValueExpr) => {
     const x = value(v)
@@ -754,6 +756,8 @@ function headHtml(
   const raw = str(h.image)
   const local = raw?.startsWith('/_hozu/og.png') ? ir.http.basePath + raw : raw
   const image = local?.startsWith('/') && ir.site ? ir.site.url + local : local
+  const size = raw?.startsWith('/_hozu/og.png') ? { width: 1200, height: 630 } : raw ? sizes[raw] : undefined
+  const known = size?.width && size.height ? { width: size.width, height: size.height } : null
   const published = str(h.published)
   const url = ir.site ? `${ir.site.url}${path}` : null
   const meta = (attr: 'name' | 'property', key: string, content: string | null) =>
@@ -791,6 +795,10 @@ function headHtml(
     meta('property', 'og:url', url),
     meta('property', 'og:site_name', ir.site?.name ?? null),
     meta('property', 'og:image', image),
+    image && known ? meta('property', 'og:image:width', String(known.width)) : '',
+    image && known ? meta('property', 'og:image:height', String(known.height)) : '',
+    image ? meta('property', 'og:image:alt', title) : '',
+    image ? meta('name', 'twitter:card', known && known.width < 600 ? 'summary' : 'summary_large_image') : '',
     ir.site?.locales ? meta('property', 'og:locale', ogLocale(lang)) : '',
     ...(ir.site?.locales ?? [])
       .filter((l) => l !== lang)

@@ -9,7 +9,12 @@ export interface PageEntry {
   params: Json
   path: string
   locale: string | null
+  lastmod: string | null
 }
+
+const isoDate = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2}))?$/
+const dateOf = (x: Json): string | null =>
+  typeof x === 'string' && isoDate.test(x) && !Number.isNaN(Date.parse(x)) ? x : null
 
 const evaluate = (v: ValueExpr, item: Json, fns: Record<string, (x: Json) => Json>): Json =>
   compileValue(v, fns)({ bindings: [item] })
@@ -22,16 +27,22 @@ export async function pageEntries(build: BuildResult, data: DataRuntime): Promis
   for (const [route, page] of Object.entries(ir.pages).sort(([a], [b]) => a.localeCompare(b))) {
     const r = ir.routes[route]
     if (!r) continue
-    const params: Json[] = []
-    if (!r.params) params.push(null)
+    const params: { params: Json; lastmod: string | null }[] = []
+    if (!r.params) params.push({ params: null, lastmod: null })
     else if (page.entries) {
-      const result = await data.run(page.entries.query, evaluate(page.entries.input, null, fns))
+      const { entries } = page
+      const result = await data.run(entries.query, evaluate(entries.input, null, fns))
       if (result.ok && Array.isArray(result.value))
-        for (const item of result.value) params.push(evaluate(page.entries.params, item, fns))
+        for (const item of result.value)
+          params.push({
+            params: evaluate(entries.params, item, fns),
+            lastmod: entries.lastmod ? dateOf(evaluate(entries.lastmod, item, fns)) : null,
+          })
     }
     for (const locale of locales) {
       const pattern = routeTable(ir, locale)[route] ?? r.path
-      for (const p of params) out.push({ route, params: p, path: pathOf(pattern, p), locale })
+      for (const p of params)
+        out.push({ route, params: p.params, path: pathOf(pattern, p.params), locale, lastmod: p.lastmod })
     }
   }
   return out
@@ -58,7 +69,10 @@ export function sitemapXml(build: BuildResult, entries: PageEntry[]): string {
       `<xhtml:link rel="alternate" hreflang="x-default" href="${href(fallback.path)}"/>`,
     ].join('')
   }
-  const urls = listed.map((e) => `<url><loc>${href(e.path)}</loc>${alternates(e)}</url>`)
+  const urls = listed.map(
+    (e) =>
+      `<url><loc>${href(e.path)}</loc>${e.lastmod ? `<lastmod>${escapeHtml(e.lastmod)}</lastmod>` : ''}${alternates(e)}</url>`,
+  )
   const xhtml = site?.locales ? ' xmlns:xhtml="http://www.w3.org/1999/xhtml"' : ''
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"${xhtml}>${urls.join('')}</urlset>\n`
 }

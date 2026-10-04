@@ -75,7 +75,8 @@ export interface ProjectConfig {
   session?: Schema
   routes: Record<string, RouteDecl>
   site?: {
-    url: string
+    /** The site's origin, or `{ env: 'SITE_URL' }` to read it from a declared env variable at startup (ADR 0057 A2). */
+    url: string | { env: string }
     name: string
     lang: string
     locales?: string[]

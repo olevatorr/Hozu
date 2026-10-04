@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.16.0 — (in progress) Ship less, measure fairly, learn faster (ADR 0057)
+
+### Share cards and the sitemap
+- **The share card is derived from the image:**
+  - `og:image:width` and `og:image:height` are read from the file;
+  - `og:image:alt` is the page title;
+  - `twitter:card` is `summary_large_image` from 600 px wide, `summary` below. X used to show the small card.
+- **`entries.lastmod: (item) => item.updatedAt`** adds `<lastmod>` to the sitemap. It takes an ISO date, and an
+  invalid one is left out.
+- **`site.url: { env: 'SITE_URL' }`** reads the origin at startup, in the handler and the static export. The
+  variable must be declared (HZ085); a missing or non-origin value stops the start.
+- **Every package lists `funding`** (`npm fund`).
+
 ## 0.15.0 — Say who may read and change what, test it as two visitors, and the 0.14 dogfood fixes (ADR 0056)
 
 In 0.14, nothing in an app said who may run a query or a mutation: the rule lived in each resolver, so a missing check

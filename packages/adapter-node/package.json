@@ -21,6 +21,7 @@
     "directory": "packages/adapter-node"
   },
   "license": "MIT",
+  "funding": "https://ko-fi.com/hozu",
   "author": "olevatorr",
   "type": "module",
   "exports": {

@@ -15,6 +15,7 @@ import {
   type Stylesheet,
   sitemapXml,
   staticFiles,
+  withSiteUrl,
 } from '@hozu/runtime-server'
 
 export interface StaticExportOptions {
@@ -77,7 +78,7 @@ const write = async (file: string, content: string) => {
 }
 
 export async function exportStatic({
-  build,
+  build: given,
   resolvers,
   outDir,
   styles = null,
@@ -85,6 +86,7 @@ export async function exportStatic({
   images = null,
   env: rawEnv = {},
 }: StaticExportOptions): Promise<StaticExport> {
+  const build = withSiteUrl(given, rawEnv)
   const parsedPublic = build.bindings.env.public?.(rawEnv)
   if (parsedPublic && !parsedPublic.ok)
     throw new Error(`Invalid public environment: ${parsedPublic.issues.join('; ')}`)

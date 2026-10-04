@@ -49,7 +49,9 @@ export interface HeaderRuleIR {
 }
 
 export interface SiteIR {
+  /** Empty until startup when `urlEnv` names the variable that holds it. */
   url: string
+  urlEnv?: string
   name: string
   lang: string
   icon: string | null
@@ -82,6 +84,8 @@ export interface EntriesIR {
   query: string
   input: ValueExpr
   params: ValueExpr
+  /** The sitemap's `<lastmod>` per item (ADR 0057 A2). */
+  lastmod?: ValueExpr
 }
 
 export interface RouteIR {

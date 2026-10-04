@@ -44,7 +44,11 @@ export default project({
   features: [items],
 })
 ```
-- `image` is a URL, `ui.asset(...)` or `ui.og({ title })`.
+- `image` is a URL, `ui.asset(...)` or `ui.og({ title })`. The share card is derived: `og:image:width` / `height`
+  from the file, `og:image:alt` from the title, `twitter:card` large from 600 px wide. Use a 1200×630 image.
+- `entries.lastmod: (item) => item.updatedAt` (an ISO date) adds `<lastmod>` to the sitemap.
+- `site.url: { env: 'SITE_URL' }` reads the origin at startup from a variable declared in `env.public` (HZ085).
+- Check the head without a server: `hozu get / --select 'meta[property^="og:"]'`.
 - `head.failed` example: `failed: { Unauthorized: login, Forbidden: 403 }`. `Unexpected` is always 500.
   It maps declared errors only: a head query that always fails is not a redirect.
 - **Which redirect** (one per purpose):

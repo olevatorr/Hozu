@@ -444,7 +444,9 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
 
   const site = config.site
     ? {
-        url: String(config.site.url).replace(/\/$/, ''),
+        ...(typeof config.site.url === 'object' && config.site.url !== null
+          ? { url: '', urlEnv: String(config.site.url.env) }
+          : { url: String(config.site.url).replace(/\/$/, '') }),
         name: String(config.site.name),
         lang: String(config.site.lang),
         icon: scope.asset(config.site.icon)?.href ?? null,

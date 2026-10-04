@@ -24,7 +24,12 @@ export interface PageDef {
     render: (data: any, params: any, locale: any) => HeadFields
     failed?: Record<string, RouteDecl | HeadStatus>
   }
-  entries?: { query: QueryDecl; input: unknown; params: (item: any) => unknown }
+  entries?: {
+    query: QueryDecl
+    input: unknown
+    params: (item: any) => unknown
+    lastmod?: (item: any) => unknown
+  }
 }
 
 export interface PageDecl extends Decl<'page'> {}
@@ -50,6 +55,12 @@ export const page = <P, I = never, O = never, E = never, EI = never, EO = never,
       input?: (params: Ref<P>, locale: Ref<string>) => Val<I>
       render: (data: Ref<O>, params: Ref<P>, locale: Ref<string>) => HeadFields
     } & HeadFailed<E>
-    entries?: { query: QueryDecl<EI, EO[], EE, any>; input: Val<EI>; params: (item: Ref<EO>) => Val<P> }
+    entries?: {
+      query: QueryDecl<EI, EO[], EE, any>
+      input: Val<EI>
+      params: (item: Ref<EO>) => Val<P>
+      /** The sitemap's `<lastmod>`: an ISO date (`2026-10-04`) or date-time of the item (ADR 0057 A2). */
+      lastmod?: (item: Ref<EO>) => Val<string>
+    }
   },
 ): PageDecl => brand({}, 'page', { route, ...config } as PageDef)
