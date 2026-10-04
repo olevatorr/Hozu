@@ -5,7 +5,7 @@ import { tv } from './tv.ts'
 const styles = tv({
   slots: {
     base: '',
-    body: 'mx-auto min-w-0 max-w-6xl px-5 py-20 md:py-28',
+    body: 'mx-auto min-w-0 max-w-6xl px-5 py-14 md:py-28',
     kicker: 'mb-5 font-mono text-xs font-bold uppercase tracking-widest',
   },
   variants: {

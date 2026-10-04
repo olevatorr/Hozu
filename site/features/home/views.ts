@@ -480,7 +480,7 @@ export const Home = ui.view({
         Section,
         {
           variant: { tone: 'ink' },
-          props: { kicker: 'Components · 0.9' },
+          props: { kicker: 'Components' },
         },
         [
           ui.use(Heading, {}, ['Declared UI. Checked class by class.']),

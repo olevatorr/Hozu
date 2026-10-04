@@ -15,13 +15,36 @@ export const SpeedTable = ui.component({
   styles: tv({
     slots: {
       base: 'overflow-x-auto',
-      table: 'w-full min-w-[34rem] border-4 border-ink font-mono text-sm',
+      table: 'hidden w-full min-w-[34rem] border-4 border-ink font-mono text-sm sm:table',
       cell: 'border-t-2 border-ink px-3 py-2 text-left',
+      cards: 'grid gap-3 font-mono text-sm sm:hidden',
+      card: 'border-4 border-ink p-3',
+      stats: 'mt-2 grid grid-cols-3 gap-2',
     },
   }),
   props: z.object({ caption: z.string(), rows: z.array(Row) }),
   render: ({ props, classes }) =>
     ui.div({}, [
+      ui.div({ class: classes.cards }, [
+        ui.p({ class: 'font-bold' }, [props.caption]),
+        ui.each(props.rows, 'id', (r) =>
+          ui.div({ class: classes.card }, [
+            ui.p({ class: 'font-bold' }, [r.framework]),
+            ui.p({ class: 'text-xs' }, [r.versions]),
+            ui.dl({ class: classes.stats }, [
+              ui.div({}, [
+                ui.dt({ class: 'text-xs' }, ['Requests/s']),
+                ui.dd({ class: 'font-bold' }, [r.requests]),
+              ]),
+              ui.div({}, [ui.dt({ class: 'text-xs' }, ['JS (gzip)']), ui.dd({ class: 'font-bold' }, [r.js])]),
+              ui.div({}, [
+                ui.dt({ class: 'text-xs' }, ['Interactive']),
+                ui.dd({ class: 'font-bold' }, [r.interactive]),
+              ]),
+            ]),
+          ]),
+        ),
+      ]),
       ui.table({ class: classes.table }, [
         ui.caption({ class: 'py-2 text-left font-bold' }, [props.caption]),
         ui.thead({}, [
