@@ -1,6 +1,6 @@
 # ADR 0057 — 0.16: room in the client budget, complete share cards, compression, and what learning costs
 
-- **Status:** decided (owner, 2026-10-04: "A + B, start planning", then "ok" on this ADR).
+- **Status:** implemented (owner, 2026-10-04: "A + B, start planning", then "ok" on this ADR). Released in 0.16.0.
 - **Sources:**
   - the 0.15 gate (P7 at 8 123 of 8 192 B);
   - the site's share images (no `twitter:card`, no image size);

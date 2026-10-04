@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.16.0 — (in progress) Ship less, measure fairly, learn faster (ADR 0057)
+## 0.16.0 — Ship less, measure fairly, learn faster (ADR 0057)
+
+0.16 closes a security hole the 0.15 dogfood found, makes pages smaller on the wire and faster to render, and fixes
+what four apps built from scratch with 0.15 ran into. No breaking change: upgrade the `@hozu/*` packages.
+
+**Upgrade now if a mutation uses `access: { owner: { load, … } }`** (see Security below).
 
 ### Security: an owner rule's load fails closed
 **Upgrade if a mutation uses `access: { owner: { load, … } }`.** In 0.15.0, when the `load` query failed with a

@@ -14,7 +14,7 @@ This directory is **not** part of the pnpm workspace. Each app has its own `pack
 | Next.js | `next` 16.3.8, App Router | `react` / `react-dom` 19.3.0 | `next start` | Turbopack (Next 16 default) |
 | Nuxt | `nuxt` 4.5.2 | `vue` 3.5.43, `vue-router` 4.6.4 | `node .output/server/index.mjs` (Nitro 2.13.4, `node-server` preset, h3 1.15.11) | Vite 8.3.2 |
 | SvelteKit | `@sveltejs/kit` 3.0.0 | `svelte` 5.57.1 | `node build/index.js` (`@sveltejs/adapter-node` 6.0.0) | Vite 8.3.2, `@sveltejs/vite-plugin-svelte` 7.3.1 |
-| Hozu | `@hozu/*` 0.15.0, workspace build at commit `05fac95` (branch `release-0.15`) | own runtime (`@hozu/runtime-client`) | `hozu serve` → `@hozu/adapter-node` | prebuilt `client.js` from `@hozu/runtime-client` |
+| Hozu | `@hozu/*` 0.16.0, workspace build at commit `e0474b4` (branch `release-0.16`) | own runtime (`@hozu/runtime-client`) | `hozu serve` → `@hozu/adapter-node` | prebuilt `client.js` from `@hozu/runtime-client` |
 
 Environment: Node v22.22.2, Google Chrome 154.0.8037.93 (driven by `playwright-core` 1.63.0), Apple M4 Pro,
 24 GB, macOS (Darwin 25.5.0, arm64). Every server ran with `NODE_ENV=production`, on 127.0.0.1.
@@ -62,20 +62,25 @@ Hozu runs as a real Hozu project (`hozu.config.ts`, `app.ts`, `features/shop`, `
 - Frameworks run one at a time: start the server, run the sanity/bytes load, run the load test, run the browser
   timings, stop the server by PID, then move to the next. Ports 4811–4815.
 
-## Results (2026-10-04)
+## Results (2026-10-04, second run: Hozu 0.16 with compression)
 
 All sanity checks passed for every row.
 
 | Framework (exact versions) | Page | req/s (identity) | req/s (gzip accepted) | HTML KB (gz) | JS files | JS KB (gz) | Hydrate ms | Interactive at ms | 200 clicks ms |
 |---|---|---|---|---|---|---|---|---|---|
-| Next.js 16.3.8 (App Router, React 19.3.0, react-dom 19.3.0) | per request (`dynamic = 'force-dynamic'`) | 1630 | 1492 (gzip) | 18.8 (3.1) | 6 | 443.5 (130.9) | 102.0 | 160.7 | 98.8 |
-| Next.js 16.3.8 (App Router, React 19.3.0, react-dom 19.3.0) | static prerender (`dynamic = 'force-static'`) | 7126 | 6109 (gzip) | 19.3 (3.1) | 6 | 443.5 (130.9) | 102.0 | 160.0 | 102.1 |
-| Nuxt 4.5.2 (Vue 3.5.43, Nitro 2.13.4, node-server preset) | per request (SSR, no route rules) | 3058 | 3115 (identity) | 15.0 (2.8) | 6 | 199.6 (75.8) | 20.3 | 90.6 | 33.0 |
-| SvelteKit 3.0.0 (Svelte 5.57.1, adapter-node 6.0.0) | per request (SSR, prerender off) | 6786 | 6752 (identity) | 13.4 (2.0) | 10 | 85.0 (33.0) | 18.4 | 96.7 | 10.8 |
-| Hozu 0.15.0 (workspace build @ 05fac95, hozu serve → @hozu/adapter-node) | per request (query `freshness: 'request'`) | 16423 | 16347 (identity) | 12.3 (1.8) | 2 | 19.3 (8.1) | 7.1 | 57.1 | 11.2 |
-| node:http v22.22.2 (fixed 12 KB buffer, no framework) | load-generator ceiling | 58039 | — | — | — | — | — | — | — |
+| Next.js 16.3.8 (App Router, React 19.3.0, react-dom 19.3.0) | per request (`dynamic = 'force-dynamic'`) | 1701 | 1546 (gzip) | 18.8 (3.1) | 6 | 443.5 (130.9) | 106.8 | 165.7 | 99.7 |
+| Next.js 16.3.8 (App Router, React 19.3.0, react-dom 19.3.0) | static prerender (`dynamic = 'force-static'`) | 6952 | 6033 (gzip) | 19.3 (3.1) | 6 | 443.5 (130.9) | 100.5 | 153.7 | 103.1 |
+| Nuxt 4.5.2 (Vue 3.5.43, Nitro 2.13.4, node-server preset) | per request (SSR, no route rules) | 3236 | 3229 (identity) | 15.0 (2.8) | 6 | 199.6 (75.8) | 19.6 | 87.4 | 32.3 |
+| SvelteKit 3.0.0 (Svelte 5.57.1, adapter-node 6.0.0) | per request (SSR, prerender off) | 6867 | 6828 (identity) | 13.4 (2.0) | 10 | 85.0 (33.0) | 18.8 | 94.2 | 10.5 |
+| Hozu 0.16.0 (workspace build @ e0474b4, hozu serve → @hozu/adapter-node) | per request (query `freshness: 'request'`) | 16870 | 10168 (gzip) | 12.3 (1.8) | 2 | 19.3 (8.1) | 6.9 | 54.4 | 10.2 |
+| node:http v22.22.2 calibration (fixed 12 KB buffer, no framework) | load-generator ceiling | 59716 | — | — | — | — | — | — | — |
 
 The req/s rounds were stable within about 3 %. Per-load samples are in `out/results.json`.
+
+- **Hozu with gzip accepted:** 10,168 req/s in this run, before 0.16 flushed a compressed page only when the stream
+  waits; 11,875 req/s after (a Hozu-only run, `BENCH_ONLY=hozu`). The site uses the second number.
+- **The first run** (0.15.0, uncompressed): Hozu 16,423 / Next.js 1,630 / Nuxt 3,058 / SvelteKit 6,786 req/s; the
+  ratios are the same.
 
 ## Caveats
 

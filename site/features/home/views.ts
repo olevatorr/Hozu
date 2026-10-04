@@ -256,7 +256,7 @@ export const Home = ui.view({
             props: { caption: 'One page, four frameworks, rendered per request', rows: speed },
           }),
           ui.p({ class: 'mt-3 max-w-3xl font-mono text-xs' }, [
-            'One run on an Apple M4 Pro, Node 22.22.2, Chrome 154; browser timings with the CPU slowed four times. Next.js serving the page prerendered reaches 7,126 requests per second. Hozu and Nuxt send uncompressed by default; JavaScript sizes are all gzipped the same way. ',
+            'One run on an Apple M4 Pro, Node 22.22.2, Chrome 154; browser timings with the CPU slowed four times. Next.js serving the page prerendered reaches 6,952 requests per second. With gzip accepted, Hozu answers 11,875 and Next.js 1,546; Nuxt and SvelteKit send their pages uncompressed. JavaScript sizes are all gzipped the same way. ',
             ui.a({ href: speedSource, class: 'underline' }, ['How we measured']),
             ' · ',
             ui.a(

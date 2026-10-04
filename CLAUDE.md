@@ -268,6 +268,13 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   pushes `notes` over the dev SSE (one connection: the dev client re-dispatches `hozu:notes`), and DevTools draws
   numbered frames plus an Agent panel (Back / Next, Send reply, Done); `hozu dev` hides the app process's URL line
   and ignores `.hozu/` changes. `bench/meta` = Next.js / Nuxt / SvelteKit / Hozu in production servers.
+- 0.16 (ADR 0057): owner `load` fails closed (any load failure → Forbidden); share cards derived (og:image size/alt,
+  `twitter:card`), `entries.lastmod`, `site.url: { env }` (HZ085); P7 7 884 B (component use and list move animation
+  load with their chunks); SSR back to the 0.9 level (per-IR-object memo of island walks); adapter-node compression
+  (pages gzip flushed when the stream waits, files br/gz from `hozu build`), `hozu dev` asks the app for identity;
+  `hozu show`/`why` take `views.ts:line`, `show --in`, stale notes; browse: 401/403/404/410 is the step's status,
+  `in "<text>"` either side, `;`-joined steps, `Did you mean`; transform keeps newlines inside `?:`/`&&`/`??`;
+  HZ014 unknown head field, HZ046 derived paths, HZ054 exclusive branches; pages lock without machines; `bench/meta`.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

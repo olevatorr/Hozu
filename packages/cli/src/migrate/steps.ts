@@ -71,6 +71,14 @@ export const steps: Step[] = [
     rewrite: addAccess,
     normalize: normalize014,
   },
+  {
+    from: '0.15',
+    to: '0.16',
+    summary:
+      'no source change; an app without machines now locks its pages, so run hozu check --update-lock if it says the lock is missing (ADR 0057)',
+    rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 export const OLDEST = steps[0]!.from
