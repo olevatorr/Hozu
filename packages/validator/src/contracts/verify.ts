@@ -243,7 +243,7 @@ function reviewLock(
       '/pages',
       `hozu.lock.json pages are out of date: ${pages.length} change${pages.length === 1 ? '' : 's'}`,
       [
-        'Head error maps, endpoint statuses and redirects are reviewed through the lock (ADR 0043 D, G).',
+        'Head error maps, endpoint statuses, redirects and who may run each effect (access) are reviewed through the lock (ADR 0043 D, G; ADR 0056 B).',
         ...pages,
       ].join('\n'),
       UPDATE_FIX,

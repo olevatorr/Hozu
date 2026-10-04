@@ -1,4 +1,4 @@
-import { endpoint, feature, project, query, route, ui } from '@hozu/core'
+import { endpoint, event, feature, machine, on, project, query, route, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import { validate } from '@hozu/validator'
@@ -85,5 +85,51 @@ describe('0.15 dogfood (ADR 0057 C)', () => {
     })
     const found = validate(buildProject(app, { sources: false }).ir).find((d) => d.code === 'HZ046')
     expect(found?.message).toBe('Endpoint path "/sitemap.xml" of site.sitemap replaces a file Hozu derives')
+  })
+
+  it('two controls of one name in exclusive branches of a query are one value, not HZ054', () => {
+    const Share = event({ payload: z.object({ team: z.string() }) })
+    const m = machine({
+      context: z.object({ team: z.string() }),
+      initialContext: { team: '' },
+      initial: 'idle',
+      states: ({ ctx }) => ({
+        idle: {
+          on: [
+            on(Share, {
+              target: 'idle',
+              assign: (e) => {
+                ctx.team = e.team
+              },
+            }),
+          ],
+        },
+      }),
+    })
+    const Board = ui.view({
+      machine: m,
+      render: () =>
+        ui.form({ on: { submit: ui.send(Share, { team: ui.dom.form('team') }) } }, [
+          ui.query(
+            listRooms,
+            {},
+            {
+              ready: (rooms) =>
+                ui.select({ name: 'team' }, [ui.each(rooms, null, (r) => ui.option({ value: r }, [r]))]),
+              failed: { Unexpected: () => ui.input({ type: 'hidden', name: 'team', value: '' }) },
+            },
+          ),
+          ui.button({ type: 'submit' }, ['Share']),
+        ]),
+    })
+    const app = project({
+      schema: zodAdapter,
+      routes: { home },
+      pages: [ui.page(home, { views: [Board], head: { render: () => ({ title: 'Share' }) } })],
+      features: [
+        feature({ id: 'n', intent: { summary: 'share' }, declarations: [{ Board, Share, m, listRooms }] }),
+      ],
+    })
+    expect(validate(buildProject(app, { sources: false }).ir).map((d) => d.code)).not.toContain('HZ054')
   })
 })
