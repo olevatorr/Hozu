@@ -262,6 +262,26 @@ if (existsSync(report)) {
   }
 } else console.log(`B1 skipped: ${browse.status === 0 ? 'no Chrome' : browse.stdout.slice(-2000)}`)
 
+if (process.env.CHROMIUM_PATH) {
+  const frameworks = spawnSync(process.execPath, ['--import', '@hozu/transform/register', 'run.ts'], {
+    cwd: join(root, 'bench/frameworks'),
+    encoding: 'utf8',
+    env: { ...process.env, BENCH_ONLY: 'hozu', BENCH_RUNS: '1' },
+  })
+  const row = /\| hozu [^|]*\|(?:[^|]*\|){4}\s*([\d.]+)\s*\|/.exec(frameworks.stdout)
+  record(
+    'B2',
+    'framework bench, Hozu row: hydrates and counts 200 clicks (interactive at, 4× CPU, one run)',
+    Number(row?.[1] ?? Number.NaN),
+    'ms',
+    null,
+  )
+  if (frameworks.status !== 0 || !row) {
+    results.at(-1)!.ok = false
+    console.log((frameworks.stdout + frameworks.stderr).slice(-2000))
+  }
+} else console.log('B2 skipped: no CHROMIUM_PATH')
+
 const bytes = (dir: string): number =>
   readdirSync(dir).reduce((sum, name) => {
     if (name === 'node_modules') return sum

@@ -1,121 +1,41 @@
 {
- "name": "hozu",
- "step": 0,
- "passed": 16,
- "total": 16,
- "new": {
+  "name": "hozu",
+  "step": 0,
   "passed": 16,
-  "total": 16
- },
- "regression": {
-  "passed": 0,
-  "total": 0
- },
- "failures": [],
- "results": [
-  [
-   "N1",
-   0,
-   "pass",
-   951
+  "total": 16,
+  "new": {
+    "passed": 16,
+    "total": 16
+  },
+  "regression": {
+    "passed": 0,
+    "total": 0
+  },
+  "failures": [],
+  "results": [
+    ["N1", 0, "pass", 951],
+    ["N2", 0, "pass", 945],
+    ["N3", 0, "pass", 2041],
+    ["N4", 0, "pass", 2013],
+    ["N5", 0, "pass", 4900],
+    ["N6", 0, "pass", 2005],
+    ["N7", 0, "pass", 3520],
+    ["N8", 0, "pass", 3569],
+    ["N9", 0, "pass", 2015],
+    ["N10", 0, "pass", 3534],
+    ["N11", 0, "pass", 4205],
+    ["N12", 0, "pass", 5092],
+    ["N13", 0, "pass", 9610],
+    ["N14", 0, "pass", 3578],
+    ["N16", 0, "pass", 3664],
+    ["N15", 0, "pass", 0]
   ],
-  [
-   "N2",
-   0,
-   "pass",
-   945
-  ],
-  [
-   "N3",
-   0,
-   "pass",
-   2041
-  ],
-  [
-   "N4",
-   0,
-   "pass",
-   2013
-  ],
-  [
-   "N5",
-   0,
-   "pass",
-   4900
-  ],
-  [
-   "N6",
-   0,
-   "pass",
-   2005
-  ],
-  [
-   "N7",
-   0,
-   "pass",
-   3520
-  ],
-  [
-   "N8",
-   0,
-   "pass",
-   3569
-  ],
-  [
-   "N9",
-   0,
-   "pass",
-   2015
-  ],
-  [
-   "N10",
-   0,
-   "pass",
-   3534
-  ],
-  [
-   "N11",
-   0,
-   "pass",
-   4205
-  ],
-  [
-   "N12",
-   0,
-   "pass",
-   5092
-  ],
-  [
-   "N13",
-   0,
-   "pass",
-   9610
-  ],
-  [
-   "N14",
-   0,
-   "pass",
-   3578
-  ],
-  [
-   "N16",
-   0,
-   "pass",
-   3664
-  ],
-  [
-   "N15",
-   0,
-   "pass",
-   0
-  ]
- ],
- "retired": [],
- "js": {
-  "login": 19602,
-  "list": 19602
- },
- "heldout": null,
- "browserCrashes": 0,
- "serverErrors": ""
+  "retired": [],
+  "js": {
+    "login": 19602,
+    "list": 19602
+  },
+  "heldout": null,
+  "browserCrashes": 0,
+  "serverErrors": ""
 }

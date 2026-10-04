@@ -122,6 +122,12 @@ importers:
       '@hozu/schema-zod':
         specifier: workspace:*
         version: link:../../packages/schema-zod
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../../packages/transform
+      '@hozu/validator':
+        specifier: workspace:*
+        version: link:../../packages/validator
       '@vue/server-renderer':
         specifier: 3.5.43
         version: 3.5.43

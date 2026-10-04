@@ -1,538 +1,157 @@
 {
- "name": "hozu",
- "step": 23,
- "passed": 72,
- "total": 75,
- "new": {
-  "passed": 1,
-  "total": 4
- },
- "regression": {
-  "passed": 71,
-  "total": 71
- },
- "failures": [
-  {
-   "id": "X23a",
-   "kind": "new",
-   "what": "with JS: save title and body on the note page",
-   "error": "FAIL: body not shown with its line break"
+  "name": "hozu",
+  "step": 23,
+  "passed": 72,
+  "total": 75,
+  "new": {
+    "passed": 1,
+    "total": 4
   },
-  {
-   "id": "X23b",
-   "kind": "new",
-   "what": "without JS: every message shows, typed values stay, nothing is saved",
-   "error": "FAIL: no duplicate alert: Use at most 1000 characters in the body"
+  "regression": {
+    "passed": 71,
+    "total": 71
   },
-  {
-   "id": "X23c",
-   "kind": "new",
-   "what": "with JS: invalid save keeps the typed values and saves nothing",
-   "error": "FAIL: no duplicate alert: Use at most 1000 characters in the body"
-  }
- ],
- "results": [
-  [
-   "N1",
-   0,
-   "pass",
-   944
-  ],
-  [
-   "N2",
-   0,
-   "pass",
-   934
-  ],
-  [
-   "N3",
-   0,
-   "pass",
-   2047
-  ],
-  [
-   "N4",
-   0,
-   "pass",
-   2003
-  ],
-  [
-   "N5",
-   0,
-   "pass",
-   4858
-  ],
-  [
-   "N6",
-   0,
-   "pass",
-   2010
-  ],
-  [
-   "N7",
-   0,
-   "pass",
-   3554
-  ],
-  [
-   "N8",
-   0,
-   "pass",
-   3520
-  ],
-  [
-   "N9",
-   0,
-   "pass",
-   2047
-  ],
-  [
-   "N10",
-   0,
-   "pass",
-   3576
-  ],
-  [
-   "N11",
-   0,
-   "pass",
-   4245
-  ],
-  [
-   "N12",
-   0,
-   "pass",
-   5082
-  ],
-  [
-   "N13",
-   0,
-   "pass",
-   9623
-  ],
-  [
-   "N14",
-   0,
-   "pass",
-   3578
-  ],
-  [
-   "P1",
-   1,
-   "pass",
-   4229
-  ],
-  [
-   "P2",
-   1,
-   "pass",
-   7113
-  ],
-  [
-   "P3",
-   1,
-   "pass",
-   4940
-  ],
-  [
-   "P4",
-   1,
-   "pass",
-   4960
-  ],
-  [
-   "P5",
-   1,
-   "pass",
-   7116
-  ],
-  [
-   "L1",
-   2,
-   "pass",
-   3314
-  ],
-  [
-   "L2",
-   2,
-   "pass",
-   3622
-  ],
-  [
-   "T1",
-   3,
-   "pass",
-   2031
-  ],
-  [
-   "T2",
-   3,
-   "pass",
-   2761
-  ],
-  [
-   "R1",
-   4,
-   "pass",
-   2019
-  ],
-  [
-   "E1",
-   5,
-   "pass",
-   5667
-  ],
-  [
-   "E2",
-   5,
-   "pass",
-   5832
-  ],
-  [
-   "E3",
-   5,
-   "pass",
-   5102
-  ],
-  [
-   "E4",
-   5,
-   "pass",
-   6684
-  ],
-  [
-   "A1",
-   7,
-   "pass",
-   7734
-  ],
-  [
-   "A2",
-   7,
-   "pass",
-   2877
-  ],
-  [
-   "A3",
-   7,
-   "pass",
-   10931
-  ],
-  [
-   "A4",
-   7,
-   "pass",
-   7512
-  ],
-  [
-   "S1",
-   8,
-   "pass",
-   7528
-  ],
-  [
-   "M1",
-   9,
-   "pass",
-   2032
-  ],
-  [
-   "M2",
-   9,
-   "pass",
-   4552
-  ],
-  [
-   "U1",
-   10,
-   "pass",
-   7335
-  ],
-  [
-   "U2",
-   10,
-   "pass",
-   7938
-  ],
-  [
-   "U3",
-   10,
-   "pass",
-   6645
-  ],
-  [
-   "Pg1",
-   11,
-   "pass",
-   9245
-  ],
-  [
-   "Pg2",
-   11,
-   "pass",
-   10956
-  ],
-  [
-   "Pg3",
-   11,
-   "pass",
-   11781
-  ],
-  [
-   "O1",
-   12,
-   "pass",
-   6926
-  ],
-  [
-   "O2",
-   12,
-   "pass",
-   6343
-  ],
-  [
-   "B1",
-   13,
-   "pass",
-   7592
-  ],
-  [
-   "B2",
-   13,
-   "pass",
-   6610
-  ],
-  [
-   "B3",
-   13,
-   "pass",
-   10126
-  ],
-  [
-   "B3b",
-   13,
-   "pass",
-   13660
-  ],
-  [
-   "RL1",
-   14,
-   "pass",
-   15449
-  ],
-  [
-   "SH1",
-   15,
-   "pass",
-   7054
-  ],
-  [
-   "SH2",
-   15,
-   "pass",
-   14220
-  ],
-  [
-   "SH3",
-   15,
-   "pass",
-   6988
-  ],
-  [
-   "SH4",
-   15,
-   "pass",
-   9533
-  ],
-  [
-   "AD1",
-   16,
-   "pass",
-   8300
-  ],
-  [
-   "AD2",
-   16,
-   "pass",
-   2042
-  ],
-  [
-   "DA1",
-   17,
-   "pass",
-   17691
-  ],
-  [
-   "DA1b",
-   17,
-   "pass",
-   20418
-  ],
-  [
-   "DA2",
-   17,
-   "pass",
-   7323
-  ],
-  [
-   "DE1",
-   18,
-   "pass",
-   6999
-  ],
-  [
-   "DE2",
-   18,
-   "pass",
-   9117
-  ],
-  [
-   "EX1",
-   19,
-   "pass",
-   9296
-  ],
-  [
-   "EX2",
-   19,
-   "pass",
-   2013
-  ],
-  [
-   "TG1",
-   20,
-   "pass",
-   4362
-  ],
-  [
-   "N16",
-   0,
-   "pass",
-   7826
-  ],
-  [
-   "X21a",
-   21,
-   "pass",
-   4072
-  ],
-  [
-   "X21b",
-   21,
-   "pass",
-   17627
-  ],
-  [
-   "X21c",
-   21,
-   "pass",
-   9879
-  ],
-  [
-   "X22a",
-   22,
-   "pass",
-   7562
-  ],
-  [
-   "X22b",
-   22,
-   "pass",
-   10024
-  ],
-  [
-   "X22c",
-   22,
-   "pass",
-   10595
-  ],
-  [
-   "X22d",
-   22,
-   "pass",
-   2831
-  ],
-  [
-   "X23a",
-   23,
-   "FAIL: body not shown with its line break",
-   5119
-  ],
-  [
-   "X23b",
-   23,
-   "FAIL: no duplicate alert: Use at most 1000 characters in the body",
-   6697
-  ],
-  [
-   "X23c",
-   23,
-   "FAIL: no duplicate alert: Use at most 1000 characters in the body",
-   5129
-  ],
-  [
-   "X23d",
-   23,
-   "pass",
-   9882
-  ],
-  [
-   "N15",
-   0,
-   "pass",
-   0
-  ]
- ],
- "retired": [
-  "G1",
-  "G2",
-  "G2b",
-  "G3",
-  "S2"
- ],
- "js": {
-  "login": 22531,
-  "list": 23289
- },
- "heldout": {
-  "path": "/Users/otischen/Developer/hozu-trial-0024/heldout/accept-heldout.mjs",
-  "sha256": "e517b5bc8d4cce81848f59b84457bc01245a4bfcf05784eb7d0e8538fa3c2c67",
-  "added": [
-   "X21a",
-   "X21b",
-   "X21c",
-   "X22a",
-   "X22b",
-   "X22c",
-   "X22d",
-   "X23a",
-   "X23b",
-   "X23c",
-   "X23d",
-   "X24a",
-   "X24b",
-   "X24c",
-   "X24d",
-   "X25a",
-   "X25b",
-   "X26a",
-   "X26b",
-   "X26c",
-   "X27a",
-   "X27b",
-   "X27c",
-   "X28a",
-   "X28b"
-  ],
-  "retires": {
-   "EX1": 26,
-   "B1": 27,
-   "DE1": 28,
-   "DE2": 28
-  }
- },
- "browserCrashes": 0,
- "serverErrors": "",
- "serverOutput": "app on http://127.0.0.1:4821\n",
- "serverExit": null
+  "failures": [
+    {
+      "id": "X23a",
+      "kind": "new",
+      "what": "with JS: save title and body on the note page",
+      "error": "FAIL: body not shown with its line break"
+    },
+    {
+      "id": "X23b",
+      "kind": "new",
+      "what": "without JS: every message shows, typed values stay, nothing is saved",
+      "error": "FAIL: no duplicate alert: Use at most 1000 characters in the body"
+    },
+    {
+      "id": "X23c",
+      "kind": "new",
+      "what": "with JS: invalid save keeps the typed values and saves nothing",
+      "error": "FAIL: no duplicate alert: Use at most 1000 characters in the body"
+    }
+  ],
+  "results": [
+    ["N1", 0, "pass", 944],
+    ["N2", 0, "pass", 934],
+    ["N3", 0, "pass", 2047],
+    ["N4", 0, "pass", 2003],
+    ["N5", 0, "pass", 4858],
+    ["N6", 0, "pass", 2010],
+    ["N7", 0, "pass", 3554],
+    ["N8", 0, "pass", 3520],
+    ["N9", 0, "pass", 2047],
+    ["N10", 0, "pass", 3576],
+    ["N11", 0, "pass", 4245],
+    ["N12", 0, "pass", 5082],
+    ["N13", 0, "pass", 9623],
+    ["N14", 0, "pass", 3578],
+    ["P1", 1, "pass", 4229],
+    ["P2", 1, "pass", 7113],
+    ["P3", 1, "pass", 4940],
+    ["P4", 1, "pass", 4960],
+    ["P5", 1, "pass", 7116],
+    ["L1", 2, "pass", 3314],
+    ["L2", 2, "pass", 3622],
+    ["T1", 3, "pass", 2031],
+    ["T2", 3, "pass", 2761],
+    ["R1", 4, "pass", 2019],
+    ["E1", 5, "pass", 5667],
+    ["E2", 5, "pass", 5832],
+    ["E3", 5, "pass", 5102],
+    ["E4", 5, "pass", 6684],
+    ["A1", 7, "pass", 7734],
+    ["A2", 7, "pass", 2877],
+    ["A3", 7, "pass", 10931],
+    ["A4", 7, "pass", 7512],
+    ["S1", 8, "pass", 7528],
+    ["M1", 9, "pass", 2032],
+    ["M2", 9, "pass", 4552],
+    ["U1", 10, "pass", 7335],
+    ["U2", 10, "pass", 7938],
+    ["U3", 10, "pass", 6645],
+    ["Pg1", 11, "pass", 9245],
+    ["Pg2", 11, "pass", 10956],
+    ["Pg3", 11, "pass", 11781],
+    ["O1", 12, "pass", 6926],
+    ["O2", 12, "pass", 6343],
+    ["B1", 13, "pass", 7592],
+    ["B2", 13, "pass", 6610],
+    ["B3", 13, "pass", 10126],
+    ["B3b", 13, "pass", 13660],
+    ["RL1", 14, "pass", 15449],
+    ["SH1", 15, "pass", 7054],
+    ["SH2", 15, "pass", 14220],
+    ["SH3", 15, "pass", 6988],
+    ["SH4", 15, "pass", 9533],
+    ["AD1", 16, "pass", 8300],
+    ["AD2", 16, "pass", 2042],
+    ["DA1", 17, "pass", 17691],
+    ["DA1b", 17, "pass", 20418],
+    ["DA2", 17, "pass", 7323],
+    ["DE1", 18, "pass", 6999],
+    ["DE2", 18, "pass", 9117],
+    ["EX1", 19, "pass", 9296],
+    ["EX2", 19, "pass", 2013],
+    ["TG1", 20, "pass", 4362],
+    ["N16", 0, "pass", 7826],
+    ["X21a", 21, "pass", 4072],
+    ["X21b", 21, "pass", 17627],
+    ["X21c", 21, "pass", 9879],
+    ["X22a", 22, "pass", 7562],
+    ["X22b", 22, "pass", 10024],
+    ["X22c", 22, "pass", 10595],
+    ["X22d", 22, "pass", 2831],
+    ["X23a", 23, "FAIL: body not shown with its line break", 5119],
+    ["X23b", 23, "FAIL: no duplicate alert: Use at most 1000 characters in the body", 6697],
+    ["X23c", 23, "FAIL: no duplicate alert: Use at most 1000 characters in the body", 5129],
+    ["X23d", 23, "pass", 9882],
+    ["N15", 0, "pass", 0]
+  ],
+  "retired": ["G1", "G2", "G2b", "G3", "S2"],
+  "js": {
+    "login": 22531,
+    "list": 23289
+  },
+  "heldout": {
+    "path": "/Users/otischen/Developer/hozu-trial-0024/heldout/accept-heldout.mjs",
+    "sha256": "e517b5bc8d4cce81848f59b84457bc01245a4bfcf05784eb7d0e8538fa3c2c67",
+    "added": [
+      "X21a",
+      "X21b",
+      "X21c",
+      "X22a",
+      "X22b",
+      "X22c",
+      "X22d",
+      "X23a",
+      "X23b",
+      "X23c",
+      "X23d",
+      "X24a",
+      "X24b",
+      "X24c",
+      "X24d",
+      "X25a",
+      "X25b",
+      "X26a",
+      "X26b",
+      "X26c",
+      "X27a",
+      "X27b",
+      "X27c",
+      "X28a",
+      "X28b"
+    ],
+    "retires": {
+      "EX1": 26,
+      "B1": 27,
+      "DE1": 28,
+      "DE2": 28
+    }
+  },
+  "browserCrashes": 0,
+  "serverErrors": "",
+  "serverOutput": "app on http://127.0.0.1:4821\n",
+  "serverExit": null
 }

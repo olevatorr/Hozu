@@ -1,1 +1,58 @@
-[{"feature":"account","summary":{"contracts":2,"effects":{"me":{"implemented":"resolver","kind":"query","runs":"server"},"signIn":{"implemented":"resolver","kind":"mutation","runs":"server"},"signOut":{"implemented":"resolver","kind":"mutation","runs":"server"}},"events":2,"exports":{"endpoints":[],"events":[],"fns":[],"mutations":[],"queries":["me"],"tags":[],"views":[]},"hydrates":true,"imports":[],"mutations":2,"queries":1,"states":3,"transitions":7,"views":2}},{"feature":"notes","summary":{"contracts":0,"effects":{"addNote":{"implemented":"resolver","kind":"mutation","runs":"server"},"listNotes":{"implemented":"resolver","kind":"query","runs":"server"},"removeNote":{"implemented":"resolver","kind":"mutation","runs":"server"}},"events":3,"exports":{"endpoints":[],"events":[],"fns":[],"mutations":[],"queries":[],"tags":[],"views":[]},"hydrates":true,"imports":[],"mutations":2,"queries":1,"states":3,"transitions":10,"views":1}}]
+[
+  {
+    "feature": "account",
+    "summary": {
+      "contracts": 2,
+      "effects": {
+        "me": { "implemented": "resolver", "kind": "query", "runs": "server" },
+        "signIn": { "implemented": "resolver", "kind": "mutation", "runs": "server" },
+        "signOut": { "implemented": "resolver", "kind": "mutation", "runs": "server" }
+      },
+      "events": 2,
+      "exports": {
+        "endpoints": [],
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": ["me"],
+        "tags": [],
+        "views": []
+      },
+      "hydrates": true,
+      "imports": [],
+      "mutations": 2,
+      "queries": 1,
+      "states": 3,
+      "transitions": 7,
+      "views": 2
+    }
+  },
+  {
+    "feature": "notes",
+    "summary": {
+      "contracts": 0,
+      "effects": {
+        "addNote": { "implemented": "resolver", "kind": "mutation", "runs": "server" },
+        "listNotes": { "implemented": "resolver", "kind": "query", "runs": "server" },
+        "removeNote": { "implemented": "resolver", "kind": "mutation", "runs": "server" }
+      },
+      "events": 3,
+      "exports": {
+        "endpoints": [],
+        "events": [],
+        "fns": [],
+        "mutations": [],
+        "queries": [],
+        "tags": [],
+        "views": []
+      },
+      "hydrates": true,
+      "imports": [],
+      "mutations": 2,
+      "queries": 1,
+      "states": 3,
+      "transitions": 10,
+      "views": 1
+    }
+  }
+]

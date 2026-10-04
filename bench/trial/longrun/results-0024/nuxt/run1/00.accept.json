@@ -1,121 +1,41 @@
 {
- "name": "nuxt",
- "step": 0,
- "passed": 16,
- "total": 16,
- "new": {
+  "name": "nuxt",
+  "step": 0,
   "passed": 16,
-  "total": 16
- },
- "regression": {
-  "passed": 0,
-  "total": 0
- },
- "failures": [],
- "results": [
-  [
-   "N1",
-   0,
-   "pass",
-   979
+  "total": 16,
+  "new": {
+    "passed": 16,
+    "total": 16
+  },
+  "regression": {
+    "passed": 0,
+    "total": 0
+  },
+  "failures": [],
+  "results": [
+    ["N1", 0, "pass", 979],
+    ["N2", 0, "pass", 932],
+    ["N3", 0, "pass", 2034],
+    ["N4", 0, "pass", 2000],
+    ["N5", 0, "pass", 4837],
+    ["N6", 0, "pass", 1994],
+    ["N7", 0, "pass", 3467],
+    ["N8", 0, "pass", 3504],
+    ["N9", 0, "pass", 2015],
+    ["N10", 0, "pass", 3540],
+    ["N11", 0, "pass", 4204],
+    ["N12", 0, "pass", 5055],
+    ["N13", 0, "pass", 9590],
+    ["N14", 0, "pass", 4119],
+    ["N16", 0, "pass", 3677],
+    ["N15", 0, "pass", 0]
   ],
-  [
-   "N2",
-   0,
-   "pass",
-   932
-  ],
-  [
-   "N3",
-   0,
-   "pass",
-   2034
-  ],
-  [
-   "N4",
-   0,
-   "pass",
-   2000
-  ],
-  [
-   "N5",
-   0,
-   "pass",
-   4837
-  ],
-  [
-   "N6",
-   0,
-   "pass",
-   1994
-  ],
-  [
-   "N7",
-   0,
-   "pass",
-   3467
-  ],
-  [
-   "N8",
-   0,
-   "pass",
-   3504
-  ],
-  [
-   "N9",
-   0,
-   "pass",
-   2015
-  ],
-  [
-   "N10",
-   0,
-   "pass",
-   3540
-  ],
-  [
-   "N11",
-   0,
-   "pass",
-   4204
-  ],
-  [
-   "N12",
-   0,
-   "pass",
-   5055
-  ],
-  [
-   "N13",
-   0,
-   "pass",
-   9590
-  ],
-  [
-   "N14",
-   0,
-   "pass",
-   4119
-  ],
-  [
-   "N16",
-   0,
-   "pass",
-   3677
-  ],
-  [
-   "N15",
-   0,
-   "pass",
-   0
-  ]
- ],
- "retired": [],
- "js": {
-  "login": 200331,
-  "list": 202192
- },
- "heldout": null,
- "browserCrashes": 0,
- "serverErrors": ""
+  "retired": [],
+  "js": {
+    "login": 200331,
+    "list": 202192
+  },
+  "heldout": null,
+  "browserCrashes": 0,
+  "serverErrors": ""
 }

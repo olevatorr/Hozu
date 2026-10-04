@@ -90,7 +90,11 @@ export default function register(h) {
     async () => {
       const page = await h.fresh('X21b')
       for (const t of ['Alpha', 'Beta', 'Gamma']) await h.add(page, t)
-      for (const [t, n] of [['Alpha', '1'], ['Beta', '2'], ['Gamma', '3']])
+      for (const [t, n] of [
+        ['Alpha', '1'],
+        ['Beta', '2'],
+        ['Gamma', '3'],
+      ])
         assert((await numberOf(page, t)) === n, `${t} ${await numberOf(page, t)}`)
       await h.click(page, h.liButton(page, 'Gamma', 'Delete'))
       await h.add(page, 'Delta')
@@ -246,10 +250,16 @@ export default function register(h) {
       assert((await titleInput(page).getAttribute('required')) !== null, 'title required')
       assert((await bodyInput(page).getAttribute('maxlength')) === '1000', 'body maxlength')
       await saveNote(page, 'Gamma', 'First line\nSecond line')
-      assert((await h.statuses(page)).some((s) => s.includes('Saved')), `status ${await h.statuses(page)}`)
+      assert(
+        (await h.statuses(page)).some((s) => s.includes('Saved')),
+        `status ${await h.statuses(page)}`,
+      )
       assert((await h1(page)) === 'Gamma', `h1 ${await h1(page)}`)
       assert((await bodyInput(page).inputValue()) === 'First line\nSecond line', 'body after save')
-      assert((await shownText(page)).includes('First line\nSecond line'), 'body not shown with its line break')
+      assert(
+        (await shownText(page)).includes('First line\nSecond line'),
+        'body not shown with its line break',
+      )
       await h.go(page, V.home)
       const list = await h.items(page)
       assert(list.length === 2 && list[1].includes('Gamma') && list[1].includes('No. 1'), `list ${list}`)
@@ -262,10 +272,19 @@ export default function register(h) {
     const long = 'y'.repeat(1001)
     await saveNote(page, ' beta ', long)
     const al = await h.alerts(page)
-    assert(al.some((a) => a.includes(V.dup)), `no duplicate alert: ${al}`)
-    assert(al.some((a) => a.includes('Use at most 1000 characters in the body')), `no body alert: ${al}`)
+    assert(
+      al.some((a) => a.includes(V.dup)),
+      `no duplicate alert: ${al}`,
+    )
+    assert(
+      al.some((a) => a.includes('Use at most 1000 characters in the body')),
+      `no body alert: ${al}`,
+    )
     assert(!al.some((a) => a.includes(V.dup) && a.includes('1000')), 'both messages in one alert')
-    assert((await titleInput(page).inputValue()) === ' beta ', `title kept: "${await titleInput(page).inputValue()}"`)
+    assert(
+      (await titleInput(page).inputValue()) === ' beta ',
+      `title kept: "${await titleInput(page).inputValue()}"`,
+    )
     assert((await bodyInput(page).inputValue()) === long, 'body kept')
     await h.go(page, '/notes/1')
     assert((await h1(page)) === 'Alpha', 'title saved')
@@ -290,9 +309,15 @@ export default function register(h) {
       assert(await h.hasAlert(page, 'Use at most 60 characters'), `long: ${await h.alerts(page)}`)
       await h.go(page, '/notes/1')
       await saveNote(page, 'Alpha two', '  Hello\nthere  ')
-      assert((await h.statuses(page)).some((s) => s.includes('Saved')), `status ${await h.statuses(page)}`)
+      assert(
+        (await h.statuses(page)).some((s) => s.includes('Saved')),
+        `status ${await h.statuses(page)}`,
+      )
       assert((await h1(page)) === 'Alpha two', `h1 ${await h1(page)}`)
-      assert((await bodyInput(page).inputValue()) === 'Hello\nthere', `body "${await bodyInput(page).inputValue()}"`)
+      assert(
+        (await bodyInput(page).inputValue()) === 'Hello\nthere',
+        `body "${await bodyInput(page).inputValue()}"`,
+      )
     },
   )
   check(
@@ -331,7 +356,10 @@ export default function register(h) {
       assert((await h1(plain)) === 'Alpha', `archived note saved: ${await h1(plain)}`)
       const t = await h.text(plain)
       assert(t.includes('Archived') && t.includes('Archived body'), 'body or Archived text')
-      assert((await titleInput(plain).count()) === 0 && (await button(plain, 'Save').count()) === 0, 'form shown')
+      assert(
+        (await titleInput(plain).count()) === 0 && (await button(plain, 'Save').count()) === 0,
+        'form shown',
+      )
     },
   )
 
@@ -457,9 +485,15 @@ export default function register(h) {
       assert(JSON.stringify(titles) === '["Alpha","Gamma"]', `notes ${titles}`)
       const f = await h.newPage()
       await h.signIn(f, friend)
-      assert((await h.sharedItems(f)).some((t) => t.includes('Gamma')), 'shared note gone')
+      assert(
+        (await h.sharedItems(f)).some((t) => t.includes('Gamma')),
+        'shared note gone',
+      )
       await h.go(page, V.home)
-      assert((await h.sharedItems(page)).some((t) => t.includes('From other')), 'shared with me gone')
+      assert(
+        (await h.sharedItems(page)).some((t) => t.includes('From other')),
+        'shared with me gone',
+      )
       assert(!(await h.liWith(page, 'Gamma').innerText()).includes(`${who}z`), 'shared anyway')
       await h.go(page, '/notes/1')
       assert((await h1(page)) === 'Alpha', 'note page')
@@ -484,7 +518,10 @@ export default function register(h) {
       await h.signIn(same, h.user('X24d'))
       await h.click(stale, button(stale, `Make ${target} read-only`))
       const admin = await adminPage()
-      assert((await accessOf(admin, target)).startsWith('writable'), `access ${await accessOf(admin, target)}`)
+      assert(
+        (await accessOf(admin, target)).startsWith('writable'),
+        `access ${await accessOf(admin, target)}`,
+      )
       await h.go(t, V.home)
       assert(!(await h.text(t)).includes('Read-only account'), 'made read-only by a non-admin')
     },
@@ -513,19 +550,27 @@ export default function register(h) {
       assert((await heading(rec)) === 0, 'heading before sharing')
       await h.share(owner, 'Live plan', recName)
       assert(
-        await until(async () => (await shared(rec)).some((t) => t.includes('Live plan') && t.includes(`from ${ownerName}`))),
+        await until(async () =>
+          (await shared(rec)).some((t) => t.includes('Live plan') && t.includes(`from ${ownerName}`)),
+        ),
         `share not shown: ${await shared(rec)}`,
       )
       assert((await heading(rec)) === 1, 'no heading')
       await h.edit(owner, 'Live plan', 'Live renamed')
-      assert(await until(async () => (await shared(rec))[0]?.includes('Live renamed')), `rename: ${await shared(rec)}`)
+      assert(
+        await until(async () => (await shared(rec))[0]?.includes('Live renamed')),
+        `rename: ${await shared(rec)}`,
+      )
       await h.click(owner, h.liButton(owner, 'Live renamed', `Unshare ${recName}`))
       assert(
         await until(async () => (await shared(rec)).length === 0 && (await heading(rec)) === 0),
         `unshare: ${await shared(rec)}`,
       )
       assert((await rec.evaluate(() => window.__live)) === 1, 'the page was reloaded')
-      assert((await rec.getByLabel(V.addLabel, { exact: true }).inputValue()) === 'draft text', 'typed text lost')
+      assert(
+        (await rec.getByLabel(V.addLabel, { exact: true }).inputValue()) === 'draft text',
+        'typed text lost',
+      )
       assert(await rec.getByLabel('Select Mine', { exact: true }).isChecked(), 'checkbox lost')
     },
   )
@@ -615,13 +660,17 @@ export default function register(h) {
       const body = await res.json()
       assert(body.user === who, `user ${body.user}`)
       const keys = '["archived","body","createdAt","number","pinned","title"]'
-      for (const n of body.notes) assert(JSON.stringify(Object.keys(n).sort()) === keys, `keys ${Object.keys(n)}`)
+      for (const n of body.notes)
+        assert(JSON.stringify(Object.keys(n).sort()) === keys, `keys ${Object.keys(n)}`)
       const titles = body.notes.map((n) => n.title)
       assert(JSON.stringify(titles) === '["Alpha","Gamma","Beta"]', `order ${titles}`)
       const numbers = body.notes.map((n) => n.number)
       assert(JSON.stringify(numbers) === '[1,3,2]', `numbers ${JSON.stringify(numbers)}`)
       const bodies = body.notes.map((n) => n.body)
-      assert(JSON.stringify(bodies) === JSON.stringify(['', '', 'Line one\nLine two']), `bodies ${JSON.stringify(bodies)}`)
+      assert(
+        JSON.stringify(bodies) === JSON.stringify(['', '', 'Line one\nLine two']),
+        `bodies ${JSON.stringify(bodies)}`,
+      )
       const [alpha, gamma, beta] = body.notes
       assert(alpha.pinned === true && gamma.archived === true && beta.archived === false, 'flags')
       assert(Date.parse(alpha.createdAt) === Date.parse(alphaAt ?? ''), `createdAt ${alpha.createdAt}`)
@@ -648,7 +697,10 @@ export default function register(h) {
       const json = await exportOf(page)
       const res = await h.fetchAs(page, '/api/export?format=csv')
       assert(res.status === 200, `status ${res.status}`)
-      assert((res.headers.get('content-type') ?? '').includes('text/csv'), `type ${res.headers.get('content-type')}`)
+      assert(
+        (res.headers.get('content-type') ?? '').includes('text/csv'),
+        `type ${res.headers.get('content-type')}`,
+      )
       assert(
         new RegExp(`^attachment;\\s*filename="notes-${who}\\.csv"$`, 'i').test(disposition(res)),
         `disposition ${disposition(res)}`,
@@ -662,17 +714,26 @@ export default function register(h) {
       ]
       const expected = lines.map((l) => `${l}\r\n`).join('')
       const csv = await res.text()
-      assert(csv === expected, `csv ${JSON.stringify(csv).slice(0, 200)} expected ${JSON.stringify(expected).slice(0, 200)}`)
+      assert(
+        csv === expected,
+        `csv ${JSON.stringify(csv).slice(0, 200)} expected ${JSON.stringify(expected).slice(0, 200)}`,
+      )
       assert(csv.includes('"Say ""hi"", Bob"') && csv.includes('"a,b\nc"'), 'quoting')
     },
   )
-  check('X26c', 26, 'export: 401 signed out in every format, 400 for an unknown format', 'Any other format gives status 400. When nobody is signed in, every format gives status 401.', async () => {
-    for (const qs of ['', '?format=json', '?format=csv'])
-      assert((await fetch(`${base}/api/export${qs}`)).status === 401, `signed out ${qs}`)
-    const page = await h.fresh('X26c')
-    const res = await h.fetchAs(page, '/api/export?format=xml')
-    assert(res.status === 400, `format=xml status ${res.status}`)
-  })
+  check(
+    'X26c',
+    26,
+    'export: 401 signed out in every format, 400 for an unknown format',
+    'Any other format gives status 400. When nobody is signed in, every format gives status 401.',
+    async () => {
+      for (const qs of ['', '?format=json', '?format=csv'])
+        assert((await fetch(`${base}/api/export${qs}`)).status === 401, `signed out ${qs}`)
+      const page = await h.fresh('X26c')
+      const res = await h.fetchAs(page, '/api/export?format=xml')
+      assert(res.status === 400, `format=xml status ${res.status}`)
+    },
+  )
 
   // 27 — undo for Delete selected
   check(
@@ -713,7 +774,10 @@ export default function register(h) {
       assert(!(await h.statusOf(page)), 'message still shown')
       const f = await h.newPage()
       await h.signIn(f, friend)
-      assert((await h.sharedItems(f)).some((t) => t.includes('Gamma')), 'not shared again')
+      assert(
+        (await h.sharedItems(f)).some((t) => t.includes('Gamma')),
+        'not shared again',
+      )
       await h.go(page, '/notes/3')
       assert((await bodyInput(page).inputValue()) === 'Kept body', 'body lost')
     },
@@ -735,7 +799,10 @@ export default function register(h) {
       await h.go(page, V.home)
       const list = await h.items(page)
       assert(
-        list.length === 3 && list[0].includes('Gamma') && list[2].includes('Alpha') && list[2].includes('No. 1'),
+        list.length === 3 &&
+          list[0].includes('Gamma') &&
+          list[2].includes('Alpha') &&
+          list[2].includes('No. 1'),
         `after undo ${list}`,
       )
       await select(page, 'Alpha')
@@ -798,10 +865,16 @@ export default function register(h) {
       assert(login.includes('Sign in') && !login.includes('Anmelden'), 'login text')
       const page = await h.fresh('X28c')
       const list = await (
-        await fetch(base + V.home, { redirect: 'manual', headers: { ...de, cookie: await h.cookieHeader(page) } })
+        await fetch(base + V.home, {
+          redirect: 'manual',
+          headers: { ...de, cookie: await h.cookieHeader(page) },
+        })
       ).text()
       assert(/<html[^>]*lang="en/.test(list), 'list lang')
-      assert(list.includes('Signed in as') && !list.includes('Angemeldet') && !list.includes('Notizen'), 'list text')
+      assert(
+        list.includes('Signed in as') && !list.includes('Angemeldet') && !list.includes('Notizen'),
+        'list text',
+      )
     },
   )
 }

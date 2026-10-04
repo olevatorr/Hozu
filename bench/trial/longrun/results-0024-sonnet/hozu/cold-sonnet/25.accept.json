@@ -1,574 +1,163 @@
 {
- "name": "hozu",
- "step": 25,
- "passed": 78,
- "total": 81,
- "new": {
-  "passed": 2,
-  "total": 2
- },
- "regression": {
-  "passed": 76,
-  "total": 79
- },
- "failures": [
-  {
-   "id": "X23a",
-   "kind": "regression",
-   "what": "with JS: save title and body on the note page",
-   "error": "FAIL: body not shown with its line break"
+  "name": "hozu",
+  "step": 25,
+  "passed": 78,
+  "total": 81,
+  "new": {
+    "passed": 2,
+    "total": 2
   },
-  {
-   "id": "X23b",
-   "kind": "regression",
-   "what": "without JS: every message shows, typed values stay, nothing is saved",
-   "error": "FAIL: no duplicate alert: Use at most 1000 characters in the body"
+  "regression": {
+    "passed": 76,
+    "total": 79
   },
-  {
-   "id": "X23c",
-   "kind": "regression",
-   "what": "with JS: invalid save keeps the typed values and saves nothing",
-   "error": "FAIL: no duplicate alert: Use at most 1000 characters in the body"
-  }
- ],
- "results": [
-  [
-   "N1",
-   0,
-   "pass",
-   956
-  ],
-  [
-   "N2",
-   0,
-   "pass",
-   944
-  ],
-  [
-   "N3",
-   0,
-   "pass",
-   2043
-  ],
-  [
-   "N4",
-   0,
-   "pass",
-   2017
-  ],
-  [
-   "N5",
-   0,
-   "pass",
-   4914
-  ],
-  [
-   "N6",
-   0,
-   "pass",
-   2011
-  ],
-  [
-   "N7",
-   0,
-   "pass",
-   3562
-  ],
-  [
-   "N8",
-   0,
-   "pass",
-   3523
-  ],
-  [
-   "N9",
-   0,
-   "pass",
-   2021
-  ],
-  [
-   "N10",
-   0,
-   "pass",
-   3573
-  ],
-  [
-   "N11",
-   0,
-   "pass",
-   4318
-  ],
-  [
-   "N12",
-   0,
-   "pass",
-   5091
-  ],
-  [
-   "N13",
-   0,
-   "pass",
-   9610
-  ],
-  [
-   "N14",
-   0,
-   "pass",
-   3581
-  ],
-  [
-   "P1",
-   1,
-   "pass",
-   4255
-  ],
-  [
-   "P2",
-   1,
-   "pass",
-   7128
-  ],
-  [
-   "P3",
-   1,
-   "pass",
-   5007
-  ],
-  [
-   "P4",
-   1,
-   "pass",
-   4924
-  ],
-  [
-   "P5",
-   1,
-   "pass",
-   7119
-  ],
-  [
-   "L1",
-   2,
-   "pass",
-   3290
-  ],
-  [
-   "L2",
-   2,
-   "pass",
-   3617
-  ],
-  [
-   "T1",
-   3,
-   "pass",
-   2043
-  ],
-  [
-   "T2",
-   3,
-   "pass",
-   2775
-  ],
-  [
-   "R1",
-   4,
-   "pass",
-   2053
-  ],
-  [
-   "E1",
-   5,
-   "pass",
-   5714
-  ],
-  [
-   "E2",
-   5,
-   "pass",
-   5800
-  ],
-  [
-   "E3",
-   5,
-   "pass",
-   5100
-  ],
-  [
-   "E4",
-   5,
-   "pass",
-   6688
-  ],
-  [
-   "A1",
-   7,
-   "pass",
-   7770
-  ],
-  [
-   "A2",
-   7,
-   "pass",
-   2848
-  ],
-  [
-   "A3",
-   7,
-   "pass",
-   10945
-  ],
-  [
-   "A4",
-   7,
-   "pass",
-   7472
-  ],
-  [
-   "S1",
-   8,
-   "pass",
-   7539
-  ],
-  [
-   "M1",
-   9,
-   "pass",
-   2027
-  ],
-  [
-   "M2",
-   9,
-   "pass",
-   4574
-  ],
-  [
-   "U1",
-   10,
-   "pass",
-   7275
-  ],
-  [
-   "U2",
-   10,
-   "pass",
-   7933
-  ],
-  [
-   "U3",
-   10,
-   "pass",
-   6723
-  ],
-  [
-   "Pg1",
-   11,
-   "pass",
-   9329
-  ],
-  [
-   "Pg2",
-   11,
-   "pass",
-   10971
-  ],
-  [
-   "Pg3",
-   11,
-   "pass",
-   11808
-  ],
-  [
-   "O1",
-   12,
-   "pass",
-   6913
-  ],
-  [
-   "O2",
-   12,
-   "pass",
-   6341
-  ],
-  [
-   "B1",
-   13,
-   "pass",
-   7660
-  ],
-  [
-   "B2",
-   13,
-   "pass",
-   6578
-  ],
-  [
-   "B3",
-   13,
-   "pass",
-   10107
-  ],
-  [
-   "B3b",
-   13,
-   "pass",
-   13578
-  ],
-  [
-   "RL1",
-   14,
-   "pass",
-   15347
-  ],
-  [
-   "SH1",
-   15,
-   "pass",
-   7053
-  ],
-  [
-   "SH2",
-   15,
-   "pass",
-   14235
-  ],
-  [
-   "SH3",
-   15,
-   "pass",
-   7047
-  ],
-  [
-   "SH4",
-   15,
-   "pass",
-   9494
-  ],
-  [
-   "AD1",
-   16,
-   "pass",
-   8291
-  ],
-  [
-   "AD2",
-   16,
-   "pass",
-   2029
-  ],
-  [
-   "DA1",
-   17,
-   "pass",
-   17757
-  ],
-  [
-   "DA1b",
-   17,
-   "pass",
-   20357
-  ],
-  [
-   "DA2",
-   17,
-   "pass",
-   7327
-  ],
-  [
-   "DE1",
-   18,
-   "pass",
-   6981
-  ],
-  [
-   "DE2",
-   18,
-   "pass",
-   9118
-  ],
-  [
-   "EX1",
-   19,
-   "pass",
-   9216
-  ],
-  [
-   "EX2",
-   19,
-   "pass",
-   2026
-  ],
-  [
-   "TG1",
-   20,
-   "pass",
-   4327
-  ],
-  [
-   "N16",
-   0,
-   "pass",
-   7843
-  ],
-  [
-   "X21a",
-   21,
-   "pass",
-   4062
-  ],
-  [
-   "X21b",
-   21,
-   "pass",
-   17457
-  ],
-  [
-   "X21c",
-   21,
-   "pass",
-   9869
-  ],
-  [
-   "X22a",
-   22,
-   "pass",
-   7547
-  ],
-  [
-   "X22b",
-   22,
-   "pass",
-   9999
-  ],
-  [
-   "X22c",
-   22,
-   "pass",
-   10629
-  ],
-  [
-   "X22d",
-   22,
-   "pass",
-   2856
-  ],
-  [
-   "X23a",
-   23,
-   "FAIL: body not shown with its line break",
-   5140
-  ],
-  [
-   "X23b",
-   23,
-   "FAIL: no duplicate alert: Use at most 1000 characters in the body",
-   6661
-  ],
-  [
-   "X23c",
-   23,
-   "FAIL: no duplicate alert: Use at most 1000 characters in the body",
-   5085
-  ],
-  [
-   "X23d",
-   23,
-   "pass",
-   9903
-  ],
-  [
-   "X24a",
-   24,
-   "pass",
-   18212
-  ],
-  [
-   "X24b",
-   24,
-   "pass",
-   26553
-  ],
-  [
-   "X24c",
-   24,
-   "pass",
-   29746
-  ],
-  [
-   "X24d",
-   24,
-   "pass",
-   13857
-  ],
-  [
-   "X25a",
-   25,
-   "pass",
-   8593
-  ],
-  [
-   "X25b",
-   25,
-   "pass",
-   16401
-  ],
-  [
-   "N15",
-   0,
-   "pass",
-   0
-  ]
- ],
- "retired": [
-  "G1",
-  "G2",
-  "G2b",
-  "G3",
-  "S2"
- ],
- "js": {
-  "login": 22531,
-  "list": 23609
- },
- "heldout": {
-  "path": "/Users/otischen/Developer/hozu-trial-0024/heldout/accept-heldout.mjs",
-  "sha256": "e517b5bc8d4cce81848f59b84457bc01245a4bfcf05784eb7d0e8538fa3c2c67",
-  "added": [
-   "X21a",
-   "X21b",
-   "X21c",
-   "X22a",
-   "X22b",
-   "X22c",
-   "X22d",
-   "X23a",
-   "X23b",
-   "X23c",
-   "X23d",
-   "X24a",
-   "X24b",
-   "X24c",
-   "X24d",
-   "X25a",
-   "X25b",
-   "X26a",
-   "X26b",
-   "X26c",
-   "X27a",
-   "X27b",
-   "X27c",
-   "X28a",
-   "X28b"
-  ],
-  "retires": {
-   "EX1": 26,
-   "B1": 27,
-   "DE1": 28,
-   "DE2": 28
-  }
- },
- "browserCrashes": 0,
- "serverErrors": "",
- "serverOutput": "app on http://127.0.0.1:4821\n",
- "serverExit": null
+  "failures": [
+    {
+      "id": "X23a",
+      "kind": "regression",
+      "what": "with JS: save title and body on the note page",
+      "error": "FAIL: body not shown with its line break"
+    },
+    {
+      "id": "X23b",
+      "kind": "regression",
+      "what": "without JS: every message shows, typed values stay, nothing is saved",
+      "error": "FAIL: no duplicate alert: Use at most 1000 characters in the body"
+    },
+    {
+      "id": "X23c",
+      "kind": "regression",
+      "what": "with JS: invalid save keeps the typed values and saves nothing",
+      "error": "FAIL: no duplicate alert: Use at most 1000 characters in the body"
+    }
+  ],
+  "results": [
+    ["N1", 0, "pass", 956],
+    ["N2", 0, "pass", 944],
+    ["N3", 0, "pass", 2043],
+    ["N4", 0, "pass", 2017],
+    ["N5", 0, "pass", 4914],
+    ["N6", 0, "pass", 2011],
+    ["N7", 0, "pass", 3562],
+    ["N8", 0, "pass", 3523],
+    ["N9", 0, "pass", 2021],
+    ["N10", 0, "pass", 3573],
+    ["N11", 0, "pass", 4318],
+    ["N12", 0, "pass", 5091],
+    ["N13", 0, "pass", 9610],
+    ["N14", 0, "pass", 3581],
+    ["P1", 1, "pass", 4255],
+    ["P2", 1, "pass", 7128],
+    ["P3", 1, "pass", 5007],
+    ["P4", 1, "pass", 4924],
+    ["P5", 1, "pass", 7119],
+    ["L1", 2, "pass", 3290],
+    ["L2", 2, "pass", 3617],
+    ["T1", 3, "pass", 2043],
+    ["T2", 3, "pass", 2775],
+    ["R1", 4, "pass", 2053],
+    ["E1", 5, "pass", 5714],
+    ["E2", 5, "pass", 5800],
+    ["E3", 5, "pass", 5100],
+    ["E4", 5, "pass", 6688],
+    ["A1", 7, "pass", 7770],
+    ["A2", 7, "pass", 2848],
+    ["A3", 7, "pass", 10945],
+    ["A4", 7, "pass", 7472],
+    ["S1", 8, "pass", 7539],
+    ["M1", 9, "pass", 2027],
+    ["M2", 9, "pass", 4574],
+    ["U1", 10, "pass", 7275],
+    ["U2", 10, "pass", 7933],
+    ["U3", 10, "pass", 6723],
+    ["Pg1", 11, "pass", 9329],
+    ["Pg2", 11, "pass", 10971],
+    ["Pg3", 11, "pass", 11808],
+    ["O1", 12, "pass", 6913],
+    ["O2", 12, "pass", 6341],
+    ["B1", 13, "pass", 7660],
+    ["B2", 13, "pass", 6578],
+    ["B3", 13, "pass", 10107],
+    ["B3b", 13, "pass", 13578],
+    ["RL1", 14, "pass", 15347],
+    ["SH1", 15, "pass", 7053],
+    ["SH2", 15, "pass", 14235],
+    ["SH3", 15, "pass", 7047],
+    ["SH4", 15, "pass", 9494],
+    ["AD1", 16, "pass", 8291],
+    ["AD2", 16, "pass", 2029],
+    ["DA1", 17, "pass", 17757],
+    ["DA1b", 17, "pass", 20357],
+    ["DA2", 17, "pass", 7327],
+    ["DE1", 18, "pass", 6981],
+    ["DE2", 18, "pass", 9118],
+    ["EX1", 19, "pass", 9216],
+    ["EX2", 19, "pass", 2026],
+    ["TG1", 20, "pass", 4327],
+    ["N16", 0, "pass", 7843],
+    ["X21a", 21, "pass", 4062],
+    ["X21b", 21, "pass", 17457],
+    ["X21c", 21, "pass", 9869],
+    ["X22a", 22, "pass", 7547],
+    ["X22b", 22, "pass", 9999],
+    ["X22c", 22, "pass", 10629],
+    ["X22d", 22, "pass", 2856],
+    ["X23a", 23, "FAIL: body not shown with its line break", 5140],
+    ["X23b", 23, "FAIL: no duplicate alert: Use at most 1000 characters in the body", 6661],
+    ["X23c", 23, "FAIL: no duplicate alert: Use at most 1000 characters in the body", 5085],
+    ["X23d", 23, "pass", 9903],
+    ["X24a", 24, "pass", 18212],
+    ["X24b", 24, "pass", 26553],
+    ["X24c", 24, "pass", 29746],
+    ["X24d", 24, "pass", 13857],
+    ["X25a", 25, "pass", 8593],
+    ["X25b", 25, "pass", 16401],
+    ["N15", 0, "pass", 0]
+  ],
+  "retired": ["G1", "G2", "G2b", "G3", "S2"],
+  "js": {
+    "login": 22531,
+    "list": 23609
+  },
+  "heldout": {
+    "path": "/Users/otischen/Developer/hozu-trial-0024/heldout/accept-heldout.mjs",
+    "sha256": "e517b5bc8d4cce81848f59b84457bc01245a4bfcf05784eb7d0e8538fa3c2c67",
+    "added": [
+      "X21a",
+      "X21b",
+      "X21c",
+      "X22a",
+      "X22b",
+      "X22c",
+      "X22d",
+      "X23a",
+      "X23b",
+      "X23c",
+      "X23d",
+      "X24a",
+      "X24b",
+      "X24c",
+      "X24d",
+      "X25a",
+      "X25b",
+      "X26a",
+      "X26b",
+      "X26c",
+      "X27a",
+      "X27b",
+      "X27c",
+      "X28a",
+      "X28b"
+    ],
+    "retires": {
+      "EX1": 26,
+      "B1": 27,
+      "DE1": 28,
+      "DE2": 28
+    }
+  },
+  "browserCrashes": 0,
+  "serverErrors": "",
+  "serverOutput": "app on http://127.0.0.1:4821\n",
+  "serverExit": null
 }

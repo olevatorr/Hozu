@@ -1,12 +1,13 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { extname, join } from 'node:path'
+import { dirname, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
 import { buildProject } from '@hozu/core/ir'
 import { createDataRuntime } from '@hozu/data'
-import { renderToString as hozuRender } from '@hozu/runtime-server'
+import { fnModules, renderToString as hozuRender } from '@hozu/runtime-server'
+import { validate } from '@hozu/validator'
 import { renderToString as vueRender } from '@vue/server-renderer'
 import { build as bundle } from 'esbuild'
 import { chromium } from 'playwright-core'
@@ -38,7 +39,13 @@ const shell = (body: string, name: string) =>
   `<!doctype html><html><head><meta charset="utf-8"><title>Products</title></head><body><div id="root">${body}</div><script id="props" type="application/json">${JSON.stringify(props).replace(/</g, '\\u003c')}</script><script type="module" src="/${name}/app.js"></script></body></html>`
 
 const hozuBuild = buildProject(benchProject, { sources: false })
+const broken = [...hozuBuild.diagnostics, ...validate(hozuBuild.ir)].filter((d) => d.severity === 'error')
+if (broken.length)
+  throw new Error(
+    `The Hozu bench app does not build: ${broken.map((d) => `${d.code} ${d.message}`).join('; ')}`,
+  )
 const hozuData = createDataRuntime({ build: hozuBuild, resolvers: benchResolvers })
+const hozuFns = Object.values(fnModules(hozuBuild))
 
 const frameworks: { name: string; version: string; ssr: () => Promise<string> | string; client: string }[] = [
   {
@@ -74,7 +81,13 @@ const frameworks: { name: string; version: string; ssr: () => Promise<string> | 
           build: hozuBuild,
           data: hozuData,
           route: 'home',
-          assets: { client: '/hozu/app.js', fns: null, styles: null, preload: [], widgets: {} },
+          assets: {
+            client: '/hozu/app.js',
+            fns: Object.fromEntries(Object.entries(fnModules(hozuBuild)).map(([n, m]) => [n, m.path])),
+            styles: null,
+            preload: Object.values(fnModules(hozuBuild)).map((m) => m.path),
+            components: {},
+          },
         })
       ).html,
     client: hozuClient,
@@ -111,8 +124,9 @@ interface Row {
   clicksMs: number
 }
 
+const only = process.env.BENCH_ONLY?.split(',')
 const rows: Row[] = []
-for (const fw of frameworks) {
+for (const fw of frameworks.filter((f) => !only || only.includes(f.name))) {
   const html = await fw.ssr()
   rmSync(join(out, fw.name), { recursive: true, force: true })
   mkdirSync(join(out, fw.name), { recursive: true })
@@ -145,7 +159,12 @@ for (const fw of frameworks) {
     ].map((m) => m[1]!)
     return [contents, ...deps.flatMap((d) => initial(d, seen))]
   }
-  const code = Buffer.concat(initial('app.js'))
+  const extra = fw.name === 'hozu' ? hozuFns.map((m) => Buffer.from(m.source)) : []
+  for (const m of fw.name === 'hozu' ? hozuFns : []) {
+    mkdirSync(join(out, dirname(m.path)), { recursive: true })
+    writeFileSync(join(out, m.path), m.source)
+  }
+  const code = Buffer.concat([...initial('app.js'), ...extra])
   rows.push({
     name: fw.name,
     version: fw.version,
@@ -153,7 +172,7 @@ for (const fw of frameworks) {
     htmlBytes: Buffer.byteLength(html),
     htmlGzip: gzipSync(html).length,
     jsBytes: code.length,
-    jsGzip: initial('app.js').reduce((sum, c) => sum + gzipSync(c).length, 0),
+    jsGzip: [...initial('app.js'), ...extra].reduce((sum, c) => sum + gzipSync(c).length, 0),
     hydrateMs: 0,
     interactiveMs: 0,
     clicksMs: 0,
@@ -178,7 +197,7 @@ const { port } = server.address() as AddressInfo
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH,
 })
-const RUNS = 10
+const RUNS = Number(process.env.BENCH_RUNS ?? 10)
 const CLICKS = 200
 for (const row of rows) {
   const hydrate: number[] = []

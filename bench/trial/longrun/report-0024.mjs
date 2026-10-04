@@ -81,7 +81,10 @@ const table = steps.map((step) => {
 
 const geo = (xs) => (xs.length ? Math.exp(xs.reduce((a, x) => a + Math.log(x), 0) / xs.length) : null)
 const ratio = (range, f) => {
-  const xs = table.filter((r) => range(r.step)).map(f).filter((x) => Number.isFinite(x) && x > 0)
+  const xs = table
+    .filter((r) => range(r.step))
+    .map(f)
+    .filter((x) => Number.isFinite(x) && x > 0)
   return { n: xs.length, geomean: geo(xs) }
 }
 const ranges = { seen: (s) => s >= 0 && s <= 20, heldout: (s) => s >= 21 && s <= 28 }

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "run": "node run.ts"
+    "run": "node --import @hozu/transform/register run.ts"
   },
   "dependencies": {
     "@hozu/core": "workspace:*",
@@ -11,6 +11,8 @@
     "@hozu/runtime-client": "workspace:*",
     "@hozu/runtime-server": "workspace:*",
     "@hozu/schema-zod": "workspace:*",
+    "@hozu/transform": "workspace:*",
+    "@hozu/validator": "workspace:*",
     "@vue/server-renderer": "3.5.43",
     "esbuild": "0.28.2",
     "playwright-core": "1.63.0",
