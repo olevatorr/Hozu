@@ -1,5 +1,5 @@
 import { type ChildProcess, spawn } from 'node:child_process'
-import { existsSync, type FSWatcher, readFileSync, statSync, watch } from 'node:fs'
+import { existsSync, type FSWatcher, readFileSync, statSync, unwatchFile, watch, watchFile } from 'node:fs'
 import { createServer, type IncomingMessage, request, type Server, type ServerResponse } from 'node:http'
 import { createRequire } from 'node:module'
 import { type AddressInfo, createServer as createNetServer } from 'node:net'
@@ -10,9 +10,13 @@ import {
   devtoolsDir,
   devtoolsEntry,
   finishRequest,
+  listNotes,
   listRequests,
+  notesFile,
   parseTheme,
   readRequest,
+  removeNote,
+  replyMarkdown,
   saveRequest,
 } from '@hozu/devtools'
 import { devClient } from './client.ts'
@@ -42,7 +46,7 @@ export interface DevServer {
   close(): Promise<void>
 }
 
-const ignored = /(^|[/\\])(node_modules|dist|dist-static|\.git)([/\\]|$)/
+const ignored = /(^|[/\\])(node_modules|dist|dist-static|\.git|\.hozu)([/\\]|$)/
 
 const free = (port: number) =>
   new Promise<boolean>((resolve) => {
@@ -93,7 +97,14 @@ export async function dev({
     })
     ready = new Promise((resolve) => {
       child!.stdout!.on('data', (chunk: Buffer) => {
-        process.stdout.write(chunk)
+        const shown = chunk
+          .toString()
+          .split('\n')
+          .filter(
+            (line) => !line.trimEnd().endsWith(`:${appPort}`) || !/ on http:\/\/\S+$/.test(line.trimEnd()),
+          )
+          .join('\n')
+        if (shown.trim()) process.stdout.write(shown)
         resolve()
       })
       child!.on('exit', () => resolve())
@@ -139,6 +150,10 @@ export async function dev({
     timer = setTimeout(() => void flush(), debounce)
   })
 
+  const notesPath = join(requestsRoot ?? cwd, notesFile)
+  const notesMoved = () => send('notes')
+  if (devtools) watchFile(notesPath, { interval: 250 }, notesMoved)
+
   start()
   await ready
 
@@ -159,6 +174,8 @@ export async function dev({
           .end('Hozu DevTools answers only this machine')
       if (path.startsWith('/_hozu/devtools/')) return void serveDevtools(path, res)
       if (path === '/_hozu/dev/theme') return void theme(res, cwd, appPort)
+      if (path === '/_hozu/dev/notes' || path.startsWith('/_hozu/dev/notes/'))
+        return void notes(req, res, requestsRoot ?? cwd, path.slice('/_hozu/dev/notes/'.length).split('/'))
       if (path === '/_hozu/dev/requests' || path.startsWith('/_hozu/dev/requests/'))
         return void requests(
           req,
@@ -210,6 +227,7 @@ export async function dev({
     url: `http://127.0.0.1:${actual}`,
     close: async () => {
       watcher.close()
+      unwatchFile(notesPath, notesMoved)
       if (timer) clearTimeout(timer)
       for (const res of clients) res.end()
       await stop()
@@ -274,6 +292,32 @@ function requests(req: IncomingMessage, res: ServerResponse, cwd: string, [numbe
     return json(405, { error: 'GET, DELETE or POST …/done' })
   }
   run().catch((e: Error) => json(/^No request/.test(e.message) ? 404 : 400, { error: e.message }))
+}
+
+function notes(req: IncomingMessage, res: ServerResponse, root: string, [number, action]: string[]) {
+  const json = (status: number, body: unknown) =>
+    res
+      .writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' })
+      .end(JSON.stringify(body))
+  if (!number) return req.method === 'GET' ? json(200, listNotes(root)) : json(405, { error: 'GET' })
+  const note = listNotes(root).find((n) => String(n.n) === number)
+  if (!note) return json(404, { error: `No note ${number}` })
+  if (req.method === 'DELETE' && !action) return json(200, removeNote(root, note.n))
+  if (req.method !== 'POST' || action !== 'reply') return json(405, { error: 'DELETE or POST …/reply' })
+  let text = ''
+  req.on('data', (chunk: Buffer) => {
+    text += chunk
+    if (text.length > 100_000) req.destroy()
+  })
+  req.on('end', () => {
+    try {
+      const { reply } = JSON.parse(text || '{}') as { reply?: unknown }
+      if (typeof reply !== 'string' || !reply.trim()) return json(400, { error: 'Expected { reply }' })
+      json(200, saveRequest(root, replyMarkdown(note, reply.trim())))
+    } catch (e) {
+      json(400, { error: (e as Error).message })
+    }
+  })
 }
 
 function tailwindTheme(cwd: string): string {

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { dev } from '@hozu/dev'
+import { addNote, clearNotes } from '@hozu/devtools'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { type Cdp, findBrowser, launch } from '../../cli/src/cdp.ts'
 
@@ -434,4 +435,60 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
       `(() => { const r = document.querySelector('hozu-devtools').shadowRoot.querySelector('.panel').getBoundingClientRect(); return Math.round(r.x) === ${start.x} })()`,
     )
   })
+
+  it('shows the agent’s notes: a frame on the part, the panel steps through them, a reply becomes a request (ADR 0056 D)', async () => {
+    await open('/login')
+    const id = await evaluate(`document.querySelector('button[type=submit]').getAttribute('data-hz')`)
+    addNote(scratch, {
+      id,
+      label: 'Button “Sign in”',
+      at: 'features/account/views.ts:38',
+      path: '/login',
+      text: 'This button now signs you in',
+    })
+    addNote(scratch, {
+      id: 'page:home',
+      label: 'page home',
+      at: null,
+      path: '/',
+      text: 'Your notes are listed here',
+    })
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.dock .act.agent')?.textContent === 'Agent 2'`,
+    )
+    const box = () =>
+      evaluate(
+        `(() => { const b = document.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.note-box:not([hidden])'); const r = document.querySelector('button[type=submit]').getBoundingClientRect(); return b && { left: Math.round(parseFloat(b.style.left)), at: Math.round(r.left - 3), tag: b.textContent } })()`,
+      )
+    await until(
+      `!!document.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.note-box:not([hidden])')`,
+    )
+    expect(await box()).toMatchObject({ tag: '1 This button now signs you in' })
+    const framed = await box()
+    expect(framed.left).toBe(framed.at)
+    await shadowClick('.dock button', 'Agent')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent === 'Note 1 of 2'`,
+    )
+    expect(await tool(`$('.note-text').textContent`)).toBe('This button now signs you in')
+    await shadowClick('.actions button', 'Next')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent === 'Note 2 of 2'`,
+    )
+    await tool(`(() => { const t = $('.panel textarea'); t.value = 'Show the newest first'; return true })()`)
+    await shadowClick('.actions button', 'Send reply')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.status.ok')?.textContent.startsWith('Sent as request')`,
+    )
+    const reply = listed().find((f) => f.includes('reply-to-note-2'))
+    expect(reply).toBeDefined()
+    expect(readFileSync(join(requests, reply!), 'utf8')).toContain('- Reply: Show the newest first')
+    await shadowClick('.actions button', 'Done')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.dock .act.agent')?.textContent === 'Agent 1'`,
+    )
+    clearNotes(scratch)
+    await until(`!document.querySelector('hozu-devtools').shadowRoot.querySelector('.dock .act.agent')`)
+    expect(errors).toEqual([])
+  }, 30_000)
 })

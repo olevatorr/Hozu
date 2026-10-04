@@ -265,6 +265,11 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `--update-lock` prints the accepted lines, per-command `--help`, `hozu serve` runs as production, `og:locale` with
   region and sitemap alternates, `bench:frameworks` repaired (B2 in `pnpm bench`, 50 ms). Perf: fn modules are
   ordered module scripts that register by URL, so hydration does not wait on `import()` (hydrate 41 → 6 ms).
+  Phase D: `hozu show <id|pointer|page:route> --note "…"` (`--page`, `--done <n>`, `--clear`) writes
+  `.hozu/notes.json`; `hozu dev` serves `/_hozu/dev/notes` (loopback only; reply → a saved request, DELETE),
+  pushes `notes` over the dev SSE (one connection: the dev client re-dispatches `hozu:notes`), and DevTools draws
+  numbered frames plus an Agent panel (Back / Next, Send reply, Done); `hozu dev` hides the app process's URL line
+  and ignores `.hozu/` changes. `bench/meta` = Next.js / Nuxt / SvelteKit / Hozu in production servers.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

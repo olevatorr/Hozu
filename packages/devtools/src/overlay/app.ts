@@ -16,6 +16,7 @@ import { drawer } from './effects.ts'
 import { previewLabel, renderLayers } from './layers.ts'
 import { logo } from './logo.ts'
 import { lookSection, preview } from './look.ts'
+import { agentNotes } from './notes.ts'
 import { css, outlineCss } from './style.ts'
 import { firstText, previewText, restoreText, type TextChange, textSection } from './text.ts'
 
@@ -35,7 +36,7 @@ interface State {
   mode: 'browse' | 'select'
   picks: Pick[]
   active: number
-  panel: 'inspector' | 'changes' | 'settings' | 'layers' | null
+  panel: 'inspector' | 'changes' | 'settings' | 'layers' | 'notes' | null
   tab: 'draft' | 'saved'
   opened: string | null
   dock: { x: number; y: number } | null
@@ -112,12 +113,23 @@ let win: Window = window
 let frameEl: HTMLIFrameElement | null = null
 const frames = h('div')
 let outline: HTMLElement | null = null
+const agent = agentNotes({
+  doc: () => doc,
+  win: () => win,
+  developer: () => state.audience === 'developer',
+  closeButton: (onclick) => closeButton(onclick),
+  close: () => open(state.picks.length ? 'inspector' : null),
+  changed: () => {
+    renderDock()
+    if (state.panel === 'notes') void renderPanel()
+  },
+})
 
 function mountOutline(target: Document) {
   outline?.remove()
   const el = target.createElement('hozu-devtools-outline')
   el.style.cssText = 'all:initial;position:fixed;inset:0;pointer-events:none;z-index:2147483646'
-  el.attachShadow({ mode: 'open' }).append(h('style', {}, [outlineCss]), frames, boxes, hover)
+  el.attachShadow({ mode: 'open' }).append(h('style', {}, [outlineCss]), frames, boxes, agent.layer, hover)
   target.documentElement.append(el)
   outline = el
 }
@@ -238,6 +250,7 @@ function frame() {
     }
   }
   if (hovered && (state.mode === 'select' || forced)) place(hover, hovered)
+  agent.frame()
   requestAnimationFrame(frame)
 }
 
@@ -447,6 +460,20 @@ function renderDock() {
     ...present([
       grip,
       h('div', { class: 'seg' }, [button('Browse', 'browse'), button('Select', 'select')]),
+      agent.count()
+        ? h(
+            'button',
+            {
+              class: 'act agent',
+              type: 'button',
+              title: 'Notes from your agent on this page (hozu show)',
+              'aria-pressed': String(state.panel === 'notes'),
+              onclick: () =>
+                open(state.panel === 'notes' ? (state.picks.length ? 'inspector' : null) : 'notes'),
+            },
+            ['Agent ', h('span', { class: 'agent-count' }, [String(agent.count())])],
+          )
+        : null,
       h(
         'button',
         {
@@ -1118,6 +1145,7 @@ async function renderPanel() {
   placePanel()
   if (state.panel === 'changes') return state.opened ? renderRequest(state.opened) : renderChanges()
   if (state.panel === 'settings') return renderSettings()
+  if (state.panel === 'notes') return agent.render(panel)
   if (state.panel === 'layers')
     return renderLayers(
       panel,

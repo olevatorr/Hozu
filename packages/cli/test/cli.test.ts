@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -670,5 +670,48 @@ describe('hozu call on an endpoint (ADR 0056 C)', () => {
     expect(booked).toMatchObject({ status: 200, result: { ok: true, value: { booked: 'blue' } } })
     const bad = await run(['call', 'api.who', '--header', 'Bearer', '--json'], app)
     expect(JSON.parse(bad.stdout).error.message).toBe('--header takes "Name: value", not "Bearer"')
+  })
+})
+
+describe('hozu show (ADR 0056 D)', () => {
+  const app = `${root}packages/cli/test/fixtures/endpoints`
+  const notes = `${app}/.hozu/notes.json`
+
+  it('adds a numbered note on a part or a page, lists, removes one and clears them', async () => {
+    rmSync(`${app}/.hozu`, { recursive: true, force: true })
+    try {
+      const added = JSON.parse(
+        (await run(['show', 'page:home', '--note', 'The title changed', '--json'], app)).stdout,
+      )
+      expectSchema('show', added)
+      expect(added.added).toMatchObject({
+        n: 1,
+        id: 'page:home',
+        label: 'page home',
+        path: '/',
+        text: 'The title changed',
+      })
+      expect(added.added.at).toMatch(/^hozu\.config\.ts:\d+$/)
+      await run(['show', 'page:home', '--note', 'And the description', '--page', '/', '--json'], app)
+      expect(JSON.parse(readFileSync(notes, 'utf8')).notes.map((n: { n: number }) => n.n)).toEqual([1, 2])
+      const listed = (await run(['show'], app)).stdout
+      expect(listed).toContain('1  page home  hozu.config.ts:')
+      expect(listed).toContain('   And the description')
+      const missing = await run(['show', 'api.Nothing/9', '--note', 'x', '--json'], app)
+      expect([missing.code, JSON.parse(missing.stdout).error.message]).toEqual([
+        2,
+        'No view node api.Nothing/9',
+      ])
+      const noText = await run(['show', 'page:home', '--json'], app)
+      expect(JSON.parse(noText.stdout).error.message).toBe(
+        'hozu show needs --note: what the person should see there',
+      )
+      const done = JSON.parse((await run(['show', '--done', '1', '--json'], app)).stdout)
+      expect([done.removed, done.notes.map((n: { n: number }) => n.n)]).toEqual([1, [2]])
+      const cleared = JSON.parse((await run(['show', '--clear', '--json'], app)).stdout)
+      expect([cleared.removed, cleared.notes]).toEqual([1, []])
+    } finally {
+      rmSync(`${app}/.hozu`, { recursive: true, force: true })
+    }
   })
 })

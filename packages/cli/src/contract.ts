@@ -427,6 +427,23 @@ export interface BrowseActor {
 
 export type LocateOutput = DevNode
 
+/** `hozu show`: the notes the agent shows the person under hozu dev (ADR 0056 D). */
+export interface ShowOutput {
+  added: AgentNoteOutput | null
+  removed: number
+  notes: AgentNoteOutput[]
+}
+
+export interface AgentNoteOutput {
+  n: number
+  id: string
+  label: string
+  at: string | null
+  path: string | null
+  text: string
+  created: string
+}
+
 export interface RequestsOutput {
   requests: {
     number: string

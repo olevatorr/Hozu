@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/ShowOutput",
+  "definitions": {
+    "ShowOutput": {
+      "type": "object",
+      "properties": {
+        "added": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AgentNoteOutput"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "removed": {
+          "type": "number"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AgentNoteOutput"
+          }
+        }
+      },
+      "required": [
+        "added",
+        "removed",
+        "notes"
+      ],
+      "additionalProperties": false,
+      "description": "`hozu show`: the notes the agent shows the person under hozu dev (ADR 0056 D)."
+    },
+    "AgentNoteOutput": {
+      "type": "object",
+      "properties": {
+        "n": {
+          "type": "number"
+        },
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "n",
+        "id",
+        "label",
+        "at",
+        "path",
+        "text",
+        "created"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

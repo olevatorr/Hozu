@@ -27,6 +27,7 @@ import { describeRender, runRender } from './commands/render.ts'
 import { describeRequest, runRequest } from './commands/request.ts'
 import { describeRequests, runRequests } from './commands/requests.ts'
 import { runServe } from './commands/serve.ts'
+import { describeShow, runShow } from './commands/show.ts'
 import { runSkill } from './commands/skill.ts'
 import { featuresCreated, seedLockIsolated } from './commands/validate.ts'
 import { describeWhy, runWhy } from './commands/why.ts'
@@ -49,6 +50,9 @@ Commands:
                             (--devtools builder|developer picks its mode, --no-devtools hides it)
   requests [done <n>]       The change requests saved from DevTools (--full: all open ones as one prompt);
                             done <n> --result "<what changed>" removes one
+  show [<target>]           Show the person a note on the page under hozu dev: <target> is a DevTools id or
+                            page:<route>, --note "<text>" (--page /path where it is); no target lists the notes;
+                            --done <n> removes one, --clear all
   docs [topic] [--more]     Print one topic of the guide, its short form (--more: options and edge cases too);
                             no topic lists them; docs HZ083 prints one diagnostic; docs components adds the app's list
   migrate [--dry-run]       Upgrade the app from Hozu 0.10 or later: rewrite, raise the dependencies, then (run
@@ -92,7 +96,10 @@ Options:
   --as <name>          browse: the steps after it are this actor's, in its own browser; repeat to switch actors
   --screenshot <file>  browse: save a PNG of the viewport after the steps
   --reduced-motion     browse: emulate prefers-reduced-motion: reduce
-  --page <path>        add feature: also add a route and a page at this path
+  --page <path>        add feature/show: the route and page to add (add feature), the page a note is on (show)
+  --note <text>        show: what the person should see there, in their words
+  --done <n>           show: remove note n
+  --clear              show: remove every note
   --with <parts>       add feature: any of detail,toggle,filter,remove,auth (comma-separated)
   --sync               add kit: rewrite the generated block of <id>/tv.ts from the current design system
   --client             add component: a client component (browser code in its own module)
@@ -224,6 +231,9 @@ export async function main(
         screenshot: { type: 'string' },
         'reduced-motion': { type: 'boolean', default: false },
         result: { type: 'string' },
+        note: { type: 'string' },
+        done: { type: 'string' },
+        clear: { type: 'boolean', default: false },
         'no-devtools': { type: 'boolean', default: false },
         devtools: { type: 'string' },
         'dry-run': { type: 'boolean', default: false },
@@ -260,6 +270,7 @@ export async function main(
       'serve',
       'dev',
       'requests',
+      'show',
       'skill',
     ]
     if (command === 'validate')
@@ -339,6 +350,17 @@ export async function main(
       const lock = await seedLockIsolated(values.config, cwd, featuresCreated(result.created))
       if (lock) (lock.created ? result.created : result.edited).push(relative(cwd, lock.path))
       out(asJson ? json(result) : describeAdd(result))
+      return 0
+    }
+    const showOptions = {
+      note: values.note,
+      page: values.page,
+      done: values.done,
+      clear: values.clear === true,
+    }
+    if (command === 'show' && !target) {
+      const result = runShow(null, cwd, undefined, showOptions)
+      out(asJson ? json(result) : describeShow(result))
       return 0
     }
     if (command === 'requests') {
@@ -452,6 +474,11 @@ export async function main(
     if (command === 'plan') {
       const result = runPlan(loaded, target)
       out(asJson ? json(result) : describePlan(result))
+      return 0
+    }
+    if (command === 'show') {
+      const result = runShow(loaded, cwd, target, showOptions)
+      out(asJson ? json(result) : describeShow(result))
       return 0
     }
     if (command === 'why') {

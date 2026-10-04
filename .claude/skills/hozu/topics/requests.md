@@ -9,6 +9,9 @@
   (`hozu docs contracts`).
 - **Finish:** `npx hozu check`, then `npx hozu requests done <n> --result "<one line: what changed>"` for each one;
   it removes the file. Do not edit request files. Report the result lines to the person.
+- **Show the person what changed:** `npx hozu show <the request's Locate id, or page:<route>> --note "<what changed, in
+  their words>"` frames that part on their page under `npm run dev`; a reply comes back as a request. `npx hozu show`
+  lists the notes, `--done <n>` removes one, `--clear` all.
 
 <!-- more -->
 
@@ -25,6 +28,9 @@
     variant in the kit for every use (`npx hozu why <ui.X>` lists them).
   - An arbitrary value (`px-[22px]`) only when the line says no theme step fits.
   - A message text changes in every locale; text from data changes the data or its formatting.
+- **Notes (`hozu show`):** numbered in the order you add them, so several make a tour (Back / Next in the dock's Agent
+  panel). The target is anything `hozu why` takes; `--page /path` says where it is when the target is not on the page
+  the person has open. Notes live in `.hozu/notes.json` and never reach production.
 - **The API drawer** (the dock's API button) lists the queries the page reads and the mutations its machines start,
   with `runs`, freshness, errors and the `file:line` that implements each, and runs them with an input the person
   edits (mutations ask first: they write development data; the page then re-reads in place). A request may carry a

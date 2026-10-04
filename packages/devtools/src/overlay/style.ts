@@ -417,6 +417,11 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
   .panel { top: 8px; right: 8px; width: calc(100vw - 16px); max-height: calc(100vh - 80px); }
 }
 @media (prefers-reduced-motion: reduce) { .actions button { transition: none; } }
+.dock .act.agent { background: #fb3a0e; border-color: #fb3a0e; color: #fff; }
+.dock .act.agent .agent-count { font-variant-numeric: tabular-nums; font-weight: 700; }
+.note-text { font-size: 15px; font-weight: 600; }
+.note-item { display: block; width: 100%; text-align: left; padding: 4px 0; }
+.note-item[aria-current='true'] { color: var(--accent); }
 `
 
 export const outlineCss = `
@@ -441,4 +446,16 @@ export const outlineCss = `
   min-width: 18px; height: 18px; display: grid; place-items: center; padding: 0 5px; border-radius: 999px;
   background: #fb3a0e; color: #fff; font: 600 11px/1 system-ui, -apple-system, sans-serif;
 }
+.note-box {
+  position: fixed; box-sizing: border-box; pointer-events: none; border: 2px dashed #fb3a0e; border-radius: 4px;
+}
+.note-box.current { border-style: solid; background: rgba(251, 58, 14, 0.08); }
+.note-box[hidden] { display: none; }
+.note-tag {
+  position: absolute; left: -2px; bottom: 100%; margin-bottom: 6px; max-width: 320px; overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis; background: #fb3a0e; color: #fff;
+  font: 600 12px/1.2 system-ui, -apple-system, sans-serif; padding: 5px 8px; border-radius: 6px;
+}
+.note-tag b { margin-right: 2px; }
+.note-box.below .note-tag { bottom: auto; top: 100%; margin: 6px 0 0; }
 `

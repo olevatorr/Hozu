@@ -17,6 +17,11 @@ export const targets = [
   },
   {
     source: 'packages/cli/src/contract.ts',
+    type: 'ShowOutput',
+    out: 'packages/cli/schema/show.schema.json',
+  },
+  {
+    source: 'packages/cli/src/contract.ts',
     type: 'WhyOutput',
     out: 'packages/cli/schema/why.schema.json',
   },

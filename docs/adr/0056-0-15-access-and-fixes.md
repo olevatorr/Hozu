@@ -4,7 +4,7 @@
   - **Scope accepted** (owner, 2026-10-04): declared access as an error, a row check that reports, and all 13
     dogfood findings plus `bench:frameworks`.
   - **Decided and implemented** (owner, 2026-10-04: "do the rest to the end, AI-first"): Phases A, B and C, with
-    the changes recorded below. C5 (generated access checks) is deferred.
+    the changes recorded below, and Phase D (owner, the same day). C5 (generated access checks) is deferred.
 - **Sources:**
   - ADR 0054 (the access draft, now decided: option A);
   - the 0.14 dogfood (`hozu-dogfood-0.14/*/FRICTION.md`, each finding reproduced in `hozu-dogfood-0.14/repro`);
@@ -83,7 +83,33 @@
   Instead, the runtime checks every request (`Forbidden`, HZ091 in development), and the cross-user chain is one
   `browse` command with `remember` and `$name` (the auth and testing topics show it).
 
-## Not in 0.15
+## Phase D — the agent shows the user (decided: owner, 2026-10-04, "inside DevTools, in this release")
+DevTools carries requests from the person to the agent (ADR 0047). Nothing carries the agent's answer back to the
+screen: the agent says "I changed the delete button" in text, and the person looks for it.
+- **Options:**
+  - **A, a CLI command:** `hozu show <target> --note "<text>"`. It writes `.hozu/notes.json`; the dev server pushes
+    the change to the page, and DevTools draws the notes. Every agent that runs a shell can use it, with no setup,
+    like every other agent tool (`--json`).
+  - **B, an MCP server in the dev server:** a protocol to implement without dependencies, set up per agent, and a
+    second surface to teach.
+  - **C, both.**
+- **Decision: A.** MCP can wrap the same store later if a client needs it. The guide stays one surface.
+- **The command:**
+  - `hozu show <target> --note "<text>"` adds a numbered note. The target is anything `hozu why` takes: a DevTools
+    node id, an IR pointer or `page:<route>`. An unknown target is a usage error with suggestions, and the note
+    records the target's `file:line`.
+  - `hozu show` lists the notes; `hozu show --clear` removes them.
+- **DevTools:**
+  - A numbered red frame on each element a note names, wherever that element is on the page.
+  - A "From your agent" panel, opened from the dock with the count. Notes are listed in order; Next / Back steps
+    through them and scrolls to each.
+  - **Reply** saves a request (`hozu requests`) that quotes the note; **Done** removes the note.
+- **Production:** nothing. The notes live in `.hozu/` (git-ignored since 0.12), and only `hozu dev` serves
+  `/_hozu/dev/notes`, to loopback hosts only, like every DevTools endpoint.
+- **Also:** `hozu dev` no longer prints the app process's own `Hozu on http://127.0.0.1:<port+1>` line. It read as
+  a second server to open; the one URL is the dev server's.
+
+
 - Option C of ADR 0054 (a declared data layer with derived invalidation).
 - Session-aware tags.
 - More than one machine per feature.
@@ -109,4 +135,11 @@ These are noted for later ADRs.
   test runs 0.10 → 0.15 and ends clean after `--update-lock`.
 - **Phase C:** `hozu call` on endpoints, `browse --header`, `remember` / `$name` and `post`, each tested in both JS
   modes; C5 deferred (see Phase C).
+- **Phase D:** `hozu show`, the dev endpoints and the DevTools Agent panel, tested in the CLI (add, list, done,
+  clear, an unknown target) and in a real browser (the frame sits on the part, Back / Next, a reply becomes a
+  request, Done). Found while testing: a second `EventSource` per page made Chrome's six connections per host run
+  out with the Workbench open, so the dev client's one connection re-dispatches `notes` to the overlay.
+- **Benchmarks for the site:** `bench/meta` runs the same page in Next.js 16.3.8, Nuxt 4.5.2, SvelteKit 3.0.0 and
+  Hozu 0.15.0, each in its production server and rendered per request (`bench/meta/README.md`); benchmark 0001 now
+  says it compares the UI libraries alone.
 - **The guide:** every phase updates the skill topics within the short-form budget (ADR 0053 E).

@@ -45,6 +45,17 @@ npx hozu requests done 7 --result "The heading is text-2xl"
 
 Agents set up by `create-hozu` know the loop (`hozu docs requests`): read the requests, edit at each place, run `hozu check`, and close each one, which removes the file. Tell yours: “Do the open Hozu requests.”
 
+## See what your agent changed
+
+Your agent can point back. After a change it runs `hozu show` on the part it changed, with a note in your words:
+
+```sh
+npx hozu show notes.NotesBoard/0/1 --note "Delete now asks before it removes a note"
+npx hozu show page:home --note "The page title is shorter"
+```
+
+The part gets a numbered red frame on your page, and an **Agent** button appears in the dock with the count. Its panel shows each note in order, with Back and Next to step through them and scroll to each part. **Send reply** sends your answer back as a request; **Done** removes the note. Notes live in `.hozu/notes.json` under `hozu dev` only: production builds never see them.
+
 ## Builder or Developer
 
 The settings switch between plain words (Builder, the default) and the source view (Developer): files, code excerpts, components, transitions and node ids. `npm run dev -- --devtools developer` starts in the source view. Light and dark follow your system.
