@@ -810,7 +810,7 @@ function renderDock() {
             [h('span', { 'data-preview': true }, ['Preview']), ' · Exit'],
           )
         : null,
-      state.mode === 'select' && !held()
+      state.mode === 'select' && !held() && !state.panel
         ? h('div', { class: 'tip', role: 'note' }, [
             h('span', {}, [h('kbd', {}, ['Click']), ' a part to select it']),
             h('span', {}, [h('kbd', {}, ['Shift']), '+click adds another']),
@@ -1391,6 +1391,7 @@ function developerSections(n: DevNode, active: Pick) {
 }
 
 async function renderPanel() {
+  dock.querySelector('.tip')?.toggleAttribute('hidden', !!state.panel)
   placePanel()
   if (state.panel === 'changes') return state.opened ? renderRequest(state.opened) : renderChanges()
   if (state.panel === 'settings') return renderSettings()

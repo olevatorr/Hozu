@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { currentUtility, oklchToHex, parseTheme, utilityFor } from '../src/theme.ts'
+import { currentUtility, oklchToHex, parseTheme, utilityFor, utilityValue } from '../src/theme.ts'
 
 const css = createRequire(fileURLToPath(new URL('../../css/package.json', import.meta.url)))
 const base = readFileSync(css.resolve('tailwindcss/theme.css'), 'utf8')
@@ -141,5 +141,20 @@ describe('theme utilities for style edits (ADR 0047 P4)', () => {
     expect(currentUtility('borderWidth', classes, theme)).toBe('border')
     expect(currentUtility('borderColor', classes, theme)).toBe('border-red')
     expect(currentUtility('boxShadow', classes, theme)).toBe('shadow-md')
+  })
+
+  it('reads the value a class sets, ignoring hover: variants (0.17.1)', () => {
+    const classes = 'bg-red hover:bg-ink text-2xl px-4 rounded-lg opacity-80 border-2 shadow-md w-full'
+    const own = (prop: Parameters<typeof utilityValue>[0]) =>
+      utilityValue(prop, currentUtility(prop, classes, theme)!, theme)
+    expect(own('backgroundColor')).toBe('#fb3a0e')
+    expect(own('fontSize')).toBe('24px')
+    expect(own('paddingInline')).toBe('16px')
+    expect(own('borderRadius')).toBe('8px')
+    expect(own('opacity')).toBe('0.8')
+    expect(own('borderWidth')).toBe('2px')
+    expect(own('boxShadow')).toBe(theme.shadow.md)
+    expect(own('width')).toBe('100%')
+    expect(utilityValue('fontSize', 'text-[18px]', theme)).toBe('18px')
   })
 })

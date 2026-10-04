@@ -8,6 +8,10 @@
   failed`) and no island hydrated: on hozu.org the home page's AI CHANGE did nothing in Safari. Pages now reference
   `/_hozu/client.js?v=<content hash>`, and a client whose chunk fails to load reloads the page once.
 - Client budget P7: 8 011 B of 8 192 (the reload guard).
+- `client.js` under its current `?v=` is served `immutable`, its chunks too; a bare `/_hozu/client.js` is `no-cache`.
+- **DevTools:** the Design panel reads a value from the element's own classes first, so a part selected under the
+  pointer no longer shows its `hover:` colour; Assets tiles are at least 320 px wide (phone layouts fit); the shortcut
+  tip hides while a panel is open, instead of covering it.
 - The site's header shows the menu button below 1024 px, keeps the links on one line above it, and the menu opens
   with a short slide (none under reduced motion).
 

@@ -118,6 +118,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
 .dock.near-top .tip { bottom: auto; top: calc(100% + 8px); }
+.dock .tip[hidden] { display: none; }
 .dock .tip kbd {
   font: 600 11px/1 var(--mono); padding: 2px 5px; margin-right: 2px; border-radius: 4px;
   background: rgba(var(--tint), 0.1); border: 1px solid var(--line-2); color: var(--text);
@@ -307,9 +308,10 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .asset-name b { font-size: 14px; }
 .asset-name:hover b { text-decoration: underline; }
 .asset-name code, .asset-uses { color: var(--mute); font: 11.5px/1.3 var(--mono); }
-.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 10px; margin-top: 10px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 10px; margin-top: 10px; }
 .tile { margin: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-2); background: #ece9e2; display: flex; flex-direction: column; }
 .tile.preview { border-color: var(--red); }
+.tile.wide { grid-column: 1 / -1; }
 .tile-frame { display: block; width: 100%; height: 96px; border: 0; background: transparent; }
 .tile figcaption { margin-top: auto; }
 .tile figcaption { padding: 5px 8px; font: 11.5px/1.3 var(--mono); color: #2b2724; background: #f6f3ec; border-top: 1px solid rgba(17, 16, 16, 0.08); }

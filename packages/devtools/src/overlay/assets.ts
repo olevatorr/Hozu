@@ -87,9 +87,18 @@ export function assetsBoard(host: AssetsHost) {
       .stylesheets()
       .map((href) => `<link rel="stylesheet" href="${href.replace(/"/g, '&quot;')}">`)
       .join('')
-    frame.addEventListener('load', () => {
+    const fit = () => {
       const body = frame.contentDocument?.body
       if (body) frame.style.height = `${Math.min(320, Math.max(72, body.scrollHeight))}px`
+    }
+    frame.addEventListener('load', () => {
+      const doc = frame.contentDocument
+      const tile = frame.closest('.tile')
+      if (doc && tile && doc.documentElement.scrollWidth > frame.clientWidth + 2) {
+        tile.classList.add('wide')
+        requestAnimationFrame(fit)
+      }
+      fit()
     })
     frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8">${links}<style>html,body{margin:0;background:transparent}body{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:16px;min-height:72px;box-sizing:border-box}</style></head><body>${out.html}</body></html>`
   }

@@ -1,5 +1,13 @@
 import type { StyleChange } from '../prompt.ts'
-import { borderSteps, normalHex, type StyleProp, type Theme, utilityFor } from '../theme.ts'
+import {
+  borderSteps,
+  currentUtility,
+  normalHex,
+  type StyleProp,
+  type Theme,
+  utilityFor,
+  utilityValue,
+} from '../theme.ts'
 import { h } from './dom.ts'
 
 const css: Record<StyleProp, string> = {
@@ -52,7 +60,10 @@ const colours: StyleProp[] = ['color', 'backgroundColor', 'borderColor']
 const steps = [0, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 16]
 const sizes = [0, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64, 72, 80, 96]
 
-export function current(el: Element, prop: StyleProp): string {
+export function current(el: Element, prop: StyleProp, theme: Theme | null = null): string {
+  const own = theme ? currentUtility(prop, el.getAttribute('class') ?? '', theme) : null
+  const fromClass = own && theme ? utilityValue(prop, own, theme) : null
+  if (fromClass !== null) return fromClass
   const s = (el.ownerDocument.defaultView ?? window).getComputedStyle(el)
   if (colours.includes(prop)) {
     const v = prop === 'borderColor' ? s.borderTopColor : s[prop as 'color']
@@ -142,14 +153,14 @@ export function lookSection(
   onChange: (changes: StyleChange[]) => void,
 ): HTMLElement {
   const set = (prop: StyleProp, to: string) => {
-    const from = changes.find((c) => c.prop === prop)?.from ?? (el ? current(el, prop) : '')
+    const from = changes.find((c) => c.prop === prop)?.from ?? (el ? current(el, prop, theme) : '')
     const next = changes.filter((c) => c.prop !== prop)
     if (to !== from) next.push({ prop, from, to })
     onChange(next)
   }
   const nameOf = (prop: StyleProp) => (plain ? figmaNames[prop] : css[prop])
   const row = (prop: StyleProp) => {
-    const now = changes.find((c) => c.prop === prop)?.to ?? (el ? current(el, prop) : '')
+    const now = changes.find((c) => c.prop === prop)?.to ?? (el ? current(el, prop, theme) : '')
     const label = h('span', { class: 'what' }, [nameOf(prop)])
     if (colours.includes(prop)) {
       const input = h('input', {

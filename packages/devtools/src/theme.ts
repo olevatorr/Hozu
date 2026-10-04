@@ -254,3 +254,50 @@ export function currentUtility(prop: StyleProp, classes: string, theme: Theme): 
     .filter((c) => tests[prop](c.replace(/!$/, '')))
   return found.at(-1) ?? null
 }
+
+const arbitrary = (raw: string): string | null => {
+  const m = /^\[(-?[\d.]+)(px|rem)\]$/.exec(raw)
+  return m ? `${Number(m[1]) * (m[2] === 'rem' ? 16 : 1)}px` : null
+}
+
+/** The value a theme utility sets, so the panel shows the element's own value, not a `:hover` one (0.17.1). */
+export function utilityValue(prop: StyleProp, utility: string, theme: Theme): string | null {
+  const u = utility.replace(/!$/, '')
+  const dash = u.indexOf('-')
+  const name = dash < 0 ? '' : u.slice(dash + 1)
+  const step = (n: string) => (/^\d+(\.\d+)?$/.test(n) ? `${Number(n) * theme.spacing}px` : arbitrary(n))
+  switch (prop) {
+    case 'color':
+    case 'backgroundColor':
+    case 'borderColor': {
+      const hex = /^\[(#[0-9a-fA-F]{3,6})\]$/.exec(name)?.[1]
+      if (hex) return normalHex(hex)
+      if (name === 'transparent') return 'transparent'
+      if (name === 'white') return '#ffffff'
+      if (name === 'black') return '#000000'
+      return theme.colors[name] ?? null
+    }
+    case 'fontSize':
+      return name in theme.text ? `${theme.text[name]}px` : arbitrary(name)
+    case 'fontWeight':
+      return name in theme.weight ? String(theme.weight[name]) : (/^\[(\d+)\]$/.exec(name)?.[1] ?? null)
+    case 'borderRadius':
+      if (u === 'rounded') return null
+      if (name === 'none') return '0px'
+      if (name === 'full') return '9999px'
+      return name in theme.radius ? `${theme.radius[name]}px` : arbitrary(name)
+    case 'paddingInline':
+    case 'paddingBlock':
+    case 'gap':
+      return step(name)
+    case 'width':
+    case 'height':
+      return name === 'full' ? '100%' : name === 'auto' ? 'auto' : step(name)
+    case 'opacity':
+      return /^\d+$/.test(name) ? String(Number(name) / 100) : null
+    case 'borderWidth':
+      return u === 'border' ? '1px' : /^\d+$/.test(name) ? `${name}px` : arbitrary(name)
+    case 'boxShadow':
+      return name === 'none' ? 'none' : (theme.shadow[name] ?? null)
+  }
+}

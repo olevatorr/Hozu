@@ -317,5 +317,13 @@ describe('the client entry carries its content hash (0.17.1)', () => {
     const plain = await handler.fetch(new Request('http://127.0.0.1/_hozu/client.js'))
     expect(versioned.status).toBe(200)
     expect(await versioned.text()).toBe(await plain.text())
+    expect(versioned.headers.get('cache-control')).toContain('immutable')
+    expect(plain.headers.get('cache-control')).toBe('no-cache')
+    const chunk = /import\("\.\/(chunk-[A-Z0-9]+\.js)"\)/.exec(
+      await (await handler.fetch(new Request('http://127.0.0.1/_hozu/client.js'))).text(),
+    )?.[1]
+    expect(
+      (await handler.fetch(new Request(`http://127.0.0.1/_hozu/${chunk}`))).headers.get('cache-control'),
+    ).toContain('immutable')
   })
 })

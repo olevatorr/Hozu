@@ -35,7 +35,7 @@ import {
 import { compileValue } from '@hozu/machine'
 import type { EffectResponse, Result } from '@hozu/runtime-client'
 import { type App, type AppHost, appHandlerOptions, appOptionsOf } from './app.ts'
-import { clientBundle } from './assets.ts'
+import { clientBundle, clientVersion } from './assets.ts'
 import { type InvalidationBus, localBus } from './bus.ts'
 import { type CachedPage, memoryCache, type PageCache } from './cache.ts'
 import { assertComponentBundle, assertFetchBundle } from './components.ts'
@@ -993,7 +993,17 @@ function handlerFor({
     const head = request.method === 'HEAD'
     if (request.method !== 'GET' && !head) return plain(405, null, { allow: 'GET, HEAD, POST' })
     const client = clientBundle()[path]
-    if (client !== undefined) return text('text/javascript', client, head)
+    if (client !== undefined)
+      return text(
+        'text/javascript',
+        client,
+        head,
+        path.endsWith('/client.js')
+          ? url.searchParams.get('v') === clientVersion()
+            ? IMMUTABLE
+            : 'no-cache'
+          : IMMUTABLE,
+      )
     const fnSource = fnSources.get(path)
     if (fnSource !== undefined) return text('text/javascript', fnSource, head, IMMUTABLE)
     const variant = images?.files[basePath + path]
