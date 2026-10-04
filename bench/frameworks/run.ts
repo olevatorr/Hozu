@@ -45,7 +45,15 @@ if (broken.length)
     `The Hozu bench app does not build: ${broken.map((d) => `${d.code} ${d.message}`).join('; ')}`,
   )
 const hozuData = createDataRuntime({ build: hozuBuild, resolvers: benchResolvers })
-const hozuFns = Object.values(fnModules(hozuBuild))
+const hozuModules = fnModules(hozuBuild)
+const hozuFns = Object.values(hozuModules)
+const hozuAssets = {
+  client: '/hozu/app.js',
+  fns: Object.fromEntries(Object.entries(hozuModules).map(([n, m]) => [n, m.path])),
+  styles: null,
+  preload: hozuFns.map((m) => m.path),
+  components: {},
+}
 
 const frameworks: { name: string; version: string; ssr: () => Promise<string> | string; client: string }[] = [
   {
@@ -81,13 +89,7 @@ const frameworks: { name: string; version: string; ssr: () => Promise<string> | 
           build: hozuBuild,
           data: hozuData,
           route: 'home',
-          assets: {
-            client: '/hozu/app.js',
-            fns: Object.fromEntries(Object.entries(fnModules(hozuBuild)).map(([n, m]) => [n, m.path])),
-            styles: null,
-            preload: Object.values(fnModules(hozuBuild)).map((m) => m.path),
-            components: {},
-          },
+          assets: hozuAssets,
         })
       ).html,
     client: hozuClient,

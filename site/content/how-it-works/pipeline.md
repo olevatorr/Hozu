@@ -28,13 +28,13 @@ The transform turns this into a conditional node whose test (`error ≠ null`) a
 
 The validator checks more than the shape of individual declarations. It can find a reference to an unregistered mutation, an event that a visible control sends into a state that cannot handle it, or a feature that accesses another feature's private declaration. Render-related checks also prevent user-scoped data from entering a shared cacheable region.
 
-Contracts add execution to those structural checks. They place a machine in a known state, send events or effect results and compare the resulting state, context and effects with the author's expectation. Transition coverage identifies paths that have no contract. The behavior lock compares changes with the contracts that cover them.
+Contracts add execution to those structural checks. They place a machine in a known state, send events or effect results and compare the resulting state, context and effects with the author's expectation. Transition coverage identifies paths that have no contract. The behaviour lock compares changes with the contracts that cover them.
 
 Diagnostics identify a location, cause and suggested fix. The JSON form supports tooling, while the text form makes the same information readable in a terminal. Some failures require a decision about intent, so a useful diagnostic does not always include an automatic patch. The diagnostic design is documented in [ADR 0003](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0003-diagnostics-and-cli.md).
 
 ## Compilation derives the plan
 
-The compiler reads the validated program and follows its dependencies. Query scope and freshness determine cache and request behavior. Machine bindings determine which nodes need client execution. A page can therefore combine a static shell, request-specific content and small interactive islands without one manually selected rendering mode for the entire route.
+The compiler reads the validated program and follows its dependencies. Query scope and freshness determine cache and request behaviour. Machine bindings determine which nodes need client execution. A page can therefore combine a static shell, request-specific content and small interactive islands without one manually selected rendering mode for the entire route.
 
 Server HTML uses generated JavaScript for subtrees that do not suspend. Query streaming retains an interpreted path around suspension points, so the server can flush earlier content before waiting for data. A production build writes the render module for deployment; Node development uses the same generator at startup. [ADR 0024](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0024-generated-render-functions.md) describes that division.
 
@@ -53,4 +53,4 @@ pnpm exec hozu plan home
 
 `inspect` exposes a feature's summary and IR. `why` describes a state's transitions, effects and covering contracts. `plan` shows the rendering decision for a named route, including islands and persistence opportunities. These commands answer different questions, so running all of them for every small edit adds unnecessary work.
 
-After an intended change, `hozu check` runs the combined verification. Use `hozu get` for rendered text, attributes and forms, and `hozu browse` for a flow: it runs the steps with and without JS, so one step list checks the native form path and the client together. The [CLI reference](/docs/cli) lists the commands, and [machines and contracts](/how-it-works/machines-and-contracts) explains the behavior checks in detail.
+After an intended change, `hozu check` runs the combined verification. Use `hozu get` for rendered text, attributes and forms, and `hozu browse` for a flow: it runs the steps with and without JS, so one step list checks the native form path and the client together. The [CLI reference](/docs/cli) lists the commands, and [machines and contracts](/how-it-works/machines-and-contracts) explains the behaviour checks in detail.

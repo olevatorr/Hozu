@@ -1,12 +1,12 @@
 ---
 title: Why AI-first?
-description: Hozu makes application behavior visible to tools, so an agent can check more than whether its code compiles.
+description: Hozu makes application behaviour visible to tools, so an agent can check more than whether its code compiles.
 order: 1
 ---
 
 ## A program an agent can inspect
 
-Hozu starts with a practical question: what should a frontend framework make easy for an agent to verify? An agent can produce plausible code quickly, but a successful build says little about whether adding a feature preserves existing behavior. Hozu gives behavior, data ownership and rendering rules explicit forms that its tools can inspect before a browser opens.
+Hozu starts with a practical question: what should a frontend framework make easy for an agent to verify? An agent can produce plausible code quickly, but a successful build says little about whether adding a feature preserves existing behaviour. Hozu gives behaviour, data ownership and rendering rules explicit forms that its tools can inspect before a browser opens.
 
 The goal is to make invalid programs structurally difficult to express and valid programs cheap to verify. That is a design objective, not a claim that generated applications are automatically correct. Developers still decide what the application should do, write meaningful contracts and check the experience in a browser.
 
@@ -29,7 +29,7 @@ export const items = feature({
 })
 ```
 
-A consumer imports another feature explicitly and uses only its exported declarations. Cross-feature references point at declaration identities instead of repeating names in loosely related strings. The framework can therefore distinguish an intentional public dependency from a view reaching into another feature's private behavior.
+A consumer imports another feature explicitly and uses only its exported declarations. Cross-feature references point at declaration identities instead of repeating names in loosely related strings. The framework can therefore distinguish an intentional public dependency from a view reaching into another feature's private behaviour.
 
 Views follow the same approach. A `ui()` tree records elements, conditions, lists and event bindings. It does not hide network requests inside arbitrary rendering functions. Operators, conditions and assignments are written as ordinary TypeScript and recorded as data by a source transform; any other computation has a named, schema-typed `fn()` boundary.
 
@@ -47,13 +47,15 @@ Hozu targets this category of mistake through separate, complementary mechanisms
 
 ## Verification has a cost
 
-Explicit behavior takes source code and reading time. On the task board, trial 0010 measured Hozu at 1.64× Nuxt's weighted tokens for building and 1.44× for changing. Both frameworks passed the acceptance checks. The build missed the trial's target, while the change met it. [Trial 0010](/trials/0010-map-scaffold-recipes) includes the complete comparison.
+Explicit behaviour takes source code and reading time. On the task board, trial 0010 measured Hozu at 1.64× Nuxt's weighted tokens for building and 1.44× for changing. Both frameworks passed the acceptance checks. The build missed the trial's target, while the change met it. [Trial 0010](/trials/0010-map-scaffold-recipes) includes the complete comparison.
 
 The notes trial measured 2.79× for building and 2.06× for changing before the account scaffold existed. Adding that scaffold brought the build comparison to 1.66× in trial 0013, using two new Hozu runs and the earlier Nuxt baseline. That improvement concerns a particular workflow and task; it does not establish a universal productivity advantage. [Trial 0013](/trials/0013-notes-with-auth-scaffold) records the scope.
 
 A study of every trial transcript then found where the remaining cost was: mostly reading the guide, multiplied by the number of calls an agent makes, not writing code ([ADR 0038](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0038-cost-anatomy.md)). Hozu 0.5 answered that by letting callbacks use ordinary TypeScript and by splitting the guide into topics found with `hozu docs`. On the same notes task, four runs per step measured 1.38× Nuxt to build and 1.45× to change, and all five runs, one of them by Codex, passed every check. [Trial 0016](/trials/0016-0-5-four-runs) has the details and the limits.
 
 A widget-heavy task (a map, a chart, animation and a WebGL globe) then showed the other half of the cost: what the surface forces an agent to write. Hozu 0.7 lets a machine start from the URL, lets `fn` bodies share helpers, registers declarations by module and shares transitions between states ([ADR 0041](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0041-0-7-write-less.md)). [Trial 0019](/trials/0019-0-7-write-less) measured the notes task at 1.14× Nuxt to build and 1.38× to change, and the widget task at 1.75× and 2.03×, with every check passing.
+
+On a long run, Hozu 0.8 made 16 more changes with no regression and no silent failure, at 1.34–1.72× Nuxt per change ([trial 0021](/trials/0021-0-8-long-run)). [Trial 0024](/trials/0024-learning-cost) then asked how much of that is learning. With Hozu 0.14, a change cost 1.32–1.42× Nuxt when the agent learned Hozu from the guide, and 1.02–1.06× once the guide was known: the structure itself costs about what Nuxt does. Over 29 changes, Hozu passed every check of every step, and Nuxt silently broke a working feature for three.
 
 ## Start with the questions you need answered
 

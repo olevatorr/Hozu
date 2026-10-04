@@ -6,12 +6,12 @@ import { gzipSync } from 'node:zlib'
 import { codes } from '@hozu/core/ir'
 import { testApp } from '@hozu/testing'
 import site from './app.ts'
-import { catches, claims } from './features/content/claims.ts'
+import { catches, claims, speed } from './features/content/claims.ts'
 
 const app = testApp(site)
 for (const [path, status, text] of [
   ['/', 200, 'Hozu checks it'],
-  ['/', 200, 'Here is the receipt'],
+  ['/', 200, 'It costs about what Nuxt does'],
   ['/', 200, 'AI CHANGE'],
   ['/', 200, 'Three minutes. No code.'],
   ['/trials/0019-0-7-write-less', 200, '1.38×'],
@@ -68,8 +68,13 @@ const visible = homePage
 const numbers = visible.match(/\d+(?:\.\d+)?(?:–\d+(?:\.\d+)?)?×|\d+\/\d+|\d+(?:\.\d+)? KB/g) ?? []
 for (const n of numbers)
   assert.ok(
-    claims.some((c) => c.value.includes(n)),
+    claims.some((c) => c.value.includes(n)) || speed.some((r) => r.js === n),
     `home number ${n} comes from claims.ts`,
+  )
+for (const r of speed)
+  assert.ok(
+    homePage.includes(`data-speed="${r.id}"`) && homePage.includes(r.requests) && homePage.includes(r.js),
+    `the speed row ${r.id} is on the home page`,
   )
 console.log(
   `${claims.length} claims link to existing trials; ${catches.length} catch cards match the registry`,

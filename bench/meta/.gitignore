@@ -1,0 +1,10 @@
+node_modules
+.next
+.output
+.nuxt
+.svelte-kit
+build
+dist
+.hozu
+out
+next-env.d.ts

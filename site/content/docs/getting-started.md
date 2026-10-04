@@ -54,7 +54,9 @@ The output tells you which files and user-facing text to edit. To include common
 | `routes.ts` | Declare paths and their parameter schemas. |
 | `features/tasks/model.ts` | Declare data, events and behaviour. |
 | `features/tasks/views.ts` | Describe the UI and its contracts. |
-| `server.ts` | Register implementations of queries and mutations. |
+| `features/tasks/feature.ts` | Register the feature: its modules, imports and exports. |
+| `features/tasks/server.ts` | Implement the feature's queries and mutations. |
+| `app.ts` | The app module: resolvers, the session store and client components. |
 | `app.css` | Load Tailwind and application styles. |
 
 Relative TypeScript imports end in `.ts`. Imports are explicit: there are no auto-imported helpers or routes inferred from filenames.
@@ -63,7 +65,7 @@ Relative TypeScript imports end in `.ts`. Imports are explicit: there are no aut
 
 Edit the scaffold's text or data model, then run `npx hozu check`. It checks TypeScript, the framework rules and every behaviour contract. Use `npx hozu get /tasks --forms` to inspect the resulting page without starting a server.
 
-For local browser development, `npm run dev` starts the app with reloads on every edit and [Hozu DevTools](/docs/devtools): select a part of the page and hand your agent a request that names its file and line. `npm start` runs the same app without them (`hozu serve`, which runs the app module named by `project({ app })`). The in-process commands are enough to inspect text, status codes, links and native forms during a change.
+For local browser development, `npm run dev` starts the app with reloads on every edit and [Hozu DevTools](/docs/devtools): select a part of the page and hand your agent a request that names its file and line. `npm start` runs the same app without them (`hozu serve`, which runs the app module named by `project({ app })`) as production, unless `NODE_ENV` is set: an app with sessions then needs `SESSION_SECRET` (`openssl rand -hex 32`), and refuses to start without it. The in-process commands are enough to inspect text, status codes, links and native forms during a change.
 
 The scaffold keeps data in memory. Add durable storage in the server resolvers when your application needs persistence.
 

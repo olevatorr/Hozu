@@ -1,5 +1,10 @@
 # Benchmark 0001 — rendering vs React, Vue, Preact, Svelte
 
+**What this compares:** the UI libraries alone, each with its own server renderer and hydration
+(`react-dom/server` + `hydrateRoot`, `@vue/server-renderer` + `createSSRApp`, `preact-render-to-string`,
+`svelte/server`). It is **not** Next.js, Nuxt or SvelteKit: no router, no meta-framework server. The comparison with
+Next.js and Nuxt in their production servers is `bench/meta`.
+
 Run with `pnpm bench:frameworks` (not part of `pnpm gate`). Source: `bench/frameworks`.
 
 ## Scenario
@@ -134,3 +139,33 @@ Server HTML now comes from generated JavaScript source (ADR 0024).
 - **SSR** rose from 35.3 k to 52.6 k renders/s. That is second, 2.3× Preact, with Svelte 1.8× ahead.
 - The other columns are unchanged, as expected: the generator is server-only and the HTML is byte-identical.
 - **Interactive at** (27.8 ms) is within 1.1 ms of Preact, the fastest this run. It stays ahead of Svelte.
+
+## Seventh run: 0.15, after the fn module fix (2026-10-04, Apple M4 Pro, system Chrome)
+| Framework | SSR renders/s | HTML (gz) | JS min (gz) | Hydrate ms (4× CPU) | Interactive at ms | 200 clicks ms |
+|---|---|---|---|---|---|---|
+| React 19.3.0 (react-dom, no Next.js) | 2,697 | 13.4 KB (1.6) | 218.1 KB (67.7) | 63.5 | 124.0 | 85.9 |
+| Vue 3.5.43 (no Nuxt) | 13,609 | 12.6 KB (1.5) | 77.1 KB (30.9) | 12.8 | 33.3 | 45.2 |
+| Preact 10.29.8 | 24,046 | 12.6 KB (1.5) | 12.9 KB (5.4) | 8.4 | 26.4 | 82.6 |
+| Svelte 5.57.1 (no SvelteKit) | 96,566 | 12.6 KB (1.6) | 49.5 KB (18.7) | 6.9 | 30.4 | 9.0 |
+| **Hozu 0.15.0** | 48,377 | 12.4 KB (1.8) | 19.2 KB (8.0) | 7.3 | 28.4 | 11.0 |
+
+- **Between the sixth run and this one, the bench was broken** (ADR 0056 A14): from 0.8 the Hozu row ran without the
+  transform, and from 0.12 it did not serve the fn modules. Repaired in 0.15, it showed interactive at 59–61 ms; the
+  cause was `import()` of the fn module during hydration (ADR 0056 A14). With the fix, hydrate is 7.3 ms and
+  interactive 28.4 ms, as in the sixth run.
+- **SSR** 48.4 k renders/s against 52.6 k in the sixth run, on a different machine. Against Svelte in the same run
+  it is 0.50× (0.56× then). See "SSR since the sixth run" below. A first run of this table showed 31.8 k because the repaired bench
+  computed the fn module table on every render; it is now computed once, as a server does.
+- **JS** is 8.0 KB gzipped (7.5 KB in the sixth run): the fn modules are now counted, and 0.9–0.15 added the
+  component runtime and the module registration.
+- Single run per framework, on the same machine. `pnpm bench` B2 runs the Hozu row on every gate (budget 50 ms).
+
+### SSR since the sixth run
+- **0.14.0 against 0.15.0, the same app, the packed tarballs, interleaved three times on one idle machine:**
+  48,228 / 48,486 / 48,570 against 47,884 / 48,315 / 48,049 renders/s. The two releases are within 1 %, so 0.15 did
+  not slow rendering.
+- **Against the sixth run** (Tenon 0.3 era, 2026-09-26, another machine): the ratio to Svelte fell from 0.56× to
+  0.50×. The releases between them added the component markers (0.9), the fn module scripts (0.12) and the
+  page-scoped payload (0.12). That drift was not bisected; `pnpm bench` B2 now watches the client side, and the
+  server side is reported here.
+

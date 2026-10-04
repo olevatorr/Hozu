@@ -1,0 +1,57 @@
+{
+  "features": {
+    "shop": {
+      "ready/on/shop.Add/0": {
+        "behavior": "546def4e9076af4e",
+        "contracts": {
+          "counts": "b219ae7e1f5ec927"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "count"
+              ],
+              "value": {
+                "arg": {
+                  "object": {
+                    "a": {
+                      "path": [
+                        "count"
+                      ],
+                      "ref": "context"
+                    },
+                    "b": {
+                      "literal": 1
+                    }
+                  }
+                },
+                "fn": "%plus"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "ready",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "ready --Add--> ready · count := (ctx.count + 1)"
+      }
+    }
+  },
+  "pages": {
+    "access": {},
+    "endpoints": {},
+    "head": {},
+    "redirects": {}
+  },
+  "version": 2
+}

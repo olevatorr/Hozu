@@ -41,6 +41,7 @@ export const addItem = mutation({
   output: Item,
   invalidates: () => [itemsTag()],
   runs: 'server',
+  access: 'anyone',
 })
 ```
 
@@ -54,7 +55,7 @@ A query or mutation declaration is a contract for an effect, not its database im
 
 A view reads through `ui.query`. A mutation runs when the feature’s machine enters a state that invokes it. Success and declared failures return through the machine’s transitions, with contracts describing the intended response. Input validation failures use the framework’s `Invalid` error shape, which can provide field-level messages.
 
-This separation means that the same view can keep its data contract while the storage implementation changes. It also means that a resolver remains responsible for authorization, persistence and correct domain behaviour. A typed result does not prove that the database query selected the right records.
+This separation means that the same view can keep its data contract while the storage implementation changes. Who may run an effect is not left to the resolver: every server-run user query and mutation declares `access` (`'signedIn'`, an owner rule, an `allow` condition or `'anyone'`), and the framework refuses with `Forbidden` before the resolver runs. An owner rule also checks the rows a query returns. The resolver remains responsible for persistence and correct domain behaviour: a typed result does not prove that the database query selected the right records.
 
 ## Do not fetch the initial result twice
 

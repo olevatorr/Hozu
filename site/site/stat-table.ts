@@ -12,7 +12,7 @@ export const StatTable = ui.component({
       cell: 'border-t-2 border-ink px-3 py-2 text-left',
     },
   }),
-  props: z.object({ caption: z.string(), rows: z.array(Row) }),
+  props: z.object({ caption: z.string(), before: z.string(), after: z.string(), rows: z.array(Row) }),
   render: ({ props, classes }) =>
     ui.div({}, [
       ui.table({ class: classes.table }, [
@@ -20,8 +20,8 @@ export const StatTable = ui.component({
         ui.thead({}, [
           ui.tr({}, [
             ui.th({ scope: 'col', class: classes.cell }, ['']),
-            ui.th({ scope: 'col', class: classes.cell }, ['Hozu 0.7']),
-            ui.th({ scope: 'col', class: classes.cell }, ['Hozu 0.8']),
+            ui.th({ scope: 'col', class: classes.cell }, [props.before]),
+            ui.th({ scope: 'col', class: classes.cell }, [props.after]),
           ]),
         ]),
         ui.tbody({}, [

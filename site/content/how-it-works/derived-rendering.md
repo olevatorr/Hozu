@@ -39,10 +39,11 @@ export const myNotes = query({
   scope: 'user',
   freshness: 'request',
   runs: 'server',
+  access: 'signedIn',
 })
 ```
 
-The project declares the session schema, and the resolver receives the appropriate identity. Public resolvers do not receive that session. A public cacheable query whose input depends on user-scoped request data is also unsafe; the validator checks data flow rather than only reading the outermost query’s label.
+The project declares the session schema, and the resolver receives the appropriate identity. `access` says who may read it, and the framework enforces it before the resolver runs. Public resolvers do not receive that session. A public cacheable query whose input depends on user-scoped request data is also unsafe; the validator checks data flow rather than only reading the outermost query’s label.
 
 A static shell can contain a request-specific region that is streamed separately. The shell remains shareable while the private region is produced for that request. Nested regions inherit the more dynamic requirements of their dependencies, so a collection of individually reasonable declarations can still produce a request-time plan.
 

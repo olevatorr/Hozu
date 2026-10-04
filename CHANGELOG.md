@@ -57,6 +57,18 @@ access in the lock.
   For example, ada remembers her note's link, then bob opens `$note` and gets 403.
 - **`post <path> a=1&b=2`:** a forged native form post as the current actor, without the page.
 
+### Your agent shows you what it changed
+- **`hozu show <part> --note "<text>"`:** the part is a DevTools id, an IR pointer or `page:<route>`.
+  - Under `hozu dev`, the part gets a numbered red frame on the page, and an **Agent** button appears in the dock.
+  - Its panel steps through the notes, scrolling to each part.
+  - **Send reply** saves a request, which the agent reads with `hozu requests`. **Done** removes the note.
+- **Managing notes:** `hozu show` lists them; `--done <n>` removes one, and `--clear` removes them all.
+- **Storage:** notes live in `.hozu/notes.json`, and only `hozu dev` serves them, to this machine. Production has
+  nothing of it.
+- **`hozu dev` prints one URL:** the app process's own `… on http://127.0.0.1:<port + 1>` line is gone.
+- **`.hozu/` no longer triggers reloads:** changes there (check caches, notes) no longer reload the app under
+  `hozu dev`.
+
 ### Fixes (found by the 0.14 dogfood)
 - **Links:** a `ui.link` attribute built from machine context now updates on the client when the context changes.
 - **Endpoints:**

@@ -1,0 +1,10 @@
+{
+  "name": "bench-meta-hozu",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "link": "node link.mjs",
+    "check": "node node_modules/@hozu/cli/bin/hozu.js check",
+    "start": "node node_modules/@hozu/cli/bin/hozu.js serve"
+  }
+}

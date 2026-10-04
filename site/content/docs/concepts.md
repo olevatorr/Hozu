@@ -34,7 +34,7 @@ When an operation needs ordinary JavaScript, declare a named `fn()` with input a
 
 ## Rendering follows the data
 
-Each query declares its scope and freshness. Public static data can be rendered at build time. Revalidation and stale-while-revalidate policies produce their corresponding cache plans. User-scoped data stays out of shared cacheable regions and is read per request (`'request'` or `'live'`).
+Each query declares its scope and freshness. Public static data can be rendered at build time. Revalidation and stale-while-revalidate policies produce their corresponding cache plans. User-scoped data stays out of shared cacheable regions and is read per request (`'request'` or `'live'`). Each query and mutation also says where it runs (`runs`) and, when it runs on the server over user data, who may run it (`access`); see [Data](/docs/data).
 
 Only machine-bound views hydrate. A static document has no need for a client application runtime. A page's optional `assert: 'static'` asks the validator to verify this property; it does not override the derived plan.
 

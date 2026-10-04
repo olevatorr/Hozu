@@ -43,7 +43,7 @@ Static hosts do not run query resolvers after export. Rebuild the site when cont
 
 ## Node
 
-Node runs the app module with `hozu serve` (the generated `npm start`): adapter-node on `PORT`, with the environment, compiled styles and `public/`. It registers the transform itself; edge bundles add `hozuTransform()` from `@hozu/transform/esbuild`. Without the transform the server refuses to start (HZ044). Run `hozu build` to generate `dist/public`, `dist/manifest.json` and `dist/server/render.js`. There is no server file to write: resolvers, the session store and the client components bundle are named in `app.ts`, headers in `project({ http })`, statuses in `head.failed`.
+Node runs the app module with `hozu serve` (the generated `npm start`): adapter-node on `PORT`, with the environment, compiled styles and `public/`. It runs as production unless `NODE_ENV` is set, so an app with sessions refuses to start without `SESSION_SECRET`. It registers the transform itself; edge bundles add `hozuTransform()` from `@hozu/transform/esbuild`. Without the transform the server refuses to start (HZ044). Run `hozu build` to generate `dist/public`, `dist/manifest.json` and `dist/server/render.js`. There is no server file to write: resolvers, the session store and the client components bundle are named in `app.ts`, headers in `project({ http })`, statuses in `head.failed`.
 
 The adapter includes an ISR page cache, tag revalidation, CSP and cross-site POST checks. Session-based applications must configure their session identity and a stable production secret.
 

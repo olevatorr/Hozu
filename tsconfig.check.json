@@ -20,6 +20,7 @@
     "**/node_modules",
     "bench/frameworks",
     "bench/parity",
+    "bench/meta",
     "bench/trial",
     "packages/cli/test/fixtures/migrate-*"
   ],

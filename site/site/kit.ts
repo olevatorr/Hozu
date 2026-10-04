@@ -10,6 +10,7 @@ import * as mono from './mono.ts'
 import * as prose from './prose.ts'
 import * as receipt from './receipt.ts'
 import * as section from './section.ts'
+import * as speedTable from './speed-table.ts'
 import * as statTable from './stat-table.ts'
 import * as steps from './steps.ts'
 import * as tag from './tag.ts'
@@ -31,6 +32,7 @@ export const kit = ui.kit({
     ticker,
     steps,
     statTable,
+    speedTable,
     mono,
     joint,
   ],
