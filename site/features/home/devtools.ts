@@ -70,7 +70,7 @@ export const DevToolsPage = ui.view({
                 },
               }),
               ui.p({ class: 'mt-5 max-w-md text-lg' }, [
-                'Select what is wrong on the screen and say what should change. The request names the file, the line and the Hozu way to make the change, so your agent stops searching and starts fixing.',
+                'Select what is wrong on the screen and say what should change. The request names the file, the line and the Hozu way to make the change, so your agent stops searching and starts fixing. When it is done, it points back: every part it changed gets a numbered frame on your page.',
               ]),
               ui.div({ class: 'mt-6 flex flex-wrap gap-3' }, [
                 ui.use(Button, { props: { href: ui.link(doc, { slug: 'devtools' }) } }, ['Read the guide →']),
@@ -107,9 +107,9 @@ export const DevToolsPage = ui.view({
         ),
       ]),
       ui.use(Section, { props: { kicker: 'How it works' } }, [
-        ui.use(Heading, {}, ['Three clicks instead of a paragraph.']),
+        ui.use(Heading, {}, ['Three clicks, then it points back.']),
         ui.use(Steps, {
-          class: 'mt-8',
+          class: 'mt-8 md:grid-cols-2! lg:grid-cols-4!',
           props: {
             items: [
               {
@@ -126,6 +126,11 @@ export const DevToolsPage = ui.view({
                 id: '3',
                 title: '3 · Hand it over',
                 body: 'Copy for AI, or save it. Tell your agent: “Do the open Hozu requests.”',
+              },
+              {
+                id: '4',
+                title: '4 · See it back',
+                body: 'Your agent frames each part it changed on your page, numbered, with a note in your words. Reply, or mark it done.',
               },
             ],
           },
