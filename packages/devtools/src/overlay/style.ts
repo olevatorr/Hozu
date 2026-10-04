@@ -420,6 +420,7 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .dock .act.agent { background: #fb3a0e; border-color: #fb3a0e; color: #fff; }
 .dock .act.agent .agent-count { font-variant-numeric: tabular-nums; font-weight: 700; }
 .note-text { font-size: 15px; font-weight: 600; }
+.actions button:disabled { opacity: 0.4; cursor: default; }
 .note-item { display: block; width: 100%; text-align: left; padding: 4px 0; }
 .note-item[aria-current='true'] { color: var(--accent); }
 `

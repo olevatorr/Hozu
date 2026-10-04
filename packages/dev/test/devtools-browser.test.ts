@@ -319,6 +319,7 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     await back
     await until(`document.documentElement.hasAttribute('data-hozu-ready')`)
     expect(await evaluate(`document.body.innerText.includes('Loading…')`)).toBe(false)
+    await until(`!!document.querySelector('hozu-devtools')?.shadowRoot?.querySelector('.dock button')`)
     expect(await tool(`$('.previewing')`)).toBeNull()
   })
 

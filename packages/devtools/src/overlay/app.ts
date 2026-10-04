@@ -468,8 +468,11 @@ function renderDock() {
               type: 'button',
               title: 'Notes from your agent on this page (hozu show)',
               'aria-pressed': String(state.panel === 'notes'),
-              onclick: () =>
-                open(state.panel === 'notes' ? (state.picks.length ? 'inspector' : null) : 'notes'),
+              onclick: () => {
+                if (state.panel === 'notes') return open(state.picks.length ? 'inspector' : null)
+                open('notes')
+                agent.focus()
+              },
             },
             ['Agent ', h('span', { class: 'agent-count' }, [String(agent.count())])],
           )

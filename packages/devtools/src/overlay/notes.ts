@@ -174,5 +174,5 @@ export function agentNotes(host: AgentHost) {
   addEventListener('hozu:notes', () => void refresh())
   void refresh()
 
-  return { layer, frame, render, count: () => notes.length }
+  return { layer, frame, render, count: () => notes.length, focus: () => go(current) }
 }
