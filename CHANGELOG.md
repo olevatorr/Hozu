@@ -42,6 +42,9 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
 - **HZ054 knows exclusive branches:** two controls of one name in different branches of a query or a condition
   (a `<select>` when ready, a hidden input when it failed) never post together, so they are one value.
 - **HZ057 on `/pages` names access** among what the pages section locks.
+- **Line numbers stay right after a multi-line `?:`, `&&` or `??`:** the transform moved the newlines between the
+  operands to the end, so every node after one reported an earlier line in `hozu why`, `hozu show`, DevTools and
+  diagnostics (the dogfood saw a list row reported on its `<tbody>`'s line).
 - **`exports` in the old record form** (`exports: { queries: [...] }`) is HZ014 with the list form, not a crash;
   HZ006's fix shows both edits in source form (`imports: [owner]`, `exports: [name]`), each with its feature.
 - **The deploy guide no longer says `public/` is served:** files a page shows are `ui.asset`, files named in data

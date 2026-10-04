@@ -486,7 +486,7 @@ describe('the guide compiles (ADR 0037 D2)', () => {
     const first = await checkFresh(app)
     expect(first.types.errors).toEqual([])
     expect(first.validate.diagnostics.map((d: { code: string }) => d.code)).toEqual(['HZ057'])
-    expect(first.validate.lock).toBe('stale')
+    expect(first.validate.lock).toBe('missing')
     await promisify(execFile)(
       process.execPath,
       [`${root}packages/cli/bin/hozu.js`, 'check', '--update-lock'],

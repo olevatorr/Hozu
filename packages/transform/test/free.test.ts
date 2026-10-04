@@ -72,3 +72,31 @@ export const visible = fn({
     expect(out.split('\n').length).toBe((head + code).split('\n').length)
   })
 })
+
+describe('line numbers survive lowering (0.15 dogfood)', () => {
+  it('a ternary or && across lines keeps every later line where it was', async () => {
+    const { transform } = await import('../src/transform.ts')
+    const source = [
+      "import { ui } from '@hozu/core'",
+      'export const V = ui.view({',
+      '  render: ({ ctx }) =>',
+      '    ui.div({}, [',
+      '      ctx.empty',
+      "        ? ui.p({}, ['none'])",
+      '        : ui.ul({}, [',
+      "            ui.li({}, ['a']),",
+      '          ]),',
+      '      ctx.open &&',
+      "        ui.p({}, ['open']),",
+      "      ui.footer({}, ['end']),",
+      '    ]),',
+      '})',
+    ].join('\n')
+    const out = transform(source, 'views.ts').code
+    const lineOf = (text: string) => out.split('\n').findIndex((l) => l.includes(text)) + 1
+    expect(out.split('\n')).toHaveLength(source.split('\n').length)
+    expect([lineOf('ui.ul({}'), lineOf('ui.li({}'), lineOf("['open']"), lineOf('ui.footer')]).toEqual([
+      7, 8, 11, 12,
+    ])
+  })
+})

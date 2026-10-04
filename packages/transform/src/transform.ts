@@ -293,6 +293,8 @@ export function transform(source: string, _file = ''): TransformResult {
     for (const e of inside) text = text.slice(0, e.start - n.start) + e.text + text.slice(e.end - n.start)
     return text
   }
+  /** `, ` plus the newlines the source had between two operands, so every later line keeps its number. */
+  const sep = (a: Node, b: Node) => `, ${'\n'.repeat((source.slice(a.end, b.start).match(/\n/g) ?? []).length)}`
   const replace = (n: Node, text: string, lower = true) => {
     const lines = (source.slice(n.start, n.end).match(/\n/g) ?? []).length - (text.match(/\n/g) ?? []).length
     const padded = lines > 0 ? text + '\n'.repeat(lines) : text
@@ -482,8 +484,8 @@ export function transform(source: string, _file = ''): TransformResult {
         replace(
           n,
           nodeLike(n.consequent) || nodeLike(n.alternate) || childPosition(n)
-            ? `${H}.branch(${gen(n.test)}, ${gen(n.consequent)}, ${gen(n.alternate)})`
-            : `${H}.cond(${gen(n.test)}, ${gen(n.consequent)}, ${gen(n.alternate)})`,
+            ? `${H}.branch(${gen(n.test)}${sep(n.test, n.consequent)}${gen(n.consequent)}${sep(n.consequent, n.alternate)}${gen(n.alternate)})`
+            : `${H}.cond(${gen(n.test)}${sep(n.test, n.consequent)}${gen(n.consequent)}${sep(n.consequent, n.alternate)}${gen(n.alternate)})`,
         )
       return
     }
@@ -492,11 +494,12 @@ export function transform(source: string, _file = ''): TransformResult {
       visit(n.right, s, bool, guardFn)
       if (!isRef(n.left, s) && !isRef(n.right, s)) return
       const [l, r] = [gen(n.left), gen(n.right)]
-      if (n.operator === '??') replace(n, `${H}.coalesce(${l}, ${r})`)
+      const and = sep(n.left, n.right)
+      if (n.operator === '??') replace(n, `${H}.coalesce(${l}${and}${r})`)
       else if (n.operator === '&&' && !bool && (nodeLike(n.right) || childPosition(n)))
-        replace(n, `${H}.branch(${l}, ${r}, null)`)
-      else if (bool) replace(n, `${H}.${n.operator === '&&' ? 'and' : 'or'}(${l}, ${r})`)
-      else replace(n, `${H}.${n.operator === '&&' ? 'both' : 'either'}(${l}, ${r})`)
+        replace(n, `${H}.branch(${l}${and}${r}, null)`)
+      else if (bool) replace(n, `${H}.${n.operator === '&&' ? 'and' : 'or'}(${l}${and}${r})`)
+      else replace(n, `${H}.${n.operator === '&&' ? 'both' : 'either'}(${l}${and}${r})`)
       return
     }
     if (n.type === 'UnaryExpression' && n.operator === 'typeof') {
