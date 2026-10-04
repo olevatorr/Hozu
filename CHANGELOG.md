@@ -48,6 +48,11 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
 - **`hozu browse` treats a page's 401, 403, 404 or 410 as the step's answer:** a step that loads such a page
   shows `→ /notes/n1 (403)` and is not an error, so an access check exits 0. The start page still must load.
 - **`hozu browse` ignores the view-transition abort** a browser reports when a step posts to a JSON endpoint.
+- **`--with auth,detail`:** the detail page maps `Forbidden` to the sign-in page and lists no user data in the
+  sitemap.
+- **The guide answers what the dogfood asked:** `SESSION_SECRET` length, how a refused page renders, the order of
+  input, access and resolver checks, `exports` / `imports`, what endpoints cannot do yet, why a link resets context,
+  per-language collections and images named in front matter.
 - **`exports` in the old record form** (`exports: { queries: [...] }`) is HZ014 with the list form, not a crash;
   HZ006's fix shows both edits in source form (`imports: [owner]`, `exports: [name]`), each with its feature.
 - **The deploy guide no longer says `public/` is served:** files a page shows are `ui.asset`, files named in data
