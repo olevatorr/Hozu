@@ -1,0 +1,213 @@
+{
+  "ok": true,
+  "overrides": [],
+  "timings": {
+    "load": 89,
+    "types": 77,
+    "validate": 89
+  },
+  "types": {
+    "errors": [],
+    "ok": true,
+    "skipped": false
+  },
+  "validate": {
+    "accepted": [],
+    "coverage": {
+      "account": {
+        "covered": 3,
+        "total": 3,
+        "transitions": 10
+      },
+      "admin": {
+        "covered": 0,
+        "total": 0,
+        "transitions": 5
+      },
+      "notes": {
+        "covered": 3,
+        "total": 3,
+        "transitions": 80
+      }
+    },
+    "diagnostics": [
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/account/queries/me/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "account",
+          "pointer": "/features/account/queries/me/access",
+          "source": {
+            "column": 19,
+            "file": "features/account/model.ts",
+            "line": 15
+          }
+        },
+        "message": "account.me is user data that anyone may read",
+        "severity": "warning"
+      },
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/admin/queries/listUsers/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "admin",
+          "pointer": "/features/admin/queries/listUsers/access",
+          "source": {
+            "column": 26,
+            "file": "features/admin/model.ts",
+            "line": 11
+          }
+        },
+        "message": "admin.listUsers is user data that anyone may read",
+        "severity": "warning"
+      },
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/notes/queries/lastDeleted/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "notes",
+          "pointer": "/features/notes/queries/lastDeleted/access",
+          "source": {
+            "column": 28,
+            "file": "features/notes/model.ts",
+            "line": 195
+          }
+        },
+        "message": "notes.lastDeleted is user data that anyone may read",
+        "severity": "warning"
+      },
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/notes/queries/listArchived/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "notes",
+          "pointer": "/features/notes/queries/listArchived/access",
+          "source": {
+            "column": 29,
+            "file": "features/notes/model.ts",
+            "line": 87
+          }
+        },
+        "message": "notes.listArchived is user data that anyone may read",
+        "severity": "warning"
+      },
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/notes/queries/listNotes/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "notes",
+          "pointer": "/features/notes/queries/listNotes/access",
+          "source": {
+            "column": 26,
+            "file": "features/notes/model.ts",
+            "line": 63
+          }
+        },
+        "message": "notes.listNotes is user data that anyone may read",
+        "severity": "warning"
+      },
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/notes/queries/listShared/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "notes",
+          "pointer": "/features/notes/queries/listShared/access",
+          "source": {
+            "column": 27,
+            "file": "features/notes/model.ts",
+            "line": 164
+          }
+        },
+        "message": "notes.listShared is user data that anyone may read",
+        "severity": "warning"
+      }
+    ],
+    "hash": "785b2b51a7ea9125090be5c34d9472efd49578300238651edd2319473f73c0ae",
+    "lock": "current",
+    "ok": true,
+    "styles": "checked",
+    "summary": {
+      "accepted": 0,
+      "errors": 0,
+      "warnings": 6
+    }
+  }
+}

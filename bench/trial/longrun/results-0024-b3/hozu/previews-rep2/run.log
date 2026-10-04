@@ -1,0 +1,18 @@
+[2026-10-05 03:11:42] hozu/previews-rep2 start from s20
+[2026-10-05 03:11:42] hozu/previews-rep2 step 21 attempt 1
+step 21: 67/67 new 3/3 regression 64/64 js {"login":22344,"list":23083}
+[2026-10-05 03:20:57] hozu/previews-rep2 step 22 attempt 1
+step 22: 71/71 new 4/4 regression 67/67 js {"login":22344,"list":23138}
+[2026-10-05 03:30:37] hozu/previews-rep2 step 23 attempt 1
+step 23: 75/75 new 4/4 regression 71/71 js {"login":22344,"list":23138}
+[2026-10-05 03:42:12] hozu/previews-rep2 step 24 attempt 1
+step 24: 79/79 new 4/4 regression 75/75 js {"login":22344,"list":23214}
+[2026-10-05 03:56:12] hozu/previews-rep2 step 25 attempt 1
+step 25: 81/81 new 2/2 regression 79/79 js {"login":22344,"list":23458}
+[2026-10-05 04:09:41] hozu/previews-rep2 step 26 attempt 1
+step 26: 83/83 new 3/3 regression 80/80 js {"login":22344,"list":23458}
+[2026-10-05 04:21:59] hozu/previews-rep2 step 27 attempt 1
+step 27: 85/85 new 3/3 regression 82/82 js {"login":22344,"list":23458}
+[2026-10-05 04:34:52] hozu/previews-rep2 step 28 attempt 1
+step 28: 85/85 new 2/2 regression 83/83 js {"login":22344,"list":23458}
+[2026-10-05 04:46:38] hozu/previews-rep2 done

@@ -1,0 +1,236 @@
+{
+  "ok": true,
+  "overrides": [],
+  "timings": {
+    "load": 122,
+    "types": 249,
+    "validate": 195
+  },
+  "types": {
+    "errors": [],
+    "ok": true,
+    "skipped": false
+  },
+  "validate": {
+    "accepted": [],
+    "coverage": {
+      "account": {
+        "covered": 3,
+        "total": 3,
+        "transitions": 10
+      },
+      "notes": {
+        "covered": 4,
+        "total": 4,
+        "transitions": 86
+      }
+    },
+    "diagnostics": [
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/account/queries/me/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "account",
+          "pointer": "/features/account/queries/me/access",
+          "source": {
+            "column": 19,
+            "file": "features/account/model.ts",
+            "line": 15
+          }
+        },
+        "message": "account.me is user data that anyone may read",
+        "severity": "warning"
+      },
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/notes/queries/adminUsers/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "notes",
+          "pointer": "/features/notes/queries/adminUsers/access",
+          "source": {
+            "column": 27,
+            "file": "features/notes/model.ts",
+            "line": 207
+          }
+        },
+        "message": "notes.adminUsers is user data that anyone may read",
+        "severity": "warning"
+      },
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/notes/queries/getNote/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "notes",
+          "pointer": "/features/notes/queries/getNote/access",
+          "source": {
+            "column": 24,
+            "file": "features/notes/model.ts",
+            "line": 53
+          }
+        },
+        "message": "notes.getNote is user data that anyone may read",
+        "severity": "warning"
+      },
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/notes/queries/lastDeleted/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "notes",
+          "pointer": "/features/notes/queries/lastDeleted/access",
+          "source": {
+            "column": 28,
+            "file": "features/notes/model.ts",
+            "line": 154
+          }
+        },
+        "message": "notes.lastDeleted is user data that anyone may read",
+        "severity": "warning"
+      },
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/notes/queries/listArchived/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "notes",
+          "pointer": "/features/notes/queries/listArchived/access",
+          "source": {
+            "column": 29,
+            "file": "features/notes/model.ts",
+            "line": 125
+          }
+        },
+        "message": "notes.listArchived is user data that anyone may read",
+        "severity": "warning"
+      },
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/notes/queries/listNotes/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "notes",
+          "pointer": "/features/notes/queries/listNotes/access",
+          "source": {
+            "column": 26,
+            "file": "features/notes/model.ts",
+            "line": 68
+          }
+        },
+        "message": "notes.listNotes is user data that anyone may read",
+        "severity": "warning"
+      },
+      {
+        "cause": "access: 'anyone' lets every visitor, signed in or not, run this scope: 'user' query.",
+        "code": "HZ090",
+        "fix": {
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/features/notes/queries/sharedNotes/access",
+              "value": {
+                "kind": "signedIn"
+              }
+            }
+          ],
+          "snippet": "access: 'signedIn',",
+          "summary": "Say who may read it"
+        },
+        "location": {
+          "feature": "notes",
+          "pointer": "/features/notes/queries/sharedNotes/access",
+          "source": {
+            "column": 28,
+            "file": "features/notes/model.ts",
+            "line": 194
+          }
+        },
+        "message": "notes.sharedNotes is user data that anyone may read",
+        "severity": "warning"
+      }
+    ],
+    "hash": "92d8c6fb11e71a659a32e2cca7e761abbfd3bbd38cae54ac26774a328c8b970a",
+    "lock": "current",
+    "ok": true,
+    "styles": "checked",
+    "summary": {
+      "accepted": 0,
+      "errors": 0,
+      "warnings": 7
+    }
+  }
+}

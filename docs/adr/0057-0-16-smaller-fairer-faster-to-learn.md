@@ -159,8 +159,27 @@ so 0.15 apps upgrade without a migration step.
     before the labels on the page; the testing topic points at `hozu get --forms` for labels.
   - **Prediction:** on the same held-out steps, fewer than half the `browse` runs fail on a target, `verify` turns
     fall from 42 toward 25, and `hozu docs testing` is read at most twice.
-  - **Not run yet, on purpose:** the check is a re-run of three held-out steps with the published 0.16, so it
-    measures what users get. It is proposed right after the release.
+  - **Checked (2026-10-05) with the published 0.17.1,** which keeps the 0.16 changes. All eight held-out steps were
+    run, not three, in two runs each, from trial 0024's step-20 apps migrated with `hozu migrate`
+    (`results-0024-b3/`). Same model, isolation and acceptance as trial 0024.
+
+    | Held out 21–28, two runs | 0.14 cold | 0.17.1 cold | Prediction | Result |
+    |---|---|---|---|---|
+    | `browse` runs failing on a target | 17 of 88 | 8 of 81 | fewer than half | **Holds** (−53 %) |
+    | `hozu docs testing` reads | 10 | 1 | at most two | **Holds** |
+    | `verify` + `serve` turns | 99 | 98 | 42 → toward 25 per run | **Fails** (38 and 60) |
+    | guide tokens carried (`docs`) | 391 k | 270 k | | −31 % |
+    | weighted tokens against Nuxt (geometric mean of per-step ratios) | 1.37× | 1.30× | | −5 % |
+    | steps passing every check | 16 / 16 | 16 / 16 | | equal |
+
+    - **Why `verify` did not fall:** the turns moved from repairing `browse` steps to checking more cases. Run b
+      spent 22 of 40 turns at step 23 on cases the change did not ask about: a title of non-breaking spaces, a
+      1 001-character body, a stale form posted after the note was archived in another tab. Testing a stale form
+      meant starting a server and copying a form's `__hozu` action out of the HTML for `post`; a step that submits
+      a form as it was when the page loaded would remove that.
+    - **Interrupted acceptance runs:** as in trial 0024, an agent's `pkill -f "hozu serve"` stopped another arm's
+      acceptance server (two runs of the warm and previews arms here). Re-running the acceptance on the committed
+      code passes (`NN.accept-rerun.json`), and so did trial 0024's three held-out ones, re-checked again.
   - **Next, for 0.17:** the `start` gap (+117 k) is what every call carries before the agent acts: the skill listing
     and the app's agent block. It needs its own ADR.
 

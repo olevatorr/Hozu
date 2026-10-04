@@ -1,0 +1,23 @@
+[2026-10-05 03:11:42] hozu/previews start from s20
+[2026-10-05 03:11:42] hozu/previews step 21 attempt 1
+step 21: 67/67 new 3/3 regression 64/64 js {"login":22344,"list":23083}
+[2026-10-05 03:20:58] hozu/previews step 22 attempt 1
+step 22: 71/71 new 4/4 regression 67/67 js {"login":22344,"list":23152}
+[2026-10-05 03:31:17] hozu/previews step 23 attempt 1
+step 23: 75/75 new 4/4 regression 71/71 js {"login":22344,"list":23152}
+[2026-10-05 03:44:12] hozu/previews step 24 attempt 1
+step 24: 79/79 new 4/4 regression 75/75 js {"login":22344,"list":23152}
+[2026-10-05 03:58:22] hozu/previews step 25 attempt 1
+step 25: 76/81 new 0/2 regression 76/79 js {"error":"page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4815/login\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:"}
+  regression X24b without JS the server refuses add, delete, pin, archive, bulk and restore: FAIL: page.goto: Target page, context or browser has been closed
+  regression X24c with JS the server refuses edit, note-page save, share, unshare and undo; sharing still works for others: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4815/login
+  regression X24d a non-admin cannot change access, even with a stale admin form: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4815/login
+  new X25a share, rename and unshare show up without a reload; typing and checks stay: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4815/login
+  new X25b note-page rename, archive, restore, delete and account deletion show up live; an open edit stays: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4815/login
+[2026-10-05 04:09:46] hozu/previews step 26 attempt 1
+step 26: 83/83 new 3/3 regression 80/80 js {"login":22344,"list":23396}
+[2026-10-05 04:22:14] hozu/previews step 27 attempt 1
+step 27: 85/85 new 3/3 regression 82/82 js {"login":22344,"list":23396}
+[2026-10-05 04:35:23] hozu/previews step 28 attempt 1
+step 28: 85/85 new 2/2 regression 83/83 js {"login":22344,"list":23396}
+[2026-10-05 04:47:34] hozu/previews done

@@ -1,0 +1,35 @@
+diff --git a/features/notes/text.ts b/features/notes/text.ts
+index 86635ef..5d3af61 100644
+--- a/features/notes/text.ts
++++ b/features/notes/text.ts
+@@ -2,7 +2,7 @@ import { ui } from '@hozu/core'
+ 
+ export const text = ui.messages('en', {
+   en: {
+-    notes: 'Notes',
++    notes: 'My notes',
+     archivedNotes: 'Archived notes',
+     deleteAccount: 'Delete account',
+     export: 'Export',
+diff --git a/features/notes/views.ts b/features/notes/views.ts
+index a30918c..210e0d0 100644
+--- a/features/notes/views.ts
++++ b/features/notes/views.ts
+@@ -69,7 +69,7 @@ export const NotesBoard = ui.view({
+   seed: ({ search }) => ({ search: search.q }),
+   render: ({ ctx, when, search }) =>
+     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [
+-      ui.h1({ class: 'text-3xl font-bold' }, [text.notes]),
++      ui.h1({ class: 'text-2xl font-semibold' }, [text.notes]),
+       ui.p({ class: 'flex gap-4 text-sm' }, [
+         ui.a({ href: ui.link(archive, null), class: 'underline' }, [text.archivedNotes]),
+         ui.a({ href: ui.link(deleteAccount, null), class: 'underline' }, [text.deleteAccount]),
+@@ -161,7 +161,7 @@ export const NotesBoard = ui.view({
+               : ui.ul({ class: 'divide-y rounded border bg-white' }, [
+                   when(['adding'], [pendingNote(ctx.draft)]),
+                   ui.each(visibleNotes({ items: listedNotes({ items: all, text: search.q, limit: search.limit }), text: ctx.search }), 'id', (item) =>
+-                    ui.li({ class: 'flex items-center gap-3 px-4 py-3' }, [
++                    ui.li({ class: 'flex items-center gap-4 px-4 py-4' }, [
+                       ui.span({ class: 'text-xs text-slate-500' }, ['No. ', item.number]),
+                       ui.input({
+                         type: 'checkbox',
