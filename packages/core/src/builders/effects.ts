@@ -1,6 +1,6 @@
 import { brand, type Decl, type Typed } from '../model/decl.ts'
 import type { Ref } from '../model/expr.ts'
-import type { Infer, Schema } from '../schema/standard.ts'
+import type { Infer, InferInput, Schema } from '../schema/standard.ts'
 import type { Access } from './access.ts'
 import type { TagUse } from './tag.ts'
 
@@ -14,8 +14,10 @@ export type Scope = 'public' | 'user'
 
 export type Runs = 'server' | 'browser' | 'either'
 
-export interface EffectTypes<I, O, E, Sc = Scope> {
+export interface EffectTypes<I, O, E, Sc = Scope, W = I> {
   input: I
+  /** What a caller passes: the schema's input type (`z.coerce.number()` takes a string), ADR 0057 C. */
+  wire: W
   output: O
   errors: E
   scope: Sc
@@ -45,11 +47,11 @@ export interface QueryDecl<I = any, O = any, E = any, Sc extends Scope = Scope>
   extends Decl<'query'>,
     Typed<EffectTypes<I, O, E, Sc>> {}
 
-export interface MutationDecl<I = any, O = any, E = any>
+export interface MutationDecl<I = any, O = any, E = any, W = I>
   extends Decl<'mutation'>,
-    Typed<EffectTypes<I, O, E>> {}
+    Typed<EffectTypes<I, O, E, Scope, W>> {}
 
-export type EffectDecl<I = any, O = any, E = any> = QueryDecl<I, O, E> | MutationDecl<I, O, E>
+export type EffectDecl<I = any, O = any, E = any, W = I> = QueryDecl<I, O, E> | MutationDecl<I, O, E, W>
 
 type RowOf<O> = O extends readonly (infer T)[] ? T : O
 
@@ -98,5 +100,5 @@ export const mutation = <
     /** Where the implementation runs (ADR 0049); required since 0.14 (ADR 0053 A). */
     runs: R
   } & MutationAccess<R, Infer<I>>,
-): MutationDecl<Infer<I>, Infer<O>, ErrorTypes<E>> =>
+): MutationDecl<Infer<I>, Infer<O>, ErrorTypes<E>, InferInput<I>> =>
   brand({}, 'mutation', { errors: {}, invalidates: () => [], ...config } as MutationDef)

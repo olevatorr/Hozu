@@ -40,7 +40,10 @@ const Board = ui.view({
         ui.query(
           teams,
           {},
-          { ready: (list) => ui.each(list, 'id', (t) => ui.option({ value: t.id }, [t.id])) },
+          {
+            ready: (list) => ui.each(list, 'id', (t) => ui.option({ value: t.id }, [t.id])),
+            failed: { Unexpected: () => null },
+          },
         ),
       ]),
       ui.button({ type: 'submit' }, ['Share']),

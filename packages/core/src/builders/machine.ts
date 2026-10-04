@@ -87,11 +87,12 @@ export const invoke = <
   I,
   O,
   E,
+  W,
   const D extends Outcome<string, Ref<O>>,
   const F extends ErrorTransitions<E, string, I>,
 >(
-  effect: EffectDecl<I, O, E>,
-  config: { input: NoInfer<Val<I>>; done: D; failed: F },
+  effect: EffectDecl<I, O, E, W>,
+  config: { input: NoInfer<Val<W>>; done: D; failed: F },
 ): InvokeDecl<Known<TargetOf<D> | { [K in keyof F]: TargetOf<F[K]> }[keyof F]>> =>
   brand({}, 'invoke', { effect, ...config } as unknown as InvokeDef)
 

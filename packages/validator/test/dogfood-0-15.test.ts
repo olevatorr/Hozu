@@ -15,7 +15,14 @@ const listRooms = query({
 const home = route({ path: '/', params: null, search: null })
 const Home = ui.view({
   render: () =>
-    ui.query(listRooms, {}, { ready: (rooms) => ui.p({}, [rooms.length === 0 ? 'none' : 'some']) }),
+    ui.query(
+      listRooms,
+      {},
+      {
+        ready: (rooms) => ui.p({}, [rooms.length === 0 ? 'none' : 'some']),
+        failed: { Unexpected: () => null },
+      },
+    ),
 })
 
 const make = (exports: unknown) =>

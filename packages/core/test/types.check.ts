@@ -476,3 +476,26 @@ export const publicRead = query({
   // @ts-expect-error a public query never sees the session, so it takes no access
   access: 'signedIn',
 })
+
+// ADR 0057 C (0.15 dogfood): invoke passes what the schema takes in, so a coerced field accepts the form's text.
+const addOrder = mutation({
+  input: z.object({ amount: z.coerce.number() }),
+  output: z.object({ id: z.string() }),
+  runs: 'server',
+  access: 'anyone',
+})
+export const orders = machine({
+  context: z.object({ amount: z.string(), id: z.string() }),
+  initialContext: { amount: '', id: '' },
+  initial: 'idle',
+  states: ({ ctx }) => ({
+    idle: { on: [] },
+    adding: {
+      invoke: invoke(addOrder, {
+        input: { amount: ctx.amount },
+        done: 'idle',
+        failed: { Unexpected: 'idle' },
+      }),
+    },
+  }),
+})
