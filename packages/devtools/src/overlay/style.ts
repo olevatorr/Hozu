@@ -76,8 +76,9 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
   position: fixed; pointer-events: auto; display: flex; align-items: center; gap: 2px; padding: 4px;
   background: var(--bg); color: var(--text); border: 1px solid var(--line-2); border-radius: 999px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), 0 1px 2px rgba(0, 0, 0, 0.2);
-  user-select: none; touch-action: none;
+  user-select: none; touch-action: none; width: max-content; max-width: calc(100vw - 8px);
 }
+.dock button { white-space: nowrap; flex: none; }
 .grip {
   display: grid; place-items: center; width: 28px; height: 28px; border-radius: 999px; cursor: grab; flex: none;
   background: #fff; box-shadow: inset 0 0 0 1px rgba(17, 16, 16, 0.08); margin-right: 4px;
@@ -97,7 +98,17 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
   display: inline-grid; place-items: center; min-width: 16px; height: 16px; padding: 0 4px; margin-left: 6px;
   border-radius: 999px; background: var(--red); color: #fff; font: 600 10.5px/1 var(--sans); vertical-align: 1px;
 }
-.dock .hint { padding: 0 10px 0 6px; font: 12px/1 var(--sans); color: var(--mute); white-space: nowrap; }
+.dock .tip {
+  position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%);
+  display: flex; gap: 12px; padding: 7px 12px; border-radius: 10px; white-space: nowrap; pointer-events: none;
+  background: var(--bg); color: var(--text); border: 1px solid var(--line-2); font: 12px/1.2 var(--sans);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+.dock.near-top .tip { bottom: auto; top: calc(100% + 8px); }
+.dock .tip kbd {
+  font: 600 11px/1 var(--mono); padding: 2px 5px; margin-right: 2px; border-radius: 4px;
+  background: rgba(var(--tint), 0.1); border: 1px solid var(--line-2); color: var(--text);
+}
 
 .panel {
   position: fixed; pointer-events: auto; top: 16px; right: 16px; width: min(400px, calc(100vw - 32px));
@@ -411,7 +422,10 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .choice button.primary:hover { background: #ff5126; }
 .choice .why { font: 12px/1.4 var(--sans); color: var(--mute); margin-bottom: 8px; }
 
-@media (max-width: 720px) { .dock .hint { display: none; } }
+@media (max-width: 720px) {
+  .dock .tip span:nth-child(n + 3) { display: none; }
+  .dock { flex-wrap: wrap; justify-content: center; border-radius: 18px; max-width: calc(100vw - 16px); }
+}
 @media (max-width: 420px) {
   .dock button.mode, .dock button.act { padding: 5px 8px; }
   .panel { top: 8px; right: 8px; width: calc(100vw - 16px); max-height: calc(100vh - 80px); }

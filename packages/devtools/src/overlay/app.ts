@@ -574,7 +574,12 @@ function renderDock() {
           )
         : null,
       state.mode === 'select' && !held()
-        ? h('div', { class: 'hint' }, ['Click selects · Shift adds · Alt goes up · Esc stops'])
+        ? h('div', { class: 'tip', role: 'note' }, [
+            h('span', {}, [h('kbd', {}, ['Click']), ' a part to select it']),
+            h('span', {}, [h('kbd', {}, ['Shift']), '+click adds another']),
+            h('span', {}, [h('kbd', {}, ['Alt']), '+click picks its parent']),
+            h('span', {}, [h('kbd', {}, ['Esc']), ' stops']),
+          ])
         : null,
     ]),
   )
@@ -592,13 +597,14 @@ function renderDock() {
 function placeDock() {
   const r = dock.getBoundingClientRect()
   const x = state.dock
-    ? Math.min(Math.max(0, state.dock.x), innerWidth - r.width)
+    ? Math.max(8, Math.min(state.dock.x, innerWidth - r.width - 8))
     : (innerWidth - r.width) / 2
   const y = state.dock
-    ? Math.min(Math.max(0, state.dock.y), innerHeight - r.height)
+    ? Math.max(8, Math.min(state.dock.y, innerHeight - r.height - 8))
     : innerHeight - r.height - 24 - api.height()
   dock.style.left = `${x}px`
   dock.style.top = `${y}px`
+  dock.classList.toggle('near-top', y < 64)
 }
 
 function fold() {
