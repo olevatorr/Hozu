@@ -45,6 +45,9 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
 - **Line numbers stay right after a multi-line `?:`, `&&` or `??`:** the transform moved the newlines between the
   operands to the end, so every node after one reported an earlier line in `hozu why`, `hozu show`, DevTools and
   diagnostics (the dogfood saw a list row reported on its `<tbody>`'s line).
+- **`hozu browse` takes the forms agents write:** `in "<text>"` before or after a fill's value, several steps in one
+  `--do` joined with `;`, and a missing target prints `Did you mean "<closest label>"?`. In trial 0024, a quarter
+  of the agents' browse runs failed on such a guess and re-ran a whole chain.
 - **`hozu browse` treats a page's 401, 403, 404 or 410 as the step's answer:** a step that loads such a page
   shows `→ /notes/n1 (403)` and is not an error, so an access check exits 0. The start page still must load.
 - **`hozu browse` ignores the view-transition abort** a browser reports when a step posts to a JSON endpoint.

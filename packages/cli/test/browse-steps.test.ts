@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { type Cdp, findBrowser, launch } from '../src/cdp.ts'
-import { act, parseStep } from '../src/commands/browse.ts'
+import { act, parseStep, stepsOf } from '../src/commands/browse.ts'
 import { Tab, type World } from '../src/commands/browse-tab.ts'
 import type { BrowseError, BrowseMode } from '../src/contract.ts'
 
@@ -107,6 +107,10 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
       jsOnly: null,
     })
     expect((await run(t, 'click Delete')).note).toBe('2 matched; used the first')
+    await t.open('/')
+    expect((await run(t, 'fill Tags=x')).note).toMatch(
+      /^No fill target named "Tags"\. Did you mean "Tag"\? On the page: /,
+    )
   }, 30_000)
 
   it('submit "<form>" and press Enter submit natively, with the default button as the submitter', async () => {
@@ -147,6 +151,18 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
 })
 
 describe('step parsing', () => {
+  it('takes in "<text>" before or after the value, and several steps in one --do (trial 0024)', () => {
+    const want = { verb: 'fill', target: 'Share with', value: 'bob', within: 'Buy milk' }
+    expect(parseStep('fill Share with=bob in "Buy milk"')).toEqual(want)
+    expect(parseStep('fill Share with in "Buy milk"=bob')).toEqual(want)
+    expect(stepsOf('fill Title=Milk; press Enter; fill Body=a; b; click Save')).toEqual([
+      'fill Title=Milk',
+      'press Enter',
+      'fill Body=a; b',
+      'click Save',
+    ])
+  })
+
   it('post and remember keep their whole target', () => {
     expect(parseStep('post /a x=1&y=2')).toMatchObject({ verb: 'post', target: '/a x=1&y=2' })
     expect(parseStep('remember id from li a @href')).toMatchObject({

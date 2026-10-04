@@ -10,6 +10,7 @@ import {
   browseFailed,
   describeBrowse,
   runBrowse,
+  stepsOf,
 } from './commands/browse.ts'
 import { runBuild } from './commands/build.ts'
 import { describeCall, runCall } from './commands/call.ts'
@@ -186,7 +187,7 @@ export function browsePlan(tokens: Token[]): Pick<BrowseOptions, 'actors' | 'pla
         )
       actor.session = t.value
     } else if (t.name === 'header' && named && current >= 0) actors[current]!.headers.push(t.value ?? '')
-    else if (t.name === 'do') plan.push({ actor: current, step: t.value ?? '' })
+    else if (t.name === 'do') for (const step of stepsOf(t.value ?? '')) plan.push({ actor: current, step })
   }
   return { actors, plan }
 }

@@ -140,6 +140,29 @@ so 0.15 apps upgrade without a migration step.
 - **Decision rule:** the largest item that a change to the guide or the tools can remove gets a change in this
   release, with a prediction recorded here before a re-run of three held-out steps checks it. Anything larger
   becomes a 0.17 ADR.
+- **Result (`anatomy.mjs --v2` over the eight held-out steps, carried tokens by what produced them):**
+
+  | | Hozu cold | Nuxt | Gap |
+  |---|---|---|---|
+  | reading the guide (`docs`) | 165 k | 0 | +165 k |
+  | the start of every call (`start`) | 382 k | 265 k | +117 k |
+  | reading files (`read`) | 294 k | 229 k | +65 k |
+  | the change and spec (`spec`) | 83 k | 25 k | +58 k |
+  | verifying (`verify`, 42 turns against 7) | 56 k | 7 k | +49 k |
+  | weighted total | 1.30 M | 0.86 M | +0.43 M |
+
+  - **The guide reads were mostly `browse` grammar:** `hozu docs testing` was read five times. Of 43 `hozu browse`
+    runs, 10 failed on a label the agent guessed (`fill Share with=bob` for a field named `name`). Each retry re-ran
+    a whole multi-actor chain, and two forms the agent wrote naturally were refused: `in "<text>"` before the value,
+    and several steps in one `--do` joined with `;`.
+  - **Changed in this release:** both forms are accepted; a missing target prints `Did you mean "<closest label>"?`
+    before the labels on the page; the testing topic points at `hozu get --forms` for labels.
+  - **Prediction:** on the same held-out steps, fewer than half the `browse` runs fail on a target, `verify` turns
+    fall from 42 toward 25, and `hozu docs testing` is read at most twice.
+  - **Not run yet, on purpose:** the check is a re-run of three held-out steps with the published 0.16, so it
+    measures what users get. It is proposed right after the release.
+  - **Next, for 0.17:** the `start` gap (+117 k) is what every call carries before the agent acts: the skill listing
+    and the app's agent block. It needs its own ADR.
 
 ### B4 — the Workbench on a narrow window
 - Below 1 100 px the Layers column folds into a button in the toolbar, and opens over the page. The browser tests

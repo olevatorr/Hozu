@@ -50,6 +50,13 @@ interface Parsed {
 /** `click "Save draft"` names the same target as `click Save draft`. */
 const unquote = (s: string) => s.replace(/^"(.*)"$/, '$1')
 
+/** `--do 'fill Title=Milk; press Enter'` is two steps: split where a verb follows a semicolon, so values may hold one. */
+export const stepsOf = (text: string): string[] =>
+  text
+    .split(/;\s*(?=(?:fill|select|check|uncheck|click|submit|press|wait|goto|post|remember)\b)/)
+    .map((step) => step.trim())
+    .filter(Boolean)
+
 export function parseStep(text: string): Parsed {
   const space = text.indexOf(' ')
   const verb = space < 0 ? text : text.slice(0, space)
@@ -59,6 +66,10 @@ export function parseStep(text: string): Parsed {
   if (scoped) {
     rest = scoped[1]!.trim()
     within = scoped[2]!
+  }
+  if ((verb === 'fill' || verb === 'select') && within === null) {
+    const before = /^(.*?)\s+in\s+"([^"]+)"\s*=(.*)$/.exec(rest)
+    if (before) return { verb, target: unquote(before[1]!.trim()), value: before[3]!, within: before[2]! }
   }
   if (verb === 'fill' || verb === 'select') {
     const eq = rest.indexOf('=')

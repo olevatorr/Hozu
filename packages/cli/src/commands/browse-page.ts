@@ -51,7 +51,18 @@ export const PAGE = String.raw`(() => {
     }).filter((hits) => hits.length)
     if (!found.length) {
       const names = [...new Set(all.map((el) => (nameOf(el) ?? '').replace(/\s+/g, ' ').trim()).filter(Boolean))]
-      return { error: 'No ' + kind + ' target named "' + name + '"' + (within === null ? '' : ' in "' + within + '"') + (names.length ? '. ' + (within === null ? 'On the page' : 'There') + ': ' + names.slice(0, 20).map((n) => JSON.stringify(n.slice(0, 40))).join(', ') : '') }
+      const words = (x) => new Set(norm(x).split(/[^a-z0-9]+/).filter(Boolean))
+      const asked = words(name)
+      const near = names
+        .map((n) => {
+          const w = words(n)
+          const shared = [...asked].filter((x) => w.has(x)).length
+          const part = norm(n).includes(want) || want.includes(norm(n)) ? 1 : 0
+          return { n, score: shared * 2 + part }
+        })
+        .filter((x) => x.score > 0)
+        .sort((a, b) => b.score - a.score)[0]
+      return { error: 'No ' + kind + ' target named "' + name + '"' + (within === null ? '' : ' in "' + within + '"') + (near ? '. Did you mean "' + near.n + '"?' : '') + (names.length ? (near ? ' ' : '. ') + (within === null ? 'On the page' : 'There') + ': ' + names.slice(0, 20).map((n) => JSON.stringify(n.slice(0, 40))).join(', ') : '') }
     }
     return { els: found[0], scoped: found.length }
   }
