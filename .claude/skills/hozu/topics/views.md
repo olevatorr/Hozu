@@ -28,8 +28,8 @@ export const Board = ui.view({
 - **Attributes:** HTML names in lower case (`for`, `minlength`, `aria-pressed`, `data-x`), typed per tag. Values are
   literals or data: `'aria-pressed': ctx.show === 'all'`, `title: ctx.error ?? 'OK'`.
 - **CSS variables:** `vars: { '--hue': item.hue }`.
-- **More conditions:** `list.length === 0 ? ui.p({}, ['Empty']) : ui.ul({}, [...])`; a branch may be a list:
-  `open ? [a, b] : null`, also as what a query branch or an each item returns.
+- **More conditions:** `list.length === 0 ? ui.p({}, ['Empty']) : ui.ul({}, [...])`; a `?:` / `&&` branch may be a list:
+  `open ? [a, b] : null`. A query branch or an each item returns one node: wrap several in an element (HZ014).
   With an enter/leave animation: `ui.if(cond, [then], [else], 'fade')` (the motion name is required).
 - **More lists:** `ui.each(tags, null, (t) => …)` for primitives. `.map` only over constants:
   `['a', 'b'].map((k) => ui.option({ value: k }, [k]))`.

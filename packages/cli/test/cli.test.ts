@@ -447,6 +447,12 @@ describe('short topics (ADR 0053 E)', () => {
     expect(shown).toBeLessThanOrEqual(36_350)
   })
 
+  it('the views topic agrees with HZ014: only a ?: / && branch may be a list (ADR 0056 A4)', () => {
+    const views = readFileSync(join(dir, 'views.md'), 'utf8')
+    expect(views).toContain('A query branch or an each item returns one node')
+    expect(views).not.toMatch(/also as what a query branch or an each item returns/)
+  })
+
   it('--more prints the whole topic without the marker', async () => {
     const short = (await run(['docs', 'data'])).stdout
     const more = (await run(['docs', 'data', '--more'])).stdout
