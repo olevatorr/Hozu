@@ -163,6 +163,16 @@ const lineOf = (c: LockChange): string => {
   }
 }
 
+/** What --update-lock accepts: one line per changed transition (with its now:), then the page table changes (ADR 0056 A7). */
+export function lockDiff(previous: unknown, next: LockfileV2): string[] {
+  const before = isV2(previous) ? previous : null
+  const removed = Object.keys(before?.features ?? {}).filter((f) => !(f in next.features))
+  return [
+    ...lockChanges(before, next, removed).map((c) => `${c.feature}: ${lineOf(c)}`),
+    ...pagesChanges(before, next).map((l) => `pages: ${l}`),
+  ]
+}
+
 const UPDATE_FIX = {
   summary:
     'If every listed change is intended, run hozu check --update-lock, then list the accepted now: lines in your final summary for the owner to review',

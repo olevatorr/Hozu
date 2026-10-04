@@ -43,6 +43,7 @@ export type {
 export { behaviorOf, contractHash, recordOf } from './contracts/record.ts'
 export type { ContractRun, Failure } from './contracts/run.ts'
 export { runContract } from './contracts/run.ts'
+export { lockDiff } from './contracts/verify.ts'
 export type { Impact, ImpactKind, ImpactQuery, ImpactUse } from './impact.ts'
 export { impact, UnknownSymbolError } from './impact.ts'
 export { classVariant, exclusive, important } from './rules/styles.ts'

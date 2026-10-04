@@ -323,6 +323,10 @@ export async function main(
         if (result.types.errors.length) out('\n')
         for (const d of result.validate.diagnostics) out(`${human(d)}\n\n`)
         for (const a of result.validate.accepted) out(`accepted ${a.code} at ${a.at}: ${a.reason}\n`)
+        if (result.validate.lockAccepted?.length)
+          out(
+            `lock accepted ${result.validate.lockAccepted.length} ${result.validate.lockAccepted.length === 1 ? 'change' : 'changes'} (list them in your summary):\n${result.validate.lockAccepted.map((l) => `  ${l}\n`).join('')}`,
+          )
         for (const o of result.overrides) out(`${describeOverrides(o)}\n`)
         if (result.overrides.length) out('\n')
         const v = result.validate

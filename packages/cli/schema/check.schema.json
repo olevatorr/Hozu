@@ -137,6 +137,13 @@
         "lock": {
           "$ref": "#/definitions/LockState"
         },
+        "lockAccepted": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "With --update-lock: every change the update accepted, with its now: (ADR 0056 A7)."
+        },
         "styles": {
           "type": "string",
           "enum": [

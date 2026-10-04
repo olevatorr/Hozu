@@ -29,6 +29,8 @@ export interface ValidateOutput {
   summary: { errors: number; warnings: number; accepted: number }
   coverage: Record<string, Coverage>
   lock: LockState
+  /** With --update-lock: every change the update accepted, with its now: (ADR 0056 A7). */
+  lockAccepted?: string[]
   styles: 'checked' | 'unavailable'
   diagnostics: Diagnostic[]
   /** Warnings the project keeps on purpose (`project({ accept })`, ADR 0053 C), with their reasons. */

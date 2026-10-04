@@ -3,7 +3,7 @@ import { dirname, extname, join as joinPath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
 import { codes, type Diagnostic, hashJson, type Json, join, resolveSource } from '@hozu/core/ir'
-import { decides, type LockfileV2, verify } from '@hozu/validator'
+import { decides, type LockfileV2, lockDiff, verify } from '@hozu/validator'
 import type { Coverage, ValidateOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
@@ -89,9 +89,13 @@ export async function runValidate(
   const current = previous !== null && json(previous) === json(verified.lock)
   let lock: ValidateOutput['lock'] =
     previous === null && !machines ? 'missing' : current ? 'current' : 'stale'
+  let lockAccepted: string[] = []
   if (updateLock && !current && (previous !== null || machines)) {
     lock = clean && verified.lock ? 'updated' : 'skipped'
-    if (lock === 'updated') writeFileSync(lockPath, json(verified.lock))
+    if (lock === 'updated') {
+      lockAccepted = lockDiff(previous, verified.lock!)
+      writeFileSync(lockPath, json(verified.lock))
+    }
   }
   const coverage: Record<string, Coverage> = {}
   for (const [fid, entries] of Object.entries(verified.lock?.features ?? {})) {
@@ -111,6 +115,7 @@ export async function runValidate(
     summary: { errors, warnings: selected.length - errors, accepted: 0 },
     coverage,
     lock,
+    ...(lockAccepted.length ? { lockAccepted } : {}),
     styles: styles ? 'checked' : 'unavailable',
     diagnostics: relativize(selected, cwd),
     accepted: [],
