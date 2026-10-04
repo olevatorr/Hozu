@@ -13,7 +13,8 @@ implement(exportNotes, (input, { session, fail }) =>                            
   `'response'` (a web `Response`, for files). Never HTML: a page is a `ui.page` (HZ053).
 - Links: `ui.link(getEndpoint, input)` is the URL of a GET endpoint; `ui.form({ method: 'post', action:
   ui.link(postEndpoint) }, [...])` posts a native form, whose fields the input declares (HZ046).
-- Paths are static and outside pages, redirects and `/_hozu/` (HZ046).
+- Paths are static and outside pages, redirects, `/_hozu/` and the derived `/sitemap.xml`, `/robots.txt` and
+  `/manifest.webmanifest` (HZ046).
 
 <!-- more -->
 

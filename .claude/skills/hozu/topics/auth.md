@@ -6,7 +6,8 @@
 - **Every server-run user query and mutation says who may run it**, like `runs` (HZ088):
   - `access: 'signedIn'`: any signed-in visitor; the resolver reads that visitor's data by `session`.
   - `access: { owner: { row: (n) => n.owner, session: (s) => s.user } }`: the framework checks the output. One row
-    that is not the visitor's is `Forbidden`; a list holding such rows is HZ091 (the resolver read too much).
+    that is not the visitor's is `Forbidden` (a missing owner on either side never matches); a list holding such
+    rows is HZ091 (the resolver read too much).
   - On a mutation, `{ owner: { load: getNote, input: (i) => ({ id: i.id }), row: (n) => n.owner, session: (s) =>
     s.user } }` reads the row and checks it before the resolver runs; if `load` fails for any reason (`NotFound`
     too), the answer is `Forbidden` and the resolver does not run.

@@ -2,7 +2,7 @@
 
 # @hozu/runtime-client
 
-Hozu client runtime: fine-grained DOM islands, no virtual DOM, about 7.5 KB gzipped.
+Hozu client runtime: fine-grained DOM islands, no virtual DOM, under 8 KB gzipped.
 
 Part of [Hozu](https://github.com/olevatorr/Hozu#readme), an AI-first web framework. Most apps start from
 `npm create hozu@latest`, which installs the right packages and sets up Claude Code or `AGENTS.md` agents.

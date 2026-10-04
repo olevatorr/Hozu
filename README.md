@@ -88,7 +88,7 @@ export const listTodos = query({
 })
 export const addTodo = mutation({
   input: z.object({ title: z.string().min(2) }), output: Todo,
-  invalidates: () => [todosTag()], runs: 'server',
+  invalidates: () => [todosTag()], runs: 'server', access: 'anyone',
 })
 export const todos = machine({
   context: z.object({ draft: z.string(), error: z.string().nullable() }),
@@ -157,15 +157,24 @@ change, depending on how one Nuxt step is counted ([trial 0021](docs/trials/0021
   comes from structure, so it is not expected to shrink.
 
 **Rendering, against React, Vue, Preact and Svelte:** the same 100-item page, 4× CPU throttling
-([benchmarks](docs/benchmarks/0001-frameworks.md), sixth run).
+([benchmarks](docs/benchmarks/0001-frameworks.md), eighth run, 0.16).
 
 | | Hozu | Best of the others |
 |---|---|---|
-| Initial JS (gzip) | 7.5 KB | Preact 5.4 KB |
-| Interactive at | 27.8 ms | Preact 26.7 ms |
-| 200 clicks | 10.6 ms | Svelte 8.7 ms |
-| Server renders per second | 52.6 k | Svelte 94.2 k |
-| HTML | 12.1 KB | 12.6 KB |
+| Initial JS (gzip) | 7.8 KB | Preact 5.4 KB |
+| Interactive at | 28.2 ms | Preact 26.6 ms |
+| 200 clicks | 11.4 ms | Svelte 8.6 ms |
+| Server renders per second | 54.0 k | Svelte 98.6 k |
+| HTML | 12.4 KB | 12.6 KB |
+
+**In production servers, against Next.js, Nuxt and SvelteKit:** the same 100-product page rendered per request
+([bench/meta](bench/meta/README.md), 0.16).
+
+| | Hozu | SvelteKit | Nuxt | Next.js |
+|---|---|---|---|---|
+| Requests per second | 16,870 | 6,867 | 3,236 | 1,701 |
+| JS (gzip) | 8.1 KB | 33.0 KB | 75.8 KB | 130.9 KB |
+| Interactive at | 54 ms | 94 ms | 87 ms | 166 ms |
 
 **At scale:** generated apps of 50 and 500 features, each with a machine, a contract, queries, mutations and a
 100-row list ([benchmark 0003](docs/benchmarks/0003-scale.md), 0.12).
@@ -183,11 +192,11 @@ The data cache keeps at most 10,000 entries by default: one million distinct key
 |---|---|
 | [`create-hozu`](https://www.npmjs.com/package/create-hozu) | Creates an app, set up for Claude Code or `AGENTS.md` agents |
 | [`@hozu/core`](https://www.npmjs.com/package/@hozu/core) | IR types and the builders you write apps with |
-| [`@hozu/cli`](https://www.npmjs.com/package/@hozu/cli) | `hozu check`, `get`, `browse`, `map`, `add`, `requests`, `why`, `plan`, `build`, `dev`, `serve`, `docs`, `skill` (all `--json`) |
+| [`@hozu/cli`](https://www.npmjs.com/package/@hozu/cli) | `hozu check`, `get`, `browse`, `call`, `map`, `inspect`, `add`, `requests`, `show`, `why`, `plan`, `env`, `build`, `dev`, `serve`, `docs`, `migrate`, `skill` (all `--json`) |
 | [`@hozu/transform`](https://www.npmjs.com/package/@hozu/transform) | Lowers the ordinary TypeScript in views and machines to the checked IR form |
 | [`@hozu/schema-zod`](https://www.npmjs.com/package/@hozu/schema-zod) | Zod schemas (the default adapter) |
 | [`@hozu/data`](https://www.npmjs.com/package/@hozu/data) | Resolvers, cache, tags, invalidation |
-| [`@hozu/adapter-node`](https://www.npmjs.com/package/@hozu/adapter-node) | Node server with an ISR page cache |
+| [`@hozu/adapter-node`](https://www.npmjs.com/package/@hozu/adapter-node) | Node server with an ISR page cache and compression |
 | [`@hozu/adapter-static`](https://www.npmjs.com/package/@hozu/adapter-static) | Static export |
 | [`@hozu/runtime-server`](https://www.npmjs.com/package/@hozu/runtime-server) | Streaming SSR and a web-standard `Request → Response` handler (Bun, Deno, Workers, Vercel) |
 | [`@hozu/runtime-client`](https://www.npmjs.com/package/@hozu/runtime-client) | The DOM runtime for islands |
@@ -207,7 +216,9 @@ The data cache keeps at most 10,000 entries by default: one million distinct key
 - i18n with typed messages.
 - Sessions, CSP and cross-site POST protection.
 - ISR and SWR with tag revalidation, and live queries.
-- A derived head: title, canonical, Open Graph, JSON-LD, sitemap and `robots.txt`.
+- A derived head: title, canonical, Open Graph with share-card size and alt, `twitter:card`, JSON-LD, the sitemap
+  (with `lastmod`) and `robots.txt`.
+- Compression on Node: pages gzip-streamed, files served from the `.br` / `.gz` that `hozu build` writes.
 - Preview mode, PWA and an offline page.
 - Components in kits, with variants and owned classes; client components wrap third-party DOM libraries.
 - Queries and mutations that call an API from the browser (`runs`, a feature's `fetch.ts`), checked against their

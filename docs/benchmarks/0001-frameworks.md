@@ -169,3 +169,17 @@ Server HTML now comes from generated JavaScript source (ADR 0024).
   page-scoped payload (0.12). That drift was not bisected; `pnpm bench` B2 now watches the client side, and the
   server side is reported here.
 
+## Eighth run: 0.16.0 (2026-10-04, Apple M4 Pro, system Chrome)
+| Framework | SSR renders/s | HTML (gz) | JS min (gz) | Hydrate ms (4× CPU) | Interactive at ms | 200 clicks ms |
+|---|---|---|---|---|---|---|
+| React 19.3.0 (react-dom, no Next.js) | 2,781 | 13.4 KB (1.6) | 218.1 KB (67.7) | 34.3 | 121.4 | 81.6 |
+| Vue 3.5.43 (no Nuxt) | 13,557 | 12.6 KB (1.5) | 77.1 KB (30.9) | 12.4 | 34.7 | 45.5 |
+| Preact 10.29.8 | 24,350 | 12.6 KB (1.5) | 12.9 KB (5.4) | 8.4 | 26.6 | 82.0 |
+| Svelte 5.57.1 (no SvelteKit) | 98,574 | 12.6 KB (1.6) | 49.5 KB (18.7) | 7.4 | 29.6 | 8.6 |
+| **Hozu 0.16.0** | 53,995 | 12.4 KB (1.8) | 18.5 KB (7.8) | 6.9 | 28.2 | 11.4 |
+
+- **SSR** 54.0 k renders/s (48.4 k in the seventh run): the per-IR-object memo of ADR 0057 B3. Against Svelte in the
+  same run it is 0.55× (0.50× in the seventh, 0.56× in the sixth). ADR 0057 measured 55.0 k in its bisect; this is
+  one run, so read the two as the same level.
+- **JS** 7.8 KB gzipped (8.0 KB): component use and the list move animation load with their chunks (ADR 0057 B1).
+- Single run per framework, on the same machine as the seventh run.
