@@ -13,6 +13,10 @@
   variable must be declared (HZ085); a missing or non-origin value stops the start.
 - **Every package lists `funding`** (`npm fund`).
 
+### Less JavaScript on every page
+- **The initial client is 7 884 B gzipped, down from 8 123 B:** a client component use and a keyed list's move
+  animation now load only on the pages that have one.
+
 ## 0.15.0 — Say who may read and change what, test it as two visitors, and the 0.14 dogfood fixes (ADR 0056)
 
 In 0.14, nothing in an app said who may run a query or a mutation: the rule lived in each resolver, so a missing check

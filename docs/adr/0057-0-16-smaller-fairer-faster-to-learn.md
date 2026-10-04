@@ -35,6 +35,18 @@ so 0.15 apps upgrade without a migration step.
     measured per module, keeping behaviour.
 - **Decision:** trim. **Target:** at least 300 B of room, measured by P7 itself; the shipped behaviour is checked
   by the existing runtime-client and browser tests, and B2 (`bench:frameworks`) still counts the clicks.
+- **Result: 8 123 → 7 884 B (308 B of room).**
+  - **Measured first:** the initial graph is one file. Its biggest inputs are `mount` (8.2 KB raw), `hydrate`
+    (3.5 KB) and the machine `compile` (3.1 KB). Motion, component setup, visible, fetch, uploads and dev were
+    already loaded on demand.
+  - **The client component use moved to the component chunk:** building and claiming the host element and wiring
+    its props and events now load with the component chunk, so only pages with a client component pay for them
+    (−178 B).
+  - **The keyed list's move animation moved to the motion chunk:** measuring the rects and the FLIP now load with
+    `motion.track` (−51 B).
+  - **An unread field removed:** `Item.value` was written and never read (−10 B).
+  - **Checked by:** the runtime-client, component, adapter-node browser (list enter / leave) and `hozu browse`
+    tests.
 
 ### A2 — complete share cards and the sitemap
 - **Problem:**
@@ -60,6 +72,13 @@ so 0.15 apps upgrade without a migration step.
 ### A3 — the DevTools test that fails once in eleven runs
 - **Decision:** find the cause; do not add retries. The test ("the inspector moves out of the way…") failed in
   219 ms, so the failure is an early exception, not a timeout. Record the cause in this ADR.
+- **Result:**
+  - **Not reproduced:** the file passed 20 runs in a row (14 of 14 each), with four dogfood agents loading the
+    machine.
+  - **Cause not found:** the one failure came in the run right after the Layers test's reload race was fixed
+    (`cf1fed6`), and its message was not kept.
+  - **Kept as it is:** the test stays without retries, and the gate keeps running it. A next failure keeps its log
+    and reopens this item.
 
 ### A4 — the SSR drift (analysis first)
 - **What:** `bench/frameworks/ssr-only.ts` against the published tarballs at 0.5, 0.8, 0.9, 0.11, 0.12, 0.13, 0.14 and

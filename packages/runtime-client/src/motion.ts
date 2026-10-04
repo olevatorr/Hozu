@@ -79,3 +79,20 @@ export function flip(el: HTMLElement, before: DOMRect, name: string) {
   style.transform = ''
   after(el, () => el.classList.remove(`${name}-move`))
 }
+
+/** A keyed list's motion: rects before the update, then enter, leave and move after it (ADR 0057 A1). */
+export function track(firsts: Node[], name: string) {
+  const rects = new Map(
+    firsts.flatMap((n) => (n.nodeType === 1 ? [[n, (n as Element).getBoundingClientRect()] as const] : [])),
+  )
+  return {
+    leave: (nodes: Node[]) => leave(nodes, name),
+    settle(items: [nodes: Node[], fresh: boolean][]) {
+      for (const [nodes, fresh] of items) {
+        const before = rects.get(nodes[0]!)
+        if (fresh) enter(nodes, name)
+        else if (before) flip(nodes[0] as HTMLElement, before, name)
+      }
+    },
+  }
+}

@@ -17,8 +17,6 @@ import { attrText, classText, domField, passive, properties, SVG_NS, text } from
 
 export type Motion = typeof import('./motion.ts')
 
-import type { ComponentHost } from './component.ts'
-
 export type Result = { ok: true; value: Json } | { ok: false; error: string; data: Json }
 
 export type Payload = Map<string, Result>
@@ -43,9 +41,29 @@ export interface AppOptions {
   components?: Record<string, ComponentRef>
   routes?: Record<string, string>
   motion?: Motion | undefined
-  mountComponent?: ((host: ComponentHost) => void) | undefined
+  /** Renders a client component use; loaded with component.ts only on pages that have one (ADR 0057 A1). */
+  component?: ComponentRenderer | undefined
   loadComponent?: (url: string) => Promise<ComponentSetup>
 }
+
+export interface ComponentApp {
+  doc: Document
+  options: AppOptions
+  render(node: ViewNode, scope: Json[], c: Cursor, block: Block, ns: string | null): void
+  value(v: ValueExpr, scope: Json[], dom?: (field: string) => Json): Json
+  dispatch(input: { type: 'event'; event: string; payload: Json }): void
+  own(el: Node, stop: () => void): void
+  same(a: Json, b: Json): boolean
+  styling(el: HTMLElement, node: Extract<ViewNode, { kind: 'component' }>, scope: Json[], block: Block): void
+}
+
+export type ComponentRenderer = (
+  app: ComponentApp,
+  node: Extract<ViewNode, { kind: 'component' }>,
+  scope: Json[],
+  c: Cursor,
+  block: Block,
+) => void
 
 export interface ComponentRef {
   url: string
@@ -75,9 +93,9 @@ export interface App {
 
 export type Mounted = Omit<App, 'attach' | 'start'>
 
-type Block = (() => void)[]
+export type Block = (() => void)[]
 
-interface Cursor {
+export interface Cursor {
   parent: Node
   next: Node | null
   claim: boolean
@@ -85,7 +103,6 @@ interface Cursor {
 
 interface Item {
   key: string
-  value: Json
   scope: Json[]
   block: Block
   first: Node
@@ -319,7 +336,8 @@ export function createApp(doc: Document, options: AppOptions): App {
         each(node, scope, c, block, ns)
         return
       case 'component':
-        component(node, scope, c, block)
+        if (options.component) options.component(componentApp, node, scope, c, block)
+        else if (c.claim && c.next?.nodeType === 1) c.next = c.next.nextSibling
         return
       case 'if': {
         const test = () => value({ test: node.test }, scope) === true
@@ -406,53 +424,15 @@ export function createApp(doc: Document, options: AppOptions): App {
       })
   }
 
-  const component = (
-    node: Extract<ViewNode, { kind: 'component' }>,
-    scope: Json[],
-    c: Cursor,
-    block: Block,
-  ) => {
-    const name = node.use.component
-    const ref = options.components?.[name]
-    const tag = ref?.tag ?? 'div'
-    let el: HTMLElement
-    const claimed = c.claim && c.next?.nodeType === 1 && (c.next as Element).localName === tag
-    if (claimed) {
-      el = c.next as HTMLElement
-      c.next = el.nextSibling
-    } else {
-      el = doc.createElement(tag)
-      if (globalThis.__HOZU_DEV__) el.setAttribute('data-hz', node.id)
-      if (node.class) el.setAttribute('class', node.class)
-      c.parent.insertBefore(el, c.next)
-    }
-    styling(el, node, scope, block)
-    if (!claimed || node.children.length) {
-      const inner: Cursor = { parent: el, next: claimed ? el.firstChild : null, claim: claimed }
-      for (const child of node.children) render(child, scope, inner, block, null)
-    }
-    if (!ref) console.error(`Hozu: component ${name} has no client code (bundleComponents)`)
-    if (!ref || !options.loadComponent || !options.mountComponent) return
-    options.mountComponent({
-      el,
-      ref,
-      name,
-      doc,
-      props: () => value(node.props, scope),
-      emit: (name, detail) => {
-        const send = node.on[name]
-        if (send)
-          dispatch({
-            type: 'event',
-            event: send.event,
-            payload: value(send.payload, scope, (f) => (f === 'detail' ? (detail as Json) : null)),
-          })
-      },
-      load: options.loadComponent,
-      watch: (update) => block.push(update),
-      own: (stop) => mounted.add({ el, stop }),
-      same: equal,
-    })
+  const componentApp: ComponentApp = {
+    doc,
+    options,
+    render,
+    value,
+    dispatch: (input) => dispatch(input),
+    own: (el, stop) => mounted.add({ el, stop }),
+    same: equal,
+    styling,
   }
 
   const fetching = new Set<string>()
@@ -530,20 +510,19 @@ export function createApp(doc: Document, options: AppOptions): App {
       const s = [...scope, x]
       const b: Block = []
       const [firstNode, lastNode] = span(cc, () => render(node.item, s, cc, b, ns))
-      return { key: keyOf(x), value: x, scope: s, block: b, first: firstNode!, last: lastNode! }
+      return { key: keyOf(x), scope: s, block: b, first: firstNode!, last: lastNode! }
     }
     let items = list().map((x) => make(x, c))
     const end = marker(c, ']')
     block.push(() => {
       const m = options.motion
-      const motion = node.motion && m && !m.reduced(doc) ? node.motion : null
-      const rects = motion
-        ? new Map(
-            items.flatMap((i) =>
-              i.first.nodeType === 1 ? [[i, (i.first as Element).getBoundingClientRect()]] : [],
-            ),
-          )
-        : null
+      const moving =
+        node.motion && m && !m.reduced(doc)
+          ? m.track(
+              items.map((i) => i.first),
+              node.motion,
+            )
+          : null
       const old = new Map(items.map((i) => [i.key, i]))
       const fresh = new Set<Item>()
       const next: Item[] = []
@@ -552,7 +531,6 @@ export function createApp(doc: Document, options: AppOptions): App {
         const hit = old.get(k)
         if (hit) {
           old.delete(k)
-          hit.value = x
           hit.scope.splice(0, hit.scope.length, ...scope, x)
           for (const u of hit.block) u()
           next.push(hit)
@@ -563,7 +541,7 @@ export function createApp(doc: Document, options: AppOptions): App {
         }
       }
       for (const gone of old.values())
-        if (motion) m!.leave(range(gone.first, gone.last), motion)
+        if (moving) moving.leave(range(gone.first, gone.last))
         else for (const n of range(gone.first, gone.last)) (n as ChildNode).remove()
       const parent = end.parentNode!
       let at: Node = start.nextSibling ?? end
@@ -572,13 +550,7 @@ export function createApp(doc: Document, options: AppOptions): App {
         else for (const n of range(item.first, item.last)) parent.insertBefore(n, at)
       }
       items = next
-      if (!motion) return
-      for (const item of next)
-        if (fresh.has(item)) m!.enter(range(item.first, item.last), motion)
-        else {
-          const before = rects?.get(item)
-          if (before) m!.flip(item.first as HTMLElement, before, motion)
-        }
+      moving?.settle(next.map((i) => [range(i.first, i.last), fresh.has(i)]))
     })
   }
 

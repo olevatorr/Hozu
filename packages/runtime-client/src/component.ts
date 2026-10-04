@@ -1,5 +1,5 @@
 import type { Json } from '@hozu/core/ir'
-import type { ComponentRef, ComponentSetup } from './mount.ts'
+import type { ComponentRef, ComponentRenderer, ComponentSetup } from './mount.ts'
 
 export interface ComponentHost {
   el: HTMLElement
@@ -61,5 +61,50 @@ export function mountComponent(h: ComponentHost) {
   h.own(() => {
     controller.abort()
     instance?.destroy?.()
+  })
+}
+
+/** A client component use, built and claimed here so pages without one ship none of it (ADR 0057 A1). */
+export const renderComponent: ComponentRenderer = (app, node, scope, c, block) => {
+  const name = node.use.component
+  const ref = app.options.components?.[name]
+  const tag = ref?.tag ?? 'div'
+  let el: HTMLElement
+  const claimed = c.claim && c.next?.nodeType === 1 && (c.next as Element).localName === tag
+  if (claimed) {
+    el = c.next as HTMLElement
+    c.next = el.nextSibling
+  } else {
+    el = app.doc.createElement(tag)
+    if (globalThis.__HOZU_DEV__) el.setAttribute('data-hz', node.id)
+    if (node.class) el.setAttribute('class', node.class)
+    c.parent.insertBefore(el, c.next)
+  }
+  app.styling(el, node, scope, block)
+  if (!claimed || node.children.length) {
+    const inner = { parent: el, next: claimed ? el.firstChild : null, claim: claimed }
+    for (const child of node.children) app.render(child, scope, inner, block, null)
+  }
+  if (!ref) console.error(`Hozu: component ${name} has no client code (bundleComponents)`)
+  if (!ref || !app.options.loadComponent) return
+  mountComponent({
+    el,
+    ref,
+    name,
+    doc: app.doc,
+    props: () => app.value(node.props, scope),
+    emit: (event, detail) => {
+      const send = node.on[event]
+      if (send)
+        app.dispatch({
+          type: 'event',
+          event: send.event,
+          payload: app.value(send.payload, scope, (f) => (f === 'detail' ? (detail as Json) : null)),
+        })
+    },
+    load: app.options.loadComponent,
+    watch: (update) => block.push(update),
+    own: (stop) => app.own(el, stop),
+    same: app.same,
   })
 }

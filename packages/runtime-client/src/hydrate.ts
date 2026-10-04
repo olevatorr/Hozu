@@ -147,8 +147,8 @@ export async function hydrate(
     : {}
   const { components, routes } = payload
   const motion = payload.motion ? await import('./motion.ts') : undefined
-  const mountComponent = Object.keys(components).length
-    ? (await import('./component.ts')).mountComponent
+  const component = Object.keys(components).length
+    ? (await import('./component.ts')).renderComponent
     : undefined
   if (payload.visible) void import('./visible.ts').then((m) => m.watch(doc))
   const local = payload.effects
@@ -226,7 +226,7 @@ export async function hydrate(
         components,
         routes,
         motion,
-        mountComponent,
+        component,
         loadComponent,
         onQuery,
         onInvoke,
