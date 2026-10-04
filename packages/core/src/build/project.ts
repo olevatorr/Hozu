@@ -145,7 +145,11 @@ function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
       join(base, 'exports'),
       'exports is a list of declarations',
       `Got ${typeof config.exports}: list the exported queries, mutations, events, tags, fns, views and endpoints themselves.`,
-      { summary: 'List the declarations', snippet: 'exports: [model.listRooms, model.roomsTag]', patch: null },
+      {
+        summary: 'List the declarations',
+        snippet: 'exports: [model.listRooms, model.roomsTag]',
+        patch: null,
+      },
     )
   for (const [i, decl] of (Array.isArray(config.exports) ? config.exports : []).entries()) {
     const kind = infoOf(decl)?.kind

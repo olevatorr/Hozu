@@ -294,7 +294,8 @@ export function transform(source: string, _file = ''): TransformResult {
     return text
   }
   /** `, ` plus the newlines the source had between two operands, so every later line keeps its number. */
-  const sep = (a: Node, b: Node) => `, ${'\n'.repeat((source.slice(a.end, b.start).match(/\n/g) ?? []).length)}`
+  const sep = (a: Node, b: Node) =>
+    `, ${'\n'.repeat((source.slice(a.end, b.start).match(/\n/g) ?? []).length)}`
   const replace = (n: Node, text: string, lower = true) => {
     const lines = (source.slice(n.start, n.end).match(/\n/g) ?? []).length - (text.match(/\n/g) ?? []).length
     const padded = lines > 0 ? text + '\n'.repeat(lines) : text
