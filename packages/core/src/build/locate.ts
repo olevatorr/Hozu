@@ -261,12 +261,29 @@ function locatePage(build: BuildResult, route: string, dev: DevOptions): DevNode
   }
 }
 
+/** `views.ts:42` or `features/notes/views.ts:42:9`: the outermost view node written on that line (ADR 0057 C). */
+function atLine(build: BuildResult, target: string, root: string): string | null {
+  const m = /^(.+\.[cm]?[jt]sx?):(\d+)(?::(\d+))?$/.exec(target)
+  if (!m) return null
+  const [, file, line, column] = m as unknown as [string, string, string, string | undefined]
+  const hits = Object.entries(build.nodes ?? {}).flatMap(([nodeId, pointer]) => {
+    const loc = relative(root, build.sources[pointer])
+    const same =
+      loc &&
+      loc.line === Number(line) &&
+      (loc.file === file || loc.file.endsWith(`/${file}`)) &&
+      (column === undefined || loc.column === Number(column))
+    return same ? [nodeId] : []
+  })
+  return hits.sort((a, b) => a.split('/').length - b.split('/').length || a.localeCompare(b))[0] ?? null
+}
+
 export function locateNode(build: BuildResult, target: string, dev: DevOptions): DevNode | null {
   if (target.startsWith('page:')) return locatePage(build, target.slice(5), dev)
   if (target.startsWith('/pages/')) return locatePage(build, target.slice(7), dev)
   const id = target.startsWith('/')
     ? (Object.entries(build.nodes ?? {}).find(([, p]) => p === target)?.[0] ?? '')
-    : target
+    : (atLine(build, target, dev.root) ?? target)
   const entry = index(build).get(id)
   if (!entry) return null
   const { node, parents, feature, view } = entry

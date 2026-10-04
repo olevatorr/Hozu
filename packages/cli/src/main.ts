@@ -100,6 +100,7 @@ Options:
   --note <text>        show: what the person should see there, in their words
   --done <n>           show: remove note n
   --clear              show: remove every note
+  --in <text>          show: only the instances whose text contains this, e.g. one row of a list
   --with <parts>       add feature: any of detail,toggle,filter,remove,auth (comma-separated)
   --sync               add kit: rewrite the generated block of <id>/tv.ts from the current design system
   --client             add component: a client component (browser code in its own module)
@@ -234,6 +235,7 @@ export async function main(
         note: { type: 'string' },
         done: { type: 'string' },
         clear: { type: 'boolean', default: false },
+        in: { type: 'string' },
         'no-devtools': { type: 'boolean', default: false },
         devtools: { type: 'string' },
         'dry-run': { type: 'boolean', default: false },
@@ -355,10 +357,11 @@ export async function main(
     const showOptions = {
       note: values.note,
       page: values.page,
+      within: values.in,
       done: values.done,
       clear: values.clear === true,
     }
-    if (command === 'show' && !target) {
+    if (command === 'show' && (values.clear === true || values.done !== undefined)) {
       const result = runShow(null, cwd, undefined, showOptions)
       out(asJson ? json(result) : describeShow(result))
       return 0

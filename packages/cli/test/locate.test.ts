@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
@@ -127,5 +127,41 @@ describe('hozu why on a view node or page (ADR 0047, ADR 0053 F)', () => {
     const { code, stderr } = await run(['why', 'nope.Nothing/9'])
     expect(code).toBe(2)
     expect(stderr).toContain('No view node nope.Nothing/9')
+  })
+
+  it('hozu show takes file:line and --in "<text>", and marks a note whose id now names something else (0.15 dogfood)', async () => {
+    const store = join(notes, '.hozu/notes.json')
+    rmSync(store, { force: true })
+    try {
+      const line =
+        readFileSync(join(notes, 'features/notes/views.ts'), 'utf8')
+          .split('\n')
+          .findIndex((l) => l.includes('ui.form({ on: { submit')) + 1
+      const added = JSON.parse(
+        (
+          await run([
+            'show',
+            `features/notes/views.ts:${line}`,
+            '--in',
+            'Buy milk',
+            '--note',
+            'Pin moved',
+            '--json',
+          ])
+        ).stdout,
+      )
+      expect(added.added).toMatchObject({
+        label: '<form> in notes.NotesBoard',
+        within: 'Buy milk',
+        at: `features/notes/views.ts:${line}`,
+      })
+      const saved = JSON.parse(readFileSync(store, 'utf8'))
+      saved.notes[0].label = '<button> in notes.NotesBoard'
+      writeFileSync(store, JSON.stringify(saved))
+      const listed = JSON.parse((await run(['show', '--json'])).stdout)
+      expect(listed.notes[0].stale).toBe('this id now names <form> in notes.NotesBoard')
+    } finally {
+      rmSync(store, { force: true })
+    }
   })
 })

@@ -1,4 +1,5 @@
-import { addNote, clearNotes, labelOf, listNotes, removeNote } from '@hozu/devtools'
+import type { DevNode } from '@hozu/core/ir'
+import { type AgentNote, addNote, clearNotes, labelOf, listNotes, removeNote } from '@hozu/devtools'
 import type { ShowOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
@@ -7,6 +8,7 @@ import { runLocate } from './locate.ts'
 export interface ShowOptions {
   note: string | undefined
   page: string | undefined
+  within: string | undefined
   done: string | undefined
   clear: boolean
 }
@@ -33,7 +35,7 @@ export function runShow(
         'hozu show notes.NotesBoard/0/1 --note "This button now asks before it deletes"',
         'hozu show page:home --note "The page title changed"',
       ])
-    return { added: null, removed: 0, notes: listNotes(root) }
+    return { added: null, removed: 0, notes: checked(loaded, listNotes(root)) }
   }
   if (!o.note?.trim())
     throw new HozuCliError('usage', 'hozu show needs --note: what the person should see there', [
@@ -42,16 +44,33 @@ export function runShow(
   if (o.page !== undefined && !o.page.startsWith('/'))
     throw new HozuCliError('usage', '--page takes a path such as /notes', [])
   const node = runLocate(loaded!, target)
-  const owner = node.owner ? ` in ${node.owner.feature}.${node.owner.view}` : ''
   const path = o.page ?? (node.page && !node.page.path.includes(':') ? node.page.path : null)
   const added = addNote(root, {
     id: node.id,
-    label: `${labelOf(node)}${owner}`,
+    label: labelFor(node),
     at: node.location ? `${node.location.file}:${node.location.line}` : null,
     path,
+    within: o.within?.trim() || null,
     text: o.note.trim(),
   })
   return { added, removed: 0, notes: listNotes(root) }
+}
+
+const labelFor = (node: DevNode) =>
+  `${labelOf(node)}${node.owner ? ` in ${node.owner.feature}.${node.owner.view}` : ''}`
+
+/** A note keeps the label of what it was written for; a node id that now names something else is stale. */
+function checked(loaded: Loaded | null, notes: AgentNote[]): ShowOutput['notes'] {
+  if (!loaded) return notes
+  return notes.map((n) => {
+    if (n.id.startsWith('page:')) return n
+    let now: string | null = null
+    try {
+      now = labelFor(runLocate(loaded, n.id))
+    } catch {}
+    if (now === n.label) return n
+    return { ...n, stale: now ? `this id now names ${now}` : 'this part is gone' }
+  })
 }
 
 export function describeShow(out: ShowOutput): string {
@@ -61,7 +80,7 @@ export function describeShow(out: ShowOutput): string {
   if (!out.notes.length) lines.push('no notes on the page')
   for (const n of out.notes)
     lines.push(
-      `${n.n}  ${n.label}${n.at ? `  ${n.at}` : ''}${n.path ? `  on ${n.path}` : ''}`,
+      `${n.n}  ${n.label}${n.within ? ` in "${n.within}"` : ''}${n.at ? `  ${n.at}` : ''}${n.path ? `  on ${n.path}` : ''}${n.stale ? `  STALE: ${n.stale}` : ''}`,
       `   ${n.text}`,
     )
   return `${lines.join('\n')}\n`

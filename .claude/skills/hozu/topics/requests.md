@@ -9,9 +9,10 @@
   (`hozu docs contracts`).
 - **Finish:** `npx hozu check`, then `npx hozu requests done <n> --result "<one line: what changed>"` for each one;
   it removes the file. Do not edit request files. Report the result lines to the person.
-- **Show the person what changed:** `npx hozu show <the request's Locate id, or page:<route>> --note "<what changed, in
-  their words>"` frames that part on their page under `npm run dev`; a reply comes back as a request. `npx hozu show`
-  lists the notes, `--done <n>` removes one, `--clear` all.
+- **Show the person what changed:** `npx hozu show <views.ts:line | a Locate id | page:<route>> --note "<what changed,
+  in their words>"` frames that part on their page under `npm run dev`; `--in "<text>"` picks one row of a list. A
+  reply comes back as a request. `npx hozu show` lists the notes (a `STALE` one names a part that moved: re-add it),
+  `--done <n>` removes one, `--clear` all.
 
 <!-- more -->
 

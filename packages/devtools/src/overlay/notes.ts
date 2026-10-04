@@ -19,8 +19,11 @@ export function agentNotes(host: AgentHost) {
   let current = 0
   const layer = h('div')
 
-  const elementFor = (n: AgentNote | undefined): Element | null =>
-    !n || n.id.startsWith('page:') ? null : host.doc().querySelector(`[data-hz="${CSS.escape(n.id)}"]`)
+  const elementFor = (n: AgentNote | undefined): Element | null => {
+    if (!n || n.id.startsWith('page:')) return null
+    const all = [...host.doc().querySelectorAll(`[data-hz="${CSS.escape(n.id)}"]`)]
+    return n.within ? (all.find((el) => el.textContent?.includes(n.within!)) ?? null) : (all[0] ?? null)
+  }
 
   function draw() {
     layer.replaceChildren(

@@ -17,6 +17,7 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
    `now:` lines in your summary.
 4. Verify once with the line `hozu map` prints: `npx hozu browse <path> --session '…' --js both --do '…'`. It runs
    the same app as `npm start`, with and without JS; do not start a server or use `curl`.
+5. Show the person what changed, on their page: `npx hozu show <file:line> --note "<in their words>"`.
 
 ## What to touch
 | Change | Touch |
@@ -57,4 +58,4 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 | components, kits, browser APIs, DOM libraries | `components` |
 | languages, env, HTTP, Markdown, tests, deploying, upgrading Hozu | `i18n` `env` `http` `content` `testing` `deploy` |
 | a diagnostic code | `diagnostics` |
-| change requests from Hozu DevTools (`.hozu/requests`) | `requests` |
+| requests from Hozu DevTools; showing a change (`hozu show`) | `requests` |

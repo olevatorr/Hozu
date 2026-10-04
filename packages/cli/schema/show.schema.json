@@ -57,11 +57,21 @@
             "null"
           ]
         },
+        "within": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "text": {
           "type": "string"
         },
         "created": {
           "type": "string"
+        },
+        "stale": {
+          "type": "string",
+          "description": "Set when the target no longer names what the note was written for (the view changed); re-add the note."
         }
       },
       "required": [
@@ -70,6 +80,7 @@
         "label",
         "at",
         "path",
+        "within",
         "text",
         "created"
       ],

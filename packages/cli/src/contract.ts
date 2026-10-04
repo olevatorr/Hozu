@@ -440,8 +440,11 @@ export interface AgentNoteOutput {
   label: string
   at: string | null
   path: string | null
+  within: string | null
   text: string
   created: string
+  /** Set when the target no longer names what the note was written for (the view changed); re-add the note. */
+  stale?: string
 }
 
 export interface RequestsOutput {

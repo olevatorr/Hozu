@@ -27,6 +27,12 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
   `Forbidden` to a route answered 303 without a `Location`; it now redirects there.
 - **`invoke` takes what the mutation's schema takes in:** a field declared `z.coerce.number()` accepts the form's
   text, as the forms guide says (before, `invoke` wanted the parsed `number`).
+- **`hozu show` and `hozu why` take `views.ts:42`** (or `features/notes/views.ts:42:9`): the outermost view node
+  written there, so an agent needs no dev server to find an id. `hozu show … --in "<text>"` frames one row of a
+  list. Listing the notes marks one `STALE` when its id now names another part. SKILL.md's change loop ends with
+  it.
+- **`hozu serve` and `hozu dev` print how to stop them** (`stop: kill <pid>`), so an agent stops its own server
+  instead of every Hozu server on the machine.
 - **`exports` in the old record form** (`exports: { queries: [...] }`) is HZ014 with the list form, not a crash;
   HZ006's fix shows both edits in source form (`imports: [owner]`, `exports: [name]`), each with its feature.
 - **The deploy guide no longer says `public/` is served:** files a page shows are `ui.asset`, files named in data

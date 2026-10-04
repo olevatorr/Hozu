@@ -32,5 +32,7 @@ export async function runDev(
       `lsof -ti:${busy}   # what holds port ${busy}`,
     ])
   })
-  log(`Hozu dev on ${url}${devtools ? ' · DevTools: choose Select in the dock (Alt+Shift+S)' : ''}`)
+  log(
+    `Hozu dev on ${url}${devtools ? ' · DevTools: choose Select in the dock (Alt+Shift+S)' : ''} · stop: kill ${process.pid}`,
+  )
 }

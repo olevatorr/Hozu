@@ -41,7 +41,7 @@ describe('one app module (ADR 0043 E)', () => {
     const server = await runServe(await load(undefined, join(root, 'examples/notes')), (l) => lines.push(l))
     delete process.env.PORT
     try {
-      expect(lines).toEqual(['Notes on http://localhost:4793'])
+      expect(lines).toEqual([`Notes on http://localhost:4793 · stop: kill ${process.pid}`])
       const signedOut = await fetch('http://localhost:4793/', { redirect: 'manual' })
       expect([signedOut.status, signedOut.headers.get('location')]).toEqual([303, '/login'])
       const login = await fetch('http://localhost:4793/login')

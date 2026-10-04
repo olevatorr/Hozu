@@ -50,7 +50,8 @@ Agents set up by `create-hozu` know the loop (`hozu docs requests`): read the re
 Your agent can point back. After a change it runs `hozu show` on the part it changed, with a note in your words:
 
 ```sh
-npx hozu show notes.NotesBoard/0/1 --note "Delete now asks before it removes a note"
+npx hozu show features/notes/views.ts:42 --note "Delete now asks before it removes a note"
+npx hozu show features/notes/views.ts:51 --in "Buy milk" --note "Pinned notes go first"
 npx hozu show page:home --note "The page title is shorter"
 ```
 

@@ -12,6 +12,8 @@ export interface AgentNote {
   at: string | null
   /** A page path where the target is shown, when one is known. */
   path: string | null
+  /** Only the instances of the target whose text contains this (one row of a list), like browse's `in "<text>"`. */
+  within: string | null
   text: string
   created: string
 }
@@ -74,6 +76,7 @@ export function replyMarkdown(note: AgentNote, reply: string): string {
     `- Note: ${note.text}`,
     note.at ? `- Where: \`${note.at}:1\`` : `- Where: ${note.id}`,
     ...(note.path ? [`- Page: ${note.path}`] : []),
+    ...(note.within ? [`- In: "${note.within}"`] : []),
     `- Reply: ${reply}`,
     '',
     `The note stays on the page until \`hozu show --done ${note.n}\` removes it.`,
