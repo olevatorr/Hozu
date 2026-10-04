@@ -1,6 +1,6 @@
 # ADR 0054 — Declared access: who may read and change what (draft)
 
-- **Status:** draft for discussion (2026-10-03). It is not scheduled. If accepted, it is built in 0.15.
+- **Status:** decided (owner, 2026-10-04): option A, missing access is an error, the query row check reports. Built in 0.15 (ADR 0056 B).
 - **Problem:** a user seeing another user's data is the most damaging mistake an agent makes in a web app, and the
   most common one.
   - Every trial's hidden acceptance tests per-user isolation for exactly this reason (trial 0012, trial 0020).

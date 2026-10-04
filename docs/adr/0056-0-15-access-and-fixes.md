@@ -1,0 +1,90 @@
+# ADR 0056 — 0.15: declared access, test tools for it, and the fixes the 0.14 dogfood found
+
+- **Status:**
+  - **Scope accepted** (owner, 2026-10-04): declared access as an error, a row check that reports, and all 13
+    dogfood findings plus `bench:frameworks`.
+  - **Phase A is decided.** Phases B and C are proposed; the owner confirms each before it starts.
+- **Sources:**
+  - ADR 0054 (the access draft, now decided: option A);
+  - the 0.14 dogfood (`hozu-dogfood-0.14/*/FRICTION.md`, each finding reproduced in `hozu-dogfood-0.14/repro`);
+  - trial 0024 (an incomplete new feature passed `hozu check` with Sonnet 5).
+
+## Phase A — fixes (decided)
+| # | Finding | Decision |
+|---|---|---|
+| A1 | An `href` built with `ui.link` from machine context keeps its server value after the context changes | Bug: the client re-evaluates link attributes like any other bound attribute. A browser test asserts `/?currency=USD` after the event |
+| A2 | An endpoint `fail('E', { message, extra })` drops `extra` | Bug: the response is `{ error, ...data }`, with every field the error schema declares. The `fail` data is checked against the schema in development |
+| A3 | An optional env variable set to the empty string fails to parse | Bug: the env loader treats `''` as unset (server and public) before parsing. `hozu env --example` writes an optional variable as a comment `# X=` |
+| A4 | `views --more` says a query branch may return a list; HZ014 requires one element | Docs: a list is valid only as a `?:` / `&&` branch. Query branches and each items return one node. The topic is fixed, and a docs test checks the sentence against the rule |
+| A5 | A disallowed endpoint status gives HZ014 and HZ046, and points at `views` | One diagnostic: HZ046 says which statuses an endpoint error may answer, and points at `endpoints` |
+| A6 | `hozu plan /journal` wants a route name | `plan` accepts a path and resolves it to its route; an unknown path suggests the routes |
+| A7 | `hozu check --update-lock` prints only "lock updated" | It prints the accepted `now:` lines (all of them; `--json` carries them as `accepted`) |
+| A8 | `hozu <command> --help` prints the global help | Each command prints its own usage lines and options |
+| A9 | `head.input`'s second argument (the locale) is undocumented, and `locale` is a `string` | Documented in `pages` and `i18n`. The view's and `head.input`'s `locale` is typed as the union of `site.lang` and `site.locales` |
+| A10 | `@hozu/content` is not installed by the scaffold, and `loadCollection` has one line of docs | The content topic says to install it, and documents slugs (file names), sub-folders, order, YAML dates and fields |
+| A11 | The scaffold stores English text in `ctx.error` (against "machines hold codes") | The scaffold stores a code (`'duplicate'`) and the view picks the text |
+| A12 | `hozu serve` (`npm start`) leaves `NODE_ENV` unset, so a session app starts without `SESSION_SECRET` | `hozu serve` runs as production unless `NODE_ENV` is set: a session app without `SESSION_SECRET` refuses to start with the fix. `hozu dev`, `get`, `browse`, `call` and `testApp` are unchanged |
+| A13 | `og:locale` is `en` for `site.lang: 'en'`; the sitemap has no alternates | `og:locale` uses the likely region from `Intl.Locale.maximize()` (`en` → `en_US`, `de` → `de_DE`, `zh-TW` → `zh_TW`). The sitemap lists each URL's `xhtml:link` alternates when `site.locales` is set. `lastmod` is not added: no declared date is reliable for every entry |
+| A14 | `bench:frameworks`: the Hozu row no longer reacts to clicks (stale since about ADR 0024) | The row renders through the generated render path, like `hozu build`. A correctness check (hydrate, 200 clicks, the count) joins `pnpm bench` so it cannot rot silently; the timings stay out of the gate |
+| A15 | `browse --js both` reports DIFFERS when two modes create different random ids | The parity compare ignores route parameters in the location; text and status are still compared |
+| A16 | Server resolvers do not see public env; `env.internal` applies only to `'either'` effects | Docs: the env topic says so, and shows reading both URLs in a server resolver |
+
+## Phase B — declared access (proposed; confirm before it starts)
+- **The rule:**
+  - Every `scope: 'user'` query and every mutation declares `access`.
+  - A missing `access` is a type error, and HZ088 in untyped code.
+  - `access` on a `scope: 'public'` query is HZ089 (warning).
+- **The forms:** one canonical form per meaning. The callbacks are lowered like guards, so the IR holds paths, not
+  functions.
+  - **`anyone()`:** no condition. On a `scope: 'user'` query it is HZ090 (a warning, which can be accepted with a
+    reason).
+  - **`signedIn()`:** the session is not `null`.
+  - **`allow(({ session, input }) => session.role === 'admin')`:** a guard over the session and the input.
+  - **`owner({ row: (n) => n.owner, session: (s) => s.user })`, on a query:** every row of the output (or the
+    output itself, when it is an object) has `row(…) === session(…)`.
+  - **`owner({ load: getNote, input: (i) => ({ id: i.id }), row: (n) => n.owner, session: (s) => s.user })`, on a
+    mutation:** the framework loads the row with that query first, and the check is made on it.
+- **At run time:**
+  - **Refused:** a failed `signedIn` / `allow` / mutation `owner` answers the framework error `Forbidden`, which is
+    optional in `failed`, like `Invalid`. The resolver does not run.
+  - **Query `owner` (the owner's decision):** rows that do not match are removed. In development, and in
+    `hozu check`'s runtime pass, that is an error (HZ091) naming the resolver, because it means the query read
+    too much. In production it is logged once per query and the rows are dropped.
+- **Testing:**
+  - `hozu why <effect>` and `hozu map` show each effect's access.
+  - The lock records access, so a change to it is a reviewed change, like a transition.
+  - `testApp` and `hozu call --session` exercise it.
+  - Phase C adds the cross-user check.
+- **Migration (0.14 → 0.15):**
+  - `access: anyone()` on every effect that needs one. The IR keeps the old behaviour, so the app runs as before.
+  - The new warnings (HZ090) then list every user query to tighten, or to accept with a reason.
+  - Nothing is tightened silently.
+- **Why `owner` needs the row to carry its owner:**
+  - Today's apps (`examples/notes`) filter by `session.user` in the resolver and do not return the owner.
+  - The framework can check only what it sees, so `owner` asks the output to include the owner field.
+  - Where that is unwanted, `signedIn()` plus resolver scoping is the honest declaration.
+
+## Phase C — test tools for access and the dogfood's gaps (proposed; confirm before it starts)
+- **`hozu call <endpoint>`:** endpoints with `--header 'Authorization: Bearer …'` and `--body`. Today it refuses
+  endpoints.
+- **`hozu browse --header`:** a header on every request of an actor.
+- **Steps that remember:** `remember <name> from <selector|url>` and `$name` in later steps. One actor can then use
+  another's URL or id, so "B cannot open A's note" is one chain.
+- **`hozu browse --do 'post <path> field=value'`:** a forged form post as the current actor, without the page.
+  The answer status and text are reported.
+- **Generated access checks:** for every `owner` rule, `hozu check` runs the pattern "user B reads / writes user
+  A's row → `Forbidden` or not listed". It uses the app's resolvers in memory, with two sessions.
+
+## Not in 0.15
+- Option C of ADR 0054 (a declared data layer with derived invalidation).
+- Session-aware tags.
+- More than one machine per feature.
+- A scaffold that is not a to-do list.
+- Checks at the level of the requirement (the Sonnet 5 finding).
+
+These are noted for later ADRs.
+
+## Release
+- Phase A ships first on this branch, with the gate green. B and C follow after the owner confirms them.
+- 0.15.0 is released when all three are done.
+- **The guide:** every phase updates the skill topics within the short-form budget (ADR 0053 E).
