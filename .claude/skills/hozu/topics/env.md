@@ -11,22 +11,25 @@ project({
 })
 ```
 - **Parsed at startup:** a missing value stops startup.
-- **Who reads what:** resolvers `ctx.env` (server); views `ui.env(PublicEnv).SUPPORT_EMAIL`; fetch.ts `env` (public);
-  machines cannot read env (HZ041).
+- **Who reads what:** resolvers `ctx.env` (the `server` variables only); views `ui.env(PublicEnv).SUPPORT_EMAIL`;
+  fetch.ts `env` (public); machines cannot read env (HZ041). A server resolver that needs a URL the browser also
+  uses declares it in `server` too.
 - **Public values are sent to the browser.** Secrets go in `server`; a public name that looks secret (`…_SECRET`,
   `…_TOKEN`, `…_KEY`) is HZ084.
 - Keep `.env` and `.env.local` out of git.
 
 <!-- more -->
 
-- **Parsing:** defaults and `z.coerce` apply.
+- **Parsing:** defaults and `z.coerce` apply; a variable set to the empty string counts as unset.
 - **Public values** reach page payloads and a static export (written into the pages at export time). Rename a
   secret-looking name `PUBLIC_…` only if it is meant to be public.
 - **`internal`:** for an API the browser reaches at its public URL and the server reaches inside the network.
   - fetch.ts keeps reading `env.API_URL`;
   - on the server it gets `API_INTERNAL` when that is set, and the public value otherwise;
   - the browser and CSP `connect` only ever see the public one;
-  - a mapping to undeclared variables is HZ085.
+  - a mapping to undeclared variables is HZ085;
+  - it applies to fetch.ts only. A `runs: 'server'` resolver reads its own `server` variables:
+    `ctx.env.API_INTERNAL ?? ctx.env.API_URL` with both declared in `server`.
 - **`files`** are read by `hozu dev`, `serve`, `check`, `get`, `call`, `browse`, `build` and `env`. On the edge
   (`createHandler`) and on hosting platforms, set the variables in the platform.
 - The files are read after `hozu.config.ts` is imported: a value the config itself reads at import time (rare)
