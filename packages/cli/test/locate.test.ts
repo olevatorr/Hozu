@@ -11,7 +11,7 @@ vi.setConfig({ testTimeout: 30_000 })
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const notes = join(root, 'examples', 'notes')
 const bin = `${root}packages/cli/bin/hozu.js`
-const schema = JSON.parse(readFileSync(`${root}packages/cli/schema/locate.schema.json`, 'utf8'))
+const schema = JSON.parse(readFileSync(`${root}packages/cli/schema/why.schema.json`, 'utf8'))
 
 async function run(args: string[]) {
   try {
@@ -23,24 +23,24 @@ async function run(args: string[]) {
   }
 }
 
-describe('hozu locate (ADR 0047)', () => {
+describe('hozu why on a view node or page (ADR 0047, ADR 0053 F)', () => {
   it('resolves a DevTools id to the authored line under the real CLI, not a transformed one', async () => {
-    const { code, stdout } = await run(['locate', 'account.Login/2/1', '--json'])
+    const { code, stdout } = await run(['why', 'account.Login/2/1', '--json'])
     expect(code).toBe(0)
     const out = JSON.parse(stdout)
     expect(new Ajv({ strict: false }).validate(schema, out)).toBe(true)
-    expect(out).toMatchObject({
+    expect(out.node).toMatchObject({
       kind: 'element',
       tag: 'button',
       location: { file: 'features/account/views.ts', line: 38 },
       component: { ref: 'ui.Button', declaration: { file: 'ui/button.ts' } },
     })
     const line = readFileSync(join(notes, 'features/account/views.ts'), 'utf8').split('\n')[37]
-    expect(out.excerpt.lines).toContain(line)
+    expect(out.node.excerpt.lines).toContain(line)
   })
 
   it('names a translated text by its message key and base-locale string', async () => {
-    const out = JSON.parse((await run(['locate', 'account.Login/2/1', '--json'])).stdout)
+    const out = JSON.parse((await run(['why', 'account.Login/2/1', '--json'])).stdout).node
     expect(out.children[0].text).toBe('"Sign in" · message account.signIn')
     expect(out.children[0].source).toEqual({
       kind: 'message',
@@ -51,7 +51,7 @@ describe('hozu locate (ADR 0047)', () => {
   })
 
   it('says where bound text comes from: the query field, the list item, the machine context', async () => {
-    const source = async (id: string) => JSON.parse((await run(['locate', id, '--json'])).stdout).source
+    const source = async (id: string) => JSON.parse((await run(['why', id, '--json'])).stdout).node.source
     const query = (line: number) => ({ file: 'features/account/model.ts', line, column: expect.any(Number) })
     expect(await source('account.AccountBar/0/ready/1')).toEqual({
       kind: 'data',
@@ -74,7 +74,7 @@ describe('hozu locate (ADR 0047)', () => {
   })
 
   it('names the transition an event takes, at its line in the model', async () => {
-    const out = JSON.parse((await run(['locate', 'account.Login/2', '--json'])).stdout)
+    const out = JSON.parse((await run(['why', 'account.Login/2', '--json'])).stdout).node
     expect(out.events).toEqual([
       {
         dom: 'submit',
@@ -93,16 +93,16 @@ describe('hozu locate (ADR 0047)', () => {
   })
 
   it('counts the places a change would reach: every use of the component, every text using the message', async () => {
-    const button = JSON.parse((await run(['locate', 'account.Login/2/1', '--json'])).stdout)
+    const button = JSON.parse((await run(['why', 'account.Login/2/1', '--json'])).stdout).node
     expect(button.component.uses).toBe(6)
     expect(button.children[0].source.uses).toBe(2)
-    const heading = JSON.parse((await run(['locate', 'account.Login/1', '--json'])).stdout)
+    const heading = JSON.parse((await run(['why', 'account.Login/1', '--json'])).stdout).node
     expect(heading.children[0].source.uses).toBe(2)
     expect(heading.component).toBeNull()
   })
 
   it('locates a page: its declaration, route, views and head fields', async () => {
-    const out = JSON.parse((await run(['locate', 'page:home', '--json'])).stdout)
+    const out = JSON.parse((await run(['why', 'page:home', '--json'])).stdout).node
     expect(out).toMatchObject({
       id: 'page:home',
       kind: 'page',
@@ -118,13 +118,13 @@ describe('hozu locate (ADR 0047)', () => {
   })
 
   it('accepts the IR pointer, which outlives line numbers', async () => {
-    const byId = JSON.parse((await run(['locate', 'account.Login/1', '--json'])).stdout)
-    const byPointer = JSON.parse((await run(['locate', byId.pointer, '--json'])).stdout)
+    const byId = JSON.parse((await run(['why', 'account.Login/1', '--json'])).stdout).node
+    const byPointer = JSON.parse((await run(['why', byId.pointer, '--json'])).stdout).node
     expect(byPointer.location).toEqual(byId.location)
   })
 
   it('explains an unknown id', async () => {
-    const { code, stderr } = await run(['locate', 'nope.Nothing/9'])
+    const { code, stderr } = await run(['why', 'nope.Nothing/9'])
     expect(code).toBe(2)
     expect(stderr).toContain('No view node nope.Nothing/9')
   })

@@ -131,22 +131,25 @@ describe('A5 CLI contract', () => {
     ])
   })
 
-  it('impact, explain and locate still answer, with a deprecation on stderr', async () => {
-    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
-    const r = await run(['explain', 'cart.idle', '--json'])
-    const written = stderr.mock.calls.map((c) => c[0])
-    stderr.mockRestore()
-    expect([r.code, JSON.parse(r.stdout).state]).toEqual([0, 'idle'])
-    expect(written).toEqual([
-      'hozu explain is deprecated and removed in 0.15: use hozu why cart.idle (ADR 0053 F)\n',
-    ])
+  it('impact, explain and locate are removed in 0.15 and point at hozu why', async () => {
+    for (const command of ['impact', 'explain', 'locate']) {
+      const r = await run([command, 'cart.idle', '--json'])
+      expect([r.code, JSON.parse(r.stdout).error]).toEqual([
+        2,
+        {
+          code: 'usage',
+          message: `hozu ${command} was removed in 0.15: hozu why answers it (ADR 0053 F)`,
+          suggestions: ['hozu why cart.idle'],
+        },
+      ])
+    }
   })
 
-  it('explain --json matches its schema and lists covering contracts', async () => {
-    const { code, stdout } = await run(['explain', 'cart.idle', '--json'])
-    const out = JSON.parse(stdout)
+  it('why on a state lists its transitions with covering contracts', async () => {
+    const { code, stdout } = await run(['why', 'cart.idle', '--json'])
     expect(code).toBe(0)
-    expectSchema('explain', out)
+    expectSchema('why', JSON.parse(stdout))
+    const out = JSON.parse(stdout).state
     expect(out).toMatchObject({ feature: 'cart', state: 'idle', initial: true, final: false, invoke: null })
     expect(out.outgoing[0]).toEqual({
       id: 'idle/on/cart.AddItem/0',
@@ -164,23 +167,23 @@ describe('A5 CLI contract', () => {
       'cart.AddItem',
       'cart.Checkout',
     ])
-    const text = (await run(['explain', 'cart.adding'])).stdout
+    const text = (await run(['why', 'cart.adding'])).stdout
     expect(text).toContain(
       'invoke: cart.addItem(context.pending)  runs: server  errors: OutOfStock, Unexpected',
     )
   })
 
-  it('explain suggests the closest state', async () => {
-    const { code, stdout } = await run(['explain', 'cart.idel', '--json'])
+  it('why suggests the closest state', async () => {
+    const { code, stdout } = await run(['why', 'cart.idel', '--json'])
     expect(code).toBe(2)
     expect(JSON.parse(stdout).error.suggestions).toEqual(['cart.idle'])
   })
 
-  it('impact --json matches its schema', async () => {
-    const { code, stdout } = await run(['impact', 'cart.addItem', '--json'])
-    const out = JSON.parse(stdout)
+  it('why on a declaration says what it invalidates and who uses it', async () => {
+    const { code, stdout } = await run(['why', 'cart.addItem', '--json'])
     expect(code).toBe(0)
-    expectSchema('impact', out)
+    expectSchema('why', JSON.parse(stdout))
+    const out = JSON.parse(stdout).impact
     expect(out).toMatchObject({
       target: 'cart.addItem',
       kind: 'mutation',
@@ -193,10 +196,10 @@ describe('A5 CLI contract', () => {
       '"adding" invokes cart.addItem',
       'cart.CartPanel/1 reads cart.getCart',
     ])
-    const text = (await run(['impact', 'cart.getCart'])).stdout
+    const text = (await run(['why', 'cart.getCart'])).stdout
     expect(text).toContain("cart.getCart  (query, runs: server, access: 'signedIn')")
     expect(text).toContain('invalidated by: cart.addItem, cart.checkout, cart.removeItem')
-    const unknown = await run(['impact', 'cart.addItm', '--json'])
+    const unknown = await run(['why', 'cart.addItm', '--json'])
     expect(unknown.code).toBe(2)
     expect(JSON.parse(unknown.stdout).error.suggestions).toEqual(['cart.addItem'])
   })

@@ -22,16 +22,6 @@ export const targets = [
   },
   {
     source: 'packages/cli/src/contract.ts',
-    type: 'ExplainOutput',
-    out: 'packages/cli/schema/explain.schema.json',
-  },
-  {
-    source: 'packages/cli/src/contract.ts',
-    type: 'ImpactOutput',
-    out: 'packages/cli/schema/impact.schema.json',
-  },
-  {
-    source: 'packages/cli/src/contract.ts',
     type: 'PlanOutput',
     out: 'packages/cli/schema/plan.schema.json',
   },
@@ -99,11 +89,6 @@ export const targets = [
     source: 'packages/cli/src/contract.ts',
     type: 'RenderOutput',
     out: 'packages/cli/schema/render.schema.json',
-  },
-  {
-    source: 'packages/cli/src/contract.ts',
-    type: 'LocateOutput',
-    out: 'packages/cli/schema/locate.schema.json',
   },
   {
     source: 'packages/cli/src/contract.ts',

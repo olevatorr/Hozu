@@ -253,6 +253,18 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   (`hozu docs <topic> --more`, default ≤ half of 0.13's 72.7 KB, tested); `hozu why <declaration | component |
   state | node | page:route>`; `impact` / `explain` / `locate` deprecated (removed in 0.15), `graph` removed;
   ADR 0055 pre-registers trial 0024 (cold / warm / Nuxt).
+- 0.15 (ADR 0056, breaking): declared access: every `runs: 'server'` `scope: 'user'` query and server mutation has
+  `access: 'anyone' | 'signedIn' | { allow } | { owner: { row, session, load?, input? } }` (no exports; callbacks
+  lowered like guards, `AccessIR` with `session` refs; HZ088 missing / bad field, HZ089 unenforced, HZ090 user data
+  for anyone, HZ091 a list with foreign rows: dev error, prod dropped + logged once); the framework error `Forbidden`
+  (reserved, optional in `failed`, unmapped head → 403); access in the lock (`pages.access`), `hozu why` and `map`;
+  migrate 0.14 → 0.15 adds `access: 'anyone'`. Tools: `hozu call` on endpoints (`--header`, POST needs `--write`),
+  `hozu browse --header` (per actor), `remember <name> from url|<selector> [@attr]` + `$name`, `post <path> a=1`.
+  `impact` / `explain` / `locate` removed (`hozu why`). Fixes from the 0.14 dogfood (ADR 0056 A1–A16): client
+  `ui.link` attributes re-evaluate, endpoint `fail` data reaches the response, empty env = unset, `hozu plan <path>`,
+  `--update-lock` prints the accepted lines, per-command `--help`, `hozu serve` runs as production, `og:locale` with
+  region and sitemap alternates, `bench:frameworks` repaired (B2 in `pnpm bench`, 50 ms). Perf: fn modules are
+  ordered module scripts that register by URL, so hydration does not wait on `import()` (hydrate 41 → 6 ms).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of
@@ -283,7 +295,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 
 ## CLI (agent-facing, all support --json)
 `hozu inspect <feature>` · `hozu check [--no-types]` · `hozu why <feature>.<symbol|state> | <node> | page:<route>`
-`hozu plan <route>`
+`hozu plan <route|path>` · `hozu call <feature>.<effect|endpoint>` · `hozu browse <path> --do <step>`
 
 ## Cost rules
 - Do not add CI workflows, scheduled jobs, or any paid/external service without explicit approval.

@@ -1,4 +1,5 @@
 import { dirname, relative } from 'node:path'
+import { closest } from '@hozu/validator'
 import type { WhyOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
@@ -40,7 +41,17 @@ export function runWhy(loaded: Loaded, target: string | undefined, cwd: string):
     const at = sourceOf(loaded, [], `/features/${owner}/machine/states/${name}/`)
     return { target, kind: 'state', at: at ?? sourceOf(loaded, [`/features/${owner}/machine`], null), state }
   }
-  const impact = runImpact(loaded, target, cwd)
+  const impact = (() => {
+    try {
+      return runImpact(loaded, target, cwd)
+    } catch (error) {
+      const states = Object.keys(loaded.build().ir.features[owner]?.machine?.states ?? {})
+      if (!(error instanceof HozuCliError) || dot <= 0) throw error
+      const state = closest(name, states)
+      if (state) throw new HozuCliError('unknown-feature', error.message, [`${owner}.${state}`])
+      throw error
+    }
+  })()
   const pointers =
     impact.kind === 'component'
       ? [`/kits/${owner}/components/${name}`, `/features/${owner}/components/${name}`]
@@ -65,6 +76,3 @@ export function describeWhy(out: WhyOutput): string {
           : describeImpact(out.impact)
   return `${head}\n${body}${body.endsWith('\n') ? '' : '\n'}`
 }
-
-export const deprecated = (command: string, target: string | undefined) =>
-  `hozu ${command} is deprecated and removed in 0.15: use hozu why ${target ?? '<target>'} (ADR 0053 F)\n`

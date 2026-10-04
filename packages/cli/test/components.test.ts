@@ -141,11 +141,14 @@ describe('the component tools (ADR 0045 I)', () => {
     )
   })
 
-  it('lists who uses a component with hozu impact', async () => {
-    const { out } = await json('impact', ['impact', 'ui.Input'])
+  it('lists who uses a component with hozu why', async () => {
+    const { out: why } = await json('why', ['why', 'ui.Input'])
+    const out = why.impact
     expect(out).toMatchObject({ target: 'ui.Input', kind: 'component', features: ['account', 'notes'] })
     expect(out.uses.map((u: { added: string[] }) => u.added)).toEqual([['w-full'], ['flex-1'], ['w-full']])
-    expect((await run(['impact', 'ui.Input'])).stdout).toMatch(/^ui\.Input {2}\(component, kit ui\)\nuses:\n/)
+    expect((await run(['why', 'ui.Input'])).stdout).toMatch(
+      /^ui\.Input {2}component {2}at [^\n]+\nui\.Input {2}\(component, kit ui\)\nuses:\n/,
+    )
   })
 
   it('maps the kits and the components each page uses', async () => {

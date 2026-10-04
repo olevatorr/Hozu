@@ -14,15 +14,12 @@ import {
 import { runBuild } from './commands/build.ts'
 import { describeCall, runCall } from './commands/call.ts'
 import { runCheck, startTypes } from './commands/check.ts'
-import { describeComponent, describeComponentImpact } from './commands/components.ts'
+import { describeComponent } from './commands/components.ts'
 import { runDev } from './commands/dev.ts'
 import { runDocs } from './commands/docs.ts'
 import { describeEnv, runEnv } from './commands/env.ts'
-import { describeExplain, runExplain } from './commands/explain.ts'
-import { describeImpact, runImpact } from './commands/impact.ts'
 import { runInspect } from './commands/inspect.ts'
 import { describeAddKit, runAddKit } from './commands/kits.ts'
-import { describeLocate, runLocate } from './commands/locate.ts'
 import { describeMap, runMap } from './commands/map.ts'
 import { describeMigrate, runMigrate } from './commands/migrate.ts'
 import { describePlan, runPlan } from './commands/plan.ts'
@@ -32,7 +29,7 @@ import { describeRequests, runRequests } from './commands/requests.ts'
 import { runServe } from './commands/serve.ts'
 import { runSkill } from './commands/skill.ts'
 import { featuresCreated, seedLockIsolated } from './commands/validate.ts'
-import { deprecated, describeWhy, runWhy } from './commands/why.ts'
+import { describeWhy, runWhy } from './commands/why.ts'
 import { HozuCliError } from './errors.ts'
 import { load } from './load.ts'
 import { human, json } from './output.ts'
@@ -45,7 +42,6 @@ Commands:
   why <target>              What it is, where (file:line), what uses it and what it affects: a declaration
                             (cart.addItem), a component (ui.Button), a state (cart.idle) with its transitions
                             and contracts, a view node (DevTools id or IR pointer) or a page (page:home)
-  explain | locate | impact Deprecated: hozu why answers each (removed in 0.15)
   plan <route|path>         Derived render plan of a route (home) or a path (/products/mug): regions, cache modes, islands
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
   serve                     Start the app module (project({ app })) on PORT with adapter-node: what npm start runs
@@ -258,9 +254,6 @@ export async function main(
       'add',
       'inspect',
       'why',
-      'explain',
-      'locate',
-      'impact',
       'plan',
       'render',
       'build',
@@ -279,6 +272,12 @@ export async function main(
         'hozu why <feature>.<state>   # a state, its transitions and contracts',
         'hozu inspect <feature> --json   # the whole IR',
       ])
+    if (command === 'impact' || command === 'locate' || command === 'explain')
+      throw new HozuCliError(
+        'usage',
+        `hozu ${command} was removed in 0.15: hozu why answers it (ADR 0053 F)`,
+        [`hozu why ${target ?? '<target>'}`],
+      )
     if (command === 'post')
       throw new HozuCliError(
         'usage',
@@ -460,19 +459,6 @@ export async function main(
       out(asJson ? json(result) : describeWhy(result))
       return 0
     }
-    if (command === 'impact' || command === 'locate' || command === 'explain')
-      process.stderr.write(deprecated(command, target))
-    if (command === 'impact') {
-      const result = runImpact(loaded, target, cwd)
-      out(
-        asJson
-          ? json(result)
-          : result.kind === 'component'
-            ? describeComponentImpact(result)
-            : describeImpact(result),
-      )
-      return 0
-    }
     if (command === 'render') {
       const result = await runRender(loaded, cwd, target, {
         variant: values.variant ?? [],
@@ -481,16 +467,6 @@ export async function main(
       })
       out(asJson ? json(result) : describeRender(result))
       return result.ok ? 0 : 1
-    }
-    if (command === 'locate') {
-      const result = runLocate(loaded, target)
-      out(asJson ? json(result) : describeLocate(result))
-      return 0
-    }
-    if (command === 'explain') {
-      const result = runExplain(loaded, target)
-      out(asJson ? json(result) : describeExplain(result))
-      return 0
     }
     return 2
   } catch (error) {

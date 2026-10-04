@@ -1,6 +1,6 @@
 {
   "name": "@hozu/machine",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Isomorphic compiled state-machine interpreter behind Hozu features",
   "keywords": [
     "hozu",

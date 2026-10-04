@@ -95,4 +95,18 @@ These are noted for later ADRs.
 ## Release
 - Phase A ships first on this branch, with the gate green. B and C follow after the owner confirms them.
 - 0.15.0 is released when all three are done.
+- **Also in 0.15:** `hozu impact`, `explain` and `locate` are removed, as the 0.14 CHANGELOG announced; `hozu why`
+  answers each, and an unknown `why` target suggests the closest state as well as declarations.
+
+## Result
+- **Phase A:** all 16 rows done, except A9's typed locale (documented instead, see the row). Each fix has a test; A14
+  added budget B2 to `pnpm bench`.
+- **Performance:** hydrate 41 → 6 ms, interactive 62 → 26.5 ms under 4× CPU (27.8 ms in benchmark 0001), JS 7.9 KB
+  gzip. B2 fails above 50 ms.
+- **Phase B:** access is declared on every server-run user query and mutation in the examples (`notes`: `'signedIn'`
+  plus a `NotAdmin` error mapped to 403; blog and cart: `'signedIn'`; all others `'anyone'`). The runtime test
+  covers each form, the dev / production split of HZ091, the load path of a mutation and the 403 page. The migrate
+  test runs 0.10 → 0.15 and ends clean after `--update-lock`.
+- **Phase C:** `hozu call` on endpoints, `browse --header`, `remember` / `$name` and `post`, each tested in both JS
+  modes; C5 deferred (see Phase C).
 - **The guide:** every phase updates the skill topics within the short-form budget (ADR 0053 E).

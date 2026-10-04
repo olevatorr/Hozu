@@ -41,6 +41,20 @@ User-scoped queries take `'request'` or `'live'`; any other freshness is HZ049. 
 
 Session-aware applications declare the session schema on the project. Only user-scoped resolvers receive the session identity.
 
+## Say who may run it
+
+Every server-run `scope: 'user'` query and every server-run mutation declares `access`, like `runs`. A missing `access` is a type error, and HZ088 in untyped code, so reading another visitor's data cannot be written by accident.
+
+| `access` | Who may run it |
+| --- | --- |
+| `'signedIn'` | Any signed-in visitor. The resolver reads that visitor's data by `session`. |
+| `{ owner: { row: (n) => n.owner, session: (s) => s.user } }` | On a query, the framework checks the output: one row that is not the visitor's is `Forbidden`, and a list holding such rows is HZ091 in development (the resolver read too much), dropped and logged once in production. |
+| `{ owner: { load: getNote, input: (i) => ({ id: i.id }), row: …, session: … } }` | On a mutation, the framework reads the row with `load` and checks it before the resolver runs. |
+| `{ allow: ({ session, input }) => session.role === 'admin' }` | A condition on the session and the input. |
+| `'anyone'` | No condition: sign-in, a newsletter. On user data it is HZ090. |
+
+A refusal is the framework error `Forbidden`, before the resolver runs. It is optional in `failed`, like `Invalid`. A page whose head query is refused answers 403, or maps it: `failed: { Forbidden: login }`. Access is recorded in `hozu.lock.json`, so a change to it is reviewed like a transition. Check it as two visitors in one chain: `hozu browse / --as ada --session '{"user":"ada"}' --do 'remember note from li a @href' --as bob --session '{"user":"bob"}' --do 'goto $note'`.
+
 ## Choose where it runs
 
 Every query and mutation declares what its implementation needs. Hozu derives where it runs on each deployment.

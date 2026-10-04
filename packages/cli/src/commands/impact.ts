@@ -8,7 +8,7 @@ export function runImpact(loaded: Loaded, target: string | undefined, cwd: strin
   if (!target?.includes('.'))
     throw new HozuCliError(
       'usage',
-      'Expected <feature>.<symbol> or a component id, e.g. hozu impact cart.addItem',
+      'Expected <feature>.<symbol> or a component id, e.g. hozu why cart.addItem',
     )
   const build = loaded.build(true)
   const component = findComponent(build.ir, target)

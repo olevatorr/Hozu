@@ -1,5 +1,91 @@
 # Changelog
 
+## 0.15.0 — Say who may read and change what, test it as two visitors, and the 0.14 dogfood fixes (ADR 0056)
+
+In 0.14, nothing in an app said who may run a query or a mutation: the rule lived in each resolver, so a missing check
+was invisible to `hozu check`. 0.15 makes it a declaration, like `runs`. The tools can now test it as two visitors
+in one command. Four apps built with 0.14 found the bugs fixed below, and a performance regression from 0.12 is
+found and fixed.
+
+**Upgrade:** `npx -p @hozu/cli@latest hozu migrate`, install, then `npx hozu migrate` again. The step adds
+`access: 'anyone'` (the 0.14 behaviour, so the IR does not change) to every server-run `scope: 'user'` query and
+every server-run mutation. HZ090 then lists each user query to tighten. Run `hozu check --update-lock` to record
+access in the lock.
+
+### Breaking
+- **`access` is required** on every `runs: 'server'` `scope: 'user'` query and every `runs: 'server'` mutation. A
+  missing `access` is a type error, and HZ088 in untyped code.
+- **`Forbidden` is a reserved error name**, like `Invalid`.
+- **`hozu impact`, `explain` and `locate` are removed:** `hozu why` answers each (deprecated in 0.14).
+- **`hozu serve` (`npm start`) runs as production** unless `NODE_ENV` is set: a session app without
+  `SESSION_SECRET` now refuses to start, as it would in production.
+
+### Declared access
+- `access: 'signedIn'`: any signed-in visitor.
+- `access: { owner: { row: (n) => n.owner, session: (s) => s.user } }`: the framework checks the output.
+  - One row that is not the visitor's is `Forbidden`.
+  - A list holding such rows is HZ091, because the resolver read too much. It is an error in development; in
+    production the rows are dropped and logged once per query.
+- On a mutation, `{ owner: { load: getNote, input: (i) => ({ id: i.id }), row, session } }` reads the row and
+  checks it before the resolver runs.
+- `access: { allow: ({ session, input }) => session.role === 'admin' }`.
+- `access: 'anyone'`: on user data it is HZ090 (a warning, which can be accepted with a reason).
+- The callbacks are lowered like guards, so the IR holds paths. There are no new exports.
+- **Refused** is the framework error `Forbidden`, raised before the resolver runs. It is optional in `failed`.
+  - A page whose head query is refused answers 403, unless `head.failed` maps it (`{ Forbidden: login }`).
+- **Diagnostics:**
+  - HZ088: missing access, or an owner field the row or session does not have.
+  - HZ089: access where nothing enforces it (a public or browser-run effect).
+  - HZ090: user data that anyone may read.
+  - HZ091: a list with rows the visitor does not own.
+- **Reviewed and visible:**
+  - Access is in `hozu.lock.json`, so changing it is a reviewed change.
+  - `hozu why` and `hozu map` show it.
+- **Examples:**
+  - `examples/notes` declares `'signedIn'`, with a role error mapped to 403.
+  - blog and cart declare their user data.
+- **Not in 0.15:** generated cross-user checks in `hozu check` (ADR 0056 C5). They need rows and sessions the app
+  would have to supply. The runtime check and the `browse` chain below cover it.
+
+### Test it as two visitors
+- **`hozu call` on endpoints:**
+  - `hozu call api.who --input '{"room":"a"}' --header 'Authorization: Bearer t'` prints the status and the body.
+  - A POST endpoint needs `--write`.
+- **`hozu browse --header 'Name: value'`:** before the first `--as` it applies to every actor; after an `--as`, to
+  that actor only.
+- **`remember <name> from url|<selector> [@attr]`:** keeps a value; later steps read it as `$name`, in any actor.
+  For example, ada remembers her note's link, then bob opens `$note` and gets 403.
+- **`post <path> a=1&b=2`:** a forged native form post as the current actor, without the page.
+
+### Fixes (found by the 0.14 dogfood)
+- **Links:** a `ui.link` attribute built from machine context now updates on the client when the context changes.
+- **Endpoints:**
+  - an endpoint `fail('E', data)` returns every field of `data` in the response;
+  - a disallowed endpoint error status is one HZ046 that lists the allowed statuses.
+- **Env:** an env variable set to the empty string is unset, so `optional` and `default` apply.
+- **CLI:**
+  - `hozu plan` accepts a path (`hozu plan /products/mug`);
+  - `hozu check --update-lock` prints the accepted `now:` lines (`--json`: `accepted`);
+  - `hozu <command> --help` prints that command's usage.
+- **SEO:**
+  - `og:locale` carries the likely region (`en` → `en_US`);
+  - the sitemap lists `xhtml:link` alternates when `site.locales` is set.
+- **`hozu browse --js both`** compares pages by route, so two modes that create different ids are not a
+  difference.
+- **Scaffold:** the scaffold stores error codes in the machine (`Problem`), not English text.
+- **Docs:** views (query branches return one node), pages and i18n (the locale argument of `head.input`), content
+  (install, slugs, dates), env (server resolvers read server variables; `internal` applies to `fetch.ts`).
+
+### Performance
+- **Cause:**
+  - `bench:frameworks` had been broken since 0.8, so a regression went unmeasured: the Hozu row was interactive at
+    59–61 ms (4× CPU), against 27.8 ms in benchmark 0001.
+  - 33 of the 40 ms of hydration were spent waiting for `import()` of the fn module that 0.12 split out.
+- **Fix:** fn modules are now ordered `<script type="module">` tags, placed before the client, that register by URL.
+  Hydration reads them synchronously.
+- **Result:** hydrate 41 → 6 ms; interactive 62 → 26.5 ms.
+- **Guard:** `bench:frameworks` works again, and `pnpm bench` B2 runs the Hozu row with a 50 ms budget.
+
 ## 0.14.0 — Easier to learn: one form, one check command, quieter checks (ADR 0053)
 
 The largest cost of building with Hozu is that models do not know it yet: every session learns it from the guide.

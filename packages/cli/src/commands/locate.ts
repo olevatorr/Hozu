@@ -8,8 +8,8 @@ import type { Loaded } from '../load.ts'
 export function runLocate(loaded: Loaded, target: string | undefined): LocateOutput {
   if (!target)
     throw new HozuCliError('usage', 'Give a node id or IR pointer', [
-      'hozu locate notes.NotesBoard/0/1',
-      'hozu locate /features/notes/views/NotesBoard/root/children/0',
+      'hozu why notes.NotesBoard/0/1',
+      'hozu why /features/notes/views/NotesBoard/root/children/0',
     ])
   const root = dirname(loaded.path)
   const found = locateNode(loaded.build(true), target, { root })

@@ -73,7 +73,7 @@ function sendsIn(feature: FeatureIR, state: string): ExplainSend[] {
 
 export function runExplain(loaded: Loaded, target: string | undefined): ExplainOutput {
   if (!target?.includes('.'))
-    throw new HozuCliError('usage', 'Expected <feature>.<state>, e.g. hozu explain cart.idle')
+    throw new HozuCliError('usage', 'Expected <feature>.<state>, e.g. hozu why cart.idle')
   const [fid, state] = [target.slice(0, target.indexOf('.')), target.slice(target.indexOf('.') + 1)]
   const build = loaded.build()
   const feature = requireFeature(build.ir, fid)
