@@ -52,6 +52,27 @@ describe('one app module (ADR 0043 E)', () => {
     }
   }, 60_000)
 
+  it('hozu serve runs as production when NODE_ENV is unset: a session app needs SESSION_SECRET (ADR 0056 A12)', async () => {
+    const saved = {
+      NODE_ENV: process.env.NODE_ENV,
+      SESSION_SECRET: process.env.SESSION_SECRET,
+      PORT: process.env.PORT,
+    }
+    delete process.env.NODE_ENV
+    delete process.env.SESSION_SECRET
+    process.env.PORT = '4795'
+    try {
+      await expect(runServe(await load(undefined, join(root, 'examples/notes')), () => {})).rejects.toThrow(
+        /SESSION_SECRET/,
+      )
+      expect(process.env.NODE_ENV).toBe('production')
+    } finally {
+      for (const [k, v] of Object.entries(saved))
+        if (v === undefined) delete process.env[k]
+        else process.env[k] = v
+    }
+  }, 60_000)
+
   it('hozu serve says the port is in use instead of crashing', async () => {
     const notes = await load(undefined, join(root, 'examples/notes'))
     process.env.PORT = '4794'

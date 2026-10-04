@@ -15,6 +15,7 @@ export async function runServe(
   loaded: Loaded,
   log: (line: string) => void,
 ): Promise<{ url: string; close(): Promise<void> }> {
+  if (process.env.HOZU_DEV !== '1' && !process.env.NODE_ENV) process.env.NODE_ENV = 'production'
   const importFrom = importer(loaded, 'serve')
   const build = loaded.build()
   const module = await requireApp(loaded, 'serve', build)

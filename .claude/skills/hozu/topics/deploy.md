@@ -4,7 +4,7 @@
   `app({ resolvers, session?, components?, … })` from `@hozu/runtime-server`. `hozu serve`, `hozu check`, `hozu get`,
   `hozu browse` and `testApp(app)` all run it, so what the tools verify is what production serves.
 - **Node:** `npm start` is `hozu serve` (adapter-node on `PORT`, `HOST`). `hozu build` writes `dist/`.
-- Set `SESSION_SECRET` when the app has sessions (production refuses to start without it).
+- Set `SESSION_SECRET` when the app has sessions: `npm start` (`hozu serve`) runs as production unless `NODE_ENV` is set, and production refuses to start without it. `hozu dev`, `get`, `browse` and `call` do not need it.
 - Edge (Bun, Deno, Workers, Vercel), static hosts, several instances, upgrading: see --more.
 
 <!-- more -->
