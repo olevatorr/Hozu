@@ -108,3 +108,7 @@ These are the hypotheses the trial tests. They are not targets that a release ha
   - `COREPACK_ENABLE_STRICT=0` in the runner, because `~/package.json` names yarn.
   - The held-out author's session ended before its final validation, so the coordinator ran it unchanged (100 %).
   - `accept.mjs` now records the server's exit code, signal and output; pass / fail is unchanged.
+- **Replication (not registered):** the held-out steps were run a second time from each arm's step-20 app.
+  - The results were 1.32× (A / C), 1.02× (B net / C) and 1.29× (A / B net).
+  - Both Hozu arms were 100 % again.
+  - Nuxt repeated the same export regression at steps 23–25.

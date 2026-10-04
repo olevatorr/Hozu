@@ -1,0 +1,158 @@
+
+> trial-nuxt-0006@ build /Users/otischen/Developer/hozu-trial-0024/nuxt-rep2/app
+> nuxt build
+
+┌  Building Nuxt for production...
+│
+●  Nuxt 4.5.2 (with Nitro 2.13.4, Vite 8.3.1 and Vue 3.5.43)
+│
+●  Nitro preset: node-server
+ℹ Building client...
+ℹ vite v8.3.1 building client environment for production...
+transforming...
+✓ 193 modules transformed.
+rendering chunks...
+computing gzip size...
+ℹ node_modules/.cache/nuxt/.nuxt/dist/client/manifest.json                  6.47 kB │ gzip:  0.81 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/error-500.DBs3Ij05.css   1.90 kB │ gzip:  0.72 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/error-404.BtyuchFm.css   2.42 kB │ gzip:  0.85 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/entry.CifqVNsS.css      13.76 kB │ gzip:  3.72 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/BDNMzG2s.js              0.08 kB │ gzip:  0.09 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/B6q5zZrQ.js              0.17 kB │ gzip:  0.16 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/BViwF6Jc.js              1.00 kB │ gzip:  0.60 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/BqyFE0RV.js              1.36 kB │ gzip:  0.80 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/l4LKiMTW.js              1.84 kB │ gzip:  0.98 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/ClIR4hLd.js              1.97 kB │ gzip:  0.95 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/WH0N_GgY.js              2.02 kB │ gzip:  1.10 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/D8gHCvD_.js              3.40 kB │ gzip:  1.53 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/DytSyVbb.js              3.72 kB │ gzip:  1.69 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/DzxFskdg.js              7.13 kB │ gzip:  2.88 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/CQgwJyX7.js              9.21 kB │ gzip:  3.89 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/CqOY2NHq.js             11.93 kB │ gzip:  4.49 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/BTj3bJpr.js             16.70 kB │ gzip:  4.83 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/YP-QdJvD.js             19.93 kB │ gzip:  8.35 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/DQF1d2gX.js             70.11 kB │ gzip: 25.81 kB
+node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/q6FP_vRT.js             83.39 kB │ gzip: 32.22 kB
+
+ℹ ✓ built in 380ms
+✔ Client built in 393ms
+ℹ Building server...
+ℹ vite v8.3.1 building ssr environment for production...
+transforming...
+✓ 95 modules transformed.
+rendering chunks...
+ℹ node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/error-404-styles.DZ5r2W72.mjs           0.08 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/error-500-styles.BnS5gzUM.mjs           0.08 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/styles.mjs                                    0.61 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/ready-c1MPsy6G.js                       0.04 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/_plugin-vue_export-helper-BOaGB7Aw.js   0.26 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/pages-BDa95Au_.js                       1.31 kB │ map:  2.78 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/LangSwitch-YxqHXQTh.js                  1.97 kB │ map:  3.03 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/error-500-styles-1.mjs-BK3GI7cO.js      2.44 kB │ map:  5.29 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/delete-CAdU2Ogk.js                      2.79 kB │ map:  3.43 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/error-404-styles-1.mjs-BHA-NjS3.js      2.97 kB │ map:  5.93 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/login-CU7Olpi8.js                       3.40 kB │ map:  5.04 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/archive-rZPzo_BS.js                     3.41 kB │ map:  5.54 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/admin-D5GWEpwL.js                       3.88 kB │ map:  5.46 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/error-500-Dgab7f1Y.js                   4.66 kB │ map:  5.69 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/error-404-zGKN9D0x.js                   5.37 kB │ map:  6.60 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/error-BJuZ0sSj.js                       8.68 kB │ map: 22.74 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/head-CAcJ5C2Q.js                        9.44 kB │ map: 27.76 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/nuxt-link-CqZ8IeW2.js                   9.57 kB │ map: 21.54 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/notes-BGWHln0R.js                      19.45 kB │ map: 59.93 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/_nuxt/fetch-BeDUW3IK.js                      21.26 kB │ map: 52.44 kB
+node_modules/.cache/nuxt/.nuxt/dist/server/server.mjs                                   34.54 kB │ map: 96.44 kB
+
+ℹ ✓ built in 189ms
+✔ Server built in 195ms
+[nitro] ✔ Generated public .output/public
+[nitro] ℹ Building Nuxt Nitro server (preset: node-server, compatibility date: 2026-09-01)
+[nitro] ✔ Nuxt Nitro server built
+  ├─ .output/server/chunks/_/error-500.mjs (5.05 kB) (2.07 kB gzip)
+  ├─ .output/server/chunks/_/error-500.mjs.map (322 B) (239 B gzip)
+  ├─ .output/server/chunks/_/note.mjs (588 B) (372 B gzip)
+  ├─ .output/server/chunks/_/note.mjs.map (319 B) (204 B gzip)
+  ├─ .output/server/chunks/_/store.mjs (8.34 kB) (2.24 kB gzip)
+  ├─ .output/server/chunks/_/store.mjs.map (10.1 kB) (2.13 kB gzip)
+  ├─ .output/server/chunks/build/_plugin-vue_export-helper-BOaGB7Aw.mjs (320 B) (227 B gzip)
+  ├─ .output/server/chunks/build/_plugin-vue_export-helper-BOaGB7Aw.mjs.map (225 B) (172 B gzip)
+  ├─ .output/server/chunks/build/admin-D5GWEpwL.mjs (4.34 kB) (1.64 kB gzip)
+  ├─ .output/server/chunks/build/admin-D5GWEpwL.mjs.map (1.78 kB) (651 B gzip)
+  ├─ .output/server/chunks/build/archive-rZPzo_BS.mjs (3.87 kB) (1.64 kB gzip)
+  ├─ .output/server/chunks/build/archive-rZPzo_BS.mjs.map (1.65 kB) (663 B gzip)
+  ├─ .output/server/chunks/build/delete-CAdU2Ogk.mjs (3.27 kB) (1.44 kB gzip)
+  ├─ .output/server/chunks/build/delete-CAdU2Ogk.mjs.map (1.02 kB) (464 B gzip)
+  ├─ .output/server/chunks/build/error-404-styles.DZ5r2W72.mjs (3.02 kB) (1.15 kB gzip)
+  ├─ .output/server/chunks/build/error-404-styles.DZ5r2W72.mjs.map (217 B) (168 B gzip)
+  ├─ .output/server/chunks/build/error-404-zGKN9D0x.mjs (5.82 kB) (2.38 kB gzip)
+  ├─ .output/server/chunks/build/error-404-zGKN9D0x.mjs.map (422 B) (307 B gzip)
+  ├─ .output/server/chunks/build/error-500-Dgab7f1Y.mjs (5.11 kB) (2.12 kB gzip)
+  ├─ .output/server/chunks/build/error-500-Dgab7f1Y.mjs.map (373 B) (272 B gzip)
+  ├─ .output/server/chunks/build/error-500-styles.BnS5gzUM.mjs (2.49 kB) (1.02 kB gzip)
+  ├─ .output/server/chunks/build/error-500-styles.BnS5gzUM.mjs.map (217 B) (168 B gzip)
+  ├─ .output/server/chunks/build/fetch-BeDUW3IK.mjs (20.5 kB) (5.79 kB gzip)
+  ├─ .output/server/chunks/build/fetch-BeDUW3IK.mjs.map (1.77 kB) (359 B gzip)
+  ├─ .output/server/chunks/build/LangSwitch-YxqHXQTh.mjs (1.93 kB) (871 B gzip)
+  ├─ .output/server/chunks/build/LangSwitch-YxqHXQTh.mjs.map (801 B) (376 B gzip)
+  ├─ .output/server/chunks/build/login-CU7Olpi8.mjs (3.85 kB) (1.59 kB gzip)
+  ├─ .output/server/chunks/build/login-CU7Olpi8.mjs.map (1.52 kB) (529 B gzip)
+  ├─ .output/server/chunks/build/notes-BGWHln0R.mjs (19.9 kB) (4.72 kB gzip)
+  ├─ .output/server/chunks/build/notes-BGWHln0R.mjs.map (13.5 kB) (2.94 kB gzip)
+  ├─ .output/server/chunks/build/nuxt-link-CqZ8IeW2.mjs (9.4 kB) (2.88 kB gzip)
+  ├─ .output/server/chunks/build/nuxt-link-CqZ8IeW2.mjs.map (313 B) (238 B gzip)
+  ├─ .output/server/chunks/build/pages-BDa95Au_.mjs (982 B) (471 B gzip)
+  ├─ .output/server/chunks/build/pages-BDa95Au_.mjs.map (103 B) (95 B gzip)
+  ├─ .output/server/chunks/nitro/nitro.mjs (176 kB) (43 kB gzip)
+  ├─ .output/server/chunks/nitro/nitro.mjs.map (6.23 kB) (1.09 kB gzip)
+  ├─ .output/server/chunks/routes/api/account/delete.post.mjs (663 B) (316 B gzip)
+  ├─ .output/server/chunks/routes/api/account/delete.post.mjs.map (426 B) (242 B gzip)
+  ├─ .output/server/chunks/routes/api/admin.get.mjs (640 B) (314 B gzip)
+  ├─ .output/server/chunks/routes/api/admin.get.mjs.map (415 B) (232 B gzip)
+  ├─ .output/server/chunks/routes/api/export.get.mjs (885 B) (448 B gzip)
+  ├─ .output/server/chunks/routes/api/export.get.mjs.map (644 B) (327 B gzip)
+  ├─ .output/server/chunks/routes/api/index.get.mjs (841 B) (415 B gzip)
+  ├─ .output/server/chunks/routes/api/index.get.mjs.map (642 B) (322 B gzip)
+  ├─ .output/server/chunks/routes/api/index.post.mjs (2.25 kB) (798 B gzip)
+  ├─ .output/server/chunks/routes/api/index.post.mjs.map (1.93 kB) (566 B gzip)
+  ├─ .output/server/chunks/routes/api/lang.post.mjs (924 B) (471 B gzip)
+  ├─ .output/server/chunks/routes/api/lang.post.mjs.map (798 B) (336 B gzip)
+  ├─ .output/server/chunks/routes/api/login.post.mjs (992 B) (486 B gzip)
+  ├─ .output/server/chunks/routes/api/login.post.mjs.map (706 B) (330 B gzip)
+  ├─ .output/server/chunks/routes/api/logout.post.mjs (495 B) (263 B gzip)
+  ├─ .output/server/chunks/routes/api/logout.post.mjs.map (270 B) (184 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/archive.post.mjs (1.4 kB) (549 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/archive.post.mjs.map (1.17 kB) (406 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/delete.post.mjs (1.34 kB) (557 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/delete.post.mjs.map (1.08 kB) (408 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/edit.post.mjs (2.41 kB) (862 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/edit.post.mjs.map (2.25 kB) (618 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/pin.post.mjs (1.5 kB) (612 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/pin.post.mjs.map (1.24 kB) (443 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/restore.post.mjs (1.36 kB) (528 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/restore.post.mjs.map (1.17 kB) (403 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/share.post.mjs (2.14 kB) (789 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/share.post.mjs.map (1.98 kB) (566 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/unshare.post.mjs (1.24 kB) (558 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/_id/unshare.post.mjs.map (1.03 kB) (411 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/archived.get.mjs (548 B) (280 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/archived.get.mjs.map (315 B) (215 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/bulk.post.mjs (1.38 kB) (584 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/bulk.post.mjs.map (1.23 kB) (426 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/undo.post.mjs (899 B) (406 B gzip)
+  ├─ .output/server/chunks/routes/api/notes/undo.post.mjs.map (665 B) (291 B gzip)
+  ├─ .output/server/chunks/routes/renderer.mjs (16.2 kB) (5.59 kB gzip)
+  ├─ .output/server/chunks/routes/renderer.mjs.map (2.73 kB) (469 B gzip)
+  ├─ .output/server/chunks/virtual/_virtual_spa-template.mjs (94 B) (100 B gzip)
+  ├─ .output/server/chunks/virtual/_virtual_spa-template.mjs.map (88 B) (97 B gzip)
+  ├─ .output/server/chunks/virtual/entry.mjs (59 kB) (15.4 kB gzip)
+  ├─ .output/server/chunks/virtual/entry.mjs.map (8.65 kB) (1.4 kB gzip)
+  ├─ .output/server/chunks/virtual/precomputed.mjs (13.9 kB) (1.36 kB gzip)
+  ├─ .output/server/chunks/virtual/precomputed.mjs.map (181 B) (150 B gzip)
+  ├─ .output/server/chunks/virtual/styles.mjs (690 B) (325 B gzip)
+  ├─ .output/server/chunks/virtual/styles.mjs.map (164 B) (142 B gzip)
+  ├─ .output/server/index.mjs (353 B) (205 B gzip)
+  └─ .output/server/package.json (803 B) (357 B gzip)
+Σ Total size: 2.27 MB (582 kB gzip)
+[nitro] ✔ You can preview this build using node .output/server/index.mjs
+│
+└  ✨ Build complete!

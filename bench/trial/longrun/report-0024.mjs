@@ -1,12 +1,14 @@
-// Usage: node report-0024.mjs [--json]
+// Usage: node report-0024.mjs [--json] [--root=results-0024] [--arms=hozu/cold,hozu/warm,nuxt/run1]
 // ADR 0055: per-step cost and correctness of arms A (hozu cold), B (hozu warm) and C (nuxt), and the registered ratios.
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { anatomy } from '../anatomy.mjs'
 
 const here = new URL('.', import.meta.url).pathname
-const root = join(here, 'results-0024')
-const arms = { A: 'hozu/cold', B: 'hozu/warm', C: 'nuxt/run1' }
+const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=')[1]
+const root = join(here, arg('root') ?? 'results-0024')
+const [a, b, c] = (arg('arms') ?? 'hozu/cold,hozu/warm,nuxt/run1').split(',')
+const arms = { A: a, B: b, C: c }
 
 const rows = (dir) => {
   const f = join(root, dir, 'metrics.jsonl')
@@ -57,7 +59,11 @@ const table = steps.map((step) => {
   const bNet = w('B') !== null && prefix !== null && bCalls ? w('B') - prefixCost(bCalls, prefix) : null
   const rerun = (k) => {
     const f = join(root, arms[k], `${String(step).padStart(2, '0')}.accept-rerun.json`)
-    return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : null
+    try {
+      return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : null
+    } catch {
+      return null
+    }
   }
   const ok = (k) => {
     const a = at(k)?.accept

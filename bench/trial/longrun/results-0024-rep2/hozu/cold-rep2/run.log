@@ -1,0 +1,143 @@
+[2026-10-04 06:44:08] hozu/cold-rep2 start from s20
+[2026-10-04 06:44:10] hozu/cold-rep2 step 21 attempt 1
+step 21: 67/67 new 3/3 regression 64/64 js {"login":22531,"list":23216}
+[2026-10-04 06:53:07] hozu/cold-rep2 step 22 attempt 1
+step 22: 71/71 new 4/4 regression 67/67 js {"login":22531,"list":23271}
+[2026-10-04 07:03:10] hozu/cold-rep2 step 23 attempt 1
+step 23: 5/75 new 0/4 regression 5/71 js {"error":"page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:"}
+  regression N5 ada and bob at the same time see only their own notes: FAIL: page.waitForTimeout: Target page, context or browser has been closed
+  regression N6 the HTML sent to bob contains none of ada's notes: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression N7 add with JS: first in the list, count updates, input cleared: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression N8 duplicate (any case, spaces) shows the alert and adds nothing: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression N9 the browser limits a note to 60 characters: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression N10 double click on Add adds once, with no error shown: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression N11 delete with JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression N12 changes survive a reload: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression N13 without JS: sign in, add, duplicate alert, delete, sign out: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/notes
+  regression N14 sign out with JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression P1 pin with JS moves the note first and marks it pinned: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression P2 pinning survives a reload and does not affect other users: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression P3 unpin: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression P4 search filters in the browser; the count stays the total: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression P5 pin and unpin without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression L1 the server rejects 61 characters (no JS): FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression L2 a 61-character note is refused with JS too: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression T1 seeded notes show their creation date: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression T2 a new note records the moment it was added: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression R1 the add input is labelled Title: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression E1 edit with JS keeps place, pin and date: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression E2 edit to a duplicate is refused: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression E3 cancel leaves the note unchanged: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression E4 edit without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression A1 archive and restore with JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression A2 /archive: redirect when signed out, empty text: FAIL: fetch failed
+  regression A3 archived notes are read-only on the server and still duplicates: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression A4 archive and restore without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression S1 search from the URL and the Search button, without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression M1 / redirects to /notes or /login: FAIL: fetch failed
+  regression M2 forms lead to /notes (no JS): FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression U1 undo restores place, pin and date, also after a reload: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression U2 only the most recent delete, cleared by the next change: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression U3 undo without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression Pg1 five at a time, Showing n of m, Load more: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression Pg2 pinned first across pages; filters count: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression Pg3 Load more without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression O1 the note appears at once, marked saving: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression O2 a rejected note disappears again with the alert: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression B1 bulk delete with JS, Selected counter, clears undo: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression B2 bulk archive with JS; nothing checked does nothing: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression B3 bulk delete and archive without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression B3b without JS: two checked notes are deleted, then two are archived: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression RL1 the 11th add within a minute is refused; rejected adds do not count: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression SH1 share: owner sees it, recipient sees it read-only, HTML isolation: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression SH2 shared notes follow title, archive, restore and delete: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression SH3 unshare, and sharing with yourself: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression SH4 share and unshare without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression AD1 the admin table lists users and their note counts: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression AD2 others get 403 and no Admin link: FAIL: fetch failed
+  regression DA1 delete an account: notes, shares, admin row: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression DA1b DA1 with the deleting user's browser without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression DA2 delete an account without JS; signed out redirect: FAIL: fetch failed
+  regression DE1 German with JS: texts, persistence, HttpOnly: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression DE2 German without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression EX1 export: keys, order, archived, createdAt, link: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression EX2 export: seeded ada, 401 signed out: FAIL: fetch failed
+  regression TG1 tags are gone: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression N16 after each JS internal link the main text equals a no-JS GET of the same URL: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X21a seeded notes are numbered by age, per user: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X21b numbers are never reused and survive edit, pin, archive, restore and undo: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X21c numbers without JS; a deleted account starts again at 1: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X22a with JS: the title links to /notes/<number>, which shows the note: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X22b without JS: title links on the list and on /archive; an archived note says Archived: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X22c note pages: redirect, 404 Note not found, no access to shared or foreign notes: FAIL: fetch failed
+  regression X22d numbers are per user: bob's /notes/1 is his own note: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  new X23a with JS: save title and body on the note page: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  new X23b without JS: every message shows, typed values stay, nothing is saved: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  new X23c with JS: invalid save keeps the typed values and saves nothing: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  new X23d archived note page: body, no form, refused on the server; a save ends Undo: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+[2026-10-04 07:06:38] hozu/cold-rep2 step 24 attempt 1
+step 24: 79/79 new 4/4 regression 75/75 js {"login":22531,"list":23271}
+[2026-10-04 07:20:22] hozu/cold-rep2 step 25 attempt 1
+step 25: 81/81 new 2/2 regression 79/79 js {"login":22531,"list":23515}
+[2026-10-04 07:33:23] hozu/cold-rep2 step 26 attempt 1
+step 26: 28/83 new 0/3 regression 28/80 js {"error":"page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:"}
+  regression E4 edit without JS: FAIL: page.goto: Target page, context or browser has been closed
+  regression A1 archive and restore with JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression A2 /archive: redirect when signed out, empty text: FAIL: fetch failed
+  regression A3 archived notes are read-only on the server and still duplicates: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression A4 archive and restore without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression S1 search from the URL and the Search button, without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression M1 / redirects to /notes or /login: FAIL: fetch failed
+  regression M2 forms lead to /notes (no JS): FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression U1 undo restores place, pin and date, also after a reload: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression U2 only the most recent delete, cleared by the next change: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression U3 undo without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression Pg1 five at a time, Showing n of m, Load more: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression Pg2 pinned first across pages; filters count: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression Pg3 Load more without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression O1 the note appears at once, marked saving: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression O2 a rejected note disappears again with the alert: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression B1 bulk delete with JS, Selected counter, clears undo: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression B2 bulk archive with JS; nothing checked does nothing: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression B3 bulk delete and archive without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression B3b without JS: two checked notes are deleted, then two are archived: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression RL1 the 11th add within a minute is refused; rejected adds do not count: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression SH1 share: owner sees it, recipient sees it read-only, HTML isolation: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression SH2 shared notes follow title, archive, restore and delete: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression SH3 unshare, and sharing with yourself: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression SH4 share and unshare without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression AD1 the admin table lists users and their note counts: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression AD2 others get 403 and no Admin link: FAIL: fetch failed
+  regression DA1 delete an account: notes, shares, admin row: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression DA1b DA1 with the deleting user's browser without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression DA2 delete an account without JS; signed out redirect: FAIL: fetch failed
+  regression DE1 German with JS: texts, persistence, HttpOnly: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression DE2 German without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression EX2 export: seeded ada, 401 signed out: FAIL: fetch failed
+  regression TG1 tags are gone: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression N16 after each JS internal link the main text equals a no-JS GET of the same URL: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X21a seeded notes are numbered by age, per user: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X21b numbers are never reused and survive edit, pin, archive, restore and undo: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X21c numbers without JS; a deleted account starts again at 1: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X22a with JS: the title links to /notes/<number>, which shows the note: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X22b without JS: title links on the list and on /archive; an archived note says Archived: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X22c note pages: redirect, 404 Note not found, no access to shared or foreign notes: FAIL: fetch failed
+  regression X22d numbers are per user: bob's /notes/1 is his own note: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X23a with JS: save title and body on the note page: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X23b without JS: every message shows, typed values stay, nothing is saved: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X23c with JS: invalid save keeps the typed values and saves nothing: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X23d archived note page: body, no form, refused on the server; a save ends Undo: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X24a without JS the admin makes an account read-only and writable again: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X24b without JS the server refuses add, delete, pin, archive, bulk and restore: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X24c with JS the server refuses edit, note-page save, share, unshare and undo; sharing still works for others: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X24d a non-admin cannot change access, even with a stale admin form: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X25a share, rename and unshare show up without a reload; typing and checks stay: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  regression X25b note-page rename, archive, restore, delete and account deletion show up live; an open edit stays: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  new X26a JSON export: number and body keys, order, flags, download header: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  new X26b CSV export: exact content, quoting, CRLF, headers and the Export CSV link: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4831/login
+  new X26c export: 401 signed out in every format, 400 for an unknown format: FAIL: fetch failed
+[2026-10-04 07:36:55] hozu/cold-rep2 step 27 attempt 1
+step 27: 85/85 new 3/3 regression 82/82 js {"login":22531,"list":23515}
+[2026-10-04 07:49:31] hozu/cold-rep2 step 28 attempt 1
+step 28: 85/85 new 2/2 regression 83/83 js {"login":22531,"list":23515}
+[2026-10-04 08:01:21] hozu/cold-rep2 done

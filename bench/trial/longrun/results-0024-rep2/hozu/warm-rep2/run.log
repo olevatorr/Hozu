@@ -1,0 +1,56 @@
+[2026-10-04 06:44:08] hozu/warm-rep2 start from s20
+[2026-10-04 06:44:15] hozu/warm-rep2 step 21 attempt 1
+step 21: 67/67 new 3/3 regression 64/64 js {"login":22531,"list":23101}
+[2026-10-04 06:53:13] hozu/warm-rep2 step 22 attempt 1
+step 22: 71/71 new 4/4 regression 67/67 js {"login":22531,"list":23101}
+[2026-10-04 07:02:44] hozu/warm-rep2 step 23 attempt 1
+step 23: 75/75 new 4/4 regression 71/71 js {"login":22531,"list":23101}
+[2026-10-04 07:15:32] hozu/warm-rep2 step 24 attempt 1
+step 24: 41/79 new 0/4 regression 41/75 js {"error":"page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:"}
+  regression Pg3 Load more without JS: FAIL: page.waitForTimeout: Target page, context or browser has been closed
+  regression O1 the note appears at once, marked saving: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression O2 a rejected note disappears again with the alert: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression B1 bulk delete with JS, Selected counter, clears undo: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression B2 bulk archive with JS; nothing checked does nothing: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression B3 bulk delete and archive without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression B3b without JS: two checked notes are deleted, then two are archived: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression RL1 the 11th add within a minute is refused; rejected adds do not count: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression SH1 share: owner sees it, recipient sees it read-only, HTML isolation: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression SH2 shared notes follow title, archive, restore and delete: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression SH3 unshare, and sharing with yourself: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression SH4 share and unshare without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression AD1 the admin table lists users and their note counts: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression AD2 others get 403 and no Admin link: FAIL: fetch failed
+  regression DA1 delete an account: notes, shares, admin row: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression DA1b DA1 with the deleting user's browser without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression DA2 delete an account without JS; signed out redirect: FAIL: fetch failed
+  regression DE1 German with JS: texts, persistence, HttpOnly: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression DE2 German without JS: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression EX1 export: keys, order, archived, createdAt, link: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression EX2 export: seeded ada, 401 signed out: FAIL: fetch failed
+  regression TG1 tags are gone: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression N16 after each JS internal link the main text equals a no-JS GET of the same URL: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression X21a seeded notes are numbered by age, per user: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression X21b numbers are never reused and survive edit, pin, archive, restore and undo: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression X21c numbers without JS; a deleted account starts again at 1: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression X22a with JS: the title links to /notes/<number>, which shows the note: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression X22b without JS: title links on the list and on /archive; an archived note says Archived: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression X22c note pages: redirect, 404 Note not found, no access to shared or foreign notes: FAIL: fetch failed
+  regression X22d numbers are per user: bob's /notes/1 is his own note: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression X23a with JS: save title and body on the note page: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression X23b without JS: every message shows, typed values stay, nothing is saved: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression X23c with JS: invalid save keeps the typed values and saves nothing: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  regression X23d archived note page: body, no form, refused on the server; a save ends Undo: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  new X24a without JS the admin makes an account read-only and writable again: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  new X24b without JS the server refuses add, delete, pin, archive, bulk and restore: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  new X24c with JS the server refuses edit, note-page save, share, unshare and undo; sharing still works for others: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+  new X24d a non-admin cannot change access, even with a stale admin form: FAIL: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4832/login
+[2026-10-04 07:22:47] hozu/warm-rep2 step 25 attempt 1
+step 25: 81/81 new 2/2 regression 79/79 js {"login":22531,"list":23345}
+[2026-10-04 07:35:39] hozu/warm-rep2 step 26 attempt 1
+step 26: 83/83 new 3/3 regression 80/80 js {"login":22531,"list":23345}
+[2026-10-04 07:48:10] hozu/warm-rep2 step 27 attempt 1
+step 27: 85/85 new 3/3 regression 82/82 js {"login":22531,"list":23345}
+[2026-10-04 08:00:48] hozu/warm-rep2 step 28 attempt 1
+step 28: 85/85 new 2/2 regression 83/83 js {"login":19932,"list":20746}
+[2026-10-04 08:12:50] hozu/warm-rep2 done

@@ -11,7 +11,7 @@ true? How much of the gap is learning, and how much is the structure itself?
 - **Correctness:** both Hozu arms passed every check of every step. Nuxt silently broke the export for three steps.
 
 The measured warm arm (1.90× Nuxt, the guide carried in every call) is the price of preloading, not of knowing; see
-"How to read the warm arm". All of this is one run per arm.
+"How to read the warm arm". These are from the registered run. A second run of the held-out steps gave 1.32×, 1.02× and 1.29× (see "Replication").
 
 ## Setup
 - **Arms:**
@@ -106,7 +106,7 @@ examples, published apps, and documentation that models are trained on. The guid
 because a cold agent still pays 1.35× for it.
 
 ## Limits
-- **One run per arm, and one app.** The per-step ratios scatter widely (0.79–2.15× for A / C). A result within about
+- **One registered run per arm (and one replication of the held-out steps), and one app.** The per-step ratios scatter widely (0.79–2.15× for A / C). A result within about
   0.1 of a threshold should be read as undecided.
 - **"Known" is simulated** by preloading the guide. The net figure is an estimate (see above).
 - **Steps 1–20 were seen while 0.8–0.14 were designed.** The held-out steps are the ones that generalise, and they
@@ -115,6 +115,30 @@ because a cold agent still pays 1.35× for it.
   any agent's work.
 - **Not comparable with trial 0021.** Different start (built from scratch), different isolation (no owner
   instructions), and a new guide.
+
+## Replication of the held-out steps (run 2)
+- **What ran:** after the registered run, each arm made changes 21–28 again from its own step-20 app, with the same
+  model and setup (`results-0024-rep2/`).
+
+| Held out 21–28 | Run 1 (registered) | Run 2 | Mean of the two |
+|---|---|---|---|
+| A / C: Hozu today against Nuxt | 1.42× | 1.32× | 1.37× |
+| B net / C: Hozu once known | 1.06× | 1.02× | 1.04× |
+| A / B net: the learning cost | 1.35× | 1.29× | 1.32× |
+| Tool calls A · B · C | 148 · 114 · 86 | 137 · 116 · 98 | |
+
+- **Correctness repeated exactly:**
+  - Both Hozu arms passed every check of every step (`hozu check` clean throughout).
+  - Nuxt again added the body to the export at step 23 and failed EX1 silently at steps 23–25. The same
+    regression in both runs is behaviour, not chance.
+- **Interrupted acceptance runs:** three again (cold 23 and 26, warm 24), each with the same signature: the
+  server got SIGTERM while the other Hozu arm's agent ran `pkill -f "hozu serve"`. Re-running the acceptance on the
+  committed code gave 75/75, 83/83 and 79/79.
+- **Reading:**
+  - H2 holds in both runs.
+  - H1 holds in both, though run 2 (1.29×) is within 0.1 of the 1.25× threshold.
+  - Together, the two runs support the registered reading: the gap is mostly learning, and a known Hozu costs about
+    what Nuxt costs.
 
 ## Exploratory, not registered: Sonnet 5 on the held-out changes
 - **What ran:** after the registered run, the cold Hozu app and the Nuxt app at step 20 (from the Opus run) made

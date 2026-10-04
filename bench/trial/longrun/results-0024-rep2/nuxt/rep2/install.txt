@@ -1,0 +1,24 @@
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +578
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 578, reused 578, downloaded 0, added 349
+Progress: resolved 578, reused 578, downloaded 0, added 578, done
+
+devDependencies:
++ @tailwindcss/vite 4.3.3
++ nuxt 4.5.2
++ tailwindcss 4.3.3
++ typescript 5.9.3
++ vue 3.5.43
++ vue-router 4.6.4
++ vue-tsc 3.3.11
+
+╭ Warning ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│   Ignored build scripts: esbuild@0.28.2.                                     │
+│   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
+│   to run scripts.                                                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Done in 1.8s using pnpm v10.33.0
