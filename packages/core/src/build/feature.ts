@@ -1,3 +1,4 @@
+import { accessOf } from '../builders/access.ts'
 import type { MutationDef, QueryDef } from '../builders/effects.ts'
 import type { EndpointDef } from '../builders/endpoint.ts'
 import type { EventDef } from '../builders/event.ts'
@@ -7,6 +8,7 @@ import type { MessagesDef } from '../builders/i18n.ts'
 import { type TagDef, tagUseOf } from '../builders/tag.ts'
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import type {
+  AccessIR,
   ConnectIR,
   EndpointIR,
   EndpointMode,
@@ -51,6 +53,55 @@ function freshness(scope: FeatureScope, f: QueryDef['freshness'], p: At): Freshn
   return { kind: 'static' }
 }
 
+/** Records `access` (ADR 0056 B): guards and values over the `session`, `input` and `result` (a row) refs. */
+function accessIR(scope: FeatureScope, value: unknown, p: At): AccessIR | undefined {
+  if (value === undefined) return undefined
+  const def = accessOf(value)
+  if (!def) {
+    scope.report(
+      'HZ088',
+      p,
+      'access is not an access rule',
+      "Use 'anyone', 'signedIn', { allow: ({ session, input }) => … } or { owner: { row, session } }.",
+    )
+    return undefined
+  }
+  return scope.attempt(
+    p,
+    (): AccessIR => {
+      switch (def.kind) {
+        case 'anyone':
+        case 'signedIn':
+          return { kind: def.kind }
+        case 'allow':
+          return {
+            kind: 'allow',
+            test: scope.guard(
+              def.test({ session: refProxy('session', 0), input: refProxy('input', 0) }),
+              at(p, 'test'),
+            ),
+          }
+        case 'owner':
+          return {
+            kind: 'owner',
+            row: scope.value(def.row(refProxy('result', 0)), at(p, 'row')),
+            session: scope.value(def.session(refProxy('session', 0)), at(p, 'session')),
+            load:
+              def.load && def.input
+                ? {
+                    query: scope.ref(def.load, ['query'], at(p, 'load')),
+                    input: scope.value(def.input(refProxy('input', 0)), at(p, 'input')),
+                  }
+                : null,
+          }
+      }
+    },
+    undefined,
+  )
+}
+
+const withAccess = (access: AccessIR | undefined) => (access ? { access } : {})
+
 function tagExprs(scope: FeatureScope, record: (input: unknown) => unknown, p: At): TagExprIR[] {
   return scope.attempt(p, () => {
     const uses = record(refProxy('input', 0))
@@ -73,14 +124,16 @@ function errors(
   mutation = false,
 ): Record<string, string> {
   return mapRecord(record, (name, schema) => {
-    if (name === 'Unexpected' || (mutation && name === 'Invalid'))
+    if (name === 'Unexpected' || name === 'Forbidden' || (mutation && name === 'Invalid'))
       scope.report(
         'HZ014',
         at(p, name),
         `"${name}" is a reserved error name`,
         name === 'Unexpected'
           ? 'The framework always adds Unexpected ({ message }).'
-          : "The framework adds Invalid ({ message, fields }) to every mutation: it is returned when the input fails its schema, and resolvers return it with fail('Invalid', { message, fields }).",
+          : name === 'Forbidden'
+            ? 'The framework answers Forbidden ({ message }) when access refuses the visitor (ADR 0056 B).'
+            : "The framework adds Invalid ({ message, fields }) to every mutation: it is returned when the input fails its schema, and resolvers return it with fail('Invalid', { message, fields }).",
       )
     return scope.schema(schema, at(p, name))
   })
@@ -339,6 +392,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
         freshness: freshness(scope, d.freshness, at(p, 'freshness')),
         runs: runsOf(scope, d.runs, d.scope, at(p, 'runs')),
         tags: tagExprs(scope, d.tags, at(p, 'tags')),
+        ...withAccess(accessIR(scope, d.access, at(p, 'access'))),
       }
     }),
     mutations: mapRecord(config.mutations, (sym, m) => {
@@ -351,6 +405,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
         errors: errors(scope, d.errors, at(p, 'errors'), true),
         invalidates: tagExprs(scope, d.invalidates, at(p, 'invalidates')),
         runs: runsOf(scope, d.runs, null, at(p, 'runs')),
+        ...withAccess(accessIR(scope, d.access, at(p, 'access'))),
       }
     }),
     fns: mapRecord(config.fns, (sym, f) => {

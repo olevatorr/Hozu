@@ -50,6 +50,8 @@ export interface PagesLockV2 {
   head: Record<string, Record<string, HeadFailureIR>>
   endpoints: Record<string, EndpointLockV2>
   redirects: Record<string, { to: string; permanent: boolean }>
+  /** Declared access per effect (ADR 0056 B); absent in locks written before 0.15. */
+  access?: Record<string, string>
 }
 
 export interface LockfileV2 {

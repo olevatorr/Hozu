@@ -16,6 +16,7 @@ const who = query({
   scope: 'user',
   freshness: 'request',
   runs: 'server',
+  access: 'anyone',
 })
 const listA = query({
   input: z.object({}),
@@ -38,13 +39,20 @@ const touchA = mutation({
   output: z.object({}),
   invalidates: () => [aTag()],
   runs: 'server',
+  access: 'anyone',
 })
-const signIn = mutation({ input: z.object({ name: z.string() }), output: z.object({}), runs: 'server' })
+const signIn = mutation({
+  input: z.object({ name: z.string() }),
+  output: z.object({}),
+  runs: 'server',
+  access: 'anyone',
+})
 const expire = mutation({
   input: z.object({}),
   output: z.object({}),
   errors: { Expired: z.object({}) },
   runs: 'server',
+  access: 'anyone',
 })
 const SignIn = event({ payload: z.object({ name: z.string() }) })
 const door = machine({

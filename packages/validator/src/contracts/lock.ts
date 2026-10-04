@@ -90,10 +90,10 @@ export function lockChanges(
 
 export function pagesChanges(previous: LockfileV2 | null, next: LockfileV2): string[] {
   const out: string[] = []
-  const prev = previous?.pages ?? { head: {}, endpoints: {}, redirects: {} }
-  for (const section of ['head', 'endpoints', 'redirects'] as const) {
-    const b = prev[section] as Record<string, Json>
-    const a = next.pages[section] as Record<string, Json>
+  const prev = previous?.pages ?? { head: {}, endpoints: {}, redirects: {}, access: {} }
+  for (const section of ['head', 'endpoints', 'redirects', 'access'] as const) {
+    const b = (prev[section] ?? {}) as Record<string, Json>
+    const a = (next.pages[section] ?? {}) as Record<string, Json>
     for (const key of [...new Set([...Object.keys(b), ...Object.keys(a)])].sort())
       if (!same(b[key] ?? null, a[key] ?? null))
         out.push(

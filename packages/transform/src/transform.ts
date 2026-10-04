@@ -351,7 +351,7 @@ export function transform(source: string, _file = ''): TransformResult {
   }
   const inGuard = (fn: Node) => {
     const p = parent.get(fn)
-    return p?.type === 'Property' && keyName(p) === 'guard'
+    return p?.type === 'Property' && (keyName(p) === 'guard' || keyName(p) === 'allow')
   }
 
   const escapes = new Map<Node, [string, string, number, number][]>()

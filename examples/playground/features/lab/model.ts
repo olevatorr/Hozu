@@ -35,6 +35,7 @@ export const addNote = mutation({
   output: Note,
   invalidates: () => [notesTag()],
   runs: 'server',
+  access: 'anyone',
 })
 export const notesApi = endpoint({
   method: 'GET',

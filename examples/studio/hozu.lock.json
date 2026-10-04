@@ -1119,6 +1119,11 @@
     }
   },
   "pages": {
+    "access": {
+      "tasks.addTask": "'anyone'",
+      "tasks.moveTask": "'anyone'",
+      "tasks.removeTask": "'anyone'"
+    },
     "endpoints": {},
     "head": {
       "taskPage": {

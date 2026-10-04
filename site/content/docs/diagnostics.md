@@ -99,6 +99,10 @@ This table is generated from the diagnostic registry, so it lists every code the
 | HZ085 | `env.internal` maps a name that is not a public variable, or to one that is not a server variable | declare both: the public URL in `env.public`, the internal one in `env.server` |
 | HZ086 (warning) | an env file listed in `env.files` exists and git does not ignore it | add it to `.gitignore`; commit `.env.example` (`npx hozu env --example`) instead |
 | HZ087 (warning) | an entry of `project({ accept })` matches no warning, names an error, or has no reason | remove the entry when the warning is gone; fix an error instead of accepting it; give every entry a reason |
+| HZ088 | a server-run `scope: 'user'` query or a server-run mutation without `access`, or an access rule that reads a field the output or session does not have | say who may run it: `access: 'signedIn'`, `{ owner: { row, session } }`, `{ allow: ({ session }) => … }`, or `'anyone'` |
+| HZ089 (warning) | `access` on a public query or a browser-run effect, where the server cannot enforce it | remove it: a public query never sees the session, and a browser-run effect is guarded by the API it calls |
+| HZ090 (warning) | `access: 'anyone'` on a `scope: 'user'` query: every visitor, signed in or not, may read it | say who may read it (`'signedIn'`, `{ owner: { row, session } }`), or accept the warning with a reason |
+| HZ091 | a query with `owner` access returned rows the visitor does not own (reported at run time) | read only the visitor's rows in the resolver (filter by the session); production drops the extra rows and logs this |
 <!-- /codes -->
 
 ## Keep a warning on purpose

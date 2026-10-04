@@ -17,6 +17,7 @@ const listShared = query({
   freshness: 'request',
   tags: () => [notesTag()],
   runs: 'server',
+  access: 'anyone',
 })
 const listPublic = query({
   input: z.object({}),
@@ -40,6 +41,7 @@ const addNote = mutation({
   errors: {},
   invalidates: () => [notesTag()],
   runs: 'server',
+  access: 'anyone',
 })
 const p = project({
   schema: zodAdapter,

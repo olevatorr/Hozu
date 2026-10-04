@@ -194,7 +194,7 @@ describe('A5 CLI contract', () => {
       'cart.CartPanel/1 reads cart.getCart',
     ])
     const text = (await run(['impact', 'cart.getCart'])).stdout
-    expect(text).toContain('cart.getCart  (query, runs: server)')
+    expect(text).toContain("cart.getCart  (query, runs: server, access: 'signedIn')")
     expect(text).toContain('invalidated by: cart.addItem, cart.checkout, cart.removeItem')
     const unknown = await run(['impact', 'cart.addItm', '--json'])
     expect(unknown.code).toBe(2)
@@ -331,7 +331,7 @@ describe('hozu call (ADR 0050 F)', () => {
   const notes = `${root}examples/notes`
   const ada = ['--session', '{"user":"ada"}']
 
-  it('runs a query as a session user through the app handler, and reports a declared error without one', async () => {
+  it('runs a query as a session user through the app handler, and answers Forbidden without one', async () => {
     const read = await run(['call', 'notes.listNotes', ...ada, '--json'], notes)
     const out = JSON.parse(read.stdout)
     expectSchema('call', out)
@@ -339,7 +339,7 @@ describe('hozu call (ADR 0050 F)', () => {
     expect(out).toMatchObject({ effect: 'notes.listNotes', kind: 'query', runs: 'server', invalidated: [] })
     expect(out.result.value.map((n: { text: string }) => n.text)).toContain('Buy milk')
     const anonymous = JSON.parse((await run(['call', 'notes.listNotes', '--json'], notes)).stdout)
-    expect(anonymous.result).toEqual({ ok: false, error: 'Unauthorized', data: {} })
+    expect(anonymous.result).toEqual({ ok: false, error: 'Forbidden', data: { message: 'Forbidden' } })
   })
 
   it('needs --write for a mutation, then lists what it invalidated and refreshes', async () => {

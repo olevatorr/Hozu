@@ -125,8 +125,8 @@ describe('layers and states (ADR 0047 P3, P5)', () => {
       expect.arrayContaining([
         'Adding',
         'Loading list notes',
-        'List notes failed: Unauthorized',
-        'Me failed: Unauthorized',
+        'List notes failed: Forbidden',
+        'Me failed: Forbidden',
       ]),
     )
     expect(tree.scenarios.find((s: { label: string }) => s.label === 'Adding').preview).toEqual({

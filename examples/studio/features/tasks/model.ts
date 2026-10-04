@@ -58,6 +58,7 @@ export const addTask = mutation({
   errors: { Duplicate: z.object({ title: z.string() }) },
   invalidates: () => [tasksTag()],
   runs: 'server',
+  access: 'anyone',
 })
 
 export const moveTask = mutation({
@@ -66,6 +67,7 @@ export const moveTask = mutation({
   errors: { NotFound: TaskKey },
   invalidates: () => [tasksTag()],
   runs: 'server',
+  access: 'anyone',
 })
 
 export const removeTask = mutation({
@@ -74,6 +76,7 @@ export const removeTask = mutation({
   errors: { NotFound: TaskKey },
   invalidates: () => [tasksTag()],
   runs: 'server',
+  access: 'anyone',
 })
 
 const Filter = z.object({ items: Tasks, show: Show, q: z.string() })

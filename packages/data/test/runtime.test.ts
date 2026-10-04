@@ -58,7 +58,7 @@ describe('cart data runtime', () => {
     expect(data.stats()).toMatchObject({ fetches: 2, hits: 0, entries: 0 })
   })
 
-  it('reads each user with their own session; anonymous callers see no session', async () => {
+  it("reads each user with their own session; access: 'signedIn' refuses an anonymous caller", async () => {
     const { data } = await setup()
     await data.mutate(addItem, { sku: 'mug', qty: 1 }, ada)
     expect(await data.query(getCart, {}, ada)).toMatchObject({
@@ -66,7 +66,11 @@ describe('cart data runtime', () => {
       value: { items: [{ sku: 'mug', qty: 1 }] },
     })
     expect(await data.query(getCart, {}, bob)).toEqual({ ok: true, value: { items: [] } })
-    expect(await data.query(getCart, {})).toEqual({ ok: true, value: { items: [] } })
+    expect(await data.query(getCart, {})).toEqual({
+      ok: false,
+      error: 'Forbidden',
+      data: { message: 'Forbidden' },
+    })
   })
 
   it('a mutation clears the request memo and reports its tags', async () => {
@@ -144,6 +148,7 @@ describe('resolver wiring', () => {
     errors: { Busy: z.object({ retry: z.number() }) },
     invalidates: () => [pingTag()],
     runs: 'server',
+    access: 'anyone',
   })
   const p = project({
     schema: zodAdapter,

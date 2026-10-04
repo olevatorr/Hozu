@@ -1,5 +1,6 @@
 import { relative } from 'node:path'
 import {
+  accessSummary,
   appModuleOf,
   type BuildResult,
   type Freshness,
@@ -151,6 +152,7 @@ export function runMap(loaded: Loaded, cwd: string): MapOutput {
         errors: Object.keys(q.errors),
         tags: q.tags.map((t) => local(t.tag)),
         runs: q.runs,
+        access: q.access ? accessSummary(q.access) : null,
         at: at(`${base}/queries/${name}`),
       })),
       mutations: Object.entries(f.mutations).map(([name, q]) => ({
@@ -158,6 +160,7 @@ export function runMap(loaded: Loaded, cwd: string): MapOutput {
         errors: Object.keys(q.errors),
         invalidates: q.invalidates.map((t) => local(t.tag)),
         runs: q.runs,
+        access: q.access ? accessSummary(q.access) : null,
         at: at(`${base}/mutations/${name}`),
       })),
       fetch: f.fetch ? at(`${base}/fetch`) : null,
@@ -228,11 +231,11 @@ export function describeMap(out: MapOutput): string {
     lines.push(`feature ${f.id}`)
     for (const q of f.queries)
       lines.push(
-        `  query ${q.name} ${q.scope} ${q.freshness} runs:${q.runs}${q.errors.length ? ` !${q.errors.join(' !')}` : ''}${q.tags.length ? ` [${q.tags.join(' ')}]` : ''}${where(q.at)}`,
+        `  query ${q.name} ${q.scope} ${q.freshness} runs:${q.runs}${q.access ? ` access:${q.access}` : ''}${q.errors.length ? ` !${q.errors.join(' !')}` : ''}${q.tags.length ? ` [${q.tags.join(' ')}]` : ''}${where(q.at)}`,
       )
     for (const q of f.mutations)
       lines.push(
-        `  mutation ${q.name} runs:${q.runs}${q.errors.length ? ` !${q.errors.join(' !')}` : ''}${q.invalidates.length ? ` ⟳${q.invalidates.join(' ')}` : ''}${where(q.at)}`,
+        `  mutation ${q.name} runs:${q.runs}${q.access ? ` access:${q.access}` : ''}${q.errors.length ? ` !${q.errors.join(' !')}` : ''}${q.invalidates.length ? ` ⟳${q.invalidates.join(' ')}` : ''}${where(q.at)}`,
       )
     for (const e of f.endpoints) lines.push(`  endpoint ${e.name} ${e.method} ${e.path}${where(e.at)}`)
     if (f.fetch) lines.push(`  fetch.ts${where(f.fetch)}`)

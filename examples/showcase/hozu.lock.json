@@ -387,6 +387,7 @@
     }
   },
   "pages": {
+    "access": {},
     "endpoints": {},
     "head": {},
     "redirects": {}

@@ -43,6 +43,7 @@ export const addTask = mutation({
   errors: { Duplicate: z.object({ title: z.string() }) },
   invalidates: () => [tasksTag()],
   runs: 'server',
+  access: 'anyone',
 })
 
 export const toggleTask = mutation({
@@ -51,6 +52,7 @@ export const toggleTask = mutation({
   errors: { NotFound: TaskKey },
   invalidates: () => [tasksTag()],
   runs: 'server',
+  access: 'anyone',
 })
 
 export const clearDone = mutation({
@@ -58,6 +60,7 @@ export const clearDone = mutation({
   output: z.object({ removed: z.number() }),
   invalidates: () => [tasksTag()],
   runs: 'server',
+  access: 'anyone',
 })
 
 const Visible = z.object({ items: Tasks, show: Show })

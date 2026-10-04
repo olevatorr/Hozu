@@ -25,12 +25,14 @@ const who = query({
   freshness: 'request',
   tags: () => [whoTag()],
   runs: 'server',
+  access: 'anyone',
 })
 const bump = mutation({
   input: z.object({}),
   output: z.object({}),
   invalidates: () => [whoTag()],
   runs: 'server',
+  access: 'anyone',
 })
 const Bump = event({ payload: z.object({}) })
 const counter = machine({

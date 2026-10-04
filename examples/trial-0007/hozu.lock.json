@@ -451,6 +451,11 @@
     }
   },
   "pages": {
+    "access": {
+      "tasks.addTask": "'anyone'",
+      "tasks.clearDone": "'anyone'",
+      "tasks.toggleTask": "'anyone'"
+    },
     "endpoints": {},
     "head": {
       "taskPage": {

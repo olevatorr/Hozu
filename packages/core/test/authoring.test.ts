@@ -5,7 +5,12 @@ import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
 const SetN = event({ payload: z.object({ n: z.number() }) })
-const save = mutation({ input: z.object({ n: z.number() }), output: z.object({}), runs: 'server' })
+const save = mutation({
+  input: z.object({ n: z.number() }),
+  output: z.object({}),
+  runs: 'server',
+  access: 'anyone',
+})
 const m = machine({
   context: z.object({
     n: z.number(),

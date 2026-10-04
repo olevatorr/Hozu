@@ -444,6 +444,9 @@
     }
   },
   "pages": {
+    "access": {
+      "lab.addNote": "'anyone'"
+    },
     "endpoints": {
       "lab.notesApi": {
         "failed": {},

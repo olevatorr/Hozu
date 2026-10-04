@@ -53,7 +53,7 @@ export const AccountBar = ui.view({
           {
             ready: (user) => ui.p({}, ['Signed in as ', user.name]),
             pending: null,
-            failed: { Unauthorized: () => ui.p({}, ['Signed out']), Unexpected: () => ui.p({}, ['']) },
+            failed: { Forbidden: () => ui.p({}, ['Signed out']), Unexpected: () => ui.p({}, ['']) },
           },
         ),
         language(locale),
@@ -77,8 +77,8 @@ export const Admin = ui.view({
               ui.each(list, 'name', (a) => ui.li({ class: 'px-4 py-2' }, [a.name, ': ', a.notes, ' notes'])),
             ]),
           failed: {
-            Unauthorized: () => ui.p({ role: 'alert' }, ['Signed out']),
-            Forbidden: () => ui.p({ role: 'alert' }, ['Admins only']),
+            Forbidden: () => ui.p({ role: 'alert' }, ['Signed out']),
+            NotAdmin: () => ui.p({ role: 'alert' }, ['Admins only']),
             Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']),
           },
         },

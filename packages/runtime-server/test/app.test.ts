@@ -16,6 +16,7 @@ const appWith = (freshness: 'request' | { revalidate: number }) => {
     scope: 'user',
     freshness: freshness as 'request',
     runs: 'server',
+    access: 'anyone',
   })
   const Home = ui.view({
     render: () =>

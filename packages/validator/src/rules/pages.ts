@@ -37,7 +37,8 @@ export function headFailures(ctx: Ctx) {
           patch: null,
         },
       )
-    for (const e of mapped.filter((m) => !declared.includes(m)))
+    const forbidden = query?.access !== undefined && query.access.kind !== 'anyone'
+    for (const e of mapped.filter((m) => !declared.includes(m) && !(m === 'Forbidden' && forbidden)))
       ctx.report(
         'HZ051',
         null,

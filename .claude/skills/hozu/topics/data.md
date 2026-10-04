@@ -16,6 +16,7 @@ export const addItem = mutation({
   errors: { Duplicate: z.object({ title: z.string() }) },          // optional: declared failures
   invalidates: () => [itemsTag()],                                  // refreshes queries with these tags
   runs: 'server',
+  access: 'anyone',                 // who may run it (required on the server; user queries too): hozu docs auth
 })
 export const visible = fn({                   // computation: pure JS; may call const/function helpers of this module
   input: z.object({ items: z.array(Item), show: Show }), output: z.array(Item),

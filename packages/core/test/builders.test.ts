@@ -194,7 +194,13 @@ describe('builder diagnostics', () => {
   })
 
   it('HZ003 — invoke of a mutation no feature declares', () => {
-    const save = mutation({ input: Payload, output: Payload, invalidates: () => [], runs: 'server' })
+    const save = mutation({
+      input: Payload,
+      output: Payload,
+      invalidates: () => [],
+      runs: 'server',
+      access: 'anyone',
+    })
     const m = machine({
       context: Context,
       initialContext: { n: 0, label: '' },
@@ -249,6 +255,7 @@ describe('builder diagnostics', () => {
       errors: { Unexpected: Payload },
       invalidates: () => [],
       runs: 'server',
+      access: 'anyone',
     })
     const f = feature({ id: 'f', declarations: [{ save }], intent: { summary: ' ' } })
     expect(codesOf(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))).toEqual([
@@ -308,6 +315,7 @@ describe('busy states by rule (ADR 0037)', () => {
     errors: {},
     invalidates: () => [],
     runs: 'server',
+    access: 'anyone',
   })
   const build = (states: (ctx: any) => any) => {
     const m = machine({

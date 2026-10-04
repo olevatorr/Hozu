@@ -35,6 +35,7 @@ export const toggleFavorite = mutation({
   output: z.object({ id: z.string(), favorite: z.boolean() }),
   invalidates: () => [stationsTag()],
   runs: 'server',
+  access: 'anyone',
 })
 
 const matches = (s: { name: string; district: string }, q: string, district: string) =>

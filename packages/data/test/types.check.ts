@@ -26,6 +26,7 @@ const mine = query({
   freshness: 'live',
   tags: () => [],
   runs: 'server',
+  access: 'anyone',
 })
 
 resolvers(p, (implement) => [

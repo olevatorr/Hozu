@@ -30,11 +30,11 @@ export const notesApi = endpoint({
 export const listNotes = query({
   input: z.object({}),
   output: Notes,
-  errors: { Unauthorized: z.object({}) },
   scope: 'user',
   freshness: 'request',
   tags: () => [notesTag()],
   runs: 'server',
+  access: 'signedIn',
 })
 
 export const addNote = mutation({
@@ -43,6 +43,7 @@ export const addNote = mutation({
   errors: { Duplicate: z.object({ text: z.string() }) },
   invalidates: () => [notesTag()],
   runs: 'server',
+  access: 'signedIn',
 })
 
 export const removeNote = mutation({
@@ -51,6 +52,7 @@ export const removeNote = mutation({
   errors: { NotFound: NoteKey },
   invalidates: () => [notesTag()],
   runs: 'server',
+  access: 'signedIn',
 })
 
 export const togglePin = mutation({
@@ -59,6 +61,7 @@ export const togglePin = mutation({
   errors: { NotFound: NoteKey },
   invalidates: () => [notesTag()],
   runs: 'server',
+  access: 'signedIn',
 })
 
 const NoteIds = z.object({ ids: z.array(z.string()).min(1, 'Select at least one note') })
@@ -69,6 +72,7 @@ export const removeNotes = mutation({
   output: Count,
   invalidates: () => [notesTag()],
   runs: 'server',
+  access: 'signedIn',
 })
 
 export const pinNotes = mutation({
@@ -76,6 +80,7 @@ export const pinNotes = mutation({
   output: Count,
   invalidates: () => [notesTag()],
   runs: 'server',
+  access: 'signedIn',
 })
 
 const Visible = z.object({ items: Notes, query: z.string() })

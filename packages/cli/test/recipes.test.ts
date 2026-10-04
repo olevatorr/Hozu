@@ -78,7 +78,7 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
       ],
       [
         'export const Problem',
-        "export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()], runs: 'server' })\n\nexport const Problem",
+        "export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()], runs: 'server', access: 'anyone' })\n\nexport const Problem",
       ],
       [
         '        on(Toggle, {',
@@ -131,8 +131,10 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
     ])
     const stale = JSON.parse((await run(['check', '--json'])).stdout)
     expect(stale.types.errors).toEqual([])
-    expect(stale.validate.diagnostics.map((d: { code: string }) => d.code)).toEqual(['HZ057'])
-    expect(stale.validate.diagnostics[0].cause).toContain('new idle/on/items.ClearDone/0')
+    expect([...new Set(stale.validate.diagnostics.map((d: { code: string }) => d.code))]).toEqual(['HZ057'])
+    expect(stale.validate.diagnostics.map((d: { cause: string }) => d.cause).join('\n')).toContain(
+      'new idle/on/items.ClearDone/0',
+    )
     await run(['check', '--update-lock'])
     const check = await run(['check', '--json'])
     const out = JSON.parse(check.stdout)

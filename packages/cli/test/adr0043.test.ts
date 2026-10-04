@@ -109,7 +109,7 @@ describe('ADR 0043 D and J (tools)', () => {
     const app = await authApp()
     const file = join(app, 'features/notes/server.ts')
     const text = readFileSync(file, 'utf8')
-    const without = text.replace(/ {4}implement\(listNotes,[\s\S]*?\n {4}\),\n/, '')
+    const without = text.replace(/ {4}implement\(listNotes, .*\n/, '')
     expect(without).not.toBe(text)
     writeFileSync(file, without)
     const check = await hozu(['check'], app)

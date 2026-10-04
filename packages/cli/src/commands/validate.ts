@@ -146,6 +146,7 @@ export function seedLock(loaded: Loaded, features: string[]): { path: string; cr
           head: sorted({ ...next.pages.head, ...old.pages.head }),
           endpoints: sorted({ ...next.pages.endpoints, ...old.pages.endpoints }),
           redirects: sorted({ ...next.pages.redirects, ...old.pages.redirects }),
+          access: sorted({ ...next.pages.access, ...old.pages.access }),
         },
       }
     : next

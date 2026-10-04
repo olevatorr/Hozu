@@ -602,4 +602,33 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     summary: 'an entry of `project({ accept })` matches no warning, names an error, or has no reason',
     fix: 'remove the entry when the warning is gone; fix an error instead of accepting it; give every entry a reason',
   },
+  HZ088: {
+    name: 'missing-access',
+    severity: 'error',
+    topic: 'auth',
+    summary:
+      "a server-run `scope: 'user'` query or a server-run mutation without `access`, or an access rule that reads a field the output or session does not have",
+    fix: "say who may run it: `access: 'signedIn'`, `{ owner: { row, session } }`, `{ allow: ({ session }) => … }`, or `'anyone'`",
+  },
+  HZ089: {
+    name: 'unenforced-access',
+    severity: 'warning',
+    topic: 'auth',
+    summary: '`access` on a public query or a browser-run effect, where the server cannot enforce it',
+    fix: 'remove it: a public query never sees the session, and a browser-run effect is guarded by the API it calls',
+  },
+  HZ090: {
+    name: 'open-user-data',
+    severity: 'warning',
+    topic: 'auth',
+    summary: "`access: 'anyone'` on a `scope: 'user'` query: every visitor, signed in or not, may read it",
+    fix: "say who may read it (`'signedIn'`, `{ owner: { row, session } }`), or accept the warning with a reason",
+  },
+  HZ091: {
+    name: 'rows-outside-owner',
+    severity: 'error',
+    topic: 'auth',
+    summary: 'a query with `owner` access returned rows the visitor does not own (reported at run time)',
+    fix: "read only the visitor's rows in the resolver (filter by the session); production drops the extra rows and logs this",
+  },
 }

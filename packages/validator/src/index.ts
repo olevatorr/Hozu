@@ -3,6 +3,7 @@ import type { ClassStyle } from './context.ts'
 import { Ctx } from './context.ts'
 import type { LockfileV2 } from './contracts/record.ts'
 import { verifyContracts } from './contracts/verify.ts'
+import { access } from './rules/access.ts'
 import { classNames } from './rules/classes.ts'
 import { componentEmits } from './rules/clients.ts'
 import { getEndpointWrites, invalidations, queryFreshness, sessions } from './rules/data.ts'
@@ -93,6 +94,7 @@ const rules = [
   headFailures,
   unservedRoutes,
   endpointLinks,
+  access,
 ]
 
 const order = (a: Diagnostic, b: Diagnostic) =>

@@ -20,6 +20,7 @@ const save = mutation({
   output: z.object({}),
   errors: { Busy: z.object({}) },
   runs: 'server',
+  access: 'anyone',
 })
 const m = machine({
   context: z.object({ note: z.string() }),

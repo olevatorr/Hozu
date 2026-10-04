@@ -23,8 +23,14 @@ const mine = query({
   scope: 'user',
   freshness: 'request',
   runs: 'server',
+  access: 'anyone',
 })
-const add = mutation({ input: z.object({ text: z.string().trim() }), output: z.string(), runs: 'server' })
+const add = mutation({
+  input: z.object({ text: z.string().trim() }),
+  output: z.string(),
+  runs: 'server',
+  access: 'anyone',
+})
 const echo = endpoint({
   method: 'GET',
   path: '/api/echo',

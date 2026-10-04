@@ -1,3 +1,4 @@
+export type { Access } from './builders/access.ts'
 export type { Asset } from './builders/asset.ts'
 export type {
   ComponentDecl,

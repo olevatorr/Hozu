@@ -1212,6 +1212,18 @@
     }
   },
   "pages": {
+    "access": {
+      "account.accounts": "'signedIn'",
+      "account.me": "'signedIn'",
+      "account.signIn": "'anyone'",
+      "account.signOut": "'anyone'",
+      "notes.addNote": "'signedIn'",
+      "notes.listNotes": "'signedIn'",
+      "notes.pinNotes": "'signedIn'",
+      "notes.removeNote": "'signedIn'",
+      "notes.removeNotes": "'signedIn'",
+      "notes.togglePin": "'signedIn'"
+    },
     "endpoints": {
       "notes.notesApi": {
         "failed": {},
@@ -1221,14 +1233,14 @@
     "head": {
       "admin": {
         "Forbidden": {
-          "status": 403
-        },
-        "Unauthorized": {
           "redirect": "login"
+        },
+        "NotAdmin": {
+          "status": 403
         }
       },
       "home": {
-        "Unauthorized": {
+        "Forbidden": {
           "redirect": "login"
         }
       }

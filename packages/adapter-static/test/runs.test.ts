@@ -39,7 +39,12 @@ const star = mutation({
   invalidates: () => [reposTag()],
   runs: 'browser',
 })
-const save = mutation({ input: z.object({ id: z.string() }), output: z.object({}), runs: 'server' })
+const save = mutation({
+  input: z.object({ id: z.string() }),
+  output: z.object({}),
+  runs: 'server',
+  access: 'anyone',
+})
 const Star = event({ payload: z.object({ id: z.string() }) })
 const Save = event({ payload: z.object({ id: z.string() }) })
 const m = machine({

@@ -42,6 +42,7 @@ export const addItem = mutation({
   output: Item,
   invalidates: () => [itemsTag()],
   runs: 'server',
+  access: 'anyone',
 })
 
 export const toggleItem = mutation({
@@ -50,6 +51,7 @@ export const toggleItem = mutation({
   errors: { NotFound: Key },
   invalidates: () => [itemsTag()],
   runs: 'server',
+  access: 'anyone',
 })
 
 function score(n: number) {

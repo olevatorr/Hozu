@@ -321,6 +321,13 @@
             }
           ],
           "description": "Where a query or mutation runs (ADR 0049); null for other symbols."
+        },
+        "access": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Who may run it (ADR 0056 B), as the lock records it; null when it declares none."
         }
       },
       "required": [
@@ -331,7 +338,8 @@
         "invalidatedBy",
         "uses",
         "features",
-        "runs"
+        "runs",
+        "access"
       ],
       "additionalProperties": false
     },

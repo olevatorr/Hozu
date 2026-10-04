@@ -24,6 +24,7 @@ const addItem = mutation({
   output: z.object({}),
   invalidates: () => [itemsTag()],
   runs: 'server',
+  access: 'anyone',
 })
 const List = ui.view({
   render: () =>

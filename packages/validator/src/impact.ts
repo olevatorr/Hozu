@@ -1,4 +1,4 @@
-import { type ProjectIR, type Runs, resolveAt, type TagExprIR } from '@hozu/core/ir'
+import { accessSummary, type ProjectIR, type Runs, resolveAt, type TagExprIR } from '@hozu/core/ir'
 import { guardRefs, valueRefs } from './sites.ts'
 import { closest } from './suggest.ts'
 import { transitionsOf, walkView } from './walk.ts'
@@ -27,6 +27,8 @@ export interface Impact {
   features: string[]
   /** Where a query or mutation runs (ADR 0049); null for other symbols. */
   runs: Runs | null
+  /** Who may run it (ADR 0056 B), as the lock records it; null when it declares none. */
+  access: string | null
 }
 
 const registries: [ImpactKind, 'events' | 'queries' | 'mutations' | 'tags' | 'fns' | 'views'][] = [
@@ -167,7 +169,16 @@ export function impact(ir: ProjectIR, target: string): Impact {
     uses,
     features: [...touched].sort(),
     runs: runsOf(ir, target),
+    access: accessOf(ir, target),
   }
+}
+
+function accessOf(ir: ProjectIR, target: string): string | null {
+  const dot = target.indexOf('.')
+  const f = ir.features[target.slice(0, dot)]
+  const sym = target.slice(dot + 1)
+  const a = f?.queries[sym]?.access ?? f?.mutations[sym]?.access
+  return a ? accessSummary(a) : null
 }
 
 function runsOf(ir: ProjectIR, target: string): Runs | null {

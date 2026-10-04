@@ -459,6 +459,9 @@
     }
   },
   "pages": {
+    "access": {
+      "stations.toggleFavorite": "'anyone'"
+    },
     "endpoints": {},
     "head": {},
     "redirects": {}

@@ -455,7 +455,13 @@ export async function renderPage({
     if (!result.ok) {
       const failed = page.head.failed[result.error]
       if (failed && 'redirect' in failed) redirect = pathOf(routes[failed.redirect] ?? '/', null)
-      status = redirect ? 303 : failed && 'status' in failed ? failed.status : 500
+      status = redirect
+        ? 303
+        : failed && 'status' in failed
+          ? failed.status
+          : result.error === 'Forbidden'
+            ? 403
+            : 500
     }
     headScope = { ...empty, bindings: [result.ok ? result.value : null] }
   }

@@ -13,10 +13,10 @@ export const SignOut = event({ payload: z.object({}) })
 export const me = query({
   input: z.object({}),
   output: z.object({ name: z.string() }),
-  errors: { Unauthorized: z.object({}) },
   scope: 'user',
   freshness: 'request',
   runs: 'server',
+  access: 'signedIn',
 })
 
 export const ADMIN = 'admin'
@@ -24,14 +24,20 @@ export const ADMIN = 'admin'
 export const accounts = query({
   input: z.object({}),
   output: z.array(z.object({ name: z.string(), notes: z.number() })),
-  errors: { Unauthorized: z.object({}), Forbidden: z.object({}) },
+  errors: { NotAdmin: z.object({}) },
   scope: 'user',
   freshness: 'request',
   runs: 'server',
+  access: 'signedIn',
 })
 
-export const signIn = mutation({ input: Name, output: z.object({}), runs: 'server' })
-export const signOut = mutation({ input: z.object({}), output: z.object({}), runs: 'server' })
+export const signIn = mutation({ input: Name, output: z.object({}), runs: 'server', access: 'anyone' })
+export const signOut = mutation({
+  input: z.object({}),
+  output: z.object({}),
+  runs: 'server',
+  access: 'anyone',
+})
 
 export const accountMachine = machine({
   context: z.object({

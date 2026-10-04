@@ -116,7 +116,7 @@ export const NotesBoard = ui.view({
             ]),
           pending: ui.p({}, ['Loading…']),
           failed: {
-            Unauthorized: () => ui.p({ role: 'alert' }, ['Signed out']),
+            Forbidden: () => ui.p({ role: 'alert' }, ['Signed out']),
             Unexpected: () => ui.p({ role: 'alert' }, ['Notes are unavailable']),
           },
         },

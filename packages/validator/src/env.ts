@@ -45,8 +45,9 @@ export function effectSchemas(ir: ProjectIR, ref: string) {
     output: schemaIn(r.feature, effect.output),
     errors: effect.errors,
     invalid: r.registry === 'mutations',
+    forbidden: effect.access !== undefined && effect.access.kind !== 'anyone',
     error: (name: string) =>
-      name === 'Unexpected'
+      name === 'Unexpected' || (name === 'Forbidden' && !effect.errors.Forbidden)
         ? UNEXPECTED_ERROR_SCHEMA
         : name === 'Invalid' && r.registry === 'mutations' && !effect.errors.Invalid
           ? invalidSchema(schemaIn(r.feature, effect.input))

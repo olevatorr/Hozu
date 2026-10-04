@@ -24,6 +24,7 @@ const save = mutation({
   errors: { Busy: z.object({}) },
   invalidates: () => [],
   runs: 'server',
+  access: 'anyone',
 })
 const Context = z.object({ items: z.array(Item), note: z.string().nullable() })
 
@@ -438,4 +439,40 @@ export const pickerClient = implement<typeof Picker>(({ el, props, emit, signal 
       next.value satisfies string
     },
   }
+})
+
+const OwnedNote = z.object({ id: z.string(), owner: z.string() })
+export const ownedNotes = query({
+  input: z.object({}),
+  output: z.array(OwnedNote),
+  scope: 'user',
+  freshness: 'request',
+  runs: 'server',
+  access: { owner: { row: (n) => n.owner, session: (s) => s.user } },
+})
+export const misspelledOwner = query({
+  input: z.object({}),
+  output: z.array(OwnedNote),
+  scope: 'user',
+  freshness: 'request',
+  runs: 'server',
+  // @ts-expect-error the owner rule reads a field of the output row
+  access: { owner: { row: (n) => n.ownr, session: (s) => s.user } },
+})
+// @ts-expect-error a server-run user query declares access (ADR 0056 B)
+export const undeclared = query({
+  input: z.object({}),
+  output: z.array(OwnedNote),
+  scope: 'user',
+  freshness: 'request',
+  runs: 'server',
+})
+export const publicRead = query({
+  input: z.object({}),
+  output: z.array(OwnedNote),
+  scope: 'public',
+  freshness: 'static',
+  runs: 'server',
+  // @ts-expect-error a public query never sees the session, so it takes no access
+  access: 'signedIn',
 })

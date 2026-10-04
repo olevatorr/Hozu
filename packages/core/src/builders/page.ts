@@ -31,11 +31,14 @@ export interface PageDecl extends Decl<'page'> {}
 
 export type HeadStatus = 403 | 404 | 410
 
+type HeadAnswer = RouteDecl<null, any> | HeadStatus
+
+/** `Forbidden` (the framework's answer when access refuses, ADR 0056 B) may be mapped too; unmapped it is 403. */
 export type HeadFailed<E> = [E] extends [never]
-  ? { failed?: never }
+  ? { failed?: { Forbidden?: HeadAnswer } }
   : [keyof E] extends [never]
-    ? { failed?: never }
-    : { failed: { [K in keyof E]: RouteDecl<null, any> | HeadStatus } }
+    ? { failed?: { Forbidden?: HeadAnswer } }
+    : { failed: { [K in keyof E]: HeadAnswer } & { Forbidden?: HeadAnswer } }
 
 export const page = <P, I = never, O = never, E = never, EI = never, EO = never, EE = never>(
   route: RouteDecl<P>,

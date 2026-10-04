@@ -232,7 +232,7 @@ export async function runAddFeature(
         )
       if (next && pageRoute) {
         const text = w.auth
-          ? `ui.page(${pageRoute}, {\n      views: [AccountBar, ${n.View}],\n      head: {\n        query: me,\n        input: () => ({}),\n        render: () => ({ title: '${n.title}', noindex: true }),\n        failed: { Unauthorized: login },\n      },\n    })`
+          ? `ui.page(${pageRoute}, {\n      views: [AccountBar, ${n.View}],\n      head: {\n        query: me,\n        input: () => ({}),\n        render: () => ({ title: '${n.title}', noindex: true }),\n        failed: { Forbidden: login },\n      },\n    })`
           : `ui.page(${pageRoute}, { views: [${n.View}], head: { render: () => ({ title: '${n.title}' }) } })`
         next = newRoute
           ? next.replace(/pages:\s*\[/, (m) => `${m}\n    ${text},`)

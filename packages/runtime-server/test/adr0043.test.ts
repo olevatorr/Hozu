@@ -17,6 +17,7 @@ const me = query({
   freshness: 'live',
   tags: () => [notesTag()],
   runs: 'server',
+  access: 'anyone',
 })
 const listNotes = query({
   input: z.object({}),
@@ -25,14 +26,21 @@ const listNotes = query({
   freshness: 'live',
   tags: () => [notesTag()],
   runs: 'server',
+  access: 'anyone',
 })
-const signIn = mutation({ input: z.object({ name: z.string() }), output: z.object({}), runs: 'server' })
-const signOut = mutation({ input: z.object({}), output: z.object({}), runs: 'server' })
+const signIn = mutation({
+  input: z.object({ name: z.string() }),
+  output: z.object({}),
+  runs: 'server',
+  access: 'anyone',
+})
+const signOut = mutation({ input: z.object({}), output: z.object({}), runs: 'server', access: 'anyone' })
 const deleteAccount = mutation({
   input: z.object({}),
   output: z.object({}),
   invalidates: () => [notesTag()],
   runs: 'server',
+  access: 'anyone',
 })
 const home = route({ path: '/notes', params: null, search: null })
 const login = route({ path: '/login', params: null, search: null })
@@ -168,6 +176,7 @@ describe('ADR 0043 D (pages)', () => {
       scope: 'user',
       freshness: 'request',
       runs: 'server',
+      access: 'anyone',
     })
     const Admin = ui.view({ render: () => ui.main({}, ['Admin']) })
     const p = project({

@@ -39,13 +39,11 @@ const ordered = (list: Note[]) => [...list.filter((n) => n.pinned), ...list.filt
 
 export default app({
   resolvers: resolvers(project, (implement) => [
-    implement(me, (_, { session, fail }) => (session ? { name: session.user } : fail('Unauthorized', {}))),
+    implement(me, (_, { session }) => ({ name: session?.user ?? '' })),
     implement(accounts, (_, { session, fail }) =>
-      !session
-        ? fail('Unauthorized', {})
-        : session.user !== ADMIN
-          ? fail('Forbidden', {})
-          : [...store].map(([name, list]) => ({ name, notes: list.length })),
+      session?.user !== ADMIN
+        ? fail('NotAdmin', {})
+        : [...store].map(([name, list]) => ({ name, notes: list.length })),
     ),
     implement(signIn, ({ name }, { setSession }) => {
       setSession({ user: name.trim().toLowerCase() })
@@ -59,8 +57,8 @@ export default app({
       signedIn: session !== null,
       notes: session ? ordered(listOf(session.user)).map((n) => ({ ...n })) : [],
     })),
-    implement(listNotes, (_, { session, fail }) =>
-      session ? ordered(listOf(session.user)).map((n) => ({ ...n })) : fail('Unauthorized', {}),
+    implement(listNotes, (_, { session }) =>
+      session ? ordered(listOf(session.user)).map((n) => ({ ...n })) : [],
     ),
     implement(addNote, ({ text }, { session, fail }) => {
       if (!session) return fail('Invalid', { message: 'Signed out', fields: { text: 'Sign in first' } })

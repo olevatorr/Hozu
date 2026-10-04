@@ -203,6 +203,8 @@ export interface QueryIR {
   freshness: Freshness
   tags: TagExprIR[]
   runs: Runs
+  /** Who may read it (ADR 0056 B); required for a server-run `scope: 'user'` query. */
+  access?: AccessIR
 }
 
 export interface MutationIR {
@@ -211,7 +213,24 @@ export interface MutationIR {
   errors: Record<string, string>
   invalidates: TagExprIR[]
   runs: Runs
+  /** Who may run it (ADR 0056 B); required for a server-run mutation. */
+  access?: AccessIR
 }
+
+/**
+ * Declared access (ADR 0054, ADR 0056 B). The callbacks are lowered like guards: `session` and `input` are refs, and
+ * an owner's `row` is the `result` ref (a row of the output, or the row `load` read).
+ */
+export type AccessIR =
+  | { kind: 'anyone' }
+  | { kind: 'signedIn' }
+  | { kind: 'allow'; test: GuardExpr }
+  | {
+      kind: 'owner'
+      row: ValueExpr
+      session: ValueExpr
+      load: { query: string; input: ValueExpr } | null
+    }
 
 /** What an effect's implementation needs (ADR 0049): server secrets, browser credentials, or neither. */
 export type Runs = 'server' | 'browser' | 'either'
@@ -273,6 +292,7 @@ export type RefSource =
   | 'locale'
   | 'alternate'
   | 'env'
+  | 'session'
 
 export type ValueExpr =
   | { ref: RefSource; path: string[] }

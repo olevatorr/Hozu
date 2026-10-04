@@ -79,7 +79,12 @@ describe('a shared transition needs one contract (ADR 0041 D)', () => {
   })
 
   it('does not count an identical done branch of another state as covered', () => {
-    const save = mutation({ input: z.object({}), output: z.object({ ok: z.boolean() }), runs: 'server' })
+    const save = mutation({
+      input: z.object({}),
+      output: z.object({ ok: z.boolean() }),
+      runs: 'server',
+      access: 'anyone',
+    })
     const saver = machine({
       context: z.object({ q: z.string() }),
       initialContext: { q: '' },

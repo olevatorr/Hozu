@@ -20,6 +20,7 @@ const who = query({
   scope: 'user',
   freshness: 'request',
   runs: 'server',
+  access: 'anyone',
 })
 const retired = query({
   input: z.object({}),
@@ -359,6 +360,7 @@ describe('ADR 0043 D: the tables the lock reviews (pageTables)', () => {
   it('lists head failures, endpoint modes and statuses, and redirects', () => {
     const { build } = setup()
     expect(pageTables(build.ir)).toEqual({
+      access: { 'api.who': "'anyone'" },
       head: {
         admin: { Forbidden: { status: 403 }, Unauthorized: { redirect: 'login' } },
         gone: { Gone: { status: 410 } },

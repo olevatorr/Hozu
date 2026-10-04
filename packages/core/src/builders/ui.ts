@@ -146,9 +146,10 @@ type Elements = {
     : (props: Props<T>, children: Child[]) => NodeDecl
 }
 
+/** `Forbidden` (access refused, ADR 0056 B) is optional: unhandled, it renders the Unexpected branch. */
 type QueryErrors<E> = {
   [K in keyof E | 'Unexpected']: (error: Ref<K extends keyof E ? E[K] : UnexpectedError>) => Branch | null
-}
+} & { Forbidden?: (error: Ref<UnexpectedError>) => Branch | null }
 
 function view<C, S extends string, P = null, Q = null>(config: {
   machine: MachineDecl<C, S>

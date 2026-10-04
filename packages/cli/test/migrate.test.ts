@@ -7,6 +7,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 import { describeMigrate, runMigrate } from '../src/commands/migrate.ts'
 import type { MigrateOutput } from '../src/contract.ts'
 import { load } from '../src/load.ts'
+import { main } from '../src/main.ts'
 import { addRunsServer } from '../src/migrate/step-0.11.ts'
 import { chain } from '../src/migrate/steps.ts'
 
@@ -135,9 +136,11 @@ describe('hozu migrate on a 0.10 app (ADR 0049 §6)', () => {
     expect(ajv.validate(schema, second), JSON.stringify(ajv.errors)).toBe(true)
     expect(second.phase).toBe('verify')
     expect(second.ir).toEqual({ compared: true, skipped: null, differences: [] })
-    expect(second.check?.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })
-    expect(second.ok).toBe(true)
-    expect(existsSync(join(after, '.hozu/migrate-0.11.json'))).toBe(false)
+    expect(
+      second.check?.validate.diagnostics.filter((d) => d.code !== 'HZ088').map((d) => d.code),
+      'only the access 0.15 asks for remains',
+    ).toEqual([])
+    expect(existsSync(join(after, '.hozu/migrate-0.11.json')), 'kept until check is clean').toBe(true)
   }, 120_000)
 
   it('writes nothing on a dry run, and stops on a version older than 0.10', async () => {
@@ -187,7 +190,7 @@ describe('hozu migrate to 0.12 (ADR 0050 I)', () => {
       versions: { installed: '0.12.0', target: '0.12.0' },
     })
     expect(second.ir).toEqual({ compared: true, skipped: null, differences: [] })
-    expect(second.ok).toBe(true)
+    expect(second.check?.validate.diagnostics.filter((d) => d.code !== 'HZ088')).toEqual([])
   }, 120_000)
 
   it('changes no source of a 0.11 app, only its .gitignore', async () => {
@@ -320,18 +323,18 @@ describe('the 0.13 → 0.14 step (ADR 0053)', () => {
     expect(step.normalize({ features: {} } as never)).toEqual({ features: {}, accept: [] })
   })
 
-  it('takes a 0.10 app through every step to 0.14 with an equal IR and a clean check', async () => {
+  it('takes a 0.10 app through every step to 0.15 with an equal IR and a clean check', async () => {
     const dir = await copyOf('bookmarks')
     const before = await irOf(dir)
     const first = await runMigrate(dir, {
       config: undefined,
       dryRun: false,
-      versions: { installed: '0.10.0', target: '0.14.0' },
+      versions: { installed: '0.10.0', target: '0.15.0' },
       recordIR: () => before,
     })
-    expect(first.steps.map((s) => s.to)).toEqual(['0.11', '0.12', '0.13', '0.14'])
+    expect(first.steps.map((s) => s.to)).toEqual(['0.11', '0.12', '0.13', '0.14', '0.15'])
     expect(first.changed).toEqual([
-      { file: 'features/bookmarks/model.ts', edits: 4 },
+      { file: 'features/bookmarks/model.ts', edits: 6 },
       { file: '.gitignore', edits: 1 },
       { file: 'package.json', edits: 1 },
     ])
@@ -343,13 +346,21 @@ describe('the 0.13 → 0.14 step (ADR 0053)', () => {
     const second = await runMigrate(after, {
       config: undefined,
       dryRun: false,
-      versions: { installed: '0.14.0', target: '0.14.0' },
+      versions: { installed: '0.15.0', target: '0.15.0' },
     })
-    expect([second.ir.differences, second.check?.validate.summary, second.ok]).toEqual([
-      [],
-      { errors: 0, warnings: 0, accepted: 0 },
-      true,
-    ])
+    expect(second.ir.differences).toEqual([])
+    expect(
+      second.check?.validate.diagnostics.map((d) => [d.code, d.message.split(':')[0]]),
+      'the lock now reviews access: --update-lock accepts it',
+    ).toEqual([['HZ057', 'hozu.lock.json pages are out of date']])
+    await main(['check', '--no-types', '--update-lock'], after, () => {})
+    const third = await runMigrate(after, {
+      config: undefined,
+      dryRun: false,
+      versions: { installed: '0.15.0', target: '0.15.0' },
+    })
+    expect([third.check?.validate.summary, third.ok]).toEqual([{ errors: 0, warnings: 0, accepted: 0 }, true])
+    expect(existsSync(join(after, '.hozu/migrate-0.15.json'))).toBe(false)
   }, 120_000)
 
   it('takes a 0.13 app to 0.14 with an equal IR and a clean check', async () => {

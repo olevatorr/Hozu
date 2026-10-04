@@ -1,3 +1,4 @@
+import { accessSummary } from './access.ts'
 import type {
   EndpointMode,
   EndpointStatus,
@@ -115,6 +116,8 @@ export interface PageTables {
   head: Record<string, Record<string, HeadFailureIR>>
   endpoints: Record<string, { mode: EndpointMode; failed: Record<string, EndpointStatus> }>
   redirects: Record<string, { to: string; permanent: boolean }>
+  /** Each server-run effect's declared access (ADR 0056 B), so a change to it is reviewed. */
+  access: Record<string, string>
 }
 
 const targetOf = (ir: ProjectIR, to: ValueExpr): string =>
@@ -142,6 +145,13 @@ export function pageTables(ir: ProjectIR): PageTables {
         r.from,
         { to: targetOf(ir, r.to), permanent: r.permanent },
       ]),
+    ),
+    access: sorted(
+      Object.values(ir.features).flatMap((f) =>
+        [...Object.entries(f.queries), ...Object.entries(f.mutations)].flatMap(
+          ([sym, e]): [string, string][] => (e.access ? [[`${f.id}.${sym}`, accessSummary(e.access)]] : []),
+        ),
+      ),
     ),
   }
 }

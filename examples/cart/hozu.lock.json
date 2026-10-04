@@ -527,6 +527,12 @@
     }
   },
   "pages": {
+    "access": {
+      "cart.addItem": "'anyone'",
+      "cart.checkout": "'anyone'",
+      "cart.getCart": "'signedIn'",
+      "cart.removeItem": "'anyone'"
+    },
     "endpoints": {},
     "head": {
       "product": {

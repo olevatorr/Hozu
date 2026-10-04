@@ -538,7 +538,8 @@
         "dom",
         "locale",
         "alternate",
-        "env"
+        "env",
+        "session"
       ]
     },
     "GuardExpr": {
@@ -1087,6 +1088,10 @@
         },
         "runs": {
           "$ref": "#/definitions/Runs"
+        },
+        "access": {
+          "$ref": "#/definitions/AccessIR",
+          "description": "Who may read it (ADR 0056 B); required for a server-run `scope: 'user'` query."
         }
       },
       "required": [
@@ -1216,6 +1221,99 @@
       ],
       "description": "What an effect's implementation needs (ADR 0049): server secrets, browser credentials, or neither."
     },
+    "AccessIR": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "anyone"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "signedIn"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "allow"
+            },
+            "test": {
+              "$ref": "#/definitions/GuardExpr"
+            }
+          },
+          "required": [
+            "kind",
+            "test"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "owner"
+            },
+            "row": {
+              "$ref": "#/definitions/ValueExpr"
+            },
+            "session": {
+              "$ref": "#/definitions/ValueExpr"
+            },
+            "load": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "query": {
+                      "type": "string"
+                    },
+                    "input": {
+                      "$ref": "#/definitions/ValueExpr"
+                    }
+                  },
+                  "required": [
+                    "query",
+                    "input"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "row",
+            "session",
+            "load"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "Declared access (ADR 0054, ADR 0056 B). The callbacks are lowered like guards: `session` and `input` are refs, and an owner's `row` is the `result` ref (a row of the output, or the row `load` read)."
+    },
     "MutationIR": {
       "type": "object",
       "properties": {
@@ -1239,6 +1337,10 @@
         },
         "runs": {
           "$ref": "#/definitions/Runs"
+        },
+        "access": {
+          "$ref": "#/definitions/AccessIR",
+          "description": "Who may run it (ADR 0056 B); required for a server-run mutation."
         }
       },
       "required": [

@@ -1,5 +1,6 @@
 import type { MutationDecl, QueryDecl } from '@hozu/core'
 import {
+  type AccessIR,
   type BuildResult,
   canonicalStringify,
   codes,
@@ -10,7 +11,7 @@ import {
   resolveSource,
   type TagExprIR,
 } from '@hozu/core/ir'
-import { compileValue, type Getter } from '@hozu/machine'
+import { compileGuard, compileValue, type Getter } from '@hozu/machine'
 import { type DataCache, Lru, memoryDataCache } from './cache.ts'
 import {
   fail,
@@ -42,7 +43,25 @@ interface Effect {
   errors: Set<string>
   fields: string[]
   run: Run
+  access: Access | null
 }
+
+/** A compiled access rule (ADR 0056 B). */
+type Access =
+  | { kind: 'anyone' }
+  | { kind: 'signedIn' }
+  | { kind: 'allow'; test: (env: object) => boolean }
+  | {
+      kind: 'owner'
+      row: (row: Json) => Json
+      session: (session: unknown) => Json
+      load: { query: string; input: (input: Json) => Json } | null
+    }
+
+const same = (a: Json, b: Json) =>
+  a !== null && b !== null && (a === b || canonicalStringify(a) === canonicalStringify(b))
+
+const forbidden = (): Result => ({ ok: false, error: 'Forbidden', data: { message: 'Forbidden' } })
 
 interface Entry {
   value: Result | null
@@ -309,6 +328,7 @@ export function createDataRuntime({
       tags: TagExprIR[],
       scope: 'public' | 'user',
       freshness: Freshness,
+      access: AccessIR | undefined,
       fields: string[] = [],
     ) => {
       const ref = `${feature.id}.${symbol}`
@@ -334,10 +354,11 @@ export function createDataRuntime({
         fields,
         tags: tagsOf(tags),
         run,
+        access: where === 'server' && access ? compileAccess(access) : null,
       })
     }
     for (const [symbol, q] of Object.entries(feature.queries))
-      register('query', symbol, q.errors, q.tags, q.scope, q.freshness)
+      register('query', symbol, q.errors, q.tags, q.scope, q.freshness, q.access)
     for (const [symbol, e] of Object.entries(feature.endpoints ?? {})) {
       const ref = `${feature.id}.${symbol}`
       const run = runs.get(ref)
@@ -360,11 +381,32 @@ export function createDataRuntime({
         })
     }
     for (const [symbol, m] of Object.entries(feature.mutations))
-      register('mutation', symbol, m.errors, m.invalidates, 'user', { kind: 'request' }, [
+      register('mutation', symbol, m.errors, m.invalidates, 'user', { kind: 'request' }, m.access, [
         ...Object.keys((feature.schemas[m.input]?.properties as object | undefined) ?? {}),
       ])
   }
   if (problems.length) throw new DataRuntimeError(problems)
+
+  function compileAccess(a: AccessIR): Access {
+    const fns = bindings.fns as never
+    if (a.kind === 'anyone') return { kind: 'anyone' }
+    if (a.kind === 'signedIn') return { kind: 'signedIn' }
+    if (a.kind === 'allow') {
+      const test = compileGuard(a.test, fns)
+      return { kind: 'allow', test: (env) => test(env as never) }
+    }
+    const row = compileValue(a.row, fns)
+    const session = compileValue(a.session, fns)
+    const input = a.load ? compileValue(a.load.input, fns) : null
+    return {
+      kind: 'owner',
+      row: (r) => row({ result: r } as never),
+      session: (s) => session({ session: s } as never),
+      load: a.load && input ? { query: a.load.query, input: (i) => input({ input: i } as never) } : null,
+    }
+  }
+  const production = rawEnv !== null && (rawEnv as Record<string, unknown>).NODE_ENV === 'production'
+  const reportedRows = new Set<string>()
 
   const parsedInputs = new Lru<{ input: Json; key: string }>(10_000)
   const stats = { fetches: 0, hits: 0, deduped: 0, invalidated: 0 }
@@ -519,7 +561,51 @@ export function createDataRuntime({
       }
       const issues = check(`${effect.ref}#output`, out)
       if (issues) return report(new Error(`Invalid output from ${effect.ref}: ${issues.join('; ')}`))
+      const owned = effect.kind === 'query' ? this.#owned(effect, out as Json) : null
+      if (owned) return owned.result ?? { ok: true, value: owned.rows }
       return { ok: true, value: out as Json }
+    }
+
+    /**
+     * Query `owner` (ADR 0056 B): one row that is not the visitor's is Forbidden; a list with such rows means the
+     * resolver read too much (HZ091): an error in development, the rows dropped and logged once in production.
+     */
+    #owned(effect: Effect, out: Json): { result: Result | null; rows: Json } | null {
+      const a = effect.access
+      if (a?.kind !== 'owner') return null
+      const me = a.session(this.session)
+      const mine = (row: Json) => same(a.row(row), me)
+      if (!Array.isArray(out)) return mine(out) ? null : { result: forbidden(), rows: null }
+      const foreign = out.filter((row) => !mine(row))
+      if (!foreign.length) return null
+      const error = new Error(
+        `HZ091 ${effect.ref} returned ${foreign.length} row${foreign.length === 1 ? '' : 's'} the visitor does not own: read only the visitor's rows in the resolver`,
+      )
+      if (!production) {
+        onError(error, { effect: effect.ref })
+        return { result: unexpected(error.message), rows: null }
+      }
+      if (!reportedRows.has(effect.ref)) {
+        reportedRows.add(effect.ref)
+        onError(error, { effect: effect.ref })
+      }
+      return { result: null, rows: out.filter(mine) }
+    }
+
+    /** The access checks made before the resolver runs (ADR 0056 B); null lets it run. */
+    async #refused(effect: Effect, input: Json): Promise<Result | null> {
+      const a = effect.access
+      if (!a || a.kind === 'anyone') return null
+      this.readSession = true
+      if (this.session === null) return forbidden()
+      if (a.kind === 'signedIn') return null
+      if (a.kind === 'allow') return a.test({ session: this.session, input }) ? null : forbidden()
+      if (effect.kind === 'query') return null
+      const me = a.session(this.session)
+      if (!a.load) return same(a.row(input), me) ? null : forbidden()
+      const loaded = await this.run(a.load.query, a.load.input(input))
+      if (!loaded.ok) return loaded.error === 'Forbidden' ? forbidden() : null
+      return same(a.row(loaded.value), me) ? null : forbidden()
     }
 
     #validSession(): Result | null {
@@ -549,6 +635,8 @@ export function createDataRuntime({
         if (shared !== null) parsedInputs.set(shared, known)
       }
       const { input, key } = known
+      const refused = await this.#refused(effect, input)
+      if (refused) return effect.kind === 'mutation' ? { ...refused, invalidated: [] } : refused
       if (effect.kind === 'query') {
         this.#memo ??= new Map()
         const hit = this.#memo.get(key)

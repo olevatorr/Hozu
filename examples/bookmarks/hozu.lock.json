@@ -368,6 +368,10 @@
     }
   },
   "pages": {
+    "access": {
+      "bookmarks.addBookmark": "'anyone'",
+      "bookmarks.toggleRead": "'anyone'"
+    },
     "endpoints": {},
     "head": {
       "bookmarkPage": {

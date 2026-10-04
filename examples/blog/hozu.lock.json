@@ -235,6 +235,11 @@
     }
   },
   "pages": {
+    "access": {
+      "saved.savePost": "'anyone'",
+      "saved.savedPosts": "'signedIn'",
+      "saved.unsavePost": "'anyone'"
+    },
     "endpoints": {},
     "head": {
       "post": {

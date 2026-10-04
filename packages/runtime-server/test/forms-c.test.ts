@@ -16,6 +16,7 @@ const removeMany = mutation({
   output: z.object({ count: z.number() }),
   invalidates: () => [notesTag()],
   runs: 'server',
+  access: 'anyone',
 })
 const importTags = endpoint({
   method: 'POST',

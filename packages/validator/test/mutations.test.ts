@@ -69,6 +69,34 @@ const text = { type: 'string' }
 
 const catalog: Mutation[] = [
   {
+    name: 'a server-run user query without access (ADR 0056 B)',
+    code: 'HZ088',
+    mutate: (ir) => {
+      delete cart(ir).queries.getCart!.access
+    },
+  },
+  {
+    name: 'a server-run mutation without access (ADR 0056 B)',
+    code: 'HZ088',
+    mutate: (ir) => {
+      delete cart(ir).mutations.addItem!.access
+    },
+  },
+  {
+    name: 'access on a public query, which never sees the session',
+    code: 'HZ089',
+    mutate: (ir) => {
+      ir.features.catalog!.queries.listProducts!.access = { kind: 'signedIn' }
+    },
+  },
+  {
+    name: "user data that 'anyone' may read",
+    code: 'HZ090',
+    mutate: (ir) => {
+      cart(ir).queries.getCart!.access = { kind: 'anyone' }
+    },
+  },
+  {
     name: 'typo in a transition target',
     code: 'HZ007',
     mutate: (ir) => {

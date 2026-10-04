@@ -42,6 +42,7 @@ export const addBookmark = mutation({
   errors: { Duplicate: z.object({ title: z.string() }) },
   invalidates: () => [bookmarksTag()],
   runs: 'server',
+  access: 'anyone',
 })
 
 export const toggleRead = mutation({
@@ -50,6 +51,7 @@ export const toggleRead = mutation({
   errors: { NotFound: BookmarkKey },
   invalidates: () => [bookmarksTag()],
   runs: 'server',
+  access: 'anyone',
 })
 
 const Visible = z.object({ items: Bookmarks, show: Show })

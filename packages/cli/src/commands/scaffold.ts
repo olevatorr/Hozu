@@ -39,6 +39,7 @@ export function model(n: Names, w: With): string {
   const keyed = w.detail || w.toggle || w.remove
   const busy = w.toggle || w.remove
   const core = ['event', ...(w.filter ? ['fn'] : []), 'invoke', 'machine', 'mutation', 'on', 'query', 'tag']
+  const access = `  access: '${w.auth ? 'signedIn' : 'anyone'}',`
   const actionState = (state: string, effect: string) => `    ${state}: {
       invoke: invoke(${effect}, {
         input: { id: ctx.target },
@@ -71,11 +72,11 @@ export function model(n: Names, w: With): string {
     `export const ${n.list} = query({`,
     `  input: z.object({}),`,
     `  output: z.array(${n.Item}),`,
-    w.auth && `  errors: { Unauthorized: z.object({}) },`,
     `  scope: '${w.auth ? 'user' : 'public'}',`,
     `  freshness: '${w.auth ? 'request' : 'static'}',`,
     `  tags: () => [${n.tag}()],`,
     `  runs: 'server',`,
+    w.auth && access,
     '})',
     w.detail &&
       `
@@ -86,7 +87,7 @@ export const ${n.get} = query({
   scope: '${w.auth ? 'user' : 'public'}',
   freshness: '${w.auth ? 'request' : 'static'}',
   tags: () => [${n.tag}()],
-  runs: 'server',
+  runs: 'server',${w.auth ? `\n${access}` : ''}
 })`,
     '',
     `export const ${n.add} = mutation({`,
@@ -95,6 +96,7 @@ export const ${n.get} = query({
     `  errors: { Duplicate: z.object({ title: z.string() }) },`,
     `  invalidates: () => [${n.tag}()],`,
     `  runs: 'server',`,
+    access,
     '})',
     w.toggle &&
       `
@@ -104,6 +106,7 @@ export const ${n.toggle} = mutation({
   errors: { NotFound: ${n.Key} },
   invalidates: () => [${n.tag}()],
   runs: 'server',
+${access}
 })`,
     w.remove &&
       `
@@ -113,6 +116,7 @@ export const ${n.remove} = mutation({
   errors: { NotFound: ${n.Key} },
   invalidates: () => [${n.tag}()],
   runs: 'server',
+${access}
 })`,
     w.filter &&
       `
@@ -282,7 +286,7 @@ export function views(n: Names, w: With, listRoute: string | null): string {
     '          ready: (items) =>',
     `            ${ready},`,
     `          pending: ui.p({}, ['Loading…']),`,
-    `          failed: { ${w.auth ? "Unauthorized: () => ui.p({ role: 'alert' }, ['Signed out']), " : ''}Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },`,
+    `          failed: { ${w.auth ? "Forbidden: () => ui.p({ role: 'alert' }, ['Signed out']), " : ''}Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },`,
     '        },',
     '      ),',
     '    ]),',
@@ -375,9 +379,7 @@ export function server(n: Names, w: With): string {
     find && `  const find = (items: ${Row}[], id: string) => items.find((item) => item.id === id)`,
     '  return [',
     w.auth
-      ? `    implement(${n.list}, (_, { session, fail }) =>
-      session ? listOf(session).map((item) => ({ ...item })) : fail('Unauthorized', {}),
-    ),`
+      ? `    implement(${n.list}, (_, { session }) => listOf(session).map((item) => ({ ...item }))),`
       : `    implement(${n.list}, () => items.map((item) => ({ ...item }))),`,
     w.detail &&
       `    implement(${n.get}, ({ id }, ${ctx('fail')}) => ${scoped(
@@ -385,11 +387,7 @@ export function server(n: Names, w: With): string {
       return item ? { ...item } : fail('NotFound', { id })`,
         false,
       )}),`,
-    `    implement(${n.add}, ({ title }, ${ctx('fail')}) => ${scoped(`${
-      w.auth
-        ? `      if (!session) return fail('Invalid', { message: 'Signed out', fields: { title: 'Sign in first' } })\n`
-        : ''
-    }      const clean = title.trim()
+    `    implement(${n.add}, ({ title }, ${ctx('fail')}) => ${scoped(`      const clean = title.trim()
       if (items.some((item) => item.title.toLowerCase() === clean.toLowerCase()))
         return fail('Duplicate', { title: clean })
       const item = { id: \`${n.one.charAt(0)}\${++seq}\`, title: clean${w.toggle ? ', done: false' : ''} }
@@ -424,14 +422,14 @@ export const SignOut = event({ payload: z.object({}) })
 export const me = query({
   input: z.object({}),
   output: z.object({ name: z.string() }),
-  errors: { Unauthorized: z.object({}) },
   scope: 'user',
   freshness: 'request',
   runs: 'server',
+  access: 'signedIn',
 })
 
-export const signIn = mutation({ input: Name, output: z.object({}), runs: 'server' })
-export const signOut = mutation({ input: z.object({}), output: z.object({}), runs: 'server' })
+export const signIn = mutation({ input: Name, output: z.object({}), runs: 'server', access: 'anyone' })
+export const signOut = mutation({ input: z.object({}), output: z.object({}), runs: 'server', access: 'anyone' })
 
 export const accountMachine = machine({
   context: z.object({
@@ -513,7 +511,7 @@ export const AccountBar = ui.view({
         {},
         {
           ready: (user) => ui.p({}, ['Signed in as ', user.name]),
-          failed: { Unauthorized: () => ui.p({}, ['Signed out']), Unexpected: () => ui.p({}, ['']) },
+          failed: { Forbidden: () => ui.p({}, ['Signed out']), Unexpected: () => ui.p({}, ['']) },
         },
       ),
       ui.form({ on: { submit: ui.send(SignOut, {}) } }, [
@@ -563,7 +561,7 @@ import { me, signIn, signOut } from './model.ts'
 
 export function accountResolvers<Env>(implement: Implement<{ user: string }, Env>) {
   return [
-    implement(me, (_, { session, fail }) => (session ? { name: session.user } : fail('Unauthorized', {}))),
+    implement(me, (_, { session }) => ({ name: session?.user ?? '' })),
     implement(signIn, ({ name }, { setSession }) => {
       setSession({ user: name.trim().toLowerCase() })
       return {}

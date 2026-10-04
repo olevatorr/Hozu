@@ -66,7 +66,7 @@ export interface MachineDecl<C = any, S extends string = string>
 
 type ErrorTransitions<E, T extends string, I = Record<string, unknown>> = {
   [K in keyof E | 'Unexpected']: Outcome<T, Ref<K extends keyof E ? E[K] : UnexpectedError>>
-} & { Invalid?: Outcome<T, Ref<InvalidError<I>>> }
+} & { Invalid?: Outcome<T, Ref<InvalidError<I>>>; Forbidden?: Outcome<T, Ref<UnexpectedError>> }
 
 export const on = <P, const T extends string = never>(
   event: EventDecl<P>,

@@ -15,7 +15,8 @@ export const itemsTag = tag({ param: null })
 export const listItems = query({ input: z.object({}), output: z.array(Item), scope: 'public',
   freshness: 'static', tags: () => [itemsTag()], runs: 'server' })        // resolvers in app.ts
 export const addItem = mutation({ input: z.object({ title: z.string().min(2, 'Too short') }), output: Item,
-  errors: { Duplicate: z.object({ title: z.string() }) }, invalidates: () => [itemsTag()], runs: 'server' })
+  errors: { Duplicate: z.object({ title: z.string() }) }, invalidates: () => [itemsTag()], runs: 'server',
+  access: 'anyone' })                                                  // who may run it: hozu docs auth
 export const items = machine({
   context: z.object({ draft: z.string(), error: z.string().nullable() }),
   initialContext: { draft: '', error: null },
