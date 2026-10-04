@@ -58,7 +58,7 @@ export function compressedCache(max = 256) {
   }
 }
 
-/** A streamed body (a page): each chunk is flushed, so streaming keeps its order and timing. */
+/** A streamed body (a page): flushed whenever the stream waits, so streaming keeps its order and timing. */
 export async function streamCompressed(
   response: ServerResponse,
   reader: ReadableStreamDefaultReader<Uint8Array>,
@@ -71,11 +71,14 @@ export async function streamCompressed(
   const flushing = encoding === 'gzip' ? constants.Z_SYNC_FLUSH : constants.BROTLI_OPERATION_FLUSH
   zip.pipe(response)
   response.on('close', () => void reader.cancel().catch(() => {}))
+  let idle: ReturnType<typeof setImmediate> | null = null
   for (;;) {
     const { done, value } = await reader.read()
+    if (idle) clearImmediate(idle)
+    idle = null
     if (done) break
     zip.write(value)
-    await new Promise<void>((resolve) => zip.flush(flushing, () => resolve()))
+    idle = setImmediate(() => zip.flush(flushing))
   }
   zip.end()
 }

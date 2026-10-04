@@ -122,6 +122,14 @@ so 0.15 apps upgrade without a migration step.
   - P9 (req/s through adapter-node) before and after, reported;
   - `bench/meta` again with every framework behind the same compression, and the static variants of Nuxt,
     SvelteKit and Hozu next to Next.js's. The site's Speed table is updated from that run.
+- **Result (`bench/meta`, one idle M4 Pro):**
+  - Without compression, Hozu answers 16.9 k req/s (16.4 k on 0.15, before A4).
+  - With gzip accepted, it answers 11.9 k req/s: about 27 % for the compression, against 9 % for Next.js (1.5 k).
+    That is still 7.7× Next.js with compression and 1.7× SvelteKit without it.
+  - **Changed while building:** the first version flushed after every chunk, and cost 40 %. It now flushes when
+    the stream waits (`setImmediate`), so the head still arrives first and a page that renders at once is one
+    deflate. The gzip level did not matter (4 and 6 measured the same).
+  - Every HTML page is 12.3 KB raw and 1.8 KB on the wire.
 
 ### B3 — what learning costs (analysis first)
 - **What:** trial 0024's cold-arm transcripts, measured as ADR 0038 did. Tokens are counted by what produced them:
