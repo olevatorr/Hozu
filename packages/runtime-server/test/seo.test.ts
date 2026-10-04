@@ -83,8 +83,12 @@ describe('route params and head metadata', () => {
       '/zh-TW/posts/islands-explained',
     ])
     expect(sitemapXml(build, entries)).toContain(
-      '<loc>https://blog.hozu.dev/zh-TW/posts/islands-explained</loc>',
+      '<url><loc>https://blog.hozu.dev/zh-TW/posts/islands-explained</loc>' +
+        '<xhtml:link rel="alternate" hreflang="en" href="https://blog.hozu.dev/posts/islands-explained"/>' +
+        '<xhtml:link rel="alternate" hreflang="zh-TW" href="https://blog.hozu.dev/zh-TW/posts/islands-explained"/>' +
+        '<xhtml:link rel="alternate" hreflang="x-default" href="https://blog.hozu.dev/posts/islands-explained"/></url>',
     )
+    expect(sitemapXml(build, entries)).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"')
     expect(robotsTxt(build)).toBe(
       'User-agent: *\nAllow: /\nDisallow: /offline\nDisallow: /zh-TW/offline\nSitemap: https://blog.hozu.dev/sitemap.xml\n',
     )

@@ -39,7 +39,7 @@ describe('internationalisation (ADR 0017, ADR 0043 F)', () => {
       '<link rel="alternate" hreflang="zh-TW" href="https://blog.hozu.dev/zh-TW/posts/hello-hozu">',
       '<link rel="alternate" hreflang="x-default" href="https://blog.hozu.dev/posts/hello-hozu">',
       '<meta property="og:locale" content="zh_TW">',
-      '<meta property="og:locale:alternate" content="en">',
+      '<meta property="og:locale:alternate" content="en_US">',
       '<a href="/posts/hello-hozu" hreflang="en" lang="en">English</a>',
     ])
       expect(html).toContain(tag)

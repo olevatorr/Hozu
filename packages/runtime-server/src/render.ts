@@ -784,10 +784,10 @@ function headHtml(
     meta('property', 'og:url', url),
     meta('property', 'og:site_name', ir.site?.name ?? null),
     meta('property', 'og:image', image),
-    ir.site?.locales ? meta('property', 'og:locale', lang.replace('-', '_')) : '',
+    ir.site?.locales ? meta('property', 'og:locale', ogLocale(lang)) : '',
     ...(ir.site?.locales ?? [])
       .filter((l) => l !== lang)
-      .map((l) => meta('property', 'og:locale:alternate', l.replace('-', '_'))),
+      .map((l) => meta('property', 'og:locale:alternate', ogLocale(l))),
     ...(ir.site?.locales && status === 200
       ? [
           ...Object.entries(alternate).map(
@@ -820,5 +820,15 @@ export async function renderToString(options: RenderOptions): Promise<{
     status: page.status,
     path: page.path,
     redirect: page.redirect,
+  }
+}
+
+/** Open Graph wants language_TERRITORY: `en` → `en_US`, `zh-TW` → `zh_TW`, from the likely region (ADR 0056 A13). */
+export function ogLocale(lang: string): string {
+  try {
+    const full = new Intl.Locale(lang).maximize()
+    return full.region ? `${full.language}_${full.region}` : lang.replace('-', '_')
+  } catch {
+    return lang.replace('-', '_')
   }
 }

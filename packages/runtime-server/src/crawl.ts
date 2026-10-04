@@ -39,10 +39,28 @@ export async function pageEntries(build: BuildResult, data: DataRuntime): Promis
 
 export function sitemapXml(build: BuildResult, entries: PageEntry[]): string {
   const site = build.ir.site
-  const urls = entries
-    .filter((e) => !build.ir.pages[e.route]?.head.noindex)
-    .map((e) => `<url><loc>${escapeHtml(`${site?.url ?? ''}${e.path}`)}</loc></url>`)
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join('')}</urlset>\n`
+  const listed = entries.filter((e) => !build.ir.pages[e.route]?.head.noindex)
+  const groups = new Map<string, PageEntry[]>()
+  for (const e of listed) {
+    const key = `${e.route} ${JSON.stringify(e.params)}`
+    groups.set(key, [...(groups.get(key) ?? []), e])
+  }
+  const href = (path: string) => escapeHtml(`${site?.url ?? ''}${path}`)
+  const alternates = (e: PageEntry) => {
+    const group = groups.get(`${e.route} ${JSON.stringify(e.params)}`) ?? []
+    if (!site?.locales || group.length < 2) return ''
+    const fallback = group.find((g) => g.locale === site.lang) ?? group[0]!
+    return [
+      ...group.map(
+        (g) =>
+          `<xhtml:link rel="alternate" hreflang="${escapeHtml(g.locale ?? '')}" href="${href(g.path)}"/>`,
+      ),
+      `<xhtml:link rel="alternate" hreflang="x-default" href="${href(fallback.path)}"/>`,
+    ].join('')
+  }
+  const urls = listed.map((e) => `<url><loc>${href(e.path)}</loc>${alternates(e)}</url>`)
+  const xhtml = site?.locales ? ' xmlns:xhtml="http://www.w3.org/1999/xhtml"' : ''
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"${xhtml}>${urls.join('')}</urlset>\n`
 }
 
 export function robotsTxt(build: BuildResult): string {
