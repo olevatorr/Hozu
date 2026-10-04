@@ -376,6 +376,8 @@ export interface BrowseChange {
   requested: boolean
   navigated: boolean
   url: string
+  /** The status of the page the step loaded, when it is not 200 (a 403 an access check expects). */
+  status?: number
   added: string[]
   removed: string[]
 }

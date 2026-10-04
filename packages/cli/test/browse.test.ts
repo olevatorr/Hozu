@@ -275,6 +275,16 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     for (const m of out.steps[4].modes) expect(m.note).toBe('$nothing was not remembered before this step')
   }, 60_000)
 
+  it("a page that answers 403 is the step's status, not an error, so an access check exits 0 (0.15 dogfood)", async () => {
+    const { code, out } = await browse(
+      ['/', '--session', '{"user":"bob"}', '--do', 'goto /admin'],
+      example('notes'),
+    )
+    expect(out.actors.flatMap((a: { errors: unknown[] }) => a.errors)).toEqual([])
+    for (const m of out.steps[0].modes) expect([m.url, m.status]).toEqual(['/admin', 403])
+    expect(code).toBe(0)
+  }, 60_000)
+
   it('prints js-only in the off column for a step with no native effect', async () => {
     const { stdout } = await human(['/', ...steps('click Save in "Hello, Hozu"')], example('blog'))
     expect(stdout).toContain(

@@ -153,6 +153,9 @@ const bodyOf = (request: { postData?: string; postDataEntries?: { bytes?: string
 const pathOf = (url: string) => (url.startsWith(ORIGIN) ? url.slice(ORIGIN.length) || '/' : url)
 
 /** One browser context and page for one actor in one mode. */
+const pageAnswers = new Set([401, 403, 404, 410])
+const viewTransitionAbortedByNonHtmlAnswer = /^InvalidStateError: Transition was aborted/
+
 export class Tab {
   sessionId = ''
   targetId = ''
@@ -290,10 +293,11 @@ export class Tab {
         const url = pathOf(params.response.url)
         const type = params.type ?? 'Other'
         if (main && type === 'Document' && params.frameId === this.targetId)
-          this.status = params.response.status
+          this.status = this.stepStatus = params.response.status
         const status = params.response.status as number
         const favicon = type === 'Other' && url === '/favicon.ico'
-        if (status >= 400 && !this.invalidPosts.has(id) && !favicon)
+        const answered = this.opened && type === 'Document' && pageAnswers.has(status)
+        if (status >= 400 && !answered && !this.invalidPosts.has(id) && !favicon)
           this.error(
             {
               kind: 'request',
@@ -309,6 +313,8 @@ export class Tab {
     }
     if (method === 'Runtime.exceptionThrown') {
       const d = params.exceptionDetails
+      const description: string = d.exception?.description ?? d.text ?? ''
+      if (viewTransitionAbortedByNonHtmlAnswer.test(description)) return true
       const frame = d.stackTrace?.callFrames?.[0]
       this.error(
         {
@@ -441,7 +447,13 @@ export class Tab {
     return this.evaluate(`${PAGE}.${call}`)
   }
 
+  /** The status of the page this step loaded, if it loaded one. */
+  stepStatus: number | null = null
+  /** After the start page: a page a step loads may answer 401, 403, 404 or 410 on purpose; the start page may not. */
+  private opened = false
+
   mark() {
+    this.stepStatus = null
     this.marked = this.activity
   }
 
@@ -463,6 +475,7 @@ export class Tab {
     this.mark()
     await this.send('Page.navigate', { url: ORIGIN + path })
     await this.settle()
+    this.opened = true
   }
 
   async look(): Promise<Snapshot> {

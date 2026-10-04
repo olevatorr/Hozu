@@ -45,6 +45,9 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
 - **Line numbers stay right after a multi-line `?:`, `&&` or `??`:** the transform moved the newlines between the
   operands to the end, so every node after one reported an earlier line in `hozu why`, `hozu show`, DevTools and
   diagnostics (the dogfood saw a list row reported on its `<tbody>`'s line).
+- **`hozu browse` treats a page's 401, 403, 404 or 410 as the step's answer:** a step that loads such a page
+  shows `→ /notes/n1 (403)` and is not an error, so an access check exits 0. The start page still must load.
+- **`hozu browse` ignores the view-transition abort** a browser reports when a step posts to a JSON endpoint.
 - **`exports` in the old record form** (`exports: { queries: [...] }`) is HZ014 with the list form, not a crash;
   HZ006's fix shows both edits in source form (`imports: [owner]`, `exports: [name]`), each with its feature.
 - **The deploy guide no longer says `public/` is served:** files a page shows are `ui.asset`, files named in data

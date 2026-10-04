@@ -156,6 +156,10 @@
         "url": {
           "type": "string"
         },
+        "status": {
+          "type": "number",
+          "description": "The status of the page the step loaded, when it is not 200 (a 403 an access check expects)."
+        },
         "added": {
           "type": "array",
           "items": {

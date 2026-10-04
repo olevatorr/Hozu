@@ -353,6 +353,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
             requested: tab.requested,
             navigated: before.url !== after.url,
             url: after.url,
+            ...(tab.stepStatus !== null && tab.stepStatus !== 200 ? { status: tab.stepStatus } : {}),
             ...delta(before, after),
           }
           return { change, before, after, elsewhere }
@@ -463,7 +464,8 @@ function describeChange(c: BrowseChange, full: boolean): string {
   const shown = full ? items : items.slice(0, ITEMS)
   const more = items.length - shown.length
   const list = [...shown, ...(more ? [`… ${more} more`] : [])].join(' · ')
-  return [moved ? `→ ${c.url}` : '', list].filter(Boolean).join(': ')
+  const status = c.status ? ` (${c.status})` : ''
+  return [moved || status ? `→ ${c.url}${status}` : '', list].filter(Boolean).join(': ')
 }
 
 export function describeBrowse(out: BrowseOutput, full = false): string {

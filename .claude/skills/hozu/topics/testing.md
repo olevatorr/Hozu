@@ -55,7 +55,10 @@
   (`bob: + Milk`).
   - `≠ DIFFERS` marks a step where both modes made a request and the resulting text differs: a no-JS/JS parity bug.
   - Errors: uncaught exceptions, `console.error`s, CSP violations and failed requests, each with the page, the
-    resource type and the mode. A 400 re-render of an invalid native post is not an error.
+    resource type and the mode. A 400 re-render of an invalid native post is not an error, and a page answering
+    401, 403, 404 or 410 is the step's status (`→ /notes/n1 (403)`), so an access check exits 0.
+  - To forge a post, take the form's `action` from `hozu get <page> --forms` or `remember … @action` on a page the
+    server rendered (`goto` it first): forms the client renders after a change carry no `action`.
   - Exit code 1 also when a client component failed. `--json` has every line; `--full` prints them all;
     `--select <css>`, `--screenshot shot.png` and `--reduced-motion` as before.
   - It also prints the client components on the page (mounted, failed, size, canvases).

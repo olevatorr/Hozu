@@ -218,10 +218,8 @@ describe('the agent loop (ADR 0027)', () => {
         expect.arrayContaining(['Not found']),
         expect.arrayContaining(['Not found']),
       ])
-      expect(flow.out.errors.map((e: { text: string; mode: string }) => `${e.mode} ${e.text}`)).toEqual([
-        'on 404 /tasks/t1',
-        'off 404 /tasks/t1',
-      ])
+      expect(flow.out.errors).toEqual([])
+      expect(flow.out.steps[6].modes.map((m: { status?: number }) => m.status)).toEqual([404, 404])
     },
     60_000,
   )

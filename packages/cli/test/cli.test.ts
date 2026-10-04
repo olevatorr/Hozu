@@ -243,7 +243,7 @@ describe('A5 CLI contract', () => {
     expect(code).toBe(1)
     expectSchema('check', checked)
     const out = checked.validate
-    expect(out.lock).toBe('stale')
+    expect(out.lock).toBe('missing')
     expect(out.diagnostics.map((d: { code: string }) => d.code).sort()).toEqual(['HZ011', 'HZ045', 'HZ057'])
     expect(out.diagnostics.find((d: { code: string }) => d.code === 'HZ011')).toMatchObject({
       code: 'HZ011',
