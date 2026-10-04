@@ -10,7 +10,7 @@ export const docs = route({ path: '/docs/:path+', params: z.object({ path: z.arr
 - `search`: flat scalars or enums, each with a default or nullable (HZ035).
 - **Pages** go in `project({ routes: { home, itemPage }, pages: [...] })` (the whole config: see --more):
   `ui.page(home, { views: [Board], head: { render: () => ({ title: 'Items' }) } })`.
-- **Head from a query:** `head: { query: getItem, input: (params) => ({ id: params.id }), render: (item) => ({ title:
+- **Head from a query:** `head: { query: getItem, input: (params, locale) => ({ id: params.id }), render: (item) => ({ title:
   item.title }), failed: { NotFound: 404 } }`. `failed` maps every declared error of the query (HZ051) to a route
   without params (303) or to `403`, `404` or `410`.
 - `head.render` fields: `title`, `description`, `type` (`'website' | 'article'`), `image`, `published`, `noindex`.

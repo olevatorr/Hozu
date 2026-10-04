@@ -20,7 +20,7 @@
 | A6 | `hozu plan /journal` wants a route name | `plan` accepts a path and resolves it to its route; an unknown path suggests the routes |
 | A7 | `hozu check --update-lock` prints only "lock updated" | It prints the accepted `now:` lines (all of them; `--json` carries them as `accepted`) |
 | A8 | `hozu <command> --help` prints the global help | Each command prints its own usage lines and options |
-| A9 | `head.input`'s second argument (the locale) is undocumented, and `locale` is a `string` | Documented in `pages` and `i18n`. The view's and `head.input`'s `locale` is typed as the union of `site.lang` and `site.locales` |
+| A9 | `head.input`'s second argument (the locale) is undocumented, and `locale` is a `string` | Documented in `pages` and `i18n`: the locale reaches data through the query input, and `as Locale` narrows it. It stays `string`: views and pages are declared before the project, so the union of `site.locales` could reach them only through a global type registry (principle 2) |
 | A10 | `@hozu/content` is not installed by the scaffold, and `loadCollection` has one line of docs | The content topic says to install it, and documents slugs (file names), sub-folders, order, YAML dates and fields |
 | A11 | The scaffold stores English text in `ctx.error` (against "machines hold codes") | The scaffold stores a code (`'duplicate'`) and the view picks the text |
 | A12 | `hozu serve` (`npm start`) leaves `NODE_ENV` unset, so a session app starts without `SESSION_SECRET` | `hozu serve` runs as production unless `NODE_ENV` is set: a session app without `SESSION_SECRET` refuses to start with the fix. `hozu dev`, `get`, `browse`, `call` and `testApp` are unchanged |
