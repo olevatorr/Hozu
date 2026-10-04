@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.17.0
+
+DevTools for Figma hands (ADR 0058). Everything here is DevTools, loaded only under `hozu dev`: production pages,
+the client budget and the authoring surface do not change, so 0.16 apps upgrade without a source change
+(`hozu migrate` raises the packages).
+
+### Keys and measuring, as in Figma
+- **`Shift+Enter` selects the surrounding part, `Enter` the first part inside, `Tab` / `Shift+Tab` the next or
+  previous part beside it.** ↑ / ↓ still work. **Alt+click no longer selects the parent**: Alt measures now.
+- **Hold Alt to measure:** with a part selected, red lines show the distance in px to the part under the pointer
+  (the gap between two parts, or the four insets when one holds the other); with nothing selected, the part under the
+  pointer is measured against the part around it.
+- **The selection shows its size**, `W × H` in CSS px.
+
+### The Design panel
+- **Look is now Design, in Figma's order:** Frame (W, H, corner radius), Auto layout (gap, horizontal and vertical
+  padding), Layer (opacity), Fill, Stroke (weight, colour), Effects (drop shadow), Text (size, weight, colour).
+- **New properties:** width, height, gap, opacity, border width, border colour and shadow, each turned into the theme
+  utility the agent should write (`w-80`, `w-full`, `gap-4`, `opacity-50`, `border-2`, `border-red`, `shadow-lg`),
+  with the nearest theme step when a value is off the scale.
+- **Builder shows design tokens first** (`2xl · 24px`, `red · #fb3a0e`); Developer keeps classes first.
+
+### Figma's words
+- Scope: **This instance only** / **Main component · every Button (6 places)**.
+- Agent notes and saved requests: **Resolve** (was Done). The Workbench is **Frame**.
+- The request Markdown your agent reads and the CLI (`hozu requests done`) are unchanged.
+
+### Fixes
+- **`feature({ styles: new URL(…) })` is HZ014** with the list form as the fix; before, `hozu check` crashed with
+  `flatMap is not a function`.
+- **Stopping `hozu dev` stops its app:** `kill <pid>` (the line `hozu dev` prints), Ctrl+C or a closed terminal left
+  the app process on the second port, so the next `hozu dev` said the port was in use. The app now exits with
+  `hozu dev`, also when `hozu dev` is killed outright.
+
 ## 0.16.0 — Ship less, measure fairly, learn faster (ADR 0057)
 
 0.16 closes a security hole the 0.15 dogfood found, makes pages smaller on the wire and faster to render, and fixes

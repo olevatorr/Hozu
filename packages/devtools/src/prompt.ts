@@ -42,6 +42,13 @@ export const styleNames: Record<StyleProp, string> = {
   paddingInline: 'padding left and right',
   paddingBlock: 'padding top and bottom',
   borderRadius: 'corner radius',
+  width: 'width',
+  height: 'height',
+  gap: 'gap',
+  opacity: 'opacity',
+  borderWidth: 'border width',
+  borderColor: 'border colour',
+  boxShadow: 'shadow',
 }
 
 function styleLine(change: StyleChange, classes: string | null, theme: Theme | null | undefined): string {
@@ -77,7 +84,7 @@ export function scopesFor(node: DevNode): { scope: Scope; label: string }[] {
     ? [
         {
           scope: 'component' as const,
-          label: `Every ${c.ref.split('.').pop()} like this (${places(c.uses)})`,
+          label: `Main component · every ${c.ref.split('.').pop()} (${places(c.uses)})`,
         },
       ]
     : []
@@ -87,7 +94,7 @@ export function scopesFor(node: DevNode): { scope: Scope; label: string }[] {
       { scope: 'this', label: 'Only this item' },
       ...every,
     ]
-  return [{ scope: 'this', label: 'Only this one' }, ...every]
+  return [{ scope: 'this', label: c ? 'This instance only' : 'Only this one' }, ...every]
 }
 
 export function titleOf(items: RequestItem[]): string {
@@ -188,10 +195,13 @@ function where(node: DevNode): string {
 
 export function requestMarkdown(request: HozuRequest, options: PromptOptions = {}): string {
   const { context } = request
-  const scopeLabel = (item: RequestItem) =>
-    (scopesFor(item.node).find((s) => s.scope === item.scope)?.label ?? 'Only this one').replace(/^./, (c) =>
-      c.toLowerCase(),
-    )
+  const scopeLabel = (item: RequestItem) => {
+    const c = item.node.component
+    if (item.scope === 'component' && c)
+      return `every ${c.ref.split('.').pop()} like this (${places(c.uses)})`
+    if (item.scope === 'items') return 'every item in the list'
+    return listOf(item.node) ? 'only this item' : 'only this one'
+  }
   const lines = [
     `# Hozu request: ${titleOf(request.items)}`,
     '',

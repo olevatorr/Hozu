@@ -49,6 +49,27 @@ describe('0.15 dogfood (ADR 0057 C)', () => {
     expect(found?.fix?.snippet).toBe('exports: [model.listRooms, model.roomsTag]')
   })
 
+  it('styles that is not a list is HZ014 with the list form, not a crash (0.16 review)', () => {
+    const app = project({
+      schema: zodAdapter,
+      routes: { home },
+      pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'Rooms' }) } })],
+      features: [
+        feature({
+          id: 'site',
+          intent: { summary: 'home' },
+          declarations: [{ Home, listRooms }],
+          styles: new URL('./site.css', import.meta.url) as never,
+        }),
+      ],
+    })
+    const found = buildProject(app, { sources: false }).diagnostics.find(
+      (d) => d.message === 'styles is a list of stylesheet URLs',
+    )
+    expect(found?.code).toBe('HZ014')
+    expect(found?.fix?.snippet).toBe("styles: [new URL('./feature.css', import.meta.url)]")
+  })
+
   it('HZ006 shows both edits in source form, each with the feature it belongs to', () => {
     const build = buildProject(make(undefined), { sources: false })
     const found = validate(build.ir).find((d) => d.code === 'HZ006')

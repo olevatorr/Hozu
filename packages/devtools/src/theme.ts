@@ -3,6 +3,7 @@ export interface Theme {
   text: Record<string, number>
   weight: Record<string, number>
   radius: Record<string, number>
+  shadow: Record<string, string>
   spacing: number
   own: string[]
 }
@@ -15,6 +16,13 @@ export type StyleProp =
   | 'paddingInline'
   | 'paddingBlock'
   | 'borderRadius'
+  | 'width'
+  | 'height'
+  | 'gap'
+  | 'opacity'
+  | 'borderWidth'
+  | 'borderColor'
+  | 'boxShadow'
 
 export interface Utility {
   utility: string
@@ -97,7 +105,7 @@ function declarations(css: string, onlyTheme: boolean): [string, string][] {
 }
 
 export function parseTheme(base: string, project: string): Theme {
-  const theme: Theme = { colors: {}, text: {}, weight: {}, radius: {}, spacing: 4, own: [] }
+  const theme: Theme = { colors: {}, text: {}, weight: {}, radius: {}, shadow: {}, spacing: 4, own: [] }
   const apply = (name: string, value: string, own: boolean) => {
     if (value === 'initial' && name.endsWith('-*')) {
       const space = name.slice(0, -2)
@@ -105,6 +113,7 @@ export function parseTheme(base: string, project: string): Theme {
       if (space === 'text') theme.text = {}
       if (space === 'radius') theme.radius = {}
       if (space === 'font-weight') theme.weight = {}
+      if (space === 'shadow') theme.shadow = {}
       return
     }
     if (name.includes('--')) return
@@ -119,6 +128,7 @@ export function parseTheme(base: string, project: string): Theme {
     } else if (name.startsWith('text-')) set(theme.text, name.slice(5), px(value))
     else if (name.startsWith('font-weight-')) set(theme.weight, name.slice(12), Number(value) || null)
     else if (name.startsWith('radius-')) set(theme.radius, name.slice(7), px(value))
+    else if (name.startsWith('shadow-')) theme.shadow[name.slice(7)] = value
   }
   for (const [n, v] of declarations(base, false)) apply(n, v, false)
   for (const [n, v] of declarations(project, true)) apply(n, v, true)
@@ -133,7 +143,16 @@ const prefix: Record<StyleProp, string> = {
   paddingInline: 'px',
   paddingBlock: 'py',
   borderRadius: 'rounded',
+  width: 'w',
+  height: 'h',
+  gap: 'gap',
+  opacity: 'opacity',
+  borderWidth: 'border',
+  borderColor: 'border',
+  boxShadow: 'shadow',
 }
+
+export const borderSteps = [0, 1, 2, 4, 8]
 
 const closest = (table: Record<string, number>, v: number) =>
   Object.entries(table).reduce<[string, number] | null>(
@@ -143,7 +162,7 @@ const closest = (table: Record<string, number>, v: number) =>
 
 export function utilityFor(prop: StyleProp, value: string, theme: Theme): Utility {
   const p = prefix[prop]
-  if (prop === 'color' || prop === 'backgroundColor') {
+  if (prop === 'color' || prop === 'backgroundColor' || prop === 'borderColor') {
     const hex = normalHex(value) ?? value
     const names = [...theme.own, ...Object.keys(theme.colors).filter((n) => !theme.own.includes(n))]
     let best: string | null = null
@@ -162,8 +181,32 @@ export function utilityFor(prop: StyleProp, value: string, theme: Theme): Utilit
     const near = closest(theme.weight, v)
     return { utility: `font-[${v}]`, exact: false, nearest: near ? `font-${near[0]}` : null }
   }
+  if (prop === 'boxShadow') {
+    if (value === 'none') return { utility: 'shadow-none', exact: true, nearest: null }
+    const hit = Object.entries(theme.shadow).find(([, v]) => v === value)
+    if (hit) return { utility: `shadow-${hit[0]}`, exact: true, nearest: null }
+    return { utility: `shadow-[${value.replace(/\s+/g, '_')}]`, exact: false, nearest: null }
+  }
+  if (prop === 'opacity') {
+    const pct = Math.round(Number(value) * 1000) / 10
+    if (Number.isInteger(pct / 5)) return { utility: `opacity-${pct}`, exact: true, nearest: null }
+    return { utility: `opacity-[${value}]`, exact: false, nearest: `opacity-${Math.round(pct / 5) * 5}` }
+  }
+  if ((prop === 'width' || prop === 'height') && (value === 'auto' || value === '100%'))
+    return { utility: `${p}-${value === 'auto' ? 'auto' : 'full'}`, exact: true, nearest: null }
   const v = px(value) ?? 0
-  if (prop === 'paddingInline' || prop === 'paddingBlock') {
+  if (prop === 'borderWidth') {
+    if (v === 1) return { utility: 'border', exact: true, nearest: null }
+    if (borderSteps.includes(v)) return { utility: `border-${v}`, exact: true, nearest: null }
+    return { utility: `border-[${v}px]`, exact: false, nearest: null }
+  }
+  if (
+    prop === 'paddingInline' ||
+    prop === 'paddingBlock' ||
+    prop === 'gap' ||
+    prop === 'width' ||
+    prop === 'height'
+  ) {
     const steps = v / theme.spacing
     if (Number.isInteger(steps * 4)) return { utility: `${p}-${steps}`, exact: true, nearest: null }
     return { utility: `${p}-[${v}px]`, exact: false, nearest: `${p}-${Math.round(steps * 2) / 2}` }
@@ -195,6 +238,15 @@ export function currentUtility(prop: StyleProp, classes: string, theme: Theme): 
     borderRadius: (c) =>
       c === 'rounded' ||
       (c.startsWith('rounded-') && (c.slice(8) in theme.radius || /^(none|full|\[)/.test(c.slice(8)))),
+    width: (c) => /^(w|size)-/.test(c),
+    height: (c) => /^(h|size)-/.test(c),
+    gap: (c) => /^gap-/.test(c),
+    opacity: (c) => /^opacity-/.test(c),
+    borderWidth: (c) => c === 'border' || /^border-(\d|\[\d)/.test(c),
+    borderColor: (c) => c.startsWith('border-') && isColor(c.slice(7)),
+    boxShadow: (c) =>
+      c === 'shadow' ||
+      (c.startsWith('shadow-') && (c.slice(7) in theme.shadow || /^(none|\[)/.test(c.slice(7)))),
   }
   const found = classes
     .split(/\s+/)

@@ -58,6 +58,15 @@ export async function runServe(
     else server.listen(port, ready)
   })
   const url = `http://${host ?? 'localhost'}:${port}`
+  const parent = Number(process.env.HOZU_DEV_PARENT)
+  if (parent)
+    setInterval(() => {
+      try {
+        process.kill(parent, 0)
+      } catch {
+        process.exit(0)
+      }
+    }, 500).unref()
   log(`${name} on ${url}${process.env.HOZU_DEV === '1' ? '' : ` · stop: kill ${process.pid}`}`)
   return { url, close: () => new Promise<void>((done) => server.close(done)) }
 }

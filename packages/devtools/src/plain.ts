@@ -85,18 +85,19 @@ export function questionFor(
 ): { question: string; options: Partial<Record<Scope, string>> } | null {
   const c = node.component
   const name = friendlyName(node)
-  const every = c ? { component: `Every ${name} (${c.uses} places)` } : {}
+  const every = c ? { component: `Main component · every ${name} (${c.uses} places)` } : {}
+  const one = c ? 'This instance only' : 'Only this one'
   if (node.conditions.some((x) => x.kind === 'each'))
     return {
       question: c
-        ? `Change every item, only this one, or every ${name}?`
+        ? `Change every item, this instance only, or the main component (every ${name})?`
         : 'Change every item in the list, or only this one?',
-      options: { items: 'Every item', this: 'Only this one', ...every },
+      options: { items: 'Every item', this: one, ...every },
     }
   if (c)
     return {
-      question: `Change only this one, or every ${name} like it?`,
-      options: { this: 'Only this one', ...every },
+      question: `Change this instance only, or the main component (every ${name})?`,
+      options: { this: one, ...every },
     }
   return null
 }

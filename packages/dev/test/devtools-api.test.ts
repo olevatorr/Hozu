@@ -199,12 +199,12 @@ describe.skipIf(!findBrowser())('the DevTools API panel (ADR 0050 G)', () => {
   })
 
   it('opens the drawer from the Workbench too', async () => {
-    await shadowClick('.dock button', 'Workbench')
+    await shadowClick('.dock button', 'Frame')
     await until(`!!${api('.bench-bar')}`)
     expect(
       await tool(`[...$('.bench-bar').querySelectorAll('button')].some((b) => b.textContent === 'API')`),
     ).toBe(true)
     expect(await tool(`$('.api').hidden`)).toBe(false)
-    await shadowClick('.bench-bar button', 'Exit workbench')
+    await shadowClick('.bench-bar button', 'Exit frame')
   })
 })

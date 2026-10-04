@@ -2,7 +2,7 @@ import { ui } from '@hozu/core'
 import { devtools, doc } from '../../routes.ts'
 import { Button } from '../../site/button.ts'
 import { CodeBlock } from '../../site/code-block.ts'
-import { apiDemo, backDemo, layersDemo, selectDemo } from '../../site/demos.ts'
+import { apiDemo, backDemo, designDemo, layersDemo, measureDemo, selectDemo } from '../../site/demos.ts'
 import { Display, Heading } from '../../site/display.ts'
 import { Section } from '../../site/section.ts'
 import { Steps } from '../../site/steps.ts'
@@ -22,6 +22,26 @@ Page \`/\` · 390 × 844
 - Locate: \`hozu why /features/tasks/views/Board/root/children/2/children/0/children/2\`
 
 Run \`hozu check\` after the edits.`
+
+const figma = [
+  ['Shift+Enter · Enter · Tab', 'Select around it, inside it, beside it.'],
+  ['Alt', 'Hold it and point: the distance in px.'],
+  ['W × H', 'Every selection shows its size.'],
+  ['Design panel', 'Frame, Auto layout, Layer, Fill, Stroke, Effects, Text.'],
+  ['Variables', 'Tokens first: red · #fb3a0e, 2xl · 24px.'],
+  ['Comments', 'Your agent’s notes are numbered pins: reply or resolve.'],
+]
+
+export const figmaCards = (frame: 'border-ink' | 'border-paper') =>
+  ui.div(
+    { class: 'mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3' },
+    figma.map(([k, v]) =>
+      ui.div({ class: `border-4 ${frame} p-4` }, [
+        ui.h3({ class: 'font-mono text-sm font-bold' }, [k!]),
+        ui.p({ class: 'mt-2' }, [v!]),
+      ]),
+    ),
+  )
 
 export const notes = `npx hozu show features/notes/views.ts:42 --note "Delete now asks before it removes a note"
 npx hozu show features/notes/views.ts:51 --in "Buy milk" --note "Pinned notes go first"
@@ -107,7 +127,7 @@ export const DevToolsPage = ui.view({
               {
                 id: '1',
                 title: '1 · Select',
-                body: 'Choose Select in the dock and click the part. Alt goes up a level, a double-click picks a text.',
+                body: 'Choose Select and click the part, with Figma’s keys: Shift+Enter goes up a level, Alt measures, a double-click picks a text.',
               },
               {
                 id: '2',
@@ -132,6 +152,21 @@ export const DevToolsPage = ui.view({
             'Hozu DevTools on a task board: the Add task button is selected and the inspector shows it is a shared Button used in six places',
           ),
         ]),
+      ]),
+      ui.use(Section, { props: { kicker: 'Feels like Figma' } }, [
+        ui.use(Heading, {}, ['Your Figma hands already know it.']),
+        ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
+          'The same keys, the same measuring, the Design panel in the same order and your design tokens first. In Builder and in Developer alike.',
+        ]),
+        ui.div({ class: 'mt-8 grid gap-6 lg:grid-cols-2' }, [
+          measureDemo(
+            'The Add task button is selected and shows 136 × 40; holding Alt and pointing at nearby parts draws red lines with the distance in px',
+          ),
+          designDemo(
+            'The Design panel in Figma’s order: changing Fill to red, Corner radius to full and Font size to base previews on the button and becomes the class to use',
+          ),
+        ]),
+        figmaCards('border-ink'),
       ]),
       ui.use(Section, { variant: { tone: 'ink' }, props: { kicker: 'The request' } }, [
         ui.use(Heading, {}, ['What your agent reads.']),
@@ -163,7 +198,7 @@ export const DevToolsPage = ui.view({
           ui.div({ class: 'border-4 border-ink p-4' }, [
             ui.h3({ class: 'font-black uppercase' }, ['Reply or done']),
             ui.p({ class: 'mt-2' }, [
-              'The Agent panel steps through the notes. Send reply hands your answer back as a request; Done removes the note.',
+              'The Agent panel steps through the notes. Send reply hands your answer back as a request; Resolve removes the note.',
             ]),
           ]),
           ui.div({ class: 'border-4 border-ink p-4' }, [

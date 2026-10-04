@@ -3,7 +3,7 @@ import { chapter, devtools, doc, home, how, trial, trials } from '../../routes.t
 import { Button } from '../../site/button.ts'
 import { CatchCard } from '../../site/catch-card.ts'
 import { CodeBlock } from '../../site/code-block.ts'
-import { apiDemo, selectDemo } from '../../site/demos.ts'
+import { apiDemo, measureDemo, selectDemo } from '../../site/demos.ts'
 import { Display, Heading } from '../../site/display.ts'
 import { Joint } from '../../site/joint.ts'
 import { peg } from '../../site/peg.ts'
@@ -16,6 +16,7 @@ import { Ticker } from '../../site/ticker.ts'
 import { support } from '../content/chrome.ts'
 import { catches, claim, speed, speedSource } from '../content/claims.ts'
 import { getStart, listChapters } from '../content/model.ts'
+import { figmaCards } from './devtools.ts'
 import { films } from './media.ts'
 import { Break, Fix, getPlayground, m, Pick } from './model.ts'
 
@@ -451,6 +452,26 @@ export const Home = ui.view({
               ]),
             ]),
           ]),
+        ]),
+        ui.use(Section, { props: { kicker: 'For designers' } }, [
+          ui.use(Heading, {}, ['Feels like Figma.']),
+          ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-center' }, [
+            measureDemo(
+              'The Add task button is selected and shows 136 × 40; holding Alt and pointing at nearby parts draws red lines with the distance in px',
+            ),
+            ui.div({ class: 'grid content-start gap-4 text-lg' }, [
+              ui.p({}, [
+                'DevTools uses the keys, the measuring and the words a designer already has: Shift+Enter goes up a level, Alt measures, the Design panel reads like Figma’s, with your tokens first.',
+              ]),
+              ui.p({}, [
+                'Try a change on the page, then hand it to your agent. It writes the code; you never open a file.',
+              ]),
+              ui.div({ class: 'mt-2 flex flex-wrap gap-3' }, [
+                ui.use(Button, { props: { href: ui.link(devtools, null) } }, ['See it in motion →']),
+              ]),
+            ]),
+          ]),
+          figmaCards('border-ink'),
         ]),
         ui.use(
           Section,

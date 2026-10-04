@@ -257,6 +257,8 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 
 .look { display: flex; align-items: center; gap: 8px; min-height: 32px; }
 .look + .look { margin-top: 4px; }
+.look-group + .look-group { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+.look-title { margin-bottom: 4px; font: 600 11.5px/1.3 var(--sans); color: var(--text); }
 .look .what { flex: none; width: 128px; color: var(--mute); font: 12.5px/1.3 var(--sans); }
 .look select {
   flex: 1; min-width: 0; height: 28px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--bg-3);
@@ -488,4 +490,19 @@ export const outlineCss = `
 .note-tag:hover { background: #d92f08; }
 .note-tag b { margin-right: 2px; }
 .note-box.below .note-tag { bottom: auto; top: 100%; margin: 6px 0 0; }
+.size {
+  position: absolute; left: 50%; top: 100%; margin-top: 6px; transform: translateX(-50%); white-space: nowrap;
+  background: #fb3a0e; color: #fff; font: 600 11px/1 system-ui, -apple-system, sans-serif;
+  padding: 3px 5px; border-radius: 4px;
+}
+.measure[hidden] { display: none; }
+.m-line { position: fixed; pointer-events: none; background: #f24e1e; }
+.m-line.h { height: 1px; }
+.m-line.v { width: 1px; }
+.m-label {
+  position: fixed; pointer-events: none; transform: translate(-50%, -50%); white-space: nowrap;
+  background: #f24e1e; color: #fff; font: 600 11px/1 system-ui, -apple-system, sans-serif;
+  padding: 3px 5px; border-radius: 4px;
+}
+.m-target { position: fixed; pointer-events: none; box-sizing: border-box; border: 1px dashed #f24e1e; }
 `

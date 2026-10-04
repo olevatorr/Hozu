@@ -79,6 +79,14 @@ export const steps: Step[] = [
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.16',
+    to: '0.17',
+    summary:
+      'no source change; DevTools follows Figma (Shift+Enter selects the parent, Alt measures), and feature({ styles }) must be a list (HZ014) (ADR 0058)',
+    rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 export const OLDEST = steps[0]!.from

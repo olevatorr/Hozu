@@ -56,7 +56,7 @@ export const selectDemo = (label: string) =>
   stage('select', label, [
     board(),
     dock(false),
-    d('hover', [s('tag', 'ui.Button')]),
+    d('hover', [s('tag', 'ui.Button'), s('size', '136 × 40')]),
     d('panel', [
       s('on', 'On /'),
       ui.p({ 'data-d': 'head' }, [ui.b({}, ['Button']), ' “Add task”']),
@@ -64,7 +64,7 @@ export const selectDemo = (label: string) =>
       ui.p({}, ['A shared Button: the same design is used in 6 places.']),
       s('file', 'features/tasks/views.ts:102'),
       s('h', 'Change'),
-      d('radio', [s('on1', '● Only this one'), s('off1', '○ Every Button (6 places)')]),
+      d('radio', [s('on1', '● This instance only'), s('off1', '○ Main component · 6 places')]),
       d('field', [s('typed', 'Make it bigger on phones')]),
       d('copy', [s('a', 'Copy for AI'), s('b', 'Copied ✓')]),
     ]),
@@ -97,7 +97,7 @@ export const backDemo = (label: string) =>
         ui.p({}, ['Pinned first']),
         s('file', 'features/tasks/views.ts:118'),
       ]),
-      d('btns', [s('btn', 'Back'), s('next', 'Next'), s('btn', 'Send reply'), s('done', 'Done')]),
+      d('btns', [s('btn', 'Back'), s('next', 'Next'), s('btn', 'Send reply'), s('done', 'Resolve')]),
     ]),
     d('click'),
     cursor(),
@@ -179,6 +179,51 @@ export const apiDemo = (label: string) =>
         ]),
       ]),
     ]),
+    d('click'),
+    cursor(),
+  ])
+
+export const measureDemo = (label: string) =>
+  stage('measure', label, [
+    board(),
+    dock(false),
+    d('sel', [s('size', '136 × 40')]),
+    d('key', [ui.kbd({}, ['Alt'])]),
+    d('ta', [s('n', '20')]),
+    d('tb', [s('n', '12')]),
+    d('tc', [s('n', '16')]),
+    d('click'),
+    cursor(),
+  ])
+
+const field = (name: string, label: string, before: string, after?: string) =>
+  ui.div({ 'data-d': 'fieldrow', 'data-f': name }, [
+    ui.span({}, [label]),
+    d('val', after ? [s('was', before), s('now', after)] : [s('was', before)]),
+  ])
+
+export const designDemo = (label: string) =>
+  stage('design', label, [
+    d('canvas', [d('card', [s('t', 'New task'), d('btn', [s('label', 'Add task')])])]),
+    d('panel', [
+      s('h', 'Design'),
+      s('g', 'Frame'),
+      field('w', 'W', '136'),
+      field('hh', 'H', '40'),
+      field('r', 'Corner radius', 'md · 6px', 'full · 9999px'),
+      s('g', 'Auto layout'),
+      field('gap', 'Gap', '2 · 8px'),
+      field('pad', 'Padding', '4 · 16px'),
+      s('g', 'Fill'),
+      field('fill', 'Fill', 'ink · #111010', 'red · #fb3a0e'),
+      s('g', 'Stroke'),
+      field('stroke', 'Stroke weight', '0px'),
+      s('g', 'Effects'),
+      field('fx', 'Drop shadow', 'none'),
+      s('g', 'Text'),
+      field('size', 'Font size', 'sm · 14px', 'base · 16px'),
+    ]),
+    d('req', [s('l1', '- Style: background #111010 → #fb3a0e: replace `bg-ink` with `bg-red`')]),
     d('click'),
     cursor(),
   ])

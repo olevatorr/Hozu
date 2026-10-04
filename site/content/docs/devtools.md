@@ -14,17 +14,21 @@ order: 11
 | Changes | The parts you described for this request, and the saved requests |
 | Page | The page's title, description and other head fields |
 | Layers | Every part of the page, and the states that are not on screen |
-| Workbench | The page at an exact size: phone, tablet, laptop, or drag the corner |
+| Frame | The page at an exact size: phone, tablet, laptop, or drag the corner |
 
 ## Describe a change
 
-1. Choose **Select** and click what should change. Alt goes to the surrounding part; a double-click selects a text.
+1. Choose **Select** and click what should change. The keys are Figma's: `Shift+Enter` selects the surrounding part, `Enter` the first part inside, `Tab` / `Shift+Tab` the next or previous part beside it, and a double-click selects a text. The selection shows its size, `W × H`.
 2. The inspector says what it is in plain words: a shared button used in six places, a text that comes from your data, a message shared by two places.
-3. Write what should change. Try a style (size, weight, colours, spacing, corners) or other words (longer, Chinese, English) on the page first: it is a preview only.
+3. Write what should change. Try a style or other words (longer, Chinese, English) on the page first: it is a preview only. The **Design** panel is Figma's, in its order: Frame (W, H, corner radius), Auto layout (gap, padding), Layer (opacity), Fill, Stroke, Effects (drop shadow) and Text. In Builder, a value shows its design token first (`2xl · 24px`, `red · #fb3a0e`); in Developer, the class (`text-2xl · 24px`).
 4. Click the next part and describe it too. Every described part stays in the same request.
 5. **Copy for AI** and paste it to your agent, or **Save request**, which writes `.hozu/requests/0007-….md` and copies the line to give the agent.
 
-Each part of the request names its `file:line`, the scope you chose (only this one, every item, every use of a component), the theme class to use for a style, and a reminder only where a plain edit would go wrong.
+Each part of the request names its `file:line`, the scope you chose (this instance only, every item, or the main component: every use of it), the theme class to use for a style, and a reminder only where a plain edit would go wrong.
+
+## Measure
+
+Hold **Alt** and point, as in Figma: with a part selected, red lines show the distance in px to the part under the pointer (the gap between two parts, or the four insets when one holds the other); with nothing selected, the part under the pointer is measured against the part around it.
 
 ## See every state
 
@@ -55,7 +59,7 @@ npx hozu show features/notes/views.ts:51 --in "Buy milk" --note "Pinned notes go
 npx hozu show page:home --note "The page title is shorter"
 ```
 
-The part gets a numbered red frame on your page, and an **Agent** button appears in the dock with the count. A long note is shortened on its frame: click the label to read it in full. Its panel shows each note in order, with Back and Next to step through them and scroll to each part. **Send reply** sends your answer back as a request; **Done** removes the note. A `file:line` needs no running dev server to find its part. `hozu show` alone lists the open notes and marks one `STALE` when its part has moved or gone. Notes live in `.hozu/notes.json` under `hozu dev` only: production builds never see them.
+The part gets a numbered red frame on your page, and an **Agent** button appears in the dock with the count. A long note is shortened on its frame: click the label to read it in full. Its panel shows each note in order, with Back and Next to step through them and scroll to each part. **Send reply** sends your answer back as a request; **Resolve** removes the note. A `file:line` needs no running dev server to find its part. `hozu show` alone lists the open notes and marks one `STALE` when its part has moved or gone. Notes live in `.hozu/notes.json` under `hozu dev` only: production builds never see them.
 
 ## Builder or Developer
 

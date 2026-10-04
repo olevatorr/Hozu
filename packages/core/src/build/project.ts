@@ -439,10 +439,24 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     const path = file(def.styles, null, join('', 'kits', i, 'styles'))
     if (path) scope.bindings.styles.kits[def.id] = path
   }
-  for (const [id, fc] of configs)
-    scope.bindings.styles.features[id] = (fc.styles ?? []).flatMap(
+  for (const [id, fc] of configs) {
+    if (fc.styles !== undefined && !Array.isArray(fc.styles))
+      scope.report(
+        'HZ014',
+        id,
+        join('', 'features', id, 'styles'),
+        'styles is a list of stylesheet URLs',
+        `Got ${typeof fc.styles}: wrap it in a list, even for one file.`,
+        {
+          summary: 'Wrap the URL in a list',
+          snippet: "styles: [new URL('./feature.css', import.meta.url)]",
+          patch: null,
+        },
+      )
+    scope.bindings.styles.features[id] = (Array.isArray(fc.styles) ? fc.styles : []).flatMap(
       (u, i) => file(u, id, join('', 'features', id, 'styles', i)) ?? [],
     )
+  }
 
   const kits: Record<string, KitIR> = {}
   for (const [kit, decls] of kitDecls) {

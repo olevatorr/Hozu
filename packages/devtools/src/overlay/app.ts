@@ -16,6 +16,7 @@ import { drawer } from './effects.ts'
 import { previewLabel, renderLayers } from './layers.ts'
 import { logo } from './logo.ts'
 import { lookSection, preview } from './look.ts'
+import { distances, sizeOf } from './measure.ts'
 import { agentNotes } from './notes.ts'
 import { css, outlineCss } from './style.ts'
 import { firstText, previewText, restoreText, type TextChange, textSection } from './text.ts'
@@ -113,6 +114,8 @@ let win: Window = window
 let frameEl: HTMLIFrameElement | null = null
 const frames = h('div')
 let outline: HTMLElement | null = null
+let measuring = false
+const measure = h('div', { class: 'measure', hidden: true })
 const agent = agentNotes({
   doc: () => doc,
   win: () => win,
@@ -130,7 +133,14 @@ function mountOutline(target: Document) {
   outline?.remove()
   const el = target.createElement('hozu-devtools-outline')
   el.style.cssText = 'all:initial;position:fixed;inset:0;pointer-events:none;z-index:2147483646'
-  el.attachShadow({ mode: 'open' }).append(h('style', {}, [outlineCss]), frames, boxes, agent.layer, hover)
+  el.attachShadow({ mode: 'open' }).append(
+    h('style', {}, [outlineCss]),
+    frames,
+    boxes,
+    agent.layer,
+    hover,
+    measure,
+  )
   target.documentElement.append(el)
   outline = el
 }
@@ -177,6 +187,8 @@ function place(box: HTMLElement, el: Element | null) {
     target.style.width = `${r.width + 4}px`
     target.style.height = `${r.height + 4}px`
   }
+  const size = box.querySelector<HTMLElement>(':scope > .size')
+  if (size) size.textContent = sizeOf(r)
   const tag = box.firstElementChild as HTMLElement | null
   if (!tag?.classList.contains('tag')) return
   tag.style.left = ''
@@ -222,6 +234,37 @@ async function showHover(el: Element | null, force = false) {
   if (hovered === el) tag.replaceChildren(...tagText(n, el))
 }
 
+function drawMeasure() {
+  const active = state.picks[state.active]
+  const from = active ? elementOf(active) : hovered
+  const to = active ? hovered : (hovered?.parentElement?.closest('[data-hz]') ?? null)
+  if (!measuring || state.mode !== 'select' || !from || !to || from === to) {
+    measure.hidden = true
+    return
+  }
+  const a = from.getBoundingClientRect()
+  const b = to.getBoundingClientRect()
+  const px = (n: number) => `${n}px`
+  const target = h('div', { class: 'm-target' })
+  Object.assign(target.style, { left: px(b.left), top: px(b.top), width: px(b.width), height: px(b.height) })
+  const parts: HTMLElement[] = [target]
+  for (const l of distances(a, b)) {
+    const line = h('div', { class: `m-line ${l.axis}` })
+    const label = h('div', { class: 'm-label' }, [String(Math.round(l.to - l.from))])
+    const mid = (l.from + l.to) / 2
+    if (l.axis === 'h') {
+      Object.assign(line.style, { left: px(l.from), top: px(l.at), width: px(l.to - l.from) })
+      Object.assign(label.style, { left: px(mid), top: px(l.at) })
+    } else {
+      Object.assign(line.style, { left: px(l.at), top: px(l.from), height: px(l.to - l.from) })
+      Object.assign(label.style, { left: px(l.at), top: px(mid) })
+    }
+    parts.push(line, label)
+  }
+  measure.replaceChildren(...parts)
+  measure.hidden = false
+}
+
 function drawPicks() {
   for (const p of state.picks) {
     preview(elementOf(p), p.style ?? [])
@@ -233,6 +276,7 @@ function drawPicks() {
       const box = framed(
         h('div', { class: 'box selected' }, [
           state.picks.length > 1 ? h('div', { class: 'badge' }, [String(i + 1)]) : null,
+          h('div', { class: 'size' }),
         ]),
         true,
       )
@@ -252,6 +296,7 @@ function frame() {
     }
   }
   if (hovered && (state.mode === 'select' || forced)) place(hover, hovered)
+  drawMeasure()
   agent.frame()
   requestAnimationFrame(frame)
 }
@@ -321,7 +366,7 @@ function listen(target: Window): AbortController {
         if (type !== 'click') return
         const mouse = event as MouseEvent
         const clicked = markedFrom(event)
-        const el = mouse.altKey ? (clicked?.parentElement?.closest('[data-hz]') ?? clicked) : clicked
+        const el = clicked
         if (!el) return
         select(
           { id: el.getAttribute('data-hz') ?? '', index: indexOf(el), visible: visibleOf(el) },
@@ -333,6 +378,7 @@ function listen(target: Window): AbortController {
   target.addEventListener(
     'pointermove',
     (event) => {
+      measuring = event.altKey
       if (state.mode !== 'select') return
       const el = ours(event) ? null : markedFrom(event)
       if (el !== hovered) void showHover(el)
@@ -340,23 +386,51 @@ function listen(target: Window): AbortController {
     { capture: true, passive: true, signal },
   )
   target.addEventListener('keydown', onKey, { capture: true, signal })
+  target.addEventListener(
+    'keyup',
+    (event) => {
+      measuring = event.altKey
+    },
+    { capture: true, signal },
+  )
+  target.addEventListener(
+    'blur',
+    () => {
+      measuring = false
+    },
+    { signal },
+  )
   return stop
 }
 
-function walk(direction: 'up' | 'down') {
+/** The marked parts directly inside `parent` (or the page), in document order. */
+function partsIn(parent: Element | null): Element[] {
+  const all = [...(parent ?? doc).querySelectorAll('[data-hz]')]
+  return all.filter((e) => (e.parentElement?.closest('[data-hz]') ?? null) === parent)
+}
+
+function walk(direction: 'up' | 'down' | 'next' | 'previous') {
   const active = state.picks[state.active]
   if (!active) return
   const el = elementOf(active)
   const own = el?.getAttribute('data-hz') === active.id
+  const beside = () => {
+    if (!el || !own) return null
+    const list = partsIn(el.parentElement?.closest('[data-hz]') ?? null)
+    const at = list.indexOf(el)
+    return list[(at + (direction === 'next' ? 1 : -1) + list.length) % list.length] ?? null
+  }
   const next =
     direction === 'up'
       ? own
         ? el?.parentElement?.closest('[data-hz]')
         : el
-      : own
-        ? el?.querySelector('[data-hz]')
-        : null
-  if (!next) return
+      : direction === 'down'
+        ? own
+          ? el?.querySelector('[data-hz]')
+          : null
+        : beside()
+  if (!next || ((direction === 'next' || direction === 'previous') && next === el)) return
   state.picks[state.active] = {
     ...active,
     id: next.getAttribute('data-hz') ?? '',
@@ -394,14 +468,25 @@ function onKey(event: KeyboardEvent) {
     persist()
     return void renderPanel()
   }
-  if (
-    state.mode === 'select' &&
-    (event.key === 'ArrowUp' || event.key === 'ArrowDown') &&
-    state.picks.length
-  ) {
-    event.preventDefault()
-    walk(event.key === 'ArrowUp' ? 'up' : 'down')
+  if (event.key === 'Alt') {
+    measuring = true
+    if (state.mode === 'select') event.preventDefault()
+    return
   }
+  if (state.mode !== 'select' || !state.picks.length) return
+  const step =
+    event.key === 'ArrowUp' || (event.key === 'Enter' && event.shiftKey)
+      ? 'up'
+      : event.key === 'ArrowDown' || event.key === 'Enter'
+        ? 'down'
+        : event.key === 'Tab'
+          ? event.shiftKey
+            ? 'previous'
+            : 'next'
+          : null
+  if (!step) return
+  event.preventDefault()
+  walk(step)
 }
 
 let listening = listen(window)
@@ -546,7 +631,7 @@ function renderDock() {
             openBench()
           },
         },
-        ['Workbench'],
+        ['Frame'],
       ),
       h(
         'button',
@@ -579,7 +664,8 @@ function renderDock() {
         ? h('div', { class: 'tip', role: 'note' }, [
             h('span', {}, [h('kbd', {}, ['Click']), ' a part to select it']),
             h('span', {}, [h('kbd', {}, ['Shift']), '+click adds another']),
-            h('span', {}, [h('kbd', {}, ['Alt']), '+click picks its parent']),
+            h('span', {}, [h('kbd', {}, ['⇧ Enter']), ' picks its parent']),
+            h('span', {}, [h('kbd', {}, ['Alt']), ' measures']),
             h('span', {}, [h('kbd', {}, ['Esc']), ' stops']),
           ])
         : null,
@@ -1280,7 +1366,7 @@ async function renderChanges() {
         {
           class: 'link done',
           type: 'button',
-          title: 'Done or not needed: remove it',
+          title: 'Resolved or not needed: remove it',
           onclick: async () => {
             if (!armed) {
               armed = true
@@ -1291,7 +1377,7 @@ async function renderChanges() {
             void renderPanel()
           },
         },
-        ['Done'],
+        ['Resolve'],
       )
       return h('div', { class: 'req' }, [
         h('span', { class: 'n' }, [r.number]),
@@ -1310,7 +1396,7 @@ async function renderChanges() {
         message ? h('div', { class: 'notice' }, message) : null,
         ...(list.length
           ? [...list].reverse().map(row)
-          : [h('div', { class: 'empty' }, ['No open requests. Done ones are removed.'])]),
+          : [h('div', { class: 'empty' }, ['No open requests. Resolved ones are removed.'])]),
         list.length
           ? h('div', { class: 'sec' }, [
               h('div', { class: 'choice' }, [
@@ -1448,7 +1534,7 @@ async function renderRequest(number: string) {
         open('changes', null, 'saved')
       },
     },
-    ['Done · remove'],
+    ['Resolve · remove'],
   )
   panel.replaceChildren(
     h('div', { class: 'head' }, [
@@ -1583,7 +1669,10 @@ function renderSettings() {
         ['Alt+Shift+S', 'Select on or off'],
         ['Click', 'Select'],
         ['Shift+click', 'Add to the request'],
-        ['Alt+click', 'Select the area around it'],
+        ['Shift+Enter', 'Select the area around it'],
+        ['Enter', 'Select inside it'],
+        ['Tab / Shift+Tab', 'Next / previous part beside it'],
+        ['Alt (hold)', 'Measure: W × H and the distance to the part under the pointer'],
         ['Double-click', 'Select a text'],
         ['↑ ↓', 'Around it / inside it'],
         ['Esc', 'Back to Browse'],
@@ -1741,7 +1830,7 @@ function renderBar() {
         },
         ['API'],
       ),
-      h('button', { class: 'act exit', type: 'button', onclick: () => closeBench() }, ['Exit workbench']),
+      h('button', { class: 'act exit', type: 'button', onclick: () => closeBench() }, ['Exit frame']),
     ]),
   )
 }

@@ -101,8 +101,8 @@ describe('plain words for builders (owner, 2026-10-02)', () => {
         node({ tag: 'button', component: { ref: 'ui.Button', variant: {}, declaration: null, uses: 6 } }),
       ),
     ).toEqual({
-      question: 'Change only this one, or every Button like it?',
-      options: { this: 'Only this one', component: 'Every Button (6 places)' },
+      question: 'Change this instance only, or the main component (every Button)?',
+      options: { this: 'This instance only', component: 'Main component · every Button (6 places)' },
     })
     expect(
       questionFor(node({ conditions: [{ kind: 'each', detail: 'item of x', location: null }] })),

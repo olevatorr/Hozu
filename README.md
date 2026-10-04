@@ -55,9 +55,11 @@ agent: it checks Node, creates the app, reads the skill and builds your first pa
 
 **Hozu DevTools** comes with `npm run dev`: choose Select in the dock, click what should change and describe it.
 The request you copy or save names the file, line and the Hozu way to make the change; it can preview other
-states, styles and wording first, in an exact-size Workbench too. Give it to your agent, or tell the agent
+states, styles and wording first, in an exact-size frame too. Give it to your agent, or tell the agent
 "do the open Hozu requests" (`npx hozu requests --full`). Its **API** drawer runs the page's queries, mutations
-and endpoints with your own input, so you can test the API while you build it.
+and endpoints with your own input, so you can test the API while you build it. It speaks Figma: Shift+Enter, Enter and Tab move
+the selection, Alt measures in px, the selection shows `W × H`, and the Design panel follows Figma's order with
+your design tokens.
 
 `create-hozu` asks which coding agent will work on the app. To skip the question, pass `--agent`:
 
@@ -237,7 +239,7 @@ The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router 
 
 ## Requirements and status
 - **Node 22.18 or newer.** Config and app code are TypeScript run with Node's type stripping.
-- **Version 0.16.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
+- **Version 0.17.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
   and designers and the trial that checks DevTools requests. Every design decision is recorded in
   [`docs/adr`](docs/adr).
 

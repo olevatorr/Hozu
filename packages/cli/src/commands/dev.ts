@@ -16,10 +16,15 @@ export async function runDev(
       'hozu dev --no-devtools',
     ])
   const { dev } = await importer(loaded, 'dev')<{
-    dev(o: { cwd: string; port: number; devtools: boolean; devtoolsMode?: Mode }): Promise<{ url: string }>
+    dev(o: {
+      cwd: string
+      port: number
+      devtools: boolean
+      devtoolsMode?: Mode
+    }): Promise<{ url: string; close(): Promise<void> }>
   }>('@hozu/dev', ['npm install -D @hozu/dev'])
   const port = Number(process.env.PORT ?? 3000)
-  const { url } = await dev({
+  const { url, close } = await dev({
     cwd: dirname(loaded.path),
     port,
     devtools: devtools !== false,
@@ -32,6 +37,8 @@ export async function runDev(
       `lsof -ti:${busy}   # what holds port ${busy}`,
     ])
   })
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const)
+    process.once(signal, () => void close().finally(() => process.exit(0)))
   log(
     `Hozu dev on ${url}${devtools ? ' · DevTools: choose Select in the dock (Alt+Shift+S)' : ''} · stop: kill ${process.pid}`,
   )

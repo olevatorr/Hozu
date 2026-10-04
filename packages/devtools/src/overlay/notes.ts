@@ -177,7 +177,7 @@ export function agentNotes(host: AgentHost) {
                 await refresh()
               },
             },
-            ['Done'],
+            ['Resolve'],
           ),
         ]),
         result,

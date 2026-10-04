@@ -275,6 +275,11 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `hozu show`/`why` take `views.ts:line`, `show --in`, stale notes; browse: 401/403/404/410 is the step's status,
   `in "<text>"` either side, `;`-joined steps, `Did you mean`; transform keeps newlines inside `?:`/`&&`/`??`;
   HZ014 unknown head field, HZ046 derived paths, HZ054 exclusive branches; pages lock without machines; `bench/meta`.
+- 0.17 (ADR 0058): DevTools for Figma hands (both Builder and Developer): Shift+Enter / Enter / Tab move the selection,
+  Alt measures (red px lines; `measure.ts`), the selection shows `W × H`, the Design panel (was Look) follows Figma's
+  order (Frame, Auto layout, Layer, Fill, Stroke, Effects, Text) with width, height, gap, opacity, border and shadow
+  mapped to theme utilities, Builder shows tokens first; Figma's words (This instance only / Main component, Resolve,
+  Frame); request Markdown and the CLI unchanged. `feature({ styles })` not a list is HZ014.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

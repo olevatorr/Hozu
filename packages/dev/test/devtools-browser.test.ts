@@ -128,7 +128,9 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     expect(await tool(`$('.plain').textContent`)).toBe(
       'A shared Button: the same design is used in 6 places.',
     )
-    expect(await tool(`$('legend').textContent`)).toBe('Change only this one, or every Button like it?')
+    expect(await tool(`$('legend').textContent`)).toBe(
+      'Change this instance only, or the main component (every Button)?',
+    )
     expect(await evaluate('location.pathname')).toBe('/login')
     await shadowClick('.dock button', '⚙')
     await until(
@@ -143,8 +145,12 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     expect(await tool(`$('pre .on').textContent`)).toContain('ui.use(Button')
   })
 
-  it('Alt+click goes to the parent; described parts stay when the next one is clicked', async () => {
-    await click('button[type=submit]', 1)
+  it('Shift+Enter goes to the parent, as in Figma; described parts stay when the next one is clicked', async () => {
+    await click('button[type=submit]')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent && !document.querySelector('hozu-devtools').shadowRoot.querySelector('.title').textContent.includes('form')`,
+    )
+    await key('Enter', 'Enter', 8)
     await until(
       `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent === '<form>'`,
     )
@@ -243,11 +249,11 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
   it('a live style edit previews on the page and becomes the theme class to use', async () => {
     await click('h1')
     await until(
-      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.look select[aria-label="Text size"]')`,
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.look select[aria-label="Font size"]')`,
     )
     expect(await evaluate(`getComputedStyle(document.querySelector('h1')).fontSize`)).toBe('30px')
     await tool(
-      `(() => { const s = $('.look select[aria-label="Text size"]'); s.value = '48px'; s.dispatchEvent(new Event('change')); })()`,
+      `(() => { const s = $('.look select[aria-label="Font size"]'); s.value = '48px'; s.dispatchEvent(new Event('change')); })()`,
     )
     await until(`getComputedStyle(document.querySelector('h1')).fontSize === '48px'`)
     await shadowClick('.actions button', 'Copy for AI')
@@ -259,6 +265,99 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     )
     await shadowClick('.row-end button', 'Reset')
     await until(`getComputedStyle(document.querySelector('h1')).fontSize === '30px'`)
+  })
+
+  it('Figma hands: W × H on the selection, Tab / Shift+Tab beside it, Enter inside it, Alt measures (ADR 0058 A)', async () => {
+    const outline = (q: string) =>
+      evaluate(
+        `(() => { const $ = (s) => document.querySelector('hozu-devtools-outline').shadowRoot.querySelector(s); return ${q} })()`,
+      )
+    await click('h1')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent === '<h1>'`,
+    )
+    await until(
+      `document.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.box.selected .size')?.textContent`,
+    )
+    const size = await evaluate(
+      `(() => { const r = document.querySelector('h1').getBoundingClientRect(); return Math.round(r.width) + ' × ' + Math.round(r.height) })()`,
+    )
+    expect(await outline(`$('.box.selected .size').textContent`)).toBe(size)
+    const title = () => tool(`$('.title').textContent`)
+    const first = await title()
+    await key('Tab', 'Tab', 0)
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title').textContent !== ${JSON.stringify(first)}`,
+    )
+    const beside = await title()
+    await key('Tab', 'Tab', 8)
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title').textContent === ${JSON.stringify(first)}`,
+    )
+    await click('form')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title').textContent !== ${JSON.stringify(first)}`,
+    )
+    const inside = await title()
+    await key('Enter', 'Enter', 8)
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title').textContent !== ${JSON.stringify(inside)}`,
+    )
+    const around = await title()
+    await key('Enter', 'Enter', 0)
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title').textContent !== ${JSON.stringify(around)}`,
+    )
+    expect(beside).not.toBe(first)
+    await click('h1')
+    await cdp.send(
+      'Input.dispatchKeyEvent',
+      { type: 'keyDown', code: 'AltLeft', key: 'Alt', modifiers: 1 },
+      session,
+    )
+    const { x, y } = await evaluate(
+      `(() => { const r = document.querySelector('form').getBoundingClientRect(); return { x: r.x + 4, y: r.y + 4 } })()`,
+    )
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, modifiers: 1 }, session)
+    await until(
+      `document.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.measure:not([hidden]) .m-label')`,
+    )
+    const gap = await evaluate(
+      `Math.round(document.querySelector('form').getBoundingClientRect().top - document.querySelector('h1').getBoundingClientRect().bottom)`,
+    )
+    expect(
+      await outline(`[...$('.measure').querySelectorAll('.m-label')].map((l) => l.textContent)`),
+    ).toContain(String(gap))
+    await cdp.send(
+      'Input.dispatchKeyEvent',
+      { type: 'keyUp', code: 'AltLeft', key: 'Alt', modifiers: 0 },
+      session,
+    )
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x + 1, y, modifiers: 0 }, session)
+    await until(`document.querySelector('hozu-devtools-outline').shadowRoot.querySelector('.measure').hidden`)
+  })
+
+  it('the Design panel follows Figma: Frame, Auto layout, Layer, Fill, Stroke, Effects, Text (ADR 0058 B)', async () => {
+    await click('h1')
+    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.look-group')`)
+    expect(
+      await tool(
+        `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.look-title')].map((t) => t.textContent)`,
+      ),
+    ).toEqual(['Frame', 'Auto layout', 'Layer', 'Fill', 'Stroke', 'Effects', 'Text'])
+    await tool(
+      `(() => { const s = $('.look select[aria-label="Gap"]'); s.value = '16px'; s.dispatchEvent(new Event('change')); })()`,
+    )
+    await tool(
+      `(() => { const s = $('.look select[aria-label="Stroke weight"]'); s.value = '2px'; s.dispatchEvent(new Event('change')); })()`,
+    )
+    await until(`getComputedStyle(document.querySelector('h1')).borderTopWidth === '2px'`)
+    await shadowClick('.actions button', 'Copy for AI')
+    await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.status.ok')`)
+    const copied = (await evaluate('navigator.clipboard.readText()')) as string
+    expect(copied).toContain('- Style: gap 0px → 16px: add `gap-4`')
+    expect(copied).toContain('- Style: border width 0px → 2px: add `border-2`')
+    await shadowClick('.row-end button', 'Reset')
   })
 
   it('Escape returns to Browse; the page button shows its head', async () => {
@@ -497,7 +596,7 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     const reply = listed().find((f) => f.includes('reply-to-note-2'))
     expect(reply).toBeDefined()
     expect(readFileSync(join(requests, reply!), 'utf8')).toContain('- Reply: Show the newest first')
-    await shadowClick('.actions button', 'Done')
+    await shadowClick('.actions button', 'Resolve')
     await until(
       `document.querySelector('hozu-devtools').shadowRoot.querySelector('.dock .act.agent')?.textContent === 'Agent 1'`,
     )

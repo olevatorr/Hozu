@@ -94,4 +94,52 @@ describe('theme utilities for style edits (ADR 0047 P4)', () => {
     expect(currentUtility('fontWeight', 'p-3', theme)).toBeNull()
     expect(currentUtility('paddingBlock', 'p-3', theme)).toBe('p-3')
   })
+
+  it('maps the Figma properties to theme utilities (ADR 0058 B1)', () => {
+    expect(theme.shadow.md).toContain('0 4px 6px -1px')
+    expect(utilityFor('width', '320px', theme)).toEqual({ utility: 'w-80', exact: true, nearest: null })
+    expect(utilityFor('width', '100%', theme)).toEqual({ utility: 'w-full', exact: true, nearest: null })
+    expect(utilityFor('height', 'auto', theme)).toEqual({ utility: 'h-auto', exact: true, nearest: null })
+    expect(utilityFor('gap', '16px', theme)).toEqual({ utility: 'gap-4', exact: true, nearest: null })
+    expect(utilityFor('opacity', '0.5', theme)).toEqual({ utility: 'opacity-50', exact: true, nearest: null })
+    expect(utilityFor('opacity', '0.42', theme)).toEqual({
+      utility: 'opacity-[0.42]',
+      exact: false,
+      nearest: 'opacity-40',
+    })
+    expect(utilityFor('borderWidth', '1px', theme)).toEqual({ utility: 'border', exact: true, nearest: null })
+    expect(utilityFor('borderWidth', '2px', theme)).toEqual({
+      utility: 'border-2',
+      exact: true,
+      nearest: null,
+    })
+    expect(utilityFor('borderWidth', '3px', theme)).toEqual({
+      utility: 'border-[3px]',
+      exact: false,
+      nearest: null,
+    })
+    expect(utilityFor('borderColor', '#fb3a0e', theme)).toEqual({
+      utility: 'border-red',
+      exact: true,
+      nearest: null,
+    })
+    expect(utilityFor('boxShadow', theme.shadow.lg!, theme)).toEqual({
+      utility: 'shadow-lg',
+      exact: true,
+      nearest: null,
+    })
+    expect(utilityFor('boxShadow', 'none', theme)).toEqual({
+      utility: 'shadow-none',
+      exact: true,
+      nearest: null,
+    })
+    const classes = 'w-full h-10 gap-2 opacity-80 border border-red shadow-md text-red'
+    expect(currentUtility('width', classes, theme)).toBe('w-full')
+    expect(currentUtility('height', classes, theme)).toBe('h-10')
+    expect(currentUtility('gap', classes, theme)).toBe('gap-2')
+    expect(currentUtility('opacity', classes, theme)).toBe('opacity-80')
+    expect(currentUtility('borderWidth', classes, theme)).toBe('border')
+    expect(currentUtility('borderColor', classes, theme)).toBe('border-red')
+    expect(currentUtility('boxShadow', classes, theme)).toBe('shadow-md')
+  })
 })

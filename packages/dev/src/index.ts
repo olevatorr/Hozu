@@ -92,7 +92,7 @@ export async function dev({
         ]
     child = spawn(process.execPath, args, {
       cwd,
-      env: { ...process.env, PORT: String(appPort), HOZU_DEV: '1' },
+      env: { ...process.env, PORT: String(appPort), HOZU_DEV: '1', HOZU_DEV_PARENT: String(process.pid) },
       stdio: ['ignore', 'pipe', 'inherit'],
     })
     ready = new Promise((resolve) => {
