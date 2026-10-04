@@ -25,7 +25,7 @@ npx hozu get / --json
 | `hozu map --json` | Show a compact app outline with source locations. |
 | `hozu inspect tasks --json` | Inspect a feature's canonical IR and summary, or a component (`ui.Button`) with every use. |
 | `hozu why tasks.listItems --json` | What a target is, where it is (file:line), what uses it and what it affects. The target is a declaration, a component (`ui.Button`), a state (`tasks.idle`: its transitions, guards and covering contracts), a view node (a DevTools id or IR pointer) or a page (`page:home`). `explain`, `impact` and `locate` still work in 0.14 with a deprecation, and are removed in 0.15; `graph` was removed. |
-| `hozu plan home --json` | Show the derived render plan for a named route. |
+| `hozu plan home --json` | Show the derived render plan for a route name, or for a path such as `/products/mug`. |
 | `hozu get /tasks --json` | Request one or more pages in-process without a server. |
 | `hozu env --json` | Every env variable: server or public, required, default, whether it is set now, its internal URL; `--example` writes `.env.example`. |
 | `hozu call tasks.listItems --input '{}' --json` | Run one query or mutation through the app's handler without a server: the value or the declared error, and for a mutation (`--write`) the tags it invalidated and the queries they refresh. `--session '<json>'` signs in. |

@@ -46,7 +46,7 @@ Commands:
                             (cart.addItem), a component (ui.Button), a state (cart.idle) with its transitions
                             and contracts, a view node (DevTools id or IR pointer) or a page (page:home)
   explain | locate | impact Deprecated: hozu why answers each (removed in 0.15)
-  plan <route>              Derived render plan: regions, cache modes, hydration islands
+  plan <route|path>         Derived render plan of a route (home) or a path (/products/mug): regions, cache modes, islands
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
   serve                     Start the app module (project({ app })) on PORT with adapter-node: what npm start runs
   dev                       Start the dev server: reload on edits, hot CSS and Hozu DevTools

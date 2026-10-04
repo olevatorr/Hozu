@@ -59,5 +59,5 @@ export default project({
 - For a route no page renders (HZ052), link to an endpoint with `ui.link(endpoint, input)` instead.
 - A detail view: `ui.view({ route: itemPage, render: ({ params }) => ui.query(getItem, { id: params.id }, { ready,
   failed: { NotFound: () => ui.p({}, ['Not found']), Unexpected: () => … } }) })`.
-- A page loads JS only when a machine-bound part renders on it (`hozu plan <route>`). Every link loads a document;
+- A page loads JS only when a machine-bound part renders on it (`hozu plan <route or path>`). Every link loads a document;
   state across pages lives in the URL (`seed`), on the server (queries) or in a client component's own storage.

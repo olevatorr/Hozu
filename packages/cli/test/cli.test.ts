@@ -88,6 +88,17 @@ describe('A5 CLI contract', () => {
     })
   })
 
+  it('plan takes a path as well as a route name (ADR 0056 A6)', async () => {
+    const byPath = JSON.parse((await run(['plan', '/products/mug', '--json'])).stdout)
+    const byName = JSON.parse((await run(['plan', 'product', '--json'])).stdout)
+    expect(byPath).toEqual(byName)
+    const none = await run(['plan', '/nowhere', '--json'])
+    expect([none.code, JSON.parse(none.stdout).error.message]).toEqual([
+      2,
+      'No page renders the path "/nowhere"',
+    ])
+  })
+
   it('why answers for a state, a declaration and a page, with file:line; graph is gone', async () => {
     const state = JSON.parse((await run(['why', 'cart.adding', '--json'])).stdout)
     expectSchema('why', state)
