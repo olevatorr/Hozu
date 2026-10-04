@@ -246,7 +246,7 @@ export const Home = ui.view({
             ]),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'Speed · 0.15' } }, [
+        ui.use(Section, { props: { kicker: 'Speed' } }, [
           ui.use(Heading, {}, ['Checked, and still the lightest page.']),
           ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
             'The same page, 100 products and a cart counter, built with each framework and run in its own production server. Every request is rendered fresh. Only the parts that react to clicks ship JavaScript.',
@@ -311,7 +311,7 @@ export const Home = ui.view({
             },
           ),
         ]),
-        ui.use(Section, { props: { kicker: 'Who may see it · 0.15' } }, [
+        ui.use(Section, { props: { kicker: 'Who may see it' } }, [
           ui.use(Heading, {}, ['Your notes stay yours. Hozu checks.']),
           ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
             'Every query and change over a visitor’s data says who may run it. Forget to say it, and the app does not type-check. Hozu refuses everyone else before your code runs, and checks that a list holds only the visitor’s own rows.',
@@ -342,7 +342,7 @@ export const Home = ui.view({
             ui.use(Button, { props: { href: ui.link(doc, { slug: 'data' }) } }, ['Who may run it →']),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'Data · 0.11' } }, [
+        ui.use(Section, { props: { kicker: 'Data' } }, [
           ui.use(Heading, {}, ['Your API, called from where it belongs.']),
           ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
             'Each query and mutation says what it needs, and Hozu decides where it runs. A public API is rendered on the server first, then called straight from the browser: no second hop, no double traffic. A token that lives in the browser never travels to your server, and an app without a server exports to GitHub Pages.',
@@ -373,7 +373,7 @@ export const Home = ui.view({
             ui.use(Button, { props: { href: ui.link(doc, { slug: 'data' }) } }, ['Where data runs →']),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'Test as you build · 0.13' } }, [
+        ui.use(Section, { props: { kicker: 'Test as you build' } }, [
           ui.use(Heading, {}, ['Run your API next to the page.']),
           ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
             'npm run dev puts an API drawer under every page: the data it reads, the changes it makes and your endpoints, with the requests each call really sent. The environment is declared once, secrets stay on the server, and the server can call your APIs on the inside.',
@@ -393,7 +393,7 @@ export const Home = ui.view({
             ),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'Scale · 0.12' } }, [
+        ui.use(Section, { props: { kicker: 'Scale' } }, [
           ui.use(Heading, {}, ['Five hundred features. Same page.']),
           ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
             'We generated apps of 50 and 500 features and fixed what grew with the app instead of the page. A page now loads only its own code and links, the check after an edit runs the type check alongside everything else, and several servers keep one another’s caches honest.',
@@ -431,7 +431,7 @@ export const Home = ui.view({
             ),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'DevTools · 0.10' } }, [
+        ui.use(Section, { props: { kicker: 'DevTools' } }, [
           ui.use(Heading, {}, ['Point at it. Your agent gets the line.']),
           ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-center' }, [
             shot(
@@ -444,6 +444,9 @@ export const Home = ui.view({
               ]),
               ui.p({}, [
                 'The request names the file, the line and the Hozu way to make the change: one button or every button, a message shared by two places, a state that needs a contract. Your agent stops searching and starts fixing.',
+              ]),
+              ui.p({}, [
+                'And it points back: each part it changed gets a numbered frame on your page, with a note in your words.',
               ]),
               ui.div({ class: 'mt-2 flex flex-wrap gap-3' }, [
                 ui.use(Button, { props: { href: ui.link(devtools, null) } }, ['Meet DevTools →']),

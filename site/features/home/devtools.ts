@@ -22,6 +22,10 @@ Page \`/\` · 390 × 844
 
 Run \`hozu check\` after the edits.`
 
+export const notes = `npx hozu show features/notes/views.ts:42 --note "Delete now asks before it removes a note"
+npx hozu show features/notes/views.ts:51 --in "Buy milk" --note "Pinned notes go first"
+npx hozu show page:home --note "The page title is shorter"`
+
 export const shot = (name: string, alt: string) =>
   ui.img({
     src: ui.asset(new URL(`../../assets/devtools-${name}.png`, import.meta.url)),
@@ -31,7 +35,7 @@ export const shot = (name: string, alt: string) =>
     class: 'w-full border-4 border-ink bg-white shadow-[8px_8px_0_var(--color-ink)]',
   })
 
-const requestBlock = () =>
+const codeBlock = (text: string) =>
   ui.use(CodeBlock, {}, [
     ui.pre(
       {
@@ -39,7 +43,7 @@ const requestBlock = () =>
           'overflow-x-auto border-4 border-paper bg-ink p-5 font-mono text-xs leading-relaxed text-paper',
         tabindex: 0,
       },
-      [request],
+      [text],
     ),
   ])
 
@@ -52,7 +56,7 @@ export const DevToolsPage = ui.view({
           { class: 'mx-auto grid max-w-6xl gap-10 px-5 py-16 lg:grid-cols-[1fr_1.2fr] lg:items-center' },
           [
             ui.div({}, [
-              ui.p({ class: 'font-mono text-xs font-bold uppercase text-ember' }, ['Hozu DevTools · 0.10']),
+              ui.p({ class: 'font-mono text-xs font-bold uppercase text-ember' }, ['Hozu DevTools']),
               ui.use(Display, {
                 props: {
                   words: [
@@ -139,7 +143,34 @@ export const DevToolsPage = ui.view({
         ui.p({ class: 'mt-4 max-w-2xl' }, [
           'Where, what and how far the change reaches, the theme class to use, and a reminder only where a plain edit would go wrong. The pointer finds the part again after the lines move.',
         ]),
-        ui.div({ class: 'mt-8 w-full' }, [requestBlock()]),
+        ui.div({ class: 'mt-8 w-full' }, [codeBlock(request)]),
+      ]),
+      ui.use(Section, { props: { kicker: 'The way back' } }, [
+        ui.use(Heading, {}, ['See what your agent changed.']),
+        ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
+          'After a change, your agent points at each part it touched, with a note in your words. You check the result on the page, not in a diff.',
+        ]),
+        ui.div({ class: 'mt-8 w-full' }, [codeBlock(notes)]),
+        ui.div({ class: 'mt-8 grid w-full gap-6 md:grid-cols-3' }, [
+          ui.div({ class: 'border-4 border-ink p-4' }, [
+            ui.h3({ class: 'font-black uppercase' }, ['Numbered frames']),
+            ui.p({ class: 'mt-2' }, [
+              'Each part gets a red frame and a number. A file and line is enough; --in "<text>" picks one row of a list.',
+            ]),
+          ]),
+          ui.div({ class: 'border-4 border-ink p-4' }, [
+            ui.h3({ class: 'font-black uppercase' }, ['Reply or done']),
+            ui.p({ class: 'mt-2' }, [
+              'The Agent panel steps through the notes. Send reply hands your answer back as a request; Done removes the note.',
+            ]),
+          ]),
+          ui.div({ class: 'border-4 border-ink p-4' }, [
+            ui.h3({ class: 'font-black uppercase' }, ['Never out of date']),
+            ui.p({ class: 'mt-2' }, [
+              'hozu show lists the open notes and marks one stale when its part has moved or gone, so your agent fixes the note before you see it.',
+            ]),
+          ]),
+        ]),
       ]),
       ui.use(Section, { props: { kicker: 'Every state' } }, [
         ui.use(Heading, {}, ['See the screens you never get to.']),
@@ -153,7 +184,7 @@ export const DevToolsPage = ui.view({
           ),
         ]),
       ]),
-      ui.use(Section, { props: { kicker: 'Your data · 0.13' } }, [
+      ui.use(Section, { props: { kicker: 'Your data' } }, [
         ui.use(Heading, {}, ['Test the API while you build it.']),
         ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
           'API opens a drawer with what the page reads and what it can change: where each one runs, how it is cached and the line that implements it. Edit the input, run it and read the answer as a table. A change asks first, then the page updates in place, as if a button had made it.',
