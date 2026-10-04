@@ -287,6 +287,20 @@ describe('ADR 0043 D: links to endpoints', () => {
     ])
   })
 
+  it('a status an endpoint error cannot answer is one HZ046, at the failed entry (ADR 0056 A5)', () => {
+    const { build } = setup()
+    const ir = structuredClone(build.ir)
+    ir.features.api!.endpoints.exportNotes!.failed = { Unauthorized: 503 as never }
+    const found = validate(ir).filter((d) => d.location.pointer.includes('/endpoints/exportNotes'))
+    expect(found.map((d) => [d.code, d.location.pointer, d.message])).toEqual([
+      [
+        'HZ046',
+        '/features/api/endpoints/exportNotes/failed/Unauthorized',
+        'Endpoint api.exportNotes maps "Unauthorized" to 503, which an endpoint error cannot answer',
+      ],
+    ])
+  })
+
   it('HZ032: a string form action that is a POST endpoint gets a patch to ui.link(endpoint)', () => {
     const { build } = setup()
     const ir = structuredClone(build.ir)

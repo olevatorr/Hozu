@@ -339,8 +339,8 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     severity: 'error',
     topic: 'endpoints',
     summary:
-      'an endpoint path is reserved, has params or collides; an error without a status; a form posting to it with another method or an undeclared field',
-    fix: 'a static path such as `/api/…` (patch); map every error in `failed`',
+      'an endpoint path is reserved, has params or collides; an error without a status, or with one an endpoint error cannot answer; a form posting to it with another method or an undeclared field',
+    fix: 'a static path such as `/api/…` (patch); map every error in `failed` to 400, 401, 403, 404, 409, 410, 422 or 429',
   },
   HZ047: {
     name: 'fn-not-self-contained',

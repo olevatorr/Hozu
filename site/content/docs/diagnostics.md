@@ -62,7 +62,7 @@ This table is generated from the diagnostic registry, so it lists every code the
 | HZ043 | `site.offline` has params, no page, or per-request data | point it at a static page, or remove `offline` |
 | HZ044 | a feature file was loaded without the Hozu transform | run node with `--import @hozu/transform/register` (`npm start` does), or add `hozuTransform()` to Vite / Vitest |
 | HZ045 | no `project({ app })`, its default export is not `app(…)`, or views use client components and `app()` has no bundle | `export default app({ resolvers, components: bundleComponents })` |
-| HZ046 | an endpoint path is reserved, has params or collides; an error without a status; a form posting to it with another method or an undeclared field | a static path such as `/api/…` (patch); map every error in `failed` |
+| HZ046 | an endpoint path is reserved, has params or collides; an error without a status, or with one an endpoint error cannot answer; a form posting to it with another method or an undeclared field | a static path such as `/api/…` (patch); map every error in `failed` to 400, 401, 403, 404, 409, 410, 422 or 429 |
 | HZ047 | a `fn` body uses an imported name or `let` state (it is sent to the browser as source) | pass the value as input, or write it as a `const` helper in the module |
 | HZ048 | `seed` names a field the context lacks, has no machine or route, or two views on one page seed a machine | seed top-level context fields, on one view per page |
 | HZ049 | a `scope: 'user'` query is cached (`'static'`, `revalidate`, `swr`) | `freshness: 'request'` (patch), or `'live'` for push |

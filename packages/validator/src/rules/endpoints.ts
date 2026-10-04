@@ -118,6 +118,8 @@ function fieldNames(node: ViewNode, out: Set<string>) {
 
 const literalOf = (v: ValueExpr | undefined) => (v && 'literal' in v ? v.literal : undefined)
 
+const ENDPOINT_STATUSES: number[] = [400, 401, 403, 404, 409, 410, 422, 429]
+
 export function endpointLinks(ctx: Ctx) {
   const { ir } = ctx
   const flagged = new Set<string>()
@@ -141,6 +143,16 @@ export function endpointLinks(ctx: Ctx) {
             patch: null,
           },
         )
+      for (const [n, status] of Object.entries(failed))
+        if (declared.includes(n) && !ENDPOINT_STATUSES.includes(status))
+          ctx.report(
+            'HZ046',
+            f.id,
+            featurePointer(f.id, 'endpoints', sym, 'failed', n),
+            `Endpoint ${ref} maps "${n}" to ${JSON.stringify(status)}, which an endpoint error cannot answer`,
+            `A declared endpoint error answers ${ENDPOINT_STATUSES.join(', ')}; Unexpected answers 500.`,
+            { summary: `Map ${n} to one of ${ENDPOINT_STATUSES.join(', ')}`, snippet: null, patch: null },
+          )
       for (const n of Object.keys(failed).filter((k) => !declared.includes(k)))
         ctx.report(
           'HZ046',

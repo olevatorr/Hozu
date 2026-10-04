@@ -447,7 +447,6 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
 }
 
 const modes: Record<string, EndpointMode> = { redirect: 'redirect', response: 'response' }
-const statuses = new Set([400, 401, 403, 404, 409, 410, 422, 429])
 
 function buildEndpoint(scope: FeatureScope, sym: string, d: EndpointDef): EndpointIR {
   const ref = `${scope.id}.${sym}`
@@ -466,16 +465,7 @@ function buildEndpoint(scope: FeatureScope, sym: string, d: EndpointDef): Endpoi
   const errorRefs = errors(scope, d.errors ?? {}, at(p, 'errors'), true)
   for (const [name, schema] of Object.entries(d.errors ?? {})) scope.bind(`${ref}#error:${name}`, schema)
   const failed: Record<string, EndpointStatus> = {}
-  for (const [name, status] of Object.entries(d.failed ?? {})) {
-    if (statuses.has(status)) failed[name] = status
-    else
-      scope.report(
-        'HZ014',
-        at(p, 'failed', name),
-        `Endpoint status ${JSON.stringify(status)} for ${name} is not allowed`,
-        'A declared endpoint error answers 400, 401, 403, 404, 409, 410, 422 or 429.',
-      )
-  }
+  for (const [name, status] of Object.entries(d.failed ?? {})) failed[name] = status
   const invalidates = d.invalidates ? tagExprs(scope, d.invalidates, at(p, 'invalidates')) : []
   const empty = `s_${hashJson({}).slice(0, 16)}`
   if (raw) scope.schemas[empty] = {}
