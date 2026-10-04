@@ -88,6 +88,16 @@ describe('A5 CLI contract', () => {
     })
   })
 
+  it('<command> --help prints that command and its options (ADR 0056 A8)', async () => {
+    const add = (await run(['add', 'feature', '--help'])).stdout
+    expect(add.startsWith('Usage: hozu add feature [options]')).toBe(true)
+    expect(add).toContain('--with <parts>')
+    expect(add).not.toContain('--screenshot')
+    const browse = (await run(['browse', '--help'])).stdout
+    expect(browse).toContain('--do <step>')
+    expect(browse).not.toContain('add feature')
+  })
+
   it('plan takes a path as well as a route name (ADR 0056 A6)', async () => {
     const byPath = JSON.parse((await run(['plan', '/products/mug', '--json'])).stdout)
     const byName = JSON.parse((await run(['plan', 'product', '--json'])).stdout)

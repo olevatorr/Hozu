@@ -102,6 +102,31 @@ Options:
   -h, --help           Show this help
 `
 
+const blocks = (section: string, indent: number) => {
+  const body = usage.split(`\n${section}:\n`)[1]!.split('\n\n')[0]!.split('\n')
+  const out: string[][] = []
+  for (const line of body)
+    if (line.startsWith(' '.repeat(indent)) && out.length) out.at(-1)!.push(line)
+    else out.push([line])
+  return out
+}
+
+/** `hozu <command> --help`: the command's own lines and options, plus the global ones (ADR 0056 A8). */
+export function commandHelp(command: string, sub?: string): string | null {
+  const name = command === 'add' && sub ? `add ${sub}` : command
+  const own = blocks('Commands', 28).filter((b) => {
+    const head = b[0]!.trim()
+    return head === name || head.startsWith(`${name} `) || head.split(' | ').includes(command)
+  })
+  if (!own.length) return null
+  const scope = (b: string[]) => /^\s+\S+(?: <[^>]+>)?\s+([a-z/ ]+):/.exec(b[0]!)?.[1]?.split('/') ?? []
+  const options = blocks('Options', 23).filter((b) => {
+    const s = scope(b)
+    return s.length === 0 ? /--json|--config|--help/.test(b[0]!) : s.some((x) => x === name || x === command)
+  })
+  return `Usage: hozu ${name} [options]\n\n${own.flat().join('\n')}\n\nOptions:\n${options.flat().join('\n')}\n`
+}
+
 const browseJs = (value: string | undefined): BrowseJs => {
   if (value === undefined) return 'both'
   if (value === 'on' || value === 'off' || value === 'both') return value
@@ -195,6 +220,13 @@ export async function main(
     })
     asJson = values.json === true
     const [command, target] = positionals
+    if (values.help && command) {
+      const help = commandHelp(command, command === 'add' ? target : undefined)
+      if (help) {
+        out(help)
+        return 0
+      }
+    }
     if (values.help || !command) {
       out(usage)
       return command || values.help ? 0 : 2
