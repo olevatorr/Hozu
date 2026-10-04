@@ -16,6 +16,7 @@ import {
   listDocs,
   listTrials,
 } from './features/content/model.ts'
+import { mediaOrigin } from './features/home/media.ts'
 import { getPlayground } from './features/home/model.ts'
 import { highlight } from './highlight.ts'
 import project from './hozu.config.ts'
@@ -146,4 +147,5 @@ export default app({
     implement(getChangelog, () => ({ html: changelogHtml, hasCode: changelogHtml.includes('<pre') })),
   ]),
   components: bundleComponents,
+  csp: { media: [mediaOrigin] },
 })

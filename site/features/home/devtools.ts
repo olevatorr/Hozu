@@ -5,6 +5,7 @@ import { CodeBlock } from '../../site/code-block.ts'
 import { Display, Heading } from '../../site/display.ts'
 import { Section } from '../../site/section.ts'
 import { Steps } from '../../site/steps.ts'
+import { films } from './media.ts'
 
 export const request = `# Hozu request: Make it bigger on phones and use the brand red
 
@@ -94,7 +95,7 @@ export const DevToolsPage = ui.view({
               },
               [
                 ui.source({
-                  src: ui.asset(new URL('../../assets/video/hozu-devtools.mp4', import.meta.url)),
+                  src: films.devtools,
                   type: 'video/mp4',
                 }),
               ],

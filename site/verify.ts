@@ -7,6 +7,7 @@ import { codes } from '@hozu/core/ir'
 import { testApp } from '@hozu/testing'
 import site from './app.ts'
 import { catches, claims, speed } from './features/content/claims.ts'
+import { films, mediaOrigin } from './features/home/media.ts'
 
 const app = testApp(site)
 for (const [path, status, text] of [
@@ -40,18 +41,22 @@ const homePage = await readFile(new URL('./dist/index.html', import.meta.url), '
 assert.ok(homePage.includes(`data-version="${release.version}"`), `header shows ${release.version}`)
 console.log(`Header version ${release.version} equals packages/core`)
 const devtoolsPage = await readFile(new URL('./dist/devtools/index.html', import.meta.url), 'utf8')
-const film = /<video[^>]*preload="none"[^>]*><source src="(\/_hozu\/a\/[0-9a-f]+\.mp4)" type="video\/mp4">/
-for (const [page, html] of [
-  ['/', homePage],
-  ['/devtools', devtoolsPage],
+const film = /<video[^>]*preload="none"[^>]*><source src="([^"]+\.mp4)" type="video\/mp4">/
+for (const [page, html, url] of [
+  ['/', homePage, films.site],
+  ['/devtools', devtoolsPage, films.devtools],
 ] as const) {
-  const src = film.exec(html)?.[1]
-  assert.ok(src, `${page}: a film that does not preload`)
-  const { size } = await stat(new URL(`./dist${src}`, import.meta.url))
-  assert.ok(size <= 8_000_000, `${page}: the film is ${size} B, over 8 MB`)
+  assert.equal(film.exec(html)?.[1], url, `${page}: a film from ${mediaOrigin} that does not preload`)
+  const head = await fetch(url, { headers: { range: 'bytes=0-1' } })
+  assert.equal(head.status, 206, `${url} answers a range request (seeking works)`)
+  assert.equal(head.headers.get('content-type'), 'video/mp4', `${url} is served as video/mp4`)
+  const size = Number(head.headers.get('content-range')?.split('/')[1])
+  assert.ok(size <= 20_000_000, `${url} is ${size} B, over 20 MB`)
 }
 assert.ok(homePage.includes('alt="Peg, the red peg that checks, waving"'), 'Peg in the hero demo')
-console.log('Peg and the two films are on the home and DevTools pages; no film preloads, each under 8 MB')
+console.log(
+  `Peg and the two films (${mediaOrigin}, range requests, video/mp4, under 20 MB); no film preloads`,
+)
 for (const c of claims) await access(new URL(`./dist/trials/${c.trial}/index.html`, import.meta.url))
 for (const c of catches) assert.equal(codes[c.code]?.name, c.name, `${c.code} is ${c.name} in the registry`)
 for (const c of claims) {

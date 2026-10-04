@@ -15,6 +15,7 @@ import { Ticker } from '../../site/ticker.ts'
 import { catches, claim, speed, speedSource } from '../content/claims.ts'
 import { getStart, listChapters } from '../content/model.ts'
 import { shot } from './devtools.ts'
+import { films } from './media.ts'
 import { Break, Fix, getPlayground, m, Pick } from './model.ts'
 
 const claimLink = (id: string, text: string) =>
@@ -187,8 +188,8 @@ export const Home = ui.view({
         }),
       ]),
       ui.div({}, [
-        ui.use(Section, { props: { kicker: 'Watch · 3 min' } }, [
-          ui.use(Heading, {}, ['Three minutes. No code.']),
+        ui.use(Section, { props: { kicker: 'Watch · 2 min' } }, [
+          ui.use(Heading, {}, ['Two minutes. No code.']),
           ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
             'You dream it, your AI builds it, and Peg, the red peg that locks the joint, checks every change before it reaches anyone. For vibe coders and designers.',
           ]),
@@ -197,7 +198,7 @@ export const Home = ui.view({
               controls: true,
               preload: 'none',
               playsinline: true,
-              poster: ui.asset(new URL('../../assets/video/hozu-play-poster.jpg', import.meta.url)),
+              poster: ui.asset(new URL('../../assets/video/hozu-site-poster.jpg', import.meta.url)),
               width: 1280,
               height: 720,
               class:
@@ -205,7 +206,7 @@ export const Home = ui.view({
             },
             [
               ui.source({
-                src: ui.asset(new URL('../../assets/video/hozu-play.mp4', import.meta.url)),
+                src: films.site,
                 type: 'video/mp4',
               }),
             ],
