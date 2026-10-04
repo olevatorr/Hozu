@@ -1,4 +1,4 @@
-import { feature, project, query, route, ui } from '@hozu/core'
+import { endpoint, feature, project, query, route, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import { validate } from '@hozu/validator'
@@ -55,5 +55,35 @@ describe('0.15 dogfood (ADR 0057 C)', () => {
     expect(found?.fix?.snippet).toBe(
       'imports: [bookings],   // in feature "site"\nexports: [listRooms],   // in feature "bookings", next to its declarations',
     )
+  })
+
+  it('a head field Hozu does not know is HZ014, not silently dropped', () => {
+    const app = project({
+      schema: zodAdapter,
+      routes: { home },
+      pages: [
+        ui.page(home, {
+          views: [Home],
+          head: { render: () => ({ title: 'Rooms', twitter: 'summary_large_image' }) as never },
+        }),
+      ],
+      features: [feature({ id: 'site', intent: { summary: 'home' }, declarations: [{ Home, listRooms }] })],
+    })
+    const found = buildProject(app, { sources: false }).diagnostics.find((d) => d.code === 'HZ014')
+    expect(found?.message).toBe('head.render returns "twitter", which is not a head field')
+  })
+
+  it('an endpoint at /sitemap.xml is HZ046: the sitemap is derived', () => {
+    const sitemap = endpoint({ method: 'GET', path: '/sitemap.xml', input: z.object({}), output: 'response' })
+    const app = project({
+      schema: zodAdapter,
+      routes: { home },
+      pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'Rooms' }) } })],
+      features: [
+        feature({ id: 'site', intent: { summary: 'home' }, declarations: [{ Home, listRooms, sitemap }] }),
+      ],
+    })
+    const found = validate(buildProject(app, { sources: false }).ir).find((d) => d.code === 'HZ046')
+    expect(found?.message).toBe('Endpoint path "/sitemap.xml" of site.sitemap replaces a file Hozu derives')
   })
 })

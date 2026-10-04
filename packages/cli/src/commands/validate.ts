@@ -85,12 +85,13 @@ export async function runValidate(
       : { ...d, location: { ...d.location, source: resolveSource(traced.sources, d.location.pointer) } },
   )
   const clean = !diagnostics.some((d) => d.severity === 'error')
-  const machines = Object.keys(verified.lock?.features ?? {}).length > 0
-  const current = previous !== null && json(previous) === json(verified.lock)
-  let lock: ValidateOutput['lock'] =
-    previous === null && !machines ? 'missing' : current ? 'current' : 'stale'
+  const tables = Object.values((verified.lock?.pages ?? {}) as Record<string, object>)
+  const locked =
+    Object.keys(verified.lock?.features ?? {}).length > 0 || tables.some((t) => Object.keys(t).length > 0)
+  const current = previous !== null ? json(previous) === json(verified.lock) : !locked
+  let lock: ValidateOutput['lock'] = current ? 'current' : previous === null ? 'missing' : 'stale'
   let lockAccepted: string[] = []
-  if (updateLock && !current && (previous !== null || machines)) {
+  if (updateLock && !current) {
     lock = clean && verified.lock ? 'updated' : 'skipped'
     if (lock === 'updated') {
       lockAccepted = lockDiff(previous, verified.lock!)

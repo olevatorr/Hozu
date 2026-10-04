@@ -33,6 +33,12 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
   it.
 - **`hozu serve` and `hozu dev` print how to stop them** (`stop: kill <pid>`), so an agent stops its own server
   instead of every Hozu server on the machine.
+- **A head field Hozu does not know is HZ014:** `head.render` returning `twitter` or `jsonLd` was silently dropped.
+- **An endpoint at `/sitemap.xml`, `/robots.txt` or `/manifest.webmanifest` is HZ046:** it hid the derived file.
+  Shape it with `entries` (now with `lastmod`), `noindex` and `site` instead.
+- **`hozu get --select script` reads the head's scripts**, raw, so the JSON-LD can be checked without a server.
+- **Pages without machines get a lock too:** an app whose head maps errors, or that has endpoints, redirects or
+  access, reports the lock missing, and `--update-lock` writes it. Before, those were never locked.
 - **`exports` in the old record form** (`exports: { queries: [...] }`) is HZ014 with the list form, not a crash;
   HZ006's fix shows both edits in source form (`imports: [owner]`, `exports: [name]`), each with its feature.
 - **The deploy guide no longer says `public/` is served:** files a page shows are `ui.asset`, files named in data

@@ -68,6 +68,16 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
       published: { literal: null },
       noindex: false,
     }
+  const known = ['title', 'description', 'type', 'image', 'published', 'noindex']
+  for (const key of Object.keys(fields as object))
+    if (!known.includes(key))
+      scope.report(
+        'HZ014',
+        join(p, 'render'),
+        `head.render returns "${key}", which is not a head field`,
+        `The head is a closed set: ${known.join(', ')}. Open Graph, twitter:card, canonical, hreflang and the JSON-LD are derived from them (hozu docs pages).`,
+        { summary: `Remove "${key}"`, snippet: null, patch: null },
+      )
   const v = (key: string, x: unknown, absent: unknown = null) =>
     scope.attempt(join(p, key), () => scope.value(x === undefined ? absent : x, join(p, key)), empty)
   return {

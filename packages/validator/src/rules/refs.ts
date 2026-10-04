@@ -98,7 +98,8 @@ export function references(ctx: Ctx) {
           .join(' and '),
         snippet: [
           !imported && `imports: [${owner.id}],   // in feature "${f.id}"`,
-          !exported && `exports: [${resolved.symbol}],   // in feature "${owner.id}", next to its declarations`,
+          !exported &&
+            `exports: [${resolved.symbol}],   // in feature "${owner.id}", next to its declarations`,
         ]
           .filter(Boolean)
           .join('\n'),

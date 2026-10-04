@@ -1,5 +1,13 @@
 import { execFile } from 'node:child_process'
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -713,5 +721,38 @@ describe('hozu show (ADR 0056 D)', () => {
     } finally {
       rmSync(`${app}/.hozu`, { recursive: true, force: true })
     }
+  })
+})
+
+describe('hozu get --select reads head scripts (0.15 dogfood)', () => {
+  it('a script selector returns the raw content, so the JSON-LD can be checked without a server', async () => {
+    const { elementsOf } = await import('../src/commands/request.ts')
+    const html =
+      '<head><script type="application/ld+json">{"@type":"Article","headline":"Hi"}</script></head><body><p>x</p></body>'
+    expect(elementsOf(html, 'script[type=application/ld+json]')).toEqual([
+      {
+        selector: 'script[type=application/ld+json]',
+        tag: 'script',
+        attrs: { type: 'application/ld+json' },
+        text: '{"@type":"Article","headline":"Hi"}',
+      },
+    ])
+    expect(elementsOf(html, 'p').map((e) => e.text)).toEqual(['x'])
+  })
+})
+
+describe('a lock for pages without machines (0.15 dogfood)', () => {
+  it('an app whose pages have something to lock reports the lock missing, and --update-lock writes it', async () => {
+    const app = mkdtempSync(join(tmpdir(), 'hozu-lock-'))
+    const fixture = `${root}packages/cli/test/fixtures/endpoints`
+    for (const f of ['hozu.config.ts', 'app.ts'])
+      writeFileSync(join(app, f), readFileSync(join(fixture, f), 'utf8'))
+    symlinkSync(`${root}packages/cli/node_modules`, join(app, 'node_modules'))
+    const lockOf = async (args: string[]) =>
+      JSON.parse((await run(['check', '--no-types', ...args, '--json'], app)).stdout).validate.lock
+    expect(await lockOf([])).toBe('missing')
+    expect(await lockOf(['--update-lock'])).toBe('updated')
+    expect(existsSync(join(app, 'hozu.lock.json'))).toBe(true)
+    expect(await lockOf([])).toBe('current')
   })
 })

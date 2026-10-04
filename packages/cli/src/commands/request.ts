@@ -179,7 +179,10 @@ export function elementsOf(html: string, selector: string): RequestElement[] {
       .filter((part) => part.trim())
       .flatMap((part) => elementsOf(html, part.trim()))
   const sel = selectorOf(selector)
-  const source = html.replace(/<(script|style|template)\b[\s\S]*?<\/\1>/gi, (m) => ' '.repeat(m.length))
+  const raw = sel.tag === 'script' || sel.tag === 'style'
+  const source = raw
+    ? html
+    : html.replace(/<(script|style|template)\b[\s\S]*?<\/\1>/gi, (m) => ' '.repeat(m.length))
   const out: RequestElement[] = []
   const open = /<([a-z][\w-]*)\b([^>]*)>/gi
   for (const m of source.matchAll(open)) {
@@ -203,9 +206,10 @@ export function elementsOf(html: string, selector: string): RequestElement[] {
           break
         }
       }
-      text = plain(source.slice(start, end))
+      text = raw ? source.slice(start, end).trim() : plain(source.slice(start, end))
     }
-    out.push({ selector, tag, attrs, text: text.length > 120 ? `${text.slice(0, 120)}…` : text })
+    const limit = raw ? 2000 : 120
+    out.push({ selector, tag, attrs, text: text.length > limit ? `${text.slice(0, limit)}…` : text })
   }
   return out
 }
