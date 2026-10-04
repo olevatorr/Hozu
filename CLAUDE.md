@@ -282,7 +282,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   Frame); request Markdown and the CLI unchanged. `feature({ styles })` not a list is HZ014. Assets: a full-screen
   board of every component × variant + previews (`componentCatalog`, `dev.render`, `/_hozu/dev/component(s)`),
   Where used, Change the main component, Styles (tokens). `project({ previews })` (`@hozu/core/preview`:
-  `p.component`, `p.page` + `p.data` / `p.fail`) is for people: loaded only by `hozu dev` / `check` / `render`, a
+  `p.component`, `p.page` + `p.data` / `p.fail`) is for people: loaded only by `hozu dev` / `check`, a
   page screen swaps query results under `dev` only (cookie `hozu-dev-preview`), HZ092 keeps it honest, agents read
   it only when asked. `hozu dev` takes its app down on SIGTERM / SIGKILL.
 - Pages: `project({ site, pages: [ui.page(route,

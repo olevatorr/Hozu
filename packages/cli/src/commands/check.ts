@@ -6,6 +6,7 @@ import type { CheckOutput, TypeIssue } from '../contract.ts'
 import type { Loaded } from '../load.ts'
 import { relativize } from '../output.ts'
 import { checkPreviews, loadPreviews } from '../previews.ts'
+
 import { projectStyles } from '../styles.ts'
 import { componentUses, overridesOf } from '../uses.ts'
 import { applyAccepted } from './accept.ts'
@@ -96,6 +97,11 @@ export function startTypes(config: string): Promise<TypeRun> {
   })
 }
 
+const previewDiagnostics = async (loaded: Loaded, build: Parameters<typeof checkPreviews>[1]) => {
+  const { set, problems } = await loadPreviews(loaded)
+  return [...problems, ...checkPreviews(loaded, build, set)]
+}
+
 export async function runCheck(
   loaded: Loaded,
   cwd: string,
@@ -115,7 +121,7 @@ export async function runCheck(
     ...app,
     ...(await kitConfigDiagnostics(traced, root, loaded.path, tokens)),
     ...envFilesIgnored(loaded, traced.ir.env?.files ?? []),
-    ...checkPreviews(loaded, traced, await loadPreviews(loaded)),
+    ...(await previewDiagnostics(loaded, traced)),
   ]
   validate.diagnostics.push(...relativize(entry, cwd))
   const counted = applyAccepted(validate, traced.ir.accept, loaded.path)

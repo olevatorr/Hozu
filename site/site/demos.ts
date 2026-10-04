@@ -266,7 +266,7 @@ export const assetsDemo = (label: string) =>
       d('area', [s('typed', 'Rounder corners everywhere')]),
       s('addreq', 'Add to the request'),
     ]),
-    d('toast', [s('t', 'Added: every Button like this (6 places)')]),
+    d('toast', [s('t', 'Added to the request · Main component · every Button')]),
     d('click'),
     cursor(),
   ])

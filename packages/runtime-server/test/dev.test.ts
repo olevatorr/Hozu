@@ -269,6 +269,8 @@ describe('Assets and page previews under hozu dev only (ADR 0058 G, H)', () => {
     expect(await shown.text()).toContain('From the preview')
     const plain = await dev.fetch(new Request('http://127.0.0.1/'))
     expect(plain.status).toBe(303)
+    const endpoint = await dev.fetch(new Request('http://127.0.0.1/api/notes', { headers: cookie }))
+    expect(endpoint.status).not.toBe(500)
     const production = createHandler(app, { env, readFile })
     const ignored = await production.fetch(new Request('http://127.0.0.1/', { headers: cookie }))
     expect(ignored.status).toBe(303)

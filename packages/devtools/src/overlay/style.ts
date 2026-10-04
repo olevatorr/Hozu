@@ -281,6 +281,16 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .assets button.primary:disabled { opacity: 0.45; cursor: default; }
 .asset-detail .act { justify-self: start; }
 .asset-detail .label { margin-top: 12px; }
+.assets .hint-text { color: var(--mute); }
+@media (max-width: 700px) {
+  .assets-head { flex-wrap: wrap; padding: 8px 12px; }
+  .assets-head input { order: 3; flex-basis: 100%; max-width: none; }
+  .assets-body { padding: 12px; }
+  .assets-body.detail { grid-template-columns: 1fr; grid-template-rows: auto 1fr; overflow: auto; }
+  .assets-body.detail .assets-main { overflow: visible; padding: 12px; }
+  .asset-detail { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
+  .screen { flex-wrap: wrap; }
+}
 .type-rows { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 22px; }
 .type-row { display: grid; gap: 2px; }
 .assets-body { overflow: auto; overscroll-behavior: contain; padding: 16px 20px 40px; }
@@ -297,16 +307,18 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .asset-name b { font-size: 14px; }
 .asset-name:hover b { text-decoration: underline; }
 .asset-name code, .asset-uses { color: var(--mute); font: 11.5px/1.3 var(--mono); }
-.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-top: 10px; }
-.tile { margin: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-2); background: #fff; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 10px; margin-top: 10px; }
+.tile { margin: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-2); background: #ece9e2; display: flex; flex-direction: column; }
 .tile.preview { border-color: var(--red); }
-.tile-frame { display: block; width: 100%; height: 96px; border: 0; background: #fff; }
+.tile-frame { display: block; width: 100%; height: 96px; border: 0; background: transparent; }
+.tile figcaption { margin-top: auto; }
 .tile figcaption { padding: 5px 8px; font: 11.5px/1.3 var(--mono); color: #2b2724; background: #f6f3ec; border-top: 1px solid rgba(17, 16, 16, 0.08); }
 .tile-problem { padding: 12px; font: 11.5px/1.4 var(--mono); color: var(--red); background: #fff; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { border: 1px solid var(--line-2); border-radius: 999px; padding: 2px 8px; font: 11.5px/1.3 var(--mono); }
 .swatches { display: flex; flex-wrap: wrap; gap: 12px; }
 .colour { margin: 0; display: grid; gap: 4px; justify-items: start; font: 11.5px/1.3 var(--mono); }
+.swatches { padding: 10px; border-radius: 8px; background: #f6f3ec; color: #2b2724; }
 .big-swatch { width: 64px; height: 44px; border-radius: 8px; border: 1px solid var(--line-2); }
 .radius-box, .shadow-box { width: 64px; height: 44px; background: #fff; border: 1px solid var(--line-2); }
 .shadow-box { border-color: transparent; border-radius: 8px; }

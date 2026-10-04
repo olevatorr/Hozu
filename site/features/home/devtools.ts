@@ -150,7 +150,7 @@ export const DevToolsPage = ui.view({
               {
                 id: '4',
                 title: '4 · See it back',
-                body: 'Your agent frames each part it changed on your page, numbered, with a note in your words. Reply, or mark it done.',
+                body: 'Your agent frames each part it changed on your page, numbered, with a note in your words. Reply, or resolve it.',
               },
             ],
           },
@@ -229,7 +229,7 @@ export const DevToolsPage = ui.view({
             ]),
           ]),
           ui.div({ class: 'border-4 border-ink p-4' }, [
-            ui.h3({ class: 'font-black uppercase' }, ['Reply or done']),
+            ui.h3({ class: 'font-black uppercase' }, ['Reply or resolve']),
             ui.p({ class: 'mt-2' }, [
               'The Agent panel steps through the notes. Send reply hands your answer back as a request; Resolve removes the note.',
             ]),

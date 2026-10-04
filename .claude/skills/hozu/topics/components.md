@@ -77,8 +77,7 @@ export default implement<typeof Map>(({ el, props, emit, signal }) => {
   class, owned properties, diagnostics.
 
 ## Previews (for people, never shipped)
-- `project({ previews: new URL('./previews.ts', import.meta.url) })`; only `hozu dev`, `hozu check` and
-  `hozu render` load it. DevTools **Assets** shows every component × variant (props from the schema) plus these.
+- `project({ previews: new URL('./previews.ts', import.meta.url) })`; only `hozu dev` and `hozu check` load it. DevTools **Assets** shows every component × variant (props from the schema) plus these.
 - ```ts
   import { previews } from '@hozu/core/preview'
   export default previews((p) => [
@@ -87,7 +86,7 @@ export default implement<typeof Map>(({ el, props, emit, signal }) => {
     p.page(home, 'Failed', [p.fail(listNotes, 'Unexpected')]),
   ])
   ```
-- A page preview answers those queries under `hozu dev` only (Layers → Previews, or Assets → Screens); other
-  queries run as usual. HZ092: data off the output schema, an undeclared error, a route without a page, a use that
+- A page preview answers those queries under `hozu dev` only (Layers → Previews, or Assets → Screens), on every
+  page while it is on; other queries and mutations run as usual. HZ092: data off the output schema, an undeclared error, a route without a page, a use that
   does not build.
 

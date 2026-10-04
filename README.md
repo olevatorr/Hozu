@@ -59,7 +59,8 @@ states, styles and wording first, in an exact-size frame too. Give it to your ag
 "do the open Hozu requests" (`npx hozu requests --full`). Its **API** drawer runs the page's queries, mutations
 and endpoints with your own input, so you can test the API while you build it. It speaks Figma: Shift+Enter, Enter and Tab move
 the selection, Alt measures in px, the selection shows `W × H`, and the Design panel follows Figma's order with
-your design tokens.
+your design tokens. **Assets** shows every component and variant on one board, with the screens you name in
+`previews.ts` (data for empty, long or failed states, never shipped).
 
 `create-hozu` asks which coding agent will work on the app. To skip the question, pass `--agent`:
 
@@ -207,7 +208,7 @@ The data cache keeps at most 10,000 entries by default: one million distinct key
 | [`@hozu/content`](https://www.npmjs.com/package/@hozu/content) | Markdown collections with typed front matter |
 | [`@hozu/image`](https://www.npmjs.com/package/@hozu/image) | Optional WebP `srcset` and share-image cards (uses sharp) |
 | [`@hozu/testing`](https://www.npmjs.com/package/@hozu/testing) | Render assertions through the real handler |
-| [`@hozu/dev`](https://www.npmjs.com/package/@hozu/dev) · [`@hozu/devtools`](https://www.npmjs.com/package/@hozu/devtools) | Development server; Hozu DevTools (select, preview, request) |
+| [`@hozu/dev`](https://www.npmjs.com/package/@hozu/dev) · [`@hozu/devtools`](https://www.npmjs.com/package/@hozu/devtools) | Development server; Hozu DevTools (select, measure, preview, Assets, request) |
 | [`@hozu/bundle`](https://www.npmjs.com/package/@hozu/bundle) | Client component bundling |
 | [`@hozu/variants`](https://www.npmjs.com/package/@hozu/variants) | tailwind-variants for component styles, run at build time (0 B in the browser) |
 

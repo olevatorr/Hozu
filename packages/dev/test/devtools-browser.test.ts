@@ -357,6 +357,24 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     const copied = (await evaluate('navigator.clipboard.readText()')) as string
     expect(copied).toContain('- Style: gap 0px → 16px: add `gap-4`')
     expect(copied).toContain('- Style: border width 0px → 2px: add `border-2`')
+    const picks = () =>
+      tool(
+        `$('.picks') ? document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.picks button').length : 1`,
+      )
+    const before = await picks()
+    await key('Tab', 'Tab', 0)
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title').textContent !== '<h1>'`,
+    )
+    expect(await picks()).toBe(before + 1)
+    expect(await evaluate(`getComputedStyle(document.querySelector('h1')).borderTopWidth`)).toBe('2px')
+    expect(
+      await tool(`[...$('.look select[aria-label="Gap"]').options].find((o) => o.selected).textContent`),
+    ).not.toContain('16px')
+    await click('h1')
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.title')?.textContent === '<h1>'`,
+    )
     await shadowClick('.row-end button', 'Reset')
   })
 
@@ -463,6 +481,29 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     const { x, y } = await at('.assets-body', '')
     await cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY: 600 }, session)
     await until(`${shadow}.querySelector('.assets-body').scrollTop > 0`)
+    await press('.assets-head', 'Assets')
+    const box = await evaluate(
+      `(() => { const r = ${shadow}.querySelector('.assets-head input').getBoundingClientRect(); return { x: r.x + 20, y: r.y + r.height / 2 } })()`,
+    )
+    for (const type of ['mousePressed', 'mouseReleased'])
+      await cdp.send(
+        'Input.dispatchMouseEvent',
+        { type, x: box.x, y: box.y, button: 'left', clickCount: 1 },
+        session,
+      )
+    for (const ch of ['F', 'i']) {
+      await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: ch, text: ch }, session)
+      await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: ch }, session)
+    }
+    await until(`${shadow}.querySelector('.assets-head input').value === 'Fi'`)
+    expect(await evaluate(`${shadow}.activeElement?.getAttribute('aria-label')`)).toBe('Find a component')
+    expect(
+      await evaluate(`[...${shadow}.querySelectorAll('.asset')].map((a) => a.dataset.component)`),
+    ).toEqual(['ui.Field'])
+    await evaluate(
+      `(() => { const i = ${shadow}.querySelector('.assets-head input'); i.value = ''; i.dispatchEvent(new Event('input')) })()`,
+    )
+    await until(`${shadow}.querySelectorAll('.asset').length > 1`)
     await press('.assets-head button', 'Styles')
     await until(`${shadow}.querySelector('.assets .styles')`)
     await press('.assets-head button', 'Components')

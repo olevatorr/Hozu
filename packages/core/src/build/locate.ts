@@ -1,4 +1,5 @@
 import type { SourceLoc } from '../ir/diagnostic.ts'
+import { publicPath } from '../ir/routes.ts'
 import type { Freshness, GuardExpr, Json, JsonSchema, Runs, ValueExpr, ViewNode } from '../ir/types.ts'
 import type { IsolatedUse } from './isolate.ts'
 import type { BuildResult } from './project.ts'
@@ -731,6 +732,8 @@ export interface DevComponent {
   client: boolean
   props: JsonSchema
   example: Json
+  /** Distinct source places, as the inspector counts them. */
+  places: number
   uses: DevComponentUse[]
 }
 
@@ -757,7 +760,7 @@ export function componentCatalog(build: BuildResult, dev: DevOptions): DevCompon
               .filter(([, p]) => p.views.includes(view))
               .map(([route]) => {
                 const path = ir.routes[route]?.path ?? '/'
-                return { route, path, params: path.includes(':') }
+                return { route, path: publicPath(ir, path), params: path.includes(':') }
               }),
           }
         })
@@ -775,6 +778,7 @@ export function componentCatalog(build: BuildResult, dev: DevOptions): DevCompon
         children: c.children,
         client: c.client !== null,
         props,
+        places: counter(build)((n) => useOf(n)?.component === id),
         example: Object.fromEntries(
           ((props.required ?? []) as string[])
             .filter(

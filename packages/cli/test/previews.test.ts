@@ -24,7 +24,8 @@ describe('Assets and previews (ADR 0058 G, H)', () => {
   it('resolves previews.ts to component ids and query answers, and passes hozu check', async () => {
     const loaded = await load(undefined, notes)
     const build = loaded.build(true)
-    const set = await loadPreviews(loaded)
+    const { set, problems } = await loadPreviews(loaded)
+    expect(problems).toEqual([])
     const dev = devPreviews(loaded, build, set)
     expect(dev.components['ui.Button']).toEqual([
       {
@@ -67,5 +68,34 @@ describe('Assets and previews (ADR 0058 G, H)', () => {
     const out = await renderUse(loaded, 'ui.Button', { variant: {}, props: {}, slots: {}, children: 'Go' })
     expect(out.ok).toBe(true)
     expect(out.html).toMatch(/^<button[^>]*class="[^"]+"[^>]*>Go<\/button>$/)
+  })
+
+  it('a previews module that is missing, throws or exports something else is HZ014, not a crash', async () => {
+    const { mkdtempSync, writeFileSync, cpSync, symlinkSync, rmSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const messages: string[] = []
+    for (const body of [null, "throw new Error('boom from previews')\n", 'export const x = 1\n']) {
+      const dir = mkdtempSync(join(fileURLToPath(new URL('../../../.tmp/', import.meta.url)), 'previews-'))
+      try {
+        cpSync(notes, dir, {
+          recursive: true,
+          filter: (f) => !f.includes('node_modules') && !f.includes('.hozu'),
+        })
+        symlinkSync(join(notes, 'node_modules'), join(dir, 'node_modules'))
+        if (body === null) rmSync(join(dir, 'previews.ts'))
+        else writeFileSync(join(dir, 'previews.ts'), body)
+        const { set, problems } = await loadPreviews(await load(undefined, dir))
+        expect(set).toBeNull()
+        expect(problems.map((p) => p.code)).toEqual(['HZ014'])
+        messages.push(problems[0]!.message)
+      } finally {
+        rmSync(dir, { recursive: true, force: true })
+      }
+    }
+    expect(messages).toEqual([
+      'project({ previews }) names a file that does not exist',
+      'previews.ts failed to load: boom from previews',
+      'previews.ts does not default-export previews(...)',
+    ])
   })
 })

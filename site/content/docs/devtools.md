@@ -53,7 +53,7 @@ export default previews((p) => [
 ])
 ```
 
-**Layers → Previews** (or **Assets → Screens**) opens a screen; the dock shows it until you exit. The file never ships: only `hozu dev`, `hozu check` and `hozu render` load it, and a production server ignores the switch. `hozu check` reports a preview that no longer fits the app as HZ092. Your agent leaves the file alone unless you ask it to change a preview.
+**Layers → Previews** (or **Assets → Screens**) opens a screen; the dock shows it until you exit. While it is on, every page that reads those queries shows the preview data, and mutations still write. The file never ships: only `hozu dev` and `hozu check` load it, and a production server ignores the switch. `hozu check` reports a preview that no longer fits the app as HZ092. Your agent leaves the file alone unless you ask it to change a preview.
 
 ## See every state
 
@@ -61,7 +61,7 @@ Layers lists the states the page can be in: loading, failed, empty, saving, a co
 
 ## Try the data
 
-**API** opens a drawer at the bottom (in the Workbench too) with the data the page reads and the changes it can make: where each one runs, how it is cached and the `file:line` that implements it. Edit the input in its row (it starts from what the page uses) and run it: you see the value as a table or JSON, or the declared error with an invalid field marked under it, and how long it took. A change asks in its row first, because it writes your development data; then the page re-reads what it invalidated, in place, as if a button on the page had made the change. History keeps the calls of this session, and **Copy as hozu call** hands one to your agent.
+**API** opens a drawer at the bottom (in Frame too) with the data the page reads and the changes it can make: where each one runs, how it is cached and the `file:line` that implements it. Edit the input in its row (it starts from what the page uses) and run it: you see the value as a table or JSON, or the declared error with an invalid field marked under it, and how long it took. A change asks in its row first, because it writes your development data; then the page re-reads what it invalidated, in place, as if a button on the page had made the change. History keeps the calls of this session, and **Copy as hozu call** hands one to your agent.
 
 Each row says whether it **reads** or **writes**; **JSON** sends any input, also one the schema rejects, to see the answer to a bad request. **Requests it sent** lists what a call really sent out, from the server and from the browser: the method, the URL, the headers and bodies both ways, the status and the time, with **Copy as curl** for a terminal, Postman or Bruno. When the app has sessions, **Act as** sets this browser's session to any value (development only). **Endpoints** sends a request to each declared endpoint with its path, query or JSON body, and your own headers, such as `Authorization: Bearer …`.
 

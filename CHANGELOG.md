@@ -37,12 +37,13 @@ the client budget and the authoring surface do not change, so 0.16 apps upgrade 
   (`p.component(ui.Button, 'Long label', { children: '…' })`) and page screens whose queries answer with the data
   given (`p.page(home, 'No notes', [p.data(listNotes, [])])`, `p.fail(listNotes, 'Unexpected')`), from
   `@hozu/core/preview`.
-- **It never ships:** only `hozu dev`, `hozu check` and `hozu render` load it; `hozu build`, a production server and
+- **It never ships:** only `hozu dev` and `hozu check` load it; `hozu build`, a production server and
   an edge bundle never import it, and a production server ignores the DevTools cookie that picks a screen.
 - **Layers → Previews** and **Assets → Screens** open a page screen under `hozu dev` (uncached, `noindex`); the dock
   shows it until you exit.
 - **HZ092** keeps previews honest: data off its query's output schema, an error the query does not declare, a route
-  without a page, or a component use that does not build, each at its `file:line`.
+  without a page, or a component use that does not build, each at its `file:line`; a previews module that is
+  missing, throws or exports something else is HZ014.
 - **Agents leave it alone:** `hozu map` does not list it, and the skill says to read it only when asked or when
   HZ092 names a line. `examples/notes`, `examples/bookmarks` (the skill example) and the site have one.
 

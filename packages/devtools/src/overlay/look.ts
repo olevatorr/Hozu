@@ -56,6 +56,7 @@ export function current(el: Element, prop: StyleProp): string {
   const s = (el.ownerDocument.defaultView ?? window).getComputedStyle(el)
   if (colours.includes(prop)) {
     const v = prop === 'borderColor' ? s.borderTopColor : s[prop as 'color']
+    if (v === 'transparent' || /^rgba\(.*,\s*0\)$/.test(v)) return 'transparent'
     return normalHex(v) ?? v
   }
   if (prop === 'paddingInline') return s.paddingLeft
@@ -171,7 +172,11 @@ export function lookSection(
       const token = plain ? tokenOf(prop, now, theme) : null
       return h('div', { class: 'look' }, [
         label,
-        h('div', { class: 'pick' }, [input, h('code', {}, [token ? `${token} · ${now}` : now]), ...swatches]),
+        h('div', { class: 'pick' }, [
+          input,
+          h('code', {}, [now === 'transparent' ? 'none' : token ? `${token} · ${now}` : now]),
+          ...swatches,
+        ]),
       ])
     }
     const list = options(prop, theme)

@@ -106,14 +106,25 @@ export function assetsBoard(host: AssetsHost) {
     return frame
   }
 
+  const pagesOf = (c: Catalogued) => [
+    ...new Map(c.uses.flatMap((u) => u.pages).map((p) => [p.route, p])).values(),
+  ]
   const where = (c: Catalogued) => {
-    const pages = [...new Map(c.uses.flatMap((u) => u.pages).map((p) => [p.route, p])).values()]
+    const pages = pagesOf(c)
     return pages.length
       ? pages.map((p) => h('span', { class: 'chip' }, [p.path]))
       : [h('span', { class: 'hint-text' }, ['Not used on a page yet'])]
   }
 
-  const card = (c: Catalogued) =>
+  const cards = new Map<string, HTMLElement>()
+  const card = (c: Catalogued) => {
+    const kept = cards.get(c.id)
+    if (kept) return kept
+    const made = cardOf(c)
+    cards.set(c.id, made)
+    return made
+  }
+  const cardOf = (c: Catalogued) =>
     h('section', { class: 'asset', 'data-component': c.id }, [
       h('div', { class: 'asset-head' }, [
         h(
@@ -129,7 +140,8 @@ export function assetsBoard(host: AssetsHost) {
           [h('b', {}, [c.name]), host.plain ? '' : h('code', {}, [` ${c.id}`])],
         ),
         h('span', { class: 'asset-uses' }, [
-          `${c.uses.length} ${c.uses.length === 1 ? 'use' : 'uses'}`,
+          `${c.places} ${c.places === 1 ? 'place' : 'places'}`,
+          ` · ${pagesOf(c).length} ${pagesOf(c).length === 1 ? 'page' : 'pages'}`,
           c.client ? ' · runs in the browser (shown as its server render)' : '',
         ]),
       ]),
@@ -148,8 +160,13 @@ export function assetsBoard(host: AssetsHost) {
   const detailView = (c: Catalogued) => {
     const note = h('textarea', {
       rows: '3',
-      placeholder: `What should change in every ${c.name}?`,
+      placeholder: c.uses.length ? `What should change in every ${c.name}?` : 'Not used on a page yet',
       'aria-label': `Change the main component ${c.name}`,
+      disabled: c.uses.length === 0,
+      oninput: (e) => {
+        const add = (e.target as HTMLElement).parentElement?.querySelector<HTMLButtonElement>('[data-add]')
+        if (add) add.disabled = !(e.target as HTMLTextAreaElement).value.trim()
+      },
     }) as HTMLTextAreaElement
     return h('aside', { class: 'asset-detail' }, [
       h(
@@ -190,7 +207,8 @@ export function assetsBoard(host: AssetsHost) {
         {
           class: 'primary',
           type: 'button',
-          disabled: c.uses.length === 0,
+          disabled: true,
+          'data-add': true,
           onclick: () => {
             if (note.value.trim()) host.change(c, note.value.trim())
           },
@@ -275,18 +293,34 @@ export function assetsBoard(host: AssetsHost) {
         ])
       : null
 
+  const listBody = () => {
+    const q = query.trim().toLowerCase()
+    const shown = catalog.filter((c) => !q || c.id.toLowerCase().includes(q))
+    const owners = [...new Set(shown.map((c) => c.owner.id))]
+    return h('div', { class: 'assets-body' }, [
+      ...owners.map((o) =>
+        h('div', { class: 'owner' }, [
+          h('div', { class: 'label' }, [`${o} · ${shown.filter((c) => c.owner.id === o).length}`]),
+          ...shown.filter((c) => c.owner.id === o).map(card),
+        ]),
+      ),
+      shown.length ? null : h('p', { class: 'hint-text' }, ['No components match']),
+      q ? null : screensView(),
+    ])
+  }
+  const search = h('input', {
+    type: 'search',
+    class: 'outcome',
+    placeholder: 'Find a component…',
+    'aria-label': 'Find a component',
+    oninput: (e) => {
+      query = (e.target as HTMLInputElement).value
+      board.querySelector(':scope > .assets-body')?.replaceWith(listBody())
+    },
+  }) as HTMLInputElement
+
   const render = async () => {
-    const search = h('input', {
-      type: 'search',
-      class: 'outcome',
-      placeholder: 'Find a component…',
-      'aria-label': 'Find a component',
-      value: query,
-      oninput: (e) => {
-        query = (e.target as HTMLInputElement).value
-        void render()
-      },
-    })
+    search.value = query
     const head = h('header', { class: 'assets-head' }, [
       h('b', {}, ['Assets']),
       h('div', { class: 'seg' }, [
@@ -334,28 +368,14 @@ export function assetsBoard(host: AssetsHost) {
       )
       return
     }
-    const q = query.trim().toLowerCase()
-    const shown = catalog.filter((c) => !q || c.id.toLowerCase().includes(q))
-    const owners = [...new Set(shown.map((c) => c.owner.id))]
-    board.replaceChildren(
-      head,
-      h('div', { class: 'assets-body' }, [
-        ...owners.map((o) =>
-          h('div', { class: 'owner' }, [
-            h('div', { class: 'label' }, [`${o} · ${shown.filter((c) => c.owner.id === o).length}`]),
-            ...shown.filter((c) => c.owner.id === o).map(card),
-          ]),
-        ),
-        shown.length ? null : h('p', { class: 'hint-text' }, ['No components match']),
-        q ? null : screensView(),
-      ]),
-    )
+    board.replaceChildren(head, listBody())
   }
 
   const open = async () => {
     board.hidden = false
     board.replaceChildren(h('p', { class: 'hint-text' }, ['Loading the components…']))
     catalog = (await json<Catalogued[]>('/_hozu/dev/components')) ?? []
+    cards.clear()
     screens = (await json<Screens>('/_hozu/dev/previews')) ?? { pages: [] }
     await render()
   }

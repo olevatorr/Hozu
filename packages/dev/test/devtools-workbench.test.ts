@@ -154,6 +154,25 @@ describe.skipIf(!findBrowser())('Workbench in a real browser (ADR 0047 P3)', () 
     expect(await evaluate('navigator.clipboard.readText()')).toContain('Page `/` · 390 × 844')
   })
 
+  it('Figma keys work in the frame while focus stays on the page around it (0.17 QA)', async () => {
+    const title = () => tool(`$('.panel .title').textContent`)
+    const before = await title()
+    await evaluate('document.body.focus()')
+    await cdp.send(
+      'Input.dispatchKeyEvent',
+      { type: 'keyDown', key: 'Enter', code: 'Enter', modifiers: 8 },
+      session,
+    )
+    await cdp.send(
+      'Input.dispatchKeyEvent',
+      { type: 'keyUp', key: 'Enter', code: 'Enter', modifiers: 8 },
+      session,
+    )
+    await until(
+      `document.querySelector('hozu-devtools').shadowRoot.querySelector('.panel .title').textContent !== ${JSON.stringify(before)}`,
+    )
+  })
+
   it('switches devices, rotates, and previews a state inside the frame', async () => {
     await tool(
       `(() => { const s = $('.bench-bar select'); s.value = 'Laptop'; s.dispatchEvent(new Event('change')); })()`,
@@ -292,6 +311,7 @@ describe.skipIf(!findBrowser())('Workbench in a real browser (ADR 0047 P3)', () 
         `getComputedStyle(document.querySelector('hozu-devtools').shadowRoot.querySelector('.bench-left')).display === 'block'`,
       )
       expect(await tool(`$('.bench-bar .layers-toggle').getAttribute('aria-pressed')`)).toBe('true')
+      await tool(`$('.bench-bar .layers-toggle').focus()`)
       await key('Escape', 'Escape', 0)
       await until(
         `getComputedStyle(document.querySelector('hozu-devtools').shadowRoot.querySelector('.bench-left')).display === 'none'`,

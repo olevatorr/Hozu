@@ -39,7 +39,11 @@ export async function runServe(
       ? {
           dev: {
             root,
-            previews: devPreviews(loaded, build, await loadPreviews(loaded)),
+            previews: await (async () => {
+              const { set, problems } = await loadPreviews(loaded)
+              for (const p of problems) log(`${p.code} ${p.message} (previews are off)`)
+              return devPreviews(loaded, build, set)
+            })(),
             render: async (id: string, use: IsolatedUse) => {
               const { ok, html, problems } = await renderUse(loaded, id, use)
               return { ok, html, problems }

@@ -301,9 +301,14 @@ function handlerFor({
       scope = session(request).then((who) => {
         const real = data.scope(who, { preview: previewing.get(request) === true })
         if (!answers) return real
-        return Object.assign(Object.create(real) as typeof real, {
-          run: (ref: string, input: Json, files?: Parameters<typeof real.run>[2]) =>
-            ref in answers ? Promise.resolve(answers[ref] as never) : real.run(ref, input, files),
+        const run = (ref: string, input: Json, files?: Parameters<typeof real.run>[2]) =>
+          ref in answers ? Promise.resolve(answers[ref] as never) : real.run(ref, input, files)
+        return new Proxy(real, {
+          get: (target, key) => {
+            if (key === 'run') return run
+            const value = Reflect.get(target, key, target)
+            return typeof value === 'function' ? value.bind(target) : value
+          },
         })
       })
       scopes.set(request, scope)
@@ -889,7 +894,9 @@ function handlerFor({
         if (!dev.render) return devJson({ error: 'Rendering needs hozu dev' }, { status: 501 })
         let use: Record<string, unknown> = {}
         try {
-          use = JSON.parse(url.searchParams.get('use') ?? '{}') as Record<string, unknown>
+          const parsed = JSON.parse(url.searchParams.get('use') ?? '{}') as unknown
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
+            use = parsed as Record<string, unknown>
         } catch {}
         const props = (use.props ?? entry.example) as Record<string, unknown>
         return devJson(

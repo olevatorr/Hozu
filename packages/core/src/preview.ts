@@ -90,8 +90,8 @@ const builders = {
 export type PreviewBuilders = typeof builders
 
 /**
- * Screens for people, not for the app (ADR 0058 H): named in `project({ previews })`, loaded only by `hozu dev`,
- * `hozu check` and `hozu render`, never by a production server or `hozu build`.
+ * Screens for people, not for the app (ADR 0058 H): named in `project({ previews })`, loaded only by `hozu dev`
+ * and `hozu check`, never by a production server or `hozu build`.
  */
 export const previews = (make: (p: PreviewBuilders) => Preview[]): PreviewSet =>
   Object.freeze({ hozuPreviews: true as const, list: make(builders) })

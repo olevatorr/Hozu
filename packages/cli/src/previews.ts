@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import {
   type BuildResult,
@@ -25,12 +26,64 @@ interface Data {
 
 const BODY = /<body[^>]*>([\s\S]*?)(?:<script|<\/body>)/
 
-/** `project({ previews })` imported, or null when the app names none (ADR 0058 H). */
-export async function loadPreviews(loaded: Loaded): Promise<PreviewSet | null> {
+export interface LoadedPreviews {
+  set: PreviewSet | null
+  problems: Diagnostic[]
+}
+
+const hz014 = (path: string, message: string, cause: string): Diagnostic => ({
+  code: 'HZ014',
+  severity: 'error',
+  message,
+  location: { feature: null, pointer: '/previews', source: { file: path, line: 1, column: 1 } },
+  cause,
+  fix: {
+    summary: "Default-export previews((p) => [...]) from '@hozu/core/preview'",
+    snippet: "export default previews((p) => [p.component(Button, 'Long label', { children: '…' })])",
+    patch: null,
+  },
+})
+
+/** `project({ previews })` imported; a file that is missing, throws or exports something else is HZ014 (ADR 0058 H). */
+export async function loadPreviews(loaded: Loaded): Promise<LoadedPreviews> {
   const path = previewsModuleOf(loaded.project)
-  if (!path) return null
-  const mod = (await import(pathToFileURL(path).href)) as { default?: unknown }
-  return isPreviewSet(mod.default) ? mod.default : null
+  if (!path) return { set: null, problems: [] }
+  if (!existsSync(path))
+    return {
+      set: null,
+      problems: [
+        hz014(
+          path,
+          'project({ previews }) names a file that does not exist',
+          'The URL in hozu.config.ts points at no file.',
+        ),
+      ],
+    }
+  try {
+    const mod = (await import(pathToFileURL(path).href)) as { default?: unknown }
+    if (isPreviewSet(mod.default)) return { set: mod.default, problems: [] }
+    return {
+      set: null,
+      problems: [
+        hz014(
+          path,
+          'previews.ts does not default-export previews(...)',
+          'Its default export is not the result of previews() from @hozu/core/preview.',
+        ),
+      ],
+    }
+  } catch (error) {
+    return {
+      set: null,
+      problems: [
+        hz014(
+          path,
+          `previews.ts failed to load: ${(error as Error).message}`,
+          'Importing the previews module threw.',
+        ),
+      ],
+    }
+  }
 }
 
 const isolatedUse = (use: Extract<Preview, { kind: 'component' }>['use']): IsolatedUse => ({

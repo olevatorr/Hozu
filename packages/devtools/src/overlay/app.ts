@@ -532,7 +532,10 @@ function walk(direction: 'up' | 'down' | 'next' | 'previous') {
   const own = el?.getAttribute('data-hz') === active.id
   const beside = () => {
     if (!el || !own) return null
-    const list = partsIn(el.parentElement?.closest('[data-hz]') ?? null)
+    const list = partsIn(el.parentElement?.closest('[data-hz]') ?? null).filter((e) => {
+      const b = e.getBoundingClientRect()
+      return e === el || (b.width > 0 && b.height > 0)
+    })
     const at = list.indexOf(el)
     return list[(at + (direction === 'next' ? 1 : -1) + list.length) % list.length] ?? null
   }
@@ -547,12 +550,17 @@ function walk(direction: 'up' | 'down' | 'next' | 'previous') {
           : null
         : beside()
   if (!next || ((direction === 'next' || direction === 'previous') && next === el)) return
-  state.picks[state.active] = {
-    ...active,
-    id: next.getAttribute('data-hz') ?? '',
-    index: indexOf(next),
-    visible: visibleOf(next),
-    scope: null,
+  const moved = { id: next.getAttribute('data-hz') ?? '', index: indexOf(next), visible: visibleOf(next) }
+  if (hasContent(active)) {
+    const existing = state.picks.findIndex((p) => p.id === moved.id && p.index === moved.index)
+    if (existing >= 0) state.active = existing
+    else {
+      state.picks.push({ ...moved, note: '', scope: null })
+      state.active = state.picks.length - 1
+    }
+  } else {
+    preview(el, [])
+    state.picks[state.active] = { ...moved, note: '', scope: null }
   }
   persist()
   drawPicks()
@@ -572,12 +580,12 @@ const typingIn = (event: KeyboardEvent) =>
 
 function onKey(event: KeyboardEvent) {
   const typing = typingIn(event)
+  if (event.key === 'Escape' && assets.isOpen()) return assets.close()
   if (event.altKey && event.shiftKey && event.code === 'KeyS') {
     event.preventDefault()
     return setMode(state.mode === 'select' ? 'browse' : 'select')
   }
   if (typing) return
-  if (event.key === 'Escape' && assets.isOpen()) return assets.close()
   if (event.key === 'Escape' && bench.classList.contains('layers-open')) return closeLayers()
   if (event.key === 'Escape' && state.mode === 'select') return setMode('browse')
   if (event.key === 'Escape' && state.panel) {
@@ -590,7 +598,7 @@ function onKey(event: KeyboardEvent) {
     if (state.mode === 'select') event.preventDefault()
     return
   }
-  if (state.mode !== 'select' || !state.picks.length) return
+  if (state.mode !== 'select' || !state.picks.length || event.composedPath().includes(host)) return
   const step =
     event.key === 'ArrowUp' || (event.key === 'Enter' && event.shiftKey)
       ? 'up'
@@ -1839,6 +1847,14 @@ const stage = h('div', { class: 'stage' })
 const sizer = h('div', { class: 'sizer' })
 const bar = h('div', { class: 'bench-bar' })
 
+addEventListener(
+  'keydown',
+  (event) => {
+    if (state.view === 'workbench' && win !== window) onKey(event)
+  },
+  true,
+)
+
 function retarget(frame: HTMLIFrameElement | null) {
   listening.abort()
   const w = frame?.contentWindow ?? null
@@ -1976,6 +1992,16 @@ function renderBar() {
         },
         ['API'],
       ),
+      h(
+        'button',
+        {
+          class: 'act',
+          type: 'button',
+          title: 'Every component of the app, its variants, previews and uses; and the design tokens',
+          onclick: () => void assets.open(),
+        },
+        ['Assets'],
+      ),
       h('button', { class: 'act exit', type: 'button', onclick: () => closeBench() }, ['Exit frame']),
     ]),
   )
@@ -1997,7 +2023,7 @@ function openBench() {
   bench.hidden = false
   const frame = h('iframe', {
     src: location.href,
-    title: 'The page in Workbench',
+    title: 'The page in Frame',
     'data-hozu-bench': true,
   }) as HTMLIFrameElement
   frame.addEventListener('load', () => {
@@ -2065,9 +2091,13 @@ function closeBench() {
 }
 
 addEventListener('resize', layout)
-addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !typingIn(event) && bench.classList.contains('layers-open')) closeLayers()
-})
+addEventListener(
+  'keydown',
+  (event) => {
+    if (event.key === 'Escape' && !typingIn(event) && bench.classList.contains('layers-open')) closeLayers()
+  },
+  true,
+)
 
 renderDock()
 drawPicks()

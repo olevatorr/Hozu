@@ -238,8 +238,8 @@ export function currentUtility(prop: StyleProp, classes: string, theme: Theme): 
     borderRadius: (c) =>
       c === 'rounded' ||
       (c.startsWith('rounded-') && (c.slice(8) in theme.radius || /^(none|full|\[)/.test(c.slice(8)))),
-    width: (c) => /^(w|size)-/.test(c),
-    height: (c) => /^(h|size)-/.test(c),
+    width: (c) => /^w-/.test(c),
+    height: (c) => /^h-/.test(c),
     gap: (c) => /^gap-/.test(c),
     opacity: (c) => /^opacity-/.test(c),
     borderWidth: (c) => c === 'border' || /^border-(\d|\[\d)/.test(c),

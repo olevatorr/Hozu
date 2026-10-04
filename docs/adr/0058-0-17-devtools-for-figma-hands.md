@@ -83,7 +83,7 @@ shows design tokens first, Developer shows classes first, as today.
 - **Options:** a file-name convention (`*.preview.ts`; against "no file-based magic"), stories inside views (in the
   authoring surface agents read; noise), or a module named in `project({ previews })` like `app`. **Decision:** the
   named module, built with `previews()` from `@hozu/core/preview`.
-- **Never shipped:** the CLI imports it for `hozu dev`, `hozu check` and `hozu render`; the handler swaps query
+- **Never shipped:** the CLI imports it for `hozu dev` and `hozu check`; the handler swaps query
   results only when `dev` is set and the `hozu-dev-preview` cookie names a screen; such a page is `private,
   no-store`, `noindex` and skips the page cache. A production handler ignores the cookie (tested).
 - **HZ092** (new code: registry, rule in `hozu check`, fix, catalog cases in `packages/cli/test/previews.test.ts`).
