@@ -498,7 +498,9 @@ export async function renderPage({
       }
       if (payload.islands.length) {
         payload.fns = fnUrls.length ? fnUrls : null
-        const reached = linkTargets([payload.nodes, payload.features])
+        const reached = new Set<string>()
+        for (const part of [...Object.values(payload.nodes), ...Object.values(payload.features)])
+          if (part && typeof part === 'object') for (const target of targetsOf(part)) reached.add(target)
         payload.routes = Object.fromEntries(Object.entries(routes).filter(([id]) => reached.has(id)))
         const client = clientEffects(ir, payload)
         if (Object.keys(client).length) {
@@ -529,9 +531,12 @@ export async function renderPage({
 export const exportable = (q: QueryIR): boolean =>
   q.scope === 'public' && !['request', 'live'].includes(q.freshness.kind)
 
-/** The effects an island on this page can call that run in the browser (ADR 0049), with what the browser needs. */
-export function clientEffects(ir: ProjectIR, payload: PagePayload): Record<string, ClientEffect> {
-  const refs = new Set<string>()
+const queries = new WeakMap<object, Set<string>>()
+/** The queries a node reads, itself and below: IR nodes are shared, so each is walked once. */
+const queriesIn = (node: object): Set<string> => {
+  let hit = queries.get(node)
+  if (hit) return hit
+  hit = new Set<string>()
   const visit = (x: unknown): void => {
     if (!x || typeof x !== 'object') return
     if (Array.isArray(x)) {
@@ -539,10 +544,18 @@ export function clientEffects(ir: ProjectIR, payload: PagePayload): Record<strin
       return
     }
     const o = x as Record<string, unknown>
-    if (o.kind === 'query' && typeof o.query === 'string') refs.add(o.query)
+    if (o.kind === 'query' && typeof o.query === 'string') hit!.add(o.query)
     for (const v of Object.values(o)) visit(v)
   }
-  visit(payload.nodes)
+  visit(node)
+  queries.set(node, hit)
+  return hit
+}
+
+/** The effects an island on this page can call that run in the browser (ADR 0049), with what the browser needs. */
+export function clientEffects(ir: ProjectIR, payload: PagePayload): Record<string, ClientEffect> {
+  const refs = new Set<string>()
+  for (const node of Object.values(payload.nodes)) for (const ref of queriesIn(node)) refs.add(ref)
   for (const machine of Object.values(payload.features))
     for (const state of Object.values(machine?.states ?? {})) if (state.invoke) refs.add(state.invoke.effect)
   const out: Record<string, ClientEffect> = {}
@@ -642,6 +655,17 @@ const cachedJson = (v: unknown): string => {
   if (hit === undefined) {
     hit = JSON.stringify(v)
     jsonMemo.set(v, hit)
+  }
+  return hit
+}
+
+const targets = new WeakMap<object, Set<string>>()
+/** The routes and endpoints an island node or machine links to: IR objects are shared, so each is walked once. */
+const targetsOf = (part: object): Set<string> => {
+  let hit = targets.get(part)
+  if (!hit) {
+    hit = linkTargets(part)
+    targets.set(part, hit)
   }
   return hit
 }

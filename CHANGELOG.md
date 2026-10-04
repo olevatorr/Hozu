@@ -58,6 +58,11 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
 - **The deploy guide no longer says `public/` is served:** files a page shows are `ui.asset`, files named in data
   are served by a GET endpoint with `output: 'response'`.
 
+### Faster server rendering
+- **SSR is back at the 0.9 level: 47.3 k → 55.0 k renders/s** on the frameworks bench. 0.11 and 0.12 each added a walk
+  of every island node on every render (the browser-run queries the page reads, the routes it links to); each
+  answer is now kept per IR object.
+
 ### Less JavaScript on every page
 - **The initial client is 7 884 B gzipped, down from 8 123 B:** a client component use and a keyed list's move
   animation now load only on the pages that have one.

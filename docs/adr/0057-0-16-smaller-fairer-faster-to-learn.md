@@ -86,6 +86,17 @@ so 0.15 apps upgrade without a migration step.
 - **Decision rule:** a single step of 5 % or more gets a fix in this release if it is not the cost of a feature
   (for example the component markers); otherwise the drift is recorded as the price of the features, with
   numbers.
+- **Result (median renders/s of three interleaved rounds, one idle M4 Pro, each release with its own bench app):**
+
+  | 0.5 | 0.8 | 0.9 | 0.11 | 0.12 | 0.13 | 0.14 | 0.15 | 0.16 |
+  |---|---|---|---|---|---|---|---|---|
+  | 57.1 k | 56.3 k | 56.6 k | 52.8 k | 48.9 k | 49.3 k | 49.4 k | 48.8 k | 55.0 k |
+
+  - **Two steps over 5 %, neither the price of a feature:** each added a walk of every island node on every render.
+    0.11 found the browser-run queries a page's islands read (`clientEffects`); 0.12 found the routes and endpoints
+    they link to (`linkTargets`). Both answers depend only on the IR objects, which are shared between renders.
+  - **The fix:** each answer is kept per IR object (a `WeakMap`), so a node is walked once per process. 47.3 k →
+    55.0 k renders/s on the same machine, the level of 0.9. The HTML is byte-identical.
 
 ### A5 — `funding` in every package
 - `"funding": "https://ko-fi.com/hozu"` in each published `package.json`; `npm fund` then lists it.
