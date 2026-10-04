@@ -1,7 +1,8 @@
-import { copyFile, mkdir, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { brotliCompressSync, constants, gzipSync } from 'node:zlib'
 import { type BuildResult, componentOf, hashJson, type ImageSet, type Manifest } from '@hozu/core/ir'
 import type { BuildOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
@@ -74,6 +75,15 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
     if (f.file) await copyFile(f.file, file)
     else await writeFile(file, f.text ?? '')
     files.push(file)
+  }
+  for (const file of files.filter((f) => /\.(js|css|svg|json|xml|webmanifest|txt|html)$/.test(f))) {
+    const bytes = await readFile(file)
+    if (bytes.length < 1024) continue
+    await writeFile(
+      `${file}.br`,
+      brotliCompressSync(bytes, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } }),
+    )
+    await writeFile(`${file}.gz`, gzipSync(bytes, { level: 9 }))
   }
   for (const [href, bytes] of Object.entries(images?.files ?? {})) {
     const file = join(dir, 'public', href.replace(/^\//, ''))

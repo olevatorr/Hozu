@@ -58,6 +58,13 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
 - **The deploy guide no longer says `public/` is served:** files a page shows are `ui.asset`, files named in data
   are served by a GET endpoint with `output: 'response'`.
 
+### Compression in adapter-node
+- **Pages and JSON are gzipped as they stream:** each chunk is flushed, so the head still arrives first.
+- **Files are brotli or gzip:** `hozu build` writes `.br` and `.gz` next to each file of `dist/public` over 1 KB;
+  without them, a file is compressed once and kept. Answers carry `Content-Encoding` and `Vary: Accept-Encoding`.
+- **Not compressed:** live streams, HEAD, 204 / 304, and already-compressed types. The web-standard handler (edge)
+  leaves compression to the platform.
+
 ### Faster server rendering
 - **SSR is back at the 0.9 level: 47.3 k → 55.0 k renders/s** on the frameworks bench. 0.11 and 0.12 each added a walk
   of every island node on every render (the browser-run queries the page reads, the routes it links to); each

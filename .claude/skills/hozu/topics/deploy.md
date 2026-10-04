@@ -16,7 +16,9 @@
 - **Node:** adapter-node serves `process.env`, styles and every `ui.asset` (hashed under `/_hozu/a/`). There is no
   `public/` folder served at the root: a file the page shows is a `ui.asset(new URL(...))`; a file named in data
   (a cover in front matter) is served by a GET endpoint with `output: 'response'`. `hozu build` writes
-  `dist/public/`, `dist/manifest.json` and `dist/server/render.js`.
+  `dist/public/`, `dist/manifest.json` and `dist/server/render.js`. It compresses: pages and JSON with gzip,
+  flushed per chunk so streaming keeps going; files with brotli or gzip, from the `.br` / `.gz` that `hozu build`
+  writes. Live streams are not compressed. The edge handler leaves compression to the platform.
 - **Edge (Bun, Deno, Workers, Vercel):** bundle with `hozuTransform()` from `@hozu/transform/esbuild`, then
   `createHandler(app, { manifest, render, env })` from `@hozu/runtime-server` and
   `export default { fetch: handler.fetch }`, where `render` is `import * as render from './dist/server/render.js'`.

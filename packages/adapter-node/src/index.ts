@@ -12,6 +12,16 @@ import {
   type Handler,
   type HandlerOptions,
 } from '@hozu/runtime-server'
+import {
+  accepts,
+  compressedCache,
+  compressWhole,
+  type Encoding,
+  encodingFor,
+  streamCompressed,
+  streams,
+  varyOn,
+} from './compress.ts'
 
 export interface NodeAdapterOptions extends Omit<HandlerOptions, 'readFile'> {
   publicDir?: string
@@ -30,16 +40,55 @@ export function toRequest(request: IncomingMessage): Request {
   } as RequestInit)
 }
 
-export async function send(response: ServerResponse, answer: Response): Promise<void> {
+const shared = compressedCache()
+
+/**
+ * Writes a web Response to Node. With the request, it compresses (ADR 0057 B1): a file that never changes once, kept;
+ * a page or JSON answer with gzip, flushed per chunk so streaming keeps its order. Live streams are left alone.
+ */
+export async function send(
+  response: ServerResponse,
+  answer: Response,
+  request?: IncomingMessage,
+  cache: ReturnType<typeof compressedCache> = shared,
+): Promise<void> {
   const headers: Record<string, string | string[]> = {}
   answer.headers.forEach((value, name) => {
     if (name !== 'set-cookie') headers[name] = value
   })
   const cookies = answer.headers.getSetCookie()
   if (cookies.length) headers['set-cookie'] = cookies
+  const type = answer.headers.get('content-type')
+  const fixed = /\bimmutable\b/.test(answer.headers.get('cache-control') ?? '')
+  const flowing = streams(type)
+  const encoding =
+    request &&
+    answer.body &&
+    answer.status !== 204 &&
+    answer.status !== 304 &&
+    !answer.headers.has('content-encoding') &&
+    !type?.startsWith('text/event-stream')
+      ? flowing
+        ? accepts(request, 'gzip')
+          ? 'gzip'
+          : encodingFor(request, type)
+        : encodingFor(request, type)
+      : null
+  if (encoding) {
+    delete headers['content-length']
+    headers['content-encoding'] = encoding
+    headers.vary = varyOn(headers.vary)
+  }
   response.writeHead(answer.status, headers)
   if (!answer.body) return void response.end()
+  if (encoding && !flowing) {
+    const body = new Uint8Array(await answer.arrayBuffer())
+    return void response.end(
+      fixed ? cache(request!.url ?? '', encoding, body) : compressWhole(encoding, body),
+    )
+  }
   const reader = answer.body.getReader()
+  if (encoding) return streamCompressed(response, reader, encoding)
   response.on('close', () => void reader.cancel().catch(() => {}))
   for (;;) {
     const { done, value } = await reader.read()
@@ -47,6 +96,15 @@ export async function send(response: ServerResponse, answer: Response): Promise<
     response.write(value)
   }
   response.end()
+}
+
+/** `hozu build` writes `.br` and `.gz` next to each compressible file; without them, the file is compressed once. */
+async function precompressed(file: string, encoding: Encoding, key: string, body: Uint8Array) {
+  try {
+    return await readFile(`${file}.${encoding === 'br' ? 'br' : 'gz'}`)
+  } catch {
+    return shared(key, encoding, body)
+  }
 }
 
 export function createServer(options: NodeAdapterOptions): Server & Pick<Handler, 'revalidate' | 'stats'>
@@ -70,13 +128,18 @@ export function createServer(
     if (!publicDir || !path.startsWith(prefix) || (request.method !== 'GET' && request.method !== 'HEAD'))
       return false
     try {
-      const body = await readFile(join(publicDir, path))
+      const file = join(publicDir, path)
+      const body = await readFile(file)
       const hashed = /\/_hozu\/(a|w)\/|\/_hozu\/styles\./.test(path)
+      const type = contentType(path)
+      const encoding = encodingFor(request, type)
+      const packed = encoding ? await precompressed(file, encoding, path, body) : null
       response.writeHead(200, {
-        'content-type': contentType(path),
+        'content-type': type,
         'cache-control': hashed ? 'public, max-age=31536000, immutable' : 'no-cache',
+        ...(packed ? { 'content-encoding': encoding!, vary: 'Accept-Encoding' } : {}),
       })
-      response.end(request.method === 'HEAD' ? undefined : body)
+      response.end(request.method === 'HEAD' ? undefined : (packed ?? body))
       return true
     } catch {
       return false
@@ -90,7 +153,7 @@ export function createServer(
     } catch {
       return void response.writeHead(400, { 'content-type': 'text/plain' }).end('Bad request')
     }
-    await send(response, answer)
+    await send(response, answer, request)
   })
   return Object.assign(server, { revalidate: handler.revalidate, stats: handler.stats })
 }
