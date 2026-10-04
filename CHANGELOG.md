@@ -33,15 +33,18 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
 - **A refused native post redirects like the page:** signed out, a forged post to a page whose head maps
   `Forbidden` to a route answered 303 without a `Location`; it now redirects there.
 - **`invoke` takes what the mutation's schema takes in:** a field declared `z.coerce.number()` accepts the form's
-  text, as the forms guide says (before, `invoke` wanted the parsed `number`).
+  text, as the forms guide says (before, `invoke` wanted the parsed `number`). Resolvers and `fetch.ts`
+  implementations still receive the parsed input.
 - **`hozu show` and `hozu why` take `views.ts:42`** (or `features/notes/views.ts:42:9`): the outermost view node
-  written there, so an agent needs no dev server to find an id. `hozu show … --in "<text>"` frames one row of a
-  list. Listing the notes marks one `STALE` when its id now names another part. SKILL.md's change loop ends with
-  it.
+  written there, so an agent needs no dev server to find an id; a line that two files share is refused with both
+  paths. `hozu show … --in "<text>"` frames one row of a list. Listing the notes marks one `STALE` when its id now
+  names another part, and still lists them while the project does not load. SKILL.md's change loop ends with it.
 - **`hozu serve` and `hozu dev` print how to stop them** (`stop: kill <pid>`), so an agent stops its own server
   instead of every Hozu server on the machine.
 - **A head field Hozu does not know is HZ014:** `head.render` returning `twitter` or `jsonLd` was silently dropped.
-- **An endpoint at `/sitemap.xml`, `/robots.txt` or `/manifest.webmanifest` is HZ046:** it hid the derived file.
+  A render that returns the head query's value as a whole is still recorded.
+- **An endpoint at `/sitemap.xml`, `/robots.txt` or (with a `site`) `/manifest.webmanifest` is HZ046:** it hid the
+  derived file.
   Shape it with `entries` (now with `lastmod`), `noindex` and `site` instead.
 - **`hozu get --select script` reads the head's scripts**, raw, so the JSON-LD can be checked without a server.
 - **Pages without machines get a lock too:** an app whose head maps errors, or that has endpoints, redirects or
@@ -53,10 +56,11 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
   operands to the end, so every node after one reported an earlier line in `hozu why`, `hozu show`, DevTools and
   diagnostics (the dogfood saw a list row reported on its `<tbody>`'s line).
 - **`hozu browse` takes the forms agents write:** `in "<text>"` before or after a fill's value, several steps in one
-  `--do` joined with `;`, and a missing target prints `Did you mean "<closest label>"?`. In trial 0024, a quarter
+  `--do` joined with `;` (outside quotes, before a verb and a space), and a missing target prints `Did you mean "<closest label>"?`. In trial 0024, a quarter
   of the agents' browse runs failed on such a guess and re-ran a whole chain.
 - **`hozu browse` treats a page's 401, 403, 404 or 410 as the step's answer:** a step that loads such a page
-  shows `→ /notes/n1 (403)` and is not an error, so an access check exits 0. The start page still must load.
+  shows `→ /notes/n1 (403)` and is not an error, so an access check exits 0. The start page still must load, and
+  such an answer inside an iframe stays an error.
 - **`hozu browse` ignores the view-transition abort** a browser reports when a step posts to a JSON endpoint.
 - **`--with auth,detail`:** the detail page maps `Forbidden` to the sign-in page and lists no user data in the
   sitemap.

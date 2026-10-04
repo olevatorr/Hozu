@@ -292,11 +292,11 @@ export class Tab {
       if (method === 'Network.responseReceived') {
         const url = pathOf(params.response.url)
         const type = params.type ?? 'Other'
-        if (main && type === 'Document' && params.frameId === this.targetId)
-          this.status = this.stepStatus = params.response.status
+        const page = main && type === 'Document' && params.frameId === this.targetId
+        if (page) this.status = this.stepStatus = params.response.status
         const status = params.response.status as number
         const favicon = type === 'Other' && url === '/favicon.ico'
-        const answered = this.opened && type === 'Document' && pageAnswers.has(status)
+        const answered = this.opened && page && pageAnswers.has(status)
         if (status >= 400 && !answered && !this.invalidPosts.has(id) && !favicon)
           this.error(
             {

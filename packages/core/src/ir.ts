@@ -1,6 +1,7 @@
 export type { IsolatedUse } from './build/isolate.ts'
 export { componentProject } from './build/isolate.ts'
 export {
+  AmbiguousLine,
   type DevCondition,
   type DevEffect,
   type DevLocation,

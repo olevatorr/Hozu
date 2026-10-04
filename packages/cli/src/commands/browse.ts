@@ -50,12 +50,23 @@ interface Parsed {
 /** `click "Save draft"` names the same target as `click Save draft`. */
 const unquote = (s: string) => s.replace(/^"(.*)"$/, '$1')
 
-/** `--do 'fill Title=Milk; press Enter'` is two steps: split where a verb follows a semicolon, so values may hold one. */
-export const stepsOf = (text: string): string[] =>
-  text
-    .split(/;\s*(?=(?:fill|select|check|uncheck|click|submit|press|wait|goto|post|remember)\b)/)
-    .map((step) => step.trim())
-    .filter(Boolean)
+const STEP = /^\s*(?:fill|select|check|uncheck|click|submit|press|wait|goto|post|remember)(?:\s|$)/
+
+/** `--do 'fill Title=Milk; press Enter'` is two steps: split where a verb and a space follow a semicolon outside quotes, so values may hold one. */
+export const stepsOf = (text: string): string[] => {
+  const steps: string[] = []
+  let start = 0
+  let quoted = false
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '"') quoted = !quoted
+    else if (text[i] === ';' && !quoted && STEP.test(text.slice(i + 1))) {
+      steps.push(text.slice(start, i))
+      start = i + 1
+    }
+  }
+  steps.push(text.slice(start))
+  return steps.map((step) => step.trim()).filter(Boolean)
+}
 
 export function parseStep(text: string): Parsed {
   const space = text.indexOf(' ')
@@ -68,7 +79,7 @@ export function parseStep(text: string): Parsed {
     within = scoped[2]!
   }
   if ((verb === 'fill' || verb === 'select') && within === null) {
-    const before = /^(.*?)\s+in\s+"([^"]+)"\s*=(.*)$/.exec(rest)
+    const before = /^([^=]*?)\s+in\s+"([^"]+)"\s*=(.*)$/.exec(rest)
     if (before) return { verb, target: unquote(before[1]!.trim()), value: before[3]!, within: before[2]! }
   }
   if (verb === 'fill' || verb === 'select') {

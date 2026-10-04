@@ -29,7 +29,7 @@ export function runWhy(loaded: Loaded, target: string | undefined, cwd: string):
       'hozu why notes.NotesBoard/0/1',
       'hozu why page:home',
     ])
-  if (target.startsWith('page:') || target.includes('/')) {
+  if (target.startsWith('page:') || target.includes('/') || /\.[cm]?[jt]sx?:\d+(:\d+)?$/.test(target)) {
     const node = runLocate(loaded, target)
     const at = node.location ? `${node.location.file}:${node.location.line}` : null
     return { target, kind: target.startsWith('page:') ? 'page' : 'node', at, node }

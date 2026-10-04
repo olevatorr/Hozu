@@ -367,6 +367,11 @@ export async function main(
       out(asJson ? json(result) : describeShow(result))
       return 0
     }
+    if (command === 'show' && target === undefined && values.note === undefined) {
+      const result = runShow(await load(values.config, cwd).catch(() => null), cwd, undefined, showOptions)
+      out(asJson ? json(result) : describeShow(result))
+      return 0
+    }
     if (command === 'requests') {
       const result = runRequests(cwd, target, positionals[2], values.result, values.full === true)
       out(asJson ? json(result) : describeRequests(result))

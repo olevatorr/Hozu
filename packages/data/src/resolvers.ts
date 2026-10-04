@@ -87,7 +87,7 @@ export interface Implement<Session, Env = unknown> {
     run: (input: I, ctx: QueryContext<Sc, Session, E, Env>) => Out<O, E>,
   ): Implementation
   <I, O, E>(
-    decl: MutationDecl<I, O, E>,
+    decl: MutationDecl<I, O, E, any>,
     run: (
       input: I,
       ctx: MutationContext<Session, NoInfer<E>, Env, NoInfer<I>>,

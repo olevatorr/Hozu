@@ -75,7 +75,7 @@ export const steps: Step[] = [
     from: '0.15',
     to: '0.16',
     summary:
-      'no source change; an app without machines now locks its pages, so run hozu check --update-lock if it says the lock is missing (ADR 0057)',
+      'no source change; an app without machines now locks its pages, so run hozu check --update-lock if it says the lock is missing; an endpoint at /sitemap.xml, /robots.txt or (with a site) /manifest.webmanifest is now HZ046, and a head.render field Hozu does not know is HZ014: move them to entries, noindex or site (ADR 0057)',
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },

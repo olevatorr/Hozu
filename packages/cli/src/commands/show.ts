@@ -62,6 +62,11 @@ const labelFor = (node: DevNode) =>
 /** A note keeps the label of what it was written for; a node id that now names something else is stale. */
 function checked(loaded: Loaded | null, notes: AgentNote[]): ShowOutput['notes'] {
   if (!loaded) return notes
+  try {
+    loaded.build(true)
+  } catch {
+    return notes
+  }
   return notes.map((n) => {
     if (n.id.startsWith('page:')) return n
     let now: string | null = null

@@ -12,6 +12,7 @@ import {
   ui,
 } from '@hozu/core'
 import { implement } from '@hozu/core/component'
+import { implement as implementFetch } from '@hozu/core/fetch'
 import { zodAdapter } from '@hozu/schema-zod'
 import { createTV } from '@hozu/variants'
 import { z } from 'zod'
@@ -499,3 +500,7 @@ export const orders = machine({
     },
   }),
 })
+
+export const orderFetch = implementFetch<typeof addOrder>(async ({ amount }) => ({ id: amount.toFixed(0) }))
+// @ts-expect-error the browser implementation receives the parsed input, so amount is a number
+export const orderFetchWrong = implementFetch<typeof addOrder>(async ({ amount }) => ({ id: amount.trim() }))

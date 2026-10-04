@@ -285,6 +285,20 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(code).toBe(0)
   }, 60_000)
 
+  it('a 404 inside an iframe is a failed request, not the page answering (0.16 review)', async () => {
+    const copy = copyOf('notes', 'features/notes/views.ts', (s) =>
+      s.replace(
+        "ui.h1({ class: 'text-3xl font-bold' }, ['Notes']),",
+        "ui.h1({ class: 'text-3xl font-bold' }, ['Notes']),\n      ui.iframe({ src: '/nowhere', title: 'Frame' }, []),",
+      ),
+    )
+    const { code, out } = await browse(['/login', '--js', 'on', '--session', ADA, '--do', 'goto /'], copy)
+    expect(out.errors).toContainEqual(
+      expect.objectContaining({ kind: 'request', text: '404 /nowhere', type: 'Document' }),
+    )
+    expect(code).toBe(1)
+  }, 60_000)
+
   it('prints js-only in the off column for a step with no native effect', async () => {
     const { stdout } = await human(['/', ...steps('click Save in "Hello, Hozu"')], example('blog'))
     expect(stdout).toContain(

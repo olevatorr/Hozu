@@ -163,6 +163,20 @@ describe('step parsing', () => {
     ])
   })
 
+  it('splits steps only outside quotes and before a whole verb, and a value may hold in "…"=', () => {
+    expect(stepsOf('click "Save; press Enter"; fill Note=post-it; post-it; wait 10')).toEqual([
+      'click "Save; press Enter"',
+      'fill Note=post-it; post-it',
+      'wait 10',
+    ])
+    expect(parseStep('fill Body=say in "a"=b')).toEqual({
+      verb: 'fill',
+      target: 'Body',
+      value: 'say in "a"=b',
+      within: null,
+    })
+  })
+
   it('post and remember keep their whole target', () => {
     expect(parseStep('post /a x=1&y=2')).toMatchObject({ verb: 'post', target: '/a x=1&y=2' })
     expect(parseStep('remember id from li a @href')).toMatchObject({

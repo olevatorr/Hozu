@@ -14,11 +14,12 @@ import { scalar } from './routes.ts'
 
 const STATIC = /^\/$|^(\/[A-Za-z0-9._~-]+)+$/
 
-const DERIVED = ['/sitemap.xml', '/robots.txt', '/manifest.webmanifest']
+const DERIVED = ['/sitemap.xml', '/robots.txt']
 
 export function endpoints(ctx: Ctx) {
   const taken = new Map<string, string>()
   const locales = ctx.ir.site?.locales ?? [null]
+  const derived = ctx.ir.site ? [...DERIVED, '/manifest.webmanifest'] : DERIVED
   const pages = Object.keys(ctx.ir.pages)
     .map((r) => ctx.ir.routes[r]?.path)
     .filter((p): p is string => p !== undefined)
@@ -73,10 +74,10 @@ export function endpoints(ctx: Ctx) {
           'Use a path such as "/api/…"',
           api(e.path),
         )
-      else if (DERIVED.includes(e.path))
+      else if (derived.includes(e.path))
         report(
           `Endpoint path "${e.path}" of ${ref} replaces a file Hozu derives`,
-          '/sitemap.xml, /robots.txt and /manifest.webmanifest come from the pages, their entries and the site; an endpoint there would hide them, with no check that its URLs match the pages.',
+          '/sitemap.xml and /robots.txt come from the pages and their entries, /manifest.webmanifest from the site; an endpoint there would hide them, with no check that its URLs match the pages.',
           'Shape the derived file instead: entries (with lastmod) and noindex for the sitemap and robots, site for the manifest (hozu docs pages)',
           api(e.path),
         )

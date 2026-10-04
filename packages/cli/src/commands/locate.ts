@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { locateNode } from '@hozu/core/ir'
+import { AmbiguousLine, locateNode } from '@hozu/core/ir'
 import type { LocateOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
@@ -12,7 +12,14 @@ export function runLocate(loaded: Loaded, target: string | undefined): LocateOut
       'hozu why /features/notes/views/NotesBoard/root/children/0',
     ])
   const root = dirname(loaded.path)
-  const found = locateNode(loaded.build(true), target, { root })
+  const found = (() => {
+    try {
+      return locateNode(loaded.build(true), target, { root })
+    } catch (error) {
+      if (error instanceof AmbiguousLine) throw new HozuCliError('usage', error.message, error.candidates)
+      throw error
+    }
+  })()
   if (!found)
     throw new HozuCliError('usage', `No view node ${target}`, [
       'Copy the id from a Hozu DevTools request, or the data-hz attribute under hozu dev',

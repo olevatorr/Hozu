@@ -120,7 +120,11 @@ export interface RequestData {
 export interface DataRuntime {
   scope(session?: unknown, options?: { preview?: boolean }): RequestData
   query<I, O, E>(decl: QueryDecl<I, O, E, any>, input: I, session?: unknown): Promise<Result<O, E>>
-  mutate<I, O, E>(decl: MutationDecl<I, O, E>, input: I, session?: unknown): Promise<MutationResult<O, E>>
+  mutate<I, O, E>(
+    decl: MutationDecl<I, O, E, any>,
+    input: I,
+    session?: unknown,
+  ): Promise<MutationResult<O, E>>
   run(ref: string, input: Json, session?: unknown): Promise<Result | MutationResult>
   invalidate(tags: string[]): number
   tagsOf(ref: string, input: Json): string[]

@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
@@ -129,6 +129,14 @@ describe('hozu why on a view node or page (ADR 0047, ADR 0053 F)', () => {
     expect(stderr).toContain('No view node nope.Nothing/9')
   })
 
+  it('a file:line that two files share is ambiguous and lists both paths', async () => {
+    const { code, stderr } = await run(['why', 'views.ts:54'])
+    expect(code).toBe(2)
+    expect(stderr).toContain('views.ts:54 names view nodes in 2 files')
+    expect(stderr).toContain('features/account/views.ts:54')
+    expect(stderr).toContain('features/notes/views.ts:54')
+  })
+
   it('hozu show takes file:line and --in "<text>", and marks a note whose id now names something else (0.15 dogfood)', async () => {
     const store = join(notes, '.hozu/notes.json')
     rmSync(store, { force: true })
@@ -162,6 +170,29 @@ describe('hozu why on a view node or page (ADR 0047, ADR 0053 F)', () => {
       expect(listed.notes[0].stale).toBe('this id now names <form> in notes.NotesBoard')
     } finally {
       rmSync(store, { force: true })
+    }
+  })
+
+  it('hozu show still lists the notes when the project does not load, without marking them stale', async () => {
+    const dir = join(root, '.tmp', `show-broken-${Date.now()}`)
+    mkdirSync(join(dir, '.hozu'), { recursive: true })
+    writeFileSync(join(dir, 'hozu.config.ts'), 'export default (\n')
+    const note = {
+      n: 1,
+      id: 'notes.NotesBoard/1',
+      label: '<h1> in notes.NotesBoard',
+      at: null,
+      path: '/',
+      within: null,
+      text: 'Bigger title',
+      created: '2026-10-04T00:00:00.000Z',
+    }
+    writeFileSync(join(dir, '.hozu/notes.json'), JSON.stringify({ next: 2, notes: [note] }))
+    try {
+      const { stdout } = await promisify(execFile)(process.execPath, [bin, 'show', '--json'], { cwd: dir })
+      expect(JSON.parse(stdout).notes).toEqual([note])
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
     }
   })
 })

@@ -3,7 +3,7 @@ import type { MutationDecl, QueryDecl } from './builders/effects.ts'
 type Implementation<D> =
   D extends QueryDecl<infer I, infer O, infer E>
     ? FetchImplementation<I, O, E>
-    : D extends MutationDecl<infer I, infer O, infer E>
+    : D extends MutationDecl<infer I, infer O, infer E, any>
       ? FetchImplementation<I, O, E & { Invalid: { message: string; fields: Record<string, string | null> } }>
       : never
 

@@ -3,7 +3,7 @@ import { join } from '../canonical/pointer.ts'
 import type { DiagnosticCode, Fix } from '../ir/diagnostic.ts'
 import type { EntriesIR, HeadFailureIR, HeadIR, PageIR, ValueExpr } from '../ir/types.ts'
 import { defOf, infoOf } from '../model/decl.ts'
-import { RecorderError, refProxy } from '../model/expr.ts'
+import { exprOf, RecorderError, refProxy } from '../model/expr.ts'
 import { type At, FeatureScope, type ProjectScope } from './scope.ts'
 
 export class PageScope extends FeatureScope {
@@ -69,7 +69,8 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
       noindex: false,
     }
   const known = ['title', 'description', 'type', 'image', 'published', 'noindex']
-  for (const key of Object.keys(fields as object))
+  const keys = exprOf(fields) === null ? Object.keys(fields as object) : []
+  for (const key of keys)
     if (!known.includes(key))
       scope.report(
         'HZ014',

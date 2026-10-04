@@ -73,6 +73,33 @@ describe('0.15 dogfood (ADR 0057 C)', () => {
     expect(found?.message).toBe('head.render returns "twitter", which is not a head field')
   })
 
+  it('a head render that returns the query value itself records, not a crash', () => {
+    const getHead = query({
+      input: z.object({}),
+      output: z.object({ title: z.string(), description: z.string() }),
+      scope: 'public',
+      freshness: 'static',
+      runs: 'server',
+    })
+    const app = project({
+      schema: zodAdapter,
+      routes: { home },
+      pages: [
+        ui.page(home, { views: [Home], head: { query: getHead, input: () => ({}), render: (h) => h } }),
+      ],
+      features: [
+        feature({ id: 'site', intent: { summary: 'home' }, declarations: [{ Home, listRooms, getHead }] }),
+      ],
+    })
+    const build = buildProject(app, { sources: false })
+    expect(build.diagnostics).toEqual([])
+    expect(Object.values(build.ir.pages)[0]?.head.title).toEqual({
+      ref: 'binding',
+      depth: 0,
+      path: ['title'],
+    })
+  })
+
   it('an endpoint at /sitemap.xml is HZ046: the sitemap is derived', () => {
     const sitemap = endpoint({ method: 'GET', path: '/sitemap.xml', input: z.object({}), output: 'response' })
     const app = project({
@@ -85,6 +112,29 @@ describe('0.15 dogfood (ADR 0057 C)', () => {
     })
     const found = validate(buildProject(app, { sources: false }).ir).find((d) => d.code === 'HZ046')
     expect(found?.message).toBe('Endpoint path "/sitemap.xml" of site.sitemap replaces a file Hozu derives')
+  })
+
+  it('an endpoint at /manifest.webmanifest is HZ046 only when the site derives one', () => {
+    const manifest = endpoint({
+      method: 'GET',
+      path: '/manifest.webmanifest',
+      input: z.object({}),
+      output: 'response',
+    })
+    const app = (site: boolean) =>
+      project({
+        schema: zodAdapter,
+        ...(site ? { site: { url: 'https://example.com', name: 'Rooms', lang: 'en' } } : {}),
+        routes: { home },
+        pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'Rooms' }) } })],
+        features: [
+          feature({ id: 'site', intent: { summary: 'home' }, declarations: [{ Home, listRooms, manifest }] }),
+        ],
+      })
+    const codes = (site: boolean) =>
+      validate(buildProject(app(site), { sources: false }).ir).map((d) => d.code)
+    expect(codes(false)).not.toContain('HZ046')
+    expect(codes(true)).toContain('HZ046')
   })
 
   it('two controls of one name in exclusive branches of a query are one value, not HZ054', () => {

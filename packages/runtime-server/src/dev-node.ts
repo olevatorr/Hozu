@@ -1,4 +1,4 @@
-import { type BuildResult, type DevNode, type DevOptions, locateNode } from '@hozu/core/ir'
+import { AmbiguousLine, type BuildResult, type DevNode, type DevOptions, locateNode } from '@hozu/core/ir'
 
 export async function devNode(
   build: BuildResult,
@@ -6,7 +6,14 @@ export async function devNode(
   dev: DevOptions,
   readFile?: (file: string) => Promise<Uint8Array>,
 ): Promise<DevNode | null> {
-  const found = locateNode(build, id, dev)
+  const found = (() => {
+    try {
+      return locateNode(build, id, dev)
+    } catch (error) {
+      if (error instanceof AmbiguousLine) return null
+      throw error
+    }
+  })()
   if (!found?.location || !readFile) return found
   try {
     const path = found.location.file.startsWith('/')
