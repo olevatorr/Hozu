@@ -12,4 +12,5 @@ export const homePage = feature({
   },
   imports: [content],
   declarations: [model, views, devtools],
+  styles: [new URL('../../site/demos.css', import.meta.url)],
 })

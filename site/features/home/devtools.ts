@@ -2,6 +2,7 @@ import { ui } from '@hozu/core'
 import { devtools, doc } from '../../routes.ts'
 import { Button } from '../../site/button.ts'
 import { CodeBlock } from '../../site/code-block.ts'
+import { apiDemo, backDemo, layersDemo, selectDemo } from '../../site/demos.ts'
 import { Display, Heading } from '../../site/display.ts'
 import { Section } from '../../site/section.ts'
 import { Steps } from '../../site/steps.ts'
@@ -25,15 +26,6 @@ Run \`hozu check\` after the edits.`
 export const notes = `npx hozu show features/notes/views.ts:42 --note "Delete now asks before it removes a note"
 npx hozu show features/notes/views.ts:51 --in "Buy milk" --note "Pinned notes go first"
 npx hozu show page:home --note "The page title is shorter"`
-
-export const shot = (name: string, alt: string) =>
-  ui.img({
-    src: ui.asset(new URL(`../../assets/devtools-${name}.png`, import.meta.url)),
-    width: 1440,
-    height: 900,
-    alt,
-    class: 'w-full border-4 border-ink bg-white shadow-[8px_8px_0_var(--color-ink)]',
-  })
 
 const codeBlock = (text: string, frame: 'border-paper' | 'border-ink') =>
   ui.use(CodeBlock, {}, [
@@ -136,8 +128,7 @@ export const DevToolsPage = ui.view({
           },
         }),
         ui.div({ class: 'mt-8 w-full' }, [
-          shot(
-            'select',
+          selectDemo(
             'Hozu DevTools on a task board: the Add task button is selected and the inspector shows it is a shared Button used in six places',
           ),
         ]),
@@ -153,6 +144,11 @@ export const DevToolsPage = ui.view({
         ui.use(Heading, {}, ['See what your agent changed.']),
         ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
           'After a change, your agent points at each part it touched, with a note in your words. You check the result on the page, not in a diff.',
+        ]),
+        ui.div({ class: 'mt-8 w-full' }, [
+          backDemo(
+            'Your agent runs hozu show twice: numbered red frames appear on the Add task button and on a list row, and the Agent panel steps through both notes',
+          ),
         ]),
         ui.div({ class: 'mt-8 w-full' }, [codeBlock(notes, 'border-ink')]),
         ui.div({ class: 'mt-8 grid w-full gap-6 md:grid-cols-3' }, [
@@ -184,9 +180,8 @@ export const DevToolsPage = ui.view({
           'Loading, failed, saving, an error message, a confirmation dialog: Layers lists every state the page can be in, read from the app itself. Preview one without running anything, at a phone’s exact size.',
         ]),
         ui.div({ class: 'mt-8' }, [
-          shot(
-            'workbench',
-            'The Workbench: the task board at phone size showing the remove confirmation, with Layers and its other states on the left',
+          layersDemo(
+            'Layers lists the states of the page; previewing each one switches the phone-size page to loading, failed, a remove confirmation and saving',
           ),
         ]),
       ]),
@@ -216,9 +211,8 @@ export const DevToolsPage = ui.view({
           ]),
         ]),
         ui.div({ class: 'mt-8' }, [
-          shot(
-            'api',
-            'The API drawer docked under the task board: the Summary query ran through the server and its answer shows as a table, with the request the page sent listed below',
+          apiDemo(
+            'The API drawer under the task board: running the Summary query shows its answer as a table and the request it sent; running Add task asks to confirm, then the page shows three to do',
           ),
         ]),
       ]),

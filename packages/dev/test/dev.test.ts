@@ -145,6 +145,40 @@ describe('dev server', () => {
     }
   }, 20_000)
 
+  it('Done on an agent note removes it from .hozu/notes.json, from this origin only; a reply is a request', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-'))
+    writeFileSync(join(dir, 'style.css'), 'p { color: red }')
+    writeFileSync(join(dir, 'app.ts'), app)
+    const { addNote, listNotes } = await import('@hozu/devtools')
+    const note = { id: 'site.Home/0', label: '<p>', at: null, path: '/', within: null }
+    addNote(dir, { ...note, text: 'Bigger' })
+    addNote(dir, { ...note, text: 'Red' })
+    const server = await dev({ entry: 'app.ts', cwd: dir, port: 0, appPort: await freePort(), log: () => {} })
+    try {
+      expect((await send(server.url, 'DELETE', '/_hozu/dev/notes/1')).status).toBe(403)
+      expect(listNotes(dir).map((n) => n.n)).toEqual([1, 2])
+      const reply = await send(
+        server.url,
+        'POST',
+        '/_hozu/dev/notes/2/reply',
+        { reply: 'Darker' },
+        { origin: server.url },
+      )
+      expect(reply.status).toBe(200)
+      expect(existsSync(join(dir, '.hozu/requests'))).toBe(true)
+      expect(
+        (await send(server.url, 'DELETE', '/_hozu/dev/notes/1', undefined, { origin: server.url })).status,
+      ).toBe(200)
+      expect(listNotes(dir).map((n) => n.n)).toEqual([2])
+      expect(JSON.parse(readFileSync(join(dir, '.hozu/notes.json'), 'utf8')).notes).toHaveLength(1)
+      expect(
+        (await send(server.url, 'DELETE', '/_hozu/dev/notes/1', undefined, { origin: server.url })).status,
+      ).toBe(404)
+    } finally {
+      await server.close()
+    }
+  }, 20_000)
+
   it('starts DevTools in the mode it was given', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-'))
     writeFileSync(join(dir, 'style.css'), 'p { color: red }')

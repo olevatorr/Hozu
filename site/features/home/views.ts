@@ -3,6 +3,7 @@ import { chapter, devtools, doc, home, how, trial, trials } from '../../routes.t
 import { Button } from '../../site/button.ts'
 import { CatchCard } from '../../site/catch-card.ts'
 import { CodeBlock } from '../../site/code-block.ts'
+import { apiDemo, selectDemo } from '../../site/demos.ts'
 import { Display, Heading } from '../../site/display.ts'
 import { Joint } from '../../site/joint.ts'
 import { peg } from '../../site/peg.ts'
@@ -15,7 +16,6 @@ import { Ticker } from '../../site/ticker.ts'
 import { support } from '../content/chrome.ts'
 import { catches, claim, speed, speedSource } from '../content/claims.ts'
 import { getStart, listChapters } from '../content/model.ts'
-import { shot } from './devtools.ts'
 import { films } from './media.ts'
 import { Break, Fix, getPlayground, m, Pick } from './model.ts'
 
@@ -379,8 +379,7 @@ export const Home = ui.view({
             'npm run dev puts an API drawer under every page: the data it reads, the changes it makes and your endpoints, with the requests each call really sent. The environment is declared once, secrets stay on the server, and the server can call your APIs on the inside.',
           ]),
           ui.div({ class: 'mt-8' }, [
-            shot(
-              'api',
+            apiDemo(
               'The API drawer docked under a task board: a query ran through the server and its answer shows as a table, with the request the page sent listed below',
             ),
           ]),
@@ -434,8 +433,7 @@ export const Home = ui.view({
         ui.use(Section, { props: { kicker: 'DevTools' } }, [
           ui.use(Heading, {}, ['Point at it. Your agent gets the line.']),
           ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-center' }, [
-            shot(
-              'select',
+            selectDemo(
               'Hozu DevTools on a task board: the Add task button is selected and the inspector says it is shared by six places',
             ),
             ui.div({ class: 'grid content-start gap-4 text-lg' }, [
