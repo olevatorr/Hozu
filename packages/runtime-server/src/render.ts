@@ -23,6 +23,7 @@ import type { DataRuntime, RequestData } from '@hozu/data'
 import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '@hozu/machine'
 import type { ClientEffect, PagePayload, Result } from '@hozu/runtime-client'
 import { attrText, text } from '@hozu/runtime-client'
+import { clientUrl } from './assets.ts'
 import { escapeHtml, scriptJson, scriptSafe } from './escape.ts'
 import { fnModules, linkTargets, modulesOfPage } from './fn-modules.ts'
 import { CLOSE, OPEN, renderKey, separated } from './generate.ts'
@@ -116,7 +117,7 @@ export async function renderPage({
   snapshots = {},
   session,
   assets = {
-    client: '/_hozu/client.js',
+    client: clientUrl(),
     fns: Object.fromEntries(Object.entries(fnModules(build)).map(([name, m]) => [name, m.path])),
     styles: null,
     preload: [],

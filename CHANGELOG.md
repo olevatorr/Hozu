@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.17.1
+
+- **A visitor's cached client no longer breaks the page after a deploy.** `/_hozu/client.js` was referenced under a
+  fixed URL while its chunks carry content hashes, so a browser that kept the previous `client.js` (Safari keeps it
+  past the host's `max-age`) asked for a chunk the new deploy no longer had (404, `Importing a module script
+  failed`) and no island hydrated: on hozu.org the home page's AI CHANGE did nothing in Safari. Pages now reference
+  `/_hozu/client.js?v=<content hash>`, and a client whose chunk fails to load reloads the page once.
+- Client budget P7: 8 011 B of 8 192 (the reload guard).
+- The site's header shows the menu button below 1024 px, keeps the links on one line above it, and the menu opens
+  with a short slide (none under reduced motion).
+
 ## 0.17.0
 
 DevTools for Figma hands (ADR 0058). Everything here is DevTools, loaded only under `hozu dev`: production pages,

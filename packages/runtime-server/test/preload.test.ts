@@ -5,6 +5,7 @@ import { appOptionsOf, renderToString } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
 import createResolversApp from '../../../examples/cart/app.ts'
 import cart from '../../../examples/cart/hozu.config.ts'
+import { clientUrl } from '../src/assets.ts'
 import { conditional, conditionalResolvers } from './support/conditional.ts'
 
 const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
@@ -18,7 +19,7 @@ const render = (route: string, params: Record<string, string> | null, search: Re
     params,
     search,
   })
-const preload = '<link rel="modulepreload" href="/_hozu/client.js">'
+const preload = `<link rel="modulepreload" href="${clientUrl().replace('&', '&amp;')}">`
 
 describe('client runtime preload (ADR 0036)', () => {
   it('derives always, conditional or no JS per route', () => {
@@ -51,7 +52,7 @@ describe('client runtime preload (ADR 0036)', () => {
       expect(head).not.toContain('modulepreload')
       expect(html.split(preload)).toHaveLength(2)
       expect(html.indexOf(`${preload}<!--i-->`)).toBe(html.indexOf('<!--i-->') - preload.length)
-      expect(html).toContain('<script type="module" src="/_hozu/client.js"></script>')
+      expect(html).toContain(`<script type="module" src="${clientUrl()}"></script>`)
     }
   })
 

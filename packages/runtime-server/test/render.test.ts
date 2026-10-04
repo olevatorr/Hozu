@@ -5,6 +5,7 @@ import { appOptionsOf, renderPage, renderToString } from '@hozu/runtime-server'
 import { describe, expect, it } from 'vitest'
 import createResolversApp from '../../../examples/cart/app.ts'
 import project from '../../../examples/cart/hozu.config.ts'
+import { clientUrl } from '../src/assets.ts'
 
 const createResolvers = () => appOptionsOf(createResolversApp)!.resolvers
 
@@ -64,9 +65,10 @@ describe('server rendering', () => {
     expect(Object.keys(payload.features)).toEqual(['cart'])
     expect(payload.fns).toEqual([expect.stringMatching(/^\/_hozu\/f\/cart-[0-9a-f]{10}\.js$/)])
     const head = html.slice(0, html.indexOf('</head>'))
-    expect(head).toContain('<link rel="modulepreload" href="/_hozu/client.js">')
+    expect(head).toContain(`<link rel="modulepreload" href="${clientUrl()}">`)
+    expect(clientUrl()).toMatch(/^\/_hozu\/client\.js\?v=[0-9a-f]{12}$/)
     for (const url of payload.fns!) expect(head).toContain(`<link rel="modulepreload" href="${url}">`)
-    expect(html.endsWith('<script type="module" src="/_hozu/client.js"></script></body></html>')).toBe(true)
+    expect(html.endsWith(`<script type="module" src="${clientUrl()}"></script></body></html>`)).toBe(true)
   })
 
   it('machine-less pages contain no script at all', async () => {

@@ -162,13 +162,13 @@ for (const file of files.filter((name) => name.endsWith('.html'))) {
   assert.equal((html.match(/<main[ >]/g) ?? []).length, 1, `${file}: one main landmark`)
   const interactive = file === 'how-it-works/index.html'
   if (interactive) {
-    assert.match(html, /<script type="module" src="\/_hozu\/client\.js">/, 'Overview loads its Hozu island')
+    assert.match(html, /<script type="module" src="\/_hozu\/client\.js\?v=[0-9a-f]{12}">/, 'Overview loads its Hozu island')
     assert.ok(html.includes('Run example'), 'Pipeline interaction exported')
     assert.ok(html.includes('Machine binding'), 'Render-plan interaction exported')
   } else if (html.includes('<pre')) {
     assert.match(
       html,
-      /<script type="module" src="\/_hozu\/client\.js">/,
+      /<script type="module" src="\/_hozu\/client\.js\?v=[0-9a-f]{12}">/,
       `${file}: code blocks get the copy widget`,
     )
     assert.ok(html.includes('site.CodeBlock'), `${file}: the copy widget is in the payload`)

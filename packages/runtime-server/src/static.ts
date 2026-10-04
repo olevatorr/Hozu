@@ -1,5 +1,5 @@
 import { type BuildResult, hashJson } from '@hozu/core/ir'
-import { clientBundle } from './assets.ts'
+import { clientBundle, clientUrl } from './assets.ts'
 import { fnModules } from './fn-modules.ts'
 import { serviceWorker, serviceWorkerRegistration, webManifest } from './pwa.ts'
 import type { Assets, ComponentBundle, Stylesheet } from './render.ts'
@@ -18,7 +18,7 @@ export function publicAssets(
   fns: Record<string, string> = {},
 ): Assets {
   return {
-    client: `${basePath}/_hozu/client.js`,
+    client: clientUrl(basePath),
     fns: Object.fromEntries(Object.entries(fns).map(([k, v]) => [k, basePath + v])),
     styles: styles ? basePath + styles.href : null,
     preload: (styles?.preload ?? []).map((href) => basePath + href),

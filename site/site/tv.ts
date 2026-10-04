@@ -4,7 +4,7 @@ import { createTV } from '@hozu/variants'
 const twMergeConfig = {
   extend: {
     theme: {
-      animate: ['nudge', 'pass', 'rise', 'shake', 'ticker'],
+      animate: ['menu', 'nudge', 'pass', 'rise', 'shake', 'ticker'],
       color: ['ember', 'green', 'ink', 'paper', 'red', 'sand'],
     },
     classGroups: {

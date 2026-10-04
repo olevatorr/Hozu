@@ -199,7 +199,7 @@ async function timings(browser, url, isHozu) {
     const context = await browser.newContext()
     const page = await context.newPage()
     if (isHozu)
-      await page.route('**/_hozu/client.js', async (route) => {
+      await page.route('**/_hozu/client.js*', async (route) => {
         const response = await route.fetch()
         await route.fulfill({ response, body: hozuTiming(await response.text()) })
       })

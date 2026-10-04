@@ -304,3 +304,18 @@ describe('Assets and page previews under hozu dev only (ADR 0058 G, H)', () => {
     expect(away.status).toBe(403)
   })
 })
+
+describe('the client entry carries its content hash (0.17.1)', () => {
+  it('a page references /_hozu/client.js?v=<hash>, and that URL answers the same script', async () => {
+    const root = fileURLToPath(new URL('../../../examples/notes/', import.meta.url))
+    const app = (await import(join(root, 'app.ts'))).default
+    const handler = createHandler(app, { env, readFile })
+    const html = await (await handler.fetch(new Request('http://127.0.0.1/login'))).text()
+    const src = /<script type="module" src="([^"]*client\.js[^"]*)"/.exec(html)?.[1]
+    expect(src).toMatch(/^\/_hozu\/client\.js\?v=[0-9a-f]{12}$/)
+    const versioned = await handler.fetch(new Request(`http://127.0.0.1${src}`))
+    const plain = await handler.fetch(new Request('http://127.0.0.1/_hozu/client.js'))
+    expect(versioned.status).toBe(200)
+    expect(await versioned.text()).toBe(await plain.text())
+  })
+})
