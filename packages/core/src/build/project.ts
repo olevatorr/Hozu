@@ -138,7 +138,16 @@ function partsOf(scope: ProjectScope, config: FeatureConfig): FeatureParts {
       }
     }
   Object.assign(parts, records)
-  for (const [i, decl] of (config.exports ?? []).entries()) {
+  if (config.exports !== undefined && !Array.isArray(config.exports))
+    scope.report(
+      'HZ014',
+      id,
+      join(base, 'exports'),
+      'exports is a list of declarations',
+      `Got ${typeof config.exports}: list the exported queries, mutations, events, tags, fns, views and endpoints themselves.`,
+      { summary: 'List the declarations', snippet: 'exports: [model.listRooms, model.roomsTag]', patch: null },
+    )
+  for (const [i, decl] of (Array.isArray(config.exports) ? config.exports : []).entries()) {
     const kind = infoOf(decl)?.kind
     const key = kind ? exportKeys[kind] : undefined
     if (key) (parts.exports[key] as unknown[]).push(decl)

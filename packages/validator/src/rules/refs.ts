@@ -96,7 +96,12 @@ export function references(ctx: Ctx) {
         ]
           .filter(Boolean)
           .join(' and '),
-        snippet: !imported ? `imports: [${owner.id}]` : `exports: { ${registry}: [${resolved.symbol}] }`,
+        snippet: [
+          !imported && `imports: [${owner.id}],   // in feature "${f.id}"`,
+          !exported && `exports: [${resolved.symbol}],   // in feature "${owner.id}", next to its declarations`,
+        ]
+          .filter(Boolean)
+          .join('\n'),
         patch,
       },
     )

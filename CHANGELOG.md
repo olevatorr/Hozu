@@ -20,6 +20,14 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
   variable must be declared (HZ085); a missing or non-origin value stops the start.
 - **Every package lists `funding`** (`npm fund`).
 
+### Fixes (found by the 0.15 dogfood)
+- **A form holding a `ui.query` posts without JavaScript again:** the streaming render path left out its `method`
+  and `action`, so the form fell back to GET.
+- **`exports` in the old record form** (`exports: { queries: [...] }`) is HZ014 with the list form, not a crash;
+  HZ006's fix shows both edits in source form (`imports: [owner]`, `exports: [name]`), each with its feature.
+- **The deploy guide no longer says `public/` is served:** files a page shows are `ui.asset`, files named in data
+  are served by a GET endpoint with `output: 'response'`.
+
 ### Less JavaScript on every page
 - **The initial client is 7 884 B gzipped, down from 8 123 B:** a client component use and a keyed list's move
   animation now load only on the pages that have one.

@@ -6,6 +6,8 @@ import {
   clientComponentsIn,
   componentOf,
   type FeatureIR,
+  FORM_FIELD,
+  formRunnable,
   type HeadIR,
   type Json,
   localeOf,
@@ -256,6 +258,9 @@ export async function renderPage({
       const x = attrText(name, value(n.attrs[name]!, scope))
       if (x !== null) attrs += x === '' ? ` ${name}` : ` ${name}="${escapeHtml(x)}"`
     }
+    const submit = n.tag === 'form' ? n.on.submit : undefined
+    if (submit && !('method' in n.attrs) && formRunnable(submit.payload))
+      attrs += ` method="post" action="${escapeHtml(`${url}${url.includes('?') ? '&' : '?'}${FORM_FIELD}=${encodeURIComponent(n.id)}`)}"`
     return `<${n.tag}${dev ? ` data-hz="${escapeHtml(n.id)}"` : ''}${attrs}>`
   }
 

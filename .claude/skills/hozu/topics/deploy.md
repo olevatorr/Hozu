@@ -13,8 +13,10 @@
 - **App options:** `app({ resolvers: resolvers(project, (implement) => [...]), session?, components?, og?, csp?,
   onError?, preview? })`. There is no wrapper position: headers go through `project({ http })`, statuses through
   `head.failed` and endpoint `failed`, the language through the URL.
-- **Node:** adapter-node serves `process.env`, styles, images and `public/`. `hozu build` writes `dist/public/`,
-  `dist/manifest.json` and `dist/server/render.js`.
+- **Node:** adapter-node serves `process.env`, styles and every `ui.asset` (hashed under `/_hozu/a/`). There is no
+  `public/` folder served at the root: a file the page shows is a `ui.asset(new URL(...))`; a file named in data
+  (a cover in front matter) is served by a GET endpoint with `output: 'response'`. `hozu build` writes
+  `dist/public/`, `dist/manifest.json` and `dist/server/render.js`.
 - **Edge (Bun, Deno, Workers, Vercel):** bundle with `hozuTransform()` from `@hozu/transform/esbuild`, then
   `createHandler(app, { manifest, render, env })` from `@hozu/runtime-server` and
   `export default { fetch: handler.fetch }`, where `render` is `import * as render from './dist/server/render.js'`.
