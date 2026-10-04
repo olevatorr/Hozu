@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises'
+import { readFile, stat } from 'node:fs/promises'
 import { createServer as http, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import { join, normalize } from 'node:path'
 import { Readable } from 'node:stream'
@@ -12,16 +12,7 @@ import {
   type Handler,
   type HandlerOptions,
 } from '@hozu/runtime-server'
-import {
-  accepts,
-  compressedCache,
-  compressWhole,
-  type Encoding,
-  encodingFor,
-  streamCompressed,
-  streams,
-  varyOn,
-} from './compress.ts'
+import { accepts, compressedCache, type Encoding, encodingFor, streamCompressed, varyOn } from './compress.ts'
 
 export interface NodeAdapterOptions extends Omit<HandlerOptions, 'readFile'> {
   publicDir?: string
@@ -59,8 +50,14 @@ export async function send(
   const cookies = answer.headers.getSetCookie()
   if (cookies.length) headers['set-cookie'] = cookies
   const type = answer.headers.get('content-type')
-  const fixed = /\bimmutable\b/.test(answer.headers.get('cache-control') ?? '')
-  const flowing = streams(type)
+  const control = answer.headers.get('cache-control') ?? ''
+  const path = new URL(request?.url ?? '/', 'http://x').pathname
+  const shareable =
+    request?.method === 'GET' &&
+    path.includes('/_hozu/') &&
+    /\bimmutable\b/.test(control) &&
+    !/\bprivate\b/.test(control) &&
+    cookies.length === 0
   const encoding =
     request &&
     answer.body &&
@@ -68,11 +65,9 @@ export async function send(
     answer.status !== 304 &&
     !answer.headers.has('content-encoding') &&
     !type?.startsWith('text/event-stream')
-      ? flowing
-        ? accepts(request, 'gzip')
-          ? 'gzip'
-          : encodingFor(request, type)
-        : encodingFor(request, type)
+      ? shareable
+        ? encodingFor(request, type)
+        : encodingFor(request, type) && (accepts(request, 'gzip') ? 'gzip' : 'br')
       : null
   if (encoding) {
     delete headers['content-length']
@@ -81,12 +76,8 @@ export async function send(
   }
   response.writeHead(answer.status, headers)
   if (!answer.body) return void response.end()
-  if (encoding && !flowing) {
-    const body = new Uint8Array(await answer.arrayBuffer())
-    return void response.end(
-      fixed ? cache(request!.url ?? '', encoding, body) : compressWhole(encoding, body),
-    )
-  }
+  if (encoding && shareable)
+    return void response.end(cache(path, encoding, new Uint8Array(await answer.arrayBuffer())))
   const reader = answer.body.getReader()
   if (encoding) return streamCompressed(response, reader, encoding)
   response.on('close', () => void reader.cancel().catch(() => {}))
@@ -99,11 +90,12 @@ export async function send(
 }
 
 /** `hozu build` writes `.br` and `.gz` next to each compressible file; without them, the file is compressed once. */
-async function precompressed(file: string, encoding: Encoding, key: string, body: Uint8Array) {
+async function precompressed(file: string, encoding: Encoding, body: Uint8Array) {
   try {
     return await readFile(`${file}.${encoding === 'br' ? 'br' : 'gz'}`)
   } catch {
-    return shared(key, encoding, body)
+    const { mtimeMs, size } = await stat(file)
+    return shared(`${file}:${mtimeMs}:${size}`, encoding, body)
   }
 }
 
@@ -133,7 +125,7 @@ export function createServer(
       const hashed = /\/_hozu\/(a|w)\/|\/_hozu\/styles\./.test(path)
       const type = contentType(path)
       const encoding = encodingFor(request, type)
-      const packed = encoding ? await precompressed(file, encoding, path, body) : null
+      const packed = encoding ? await precompressed(file, encoding, body) : null
       response.writeHead(200, {
         'content-type': type,
         'cache-control': hashed ? 'public, max-age=31536000, immutable' : 'no-cache',

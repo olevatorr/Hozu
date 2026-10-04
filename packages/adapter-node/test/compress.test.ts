@@ -1,7 +1,7 @@
-import { request } from 'node:http'
+import { createServer as createHttp, request } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { brotliDecompressSync, gunzipSync } from 'node:zlib'
-import { createServer } from '@hozu/adapter-node'
+import { createServer, send } from '@hozu/adapter-node'
 import { appOptionsOf } from '@hozu/runtime-server'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { build } from './support.ts'
@@ -100,5 +100,85 @@ describe('a compressed stream keeps streaming (ADR 0057 B1)', () => {
     await done
     await new Promise((r) => gunzip.on('end', r))
     expect(seen.join('')).toBe('<head>shell</head><p>data</p>')
+  })
+})
+
+describe('compression never mixes visitors or holds back a stream (0.16 review)', () => {
+  const serve = (answer: (req: import('node:http').IncomingMessage) => Response) => {
+    const s = createHttp((req, res) => void send(res, answer(req), req))
+    return new Promise<{ port: number; close(): Promise<void> }>((resolve) =>
+      s.listen(0, '127.0.0.1', () =>
+        resolve({
+          port: (s.address() as AddressInfo).port,
+          close: () => new Promise<void>((r) => s.close(() => r())),
+        }),
+      ),
+    )
+  }
+  const get = (port: number, path: string, headers: Record<string, string>) =>
+    new Promise<{ body: Buffer; encoding: string | undefined; firstAt: number; endAt: number }>(
+      (resolve, reject) => {
+        const start = Date.now()
+        let firstAt = 0
+        const req = request({ host: '127.0.0.1', port, path, headers }, (res) => {
+          const parts: Buffer[] = []
+          res.on('data', (c: Buffer) => {
+            firstAt ||= Date.now() - start
+            parts.push(c)
+          })
+          res.on('end', () =>
+            resolve({
+              body: Buffer.concat(parts),
+              encoding: res.headers['content-encoding'],
+              firstAt,
+              endAt: Date.now() - start,
+            }),
+          )
+        })
+        req.on('error', reject)
+        req.end()
+      },
+    )
+
+  it('a private answer under /_hozu/ is compressed per request, never served to another visitor', async () => {
+    const s = await serve(
+      (req) =>
+        new Response(`hello ${req.headers.cookie} `.repeat(200), {
+          headers: { 'content-type': 'text/plain', 'cache-control': 'private, max-age=60, immutable' },
+        }),
+    )
+    try {
+      const ada = await get(s.port, '/_hozu/me.txt', { cookie: 'ada', 'accept-encoding': 'br' })
+      const bob = await get(s.port, '/_hozu/me.txt', { cookie: 'bob', 'accept-encoding': 'br' })
+      expect(brotliDecompressSync(ada.body).toString()).toContain('hello ada')
+      expect(brotliDecompressSync(bob.body).toString()).toContain('hello bob')
+    } finally {
+      await s.close()
+    }
+  })
+
+  it('a streamed text answer arrives as it is written, not when it ends', async () => {
+    const s = await serve(
+      () =>
+        new Response(
+          new ReadableStream<Uint8Array>({
+            async start(c) {
+              c.enqueue(new TextEncoder().encode('first '))
+              await new Promise((r) => setTimeout(r, 400))
+              c.enqueue(new TextEncoder().encode('second'))
+              c.close()
+            },
+          }),
+          { headers: { 'content-type': 'text/plain; charset=utf-8' } },
+        ),
+    )
+    try {
+      const got = await get(s.port, '/api/stream', { 'accept-encoding': 'gzip' })
+      expect(got.encoding).toBe('gzip')
+      expect(gunzipSync(got.body).toString()).toBe('first second')
+      expect(got.firstAt).toBeLessThan(got.endAt - 250)
+    } finally {
+      await s.close()
+    }
   })
 })

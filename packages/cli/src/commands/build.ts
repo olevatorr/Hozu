@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -78,7 +78,11 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
   }
   for (const file of files.filter((f) => /\.(js|css|svg|json|xml|webmanifest|txt|html)$/.test(f))) {
     const bytes = await readFile(file)
-    if (bytes.length < 1024) continue
+    if (bytes.length < 1024) {
+      await rm(`${file}.br`, { force: true })
+      await rm(`${file}.gz`, { force: true })
+      continue
+    }
     await writeFile(
       `${file}.br`,
       brotliCompressSync(bytes, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } }),

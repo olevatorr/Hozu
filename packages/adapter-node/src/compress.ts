@@ -36,9 +36,6 @@ export const varyOn = (vary: string | string[] | undefined): string => {
     : [...list, 'Accept-Encoding'].join(', ')
 }
 
-/** Pages and JSON stream: compress them as they come, flushing each chunk. Files are compressed whole. */
-export const streams = (type: string | null) => !!type && /^(text\/html|application\/json)\b/.test(type)
-
 export const compressWhole = (encoding: Encoding, body: Uint8Array): Buffer =>
   encoding === 'br'
     ? brotliCompressSync(body, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } })

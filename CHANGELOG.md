@@ -11,7 +11,9 @@ what four apps built from scratch with 0.15 ran into. No breaking change: upgrad
 **Upgrade if a mutation uses `access: { owner: { load, … } }`.** In 0.15.0, when the `load` query failed with a
 declared error (for example `NotFound`), the mutation's resolver still ran, so the owner check could be bypassed
 by naming a row the load refuses. Found by the 0.15 dogfood.
-- **A failing `load` now answers `Forbidden`, whatever the reason, and the resolver does not run.**
+- **A failing `load` now answers `Forbidden`, whatever the reason, and the resolver does not run.** That includes a
+  declared `NotFound` and an unexpected error in the load: a mutation guarded by an owner rule answers 403 for a
+  row it cannot see, never 404 or 500, so a caller cannot tell a missing row from someone else's.
 - **An owner both sides lack never matches:** a missing row field and a missing session field are no longer equal.
 
 ### Share cards and the sitemap
@@ -67,9 +69,12 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
   are served by a GET endpoint with `output: 'response'`.
 
 ### Compression in adapter-node
-- **Pages and JSON are gzipped as they stream:** each chunk is flushed, so the head still arrives first.
-- **Files are brotli or gzip:** `hozu build` writes `.br` and `.gz` next to each file of `dist/public` over 1 KB;
-  without them, a file is compressed once and kept. Answers carry `Content-Encoding` and `Vary: Accept-Encoding`.
+- **Answers are compressed as they stream** (gzip, or brotli when only that is accepted), flushed whenever the
+  stream waits, so the head still arrives first and a streamed text answer is never held back.
+- **Framework files are compressed once:** `hozu build` writes `.br` and `.gz` next to each file of `dist/public`
+  over 1 KB; an immutable `/_hozu/` file without them is compressed once and kept. Nothing else is kept: an answer
+  that is private or sets a cookie is compressed for its own request only. Answers carry `Content-Encoding` and
+  `Vary: Accept-Encoding`.
 - **Not compressed:** live streams, HEAD, 204 / 304, and already-compressed types. The web-standard handler (edge)
   leaves compression to the platform.
 
