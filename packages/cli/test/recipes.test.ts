@@ -77,8 +77,8 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
         'export const Toggle = event({ payload: ItemKey })\nexport const ClearDone = event({ payload: z.object({}) })',
       ],
       [
-        'export const DUPLICATE',
-        "export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()], runs: 'server' })\n\nexport const DUPLICATE",
+        'export const Problem',
+        "export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()], runs: 'server' })\n\nexport const Problem",
       ],
       [
         '        on(Toggle, {',
@@ -87,7 +87,7 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
     ])
     const model = readFileSync(join(dir, m), 'utf8').replace(
       '  }),\n})\n',
-      `    clearing: { invoke: invoke(clearDone, { input: {}, done: 'idle', failed: { Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } } } }) },\n  }),\n})\n`,
+      `    clearing: { invoke: invoke(clearDone, { input: {}, done: 'idle', failed: { Unexpected: { target: 'idle', assign: () => { ctx.error = 'unexpected' } } } }) },\n  }),\n})\n`,
     )
     writeFileSync(join(dir, m), model)
     edit(v, [

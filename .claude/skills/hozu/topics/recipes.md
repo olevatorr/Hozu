@@ -31,7 +31,7 @@ With a kit: `ui.use(Button, { variant: { tone: 'quiet' } }, ['Clear done'])`.
   - `export const clearDone = mutation({ input: z.object({}), output: z.object({ removed: z.number() }), invalidates: () => [itemsTag()], runs: 'server' })`;
   - in `idle`: `on(ClearDone, { target: 'clearing', assign: () => { ctx.error = null } })`;
   - a state
-    `clearing: { invoke: invoke(clearDone, { input: {}, done: 'idle', failed: { Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } } } }) }`
+    `clearing: { invoke: invoke(clearDone, { input: {}, done: 'idle', failed: { Unexpected: { target: 'idle', assign: () => { ctx.error = 'unexpected' } } } }) }`
     (busy states drop events they do not handle, so no `ignore`).
 - **views:** the control
   `ui.form({ on: { submit: ui.send(ClearDone, {}) } }, [ui.button({ type: 'submit', class: 'text-sm underline' }, ['Clear done'])])`.

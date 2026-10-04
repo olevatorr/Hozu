@@ -69,5 +69,6 @@ export const m = machine({
 - **Start from the URL:** a view with a `route` may declare `seed: ({ params, search }) => ({ q: search.q })`; the
   page's machine then starts with those context fields (server render, hydration and no-JS posts alike). One view
   per page may seed a machine (HZ048).
-- A transition to the same state re-enters it. Machines never hold translated text (store a code, choose the
-  message in the view).
+- A transition to the same state re-enters it. In an app with `site.locales`, machines never hold
+  translated text (HZ041): store a code (`ctx.error = 'duplicate'`) and choose the message in the view. The
+  scaffold does this in every app.

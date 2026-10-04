@@ -278,6 +278,8 @@ export function textsOf(source: string, file: string): AddOutput['texts'] {
     if (/^\s*((given|when|expect|data|result|input|payload):|\{ (send|done|failed):)/.test(line)) return
     const message = /^export const [A-Z_]+ = '([^']+)'$/.exec(line)
     if (message) texts.push({ file, line: i + 1, text: message[1]! })
+    const branch = /^\s*[?:] '([^']+)',?$/.exec(line)
+    if (branch) texts.push({ file, line: i + 1, text: branch[1]! })
     const label = /\blabel: '([^']+)'/.exec(line)
     if (label) texts.push({ file, line: i + 1, text: label[1]! })
     if (file.endsWith('model.ts')) return
