@@ -5,6 +5,8 @@ import { SiteHeader } from '../../site/header.ts'
 import { Tag } from '../../site/tag.ts'
 import { getRelease } from './model.ts'
 
+export const support = 'https://ko-fi.com/hozu'
+
 const links = () => [
   ui.a({ href: ui.link(doc, { slug: 'getting-started' }) }, ['Docs']),
   ui.a({ href: ui.link(devtools, null) }, ['DevTools']),
@@ -60,6 +62,26 @@ export const Header = ui.view({
 export const Footer = ui.view({
   render: () =>
     ui.use(SiteFooter, {}, [
+      ui.a(
+        {
+          href: support,
+          class: 'mb-8 flex items-center gap-4 bg-paper p-4 text-ink no-underline hover:bg-red',
+          'data-support': true,
+        },
+        [
+          ui.img({
+            src: ui.asset(new URL('../../assets/peg/peg-cup.svg', import.meta.url)),
+            width: 64,
+            height: 80,
+            alt: '',
+            class: 'shrink-0',
+          }),
+          ui.span({}, [
+            ui.span({ class: 'block font-black uppercase' }, ['Buy Peg a coffee']),
+            'Hozu is free and open source, made by one person. If it saves you time, a coffee keeps it going.',
+          ]),
+        ],
+      ),
       ui.p({ class: 'font-black uppercase' }, ['Hozu (ほぞ): the tenon that makes a joint fit.']),
       ui.p({}, [
         'Built with Hozu and its own component kit. ',

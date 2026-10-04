@@ -12,6 +12,7 @@ import { SpeedTable } from '../../site/speed-table.ts'
 import { StatTable } from '../../site/stat-table.ts'
 import { Steps } from '../../site/steps.ts'
 import { Ticker } from '../../site/ticker.ts'
+import { support } from '../content/chrome.ts'
 import { catches, claim, speed, speedSource } from '../content/claims.ts'
 import { getStart, listChapters } from '../content/model.ts'
 import { shot } from './devtools.ts'
@@ -703,6 +704,9 @@ export const Home = ui.view({
               { variant: { intent: 'lightOutline' }, props: { href: 'https://github.com/olevatorr/Hozu' } },
               ['GitHub'],
             ),
+            ui.use(Button, { variant: { intent: 'lightOutline' }, props: { href: support } }, [
+              'Buy Peg a coffee',
+            ]),
           ]),
         ]),
         ui.use(Ticker, {

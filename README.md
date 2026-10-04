@@ -238,5 +238,10 @@ pnpm gate            # lint, typecheck, tests and performance budgets
 Pull requests are welcome: read [`CONTRIBUTING.md`](CONTRIBUTING.md) first; security reports go through
 [`SECURITY.md`](SECURITY.md). Guides for agents working on this repository: [`CLAUDE.md`](CLAUDE.md) and [`AGENTS.md`](AGENTS.md).
 
+## Support
+
+Hozu is free and open source, made by one person. If it saves you time, you can
+[buy Peg a coffee on Ko-fi](https://ko-fi.com/hozu).
+
 ## License
 [MIT](LICENSE) © olevatorr.

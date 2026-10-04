@@ -20,6 +20,7 @@ import { changelog, chapter, devtools, doc, home, how, notFound, trial, trials }
 import { kit } from './site/kit.ts'
 
 const icon = ui.asset(new URL('./assets/icon-256.png', import.meta.url))
+const share = ui.asset(new URL('./assets/og-home.png', import.meta.url))
 export default project({
   schema: zodAdapter,
   app: new URL('./app.ts', import.meta.url),
@@ -35,7 +36,7 @@ export default project({
         render: () => ({
           title: 'How Hozu works',
           description: 'Explore the design, its checks and its trade-offs.',
-          image: icon,
+          image: share,
         }),
       },
     }),
@@ -46,7 +47,7 @@ export default project({
         query: getChapter,
         input: (params) => ({ slug: params.slug }),
         failed: { NotFound: 404 },
-        render: (article) => ({ title: article.title, description: article.description, image: icon }),
+        render: (article) => ({ title: article.title, description: article.description, image: share }),
       },
       entries: { query: listChapters, input: {}, params: (item) => ({ slug: item.slug }) },
     }),
@@ -57,7 +58,7 @@ export default project({
         render: () => ({
           title: 'Hozu — An AI-first web framework',
           description: 'Invalid programs are hard to express. Valid programs are cheap to verify.',
-          image: icon,
+          image: share,
         }),
       },
     }),
@@ -68,7 +69,7 @@ export default project({
         query: getDoc,
         input: (params) => ({ slug: params.slug }),
         failed: { NotFound: 404 },
-        render: (article) => ({ title: article.title, description: article.description, image: icon }),
+        render: (article) => ({ title: article.title, description: article.description, image: share }),
       },
       entries: { query: listDocs, input: {}, params: (item) => ({ slug: item.slug }) },
     }),
@@ -80,7 +81,7 @@ export default project({
           title: 'Hozu DevTools',
           description:
             'Point at the screen; your agent gets the file, the line and the Hozu way to change it.',
-          image: ui.asset(new URL('./assets/devtools-select.png', import.meta.url)),
+          image: ui.asset(new URL('./assets/og-devtools.png', import.meta.url)),
         }),
       },
     }),
@@ -91,7 +92,7 @@ export default project({
         render: () => ({
           title: 'Hozu trials',
           description: 'Measured correctness and agent cost, with methods and limitations.',
-          image: icon,
+          image: share,
         }),
       },
     }),
@@ -106,7 +107,7 @@ export default project({
           title: article.title,
           description: article.description,
           type: 'article',
-          image: icon,
+          image: share,
         }),
       },
       entries: { query: listTrials, input: {}, params: (item) => ({ slug: item.slug }) },
@@ -118,14 +119,14 @@ export default project({
         render: () => ({
           title: 'Hozu changelog',
           description: 'What changed in each Hozu release.',
-          image: icon,
+          image: share,
         }),
       },
     }),
     ui.page(notFound, {
       views: [Header, NotFound, Footer],
       assert: 'static',
-      head: { render: () => ({ title: 'Page not found — Hozu', noindex: true, image: icon }) },
+      head: { render: () => ({ title: 'Page not found — Hozu', noindex: true, image: share }) },
     }),
   ],
   kits: [kit],
