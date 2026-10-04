@@ -27,7 +27,8 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
 
 .panel[hidden], .dock[hidden], .bench[hidden] { display: none; }
 .bench {
-  position: fixed; inset: 0; pointer-events: auto; display: grid; grid-template-columns: 280px 1fr 400px;
+  position: fixed; inset: 0; pointer-events: auto; display: grid;
+  grid-template-columns: clamp(200px, 20vw, 280px) minmax(0, 1fr) clamp(280px, 30vw, 400px);
   background: var(--bench); color: var(--text);
 }
 .bench-left { grid-column: 1; overflow: auto; border-right: 1px solid var(--line); background: var(--bg); }
@@ -35,8 +36,8 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
 .bench-left .close { display: none; }
 .bench-center { grid-column: 2; display: grid; grid-template-rows: auto 1fr; min-width: 0; }
 .bench-bar {
-  display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--bg);
-  white-space: nowrap; min-width: 0; overflow: hidden;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line);
+  background: var(--bg); white-space: nowrap; min-width: 0;
 }
 .bench-bar > * { flex: none; }
 .bench-bar .seg { display: flex; background: rgba(var(--tint), 0.06); border-radius: 999px; padding: 2px; }

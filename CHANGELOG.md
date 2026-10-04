@@ -70,6 +70,8 @@ access in the lock.
   - it keeps its width at the window's edge (its buttons no longer wrap) and stays 8 px inside;
   - on a narrow window it takes two rows;
   - Select's help is a tip above it (`Click`, `Shift`, `Alt`, `Esc` as keys), not a faint line inside it.
+- **The Workbench:** its side columns narrow with the window, and its toolbar takes two rows instead of hiding the
+  buttons that do not fit.
 - **`hozu dev` prints one URL:** the app process's own `… on http://127.0.0.1:<port + 1>` line is gone.
 - **`.hozu/` no longer triggers reloads:** changes there (check caches, notes) no longer reload the app under
   `hozu dev`.
