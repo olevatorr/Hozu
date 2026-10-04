@@ -445,6 +445,7 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
       label: 'Button “Sign in”',
       at: 'features/account/views.ts:38',
       path: '/login',
+      within: null,
       text: 'This button now signs you in',
     })
     addNote(scratch, {
@@ -452,6 +453,7 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
       label: 'page home',
       at: null,
       path: '/',
+      within: null,
       text: 'Your notes are listed here',
     })
     await until(

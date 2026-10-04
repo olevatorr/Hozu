@@ -6,7 +6,7 @@ import { appOptionsOf } from '@hozu/runtime-server'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { build } from './support.ts'
 
-const cart = (await import('../../../examples/cart/app.ts?compress')).default
+const cart = (await import('../../../examples/cart/app.ts')).default
 
 interface Raw {
   status: number
