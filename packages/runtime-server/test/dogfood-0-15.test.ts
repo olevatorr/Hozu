@@ -82,3 +82,15 @@ describe('0.15 dogfood (ADR 0057 C)', () => {
     expect(await res.text()).toContain('<form method="post" action="/notes?__hozu=n.Board">')
   })
 })
+
+describe('a refused native post redirects like the page (0.15 dogfood)', () => {
+  it('signed out, a forged post to a page whose head maps Forbidden to login answers 303 /login', async () => {
+    const { testApp } = await import('@hozu/testing')
+    const notes = (await import('../../../examples/notes/app.ts')).default
+    const page = await testApp(notes, { env: { SESSION_SECRET: 'x'.repeat(32) } }).post(
+      '/?__hozu=notes.NotesBoard%2F7%2Fready%2F2%2FifFalse%2F0%2F0%2Fitem%2F4',
+      { id: 'n1' },
+    )
+    expect([page.status, page.headers.get('location')]).toEqual([303, '/login'])
+  })
+})

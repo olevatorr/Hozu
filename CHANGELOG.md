@@ -23,6 +23,8 @@ by naming a row the load refuses. Found by the 0.15 dogfood.
 ### Fixes (found by the 0.15 dogfood)
 - **A form holding a `ui.query` posts without JavaScript again:** the streaming render path left out its `method`
   and `action`, so the form fell back to GET.
+- **A refused native post redirects like the page:** signed out, a forged post to a page whose head maps
+  `Forbidden` to a route answered 303 without a `Location`; it now redirects there.
 - **`exports` in the old record form** (`exports: { queries: [...] }`) is HZ014 with the list form, not a crash;
   HZ006's fix shows both edits in source form (`imports: [owner]`, `exports: [name]`), each with its feature.
 - **The deploy guide no longer says `public/` is served:** files a page shows are `ui.asset`, files named in data

@@ -662,6 +662,10 @@ function handlerFor({
       env: publicEnv,
       locale,
     })
+    if (rendered.redirect && !outcome.unexpected && !outcome.invalid) {
+      after(outcome.invalidated)
+      return see(rendered.redirect, cookie)
+    }
     const response = new Response(
       stream(rendered.chunks, (e) => onError(e, { path })),
       {
