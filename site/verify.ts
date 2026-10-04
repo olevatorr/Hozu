@@ -183,7 +183,6 @@ for (const file of files.filter((name) => name.endsWith('.html'))) {
   if (file.startsWith('docs/') || (file.startsWith('how-it-works/') && file !== 'how-it-works/index.html')) {
     assert.ok(html.includes('aria-current="page"'), `${file}: active chapter`)
     assert.ok(html.includes('On this page'), `${file}: table of contents`)
-    assert.ok(html.includes('Edit this page on GitHub'), `${file}: source edit link`)
   }
   assert.ok(!/role="alert"/.test(html), `${file}: no query failure alerts`)
   assert.match(

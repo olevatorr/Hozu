@@ -72,7 +72,6 @@ const docs = (await loadCollection({ dir: new URL('./content/docs/', import.meta
     ...data,
     html: highlight(html),
     headings: headings.map((heading) => ({ ...heading, href: `#${heading.id}` })),
-    source: `${repository}site/content/docs/${slug}.md`,
   }))
   .sort((a, b) => a.order - b.order)
 const chapters = (
@@ -83,7 +82,6 @@ const chapters = (
     ...data,
     html: highlight(html),
     headings: headings.map((heading) => ({ ...heading, href: `#${heading.id}` })),
-    source: `${repository}site/content/how-it-works/${slug}.md`,
   }))
   .sort((a, b) => a.order - b.order)
 const trials = await Promise.all(
@@ -100,7 +98,6 @@ const trials = await Promise.all(
         order: Number(slug.slice(0, 4)),
         html: highlight(rewriteLinks(html, `docs/trials/${slug}.md`)),
         headings: headings.map((heading) => ({ ...heading, href: `#${heading.id}` })),
-        source: `${repository}docs/trials/${slug}.md`,
       }
     },
   ),

@@ -100,9 +100,6 @@ const articleView = (
                         ]),
                     ]),
                 articleBody(article),
-                ui.a({ href: article.source, class: 'mt-8 inline-block font-bold' }, [
-                  'Edit this page on GitHub',
-                ]),
               ],
             ),
           pending: null,
