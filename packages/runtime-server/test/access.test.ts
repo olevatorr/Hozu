@@ -96,6 +96,7 @@ const app = project({
     }),
   ],
 })
+const ran: string[] = []
 const build = buildProject(app, { sources: false })
 const resolverSet = resolvers(app, (implement) => [
   implement(mine, (_, { session }) => notes.filter((n) => n.owner === session?.user)),
@@ -103,7 +104,10 @@ const resolverSet = resolvers(app, (implement) => [
   implement(one, ({ id }, { fail }) => notes.find((n) => n.id === id) ?? fail('NotFound', { id })),
   implement(count, () => 1),
   implement(audit, () => 2),
-  implement(edit, ({ id, text }) => ({ ...notes.find((n) => n.id === id)!, text })),
+  implement(edit, ({ id, text }) => {
+    ran.push(id)
+    return { ...notes.find((n) => n.id === id)!, text }
+  }),
   implement(post, () => ({})),
 ])
 const runtime = (env: Record<string, string> = {}) => {
@@ -167,6 +171,16 @@ describe('declared access at run time (ADR 0056 B)', () => {
       ...forbidden,
       invalidated: [],
     })
+  })
+
+  it('owner on a mutation fails closed: when load fails for any reason, the resolver does not run (0.15 dogfood)', async () => {
+    const { data } = runtime()
+    expect(await data.mutate(edit, { id: 'missing', text: 'x' }, ada)).toEqual({
+      ...forbidden,
+      invalidated: [],
+    })
+    expect(await data.mutate(edit, { id: 'missing', text: 'x' })).toEqual({ ...forbidden, invalidated: [] })
+    expect(ran).not.toContain('missing')
   })
 
   it('a page whose head query is refused answers 403', async () => {

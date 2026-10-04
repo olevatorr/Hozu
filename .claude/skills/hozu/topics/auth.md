@@ -8,7 +8,8 @@
   - `access: { owner: { row: (n) => n.owner, session: (s) => s.user } }`: the framework checks the output. One row
     that is not the visitor's is `Forbidden`; a list holding such rows is HZ091 (the resolver read too much).
   - On a mutation, `{ owner: { load: getNote, input: (i) => ({ id: i.id }), row: (n) => n.owner, session: (s) =>
-    s.user } }` reads the row and checks it before the resolver runs.
+    s.user } }` reads the row and checks it before the resolver runs; if `load` fails for any reason (`NotFound`
+    too), the answer is `Forbidden` and the resolver does not run.
   - `access: { allow: ({ session, input }) => session.role === 'admin' }`.
   - `access: 'anyone'`: sign-in, a newsletter. On user data it is HZ090.
 - **Refused** is the framework error `Forbidden`, before the resolver runs: optional in `failed` (otherwise

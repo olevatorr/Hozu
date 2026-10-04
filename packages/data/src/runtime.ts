@@ -59,7 +59,7 @@ type Access =
     }
 
 const same = (a: Json, b: Json) =>
-  a !== null && b !== null && (a === b || canonicalStringify(a) === canonicalStringify(b))
+  a != null && b != null && (a === b || canonicalStringify(a) === canonicalStringify(b))
 
 const forbidden = (): Result => ({ ok: false, error: 'Forbidden', data: { message: 'Forbidden' } })
 
@@ -604,7 +604,7 @@ export function createDataRuntime({
       const me = a.session(this.session)
       if (!a.load) return same(a.row(input), me) ? null : forbidden()
       const loaded = await this.run(a.load.query, a.load.input(input))
-      if (!loaded.ok) return loaded.error === 'Forbidden' ? forbidden() : null
+      if (!loaded.ok) return forbidden()
       return same(a.row(loaded.value), me) ? null : forbidden()
     }
 
