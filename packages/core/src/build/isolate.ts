@@ -9,6 +9,7 @@ export interface IsolatedUse {
   variant: Record<string, string>
   props: Record<string, unknown>
   slots: Record<string, string>
+  children?: string
 }
 
 const componentsIn = (modules: readonly object[]): Record<string, object> =>
@@ -19,6 +20,26 @@ const componentsIn = (modules: readonly object[]): Record<string, object> =>
       ),
     ),
   )
+
+/** The id (`ui.Button`, `notes.Composer`) of a component declaration, by identity; null if the project has none. */
+export function componentIdOf(source: unknown, decl: unknown): string | null {
+  const info = infoOf(source)
+  if (info?.kind !== 'project') return null
+  const config = info.def as ProjectConfig
+  for (const kit of config.kits ?? []) {
+    const def = infoOf(kit)?.def as KitDef | undefined
+    if (!def) continue
+    for (const [name, c] of Object.entries(componentsIn(def.components)))
+      if (c === decl) return `${def.id}.${name}`
+  }
+  for (const f of config.features) {
+    const def = infoOf(f)?.def as FeatureConfig | undefined
+    if (!def) continue
+    for (const [name, c] of Object.entries(componentsIn(def.declarations)))
+      if (c === decl) return `${String(def.id)}.${name}`
+  }
+  return null
+}
 
 /** A one-page project whose only view is `ui.use` of the component `id`, for `hozu render`; null if no such component. */
 export function componentProject(source: unknown, id: string, use: IsolatedUse): unknown {
@@ -44,7 +65,9 @@ export function componentProject(source: unknown, id: string, use: IsolatedUse):
     ...(Object.keys(use.slots).length ? { slots: use.slots } : {}),
   }
   const useOf = ui.use as (...args: unknown[]) => never
-  const render = lower.lowered(() => (def.children ? useOf(decl, options, []) : useOf(decl, options)))
+  const render = lower.lowered(() =>
+    def.children ? useOf(decl, options, use.children ? [use.children] : []) : useOf(decl, options),
+  )
   const view = lower.done(ui.view({ render }))
   const page = route({ path: '/', params: null, search: null })
   return project({

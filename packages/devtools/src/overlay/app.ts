@@ -11,6 +11,7 @@ import {
   scopesFor,
 } from '../prompt.ts'
 import { held, hold, node, one, page, remove, save, saved, theme, tree } from './api.ts'
+import { assetsBoard, type Catalogued } from './assets.ts'
 import { h, read, write } from './dom.ts'
 import { drawer } from './effects.ts'
 import { previewLabel, renderLayers } from './layers.ts'
@@ -73,6 +74,9 @@ const state: State = {
 const persist = () => write(key, state)
 
 const host = document.createElement('hozu-devtools')
+host.setAttribute('data-lenis-prevent', '')
+for (const type of ['wheel', 'touchstart', 'touchmove', 'keydown'])
+  host.addEventListener(type, (event) => event.stopPropagation(), { passive: true })
 const shadow = host.attachShadow({ mode: 'open' })
 const root = h('div', { class: 'root' })
 const hover = h('div', { class: 'box', hidden: true }, [h('div', { class: 'tag' })])
@@ -99,7 +103,119 @@ const api = drawer({
   },
   closed: () => {},
 })
-root.append(bench, panel, dock, api.el)
+const screenCookie = 'hozu-dev-preview'
+const screenOf = () => {
+  const raw = new RegExp(`(?:^|;\\s*)${screenCookie}=([^;]+)`).exec(document.cookie)?.[1]
+  try {
+    return raw ? decodeURIComponent(raw) : null
+  } catch {
+    return null
+  }
+}
+const setScreen = (value: string | null) => {
+  document.cookie = value
+    ? `${screenCookie}=${encodeURIComponent(value)}; path=/; SameSite=Lax`
+    : `${screenCookie}=; path=/; max-age=0; SameSite=Lax`
+}
+const showKey = 'hozu-devtools:assets-show'
+
+function showInstances(c: Catalogued) {
+  const here = c.uses.flatMap((u) => [...doc.querySelectorAll(`[data-hz="${CSS.escape(u.node)}"]`)])
+  if (!here.length) {
+    const page = c.uses.flatMap((u) => u.pages).find((p) => !p.params)
+    if (!page) return
+    try {
+      sessionStorage.setItem(showKey, c.id)
+    } catch {}
+    win.location.href = page.path
+    return
+  }
+  assets.close()
+  state.mode = 'select'
+  state.picks = [
+    ...state.picks.filter(hasContent),
+    ...here.map((el) => ({
+      id: el.getAttribute('data-hz') ?? '',
+      index: indexOf(el),
+      note: '',
+      scope: 'component' as const,
+      visible: visibleOf(el),
+    })),
+  ]
+  state.active = state.picks.length - 1
+  state.panel = 'inspector'
+  persist()
+  renderDock()
+  drawPicks()
+  void renderPanel()
+}
+
+const assets = assetsBoard({
+  plain: state.audience === 'builder',
+  theme: () => theme(),
+  stylesheets: () =>
+    [...doc.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].map((l) => l.href).filter(Boolean),
+  show: (c) => showInstances(c),
+  change: (c, note) => {
+    const first = c.uses[0]
+    if (!first) return
+    state.picks.push({ id: first.node, index: 0, note, scope: 'component', visible: '' })
+    state.active = state.picks.length - 1
+    persist()
+    assets.close()
+    renderDock()
+    open('changes', null, 'draft')
+  },
+  screen: (route, path, name) => {
+    setScreen(`${route}:${name}`)
+    if (win.location.pathname === path) win.location.reload()
+    else win.location.href = path
+  },
+})
+
+async function screensSection(): Promise<HTMLElement | null> {
+  const res = await fetch(`/_hozu/dev/previews?path=${encodeURIComponent(win.location.pathname)}`, {
+    cache: 'no-store',
+  }).catch(() => null)
+  const out = res?.ok
+    ? ((await res.json()) as { route: string | null; previews: { name: string }[]; current: string | null })
+    : null
+  if (!out?.route || !out.previews.length) return null
+  return h('div', { class: 'sec' }, [
+    h('div', { class: 'label' }, ['Previews (previews.ts)']),
+    ...out.previews.map((p) => {
+      const value = `${out.route}:${p.name}`
+      const on = out.current === value
+      return h('div', { class: 'look' }, [
+        h('span', { class: 'what' }, [p.name]),
+        h(
+          'button',
+          {
+            class: on ? 'link done' : 'link',
+            type: 'button',
+            onclick: () => {
+              setScreen(on ? null : value)
+              win.location.reload()
+            },
+          },
+          [on ? 'Exit' : 'Preview'],
+        ),
+      ])
+    }),
+  ])
+}
+
+root.append(bench, panel, dock, api.el, assets.board)
+try {
+  const pending = sessionStorage.getItem(showKey)
+  if (pending) {
+    sessionStorage.removeItem(showKey)
+    void assets.catalog().then((list) => {
+      const c = list?.find((x) => x.id === pending)
+      if (c) setTimeout(() => showInstances(c), 300)
+    })
+  }
+} catch {}
 document.documentElement.append(host)
 
 const darkScheme = matchMedia('(prefers-color-scheme: dark)')
@@ -461,6 +577,7 @@ function onKey(event: KeyboardEvent) {
     return setMode(state.mode === 'select' ? 'browse' : 'select')
   }
   if (typing) return
+  if (event.key === 'Escape' && assets.isOpen()) return assets.close()
   if (event.key === 'Escape' && bench.classList.contains('layers-open')) return closeLayers()
   if (event.key === 'Escape' && state.mode === 'select') return setMode('browse')
   if (event.key === 'Escape' && state.panel) {
@@ -614,6 +731,16 @@ function renderDock() {
         {
           class: 'act',
           type: 'button',
+          title: 'Every component of the app, its variants, previews and uses; and the design tokens',
+          onclick: () => void assets.open(),
+        },
+        ['Assets'],
+      ),
+      h(
+        'button',
+        {
+          class: 'act',
+          type: 'button',
           title: 'The data this page reads and the changes it can make: run them with your own input',
           'aria-pressed': api.isOpen() ? 'true' : 'false',
           onclick: () => api.toggle(),
@@ -648,6 +775,21 @@ function renderDock() {
         },
         ['⚙'],
       ),
+      screenOf()
+        ? h(
+            'button',
+            {
+              class: 'previewing',
+              type: 'button',
+              title: 'Exit the preview from previews.ts',
+              onclick: () => {
+                setScreen(null)
+                win.location.reload()
+              },
+            },
+            [`Screen: ${screenOf()!.slice(screenOf()!.indexOf(':') + 1)}`, ' · Exit'],
+          )
+        : null,
       held()
         ? h(
             'button',
@@ -1245,12 +1387,16 @@ async function renderPanel() {
   if (state.panel === 'changes') return state.opened ? renderRequest(state.opened) : renderChanges()
   if (state.panel === 'settings') return renderSettings()
   if (state.panel === 'notes') return agent.render(panel)
-  if (state.panel === 'layers')
-    return renderLayers(
+  if (state.panel === 'layers') {
+    await renderLayers(
       panel,
       await tree(win.location.pathname),
       layersHost(() => open(state.picks.length ? 'inspector' : null)),
     )
+    const screens = await screensSection()
+    if (screens) panel.append(screens)
+    return
+  }
   const active = state.picks[state.active]
   if (state.panel !== 'inspector' || !active) {
     panel.hidden = state.view !== 'workbench'

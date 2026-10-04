@@ -4,6 +4,7 @@ import {
   type BuildResult,
   canonicalStringify,
   codes,
+  componentCatalog,
   type DevOptions,
   type DevPreview,
   type Diagnostic,
@@ -296,7 +297,15 @@ function handlerFor({
   const dataFor = (request: Request) => {
     let scope = scopes.get(request)
     if (!scope) {
-      scope = session(request).then((who) => data.scope(who, { preview: previewing.get(request) === true }))
+      const answers = dev ? previewAnswers(dev, request) : null
+      scope = session(request).then((who) => {
+        const real = data.scope(who, { preview: previewing.get(request) === true })
+        if (!answers) return real
+        return Object.assign(Object.create(real) as typeof real, {
+          run: (ref: string, input: Json, files?: Parameters<typeof real.run>[2]) =>
+            ref in answers ? Promise.resolve(answers[ref] as never) : real.run(ref, input, files),
+        })
+      })
       scopes.set(request, scope)
     }
     return scope
@@ -559,12 +568,14 @@ function handlerFor({
     const statusOf = (s: number) => (missing ? 404 : s)
     const inPreview = previewing.get(request) === true
     const devState = dev ? devStateOf(request) : null
+    const devData = dev ? previewAnswers(dev, request) !== null : false
     const plan = planRoute(ir, route).plan
-    if (inPreview) Object.assign(headers, { 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex' })
+    if (inPreview || devData)
+      Object.assign(headers, { 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex' })
     else if (plan.cacheable) Object.assign(headers, { 'cache-control': 'public, max-age=0, must-revalidate' })
     else if (plan.regions.some((r) => r.scope === 'user')) Object.assign(headers, privately(true))
     else Object.assign(headers, { 'cache-control': 'no-cache' })
-    if (!inPreview && !devState && plan.cacheable) {
+    if (!inPreview && !devState && !devData && plan.cacheable) {
       let cached = await cache.get(path)
       let state = 'hit'
       if (!cached) {
@@ -850,7 +861,10 @@ function handlerFor({
         path === '/_hozu/dev/effects' ||
         path === '/_hozu/dev/trace' ||
         path === '/_hozu/dev/endpoints' ||
-        path === '/_hozu/dev/session')
+        path === '/_hozu/dev/session' ||
+        path === '/_hozu/dev/components' ||
+        path === '/_hozu/dev/component' ||
+        path === '/_hozu/dev/previews')
     ) {
       if (!/^(127\.0\.0\.1|localhost|\[::1\])$/.test(url.hostname))
         return new Response('Hozu DevTools answers only this machine', { status: 403 })
@@ -864,6 +878,47 @@ function handlerFor({
         return devJson(traced(after === 'latest' ? Number.POSITIVE_INFINITY : Number(after ?? 0)))
       }
       if (path === '/_hozu/dev/endpoints') return devJson(projectEndpoints(ir))
+      if (path === '/_hozu/dev/components')
+        return devJson(
+          componentCatalog(build, dev).map((c) => ({ ...c, previews: dev.previews?.components[c.id] ?? [] })),
+        )
+      if (path === '/_hozu/dev/component') {
+        const id = url.searchParams.get('id') ?? ''
+        const entry = componentCatalog(build, dev).find((c) => c.id === id)
+        if (!entry) return devJson({ error: `No component ${id}` }, { status: 404 })
+        if (!dev.render) return devJson({ error: 'Rendering needs hozu dev' }, { status: 501 })
+        let use: Record<string, unknown> = {}
+        try {
+          use = JSON.parse(url.searchParams.get('use') ?? '{}') as Record<string, unknown>
+        } catch {}
+        const props = (use.props ?? entry.example) as Record<string, unknown>
+        return devJson(
+          await dev.render(id, {
+            variant: (use.variant ?? {}) as Record<string, string>,
+            props: props && typeof props === 'object' ? props : {},
+            slots: (use.slots ?? {}) as Record<string, string>,
+            ...(typeof use.children === 'string' ? { children: use.children } : {}),
+          }),
+        )
+      }
+      if (path === '/_hozu/dev/previews' && !url.searchParams.has('path'))
+        return devJson({
+          pages: Object.entries(dev.previews?.pages ?? {}).map(([route, list]) => ({
+            route,
+            path: publicPath(ir, ir.routes[route]?.path ?? '/'),
+            previews: list.map((p) => ({ name: p.name })),
+          })),
+          current: previewNameOf(request),
+        })
+      if (path === '/_hozu/dev/previews') {
+        const found = match(split(url.searchParams.get('path') ?? '/').rest)
+        const list = found ? (dev.previews?.pages[found.route] ?? []) : []
+        return devJson({
+          route: found?.route ?? null,
+          previews: list.map((p) => ({ name: p.name, queries: Object.keys(p.data) })),
+          current: previewNameOf(request),
+        })
+      }
       if (path === '/_hozu/dev/session') {
         if (!store || !ir.session) return devJson({ declared: false, schema: null, current: null })
         if (request.method === 'POST') {
@@ -1016,6 +1071,24 @@ function handlerFor({
       }
     },
   }
+}
+
+const previewNameOf = (request: Request): string | null => {
+  const raw = /(?:^|;\s*)hozu-dev-preview=([^;]+)/.exec(request.headers.get('cookie') ?? '')?.[1]
+  try {
+    return raw ? decodeURIComponent(raw) : null
+  } catch {
+    return null
+  }
+}
+
+/** Under `hozu dev` only: the query results of the page preview the DevTools cookie names (ADR 0058 H). */
+function previewAnswers(dev: DevOptions, request: Request): Record<string, Json> | null {
+  const name = previewNameOf(request)
+  if (!name || !dev.previews) return null
+  const at = name.indexOf(':')
+  const found = dev.previews.pages[name.slice(0, at)]?.find((p) => p.name === name.slice(at + 1))
+  return found ? found.data : null
 }
 
 function devStateOf(request: Request): DevPreview | null {

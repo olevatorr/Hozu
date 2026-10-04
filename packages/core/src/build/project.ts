@@ -433,6 +433,14 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       'project({ app }) must be a file URL',
       "Name the app module with new URL('./app.ts', import.meta.url).",
     )
+  if (config.previews != null && !filePath(config.previews))
+    scope.report(
+      'HZ014',
+      null,
+      '/previews',
+      'project({ previews }) must be a file URL',
+      "Name the previews module with new URL('./previews.ts', import.meta.url).",
+    )
   for (const [i, kit] of (Array.isArray(config.kits) ? config.kits : []).entries()) {
     const def = infoOf(kit)?.kind === 'kit' ? (infoOf(kit)!.def as KitDef) : null
     if (!def?.styles || !kitDecls.some(([id]) => id === def.id)) continue
@@ -698,6 +706,11 @@ function acceptOf(scope: ProjectScope, list: { code: string; at: string; reason:
 export function envFilesOf(project: unknown): string[] {
   const info = infoOf(project)
   return info?.kind === 'project' ? ((info.def as ProjectConfig).env?.files ?? []) : []
+}
+
+export function previewsModuleOf(project: unknown): string | null {
+  const info = infoOf(project)
+  return info?.kind === 'project' ? filePath((info.def as ProjectConfig).previews) : null
 }
 
 export function appModuleOf(project: unknown): string | null {

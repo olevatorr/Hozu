@@ -24,6 +24,7 @@ const share = ui.asset(new URL('./assets/og-home.png', import.meta.url))
 export default project({
   schema: zodAdapter,
   app: new URL('./app.ts', import.meta.url),
+  previews: new URL('./previews.ts', import.meta.url),
   styles: new URL('./app.css', import.meta.url),
   site: { url: 'https://hozu.org', name: 'Hozu', lang: 'en', icon, themeColor: '#f1ede4' },
   notFound,

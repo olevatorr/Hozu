@@ -16,7 +16,7 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 3. `npx hozu check` once. For an intended behaviour change, `npx hozu check --update-lock`, then list the accepted
    `now:` lines in your summary.
 4. Verify once with the line `hozu map` prints: `npx hozu browse <path> --session '…' --js both --do '…'`. It runs
-   the same app as `npm start`, with and without JS; do not start a server or use `curl`.
+   `npm start`'s app with and without JS: no server, no `curl`.
 5. Show the person what changed, on their page: `npx hozu show <file:line> --note "<in their words>"`.
 
 ## What to touch
@@ -27,18 +27,18 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 | A per-item action stored on the server (pin, archive) | model: the item field, an event, a mutation that `invalidates` the list tag, `on(E, { target: 'pinning', assign: (e) => { ctx.target = e.id } })`, a state with `invoke` → views: the per-item form (`hozu docs patterns`) → app: store it, sort in the list resolver |
 | A control every state handles | `machine({ on: [...] })` |
 | New page | `routes.ts` → a view with `route` → `ui.page(...)` in `hozu.config.ts` |
-| UI (a button, a field) | `ui.use` of a kit component; the catalog: `npx hozu docs components` |
+| UI (a button, a field) | `ui.use` of a kit component (`npx hozu docs components`) |
 
 ## Rules no diagnostic checks
 - **Every query and mutation states `runs`:** a database, a secret or the session → `'server'` (resolver in
   `app.ts`); the visitor's browser credentials → `'browser'`; a public API → `'either'`, implemented in the feature's
   `fetch.ts` (`npx hozu docs fetch`).
-- **Query resolvers only read.** Writes belong in mutation and endpoint resolvers; a prefetched link runs queries.
-- **Other users, reloads, sign-out:** verify them in one `browse` chain with `--js both` (`--as <name>` per user).
-- **Contracts only where a transition decides:** a guard, a `navigate`, a `fn` or computed value. Copy-only
-  transitions are reviewed in the lock.
-- **`'live'` only for push** to pages that are already open.
+- **Query resolvers only read.** Writes belong in mutations and endpoints: a prefetched link runs queries.
+- **Other users, reloads, sign-out:** verify in one `browse` chain with `--js both` (`--as <name>` per user).
+- **Contracts only where a transition decides:** a guard, `navigate` or a computed value; the lock has the rest.
+- **`'live'` only for push** to open pages.
 - **`invalidates` drives the client refresh** of every query with those tags, whatever its freshness.
+- **`previews.ts` is for people:** read it only if asked or when HZ092 names a line.
 
 ## Topics (`npx hozu docs <topic>`; `--more`: options, edge cases)
 | Task | Topic |
@@ -55,7 +55,7 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 | filters, modes, per-item actions, load more | `patterns` |
 | worked changes | `recipes` |
 | webhooks, JSON APIs, redirects | `endpoints` |
-| components, kits, browser APIs, DOM libraries | `components` |
+| components, kits, browser APIs, DOM libraries, `previews.ts` | `components` |
 | languages, env, HTTP, Markdown, tests, deploying, upgrading Hozu | `i18n` `env` `http` `content` `testing` `deploy` |
 | a diagnostic code | `diagnostics` |
 | requests from Hozu DevTools; showing a change (`hozu show`) | `requests` |

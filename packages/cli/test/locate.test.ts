@@ -106,7 +106,7 @@ describe('hozu why on a view node or page (ADR 0047, ADR 0053 F)', () => {
     expect(out).toMatchObject({
       id: 'page:home',
       kind: 'page',
-      location: { file: 'hozu.config.ts', line: 19 },
+      location: { file: 'hozu.config.ts', line: 20 },
       page: {
         route: 'home',
         path: '/',

@@ -239,3 +239,66 @@ describe('client bundle (ADR 0047 G4)', () => {
     expect(readFileSync(join(dist, 'browser-dev/client.js'), 'utf8')).toContain('data-hz')
   })
 })
+
+describe('Assets and page previews under hozu dev only (ADR 0058 G, H)', () => {
+  const root = fileURLToPath(new URL('../../../examples/notes/', import.meta.url))
+  const previews = {
+    components: {
+      'ui.Button': [{ name: 'Long', use: { variant: {}, props: {}, slots: {}, children: 'Long' } }],
+    },
+    pages: {
+      home: [
+        {
+          name: 'Empty',
+          data: {
+            'account.me': { ok: true, value: { name: 'ada' } },
+            'notes.listNotes': { ok: true, value: [{ id: 'p1', text: 'From the preview', pinned: false }] },
+          },
+        },
+      ],
+    },
+  }
+  const cookie = { cookie: `hozu-dev-preview=${encodeURIComponent('home:Empty')}` }
+
+  it('answers the page queries from the preview, uncached, and never in production', async () => {
+    const app = (await import(join(root, 'app.ts'))).default
+    const dev = createHandler(app, { dev: { root, previews }, env, readFile })
+    const shown = await dev.fetch(new Request('http://127.0.0.1/', { headers: cookie }))
+    expect(shown.status).toBe(200)
+    expect(shown.headers.get('cache-control')).toBe('private, no-store')
+    expect(await shown.text()).toContain('From the preview')
+    const plain = await dev.fetch(new Request('http://127.0.0.1/'))
+    expect(plain.status).toBe(303)
+    const production = createHandler(app, { env, readFile })
+    const ignored = await production.fetch(new Request('http://127.0.0.1/', { headers: cookie }))
+    expect(ignored.status).toBe(303)
+    expect(
+      await (await production.fetch(new Request('http://127.0.0.1/_hozu/dev/previews'))).text(),
+    ).not.toContain('Empty')
+  })
+
+  it('lists components with their previews, and renders one through dev.render', async () => {
+    const app = (await import(join(root, 'app.ts'))).default
+    const seen: unknown[] = []
+    const render = async (id: string, use: unknown) => {
+      seen.push({ id, use })
+      return { ok: true, html: '<button>Long</button>', problems: [] }
+    }
+    const handler = createHandler(app, { dev: { root, previews, render }, env, readFile })
+    const list = await (await handler.fetch(new Request('http://127.0.0.1/_hozu/dev/components'))).json()
+    const button = list.find((c: { id: string }) => c.id === 'ui.Button')
+    expect(button.previews.map((p: { name: string }) => p.name)).toEqual(['Long'])
+    const use = encodeURIComponent(JSON.stringify({ variant: { tone: 'plain' }, children: 'Go' }))
+    const out = await (
+      await handler.fetch(new Request(`http://127.0.0.1/_hozu/dev/component?id=ui.Button&use=${use}`))
+    ).json()
+    expect(out).toEqual({ ok: true, html: '<button>Long</button>', problems: [] })
+    expect(seen).toEqual([
+      { id: 'ui.Button', use: { variant: { tone: 'plain' }, props: {}, slots: {}, children: 'Go' } },
+    ])
+    const screens = await (await handler.fetch(new Request('http://127.0.0.1/_hozu/dev/previews'))).json()
+    expect(screens.pages).toEqual([{ route: 'home', path: '/', previews: [{ name: 'Empty' }] }])
+    const away = await handler.fetch(new Request('http://evil.example/_hozu/dev/components'))
+    expect(away.status).toBe(403)
+  })
+})

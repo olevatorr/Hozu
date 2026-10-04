@@ -11,6 +11,7 @@ export const exampleFiles = [
   'routes.ts',
   'app.ts',
   'hozu.config.ts',
+  'previews.ts',
   'features/bookmarks/model.ts',
   'features/bookmarks/views.ts',
   'features/bookmarks/feature.ts',

@@ -22,6 +22,30 @@ the client budget and the authoring surface do not change, so 0.16 apps upgrade 
   with the nearest theme step when a value is off the scale.
 - **Builder shows design tokens first** (`2xl · 24px`, `red · #fb3a0e`); Developer keeps classes first.
 
+### Assets: every component on one page
+- **A new dock button, Assets**, opens a full-screen board: every component of the app, each variant on its own and
+  the named previews, rendered live from the IR with your stylesheet (props filled from the schema), so there is no
+  showcase page to write by hand and no Storybook. Search, a detail view (variants, properties, slots, the file and
+  line), **Where used** with **Show the instances** (frames every use on the page, or opens a page that has one),
+  and **Change the main component**, which adds a request for every use.
+- **Styles** shows the design tokens: colours, text sizes, corner radius, shadows and the spacing unit.
+- DevTools keeps its own scrolling and pointer: libraries that hijack the wheel or lock the page (Lenis, modal
+  scroll locks) no longer scroll the page under a panel.
+
+### `previews.ts`: screens for people
+- **`project({ previews: new URL('./previews.ts', import.meta.url) })`** names named component states
+  (`p.component(ui.Button, 'Long label', { children: '…' })`) and page screens whose queries answer with the data
+  given (`p.page(home, 'No notes', [p.data(listNotes, [])])`, `p.fail(listNotes, 'Unexpected')`), from
+  `@hozu/core/preview`.
+- **It never ships:** only `hozu dev`, `hozu check` and `hozu render` load it; `hozu build`, a production server and
+  an edge bundle never import it, and a production server ignores the DevTools cookie that picks a screen.
+- **Layers → Previews** and **Assets → Screens** open a page screen under `hozu dev` (uncached, `noindex`); the dock
+  shows it until you exit.
+- **HZ092** keeps previews honest: data off its query's output schema, an error the query does not declare, a route
+  without a page, or a component use that does not build, each at its `file:line`.
+- **Agents leave it alone:** `hozu map` does not list it, and the skill says to read it only when asked or when
+  HZ092 names a line. `examples/notes`, `examples/bookmarks` (the skill example) and the site have one.
+
 ### Figma's words
 - Scope: **This instance only** / **Main component · every Button (6 places)**.
 - Agent notes and saved requests: **Resolve** (was Done). The Workbench is **Frame**.

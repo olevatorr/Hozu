@@ -2,7 +2,15 @@ import { ui } from '@hozu/core'
 import { devtools, doc } from '../../routes.ts'
 import { Button } from '../../site/button.ts'
 import { CodeBlock } from '../../site/code-block.ts'
-import { apiDemo, backDemo, designDemo, layersDemo, measureDemo, selectDemo } from '../../site/demos.ts'
+import {
+  apiDemo,
+  assetsDemo,
+  backDemo,
+  designDemo,
+  layersDemo,
+  measureDemo,
+  selectDemo,
+} from '../../site/demos.ts'
 import { Display, Heading } from '../../site/display.ts'
 import { Section } from '../../site/section.ts'
 import { Steps } from '../../site/steps.ts'
@@ -167,6 +175,31 @@ export const DevToolsPage = ui.view({
           ),
         ]),
         figmaCards('border-ink'),
+      ]),
+      ui.use(Section, { props: { kicker: 'Assets' } }, [
+        ui.use(Heading, {}, ['Every component on one page.']),
+        ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
+          'No showcase page to write, no Storybook. Assets draws every component of your app, each variant and the states you named, from the app itself. See where each is used, frame its instances, and ask your agent to change the main component. Styles lists your tokens.',
+        ]),
+        ui.div({ class: 'mt-8' }, [
+          assetsDemo(
+            'Assets shows every component with its variants and named previews; opening Button lists where it is used, and a note to change the main component is added to the request',
+          ),
+        ]),
+        ui.div({ class: 'mt-8 grid gap-4 md:grid-cols-2' }, [
+          ui.div({ class: 'border-4 border-ink p-4' }, [
+            ui.h3({ class: 'font-black uppercase' }, ['previews.ts']),
+            ui.p({ class: 'mt-2' }, [
+              'Name the screens you care about: a long label, an empty list, a failed load, fifty rows. Each page screen answers its queries with your data, under npm run dev only.',
+            ]),
+          ]),
+          ui.div({ class: 'border-4 border-ink p-4' }, [
+            ui.h3({ class: 'font-black uppercase' }, ['Never shipped']),
+            ui.p({ class: 'mt-2' }, [
+              'The build and the production server never load it, your agent leaves it alone unless asked, and hozu check says when a preview no longer fits the app.',
+            ]),
+          ]),
+        ]),
       ]),
       ui.use(Section, { variant: { tone: 'ink' }, props: { kicker: 'The request' } }, [
         ui.use(Heading, {}, ['What your agent reads.']),

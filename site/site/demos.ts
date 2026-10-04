@@ -227,3 +227,46 @@ export const designDemo = (label: string) =>
     d('click'),
     cursor(),
   ])
+
+const tile = (name: string, label: string, body: Child[]) =>
+  ui.div({ 'data-d': 'tile', 'data-t': name }, [d('tbody', body), s('cap', label)])
+
+export const assetsDemo = (label: string) =>
+  stage('assets', label, [
+    d('bar', [
+      ui.b({}, ['Assets']),
+      s('tab', 'Components'),
+      s('tab2', 'Styles'),
+      d('find', [s('q', 'Find a component…')]),
+    ]),
+    d('c1', [
+      d('ct', [ui.b({}, ['Button']), s('u', '6 uses')]),
+      tile('a', 'Default', [s('btn', 'Button')]),
+      tile('b', 'tone: subtle', [s('btn2', 'Button')]),
+      tile('c', '★ Long label', [s('btn', 'Save every note you wrote today')]),
+    ]),
+    d('c2', [
+      d('ct', [ui.b({}, ['Field']), s('u', '4 uses')]),
+      tile('d', 'Default', [s('lbl', 'Note'), d('inp')]),
+      tile('e', '★ With an error', [s('lbl', 'Note'), d('inp'), s('err', 'Write something')]),
+    ]),
+    d('scr', [
+      s('h', 'Screens'),
+      d('srow', [ui.code({}, ['/']), ui.b({}, ['No notes']), s('open', 'Open')]),
+      d('srow', [ui.code({}, ['/']), ui.b({}, ['Notes failed']), s('open', 'Open')]),
+    ]),
+    d('detail', [
+      ui.b({}, ['Button']),
+      s('file', 'ui/button.ts:16'),
+      s('h', 'Variants'),
+      ui.p({}, ['tone: primary, subtle, plain']),
+      s('h', 'Where used'),
+      d('chips', [s('chip', '/'), s('chip', '/login'), s('chip', '/admin')]),
+      s('h', 'Change the main component'),
+      d('area', [s('typed', 'Rounder corners everywhere')]),
+      s('addreq', 'Add to the request'),
+    ]),
+    d('toast', [s('t', 'Added: every Button like this (6 places)')]),
+    d('click'),
+    cursor(),
+  ])

@@ -9,6 +9,7 @@ import { kit as uiKit } from './ui/kit.ts'
 export default project({
   schema: zodAdapter,
   app: new URL('./app.ts', import.meta.url),
+  previews: new URL('./previews.ts', import.meta.url),
   styles: new URL('./app.css', import.meta.url),
   site: { url: 'http://localhost:3000', name: 'Bookmarks', lang: 'en' },
   routes: { home, bookmarkPage },

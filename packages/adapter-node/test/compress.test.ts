@@ -1,6 +1,6 @@
 import { createServer as createHttp, request } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { brotliDecompressSync, gunzipSync } from 'node:zlib'
+import { brotliDecompressSync, constants, gunzipSync } from 'node:zlib'
 import { createServer, respond, send } from '@hozu/adapter-node'
 import { appOptionsOf } from '@hozu/runtime-server'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -106,8 +106,10 @@ describe('a compressed stream keeps streaming (ADR 0057 B1)', () => {
 })
 
 describe('compression never mixes visitors or holds back a stream (0.16 review)', () => {
-  const serve = (answer: (req: import('node:http').IncomingMessage) => Response) => {
-    const s = createHttp((req, res) => void send(res, answer(req), req))
+  const serve = (
+    answer: (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Response,
+  ) => {
+    const s = createHttp((req, res) => void send(res, answer(req, res), req))
     return new Promise<{ port: number; close(): Promise<void> }>((resolve) =>
       s.listen(0, '127.0.0.1', () =>
         resolve({
@@ -122,7 +124,7 @@ describe('compression never mixes visitors or holds back a stream (0.16 review)'
       (resolve, reject) => {
         const start = Date.now()
         let firstAt = 0
-        const req = request({ host: '127.0.0.1', port, path, headers }, (res) => {
+        const req = request({ host: '127.0.0.1', port, path, headers, agent: false }, (res) => {
           const parts: Buffer[] = []
           res.on('data', (c: Buffer) => {
             firstAt ||= Date.now() - start
@@ -159,26 +161,33 @@ describe('compression never mixes visitors or holds back a stream (0.16 review)'
     }
   })
 
-  it('a streamed text answer arrives as it is written, not when it ends', async () => {
-    const s = await serve(
-      () =>
-        new Response(
-          new ReadableStream<Uint8Array>({
-            async start(c) {
-              c.enqueue(new TextEncoder().encode('first '))
-              await new Promise((r) => setTimeout(r, 400))
-              c.enqueue(new TextEncoder().encode('second'))
-              c.close()
-            },
-          }),
-          { headers: { 'content-type': 'text/plain; charset=utf-8' } },
-        ),
-    )
+  it('a streamed text answer leaves the server as it is written, not when it ends', async () => {
+    let before = Buffer.alloc(0)
+    const s = await serve((_, res) => {
+      const sent: Buffer[] = []
+      const write = res.write.bind(res)
+      res.write = ((chunk: Buffer, ...rest: never[]) => {
+        sent.push(Buffer.from(chunk))
+        return write(chunk, ...rest)
+      }) as typeof res.write
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          async start(c) {
+            c.enqueue(new TextEncoder().encode('first '))
+            await new Promise((r) => setTimeout(r, 300))
+            before = Buffer.concat(sent)
+            c.enqueue(new TextEncoder().encode('second'))
+            c.close()
+          },
+        }),
+        { headers: { 'content-type': 'text/plain; charset=utf-8' } },
+      )
+    })
     try {
       const got = await get(s.port, '/api/stream', { 'accept-encoding': 'gzip' })
       expect(got.encoding).toBe('gzip')
       expect(gunzipSync(got.body).toString()).toBe('first second')
-      expect(got.firstAt).toBeLessThan(got.endAt - 250)
+      expect(gunzipSync(before, { finishFlush: constants.Z_SYNC_FLUSH }).toString()).toBe('first ')
     } finally {
       await s.close()
     }

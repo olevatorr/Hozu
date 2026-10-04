@@ -11,6 +11,7 @@ import { kit } from './ui/kit.ts'
 export default project({
   schema: zodAdapter,
   app: new URL('./app.ts', import.meta.url),
+  previews: new URL('./previews.ts', import.meta.url),
   styles: new URL('./app.css', import.meta.url),
   session: Session,
   site: { url: 'http://localhost:3000', name: 'Notes', lang: 'en', locales: ['en', 'de'] },

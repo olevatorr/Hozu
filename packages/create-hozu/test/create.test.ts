@@ -45,6 +45,7 @@ describe('SKILL.md (ADR 0043 K)', () => {
       '**Contracts only where a transition decides:**',
       "**`'live'` only for push**",
       '**`invalidates` drives the client refresh**',
+      '**`previews.ts` is for people:**',
     ])
       expect(skill).toContain(rule)
   })

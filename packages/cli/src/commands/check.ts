@@ -5,6 +5,7 @@ import { dirname, join, relative } from 'node:path'
 import type { CheckOutput, TypeIssue } from '../contract.ts'
 import type { Loaded } from '../load.ts'
 import { relativize } from '../output.ts'
+import { checkPreviews, loadPreviews } from '../previews.ts'
 import { projectStyles } from '../styles.ts'
 import { componentUses, overridesOf } from '../uses.ts'
 import { applyAccepted } from './accept.ts'
@@ -114,6 +115,7 @@ export async function runCheck(
     ...app,
     ...(await kitConfigDiagnostics(traced, root, loaded.path, tokens)),
     ...envFilesIgnored(loaded, traced.ir.env?.files ?? []),
+    ...checkPreviews(loaded, traced, await loadPreviews(loaded)),
   ]
   validate.diagnostics.push(...relativize(entry, cwd))
   const counted = applyAccepted(validate, traced.ir.accept, loaded.path)

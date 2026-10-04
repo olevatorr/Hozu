@@ -631,4 +631,12 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     summary: 'a query with `owner` access returned rows the visitor does not own (reported at run time)',
     fix: "read only the visitor's rows in the resolver (filter by the session); production drops the extra rows and logs this",
   },
+  HZ092: {
+    name: 'preview-mismatch',
+    severity: 'error',
+    topic: 'components',
+    summary:
+      'a preview in `project({ previews })` no longer fits the app: data off its query output schema, an error the query does not declare, a route without a page, or a component use that does not build',
+    fix: 'update the preview to the current schema, error, page or component (previews are for people: they never ship)',
+  },
 }

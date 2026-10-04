@@ -13,7 +13,8 @@ order: 11
 | Browse / Select | Use the app as usual, or click a part to select it (`Alt+Shift+S` switches) |
 | Changes | The parts you described for this request, and the saved requests |
 | Page | The page's title, description and other head fields |
-| Layers | Every part of the page, and the states that are not on screen |
+| Layers | Every part of the page, the states that are not on screen, and the page's previews |
+| Assets | Every component of the app on one board, and the design tokens |
 | Frame | The page at an exact size: phone, tablet, laptop, or drag the corner |
 
 ## Describe a change
@@ -29,6 +30,30 @@ Each part of the request names its `file:line`, the scope you chose (this instan
 ## Measure
 
 Hold **Alt** and point, as in Figma: with a part selected, red lines show the distance in px to the part under the pointer (the gap between two parts, or the four insets when one holds the other); with nothing selected, the part under the pointer is measured against the part around it.
+
+## Every component on one board
+
+**Assets** opens a full-screen board with every component of the app: each variant on its own, rendered live with your stylesheet, and the named states from `previews.ts`. You do not write a showcase page. Click a component for its variants, properties, slots and `file:line`; **Where used** lists the pages, and **Show the instances** frames every use on this page (or opens a page that has one). **Change the main component** adds a request for every use to the current request. **Styles** shows the design tokens: colours, text sizes, corner radius and shadows.
+
+## Screens with data you choose
+
+`previews.ts` holds screens for people: a component in a named state, or a page whose queries answer with the data you give. Name it in `hozu.config.ts` with `previews: new URL('./previews.ts', import.meta.url)`:
+
+```ts
+import { previews } from '@hozu/core/preview'
+import { me } from './features/account/model.ts'
+import { listNotes } from './features/notes/model.ts'
+import { home } from './routes.ts'
+import { Button } from './ui/button.ts'
+
+export default previews((p) => [
+  p.component(Button, 'Long label', { variant: { tone: 'primary' }, children: 'Save every note you wrote today' }),
+  p.page(home, 'No notes', [p.data(me, { name: 'ada' }), p.data(listNotes, [])]),
+  p.page(home, 'Notes failed', [p.data(me, { name: 'ada' }), p.fail(listNotes, 'Unexpected')]),
+])
+```
+
+**Layers → Previews** (or **Assets → Screens**) opens a screen; the dock shows it until you exit. The file never ships: only `hozu dev`, `hozu check` and `hozu render` load it, and a production server ignores the switch. `hozu check` reports a preview that no longer fits the app as HZ092. Your agent leaves the file alone unless you ask it to change a preview.
 
 ## See every state
 

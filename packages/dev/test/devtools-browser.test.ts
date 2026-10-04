@@ -437,6 +437,54 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     expect(errors).toEqual([])
   })
 
+  it('Assets: every component with its variants and previews, Styles, real mouse and wheel; a page preview from previews.ts (ADR 0058 G, H)', async () => {
+    await open('/login')
+    const at = async (selector: string, text: string) =>
+      evaluate(
+        `(() => { const el = [...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll(${JSON.stringify(selector)})].find((b) => b.textContent.includes(${JSON.stringify(text)})); const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 } })()`,
+      ) as Promise<{ x: number; y: number }>
+    const press = async (selector: string, text: string) => {
+      const { x, y } = await at(selector, text)
+      await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y }, session)
+      for (const type of ['mousePressed', 'mouseReleased'])
+        await cdp.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: 1 }, session)
+    }
+    const shadow = `document.querySelector('hozu-devtools')?.shadowRoot`
+    await press('.dock button', 'Assets')
+    await until(`${shadow}.querySelector('.assets:not([hidden]) [data-component="ui.Button"]')`)
+    await until(
+      `[...${shadow}.querySelectorAll('[data-component="ui.Button"] .tile-frame')].some((f) => f.srcdoc.includes('<button'))`,
+    )
+    expect(
+      await evaluate(
+        `[...${shadow}.querySelectorAll('[data-component="ui.Button"] figcaption')].map((f) => f.textContent)`,
+      ),
+    ).toEqual(['Default', 'tone: subtle', 'tone: plain', '★ Long label'])
+    const { x, y } = await at('.assets-body', '')
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY: 600 }, session)
+    await until(`${shadow}.querySelector('.assets-body').scrollTop > 0`)
+    await press('.assets-head button', 'Styles')
+    await until(`${shadow}.querySelector('.assets .styles')`)
+    await press('.assets-head button', 'Components')
+    await until(`${shadow}.querySelector('.screens')`)
+    expect(await evaluate(`[...${shadow}.querySelectorAll('.screen')].map((r) => r.textContent)`)).toEqual([
+      '/No notesOpen',
+      '/Twelve notesOpen',
+      '/Notes failedOpen',
+    ])
+    await key('Escape', 'Escape', 0)
+    await until(`${shadow}.querySelector('.assets').hidden`)
+    await evaluate(`document.cookie = 'hozu-dev-preview=' + encodeURIComponent('home:No notes') + '; path=/'`)
+    await open('/')
+    await until(`document.title === 'Notes'`)
+    await until(`${shadow}?.querySelector('.dock .previewing')?.textContent.includes('No notes')`)
+    await press('.dock .previewing', 'No notes')
+    await until(
+      `!document.cookie.includes('hozu-dev-preview') && !!document.querySelector('hozu-devtools')?.shadowRoot.querySelector('.dock button') && !document.querySelector('hozu-devtools').shadowRoot.querySelector('.dock .previewing')`,
+    )
+    expect(await evaluate('document.cookie')).not.toContain('hozu-dev-preview')
+  }, 30_000)
+
   it('the logo folds the dock to itself and opens it again; dragging it does not fold', async () => {
     const at = async () =>
       evaluate(

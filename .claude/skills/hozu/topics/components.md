@@ -27,6 +27,8 @@ ui.use(Button, { variant: { tone: 'ghost' }, props: { busy: ctx.saving }, slots:
 - **`class`** may only add classes that set none of the component's properties (`w-full`, `md:hidden`); to change
   one, declare a variant (HZ072–HZ077; one-offs: see --more).
 - Browser APIs or DOM libraries: a client component, `hozu add component <kit|feature> <Name> --client` (see --more).
+- `previews.ts` (`project({ previews })`) is for people: named component states and page screens in DevTools
+  Assets. It never ships; change it only when asked or when HZ092 names a line (see --more).
 
 <!-- more -->
 
@@ -73,3 +75,19 @@ export default implement<typeof Map>(({ el, props, emit, signal }) => {
   classes, every use), `hozu why ui.Button`.
 - `hozu render ui.Button --variant tone=ghost --props '{"busy":true}' --slot icon=+` renders it alone: HTML, root
   class, owned properties, diagnostics.
+
+## Previews (for people, never shipped)
+- `project({ previews: new URL('./previews.ts', import.meta.url) })`; only `hozu dev`, `hozu check` and
+  `hozu render` load it. DevTools **Assets** shows every component × variant (props from the schema) plus these.
+- ```ts
+  import { previews } from '@hozu/core/preview'
+  export default previews((p) => [
+    p.component(Button, 'Long label', { variant: { tone: 'primary' }, children: 'Save every note' }),
+    p.page(home, 'No notes', [p.data(me, { name: 'ada' }), p.data(listNotes, [])]),
+    p.page(home, 'Failed', [p.fail(listNotes, 'Unexpected')]),
+  ])
+  ```
+- A page preview answers those queries under `hozu dev` only (Layers → Previews, or Assets → Screens); other
+  queries run as usual. HZ092: data off the output schema, an undeclared error, a route without a page, a use that
+  does not build.
+

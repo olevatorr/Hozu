@@ -50,6 +50,10 @@
       "types": "./dist/fetch.d.ts",
       "default": "./dist/fetch.js"
     },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    },
     "./lower": {
       "types": "./dist/lower.d.ts",
       "default": "./dist/lower.js"

@@ -86,6 +86,8 @@ export interface ProjectConfig {
   }
   styles?: URL
   app?: URL
+  /** Screens for people (`previews.ts`), loaded only by `hozu dev`, `hozu check` and `hozu render` (ADR 0058 H). */
+  previews?: URL
   notFound?: RouteDecl
   error?: RouteDecl
   pages: PageDecl[]

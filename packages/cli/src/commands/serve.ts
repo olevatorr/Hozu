@@ -1,8 +1,9 @@
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import type { BuildResult } from '@hozu/core/ir'
+import type { BuildResult, IsolatedUse } from '@hozu/core/ir'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
+import { devPreviews, loadPreviews, renderUse } from '../previews.ts'
 import { importer, requireApp } from './app.ts'
 
 interface Listening {
@@ -34,7 +35,18 @@ export async function runServe(
   const publicDir = join(root, 'public')
   const server = createServer(module.app, {
     env: process.env,
-    ...(process.env.HOZU_DEV === '1' ? { dev: { root } } : {}),
+    ...(process.env.HOZU_DEV === '1'
+      ? {
+          dev: {
+            root,
+            previews: devPreviews(loaded, build, await loadPreviews(loaded)),
+            render: async (id: string, use: IsolatedUse) => {
+              const { ok, html, problems } = await renderUse(loaded, id, use)
+              return { ok, html, problems }
+            },
+          },
+        }
+      : {}),
     styles: await compileStyles(build, { base: root }),
     ...(components ? { components } : {}),
     ...(images ? { images: await images.optimizeImages(build) } : {}),

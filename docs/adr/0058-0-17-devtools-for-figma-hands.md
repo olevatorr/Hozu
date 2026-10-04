@@ -70,6 +70,26 @@ shows design tokens first, Developer shows classes first, as today.
 - **Decision:** `hozu dev` closes on SIGINT / SIGTERM / SIGHUP, and the app watches `HOZU_DEV_PARENT` and exits when
   the parent is gone (SIGKILL included). Tested both ways.
 
+## G — Assets: every component on one page (owner, 2026-10-04: "主要就是可以有一頁面可以看到所有組件 … storybook又臭又長也不適合")
+- **Options:** a side panel (small thumbnails) or a full-screen board like Figma's canvas. **Decision:** the board.
+- **How:** `componentCatalog(build)` (core) lists components, variants, defaults, slots, the props schema with an
+  example built from its required fields, and where each is used (node, view, pages). `hozu serve` under `hozu dev`
+  gives the handler `dev.render(id, use)` (the `hozu render` path, `IsolatedUse` gains `children`). Endpoints
+  `/_hozu/dev/components`, `/_hozu/dev/component`, `/_hozu/dev/previews`, loopback only. Thumbnails are sandboxed
+  iframes (no scripts) with the page's stylesheets, filled when they scroll into view.
+- **Styles** reads `/_hozu/dev/theme` (the parser now keeps `--shadow-*`).
+
+## H — `previews.ts` (owner: "是不是就可以有個資料層是用來做那些特殊畫面? 打包的時候不會進去，且ai實作的時候也不要讀")
+- **Options:** a file-name convention (`*.preview.ts`; against "no file-based magic"), stories inside views (in the
+  authoring surface agents read; noise), or a module named in `project({ previews })` like `app`. **Decision:** the
+  named module, built with `previews()` from `@hozu/core/preview`.
+- **Never shipped:** the CLI imports it for `hozu dev`, `hozu check` and `hozu render`; the handler swaps query
+  results only when `dev` is set and the `hozu-dev-preview` cookie names a screen; such a page is `private,
+  no-store`, `noindex` and skips the page cache. A production handler ignores the cookie (tested).
+- **HZ092** (new code: registry, rule in `hozu check`, fix, catalog cases in `packages/cli/test/previews.test.ts`).
+- **Agent noise:** not in `hozu map`; SKILL.md: read it only when asked or when HZ092 names a line. A schema change
+  that breaks a preview costs the agent the one line HZ092 names, which keeps the previews true.
+
 ## Results
 - A: Shift+Enter / Enter / Tab / Shift+Tab, `W × H`, Alt measuring (`overlay/measure.ts`, unit-tested; a browser test
   measures the gap between the heading and the form of `examples/notes` against `getBoundingClientRect`).
@@ -79,4 +99,11 @@ shows design tokens first, Developer shows classes first, as today.
 - D: two more CSS animations on the DevTools page and a "For designers" section on the home page; 0 JS.
 - E, F: HZ014 for a non-list `styles`; `hozu dev` takes its app down on SIGTERM and SIGKILL (both tested, both
   failing before the fix).
-- Gate: 120 files, 785 tests; P7 7 886 B (unchanged: DevTools loads only under `hozu dev`).
+- G, H: `componentCatalog`, `dev.render`, the three endpoints, the Assets board and Styles, `previews.ts` with
+  HZ092; tested in `packages/cli/test/previews.test.ts` (catalog, resolution, HZ092 cases, rendering),
+  `packages/runtime-server/test/dev.test.ts` (screens uncached, production ignores the cookie, loopback only) and
+  a real-mouse browser test (Assets, wheel, Styles, Screens). Found while testing: the board did not take pointer
+  events (clicks reached the page) and panels let scroll-hijacking libraries scroll the page; both fixed.
+- The 0.16 streaming test measured the first byte at the client in the same process, which vitest delays at times;
+  it now checks what left the server before the second chunk (fails without the flush).
+- Gate: 121 files, 792 tests; P7 7 886 B (unchanged: DevTools loads only under `hozu dev`).

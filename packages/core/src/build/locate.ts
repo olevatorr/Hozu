@@ -1,11 +1,21 @@
 import type { SourceLoc } from '../ir/diagnostic.ts'
 import type { Freshness, GuardExpr, Json, JsonSchema, Runs, ValueExpr, ViewNode } from '../ir/types.ts'
+import type { IsolatedUse } from './isolate.ts'
 import type { BuildResult } from './project.ts'
 
 export interface DevOptions {
   root: string
   /** The app module (`project({ app })`), where server resolvers are implemented. */
   app?: string | null
+  /** Renders one component use alone, for the DevTools Assets panel (ADR 0058 G); given by `hozu serve` under `hozu dev`. */
+  render?: (id: string, use: IsolatedUse) => Promise<{ ok: boolean; html: string; problems: string[] }>
+  /** The app's `project({ previews })`, resolved to ids and query results (ADR 0058 H). */
+  previews?: DevPreviews
+}
+
+export interface DevPreviews {
+  components: Record<string, { name: string; use: IsolatedUse }[]>
+  pages: Record<string, { name: string; data: Record<string, Json> }[]>
 }
 
 export interface DevLocation {
@@ -695,4 +705,85 @@ export function pageEffects(build: BuildResult, route: string): DevEffect[] | nu
       },
     ]
   })
+}
+
+export interface DevComponentPage {
+  route: string
+  path: string
+  params: boolean
+}
+
+export interface DevComponentUse {
+  node: string
+  view: string
+  pages: DevComponentPage[]
+}
+
+export interface DevComponent {
+  id: string
+  owner: { kind: 'kit' | 'feature'; id: string }
+  name: string
+  location: DevLocation | null
+  variants: Record<string, string[]>
+  defaults: Record<string, string>
+  slots: string[]
+  children: boolean
+  client: boolean
+  props: JsonSchema
+  example: Json
+  uses: DevComponentUse[]
+}
+
+/** Every component of the app with its variants and where it is used, for the DevTools Assets panel (ADR 0058 G). */
+export function componentCatalog(build: BuildResult, dev: DevOptions): DevComponent[] {
+  const { ir } = build
+  const owners = [
+    ...Object.entries(ir.kits).map(([id, k]) => ['kit', id, k.components, k.schemas] as const),
+    ...Object.values(ir.features).map((f) => ['feature', f.id, f.components, f.schemas] as const),
+  ]
+  const entries = [...index(build).values()]
+  return owners.flatMap(([kind, owner, components, schemas]) =>
+    Object.entries(components).map(([name, c]) => {
+      const id = `${owner}.${name}`
+      const props = (schemas[c.props] ?? {}) as JsonSchema
+      const uses = entries
+        .filter((e) => useOf(e.node)?.component === id)
+        .map((e) => {
+          const view = `${e.feature}.${e.view}`
+          return {
+            node: e.node.id,
+            view,
+            pages: Object.entries(ir.pages)
+              .filter(([, p]) => p.views.includes(view))
+              .map(([route]) => {
+                const path = ir.routes[route]?.path ?? '/'
+                return { route, path, params: path.includes(':') }
+              }),
+          }
+        })
+      return {
+        id,
+        owner: { kind, id: owner },
+        name,
+        location: relative(
+          dev.root,
+          build.sources[`/${kind === 'kit' ? 'kits' : 'features'}/${owner}/components/${name}`],
+        ),
+        variants: c.variants,
+        defaults: c.defaults,
+        slots: c.slots,
+        children: c.children,
+        client: c.client !== null,
+        props,
+        example: Object.fromEntries(
+          ((props.required ?? []) as string[])
+            .filter(
+              (k) => (props.properties as Record<string, JsonSchema> | undefined)?.[k]?.default === undefined,
+            )
+            .map((k) => [k, sample((props.properties as Record<string, JsonSchema>)[k])]),
+        ),
+        uses,
+      }
+    }),
+  )
 }

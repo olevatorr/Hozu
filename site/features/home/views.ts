@@ -464,7 +464,7 @@ export const Home = ui.view({
                 'DevTools uses the keys, the measuring and the words a designer already has: Shift+Enter goes up a level, Alt measures, the Design panel reads like Figma’s, with your tokens first.',
               ]),
               ui.p({}, [
-                'Try a change on the page, then hand it to your agent. It writes the code; you never open a file.',
+                'Assets shows every component and variant on one page, with the screens you name in previews.ts. Try a change on the page, then hand it to your agent. It writes the code; you never open a file.',
               ]),
               ui.div({ class: 'mt-2 flex flex-wrap gap-3' }, [
                 ui.use(Button, { props: { href: ui.link(devtools, null) } }, ['See it in motion →']),

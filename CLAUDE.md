@@ -279,7 +279,12 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   Alt measures (red px lines; `measure.ts`), the selection shows `W × H`, the Design panel (was Look) follows Figma's
   order (Frame, Auto layout, Layer, Fill, Stroke, Effects, Text) with width, height, gap, opacity, border and shadow
   mapped to theme utilities, Builder shows tokens first; Figma's words (This instance only / Main component, Resolve,
-  Frame); request Markdown and the CLI unchanged. `feature({ styles })` not a list is HZ014.
+  Frame); request Markdown and the CLI unchanged. `feature({ styles })` not a list is HZ014. Assets: a full-screen
+  board of every component × variant + previews (`componentCatalog`, `dev.render`, `/_hozu/dev/component(s)`),
+  Where used, Change the main component, Styles (tokens). `project({ previews })` (`@hozu/core/preview`:
+  `p.component`, `p.page` + `p.data` / `p.fail`) is for people: loaded only by `hozu dev` / `check` / `render`, a
+  page screen swaps query results under `dev` only (cookie `hozu-dev-preview`), HZ092 keeps it honest, agents read
+  it only when asked. `hozu dev` takes its app down on SIGTERM / SIGKILL.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of
