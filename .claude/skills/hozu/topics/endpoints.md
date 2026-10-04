@@ -17,7 +17,7 @@ implement(exportNotes, (input, { session, fail }) =>                            
 
 <!-- more -->
 
-- Error bodies: invalid input is `{ error: 'Invalid', message, fields }`; a `fail` is `{ error, message, fields? }`
+- Error bodies: invalid input is `{ error: 'Invalid', message, fields }`; a `fail` is `{ error, message, ...every field its error schema declares }`
   (statuses 400 401 403 404 409 410 422 429).
 - `'redirect'` keeps the basePath. `'response'` is for files and protocol bodies that are neither JSON nor HTML. A
   `text/html` response is a 500 with HZ053: a page is a `ui.page` with `head.failed`.

@@ -34,7 +34,7 @@ const exportNotes = endpoint({
   path: '/api/export',
   input: z.object({ format: z.enum(['json', 'csv']).default('json'), limit: z.number().default(10) }),
   output: z.object({ format: z.string(), limit: z.number() }),
-  errors: { Unauthorized: z.object({ message: z.string() }) },
+  errors: { Unauthorized: z.object({ message: z.string(), signIn: z.string() }) },
   failed: { Unauthorized: 401 },
 })
 const bulk = endpoint({
@@ -116,7 +116,7 @@ function setup(basePath: '' | '/app' = '') {
       ),
       implement(retired, (_, { fail }) => fail('Gone', {})),
       implement(exportNotes, (input, { session, fail }) =>
-        session ? input : fail('Unauthorized', { message: 'Sign in to export' }),
+        session ? input : fail('Unauthorized', { message: 'Sign in to export', signIn: '/login' }),
       ),
       implement(bulk, (_, { redirect }) => redirect(ui.link(home, null))),
       implement(
@@ -193,11 +193,15 @@ describe('ADR 0043 D: pages answer through head.failed', () => {
 })
 
 describe('ADR 0043 D: endpoints in the shape of mutations', () => {
-  it('fail(name, payload) answers the mapped status with { error, message }', async () => {
+  it('fail(name, payload) answers the mapped status with the error and every declared field (ADR 0056 A2)', async () => {
     const { get } = setup()
     const res = await get('/api/export')
     expect(res.status).toBe(401)
-    expect(await res.json()).toEqual({ error: 'Unauthorized', message: 'Sign in to export' })
+    expect(await res.json()).toEqual({
+      error: 'Unauthorized',
+      message: 'Sign in to export',
+      signIn: '/login',
+    })
   })
 
   it('a schema failure is the framework Invalid, 400 with fields', async () => {

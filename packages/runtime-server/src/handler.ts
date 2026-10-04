@@ -792,6 +792,7 @@ function handlerFor({
       return finish(
         new Response(
           JSON.stringify({
+            ...result.data,
             error: result.error,
             message: result.message,
             ...(result.fields ? { fields: result.fields } : {}),

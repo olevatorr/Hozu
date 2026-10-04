@@ -116,6 +116,8 @@ export type EndpointResult =
       error: string
       message: string
       fields: Record<string, string | null> | null
+      /** Every field of the declared error's data, so the answer carries all of them (ADR 0056 A2). */
+      data?: Record<string, unknown>
     }
 
 const isResponse = (value: unknown): boolean =>
@@ -632,6 +634,9 @@ export function createDataRuntime({
           message: typeof d.message === 'string' ? d.message : error,
           fields:
             d.fields && typeof d.fields === 'object' ? (d.fields as Record<string, string | null>) : null,
+          ...(data && typeof data === 'object' && !Array.isArray(data)
+            ? { data: data as Record<string, unknown> }
+            : {}),
         }
       }
       const done = (value: unknown, ok: boolean, redirect?: unknown): EndpointResult => {
