@@ -89,7 +89,7 @@ export const DevToolsPage = ui.view({
                 poster: ui.asset(new URL('../../assets/video/hozu-devtools-poster.jpg', import.meta.url)),
                 width: 1280,
                 height: 720,
-                'aria-label': 'Hozu DevTools in 93 seconds',
+                'aria-label': 'Hozu DevTools in under two minutes',
                 class:
                   'aspect-video h-auto w-full border-4 border-ink bg-ink shadow-[8px_8px_0_var(--color-ink)]',
               },
