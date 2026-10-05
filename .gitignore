@@ -9,3 +9,4 @@ bench/frameworks/out
 .agents
 .hozu/
 bench/scale/out
+.claude/worktrees/
