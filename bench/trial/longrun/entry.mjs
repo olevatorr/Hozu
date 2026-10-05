@@ -6,4 +6,4 @@ const pkg = existsSync(join(app, 'package.json'))
   ? JSON.parse(readFileSync(join(app, 'package.json'), 'utf8'))
   : {}
 if (fw === 'nuxt') console.log('.output/server/index.mjs')
-else console.log(pkg.scripts?.start?.trim() === 'hozu serve' ? 'hozu serve' : 'serve.ts')
+else console.log(pkg.scripts?.start?.trim() === 'hozu serve' ? '@hozu/cli serve' : 'serve.ts')

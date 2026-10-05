@@ -1511,8 +1511,11 @@ const transform = existsSync(join(cwd, 'node_modules/@hozu/transform'))
   ? ['--import', '@hozu/transform/register']
   : []
 const [bin, ...args] = entry.split(' ')
+const cliBin = join(cwd, 'node_modules/@hozu/cli/bin/hozu.js')
 const [exe, command] = args.length
-  ? [join(cwd, 'node_modules/.bin', bin), args]
+  ? (bin === 'hozu' || bin === '@hozu/cli') && existsSync(cliBin)
+    ? [process.execPath, [cliBin, ...args]]
+    : [join(cwd, 'node_modules/.bin', bin), args]
   : [process.execPath, [...transform, entry]]
 const server = spawn(exe, command, {
   cwd,
