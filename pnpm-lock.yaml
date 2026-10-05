@@ -820,6 +820,10 @@ importers:
       '@hozu/validator':
         specifier: workspace:*
         version: link:../validator
+    devDependencies:
+      create-hozu:
+        specifier: workspace:*
+        version: link:../create-hozu
 
   packages/compiler:
     dependencies:

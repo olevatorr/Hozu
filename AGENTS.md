@@ -30,11 +30,11 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 7. Diagnostics are structured JSON with location, cause, and suggested fix.
 8. Rendering mode is DERIVED, never chosen:
    - query declares `scope: 'public' | 'user'` and
-     `freshness: 'static' | 'request' | { revalidate } | { swr } | 'live'`
+     `freshness: 'static' | 'request' | { revalidate } | { swr } | 'live' | { poll }`
    - compiler derives a per-node render plan (static / ISR / SWR / per-request / streamed SSR / client);
      `'request'` is a per-request region in either scope
    - `scope: 'user'` data must never reach a cacheable region (hard error) and is never cached across requests:
-     its freshness is `'request'` or `'live'` (HZ049, ADR 0043 A)
+     its freshness is `'request'`, `'live'` or `{ poll }` (HZ049, ADR 0043 A, ADR 0063 C1)
    - only nodes bound to a machine hydrate; everything else ships 0 JS
    - `render: 'static'` style assertions are allowed but validated, never obeyed blindly
 9. Framework-owned fetch: queries have tags, mutations and endpoints declare `invalidates`.
@@ -306,6 +306,16 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   component's module (`DevNode.component.client`) and offers no way inside it. 0.18.2 (ADR 0062): `hozu dev`
   reloads only for files the app loaded (reported by an `--import`ed async load hook over IPC), CSS, `.env*`,
   `package.json`, `tsconfig.json`; any `.ts`/`.json` while the app is down.
+- 0.19 (ADR 0063): the guide no longer teaches server memory as storage (SKILL.md: where data lives is the
+  person's call, ask; `demo…` stand-ins; `hozu docs data` opens with whose data it is; recipe "A personal list
+  without sign-in"; `examples/watchlist`); `freshness: { poll: s }` (5 ≤ s ≤ 86 400, any scope / runs;
+  `payload.poll`, lazy `poll.ts` re-reads the mounted keys on a timer, public data cached for s / 2);
+  `target: 'previous'` (snapshot `previous` only for machines that use it, contract `given.previous`, HZ007 when a
+  `done` / `failed` / `after` return has nothing to return to); a field alone is a guard; a transition that stops
+  deciding is reviewed by the lock alone; `hozu browse` reports reloaded / navigated / in place per step (`--full`:
+  replaced count), `hold <feature>.<effect>` / `release` (runs: 'server' mutations), targets by accessible name;
+  SVG shapes take optional children; `@hozu/css` hoists `@import url(…)`; `@hozu/cli` carries copies of
+  create-hozu's agent writer and the skill (`pnpm skill`), so it no longer depends on `create-hozu`.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

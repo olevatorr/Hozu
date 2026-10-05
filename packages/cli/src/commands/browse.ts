@@ -284,6 +284,19 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
   const worlds = modes.map(() => new World(loaded.path, dirname(loaded.path), sessions))
   const vars = new Map<BrowseMode, Map<string, string>>(modes.map((m) => [m, new Map()]))
   const pageKey = routeKey(Object.values(loaded.build().ir.routes).map((r) => routePattern(r.path).pattern))
+  const mutations = new Map<string, string>(
+    Object.values(loaded.build().ir.features).flatMap((f) =>
+      Object.entries(f.mutations).map(([name, m]) => [`${f.id}.${name}`, m.runs] as const),
+    ),
+  )
+  const holdable = (target: string) => {
+    const runs = mutations.get(target)
+    if (runs === undefined) throw new Error(`hold: ${target} is not a mutation of this app`)
+    if (runs !== 'server')
+      throw new Error(
+        `hold: ${target} runs in the browser (runs: '${runs}'); only runs: 'server' mutations can be held`,
+      )
+  }
   const profile = await mkdtemp(join(tmpdir(), 'hozu-browse-'))
   let cdp: Cdp | null = null
   const errors: BrowseError[] = []
@@ -373,6 +386,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
               }),
             )
             verb = parsed.verb
+            if (verb === 'hold') holdable(parsed.target)
             r = parsed.verb === 'remember' ? await remember(tab, parsed.target, own) : await act(tab, parsed)
           } catch (error) {
             r = { ok: false, note: error instanceof Error ? error.message : String(error), jsOnly: null }

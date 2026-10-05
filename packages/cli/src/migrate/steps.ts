@@ -95,6 +95,14 @@ export const steps: Step[] = [
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.18',
+    to: '0.19',
+    summary:
+      "no source change; freshness: { poll: seconds } re-reads a query on a timer, target: 'previous' returns to the state a machine came from, a field alone is a guard, and hozu browse says per step what changed (hold / release keep an effect pending) (ADR 0063)",
+    rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 export const OLDEST = steps[0]!.from

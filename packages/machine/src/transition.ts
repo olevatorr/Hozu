@@ -24,8 +24,6 @@ export function enter(
 ): Step {
   const index = machine.index.get(state)
   if (index === undefined) throw new Error(`Unknown state "${state}" in ${machine.feature}`)
-  if (previous !== undefined && !machine.index.has(previous))
-    throw new Error(`Unknown state "${previous}" in ${machine.feature}`)
   const effects: Effect[] = []
   enterEffects(machine, index, context, entry, effects)
   return {

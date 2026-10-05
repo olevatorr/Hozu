@@ -31,10 +31,12 @@ describe('freshness { poll } (ADR 0063 C1)', () => {
     }
   })
 
-  it('refuses an interval under five seconds', () => {
-    const codes = buildProject(appWith({ poll: 2 }, 'public'), { sources: false }).diagnostics.map(
-      (d) => d.code,
-    )
-    expect(codes).toContain('HZ014')
+  it('refuses an interval under five seconds or over a day', () => {
+    for (const poll of [2, 1e7]) {
+      const codes = buildProject(appWith({ poll }, 'public'), { sources: false }).diagnostics.map(
+        (d) => d.code,
+      )
+      expect(codes).toContain('HZ014')
+    }
   })
 })

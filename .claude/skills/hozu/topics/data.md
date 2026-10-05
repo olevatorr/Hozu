@@ -46,7 +46,7 @@ export default app({ resolvers: resolvers(project, (implement) => [
   and get the schema-parsed input; `'browser'` / `'either'` live in `fetch.ts` (`hozu docs fetch`).
 - **Query resolvers only read;** writes happen in mutation and endpoint resolvers (see --more).
 - User data (`scope: 'user'`) is `freshness: 'request'`, `'live'` or `{ poll }` only (HZ049); `'live'` needs tags (HZ050).
-- **Changes on its own** (quotes, a feed): `freshness: { poll: 30 }` reads it again every 30 s (5 or more) while a page
+- **Changes on its own** (quotes, a feed): `freshness: { poll: 30 }` reads it again every 30 s (5 to 86400) while a page
   shows it, also from the browser. `'live'` is for data your own mutations change.
 - Call a `fn` from views or machines: `ui.each(visible({ items, show: ctx.show }), 'id', …)`.
 

@@ -156,7 +156,14 @@ export async function renderPage({
     ...(dev && devState ? { devState } : {}),
   }
   const polled = Object.fromEntries(
-    [...new Set(plan.views.map((v) => v.slice(0, v.indexOf('.'))))].flatMap((id) =>
+    [
+      ...new Set(
+        plan.views.flatMap((v) => {
+          const id = v.slice(0, v.indexOf('.'))
+          return [id, ...(ir.features[id]?.imports ?? [])]
+        }),
+      ),
+    ].flatMap((id) =>
       Object.entries(ir.features[id]?.queries ?? {}).flatMap(([sym, q]) =>
         q.freshness.kind === 'poll' ? [[`${id}.${sym}`, q.freshness.seconds] as const] : [],
       ),

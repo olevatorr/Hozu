@@ -4,6 +4,19 @@ description: Declare reads, writes and refresh rules independently of their serv
 order: 4
 ---
 
+## First: whose data is it?
+
+Decide where data lives before declaring it. When the request does not say, ask the person.
+
+| Whose data | Where it lives |
+| --- | --- |
+| The visitor's own, no sign-in (a watchlist, settings) | The browser: `runs: 'browser'`, `scope: 'user'`, `localStorage` in `fetch.ts` |
+| A user's, across devices | The server, with a session and your database |
+| Everyone's (posts, comments) | The server, with your database and a deliberate `access` |
+| A public third-party API | `runs: 'either'` |
+
+The examples keep data in a module-level array named `demo…`. That is a stand-in: every visitor shares it and a restart loses it.
+
 ## Declare a query
 
 A query describes the shape and policy of a read, and where its implementation runs.
@@ -36,8 +49,9 @@ Export both from a module the feature lists in `declarations`. Render the query 
 | `freshness: { revalidate: 60 }` | Revalidate on the declared interval in seconds. |
 | `freshness: { swr: 60 }` | Serve stale content while refreshing according to the policy. |
 | `freshness: 'live'` | Read per request, and push updates through the live-query transport. It needs tags. |
+| `freshness: { poll: 30 }` | Read again every 30 seconds (5 to 86400) while a page shows it: data that changes outside your app, such as quotes. Hidden pages and in-flight effects skip a round; public data is cached on the server for half the interval. |
 
-User-scoped queries take `'request'` or `'live'`; any other freshness is HZ049. Public data is `'static'` with tags unless it changes without a declared writer.
+User-scoped queries take `'request'`, `'live'` or `{ poll }`; any other freshness is HZ049. Public data is `'static'` with tags unless it changes without a declared writer.
 
 Session-aware applications declare the session schema on the project. Only user-scoped resolvers receive the session identity.
 
@@ -113,7 +127,7 @@ export default app({
 
 `hozu serve`, `hozu check`, `hozu get`, `hozu browse` and `testApp(app)` all run this one module.
 
-Replace the in-memory implementation with your database or service without changing the view's data contract. Server-fetched data is serialized into the page payload instead of being fetched again on hydration.
+Replace the stand-in implementation with your database or service without changing the view's data contract. Server-fetched data is serialized into the page payload instead of being fetched again on hydration.
 
 ## Keep a session valid while reading
 

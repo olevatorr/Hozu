@@ -57,15 +57,56 @@ describe("ADR 0063 C2: target: 'previous'", () => {
     expect(errors(ir).map((d) => d.code)).toContain('HZ015')
   })
 
-  it('HZ007 when no transition enters the state from another one', () => {
+  it('HZ007 when a timer or an effect result would return from a state nothing enters', () => {
     const ir = fresh()
-    ir.features.w!.machine!.states.paused!.on['w.Pause']![0]!.target = 'paused'
-    ir.features.w!.machine!.states.running!.on['w.Done'] = [
-      { target: 'previous', guard: null, assign: [], navigate: null },
+    const states = ir.features.w!.machine!.states
+    states.paused!.on['w.Pause']![0]!.target = 'paused'
+    states.editing!.on['w.Done']![0]!.target = 'paused'
+    states.running!.after = [
+      { ms: 10, transition: { target: 'previous', guard: null, assign: [], navigate: null } },
     ]
     const d = errors(ir).find((x) => x.code === 'HZ007')!
     expect(d.message).toBe('"running" has no previous state to return to')
-    expect(d.location.pointer).toBe('/features/w/machine/states/running/on/w.Done/0/target')
+    expect(d.location.pointer).toBe('/features/w/machine/states/running/after/0/transition/target')
+  })
+
+  it('no HZ007 where a state is entered again by a return, or for an event that may simply not fire', () => {
+    const ir = fresh()
+    const states = ir.features.w!.machine!.states
+    states.running!.after = [
+      { ms: 10, transition: { target: 'previous', guard: null, assign: [], navigate: null } },
+    ]
+    states.paused!.on['w.Pause']![0]!.target = 'paused'
+    expect(errors(ir)).toEqual([])
+    const other = fresh()
+    const again = other.features.w!.machine!.states
+    again.paused!.on['w.Pause']![0]!.target = 'paused'
+    again.editing!.on['w.Done']![0]!.target = 'paused'
+    again.running!.on['w.Done'] = [{ target: 'previous', guard: null, assign: [], navigate: null }]
+    expect(errors(other)).toEqual([])
+  })
+
+  it("a machine-wide on may return to 'previous'", () => {
+    const Cancel = event({ payload: z.object({}) })
+    const shared = machine({
+      context: z.object({}),
+      initialContext: {},
+      initial: 'a',
+      on: () => [on(Cancel, { target: 'previous' })],
+      states: () => ({ a: { on: [on(Edit, { target: 'b' })] }, b: { on: [on(Edit, { target: 'a' })] } }),
+    })
+    const b = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [feature({ id: 's', intent: { summary: 'x' }, declarations: [{ Cancel, Edit, shared }] })],
+      }),
+      { sources: true },
+    )
+    expect(b.diagnostics).toEqual([])
+    const found = verify(b.ir, { sources: b.sources, bindings: b.bindings }).diagnostics
+    expect(found.filter((d) => d.severity === 'error')).toEqual([])
   })
 
   it('HZ016 suggests a contract with a previous state', () => {

@@ -1,7 +1,7 @@
 import { type At, at, resolveAt } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { closest, didYouMean } from '../suggest.ts'
-import { featurePointer, transitionsOf, walkView } from '../walk.ts'
+import { featurePointer, type TransitionSite, transitionsOf, walkView } from '../walk.ts'
 
 export function reachability(ctx: Ctx) {
   for (const f of Object.values(ctx.ir.features)) {
@@ -61,6 +61,24 @@ export function deadEnds(ctx: Ctx) {
     }
 }
 
+function enteredStates(sites: TransitionSite[]): Set<string> {
+  const into = new Map<string, Set<string>>()
+  const add = (to: string, from: string) => {
+    if (to === from) return false
+    const set = into.get(to) ?? new Set()
+    into.set(to, set)
+    return set.size < set.add(from).size
+  }
+  for (const site of sites) if (site.transition.target !== 'previous') add(site.transition.target, site.state)
+  const returning = sites.filter((site) => site.transition.target === 'previous')
+  for (let changed = true; changed; ) {
+    changed = false
+    for (const site of returning)
+      for (const from of [...(into.get(site.state) ?? [])]) changed = add(from, site.state) || changed
+  }
+  return new Set(into.keys())
+}
+
 export function stateNames(ctx: Ctx) {
   for (const f of Object.values(ctx.ir.features)) {
     const m = f.machine
@@ -82,20 +100,16 @@ export function stateNames(ctx: Ctx) {
       )
     }
     if (m && !known(m.initial)) dangling(featurePointer(f.id, 'machine', 'initial'), m.initial, 'initial')
-    const entered = new Set(
-      transitionsOf(f)
-        .filter((t) => t.transition.target !== t.state && t.transition.target !== 'previous')
-        .map((t) => t.transition.target),
-    )
+    const entered = enteredStates(transitionsOf(f))
     for (const site of transitionsOf(f))
       if (site.transition.target === 'previous') {
-        if (!entered.has(site.state))
+        if (site.trigger.kind !== 'on' && !entered.has(site.state))
           ctx.report(
             'HZ007',
             f.id,
             site.at('target'),
             `"${site.state}" has no previous state to return to`,
-            `No transition enters "${site.state}" from another state, so target: 'previous' never fires there.`,
+            `No transition enters "${site.state}" from another state, so target: 'previous' never fires there and the machine stays in "${site.state}".`,
             {
               summary: 'Name the target state',
               snippet: null,

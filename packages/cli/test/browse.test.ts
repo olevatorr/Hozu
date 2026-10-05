@@ -369,6 +369,11 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(release.modes[0].note).toBe('released 1 held answer')
     expect(release.modes[0].added.join(' ')).toContain('Held note')
     expect(again.modes[0].document).toBe('navigated')
+    const browserRun = await browse(
+      ['/', '--js', 'on', '--do', 'hold watchlist.addSymbol'],
+      example('watchlist'),
+    )
+    expect(browserRun.out.steps[0].modes[0].note).toContain("only runs: 'server' mutations can be held")
     const off = await browse(
       ['/', '--js', 'off', '--session', ADA, '--do', 'fill New note=Posted; press Enter'],
       notes,

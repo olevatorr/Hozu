@@ -32,11 +32,13 @@
 - **Problem:** `'live'` is pushed by invalidation only; a 30 s quote refresh needed a mutation whose only job was to
   invalidate, driven by a machine timer.
 - **Options:** the server re-reads on a timer and pushes over the live stream; or the page reads again on a timer.
-- **Decision:** `freshness: { poll: s }` (s ≥ 5, HZ014 otherwise), for any `scope` and any `runs`. The region is a
+- **Decision:** `freshness: { poll: s }` (5 ≤ s ≤ 86 400, HZ014 otherwise; a longer delay overflows `setInterval`), for any `scope` and any `runs`. The region is a
   client region like `'live'`; the page carries `payload.poll` (query → seconds, for the queries of its features) and a
   lazily loaded `poll.ts` reads every polled query on the page again on its timer, through the page's own query path,
   so queries the browser fetched itself (inside another region) and `runs: 'browser'` queries poll too. It skips while
-  the page is hidden or an effect is in flight. On the server, public polled data is cached for half the interval, so
+  the page is hidden or an effect is in flight, reads only the keys a mounted region shows (recorded during a sync, so
+  inputs the page no longer shows are not read again), drops an answer when an effect started or refreshed the key
+  meanwhile, and includes the queries of the features the page's views import. On the server, public polled data is cached for half the interval, so
   every page showing it shares one read; user data is never cached (HZ049 allows `{ poll }`).
 - The server-push option needs a timer per key and per instance and still only covers server-run queries; the client
   timer covers every case with the existing read path.
@@ -48,8 +50,10 @@
   machine was in before it entered the current one. The interpreter keeps it in the snapshot (`previous`, only for
   machines that use the target, so other payloads stay as they were); a re-entry of the same state keeps it, and with
   nothing to return to the transition does not fire. Contracts take `given.previous` (HZ016 suggests one), the lock
-  prints `--> previous`, a `'previous'` target in a state no transition enters from another state is HZ007, and a
-  state named `previous` is HZ014. Parallel regions are not in 0.19.
+  prints `--> previous`, and a state named `previous` is HZ014. A `done` / `failed` / `after` return in a state that
+  nothing enters from another state (directly or by a return) is HZ007, since the machine would stay there; an `on`
+  return there is only an event that does nothing, so a machine-wide `on` may use `'previous'`. The lock records the
+  return as it is written: what the returned-to state invokes is reviewed with the transitions that enter it. Parallel regions are not in 0.19.
 
 ## C3, D1 — seeing what a step did
 - **Decision:** `hozu browse` reports per step whether the document reloaded, navigated, or changed in place (and
