@@ -23,9 +23,6 @@
       "path": "../validator"
     },
     {
-      "path": "../create-hozu"
-    },
-    {
       "path": "../transform"
     }
   ]

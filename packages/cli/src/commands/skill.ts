@@ -1,6 +1,6 @@
 import { stat } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { AGENTS, type Agent, runnerOf, writeAgentFiles } from 'create-hozu'
+import { AGENTS, type Agent, runnerOf, writeAgentFiles } from '../agent.ts'
 import type { SkillOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 

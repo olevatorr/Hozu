@@ -23,6 +23,12 @@ export const exampleFiles = [
   'ui/badge.ts',
 ]
 
+export const cliCopies = [
+  ['packages/create-hozu/src/agent.ts', 'packages/cli/src/agent.ts'],
+  ['packages/create-hozu/src/guide.ts', 'packages/cli/src/guide.ts'],
+  ['packages/create-hozu/templates/guide.md', 'packages/cli/templates/guide.md'],
+] as const
+
 export const agentsMd = (claude: string) =>
   `${claude.replace(
     /^# (.+)\n/,
@@ -42,6 +48,7 @@ export async function sync(write: boolean): Promise<string[]> {
   for (const f of exampleFiles)
     await put(join(skill, 'example', f), await readFile(join(root, 'examples/bookmarks', f), 'utf8'))
   await put(join(root, 'AGENTS.md'), agentsMd(await readFile(join(root, 'CLAUDE.md'), 'utf8')))
+  for (const [from, to] of cliCopies) await put(join(root, to), await readFile(join(root, from), 'utf8'))
   await put(join(skill, 'topics/diagnostics.md'), diagnosticsTopic())
   const site = join(root, 'site/content/docs/diagnostics.md')
   const page = await readFile(site, 'utf8')
@@ -83,9 +90,11 @@ ${codeTable()}
 `
 
 export async function pack() {
-  const target = join(root, 'packages/create-hozu/skill')
-  await rm(target, { recursive: true, force: true })
-  await cp(skill, target, { recursive: true })
+  for (const owner of ['create-hozu', 'cli']) {
+    const target = join(root, 'packages', owner, 'skill')
+    await rm(target, { recursive: true, force: true })
+    await cp(skill, target, { recursive: true })
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

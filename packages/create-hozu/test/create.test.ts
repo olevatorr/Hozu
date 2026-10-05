@@ -133,6 +133,16 @@ describe('create-hozu', () => {
     expect(await sync(false)).toEqual([])
   })
 
+  it('@hozu/cli carries its own copy of the agent files, so it can be published before create-hozu (ADR 0063 A2)', async () => {
+    const cli = JSON.parse(await repo('packages/cli/package.json')) as {
+      dependencies: Record<string, string>
+      files: string[]
+    }
+    expect(Object.keys(cli.dependencies)).not.toContain('create-hozu')
+    expect(cli.files).toEqual(expect.arrayContaining(['skill', 'templates']))
+    expect(await repo('packages/cli/src/agent.ts')).toBe(await repo('packages/create-hozu/src/agent.ts'))
+  })
+
   it('creates an app for Claude Code', async () => {
     const dir = join(await fresh(), 'demo')
     const written = await createApp(dir, { ...base, agent: 'claude' })

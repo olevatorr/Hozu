@@ -89,6 +89,9 @@
   apps depend on `@hozu/cli`: whichever goes first, one points at a version npm does not show yet.
 - **Decision:** the build copies what the CLI uses from `create-hozu` into `@hozu/cli` (a generated module, checked by
   a test like the skill copies), so `@hozu/cli` no longer depends on `create-hozu`, and `create-hozu` goes last.
+  `create-hozu/src/agent.ts` (the agent-file writer) and `guide.ts` are copied verbatim to `packages/cli/src/`, the
+  guide template to `packages/cli/templates/`, and the skill is packed into `packages/cli/skill` like
+  `create-hozu/skill`; `pnpm skill` writes the copies and the create-hozu test fails when they are stale.
 
 ## A1
 - Done in 0.18.2: the dev terminal and the page's console name the files behind a reload.
