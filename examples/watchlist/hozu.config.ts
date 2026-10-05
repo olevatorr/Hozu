@@ -18,6 +18,10 @@ export default project({
   ],
   features: [watchlist],
   accept: [
-    { code: 'HZ036', at: 'watchlist.Add', reason: 'the list is kept in this browser, so adding needs JavaScript' },
+    {
+      code: 'HZ036',
+      at: 'watchlist.Add',
+      reason: 'the list is kept in this browser, so adding needs JavaScript',
+    },
   ],
 })

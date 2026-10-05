@@ -124,7 +124,11 @@ export function patchOf(base: Json, value: Json): Json {
 export function contractHash(contract: ContractIR, initialContext: Json): string {
   const { given, when, expect } = contract
   return hashJson({
-    given: { state: given.state, context: patchOf(initialContext, given.context) },
+    given: {
+      state: given.state,
+      context: patchOf(initialContext, given.context),
+      ...(given.previous === undefined ? {} : { previous: given.previous }),
+    },
     when,
     expect: {
       state: expect.state,

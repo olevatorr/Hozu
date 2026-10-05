@@ -116,7 +116,15 @@ export function runContract(
         `States: ${[...machine.index.keys()].join(', ')}.`,
       )
     validate(`${feature}#context`, contract.given.context, ['given', 'context'], 'given.context')
-    let snapshot = enter(machine, contract.given.state, contract.given.context).snapshot
+    const previous = contract.given.previous
+    if (previous !== undefined && !machine.index.has(previous))
+      stop(
+        'HZ015',
+        ['given', 'previous'],
+        `Unknown state "${previous}"`,
+        `States: ${[...machine.index.keys()].join(', ')}.`,
+      )
+    let snapshot = enter(machine, contract.given.state, contract.given.context, 1, previous).snapshot
     let elapsed = 0
     let fired = new Set<number>()
     const apply = (step: Step) => {

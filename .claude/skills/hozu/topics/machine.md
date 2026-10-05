@@ -25,6 +25,8 @@ export const m = machine({
 - **invoke** runs a mutation on entry; the state drops events it does not handle. `failed` lists every declared error
   of the mutation plus `Unexpected` (`Invalid` optional, `hozu docs forms`).
 - Do not handle the busy event in the busy state: a transition to the same state re-runs its `invoke`.
+- `target: 'previous'` (or `done: 'previous'`) returns to the state the machine came from, so a busy state entered
+  from two modes (viewing, editing) needs no copy per mode.
 
 <!-- more -->
 

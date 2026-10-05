@@ -50,7 +50,11 @@ export function buildContract(scope: FeatureScope, symbol: string, decl: Decl): 
   return scope.attempt(
     p,
     () => ({
-      given: { state: String(d.given.state), context: given },
+      given: {
+        state: String(d.given.state),
+        context: given,
+        ...(d.given.previous === undefined ? {} : { previous: String(d.given.previous) }),
+      },
       when: d.when.map((s, i) => step(scope, s, at(p, 'when', i))),
       expect: {
         state: String(d.expect.state),

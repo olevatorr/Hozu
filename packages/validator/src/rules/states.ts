@@ -9,6 +9,7 @@ export function reachability(ctx: Ctx) {
     if (!m || !Object.hasOwn(m.states, m.initial)) continue
     const edges = new Map<string, string[]>()
     for (const site of transitionsOf(f)) {
+      if (site.transition.target === 'previous') continue
       const list = edges.get(site.state)
       if (list) list.push(site.transition.target)
       else edges.set(site.state, [site.transition.target])
@@ -81,10 +82,35 @@ export function stateNames(ctx: Ctx) {
       )
     }
     if (m && !known(m.initial)) dangling(featurePointer(f.id, 'machine', 'initial'), m.initial, 'initial')
+    const entered = new Set(
+      transitionsOf(f)
+        .filter((t) => t.transition.target !== t.state && t.transition.target !== 'previous')
+        .map((t) => t.transition.target),
+    )
     for (const site of transitionsOf(f))
-      if (!known(site.transition.target))
+      if (site.transition.target === 'previous') {
+        if (!entered.has(site.state))
+          ctx.report(
+            'HZ007',
+            f.id,
+            site.at('target'),
+            `"${site.state}" has no previous state to return to`,
+            `No transition enters "${site.state}" from another state, so target: 'previous' never fires there.`,
+            {
+              summary: 'Name the target state',
+              snippet: null,
+              patch: m ? [{ op: 'replace', path: resolveAt(site.at('target')), value: m.initial }] : null,
+            },
+          )
+      } else if (!known(site.transition.target))
         dangling(site.at('target'), site.transition.target, 'a transition target')
     for (const [cid, c] of Object.entries(f.contracts)) {
+      if (c.given.previous !== undefined && !known(c.given.previous))
+        dangling(
+          featurePointer(f.id, 'contracts', cid, 'given', 'previous'),
+          c.given.previous,
+          'contract given',
+        )
       if (!known(c.given.state))
         dangling(featurePointer(f.id, 'contracts', cid, 'given', 'state'), c.given.state, 'contract given')
       if (!known(c.expect.state))

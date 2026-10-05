@@ -4,6 +4,7 @@ export interface Snapshot {
   state: string
   context: Json
   entry: number
+  previous?: string
 }
 
 export type Input =
@@ -71,4 +72,5 @@ export interface CompiledMachine {
   states: CompiledState[]
   index: Map<string, number>
   transitions: string[]
+  remembers: boolean
 }

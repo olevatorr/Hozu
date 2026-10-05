@@ -1,13 +1,23 @@
 import { ui } from '@hozu/core'
-import { Add, listMachine, myList, quotes, Remove } from './model.ts'
+import { Add, Edit, Finish, listMachine, myList, quotes, Remove } from './model.ts'
 
 const button = 'rounded border border-slate-300 px-2 py-1 text-sm'
 
 export const Board = ui.view({
   machine: listMachine,
-  render: ({ ctx }) =>
+  render: ({ ctx, when }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-10' }, [
-      ui.h1({ class: 'text-3xl font-bold' }, ['Watchlist']),
+      ui.div({ class: 'flex items-center justify-between' }, [
+        ui.h1({ class: 'text-3xl font-bold' }, ['Watchlist']),
+        when(
+          ['idle'],
+          [ui.button({ type: 'button', class: button, on: { click: ui.send(Edit, {}) } }, ['Edit'])],
+        ),
+        when(
+          ['editing'],
+          [ui.button({ type: 'button', class: button, on: { click: ui.send(Finish, {}) } }, ['Done'])],
+        ),
+      ]),
       ui.p({ class: 'text-slate-600' }, ['Your symbols stay in this browser; quotes come from the server.']),
       ui.form({ class: 'flex gap-2', on: { submit: ui.send(Add, { symbol: ui.dom.form('symbol') }) } }, [
         ui.input({
@@ -40,13 +50,18 @@ export const Board = ui.view({
                         ui.span({ class: 'tabular-nums text-slate-600' }, [
                           ui.format.number(q.change, { signDisplay: 'always', maximumFractionDigits: 2 }),
                         ]),
-                        ui.button(
-                          {
-                            type: 'button',
-                            class: button,
-                            on: { click: ui.send(Remove, { symbol: q.symbol }) },
-                          },
-                          ['Remove'],
+                        when(
+                          ['editing', 'removing'],
+                          [
+                            ui.button(
+                              {
+                                type: 'button',
+                                class: button,
+                                on: { click: ui.send(Remove, { symbol: q.symbol }) },
+                              },
+                              ['Remove'],
+                            ),
+                          ],
                         ),
                       ]),
                     ),

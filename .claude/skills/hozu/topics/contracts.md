@@ -15,6 +15,7 @@ changing either.
   until `hozu check --update-lock` accepts it.
 - A deciding change also needs a contract that fails against the old behaviour (HZ018); renaming or copying a
   contract does not count.
+- A transition to `'previous'` needs the state it returns to: `given: { state: 'adding', previous: 'editing' }`.
 - Contracts may be exported from any module the feature lists. When one fails, the choice is between the machine
   and the contract.
 ```ts

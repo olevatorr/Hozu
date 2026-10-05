@@ -16,7 +16,7 @@ export interface InvalidError<I = Record<string, unknown>> {
 }
 
 export interface TransitionConfig<T extends string, A> {
-  target?: T
+  target?: T | 'previous'
   guard?: (arg: A) => Condition
   assign?: (arg: A) => Assign[] | void
   navigate?: (arg: A) => Href
@@ -31,7 +31,11 @@ export interface OnDef {
   transition: TransitionConfig<string, any>
 }
 
-export type Outcome<T extends string, A> = T | TransitionConfig<T, A> | readonly TransitionConfig<T, A>[]
+export type Outcome<T extends string, A> =
+  | T
+  | 'previous'
+  | TransitionConfig<T, A>
+  | readonly TransitionConfig<T, A>[]
 
 export interface InvokeDef {
   effect: EffectDecl
@@ -71,7 +75,7 @@ type ErrorTransitions<E, T extends string, I = Record<string, unknown>> = {
 export const on = <P, const T extends string = never>(
   event: EventDecl<P>,
   transition: TransitionConfig<T, Ref<P>>,
-): OnDecl<T> => brand({}, 'on', { event, transition } satisfies OnDef)
+): OnDecl<Exclude<T, 'previous'>> => brand({}, 'on', { event, transition } satisfies OnDef)
 
 type TargetOf<L> = L extends string
   ? L
@@ -81,7 +85,7 @@ type TargetOf<L> = L extends string
       ? T
       : never
 
-type Known<T extends string> = string extends T ? never : T
+type Known<T extends string> = string extends T ? never : Exclude<T, 'previous'>
 
 export const invoke = <
   I,

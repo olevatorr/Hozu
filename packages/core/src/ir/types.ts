@@ -441,7 +441,7 @@ export interface EmbedNode {
 }
 
 export interface ContractIR {
-  given: { state: string; context: Json }
+  given: { state: string; context: Json; previous?: string }
   when: StepIR[]
   expect: ExpectIR
 }
