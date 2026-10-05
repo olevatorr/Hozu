@@ -100,6 +100,7 @@ Options:
   --as <name>          browse: the steps after it are this actor's, in its own browser; repeat to switch actors
   --screenshot <file>  browse: save a PNG of the viewport after the steps
   --reduced-motion     browse: emulate prefers-reduced-motion: reduce
+  --viewport <WxH>     browse: the window size in CSS px (default 1280x800); below 768 wide it is a phone (390x844)
   --page <path>        add feature/show: the route and page to add (add feature), the page a note is on (show)
   --note <text>        show: what the person should see there, in their words
   --done <n>           show: remove note n
@@ -137,6 +138,16 @@ export function commandHelp(command: string, sub?: string): string | null {
     return s.length === 0 ? /--json|--config|--help/.test(b[0]!) : s.some((x) => x === name || x === command)
   })
   return `Usage: hozu ${name} [options]\n\n${own.flat().join('\n')}\n\nOptions:\n${options.flat().join('\n')}\n`
+}
+
+export const browseViewport = (value: string | undefined): { width: number; height: number } => {
+  if (value === undefined) return { width: 1280, height: 800 }
+  const m = /^(\d{3,4})x(\d{3,4})$/.exec(value)
+  if (!m)
+    throw new HozuCliError('usage', `--viewport takes <width>x<height> in CSS px, not "${value}"`, [
+      '--viewport 390x844',
+    ])
+  return { width: Number(m[1]), height: Number(m[2]) }
 }
 
 const browseJs = (value: string | undefined): BrowseJs => {
@@ -235,6 +246,7 @@ export async function main(
         js: { type: 'string' },
         screenshot: { type: 'string' },
         'reduced-motion': { type: 'boolean', default: false },
+        viewport: { type: 'string' },
         result: { type: 'string' },
         note: { type: 'string' },
         done: { type: 'string' },
@@ -467,6 +479,7 @@ export async function main(
         select: values.select ?? [],
         screenshot: values.screenshot,
         reducedMotion: values['reduced-motion'] === true,
+        viewport: browseViewport(values.viewport),
         full: values.full === true,
       })
       out(asJson ? json(result) : describeBrowse(result, values.full === true))
