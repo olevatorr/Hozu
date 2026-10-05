@@ -162,7 +162,11 @@ export class Tab {
   status = 0
   loaded = false
   requested = false
+  documentLoads = 0
+  readonly held = new Set<string>()
   snapshot: Snapshot = { url: '', title: '', text: '', component: [] }
+  private readonly holding: { networkId: string; answer: () => Promise<void> }[] = []
+  private readonly heldIds = new Set<string>()
   readonly sessions = new Set<string>()
   private readonly prerender = new Set<string>()
   private readonly tracked = new Map<string, string>()
@@ -363,6 +367,7 @@ export class Tab {
     }
     if (main && method === 'Page.frameStartedLoading' && params.frameId === this.targetId) {
       this.loaded = false
+      this.documentLoads++
       this.activity++
       for (const live of this.live.values()) this.world.cancel(live.id)
       this.live.clear()
@@ -400,6 +405,50 @@ export class Tab {
   headers: Record<string, string> = {}
 
   private async paused(params: any, session: string) {
+    const r = params.request
+    if (this.held.size && r.method === 'POST' && pathOf(r.url).endsWith('/_hozu/effect')) {
+      const effect = (() => {
+        try {
+          return JSON.parse(Buffer.from(bodyOf(r) ?? new Uint8Array()).toString()).effect as string
+        } catch {
+          return null
+        }
+      })()
+      if (effect && this.held.has(effect)) {
+        const networkId = params.networkId ?? params.requestId
+        this.heldIds.add(networkId)
+        this.holding.push({ networkId, answer: () => this.answer(params, session) })
+        return
+      }
+    }
+    return this.answer(params, session)
+  }
+
+  /** Answers every effect call `hold` kept back, in order; how many there were. */
+  async release(): Promise<number> {
+    const all = this.holding.splice(0)
+    this.held.clear()
+    for (const h of all) {
+      this.heldIds.delete(h.networkId)
+      await h.answer()
+    }
+    return all.length
+  }
+
+  /** Marks every element now on the page, so `newElements` can count what a step replaced. */
+  tagElements(): Promise<number> {
+    return this.evaluate(
+      `(() => { const s = Symbol.for('hozu.browse.seen'); let n = 0; for (const el of document.querySelectorAll('body *')) { el[s] = true; n++ } return n })()`,
+    )
+  }
+
+  newElements(): Promise<number> {
+    return this.evaluate(
+      `(() => { const s = Symbol.for('hozu.browse.seen'); let n = 0; for (const el of document.querySelectorAll('body *')) if (!el[s]) n++; return n })()`,
+    )
+  }
+
+  private async answer(params: any, session: string) {
     const r = params.request
     const existing = r.method === 'GET' ? this.live.get(r.url) : undefined
     if (existing) return existing.wait(params.requestId, session)
@@ -460,7 +509,8 @@ export class Tab {
     const start = Date.now()
     while (this.activity === this.marked && Date.now() - start < SETTLE_MS) await sleep(25)
     while (Date.now() - start < CAP_MS) {
-      if (this.tracked.size === 0 && Date.now() - this.lastActivity >= QUIET_MS && this.loaded) {
+      const open = [...this.tracked.keys()].some((id) => !this.heldIds.has(id))
+      if (!open && Date.now() - this.lastActivity >= QUIET_MS && this.loaded) {
         const ready = await this.evaluate(this.mode === 'off' ? STILL : READY).catch(() => false)
         if (ready) return
       }

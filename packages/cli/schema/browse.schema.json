@@ -153,6 +153,19 @@
         "navigated": {
           "type": "boolean"
         },
+        "document": {
+          "type": "string",
+          "enum": [
+            "in place",
+            "reloaded",
+            "navigated"
+          ],
+          "description": "What the step did to the document: kept it, loaded the same URL again, or loaded another one (ADR 0063 C3)."
+        },
+        "replaced": {
+          "type": "number",
+          "description": "With the document kept: how many elements are new after the step (a region drawn again)."
+        },
         "url": {
           "type": "string"
         },

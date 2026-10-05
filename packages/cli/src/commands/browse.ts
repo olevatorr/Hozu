@@ -39,7 +39,7 @@ export interface BrowseOptions {
 
 const TARGETED = new Set(['fill', 'select', 'check', 'uncheck', 'click', 'submit'])
 const VERBS =
-  'fill <label>=<value>, select <label>=<option>, check <label>, uncheck <label>, click <name>, submit "<form>", press <key>, wait <ms>, goto <path>, post <path> <a=1&b=2>, remember <name> from url|<selector> [@attr] (targets take in "<text>"; $name reads a remembered value)'
+  'fill <label>=<value>, select <label>=<option>, check <label>, uncheck <label>, click <name>, submit "<form>", press <key>, wait <ms>, goto <path>, post <path> <a=1&b=2>, remember <name> from url|<selector> [@attr], hold <feature>.<effect>, release (targets take in "<text>"; $name reads a remembered value)'
 
 interface Parsed {
   verb: string
@@ -51,7 +51,8 @@ interface Parsed {
 /** `click "Save draft"` names the same target as `click Save draft`. */
 const unquote = (s: string) => s.replace(/^"(.*)"$/, '$1')
 
-const STEP = /^\s*(?:fill|select|check|uncheck|click|submit|press|wait|goto|post|remember)(?:\s|$)/
+const STEP =
+  /^\s*(?:fill|select|check|uncheck|click|submit|press|wait|goto|post|remember|hold|release)(?:\s|$)/
 
 /** `--do 'fill Title=Milk; press Enter'` is two steps: split where a verb and a space follow a semicolon outside quotes, so values may hold one. */
 export const stepsOf = (text: string): string[] => {
@@ -130,6 +131,18 @@ export async function act(tab: Tab, p: Parsed): Promise<StepResult> {
     if (off && at.jsOnly) return { ok: true, note: at.note, jsOnly: at.jsOnly }
     await tab.mouse(at.x, at.y)
     return done(at)
+  }
+  if (p.verb === 'hold') {
+    if (!/^[\w-]+\.\w+$/.test(p.target))
+      throw new Error('hold takes <feature>.<effect>, e.g. hold notes.addNote')
+    if (off) return { ok: true, note: null, jsOnly: 'only a JS call to an effect can be held' }
+    tab.held.add(p.target)
+    return done({ note: `holding ${p.target}: its answer waits for release` })
+  }
+  if (p.verb === 'release') {
+    if (off) return { ok: true, note: null, jsOnly: 'only a JS call to an effect can be held' }
+    const n = await tab.release()
+    return done({ note: n ? `released ${n} held answer${n === 1 ? '' : 's'}` : 'nothing was held' })
   }
   if (p.verb === 'press') {
     if (!p.target) throw new Error('press takes a key such as Enter')
@@ -344,6 +357,8 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
           const others = tabs.filter((t) => t.mode === mode && t !== tab)
           const before = tab.snapshot
           tab.requested = false
+          const loadsBefore = tab.documentLoads
+          await tab.tagElements().catch(() => 0)
           tab.mark()
           for (const o of others) o.mark()
           let r: StepResult
@@ -367,6 +382,8 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
           if (acted) await tab.settle()
           await Promise.all(others.map((o) => o.settle()))
           const after = await tab.look()
+          const reloads = tab.documentLoads - loadsBefore
+          const replaced = reloads ? 0 : await tab.newElements().catch(() => 0)
           const elsewhere: BrowseElsewhere[] = []
           for (const o of others) {
             const was = o.snapshot
@@ -380,6 +397,8 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
             jsOnly: r.jsOnly,
             requested: tab.requested,
             navigated: before.url !== after.url,
+            document: reloads === 0 ? 'in place' : before.url !== after.url ? 'navigated' : 'reloaded',
+            ...(replaced ? { replaced } : {}),
             url: after.url,
             ...(tab.stepStatus !== null && tab.stepStatus !== 200 ? { status: tab.stepStatus } : {}),
             ...delta(before, after),
@@ -493,7 +512,13 @@ function describeChange(c: BrowseChange, full: boolean): string {
   const more = items.length - shown.length
   const list = [...shown, ...(more ? [`… ${more} more`] : [])].join(' · ')
   const status = c.status ? ` (${c.status})` : ''
-  return [moved || status ? `→ ${c.url}${status}` : '', list].filter(Boolean).join(': ')
+  const how =
+    c.mode === 'on' && c.document === 'reloaded'
+      ? 'the page reloaded'
+      : c.replaced
+        ? `${c.replaced} element${c.replaced === 1 ? '' : 's'} replaced`
+        : ''
+  return [moved || status ? `→ ${c.url}${status}` : '', how, list].filter(Boolean).join(': ')
 }
 
 export function describeBrowse(out: BrowseOutput, full = false): string {

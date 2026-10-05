@@ -340,4 +340,47 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
       await main(['browse', '/', '--viewport', 'phone'], example('stations'), (s) => (text += s)),
     ).not.toBe(0)
   }, 60_000)
+
+  it('says what each step did to the document, and holds an effect to show its pending state (ADR 0063 C3)', async () => {
+    const notes = example('notes')
+    const held = await browse(
+      [
+        '/',
+        '--js',
+        'on',
+        '--session',
+        ADA,
+        '--do',
+        'hold notes.addNote',
+        '--do',
+        'fill New note=Held note; press Enter',
+        '--do',
+        'release',
+        '--do',
+        'goto /',
+      ],
+      notes,
+    )
+    expect(held.code).toBe(0)
+    const [hold, fill, press, release, again] = held.out.steps
+    expect(hold.modes[0].note).toContain('holding notes.addNote')
+    expect(fill.modes[0].document).toBe('in place')
+    expect(press.modes[0].added.join(' ')).toContain('Adding Held note…')
+    expect(release.modes[0].note).toBe('released 1 held answer')
+    expect(release.modes[0].added.join(' ')).toContain('Held note')
+    expect(again.modes[0].document).toBe('reloaded')
+    const text = await human(['/', '--js', 'on', '--session', ADA, '--do', 'goto /'], notes)
+    expect(text.stdout).toContain('the page reloaded')
+  }, 60_000)
+
+  it('clicks a button by its accessible name, without the glyph it hides (ADR 0063 E1)', async () => {
+    const copy = copyOf('stations', 'features/stations/views.ts', (s) =>
+      s.replace(
+        "ui.h1({ class: 'text-3xl font-bold' }, ['City bikes']),",
+        "ui.h1({ class: 'text-3xl font-bold' }, ['City bikes']),\n      ui.button({ type: 'button' }, [ui.span({ 'aria-hidden': 'true' }, ['❚❚']), ' Pause']),",
+      ),
+    )
+    const { code, out } = await browse(['/', '--js', 'on', '--do', 'click Pause'], copy)
+    expect([code, out.steps[0].modes[0].ok]).toEqual([0, true])
+  }, 60_000)
 })
