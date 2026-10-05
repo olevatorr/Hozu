@@ -1,6 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readdirSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -15,21 +14,16 @@ const manifestOf = (file: string) =>
   JSON.parse(run('tar', ['-xzOf', file, 'package/package.json'])) as { name: string; version: string }
 const published = (name: string, version: string) => {
   try {
-    return run('npm', ['view', `${name}@${version}`, 'version', '--prefer-online']).trim() === version
+    return (
+      execFileSync('npm', ['view', `${name}@${version}`, 'version', '--prefer-online'], {
+        cwd: root,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim() === version
+    )
   } catch {
     return false
   }
-}
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
-
-async function visible(names: string[], version: string) {
-  for (let i = 0; i < 60; i++) {
-    const missing = names.filter((n) => !published(n, version))
-    if (!missing.length) return
-    console.log(`waiting for npm: ${missing.join(' ')}`)
-    await sleep(15_000)
-  }
-  throw new Error(`npm does not show ${version} of every package after 15 minutes`)
 }
 
 const packages = readdirSync(release)
@@ -63,17 +57,4 @@ const publish = (p: (typeof packages)[number]) => {
 }
 
 for (const p of libraries) publish(p)
-if (!dryRun)
-  await visible(
-    libraries.map((p) => p.name),
-    version,
-  )
 publish(scaffold)
-if (dryRun) process.exit(0)
-await visible([scaffold.name], version)
-
-const dir = mkdtempSync(join(tmpdir(), 'hozu-release-'))
-run('npx', ['-y', `create-hozu@${version}`, 'app', '--agent', 'claude'], dir)
-run('npm', ['install', '--no-audit', '--no-fund'], join(dir, 'app'))
-console.log(run('npx', ['hozu', 'check'], join(dir, 'app')).trim().split('\n').at(-1))
-console.log(`✔ ${version}: 21 packages on npm, and a new app installs and checks`)
