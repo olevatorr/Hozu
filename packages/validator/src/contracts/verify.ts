@@ -157,7 +157,7 @@ const lineOf = (c: LockChange): string => {
     case 'removed':
       return `removed ${c.id} · was: ${c.before!.summary}`
     case 'changed':
-      return `changed ${c.id} (${c.fields.join(', ') || 'summary'}) · was: ${c.before!.summary} · now: ${c.after!.summary}`
+      return `changed ${c.id} (${c.fields.join(', ') || 'summary'})${c.before!.decides && !c.after!.decides ? ' · stops deciding: accept it, then delete the contracts HZ058 names' : ''} · was: ${c.before!.summary} · now: ${c.after!.summary}`
     default:
       return `contracts ${c.id}: was ${names(c.before)}; now ${names(c.after)}`
   }
@@ -229,7 +229,7 @@ function reviewLock(
   for (const change of lockChanges(previous, next, removed)) {
     if (skipped.has(change.feature)) continue
     const feature = ctx.ir.features[change.feature]
-    const deciding = change.kind === 'changed' && (change.before!.decides || change.after!.decides)
+    const deciding = change.kind === 'changed' && change.after!.decides
     if (feature && deciding && !specified(ctx, bindings, feature, change)) unspecified(ctx, feature, change)
     else byFeature.set(change.feature, [...(byFeature.get(change.feature) ?? []), change])
   }
