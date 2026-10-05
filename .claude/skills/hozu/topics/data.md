@@ -35,6 +35,8 @@ export default app({ resolvers: resolvers(project, (implement) => [
 - **Query resolvers only read;** writes happen in mutation and endpoint resolvers (see --more).
 - User data (`scope: 'user'`) is `freshness: 'request'` or `'live'` only (HZ049); `'live'` needs tags (HZ050).
 - Call a `fn` from views or machines: `ui.each(visible({ items, show: ctx.show }), 'id', …)`.
+- Keeping data in a file (`data/notes.json`) is fine inside the project: `hozu dev` reloads only for files the app
+  imports, stylesheets and env files.
 
 <!-- more -->
 

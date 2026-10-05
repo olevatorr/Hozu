@@ -1,5 +1,14 @@
 import { type ChildProcess, spawn } from 'node:child_process'
-import { existsSync, type FSWatcher, readFileSync, statSync, unwatchFile, watch, watchFile } from 'node:fs'
+import {
+  existsSync,
+  type FSWatcher,
+  readFileSync,
+  realpathSync,
+  statSync,
+  unwatchFile,
+  watch,
+  watchFile,
+} from 'node:fs'
 import { createServer, type IncomingMessage, request, type Server, type ServerResponse } from 'node:http'
 import { createRequire } from 'node:module'
 import { type AddressInfo, createServer as createNetServer } from 'node:net'
@@ -50,6 +59,15 @@ export interface DevServer {
 }
 
 const ignored = /(^|[/\\])(node_modules|dist|dist-static|\.git|\.hozu)([/\\]|$)/
+const envFile = /(^|[/\\])\.env(\.[\w.-]+)?$/
+const real = (file: string) => {
+  try {
+    return realpathSync(file)
+  } catch {
+    return file
+  }
+}
+const graphHook = new URL(import.meta.url.endsWith('.ts') ? './graph.ts' : './graph.js', import.meta.url).href
 
 const free = (port: number) =>
   new Promise<boolean>((resolve) => {
@@ -84,6 +102,7 @@ export async function dev({
   let child: ChildProcess | null = null
   let ready: Promise<void> = Promise.resolve()
 
+  let loaded = new Set<string>()
   const start = () => {
     const transform = existsSync(join(cwd, 'node_modules/@hozu/transform'))
       ? ['--import', '@hozu/transform/register']
@@ -94,10 +113,14 @@ export async function dev({
           join(dirname(createRequire(join(cwd, 'package.json')).resolve('@hozu/cli')), '../bin/hozu.js'),
           'serve',
         ]
-    child = spawn(process.execPath, args, {
+    loaded = new Set()
+    child = spawn(process.execPath, ['--import', graphHook, ...args], {
       cwd,
       env: { ...process.env, PORT: String(appPort), HOZU_DEV: '1', HOZU_DEV_PARENT: String(process.pid) },
-      stdio: ['ignore', 'pipe', 'inherit'],
+      stdio: ['ignore', 'pipe', 'inherit', 'ipc'],
+    })
+    child.on('message', (message: { hozuGraph?: string[] }) => {
+      for (const file of message?.hozuGraph ?? []) loaded.add(real(file))
     })
     ready = new Promise((resolve) => {
       child!.stdout!.on('data', (chunk: Buffer) => {
@@ -123,8 +146,8 @@ export async function dev({
       c.kill()
     })
 
-  const send = (event: string) => {
-    for (const res of clients) res.write(`event: ${event}\ndata: {}\n\n`)
+  const send = (event: string, data: object = {}) => {
+    for (const res of clients) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
   }
 
   let pending: Set<string> = new Set()
@@ -137,7 +160,7 @@ export async function dev({
     start()
     await ready
     log(`${cssOnly ? 'css' : 'reload'}: ${files.join(', ')}`)
-    send(cssOnly ? 'css' : 'reload')
+    send(cssOnly ? 'css' : 'reload', { files })
   }
   const since = performance.timeOrigin + performance.now()
   const untouched = (file: string) => {
@@ -147,8 +170,17 @@ export async function dev({
       return false
     }
   }
+  const realRoot = realpathSync(cwd)
+  const running = () => !!child && child.exitCode === null && child.signalCode === null
+  const reloads = (file: string) => {
+    if (file.endsWith('.css') || envFile.test(file) || file === 'package.json' || file === 'tsconfig.json')
+      return true
+    if (loaded.has(join(realRoot, file))) return true
+    if (!/\.(ts|mts|json)$/.test(file)) return false
+    return !running() || loaded.size === 0
+  }
   const watcher: FSWatcher = watch(cwd, { recursive: true }, (_, file) => {
-    if (!file || ignored.test(file) || !/\.(ts|css|json)$/.test(file) || untouched(file)) return
+    if (!file || ignored.test(file) || !reloads(file) || untouched(file)) return
     pending.add(file)
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => void flush(), debounce)

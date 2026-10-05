@@ -1,5 +1,13 @@
 export const devClient = `const source = new EventSource('/_hozu/dev')
-source.addEventListener('reload', () => {
+try {
+  const why = sessionStorage.getItem('hozu:dev-reload')
+  if (why) console.info('[hozu dev] reloaded: ' + why + ' changed')
+  sessionStorage.removeItem('hozu:dev-reload')
+} catch {}
+source.addEventListener('reload', (event) => {
+  try {
+    sessionStorage.setItem('hozu:dev-reload', (JSON.parse(event.data).files ?? []).join(', '))
+  } catch {}
   window.__hozu?.save()
   location.reload()
 })
