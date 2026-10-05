@@ -48,6 +48,15 @@ const foldDivisions = (css: string) =>
     return Number.isFinite(x) ? String(Number(x.toFixed(5))).replace(/^0\./, '.') : all
   })
 
+const hoistImports = (css: string) => {
+  const imports: string[] = []
+  const rest = css.replace(/^@import\s(?:"[^"\n]*"|'[^'\n]*'|[^;"'\n])*;[ \t]*\n?/gm, (rule) => {
+    imports.push(rule.trimEnd())
+    return ''
+  })
+  return imports.length ? `${imports.join('\n')}\n${rest}` : css
+}
+
 export const stylesSource = (build: BuildResult) => {
   const { entry, kits, features } = build.bindings.styles
   return [entry ?? 'tailwindcss', ...Object.values(kits), ...Object.values(features).flat()]
@@ -69,16 +78,17 @@ export async function compileStyles(
   })
   const candidates = classCandidates(build.ir)
   const assets: Record<string, string> = {}
-  const raw = compiler
-    .build([...candidates])
-    .replace(/url\((['"]?)([^'")]+)\1\)/g, (all, quote: string, url: string) => {
+  const raw = hoistImports(compiler.build([...candidates])).replace(
+    /url\((['"]?)([^'")]+)\1\)/g,
+    (all, quote: string, url: string) => {
       if (/^(data:|https?:|\/\/|#|\/_hozu\/)/.test(url)) return all
       const file = resolve(base, url.split(/[?#]/)[0]!)
       if (!existsSync(file)) return all
       const name = `${sha256(readFileSync(file).toString('base64')).slice(0, 16)}${extname(file).toLowerCase()}`
       assets[`/_hozu/a/${name}`] = file
       return `url(${quote}a/${name}${quote})`
-    })
+    },
+  )
   const fonted = withFallbacks(raw, assets, (file) => readFileSync(file))
   const css = minify ? foldDivisions(optimize(fonted, { minify: true }).code) : fonted
   const known = selectorClasses(raw)

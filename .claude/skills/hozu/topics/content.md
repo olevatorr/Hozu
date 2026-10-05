@@ -23,7 +23,9 @@
 - **Images:** with `@hozu/image`, `hozu build` adds WebP `srcset` widths.
 - **Share images:** `head.render → image: ui.og({ title, subtitle })` (needs `app({ og: ogImage })` with `ogImage`
   from `@hozu/image`); on a static host use `image: ui.asset(new URL('./share.png', import.meta.url))`.
-- **Fonts:** a local `@font-face` gets a size-matched fallback automatically.
+- **Fonts:** prefer local font files: a local `@font-face` gets a size-matched fallback automatically. A remote font
+  is `@import url('https://fonts.googleapis.com/css2?family=…');` in `app.css` (moved to the top of the output) plus
+  its CSP sources: `app({ csp: { style: ['https://fonts.googleapis.com'], font: ['https://fonts.gstatic.com'] } })`.
 - **Page transitions:** links cross-fade (CSS view transitions, no JS); turn off with
   `@view-transition { navigation: none; }` in `app.css`.
 - **Preview:** `app({ preview: { secret } })`; `/_hozu/preview?secret=…&path=/posts/a` turns it on; resolvers
