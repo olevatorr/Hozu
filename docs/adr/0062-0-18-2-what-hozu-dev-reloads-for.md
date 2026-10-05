@@ -26,11 +26,17 @@ mutation also signed the person out. `.env` files, which the app does read, were
    once a loaded file imports it, which is the edit that wires it in.
 3. While the app is not running (it failed to start), any `.ts` / `.json` change reloads, as before, so fixing the
    error still restarts it.
-4. The reload event names the files, and the page logs `[hozu dev] reloaded: <files> changed` after it reloads.
+4. What Node never imports is reported too: `hozu serve` sends the files esbuild read for the browser bundle
+   (`ComponentBundle.inputs`: client components, `fetch.ts`, and what they import) and the env files `env.files`
+   named. Found in review: the first version saw only Node's imports, so editing a client component or a
+   browser-run `fetch.ts` no longer reloaded.
+5. The reload event names the files, and the page logs `[hozu dev] reloaded: <files> changed` after it reloads.
 
 ## Results
 - `packages/dev/test/dev.test.ts`: a request that writes `data/store.json` and a `.ts` file the app never imports
   sends nothing; editing an imported `lib.ts` reloads with `{"files":["lib.ts"]}`; writing `.env` reloads. Fails
   before the fix.
+- The same file: editing `features/stations/map.client.ts` in a copy of `examples/stations`, and the browser-run
+  `features/stars/fetch.ts` in a copy of `examples/stars`, reloads (fails without `inputs`).
 - A copy of `examples/notes` under `hozu dev`: writing `data/store.json` sends nothing; editing
   `features/notes/views.ts` reloads.

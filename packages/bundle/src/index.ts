@@ -1,4 +1,4 @@
-import { relative } from 'node:path'
+import { relative, resolve } from 'node:path'
 import { type BuildResult, codes, type Diagnostic, join } from '@hozu/core/ir'
 import { build } from 'esbuild'
 
@@ -8,18 +8,26 @@ export interface ComponentBundle {
   diagnostics: Diagnostic[]
   /** Each feature's fetch module for the browser (ADR 0049), by feature id. */
   fetches: Record<string, string>
+  /** Every file esbuild read, absolute: `hozu dev` reloads when one changes (ADR 0062). */
+  inputs: string[]
 }
 
 const base = '/_hozu/c'
+
+const inputsOf = (metafile: { inputs: Record<string, unknown> }) =>
+  Object.keys(metafile.inputs)
+    .filter((path) => !path.includes('node_modules/') && !path.includes(':'))
+    .map((path) => resolve(process.cwd(), path))
 
 export async function bundleComponents(
   project: BuildResult,
   { minify = true }: { minify?: boolean } = {},
 ): Promise<ComponentBundle> {
   const entries = Object.entries(project.bindings.clients)
-  const out: ComponentBundle = { urls: {}, files: {}, diagnostics: [], fetches: {} }
+  const out: ComponentBundle = { urls: {}, files: {}, diagnostics: [], fetches: {}, inputs: [] }
   await bundleFetches(project, out, minify)
   if (!entries.length) return out
+  out.inputs.push(...entries.map(([, file]) => file))
   const result = await build({
     entryPoints: Object.fromEntries(entries.map(([ref, file]) => [ref.replace('.', '-'), file])),
     bundle: true,
@@ -37,6 +45,7 @@ export async function bundleComponents(
     logLevel: 'silent',
   })
   for (const file of result.outputFiles) out.files[file.path.slice(file.path.indexOf(base))] = file.text
+  out.inputs.push(...inputsOf(result.metafile))
   for (const [path, meta] of Object.entries(result.metafile.outputs)) {
     if (!meta.entryPoint) continue
     const ref = entries.find(([, file]) => relative(process.cwd(), file) === meta.entryPoint)?.[0]
@@ -70,6 +79,7 @@ async function bundleFetches(project: BuildResult, out: ComponentBundle, minify:
   for (const [feature, file] of Object.entries(project.bindings.fetches ?? {}).sort(([a], [b]) =>
     a.localeCompare(b),
   )) {
+    out.inputs.push(file)
     try {
       const result = await build({
         entryPoints: { [`fetch-${feature}`]: file },
@@ -86,6 +96,7 @@ async function bundleFetches(project: BuildResult, out: ComponentBundle, minify:
         logLevel: 'silent',
       })
       for (const f of result.outputFiles) out.files[f.path.slice(f.path.indexOf(base))] = f.text
+      out.inputs.push(...inputsOf(result.metafile))
       const entry = Object.entries(result.metafile.outputs).find(([, meta]) => meta.entryPoint)
       if (entry) out.fetches[feature] = entry[0].slice(entry[0].indexOf(base))
     } catch (error) {

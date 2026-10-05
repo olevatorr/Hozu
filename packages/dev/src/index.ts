@@ -60,6 +60,13 @@ export interface DevServer {
 
 const ignored = /(^|[/\\])(node_modules|dist|dist-static|\.git|\.hozu)([/\\]|$)/
 const envFile = /(^|[/\\])\.env(\.[\w.-]+)?$/
+const real = (file: string) => {
+  try {
+    return realpathSync(file)
+  } catch {
+    return file
+  }
+}
 const graphHook = new URL(import.meta.url.endsWith('.ts') ? './graph.ts' : './graph.js', import.meta.url).href
 
 const free = (port: number) =>
@@ -113,7 +120,7 @@ export async function dev({
       stdio: ['ignore', 'pipe', 'inherit', 'ipc'],
     })
     child.on('message', (message: { hozuGraph?: string[] }) => {
-      for (const file of message?.hozuGraph ?? []) loaded.add(file)
+      for (const file of message?.hozuGraph ?? []) loaded.add(real(file))
     })
     ready = new Promise((resolve) => {
       child!.stdout!.on('data', (chunk: Buffer) => {
@@ -168,8 +175,9 @@ export async function dev({
   const reloads = (file: string) => {
     if (file.endsWith('.css') || envFile.test(file) || file === 'package.json' || file === 'tsconfig.json')
       return true
+    if (loaded.has(join(realRoot, file))) return true
     if (!/\.(ts|mts|json)$/.test(file)) return false
-    return !running() || loaded.size === 0 || loaded.has(join(realRoot, file))
+    return !running() || loaded.size === 0
   }
   const watcher: FSWatcher = watch(cwd, { recursive: true }, (_, file) => {
     if (!file || ignored.test(file) || !reloads(file) || untouched(file)) return

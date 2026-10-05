@@ -1,4 +1,12 @@
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  appendFileSync,
+  cpSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { get, request } from 'node:http'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
@@ -116,6 +124,40 @@ createServer((req, res) => {
       await server.close()
     }
   }, 30_000)
+
+  it('reloads for what the browser bundle reads: a client component and a browser-run fetch.ts (0.18.2 review)', async () => {
+    for (const [example, file] of [
+      ['stations', 'features/stations/map.client.ts'],
+      ['stars', 'features/stars/fetch.ts'],
+    ] as const) {
+      const dir = join(mkdtempSync(join(tmpdir(), 'hozu-dev-bundle-')), example)
+      cpSync(new URL(`../../../examples/${example}/`, import.meta.url), dir, {
+        recursive: true,
+        filter: (from) => !/[/\\](node_modules|\.hozu|dist)([/\\]|$)/.test(from),
+      })
+      symlinkSync(
+        new URL(`../../../examples/${example}/node_modules`, import.meta.url),
+        join(dir, 'node_modules'),
+      )
+      const server = await dev({ cwd: dir, port: 0, appPort: await freePort(), log: () => {} })
+      try {
+        const events: string[] = []
+        const stream = await new Promise<import('node:http').IncomingMessage>((resolve) =>
+          get(`${server.url}/_hozu/dev`, resolve),
+        )
+        stream.on('data', (c: Buffer) => {
+          for (const m of c.toString().matchAll(/event: (\w+)\ndata: (.*)\n/g)) events.push(`${m[1]} ${m[2]}`)
+        })
+        await new Promise((r) => setTimeout(r, 1500))
+        appendFileSync(join(dir, file), '\n')
+        for (let i = 0; i < 100 && !events.length; i++) await new Promise((r) => setTimeout(r, 50))
+        expect(events, example).toEqual([`reload {"files":["${file}"]}`])
+        stream.destroy()
+      } finally {
+        await server.close()
+      }
+    }
+  }, 60_000)
 
   it('shows DevTools: injects the overlay, serves its modules and saves requests from this origin only', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-'))

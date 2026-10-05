@@ -32,6 +32,13 @@ export async function runServe(
   ).catch(() => null)
   const components = module.options.components ? await module.options.components(build) : null
   for (const d of components?.diagnostics ?? []) log(`${d.code} ${d.message}`)
+  if (process.env.HOZU_DEV === '1' && process.connected)
+    process.send?.({
+      hozuGraph: [
+        ...((components as { inputs?: string[] } | null)?.inputs ?? []),
+        ...loaded.envFiles.map((f) => join(root, f)),
+      ],
+    })
   const publicDir = join(root, 'public')
   const server = createServer(module.app, {
     env: process.env,

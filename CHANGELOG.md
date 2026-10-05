@@ -5,8 +5,9 @@
 - **`hozu dev` no longer reloads because the app wrote a file.** It reloaded the page, and restarted the app, for
   any `.ts`, `.css` or `.json` change in the project, so a resolver that keeps data in `data/*.json` reloaded the page
   after every mutation (instead of refreshing the invalidated queries in place) and, by restarting, signed everyone
-  out of the default in-memory sessions. It now reloads only for files the app loaded, stylesheets (still swapped in
-  place), env files (now watched too), `package.json` and `tsconfig.json`. The page logs which files changed
+  out of the default in-memory sessions. It now reloads only for files the app loaded or the browser bundle read
+  (client components, `fetch.ts`), stylesheets (still swapped in place), env files (now watched too),
+  `package.json` and `tsconfig.json`. The page logs which files changed
   (`[hozu dev] reloaded: lib.ts changed`). ADR 0062.
 - **Releases run in GitHub Actions** (ADR 0061): a version tag builds, tests and packs, then publishes after the
   owner approves, with npm Trusted Publishing and provenance; `create-hozu` goes out only once every `@hozu/*` package
