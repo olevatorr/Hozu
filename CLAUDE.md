@@ -156,7 +156,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - Name (ADR 0026): the framework was called Tenon until 0.1.0; it is **Hozu** (ほぞ, Japanese for "tenon").
   Historical records (ADRs 0001–0025, `docs/trials`, `docs/benchmarks`) keep `Tenon`, `@tenon/`, `tenon.config.ts`
   and `TN0xx` codes; everything else uses `Hozu`, `@hozu/`, `hozu.config.ts`, `/_hozu/` and `HZ0xx`.
-- Release (ADR 0025): npm scope `@hozu/*`, plus unscoped `create-hozu`; the binary is `hozu`. Publishing is manual with the owner's 2FA code: `pnpm -r pack` rehearsal first, no CI.
+- Release (ADR 0025, 0061): npm scope `@hozu/*`, plus unscoped `create-hozu`; the binary is `hozu`. A pushed `vX.Y.Z` tag runs
+  `.github/workflows/release.yml`: `check` (build, lint, typecheck, tests, pack, dry run), then `publish` after the
+  owner approves the `npm` environment (npm Trusted Publishing, no token): `scripts/publish.ts` publishes the 20
+  `@hozu/*`, waits until npm shows them, then `create-hozu`, then installs a fresh app.
 - 0.5 (ADR 0037): contracts only for deciding transitions, the lock summarises every transition (`was/now` in HZ018,
   `--update-lock` accepts copy-only changes); states with `invoke` drop unhandled events (listing `ignore` there is
   HZ014) and `done` / `failed` take a state name, a transition or a guarded list; `ui.query` `pending` is optional;
