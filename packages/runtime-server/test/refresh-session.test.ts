@@ -1,4 +1,5 @@
 import { feature, project, query, route, ui } from '@hozu/core'
+import { buildProject } from '@hozu/core/ir'
 import { resolvers } from '@hozu/data'
 import { app, createHandler, memorySessions, type SessionStore } from '@hozu/runtime-server'
 import { zodAdapter } from '@hozu/schema-zod'
@@ -149,8 +150,11 @@ describe('refreshSession (ADR 0060 C)', () => {
     const store = memorySessions({ secret: 'x'.repeat(40) })
     const { update: _, ...without } = store
     expect(() =>
-      createHandler(app({ resolvers: appResolvers, refreshSession: () => undefined }), {
+      createHandler({
+        build: buildProject(config, { sources: false }),
+        resolvers: appResolvers,
         session: () => ({ user: 'ada', token: 't', expires: 0 }),
+        refreshSession: () => undefined,
       }),
     ).toThrow('refreshSession needs a session store with update(request, value)')
     expect(() =>
