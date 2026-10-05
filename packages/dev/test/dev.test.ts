@@ -68,6 +68,55 @@ describe('dev server', () => {
     }
   }, 20_000)
 
+  it('reloads for files the app loads, stylesheets and env files, never for data the app writes (0.18.2)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-'))
+    writeFileSync(join(dir, 'lib.ts'), "export const word = 'hi'\n")
+    writeFileSync(
+      join(dir, 'app.ts'),
+      `import { createServer } from 'node:http'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { word } from './lib.ts'
+createServer((req, res) => {
+  if (req.url === '/write') {
+    mkdirSync(new URL('./data/', import.meta.url), { recursive: true })
+    writeFileSync(new URL('./data/store.json', import.meta.url), JSON.stringify({ at: Date.now() }))
+    writeFileSync(new URL('./notes.ts', import.meta.url), 'export const n = 1\\n')
+  }
+  res.writeHead(200, { 'content-type': 'text/html' }).end('<html><body><p>' + word + '</p></body></html>')
+}).listen(Number(process.env.PORT), () => console.log('ready'))
+`,
+    )
+    const server = await dev({ entry: 'app.ts', cwd: dir, port: 0, appPort: await freePort(), log: () => {} })
+    try {
+      const events: { event: string; data: string }[] = []
+      const stream = await new Promise<import('node:http').IncomingMessage>((resolve) =>
+        get(`${server.url}/_hozu/dev`, resolve),
+      )
+      stream.on('data', (c: Buffer) => {
+        for (const m of c.toString().matchAll(/event: (\w+)\ndata: (.*)\n/g))
+          events.push({ event: m[1]!, data: m[2]! })
+      })
+      const until = async (n: number) => {
+        for (let i = 0; i < 100 && events.length < n; i++) await new Promise((r) => setTimeout(r, 50))
+      }
+      await fetchText(`${server.url}/write`)
+      await fetchText(`${server.url}/write`)
+      await new Promise((r) => setTimeout(r, 600))
+      expect(existsSync(join(dir, 'data/store.json'))).toBe(true)
+      expect(events).toEqual([])
+      writeFileSync(join(dir, 'lib.ts'), "export const word = 'hello'\n")
+      await until(1)
+      expect(events).toEqual([{ event: 'reload', data: '{"files":["lib.ts"]}' }])
+      expect(await fetchText(`${server.url}/`)).toContain('<p>hello</p>')
+      writeFileSync(join(dir, '.env'), 'A=1\n')
+      await until(2)
+      expect(events[1]).toEqual({ event: 'reload', data: '{"files":[".env"]}' })
+      stream.destroy()
+    } finally {
+      await server.close()
+    }
+  }, 30_000)
+
   it('shows DevTools: injects the overlay, serves its modules and saves requests from this origin only', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-'))
     writeFileSync(join(dir, 'style.css'), 'p { color: red }')

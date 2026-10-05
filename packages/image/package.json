@@ -1,6 +1,6 @@
 {
   "name": "@hozu/image",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "description": "Optional build-time image optimisation (WebP srcset) and share-image cards for Hozu, using sharp",
   "keywords": [
     "hozu",
