@@ -286,7 +286,7 @@ export const DevToolsPage = ui.view({
       ]),
       ui.use(Section, { variant: { tone: 'ink' }, props: { kicker: 'For everyone' } }, [
         ui.use(Heading, {}, ['Plain words, or the source.']),
-        ui.div({ class: 'mt-8 grid gap-6 md:grid-cols-3' }, [
+        ui.div({ class: 'mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4' }, [
           ui.div({ class: 'border-4 border-paper p-5' }, [
             ui.h3({ class: 'text-xl font-black uppercase' }, ['Builder']),
             ui.p({ class: 'mt-2' }, [
@@ -303,6 +303,12 @@ export const DevToolsPage = ui.view({
             ui.h3({ class: 'text-xl font-black uppercase' }, ['Zero cost']),
             ui.p({ class: 'mt-2' }, [
               'Only under npm run dev. A production build carries no marker and no DevTools code.',
+            ]),
+          ]),
+          ui.div({ class: 'border-4 border-paper p-5' }, [
+            ui.h3({ class: 'text-xl font-black uppercase' }, ['Your language']),
+            ui.p({ class: 'mt-2' }, [
+              'One file translates every word of it, for you or your whole team: npx hozu devtools messages. What your agent reads stays English.',
             ]),
           ]),
         ]),

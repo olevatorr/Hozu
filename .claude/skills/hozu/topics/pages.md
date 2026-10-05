@@ -52,6 +52,7 @@ export default project({
 - Check the head without a server: `hozu get / --select 'meta[property^="og:"]'`; `--select script` prints the JSON-LD.
 - `head.failed` example: `failed: { Unauthorized: login, Forbidden: 403 }`. `Unexpected` is always 500.
   It maps declared errors only: a head query that always fails is not a redirect.
+  When the head query fails, no head field is computed: the `<title>` is `site.name`, with no description.
 - **Which redirect** (one per purpose):
 
 | Need | Form |

@@ -61,7 +61,9 @@ export const m = machine({
 ```
 - **assign** values are event (`e`), result (`r`) or error fields, context, literals, operators and `fn()` calls.
 - **guard** conditions: comparisons, `&&`, `||`, `!`, or a boolean `fn()`.
-- **navigate** sends the browser to `ui.link(route, params, search?)` after the transition.
+- **navigate** sends the browser to `ui.link(route, params, search?)` after the transition. It returns one link: to
+  choose between links, write one guarded transition per link (`[{ guard: () => …, navigate: … }, { navigate: … }]`);
+  a `?:` inside `navigate` is HZ014.
 - `done` and each `failed` entry take a state name, one transition, or a list of guarded transitions.
 - **Shared transitions:** `machine({ on })` entries are copied into every state that has no `invoke`, is not final,
   and neither handles nor ignores the event itself. Without `target` they stay in the state they fire in; one
