@@ -19,6 +19,7 @@ const base: DevNode = {
     variant: { tone: 'primary' },
     declaration: at('ui/button.ts', 16, 38),
     uses: 6,
+    client: null,
   },
   location: at('features/account/views.ts', 38, 12),
   classes: 'rounded bg-indigo-600 px-4 py-2',

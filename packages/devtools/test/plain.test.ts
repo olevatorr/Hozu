@@ -29,7 +29,10 @@ describe('plain words for builders (owner, 2026-10-02)', () => {
     expect(friendlyName(node({ tag: 'a' }))).toBe('Link')
     expect(
       friendlyName(
-        node({ tag: 'button', component: { ref: 'ui.Button', variant: {}, declaration: null, uses: 6 } }),
+        node({
+          tag: 'button',
+          component: { ref: 'ui.Button', variant: {}, declaration: null, uses: 6, client: null },
+        }),
       ),
     ).toBe('Button')
     expect(friendlyName(node({ tag: 'section' }))).toBe('Area')
@@ -70,7 +73,7 @@ describe('plain words for builders (owner, 2026-10-02)', () => {
     const lines = describeFor(
       node({
         tag: 'button',
-        component: { ref: 'ui.Button', variant: {}, declaration: null, uses: 6 },
+        component: { ref: 'ui.Button', variant: {}, declaration: null, uses: 6, client: null },
         children: [
           {
             id: 'x',
@@ -98,7 +101,10 @@ describe('plain words for builders (owner, 2026-10-02)', () => {
   it('asks the scope as a question', () => {
     expect(
       questionFor(
-        node({ tag: 'button', component: { ref: 'ui.Button', variant: {}, declaration: null, uses: 6 } }),
+        node({
+          tag: 'button',
+          component: { ref: 'ui.Button', variant: {}, declaration: null, uses: 6, client: null },
+        }),
       ),
     ).toEqual({
       question: 'Change this instance only, or the main component (every Button)?',
