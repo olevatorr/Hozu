@@ -102,8 +102,10 @@ export interface Implement<Session, Env = unknown> {
   ): Implementation
 }
 
-export interface ResolverSet {
+export interface ResolverSet<Session = unknown, Env = unknown> {
   readonly [RESOLVERS]: { project: object; list: Implementation[] }
+  /** Carries the project's session and env types to `app()`; never set. */
+  readonly types?: { session: Session; env: Env }
 }
 
 const implement = ((decl: object, run: Run): Implementation =>
@@ -112,7 +114,7 @@ const implement = ((decl: object, run: Run): Implementation =>
 export const resolvers = <Session, Env>(
   project: ProjectDecl<Session, Env>,
   define: (implement: Implement<Session, Env>) => Implementation[],
-): ResolverSet =>
+): ResolverSet<Session, Env> =>
   Object.freeze({ [RESOLVERS]: { project, list: define(implement as Implement<Session, Env>) } })
 
 export const implementationOf = (i: Implementation) => i[IMPLEMENTATION]

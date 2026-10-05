@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 const home = route({ path: '/', params: null, search: null })
 const story = route({ path: '/stories/:id', params: z.object({ id: z.string() }), search: null })
-const save = mutation({ input: z.object({}), output: z.object({}), runs: 'server' })
+const save = mutation({ input: z.object({}), output: z.object({}), runs: 'server', access: 'anyone' })
 const Save = event({ payload: z.object({}) })
 
 const appWith = (navigate: 'condition' | 'guards') => {

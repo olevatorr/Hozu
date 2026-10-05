@@ -39,6 +39,12 @@
   read only the visitor's rows. In production a list's foreign rows are dropped and logged once.
 - Public queries never see the session, and a browser-run effect is guarded by the API it calls: `access` there is
   HZ089.
+- **A token that expires:** keep it and its expiry in the session, and refresh it in `app({ refreshSession: async
+  (session, { env }) => session.expires > Date.now() ? undefined : { ...session, token: await renew(session) } })`.
+  It runs once per request before any resolver reads the session (queries stay read-only); the new value replaces
+  the old one in place (the cookie stays), `null` signs out, `undefined` keeps it. Parallel requests share one call;
+  a throw keeps the session and reaches `onError`. Do not keep tokens in module variables: a restart or a second
+  instance loses them.
 - Calling another API with a token: a token your server holds goes in the session and is read in a `runs: 'server'`
   resolver; a token that lives in the browser (OIDC / SSO, `localStorage`) is read in a `runs: 'browser'` effect
   (`hozu docs fetch`) and never reaches your server.

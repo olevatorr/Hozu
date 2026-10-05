@@ -2,6 +2,8 @@ export interface SessionStore {
   read(request: Request): Promise<unknown>
   write(value: unknown, request?: Request): Promise<string>
   issue(value: unknown): Promise<string>
+  /** Replaces the value under the request's id, which stays; `null` removes it (ADR 0060 C, for refreshSession). */
+  update?(request: Request, value: unknown): Promise<void>
 }
 
 export interface MemorySessionsOptions {
@@ -95,6 +97,12 @@ function storedSessions(
       return `${await create(value)}${attributes}; Max-Age=${maxAge}`
     },
     issue: create,
+    async update(request, value) {
+      const id = await idOf(request)
+      if (!id) return
+      if (value === null) await kv.delete(`${prefix}${id}`)
+      else await kv.put(`${prefix}${id}`, JSON.stringify(value), { expirationTtl: maxAge })
+    },
   }
 }
 

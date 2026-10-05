@@ -95,6 +95,11 @@ export interface HandlerOptions {
   dev?: DevOptions
   /** How this host loads each feature's fetch.ts for runs: 'either' (ADR 0049); by default `import()` of the file. */
   fetches?: FetchLoader
+  /**
+   * Runs once per request before any resolver reads the session (ADR 0060 C): a new value replaces it in place,
+   * `null` signs out, `undefined` keeps it.
+   */
+  refreshSession?: (session: never, ctx: { env: never }) => unknown
 }
 
 export interface OgCard {
@@ -205,6 +210,7 @@ function handlerFor({
   render,
   dev,
   fetches,
+  refreshSession,
 }: HandlerOptions): Handler {
   const generated = render ? instantiate(render) : undefined
   const cards = new Map<string, Promise<Uint8Array>>()
@@ -264,9 +270,47 @@ function handlerFor({
                 : rawEnv.NODE_ENV === 'production',
             })
           : null))
-  const session = store
+  if (refreshSession && store && !store.update)
+    throw new Error(
+      'refreshSession needs a session store with update(request, value): memorySessions and kvSessions have one',
+    )
+  const read = store
     ? (request: Request) => store.read(request)
     : async (request: Request) => (sessionOption as ((r: Request) => unknown) | undefined)?.(request) ?? null
+  const serverEnv = (() => {
+    const parsed = build.bindings.env.server?.(rawEnv)
+    return parsed?.ok ? parsed.value : {}
+  })()
+  const refreshing = new Map<string, Promise<unknown>>()
+  const refreshed = (request: Request, who: unknown): Promise<unknown> => {
+    const key = `${request.headers.get('cookie') ?? ''}\n${JSON.stringify(who)}`
+    let running = refreshing.get(key)
+    if (!running) {
+      running = (async () => {
+        try {
+          const next = await (refreshSession as (s: unknown, c: { env: unknown }) => unknown)(who, {
+            env: serverEnv,
+          })
+          if (next === undefined) return who
+          const issues = next === null ? null : (build.bindings.checks['#session']?.(next) ?? null)
+          if (issues)
+            throw new Error(`refreshSession returned a value that is not a session: ${issues.join('; ')}`)
+          await store?.update?.(request, next)
+          return next
+        } catch (error) {
+          onError(error, { path: new URL(request.url).pathname })
+          return who
+        } finally {
+          refreshing.delete(key)
+        }
+      })()
+      refreshing.set(key, running)
+    }
+    return running
+  }
+  const session = refreshSession
+    ? (request: Request) => read(request).then((who) => (who === null ? who : refreshed(request, who)))
+    : read
   if (dev) traceFetch()
   const { basePath, redirects, headers: headerRules } = ir.http
   const fnFiles = fnModules(build)

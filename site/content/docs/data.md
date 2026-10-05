@@ -115,6 +115,20 @@ export default app({
 
 Replace the in-memory implementation with your database or service without changing the view's data contract. Server-fetched data is serialized into the page payload instead of being fetched again on hydration.
 
+## Keep a session valid while reading
+
+Queries only read, so a query cannot store a renewed token in the session. When the session holds a token that expires, renew it in the app module instead:
+
+```ts
+export default app({
+  resolvers,
+  refreshSession: async (session, { env }) =>
+    session.expires > Date.now() ? undefined : { ...session, ...(await renew(session.refreshToken, env)) },
+})
+```
+
+`refreshSession` runs once per request, when the request first reads the session and before any resolver sees it, so the page, its queries and its mutations all get the renewed value. Return the new session (it replaces the old one on the server; the cookie stays the same), `null` to sign out, or `undefined` to keep it. Requests that arrive together for one session share one call, so a single-use refresh token is spent once. A hook that throws keeps the session and reports through `onError`. The value is checked against the session schema. Keep tokens in the session rather than in module variables: those are lost on a restart and differ between instances.
+
 ## Load a Markdown collection
 
 `@hozu/content` loads Markdown files into entries with `slug`, validated front matter, HTML and headings. Call `loadCollection({ dir: new URL('./content/posts/', import.meta.url), schema })` in server code, then return the entries through public queries. This website uses that pattern for its documentation and original trial records.

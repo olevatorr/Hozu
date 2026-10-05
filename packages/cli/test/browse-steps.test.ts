@@ -67,7 +67,7 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
 
   const tab = async (mode: BrowseMode) => {
     const t = new Tab(cdp, world, mode, null, errors)
-    await t.start(null, false)
+    await t.start(null, false, { width: 1280, height: 800 })
     cdp.on((method, params, from) => {
       if (from && t.sessions.has(from)) t.handle(method, params, from)
     })
