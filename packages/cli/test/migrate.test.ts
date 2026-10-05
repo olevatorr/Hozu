@@ -363,6 +363,32 @@ describe('the 0.13 → 0.14 step (ADR 0053)', () => {
     expect(existsSync(join(after, '.hozu/migrate-0.15.json'))).toBe(false)
   }, 120_000)
 
+  it('renames an error the app named Forbidden, which 0.15 reserves, and keeps the IR equal (ADR 0059 C)', async () => {
+    const dir = await copyOf('notes')
+    const before = await irOf(dir)
+    await runMigrate(dir, {
+      config: undefined,
+      dryRun: false,
+      versions: { installed: '0.10.0', target: '0.15.0' },
+      recordIR: () => before,
+    })
+    for (const file of ['app.ts', 'hozu.config.ts', 'features/account/views.ts', 'features/account/model.ts'])
+      expect(readFileSync(join(dir, file), 'utf8'), file).not.toContain('Forbidden')
+    expect(readFileSync(join(dir, 'app.ts'), 'utf8')).toContain("fail('NotAllowed', {})")
+    const after = join(root, '.tmp', `migrate-notes-after-${Date.now()}`)
+    cpSync(dir, after, { recursive: true, verbatimSymlinks: true })
+    made.push(after)
+    const second = await runMigrate(after, {
+      config: undefined,
+      dryRun: false,
+      versions: { installed: '0.15.0', target: '0.15.0' },
+    })
+    expect(second.ir.differences).toEqual([])
+    expect(
+      second.check?.validate.diagnostics.filter((d) => d.severity === 'error').map((d) => d.code),
+    ).not.toContain('HZ014')
+  }, 120_000)
+
   it('takes a 0.13 app to 0.14 with an equal IR and a clean check', async () => {
     const dir = join(root, '.tmp', `migrate-0.13-${Date.now()}`)
     cpSync(join(root, 'examples/bookmarks'), dir, {
