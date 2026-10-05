@@ -13,7 +13,9 @@
     `scripts/publish.ts --dry-run`. No approval; publishes nothing.
   - `publish` on a `v*` tag only, after `check`, in the GitHub environment `npm`, which waits for the owner's
     approval. It packs again and runs `scripts/publish.ts`.
-- **No token:** npm Trusted Publishing (OIDC, npm ≥ 11.5.1, `id-token: write`). Each package on npmjs.com trusts this
+- **No token:** npm Trusted Publishing (OIDC, npm ≥ 11.5.1, `id-token: write`). The `publish` job runs Node 24,
+  whose npm qualifies: upgrading Node 22's npm in place (`npm install -g npm@11`) broke halfway on the runner
+  (`Cannot find module 'promise-retry'`) the first time it ran, before anything was published. Each package on npmjs.com trusts this
   repository, this workflow file and the `npm` environment; every version carries provenance.
 - **`scripts/publish.ts`** refuses unless `.tmp/release` holds the 21 packages at one version equal to the tag;
   publishes the 20 `@hozu/*` not yet on npm, waits until npm shows all of them, then `create-hozu`; then creates an

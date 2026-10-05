@@ -41,6 +41,17 @@ if (versions.length !== 1) throw new Error(`the packages hold several versions: 
 const version = versions[0]!
 if (tag && tag !== version) throw new Error(`the tag says ${tag}, the packages ${version}`)
 
+const npmVersion = run('npm', ['--version']).trim().split('.').map(Number) as [number, number, number]
+if (
+  !dryRun &&
+  (npmVersion[0] < 11 ||
+    (npmVersion[0] === 11 && npmVersion[1] < 5) ||
+    (npmVersion[0] === 11 && npmVersion[1] === 5 && npmVersion[2] < 1))
+)
+  throw new Error(
+    `npm ${npmVersion.join('.')} cannot publish with Trusted Publishing: it needs 11.5.1 or later (Node 24 ships it)`,
+  )
+
 const libraries = packages.filter((p) => p.name !== 'create-hozu')
 const scaffold = packages.find((p) => p.name === 'create-hozu')
 if (!scaffold) throw new Error('create-hozu is not in .tmp/release')
