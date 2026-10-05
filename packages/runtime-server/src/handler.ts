@@ -270,6 +270,10 @@ function handlerFor({
                 : rawEnv.NODE_ENV === 'production',
             })
           : null))
+  if (refreshSession && !ir.session)
+    throw new Error(
+      'refreshSession renews a session, and this project declares none: add project({ session })',
+    )
   if (refreshSession && store && !store.update)
     throw new Error(
       'refreshSession needs a session store with update(request, value): memorySessions and kvSessions have one',

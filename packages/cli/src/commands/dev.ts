@@ -26,6 +26,7 @@ export async function runDev(
       devtoolsMessages?: string | null
     }): Promise<{ url: string; close(): Promise<void> }>
   }>('@hozu/dev', ['npm install -D @hozu/dev'])
+  const line = devtools ? await messagesLine(loaded, messages) : null
   const port = Number(process.env.PORT ?? 3000)
   const { url, close } = await dev({
     cwd: dirname(loaded.path),
@@ -46,6 +47,5 @@ export async function runDev(
   log(
     `Hozu dev on ${url}${devtools ? ' · DevTools: choose Select in the dock (Alt+Shift+S)' : ''} · stop: kill ${process.pid}`,
   )
-  const line = devtools ? await messagesLine(loaded, messages) : null
   if (line) log(line)
 }

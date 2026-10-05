@@ -111,6 +111,13 @@ describe('refreshSession (ADR 0060 C)', () => {
     expect(String(wrong.errors[0])).toContain('refreshSession returned a value that is not a session')
   })
 
+  it('needs a project with a session', () => {
+    const plain = project({ schema: zodAdapter, routes: { home }, pages: [], features: [] })
+    expect(() =>
+      createHandler(app({ resolvers: resolvers(plain, () => []), refreshSession: () => undefined })),
+    ).toThrow('this project declares none')
+  })
+
   it('needs a store that can replace a value in place', () => {
     const store = memorySessions({ secret: 'x'.repeat(40) })
     const { update: _, ...without } = store
