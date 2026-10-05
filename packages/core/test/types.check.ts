@@ -244,6 +244,18 @@ ui.view({
       // @ts-expect-error ref belongs on a form
       ui.div({ ref: picked }, []),
       ui.svg({ viewBox: '0 0 1 1' }, [ui.path({ d: 'M0 0', 'stroke-width': 2 }, [])]),
+      ui.svg({ viewBox: '0 0 1 1' }, [
+        ui.path({ d: 'M0 0' }),
+        ui.line({ x1: 0, y1: 0, x2: 1, y2: 1 }),
+        ui.circle({ r: 1 }),
+        ui.rect({ width: 1, height: 1 }),
+        ui.ellipse({ rx: 1, ry: 1 }),
+        ui.polygon({ points: '0,0 1,1' }),
+        ui.polyline({ points: '0,0 1,1' }),
+        ui.linearGradient({ id: 'g' }, [ui.stop({ offset: 0 })]),
+      ]),
+      // @ts-expect-error a group still takes its children
+      ui.g({}),
       ui.button({ 'aria-pressed': ui.dom.key === 'x', 'data-state': 'open' }, []),
     ]),
 })
