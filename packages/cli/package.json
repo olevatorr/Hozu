@@ -1,6 +1,6 @@
 {
   "name": "@hozu/cli",
-  "version": "0.17.2",
+  "version": "0.18.0",
   "description": "The hozu command: check, map, why, show, get, browse, call, plan, add, build, dev, serve, docs, migrate and skill (all with --json)",
   "keywords": [
     "hozu",

@@ -60,7 +60,17 @@ function transition(
           at(p, 'navigate'),
           () => {
             const v = scope.value(scope.callback(t.navigate!)(arg), at(p, 'navigate'))
-            if (!('link' in v)) throw new RecorderError('navigate must return ui.link(route, params, search)')
+            if (!('link' in v))
+              throw new RecorderError('navigate must return one ui.link(route, params, search)', {
+                cause:
+                  'navigate is recorded once, so a condition inside it (?:, &&, ??) becomes a value, not a link. Choose the link with guarded transitions instead.',
+                fix: {
+                  summary: 'One transition per link, the first matching guard wins',
+                  snippet:
+                    "done: [\n  { guard: () => ctx.returnTo !== null, target: 'idle', navigate: () => ui.link(storyPage, { id: ctx.returnTo }) },\n  { target: 'idle', navigate: () => ui.link(home, null) },\n]",
+                  patch: null,
+                },
+              })
             return v
           },
           null,

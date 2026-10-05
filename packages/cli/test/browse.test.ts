@@ -324,4 +324,20 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     ])
     expect(csp.out.errors[0].text).toContain('violates the following Content Security Policy directive')
   }, 60_000)
+
+  it('opens at the --viewport size and points a screenshot step at --screenshot (ADR 0060 E)', async () => {
+    const shot = `${root}.tmp/browse-phone-${Date.now()}.png`
+    copies.push(shot)
+    const phone = await browse(['/', '--js', 'on', '--viewport', '390x844', '--screenshot', shot])
+    expect(phone.code).toBe(0)
+    const png = readFileSync(shot)
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([390, 844])
+    const step = await browse(['/', '--js', 'on', '--do', 'screenshot phone.png'])
+    expect(step.code).not.toBe(0)
+    expect(JSON.stringify(step.out)).toContain('add --screenshot <file>')
+    let text = ''
+    expect(
+      await main(['browse', '/', '--viewport', 'phone'], example('stations'), (s) => (text += s)),
+    ).not.toBe(0)
+  }, 60_000)
 })

@@ -29,10 +29,12 @@ npx hozu get / --json
 | `hozu get /tasks --json` | Request one or more pages in-process without a server. |
 | `hozu env --json` | Every env variable: server or public, required, default, whether it is set now, its internal URL; `--example` writes `.env.example`. |
 | `hozu call tasks.listItems --input '{}' --json` | Run one query or mutation through the app's handler without a server: the value or the declared error, and for a mutation (`--write`) the tags it invalidated and the queries they refresh. `--session '<json>'` signs in. An endpoint takes `--header 'Authorization: Bearer …'` and prints its status; a POST endpoint needs `--write`. |
-| `hozu browse /tasks --do 'click Save' --json` | Run steps in headless Chrome without a server, with and without JS: what each step changed, errors and client components. `--as <name>` adds actors, `--header` adds a request header (to every actor, or to one after its `--as`), `remember <name> from url|<selector>` keeps a value for `$name` in later steps, and `post <path> a=1` forges a native form post. |
+| `hozu browse /tasks --do 'click Save' --json` | Run steps in headless Chrome without a server, with and without JS: what each step changed, errors and client components. `--as <name>` adds actors, `--header` adds a request header (to every actor, or to one after its `--as`), `remember <name> from url|<selector>` keeps a value for `$name` in later steps, and `post <path> a=1` forges a native form post. `--viewport 390x844` opens at a phone's size, `--screenshot <file>` saves a PNG after the steps. |
 | `hozu build --json` | Write deployment assets, generated server rendering code and the manifest. |
+| `hozu export --json` | Write every page as files for a static host to `dist/` (`--out` elsewhere), with `.nojekyll`; it exits 1 and names each page and server effect a static host cannot answer. See [Deploying](/docs/deploying). |
 | `hozu serve` | Start the app module on `PORT` with adapter-node; this is `npm start`, and it prints `stop: kill <pid>`. It runs as production unless `NODE_ENV` is set, so an app with sessions needs `SESSION_SECRET`. |
-| `hozu dev` | Start the app with reloads on every edit and [Hozu DevTools](/docs/devtools); this is `npm run dev`. |
+| `hozu dev` | Start the app with reloads on every edit and [Hozu DevTools](/docs/devtools); this is `npm run dev`. `--devtools-messages <file>` (or `HOZU_DEVTOOLS_MESSAGES`) shows DevTools in your language. |
+| `hozu devtools messages` | Print every DevTools string as JSON to translate; `--check <file>` lists what a translation lacks or no longer needs. |
 | `hozu requests` | List the requests saved from DevTools; `done <n> --result` closes one. |
 | `hozu show views.ts:42 --note "…"` | Show the person a note on that part of their page under `hozu dev` (a `file:line`, a DevTools id or `page:<route>`; `--in "<text>"` frames one row of a list). `hozu show` lists the notes and marks one `STALE` when its id names another part now; `--done <n>` removes one, `--clear` all. |
 | `hozu <command> --help` | Print one command's usage and options. |
@@ -81,6 +83,7 @@ The exit code is 1 when anything failed.
 ```sh
 npx hozu browse / --do 'fill Search=park' --do 'click Tech Park' --select canvas
 npx hozu browse / --reduced-motion --screenshot shot.png
+npx hozu browse / --viewport 390x844 --screenshot phone.png
 ```
 
 Set `HOZU_CHROME=/path/to/chrome` when the browser is not in a standard location.

@@ -452,6 +452,7 @@ export async function renderPage({
   let status = 200
   let redirect: string | null = null
   let headScope = empty
+  let headFailed = false
   if (page.head.query) {
     const input = value(page.head.query.input, empty)
     const result = (await data.run(page.head.query.ref, input)) as Result
@@ -459,6 +460,7 @@ export async function renderPage({
     const q = ir.features[page.head.query.ref.slice(0, dot)]?.queries[page.head.query.ref.slice(dot + 1)]
     if (q) for (const t of tagKeys(q.tags, input, empty)) tags.add(t)
     if (!result.ok) {
+      headFailed = true
       const failed = page.head.failed[result.error]
       if (failed && 'redirect' in failed) redirect = pathOf(routes[failed.redirect] ?? '/', null)
       status = redirect
@@ -477,7 +479,7 @@ export async function renderPage({
   const head = headHtml(
     ir,
     page.head,
-    (v) => value(v, headScope),
+    (v) => (headFailed ? null : value(v, headScope)),
     path,
     status,
     assets,

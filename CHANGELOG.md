@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.18.0 — What a backend engineer's app found (ADR 0060)
+
+No source change is needed (`hozu migrate` raises the packages).
+
+- **Renew a session while the app only reads: `app({ refreshSession })`.** When the session holds a token that
+  expires, `refreshSession: async (session, { env }) => …` runs once per request, before any resolver reads the
+  session. Return the new value (it replaces the old one on the server under the same id, so the cookie stays),
+  `null` to sign out, or `undefined` to keep it. Within one process, requests of one session share one call (and its
+  result for ten seconds), a sign-out while it runs wins, a throw keeps the session and reaches `onError`, and the
+  value is checked against the session schema. Its types come from
+  `resolvers(project, …)`. `SessionStore` gains an optional `update(request, value)`, which `memorySessions` and
+  `kvSessions` have. Queries still only read.
+- **DevTools in your language.** `npx hozu devtools messages > devtools.zh-TW.json` prints every DevTools string to
+  translate; `hozu dev --devtools-messages <file>`, or `HOZU_DEVTOOLS_MESSAGES=<file>` in your shell for every
+  project, shows it. A missing string stays English, `hozu dev` says how many are missing, and `--check <file>`
+  lists missing, stale and wrongly placed `{placeholders}`. The request Markdown and the CLI stay English. A
+  complete Traditional Chinese file is in `examples/studio/devtools.zh-TW.json`.
+- **A 404 or 410 page is titled with the site name**, not `null · <site>`: a failed head query no longer evaluates
+  the head fields.
+- **HZ014 for a condition inside `navigate`** now says so and gives the fix: one guarded transition per link.
+- **`hozu browse --viewport 390x844`** opens at that size (a phone below 768 px wide), for `--screenshot` and layout
+  checks; `--do 'screenshot …'` points at `--screenshot <file>`.
+
 ## 0.17.2
 
 Deploying, and what trial 0024's re-run found (ADR 0059). No app changes how it is written; `hozu migrate` raises the

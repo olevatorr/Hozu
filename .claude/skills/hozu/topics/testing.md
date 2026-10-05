@@ -65,7 +65,8 @@
   - To forge a post, take the form's `action` from `hozu get <page> --forms` or `remember … @action` on a page the
     server rendered (`goto` it first): forms the client renders after a change carry no `action`.
   - Exit code 1 also when a client component failed. `--json` has every line; `--full` prints them all;
-    `--select <css>`, `--screenshot shot.png` and `--reduced-motion` as before.
+    `--select <css>`, `--screenshot shot.png` (after the steps), `--viewport 390x844` (a phone; default 1280x800) and
+    `--reduced-motion`.
   - It also prints the client components on the page (mounted, failed, size, canvases).
 - **`testApp`:** `app` is the default export of `app.ts`; `.post(path, fields)` submits a native form, with fields as
   a record or as `[name, value]` pairs for repeated names. `testApp(app, { session: store })` may swap only the

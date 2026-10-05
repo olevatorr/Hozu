@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/DevtoolsMessagesOutput",
+  "definitions": {
+    "DevtoolsMessagesOutput": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "hozu": {
+              "type": "string"
+            },
+            "messages": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "hozu",
+            "messages"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string"
+            },
+            "missing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "unknown": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "placeholders": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "file",
+            "missing",
+            "unknown",
+            "placeholders"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "`hozu devtools messages` (ADR 0060 D): every string to translate, or what a translation (`--check`) lacks."
+    }
+  }
+}

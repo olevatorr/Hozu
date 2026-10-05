@@ -89,3 +89,16 @@ The part gets a numbered red frame on your page, and an **Agent** button appears
 ## Builder or Developer
 
 The settings switch between plain words (Builder, the default) and the source view (Developer): files, code excerpts, components, transitions and node ids. `npm run dev -- --devtools developer` starts in the source view. Light and dark follow your system.
+
+## In your language
+
+DevTools speaks English unless you give it your own words. Print every string, translate the values, and name the file:
+
+```sh
+npx hozu devtools messages > devtools.zh-TW.json
+npm run dev -- --devtools-messages devtools.zh-TW.json
+```
+
+To use one translation in every project, set it once in your shell instead: `export HOZU_DEVTOOLS_MESSAGES=~/.config/hozu/devtools.zh-TW.json`. The flag wins over the variable. Keep the `{names}` in braces: DevTools fills them in. A string the file lacks shows in English, so an upgrade never breaks the file; `hozu dev` says how many are missing, and `npx hozu devtools messages --check devtools.zh-TW.json` lists them. The file is read again on every page load.
+
+Only the interface changes. The request your agent reads, and every CLI command, stay in English. The Hozu repository keeps a complete Traditional Chinese file in `examples/studio/devtools.zh-TW.json`.

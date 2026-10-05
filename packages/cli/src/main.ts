@@ -17,6 +17,7 @@ import { describeCall, runCall } from './commands/call.ts'
 import { runCheck, startTypes } from './commands/check.ts'
 import { describeComponent } from './commands/components.ts'
 import { runDev } from './commands/dev.ts'
+import { describeDevtoolsMessages, messagesFileOf, runDevtoolsMessages } from './commands/devtools.ts'
 import { runDocs } from './commands/docs.ts'
 import { describeEnv, runEnv } from './commands/env.ts'
 import { describeExport, runExport } from './commands/export.ts'
@@ -51,7 +52,9 @@ Commands:
                             when a page needs a server and lists why (needs @hozu/adapter-static)
   serve                     Start the app module (project({ app })) on PORT with adapter-node: what npm start runs
   dev                       Start the dev server: reload on edits, hot CSS and Hozu DevTools
-                            (--devtools builder|developer picks its mode, --no-devtools hides it)
+                            (--devtools builder|developer picks its mode, --no-devtools hides it,
+                            --devtools-messages <file> or HOZU_DEVTOOLS_MESSAGES shows it in your language)
+  devtools messages         Print every DevTools string as JSON to translate (--check <file>: what it lacks)
   requests [done <n>]       The change requests saved from DevTools (--full: all open ones as one prompt);
                             done <n> --result "<what changed>" removes one
   show [<target>]           Show the person a note on the page under hozu dev: <target> is a DevTools id or
@@ -100,6 +103,10 @@ Options:
   --as <name>          browse: the steps after it are this actor's, in its own browser; repeat to switch actors
   --screenshot <file>  browse: save a PNG of the viewport after the steps
   --reduced-motion     browse: emulate prefers-reduced-motion: reduce
+  --devtools-messages <file> dev: DevTools in your language (a file from hozu devtools messages);
+                       HOZU_DEVTOOLS_MESSAGES=<file> in your shell does it for every project
+  --check <file>       devtools messages: list the strings a translation lacks or no longer needs
+  --viewport <WxH>     browse: the window size in CSS px (default 1280x800); below 768 wide it is a phone (390x844)
   --page <path>        add feature/show: the route and page to add (add feature), the page a note is on (show)
   --note <text>        show: what the person should see there, in their words
   --done <n>           show: remove note n
@@ -137,6 +144,16 @@ export function commandHelp(command: string, sub?: string): string | null {
     return s.length === 0 ? /--json|--config|--help/.test(b[0]!) : s.some((x) => x === name || x === command)
   })
   return `Usage: hozu ${name} [options]\n\n${own.flat().join('\n')}\n\nOptions:\n${options.flat().join('\n')}\n`
+}
+
+export const browseViewport = (value: string | undefined): { width: number; height: number } => {
+  if (value === undefined) return { width: 1280, height: 800 }
+  const m = /^(\d{3,4})x(\d{3,4})$/.exec(value)
+  if (!m)
+    throw new HozuCliError('usage', `--viewport takes <width>x<height> in CSS px, not "${value}"`, [
+      '--viewport 390x844',
+    ])
+  return { width: Number(m[1]), height: Number(m[2]) }
 }
 
 const browseJs = (value: string | undefined): BrowseJs => {
@@ -235,6 +252,9 @@ export async function main(
         js: { type: 'string' },
         screenshot: { type: 'string' },
         'reduced-motion': { type: 'boolean', default: false },
+        viewport: { type: 'string' },
+        'devtools-messages': { type: 'string' },
+        check: { type: 'string' },
         result: { type: 'string' },
         note: { type: 'string' },
         done: { type: 'string' },
@@ -276,6 +296,7 @@ export async function main(
       'export',
       'serve',
       'dev',
+      'devtools',
       'requests',
       'show',
       'skill',
@@ -392,10 +413,25 @@ export async function main(
     const loaded = await load(values.config, cwd)
     const loadMs = performance.now() - loading
     if (command === 'dev') {
-      await runDev(loaded, values['no-devtools'] === true ? false : (values.devtools ?? 'builder'), (line) =>
-        out(`${line}\n`),
+      await runDev(
+        loaded,
+        values['no-devtools'] === true ? false : (values.devtools ?? 'builder'),
+        (line) => out(`${line}\n`),
+        values['no-devtools'] === true
+          ? null
+          : messagesFileOf(values['devtools-messages'], cwd, (line) => out(`${line}\n`)),
       )
       return 0
+    }
+    if (command === 'devtools') {
+      if (target !== 'messages')
+        throw new HozuCliError('usage', 'hozu devtools takes messages', [
+          'npx hozu devtools messages > devtools.messages.json',
+          'npx hozu devtools messages --check devtools.messages.json',
+        ])
+      const result = await runDevtoolsMessages(loaded, values.check, cwd)
+      out(asJson ? json(result) : describeDevtoolsMessages(result))
+      return 'missing' in result && (result.unknown.length || result.placeholders.length) ? 1 : 0
     }
     if (command === 'check') {
       const result = await runCheck(loaded, cwd, values['update-lock'] === true, typeRun, loadMs)
@@ -467,6 +503,7 @@ export async function main(
         select: values.select ?? [],
         screenshot: values.screenshot,
         reducedMotion: values['reduced-motion'] === true,
+        viewport: browseViewport(values.viewport),
         full: values.full === true,
       })
       out(asJson ? json(result) : describeBrowse(result, values.full === true))

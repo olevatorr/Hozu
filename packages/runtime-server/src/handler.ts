@@ -95,6 +95,11 @@ export interface HandlerOptions {
   dev?: DevOptions
   /** How this host loads each feature's fetch.ts for runs: 'either' (ADR 0049); by default `import()` of the file. */
   fetches?: FetchLoader
+  /**
+   * Runs once per request before any resolver reads the session (ADR 0060 C): a new value replaces it in place,
+   * `null` signs out, `undefined` keeps it.
+   */
+  refreshSession?: (session: never, ctx: { env: never }) => unknown
 }
 
 export interface OgCard {
@@ -205,6 +210,7 @@ function handlerFor({
   render,
   dev,
   fetches,
+  refreshSession,
 }: HandlerOptions): Handler {
   const generated = render ? instantiate(render) : undefined
   const cards = new Map<string, Promise<Uint8Array>>()
@@ -264,9 +270,59 @@ function handlerFor({
                 : rawEnv.NODE_ENV === 'production',
             })
           : null))
-  const session = store
+  if (refreshSession && !ir.session)
+    throw new Error(
+      'refreshSession renews a session, and this project declares none: add project({ session })',
+    )
+  if (refreshSession && !store?.update)
+    throw new Error(
+      'refreshSession needs a session store with update(request, value), where it keeps the renewed value: memorySessions and kvSessions have one',
+    )
+  const read = store
     ? (request: Request) => store.read(request)
     : async (request: Request) => (sessionOption as ((r: Request) => unknown) | undefined)?.(request) ?? null
+  const serverEnv = (() => {
+    const parsed = build.bindings.env.server?.(rawEnv)
+    return parsed?.ok ? parsed.value : {}
+  })()
+  const renewals = new Map<string, { next: Promise<unknown>; until: number }>()
+  const renew = (who: unknown, path: string): Promise<unknown> => {
+    const key = JSON.stringify(who)
+    const at = now()
+    for (const [k, r] of renewals) if (r.until < at) renewals.delete(k)
+    const known = renewals.get(key)
+    if (known) return known.next
+    const next = (async () => {
+      try {
+        const value = await (refreshSession as (s: unknown, c: { env: unknown }) => unknown)(who, {
+          env: serverEnv,
+        })
+        if (value === undefined || value === null) return value
+        const issues = build.bindings.checks['#session']?.(value) ?? null
+        if (issues)
+          throw new Error(`refreshSession returned a value that is not a session: ${issues.join('; ')}`)
+        return value
+      } catch (error) {
+        onError(error, { path })
+        return undefined
+      }
+    })()
+    renewals.set(key, { next, until: Number.POSITIVE_INFINITY })
+    void next.then(() => {
+      const entry = renewals.get(key)
+      if (entry) entry.until = now() + 10_000
+    })
+    return next
+  }
+  const refreshed = async (request: Request, who: unknown): Promise<unknown> => {
+    const next = await renew(who, new URL(request.url).pathname)
+    if (next === undefined) return who
+    const kept = await store!.update!(request, next)
+    return next === null || kept === false ? null : next
+  }
+  const session = refreshSession
+    ? (request: Request) => read(request).then((who) => (who === null ? who : refreshed(request, who)))
+    : read
   if (dev) traceFetch()
   const { basePath, redirects, headers: headerRules } = ir.http
   const fnFiles = fnModules(build)

@@ -87,6 +87,14 @@ export const steps: Step[] = [
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.17',
+    to: '0.18',
+    summary:
+      'no source change; a page whose head query fails is titled with the site name, app({ refreshSession }) can renew a session while reading, hozu browse --viewport, and DevTools in your language (--devtools-messages) (ADR 0060)',
+    rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 export const OLDEST = steps[0]!.from

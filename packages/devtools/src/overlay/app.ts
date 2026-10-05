@@ -1,4 +1,5 @@
 import type { DevLocation, DevNode } from '@hozu/core/ir'
+import { type MessageKey, t } from '../messages.ts'
 import { describeFor, friendlyName, questionFor } from '../plain.ts'
 import {
   type HozuRequest,
@@ -85,7 +86,7 @@ const dock = h('div', { class: 'dock', role: 'toolbar', 'aria-label': 'Hozu DevT
 const panel = h('div', {
   class: 'panel',
   role: 'dialog',
-  'aria-label': 'Hozu DevTools inspector',
+  'aria-label': t('panel.aria'),
   hidden: true,
 })
 const bench = h('div', { class: 'bench', hidden: true })
@@ -182,7 +183,7 @@ async function screensSection(): Promise<HTMLElement | null> {
     : null
   if (!out?.route || !out.previews.length) return null
   return h('div', { class: 'sec' }, [
-    h('div', { class: 'label' }, ['Previews (previews.ts)']),
+    h('div', { class: 'label' }, [t('screens.title')]),
     ...out.previews.map((p) => {
       const value = `${out.route}:${p.name}`
       const on = out.current === value
@@ -198,7 +199,7 @@ async function screensSection(): Promise<HTMLElement | null> {
               win.location.reload()
             },
           },
-          [on ? 'Exit' : 'Preview'],
+          [t(on ? 'screens.exit' : 'screens.preview')],
         ),
       ])
     }),
@@ -323,7 +324,9 @@ function tagText(n: DevNode | null, el: Element): (Node | string)[] {
   if (state.audience === 'builder')
     return [
       friendlyName(n),
-      n.component && n.component.uses > 1 ? h('b', {}, [`  shared · ${n.component.uses} places`]) : '',
+      n.component && n.component.uses > 1
+        ? h('b', {}, [`  ${t('hover.shared', { count: n.component.uses })}`])
+        : '',
     ]
   return [
     h('b', {}, [n.kind === 'element' ? '' : `${n.kind} `]),
@@ -652,8 +655,8 @@ function renderDock() {
       role: 'button',
       tabindex: '0',
       'aria-expanded': String(!state.folded),
-      'aria-label': state.folded ? 'Open Hozu DevTools' : 'Fold Hozu DevTools',
-      title: 'Hozu DevTools · click to fold · drag to move · Alt+Shift+S toggles Select',
+      'aria-label': t(state.folded ? 'dock.open' : 'dock.fold'),
+      title: t('dock.grip'),
       onkeydown: (e) => {
         const key = (e as KeyboardEvent).key
         if (key === 'Enter' || key === ' ') {
@@ -673,14 +676,14 @@ function renderDock() {
   dock.replaceChildren(
     ...present([
       grip,
-      h('div', { class: 'seg' }, [button('Browse', 'browse'), button('Select', 'select')]),
+      h('div', { class: 'seg' }, [button(t('dock.browse'), 'browse'), button(t('dock.select'), 'select')]),
       agent.count()
         ? h(
             'button',
             {
               class: 'act agent',
               type: 'button',
-              title: 'Notes from your agent on this page (hozu show)',
+              title: t('dock.agent.title'),
               'aria-pressed': String(state.panel === 'notes'),
               onclick: () => {
                 if (state.panel === 'notes') return open(state.picks.length ? 'inspector' : null)
@@ -688,7 +691,7 @@ function renderDock() {
                 agent.focus()
               },
             },
-            ['Agent ', h('span', { class: 'agent-count' }, [String(agent.count())])],
+            [t('dock.agent'), h('span', { class: 'agent-count' }, [String(agent.count())])],
           )
         : null,
       h(
@@ -701,14 +704,14 @@ function renderDock() {
             else open('changes', null, drafted().length ? 'draft' : 'saved')
           },
         },
-        ['Changes', h('span', { class: 'count', 'data-count': true })],
+        [t('dock.changes'), h('span', { class: 'count', 'data-count': true })],
       ),
       h(
         'button',
         {
           class: 'act',
           type: 'button',
-          title: 'Select this page: its title, description and other head fields',
+          title: t('dock.page.title'),
           onclick: async () => {
             const n = await page(win.location.pathname)
             if (n)
@@ -718,63 +721,63 @@ function renderDock() {
               )
           },
         },
-        ['Page'],
+        [t('dock.page')],
       ),
       h(
         'button',
         {
           class: 'act',
           type: 'button',
-          title: 'The parts of this page, and its states that are not on screen',
+          title: t('dock.layers.title'),
           onclick: () => {
             state.panel = state.panel === 'layers' ? (state.picks.length ? 'inspector' : null) : 'layers'
             persist()
             void renderPanel()
           },
         },
-        ['Layers'],
+        [t('dock.layers')],
       ),
       h(
         'button',
         {
           class: 'act',
           type: 'button',
-          title: 'Every component of the app, its variants, previews and uses; and the design tokens',
+          title: t('dock.assets.title'),
           onclick: () => void assets.open(),
         },
-        ['Assets'],
+        [t('dock.assets')],
       ),
       h(
         'button',
         {
           class: 'act',
           type: 'button',
-          title: 'The data this page reads and the changes it can make: run them with your own input',
+          title: t('dock.api.title'),
           'aria-pressed': api.isOpen() ? 'true' : 'false',
           onclick: () => api.toggle(),
         },
-        ['API'],
+        [t('dock.api')],
       ),
       h(
         'button',
         {
           class: 'act',
           type: 'button',
-          title: 'The page at an exact size, with its parts on the left and the inspector on the right',
+          title: t('dock.frame.title'),
           onclick: () => {
             state.panel = state.picks.length ? 'inspector' : null
             openBench()
           },
         },
-        ['Frame'],
+        [t('dock.frame')],
       ),
       h(
         'button',
         {
           class: 'act gear',
           type: 'button',
-          title: 'Settings',
-          'aria-label': 'Settings',
+          title: t('dock.settings'),
+          'aria-label': t('dock.settings'),
           onclick: () => {
             state.panel = state.panel === 'settings' ? (state.picks.length ? 'inspector' : null) : 'settings'
             persist()
@@ -789,13 +792,16 @@ function renderDock() {
             {
               class: 'previewing',
               type: 'button',
-              title: 'Exit the preview from previews.ts',
+              title: t('dock.screen.exit'),
               onclick: () => {
                 setScreen(null)
                 win.location.reload()
               },
             },
-            [`Screen: ${screenOf()!.slice(screenOf()!.indexOf(':') + 1)}`, ' · Exit'],
+            [
+              t('dock.screen', { name: screenOf()!.slice(screenOf()!.indexOf(':') + 1) }),
+              ` · ${t('dock.exit')}`,
+            ],
           )
         : null,
       held()
@@ -804,28 +810,28 @@ function renderDock() {
             {
               class: 'previewing',
               type: 'button',
-              title: 'Exit the preview',
+              title: t('dock.preview.exit'),
               onclick: () => hold(null, reload),
             },
-            [h('span', { 'data-preview': true }, ['Preview']), ' · Exit'],
+            [h('span', { 'data-preview': true }, [t('dock.preview')]), ` · ${t('dock.exit')}`],
           )
         : null,
       state.mode === 'select' && !held() && !state.panel
         ? h('div', { class: 'tip', role: 'note' }, [
-            h('span', {}, [h('kbd', {}, ['Click']), ' a part to select it']),
-            h('span', {}, [h('kbd', {}, ['Shift']), '+click adds another']),
-            h('span', {}, [h('kbd', {}, ['⇧ Enter']), ' picks its parent']),
-            h('span', {}, [h('kbd', {}, ['Alt']), ' measures']),
-            h('span', {}, [h('kbd', {}, ['Esc']), ' stops']),
+            h('span', {}, inline(t('tip.click'), 'key', h('kbd', {}, ['Click']))),
+            h('span', {}, inline(t('tip.shift'), 'key', h('kbd', {}, ['Shift']))),
+            h('span', {}, inline(t('tip.parent'), 'key', h('kbd', {}, ['⇧ Enter']))),
+            h('span', {}, inline(t('tip.measure'), 'key', h('kbd', {}, ['Alt']))),
+            h('span', {}, inline(t('tip.stop'), 'key', h('kbd', {}, ['Esc']))),
           ])
         : null,
     ]),
   )
   const holding = held()
   if (holding)
-    void tree(win.location.pathname).then((t) => {
+    void tree(win.location.pathname).then((found) => {
       const label = dock.querySelector('[data-preview]')
-      if (label) label.textContent = `Preview: ${previewLabel(t, holding)}`
+      if (label) label.textContent = t('dock.preview.named', { name: previewLabel(found, holding) })
     })
   const count = dock.querySelector('[data-count]')
   if (count) count.textContent = drafted().length ? String(drafted().length) : ''
@@ -937,10 +943,10 @@ const where = (what: string, l: DevLocation | null) =>
           'button',
           {
             type: 'button',
-            title: 'Copy the location',
+            title: t('inspector.copyLocation'),
             onclick: () => void copy(`${l.file}:${l.line}:${l.column}`),
           },
-          ['Copy'],
+          [t('inspector.copy')],
         ),
       ])
     : null
@@ -967,28 +973,38 @@ const section = (label: string, children: (Node | null)[]) =>
     ? h('div', { class: 'sec' }, [h('div', { class: 'label' }, [label]), ...children])
     : null
 
-const kindTitle: Record<string, string> = {
-  element: 'Element',
-  component: 'Component use',
-  text: 'Text',
-  query: 'Query',
-  when: 'State branch',
-  if: 'Branch',
-  list: 'List',
-  html: 'Raw HTML',
-  embed: 'Embed',
-  other: 'Node',
+const kindTitle: Record<string, MessageKey> = {
+  element: 'kind.element',
+  component: 'kind.component',
+  text: 'kind.text',
+  query: 'kind.query',
+  when: 'kind.when',
+  if: 'kind.if',
+  list: 'kind.list',
+  html: 'kind.html',
+  embed: 'kind.embed',
+  other: 'kind.other',
+}
+
+const kindOf = (kind: string) => (kindTitle[kind] ? t(kindTitle[kind]!) : kind)
+
+const inline = (text: string, name: string, node: Node): (Node | string)[] => {
+  const [before, after] = text.split(`{${name}}`)
+  return after === undefined ? [text] : [before || null, node, after || null].filter((x) => x !== null)
 }
 
 function kicker(n: DevNode) {
-  if (state.audience === 'builder') return n.page ? `Page ${n.page.path}` : `On ${win.location.pathname}`
+  if (state.audience === 'builder')
+    return n.page
+      ? t('inspector.kicker.page', { path: n.page.path })
+      : t('inspector.kicker.on', { path: win.location.pathname })
   const kind = n.component
-    ? 'Component use'
+    ? t('kind.component')
     : n.kind === 'text' && n.source?.kind === 'data'
-      ? 'Data text'
-      : (kindTitle[n.kind] ?? n.kind)
-  if (n.page) return `Page · route ${n.page.path}`
-  return `${kind} · view ${n.owner?.feature}.${n.owner?.view}`
+      ? t('kind.dataText')
+      : kindOf(n.kind)
+  if (n.page) return t('inspector.kicker.route', { path: n.page.path })
+  return t('inspector.kicker.view', { kind, view: `${n.owner?.feature}.${n.owner?.view}` })
 }
 
 function titleFor(n: DevNode, active: Pick) {
@@ -1002,7 +1018,7 @@ function titleFor(n: DevNode, active: Pick) {
         ? `<${n.tag}>`
         : n.kind === 'text'
           ? `“${text}”`
-          : (kindTitle[n.kind] ?? n.kind),
+          : kindOf(n.kind),
     n.component ? h('code', {}, [n.component.ref]) : null,
   ]
 }
@@ -1016,7 +1032,9 @@ function textRows(n: DevNode) {
       h('b', {}, [source.kind === 'literal' ? 'text ' : `${source.kind} `]),
       source.kind === 'literal' ? `“${source.detail}”` : source.detail,
       source.location ? `  ${source.location.file}:${source.location.line}` : '',
-      (source.uses ?? 1) > 1 ? h('span', { class: 'warn' }, [` · shared by ${source.uses} places`]) : null,
+      (source.uses ?? 1) > 1
+        ? h('span', { class: 'warn' }, [` · ${t('inspector.sharedBy', { count: source.uses! })}`])
+        : null,
     ]),
   )
 }
@@ -1076,7 +1094,7 @@ const open = (panelName: State['panel'], opened: string | null = null, tab: Stat
 }
 
 const closeButton = (onclick: () => void) =>
-  h('button', { class: 'close', type: 'button', 'aria-label': 'Close', onclick }, ['×'])
+  h('button', { class: 'close', type: 'button', 'aria-label': t('common.close'), onclick }, ['×'])
 
 function choose(active: Pick, id: string, visible: string) {
   state.picks[state.active] = { ...active, id, scope: null, visible }
@@ -1095,6 +1113,18 @@ function removeActive() {
   persist()
   drawPicks()
   void renderPanel()
+}
+
+function scopeLabel(n: DevNode, scope: Scope) {
+  const c = n.component
+  if (scope === 'component' && c)
+    return t(c.uses === 1 ? 'scope.component.one' : 'scope.component.other', {
+      name: c.ref.split('.').pop() ?? '',
+      count: c.uses,
+    })
+  if (scope === 'items') return t('scope.items')
+  if (n.conditions.some((x) => x.kind === 'each')) return t('scope.thisItem')
+  return t(c ? 'scope.instance' : 'scope.thisOne')
 }
 
 function scopeField(n: DevNode, active: Pick) {
@@ -1116,7 +1146,7 @@ function scopeField(n: DevNode, active: Pick) {
             persist()
           },
         }),
-        asked?.options[s.scope] ?? s.label,
+        asked?.options[s.scope] ?? scopeLabel(n, s.scope),
       ]),
     ),
   ])
@@ -1140,7 +1170,7 @@ function exportBlock() {
   const result = h('div', { class: 'status', role: 'status' })
   const draft = h('textarea', {
     class: 'draft',
-    'aria-label': 'The request, as the agent will read it',
+    'aria-label': t('export.draft'),
     hidden: true,
   }) as HTMLTextAreaElement
   const generate = async () =>
@@ -1154,12 +1184,12 @@ function exportBlock() {
       onclick: async () => {
         if (draft.hidden) draft.value = await generate()
         draft.hidden = !draft.hidden
-        edit.textContent = draft.hidden ? 'Edit before sending' : 'Discard edits'
+        edit.textContent = t(draft.hidden ? 'export.edit' : 'export.discard')
       },
     },
-    ['Edit before sending'],
+    [t('export.edit')],
   )
-  const many = count > 1 ? ` (${count})` : ''
+  const many = count > 1
   return h('div', { class: 'export' }, [
     h('div', { class: 'row-end' }, [edit]),
     draft,
@@ -1171,12 +1201,10 @@ function exportBlock() {
           type: 'button',
           onclick: async () => {
             await copy(await markdown())
-            status(result, 'ok', [
-              `Copied ${count === 1 ? 'the change' : `all ${count} changes`}. Paste it to your agent.`,
-            ])
+            status(result, 'ok', [t(count === 1 ? 'export.copied.one' : 'export.copied.other', { count })])
           },
         },
-        [`Copy for AI${many}`],
+        [many ? t('export.copy.many', { count }) : t('export.copy')],
       ),
       h(
         'button',
@@ -1187,16 +1215,16 @@ function exportBlock() {
               const done = await save(await markdown())
               const ask = `Do the Hozu request ${done.file}`
               await copy(ask)
-              notice = ['Saved ', h('code', {}, [done.file]), `. Copied “${ask}”: paste it to your agent.`]
+              notice = inline(t('export.saved', { ask }), 'file', h('code', {}, [done.file]))
               clearDraft()
               renderDock()
               open('changes', null, 'saved')
             } catch (e) {
-              status(result, 'err', [`Not saved: ${(e as Error).message}`])
+              status(result, 'err', [t('export.notSaved', { error: (e as Error).message })])
             }
           },
         },
-        [`Save request${many}`],
+        [many ? t('export.save.many', { count }) : t('export.save')],
       ),
       h(
         'button',
@@ -1208,10 +1236,10 @@ function exportBlock() {
               download: 'hozu-request.md',
             })
             a.click()
-            status(result, 'ok', ['Downloaded hozu-request.md'])
+            status(result, 'ok', [t('export.downloaded', { file: 'hozu-request.md' })])
           },
         },
-        ['Download .md'],
+        [t('export.download')],
       ),
     ]),
     result,
@@ -1237,8 +1265,8 @@ function textFor(n: DevNode, active: Pick) {
 function requestSection(n: DevNode, active: Pick) {
   const others = state.picks.filter((p) => p !== active && hasContent(p)).length
   const note = h('textarea', {
-    'aria-label': 'What should change?',
-    placeholder: 'What should change? For example: “Make it bigger and use the brand red”',
+    'aria-label': t('change.aria'),
+    placeholder: t('change.placeholder'),
     oninput: (event) => {
       const had = hasContent(active)
       active.note = (event.target as HTMLTextAreaElement).value
@@ -1248,19 +1276,17 @@ function requestSection(n: DevNode, active: Pick) {
   }) as HTMLTextAreaElement
   note.value = active.note
   return h('div', { class: 'sec' }, [
-    h('div', { class: 'label' }, ['Change']),
+    h('div', { class: 'label' }, [t('change.label')]),
     scopeField(n, active),
     note,
     others
       ? h('div', { class: 'plain more' }, [
-          `This request also has ${others} other ${others === 1 ? 'change' : 'changes'}. `,
+          t(others === 1 ? 'change.others.one' : 'change.others.other', { count: others }),
           h('button', { class: 'link', type: 'button', onclick: () => open('changes', null, 'draft') }, [
-            'Review all',
+            t('change.review'),
           ]),
         ])
-      : h('div', { class: 'hint-text' }, [
-          'Described parts stay in this request when you select the next one.',
-        ]),
+      : h('div', { class: 'hint-text' }, [t('change.hint')]),
     exportBlock(),
   ])
 }
@@ -1269,16 +1295,16 @@ function builderSections(n: DevNode) {
   const children = n.children.filter((c) => c.kind !== 'text')
   return [
     section(
-      'About it',
+      t('inspector.about'),
       describeFor(n).map((line) => h('div', { class: 'plain' }, [line])),
     ),
     h('div', { class: 'sec' }, [
       h('div', { class: 'nav' }, [
-        h('button', { type: 'button', onclick: () => walk('up') }, ['↑ Select the area around it']),
+        h('button', { type: 'button', onclick: () => walk('up') }, [t('inspector.around')]),
         children.length && !isText(n)
-          ? h('button', { type: 'button', onclick: () => walk('down') }, ['↓ Inside'])
+          ? h('button', { type: 'button', onclick: () => walk('down') }, [t('inspector.inside')])
           : null,
-        h('button', { type: 'button', onclick: removeActive }, ['Remove']),
+        h('button', { type: 'button', onclick: removeActive }, [t('inspector.remove')]),
       ]),
       n.location
         ? h('div', { class: 'file' }, [
@@ -1290,7 +1316,7 @@ function builderSections(n: DevNode) {
                 type: 'button',
                 onclick: () => void copy(`${n.location!.file}:${n.location!.line}`),
               },
-              ['Copy'],
+              [t('inspector.copy')],
             ),
           ])
         : null,
@@ -1301,21 +1327,23 @@ function builderSections(n: DevNode) {
 function developerSections(n: DevNode, active: Pick) {
   const children = n.children.filter((c) => c.kind !== 'text' || c.text)
   return [
-    section('Where', [
-      where(n.page ? 'page' : 'view', n.location),
-      n.page ? where('route', n.page.routeLocation) : null,
-      n.component ? where('component', n.component.declaration) : null,
-      n.events.length ? where('machine', n.machine) : null,
+    section(t('inspector.where'), [
+      where(t(n.page ? 'inspector.where.page' : 'inspector.where.view'), n.location),
+      n.page ? where(t('inspector.where.route'), n.page.routeLocation) : null,
+      n.component ? where(t('inspector.where.component'), n.component.declaration) : null,
+      n.events.length ? where(t('inspector.where.machine'), n.machine) : null,
       excerpt(n),
     ]),
     section(
-      'Component',
+      t('inspector.component'),
       n.component
         ? [
             h('div', {}, [
               h('span', { class: 'chip red' }, [n.component.ref]),
               h('span', { class: 'chip' }, [
-                `used in ${n.component.uses} ${n.component.uses === 1 ? 'place' : 'places'}`,
+                t(n.component.uses === 1 ? 'inspector.usedIn.one' : 'inspector.usedIn.other', {
+                  count: n.component.uses,
+                }),
               ]),
               ...Object.entries(n.component.variant).map(([k, v]) =>
                 h('span', { class: 'chip' }, [`${k}=${v}`]),
@@ -1325,7 +1353,7 @@ function developerSections(n: DevNode, active: Pick) {
         : [],
     ),
     section(
-      'Head',
+      t('inspector.head'),
       n.page
         ? [
             ...(['title', 'description', 'image'] as const).map((f) =>
@@ -1339,9 +1367,9 @@ function developerSections(n: DevNode, active: Pick) {
           ]
         : [],
     ),
-    section('Text', textRows(n)),
+    section(t('inspector.text'), textRows(n)),
     section(
-      'Shown when',
+      t('inspector.shownWhen'),
       n.conditions.map((c) =>
         h('div', { class: 'row' }, [
           h('b', {}, [`${c.kind} `]),
@@ -1351,7 +1379,7 @@ function developerSections(n: DevNode, active: Pick) {
       ),
     ),
     section(
-      'Behaviour',
+      t('inspector.behaviour'),
       n.events.map((e) =>
         h('div', { class: 'row' }, [
           h('span', { class: 'chip red' }, [`on ${e.dom}`]),
@@ -1362,7 +1390,7 @@ function developerSections(n: DevNode, active: Pick) {
         ]),
       ),
     ),
-    section('Inside', [
+    section(t('inspector.insideIt'), [
       children.length
         ? h(
             'div',
@@ -1381,9 +1409,11 @@ function developerSections(n: DevNode, active: Pick) {
           )
         : null,
       h('div', { class: 'nav' }, [
-        h('button', { type: 'button', onclick: () => walk('up') }, ['↑ Parent']),
-        isText(n) ? null : h('button', { type: 'button', onclick: () => walk('down') }, ['↓ Child']),
-        h('button', { type: 'button', onclick: removeActive }, ['Remove']),
+        h('button', { type: 'button', onclick: () => walk('up') }, [t('inspector.parent')]),
+        isText(n)
+          ? null
+          : h('button', { type: 'button', onclick: () => walk('down') }, [t('inspector.child')]),
+        h('button', { type: 'button', onclick: removeActive }, [t('inspector.remove')]),
       ]),
     ]),
     h('div', { class: 'sec meta' }, [`node ${n.id}`, n.pointer ? ` · ${n.pointer}` : '']),
@@ -1411,10 +1441,7 @@ async function renderPanel() {
     panel.hidden = state.view !== 'workbench'
     if (state.view === 'workbench')
       panel.replaceChildren(
-        h('div', { class: 'empty' }, [
-          h('b', {}, ['Nothing selected. ']),
-          'Choose Select and click a part of the page, or pick one in Layers.',
-        ]),
+        h('div', { class: 'empty' }, [h('b', {}, [t('inspector.empty.title')]), t('inspector.empty.text')]),
       )
     return
   }
@@ -1422,10 +1449,7 @@ async function renderPanel() {
   if (!n) {
     panel.hidden = false
     panel.replaceChildren(
-      h('div', { class: 'empty' }, [
-        h('b', {}, ['This part is gone.']),
-        ' The code changed since you selected it: select it again.',
-      ]),
+      h('div', { class: 'empty' }, [h('b', {}, [t('inspector.gone.title')]), t('inspector.gone.text')]),
     )
     return
   }
@@ -1495,8 +1519,8 @@ function tabs(current: 'draft' | 'saved', saved: number) {
       [label],
     )
   return h('div', { class: 'tabs' }, [
-    tab('draft', `This request · ${drafted().length}`),
-    tab('saved', `Saved · ${saved}`),
+    tab('draft', t('changes.tab.draft', { count: drafted().length })),
+    tab('saved', t('changes.tab.saved', { count: saved })),
   ])
 }
 
@@ -1505,8 +1529,8 @@ async function renderChanges() {
   const current = state.tab
   panel.hidden = false
   const head = h('div', { class: 'head' }, [
-    h('div', { class: 'kicker' }, [current === 'draft' ? 'Not sent yet' : '.hozu/requests']),
-    h('h2', { class: 'title' }, ['Changes']),
+    h('div', { class: 'kicker' }, [current === 'draft' ? t('changes.notSent') : '.hozu/requests']),
+    h('h2', { class: 'title' }, [t('changes.title')]),
     closeButton(() => open(state.picks.length ? 'inspector' : null)),
     tabs(current, list.length),
   ])
@@ -1521,18 +1545,18 @@ async function renderChanges() {
         {
           class: 'link done',
           type: 'button',
-          title: 'Resolved or not needed: remove it',
+          title: t('changes.resolve.title'),
           onclick: async () => {
             if (!armed) {
               armed = true
-              done.textContent = 'Remove?'
+              done.textContent = t('changes.resolve.confirm')
               return
             }
             await remove(r.number)
             void renderPanel()
           },
         },
-        ['Resolve'],
+        [t('changes.resolve')],
       )
       return h('div', { class: 'req' }, [
         h('span', { class: 'n' }, [r.number]),
@@ -1551,7 +1575,7 @@ async function renderChanges() {
         message ? h('div', { class: 'notice' }, message) : null,
         ...(list.length
           ? [...list].reverse().map(row)
-          : [h('div', { class: 'empty' }, ['No open requests. Resolved ones are removed.'])]),
+          : [h('div', { class: 'empty' }, [t('changes.noRequests')])]),
         list.length
           ? h('div', { class: 'sec' }, [
               h('div', { class: 'choice' }, [
@@ -1563,30 +1587,24 @@ async function renderChanges() {
                     onclick: async () => {
                       const full = await Promise.all(list.map((r) => one(r.number)))
                       await copy(joinRequests(full))
-                      status(result, 'ok', [
-                        `Copied all ${list.length} as one prompt. Paste it to your agent.`,
-                      ])
+                      status(result, 'ok', [t('changes.copiedAll', { count: list.length })])
                     },
                   },
-                  [`Copy all ${list.length} for AI`],
+                  [t('changes.copyAll', { count: list.length })],
                 ),
-                h('span', { class: 'why' }, [
-                  'One prompt with every open request: the fewest tokens and no file reads. Works in any chat.',
-                ]),
+                h('span', { class: 'why' }, [t('changes.copyAll.why')]),
                 h(
                   'button',
                   {
                     type: 'button',
                     onclick: async () => {
                       await copy(openRequestsLine(list))
-                      status(result, 'ok', ['Copied the file paths.'])
+                      status(result, 'ok', [t('changes.copiedPaths')])
                     },
                   },
-                  ['Copy file paths only'],
+                  [t('changes.copyPaths')],
                 ),
-                h('span', { class: 'why' }, [
-                  'For an agent in this project that should read the files itself (or run hozu requests --full).',
-                ]),
+                h('span', { class: 'why' }, [t('changes.copyPaths.why')]),
               ]),
               result,
             ])
@@ -1614,7 +1632,9 @@ async function renderChanges() {
                     [
                       p.note.trim(),
                       p.style?.length
-                        ? `${p.style.length} style ${p.style.length === 1 ? 'change' : 'changes'}`
+                        ? t(p.style.length === 1 ? 'changes.styles.one' : 'changes.styles.other', {
+                            count: p.style.length,
+                          })
                         : '',
                     ]
                       .filter(Boolean)
@@ -1631,7 +1651,7 @@ async function renderChanges() {
                       open('inspector')
                     },
                   },
-                  ['Edit'],
+                  [t('changes.edit')],
                 ),
                 h(
                   'button',
@@ -1649,15 +1669,12 @@ async function renderChanges() {
                       void renderPanel()
                     },
                   },
-                  ['Remove'],
+                  [t('changes.remove')],
                 ),
               ])
             }),
           )
-        : h('div', { class: 'empty' }, [
-            h('b', {}, ['Nothing yet. ']),
-            'Choose Select, click a part and describe the change. Every described part is added here.',
-          ]),
+        : h('div', { class: 'empty' }, [h('b', {}, [t('changes.empty.title')]), t('changes.empty.text')]),
       items.length ? h('div', { class: 'sec' }, [exportBlock()]) : null,
     ]),
   )
@@ -1681,7 +1698,7 @@ async function renderRequest(number: string) {
       onclick: async () => {
         if (!armed) {
           armed = true
-          del.textContent = 'Click again to remove'
+          del.textContent = t('request.remove.confirm')
           return
         }
         await remove(r.number)
@@ -1689,12 +1706,12 @@ async function renderRequest(number: string) {
         open('changes', null, 'saved')
       },
     },
-    ['Resolve · remove'],
+    [t('request.remove')],
   )
   panel.replaceChildren(
     h('div', { class: 'head' }, [
       h('button', { class: 'back', type: 'button', onclick: () => open('changes', null, 'saved') }, [
-        '← Saved',
+        t('request.back'),
       ]),
       h('h2', { class: 'title' }, [r.title]),
       h('div', { class: 'kicker' }, [r.file]),
@@ -1710,10 +1727,10 @@ async function renderRequest(number: string) {
             type: 'button',
             onclick: async () => {
               await copy(`Do the Hozu request ${r.file}`)
-              status(result, 'ok', [`Copied “Do the Hozu request ${r.file}”.`])
+              status(result, 'ok', [t('request.copiedAsk', { ask: `Do the Hozu request ${r.file}` })])
             },
           },
-          ['Copy “do this request”'],
+          [t('request.copyAsk')],
         ),
         h(
           'button',
@@ -1721,10 +1738,10 @@ async function renderRequest(number: string) {
             type: 'button',
             onclick: async () => {
               await copy(r.markdown)
-              status(result, 'ok', ['Copied the whole request.'])
+              status(result, 'ok', [t('request.copied')])
             },
           },
-          ['Copy request'],
+          [t('request.copy')],
         ),
         del,
       ]),
@@ -1753,19 +1770,19 @@ function renderSettings() {
   panel.replaceChildren(
     h('div', { class: 'head' }, [
       h('div', { class: 'kicker' }, ['Hozu DevTools']),
-      h('h2', { class: 'title' }, ['Settings']),
+      h('h2', { class: 'title' }, [t('settings.title')]),
       closeButton(() => open(state.picks.length ? 'inspector' : null)),
     ]),
     h('div', { class: 'sec' }, [
-      h('div', { class: 'label' }, ['Appearance']),
+      h('div', { class: 'label' }, [t('settings.appearance')]),
       h(
         'div',
-        { class: 'tabs', role: 'radiogroup', 'aria-label': 'Appearance' },
+        { class: 'tabs', role: 'radiogroup', 'aria-label': t('settings.appearance') },
         (
           [
-            ['system', 'System'],
-            ['light', 'Light'],
-            ['dark', 'Dark'],
+            ['system', t('settings.system')],
+            ['light', t('settings.light')],
+            ['dark', t('settings.dark')],
           ] as const
         ).map(([value, label]) =>
           h(
@@ -1789,18 +1806,14 @@ function renderSettings() {
       ),
     ]),
     h('div', { class: 'sec' }, [
-      h('div', { class: 'label' }, ['Show']),
+      h('div', { class: 'label' }, [t('settings.show')]),
       h('fieldset', {}, [
-        choice('builder', 'Builder', 'Plain words: what it is, what a change reaches. No code names.'),
-        choice(
-          'developer',
-          'Developer',
-          'Files, the code excerpt, components, conditions, transitions and node ids.',
-        ),
+        choice('builder', t('settings.builder'), t('settings.builder.detail')),
+        choice('developer', t('settings.developer'), t('settings.developer.detail')),
       ]),
     ]),
     h('div', { class: 'sec' }, [
-      h('div', { class: 'label' }, ['Requests']),
+      h('div', { class: 'label' }, [t('settings.requests')]),
       h('label', { class: 'option' }, [
         h('input', {
           type: 'checkbox',
@@ -1810,27 +1823,22 @@ function renderSettings() {
             persist()
           },
         }),
-        h('span', {}, [
-          h('b', {}, ['Add the code excerpt']),
-          h('span', {}, [
-            'Seven lines around each place. The agent reads the file anyway, so it is off by default.',
-          ]),
-        ]),
+        h('span', {}, [h('b', {}, [t('settings.excerpt')]), h('span', {}, [t('settings.excerpt.detail')])]),
       ]),
     ]),
     h('div', { class: 'sec' }, [
-      h('div', { class: 'label' }, ['Keys']),
+      h('div', { class: 'label' }, [t('settings.keys')]),
       ...[
-        ['Alt+Shift+S', 'Select on or off'],
-        ['Click', 'Select'],
-        ['Shift+click', 'Add to the request'],
-        ['Shift+Enter', 'Select the area around it'],
-        ['Enter', 'Select inside it'],
-        ['Tab / Shift+Tab', 'Next / previous part beside it'],
-        ['Alt (hold)', 'Measure: W × H and the distance to the part under the pointer'],
-        ['Double-click', 'Select a text'],
-        ['↑ ↓', 'Around it / inside it'],
-        ['Esc', 'Back to Browse'],
+        ['Alt+Shift+S', t('keys.toggle')],
+        ['Click', t('keys.click')],
+        ['Shift+click', t('keys.add')],
+        ['Shift+Enter', t('keys.around')],
+        ['Enter', t('keys.inside')],
+        ['Tab / Shift+Tab', t('keys.beside')],
+        ['Alt (hold)', t('keys.measure')],
+        ['Double-click', t('keys.text')],
+        ['↑ ↓', t('keys.arrows')],
+        ['Esc', t('keys.escape')],
       ].map(([k, v]) => h('div', { class: 'keyrow' }, [h('kbd', {}, [k!]), v!])),
     ]),
   )
@@ -1842,6 +1850,13 @@ const devices = [
   { name: 'Laptop', width: 1280, height: 800 },
   { name: 'Desktop', width: 1440, height: 900 },
 ]
+
+const deviceNames: Record<string, MessageKey> = {
+  Phone: 'bench.phone',
+  Tablet: 'bench.tablet',
+  Laptop: 'bench.laptop',
+  Desktop: 'bench.desktop',
+}
 
 const left = h('div', { class: 'bench-left' })
 const stage = h('div', { class: 'stage' })
@@ -1910,7 +1925,7 @@ function renderBar() {
   const select = h(
     'select',
     {
-      'aria-label': 'Device',
+      'aria-label': t('bench.device'),
       onchange: (e) => {
         const d = devices.find((x) => x.name === (e.target as HTMLSelectElement).value)
         if (d) setDevice(d)
@@ -1918,17 +1933,19 @@ function renderBar() {
     },
     [
       ...devices.map((d) =>
-        h('option', { value: d.name, selected: d.name === state.device.name }, [`${d.name} ${d.width}`]),
+        h('option', { value: d.name, selected: d.name === state.device.name }, [
+          t('bench.option', { name: t(deviceNames[d.name]!), width: d.width }),
+        ]),
       ),
       devices.some((d) => d.name === state.device.name)
         ? null
-        : h('option', { value: 'Custom', selected: true }, ['Custom']),
+        : h('option', { value: 'Custom', selected: true }, [t('bench.custom')]),
     ],
   )
   bar.replaceChildren(
     ...present([
       h('div', { class: 'grip' }, [h('img', { src: logo, alt: 'Hozu', width: '18', height: '18' })]),
-      h('div', { class: 'seg' }, [mode('Browse', 'browse'), mode('Select', 'select')]),
+      h('div', { class: 'seg' }, [mode(t('dock.browse'), 'browse'), mode(t('dock.select'), 'select')]),
       h(
         'button',
         {
@@ -1940,7 +1957,7 @@ function renderBar() {
             renderBar()
           },
         },
-        ['Layers'],
+        [t('dock.layers')],
       ),
       select,
       h(
@@ -1948,8 +1965,8 @@ function renderBar() {
         {
           class: 'act',
           type: 'button',
-          title: 'Rotate',
-          'aria-label': 'Rotate',
+          title: t('bench.rotate'),
+          'aria-label': t('bench.rotate'),
           onclick: () =>
             setDevice({ name: state.device.name, width: state.device.height, height: state.device.width }),
         },
@@ -1959,7 +1976,7 @@ function renderBar() {
       h('span', { class: 'spacer' }),
       held()
         ? h('button', { class: 'previewing', type: 'button', onclick: () => hold(null, reload) }, [
-            'Preview · Exit',
+            `${t('dock.preview')} · ${t('dock.exit')}`,
           ])
         : null,
       h(
@@ -1970,14 +1987,17 @@ function renderBar() {
           onclick: () =>
             open(state.panel === 'changes' ? null : 'changes', null, drafted().length ? 'draft' : 'saved'),
         },
-        ['Changes', h('span', { class: 'count' }, [drafted().length ? String(drafted().length) : ''])],
+        [
+          t('dock.changes'),
+          h('span', { class: 'count' }, [drafted().length ? String(drafted().length) : '']),
+        ],
       ),
       h(
         'button',
         {
           class: 'act gear',
           type: 'button',
-          'aria-label': 'Settings',
+          'aria-label': t('dock.settings'),
           onclick: () => open(state.panel === 'settings' ? null : 'settings'),
         },
         ['⚙'],
@@ -1987,23 +2007,23 @@ function renderBar() {
         {
           class: 'act',
           type: 'button',
-          title: 'The data this page reads and the changes it can make',
+          title: t('bench.api.title'),
           'aria-pressed': api.isOpen() ? 'true' : 'false',
           onclick: () => api.toggle(),
         },
-        ['API'],
+        [t('dock.api')],
       ),
       h(
         'button',
         {
           class: 'act',
           type: 'button',
-          title: 'Every component of the app, its variants, previews and uses; and the design tokens',
+          title: t('dock.assets.title'),
           onclick: () => void assets.open(),
         },
-        ['Assets'],
+        [t('dock.assets')],
       ),
-      h('button', { class: 'act exit', type: 'button', onclick: () => closeBench() }, ['Exit frame']),
+      h('button', { class: 'act exit', type: 'button', onclick: () => closeBench() }, [t('bench.exit')]),
     ]),
   )
 }
@@ -2024,7 +2044,7 @@ function openBench() {
   bench.hidden = false
   const frame = h('iframe', {
     src: location.href,
-    title: 'The page in Frame',
+    title: t('bench.frame'),
     'data-hozu-bench': true,
   }) as HTMLIFrameElement
   frame.addEventListener('load', () => {
@@ -2035,7 +2055,7 @@ function openBench() {
     void renderLeft()
     void renderPanel()
   })
-  const grip = h('div', { class: 'resize', title: 'Drag to resize', 'aria-hidden': 'true' })
+  const grip = h('div', { class: 'resize', title: t('common.resize'), 'aria-hidden': 'true' })
   grip.addEventListener('pointerdown', (event) => {
     event.preventDefault()
     grip.setPointerCapture(event.pointerId)

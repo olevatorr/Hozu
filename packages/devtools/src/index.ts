@@ -1,6 +1,12 @@
 import { fileURLToPath } from 'node:url'
 
 export {
+  checkMessages,
+  en as devtoolsMessages,
+  type MessagesFile,
+  messagesOf,
+} from './messages.ts'
+export {
   type AgentNote,
   addNote,
   clearNotes,

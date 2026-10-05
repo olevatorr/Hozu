@@ -1,4 +1,5 @@
 import type { DevPageTree, DevPreview, DevTreeNode } from '@hozu/core/ir'
+import { t } from '../messages.ts'
 import { tagName } from '../plain.ts'
 import { held } from './api.ts'
 import { h } from './dom.ts'
@@ -30,8 +31,8 @@ export function renderLayers(panel: HTMLElement, tree: DevPageTree | null, host:
   const search = h('input', {
     type: 'search',
     class: 'outcome',
-    placeholder: 'Find a part or a state…',
-    'aria-label': 'Find a part or a state',
+    placeholder: t('layers.find.placeholder'),
+    'aria-label': t('layers.find'),
   }) as HTMLInputElement
   const list = h('div', { class: 'layers' })
   const states = h('div', { class: 'sec' })
@@ -41,15 +42,17 @@ export function renderLayers(panel: HTMLElement, tree: DevPageTree | null, host:
     if (depth === 0) return host.plain ? spaced(n.label.split('.').pop() ?? n.label) : n.label
     if (!host.plain || n.component) return n.label
     if (n.kind === 'element') return tagName(n.label)
-    if (n.kind === 'query') return `Data: ${spaced(n.label.split('.').pop() ?? '')}`
+    if (n.kind === 'query') return t('layers.data', { name: spaced(n.label.split('.').pop() ?? '') })
     if (n.kind === 'when')
-      return `While ${n.label
-        .replace(/^while /, '')
-        .split(' | ')
-        .map((x) => spaced(x).toLowerCase())
-        .join(' or ')}`
-    if (n.kind === 'if') return 'Only sometimes'
-    if (n.kind === 'list') return 'List'
+      return t('layers.while', {
+        states: n.label
+          .replace(/^while /, '')
+          .split(' | ')
+          .map((x) => spaced(x).toLowerCase())
+          .join(t('plain.or')),
+      })
+    if (n.kind === 'if') return t('layers.if')
+    if (n.kind === 'list') return t('plain.tag.list')
     return n.label
   }
 
@@ -71,7 +74,7 @@ export function renderLayers(panel: HTMLElement, tree: DevPageTree | null, host:
             {
               class: 'fold',
               type: 'button',
-              'aria-label': folded ? 'Show inside' : 'Hide inside',
+              'aria-label': t(folded ? 'layers.fold.show' : 'layers.fold.hide'),
               onclick: () => {
                 if (expanded.has(n.id)) expanded.delete(n.id)
                 else expanded.add(n.id)
@@ -87,7 +90,7 @@ export function renderLayers(panel: HTMLElement, tree: DevPageTree | null, host:
           class: 'name',
           type: 'button',
           disabled: !el,
-          title: el ? '' : 'Not on screen now: preview its state below',
+          title: el ? '' : t('layers.off.title'),
           onpointerenter: () => host.hover(el),
           onpointerleave: () => host.hover(null),
           onclick: () => {
@@ -97,8 +100,8 @@ export function renderLayers(panel: HTMLElement, tree: DevPageTree | null, host:
         [
           own,
           n.component && !host.plain ? h('span', { class: 'badge-ref' }, [n.component]) : null,
-          n.component && host.plain ? h('span', { class: 'badge-ref' }, ['shared']) : null,
-          el || group ? null : h('span', { class: 'badge-off' }, ['not on screen']),
+          n.component && host.plain ? h('span', { class: 'badge-ref' }, [t('layers.shared')]) : null,
+          el || group ? null : h('span', { class: 'badge-off' }, [t('layers.off')]),
         ],
       ),
     ])
@@ -111,21 +114,21 @@ export function renderLayers(panel: HTMLElement, tree: DevPageTree | null, host:
     list.replaceChildren(...(tree?.views ?? []).flatMap((v) => row(v, 0, query)))
     const scenarios = (tree?.scenarios ?? []).filter((s) => !query || s.label.toLowerCase().includes(query))
     states.replaceChildren(
-      h('div', { class: 'label' }, [host.plain ? 'Other states of this page' : 'Not on screen']),
+      h('div', { class: 'label' }, [t(host.plain ? 'layers.states.plain' : 'layers.states')]),
       ...(scenarios.length
         ? scenarios.map((s) =>
             h('div', { class: `state${same(current, s.preview) ? ' on' : ''}` }, [
               h('span', {}, [s.label]),
               same(current, s.preview)
                 ? h('button', { class: 'link', type: 'button', onclick: () => host.hold(null) }, [
-                    'Exit preview',
+                    t('layers.exitPreview'),
                   ])
                 : h('button', { class: 'link', type: 'button', onclick: () => host.hold(s.preview) }, [
-                    'Preview',
+                    t('layers.preview'),
                   ]),
             ]),
           )
-        : [h('div', { class: 'plain' }, ['This page has no other states.'])]),
+        : [h('div', { class: 'plain' }, [t('layers.noStates')])]),
     )
   }
   search.addEventListener('input', draw)
@@ -134,8 +137,10 @@ export function renderLayers(panel: HTMLElement, tree: DevPageTree | null, host:
   panel.replaceChildren(
     h('div', { class: 'head' }, [
       h('div', { class: 'kicker' }, [location.pathname]),
-      h('h2', { class: 'title' }, ['Layers']),
-      h('button', { class: 'close', type: 'button', 'aria-label': 'Close', onclick: host.close }, ['×']),
+      h('h2', { class: 'title' }, [t('layers.title')]),
+      h('button', { class: 'close', type: 'button', 'aria-label': t('common.close'), onclick: host.close }, [
+        '×',
+      ]),
       h('div', { class: 'find' }, [search]),
       tree?.scenarios.length
         ? h(
@@ -145,11 +150,11 @@ export function renderLayers(panel: HTMLElement, tree: DevPageTree | null, host:
               type: 'button',
               onclick: () => states.scrollIntoView({ behavior: 'smooth', block: 'start' }),
             },
-            [`${host.plain ? 'Other states' : 'States'} (${tree.scenarios.length}) ↓`],
+            [t(host.plain ? 'layers.jump.plain' : 'layers.jump', { count: tree.scenarios.length })],
           )
         : null,
     ]),
-    tree ? list : h('div', { class: 'empty' }, ['No page structure: is this a Hozu page under hozu dev?']),
+    tree ? list : h('div', { class: 'empty' }, [t('layers.noTree')]),
     states,
   )
 }

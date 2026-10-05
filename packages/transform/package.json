@@ -1,6 +1,6 @@
 {
   "name": "@hozu/transform",
-  "version": "0.17.2",
+  "version": "0.18.0",
   "description": "Lets Hozu builder callbacks use ordinary TypeScript (===, ?:, &&, template strings, assignments) by lowering it to the IR's explicit forms",
   "keywords": [
     "hozu",

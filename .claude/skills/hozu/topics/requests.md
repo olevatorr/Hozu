@@ -16,6 +16,8 @@
 
 <!-- more -->
 
+- **The person's language:** DevTools may show their own translation (`hozu dev --devtools-messages <file>`,
+  `HOZU_DEVTOOLS_MESSAGES`); the request Markdown you read is always English.
 - **Where they come from:** under `npm run dev` (`hozu dev`) a person selects parts of the running app, describes the
   change, tries styles or text, and saves a request to `.hozu/requests/NNNN-<title>.md` or pastes it to you.
   `npx hozu requests` lists the numbers and places.

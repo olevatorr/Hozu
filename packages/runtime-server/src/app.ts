@@ -1,6 +1,6 @@
 import type { DevOptions } from '@hozu/core/ir'
 import { appModuleOf, type BuildResult, buildProject, type ImageSet, type Manifest } from '@hozu/core/ir'
-import { type FetchLoader, resolverSetOf } from '@hozu/data'
+import { type FetchLoader, type ResolverSet, resolverSetOf } from '@hozu/data'
 import type { HandlerOptions } from './handler.ts'
 import type { ComponentBundle, Stylesheet } from './render.ts'
 import type { RenderModule } from './rendered.ts'
@@ -8,12 +8,30 @@ import type { SessionStore } from './session.ts'
 
 const APP = Symbol.for('hozu.app')
 
-export interface AppOptions
+export interface AppOptions<Session = unknown, Env = unknown>
   extends Omit<
     HandlerOptions,
-    'build' | 'styles' | 'components' | 'env' | 'readFile' | 'manifest' | 'render' | 'images'
+    | 'build'
+    | 'styles'
+    | 'components'
+    | 'env'
+    | 'readFile'
+    | 'manifest'
+    | 'render'
+    | 'images'
+    | 'resolvers'
+    | 'refreshSession'
   > {
+  resolvers: ResolverSet<Session, Env>
   components?: (build: BuildResult) => Promise<ComponentBundle>
+  /**
+   * Keeps the session valid while the app only reads (ADR 0060 C): runs once per request, before any resolver
+   * reads the session. Return the new value (stored in place, the cookie stays), `null` to sign out, or `undefined`.
+   */
+  refreshSession?: (
+    session: NoInfer<Session>,
+    ctx: { env: NoInfer<Env> },
+  ) => NoInfer<Session> | null | undefined | Promise<NoInfer<Session> | null | undefined>
 }
 
 export interface App {
@@ -33,7 +51,8 @@ export interface AppHost {
   fetches?: FetchLoader
 }
 
-export const app = (options: AppOptions): App => Object.freeze({ [APP]: options })
+export const app = <Session, Env>(options: AppOptions<Session, Env>): App =>
+  Object.freeze({ [APP]: options as AppOptions })
 
 export const appOptionsOf = (value: unknown): AppOptions | null =>
   typeof value === 'object' && value !== null ? ((value as Partial<App>)[APP] ?? null) : null

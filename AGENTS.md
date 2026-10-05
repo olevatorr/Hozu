@@ -294,6 +294,12 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `basePath` writes sitemap.xml / 404.html under the base; migrate 0.14 → 0.15 renames a user `Forbidden` error to
   `NotAllowed`; DevTools message uses count page heads and attributes; `hozu build` writes `server/render.d.ts`; trial acceptance
   runs `@hozu/cli serve`.
+- 0.18 (ADR 0060): `app({ refreshSession: (session, { env }) => next })` (once per request before any resolver; new
+  value stored in place via `SessionStore.update`, cookie unchanged; `null` signs out; shared per session; typed from
+  `resolvers(project)`); DevTools strings go through `t()` (`packages/devtools/src/messages.ts`), translated by the
+  person's file (`hozu devtools messages [--check]`, `hozu dev --devtools-messages`, `HOZU_DEVTOOLS_MESSAGES`);
+  request Markdown and CLI stay English; a failed head query evaluates no head field (title = site name); HZ014
+  for a computed `navigate` gives the guarded list; `hozu browse --viewport WxH`.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

@@ -33,6 +33,7 @@ export interface BrowseOptions {
   select: string[]
   screenshot: string | undefined
   reducedMotion: boolean
+  viewport: { width: number; height: number }
   full: boolean
 }
 
@@ -174,6 +175,10 @@ export async function act(tab: Tab, p: Parsed): Promise<StepResult> {
     await tab.settle()
     return done({ note: `posted ${fields.length} field${fields.length === 1 ? '' : 's'} to ${path}` })
   }
+  if (p.verb === 'screenshot')
+    throw new Error(
+      'There is no screenshot step: add --screenshot <file> to save a PNG after the steps (--viewport 390x844 for a phone)',
+    )
   throw new Error(`Unknown step "${p.verb}": use ${VERBS}`)
 }
 
@@ -294,7 +299,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
             const tab = new Tab(cdp!, worlds[m]!, mode, nameOf(item.open), errors)
             tab.headers = headersOf(options.actors[item.open]!.headers)
             tabs.push(tab)
-            await tab.start(cookies[m]![item.open] ?? null, options.reducedMotion)
+            await tab.start(cookies[m]![item.open] ?? null, options.reducedMotion, options.viewport)
             bySession.set(tab.sessionId, tab)
             await tab.open(path)
             initial.set(tab, tab.status)

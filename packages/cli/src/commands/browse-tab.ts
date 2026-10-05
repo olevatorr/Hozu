@@ -192,7 +192,7 @@ export class Tab {
     return this.cdp.send(method, params, session)
   }
 
-  async start(cookie: string | null, reducedMotion: boolean) {
+  async start(cookie: string | null, reducedMotion: boolean, viewport: { width: number; height: number }) {
     const { browserContextId } = await this.cdp.send('Target.createBrowserContext', {})
     const { targetId } = await this.cdp.send('Target.createTarget', { url: 'about:blank', browserContextId })
     this.targetId = targetId
@@ -212,10 +212,9 @@ export class Tab {
       })
     }
     await this.send('Emulation.setDeviceMetricsOverride', {
-      width: 1280,
-      height: 800,
+      ...viewport,
       deviceScaleFactor: 1,
-      mobile: false,
+      mobile: viewport.width < 768,
     })
     if (reducedMotion)
       await this.send('Emulation.setEmulatedMedia', {
