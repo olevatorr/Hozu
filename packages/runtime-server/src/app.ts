@@ -29,9 +29,9 @@ export interface AppOptions<Session = unknown, Env = unknown>
    * reads the session. Return the new value (stored in place, the cookie stays), `null` to sign out, or `undefined`.
    */
   refreshSession?: (
-    session: Session,
-    ctx: { env: Env },
-  ) => Session | null | undefined | Promise<Session | null | undefined>
+    session: NoInfer<Session>,
+    ctx: { env: NoInfer<Env> },
+  ) => NoInfer<Session> | null | undefined | Promise<NoInfer<Session> | null | undefined>
 }
 
 export interface App {

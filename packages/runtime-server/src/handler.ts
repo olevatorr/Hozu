@@ -274,9 +274,9 @@ function handlerFor({
     throw new Error(
       'refreshSession renews a session, and this project declares none: add project({ session })',
     )
-  if (refreshSession && store && !store.update)
+  if (refreshSession && !store?.update)
     throw new Error(
-      'refreshSession needs a session store with update(request, value): memorySessions and kvSessions have one',
+      'refreshSession needs a session store with update(request, value), where it keeps the renewed value: memorySessions and kvSessions have one',
     )
   const read = store
     ? (request: Request) => store.read(request)
@@ -285,32 +285,40 @@ function handlerFor({
     const parsed = build.bindings.env.server?.(rawEnv)
     return parsed?.ok ? parsed.value : {}
   })()
-  const refreshing = new Map<string, Promise<unknown>>()
-  const refreshed = (request: Request, who: unknown): Promise<unknown> => {
-    const key = `${request.headers.get('cookie') ?? ''}\n${JSON.stringify(who)}`
-    let running = refreshing.get(key)
-    if (!running) {
-      running = (async () => {
-        try {
-          const next = await (refreshSession as (s: unknown, c: { env: unknown }) => unknown)(who, {
-            env: serverEnv,
-          })
-          if (next === undefined) return who
-          const issues = next === null ? null : (build.bindings.checks['#session']?.(next) ?? null)
-          if (issues)
-            throw new Error(`refreshSession returned a value that is not a session: ${issues.join('; ')}`)
-          await store?.update?.(request, next)
-          return next
-        } catch (error) {
-          onError(error, { path: new URL(request.url).pathname })
-          return who
-        } finally {
-          refreshing.delete(key)
-        }
-      })()
-      refreshing.set(key, running)
-    }
-    return running
+  const renewals = new Map<string, { next: Promise<unknown>; until: number }>()
+  const renew = (who: unknown, path: string): Promise<unknown> => {
+    const key = JSON.stringify(who)
+    const at = now()
+    for (const [k, r] of renewals) if (r.until < at) renewals.delete(k)
+    const known = renewals.get(key)
+    if (known) return known.next
+    const next = (async () => {
+      try {
+        const value = await (refreshSession as (s: unknown, c: { env: unknown }) => unknown)(who, {
+          env: serverEnv,
+        })
+        if (value === undefined || value === null) return value
+        const issues = build.bindings.checks['#session']?.(value) ?? null
+        if (issues)
+          throw new Error(`refreshSession returned a value that is not a session: ${issues.join('; ')}`)
+        return value
+      } catch (error) {
+        onError(error, { path })
+        return undefined
+      }
+    })()
+    renewals.set(key, { next, until: Number.POSITIVE_INFINITY })
+    void next.then(() => {
+      const entry = renewals.get(key)
+      if (entry) entry.until = now() + 10_000
+    })
+    return next
+  }
+  const refreshed = async (request: Request, who: unknown): Promise<unknown> => {
+    const next = await renew(who, new URL(request.url).pathname)
+    if (next === undefined) return who
+    const kept = await store!.update!(request, next)
+    return next === null || kept === false ? null : next
   }
   const session = refreshSession
     ? (request: Request) => read(request).then((who) => (who === null ? who : refreshed(request, who)))

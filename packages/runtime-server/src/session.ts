@@ -2,8 +2,11 @@ export interface SessionStore {
   read(request: Request): Promise<unknown>
   write(value: unknown, request?: Request): Promise<string>
   issue(value: unknown): Promise<string>
-  /** Replaces the value under the request's id, which stays; `null` removes it (ADR 0060 C, for refreshSession). */
-  update?(request: Request, value: unknown): Promise<void>
+  /**
+   * Replaces the value under the request's id, which stays; `null` removes it. A session signed out (or rotated by
+   * a sign-in) meanwhile stays gone (ADR 0060 C, for refreshSession).
+   */
+  update?(request: Request, value: unknown): Promise<boolean | void>
 }
 
 export interface MemorySessionsOptions {
@@ -99,9 +102,14 @@ function storedSessions(
     issue: create,
     async update(request, value) {
       const id = await idOf(request)
-      if (!id) return
-      if (value === null) await kv.delete(`${prefix}${id}`)
-      else await kv.put(`${prefix}${id}`, JSON.stringify(value), { expirationTtl: maxAge })
+      if (!id) return false
+      if (value === null) {
+        await kv.delete(`${prefix}${id}`)
+        return false
+      }
+      if ((await kv.get(`${prefix}${id}`)) === null) return false
+      await kv.put(`${prefix}${id}`, JSON.stringify(value), { expirationTtl: maxAge })
+      return true
     },
   }
 }

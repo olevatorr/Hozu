@@ -56,6 +56,10 @@ describe('hozu devtools messages (ADR 0060 D)', () => {
       delete process.env.HOZU_DEVTOOLS_MESSAGES
       expect(messagesFileOf(undefined, studio)).toBeNull()
       expect(() => messagesFileOf('nope.json', studio)).toThrow('does not exist')
+      process.env.HOZU_DEVTOOLS_MESSAGES = 'nope.json'
+      const warnings: string[] = []
+      expect(messagesFileOf(undefined, studio, (w) => warnings.push(w))).toBeNull()
+      expect(warnings[0]).toContain('DevTools stays in English')
     } finally {
       if (before === undefined) delete process.env.HOZU_DEVTOOLS_MESSAGES
       else process.env.HOZU_DEVTOOLS_MESSAGES = before

@@ -127,7 +127,7 @@ export default app({
 })
 ```
 
-`refreshSession` runs once per request, when the request first reads the session and before any resolver sees it, so the page, its queries and its mutations all get the renewed value. Return the new session (it replaces the old one on the server; the cookie stays the same), `null` to sign out, or `undefined` to keep it. Requests that arrive together for one session share one call, so a single-use refresh token is spent once. A hook that throws keeps the session and reports through `onError`. The value is checked against the session schema. Keep tokens in the session rather than in module variables: those are lost on a restart and differ between instances.
+`refreshSession` runs once per request, when the request first reads the session and before any resolver sees it, so the page, its queries and its mutations all get the renewed value. Return the new session (it replaces the old one on the server; the cookie stays the same), `null` to sign out, or `undefined` to keep it. Within one server process, the requests of one session that arrive together, or in the ten seconds after a renewal, share one call, so a single-use refresh token is spent once there; with several instances, renew where the token endpoint tolerates a second use. A session signed out while the hook runs stays signed out. A hook that throws keeps the session and reports through `onError`. The value is checked against the session schema. Keep tokens in the session rather than in module variables: those are lost on a restart and differ between instances.
 
 ## Load a Markdown collection
 

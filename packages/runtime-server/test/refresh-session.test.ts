@@ -92,6 +92,33 @@ describe('refreshSession (ADR 0060 C)', () => {
     expect(calls).toHaveLength(1)
   })
 
+  it('never brings back a session signed out while the hook ran', async () => {
+    let release = () => {}
+    const gate = new Promise<void>((r) => (release = r))
+    const { store, get } = setup(async (s) => {
+      await gate
+      return { ...s, token: 't2', expires: 200 }
+    })
+    const cookie = await signedIn(store, 50)
+    const request = new Request('https://app.test/', { headers: { cookie } })
+    const page = get(cookie)
+    await new Promise((r) => setTimeout(r, 10))
+    await store.write(null, request)
+    release()
+    expect((await page).token).toBe('signed out')
+    expect(await store.read(request)).toBeNull()
+  })
+
+  it('shares one call per session whatever other cookies a request carries, also just after it', async () => {
+    const { store, calls, get } = setup((s) =>
+      s.expires < 100 ? { ...s, token: 't2', expires: 200 } : undefined,
+    )
+    const cookie = await signedIn(store, 50)
+    const pages = await Promise.all([get(cookie), get(`${cookie}; theme=dark`), get(`a=1; ${cookie}`)])
+    expect(pages.map((p) => p.token)).toEqual(['t2', 't2', 't2'])
+    expect(calls.map((s) => s.token)).toEqual(['t1'])
+  })
+
   it('signs out on null, and keeps the session when the hook throws or returns something else', async () => {
     const out = setup(() => null)
     const cookie = await signedIn(out.store, 50)
@@ -121,6 +148,11 @@ describe('refreshSession (ADR 0060 C)', () => {
   it('needs a store that can replace a value in place', () => {
     const store = memorySessions({ secret: 'x'.repeat(40) })
     const { update: _, ...without } = store
+    expect(() =>
+      createHandler(app({ resolvers: appResolvers, refreshSession: () => undefined }), {
+        session: () => ({ user: 'ada', token: 't', expires: 0 }),
+      }),
+    ).toThrow('refreshSession needs a session store with update(request, value)')
     expect(() =>
       createHandler(app({ resolvers: appResolvers, refreshSession: () => undefined }), { session: without }),
     ).toThrow('refreshSession needs a session store with update(request, value)')

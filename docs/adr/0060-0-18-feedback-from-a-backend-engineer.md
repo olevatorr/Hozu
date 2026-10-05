@@ -37,12 +37,18 @@
 - **Decision:** 1. `app({ refreshSession: (session, { env }) => next })`, where `next` is a new session value,
   `null` (sign out) or `undefined` (unchanged).
   - It runs once per request, when the request first reads the session and before any resolver sees it. Pages,
-    queries, effects, endpoints and live streams all get the refreshed value, so no response has been sent yet.
+    queries, effects, endpoints and native posts all get the refreshed value, before any response is sent.
   - The value is checked against the session schema. It is stored in place under the same id
     (`SessionStore.update(request, value)`), so the cookie does not change and parallel requests stay signed in.
     `memorySessions` and `kvSessions` implement `update`; a custom store without it is an error at startup.
-  - Concurrent requests of one session share one call (per process), so a single-use refresh token is spent once.
-  - A hook that throws leaves the session unchanged and reports through `onError`.
+  - Requests of one session (the same value, whatever other cookies they carry) share one call per process, and
+    its result for ten seconds, so a late request does not spend a single-use refresh token again. Each request
+    stores the result under its own id. `update` writes only while the id still holds a value, and answers whether
+    it did: a sign-out (or a sign-in's new id) during the call wins, and the request reads as signed out.
+  - A hook that throws leaves the session unchanged and reports through `onError`. A session given as a function
+    (no store) cannot keep a renewed value, so it is an error at startup too, as is a project without a session.
+  - Found in review: the first version wrote a renewed value back over a session signed out meanwhile, shared
+    calls only between requests with identical cookie headers, and accepted a function session.
 - **Principle 4:** queries still only read. Keeping the session valid is the framework's, like `navigate` and
   `after`: the app says how, the framework decides when.
 

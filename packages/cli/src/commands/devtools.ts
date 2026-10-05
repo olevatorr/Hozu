@@ -38,18 +38,26 @@ async function devtoolsOf(loaded: Loaded): Promise<DevtoolsModule> {
   throw new HozuCliError('usage', 'hozu devtools needs @hozu/dev in the app', ['npm install -D @hozu/dev'])
 }
 
-/** The file named by --devtools-messages, else HOZU_DEVTOOLS_MESSAGES, else none (English) (ADR 0060 D). */
-export function messagesFileOf(flag: string | undefined, cwd: string): string | null {
+/**
+ * The file named by --devtools-messages, else HOZU_DEVTOOLS_MESSAGES, else none (English) (ADR 0060 D). A missing
+ * file named by the flag is an error; one named by the variable, set for every project, is a warning.
+ */
+export function messagesFileOf(
+  flag: string | undefined,
+  cwd: string,
+  warn: (line: string) => void = () => {},
+): string | null {
   const named = flag ?? process.env.HOZU_DEVTOOLS_MESSAGES
   if (!named) return null
   const file = resolve(cwd, named.replace(/^~(?=\/)/, process.env.HOME ?? '~'))
-  if (!existsSync(file))
-    throw new HozuCliError(
-      'usage',
-      `The DevTools messages file ${file} does not exist${flag ? '' : ' (HOZU_DEVTOOLS_MESSAGES)'}`,
-      ['npx hozu devtools messages > devtools.messages.json   # every string, to translate'],
-    )
-  return file
+  if (existsSync(file)) return file
+  if (!flag) {
+    warn(`HOZU_DEVTOOLS_MESSAGES names ${file}, which does not exist: DevTools stays in English`)
+    return null
+  }
+  throw new HozuCliError('usage', `The DevTools messages file ${file} does not exist`, [
+    'npx hozu devtools messages > devtools.messages.json   # every string, to translate',
+  ])
 }
 
 const read = (file: string): unknown => {

@@ -7,8 +7,9 @@ No source change is needed (`hozu migrate` raises the packages).
 - **Renew a session while the app only reads: `app({ refreshSession })`.** When the session holds a token that
   expires, `refreshSession: async (session, { env }) => …` runs once per request, before any resolver reads the
   session. Return the new value (it replaces the old one on the server under the same id, so the cookie stays),
-  `null` to sign out, or `undefined` to keep it. Parallel requests of one session share one call, a throw keeps the
-  session and reaches `onError`, and the value is checked against the session schema. Its types come from
+  `null` to sign out, or `undefined` to keep it. Within one process, requests of one session share one call (and its
+  result for ten seconds), a sign-out while it runs wins, a throw keeps the session and reaches `onError`, and the
+  value is checked against the session schema. Its types come from
   `resolvers(project, …)`. `SessionStore` gains an optional `update(request, value)`, which `memorySessions` and
   `kvSessions` have. Queries still only read.
 - **DevTools in your language.** `npx hozu devtools messages > devtools.zh-TW.json` prints every DevTools string to

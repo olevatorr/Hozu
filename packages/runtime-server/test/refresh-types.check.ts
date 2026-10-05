@@ -29,3 +29,5 @@ export const typed = app({
 export const unknownField = app({ resolvers: r, refreshSession: (s) => s.token })
 // @ts-expect-error a refreshed value must be a session
 export const notASession = app({ resolvers: r, refreshSession: () => ({ user: 1 }) })
+// @ts-expect-error a hook without a parameter must still return a whole session
+export const partial = app({ resolvers: r, refreshSession: () => ({ user: 'a' }) })

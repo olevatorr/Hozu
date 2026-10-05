@@ -417,7 +417,9 @@ export async function main(
         loaded,
         values['no-devtools'] === true ? false : (values.devtools ?? 'builder'),
         (line) => out(`${line}\n`),
-        messagesFileOf(values['devtools-messages'], cwd),
+        values['no-devtools'] === true
+          ? null
+          : messagesFileOf(values['devtools-messages'], cwd, (line) => out(`${line}\n`)),
       )
       return 0
     }
