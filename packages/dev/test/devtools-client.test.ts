@@ -81,7 +81,7 @@ describe.skipIf(!findBrowser())('a client component in DevTools (0.18.1)', () =>
       `[...${tool}.querySelectorAll('.dock button')].find((b) => b.textContent.trim() === 'Select')`,
     )
     await click(`document.querySelector('[data-hozu-component="stations.StationMap"]')`)
-    await until(`!${tool}.querySelector('.panel').hidden`)
+    await until(`${tool}.querySelector('.panel').textContent.includes('Drawn in the browser')`)
     const panel = await evaluate(`${tool}.querySelector('.panel').textContent`)
     expect(panel).toContain('Drawn in the browser by features/stations/map.client.ts')
     expect(panel).not.toContain('↓ Inside')

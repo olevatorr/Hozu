@@ -747,9 +747,12 @@ describe('a lock for pages without machines (0.15 dogfood)', () => {
     const fixture = `${root}packages/cli/test/fixtures/endpoints`
     for (const f of ['hozu.config.ts', 'app.ts'])
       writeFileSync(join(app, f), readFileSync(join(fixture, f), 'utf8'))
-    symlinkSync(`${root}packages/cli/node_modules`, join(app, 'node_modules'))
-    const lockOf = async (args: string[]) =>
-      JSON.parse((await run(['check', '--no-types', ...args, '--json'], app)).stdout).validate.lock
+    symlinkSync(`${root}examples/notes/node_modules`, join(app, 'node_modules'))
+    const lockOf = async (args: string[]) => {
+      const out = JSON.parse((await run(['check', '--no-types', ...args, '--json'], app)).stdout)
+      expect(out.error, JSON.stringify(out.error)).toBeUndefined()
+      return out.validate.lock
+    }
     expect(await lockOf([])).toBe('missing')
     expect(await lockOf(['--update-lock'])).toBe('updated')
     expect(existsSync(join(app, 'hozu.lock.json'))).toBe(true)
