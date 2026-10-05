@@ -59,6 +59,8 @@ export const en = {
   'inspector.where.component': 'component',
   'inspector.where.machine': 'machine',
   'inspector.component': 'Component',
+  'inspector.client':
+    'A client component: {file} draws its inside in the browser, so it is selected as one part.',
   'inspector.usedIn.one': 'used in {count} place',
   'inspector.usedIn.other': 'used in {count} places',
   'inspector.head': 'Head',
@@ -390,6 +392,8 @@ export const en = {
   'plain.about.submit': 'When submitted, it does “{action}”.',
   'plain.about.event': 'When {dom}ed, it does “{action}”.',
   'plain.about.page': 'Its title and description are what search engines and shared links show.',
+  'plain.about.client':
+    'Drawn in the browser by {file}, so DevTools selects it as one part: what is inside belongs to that code.',
   'plain.scope.component': 'Main component · every {name} ({count} places)',
   'plain.scope.instance': 'This instance only',
   'plain.scope.thisOne': 'Only this one',

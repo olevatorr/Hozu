@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.18.1
+
+- **DevTools on a client component says why you cannot select inside it.** A client component draws its inside in
+  the browser (its `client` module), so DevTools selects it as one part. The inspector now says which module draws it
+  ("Drawn in the browser by features/site/editor.client.ts …"), and no longer offers Inside / Child, which did
+  nothing there. `hozu why` on such a node gives the module as `component.client`.
+
 ## 0.18.0 — What a backend engineer's app found (ADR 0060)
 
 No source change is needed (`hozu migrate` raises the packages).

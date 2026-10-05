@@ -68,6 +68,8 @@ export interface DevNode {
     variant: Record<string, string>
     declaration: DevLocation | null
     uses: number
+    /** A client component's module (ADR 0045): its inside is drawn there, in the browser, not by a view. */
+    client: DevLocation | null
   } | null
   location: DevLocation | null
   classes: string | null
@@ -347,6 +349,9 @@ export function locateNode(build: BuildResult, target: string, dev: DevOptions):
           )
         })(),
         uses: counter(build)((n) => useOf(n)?.component === use.component),
+        client: build.bindings.clients[use.component]
+          ? relative(dev.root, { file: build.bindings.clients[use.component]!, line: 1, column: 1 })
+          : null,
       }
     : null
   const conditions: DevCondition[] = []
