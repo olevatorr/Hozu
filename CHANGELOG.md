@@ -15,6 +15,8 @@ packages.
   with a KV binding, agree on who is signed in. Same contract as `memorySessions`: an opaque signed id in the
   cookie, the value on the server, deleted on sign-out. On Workers: `createHandler(app, { …, session:
   kvSessions(env.SESSIONS, { secret: env.SESSION_SECRET }) })`.
+- **`hozu build` writes `server/render.d.ts`**, so an edge entry that imports the render module passes `tsc` and
+  `hozu check`.
 - **A static export under `basePath`** writes `sitemap.xml` and `404.html` under the base, where `robots.txt` points
   (a GitHub project site uploads `dist/<repo>`).
 - **`hozu migrate` 0.14 → 0.15** renames an error the app named `Forbidden` (the framework's access error since 0.15)

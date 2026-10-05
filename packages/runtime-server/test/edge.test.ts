@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -51,6 +51,7 @@ describe('edge build (ADR 0016)', () => {
       encoding: 'utf8',
     })
     expect(built.status, built.stderr).toBe(0)
+    expect(readFileSync(join(out, 'server/render.d.ts'), 'utf8')).toContain("RenderModule['default']")
     const entry = join(out, 'entry.ts')
     writeFileSync(
       entry,

@@ -290,7 +290,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   { expirationTtl } / delete; opaque signed id, deleted on sign-out; `createHandler(app, { session })` on Workers);
   `hozuTransform()` (esbuild) gives app files their own `import.meta.url` (Workers have none); static export under
   `basePath` writes sitemap.xml / 404.html under the base; migrate 0.14 → 0.15 renames a user `Forbidden` error to
-  `NotAllowed`; DevTools message uses count page heads and attributes; trial acceptance runs `@hozu/cli serve`.
+  `NotAllowed`; DevTools message uses count page heads and attributes; `hozu build` writes `server/render.d.ts`; trial acceptance
+  runs `@hozu/cli serve`.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

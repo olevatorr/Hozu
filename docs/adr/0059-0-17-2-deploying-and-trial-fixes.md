@@ -79,8 +79,19 @@ Nothing here changes how an app is written. Two additions fill gaps in deploying
 - **Limit:** Cloudflare KV is eventually consistent; a sign-out can take up to a minute to reach other regions.
   Durable Objects give strong consistency through the same interface.
 
+## J — types for the render module (found while verifying A and I)
+- **Problem:** an edge entry imports `build/server/render.js`, which had no types, so the entry failed `tsc` and
+  therefore `hozu check`.
+- **Decision:** `hozu build` writes `server/render.d.ts` next to it (`RenderModule['default']`).
+
 ## Results
 - Each fix has a test that fails without it: edge bundle without `import.meta.url`, message uses with a page head
   (`examples/blog`, `posts.offline` = 2), static export under `/shop`, migrating the 0.10 notes fixture with its own
   `Forbidden` to 0.15 with an equal IR, `hozu export` on `examples/stars` (0 skipped) and `examples/cart` (exit 1),
   and `kvSessions` across two instances.
+- **On real workerd (`wrangler dev`, packed 0.17.2 tarballs, a fresh `create-hozu` app with `hozu add feature
+  --with auth`):** the bundle starts without a `define`; signing in answers 303 and writes `session:<id>` to the KV
+  binding with its expiry; the page reads "Signed in as ada"; signing out deletes the key and the page redirects to
+  `/login`. `hozu export` on the same app exits 1 naming the page and the two mutations that need a server, and on
+  the app before the feature writes `index.html`, the sitemap and `.nojekyll`.
+- Gate green (804 tests with `CHROMIUM_PATH`; P7 8 011 B unchanged).

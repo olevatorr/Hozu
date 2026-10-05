@@ -116,7 +116,12 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
   const renderFile = join(dir, 'server', 'render.js')
   await mkdir(dirname(renderFile), { recursive: true })
   await writeFile(renderFile, server.generateRender(build, manifest.images))
-  files.push(renderFile)
+  const renderTypes = join(dir, 'server', 'render.d.ts')
+  await writeFile(
+    renderTypes,
+    "import type { RenderModule } from '@hozu/runtime-server'\n\ndeclare const render: RenderModule['default']\nexport default render\n",
+  )
+  files.push(renderFile, renderTypes)
   const manifestFile = join(dir, 'manifest.json')
   await writeFile(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`)
   return { out: dir, manifest: manifestFile, files }
