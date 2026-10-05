@@ -222,3 +222,38 @@ describe("target: 'previous'", () => {
     expect(enter(compiled, 'flash', {}, 1, 'paused').snapshot.previous).toBe('paused')
   })
 })
+
+describe('a boolean field as a guard (ADR 0063 D3)', () => {
+  const Tick = event({ payload: z.object({ on: z.boolean() }) })
+  const m = machine({
+    context: z.object({ auto: z.boolean() }),
+    initialContext: { auto: false },
+    initial: 'idle',
+    states: ({ ctx }) => ({
+      idle: {
+        on: [
+          on(Tick, { target: 'refreshing', guard: () => ctx.auto }),
+          on(Tick, {
+            target: 'idle',
+            assign: (e) => {
+              ctx.auto = e.on
+            },
+          }),
+        ],
+      },
+      refreshing: { final: true },
+    }),
+  })
+  const f = feature({ id: 'g', intent: { summary: 'guard fixture' }, declarations: [{ Tick, m }] })
+  const b = buildProject(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))
+  const compiled = compileMachine(b.ir.features.g!, b.bindings.fns)
+
+  it('fires only while the field is true', () => {
+    expect(b.diagnostics).toEqual([])
+    const tick = (s: Snapshot, value: boolean) =>
+      transition(compiled, s, { type: 'event', event: 'g.Tick', payload: { on: value } }).snapshot
+    const armed = tick(init(compiled).snapshot, true)
+    expect(armed.state).toBe('idle')
+    expect(tick(armed, false).state).toBe('refreshing')
+  })
+})

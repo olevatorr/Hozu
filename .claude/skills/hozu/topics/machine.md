@@ -62,7 +62,7 @@ export const m = machine({
 })
 ```
 - **assign** values are event (`e`), result (`r`) or error fields, context, literals, operators and `fn()` calls.
-- **guard** conditions: comparisons, `&&`, `||`, `!`, or a boolean `fn()`.
+- **guard** conditions: a field (`() => ctx.auto`), comparisons, `&&`, `||`, `!`, or a boolean `fn()`.
 - **navigate** sends the browser to `ui.link(route, params, search?)` after the transition. It returns one link: to
   choose between links, write one guarded transition per link (`[{ guard: () => …, navigate: … }, { navigate: … }]`);
   a `?:` inside `navigate` is HZ014.

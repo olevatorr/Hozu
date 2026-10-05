@@ -45,9 +45,11 @@
 - **Problem:** to come back to "paused" after an add, every busy state was doubled (`adding` / `addingPaused`, …).
 - **Options:** history targets; parallel regions (a larger change to the machine model).
 - **Decision:** `target: 'previous'` on a transition (an event, `done`, `failed`, `after`) returns to the state the
-  machine was in before it entered the current one. The interpreter keeps it in the snapshot; contracts, the lock,
-  `hozu why` and the validator know it (HZ0xx when a state can only be entered first). Parallel regions are not in
-  0.19.
+  machine was in before it entered the current one. The interpreter keeps it in the snapshot (`previous`, only for
+  machines that use the target, so other payloads stay as they were); a re-entry of the same state keeps it, and with
+  nothing to return to the transition does not fire. Contracts take `given.previous` (HZ016 suggests one), the lock
+  prints `--> previous`, a `'previous'` target in a state no transition enters from another state is HZ007, and a
+  state named `previous` is HZ014. Parallel regions are not in 0.19.
 
 ## C3, D1 — seeing what a step did
 - **Decision:** `hozu browse` reports per step whether the document reloaded, navigated, or changed in place (and
@@ -61,11 +63,14 @@
   contracts HZ058 then names.
 
 ## D3 — a boolean field as a guard
-- **Decision:** `guard: () => ctx.auto` is accepted (as `ctx.auto === true`, lowered like `&&`).
+- **Decision:** `guard: () => ctx.auto` is accepted: a field alone is a condition, lowered like an operand of `&&`
+  (`%truthy`), so `() => ctx.auto` and `() => ctx.auto && ctx.ready` read the field the same way.
 
 ## D4 — SVG elements without children
 - **Decision:** SVG shape and gradient elements (`path`, `line`, `circle`, `rect`, `ellipse`, `polygon`, `polyline`,
   `stop`, `use`) take their children argument as optional, like void HTML elements.
+- **Gap:** SVG `<use>` itself cannot be written: `ui.use` is the component call. It stays out of 0.19; a sprite is an
+  `ui.asset` image or inline paths.
 
 ## E1 — `browse` targets by accessible name
 - **Decision:** a click / fill target matches the element's accessible name (`aria-label`, then the text without

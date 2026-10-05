@@ -448,8 +448,9 @@ export class FeatureScope {
       }
       return { op: 'fn', fn: this.ref(expr.fn, ['fn'], p), arg: this.value(expr.arg, p) }
     }
+    if (expr?.kind === 'ref') return this.test(g, p)
     throw new RecorderError(
-      'A guard must be a comparison (===, <, …), a combination with && / || / !, or a boolean fn() call',
+      'A guard must be a field, a comparison (===, <, …), a combination with && / || / !, or a boolean fn() call',
     )
   }
 
