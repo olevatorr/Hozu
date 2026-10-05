@@ -1,8 +1,8 @@
 import type { SourceLoc } from '../ir/diagnostic.ts'
 import { fileUrlToPath } from '../platform.ts'
 
-const coreUrl = new URL('../', import.meta.url).href
-const corePath = coreUrl.startsWith('file:') ? fileUrlToPath(coreUrl) : coreUrl
+const coreUrl = typeof import.meta.url === 'string' ? new URL('../', import.meta.url).href : null
+const corePath = coreUrl?.startsWith('file:') ? fileUrlToPath(coreUrl) : coreUrl
 
 type CallSite = {
   getFileName(): string | null
@@ -23,7 +23,7 @@ const toPath = (raw: string): string => {
 }
 
 const internal = (raw: string) =>
-  raw.startsWith('node:') || raw.startsWith(coreUrl) || raw.startsWith(corePath)
+  raw.startsWith('node:') || (!!coreUrl && (raw.startsWith(coreUrl) || raw.startsWith(corePath!)))
 
 let enabled = true
 

@@ -63,7 +63,6 @@ describe('edge build (ADR 0016)', () => {
       format: 'iife',
       globalName: 'edge',
       mainFields: ['module', 'main'],
-      define: { 'import.meta.url': '"https://edge.example/worker.js"' },
       metafile: true,
       plugins: [hozuTransform()],
       write: false,

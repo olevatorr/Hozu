@@ -123,3 +123,19 @@ describe('static export of conditional islands (ADR 0036)', () => {
     expect(plain.filter((f) => f.startsWith('/_hozu/'))).toEqual([])
   })
 })
+
+describe('static export under a base path', () => {
+  it('writes the sitemap where robots.txt says, under the base, and robots.txt at the root', async () => {
+    const build = buildProject(project, { sources: false })
+    build.ir.http.basePath = '/shop'
+    const outDir = await mkdtemp(join(tmpdir(), 'hozu-base-'))
+    const result = await exportStatic({ build, resolvers: createResolvers(), outDir })
+    expect(result.written.map((f) => f.slice(outDir.length))).toEqual([
+      '/shop/order/placed/index.html',
+      '/robots.txt',
+      '/shop/sitemap.xml',
+      '/shop/manifest.webmanifest',
+    ])
+    expect(await readFile(join(outDir, 'robots.txt'), 'utf8')).toContain('/shop/sitemap.xml')
+  })
+})
