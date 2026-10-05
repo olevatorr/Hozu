@@ -9,6 +9,7 @@ import type { MigrateOutput } from '../src/contract.ts'
 import { load } from '../src/load.ts'
 import { main } from '../src/main.ts'
 import { addRunsServer } from '../src/migrate/step-0.11.ts'
+import { renameForbidden } from '../src/migrate/step-0.15.ts'
 import { chain } from '../src/migrate/steps.ts'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
@@ -362,6 +363,25 @@ describe('the 0.13 → 0.14 step (ADR 0053)', () => {
     expect([third.check?.validate.summary, third.ok]).toEqual([{ errors: 0, warnings: 0, accepted: 0 }, true])
     expect(existsSync(join(after, '.hozu/migrate-0.15.json'))).toBe(false)
   }, 120_000)
+
+  it('renames Forbidden only where an error is named, keeping shorthand and quotes valid (ADR 0059 C)', () => {
+    const source = `const Forbidden = z.object({})
+export const q = query({ errors: { Unauthorized, Forbidden }, failed: { 'Forbidden': 403 } })
+const text = { Forbidden: 'Forbidden here' }
+implement(q, (_, { fail }) => fail('Forbidden', {}))
+implement(q, (_, ctx) => ctx.fail("Forbidden", {}))
+contract(m, { when: [{ failed: q, error: 'Forbidden' }] })
+`
+    const r = renameForbidden('model.ts', source)
+    expect(r.code).toBe(`const Forbidden = z.object({})
+export const q = query({ errors: { Unauthorized, NotAllowed: Forbidden }, failed: { 'NotAllowed': 403 } })
+const text = { Forbidden: 'Forbidden here' }
+implement(q, (_, { fail }) => fail('NotAllowed', {}))
+implement(q, (_, ctx) => ctx.fail("NotAllowed", {}))
+contract(m, { when: [{ failed: q, error: 'NotAllowed' }] })
+`)
+    expect([r.count, r.notes]).toEqual([5, []])
+  })
 
   it('renames an error the app named Forbidden, which 0.15 reserves, and keeps the IR equal (ADR 0059 C)', async () => {
     const dir = await copyOf('notes')

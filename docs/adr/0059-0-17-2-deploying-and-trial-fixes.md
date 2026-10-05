@@ -19,19 +19,24 @@ Nothing here changes how an app is written. Two additions fill gaps in deploying
 - **Decision:** the plugin replaces `import.meta.url` in app files (not `node_modules`) with that file's `file:` URL,
   which is what Node gives and what the build reads; core tolerates a missing `import.meta.url`. The edge test no
   longer defines it (the `iife` bundle has none, as in workerd), and fails without the fix.
+- **Trade-off:** in a bundle, an app file's `import.meta.url` now names its source file, not the bundle. Code that
+  reads a file relative to the bundle (a folder copied next to it) reads the source path instead; such reads cannot
+  work in a Worker at all, and `hozu serve` runs the sources unbundled. Client component modules are bundled by
+  `@hozu/bundle`, which does not use the plugin, so browser code keeps its own `import.meta.url`.
 
 ## B — DevTools under-counted a message's places
 - **Problem:** a request's `Mind` line says "change it there, in every locale" for a message used once, and "shared
   by N places" otherwise. The count saw view text only, not a page head or an attribute. In the trial, the heading
   `Notes` was also the page `<title>`, and one of two agents changed the tab title as told.
-- **Decision:** the count adds element attributes and page heads that use the message.
+- **Decision:** the count adds element attributes, client component props and page heads that use the message.
 
 ## C — `hozu migrate` 0.14 → 0.15 left a reserved name
 - **Problem:** `Forbidden` is the framework's access error since 0.15 (reserved, HZ014). An app that declared its own
   `Forbidden` (both trial 0024 apps did) failed `hozu check` after migrating.
 - **Decision:** the step renames it to `NotAllowed` where 0.14 code names an error: `errors` / `failed` keys,
   `fail('Forbidden')` and a contract's `error`. 0.14 had no framework `Forbidden`, so each of these is the app's own.
-  The old IR is mapped the same way, so migrate still proves the behaviour unchanged. A file that already uses
+  The old IR is mapped the same way, so migrate still proves the behaviour unchanged. A shorthand key
+  (`{ Forbidden }`) becomes `NotAllowed: Forbidden`, so the variable it names stays. A file that already uses
   `NotAllowed` gets a note to check by hand.
 
 ## D — a static export under `basePath`
@@ -61,7 +66,9 @@ Nothing here changes how an app is written. Two additions fill gaps in deploying
   files for a server, not pages.
 - **Decision:** `hozu export [--out dist]` runs `exportStatic` with the app's resolvers, styles, client bundle and
   images, writes `.nojekyll` (GitHub Pages hides `_` folders otherwise; harmless elsewhere), and exits 1 listing the
-  skipped pages and the server effects pages call. It empties its output folder and refuses the app's own folder.
+  skipped pages and the server effects pages call. It empties its output folder, so it refuses a folder that holds
+  the app or the current directory (`--out ..` would have removed the app: found in review) and a non-empty folder
+  without the `.nojekyll` an earlier export wrote.
   `create-hozu` adds `@hozu/adapter-static` (no third-party dependencies).
 - **Not done:** an `export` script in new apps; `npx hozu export` is the one form.
 
@@ -74,7 +81,8 @@ Nothing here changes how an app is written. Two additions fill gaps in deploying
   `kv` has Cloudflare KV's shape (`get`, `put(key, value, { expirationTtl })`, `delete`): a KV binding fits as is,
   and Redis or a database is three lines. Same contract as `memorySessions` (opaque signed id in the cookie, value on
   the server, deleted on sign-out, TTL = `maxAge`); the secret is required. `memorySessions` now runs on the same
-  code over an in-memory map. A Worker passes it to `createHandler(app, { session })`, created on the first request
+  code over an in-memory map. Cloudflare KV keeps a value at least 60 seconds, so the stored TTL is at least 60 (the
+  cookie still ends at `maxAge`); a value that is not JSON reads as signed out. A Worker passes it to `createHandler(app, { session })`, created on the first request
   when its `env` is known; `app.ts` stays the same everywhere.
 - **Limit:** Cloudflare KV is eventually consistent; a sign-out can take up to a minute to reach other regions.
   Durable Objects give strong consistency through the same interface.

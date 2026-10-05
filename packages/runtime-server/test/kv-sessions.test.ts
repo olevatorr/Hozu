@@ -48,4 +48,14 @@ describe('kvSessions (ADR 0059 I)', () => {
       'kvSessions secret must be at least 32 characters',
     )
   })
+
+  it('keeps a value at least the 60 seconds Cloudflare KV allows, and reads a damaged one as signed out', async () => {
+    const { kv, data } = fakeKV()
+    const store = kvSessions(kv, { secret, maxAge: 30 })
+    const cookie = await store.write({ user: 'ada' })
+    expect(cookie.endsWith('; Max-Age=30')).toBe(true)
+    expect([...data.values()][0]!.ttl).toBe(60)
+    data.set([...data.keys()][0]!, { value: '{not json', ttl: 60 })
+    expect(await store.read(withCookie(cookie))).toBeNull()
+  })
 })

@@ -23,7 +23,7 @@
   `dist/public/`, `dist/manifest.json` and `dist/server/render.js`. It compresses answers as they stream (gzip),
   and framework files with brotli or gzip from the `.br` / `.gz` that `hozu build` writes. Live streams are not
   compressed. The edge handler leaves compression to the platform.
-- **Edge (Cloudflare Workers, Bun, Deno):** `hozu build --out build`, then bundle an entry with esbuild and
+- **Edge (Cloudflare Workers, Bun, Deno):** `hozu build --out build` (git-ignore `build/`), then bundle an entry with esbuild and
   `hozuTransform()` from `@hozu/transform/esbuild` (it gives each app file its own `import.meta.url`, which a
   Worker lacks). The entry creates the handler on the first request, when the platform's `env` is known:
   `handler ??= createHandler(app, { manifest, render, env })` from `@hozu/runtime-server`, with

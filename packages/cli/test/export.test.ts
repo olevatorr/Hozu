@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Ajv } from 'ajv'
@@ -38,10 +38,42 @@ describe('hozu export (ADR 0059 H)', () => {
     expect(result.skipped).toContainEqual({ route: 'home', reason: 'per-request regions: cart.getCart' })
   }, 60_000)
 
-  it('refuses to empty the app directory', async () => {
-    const lines: string[] = []
-    const code = await main(['export', '--out', '.'], join(root, 'examples', 'cart'), (s) => lines.push(s))
-    expect(code).not.toBe(0)
-    expect(existsSync(join(root, 'examples/cart/hozu.config.ts'))).toBe(true)
-  })
+  it('never empties a folder that holds the app or files it did not write', async () => {
+    const parent = join(root, '.tmp', `export-guard-${Date.now()}`)
+    outs.push(parent)
+    const app = join(parent, 'app')
+    cpSync(join(root, 'examples/stars'), app, {
+      recursive: true,
+      filter: (from) => !/\/(node_modules|\.hozu|dist)(\/|$)/.test(from),
+    })
+    symlinkSync(join(root, 'examples/stars/node_modules'), join(app, 'node_modules'))
+    const tsconfig = join(app, 'tsconfig.json')
+    writeFileSync(
+      tsconfig,
+      readFileSync(tsconfig, 'utf8').replace('../../tsconfig.base.json', join(root, 'tsconfig.base.json')),
+    )
+    expect(await main(['export', '--out', 'dist'], app, () => {}), 'the copy exports').toBe(0)
+    writeFileSync(join(parent, 'sibling.txt'), 'mine')
+    mkdirSync(join(parent, 'other'))
+    writeFileSync(join(parent, 'other', 'notes.txt'), 'mine')
+    for (const out of ['.', '..', 'features', join(parent, 'sibling-dir', '..'), '../other'])
+      expect(await main(['export', '--out', out], app, () => {}), out).not.toBe(0)
+    expect(readFileSync(join(parent, 'sibling.txt'), 'utf8')).toBe('mine')
+    expect(existsSync(join(app, 'hozu.config.ts'))).toBe(true)
+    expect(existsSync(join(app, 'features'))).toBe(true)
+    expect(readFileSync(join(parent, 'other', 'notes.txt'), 'utf8')).toBe('mine')
+  }, 60_000)
+
+  it('exports again into a folder it wrote', async () => {
+    const first = await exportOf('stars')
+    let text = ''
+    const code = await main(
+      ['export', '--out', first.out, '--json'],
+      join(root, 'examples', 'stars'),
+      (s) => {
+        text += s
+      },
+    )
+    expect([code, JSON.parse(text).skipped]).toEqual([0, []])
+  }, 60_000)
 })

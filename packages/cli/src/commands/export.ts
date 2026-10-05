@@ -1,7 +1,7 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { BuildResult } from '@hozu/core/ir'
 import type { ExportOutput } from '../contract.ts'
@@ -33,10 +33,20 @@ export async function runExport(loaded: Loaded, out: string | undefined, cwd: st
     throw new HozuCliError('build', `The project has ${errors.length} build errors`, ['Run hozu check'])
   const base = dirname(loaded.path)
   const dir = resolve(cwd, out ?? 'dist')
-  if (dir === base || existsSync(join(dir, 'hozu.config.ts')) || existsSync(join(dir, 'package.json')))
+  const within = (path: string) => {
+    const r = relative(dir, path)
+    return r === '' || (!r.startsWith('..') && !isAbsolute(r))
+  }
+  if (within(base) || within(cwd))
     throw new HozuCliError('usage', `hozu export empties its output directory, and ${dir} holds the app`, [
       'hozu export --out dist',
     ])
+  if (existsSync(dir) && readdirSync(dir).length && !existsSync(join(dir, '.nojekyll')))
+    throw new HozuCliError(
+      'usage',
+      `hozu export empties its output directory, and ${dir} holds files it did not write`,
+      [`rm -r ${relative(cwd, dir) || dir}   # if they can go`, 'hozu export --out <a new folder>'],
+    )
   const require = createRequire(loaded.path)
   const from = async <T>(id: string): Promise<T> => {
     try {

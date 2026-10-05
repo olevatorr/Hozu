@@ -135,7 +135,8 @@ export function renameForbidden(
       n.value.type === 'ObjectExpression'
     )
       for (const p of n.value.properties)
-        if (p.type === 'Property' && named(p.key, RESERVED)) edits.push(renamed(source, p.key))
+        if (p.type === 'Property' && named(p.key, RESERVED))
+          edits.push(p.shorthand ? [p.start, p.end, `${RENAMED}: ${RESERVED}`] : renamed(source, p.key))
     if (n.type === 'Property' && keyOf(n) === 'error' && named(n.value, RESERVED))
       edits.push(renamed(source, n.value))
     if (n.type === 'CallExpression') {

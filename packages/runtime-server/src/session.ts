@@ -82,7 +82,11 @@ function storedSessions(
     async read(request) {
       const id = await idOf(request)
       const json = id ? await kv.get(`${prefix}${id}`) : null
-      return json === null ? null : JSON.parse(json)
+      try {
+        return json === null ? null : JSON.parse(json)
+      } catch {
+        return null
+      }
     },
     async write(value, request) {
       const old = request ? await idOf(request) : null
@@ -132,12 +136,19 @@ export function memorySessions({
 /**
  * Sessions in a shared key-value store, for several instances or an edge runtime (ADR 0059 I): the cookie holds an
  * opaque signed id, the value lives in `kv` under `prefix + id` and is deleted on sign-out, as with memorySessions.
+ * Cloudflare KV keeps a value at least 60 seconds, so a shorter `maxAge` ends with the cookie, not the stored value.
  */
 export function kvSessions(
   kv: SessionKV,
   { name = 'sid', secret, maxAge = 60 * 60 * 24 * 30, secure = true, prefix = 'session:' }: KvSessionsOptions,
 ): SessionStore {
-  return storedSessions(kv, { name, secret, maxAge, secure, prefix }, 'kvSessions')
+  const store: SessionKV = {
+    get: (key) => kv.get(key),
+    put: (key, value, { expirationTtl }) =>
+      kv.put(key, value, { expirationTtl: Math.max(60, expirationTtl) }),
+    delete: (key) => kv.delete(key),
+  }
+  return storedSessions(store, { name, secret, maxAge, secure, prefix }, 'kvSessions')
 }
 
 export function signedCookie({

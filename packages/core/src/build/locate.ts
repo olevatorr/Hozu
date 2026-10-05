@@ -172,7 +172,8 @@ const describeWith = (build: BuildResult, providers: Provider[], root: string) =
     const inViews = count(
       (n) =>
         (n.kind === 'text' && 'fn' in n.value && n.value.fn === fn) ||
-        (n.kind === 'el' && JSON.stringify(n.attrs).includes(quoted)),
+        (n.kind === 'el' && JSON.stringify(n.attrs).includes(quoted)) ||
+        (n.kind === 'component' && JSON.stringify(n.props).includes(quoted)),
     )
     const inHeads = Object.values(build.ir.pages).filter((p) => JSON.stringify(p.head).includes(quoted))
     return inViews + inHeads.length

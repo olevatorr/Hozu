@@ -121,7 +121,7 @@ The adapter includes an ISR page cache, tag revalidation, CSP and cross-site POS
 
 ## Cloudflare Workers
 
-A Worker runs the web-standard handler, `createHandler` from `@hozu/runtime-server`. The edge cannot generate the render module at startup, so build first and bundle the result:
+A Worker runs the web-standard handler, `createHandler` from `@hozu/runtime-server`. The edge cannot generate the render module at startup, so build first and bundle the result (add `build/` to `.gitignore`: it is generated):
 
 ```sh
 npm install -D esbuild wrangler
