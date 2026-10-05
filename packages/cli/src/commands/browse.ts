@@ -397,7 +397,12 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
             jsOnly: r.jsOnly,
             requested: tab.requested,
             navigated: before.url !== after.url,
-            document: reloads === 0 ? 'in place' : before.url !== after.url ? 'navigated' : 'reloaded',
+            document:
+              reloads === 0
+                ? 'in place'
+                : before.url !== after.url || verb === 'goto' || verb === 'post'
+                  ? 'navigated'
+                  : 'reloaded',
             ...(replaced ? { replaced } : {}),
             url: after.url,
             ...(tab.stepStatus !== null && tab.stepStatus !== 200 ? { status: tab.stepStatus } : {}),
@@ -515,7 +520,7 @@ function describeChange(c: BrowseChange, full: boolean): string {
   const how =
     c.mode === 'on' && c.document === 'reloaded'
       ? 'the page reloaded'
-      : c.replaced
+      : full && c.replaced
         ? `${c.replaced} element${c.replaced === 1 ? '' : 's'} replaced`
         : ''
   return [moved || status ? `→ ${c.url}${status}` : '', how, list].filter(Boolean).join(': ')

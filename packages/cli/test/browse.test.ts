@@ -368,9 +368,17 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(press.modes[0].added.join(' ')).toContain('Adding Held note…')
     expect(release.modes[0].note).toBe('released 1 held answer')
     expect(release.modes[0].added.join(' ')).toContain('Held note')
-    expect(again.modes[0].document).toBe('reloaded')
-    const text = await human(['/', '--js', 'on', '--session', ADA, '--do', 'goto /'], notes)
-    expect(text.stdout).toContain('the page reloaded')
+    expect(again.modes[0].document).toBe('navigated')
+    const off = await browse(
+      ['/', '--js', 'off', '--session', ADA, '--do', 'fill New note=Posted; press Enter'],
+      notes,
+    )
+    expect(off.out.steps[1].modes[0].document).toBe('reloaded')
+    const full = await human(
+      ['/', '--js', 'on', '--session', ADA, '--full', '--do', 'click Pin in "Buy milk"'],
+      notes,
+    )
+    expect(full.stdout).toMatch(/click Pin in "Buy milk": \d+ elements? replaced/)
   }, 60_000)
 
   it('clicks a button by its accessible name, without the glyph it hides (ADR 0063 E1)', async () => {

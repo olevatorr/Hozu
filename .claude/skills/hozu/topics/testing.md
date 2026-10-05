@@ -19,9 +19,10 @@
   chain with `--js both`. `--as <name>` starts an actor with its own browser; all actors share one app.
   - A stale form (sent after the data changed elsewhere): `--do 'remember save from form:has([name=title]) @action'`,
     change the data as another `--as`, then `--do 'post $save title=x'`. No server and no curl needed.
-- **The output** is per step only the lines added (`+`) or removed (`−`), and what the step did to the document:
-  `the page reloaded`, `→ /path` (navigated), or `N elements replaced` (redrawn in place). A passing six-step run
-  stays under 1.5 KB. Exit code 1 when a step failed, the modes differ or an error was printed.
+- **The output** is per step only the lines added (`+`) or removed (`−`). A passing six-step run stays under 1.5 KB.
+  Exit code 1 when a step failed, the modes differ or an error was printed.
+- **A step that reloads the page** with JS on says `the page reloaded` (a form that should update in place);
+  `--full` adds `N elements replaced` (a region drawn again), `--json` has both as `document` / `replaced`.
 - **A pending state:** `--do 'hold notes.addNote'` keeps that effect's answer back; the next steps (and
   `--screenshot`) see the busy UI; `--do 'release'` answers it.
 - `browse` runs the `npm start` app: what only `hozu dev` does (reload on edits, DevTools) is not in it.
