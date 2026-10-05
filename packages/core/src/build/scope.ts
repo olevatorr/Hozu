@@ -240,8 +240,10 @@ export class FeatureScope {
           pointer,
           message,
           error instanceof RecorderError
-            ? 'Builder callbacks are recorded once with reference proxies; they cannot compute values.'
+            ? (error.detail?.cause ??
+                'Builder callbacks are recorded once with reference proxies; they cannot compute values.')
             : 'A builder callback threw while being recorded.',
+          error instanceof RecorderError ? (error.detail?.fix ?? null) : null,
         )
       return fallback
     } finally {

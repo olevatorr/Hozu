@@ -48,8 +48,15 @@ export interface Assign {
   readonly [ASSIGN]: RawAssign
 }
 
+type RecorderDetail = { cause: string; fix: { summary: string; snippet: string | null; patch: null } }
+
 export class RecorderError extends Error {
   override name = 'RecorderError'
+  readonly detail: RecorderDetail | undefined
+  constructor(message: string, detail?: RecorderDetail) {
+    super(message)
+    this.detail = detail
+  }
 }
 
 export class ReferenceEscape extends RecorderError {
