@@ -468,7 +468,12 @@ export function createDataRuntime({
     const entry = entryOf(effect, key, input)
     const f = effect.freshness as Exclude<Freshness, { kind: 'request' } | { kind: 'live' }>
     if (entry.value) {
-      const ttl = f.kind === 'static' ? (staticTtl ?? Number.POSITIVE_INFINITY) : f.seconds
+      const ttl =
+        f.kind === 'static'
+          ? (staticTtl ?? Number.POSITIVE_INFINITY)
+          : f.kind === 'poll'
+            ? f.seconds / 2
+            : f.seconds
       if (now() - entry.at < ttl * 1000) {
         stats.hits++
         return entry.value

@@ -1,6 +1,10 @@
 export const PAGE = String.raw`(() => {
   const norm = (s) => (s ?? '').replace(/\s+/g, ' ').trim().toLowerCase()
   const shown = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 || r.height > 0 }
+  const spoken = (el) =>
+    [...el.childNodes]
+      .map((n) => (n.nodeType === 3 ? n.textContent : n.nodeType === 1 && n.getAttribute('aria-hidden') !== 'true' ? spoken(n) : ''))
+      .join('')
   const nameOf = (el) => {
     const aria = el.getAttribute('aria-label')
     if (aria) return aria
@@ -10,7 +14,7 @@ export const PAGE = String.raw`(() => {
     if (el.tagName === 'INPUT' && ['submit', 'button'].includes(el.type)) return el.value
     if (el.placeholder) return el.placeholder
     if (el.getAttribute('title') && !el.textContent.trim()) return el.getAttribute('title')
-    return el.textContent
+    return spoken(el)
   }
   const KINDS = {
     fill: 'input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]):not([type=image]):not([type=reset]), textarea, [contenteditable=true]',
@@ -41,7 +45,9 @@ export const PAGE = String.raw`(() => {
     const found = scope.roots.map((root) => {
       const pool = [...document.querySelectorAll(KINDS[kind])].filter((el) => shown(el) && inside(root, el))
       all = all.concat(pool)
-      let hits = pool.filter((el) => norm(nameOf(el)) === want || norm(el.getAttribute('title')) === want)
+      let hits = pool.filter(
+        (el) => norm(nameOf(el)) === want || norm(el.getAttribute('title')) === want || norm(el.textContent) === want,
+      )
       if (!hits.length && kind !== 'click') hits = pool.filter((el) => norm(el.getAttribute('name')) === want)
       if (!hits.length && kind === 'click')
         hits = [...(root ?? document.body).querySelectorAll('*')].filter(

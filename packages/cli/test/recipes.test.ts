@@ -115,8 +115,8 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
     ])
     edit(s, [
       [
-        'const items: { id: string; title: string; done: boolean }[] = []',
-        "const items: { id: string; title: string; done: boolean; priority: 'low' | 'normal' | 'high' }[] = []",
+        'const demoItems: { id: string; title: string; done: boolean }[] = []',
+        "const demoItems: { id: string; title: string; done: boolean; priority: 'low' | 'normal' | 'high' }[] = []",
       ],
       ['implement(addItem, ({ title }, { fail })', 'implement(addItem, ({ title, priority }, { fail })'],
       ['title: clean, done: false }', 'title: clean, done: false, priority }'],
@@ -126,7 +126,7 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
       ],
       [
         '  return [\n',
-        '  return [\n    implement(clearDone, () => { const before = items.length; items.splice(0, items.length, ...items.filter((i) => !i.done)); return { removed: before - items.length } }),\n',
+        '  return [\n    implement(clearDone, () => { const before = demoItems.length; demoItems.splice(0, demoItems.length, ...demoItems.filter((i) => !i.done)); return { removed: before - demoItems.length } }),\n',
       ],
     ])
     const stale = JSON.parse((await run(['check', '--json'])).stdout)

@@ -388,6 +388,10 @@ export interface BrowseChange {
   jsOnly: string | null
   requested: boolean
   navigated: boolean
+  /** What the step did to the document: kept it, loaded the same URL again, or loaded another one (ADR 0063 C3). */
+  document?: 'in place' | 'reloaded' | 'navigated'
+  /** With the document kept: how many elements are new after the step (a region drawn again). */
+  replaced?: number
   url: string
   /** The status of the page the step loaded, when it is not 200 (a 403 an access check expects). */
   status?: number

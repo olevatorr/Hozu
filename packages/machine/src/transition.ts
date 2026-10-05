@@ -1,4 +1,5 @@
 import type { Json } from '@hozu/core/ir'
+import { PREVIOUS } from './compile.ts'
 import type { CompiledMachine, CompiledTransition, Effect, Env, Input, Snapshot, Step } from './types.ts'
 
 function enterEffects(
@@ -14,12 +15,22 @@ function enterEffects(
   for (const ms of s.timers) effects.push({ type: 'timer', entry, ms })
 }
 
-export function enter(machine: CompiledMachine, state: string, context: Json, entry = 1): Step {
+export function enter(
+  machine: CompiledMachine,
+  state: string,
+  context: Json,
+  entry = 1,
+  previous?: string,
+): Step {
   const index = machine.index.get(state)
   if (index === undefined) throw new Error(`Unknown state "${state}" in ${machine.feature}`)
   const effects: Effect[] = []
   enterEffects(machine, index, context, entry, effects)
-  return { snapshot: { state, context, entry }, effects, taken: null }
+  return {
+    snapshot: { state, context, entry, ...(previous === undefined ? {} : { previous }) },
+    effects,
+    taken: null,
+  }
 }
 
 export const init = (machine: CompiledMachine): Step =>
@@ -35,13 +46,21 @@ function fire(
 ): Step {
   if (!candidates) return ignored(snapshot)
   for (const t of candidates) {
+    const target = t.target === PREVIOUS ? machine.index.get(snapshot.previous ?? '') : t.target
+    if (target === undefined) continue
     if (t.guard && !t.guard(env)) continue
     let context = snapshot.context
     for (const update of t.assign) context = update(context, env)
     const entry = snapshot.entry + 1
     const effects: Effect[] = t.navigate === null ? [] : [{ type: 'navigate', url: String(t.navigate(env)) }]
-    enterEffects(machine, t.target, context, entry, effects)
-    return { snapshot: { state: machine.states[t.target]!.name, context, entry }, effects, taken: t.id }
+    enterEffects(machine, target, context, entry, effects)
+    const state = machine.states[target]!.name
+    const previous = !machine.remembers || state === snapshot.state ? snapshot.previous : snapshot.state
+    return {
+      snapshot: { state, context, entry, ...(previous === undefined ? {} : { previous }) },
+      effects,
+      taken: t.id,
+    }
   }
   return ignored(snapshot)
 }

@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.19.0 — What an agent building a dashboard found (ADR 0063)
+
+No source change is needed (`hozu migrate` raises the packages).
+
+- **The guide no longer teaches keeping app data in server memory.** Every example kept its data in a module-level
+  array and nothing said it was a stand-in, so an agent stored each visitor's watchlist in one list on the server,
+  shared by everyone, without asking. `SKILL.md` now says where data lives is the person's call (ask when the request
+  does not say); `hozu docs data` opens with "whose data is it?" (the visitor's own → the browser, a user's →
+  session + database, everyone's → a database); stand-ins are named `demo…` in the examples and the scaffold; a new
+  recipe, "A personal list without sign-in"; and `examples/watchlist` keeps the list in `localStorage` with quotes
+  from the server.
+- **`freshness: { poll: seconds }`** reads a query again on a timer while a page shows it (5 s to a day; any `scope`
+  and `runs`). It skips hidden pages and in-flight effects; public data is cached on the server for half the
+  interval, user data never.
+- **`target: 'previous'`** (also `done: 'previous'`) returns to the state the machine came from, so a busy state
+  entered from two modes needs no copy per mode. Contracts take `given: { state, previous }`; HZ016 suggests it, and
+  a `done`, `failed` or `after` return from a state nothing enters from another state is HZ007 (the machine would
+  stay there).
+- **A field alone is a guard:** `guard: () => ctx.auto`.
+- **Removing a guard is reviewed by the lock alone.** A transition that stops deciding no longer asks for a covering
+  contract (HZ018); HZ057 says to accept it and delete the contracts HZ058 names.
+- **`hozu browse` says what each step did:** the page reloaded, navigated, or changed in place (`--full` adds how many
+  elements were redrawn). `hold <feature>.<effect>` keeps an effect's answer until `release`, to read and screenshot
+  the pending state. Click and fill targets match the accessible name (`aria-hidden` glyphs left out).
+- **SVG shapes** (`path`, `circle`, `rect`, `line`, `stop`, …) take their children argument as optional.
+- **`@hozu/css` moves `@import url(…)` rules to the top** of the compiled stylesheet; the content topic recommends
+  local fonts and shows a remote one with its CSP sources.
+- **`ui.format.*` is listed in the views topic.**
+- **`@hozu/cli` no longer depends on `create-hozu`**, so a release is installable as soon as the `@hozu/*` packages
+  are on npm.
+
 ## 0.18.2
 
 - **`hozu dev` no longer reloads because the app wrote a file.** It reloaded the page, and restarted the app, for

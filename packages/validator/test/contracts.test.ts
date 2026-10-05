@@ -183,6 +183,16 @@ describe('Phase 1 behavior catalog', () => {
     expect(decisive(verify(ir, { sources, bindings, lock: baseline, accept: true }).diagnostics)).toEqual([])
   })
 
+  it('ADR 0063 D2: a transition that stops deciding is reviewed by the lock alone', () => {
+    const baseline = run(cartIR()).lock!
+    const ir = cartIR()
+    cart(ir).machine!.states.idle!.on['cart.SetQuantity']![0]!.guard = null
+    const diagnostics = run(ir, baseline).diagnostics
+    expect(diagnostics.map((d) => d.code)).not.toContain('HZ018')
+    const stale = diagnostics.find((d) => d.code === 'HZ057')!
+    expect(stale.cause).toContain('changed idle/on/cart.SetQuantity/0 (guard) · stops deciding:')
+  })
+
   it('a transition that only copies values needs no contract; the lock summarises it (ADR 0037)', () => {
     const ir = cartIR()
     cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [

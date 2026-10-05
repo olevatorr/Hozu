@@ -4,7 +4,13 @@ import type { Infer, InferInput, Schema } from '../schema/standard.ts'
 import type { Access } from './access.ts'
 import type { TagUse } from './tag.ts'
 
-export type Freshness = 'static' | 'request' | 'live' | { revalidate: number } | { swr: number }
+export type Freshness =
+  | 'static'
+  | 'request'
+  | 'live'
+  | { revalidate: number }
+  | { swr: number }
+  | { poll: number }
 
 export type ErrorSchemas = Record<string, Schema>
 

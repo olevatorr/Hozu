@@ -56,13 +56,13 @@ export function queryFreshness(ctx: Ctx) {
     for (const [sym, q] of Object.entries(f.queries)) {
       const p = featurePointer(f.id, 'queries', sym, 'freshness')
       const kind = q.freshness.kind
-      if (q.scope === 'user' && kind !== 'request' && kind !== 'live')
+      if (q.scope === 'user' && kind !== 'request' && kind !== 'live' && kind !== 'poll')
         ctx.report(
           'HZ049',
           f.id,
           p,
           `${f.id}.${sym} is user-scoped with freshness ${kind === 'static' ? "'static'" : `{ ${kind}: … }`}`,
-          "User data is never cached across requests: 'request' reads it once per request, 'live' also pushes updates.",
+          "User data is never cached across requests: 'request' reads it once per request, 'live' also pushes updates, { poll } reads it again on a timer.",
           {
             summary: "Use freshness: 'request'",
             snippet: "freshness: 'request',",

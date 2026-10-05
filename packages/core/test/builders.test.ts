@@ -304,6 +304,27 @@ describe('builder diagnostics', () => {
     })
     expect(second!.assign[0]!.value).toEqual({ literal: { a: 1, b: 2 } })
   })
+
+  it('SVG shapes take their children argument as optional (ADR 0063 D4)', () => {
+    const V = ui.view({
+      render: () =>
+        ui.svg({ viewBox: '0 0 1 1' }, [ui.path({ d: 'M0 0' }), ui.circle({ r: 1 }, [ui.desc({}, ['dot'])])]),
+    })
+    const b = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [feature({ id: 'f', declarations: [{ V }], ...base })],
+      }),
+    )
+    expect(b.diagnostics).toEqual([])
+    const root = b.ir.features.f!.views.V!.root as { children: { tag: string; children: unknown[] }[] }
+    expect(root.children.map((c) => [c.tag, c.children.length])).toEqual([
+      ['path', 0],
+      ['circle', 1],
+    ])
+  })
 })
 
 describe('busy states by rule (ADR 0037)', () => {

@@ -38,6 +38,8 @@ export interface PagePayload {
   components: Record<string, ComponentRef>
   routes: Record<string, string>
   live: Record<string, LiveQuery>
+  /** Queries this page reads again on a timer, in seconds (ADR 0063 C1). */
+  poll?: Record<string, number>
   /** Effects this page can call that run in the browser (ADR 0049). */
   effects?: Record<string, ClientEffect>
   /** The bundled fetch module of each feature with such effects. */
@@ -174,12 +176,15 @@ export async function hydrate(
     }
     return pending
   }
+  const syncAll = () => {
+    for (const app of apps.values()) app.sync()
+  }
   const liveKeys = Object.entries(payload.live ?? {})
   const onTags = async (tags: string[]) => {
     if (busy) return void queued.push(...tags)
     const stale = liveKeys.filter(([, l]) => l.tags.some((t) => tags.includes(t)))
     for (const [key, l] of stale) shared.data.set(key, await query(l.query, l.input))
-    if (stale.length) for (const app of apps.values()) app.sync()
+    if (stale.length) syncAll()
   }
   let busy = 0
   let queued: string[] = []
@@ -187,14 +192,14 @@ export async function hydrate(
     if (local?.runs(effect)) {
       busy++
       const { result, changed, tags } = await local.mutate(effect, input).finally(() => busy--)
-      if (changed) for (const app of apps.values()) app.sync()
+      if (changed) syncAll()
       return { result, tags }
     }
     busy++
     const { result, refreshed, session, tags } = await transport(effect, input, [
       ...shared.data.keys(),
     ]).finally(() => busy--)
-    if (tags && local && (await local.reread(tags))) for (const app of apps.values()) app.sync()
+    if (tags && local && (await local.reread(tags))) syncAll()
     if (session) {
       shared.data.clear()
       queued = []
@@ -203,7 +208,7 @@ export async function hydrate(
       shared.data.set(key, value)
       shared.versions.set(key, (shared.versions.get(key) ?? 0) + 1)
     }
-    if (refreshed.length || session) for (const app of apps.values()) app.sync()
+    if (refreshed.length || session) syncAll()
     if (!busy && queued.length) onTags(queued.splice(0))
     return { result, tags: tags ?? [] }
   }
@@ -245,13 +250,14 @@ export async function hydrate(
     if (at?.parentNode && node)
       apps.get(island.feature)?.attach(at.parentNode, at.nextSibling, node, island.scope, true)
   })
-  for (const app of apps.values()) app.sync()
+  syncAll()
   for (const app of apps.values()) app.start()
   if (liveKeys.length)
     (live ?? (await import('./live.ts')).liveStream(doc))(
       onTags,
       liveKeys.flatMap(([, l]) => l.tags),
     )
+  if (payload.poll) (await import('./poll.ts')).poll(doc, payload.poll, shared, onQuery, () => busy, syncAll)
   if (globalThis.__HOZU_DEV__ && dev)
     (await import('./dev.ts')).expose(doc, apps, dev.machines, { invoke, query: onQuery })
   doc.documentElement.setAttribute('data-hozu-ready', '')

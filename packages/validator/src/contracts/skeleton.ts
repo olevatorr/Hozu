@@ -87,7 +87,19 @@ export function skeleton(ir: ProjectIR, feature: FeatureIR, id: string): string 
         : (effectSchemas(ir, s.invoke!.effect)?.error(error) ?? null)
     step = `{ failed: ${local(s.invoke!.effect)}, error: '${error}', data: ${ts(example(schema))} }`
   }
-  const target = t?.target ?? state
+  const back =
+    t?.target === 'previous'
+      ? (Object.entries(m.states).find(
+          ([name, other]) =>
+            name !== state &&
+            [
+              ...Object.values(other.on).flat(),
+              ...(other.invoke ? [...other.invoke.done, ...Object.values(other.invoke.failed).flat()] : []),
+              ...other.after.map((a) => a.transition),
+            ].some((x) => x.target === state),
+        )?.[0] ?? m.initial)
+      : null
+  const target = back ?? t?.target ?? state
   const entered = m.states[target]?.invoke
   const calls: string[] = []
   if (t?.navigate && 'link' in t.navigate)
@@ -102,7 +114,7 @@ export function skeleton(ir: ProjectIR, feature: FeatureIR, id: string): string 
   if (calls.length) expect.push(`effects: [${calls.join(', ')}]`)
   return [
     'contract(machine, {',
-    `  given: { state: '${state}' },`,
+    back ? `  given: { state: '${state}', previous: '${back}' },` : `  given: { state: '${state}' },`,
     `  when: [${step}],`,
     `  expect: { ${expect.join(', ')} },`,
     '})',

@@ -149,6 +149,8 @@ function assign(a: AssignOp, fns: Fns): Update {
   }
 }
 
+export const PREVIOUS = -1
+
 const navigateTo =
   (url: Getter, routes: Record<string, string>): Getter =>
   (env) =>
@@ -169,12 +171,14 @@ export function compileMachine(
     return i
   }
   const transitions: string[] = []
+  let remembers = false
   const compile = (t: TransitionIR, id: string): CompiledTransition => {
     transitions.push(id)
+    if (t.target === 'previous') remembers = true
     return {
       id,
       guard: t.guard ? guard(t.guard, fns) : null,
-      target: indexOf(t.target),
+      target: t.target === 'previous' ? PREVIOUS : indexOf(t.target),
       assign: t.assign.map((a) => assign(a, fns)),
       navigate: t.navigate ? navigateTo(compileValue(t.navigate, fns), routes) : null,
     }
@@ -219,5 +223,6 @@ export function compileMachine(
     states,
     index,
     transitions,
+    remembers,
   }
 }

@@ -68,9 +68,12 @@ By default (`--js both`) it runs the `--do` steps twice side by side, with JS an
 - `fill <label>=<value>`, `select <label>=<option>`, `check <label>` and `uncheck <label>`;
 - `click <name>`, `submit "<form>"` and `press <key>`;
 - `wait <ms>` and `goto <path>`;
+- `hold <feature>.<effect>` and `release`: keep that effect's answer back, to read and screenshot the pending state;
 - `post <path> a=1&b=2`: a forged native form post as the current actor, without the page;
 - `remember <name> from url|<selector> [@attr]`: keep a value that later steps read as `$name`;
 - any target may end with `in "<text>"`: the smallest list item, table row or form containing that text (for `fill` and `select`, before or after `=value`).
+
+Each step says whether the page reloaded, navigated or changed in place (`--full` adds how many elements were redrawn). Click and fill targets match the visible text and the accessible name (`aria-label`, or the text without `aria-hidden` parts). `browse` runs the built app, not `hozu dev`: its file watcher and DevTools are not part of a run.
 
 One `--do` may hold several steps joined with `;` (outside quotes, before a step's verb). A target that is not on the page prints `Did you mean "<closest label>"?`. A step that loads a page answering 401, 403, 404 or 410 shows that status as its answer, such as `→ /notes/n1 (403)`, and is not an error, so an access check exits 0; the start page must still load.
 

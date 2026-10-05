@@ -13,7 +13,7 @@ export type EffectCall = { effect: EffectDecl; input: unknown } | { navigate: st
 
 export interface ContractDef {
   machine: MachineDecl
-  given: { state: string; context?: unknown }
+  given: { state: string; context?: unknown; previous?: string }
   when: Step[]
   expect: { state: string; changes?: unknown; effects?: EffectCall[] }
 }
@@ -29,7 +29,7 @@ export interface ContractDecl extends Decl<'contract'> {}
 export const contract = <C, S extends string>(
   machine: MachineDecl<C, S>,
   spec: {
-    given: { state: NoInfer<S>; context?: Changes<NoInfer<C>> }
+    given: { state: NoInfer<S>; context?: Changes<NoInfer<C>>; previous?: NoInfer<S> }
     when: Step[]
     expect: { state: NoInfer<S>; changes?: Changes<NoInfer<C>>; effects?: EffectCall[] }
   },

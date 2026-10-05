@@ -357,7 +357,7 @@ export function server(n: Names, w: With): string {
   const scoped = (body: string, own = true) =>
     w.auth
       ? `{\n      const items = ${own ? 'ownListOf' : 'listOf'}(session)\n${body}\n    }`
-      : `{\n${body}\n    }`
+      : `{\n      const items = demoItems\n${body}\n    }`
   return `${lines(
     `import type { Implement } from '@hozu/data'`,
     `import { ${imports.sort().join(', ')} } from './model.ts'`,
@@ -366,21 +366,21 @@ export function server(n: Names, w: With): string {
       ? `export function ${n.resolvers}<Env>(implement: Implement<{ user: string }, Env>) {`
       : `export function ${n.resolvers}<Session, Env>(implement: Implement<Session, Env>) {`,
     w.auth
-      ? `  const store = new Map<string, ${Row}[]>()
-  const listOf = (session: { user: string } | null): ${Row}[] => (session ? (store.get(session.user) ?? []) : [])
+      ? `  const demoStore = new Map<string, ${Row}[]>()
+  const listOf = (session: { user: string } | null): ${Row}[] => (session ? (demoStore.get(session.user) ?? []) : [])
   const ownListOf = (session: { user: string } | null) => {
     if (!session) return []
-    const list = store.get(session.user) ?? []
-    store.set(session.user, list)
+    const list = demoStore.get(session.user) ?? []
+    demoStore.set(session.user, list)
     return list
   }`
-      : `  const items: ${Row}[] = []`,
-    '  let seq = 0',
+      : `  const demoItems: ${Row}[] = []`,
+    '  let demoSeq = 0',
     find && `  const find = (items: ${Row}[], id: string) => items.find((item) => item.id === id)`,
     '  return [',
     w.auth
       ? `    implement(${n.list}, (_, { session }) => listOf(session).map((item) => ({ ...item }))),`
-      : `    implement(${n.list}, () => items.map((item) => ({ ...item }))),`,
+      : `    implement(${n.list}, () => demoItems.map((item) => ({ ...item }))),`,
     w.detail &&
       `    implement(${n.get}, ({ id }, ${ctx('fail')}) => ${scoped(
         `      const item = find(items, id)
@@ -390,7 +390,7 @@ export function server(n: Names, w: With): string {
     `    implement(${n.add}, ({ title }, ${ctx('fail')}) => ${scoped(`      const clean = title.trim()
       if (items.some((item) => item.title.toLowerCase() === clean.toLowerCase()))
         return fail('Duplicate', { title: clean })
-      const item = { id: \`${n.one.charAt(0)}\${++seq}\`, title: clean${w.toggle ? ', done: false' : ''} }
+      const item = { id: \`${n.one.charAt(0)}\${++demoSeq}\`, title: clean${w.toggle ? ', done: false' : ''} }
       items.unshift(item)
       return { ...item }`)}),`,
     w.toggle &&

@@ -1,7 +1,7 @@
 import { type At, at, resolveAt } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
 import { closest, didYouMean } from '../suggest.ts'
-import { featurePointer, transitionsOf, walkView } from '../walk.ts'
+import { featurePointer, type TransitionSite, transitionsOf, walkView } from '../walk.ts'
 
 export function reachability(ctx: Ctx) {
   for (const f of Object.values(ctx.ir.features)) {
@@ -9,6 +9,7 @@ export function reachability(ctx: Ctx) {
     if (!m || !Object.hasOwn(m.states, m.initial)) continue
     const edges = new Map<string, string[]>()
     for (const site of transitionsOf(f)) {
+      if (site.transition.target === 'previous') continue
       const list = edges.get(site.state)
       if (list) list.push(site.transition.target)
       else edges.set(site.state, [site.transition.target])
@@ -60,6 +61,24 @@ export function deadEnds(ctx: Ctx) {
     }
 }
 
+function enteredStates(sites: TransitionSite[]): Set<string> {
+  const into = new Map<string, Set<string>>()
+  const add = (to: string, from: string) => {
+    if (to === from) return false
+    const set = into.get(to) ?? new Set()
+    into.set(to, set)
+    return set.size < set.add(from).size
+  }
+  for (const site of sites) if (site.transition.target !== 'previous') add(site.transition.target, site.state)
+  const returning = sites.filter((site) => site.transition.target === 'previous')
+  for (let changed = true; changed; ) {
+    changed = false
+    for (const site of returning)
+      for (const from of [...(into.get(site.state) ?? [])]) changed = add(from, site.state) || changed
+  }
+  return new Set(into.keys())
+}
+
 export function stateNames(ctx: Ctx) {
   for (const f of Object.values(ctx.ir.features)) {
     const m = f.machine
@@ -81,10 +100,31 @@ export function stateNames(ctx: Ctx) {
       )
     }
     if (m && !known(m.initial)) dangling(featurePointer(f.id, 'machine', 'initial'), m.initial, 'initial')
+    const entered = enteredStates(transitionsOf(f))
     for (const site of transitionsOf(f))
-      if (!known(site.transition.target))
+      if (site.transition.target === 'previous') {
+        if (site.trigger.kind !== 'on' && !entered.has(site.state))
+          ctx.report(
+            'HZ007',
+            f.id,
+            site.at('target'),
+            `"${site.state}" has no previous state to return to`,
+            `No transition enters "${site.state}" from another state, so target: 'previous' never fires there and the machine stays in "${site.state}".`,
+            {
+              summary: 'Name the target state',
+              snippet: null,
+              patch: m ? [{ op: 'replace', path: resolveAt(site.at('target')), value: m.initial }] : null,
+            },
+          )
+      } else if (!known(site.transition.target))
         dangling(site.at('target'), site.transition.target, 'a transition target')
     for (const [cid, c] of Object.entries(f.contracts)) {
+      if (c.given.previous !== undefined && !known(c.given.previous))
+        dangling(
+          featurePointer(f.id, 'contracts', cid, 'given', 'previous'),
+          c.given.previous,
+          'contract given',
+        )
       if (!known(c.given.state))
         dangling(featurePointer(f.id, 'contracts', cid, 'given', 'state'), c.given.state, 'contract given')
       if (!known(c.expect.state))

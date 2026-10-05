@@ -39,7 +39,8 @@ describe('SKILL.md (ADR 0043 K)', () => {
       'npx hozu check --update-lock',
       "--session '…' --js both",
       '## What to touch',
-      '| A per-item action stored on the server',
+      '| A per-item action (pin, archive)',
+      "**Where data lives is the person's call; ask when the request does not say.**",
       '**Query resolvers only read.**',
       'in one `browse` chain with `--js both`',
       '**Contracts only where a transition decides:**',
@@ -130,6 +131,16 @@ describe('the 0.8 guide (ADR 0043 K)', () => {
 describe('create-hozu', () => {
   it('keeps the skill example and AGENTS.md generated from their sources', async () => {
     expect(await sync(false)).toEqual([])
+  })
+
+  it('@hozu/cli carries its own copy of the agent files, so it can be published before create-hozu (ADR 0063 A2)', async () => {
+    const cli = JSON.parse(await repo('packages/cli/package.json')) as {
+      dependencies: Record<string, string>
+      files: string[]
+    }
+    expect(Object.keys(cli.dependencies)).not.toContain('create-hozu')
+    expect(cli.files).toEqual(expect.arrayContaining(['skill', 'templates']))
+    expect(await repo('packages/cli/src/agent.ts')).toBe(await repo('packages/create-hozu/src/agent.ts'))
   })
 
   it('creates an app for Claude Code', async () => {

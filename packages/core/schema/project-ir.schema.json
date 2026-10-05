@@ -1187,6 +1187,23 @@
           "properties": {
             "kind": {
               "type": "string",
+              "const": "poll"
+            },
+            "seconds": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "seconds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
               "const": "request"
             }
           },
@@ -2314,6 +2331,9 @@
             },
             "context": {
               "$ref": "#/definitions/Json"
+            },
+            "previous": {
+              "type": "string"
             }
           },
           "required": [

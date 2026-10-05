@@ -190,6 +190,13 @@ export function buildMachine(scope: FeatureScope, decl: Decl | null): MachineIR 
         `State name "${name}" is not an identifier`,
         'Names must match /^[A-Za-z][A-Za-z0-9_]*$/.',
       )
+    else if (name === 'previous')
+      scope.report(
+        'HZ014',
+        at(p, 'states', name),
+        'A state cannot be named "previous"',
+        "target: 'previous' returns to the state the machine came from, so the name is reserved.",
+      )
     states[name] = state(scope, config, at(p, 'states', name))
   }
   const byEvent = new Map<string, { def: OnDef; at: At }[]>()

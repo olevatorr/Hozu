@@ -50,6 +50,7 @@ export type HtmlTag = (typeof htmlTags)[number]
 export type SvgTag = (typeof svgTags)[number]
 export type Tag = HtmlTag | SvgTag
 type VoidTag = (typeof voidTags)[number]
+type ShapeTag = 'path' | 'line' | 'circle' | 'rect' | 'ellipse' | 'polygon' | 'polyline' | 'stop' | 'use'
 type GlobalAttr<T extends Tag> = T extends SvgTag
   ? (typeof svgGlobalAttrs)[number]
   : (typeof htmlGlobalAttrs)[number]
@@ -143,7 +144,9 @@ recorderFns.add(when)
 type Elements = {
   [T in Tag]: T extends VoidTag | 'textarea'
     ? (props: Props<T>) => NodeDecl
-    : (props: Props<T>, children: Child[]) => NodeDecl
+    : T extends ShapeTag
+      ? (props: Props<T>, children?: Child[]) => NodeDecl
+      : (props: Props<T>, children: Child[]) => NodeDecl
 }
 
 /** `Forbidden` (access refused, ADR 0056 B) is optional: unhandled, it renders the Unexpected branch. */
@@ -178,7 +181,8 @@ const elements = Object.fromEntries(
     tag,
     voids.has(tag)
       ? (props: Record<string, unknown>) => node({ kind: 'el', tag, props, children: [] })
-      : (props: Record<string, unknown>, children: Child[]) => node({ kind: 'el', tag, props, children }),
+      : (props: Record<string, unknown>, children: Child[] = []) =>
+          node({ kind: 'el', tag, props, children }),
   ]),
 ) as Elements
 

@@ -92,4 +92,26 @@ describe('page transitions', () => {
       css.indexOf('@view-transition{navigation:auto}'),
     )
   })
+
+  it('remote @import rules come first, in their order, where CSS requires them (ADR 0063 E3)', async () => {
+    const build = buildProject(cart, { sources: false })
+    const dir = await mkdtemp(join(tmpdir(), 'hozu-css-'))
+    const entry = join(dir, 'app.css')
+    const fonts = "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');"
+    await writeFile(join(dir, 'theme.css'), ':root { --brand: red; }\n')
+    await writeFile(
+      entry,
+      `@import "tailwindcss";\n${fonts}\n@import "./theme.css";\n@import "https://fonts.googleapis.com/css2?family=Mono";\n`,
+    )
+    const bindings = { ...build.bindings, styles: { entry, kits: {}, features: {} } }
+    for (const minify of [true, false]) {
+      const { css } = await compileStyles({ ...build, bindings }, { minify })
+      expect(css).toMatch(
+        /^@import (url\()?['"]https:\/\/fonts\.googleapis\.com\/css2\?family=Inter:wght@400;700/,
+      )
+      expect(css.indexOf('family=Mono')).toBeLessThan(css.indexOf('{'))
+      expect(css.match(/@import/g)).toHaveLength(2)
+      expect(css).toContain('--brand')
+    }
+  })
 })

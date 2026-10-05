@@ -178,3 +178,82 @@ describe('assign ops and fn bindings', () => {
     expect(() => compileMachine(b.ir.features.f!, {})).toThrow(/No implementation bound for fn f\.isBig/)
   })
 })
+
+describe("target: 'previous'", () => {
+  const Pause = event({ payload: z.object({}) })
+  const Flash = event({ payload: z.object({}) })
+  const m = machine({
+    context: z.object({}),
+    initialContext: {},
+    initial: 'running',
+    states: () => ({
+      running: { on: [on(Pause, { target: 'paused' }), on(Flash, { target: 'flash' })] },
+      paused: { on: [on(Flash, { target: 'flash' }), on(Pause, { target: 'paused' })] },
+      flash: { on: [on(Flash, { target: 'previous' })], after: [{ ms: 1000, target: 'previous' }] },
+    }),
+  })
+  const f = feature({ id: 'p', intent: { summary: 'previous fixture' }, declarations: [{ Pause, Flash, m }] })
+  const b = buildProject(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))
+  const compiled = compileMachine(b.ir.features.p!, b.bindings.fns)
+  const send = (s: Snapshot, e: string) =>
+    transition(compiled, s, { type: 'event', event: `p.${e}`, payload: {} })
+
+  it('returns to the state the machine came from', () => {
+    expect(b.diagnostics.filter((d) => d.severity === 'error')).toEqual([])
+    const paused = send(init(compiled).snapshot, 'Pause').snapshot
+    expect(paused).toMatchObject({ state: 'paused', previous: 'running' })
+    const flash = send(paused, 'Flash').snapshot
+    expect(flash).toMatchObject({ state: 'flash', previous: 'paused' })
+    const back = transition(compiled, flash, { type: 'timer', entry: flash.entry, ms: 1000 })
+    expect(back.taken).toBe('flash/after/0')
+    expect(back.snapshot).toMatchObject({ state: 'paused', previous: 'flash' })
+    const fromRunning = send(send(init(compiled).snapshot, 'Flash').snapshot, 'Flash')
+    expect(fromRunning.snapshot.state).toBe('running')
+  })
+
+  it('keeps the previous state across a re-entry of the same state', () => {
+    const paused = send(send(init(compiled).snapshot, 'Pause').snapshot, 'Pause').snapshot
+    expect(paused).toMatchObject({ state: 'paused', previous: 'running', entry: 3 })
+  })
+
+  it('skips the transition when there is nothing to return to', () => {
+    const start = enter(compiled, 'flash', {}).snapshot
+    expect(send(start, 'Flash').taken).toBeNull()
+    expect(enter(compiled, 'flash', {}, 1, 'paused').snapshot.previous).toBe('paused')
+  })
+})
+
+describe('a boolean field as a guard (ADR 0063 D3)', () => {
+  const Tick = event({ payload: z.object({ on: z.boolean() }) })
+  const m = machine({
+    context: z.object({ auto: z.boolean() }),
+    initialContext: { auto: false },
+    initial: 'idle',
+    states: ({ ctx }) => ({
+      idle: {
+        on: [
+          on(Tick, { target: 'refreshing', guard: () => ctx.auto }),
+          on(Tick, {
+            target: 'idle',
+            assign: (e) => {
+              ctx.auto = e.on
+            },
+          }),
+        ],
+      },
+      refreshing: { final: true },
+    }),
+  })
+  const f = feature({ id: 'g', intent: { summary: 'guard fixture' }, declarations: [{ Tick, m }] })
+  const b = buildProject(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))
+  const compiled = compileMachine(b.ir.features.g!, b.bindings.fns)
+
+  it('fires only while the field is true', () => {
+    expect(b.diagnostics).toEqual([])
+    const tick = (s: Snapshot, value: boolean) =>
+      transition(compiled, s, { type: 'event', event: 'g.Tick', payload: { on: value } }).snapshot
+    const armed = tick(init(compiled).snapshot, true)
+    expect(armed.state).toBe('idle')
+    expect(tick(armed, false).state).toBe('refreshing')
+  })
+})

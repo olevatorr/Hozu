@@ -3,6 +3,26 @@
 Names follow `hozu add feature items`: `Item`, `NewItem`, `Add`, `addItem`, `itemsMachine`, `ItemsBoard`. The controls are plain elements; with a
 kit, use its components instead. More recipes (an action over many items, a field on the detail page, a detail page): see --more.
 
+## A personal list without sign-in (a watchlist, favourites)
+The list is the visitor's own: it lives in their browser, so two visitors never share it (`examples/watchlist`).
+- **model:** `myList` query `scope: 'user'`, `freshness: 'request'`, `tags: () => [listTag()]`, `runs: 'browser'`;
+  `addSymbol` / `removeSymbol` mutations `invalidates: () => [listTag()]`, `runs: 'browser'` (no `access`).
+- **fetch.ts:** `localStorage`, one export per effect:
+  ```ts
+  const read = (): string[] => JSON.parse(localStorage.getItem('watchlist:symbols') ?? '[]')
+  export const myList = implement<typeof model.myList>(async () => read())
+  export const addSymbol = implement<typeof model.addSymbol>(async ({ symbol }, { fail }) => {
+    if (read().includes(symbol)) return fail('Duplicate', { symbol })
+    localStorage.setItem('watchlist:symbols', JSON.stringify([...read(), symbol]))
+    return {}
+  })
+  ```
+- **feature.ts:** `fetch: new URL('./fetch.ts', import.meta.url)`; `app.ts`: `components: bundleComponents`.
+- **Data about the items** (quotes, prices) is public: a `runs: 'server'` (or `'either'`) query inside the list's
+  `ready` branch, `ui.query(quotes, { symbols }, …)`.
+- The form needs JavaScript (HZ036): `project({ accept: [{ code: 'HZ036', at: 'watchlist.Add', reason: … }] })`.
+- Across devices the list needs sign-in and a database instead (`hozu docs auth`).
+
 ## A field chosen in the add form (an enum)
 - **model:**
   - `export const Priority = z.enum(['low', 'normal', 'high'])`;
@@ -19,7 +39,7 @@ kit, use its components instead. More recipes (an action over many items, a fiel
   - in the item: `ui.span({ class: 'text-xs' }, [item.priority])`.
 - **Contracts:** if the app has contracts that send `Add` or return an item, add `priority` to their payloads,
   inputs and results. These transitions only copy values, so they need no new contract.
-- **server:** store `priority` (seed items included) and return it.
+- **server:** store `priority` where the items live (the scaffold's `demoItems` stand-in, or the database) and return it.
 
 <!-- more -->
 
@@ -37,7 +57,7 @@ With a kit: `ui.use(Button, { variant: { tone: 'quiet' } }, ['Clear done'])`.
   `ui.form({ on: { submit: ui.send(ClearDone, {}) } }, [ui.button({ type: 'submit', class: 'text-sm underline' }, ['Clear done'])])`.
 - The new transitions only copy values, so they need no contract (the feature lists `model`, so both are registered).
 - **server:**
-  `implement(clearDone, () => { const before = items.length; items.splice(0, items.length, ...items.filter((i) => !i.done)); return { removed: before - items.length } })`.
+  `implement(clearDone, () => { const before = demoItems.length; demoItems.splice(0, demoItems.length, ...demoItems.filter((i) => !i.done)); return { removed: before - demoItems.length } })` (with a database: one delete of the done rows).
 - **Try it:** `hozu browse / --do 'click Clear done'` (with and without JS).
 
 ## A field shown on the detail page
