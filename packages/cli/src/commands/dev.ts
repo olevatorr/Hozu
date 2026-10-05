@@ -2,6 +2,7 @@ import { dirname } from 'node:path'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { importer } from './app.ts'
+import { messagesLine } from './devtools.ts'
 
 type Mode = 'builder' | 'developer'
 
@@ -9,6 +10,7 @@ export async function runDev(
   loaded: Loaded,
   devtools: string | false,
   log: (line: string) => void,
+  messages: string | null = null,
 ): Promise<void> {
   if (devtools !== false && devtools !== 'builder' && devtools !== 'developer')
     throw new HozuCliError('usage', `--devtools takes builder or developer, not "${devtools}"`, [
@@ -21,6 +23,7 @@ export async function runDev(
       port: number
       devtools: boolean
       devtoolsMode?: Mode
+      devtoolsMessages?: string | null
     }): Promise<{ url: string; close(): Promise<void> }>
   }>('@hozu/dev', ['npm install -D @hozu/dev'])
   const port = Number(process.env.PORT ?? 3000)
@@ -29,6 +32,7 @@ export async function runDev(
     port,
     devtools: devtools !== false,
     ...(devtools ? { devtoolsMode: devtools } : {}),
+    devtoolsMessages: messages,
   }).catch((error: unknown) => {
     const busy = (error as { port?: unknown }).port
     if (typeof busy !== 'number') throw error
@@ -42,4 +46,6 @@ export async function runDev(
   log(
     `Hozu dev on ${url}${devtools ? ' · DevTools: choose Select in the dock (Alt+Shift+S)' : ''} · stop: kill ${process.pid}`,
   )
+  const line = devtools ? await messagesLine(loaded, messages) : null
+  if (line) log(line)
 }

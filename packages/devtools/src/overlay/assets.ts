@@ -1,4 +1,5 @@
 import type { DevComponent, IsolatedUse } from '@hozu/core/ir'
+import { t } from '../messages.ts'
 import type { Theme } from '../theme.ts'
 import { h } from './dom.ts'
 
@@ -36,7 +37,7 @@ const json = async <T>(url: string): Promise<T | null> => {
 /** The default, each variant value on its own, then the named previews (ADR 0058 G). */
 export function tilesOf(c: Catalogued): Tile[] {
   const children = c.children ? { children: c.name } : {}
-  const tiles: Tile[] = [{ label: 'Default', use: { variant: {}, ...children }, preview: false }]
+  const tiles: Tile[] = [{ label: t('assets.default'), use: { variant: {}, ...children }, preview: false }]
   for (const [dim, values] of Object.entries(c.variants))
     for (const value of values)
       if (value !== c.defaults[dim])
@@ -55,7 +56,7 @@ const schemaRows = (props: Catalogued['props']) =>
   )
 
 export function assetsBoard(host: AssetsHost) {
-  const board = h('div', { class: 'assets', hidden: true, role: 'dialog', 'aria-label': 'Assets' })
+  const board = h('div', { class: 'assets', hidden: true, role: 'dialog', 'aria-label': t('assets.title') })
   for (const type of ['pointerdown', 'pointermove', 'mousedown', 'click', 'dragstart'])
     board.addEventListener(type, (event) => event.stopPropagation())
   let tab: 'components' | 'styles' = 'components'
@@ -79,7 +80,7 @@ export function assetsBoard(host: AssetsHost) {
     )
     if (!out?.ok) {
       frame.replaceWith(
-        h('div', { class: 'tile-problem' }, [out?.problems.join('; ') || 'Could not render this use']),
+        h('div', { class: 'tile-problem' }, [out?.problems.join('; ') || t('assets.renderFailed')]),
       )
       return
     }
@@ -103,13 +104,13 @@ export function assetsBoard(host: AssetsHost) {
     frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8">${links}<style>html,body{margin:0;background:transparent}body{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:16px;min-height:72px;box-sizing:border-box}</style></head><body>${out.html}</body></html>`
   }
 
-  const frameFor = (c: Catalogued, t: Tile) => {
+  const frameFor = (c: Catalogued, tile: Tile) => {
     const frame = h('iframe', {
       class: 'tile-frame',
       sandbox: 'allow-same-origin',
-      title: `${c.id} · ${t.label}`,
+      title: `${c.id} · ${tile.label}`,
       'data-id': c.id,
-      'data-use': JSON.stringify(t.use),
+      'data-use': JSON.stringify(tile.use),
     }) as HTMLIFrameElement
     watched.observe(frame)
     return frame
@@ -122,7 +123,7 @@ export function assetsBoard(host: AssetsHost) {
     const pages = pagesOf(c)
     return pages.length
       ? pages.map((p) => h('span', { class: 'chip' }, [p.path]))
-      : [h('span', { class: 'hint-text' }, ['Not used on a page yet'])]
+      : [h('span', { class: 'hint-text' }, [t('assets.unused')])]
   }
 
   const cards = new Map<string, HTMLElement>()
@@ -149,18 +150,18 @@ export function assetsBoard(host: AssetsHost) {
           [h('b', {}, [c.name]), host.plain ? '' : h('code', {}, [` ${c.id}`])],
         ),
         h('span', { class: 'asset-uses' }, [
-          `${c.places} ${c.places === 1 ? 'place' : 'places'}`,
-          ` · ${pagesOf(c).length} ${pagesOf(c).length === 1 ? 'page' : 'pages'}`,
-          c.client ? ' · runs in the browser (shown as its server render)' : '',
+          t(c.places === 1 ? 'assets.places.one' : 'assets.places.other', { count: c.places }),
+          ` · ${t(pagesOf(c).length === 1 ? 'assets.pages.one' : 'assets.pages.other', { count: pagesOf(c).length })}`,
+          c.client ? ` · ${t('assets.client')}` : '',
         ]),
       ]),
       h(
         'div',
         { class: 'tiles' },
-        tilesOf(c).map((t) =>
-          h('figure', { class: t.preview ? 'tile preview' : 'tile' }, [
-            frameFor(c, t),
-            h('figcaption', {}, [t.preview ? `★ ${t.label}` : t.label]),
+        tilesOf(c).map((tile) =>
+          h('figure', { class: tile.preview ? 'tile preview' : 'tile' }, [
+            frameFor(c, tile),
+            h('figcaption', {}, [tile.preview ? `★ ${tile.label}` : tile.label]),
           ]),
         ),
       ),
@@ -169,8 +170,8 @@ export function assetsBoard(host: AssetsHost) {
   const detailView = (c: Catalogued) => {
     const note = h('textarea', {
       rows: '3',
-      placeholder: c.uses.length ? `What should change in every ${c.name}?` : 'Not used on a page yet',
-      'aria-label': `Change the main component ${c.name}`,
+      placeholder: c.uses.length ? t('assets.change.placeholder', { name: c.name }) : t('assets.unused'),
+      'aria-label': t('assets.change.aria', { name: c.name }),
       disabled: c.uses.length === 0,
       oninput: (e) => {
         const add = (e.target as HTMLElement).parentElement?.querySelector<HTMLButtonElement>('[data-add]')
@@ -188,28 +189,28 @@ export function assetsBoard(host: AssetsHost) {
             void render()
           },
         },
-        ['← All assets'],
+        [t('assets.back')],
       ),
       h('h2', {}, [c.name]),
       h('p', { class: 'hint-text' }, [
-        `${c.owner.kind === 'kit' ? 'Kit' : 'Feature'} ${c.owner.id}`,
+        t(c.owner.kind === 'kit' ? 'assets.owner.kit' : 'assets.owner.feature', { id: c.owner.id }),
         c.location ? ` · ${c.location.file}:${c.location.line}` : '',
       ]),
-      h('div', { class: 'label' }, ['Variants']),
+      h('div', { class: 'label' }, [t('assets.variants')]),
       ...(Object.keys(c.variants).length
         ? Object.entries(c.variants).map(([k, v]) => h('p', {}, [h('b', {}, [k]), `: ${v.join(', ')}`]))
-        : [h('p', { class: 'hint-text' }, ['None'])]),
-      h('div', { class: 'label' }, ['Properties']),
+        : [h('p', { class: 'hint-text' }, [t('assets.none')])]),
+      h('div', { class: 'label' }, [t('assets.properties')]),
       ...(schemaRows(c.props).length
-        ? schemaRows(c.props).map(([k, t]) => h('p', {}, [h('code', {}, [k!]), ` ${t}`]))
-        : [h('p', { class: 'hint-text' }, ['None'])]),
-      c.slots.length ? h('p', {}, [h('b', {}, ['Slots']), `: ${c.slots.join(', ')}`]) : null,
-      h('div', { class: 'label' }, ['Where used']),
+        ? schemaRows(c.props).map(([k, type]) => h('p', {}, [h('code', {}, [k!]), ` ${type}`]))
+        : [h('p', { class: 'hint-text' }, [t('assets.none')])]),
+      c.slots.length ? h('p', {}, [h('b', {}, [t('assets.slots')]), `: ${c.slots.join(', ')}`]) : null,
+      h('div', { class: 'label' }, [t('assets.whereUsed')]),
       h('div', { class: 'chips' }, where(c)),
       c.uses.length
-        ? h('button', { class: 'act', type: 'button', onclick: () => host.show(c) }, ['Show the instances'])
+        ? h('button', { class: 'act', type: 'button', onclick: () => host.show(c) }, [t('assets.show')])
         : null,
-      h('div', { class: 'label' }, ['Change the main component']),
+      h('div', { class: 'label' }, [t('assets.change')]),
       note,
       h(
         'button',
@@ -222,79 +223,79 @@ export function assetsBoard(host: AssetsHost) {
             if (note.value.trim()) host.change(c, note.value.trim())
           },
         },
-        ['Add to the request'],
+        [t('assets.add')],
       ),
     ])
   }
 
   const styles = async () => {
-    const t = await host.theme()
-    if (!t) return h('p', { class: 'hint-text' }, ['No theme found'])
-    const own = t.own.length ? t.own : Object.keys(t.colors).slice(0, 16)
+    const theme = await host.theme()
+    if (!theme) return h('p', { class: 'hint-text' }, [t('assets.noTheme')])
+    const own = theme.own.length ? theme.own : Object.keys(theme.colors).slice(0, 16)
     const sorted = (table: Record<string, number>) => Object.entries(table).sort((a, b) => a[1] - b[1])
     return h('div', { class: 'styles' }, [
-      h('div', { class: 'label' }, ['Colours']),
+      h('div', { class: 'label' }, [t('assets.colours')]),
       h(
         'div',
         { class: 'swatches' },
         own.map((name) => {
           const sw = h('span', { class: 'big-swatch' })
-          sw.style.background = t.colors[name] ?? ''
+          sw.style.background = theme.colors[name] ?? ''
           return h('figure', { class: 'colour' }, [
             sw,
-            h('figcaption', {}, [h('b', {}, [name]), ` ${t.colors[name]}`]),
+            h('figcaption', {}, [h('b', {}, [name]), ` ${theme.colors[name]}`]),
           ])
         }),
       ),
-      h('div', { class: 'label' }, ['Text sizes']),
+      h('div', { class: 'label' }, [t('assets.textSizes')]),
       h(
         'div',
         { class: 'type-rows' },
-        sorted(t.text).map(([name, px]) => {
+        sorted(theme.text).map(([name, px]) => {
           const sample = h('span', { class: 'type-sample' }, ['Aa'])
           sample.style.fontSize = `${Math.min(px, 64)}px`
           return h('div', { class: 'type-row' }, [sample, h('code', {}, [`${name} · ${px}px`])])
         }),
       ),
-      h('div', { class: 'label' }, ['Corner radius']),
+      h('div', { class: 'label' }, [t('assets.radius')]),
       h(
         'div',
         { class: 'swatches' },
-        sorted(t.radius).map(([name, px]) => {
+        sorted(theme.radius).map(([name, px]) => {
           const box = h('span', { class: 'radius-box' })
           box.style.borderRadius = `${px}px`
           return h('figure', { class: 'colour' }, [box, h('figcaption', {}, [`${name} · ${px}px`])])
         }),
       ),
-      h('div', { class: 'label' }, ['Shadows']),
+      h('div', { class: 'label' }, [t('assets.shadows')]),
       h(
         'div',
         { class: 'swatches' },
-        Object.entries(t.shadow).map(([name, value]) => {
+        Object.entries(theme.shadow).map(([name, value]) => {
           const box = h('span', { class: 'shadow-box' })
           box.style.boxShadow = value
           return h('figure', { class: 'colour' }, [box, h('figcaption', {}, [name])])
         }),
       ),
-      h('p', { class: 'hint-text' }, [`Spacing unit ${t.spacing}px: p-4 is ${t.spacing * 4}px.`]),
+      h('p', { class: 'hint-text' }, [t('assets.spacing', { unit: theme.spacing, p4: theme.spacing * 4 })]),
     ])
   }
 
   const screensView = () =>
     screens.pages.some((p) => p.previews.length)
       ? h('div', { class: 'screens' }, [
-          h('div', { class: 'label' }, ['Screens']),
+          h('div', { class: 'label' }, [t('assets.screens')]),
           ...screens.pages.flatMap((p) =>
             p.previews.map((s) =>
               h('div', { class: 'screen' }, [
                 h('code', {}, [p.path]),
                 h('b', {}, [s.name]),
                 p.path.includes(':')
-                  ? h('span', { class: 'hint-text' }, ['open the page, then Layers → Previews'])
+                  ? h('span', { class: 'hint-text' }, [t('assets.screen.hint')])
                   : h(
                       'button',
                       { class: 'act', type: 'button', onclick: () => host.screen(p.route, p.path, s.name) },
-                      ['Open'],
+                      [t('assets.open')],
                     ),
               ]),
             ),
@@ -313,15 +314,15 @@ export function assetsBoard(host: AssetsHost) {
           ...shown.filter((c) => c.owner.id === o).map(card),
         ]),
       ),
-      shown.length ? null : h('p', { class: 'hint-text' }, ['No components match']),
+      shown.length ? null : h('p', { class: 'hint-text' }, [t('assets.noMatch')]),
       q ? null : screensView(),
     ])
   }
   const search = h('input', {
     type: 'search',
     class: 'outcome',
-    placeholder: 'Find a component…',
-    'aria-label': 'Find a component',
+    placeholder: t('assets.find.placeholder'),
+    'aria-label': t('assets.find'),
     oninput: (e) => {
       query = (e.target as HTMLInputElement).value
       board.querySelector(':scope > .assets-body')?.replaceWith(listBody())
@@ -331,7 +332,7 @@ export function assetsBoard(host: AssetsHost) {
   const render = async () => {
     search.value = query
     const head = h('header', { class: 'assets-head' }, [
-      h('b', {}, ['Assets']),
+      h('b', {}, [t('assets.title')]),
       h('div', { class: 'seg' }, [
         h(
           'button',
@@ -344,7 +345,7 @@ export function assetsBoard(host: AssetsHost) {
               void render()
             },
           },
-          ['Components'],
+          [t('assets.components')],
         ),
         h(
           'button',
@@ -357,11 +358,11 @@ export function assetsBoard(host: AssetsHost) {
               void render()
             },
           },
-          ['Styles'],
+          [t('assets.styles')],
         ),
       ]),
       tab === 'components' && !detail ? search : null,
-      h('button', { class: 'act', type: 'button', onclick: () => close() }, ['Close']),
+      h('button', { class: 'act', type: 'button', onclick: () => close() }, [t('common.close')]),
     ])
     if (tab === 'styles') {
       board.replaceChildren(head, h('div', { class: 'assets-body' }, [await styles()]))
@@ -382,7 +383,7 @@ export function assetsBoard(host: AssetsHost) {
 
   const open = async () => {
     board.hidden = false
-    board.replaceChildren(h('p', { class: 'hint-text' }, ['Loading the components…']))
+    board.replaceChildren(h('p', { class: 'hint-text' }, [t('assets.loading')]))
     catalog = (await json<Catalogued[]>('/_hozu/dev/components')) ?? []
     cards.clear()
     screens = (await json<Screens>('/_hozu/dev/previews')) ?? { pages: [] }

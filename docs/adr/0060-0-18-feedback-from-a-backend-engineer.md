@@ -1,6 +1,6 @@
 # ADR 0060 — 0.18: what a backend engineer's app found
 
-- **Status:** accepted (owner, 2026-10-05: "C 用選項1，A、B、E 都做，D 也做 … 全部都要併入0.18.0"; D: "他自己改成他想要的
+- **Status:** implemented (owner, 2026-10-05: "C 用選項1，A、B、E 都做，D 也做 … 全部都要併入0.18.0"; D: "他自己改成他想要的
   語系，我們給他cli或者讀取的檔案"; then "D 沒問題").
 - **Source:** notes from an engineer building an app on 0.10.0 (2026-10-02 to 10-05). Each was checked on 0.17.2
   first:
@@ -63,3 +63,19 @@
 ## E — `hozu browse` at a phone's size
 - **Decision:** `--viewport <width>x<height>` (default `1280x800`; below 768 px wide it also emulates a mobile
   device). `--do 'screenshot …'` answers with the option to use, `--screenshot <file>`.
+
+## Results
+- A: `packages/runtime-server/test/head-failed.test.ts` (404 and 410 titled `WorldBook`, no `null`, no description;
+  failed before the fix with `null · WorldBook`).
+- B: `packages/core/test/navigate-condition.test.ts` (HZ014 at the transition with the guarded list as the fix; the
+  guarded list builds clean).
+- C: `packages/runtime-server/test/refresh-session.test.ts` (renewed in place with the cookie unchanged, one call
+  for three parallel requests, `null` signs out, a throw or a non-session keeps it, a store without `update` is
+  refused) and `refresh-types.check.ts` (the hook is typed from the project's session).
+- D: 394 strings in `en`, the request path untouched; `packages/cli/test/devtools-messages.test.ts` (template,
+  `--check`, flag over variable) and `packages/dev/test/devtools-messages.test.ts` (a real browser draws the file's
+  words, English where it has none, and rereads it on load). Found while testing: `hozu devtools` could not find
+  `@hozu/devtools` under pnpm, which does not hoist it; it now resolves through `@hozu/dev`.
+- E: `packages/cli/test/browse.test.ts` (a `--viewport 390x844` screenshot is 390 × 844; the screenshot step and a
+  bad size are refused with the option to use).
+

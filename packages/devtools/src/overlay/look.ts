@@ -1,3 +1,4 @@
+import { type MessageKey, t } from '../messages.ts'
 import type { StyleChange } from '../prompt.ts'
 import {
   borderSteps,
@@ -27,21 +28,31 @@ const css: Record<StyleProp, string> = {
   color: 'color',
 }
 
-const figmaNames: Record<StyleProp, string> = {
-  width: 'W',
-  height: 'H',
-  borderRadius: 'Corner radius',
-  gap: 'Gap',
-  paddingInline: 'Horizontal padding',
-  paddingBlock: 'Vertical padding',
-  opacity: 'Opacity',
-  backgroundColor: 'Fill',
-  borderWidth: 'Stroke weight',
-  borderColor: 'Stroke',
-  boxShadow: 'Drop shadow',
-  fontSize: 'Font size',
-  fontWeight: 'Weight',
-  color: 'Text colour',
+const figmaNames: Record<StyleProp, MessageKey> = {
+  width: 'design.prop.width',
+  height: 'design.prop.height',
+  borderRadius: 'design.prop.borderRadius',
+  gap: 'design.prop.gap',
+  paddingInline: 'design.prop.paddingInline',
+  paddingBlock: 'design.prop.paddingBlock',
+  opacity: 'design.prop.opacity',
+  backgroundColor: 'design.prop.backgroundColor',
+  borderWidth: 'design.prop.borderWidth',
+  borderColor: 'design.prop.borderColor',
+  boxShadow: 'design.prop.boxShadow',
+  fontSize: 'design.prop.fontSize',
+  fontWeight: 'design.prop.fontWeight',
+  color: 'design.prop.color',
+}
+
+const groupNames: Record<string, MessageKey> = {
+  Frame: 'design.frame',
+  'Auto layout': 'design.autoLayout',
+  Layer: 'design.layer',
+  Fill: 'design.fill',
+  Stroke: 'design.stroke',
+  Effects: 'design.effects',
+  Text: 'design.text',
 }
 
 /** Figma's Design panel, in its order (ADR 0058 B1). */
@@ -158,7 +169,7 @@ export function lookSection(
     if (to !== from) next.push({ prop, from, to })
     onChange(next)
   }
-  const nameOf = (prop: StyleProp) => (plain ? figmaNames[prop] : css[prop])
+  const nameOf = (prop: StyleProp) => (plain ? t(figmaNames[prop]) : css[prop])
   const row = (prop: StyleProp) => {
     const now = changes.find((c) => c.prop === prop)?.to ?? (el ? current(el, prop, theme) : '')
     const label = h('span', { class: 'what' }, [nameOf(prop)])
@@ -166,7 +177,7 @@ export function lookSection(
       const input = h('input', {
         type: 'color',
         value: /^#[0-9a-f]{6}$/.test(now) ? now : '#000000',
-        'aria-label': figmaNames[prop],
+        'aria-label': t(figmaNames[prop]),
         onchange: (e) => set(prop, (e.target as HTMLInputElement).value),
       })
       const swatches = (theme?.own ?? []).slice(0, 8).map((name) =>
@@ -194,12 +205,15 @@ export function lookSection(
     const known = list.some(([v]) => v === now)
     const select = h(
       'select',
-      { 'aria-label': figmaNames[prop], onchange: (e) => set(prop, (e.target as HTMLSelectElement).value) },
+      {
+        'aria-label': t(figmaNames[prop]),
+        onchange: (e) => set(prop, (e.target as HTMLSelectElement).value),
+      },
       [
         known
           ? null
           : h('option', { value: now, selected: true }, [
-              `${prop === 'boxShadow' && now !== 'none' ? 'shadow' : now} (now)`,
+              t('design.now', { value: prop === 'boxShadow' && now !== 'none' ? 'shadow' : now }),
             ]),
         ...list.map((o) =>
           h('option', { value: o[0], selected: o[0] === now }, [optionText(prop, o, plain)]),
@@ -209,17 +223,17 @@ export function lookSection(
     return h('div', { class: 'look' }, [label, select])
   }
   return h('div', { class: 'sec' }, [
-    h('div', { class: 'label' }, [plain ? 'Design' : 'Style (preview)']),
+    h('div', { class: 'label' }, [t(plain ? 'design.label' : 'design.label.preview')]),
     ...groups.map(([title, list]) =>
       h('div', { class: 'look-group', 'data-group': title }, [
-        h('div', { class: 'look-title' }, [title]),
+        h('div', { class: 'look-title' }, [t(groupNames[title]!)]),
         ...list.map(row),
       ]),
     ),
     h('div', { class: 'row-end' }, [
-      h('span', { class: 'hint-text' }, ['Preview only: the agent makes the real change.']),
+      h('span', { class: 'hint-text' }, [t('design.hint')]),
       changes.length
-        ? h('button', { class: 'link', type: 'button', onclick: () => onChange([]) }, ['Reset'])
+        ? h('button', { class: 'link', type: 'button', onclick: () => onChange([]) }, [t('design.reset')])
         : null,
     ]),
   ])

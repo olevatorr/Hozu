@@ -12,6 +12,7 @@ import {
   finishRequest,
   listNotes,
   listRequests,
+  messagesOf,
   notesFile,
   parseTheme,
   readRequest,
@@ -36,6 +37,8 @@ export interface DevOptions {
   debounce?: number
   devtools?: boolean
   devtoolsMode?: 'builder' | 'developer'
+  /** A translation of the DevTools strings (ADR 0060 D), read again on every page load. */
+  devtoolsMessages?: string | null
   requestsRoot?: string
   log?: (line: string) => void
 }
@@ -72,6 +75,7 @@ export async function dev({
   debounce = 60,
   devtools = true,
   devtoolsMode = 'builder',
+  devtoolsMessages = null,
   requestsRoot,
   log = (line) => console.log(line),
 }: DevOptions): Promise<DevServer> {
@@ -172,6 +176,7 @@ export async function dev({
         return void res
           .writeHead(403, { 'content-type': 'text/plain' })
           .end('Hozu DevTools answers only this machine')
+      if (path === '/_hozu/devtools/messages.json') return void messages(res, devtoolsMessages)
       if (path.startsWith('/_hozu/devtools/')) return void serveDevtools(path, res)
       if (path === '/_hozu/dev/theme') return void theme(res, cwd, appPort)
       if (path === '/_hozu/dev/notes' || path.startsWith('/_hozu/dev/notes/'))
@@ -240,6 +245,18 @@ export async function dev({
       await new Promise<void>((resolve) => server.close(() => resolve()))
     },
   }
+}
+
+function messages(res: ServerResponse, file: string | null) {
+  let body: Record<string, string> = {}
+  try {
+    if (file) body = messagesOf(JSON.parse(readFileSync(file, 'utf8')))
+  } catch {
+    body = {}
+  }
+  res
+    .writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' })
+    .end(JSON.stringify(body))
 }
 
 function serveDevtools(path: string, res: ServerResponse) {

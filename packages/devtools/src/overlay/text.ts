@@ -1,3 +1,4 @@
+import { t } from '../messages.ts'
 import { h } from './dom.ts'
 
 export interface TextChange {
@@ -44,21 +45,21 @@ export function textSection(
   const input = h('input', {
     type: 'text',
     class: 'outcome',
-    'aria-label': 'Text on the page',
+    'aria-label': t('text.input'),
     onchange: (e) => set((e.target as HTMLInputElement).value),
   }) as HTMLInputElement
   input.value = change?.to ?? from
   const chip = (label: string, to: string) =>
     h('button', { class: 'chip-button', type: 'button', onclick: () => set(to) }, [label])
   return h('div', { class: 'sec' }, [
-    h('div', { class: 'label' }, [plain ? 'Text' : 'Text (preview)']),
+    h('div', { class: 'label' }, [t(plain ? 'text.label' : 'text.label.preview')]),
     input,
     h('div', { class: 'chips' }, [
-      chip('Longer', Array.from({ length: 4 }, () => from).join(' ')),
+      chip(t('text.longer'), Array.from({ length: 4 }, () => from).join(' ')),
       chip('中文', ZH),
       chip('English', EN),
-      change ? chip('Reset', from) : null,
+      change ? chip(t('text.reset'), from) : null,
     ]),
-    h('div', { class: 'hint-text' }, ['Try other words to see how the layout copes. Kept in the request.']),
+    h('div', { class: 'hint-text' }, [t('text.hint')]),
   ])
 }

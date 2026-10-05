@@ -42,6 +42,11 @@ export const targets = [
   },
   {
     source: 'packages/cli/src/contract.ts',
+    type: 'DevtoolsMessagesOutput',
+    out: 'packages/cli/schema/devtools-messages.schema.json',
+  },
+  {
+    source: 'packages/cli/src/contract.ts',
     type: 'BrowseOutput',
     out: 'packages/cli/schema/browse.schema.json',
   },

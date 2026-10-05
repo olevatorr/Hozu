@@ -1,4 +1,5 @@
 import type { DevEffect, Json } from '@hozu/core/ir'
+import { t } from '../messages.ts'
 import { h, read, write } from './dom.ts'
 import { curl, type Traced, traced } from './trace.ts'
 
@@ -143,7 +144,7 @@ async function call(effect: DevEffect, input: Json, win: Window): Promise<Outcom
         {
           ok: false,
           error: 'Unexpected',
-          data: { message: 'This page has no client: browser-run effects need one' },
+          data: { message: t('api.noClient') },
         },
         [],
         false,
@@ -222,7 +223,7 @@ async function send(
         ...base,
         ok: true,
         error: null,
-        value: 'A redirect (the browser does not show where to; open the endpoint URL to follow it)',
+        value: t('api.redirect.value'),
         ms: Math.round(performance.now() - started),
         status: 0,
         headers: [],
@@ -311,7 +312,7 @@ export function drawer(host: DrawerHost) {
   const asJson = new Set<string>()
   const requests = new Map<string, Request>()
   const running = new Set<string>()
-  const el = h('section', { class: 'api', 'aria-label': 'API', hidden: true })
+  const el = h('section', { class: 'api', 'aria-label': t('api.title'), hidden: true })
   let shown = false
 
   const height = () => (shown ? Math.min(ui.height, innerHeight - 120) : 0)
@@ -321,7 +322,13 @@ export function drawer(host: DrawerHost) {
   }
 
   const where = (runs: DevEffect['runs']) =>
-    host.plain() ? { server: 'server', either: 'server, then browser', browser: 'browser' }[runs] : runs
+    host.plain()
+      ? t(
+          ({ server: 'api.runs.server', either: 'api.runs.either', browser: 'api.runs.browser' } as const)[
+            runs
+          ],
+        )
+      : runs
 
   const remember = (outcome: Outcome, sent: Traced[]) => {
     const record: CallRecord = { ...outcome, requests: sent, id: Date.now(), at: Date.now() }
@@ -400,7 +407,7 @@ export function drawer(host: DrawerHost) {
     const invalid = invalidOf(last)
     if (!flat(schema) || asJson.has(effect.ref))
       return h('div', { class: 'api-fields' }, [
-        jsonEditor(`${effect.ref} input (JSON)`, JSON.stringify(value, null, 2), (text) => {
+        jsonEditor(t('api.input.aria', { ref: effect.ref }), JSON.stringify(value, null, 2), (text) => {
           try {
             inputs.set(effect.ref, JSON.parse(text) as Json)
           } catch {}
@@ -415,7 +422,7 @@ export function drawer(host: DrawerHost) {
             )
           : null,
       ])
-    if (!Object.keys(props).length) return h('span', { class: 'api-none' }, ['no input'])
+    if (!Object.keys(props).length) return h('span', { class: 'api-none' }, [t('api.noInput')])
     const current = { ...(value as Record<string, Json>) }
     return h(
       'div',
@@ -493,14 +500,14 @@ export function drawer(host: DrawerHost) {
         h('div', { class: 'api-name' }, [
           h('b', {}, [host.plain() ? effect.label : effect.ref]),
           h('span', { class: `api-kind ${effect.kind === 'query' ? 'read' : 'write'}` }, [
-            effect.kind === 'query' ? 'read' : 'write',
+            t(effect.kind === 'query' ? 'api.read' : 'api.write'),
           ]),
           h('span', { class: `api-runs ${effect.runs}`, title: `runs: ${effect.runs}` }, [
             where(effect.runs),
           ]),
           effect.kind === 'query' ? h('span', { class: 'api-tag' }, [effect.freshness]) : null,
           effect.implemented
-            ? h('span', { class: 'api-where', title: 'Where it is implemented' }, [
+            ? h('span', { class: 'api-where', title: t('api.implemented') }, [
                 `${effect.implemented.file}:${effect.implemented.line}`,
               ])
             : null,
@@ -510,21 +517,21 @@ export function drawer(host: DrawerHost) {
                 {
                   type: 'button',
                   class: 'api-switch',
-                  title: 'JSON sends any value, also one the schema rejects',
+                  title: t('api.switch.title'),
                   onclick: () => {
                     if (asJson.has(effect.ref)) asJson.delete(effect.ref)
                     else asJson.add(effect.ref)
                     draw()
                   },
                 },
-                [asJson.has(effect.ref) ? 'Form' : 'JSON'],
+                [t(asJson.has(effect.ref) ? 'api.form' : 'api.json')],
               )
             : null,
         ]),
         fieldsOf(effect, last),
         asking
           ? h('div', { class: 'api-confirm', role: 'alert' }, [
-              h('span', {}, ['Writes your development data.']),
+              h('span', {}, [t('api.confirm')]),
               h(
                 'button',
                 {
@@ -535,10 +542,10 @@ export function drawer(host: DrawerHost) {
                     draw()
                   },
                 },
-                ['Cancel'],
+                [t('api.cancel')],
               ),
               h('button', { type: 'button', class: 'api-run warn', onclick: () => void run(effect) }, [
-                'Run',
+                t('api.run'),
               ]),
             ])
           : h(
@@ -549,7 +556,7 @@ export function drawer(host: DrawerHost) {
                 disabled: busy,
                 onclick: () => ask(effect),
               },
-              [busy ? 'Running…' : 'Run ▶'],
+              [t(busy ? 'api.running' : 'api.run.go')],
             ),
       ],
     )
@@ -562,13 +569,13 @@ export function drawer(host: DrawerHost) {
     const headerRows = r.headers.map((pair, i) => {
       const key = h('input', {
         value: pair[0],
-        placeholder: 'Header',
-        'aria-label': 'Header name',
+        placeholder: t('api.header'),
+        'aria-label': t('api.header.name'),
       }) as HTMLInputElement
       const val = h('input', {
         value: pair[1],
-        placeholder: 'Value',
-        'aria-label': 'Header value',
+        placeholder: t('api.header.value.placeholder'),
+        'aria-label': t('api.header.value'),
       }) as HTMLInputElement
       key.addEventListener('input', () => {
         r.headers[i] = [key.value, val.value]
@@ -596,7 +603,7 @@ export function drawer(host: DrawerHost) {
             const input = h('input', {
               value: r.params[p]!,
               placeholder: p,
-              'aria-label': `Path :${p}`,
+              'aria-label': t('api.path.aria', { name: p }),
             }) as HTMLInputElement
             input.addEventListener('input', () => {
               r.params[p] = input.value
@@ -605,14 +612,14 @@ export function drawer(host: DrawerHost) {
           }),
           h('div', { class: 'api-field wide' }, [
             h('span', {}, [
-              endpoint.method === 'GET' ? 'Query (JSON)' : endpoint.raw ? 'Body' : 'Body (JSON)',
+              t(endpoint.method === 'GET' ? 'api.query' : endpoint.raw ? 'api.body' : 'api.body.json'),
             ]),
-            jsonEditor(`${endpoint.ref} body`, r.body, (text) => {
+            jsonEditor(t('api.body.aria', { ref: endpoint.ref }), r.body, (text) => {
               r.body = text
             }),
           ]),
           h('div', { class: 'api-field wide' }, [
-            h('span', {}, ['Headers']),
+            h('span', {}, [t('api.headers')]),
             ...headerRows,
             h(
               'button',
@@ -624,14 +631,14 @@ export function drawer(host: DrawerHost) {
                   draw()
                 },
               },
-              ['+ Header'],
+              [t('api.header.add')],
             ),
           ]),
         ]),
         h(
           'button',
           { type: 'button', class: 'api-run', disabled: busy, onclick: () => void sendTo(endpoint) },
-          [busy ? 'Sending…' : 'Send ▶'],
+          [t(busy ? 'api.sending' : 'api.send')],
         ),
       ],
     )
@@ -689,7 +696,7 @@ export function drawer(host: DrawerHost) {
         title,
         onclick: async () => {
           await navigator.clipboard.writeText(text()).catch(() => {})
-          button.textContent = 'Copied'
+          button.textContent = t('api.copied')
         },
       },
       [label],
@@ -700,30 +707,30 @@ export function drawer(host: DrawerHost) {
   const sentList = (r: CallRecord) =>
     r.requests.length
       ? h('div', { class: 'api-sent' }, [
-          h('div', { class: 'api-label' }, ['Requests it sent']),
-          ...r.requests.map((t) =>
+          h('div', { class: 'api-label' }, [t('api.sent')]),
+          ...r.requests.map((out) =>
             h('details', { class: 'api-request' }, [
               h('summary', {}, [
-                h('span', { class: `api-method ${t.method.toLowerCase()}` }, [t.method]),
-                h('code', {}, [t.url]),
-                h('span', { class: `api-code ${t.status && t.status < 400 ? 'ok' : 'bad'}` }, [
-                  t.error ? 'failed' : String(t.status),
+                h('span', { class: `api-method ${out.method.toLowerCase()}` }, [out.method]),
+                h('code', {}, [out.url]),
+                h('span', { class: `api-code ${out.status && out.status < 400 ? 'ok' : 'bad'}` }, [
+                  out.error ? t('api.failed') : String(out.status),
                 ]),
                 h('span', { class: 'api-tag' }, [
-                  `${t.ms} ms · ${t.side === 'server' ? 'from the server' : 'from this browser'}`,
+                  `${out.ms} ms · ${t(out.side === 'server' ? 'api.fromServer' : 'api.fromBrowser')}`,
                 ]),
               ]),
               h('div', { class: 'api-request-body' }, [
-                t.error ? h('em', { class: 'api-invalid' }, [t.error]) : null,
-                h('b', {}, ['Request headers']),
-                h('pre', {}, [t.requestHeaders.map(([k, v]) => `${k}: ${v}`).join('\n') || '(none)']),
-                t.requestBody ? h('b', {}, ['Request body']) : null,
-                t.requestBody ? h('pre', {}, [t.requestBody]) : null,
-                h('b', {}, ['Response headers']),
-                h('pre', {}, [t.responseHeaders.map(([k, v]) => `${k}: ${v}`).join('\n') || '(none)']),
-                t.responseBody ? h('b', {}, ['Response body']) : null,
-                t.responseBody ? h('pre', {}, [t.responseBody]) : null,
-                copyButton('Copy as curl', () => curl(t)),
+                out.error ? h('em', { class: 'api-invalid' }, [out.error]) : null,
+                h('b', {}, [t('api.requestHeaders')]),
+                h('pre', {}, [out.requestHeaders.map(([k, v]) => `${k}: ${v}`).join('\n') || t('api.none')]),
+                out.requestBody ? h('b', {}, [t('api.requestBody')]) : null,
+                out.requestBody ? h('pre', {}, [out.requestBody]) : null,
+                h('b', {}, [t('api.responseHeaders')]),
+                h('pre', {}, [out.responseHeaders.map(([k, v]) => `${k}: ${v}`).join('\n') || t('api.none')]),
+                out.responseBody ? h('b', {}, [t('api.responseBody')]) : null,
+                out.responseBody ? h('pre', {}, [out.responseBody]) : null,
+                copyButton(t('api.copyCurl'), () => curl(out)),
               ]),
             ]),
           ),
@@ -731,36 +738,36 @@ export function drawer(host: DrawerHost) {
       : null
 
   function result(r: CallRecord | undefined) {
-    if (!r) return h('div', { class: 'api-empty' }, ['Run something to see its answer here.'])
+    if (!r) return h('div', { class: 'api-empty' }, [t('api.empty')])
     const effect = list?.find((e) => e.ref === r.ref)
     const status =
       r.kind === 'endpoint'
-        ? `${r.status === 0 ? 'Redirect' : (r.status ?? 'No answer')}${r.ok ? '' : ` · ${r.error}`}`
+        ? `${r.status === 0 ? t('api.redirect') : (r.status ?? t('api.noAnswer'))}${r.ok ? '' : ` · ${r.error}`}`
         : r.ok
-          ? 'OK'
+          ? t('api.ok')
           : r.error === 'Unexpected'
-            ? 'Unexpected error'
-            : `Declared error: ${r.error}`
+            ? t('api.unexpected')
+            : t('api.declared', { error: String(r.error) })
     const grid = typeof r.value === 'object' ? table(r.value) : null
     return h('div', { class: 'api-result' }, [
       h('div', { class: `api-status ${r.ok ? 'ok' : 'bad'}`, role: 'status' }, [
         h('b', {}, [status]),
-        ` · ${r.ms} ms · ${r.kind === 'endpoint' ? 'HTTP' : r.where === 'server' ? 'through the server' : 'in this browser'} · ${host.plain() ? (effect?.label ?? r.ref) : r.ref}`,
+        ` · ${r.ms} ms · ${r.kind === 'endpoint' ? 'HTTP' : t(r.where === 'server' ? 'api.throughServer' : 'api.inBrowser')} · ${host.plain() ? (effect?.label ?? r.ref) : r.ref}`,
       ]),
       r.tags.length
         ? h('div', { class: 'api-note' }, [
-            `Invalidated ${r.tags.join(', ')}`,
+            t('api.invalidated', { tags: r.tags.join(', ') }),
             r.refreshed
-              ? ' · the page re-read it'
+              ? ` · ${t('api.reread')}`
               : h(
                   'button',
                   { type: 'button', class: 'api-link', onclick: () => host.win().location.reload() },
-                  [' · reload the page to see it'],
+                  [` · ${t('api.reload')}`],
                 ),
           ])
         : null,
       h('div', { class: 'api-tools' }, [
-        h('div', { class: 'api-seg', role: 'group', 'aria-label': 'View' }, [
+        h('div', { class: 'api-seg', role: 'group', 'aria-label': t('api.view') }, [
           ...(['table', 'json'] as const).map((v) =>
             h(
               'button',
@@ -774,19 +781,17 @@ export function drawer(host: DrawerHost) {
                   draw()
                 },
               },
-              [v === 'table' ? 'Table' : 'JSON'],
+              [t(v === 'table' ? 'api.table' : 'api.json')],
             ),
           ),
         ]),
         r.kind === 'endpoint'
           ? null
           : copyButton(
-              'Copy as hozu call',
+              t('api.copyCall'),
               () => hozuCall(r, effect?.scope ?? 'public'),
               r.runs === 'browser',
-              r.runs === 'browser'
-                ? 'hozu call runs server and either effects; this one needs the browser'
-                : '',
+              r.runs === 'browser' ? t('api.copyCall.browser') : '',
             ),
       ]),
       ui.view === 'table' && grid
@@ -796,7 +801,7 @@ export function drawer(host: DrawerHost) {
           ]),
       r.kind === 'endpoint' && r.headers.length
         ? h('details', { class: 'api-request' }, [
-            h('summary', {}, ['Response headers']),
+            h('summary', {}, [t('api.responseHeaders')]),
             h('pre', {}, [r.headers.map(([k, v]) => `${k}: ${v}`).join('\n')]),
           ])
         : null,
@@ -805,7 +810,7 @@ export function drawer(host: DrawerHost) {
   }
 
   function historyList() {
-    if (!ui.history.length) return [h('div', { class: 'api-empty' }, ['No calls yet.'])]
+    if (!ui.history.length) return [h('div', { class: 'api-empty' }, [t('api.noCalls')])]
     return ui.history.map((r) =>
       h('div', { class: `api-row history${r.id === selected ? ' on' : ''}` }, [
         h('span', { class: `api-dot ${r.ok ? 'ok' : 'bad'}`, 'aria-hidden': 'true' }),
@@ -841,7 +846,7 @@ export function drawer(host: DrawerHost) {
                   ask(effect)
                 },
               },
-              ['Run again'],
+              [t('api.runAgain')],
             ),
       ]),
     )
@@ -868,17 +873,19 @@ export function drawer(host: DrawerHost) {
     return h('div', { class: 'api-row session' }, [
       h('span', {}),
       h('div', { class: 'api-name' }, [
-        h('b', {}, ['Act as']),
-        h('span', { class: 'api-tag' }, ['development only: sets this browser’s session cookie']),
+        h('b', {}, [t('api.actAs')]),
+        h('span', { class: 'api-tag' }, [t('api.actAs.hint')]),
       ]),
       h('div', { class: 'api-fields' }, [
-        jsonEditor('Session (JSON)', text, (t) => {
-          text = t
+        jsonEditor(t('api.session'), text, (value) => {
+          text = value
         }),
         sessionError ? h('em', { class: 'api-invalid' }, [sessionError]) : null,
       ]),
       h('div', { class: 'api-confirm' }, [
-        h('button', { type: 'button', class: 'api-ghost', onclick: () => void apply(null) }, ['Sign out']),
+        h('button', { type: 'button', class: 'api-ghost', onclick: () => void apply(null) }, [
+          t('api.signOut'),
+        ]),
         h(
           'button',
           {
@@ -888,12 +895,12 @@ export function drawer(host: DrawerHost) {
               try {
                 void apply(JSON.parse(text) as Json)
               } catch {
-                sessionError = 'The session is not valid JSON'
+                sessionError = t('api.session.invalid')
                 draw()
               }
             },
           },
-          ['Act as'],
+          [t('api.actAs')],
         ),
       ]),
     ])
@@ -905,7 +912,7 @@ export function drawer(host: DrawerHost) {
     } catch (error) {
       el.replaceChildren(
         h('div', { class: 'api-empty', role: 'alert' }, [
-          `The API drawer could not draw: ${error instanceof Error ? error.message : String(error)}. `,
+          t('api.broken', { error: error instanceof Error ? error.message : String(error) }),
           h(
             'button',
             {
@@ -918,7 +925,7 @@ export function drawer(host: DrawerHost) {
                 draw()
               },
             },
-            ['Clear its saved state'],
+            [t('api.broken.clear')],
           ),
         ]),
       )
@@ -943,7 +950,7 @@ export function drawer(host: DrawerHost) {
         },
         [label, h('span', { class: 'count' }, [String(count)])],
       )
-    const grip = h('div', { class: 'api-grip', title: 'Drag to resize', 'aria-hidden': 'true' })
+    const grip = h('div', { class: 'api-grip', title: t('common.resize'), 'aria-hidden': 'true' })
     grip.addEventListener('pointerdown', (event) => {
       event.preventDefault()
       grip.setPointerCapture(event.pointerId)
@@ -965,7 +972,7 @@ export function drawer(host: DrawerHost) {
         : ui.tab === 'endpoint'
           ? endpoints.map(endpointRow)
           : list === null
-            ? [h('div', { class: 'api-empty' }, ['This page is not a Hozu page.'])]
+            ? [h('div', { class: 'api-empty' }, [t('api.notHozu')])]
             : (ui.tab === 'query' ? queries : mutations).map(row)
     const who =
       session?.declared &&
@@ -974,23 +981,27 @@ export function drawer(host: DrawerHost) {
         {
           type: 'button',
           class: `api-session${sessionOpen ? ' on' : ''}`,
-          title: 'The session this browser sends; act as someone else',
+          title: t('api.session.title'),
           onclick: () => {
             sessionOpen = !sessionOpen
             draw()
           },
         },
-        [session.current === null ? 'Signed out' : `As ${JSON.stringify(session.current)}`],
+        [
+          session.current === null
+            ? t('api.signedOut')
+            : t('api.as', { who: JSON.stringify(session.current) }),
+        ],
       )
     el.replaceChildren(
       grip,
       h('div', { class: 'api-head' }, [
-        h('b', { class: 'api-title' }, ['API']),
+        h('b', { class: 'api-title' }, [t('api.title')]),
         h('div', { class: 'api-tabs', role: 'tablist' }, [
-          tab('query', host.plain() ? 'Reads' : 'Queries', queries.length),
-          tab('mutation', host.plain() ? 'Changes' : 'Mutations', mutations.length),
-          endpoints.length ? tab('endpoint', 'Endpoints', endpoints.length) : null,
-          tab('history', 'History', ui.history.length),
+          tab('query', t(host.plain() ? 'api.reads' : 'api.queries'), queries.length),
+          tab('mutation', t(host.plain() ? 'api.changes' : 'api.mutations'), mutations.length),
+          endpoints.length ? tab('endpoint', t('api.endpoints'), endpoints.length) : null,
+          tab('history', t('api.history'), ui.history.length),
         ]),
         h('span', { class: 'api-path' }, [host.path()]),
         who || null,
@@ -999,7 +1010,7 @@ export function drawer(host: DrawerHost) {
           {
             type: 'button',
             class: 'api-close',
-            'aria-label': 'Close the API drawer',
+            'aria-label': t('api.close'),
             onclick: () => show(false),
           },
           ['×'],
@@ -1008,7 +1019,7 @@ export function drawer(host: DrawerHost) {
       h('div', { class: 'api-body' }, [
         h('div', { class: 'api-list' }, [
           sessionBox(),
-          ...(rows.length ? rows : [h('div', { class: 'api-empty' }, ['None on this page.'])]),
+          ...(rows.length ? rows : [h('div', { class: 'api-empty' }, [t('api.noneHere')])]),
         ]),
         result(ui.history.find((r) => r.id === selected)),
       ]),

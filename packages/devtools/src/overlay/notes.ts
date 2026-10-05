@@ -1,3 +1,4 @@
+import { t } from '../messages.ts'
 import type { AgentNote } from '../notes.ts'
 import { h } from './dom.ts'
 
@@ -104,23 +105,22 @@ export function agentNotes(host: AgentHost) {
     panel.hidden = false
     const note = notes[current]
     const head = h('div', { class: 'head' }, [
-      h('div', { class: 'kicker' }, ['From your agent']),
-      h('h2', { class: 'title' }, [note ? `Note ${current + 1} of ${notes.length}` : 'No notes']),
+      h('div', { class: 'kicker' }, [t('notes.kicker')]),
+      h('h2', { class: 'title' }, [
+        note ? t('notes.title', { n: current + 1, count: notes.length }) : t('notes.none'),
+      ]),
       host.closeButton(host.close),
     ])
     if (!note)
       return panel.replaceChildren(
         head,
-        h('div', { class: 'empty' }, [
-          h('b', {}, ['Nothing to show. ']),
-          'Your agent points at parts of the page with hozu show, and they appear here.',
-        ]),
+        h('div', { class: 'empty' }, [h('b', {}, [t('notes.empty.title')]), t('notes.empty.text')]),
       )
     const shown = elementFor(note) !== null
     const result = h('div', { class: 'status', role: 'status' })
     const reply = h('textarea', {
-      'aria-label': 'Reply to your agent',
-      placeholder: 'Reply to your agent. For example: “Good, but make it red”',
+      'aria-label': t('notes.reply.aria'),
+      placeholder: t('notes.reply.placeholder'),
     }) as HTMLTextAreaElement
     const step = (label: string, to: number) =>
       h('button', { type: 'button', disabled: to < 0 || to >= notes.length, onclick: () => go(to) }, [label])
@@ -128,18 +128,23 @@ export function agentNotes(host: AgentHost) {
       head,
       h('div', { class: 'sec' }, [
         h('p', { class: 'plain note-text' }, [note.text]),
-        h('div', { class: 'row' }, [h('b', {}, ['On ']), note.label]),
-        host.developer() && note.at ? h('div', { class: 'row' }, [h('b', {}, ['Source ']), note.at]) : null,
+        h('div', { class: 'row' }, [h('b', {}, [t('notes.on')]), note.label]),
+        host.developer() && note.at
+          ? h('div', { class: 'row' }, [h('b', {}, [t('notes.source')]), note.at])
+          : null,
         note.id.startsWith('page:') || shown
           ? null
           : h('div', { class: 'hint-text' }, [
-              'Not on this page. ',
-              note.path ? h('a', { href: note.path }, [`Open ${note.path}`]) : '',
+              t('notes.elsewhere'),
+              note.path ? h('a', { href: note.path }, [t('notes.open', { path: note.path })]) : '',
             ]),
-        h('div', { class: 'actions' }, [step('← Back', current - 1), step('Next →', current + 1)]),
+        h('div', { class: 'actions' }, [
+          step(t('notes.back'), current - 1),
+          step(t('notes.next'), current + 1),
+        ]),
       ]),
       h('div', { class: 'sec' }, [
-        h('div', { class: 'label' }, ['Reply']),
+        h('div', { class: 'label' }, [t('notes.reply')]),
         reply,
         h('div', { class: 'actions' }, [
           h(
@@ -158,33 +163,33 @@ export function agentNotes(host: AgentHost) {
                 result.className = response.ok ? 'status ok' : 'status err'
                 result.replaceChildren(
                   response.ok
-                    ? `Sent as request ${body.number}. Your agent reads it with hozu requests.`
-                    : `Not sent: ${body.error}`,
+                    ? t('notes.sent', { number: String(body.number) })
+                    : t('notes.notSent', { error: String(body.error) }),
                 )
                 if (response.ok) reply.value = ''
               },
             },
-            ['Send reply'],
+            [t('notes.send')],
           ),
           h(
             'button',
             {
               class: 'danger',
               type: 'button',
-              title: 'Remove this note from the page',
+              title: t('notes.resolve.title'),
               onclick: async () => {
                 await fetch(`/_hozu/dev/notes/${note.n}`, { method: 'DELETE' })
                 await refresh()
               },
             },
-            ['Resolve'],
+            [t('notes.resolve')],
           ),
         ]),
         result,
       ]),
       notes.length > 1
         ? h('div', { class: 'sec' }, [
-            h('div', { class: 'label' }, ['All notes']),
+            h('div', { class: 'label' }, [t('notes.all')]),
             ...notes.map((n, i) =>
               h(
                 'button',

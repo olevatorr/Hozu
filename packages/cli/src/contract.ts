@@ -136,6 +136,11 @@ export interface BuildOutput {
   files: string[]
 }
 
+/** `hozu devtools messages` (ADR 0060 D): every string to translate, or what a translation (`--check`) lacks. */
+export type DevtoolsMessagesOutput =
+  | { hozu: string; messages: Record<string, string> }
+  | { file: string; missing: string[]; unknown: string[]; placeholders: string[] }
+
 /** `hozu export` (ADR 0059 H): files written for a static host, and what only a server can answer. */
 export interface ExportOutput {
   out: string

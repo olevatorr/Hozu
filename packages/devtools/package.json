@@ -1,6 +1,6 @@
 {
   "name": "@hozu/devtools",
-  "version": "0.17.2",
+  "version": "0.18.0",
   "description": "Hozu DevTools: point at the screen, get a request that points the agent at the source",
   "keywords": [
     "hozu",
