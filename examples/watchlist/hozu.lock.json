@@ -1,0 +1,282 @@
+{
+  "features": {
+    "watchlist": {
+      "adding/invoke/done/0": {
+        "behavior": "ee86400c5f22f52f",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "adding --done addSymbol--> idle"
+      },
+      "adding/invoke/failed/Duplicate/0": {
+        "behavior": "fb26b4381f2712ad",
+        "contracts": {
+          "duplicateSays": "e81000fb1e88d665"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "arg": {
+                  "object": {
+                    "0": {
+                      "path": [
+                        "symbol"
+                      ],
+                      "ref": "error"
+                    },
+                    "1": {
+                      "literal": " is already on your list"
+                    }
+                  }
+                },
+                "fn": "%concat"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "adding --failed addSymbol.Duplicate--> idle · error := (error.symbol + \" is already on your list\")"
+      },
+      "adding/invoke/failed/Invalid/0": {
+        "behavior": "cae301dbdc321b19",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "adding --failed addSymbol.Invalid--> idle · error := error.message"
+      },
+      "adding/invoke/failed/Unexpected/0": {
+        "behavior": "5768648eda6c6baa",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "adding --failed addSymbol.Unexpected--> idle · error := error.message"
+      },
+      "idle/on/watchlist.Add/0": {
+        "behavior": "f895624bdbb0d620",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "symbol"
+              ],
+              "value": {
+                "path": [
+                  "symbol"
+                ],
+                "ref": "event"
+              }
+            },
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "literal": null
+              }
+            }
+          ],
+          "enters": {
+            "effect": "watchlist.addSymbol",
+            "final": false,
+            "input": {
+              "object": {
+                "symbol": {
+                  "path": [
+                    "symbol"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "adding",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Add--> adding · symbol := event.symbol, error := null · invoke addSymbol({ symbol: ctx.symbol })"
+      },
+      "idle/on/watchlist.Remove/0": {
+        "behavior": "3728cc5d47b02e34",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "symbol"
+              ],
+              "value": {
+                "path": [
+                  "symbol"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": "watchlist.removeSymbol",
+            "final": false,
+            "input": {
+              "object": {
+                "symbol": {
+                  "path": [
+                    "symbol"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "removing",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "idle --Remove--> removing · symbol := event.symbol · invoke removeSymbol({ symbol: ctx.symbol })"
+      },
+      "removing/invoke/done/0": {
+        "behavior": "161009426fbd8484",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "removing --done removeSymbol--> idle"
+      },
+      "removing/invoke/failed/Unexpected/0": {
+        "behavior": "e371f013b54e7dca",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "error"
+              ],
+              "value": {
+                "path": [
+                  "message"
+                ],
+                "ref": "error"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "removing --failed removeSymbol.Unexpected--> idle · error := error.message"
+      }
+    }
+  },
+  "pages": {
+    "access": {},
+    "endpoints": {},
+    "head": {},
+    "redirects": {}
+  },
+  "version": 2
+}

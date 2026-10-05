@@ -1,5 +1,17 @@
 # Data: queries, mutations, tags, fn, resolvers
 
+**First: whose data is it?** It decides `runs`, `scope` and where it is stored. When the request does not say, ask.
+
+| The data | `runs` / `scope` | Stored in |
+|---|---|---|
+| the visitor's own, no sign-in (a watchlist, favourites, settings) | `'browser'` / `'user'` | `localStorage`, in `fetch.ts` (`hozu docs recipes`) |
+| a signed-in user's, on every device | `'server'` / `'user'` + `access` | the app's database |
+| everyone's (posts, a shared board) | `'server'` / `'public'` + a deliberate `access` | the app's database |
+| a public third-party API (quotes, weather) | `'either'` / `'public'` | nowhere: read it |
+
+The arrays in Hozu's examples and scaffolds are stand-ins that keep them short: one list for every visitor, gone on
+restart. Never ship one; replace it with the store above.
+
 ```ts
 export const itemsTag = tag({ param: null })                    // tag({ param: z.string() }) → itemTag(id)
 export const listItems = query({
@@ -25,8 +37,8 @@ export const visible = fn({                   // computation: pure JS; may call 
 ```
 ```ts
 export default app({ resolvers: resolvers(project, (implement) => [
-  implement(listItems, () => items.map((i) => ({ ...i }))),
-  implement(getItem, ({ id }, { fail }) => items.find((i) => i.id === id) ?? fail('NotFound', { id })),
+  implement(listItems, () => db.items.list()),                     // db: the app's database client
+  implement(getItem, async ({ id }, { fail }) => (await db.items.get(id)) ?? fail('NotFound', { id })),
   implement(addItem, ({ title }, { fail, session }) => /* … */ ),
 ]) })
 ```
@@ -35,8 +47,6 @@ export default app({ resolvers: resolvers(project, (implement) => [
 - **Query resolvers only read;** writes happen in mutation and endpoint resolvers (see --more).
 - User data (`scope: 'user'`) is `freshness: 'request'` or `'live'` only (HZ049); `'live'` needs tags (HZ050).
 - Call a `fn` from views or machines: `ui.each(visible({ items, show: ctx.show }), 'id', …)`.
-- Keeping data in a file (`data/notes.json`) is fine inside the project: `hozu dev` reloads only for files the app
-  imports, stylesheets and env files.
 
 <!-- more -->
 
