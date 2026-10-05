@@ -3,9 +3,13 @@
 - **One app module:** `project({ app: new URL('./app.ts', import.meta.url) })`; `app.ts` default-exports
   `app({ resolvers, session?, components?, … })` from `@hozu/runtime-server`. `hozu serve`, `hozu check`, `hozu get`,
   `hozu browse` and `testApp(app)` all run it, so what the tools verify is what production serves.
-- **Node:** `npm start` is `hozu serve` (adapter-node on `PORT`, `HOST`). `hozu build` writes `dist/`.
+- **Which host:** nobody marks pages static. `npx hozu export` writes every page for a static host (GitHub Pages,
+  Netlify, Cloudflare Pages, Vercel) to `dist/` and exits 1 naming each page or effect that needs a server; then
+  use Node (`npm start`, a Docker image) or Cloudflare Workers.
+- **Node:** `npm start` is `hozu serve` (adapter-node on `PORT`, `HOST`). Docker: `node:22-slim`, `npm ci
+  --omit=dev`, `CMD ["npx", "hozu", "serve"]`.
 - Set `SESSION_SECRET` when the app has sessions: `npm start` (`hozu serve`) runs as production unless `NODE_ENV` is set, and production refuses to start without it. `hozu dev`, `get`, `browse` and `call` do not need it.
-- Edge (Bun, Deno, Workers, Vercel), static hosts, several instances, upgrading: see --more.
+- Workers, several instances, sessions in KV, upgrading: see --more.
 
 <!-- more -->
 
@@ -19,18 +23,26 @@
   `dist/public/`, `dist/manifest.json` and `dist/server/render.js`. It compresses answers as they stream (gzip),
   and framework files with brotli or gzip from the `.br` / `.gz` that `hozu build` writes. Live streams are not
   compressed. The edge handler leaves compression to the platform.
-- **Edge (Bun, Deno, Workers, Vercel):** bundle with `hozuTransform()` from `@hozu/transform/esbuild`, then
-  `createHandler(app, { manifest, render, env })` from `@hozu/runtime-server` and
-  `export default { fetch: handler.fetch }`, where `render` is `import * as render from './dist/server/render.js'`.
-- **Static host (GitHub Pages):** `exportStatic({ build, styles, resolvers: appOptionsOf(app).resolvers, outDir })`
-  from `@hozu/adapter-static` writes every page without per-request server data, and lists skipped routes. With
-  client components or fetch.ts, also pass `components: await bundleComponents(build)` (`@hozu/bundle`). Pages whose
-  data runs in the browser (`runs: 'browser'` / `'either'`) export completely; `result.needsServer` lists the server
-  effects a written page would still call, which a static host cannot answer (HZ082).
+- **Edge (Cloudflare Workers, Bun, Deno):** `hozu build --out build` (git-ignore `build/`), then bundle an entry with esbuild and
+  `hozuTransform()` from `@hozu/transform/esbuild` (it gives each app file its own `import.meta.url`, which a
+  Worker lacks). The entry creates the handler on the first request, when the platform's `env` is known:
+  `handler ??= createHandler(app, { manifest, render, env })` from `@hozu/runtime-server`, with
+  `import * as render from './build/server/render.js'`. Serve `build/public` as static assets (wrangler
+  `[assets] directory`). Workers keep no memory between requests: data goes in a database.
+- **Static host:** `npx hozu export [--out dist]` (`@hozu/adapter-static`, in new apps) empties the folder, writes
+  every page without per-request server data plus `.nojekyll`, and prints what it skipped. Pages whose data runs in
+  the browser (`runs: 'browser'` / `'either'`) export completely; a page that calls a server effect is listed
+  (HZ082). A GitHub project site sets `project({ http: { basePath: '/<repo>' } })` and uploads `dist/<repo>`.
+  In code: `exportStatic({ build, styles, resolvers, outDir })`.
 - **Edge and fetch.ts:** a host without `import()` of files passes `createHandler(app, { fetches: async (f) =>
   modules[f] })` for `runs: 'either'` effects.
-- **Sessions:** the default store keeps sessions in memory per process; an edge or multi-instance deployment passes
-  a shared store as `app({ session })`.
+- **Sessions:** the default store keeps sessions in memory per process. Several instances or Workers share
+  `kvSessions(kv, { secret })` (`@hozu/runtime-server`; `kv` has Cloudflare KV's `get` / `put(key, value,
+  { expirationTtl })` / `delete`, so a KV binding fits as is; wrap Redis in those three). On Workers pass it to the
+  handler: `createHandler(app, { manifest, render, env, session: kvSessions(env.SESSIONS, { secret:
+  env.SESSION_SECRET }) })`. Cloudflare KV may take up to a minute to show a sign-out in other regions.
+- **Another store:** implement `SessionStore` (`read`, `write`, `issue`) and pass it as `app({ session })` or the
+  handler's `session`; keep the cookie an opaque signed id (ADR 0043 B).
 
 ## Caches and many instances
 - **Bounded caches:** public query results and cached pages are LRU caches, at most 10,000 entries and 5,000 pages

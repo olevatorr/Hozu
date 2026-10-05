@@ -195,13 +195,13 @@ The data cache keeps at most 10,000 entries by default: one million distinct key
 |---|---|
 | [`create-hozu`](https://www.npmjs.com/package/create-hozu) | Creates an app, set up for Claude Code or `AGENTS.md` agents |
 | [`@hozu/core`](https://www.npmjs.com/package/@hozu/core) | IR types and the builders you write apps with |
-| [`@hozu/cli`](https://www.npmjs.com/package/@hozu/cli) | `hozu check`, `get`, `browse`, `call`, `map`, `inspect`, `add`, `requests`, `show`, `why`, `plan`, `env`, `build`, `dev`, `serve`, `docs`, `migrate`, `skill` (all `--json`) |
+| [`@hozu/cli`](https://www.npmjs.com/package/@hozu/cli) | `hozu check`, `get`, `browse`, `call`, `map`, `inspect`, `add`, `requests`, `show`, `why`, `plan`, `env`, `build`, `export`, `dev`, `serve`, `docs`, `migrate`, `skill` (all `--json`) |
 | [`@hozu/transform`](https://www.npmjs.com/package/@hozu/transform) | Lowers the ordinary TypeScript in views and machines to the checked IR form |
 | [`@hozu/schema-zod`](https://www.npmjs.com/package/@hozu/schema-zod) | Zod schemas (the default adapter) |
 | [`@hozu/data`](https://www.npmjs.com/package/@hozu/data) | Resolvers, cache, tags, invalidation |
 | [`@hozu/adapter-node`](https://www.npmjs.com/package/@hozu/adapter-node) | Node server with an ISR page cache and compression |
-| [`@hozu/adapter-static`](https://www.npmjs.com/package/@hozu/adapter-static) | Static export |
-| [`@hozu/runtime-server`](https://www.npmjs.com/package/@hozu/runtime-server) | Streaming SSR and a web-standard `Request → Response` handler (Bun, Deno, Workers, Vercel) |
+| [`@hozu/adapter-static`](https://www.npmjs.com/package/@hozu/adapter-static) | Static export (`hozu export`) |
+| [`@hozu/runtime-server`](https://www.npmjs.com/package/@hozu/runtime-server) | Streaming SSR, a web-standard `Request → Response` handler (Cloudflare Workers, Bun, Deno) and sessions in a shared store (`kvSessions`) |
 | [`@hozu/runtime-client`](https://www.npmjs.com/package/@hozu/runtime-client) | The DOM runtime for islands |
 | [`@hozu/css`](https://www.npmjs.com/package/@hozu/css) | Tailwind CSS v4, compiled from the classes the IR declares |
 | [`@hozu/validator`](https://www.npmjs.com/package/@hozu/validator) · [`@hozu/compiler`](https://www.npmjs.com/package/@hozu/compiler) · [`@hozu/machine`](https://www.npmjs.com/package/@hozu/machine) | Used by the packages above |
@@ -240,7 +240,7 @@ The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router 
 
 ## Requirements and status
 - **Node 22.18 or newer.** Config and app code are TypeScript run with Node's type stripping.
-- **Version 0.17.1.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
+- **Version 0.17.2.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
   and designers and the trial that checks DevTools requests. Every design decision is recorded in
   [`docs/adr`](docs/adr).
 

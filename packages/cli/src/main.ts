@@ -19,6 +19,7 @@ import { describeComponent } from './commands/components.ts'
 import { runDev } from './commands/dev.ts'
 import { runDocs } from './commands/docs.ts'
 import { describeEnv, runEnv } from './commands/env.ts'
+import { describeExport, runExport } from './commands/export.ts'
 import { runInspect } from './commands/inspect.ts'
 import { describeAddKit, runAddKit } from './commands/kits.ts'
 import { describeMap, runMap } from './commands/map.ts'
@@ -46,6 +47,8 @@ Commands:
                             and contracts, a view node (DevTools id or IR pointer) or a page (page:home)
   plan <route|path>         Derived render plan of a route (home) or a path (/products/mug): regions, cache modes, islands
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
+  export                    Write every page as files for a static host (GitHub Pages, Netlify…) to dist; fails
+                            when a page needs a server and lists why (needs @hozu/adapter-static)
   serve                     Start the app module (project({ app })) on PORT with adapter-node: what npm start runs
   dev                       Start the dev server: reload on edits, hot CSS and Hozu DevTools
                             (--devtools builder|developer picks its mode, --no-devtools hides it)
@@ -81,7 +84,7 @@ Options:
   --json               Machine-readable output (schemas in @hozu/cli/schema)
   --config <path>      Config file (default: hozu.config.ts)
   --update-lock        check: rewrite hozu.lock.json when there are no errors
-  --out <dir>          build: output directory (default: dist)
+  --out <dir>          build/export: output directory (default: dist)
   --agent <agent>      skill: claude, agents or both (default: the folders that exist)
   --header <h>         call/browse: a request header, 'Name: value' (repeatable), e.g. a bearer token; in browse,
                        before the first --as for every actor, after an --as for that actor
@@ -270,6 +273,7 @@ export async function main(
       'plan',
       'render',
       'build',
+      'export',
       'serve',
       'dev',
       'requests',
@@ -479,6 +483,11 @@ export async function main(
       const result = await runBuild(loaded, values.out, cwd)
       out(asJson ? json(result) : `✔ wrote ${result.files.length} static files and ${result.manifest}\n`)
       return 0
+    }
+    if (command === 'export') {
+      const result = await runExport(loaded, values.out, cwd)
+      out(asJson ? json(result) : describeExport(result))
+      return result.skipped.length || result.needsServer.length ? 1 : 0
     }
     if (command === 'plan') {
       const result = runPlan(loaded, target)

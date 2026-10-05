@@ -102,6 +102,7 @@ export async function exportStatic({
   assertFetchBundle(build.ir, assets.fetches ?? {}, Boolean(components))
   const data = createDataRuntime({ build, resolvers })
   const result: StaticExport = { written: [], skipped: [], needsServer: [] }
+  const base = build.ir.http.basePath.replace(/^\//, '')
   let js = false
   const entries = await pageEntries(build, data)
   for (const [route, page] of Object.entries(build.ir.pages).sort(([a], [b]) => a.localeCompare(b))) {
@@ -153,12 +154,12 @@ export async function exportStatic({
       assets,
       images: images?.variants ?? null,
     })
-    await write(join(outDir, '404.html'), html)
-    result.written.push(join(outDir, '404.html'))
+    await write(join(outDir, base, '404.html'), html)
+    result.written.push(join(outDir, base, '404.html'))
   }
   await write(join(outDir, 'robots.txt'), robotsTxt(build))
-  await write(join(outDir, 'sitemap.xml'), sitemapXml(build, entries))
-  result.written.push(join(outDir, 'robots.txt'), join(outDir, 'sitemap.xml'))
+  await write(join(outDir, base, 'sitemap.xml'), sitemapXml(build, entries))
+  result.written.push(join(outDir, 'robots.txt'), join(outDir, base, 'sitemap.xml'))
   for (const f of staticFiles(build, { styles, components, client: js })) {
     const file = join(outDir, f.path.replace(/^\//, ''))
     await mkdir(dirname(file), { recursive: true })

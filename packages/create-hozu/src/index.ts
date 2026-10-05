@@ -85,6 +85,7 @@ export const packageJson = (name: string, version: string) => ({
   },
   dependencies: {
     '@hozu/adapter-node': `^${version}`,
+    '@hozu/adapter-static': `^${version}`,
     '@hozu/cli': `^${version}`,
     '@hozu/core': `^${version}`,
     '@hozu/css': `^${version}`,

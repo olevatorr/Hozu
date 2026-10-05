@@ -18,43 +18,11 @@ To check, run `hozu plan` for the routes you care about, or try the static expor
 
 ## Static hosting
 
-Add the static adapter and the component bundler, then an export script next to `app.ts`:
-
 ```sh
-npm install @hozu/adapter-static @hozu/bundle
+npx hozu export
 ```
 
-```ts
-// export.ts
-import { exportStatic } from '@hozu/adapter-static'
-import { bundleComponents } from '@hozu/bundle'
-import { buildProject } from '@hozu/core/ir'
-import { compileStyles } from '@hozu/css'
-import { appOptionsOf } from '@hozu/runtime-server'
-import app from './app.ts'
-import project from './hozu.config.ts'
-
-const build = buildProject(project, { sources: false })
-const result = await exportStatic({
-  build,
-  styles: await compileStyles(build),
-  components: await bundleComponents(build),
-  resolvers: appOptionsOf(app)!.resolvers,
-  outDir: 'dist',
-  env: process.env,
-})
-for (const { route, reason } of result.skipped) console.error(route, reason)
-for (const { path, effect, reason } of result.needsServer) console.error(path, effect, reason)
-if (result.skipped.length || result.needsServer.length) process.exitCode = 1
-```
-
-```json
-"scripts": {
-  "export": "node --import @hozu/transform/register export.ts"
-}
-```
-
-`npm run export` writes `dist/`: one `index.html` per page, `/_hozu/` assets, `sitemap.xml`, `robots.txt` and the web manifest. It exits with an error when a page needs a server.
+`hozu export` empties `dist/` and writes one `index.html` per page, the `/_hozu/` assets, `sitemap.xml`, `robots.txt`, the web manifest and `.nojekyll`. It exits with an error, and names each page and effect, when a page needs a server. New apps include `@hozu/adapter-static`, which it uses; in an older app run `npm install @hozu/adapter-static` first. `--out <dir>` writes elsewhere. To export from your own script, call `exportStatic` from `@hozu/adapter-static` with the build, styles and resolvers.
 
 - Declare `entries` for every parameterized page, so the export knows which URLs to write.
 - Set `site.url` to the production origin, or to `{ env: 'SITE_URL' }` to read it from a declared variable (HZ085). Canonical links, the sitemap and share images use it.
@@ -89,8 +57,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - run: npm run export
-      - run: touch dist/.nojekyll
+      - run: npx hozu export
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
@@ -99,7 +66,7 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-`.nojekyll` stops GitHub Pages from hiding the underscore-prefixed `/_hozu/` folder. With a custom domain, write a `CNAME` file into `dist/` as well. A project site served under `https://<user>.github.io/<repo>/` needs `project({ http: { basePath: '/<repo>' } })`. The export then writes the pages into `dist/<repo>/`, so upload that folder. This website is deployed this way, from `site/export.ts` and `.github/workflows/pages.yml` in the Hozu repository.
+The `.nojekyll` that `hozu export` writes stops GitHub Pages from hiding the underscore-prefixed `/_hozu/` folder. With a custom domain, write a `CNAME` file into `dist/` as well. A project site served under `https://<user>.github.io/<repo>/` needs `project({ http: { basePath: '/<repo>' } })`. The export then writes the pages, the sitemap and `404.html` into `dist/<repo>/`, so upload that folder. This website is deployed this way, from `site/export.ts` and `.github/workflows/pages.yml` in the Hozu repository.
 
 ### Cloudflare Pages, Netlify and Vercel
 
@@ -107,7 +74,7 @@ Connect the repository and set:
 
 | Setting | Value |
 | --- | --- |
-| Build command | `npm run export` |
+| Build command | `npx hozu export` |
 | Output directory | `dist` |
 | Node version | 22 or later (for example `NODE_VERSION=22`) |
 
@@ -144,7 +111,7 @@ docker build -t my-app .
 docker run -p 3000:3000 -e SESSION_SECRET="$(openssl rand -hex 32)" my-app
 ```
 
-Use a fixed `SESSION_SECRET` from your platform's secrets in production; a new one signs everyone out. The image runs on any container host, such as Fly.io, Railway, Render or Google Cloud Run. Hosts that run Node directly need only `npm ci` and `npm start` with Node 22.18 or later.
+Use a fixed `SESSION_SECRET` from your platform's secrets in production; a new one signs everyone out. One container keeps sessions in memory, so a restart signs everyone out too; with several containers, or to keep sessions across restarts, use `kvSessions` over a shared store (see [Several instances](#several-instances)). The image runs on any container host, such as Fly.io, Railway, Render or Google Cloud Run. Hosts that run Node directly need only `npm ci` and `npm start` with Node 22.18 or later.
 
 ### What the Node adapter does
 
@@ -154,7 +121,7 @@ The adapter includes an ISR page cache, tag revalidation, CSP and cross-site POS
 
 ## Cloudflare Workers
 
-A Worker runs the web-standard handler, `createHandler` from `@hozu/runtime-server`. The edge cannot generate the render module at startup, so build first and bundle the result:
+A Worker runs the web-standard handler, `createHandler` from `@hozu/runtime-server`. The edge cannot generate the render module at startup, so build first and bundle the result (add `build/` to `.gitignore`: it is generated):
 
 ```sh
 npm install -D esbuild wrangler
@@ -191,7 +158,6 @@ await build({
   platform: 'browser',
   conditions: ['workerd', 'worker', 'browser'],
   plugins: [hozuTransform()],
-  define: { 'import.meta.url': JSON.stringify('file:///worker.js') },
 })
 ```
 
@@ -211,10 +177,37 @@ npx wrangler dev      # local
 npx wrangler deploy   # your Cloudflare account
 ```
 
-- `hozuTransform()` lowers views and machines as `hozu serve` does; without it the handler refuses to start (HZ044). In 0.17.1, the `define` line is needed because a bundled Worker has no `import.meta.url`.
+- `hozuTransform()` lowers views and machines as `hozu serve` does; without it the handler refuses to start (HZ044). It also gives each of your files its own `import.meta.url`, which a Worker does not have, so `new URL('./app.css', import.meta.url)` in `hozu.config.ts` keeps working (0.17.2 and later).
 - `[assets]` serves `build/public` (the client, chunks, styles and assets) before the Worker runs. The Worker answers pages, queries, effects and endpoints. Compression is left to Cloudflare.
 - Environment variables and secrets come from `wrangler.toml` `[vars]` and `wrangler secret put`; the Worker passes them to the handler on the first request.
-- A Worker's memory is not shared and does not last: the default `memorySessions()` and data kept in resolver variables are lost between isolates. Keep app data in a database (D1, KV or an external one). An app with sessions needs a `session` store in `app({ session })` that implements `SessionStore` (`read`, `write`, `issue`) over KV or a Durable Object.
+- A Worker's memory is not shared and does not last: data kept in resolver variables is lost between isolates, so keep app data in a database (D1, KV or an external one).
+- An app with sessions keeps them in Workers KV with `kvSessions`. Create a namespace (`npx wrangler kv namespace create SESSIONS`), bind it in `wrangler.toml`, set the secret (`npx wrangler secret put SESSION_SECRET`), and pass the store to the handler:
+
+```ts
+import { createHandler, type Handler, kvSessions, type SessionKV } from '@hozu/runtime-server'
+
+let handler: Handler | undefined
+
+export default {
+  fetch(request: Request, env: { SESSIONS: SessionKV; SESSION_SECRET: string }) {
+    handler ??= createHandler(app, {
+      manifest,
+      render,
+      env: env as unknown as Record<string, string>,
+      session: kvSessions(env.SESSIONS, { secret: env.SESSION_SECRET }),
+    })
+    return handler.fetch(request)
+  },
+}
+```
+
+```toml
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "<the id wrangler printed>"
+```
+
+  The cookie holds only a signed id; the session lives in KV and is deleted on sign-out. KV can take up to a minute to show a change in other regions, so a sign-out may be seen late far away.
 
 ### Other web-standard runtimes
 
@@ -244,7 +237,7 @@ export default app({
 })
 ```
 
-`httpBus` sends a signed `POST /_hozu/invalidate` to each peer, so the others drop the same pages and data and push to their own live clients. Messages carry tags, never data. With a broker instead of fixed addresses, implement `InvalidationBus` (`publish(tags)`, `subscribe(onTags)`) over Redis, NATS or Postgres `LISTEN`. `app({ staticTtl: 300 })` re-reads `'static'` data after 300 seconds in case a message is lost. Sessions need a shared store too: the default `memorySessions()` lives in one process.
+`httpBus` sends a signed `POST /_hozu/invalidate` to each peer, so the others drop the same pages and data and push to their own live clients. Messages carry tags, never data. With a broker instead of fixed addresses, implement `InvalidationBus` (`publish(tags)`, `subscribe(onTags)`) over Redis, NATS or Postgres `LISTEN`. `app({ staticTtl: 300 })` re-reads `'static'` data after 300 seconds in case a message is lost. Sessions need a shared store too, since the default `memorySessions()` lives in one process: `app({ session: kvSessions(kv, { secret }) })` takes any store with `get`, `put(key, value, { expirationTtl })` and `delete` (Workers KV as it is; Redis wrapped in those three).
 
 ## Understand the design
 

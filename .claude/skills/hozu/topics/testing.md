@@ -17,6 +17,8 @@
     several steps: `--do 'fill Title=Milk; press Enter'`.
 - **Other users, other pages, after a reload, after sign-out:** verify any such statement once, in one `browse`
   chain with `--js both`. `--as <name>` starts an actor with its own browser; all actors share one app.
+  - A stale form (sent after the data changed elsewhere): `--do 'remember save from form:has([name=title]) @action'`,
+    change the data as another `--as`, then `--do 'post $save title=x'`. No server and no curl needed.
 - **The output** is per step only the lines added (`+`) or removed (`−`). A passing six-step run stays under 1.5 KB.
   Exit code 1 when a step failed, the modes differ or an error was printed.
 - In code: `const page = await testApp(app).get('/')` from `@hozu/testing` → `{ status, headers, html, text, payload }`.

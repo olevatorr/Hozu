@@ -287,6 +287,13 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `p.component`, `p.page` + `p.data` / `p.fail`) is for people: loaded only by `hozu dev` / `check`, a
   page screen swaps query results under `dev` only (cookie `hozu-dev-preview`), HZ092 keeps it honest, agents read
   it only when asked. `hozu dev` takes its app down on SIGTERM / SIGKILL.
+- 0.17.2 (ADR 0059): `hozu export [--out dist]` (static host; `.nojekyll`; exit 1 listing skipped pages and server
+  effects; create-hozu adds `@hozu/adapter-static`); `kvSessions(kv, { secret })` (Cloudflare KV's get / put
+  { expirationTtl } / delete; opaque signed id, deleted on sign-out; `createHandler(app, { session })` on Workers);
+  `hozuTransform()` (esbuild) gives app files their own `import.meta.url` (Workers have none); static export under
+  `basePath` writes sitemap.xml / 404.html under the base; migrate 0.14 → 0.15 renames a user `Forbidden` error to
+  `NotAllowed`; DevTools message uses count page heads and attributes; `hozu build` writes `server/render.d.ts`; trial acceptance
+  runs `@hozu/cli serve`.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

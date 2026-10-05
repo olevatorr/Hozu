@@ -167,6 +167,17 @@ type Provider = Extract<ViewNode, { kind: 'query' } | { kind: 'each' }>
 
 const describeWith = (build: BuildResult, providers: Provider[], root: string) => {
   const count = counter(build)
+  const messageUses = (fn: string) => {
+    const quoted = JSON.stringify(fn)
+    const inViews = count(
+      (n) =>
+        (n.kind === 'text' && 'fn' in n.value && n.value.fn === fn) ||
+        (n.kind === 'el' && JSON.stringify(n.attrs).includes(quoted)) ||
+        (n.kind === 'component' && JSON.stringify(n.props).includes(quoted)),
+    )
+    const inHeads = Object.values(build.ir.pages).filter((p) => JSON.stringify(p.head).includes(quoted))
+    return inViews + inHeads.length
+  }
   const queryOf = (v: ValueExpr): string | null => {
     if (!('ref' in v) || v.ref !== 'binding') return null
     const p = providers[v.depth ?? 0]
@@ -199,10 +210,7 @@ const describeWith = (build: BuildResult, providers: Provider[], root: string) =
       kind,
       detail: kind === 'message' && 'fn' in v ? v.fn.slice(5) : describe(v),
       location,
-      uses:
-        kind === 'message' && 'fn' in v
-          ? count((n) => n.kind === 'text' && 'fn' in n.value && n.value.fn === v.fn)
-          : null,
+      uses: kind === 'message' && 'fn' in v ? messageUses(v.fn) : null,
     })
     if ('literal' in v) return of('literal')
     if ('fn' in v && v.fn.startsWith('#msg:')) {

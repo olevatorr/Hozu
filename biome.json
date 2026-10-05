@@ -16,6 +16,7 @@
       "!bench/trial/notes/*-run*",
       "!bench/trial/longrun/results",
       "!bench/trial/longrun/results-0021",
+      "!bench/trial/longrun/results-0024-b3",
       "!bench/trial/longrun/reference",
       "!packages/cli/test/fixtures/migrate-*"
     ]

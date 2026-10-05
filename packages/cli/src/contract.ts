@@ -136,6 +136,14 @@ export interface BuildOutput {
   files: string[]
 }
 
+/** `hozu export` (ADR 0059 H): files written for a static host, and what only a server can answer. */
+export interface ExportOutput {
+  out: string
+  written: string[]
+  skipped: { route: string; reason: string }[]
+  needsServer: { path: string; effect: string; reason: string }[]
+}
+
 export interface SkillOutput {
   written: string[]
   /** Guides without hozu markers: paste `block` by hand. */

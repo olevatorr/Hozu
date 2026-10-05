@@ -1,4 +1,5 @@
-import { buildProject } from '@hozu/core/ir'
+import { fileURLToPath } from 'node:url'
+import { buildProject, locateNode } from '@hozu/core/ir'
 import { hydrate } from '@hozu/runtime-client'
 import { appOptionsOf, createHandler } from '@hozu/runtime-server'
 import { Window } from 'happy-dom'
@@ -78,5 +79,10 @@ describe('internationalisation (ADR 0017, ADR 0043 F)', () => {
     await new Promise((r) => setTimeout(r, 10))
     expect(apps.get('saved')?.snapshot()?.state).toBe('idle')
     expect(count()).toBe('已儲存 1 篇')
+  })
+  it('counts a message used by a page head as a place a text change reaches', () => {
+    const root = fileURLToPath(new URL('../../../examples/blog/', import.meta.url))
+    const heading = locateNode(buildProject(project, { sources: true }), 'posts.Offline/0', { root })
+    expect(heading?.children[0]?.source).toMatchObject({ kind: 'message', detail: 'posts.offline', uses: 2 })
   })
 })

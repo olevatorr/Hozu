@@ -3,7 +3,7 @@ import type { Note } from './ast.ts'
 import { addRuns, addRunsServer, normalize010 } from './step-0.11.ts'
 import { ignoreHozu } from './step-0.12.ts'
 import { rewriteScripts } from './step-0.14.ts'
-import { addAccess, normalize014 } from './step-0.15.ts'
+import { accessStep, normalize014Renamed } from './step-0.15.ts'
 
 export interface Step {
   from: string
@@ -67,9 +67,9 @@ export const steps: Step[] = [
     from: '0.14',
     to: '0.15',
     summary:
-      "access: 'anyone' on every server-run user query and mutation, the 0.14 behaviour (ADR 0056 B); HZ090 then lists the user queries to tighten",
-    rewrite: addAccess,
-    normalize: normalize014,
+      "access: 'anyone' on every server-run user query and mutation, the 0.14 behaviour (ADR 0056 B); HZ090 then lists the user queries to tighten; an error the app named Forbidden (the framework's access error since 0.15) becomes NotAllowed",
+    rewrite: accessStep,
+    normalize: normalize014Renamed,
   },
   {
     from: '0.15',
