@@ -1,5 +1,5 @@
 {
-  "hozu": "0.18.0",
+  "hozu": "0.18.1",
   "messages": {
     "common.close": "關閉",
     "common.resize": "拖曳以調整大小",
@@ -61,6 +61,7 @@
     "inspector.where.component": "元件",
     "inspector.where.machine": "machine",
     "inspector.component": "元件",
+    "inspector.client": "Client 元件：內部由 {file} 在瀏覽器繪製，所以只能整個選取。",
     "inspector.usedIn.one": "用在 {count} 處",
     "inspector.usedIn.other": "用在 {count} 處",
     "inspector.head": "Head",
@@ -388,6 +389,7 @@
     "plain.about.submit": "送出時會執行「{action}」。",
     "plain.about.event": "觸發 {dom} 時會執行「{action}」。",
     "plain.about.page": "它的標題和描述就是搜尋引擎和分享連結會顯示的內容。",
+    "plain.about.client": "由 {file} 在瀏覽器繪製，所以 DevTools 只能整個選取：裡面的內容屬於那段程式。",
     "plain.scope.component": "主元件 · 所有 {name}（{count} 處）",
     "plain.scope.instance": "只有這個實例",
     "plain.scope.thisOne": "只有這一個",

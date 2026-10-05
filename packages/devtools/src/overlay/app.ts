@@ -1294,14 +1294,16 @@ function requestSection(n: DevNode, active: Pick) {
 function builderSections(n: DevNode) {
   const children = n.children.filter((c) => c.kind !== 'text')
   return [
-    section(
-      t('inspector.about'),
-      describeFor(n).map((line) => h('div', { class: 'plain' }, [line])),
-    ),
+    section(t('inspector.about'), [
+      ...describeFor(n).map((line) => h('div', { class: 'plain' }, [line])),
+      n.component?.client
+        ? h('div', { class: 'plain' }, [t('plain.about.client', { file: n.component.client.file })])
+        : null,
+    ]),
     h('div', { class: 'sec' }, [
       h('div', { class: 'nav' }, [
         h('button', { type: 'button', onclick: () => walk('up') }, [t('inspector.around')]),
-        children.length && !isText(n)
+        children.length && !isText(n) && !n.component?.client
           ? h('button', { type: 'button', onclick: () => walk('down') }, [t('inspector.inside')])
           : null,
         h('button', { type: 'button', onclick: removeActive }, [t('inspector.remove')]),
@@ -1349,6 +1351,9 @@ function developerSections(n: DevNode, active: Pick) {
                 h('span', { class: 'chip' }, [`${k}=${v}`]),
               ),
             ]),
+            n.component.client
+              ? h('div', { class: 'plain' }, [t('inspector.client', { file: n.component.client.file })])
+              : null,
           ]
         : [],
     ),
@@ -1410,7 +1415,7 @@ function developerSections(n: DevNode, active: Pick) {
         : null,
       h('div', { class: 'nav' }, [
         h('button', { type: 'button', onclick: () => walk('up') }, [t('inspector.parent')]),
-        isText(n)
+        isText(n) || n.component?.client
           ? null
           : h('button', { type: 'button', onclick: () => walk('down') }, [t('inspector.child')]),
         h('button', { type: 'button', onclick: removeActive }, [t('inspector.remove')]),

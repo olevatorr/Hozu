@@ -583,13 +583,25 @@
                 },
                 "uses": {
                   "type": "number"
+                },
+                "client": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/DevLocation"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "A client component's module (ADR 0045): its inside is drawn there, in the browser, not by a view."
                 }
               },
               "required": [
                 "ref",
                 "variant",
                 "declaration",
-                "uses"
+                "uses",
+                "client"
               ],
               "additionalProperties": false
             },

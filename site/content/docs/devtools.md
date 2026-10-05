@@ -25,6 +25,8 @@ order: 11
 4. Click the next part and describe it too. Every described part stays in the same request.
 5. **Copy for AI** and paste it to your agent, or **Save request**, which writes `.hozu/requests/0007-….md` and copies the line to give the agent.
 
+A client component (one with a `client` module, such as a map or a canvas) draws its inside in the browser, so DevTools selects it as one part and says which module draws it. To select the parts around it, such as a toolbar or a panel, write them as views and keep only what needs browser code in the component.
+
 Each part of the request names its `file:line`, the scope you chose (this instance only, every item, or the main component: every use of it), the theme class to use for a style, and a reminder only where a plain edit would go wrong.
 
 ## Measure
