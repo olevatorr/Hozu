@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.17.2
+
+Deploying, and what trial 0024's re-run found (ADR 0059). No app changes how it is written; `hozu migrate` raises the
+packages.
+
+- **`npx hozu export`** writes every page for a static host (GitHub Pages, Netlify, Cloudflare Pages, Vercel) to
+  `dist/`, with `.nojekyll`, and exits 1 naming each page and server effect a static host cannot answer. New apps
+  include `@hozu/adapter-static`; older ones `npm install @hozu/adapter-static`.
+- **Cloudflare Workers:** a bundle made with `hozuTransform()` now starts (it threw `Invalid URL string`: a Worker
+  has no `import.meta.url`, which core and every `hozu.config.ts` use). The plugin gives each app file its own URL;
+  no `define` is needed.
+- **`kvSessions(kv, { secret })`** keeps sessions in a shared key-value store, so several instances, or a Worker
+  with a KV binding, agree on who is signed in. Same contract as `memorySessions`: an opaque signed id in the
+  cookie, the value on the server, deleted on sign-out. On Workers: `createHandler(app, { …, session:
+  kvSessions(env.SESSIONS, { secret: env.SESSION_SECRET }) })`.
+- **A static export under `basePath`** writes `sitemap.xml` and `404.html` under the base, where `robots.txt` points
+  (a GitHub project site uploads `dist/<repo>`).
+- **`hozu migrate` 0.14 → 0.15** renames an error the app named `Forbidden` (the framework's access error since 0.15)
+  to `NotAllowed`, and still proves the IR unchanged.
+- **DevTools:** a request counts a message used by the page head or an attribute as another place, so it says
+  "shared by 2 places; give this one its own message" instead of sending the agent to change the tab title too.
+- **Guide:** the deploy topic covers `hozu export`, Docker, Workers and shared sessions; the testing topic shows how
+  to post a stale form with `hozu browse` (`remember … @action`, then `post $name`).
+- The site's Deploying page has tested recipes: GitHub Pages, Cloudflare Pages / Netlify / Vercel, Docker and
+  Cloudflare Workers with KV sessions.
+
 ## 0.17.1
 
 - **A visitor's cached client no longer breaks the page after a deploy.** `/_hozu/client.js` was referenced under a
