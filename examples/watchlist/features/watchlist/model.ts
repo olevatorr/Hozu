@@ -34,7 +34,7 @@ export const quotes = query({
   input: z.object({ symbols: z.array(z.string()) }),
   output: z.array(Quote),
   scope: 'public',
-  freshness: 'request',
+  freshness: { poll: 30 },
   runs: 'server',
 })
 

@@ -155,6 +155,14 @@ export async function renderPage({
     live: {},
     ...(dev && devState ? { devState } : {}),
   }
+  const polled = Object.fromEntries(
+    [...new Set(plan.views.map((v) => v.slice(0, v.indexOf('.'))))].flatMap((id) =>
+      Object.entries(ir.features[id]?.queries ?? {}).flatMap(([sym, q]) =>
+        q.freshness.kind === 'poll' ? [[`${id}.${sym}`, q.freshness.seconds] as const] : [],
+      ),
+    ),
+  )
+  if (Object.keys(polled).length) payload.poll = polled
   const fns = i18n ? fnsFor(build, lang) : (bindings.fns as Record<string, (x: Json) => Json>)
   const getters = gettersFor(fns)
 

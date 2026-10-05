@@ -31,11 +31,15 @@
 ## C1 — re-reading on a timer: `freshness: { poll: seconds }`
 - **Problem:** `'live'` is pushed by invalidation only; a 30 s quote refresh needed a mutation whose only job was to
   invalidate, driven by a machine timer.
-- **Decision:** `freshness: { poll: s }` (s ≥ 5) on a `runs: 'server'` or `'either'` query: the page renders it like
-  a `'live'` region, and while a page shows it the server re-reads it every `s` seconds (once per key, shared by every
-  open page of public data) and pushes a changed value over the existing live stream. No tag is needed. `'browser'`
-  queries are refused (HZ014) until a browser-side timer exists. Scope rules stay: user data still is never cached
-  across requests.
+- **Options:** the server re-reads on a timer and pushes over the live stream; or the page reads again on a timer.
+- **Decision:** `freshness: { poll: s }` (s ≥ 5, HZ014 otherwise), for any `scope` and any `runs`. The region is a
+  client region like `'live'`; the page carries `payload.poll` (query → seconds, for the queries of its features) and a
+  lazily loaded `poll.ts` reads every polled query on the page again on its timer, through the page's own query path,
+  so queries the browser fetched itself (inside another region) and `runs: 'browser'` queries poll too. It skips while
+  the page is hidden or an effect is in flight. On the server, public polled data is cached for half the interval, so
+  every page showing it shares one read; user data is never cached (HZ049 allows `{ poll }`).
+- The server-push option needs a timer per key and per instance and still only covers server-run queries; the client
+  timer covers every case with the existing read path.
 
 ## C2 — back to the state it came from: `target: 'previous'`
 - **Problem:** to come back to "paused" after an add, every busy state was doubled (`adding` / `addingPaused`, …).

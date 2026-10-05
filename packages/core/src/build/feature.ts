@@ -44,11 +44,12 @@ function freshness(scope: FeatureScope, f: QueryDef['freshness'], p: At): Freshn
   if (typeof f === 'object' && f && 'revalidate' in f && f.revalidate > 0)
     return { kind: 'revalidate', seconds: f.revalidate }
   if (typeof f === 'object' && f && 'swr' in f && f.swr > 0) return { kind: 'swr', seconds: f.swr }
+  if (typeof f === 'object' && f && 'poll' in f && f.poll >= 5) return { kind: 'poll', seconds: f.poll }
   scope.report(
     'HZ014',
     p,
     `Invalid freshness ${JSON.stringify(f)}`,
-    "Use 'static', 'request', 'live', { revalidate: seconds } or { swr: seconds }.",
+    "Use 'static', 'request', 'live', { revalidate: seconds }, { swr: seconds } or { poll: seconds } (5 or more).",
   )
   return { kind: 'static' }
 }

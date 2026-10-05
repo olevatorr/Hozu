@@ -54,7 +54,12 @@ const rank: Record<Mode, number> = { static: 0, isr: 1, swr: 2, request: 3, brow
 
 function own(q: QueryIR): { mode: Mode; seconds: number | null } {
   if (q.runs === 'browser') return { mode: 'browser', seconds: null }
-  if (q.scope === 'user' || q.freshness.kind === 'live' || q.freshness.kind === 'request')
+  if (
+    q.scope === 'user' ||
+    q.freshness.kind === 'live' ||
+    q.freshness.kind === 'request' ||
+    q.freshness.kind === 'poll'
+  )
     return { mode: 'request', seconds: null }
   if (q.freshness.kind === 'static') return { mode: 'static', seconds: null }
   return { mode: q.freshness.kind === 'revalidate' ? 'isr' : 'swr', seconds: q.freshness.seconds }
@@ -134,7 +139,8 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
   }
   const liveQuery = (ref: string) => {
     const { feature, symbol } = resolve(ir, ref)
-    return feature?.queries[symbol]?.freshness.kind === 'live'
+    const kind = feature?.queries[symbol]?.freshness.kind
+    return kind === 'live' || kind === 'poll'
   }
   const browserQuery = (ref: string) => {
     const { feature, symbol } = resolve(ir, ref)
@@ -212,6 +218,7 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
           q.scope === 'public' &&
           q.freshness.kind !== 'live' &&
           q.freshness.kind !== 'request' &&
+          q.freshness.kind !== 'poll' &&
           readsBinding(node.input, tainted)
         )
           issues.push({

@@ -391,4 +391,18 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     const { code, out } = await browse(['/', '--js', 'on', '--do', 'click Pause'], copy)
     expect([code, out.steps[0].modes[0].ok]).toEqual([0, true])
   }, 60_000)
+
+  it('reads a { poll } query again on its timer, also when the browser fetched it (ADR 0063 C1)', async () => {
+    const copy = copyOf('watchlist', 'features/watchlist/model.ts', (s) =>
+      s.replace('freshness: { poll: 30 }', 'freshness: { poll: 5 }'),
+    )
+    const { code, out } = await browse(
+      ['/', '--js', 'on', '--do', 'fill Symbol=AAPL; press Enter', '--do', 'wait 6000'],
+      copy,
+    )
+    expect(code).toBe(0)
+    const waited = out.steps[2].modes[0]
+    expect(waited.added.some((l: string) => l.startsWith('$'))).toBe(true)
+    expect(waited.removed.some((l: string) => l.startsWith('$'))).toBe(true)
+  }, 60_000)
 })

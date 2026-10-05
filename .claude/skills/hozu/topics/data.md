@@ -17,7 +17,7 @@ export const itemsTag = tag({ param: null })                    // tag({ param: 
 export const listItems = query({
   input: z.object({}), output: z.array(Item),
   scope: 'public',                  // 'user' = the session's data (needs project({ session }))
-  freshness: 'static',              // | 'request' | { revalidate: seconds } | { swr: seconds } | 'live'
+  freshness: 'static',              // | 'request' | { revalidate: s } | { swr: s } | 'live' | { poll: s }
   tags: () => [itemsTag()],          // optional; (input) => [...]
   runs: 'server',                   // where the implementation lives: 'server' | 'browser' | 'either' (required); hozu docs fetch
 })
@@ -45,7 +45,9 @@ export default app({ resolvers: resolvers(project, (implement) => [
 - `runs` is required on every query and mutation. `'server'` resolvers live in `app.ts` (or `features/<name>/server.ts`)
   and get the schema-parsed input; `'browser'` / `'either'` live in `fetch.ts` (`hozu docs fetch`).
 - **Query resolvers only read;** writes happen in mutation and endpoint resolvers (see --more).
-- User data (`scope: 'user'`) is `freshness: 'request'` or `'live'` only (HZ049); `'live'` needs tags (HZ050).
+- User data (`scope: 'user'`) is `freshness: 'request'`, `'live'` or `{ poll }` only (HZ049); `'live'` needs tags (HZ050).
+- **Changes on its own** (quotes, a feed): `freshness: { poll: 30 }` reads it again every 30 s (5 or more) while a page
+  shows it, also from the browser. `'live'` is for data your own mutations change.
 - Call a `fn` from views or machines: `ui.each(visible({ items, show: ctx.show }), 'id', …)`.
 
 <!-- more -->

@@ -38,6 +38,8 @@ export interface PagePayload {
   components: Record<string, ComponentRef>
   routes: Record<string, string>
   live: Record<string, LiveQuery>
+  /** Queries this page reads again on a timer, in seconds (ADR 0063 C1). */
+  poll?: Record<string, number>
   /** Effects this page can call that run in the browser (ADR 0049). */
   effects?: Record<string, ClientEffect>
   /** The bundled fetch module of each feature with such effects. */
@@ -252,6 +254,14 @@ export async function hydrate(
       onTags,
       liveKeys.flatMap(([, l]) => l.tags),
     )
+  if (payload.poll)
+    (await import('./poll.ts')).poll(doc, payload.poll, async (refs) => {
+      if (busy) return
+      const stale = [...shared.data.keys()].filter((k) => refs.includes(k.slice(0, k.indexOf('{'))))
+      for (const k of stale)
+        shared.data.set(k, await onQuery(k.slice(0, k.indexOf('{')), JSON.parse(k.slice(k.indexOf('{')))))
+      if (stale.length) for (const app of apps.values()) app.sync()
+    })
   if (globalThis.__HOZU_DEV__ && dev)
     (await import('./dev.ts')).expose(doc, apps, dev.machines, { invoke, query: onQuery })
   doc.documentElement.setAttribute('data-hozu-ready', '')

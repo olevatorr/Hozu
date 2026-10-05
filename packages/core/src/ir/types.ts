@@ -197,6 +197,8 @@ export type Freshness =
   | { kind: 'revalidate'; seconds: number }
   | { kind: 'swr'; seconds: number }
   | { kind: 'live' }
+  /** Read again every `seconds` while a page shows it (ADR 0063 C1). */
+  | { kind: 'poll'; seconds: number }
   | { kind: 'request' }
 
 export interface QueryIR {
