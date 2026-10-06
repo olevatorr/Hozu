@@ -17,7 +17,8 @@ changing either.
   contract does not count.
 - A transition that stops deciding (its guard or `navigate` removed) needs only the lock: `hozu check
   --update-lock`, then delete the contracts HZ058 names.
-- A transition to `'previous'` needs the state it returns to: `given: { state: 'adding', previous: 'editing' }`.
+- A transition to `'previous'` needs the state it returns to, one without `invoke`: `given: { state: 'adding',
+  previous: 'editing' }`.
 - Contracts may be exported from any module the feature lists. When one fails, the choice is between the machine
   and the contract.
 ```ts

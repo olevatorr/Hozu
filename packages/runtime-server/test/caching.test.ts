@@ -173,6 +173,20 @@ describe('ADR 0043 A: generations, derived HTTP caching, parsed input', () => {
     expect(handler.stats().dataEntries).toBe(1)
   })
 
+  it('a machine may invoke a query: /_hozu/effect answers it like a read (ADR 0065 B)', async () => {
+    const { handler } = setup()
+    const response = await handler.fetch(
+      new Request(`${origin}/_hozu/effect`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', origin, 'sec-fetch-site': 'same-origin' },
+        body: JSON.stringify({ effect: 'shop.items', input: {}, keys: [] }),
+      }),
+    )
+    const body = (await response.json()) as { result: unknown; tags?: string[] }
+    expect(body.result).toEqual({ ok: true, value: ['Mug'] })
+    expect(body.tags).toBeUndefined()
+  })
+
   it('derives Cache-Control and Vary from what a response read', async () => {
     const { handler, cookie } = setup()
     const sid = (await cookie()).split(';')[0]!

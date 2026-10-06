@@ -137,6 +137,7 @@ export async function act(tab: Tab, p: Parsed): Promise<StepResult> {
       throw new Error('hold takes <feature>.<effect>, e.g. hold notes.addNote')
     if (off) return { ok: true, note: null, jsOnly: 'only a JS call to an effect can be held' }
     tab.held.add(p.target)
+    await tab.holdInPage(p.target)
     return done({ note: `holding ${p.target}: its answer waits for release` })
   }
   if (p.verb === 'release') {
@@ -292,10 +293,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
   const holdable = (target: string) => {
     const runs = mutations.get(target)
     if (runs === undefined) throw new Error(`hold: ${target} is not a mutation of this app`)
-    if (runs !== 'server')
-      throw new Error(
-        `hold: ${target} runs in the browser (runs: '${runs}'); only runs: 'server' mutations can be held`,
-      )
+    return runs
   }
   const profile = await mkdtemp(join(tmpdir(), 'hozu-browse-'))
   let cdp: Cdp | null = null

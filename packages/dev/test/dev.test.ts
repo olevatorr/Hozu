@@ -1,10 +1,13 @@
 import {
   appendFileSync,
+  chmodSync,
   cpSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   symlinkSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs'
 import { get, request } from 'node:http'
@@ -121,6 +124,37 @@ createServer((req, res) => {
       expect(events[1]).toEqual({ event: 'reload', data: '{"files":[".env"]}' })
       stream.destroy()
     } finally {
+      await server.close()
+    }
+  }, 30_000)
+
+  it('reloads only when a file changed since it started, not for an event about an unchanged file (0.20.1)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-'))
+    writeFileSync(join(dir, 'tsconfig.json'), '{}\n')
+    const later = new Date(Date.now() + 60_000)
+    utimesSync(join(dir, 'tsconfig.json'), later, later)
+    writeFileSync(join(dir, 'style.css'), 'p { color: red }')
+    writeFileSync(join(dir, 'app.ts'), app)
+    mkdirSync(join(dir, 'locked'))
+    chmodSync(join(dir, 'locked'), 0o000)
+    const server = await dev({ entry: 'app.ts', cwd: dir, port: 0, appPort: await freePort(), log: () => {} })
+    try {
+      const events: string[] = []
+      const stream = await new Promise<import('node:http').IncomingMessage>((resolve) =>
+        get(`${server.url}/_hozu/dev`, resolve),
+      )
+      stream.on('data', (c: Buffer) => {
+        for (const m of c.toString().matchAll(/event: (\w+)\n/g)) events.push(m[1]!)
+      })
+      chmodSync(join(dir, 'tsconfig.json'), 0o600)
+      await new Promise((r) => setTimeout(r, 800))
+      expect(events).toEqual([])
+      writeFileSync(join(dir, 'tsconfig.json'), '{ }\n')
+      for (let i = 0; i < 100 && !events.length; i++) await new Promise((r) => setTimeout(r, 50))
+      expect(events).toEqual(['reload'])
+      stream.destroy()
+    } finally {
+      chmodSync(join(dir, 'locked'), 0o700)
       await server.close()
     }
   }, 30_000)

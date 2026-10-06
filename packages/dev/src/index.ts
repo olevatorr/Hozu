@@ -1,7 +1,9 @@
 import { type ChildProcess, spawn } from 'node:child_process'
 import {
+  type Dirent,
   existsSync,
   type FSWatcher,
+  readdirSync,
   readFileSync,
   realpathSync,
   statSync,
@@ -162,10 +164,31 @@ export async function dev({
     log(`${cssOnly ? 'css' : 'reload'}: ${files.join(', ')}`)
     send(cssOnly ? 'css' : 'reload', { files })
   }
-  const since = Date.now()
+  const seen = new Map<string, number>()
+  const record = (dir: string, rel: string) => {
+    let entries: Dirent[] = []
+    try {
+      entries = readdirSync(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const entry of entries) {
+      const path = rel ? `${rel}/${entry.name}` : entry.name
+      if (ignored.test(path)) continue
+      if (entry.isDirectory()) record(join(dir, entry.name), path)
+      else if (entry.isFile())
+        try {
+          seen.set(normalize(path), statSync(join(dir, entry.name)).mtimeMs)
+        } catch {}
+    }
+  }
+  record(cwd, '')
   const untouched = (file: string) => {
     try {
-      return statSync(join(cwd, file)).mtimeMs < since
+      const mtime = statSync(join(cwd, file)).mtimeMs
+      if (seen.get(normalize(file)) === mtime) return true
+      seen.set(normalize(file), mtime)
+      return false
     } catch {
       return false
     }

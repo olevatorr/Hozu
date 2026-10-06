@@ -174,7 +174,7 @@ export function createRunner(
     input: Json,
   ): Promise<{ result: Result; changed: boolean; tags: string[] }> {
     const result = await run(ref, input)
-    const tags = result.ok ? tagsOf(ref, input) : []
+    const tags = result.ok && !isQuery(ref) ? tagsOf(ref, input) : []
     return { result, changed: tags.length ? await reread(tags) : false, tags }
   }
   return { run, mutate, reread, runs: (ref: string) => ref in effects, owns: (key: string) => !!refOf(key) }

@@ -379,10 +379,22 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(release.modes[0].added.join(' ')).toContain('Held note')
     expect(again.modes[0].document).toBe('navigated')
     const browserRun = await browse(
-      ['/', '--js', 'on', '--do', 'hold watchlist.addSymbol'],
+      ['/', '--js', 'on', '--do', 'hold watchlist.addSymbol; fill Symbol=AAPL; press Enter; release'],
       example('watchlist'),
     )
-    expect(browserRun.out.steps[0].modes[0].note).toContain("only runs: 'server' mutations can be held")
+    const [, , pressed, released] = browserRun.out.steps
+    expect(pressed.modes[0].removed).toContain('Pause')
+    expect(pressed.modes[0].added).not.toContain('AAPL')
+    expect(released.modes[0].note).toBe('released 1 held answer')
+    expect(released.modes[0].added).toContain('AAPL')
+    const afterGoto = await browse(
+      ['/', '--js', 'on', '--do', 'hold watchlist.addSymbol; goto /; fill Symbol=MSFT; press Enter; release'],
+      example('watchlist'),
+    )
+    expect(afterGoto.out.steps[3].modes[0].added).not.toContain('MSFT')
+    expect(afterGoto.out.steps[4].modes[0].note).toBe('released 1 held answer')
+    const unknown = await browse(['/', '--js', 'on', '--do', 'hold watchlist.quotes'], example('watchlist'))
+    expect(unknown.out.steps[0].modes[0].note).toBe('hold: watchlist.quotes is not a mutation of this app')
     const off = await browse(
       ['/', '--js', 'off', '--session', ADA, '--do', 'fill New note=Posted; press Enter'],
       notes,
@@ -404,6 +416,17 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     )
     const { code, out } = await browse(['/', '--js', 'on', '--do', 'click Pause'], copy)
     expect([code, out.steps[0].modes[0].ok]).toEqual([0, true])
+  }, 60_000)
+
+  it('matches a name without its symbols when nothing matches exactly (ADR 0065 C)', async () => {
+    const copy = copyOf('stations', 'features/stations/views.ts', (s) =>
+      s.replace(
+        "ui.h1({ class: 'text-3xl font-bold' }, ['City bikes']),",
+        "ui.h1({ class: 'text-3xl font-bold' }, ['City bikes']),\n      ui.button({ type: 'button' }, ['❚❚ 暫停']),\n      ui.button({ type: 'button' }, ['▶️ 播放']),",
+      ),
+    )
+    const { code, out } = await browse(['/', '--js', 'on', '--do', 'click 暫停; click 播放'], copy)
+    expect([code, out.steps[0].modes[0].ok, out.steps[1].modes[0].ok]).toEqual([0, true, true])
   }, 60_000)
 
   it('runs the steps with JS by default (ADR 0064 B)', async () => {
