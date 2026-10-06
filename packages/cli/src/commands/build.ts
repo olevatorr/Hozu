@@ -106,6 +106,21 @@ export async function runBuild(loaded: Loaded, out: string | undefined, cwd: str
       ]),
     ),
     styles: styles ? { href: styles.href, preload: styles.preload } : null,
+    sources: {
+      components: Object.fromEntries([
+        ...Object.entries(build.ir.kits).flatMap(([kit, k]) =>
+          Object.entries(k.components).map(([name, c]) => [`${kit}.${name}`, c.sourceHash] as const),
+        ),
+        ...Object.values(build.ir.features).flatMap((f) =>
+          Object.entries(f.components).map(([name, c]) => [`${f.id}.${name}`, c.sourceHash] as const),
+        ),
+      ]),
+      fns: Object.fromEntries(
+        Object.values(build.ir.features).flatMap((f) =>
+          Object.entries(f.fns).map(([name, fn]) => [`${f.id}.${name}`, fn.sourceHash] as const),
+        ),
+      ),
+    },
     fetches: Object.fromEntries(
       Object.entries(components?.fetches ?? {}).map(([feature, url]) => [
         feature,

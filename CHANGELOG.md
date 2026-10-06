@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.20.2
+
+- **A bundled app with components or `fn`s matches its build manifest** (GitHub issue #1). The IR fingerprinted
+  component renders and `fn` bodies from their function text, which a bundler reprints, so
+  `createHandler(app, { manifest, render })` refused an `app.ts` bundled with `hozuTransform()`. `hozu build` now
+  records those fingerprints in the manifest and a build with a manifest reads them. Run `hozu build` again after
+  upgrading, and build and bundle from the same source on every deploy (an edited `fn` body alone no longer fails
+  the manifest check).
+- **`@hozu/bundle` keeps Node out of edge bundles:** it loads `node:path` and esbuild only when it builds.
+
 ## 0.20.1
 
 - **`hold` works for browser-run mutations too:** `hozu browse --do 'hold watchlist.addSymbol'` keeps a `runs:

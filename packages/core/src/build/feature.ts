@@ -421,9 +421,11 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
       return {
         input: scope.schema(d.input, scope.at('fns', sym, 'input')),
         output: scope.schema(d.output, scope.at('fns', sym, 'output')),
-        sourceHash: scope.fingerprint(
-          Object.keys(helpers).length ? `${String(d.impl)}\n${JSON.stringify(helpers)}` : String(d.impl),
-        ),
+        sourceHash:
+          scope.project.manifest?.sources?.fns[`${id}.${sym}`] ??
+          scope.fingerprint(
+            Object.keys(helpers).length ? `${String(d.impl)}\n${JSON.stringify(helpers)}` : String(d.impl),
+          ),
       }
     }),
     machine,

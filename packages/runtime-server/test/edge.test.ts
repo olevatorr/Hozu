@@ -43,6 +43,64 @@ const web = {
   console,
 }
 
+describe('a bundled app with components and fns matches its build manifest (issue #1, ADR 0066)', () => {
+  it('reads the component and fn fingerprints from the manifest, so a reprinting bundler does not break it', async () => {
+    const bookmarks = fileURLToPath(new URL('../../../examples/bookmarks/', import.meta.url))
+    const out = mkdtempSync(join(tmpdir(), 'hozu-issue1-'))
+    const built = spawnSync(process.execPath, [cli, 'build', '--out', out], {
+      cwd: bookmarks,
+      encoding: 'utf8',
+    })
+    expect(built.status, built.stderr).toBe(0)
+    const manifest = JSON.parse(readFileSync(join(out, 'manifest.json'), 'utf8'))
+    expect(Object.keys(manifest.sources.components)).toContain('ui.Button')
+    expect(Object.keys(manifest.sources.fns)).toContain('bookmarks.visible')
+    const outfile = join(bookmarks, '.issue1-entry.mjs')
+    try {
+      await build({
+        stdin: {
+          contents: `import { createHandler } from '@hozu/runtime-server'\nimport app from './app.ts'\nimport * as render from '${join(out, 'server/render.js')}'\nexport const handler = (manifest: never) => createHandler(app, { manifest, render, env: {} })\n`,
+          resolveDir: bookmarks,
+          sourcefile: 'entry.ts',
+          loader: 'ts',
+        },
+        outfile,
+        bundle: true,
+        format: 'esm',
+        platform: 'node',
+        packages: 'external',
+        plugins: [hozuTransform()],
+        logLevel: 'silent',
+      })
+      const { handler } = await import(outfile)
+      const response = await handler(manifest).fetch(new Request('http://localhost/'))
+      expect(response.status).toBe(200)
+      const { sources: _, ...withoutSources } = manifest
+      expect(() => handler(withoutSources)).toThrow('The build manifest does not match this project')
+    } finally {
+      ;(await import('node:fs')).rmSync(outfile, { force: true })
+    }
+  }, 60_000)
+})
+
+describe('@hozu/bundle in an edge bundle (issue #1)', () => {
+  it('pulls no Node built-ins or esbuild into a web bundle that imports it', async () => {
+    const result = await build({
+      stdin: { contents: "export { bundleComponents } from '@hozu/bundle'", resolveDir: cart },
+      bundle: true,
+      platform: 'neutral',
+      format: 'esm',
+      mainFields: ['module', 'main'],
+      metafile: true,
+      write: false,
+      logLevel: 'silent',
+    })
+    expect(
+      Object.keys(result.metafile.inputs).filter((f) => f.startsWith('node:') || f.includes('esbuild')),
+    ).toEqual([])
+  })
+})
+
 describe('edge build (ADR 0016)', () => {
   it('bundles without node: imports and serves the cart from web globals only', async () => {
     const out = mkdtempSync(join(tmpdir(), 'hozu-edge-'))

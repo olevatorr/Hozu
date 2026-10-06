@@ -28,7 +28,9 @@
   Worker lacks). The entry creates the handler on the first request, when the platform's `env` is known:
   `handler ??= createHandler(app, { manifest, render, env })` from `@hozu/runtime-server`, with
   `import * as render from './build/server/render.js'`. Serve `build/public` as static assets (wrangler
-  `[assets] directory`). Workers keep no memory between requests: data goes in a database.
+  `[assets] directory`) and let other requests reach the Worker (`/_hozu/f/…` fn modules come from the handler).
+  Build and bundle from the same source on every deploy: the manifest holds the fingerprints. Workers keep no memory
+  between requests: data goes in a database.
 - **Static host:** `npx hozu export [--out dist]` (`@hozu/adapter-static`, in new apps) empties the folder, writes
   every page without per-request server data plus `.nojekyll`, and prints what it skipped. Pages whose data runs in
   the browser (`runs: 'browser'` / `'either'`) export completely; a page that calls a server effect is listed
