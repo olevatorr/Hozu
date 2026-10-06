@@ -1,4 +1,14 @@
-import type { AssignOp, FeatureIR, GuardExpr, Json, RefExpr, TransitionIR, ValueExpr } from '@hozu/core/ir'
+import { canonicalStringify } from '@hozu/core/canonical'
+import type {
+  AssignOp,
+  FeatureIR,
+  GuardExpr,
+  Json,
+  RefExpr,
+  TagExprIR,
+  TransitionIR,
+  ValueExpr,
+} from '@hozu/core/ir'
 import { equal, getIn, pathOf, setIn } from './data.ts'
 import type {
   CompiledMachine,
@@ -59,7 +69,7 @@ export function compileValue(v: ValueExpr, fns: Fns): Getter {
     return (env) =>
       env.dom && field ? (getIn(env.dom(field), rest) ?? (field === 'formAll' ? [] : null)) : null
   }
-  const ref = r.ref as 'context' | 'input' | 'event' | 'result' | 'error' | 'params' | 'search'
+  const ref = r.ref as 'context' | 'state' | 'input' | 'event' | 'result' | 'error' | 'params' | 'search'
   if (path.length === 0) return (env) => env[ref] ?? null
   return (env) => getIn(env[ref], path)
 }
@@ -151,6 +161,11 @@ function assign(a: AssignOp, fns: Fns): Update {
 
 export const PREVIOUS = -1
 
+const refreshOf = (list: TagExprIR[], fns: Fns): Getter => {
+  const parts = list.map((t) => [t.tag, t.param && compileValue(t.param, fns)] as const)
+  return (env) => parts.map(([tag, param]) => (param ? `${tag}(${canonicalStringify(param(env))})` : tag))
+}
+
 const navigateTo =
   (url: Getter, routes: Record<string, string>): Getter =>
   (env) =>
@@ -179,8 +194,11 @@ export function compileMachine(
       id,
       guard: t.guard ? guard(t.guard, fns) : null,
       target: t.target === 'previous' ? PREVIOUS : indexOf(t.target),
+      stay: t.stay === true,
       assign: t.assign.map((a) => assign(a, fns)),
       navigate: t.navigate ? navigateTo(compileValue(t.navigate, fns), routes) : null,
+      refresh: t.refresh?.length ? refreshOf(t.refresh, fns) : null,
+      copy: t.copy ? compileValue(t.copy, fns) : null,
     }
   }
   const states: CompiledState[] = names.map((name) => {

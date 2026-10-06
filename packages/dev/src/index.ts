@@ -162,7 +162,7 @@ export async function dev({
     log(`${cssOnly ? 'css' : 'reload'}: ${files.join(', ')}`)
     send(cssOnly ? 'css' : 'reload', { files })
   }
-  const since = performance.timeOrigin + performance.now()
+  const since = Date.now()
   const untouched = (file: string) => {
     try {
       return statSync(join(cwd, file)).mtimeMs < since

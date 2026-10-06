@@ -104,7 +104,7 @@
         "summary": "idle --Search--> idle · q := event.text"
       },
       "idle/on/stations.Select/0": {
-        "behavior": "ed3675fc11e41db9",
+        "behavior": "9e764efcad23c30a",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -131,9 +131,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "idle --Select--> idle · selected := event.id"
+        "summary": "idle --Select--> stays · selected := event.id"
       },
       "idle/on/stations.StartTour/0": {
         "behavior": "1e5a5bfe6efd73d3",
@@ -363,7 +364,7 @@
         "summary": "touring --Search--> idle · q := event.text"
       },
       "touring/on/stations.Select/0": {
-        "behavior": "fe8cdddb7ff861c8",
+        "behavior": "7a6515e7d77ee834",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -386,15 +387,14 @@
             "final": false,
             "input": null,
             "state": "touring",
-            "timers": [
-              1500
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "touring --Select--> touring · selected := event.id · after 1500ms"
+        "summary": "touring --Select--> stays · selected := event.id"
       },
       "touring/on/stations.StopTour/0": {
         "behavior": "9e61ed59f9454287",

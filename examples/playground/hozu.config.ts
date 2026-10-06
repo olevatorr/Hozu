@@ -32,11 +32,4 @@ export default project({
     }),
   ],
   features: [lab],
-  accept: [
-    {
-      code: 'HZ036',
-      at: 'lab.SaveDraft',
-      reason: 'drafts live in this browser’s localStorage, so saving one needs JavaScript',
-    },
-  ],
 })

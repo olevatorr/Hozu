@@ -746,7 +746,8 @@
         "locale",
         "alternate",
         "env",
-        "session"
+        "session",
+        "state"
       ]
     },
     "GuardExpr": {
@@ -1113,6 +1114,22 @@
               "type": "null"
             }
           ]
+        },
+        "stay": {
+          "type": "boolean",
+          "const": true,
+          "description": "An `on` without `target`: stays in its state without entering it again (ADR 0064 F); absent otherwise."
+        },
+        "refresh": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TagExprIR"
+          },
+          "description": "Tags whose queries on the page are read again (ADR 0064 A); absent when none."
+        },
+        "copy": {
+          "$ref": "#/definitions/ValueExpr",
+          "description": "Text written to the clipboard (ADR 0064 D); absent when none."
         }
       },
       "required": [
@@ -2102,6 +2119,33 @@
           },
           "required": [
             "navigate"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "refresh": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "refresh"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "copy": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "copy"
           ],
           "additionalProperties": false
         }

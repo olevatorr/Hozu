@@ -67,7 +67,7 @@ export function viewEvents(ctx: Ctx) {
               : `The sender cannot observe the state of ${r.feature.id}, so every one of its states must handle ${send.event}.`,
             own
               ? {
-                  summary: `Ignore ${send.event} in ${missing.join(', ')} (ignore: [${send.event.split('.')[1]}]), or show the node only in the states that handle it`,
+                  summary: `Handle ${send.event} in ${missing.join(', ')} (machine({ on }) handles it in every state without invoke), show the node only where it is handled, or ignore it there (ignore: [${send.event.split('.')[1]}]), which drops the event`,
                   snippet: `ignore: [${send.event.split('.')[1]}]`,
                   patch: missing.map((s) => ({
                     op: 'add' as const,

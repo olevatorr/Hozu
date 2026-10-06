@@ -569,9 +569,23 @@ describe('diagnostics from the registry (ADR 0053 D)', () => {
 describe('accepted warnings (ADR 0053 C)', () => {
   it('keeps an accepted warning out of the count, and reports a stale entry as HZ087', async () => {
     const out = JSON.parse((await run(['check', '--json'], `${root}examples/playground`)).stdout)
-    expect(out.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 1 })
-    expect(out.validate.accepted[0]).toMatchObject({ code: 'HZ036', at: 'lab.SaveDraft' })
+    expect(out.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     const { applyAccepted } = await import('../src/commands/accept.ts')
+    const warning = {
+      code: 'HZ083',
+      severity: 'warning',
+      message: 'fetch.ts calls https://api.example',
+      location: { feature: 'lab', pointer: '/features/lab/fetch/load', source: null },
+      cause: '',
+      fix: { summary: '', snippet: null, patch: null },
+    }
+    const kept = applyAccepted(
+      { ...out.validate, diagnostics: [warning], summary: { errors: 0, warnings: 1, accepted: 0 } },
+      [{ code: 'HZ083', at: 'lab.load', reason: 'the URL comes from the visitor' }],
+      'hozu.config.ts',
+    )
+    expect(kept.summary).toEqual({ errors: 0, warnings: 0, accepted: 1 })
+    expect(kept.accepted[0]).toMatchObject({ code: 'HZ083', at: 'lab.load' })
     const stale = applyAccepted(
       { ...out.validate, accepted: [], diagnostics: [] },
       [{ code: 'HZ036', at: 'lab.Gone', reason: 'old' }],

@@ -124,6 +124,7 @@ export type When<S extends string> = (states: S[], children: Child[], motion?: s
 export interface ViewScope<C, S extends string, P, Q = null> {
   ctx: Ref<C>
   when: When<S>
+  is: (states: S[]) => boolean
   params: Ref<P>
   search: Ref<Q>
   locale: Ref<string>

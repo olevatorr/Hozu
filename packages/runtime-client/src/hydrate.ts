@@ -213,6 +213,10 @@ export async function hydrate(
     return { result, tags: tags ?? [] }
   }
   const onInvoke = async (effect: string, input: Json) => (await invoke(effect, input)).result
+  const onRefresh = async (tags: string[]) => {
+    if (local && (await local.reread(tags))) syncAll()
+    if ([...shared.data.keys()].some((k) => !local?.owns(k))) await invoke('%refresh', tags).catch(() => null)
+  }
   const dev = globalThis.__HOZU_DEV__
     ? { restore: (await import('./dev.ts')).restore(doc), machines: new Map<string, MachineIR | null>() }
     : null
@@ -235,6 +239,7 @@ export async function hydrate(
         loadComponent,
         onQuery,
         onInvoke,
+        onRefresh,
         ...(local ? { readsInBrowser: (q: string) => local.runs(q) } : {}),
         onNavigate: (url) => doc.defaultView?.location.assign(url),
       }),

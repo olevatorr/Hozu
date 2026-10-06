@@ -11,6 +11,7 @@ import { transformedDecls } from '../lower.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
 import { assignOf, exprOf, RecorderError, refProxy } from '../model/expr.ts'
 import { type At, at, type FeatureScope, IDENTIFIER, resolveAt } from './scope.ts'
+import { tagList } from './tags.ts'
 
 const guard = (scope: FeatureScope, g: unknown, p: At): GuardExpr => scope.guard(g, p)
 
@@ -41,10 +42,11 @@ function transition(
       'HZ014',
       at(p, 'target'),
       'This transition has no target',
-      "A state's transitions name their target state; only machine-wide on entries may omit it (the state they fire in).",
+      'done, failed and after name the state they go to; only an on may omit it (it then stays where it is).',
     )
   return {
     target: String(target ?? '?'),
+    ...(t.target === undefined && self !== undefined ? { stay: true as const } : {}),
     guard: t.guard
       ? scope.attempt(at(p, 'guard'), () => guard(scope, scope.callback(t.guard!)(arg), at(p, 'guard')), null)
       : null,
@@ -76,7 +78,25 @@ function transition(
           null,
         )
       : null,
+    ...(t.copy
+      ? {
+          copy: scope.attempt(at(p, 'copy'), () => scope.value(scope.callback(t.copy!)(arg), at(p, 'copy')), {
+            literal: null,
+          }),
+        }
+      : {}),
+    ...refreshOf(scope, t, arg, p),
   }
+}
+
+function refreshOf(scope: FeatureScope, t: TransitionConfig<string, any>, arg: unknown, p: At) {
+  if (!t.refresh) return {}
+  const refresh = scope.attempt(
+    at(p, 'refresh'),
+    () => tagList(scope, scope.callback(t.refresh!)(arg), at(p, 'refresh')),
+    [],
+  )
+  return refresh.length ? { refresh } : {}
 }
 
 const outcomes = (o: Outcome<string, any> | undefined): readonly TransitionConfig<string, any>[] =>
@@ -115,7 +135,7 @@ function invoke(scope: FeatureScope, decl: unknown, p: At): InvokeIR | null {
   }
 }
 
-function state(scope: FeatureScope, config: StateConfig<string>, p: At): StateIR {
+function state(scope: FeatureScope, config: StateConfig<string>, p: At, name: string): StateIR {
   const on: Record<string, TransitionIR[]> = {}
   for (const entry of config.on ?? []) {
     const info = infoOf(entry)
@@ -135,7 +155,7 @@ function state(scope: FeatureScope, config: StateConfig<string>, p: At): StateIR
     const tp = at(p, 'on', event, list.length)
     scope.project.mark(tp, entry)
     scope.escapes(entry, tp)
-    list.push(transition(scope, d.transition, refProxy('event', 0), tp))
+    list.push(transition(scope, d.transition, refProxy('event', 0), tp, name))
   }
   const after = [...(config.after ?? [])].sort((a, b) => a.ms - b.ms)
   if (config.invoke && config.ignore?.length)
@@ -197,7 +217,7 @@ export function buildMachine(scope: FeatureScope, decl: Decl | null): MachineIR 
         'A state cannot be named "previous"',
         "target: 'previous' returns to the state the machine came from, so the name is reserved.",
       )
-    states[name] = state(scope, config, at(p, 'states', name))
+    states[name] = state(scope, config, at(p, 'states', name), name)
   }
   const byEvent = new Map<string, { def: OnDef; at: At }[]>()
   shared.forEach((entry, i) => {

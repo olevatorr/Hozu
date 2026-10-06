@@ -35,7 +35,8 @@ const json = async (name: string, args: string[], cwd: string) => {
 }
 
 const chrome = findBrowser() !== null
-const browse = (args: string[], cwd: string) => json('browse', ['browse', ...args], cwd)
+const browse = (args: string[], cwd: string) =>
+  json('browse', ['browse', ...args, ...(args.includes('--js') ? [] : ['--js', 'both'])], cwd)
 const steps = (...list: string[]) => list.flatMap((step) => ['--do', step])
 const addedBy = (out: { steps: { modes: { added: string[] }[] }[] }, i: number) =>
   out.steps[i]!.modes.map((m) => m.added)
@@ -239,17 +240,22 @@ describe('the agent loop (ADR 0027)', () => {
     expect(notes.stdout.length).toBeLessThan(3584)
   })
 
+  it('shows an on without target as (stays) (ADR 0064 F)', async () => {
+    const { stdout } = await run(['map'], join(root, 'examples', 'watchlist'))
+    expect(stdout).toContain('RefreshNow→(stays); CopyQuote→(stays); after 30000ms→live')
+  })
+
   it('starts with the session shape, the verify line and the files with their roles (ADR 0043 K)', async () => {
     const notes = await run(['map'], join(root, 'examples', 'notes'))
     expect(notes.stdout.split('\n').slice(0, 4)).toEqual([
       'session { user: string }',
-      `verify npx hozu browse / --session '{"user":"ada"}' --js both --do '…'`,
+      `verify npx hozu browse / --session '{"user":"ada"}' --do '…'`,
       'files',
       '  app.ts app resolvers',
     ])
     expect(notes.stdout).toMatch(/^ {2}features\/notes\/model\.ts .*\bmachine\b/m)
     const bookmarks = await run(['map'], join(root, 'examples', 'bookmarks'))
-    expect(bookmarks.stdout).toMatch(/^session none\nverify npx hozu browse \/ --js both --do '…'\n/)
+    expect(bookmarks.stdout).toMatch(/^session none\nverify npx hozu browse \/ --do '…'\n/)
   })
 
   it('shows attributes and forms without a server, and lists the texts a scaffold wants edited', async () => {

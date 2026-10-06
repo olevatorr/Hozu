@@ -100,10 +100,13 @@ export function skeleton(ir: ProjectIR, feature: FeatureIR, id: string): string 
         )?.[0] ?? m.initial)
       : null
   const target = back ?? t?.target ?? state
-  const entered = m.states[target]?.invoke
+  const entered = t?.stay ? undefined : m.states[target]?.invoke
   const calls: string[] = []
   if (t?.navigate && 'link' in t.navigate)
     calls.push(`{ navigate: '${ir.routes[t.navigate.link]?.path ?? '/'}' }`)
+  if (t?.refresh?.length)
+    calls.push(`{ refresh: [${t.refresh.map((r) => `${local(r.tag)}(${r.param ? '…' : ''})`).join(', ')}] }`)
+  if (t?.copy) calls.push(`{ copy: '…' }`)
   if (entered)
     calls.push(
       `{ effect: ${local(entered.effect)}, input: ${ts(example(effectSchemas(ir, entered.effect)?.input ?? null))} }`,

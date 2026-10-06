@@ -52,7 +52,7 @@
         "summary": "idle --SaveToken--> saving · token := event.token, error := null · invoke saveToken({ token: ctx.token })"
       },
       "idle/on/stars.Search/0": {
-        "behavior": "dd5d3e22525354fa",
+        "behavior": "5f21e17300c00f7e",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -79,9 +79,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "idle --Search--> idle · q := event.q"
+        "summary": "idle --Search--> stays · q := event.q"
       },
       "idle/on/stars.Star/0": {
         "behavior": "45be18a6e4980c0d",

@@ -382,7 +382,7 @@ export function locateNode(build: BuildResult, target: string, dev: DevOptions):
     Object.entries(states).flatMap(([from, state]) =>
       (state.on[event] ?? []).map((t, i) => ({
         from,
-        to: t.target,
+        to: t.stay ? '(stays)' : t.target,
         guarded: t.guard !== null,
         navigates: t.navigate !== null,
         location: relative(

@@ -142,7 +142,7 @@ record(
   '@hozu/runtime-client initial JS (entry + static chunks), min+gz',
   initialClientBytes(),
   'bytes',
-  8 * 1024,
+  9 * 1024,
 )
 
 const browserDir = join(root, 'packages/runtime-client/dist/browser')

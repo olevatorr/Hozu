@@ -15,8 +15,8 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 2. Edit everything the change needs (table below).
 3. `npx hozu check` once. For an intended behaviour change, `npx hozu check --update-lock`, then list the accepted
    `now:` lines in your summary.
-4. Verify once with the line `hozu map` prints: `npx hozu browse <path> --session '…' --js both --do '…'` (the
-   app with and without JS; no server, no `curl`).
+4. Verify once with the line `hozu map` prints: `npx hozu browse <path> --session '…' --do '…'` (no server, no
+   `curl`).
 5. Show the person the change: `npx hozu show <file:line> --note "<in their words>"`.
 
 ## What to touch
@@ -24,22 +24,23 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 |---|---|
 | UI-only state (a tab) | model: a context field, an event, an `on` whose `assign` sets it → views: the control |
 | Filter / sort in the URL | the route's `search` (with a default) → `ui.link(route, params, { key })` → `search.key`; while typing: `seed` the machine from `search` |
-| A per-item action (pin, archive) | model: the item field, an event, a mutation that `invalidates` the list tag, an `on` into a state with `invoke` → views: the per-item form (`hozu docs patterns`) → store it where the data lives |
+| A per-item action (pin, archive) | model: the item field, an event, a mutation that `invalidates` the list tag, an `on` into a state with `invoke` → views: the per-item form (`hozu docs patterns`) |
 | A control every state handles | `machine({ on: [...] })` |
+| Refresh (a button, a timer) | `refresh: () => [tag()]` on a transition |
 | New page | `routes.ts` → a view with `route` → `ui.page(...)` in `hozu.config.ts` |
 | UI (a button, a field) | `ui.use` of a kit component (`npx hozu docs components`) |
 
 ## Rules no diagnostic checks
-- **Where data lives is the person's call; ask when the request does not say.** The visitor's own, no sign-in →
-  `'browser'` (`localStorage` in `fetch.ts`); a user's across devices → session + database; everyone's → a
-  database. Arrays in examples are stand-ins, never storage (`npx hozu docs data`).
+- **Ask where data lives when it could be shared or follow a user across devices.** The visitor's own (drafts,
+  preferences) → `'browser'` (`localStorage` in `fetch.ts`); a user's across devices → session + database;
+  everyone's → a database. Arrays in examples are stand-ins, never storage (`npx hozu docs data`).
 - **Every query and mutation states `runs`:** a database, a secret or the session → `'server'` (resolver in
   `app.ts`); browser storage or credentials → `'browser'`; a public API → `'either'` (`fetch.ts`).
 - **Query resolvers only read.** Writes belong in mutations and endpoints.
-- **Other users, reloads, sign-out:** verify in one `browse` chain with `--js both`, `--as <name>` per user.
-- **Contracts only where a transition decides:** a guard, `navigate` or a computed value; the lock has the rest.
-- **`'live'` only for push**.
-- **`invalidates` drives the client refresh** of the queries with those tags.
+- **Other users, reloads, sign-out:** verify in one `browse` chain, `--as <name>` per user.
+- **Contracts only where a transition decides:** a guard, `navigate` or a computed value (`+=` too); the lock has
+  the rest.
+- **`invalidates` drives the client refresh** of the queries with those tags; `'live'` only for push.
 - **`previews.ts` is for people:** read it only if asked or when HZ092 names a line.
 
 ## Topics (`npx hozu docs <topic>`; `--more`: options, edge cases)

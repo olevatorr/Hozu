@@ -45,7 +45,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     severity: 'error',
     topic: 'machine',
     summary: 'a node sends an event in a state (without `invoke`) that does not handle it',
-    fix: '`ignore: [Event]` in that state, or show the node only via `when`',
+    fix: 'handle it there (`machine({ on })` handles it in every state), show the node only via `when`, or `ignore: [Event]` to drop it',
   },
   HZ006: {
     name: 'boundary-violation',
@@ -145,8 +145,9 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     name: 'ineffective-invalidation',
     severity: 'warning',
     topic: 'data',
-    summary: '`invalidates` names a tag no query carries',
-    fix: 'tag the affected query, or remove the invalidation',
+    summary:
+      '`invalidates` or `refresh` names a tag no query carries (or, for `refresh`, only server-cached ones)',
+    fix: "tag the affected query, or remove the invalidation; a refreshed query reads with `freshness: 'request'`",
   },
   HZ020: {
     name: 'user-scope-without-session',
@@ -266,8 +267,9 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     name: 'form-not-server-runnable',
     severity: 'warning',
     topic: 'forms',
-    summary: "a form needs JavaScript: it reads other DOM values, or starts a `runs: 'browser'` mutation",
-    fix: "read its values with `ui.dom.form('name')` / `ui.dom.formAll('name')`; a browser mutation needs JS by design",
+    summary:
+      'a form submitted before the page has loaded is lost: its payload reads DOM values other than its named fields',
+    fix: "read its values with `ui.dom.form('name')` / `ui.dom.formAll('name')`",
   },
   HZ037: {
     name: 'invalid-redirect',

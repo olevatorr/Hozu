@@ -29,7 +29,7 @@ npx hozu get / --json
 | `hozu get /tasks --json` | Request one or more pages in-process without a server. |
 | `hozu env --json` | Every env variable: server or public, required, default, whether it is set now, its internal URL; `--example` writes `.env.example`. |
 | `hozu call tasks.listItems --input '{}' --json` | Run one query or mutation through the app's handler without a server: the value or the declared error, and for a mutation (`--write`) the tags it invalidated and the queries they refresh. `--session '<json>'` signs in. An endpoint takes `--header 'Authorization: Bearer …'` and prints its status; a POST endpoint needs `--write`. |
-| `hozu browse /tasks --do 'click Save' --json` | Run steps in headless Chrome without a server, with and without JS: what each step changed, errors and client components. `--as <name>` adds actors, `--header` adds a request header (to every actor, or to one after its `--as`), `remember <name> from url|<selector>` keeps a value for `$name` in later steps, and `post <path> a=1` forges a native form post. `--viewport 390x844` opens at a phone's size, `--screenshot <file>` saves a PNG after the steps. |
+| `hozu browse /tasks --do 'click Save' --json` | Run steps in headless Chrome without a server (with JS; `--js off` or `both` for a page that must also work without it): what each step changed, errors and client components. `--as <name>` adds actors, `--header` adds a request header (to every actor, or to one after its `--as`), `remember <name> from url|<selector>` keeps a value for `$name` in later steps, and `post <path> a=1` forges a native form post. `--viewport 390x844` opens at a phone's size, `--screenshot <file>` saves a PNG after the steps. |
 | `hozu build --json` | Write deployment assets, generated server rendering code and the manifest. |
 | `hozu export --json` | Write every page as files for a static host to `dist/` (`--out` elsewhere), with `.nojekyll`; it exits 1 and names each page and server effect a static host cannot answer. See [Deploying](/docs/deploying). |
 | `hozu serve` | Start the app module on `PORT` with adapter-node; this is `npm start`, and it prints `stop: kill <pid>`. It runs as production unless `NODE_ENV` is set, so an app with sessions needs `SESSION_SECRET`. |
@@ -64,7 +64,7 @@ It runs the real request handler and needs no browser. It does not run client co
 
 `browse` loads a page in the installed Chrome, Chromium or Edge. It does not start a server: the browser's requests are answered by the same in-process app, so no port is opened. Without a browser it is a configuration error; `get` stays the browser-free read.
 
-By default (`--js both`) it runs the `--do` steps twice side by side, with JS and with JS switched off in the same browser, then reports per step only the lines that step added or removed:
+It runs the `--do` steps with JavaScript and reports per step only the lines that step added or removed (`--js off` runs them with JavaScript switched off, `--js both` side by side, for a page that must also work without it):
 - `fill <label>=<value>`, `select <label>=<option>`, `check <label>` and `uncheck <label>`;
 - `click <name>`, `submit "<form>"` and `press <key>`;
 - `wait <ms>` and `goto <path>`;

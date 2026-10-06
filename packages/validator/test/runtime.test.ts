@@ -174,7 +174,7 @@ describe('what only the server can do (ADR 0049, HZ082)', () => {
     ])
   })
 
-  it('warns that a form starting a browser mutation needs JavaScript (HZ036)', () => {
+  it('does not warn about a form starting a browser mutation (ADR 0064 B)', () => {
     const star = mutation({ input: z.object({ id: z.string() }), output: z.object({}), runs: 'browser' })
     const m = machine({
       context: z.object({ id: z.string() }),
@@ -206,9 +206,7 @@ describe('what only the server can do (ADR 0049, HZ082)', () => {
     })
     const starFile = fetchFile('star.ts', 'export const star = implement(async () => ({}))\n')
     const { codes } = build({ Star, star, m, Board }, { fetch: starFile })
-    expect(codes.filter(([c]) => c === 'HZ036').map(([, m]) => m)).toEqual([
-      'This form only works with JavaScript: repos.Star starts repos.star, which runs in the browser',
-    ])
+    expect(codes.filter(([c]) => c === 'HZ036')).toEqual([])
   })
 })
 

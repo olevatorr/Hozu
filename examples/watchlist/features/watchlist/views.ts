@@ -1,22 +1,27 @@
 import { ui } from '@hozu/core'
-import { Add, Edit, Finish, listMachine, myList, quotes, Remove } from './model.ts'
+import { Add, CopyQuote, listMachine, myList, Pause, quotes, RefreshNow, Remove, Resume } from './model.ts'
 
 const button = 'rounded border border-slate-300 px-2 py-1 text-sm'
 
 export const Board = ui.view({
   machine: listMachine,
-  render: ({ ctx, when }) =>
+  render: ({ ctx, when, is }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-10' }, [
       ui.div({ class: 'flex items-center justify-between' }, [
         ui.h1({ class: 'text-3xl font-bold' }, ['Watchlist']),
-        when(
-          ['idle'],
-          [ui.button({ type: 'button', class: button, on: { click: ui.send(Edit, {}) } }, ['Edit'])],
-        ),
-        when(
-          ['editing'],
-          [ui.button({ type: 'button', class: button, on: { click: ui.send(Finish, {}) } }, ['Done'])],
-        ),
+        ui.div({ class: 'flex gap-2' }, [
+          when(
+            ['paused'],
+            [ui.button({ type: 'button', class: button, on: { click: ui.send(Resume, {}) } }, ['Resume'])],
+          ),
+          when(
+            ['live'],
+            [ui.button({ type: 'button', class: button, on: { click: ui.send(Pause, {}) } }, ['Pause'])],
+          ),
+          ui.button({ type: 'button', class: button, on: { click: ui.send(RefreshNow, {}) } }, [
+            'Refresh now',
+          ]),
+        ]),
       ]),
       ui.p({ class: 'text-slate-600' }, ['Your symbols stay in this browser; quotes come from the server.']),
       ui.form({ class: 'flex gap-2', on: { submit: ui.send(Add, { symbol: ui.dom.form('symbol') }) } }, [
@@ -27,7 +32,7 @@ export const Board = ui.view({
           required: true,
           class: 'flex-1 rounded border px-2 uppercase',
         }),
-        ui.button({ type: 'submit', class: button }, ['Add']),
+        ui.button({ type: 'submit', class: button, disabled: is(['adding']) }, ['Add']),
       ]),
       ctx.error !== null && ui.p({ role: 'alert', class: 'text-red-700' }, [ctx.error]),
       ui.query(
@@ -50,18 +55,21 @@ export const Board = ui.view({
                         ui.span({ class: 'tabular-nums text-slate-600' }, [
                           ui.format.number(q.change, { signDisplay: 'always', maximumFractionDigits: 2 }),
                         ]),
-                        when(
-                          ['editing', 'removing'],
-                          [
-                            ui.button(
-                              {
-                                type: 'button',
-                                class: button,
-                                on: { click: ui.send(Remove, { symbol: q.symbol }) },
-                              },
-                              ['Remove'],
-                            ),
-                          ],
+                        ui.button(
+                          {
+                            type: 'button',
+                            class: button,
+                            on: { click: ui.send(CopyQuote, { text: q.symbol }) },
+                          },
+                          ['Copy'],
+                        ),
+                        ui.button(
+                          {
+                            type: 'button',
+                            class: button,
+                            on: { click: ui.send(Remove, { symbol: q.symbol }) },
+                          },
+                          ['Remove'],
                         ),
                       ]),
                     ),

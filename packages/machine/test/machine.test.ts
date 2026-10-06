@@ -1,4 +1,4 @@
-import { event, feature, fn, machine, on, project } from '@hozu/core'
+import { event, feature, fn, machine, on, project, tag } from '@hozu/core'
 import { buildProject, routeTable } from '@hozu/core/ir'
 import { compileMachine, enter, init, type Snapshot, transition } from '@hozu/machine'
 import { zodAdapter } from '@hozu/schema-zod'
@@ -255,5 +255,85 @@ describe('a boolean field as a guard (ADR 0063 D3)', () => {
     const armed = tick(init(compiled).snapshot, true)
     expect(armed.state).toBe('idle')
     expect(tick(armed, false).state).toBe('refreshing')
+  })
+})
+
+describe('refresh and copy on a transition (ADR 0064 A, D)', () => {
+  const Refresh = event({ payload: z.object({ id: z.string() }) })
+  const Copy = event({ payload: z.object({ text: z.string() }) })
+  const listTag = tag({ param: null })
+  const itemTag = tag({ param: z.string() })
+  const m = machine({
+    context: z.object({}),
+    initialContext: {},
+    initial: 'idle',
+    on: () => [on(Copy, { copy: (e) => e.text })],
+    states: () => ({
+      idle: { on: [on(Refresh, { target: 'idle', refresh: (e) => [listTag(), itemTag(e.id)] })] },
+    }),
+  })
+  const f = feature({
+    id: 'r',
+    intent: { summary: 'refresh fixture' },
+    declarations: [{ Refresh, Copy, listTag, itemTag, m }],
+  })
+  const b = buildProject(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))
+  const compiled = compileMachine(b.ir.features.r!, b.bindings.fns)
+
+  it('emits the tag keys to read again and the text to copy as effects', () => {
+    expect(b.diagnostics).toEqual([])
+    expect(b.ir.features.r!.machine!.states.idle!.on['r.Refresh']![0]!.refresh).toEqual([
+      { tag: 'r.listTag', param: null },
+      { tag: 'r.itemTag', param: { ref: 'event', path: ['id'] } },
+    ])
+    const start = init(compiled).snapshot
+    const refreshed = transition(compiled, start, { type: 'event', event: 'r.Refresh', payload: { id: 'a' } })
+    expect(refreshed.effects).toEqual([{ type: 'refresh', tags: ['r.listTag', 'r.itemTag("a")'] }])
+    const copied = transition(compiled, start, { type: 'event', event: 'r.Copy', payload: { text: 'AAPL' } })
+    expect(copied.effects).toEqual([{ type: 'copy', text: 'AAPL' }])
+  })
+})
+
+describe('an on without target stays (ADR 0064 F)', () => {
+  const Type = event({ payload: z.object({ text: z.string() }) })
+  const Save = event({ payload: z.object({}) })
+  const m = machine({
+    context: z.object({ text: z.string() }),
+    initialContext: { text: '' },
+    initial: 'toast',
+    on: ({ ctx }) => [
+      on(Type, {
+        assign: (e) => {
+          ctx.text = e.text
+        },
+      }),
+    ],
+    states: () => ({
+      toast: { on: [on(Save, { target: 'toast' })], after: [{ ms: 3000, target: 'quiet' }] },
+      quiet: { on: [] },
+    }),
+  })
+  const f = feature({ id: 's', intent: { summary: 'stay fixture' }, declarations: [{ Type, Save, m }] })
+  const b = buildProject(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))
+  const compiled = compileMachine(b.ir.features.s!, b.bindings.fns)
+
+  it('keeps the entry and the timers; naming the state enters it again', () => {
+    expect(b.ir.features.s!.machine!.states.toast!.on['s.Type']![0]!.stay).toBe(true)
+    expect(b.ir.features.s!.machine!.states.toast!.on['s.Save']![0]!.stay).toBeUndefined()
+    const start = init(compiled)
+    expect(start.effects).toEqual([{ type: 'timer', entry: 1, ms: 3000 }])
+    const typed = transition(compiled, start.snapshot, {
+      type: 'event',
+      event: 's.Type',
+      payload: { text: 'a' },
+    })
+    expect(typed.snapshot).toEqual({ state: 'toast', context: { text: 'a' }, entry: 1 })
+    expect(typed.effects).toEqual([])
+    expect(transition(compiled, typed.snapshot, { type: 'timer', entry: 1, ms: 3000 }).snapshot.state).toBe(
+      'quiet',
+    )
+    const saved = transition(compiled, typed.snapshot, { type: 'event', event: 's.Save', payload: {} })
+    expect(saved.snapshot.entry).toBe(2)
+    expect(saved.effects).toEqual([{ type: 'timer', entry: 2, ms: 3000 }])
   })
 })

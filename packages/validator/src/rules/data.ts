@@ -1,6 +1,6 @@
 import { resolveAt } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
-import { featurePointer } from '../walk.ts'
+import { featurePointer, transitionsOf } from '../walk.ts'
 
 export function invalidations(ctx: Ctx) {
   const carried = new Set<string>()
@@ -24,6 +24,39 @@ export function invalidations(ctx: Ctx) {
             summary: 'Tag the affected query, or remove this invalidation',
             snippet: null,
             patch: [{ op: 'remove', path: resolveAt(p) }],
+          },
+        )
+      })
+  const fresh = new Set<string>()
+  for (const f of Object.values(ctx.ir.features))
+    for (const q of Object.values(f.queries))
+      if (q.runs !== 'server' || !['static', 'revalidate', 'swr'].includes(q.freshness.kind))
+        for (const t of q.tags) fresh.add(t.tag)
+  const reported = new Set<string>()
+  for (const f of Object.values(ctx.ir.features))
+    for (const site of transitionsOf(f))
+      site.transition.refresh?.forEach((t, i) => {
+        const once =
+          site.trigger.kind === 'on' ? `${site.trigger.event} ${t.tag}` : `${site.state} ${i} ${t.tag}`
+        if (t.tag === '?' || fresh.has(t.tag) || reported.has(once)) return
+        reported.add(once)
+        const cached = carried.has(t.tag)
+        ctx.report(
+          'HZ019',
+          f.id,
+          site.at('refresh', i),
+          cached
+            ? `refresh names ${t.tag}, but every query with that tag is cached on the server, so it answers the same data`
+            : `refresh names ${t.tag}, but no query carries that tag`,
+          cached
+            ? "A refresh reads through the query's freshness: 'static', { revalidate } and { swr } answer from the server cache until it expires or a write invalidates the tag."
+            : 'The refresh reads nothing again; either a query is missing the tag or the transition names the wrong one.',
+          {
+            summary: cached
+              ? "Give the query freshness: 'request' (read on every refresh) or { poll: seconds }"
+              : 'Tag the query the refresh is for',
+            snippet: null,
+            patch: null,
           },
         )
       })

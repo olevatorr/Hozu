@@ -7,8 +7,6 @@
   `hozu call api.who --input '{"room":"a"}' --header 'Authorization: Bearer t'` (a POST needs `--write`).
 - **Drive the app in a real browser, still without a server:**
   `hozu browse / --session '{"user":"ada"}' --do 'fill New note=Milk' --do 'press Enter' --do 'click Pin in "Milk"'`.
-  - `--js both` (the default) runs every step with JS and with JS switched off; submit with `press Enter` or
-    `submit "<form>"` so one step list drives both.
   - Steps: `fill <label>=<value>`, `select <label>=<option>`, `check` / `uncheck <label>`, `click <name>`,
     `submit "<form>"`, `press <key>`, `wait <ms>`, `goto <path>`, `post <path> a=1&b=2`,
     `remember <name> from url|<selector> [@attr]` (later steps read `$name`); a target may end with `in "<text>"`
@@ -16,7 +14,7 @@
   - Labels are what `hozu get <page> --forms` lists; a missing one prints `Did you mean "…"?`. One `--do` may hold
     several steps: `--do 'fill Title=Milk; press Enter'`.
 - **Other users, other pages, after a reload, after sign-out:** verify any such statement once, in one `browse`
-  chain with `--js both`. `--as <name>` starts an actor with its own browser; all actors share one app.
+  chain. `--as <name>` starts an actor with its own browser; all actors share one app.
   - A stale form (sent after the data changed elsewhere): `--do 'remember save from form:has([name=title]) @action'`,
     change the data as another `--as`, then `--do 'post $save title=x'`. No server and no curl needed.
 - **The output** is per step only the lines added (`+`) or removed (`−`). A passing six-step run stays under 1.5 KB.
@@ -42,7 +40,7 @@
 - **`hozu browse`:**
   - It uses the installed Chrome / Chromium / Edge (`HOZU_CHROME=/path` to choose); without one it is a config
     error. The app runs in-process, exactly as `npm start` serves it.
-  - `--js both` runs both modes in the same Chrome, side by side. Use `--js on` or `--js off` for one mode.
+  - `--js off` runs the steps with JS switched off, `--js both` side by side: for a page that must work without it.
   - Steps in detail: a second fill of a repeated name fills the next field; `check` / `uncheck` set the state;
     `click <name>` on a submit button posts with its name and value; `submit "<form>"` takes a form's `aria-label` or
     its submit button text. Labels and names are what a user reads (aria-label, `<label>`, placeholder, button text,

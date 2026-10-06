@@ -102,7 +102,7 @@ Inputs and outputs are checked against their schemas in the browser too, and `fa
 
 A mutation declares its input, output, possible errors and invalidated tags. It runs when a machine enters a state that invokes it. Handle both successful and failed outcomes with transitions; a contract is needed only where a transition decides. Query resolvers only read: writes belong in mutation and endpoint resolvers, because a prefetched link runs a page's queries.
 
-For example, an `addArticle` mutation can declare `invalidates: () => [articlesTag()]`. Hozu owns the refresh of queries carrying that tag, so your UI does not need a second handwritten synchronization mechanism.
+For example, an `addArticle` mutation can declare `invalidates: () => [articlesTag()]`. Hozu owns the refresh of queries carrying that tag, so your UI does not need a second handwritten synchronization mechanism. To read data again without writing (a Refresh button, a timer the visitor can pause), a machine transition declares `refresh: () => [articlesTag()]`.
 
 Endpoints declare `invalidates` the same way; it applies when the endpoint succeeds. A write that happens outside Hozu, such as a job, calls `await server.revalidate([articlesTag()])`, which returns the number of dropped cache entries and pages as `{ entries, pages }`.
 

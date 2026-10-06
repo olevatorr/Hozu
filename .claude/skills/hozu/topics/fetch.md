@@ -61,7 +61,6 @@ export const repos = feature({ id: 'repos', intent, declarations: [model, views]
   run time shows in `hozu browse`.
 - The bundle (`bundleComponents`) carries fetch.ts for the browser.
 - **Rules:** HZ081 (a missing or extra export, or `'either'` with user data), HZ082 (a `'browser'` query in a page
-  `head` or `entries`; a browser mutation that invalidates a tag a server-cached query reads), HZ036 (a form that
-  starts a `'browser'` mutation needs JS).
+  `head` or `entries`; a browser mutation that invalidates a tag a server-cached query reads).
 - **Static host:** pages with only `'browser'` / `'either'` data export completely; `exportStatic` lists in
   `needsServer` the server effects a page would still call.

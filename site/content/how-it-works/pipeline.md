@@ -53,4 +53,4 @@ pnpm exec hozu plan home
 
 `inspect` exposes a feature's summary and IR. `why` describes a state's transitions, effects and covering contracts. `plan` shows the rendering decision for a named route, including islands and persistence opportunities. These commands answer different questions, so running all of them for every small edit adds unnecessary work.
 
-After an intended change, `hozu check` runs the combined verification. Use `hozu get` for rendered text, attributes and forms, and `hozu browse` for a flow: it runs the steps with and without JS, so one step list checks the native form path and the client together. The [CLI reference](/docs/cli) lists the commands, and [machines and contracts](/how-it-works/machines-and-contracts) explains the behaviour checks in detail.
+After an intended change, `hozu check` runs the combined verification. Use `hozu get` for rendered text, attributes and forms, and `hozu browse` for a flow in a real browser. The [CLI reference](/docs/cli) lists the commands, and [machines and contracts](/how-it-works/machines-and-contracts) explains the behaviour checks in detail.

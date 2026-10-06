@@ -284,6 +284,12 @@ export interface TransitionIR {
   target: string
   assign: AssignOp[]
   navigate: ValueExpr | null
+  /** An `on` without `target`: stays in its state without entering it again (ADR 0064 F); absent otherwise. */
+  stay?: true
+  /** Tags whose queries on the page are read again (ADR 0064 A); absent when none. */
+  refresh?: TagExprIR[]
+  /** Text written to the clipboard (ADR 0064 D); absent when none. */
+  copy?: ValueExpr
 }
 
 export type RefSource =
@@ -299,6 +305,7 @@ export type RefSource =
   | 'alternate'
   | 'env'
   | 'session'
+  | 'state'
 
 export type ValueExpr =
   | { ref: RefSource; path: string[] }
@@ -458,7 +465,11 @@ export interface ExpectIR {
   effects: EffectCallIR[] | null
 }
 
-export type EffectCallIR = { effect: string; input: Json } | { navigate: string }
+export type EffectCallIR =
+  | { effect: string; input: Json }
+  | { navigate: string }
+  | { refresh: string[] }
+  | { copy: string }
 
 export interface MessagesIR {
   base: string

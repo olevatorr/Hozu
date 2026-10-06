@@ -306,7 +306,7 @@
         "summary": "confirming --ConfirmRemove--> removing · invoke removeTask({ id: ctx.target })"
       },
       "confirming/on/tasks.Draft/0": {
-        "behavior": "9aeecff8f5876aeb",
+        "behavior": "cbd289cdcdc683c7",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -333,9 +333,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "confirming --Draft--> confirming · draft := event.text"
+        "summary": "confirming --Draft--> stays · draft := event.text"
       },
       "confirming/on/tasks.Move/0": {
         "behavior": "592e789ffb591d2c",
@@ -397,7 +398,7 @@
         "summary": "confirming --Move--> moving · target := event.id, status := event.status · invoke moveTask({ id: ctx.target, status: ctx.status })"
       },
       "confirming/on/tasks.Search/0": {
-        "behavior": "50afb41dc53403e6",
+        "behavior": "786cf4e470acbad9",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -424,9 +425,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "confirming --Search--> confirming · q := event.text"
+        "summary": "confirming --Search--> stays · q := event.text"
       },
       "idle/on/tasks.Add/0": {
         "behavior": "b80f53c9ecbc634c",
@@ -553,7 +555,7 @@
         "summary": "idle --AskRemove--> confirming · target := event.id, targetTitle := event.title"
       },
       "idle/on/tasks.Draft/0": {
-        "behavior": "d293de25b0616c82",
+        "behavior": "bc4ec7db3dde2085",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -580,9 +582,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "idle --Draft--> idle · draft := event.text"
+        "summary": "idle --Draft--> stays · draft := event.text"
       },
       "idle/on/tasks.Move/0": {
         "behavior": "980fe628a1894a39",
@@ -644,7 +647,7 @@
         "summary": "idle --Move--> moving · target := event.id, status := event.status · invoke moveTask({ id: ctx.target, status: ctx.status })"
       },
       "idle/on/tasks.Search/0": {
-        "behavior": "7813e75485207551",
+        "behavior": "43de7b23076f2474",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -671,9 +674,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "idle --Search--> idle · q := event.text"
+        "summary": "idle --Search--> stays · q := event.text"
       },
       "moving/invoke/done/0": {
         "behavior": "3d71f9beca647073",
@@ -990,7 +994,7 @@
         "summary": "saved --Dismiss--> idle"
       },
       "saved/on/tasks.Draft/0": {
-        "behavior": "c053c4da4fed0622",
+        "behavior": "d64b42b9ddb11212",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1013,15 +1017,14 @@
             "final": false,
             "input": null,
             "state": "saved",
-            "timers": [
-              3000
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "saved --Draft--> saved · draft := event.text · after 3000ms"
+        "summary": "saved --Draft--> stays · draft := event.text"
       },
       "saved/on/tasks.Move/0": {
         "behavior": "5552e017398672b5",
@@ -1083,7 +1086,7 @@
         "summary": "saved --Move--> moving · target := event.id, status := event.status · invoke moveTask({ id: ctx.target, status: ctx.status })"
       },
       "saved/on/tasks.Search/0": {
-        "behavior": "5637d799b703b6e9",
+        "behavior": "624b2621c427a315",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1106,15 +1109,14 @@
             "final": false,
             "input": null,
             "state": "saved",
-            "timers": [
-              3000
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "saved --Search--> saved · q := event.text · after 3000ms"
+        "summary": "saved --Search--> stays · q := event.text"
       }
     }
   },

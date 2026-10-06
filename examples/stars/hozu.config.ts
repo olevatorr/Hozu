@@ -27,11 +27,4 @@ export default project({
     }),
   ],
   features: [stars],
-  accept: [
-    {
-      code: 'HZ036',
-      at: 'stars.SaveToken',
-      reason: 'the GitHub token stays in this browser, so saving it needs JavaScript',
-    },
-  ],
 })

@@ -26,9 +26,13 @@ afterAll(() => {
 async function browse(args: string[], cwd = example('stations')) {
   let stdout = ''
   const start = Date.now()
-  const code = await main(['browse', ...args, '--json'], cwd, (s) => {
-    stdout += s
-  })
+  const code = await main(
+    ['browse', ...args, ...(args.includes('--js') ? [] : ['--js', 'both']), '--json'],
+    cwd,
+    (s) => {
+      stdout += s
+    },
+  )
   runs.push(Date.now() - start)
   if (budgeted) expect(runs.at(-1)).toBeLessThan(BUDGET_MS)
   const out = JSON.parse(stdout)
@@ -38,9 +42,13 @@ async function browse(args: string[], cwd = example('stations')) {
 
 async function human(args: string[], cwd: string) {
   let stdout = ''
-  const code = await main(['browse', ...args], cwd, (s) => {
-    stdout += s
-  })
+  const code = await main(
+    ['browse', ...args, ...(args.includes('--js') ? [] : ['--js', 'both'])],
+    cwd,
+    (s) => {
+      stdout += s
+    },
+  )
   return { code, stdout }
 }
 
@@ -67,8 +75,9 @@ const steps = (...list: string[]) => list.flatMap((step) => ['--do', step])
 
 describe('the testing guide (ADR 0043 J)', () => {
   const guide = readFileSync(`${root}.claude/skills/hozu/topics/testing.md`, 'utf8')
-  it('verifies other users, reloads and sign-out in one browse chain with --js both', () => {
-    expect(guide).toContain('verify any such statement once, in one `browse`\n  chain with `--js both`')
+  it('verifies other users, reloads and sign-out in one browse chain, with JS unless the page must work without it', () => {
+    expect(guide).toContain('verify any such statement once, in one `browse`\n  chain. `--as <name>`')
+    expect(guide).not.toContain('(the default) runs every step with JS and with JS switched off')
     expect(guide).toContain('`--as <name>`')
     expect(guide).not.toMatch(/two commands|hozu post|--next/i)
     expect(guide).toContain('A passing six-step run stays under 1.5 KB')
@@ -397,9 +406,46 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect([code, out.steps[0].modes[0].ok]).toEqual([0, true])
   }, 60_000)
 
+  it('runs the steps with JS by default (ADR 0064 B)', async () => {
+    let stdout = ''
+    const code = await main(
+      ['browse', '/', '--do', 'fill Symbol=AAPL', '--json'],
+      example('watchlist'),
+      (t) => {
+        stdout += t
+      },
+    )
+    expect(code).toBe(0)
+    expect(JSON.parse(stdout).steps[0].modes.map((m: { mode: string }) => m.mode)).toEqual(['on'])
+  }, 60_000)
+
+  it('Pause, Resume and Refresh now through refresh on a transition (ADR 0064 A)', async () => {
+    const { code, out } = await browse(
+      [
+        '/',
+        '--js',
+        'on',
+        '--do',
+        'fill Symbol=AAPL; press Enter; click Pause; click Refresh now; click Resume',
+      ],
+      example('watchlist'),
+    )
+    expect(code).toBe(0)
+    const [, added, paused, refreshed, resumed] = out.steps
+    expect(added.modes[0].added).toContain('AAPL')
+    expect(paused.modes[0].added).toContain('Resume')
+    expect(refreshed.modes[0].added.some((l: string) => l.startsWith('$'))).toBe(true)
+    expect(resumed.modes[0].added).toContain('Pause')
+    expect(resumed.modes[0].added.some((l: string) => l.startsWith('$'))).toBe(true)
+    expect(out.errors).toEqual([])
+  }, 60_000)
+
   it('reads a { poll } query again on its timer, also when the browser fetched it (ADR 0063 C1)', async () => {
     const copy = copyOf('watchlist', 'features/watchlist/model.ts', (s) =>
-      s.replace('freshness: { poll: 30 }', 'freshness: { poll: 5 }'),
+      s.replace(
+        "freshness: 'request',\n  tags: () => [quotesTag()]",
+        'freshness: { poll: 5 },\n  tags: () => [quotesTag()]',
+      ),
     )
     const { code, out } = await browse(
       ['/', '--js', 'on', '--do', 'fill Symbol=AAPL; press Enter', '--do', 'wait 6000'],

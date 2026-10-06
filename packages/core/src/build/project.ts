@@ -694,7 +694,8 @@ function acceptOf(scope: ProjectScope, list: { code: string; at: string; reason:
       'An accepted warning names a warning code, what it is about (a declaration such as notes.SaveDraft, or an IR pointer) and the reason it is kept, so the choice can be reviewed.',
       {
         summary: 'Fix the entry or remove it; fix an error instead of accepting it',
-        snippet: "accept: [{ code: 'HZ036', at: 'notes.SaveDraft', reason: 'drafts live in localStorage' }]",
+        snippet:
+          "accept: [{ code: 'HZ080', at: 'layout.Shell', reason: 'the page shell is shared on purpose' }]",
         patch: null,
       },
     )

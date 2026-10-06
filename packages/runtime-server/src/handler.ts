@@ -436,6 +436,13 @@ function handlerFor({
         .map(([s]) => `${f.id}.${s}`),
     ),
   )
+  const serverRun = new Set(
+    Object.values(ir.features).flatMap((f) =>
+      Object.entries(f.queries)
+        .filter(([, q]) => q.runs === 'server')
+        .map(([q]) => `${f.id}.${q}`),
+    ),
+  )
   const perRequest = new Set(
     Object.values(ir.features).flatMap((f) =>
       Object.entries(f.queries)
@@ -584,19 +591,22 @@ function handlerFor({
     const { effect, input, keys } = JSON.parse(body) as { effect: string; input: Json; keys: string[] }
     if (browserOnly.has(effect)) return plain(400, `${effect} runs in the browser; the server never runs it`)
     const scope = await dataFor(request)
-    const result = (await scope.run(effect, input, files)) as Result & {
+    const refreshing = effect === '%refresh'
+    const result = (
+      refreshing ? { ok: true, value: null } : await scope.run(effect, input, files)
+    ) as Result & {
       invalidated?: string[]
       session?: unknown
     }
     const invalidated = result.invalidated ?? []
     await dropPages(invalidated)
-    const changed = new Set(invalidated)
+    const changed = new Set(refreshing && Array.isArray(input) ? input.map(String) : invalidated)
     const refreshed: [string, Result][] = []
     for (const key of keys) {
       const ref = queries.find((q) => key.startsWith(q) && '{["tfn0123456789-'.includes(key[q.length] ?? ''))
-      if (!ref) continue
+      if (!ref || (refreshing && !serverRun.has(ref))) continue
       const input = JSON.parse(key.slice(ref.length)) as Json
-      if (perRequest.has(ref) || data.tagsOf(ref, input).some((t) => changed.has(t)))
+      if ((!refreshing && perRequest.has(ref)) || data.tagsOf(ref, input).some((t) => changed.has(t)))
         refreshed.push([key, (await scope.run(ref, input)) as Result])
     }
     const cookie = store && scope.written ? await store.write(scope.written.value, request) : null

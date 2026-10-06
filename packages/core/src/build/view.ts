@@ -1,5 +1,6 @@
 import type { ComponentDef } from '../builders/component.ts'
 import { builtinOf } from '../builders/i18n.ts'
+import { op } from '../builders/op.ts'
 import { type NodeDef, sendOf, type ViewDef, when } from '../builders/ui.ts'
 import { htmlGlobalAttrs, svgGlobalAttrs, svgTags, tagAttrs, voidTags } from '../ir/dom-data.ts'
 import { domEvents } from '../ir/events.ts'
@@ -727,6 +728,18 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
       ? scope.callback(d.render)({
           ctx: refProxy('context', 0),
           when,
+          is: (states: string[]) => {
+            for (const s of states)
+              if (scope.stateNames.length && !scope.stateNames.includes(s))
+                scope.report(
+                  'HZ007',
+                  at(p, 'root'),
+                  `Unknown state "${s}" in is([...])`,
+                  `States: ${scope.stateNames.join(', ')}.`,
+                )
+            const one = states.map((s) => op.eq(refProxy('state', 0) as unknown as string, s))
+            return one.length === 1 ? one[0] : op.or(...one)
+          },
           params,
           search,
           locale: refProxy('locale', 0),

@@ -75,7 +75,7 @@ Commands:
   call <feature>.<effect>   Run one query, mutation or endpoint in-process (no server) through the app's own
                             handler: --input '<json>', --session '<json>', --header 'Name: value' (endpoints);
                             a mutation or a POST endpoint writes real data and needs --write
-  browse <path> --do <step> Run the steps in headless Chrome with and without JS (no server): what each step changed
+  browse <path> --do <step> Run the steps in headless Chrome (no server): what each step changed
   add feature <name>        Scaffold a working feature (model, views, contracts, resolvers) and wire it in
   add component <kit|feature> <Name> [--client]
                             Add a component to a kit or a feature; --client adds the client module, the app.ts
@@ -100,7 +100,7 @@ Options:
                        'post <path> a=1&b=2', 'remember <name> from url|<selector> [@attr]' (later steps read $name),
                        'hold <feature>.<effect>' (its answer waits) then 'release'
                        (repeatable, in order); a target may end with in "<text>" (the list item, table row or form)
-  --js <on|off|both>   browse: run the steps with JS, without JS, or both side by side (default both)
+  --js <on|off|both>   browse: run the steps with JS (default), without JS, or both side by side
   --as <name>          browse: the steps after it are this actor's, in its own browser; repeat to switch actors
   --screenshot <file>  browse: save a PNG of the viewport after the steps
   --reduced-motion     browse: emulate prefers-reduced-motion: reduce
@@ -158,7 +158,7 @@ export const browseViewport = (value: string | undefined): { width: number; heig
 }
 
 const browseJs = (value: string | undefined): BrowseJs => {
-  if (value === undefined) return 'both'
+  if (value === undefined) return 'on'
   if (value === 'on' || value === 'off' || value === 'both') return value
   throw new HozuCliError('usage', `--js takes on, off or both, not "${value}"`, ['--js both'])
 }
@@ -323,7 +323,7 @@ export async function main(
         'usage',
         'hozu post was replaced by hozu browse, which posts forms with JS off too',
         [
-          "hozu browse / --do 'fill Title=Milk' --do 'press Enter'   # runs with and without JS",
+          "hozu browse / --do 'fill Title=Milk' --do 'press Enter'",
           'hozu browse / --js off --do \'click Delete in "Milk"\'',
         ],
       )

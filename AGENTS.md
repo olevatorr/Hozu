@@ -316,6 +316,13 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   replaced count), `hold <feature>.<effect>` / `release` (runs: 'server' mutations), targets by accessible name;
   SVG shapes take optional children; `@hozu/css` hoists `@import url(…)`; `@hozu/cli` carries copies of
   create-hozu's agent writer and the skill (`pnpm skill`), so it no longer depends on `create-hozu`.
+- 0.20 (ADR 0064): diagnostics warn about real problems, never about needing JavaScript, and the guide says what to
+  watch for, not what is allowed; transitions take `refresh: () => [tag()]` (machine effect `refresh`, the client
+  re-reads browser-run queries and posts `%refresh` to `/_hozu/effect` for server-run ones; no write or
+  invalidation) and `copy: (arg) => text`; a bound render gets `is([...])` (`{ ref: 'state' }`); HZ036 no longer for
+  browser mutations; HZ005's fix handles before ignoring; `hozu browse` defaults to `--js on`; P7 budget 9 KiB; an
+  `on` without `target` stays (IR `stay: true`, no new entry, timers and invoke continue; the lock prints `stays`),
+  naming the state enters it again; `refresh` naming an uncarried or only server-cached tag is HZ019.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

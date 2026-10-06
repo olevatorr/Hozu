@@ -43,9 +43,13 @@ A button, a field or a card used by several features is a component in a kit: `u
 
 Bind a view to a machine when it needs state and events. A button can send a declared event with `ui.send(Event, payload)`. DOM values such as `ui.dom.value`, `ui.dom.checked` and `ui.dom.form('title')` provide typed event fields.
 
-A form whose submit payload reads only named form fields, constants, context, route parameters or search parameters can also work without JavaScript. The server runs the same machine for the native form post.
+Read a form's values with `ui.dom.form('title')`, so a submit made before the page has loaded still arrives: the server runs the same machine for that post.
 
-A state with `invoke` drops every event it does not handle, so a repeated click cannot restart an in-flight operation. When such a state is entered from two modes (viewing and editing), `done: 'previous'` returns to the one it came from. A guard may be a field alone: `guard: () => ctx.auto`.
+A state with `invoke` drops every event it does not handle, so a repeated click cannot restart an in-flight operation. When such a state is entered from two modes (viewing and editing), `done: 'previous'` returns to the one it came from. A guard may be a field alone: `guard: () => ctx.auto`. An attribute can follow the machine state with `is`: `disabled: is(['saving'])`.
+
+A transition can also read the page's queries again, `refresh: () => [quotesTag()]` (a Refresh button, or every 30 seconds with `after` while a `live` state lasts), and copy text to the clipboard, `copy: (e) => e.url`.
+
+Dialogs, popovers and menus need no machine state: `ui.button({ commandfor: 'd', command: 'show-modal' })` opens `ui.dialog({ id: 'd', closedby: 'any' }, [...])`, and `popover` / `popovertarget` and `ui.details` work the same way.
 
 ## Images and Markdown
 

@@ -1,7 +1,16 @@
 import type { ContractDef, Step } from '../builders/contract.ts'
+import { tagUseOf } from '../builders/tag.ts'
+import { canonicalStringify } from '../canonical/stringify.ts'
 import type { ContractIR, Json, StepIR } from '../ir/types.ts'
 import { type Decl, defOf } from '../model/decl.ts'
 import { type At, at, type FeatureScope } from './scope.ts'
+
+function tagKey(scope: FeatureScope, u: unknown, p: At): string {
+  const use = tagUseOf(u)
+  if (!use) return '?'
+  const ref = scope.ref(use.tag, ['tag'], p)
+  return use.param === null ? ref : `${ref}(${canonicalStringify(scope.json(use.param))})`
+}
 
 function step(scope: FeatureScope, s: Step, p: At): StepIR {
   if ('send' in s) return { send: scope.ref(s.send, ['event'], p), payload: scope.json(s.payload) }
@@ -62,10 +71,18 @@ export function buildContract(scope: FeatureScope, symbol: string, decl: Decl): 
         effects: (d.expect.effects ?? []).map((e, i) =>
           'navigate' in e
             ? { navigate: String(e.navigate) }
-            : {
-                effect: scope.ref(e.effect, ['query', 'mutation'], at(p, 'expect', 'effects', i)),
-                input: scope.json(e.input),
-              },
+            : 'copy' in e
+              ? { copy: String(e.copy) }
+              : 'refresh' in e
+                ? {
+                    refresh: e.refresh.map((u, j) =>
+                      tagKey(scope, u, at(p, 'expect', 'effects', i, 'refresh', j)),
+                    ),
+                  }
+                : {
+                    effect: scope.ref(e.effect, ['query', 'mutation'], at(p, 'expect', 'effects', i)),
+                    input: scope.json(e.input),
+                  },
         ),
       },
     }),

@@ -34,6 +34,7 @@ export interface AppOptions {
   search?: Json
   snapshot?: Snapshot
   onInvoke?: (effect: string, input: Json) => Promise<Result>
+  onRefresh?: (tags: string[]) => void
   onQuery?: (query: string, input: Json) => Promise<Result>
   /** Queries the server never read (ADR 0049): requested while hydrating too, since the payload cannot hold them. */
   readsInBrowser?: (query: string) => boolean
@@ -125,7 +126,7 @@ const guardReads = (g: GuardExpr): boolean => {
 
 const reads = (v: ValueExpr): boolean =>
   'ref' in v
-    ? v.ref === 'context' || v.ref === 'binding'
+    ? v.ref === 'context' || v.ref === 'state' || v.ref === 'binding'
     : 'object' in v
       ? Object.values(v.object).some(reads)
       : 'fn' in v
@@ -192,6 +193,7 @@ export function createApp(doc: Document, options: AppOptions): App {
     }
     return get({
       context: snapshot?.context ?? null,
+      state: snapshot?.state ?? null,
       bindings: scope,
       params,
       search,
@@ -567,7 +569,9 @@ export function createApp(doc: Document, options: AppOptions): App {
           dispatch({ type: 'timer', entry: e.entry, ms: e.ms })
         }, e.ms)
         timers.add(t)
-      } else
+      } else if (e.type === 'refresh') options.onRefresh?.(e.tags)
+      else if (e.type === 'copy') void navigator.clipboard?.writeText(e.text).catch(() => null)
+      else
         options
           .onInvoke?.(e.effect, e.input)
           .then((r) =>
