@@ -186,9 +186,23 @@ describe.skipIf(!findBrowser())('DevTools in a real browser (ADR 0047 P2)', () =
     const copied = (await evaluate('navigator.clipboard.readText()')) as string
     expect(copied).toContain('## 1. <form>\n- Want: Clear the name after signing in')
     expect(copied).toContain('## 2. <h1>\n- Want: Shorter heading')
+    const copiedFile =
+      /Saved as (\.hozu\/requests\/\S+\.md)\. When it is done: npx hozu requests done (\d+) /.exec(copied)
+    expect(copiedFile).not.toBeNull()
+    expect(readFileSync(join(scratch, copiedFile![1]!), 'utf8')).toContain('## 2. <h1>')
+    rmSync(join(scratch, copiedFile![1]!))
+    await shadowClick('.actions button', 'Copy for AI (2)')
+    await until(
+      `navigator.clipboard.readText().then((t) => !t.includes(${JSON.stringify(copiedFile![1])}) && t.includes('Saved as'))`,
+    )
+    const again = /Saved as (\.hozu\/requests\/\S+\.md)\./.exec(
+      (await evaluate('navigator.clipboard.readText()')) as string,
+    )
+    expect(existsSync(join(scratch, again![1]!))).toBe(true)
     await shadowClick('.actions button', 'Save request (2)')
     await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.notice code')`)
     const file = (await tool(`$('.notice code').textContent`)) as string
+    expect(file).toBe(again![1])
     const saved = readFileSync(join(scratch, file), 'utf8')
     expect(saved).toContain('# Hozu request: Clear the name after signing in + 1 more')
     expect(saved).toContain('`submit` sends `account.SignIn`')

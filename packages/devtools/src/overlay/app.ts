@@ -1047,9 +1047,19 @@ async function copy(text: string) {
     area.value = text
     shadow.append(area)
     area.select()
-    document.execCommand('copy')
+    const done = document.execCommand('copy')
     area.remove()
+    if (!done) throw new Error('the browser did not allow copying')
   }
+}
+
+/** Starts the clipboard write inside the click, for text that is still being prepared (Safari ends the gesture). */
+function copyLater(text: Promise<string>): Promise<void> {
+  if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write)
+    return navigator.clipboard
+      .write([new ClipboardItem({ 'text/plain': text.then((t) => new Blob([t], { type: 'text/plain' })) })])
+      .catch(async () => copy(await text))
+  return text.then(copy)
 }
 
 async function request(): Promise<HozuRequest> {
@@ -1190,6 +1200,26 @@ function exportBlock() {
     [t('export.edit')],
   )
   const many = count > 1
+  let stored: { text: string; done: Promise<{ number: string; file: string }> } | null = null
+  const saveOnce = async (text: string): Promise<{ number: string; file: string }> => {
+    if (stored?.text === text) {
+      const kept = await stored.done.catch(() => null)
+      if (
+        kept &&
+        (await one(kept.number).then(
+          () => true,
+          () => false,
+        ))
+      )
+        return kept
+    }
+    const current = { text, done: save(text) }
+    stored = current
+    return current.done.catch((e) => {
+      if (stored === current) stored = null
+      throw e
+    })
+  }
   return h('div', { class: 'export' }, [
     h('div', { class: 'row-end' }, [edit]),
     draft,
@@ -1200,8 +1230,33 @@ function exportBlock() {
           class: 'primary',
           type: 'button',
           onclick: async () => {
-            await copy(await markdown())
-            status(result, 'ok', [t(count === 1 ? 'export.copied.one' : 'export.copied.other', { count })])
+            const job = markdown().then(async (text) => {
+              try {
+                const done = await saveOnce(text)
+                return {
+                  text: `${text}\n\nSaved as ${done.file}. When it is done: npx hozu requests done ${done.number} --result "<what changed>"\n`,
+                  done,
+                  error: null,
+                }
+              } catch (e) {
+                return { text, done: null, error: (e as Error).message }
+              }
+            })
+            try {
+              await copyLater(job.then((j) => j.text))
+            } catch (e) {
+              status(result, 'err', [t('export.notCopied', { error: (e as Error).message })])
+              return
+            }
+            const { done, error } = await job
+            if (done)
+              status(result, 'ok', [
+                t(count === 1 ? 'export.copiedSaved.one' : 'export.copiedSaved.other', {
+                  count,
+                  file: done.file,
+                }),
+              ])
+            else status(result, 'err', [t('export.copiedNotSaved', { error: error ?? '' })])
           },
         },
         [many ? t('export.copy.many', { count }) : t('export.copy')],
@@ -1212,9 +1267,10 @@ function exportBlock() {
           type: 'button',
           onclick: async () => {
             try {
-              const done = await save(await markdown())
+              const saving = markdown().then(saveOnce)
+              await copyLater(saving.then((d) => `Do the Hozu request ${d.file}`))
+              const done = await saving
               const ask = `Do the Hozu request ${done.file}`
-              await copy(ask)
               notice = inline(t('export.saved', { ask }), 'file', h('code', {}, [done.file]))
               clearDraft()
               renderDock()

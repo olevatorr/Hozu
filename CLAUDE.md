@@ -324,7 +324,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   (ADR 0065): `hold` also holds browser-run mutations (browse wraps `/_hozu/c/fetch-*.js`); `previous` is the last
   state without `invoke`; browse targets match without symbols when nothing matches exactly. 0.20.2 (ADR 0066, issue
   #1): `Manifest.sources` holds component and `fn` fingerprints, read by a build given a manifest (bundlers reprint
-  function text); `@hozu/bundle` loads Node and esbuild lazily.
+  function text); `@hozu/bundle` loads Node and esbuild lazily; DevTools Copy for AI saves the request first (one
+  file per request text, shared with Save request) and copies it with a last line naming the file and `done` command.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

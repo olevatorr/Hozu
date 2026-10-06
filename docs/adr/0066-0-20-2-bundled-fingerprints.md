@@ -20,3 +20,10 @@ so locks do not change. A build with a manifest no longer notices a `fn` or rend
 
 `@hozu/bundle` loads `node:path` and `esbuild` only when it builds, through a computed specifier, so an edge bundle of
 an `app.ts` that names `bundleComponents` pulls in no Node built-ins.
+
+## DevTools: Copy for AI saves the request
+Owner, 2026-10-06: "copy for ai 就強制幫她save request … 有人複製給agent會發現刪不掉". A pasted request had no file, so
+`hozu requests done` had nothing to remove. Copy for AI saves first (one file per request text, shared with Save
+request), then copies the request with a last line naming the file and the `done` command; when saving fails it
+still copies and says why. The clipboard write starts inside the click with the text still to come
+(`ClipboardItem` with a promise), and a reused file is checked to still exist (it is gone after `done`).

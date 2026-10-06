@@ -9,6 +9,9 @@
   upgrading, and build and bundle from the same source on every deploy (an edited `fn` body alone no longer fails
   the manifest check).
 - **`@hozu/bundle` keeps Node out of edge bundles:** it loads `node:path` and esbuild only when it builds.
+- **DevTools: Copy for AI saves the request too.** A pasted request had no file, so the agent could not mark it done
+  (`hozu requests done`). Copy for AI now saves `.hozu/requests/NNNN-….md` and adds a last line with the file and the
+  `hozu requests done <n>` command; Copy and Save of the same request share one file.
 
 ## 0.20.1
 
