@@ -146,6 +146,33 @@ describe('ADR 0043 A: generations, derived HTTP caching, parsed input', () => {
     expect([next.headers.get('x-hozu-cache'), (await next.text()).includes('Cup')]).toEqual(['miss', true])
   })
 
+  it('%refresh reads the named tags again without writing or invalidating (ADR 0064 A)', async () => {
+    const { handler, list, cookie } = setup()
+    const sid = (await cookie()).split(';')[0]!
+    await (await handler.fetch(new Request(`${origin}/`))).text()
+    list.unshift('Cup')
+    const response = await handler.fetch(
+      new Request(`${origin}/_hozu/effect`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', origin, 'sec-fetch-site': 'same-origin', cookie: sid },
+        body: JSON.stringify({
+          effect: '%refresh',
+          input: ['shop.itemsTag'],
+          keys: ['shop.items{}', 'shop.mine{"limit":2}'],
+        }),
+      }),
+    )
+    const body = (await response.json()) as {
+      result: unknown
+      refreshed: [string, unknown][]
+      tags?: string[]
+    }
+    expect(body.result).toEqual({ ok: true, value: null })
+    expect(body.refreshed).toEqual([['shop.items{}', { ok: true, value: ['Mug'] }]])
+    expect(body.tags).toBeUndefined()
+    expect(handler.stats().dataEntries).toBe(1)
+  })
+
   it('derives Cache-Control and Vary from what a response read', async () => {
     const { handler, cookie } = setup()
     const sid = (await cookie()).split(';')[0]!

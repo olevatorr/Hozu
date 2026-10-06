@@ -5,7 +5,7 @@ export const Board = ui.view({
   machine: m,        // optional: without it, no ctx / when / events, and 0 JS
   route: home,       // optional: render gets { params, search } typed by the route
   seed: ({ search }) => ({ q: search.q }),   // optional, with machine + route: context fields from the URL
-  render: ({ ctx, when, params, search, locale }) => ui.main({ class: 'mx-auto max-w-xl' }, [ /* children */ ]),
+  render: ({ ctx, when, is, params, search, locale }) => ui.main({ class: 'mx-auto max-w-xl' }, [ /* children */ ]),
 })
 ```
 - **Elements:** `ui.<tag>(attrs, children)` for every HTML and SVG element; void tags (`input`, `img`) take only attrs.
@@ -13,7 +13,9 @@ export const Board = ui.view({
 - **Classes:** `class` is a static string of Tailwind classes that must exist (HZ026); conditional classes:
   `toggle: { 'bg-indigo-600 text-white': ctx.tab === t }`. No `style`.
 - **Conditions:** `ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error])`, `item.done ? 'done' : 'open'`.
-  By machine state: `when(['adding', 'saving'], [ui.p({}, ['Saving…'])])`.
+  By machine state: `when(['adding', 'saving'], [ui.p({}, ['Saving…'])])`; as a value (attributes): `disabled: is(['saving'])`.
+- **Dialogs, popovers, menus:** native, no machine state: `ui.button({ commandfor: 'd', command: 'show-modal' })` +
+  `ui.dialog({ id: 'd', closedby: 'any' }, [...])`, `popover` / `popovertarget`, `ui.details`.
 - **Lists:** `ui.each(items, 'id', (item) => ui.li({}, [item.title]))`. Never `.map` over data.
 - **Numbers and dates:** `ui.format.number(q.price, { style: 'currency', currency: 'USD' })`, `ui.format.date(x,
   { dateStyle: 'medium' })`, `ui.format.relative(n, 'day')`, `ui.format.list(xs)` (Intl, the page's locale).

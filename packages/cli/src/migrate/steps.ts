@@ -103,6 +103,14 @@ export const steps: Step[] = [
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.19',
+    to: '0.20',
+    summary:
+      "no source change; transitions take refresh: () => [tag()] and copy, a render gets is([...]), HZ036 no longer warns about a form that starts a runs: 'browser' mutation (delete such accept entries, HZ087), hozu browse runs with JavaScript by default, and an on without target stays without entering its state again (accept the lock with hozu check --update-lock if HZ057 lists --> stays) (ADR 0064)",
+    rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 export const OLDEST = steps[0]!.from

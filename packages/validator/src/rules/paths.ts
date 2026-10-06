@@ -190,6 +190,8 @@ export function paths(ctx: Ctx) {
         if (t.guard) checkGuard(ctx, env, t.guard, site.at('guard'))
         t.assign.forEach((a, i) => checkAssign(ctx, env, a, site.at('assign', i)))
         if (t.navigate) checkValue(ctx, env, t.navigate, site.at('navigate'))
+        if (t.copy) checkValue(ctx, env, t.copy, site.at('copy'))
+        t.refresh?.forEach((r, i) => r.param && checkValue(ctx, env, r.param, site.at('refresh', i, 'param')))
       }
     }
     for (const [vid, view] of Object.entries(f.views))

@@ -2,6 +2,7 @@ import { brand, type Decl } from '../model/decl.ts'
 import type { EffectDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
 import type { MachineDecl } from './machine.ts'
+import type { TagUse } from './tag.ts'
 
 export type Step =
   | { send: EventDecl; payload: unknown }
@@ -9,7 +10,11 @@ export type Step =
   | { failed: EffectDecl; error: string; data: unknown }
   | { elapse: number }
 
-export type EffectCall = { effect: EffectDecl; input: unknown } | { navigate: string }
+export type EffectCall =
+  | { effect: EffectDecl; input: unknown }
+  | { navigate: string }
+  | { refresh: TagUse[] }
+  | { copy: string }
 
 export interface ContractDef {
   machine: MachineDecl

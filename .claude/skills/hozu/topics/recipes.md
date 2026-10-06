@@ -20,7 +20,8 @@ The list is the visitor's own: it lives in their browser, so two visitors never 
 - **feature.ts:** `fetch: new URL('./fetch.ts', import.meta.url)`; `app.ts`: `components: bundleComponents`.
 - **Data about the items** (quotes, prices) is public: a `runs: 'server'` (or `'either'`) query inside the list's
   `ready` branch, `ui.query(quotes, { symbols }, …)`.
-- The form needs JavaScript (HZ036): `project({ accept: [{ code: 'HZ036', at: 'watchlist.Add', reason: … }] })`.
+- Refresh controls (Pause / Resume / Refresh now): states `live` / `paused`, `refresh: () => [quotesTag()]` on
+  `RefreshNow` and on `live`'s `after: [{ ms: 30_000, target: 'live', … }]`; adds return with `done: 'previous'`.
 - Across devices the list needs sign-in and a database instead (`hozu docs auth`).
 
 ## A field chosen in the add form (an enum)
@@ -58,7 +59,7 @@ With a kit: `ui.use(Button, { variant: { tone: 'quiet' } }, ['Clear done'])`.
 - The new transitions only copy values, so they need no contract (the feature lists `model`, so both are registered).
 - **server:**
   `implement(clearDone, () => { const before = demoItems.length; demoItems.splice(0, demoItems.length, ...demoItems.filter((i) => !i.done)); return { removed: before - demoItems.length } })` (with a database: one delete of the done rows).
-- **Try it:** `hozu browse / --do 'click Clear done'` (with and without JS).
+- **Try it:** `hozu browse / --do 'click Clear done'`.
 
 ## A field shown on the detail page
 In the detail view's `ready`: `ui.p({}, ['Priority: ', item.priority])`. The detail query already returns the whole
@@ -71,3 +72,8 @@ Run a fresh scaffold into a scratch app with `--with detail`, and copy the parts
 - the detail view;
 - the link in the list;
 - `ui.page(...)` with `head` and `entries`.
+
+## Dark mode
+- Following the system needs no code: Tailwind's `dark:` classes (`bg-white dark:bg-slate-900`).
+- A switch the visitor chooses: a client component (`hozu docs components`) puts `dark` on `<html>` and keeps the
+  choice in `localStorage`; `app.css` adds `@custom-variant dark (&:where(.dark, .dark *));`.

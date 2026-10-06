@@ -74,7 +74,8 @@ function combine(parent: RegionPlan, child: { mode: Mode; seconds: number | null
   return { mode, seconds }
 }
 
-export const readsContext = (v: ValueExpr): boolean => anyRef(v, (r) => r.ref === 'context')
+export const readsContext = (v: ValueExpr): boolean =>
+  anyRef(v, (r) => r.ref === 'context' || r.ref === 'state')
 
 const readsBinding = (v: ValueExpr, tainted: boolean[]): boolean =>
   anyRef(v, (r) => r.ref === 'binding' && tainted[r.depth] === true)
@@ -93,7 +94,7 @@ export function hydrates(node: ViewNode): boolean {
     case 'global':
       return true
     case 'if':
-      return anyGuardRef(node.test, (r) => r.ref === 'context')
+      return anyGuardRef(node.test, (r) => r.ref === 'context' || r.ref === 'state')
     case 'html':
       return readsContext(node.value)
     case 'each':

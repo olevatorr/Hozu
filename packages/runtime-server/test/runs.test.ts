@@ -30,6 +30,7 @@ const search = query({
   errors: { Empty: z.object({ q: z.string() }) },
   scope: 'public',
   freshness: 'request',
+  tags: () => [reposTag()],
   runs: 'either',
 })
 const mine = query({
@@ -142,13 +143,16 @@ describe('where effects run on a server (ADR 0049 phase 2)', () => {
     expect(page).toContain('Loading your repositories')
     expect(page).not.toContain('never on the server')
     const payload = payloadOf(page)
-    expect(payload.data).toEqual([])
+    expect(
+      payload.data.map(([key]: [string]) => key).filter((k: string) => k.startsWith('repos.mine')),
+    ).toEqual([])
     expect(
       Object.fromEntries(
         Object.entries(payload.effects).map(([k, e]: [string, any]) => [k, [e.kind, e.runs]]),
       ),
     ).toEqual({
       'repos.mine': ['query', 'browser'],
+      'repos.search': ['query', 'either'],
       'repos.star': ['mutation', 'browser'],
     })
     expect(payload.effects['repos.mine'].tags).toEqual([{ tag: 'repos.reposTag', param: null }])
@@ -174,6 +178,12 @@ describe('where effects run on a server (ADR 0049 phase 2)', () => {
     expect(e.status).toBe(400)
     const saved = await post('/_hozu/effect', { effect: 'repos.save', input: { id: '1' }, keys: [] })
     expect((await saved.json()).tags).toEqual(['repos.reposTag'])
+    const refreshed = await post('/_hozu/effect', {
+      effect: '%refresh',
+      input: ['repos.reposTag'],
+      keys: ['repos.search{"q":"a"}', 'repos.mine{}'],
+    })
+    expect((await refreshed.json()).refreshed).toEqual([])
   })
 
   it('answers a native post that would start a browser mutation with 400', async () => {

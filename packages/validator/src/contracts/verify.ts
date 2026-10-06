@@ -2,7 +2,16 @@ import { type Bindings, type FeatureIR, hashJson, type Json, join, routeTable } 
 import { type CompiledMachine, compileMachine } from '@hozu/machine'
 import type { Ctx } from '../context.ts'
 import { type Coverage, isV2, type LockChange, lockChanges, lockOf, pagesChanges } from './lock.ts'
-import { decides, locate, showAssign, showEnters, showFns, showGuard, showValue } from './mechanical.ts'
+import {
+  decides,
+  locate,
+  showAssign,
+  showEnters,
+  showFns,
+  showGuard,
+  showRefresh,
+  showValue,
+} from './mechanical.ts'
 import type { BehaviorRecord, LockfileV2 } from './record.ts'
 import { runContract } from './run.ts'
 import { skeleton } from './skeleton.ts'
@@ -77,6 +86,12 @@ function previousFeature(feature: FeatureIR, id: string, record: BehaviorRecord)
   transition.guard = record.guard
   transition.assign = record.assign
   transition.navigate = record.navigate
+  if (record.refresh) transition.refresh = record.refresh
+  else delete transition.refresh
+  if (record.copy) transition.copy = record.copy
+  else delete transition.copy
+  if (record.stay) transition.stay = true
+  else delete transition.stay
   transition.target = record.enters.state
   const target = f.machine!.states[record.enters.state]
   if (target) {
@@ -116,6 +131,9 @@ const fieldText: Record<keyof BehaviorRecord, (r: BehaviorRecord) => string> = {
   navigate: (r) => (r.navigate ? showValue(r.navigate) : 'none'),
   enters: (r) => [r.enters.state, showEnters(r.enters)].filter(Boolean).join(' · '),
   fns: (r) => showFns(r.fns) || 'none',
+  refresh: (r) => (r.refresh ? showRefresh(r.refresh) : 'none'),
+  copy: (r) => (r.copy ? showValue(r.copy) : 'none'),
+  stay: (r) => (r.stay ? 'stays' : 'enters'),
 }
 
 function unspecified(ctx: Ctx, feature: FeatureIR, change: LockChange) {

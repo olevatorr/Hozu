@@ -151,12 +151,14 @@ export function createRunner(
   }
   const isQuery = (ref: string) => effects[ref]?.kind === 'query'
   /** Re-reads the browser-run queries in the page store that carry one of these tags. */
+  const refOf = (key: string) =>
+    Object.keys(effects).find(
+      (r) => isQuery(r) && key.startsWith(r) && '{["tfn0123456789-'.includes(key[r.length] ?? ''),
+    )
   async function reread(tags: string[]): Promise<boolean> {
     let changed = false
     for (const key of [...shared.data.keys()]) {
-      const ref = Object.keys(effects).find(
-        (r) => isQuery(r) && key.startsWith(r) && '{["tfn0123456789-'.includes(key[r.length] ?? ''),
-      )
+      const ref = refOf(key)
       if (!ref) continue
       const input = JSON.parse(key.slice(ref.length)) as Json
       if (!tagsOf(ref, input).some((t) => tags.includes(t))) continue
@@ -175,7 +177,7 @@ export function createRunner(
     const tags = result.ok ? tagsOf(ref, input) : []
     return { result, changed: tags.length ? await reread(tags) : false, tags }
   }
-  return { run, mutate, reread, runs: (ref: string) => ref in effects }
+  return { run, mutate, reread, runs: (ref: string) => ref in effects, owns: (key: string) => !!refOf(key) }
 }
 
 export type Runner = ReturnType<typeof createRunner>

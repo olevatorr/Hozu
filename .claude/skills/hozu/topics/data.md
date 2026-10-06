@@ -47,7 +47,8 @@ export default app({ resolvers: resolvers(project, (implement) => [
 - **Query resolvers only read;** writes happen in mutation and endpoint resolvers (see --more).
 - User data (`scope: 'user'`) is `freshness: 'request'`, `'live'` or `{ poll }` only (HZ049); `'live'` needs tags (HZ050).
 - **Changes on its own** (quotes, a feed): `freshness: { poll: 30 }` reads it again every 30 s (5 to 86400) while a page
-  shows it, also from the browser. `'live'` is for data your own mutations change.
+  shows it, also from the browser. `'live'` is for data your own mutations change. A refresh the visitor controls
+  (a button, Pause / Resume) is `refresh: () => [tag()]` on a machine transition (`hozu docs machine`).
 - Call a `fn` from views or machines: `ui.each(visible({ items, show: ctx.show }), 'id', …)`.
 
 <!-- more -->

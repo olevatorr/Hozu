@@ -178,14 +178,24 @@ describe('machine-wide transitions (ADR 0041 D)', () => {
     expect(states.saving!.on).toEqual({})
   })
 
-  it("reports a state's transition without a target", () => {
+  it('an on without a target stays; an after without one is HZ014 (ADR 0064 F)', () => {
     const loose = machine({
       context: z.object({ q: z.string() }),
       initialContext: { q: '' },
       initial: 'idle',
-      states: () => ({ idle: { on: [on(Search, {})] } }),
+      states: () => ({
+        idle: { on: [on(Search, {})], after: [{ ms: 10 } as { ms: number; target: 'idle' }] },
+      }),
     })
-    const d = build({ Search, loose }).diagnostics.find((x) => x.code === 'HZ014')!
-    expect(d.message).toBe('This transition has no target')
+    const b = build({ Search, loose })
+    expect(b.ir.features.f!.machine!.states.idle!.on['f.Search']![0]).toMatchObject({
+      target: 'idle',
+      stay: true,
+    })
+    const d = b.diagnostics.find((x) => x.code === 'HZ014')!
+    expect([d.message, d.location.pointer]).toEqual([
+      'This transition has no target',
+      '/features/f/machine/states/idle/after/0/transition/target',
+    ])
   })
 })

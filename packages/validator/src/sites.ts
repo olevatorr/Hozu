@@ -88,6 +88,11 @@ export function refSites(ir: ProjectIR): RefSite[] {
       )
       const nav = site.transition.navigate
       if (nav && hasRefs(nav)) valueRefs(nav, site.at('navigate'), fnRef)
+      const copy = site.transition.copy
+      if (copy && hasRefs(copy)) valueRefs(copy, site.at('copy'), fnRef)
+      site.transition.refresh?.forEach(
+        (t, i) => t.param && hasRefs(t.param) && valueRefs(t.param, site.at('refresh', i, 'param'), fnRef),
+      )
     }
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer }) => {

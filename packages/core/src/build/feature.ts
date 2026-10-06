@@ -5,7 +5,7 @@ import type { EventDef } from '../builders/event.ts'
 import type { FeatureParts } from '../builders/feature.ts'
 import type { FnDef } from '../builders/fn.ts'
 import type { MessagesDef } from '../builders/i18n.ts'
-import { type TagDef, tagUseOf } from '../builders/tag.ts'
+import type { TagDef } from '../builders/tag.ts'
 import { hashJson, sha256 } from '../canonical/hash.ts'
 import type {
   AccessIR,
@@ -23,7 +23,7 @@ import type {
 } from '../ir/types.ts'
 import { helpersOf } from '../lower.ts'
 import { type Decl, defOf } from '../model/decl.ts'
-import { RecorderError, refProxy } from '../model/expr.ts'
+import { refProxy } from '../model/expr.ts'
 import { builtin } from '../platform.ts'
 import { toParse } from '../schema/check.ts'
 import type { Schema } from '../schema/standard.ts'
@@ -32,6 +32,7 @@ import { buildContract } from './contract.ts'
 import { finishForms } from './forms.ts'
 import { buildMachine } from './machine.ts'
 import { type At, at, FeatureScope, filePath, type ProjectScope } from './scope.ts'
+import { tagList } from './tags.ts'
 import { buildView } from './view.ts'
 
 const exportKeys = ['events', 'queries', 'mutations', 'tags', 'fns', 'views', 'endpoints'] as const
@@ -105,18 +106,7 @@ function accessIR(scope: FeatureScope, value: unknown, p: At): AccessIR | undefi
 const withAccess = (access: AccessIR | undefined) => (access ? { access } : {})
 
 function tagExprs(scope: FeatureScope, record: (input: unknown) => unknown, p: At): TagExprIR[] {
-  return scope.attempt(p, () => {
-    const uses = record(refProxy('input', 0))
-    if (!Array.isArray(uses)) throw new RecorderError('Tag lists must be arrays: [myTag()]')
-    return uses.map((u, i) => {
-      const use = tagUseOf(u)
-      if (!use) throw new RecorderError('Tag lists may only contain tag uses: [myTag()]')
-      return {
-        tag: scope.ref(use.tag, ['tag'], at(p, i)),
-        param: use.param === null ? null : scope.value(use.param, at(p, i)),
-      }
-    })
-  }, [])
+  return scope.attempt(p, () => tagList(scope, record(refProxy('input', 0)), p), [])
 }
 
 function errors(

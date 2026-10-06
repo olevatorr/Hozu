@@ -1,4 +1,4 @@
-import type { FeatureIR, GuardExpr, StateIR, TransitionIR, ValueExpr } from '@hozu/core/ir'
+import type { FeatureIR, GuardExpr, StateIR, TagExprIR, TransitionIR, ValueExpr } from '@hozu/core/ir'
 import type { BehaviorRecord } from './record.ts'
 
 export interface Located {
@@ -29,7 +29,12 @@ export function locate(feature: FeatureIR, id: string): Located {
     transition = state.invoke!.failed[rest[1]!]![Number(rest[2])]!
     trigger = `failed ${short(state.invoke!.effect)}.${rest[1]}`
   }
-  return { from, trigger, transition, target: feature.machine!.states[transition.target] }
+  return {
+    from,
+    trigger,
+    transition,
+    target: transition.stay ? undefined : feature.machine!.states[transition.target],
+  }
 }
 
 const computingBuiltins = new Set([
@@ -72,6 +77,11 @@ export function decides(feature: FeatureIR, id: string): boolean {
   const { transition, target } = locate(feature, id)
   if (transition.guard || transition.navigate) return true
   if (transition.assign.some((a) => a.op === 'inc' || computes(a.value))) return true
+  if (
+    (transition.copy && computes(transition.copy)) ||
+    transition.refresh?.some((t) => t.param && computes(t.param))
+  )
+    return true
   return target?.invoke ? computes(target.invoke.input) : false
 }
 
@@ -145,12 +155,17 @@ export const showFns = (fns: BehaviorRecord['fns']): string =>
     .map(([ref, hash]) => `${short(ref)}@${hash ? hash.slice(0, 8) : '?'}`)
     .join(', ')
 
+export const showRefresh = (tags: TagExprIR[]): string =>
+  tags.map((t) => (t.param ? `${short(t.tag)}(${showValue(t.param)})` : short(t.tag))).join(', ')
+
 export function summaryOf(feature: FeatureIR, id: string, record: BehaviorRecord): string {
   const { from, trigger } = locate(feature, id)
-  const parts = [`${from} --${trigger}--> ${record.enters.state}`]
+  const parts = [`${from} --${trigger}--> ${record.stay ? 'stays' : record.enters.state}`]
   if (record.guard) parts.push(`if ${showGuard(record.guard)}`)
   if (record.assign.length) parts.push(showAssign(record.assign))
   if (record.navigate) parts.push(`navigate ${showValue(record.navigate)}`)
+  if (record.refresh) parts.push(`refresh ${showRefresh(record.refresh)}`)
+  if (record.copy) parts.push(`copy ${showValue(record.copy)}`)
   const enters = showEnters(record.enters)
   if (enters) parts.push(enters)
   if (Object.keys(record.fns).length) parts.push(`fns ${showFns(record.fns)}`)

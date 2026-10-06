@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.20.0 — Simple requests stay simple (ADR 0064)
+
+No source change is needed (`hozu migrate` raises the packages). An `accept` entry for HZ036 on a form that starts a
+`runs: 'browser'` mutation is now stale (HZ087): delete it. A `machine({ on })` entry without `target` now stays
+without entering its state again: run `hozu check --update-lock` if HZ057 lists such entries (`--> stays`).
+
+- **`refresh` on a transition** reads the page's queries with those tags again, with no write:
+  `on(RefreshNow, { refresh: () => [quotesTag()] })`, or every 30 s while a `live` state lasts
+  (`after: [{ ms: 30_000, target: 'live', refresh: … }]`; Pause is another state). It replaces the no-op mutation
+  whose only job was `invalidates`. Contracts expect `{ refresh: [quotesTag()] }`. `freshness: { poll }` stays for data
+  that is always kept fresh.
+- **An `on` without `target` stays where it is:** its state's timers keep running and an `invoke` keeps going, as in
+  XState v5 or plain `setInterval` code. A Copy click no longer restarts a refresh timer, typing no longer keeps a
+  toast open, and a busy state can take an event without restarting. Naming the state enters it again (a debounce, a
+  repeating timer).
+- **`copy` on a transition** writes text to the clipboard: `on(CopyLink, { copy: (e) => e.url })`.
+- **`is([...])` in a render** follows the machine state as a value: `disabled: is(['saving'])`.
+- **Warnings about real problems only.** A form that starts a browser-run mutation no longer warns (HZ036); HZ036
+  now says what actually goes wrong (a submit before the page has loaded is lost). HZ005 suggests handling the event
+  first (`machine({ on })`), since `ignore` drops the click.
+- **`hozu browse` runs with JavaScript by default**; `--js off` / `--js both` are for a page that must also work without
+  it. The skill's verify line, `hozu map` and the docs follow.
+- **The guide** shows native dialogs, popovers and menus (`command` / `commandfor`, `popover`, `<details>`), a toast
+  that keeps the page usable, refresh controls, dark mode, and asks where data lives only when it could be shared or
+  follow a user across devices.
+- **P7** (initial client JavaScript) budget rises to 9 KiB.
+- `hozu dev` compares file times with the wall clock, so files saved just before it started no longer reload the
+  page once it runs.
+
 ## 0.19.0 — What an agent building a dashboard found (ADR 0063)
 
 No source change is needed (`hozu migrate` raises the packages).

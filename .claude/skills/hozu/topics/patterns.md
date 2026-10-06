@@ -9,7 +9,7 @@ The controls are plain elements; in an app with a kit, use its components (`ui.u
   and the refreshed query shows the real item.
 - **Refresh after a mutation:** tag the query, list the tag in the mutation's `invalidates`.
 - **Go to what was just created:** `done: { target: 'idle', navigate: (r) => ui.link(itemPage, { id: r.id }) }`.
-- **Per-item action** (toggle, pin, delete): each item gets its own small form, so it works without JS:
+- **Per-item action** (toggle, pin, delete): each item gets its own small form:
 ```ts
 ui.form({ on: { submit: ui.send(Toggle, { id: ui.dom.form('id') }) } }, [
   ui.input({ type: 'hidden', name: 'id', value: item.id }),
@@ -46,8 +46,8 @@ isEmpty({ items, show: ctx.show })
   { ctx.search = e.text } })`; filter with a `fn({ input: z.object({ items, text: z.string() }), … })`.
 - **Toggle buttons:** for each option of a constant list,
   `ui.button({ type: 'button', 'aria-pressed': ctx.show === s.value, on: { click: ui.send(SetShow, { show: s.value }) } }, [s.label])`.
-- **In the URL and as you type** (`/?q=park` works without JS, typing filters live): seed the machine from the URL
-  and read only the context. A GET form with `name="q"` submits it without JS.
+- **In the URL and as you type** (`/?q=park` is a link to share, typing filters live): seed the machine from the URL
+  and read only the context. A GET form with `name="q"` sets it.
 ```ts
 export const Board = ui.view({ machine: m, route: home, seed: ({ search }) => ({ q: search.q, district: search.district }),
   render: ({ ctx }) => ui.form({ method: 'get' }, [

@@ -14,7 +14,7 @@ around the rule. `npx hozu docs HZ083` prints one code: its cause, its fix and t
 | HZ002 | event handled nowhere | handle it in a state or remove it |
 | HZ003 | unknown effect / reference | export it from a module the feature lists in `declarations`, or fix the name (the patch suggests one) |
 | HZ004 | a declared error is not handled | add every `failed` key, plus `Unexpected`, in `invoke` and `ui.query` |
-| HZ005 | a node sends an event in a state (without `invoke`) that does not handle it | `ignore: [Event]` in that state, or show the node only via `when` |
+| HZ005 | a node sends an event in a state (without `invoke`) that does not handle it | handle it there (`machine({ on })` handles it in every state), show the node only via `when`, or `ignore: [Event]` to drop it |
 | HZ006 | crossing a feature boundary | import the feature and use its `exports` |
 | HZ007 | unknown effect / reference | export it from a module the feature lists in `declarations`, or fix the name (the patch suggests one) |
 | HZ008 | a path does not exist in the schema | fix the property name |
@@ -28,7 +28,7 @@ around the rule. `npx hozu docs HZ083` prints one code: its cause, its fix and t
 | HZ016 | a transition that decides (guard, `navigate`, a `fn`, comparison or `+ - ?? ?: .length .includes` in a value) has no contract | add the contract from the snippet |
 | HZ017 | a contract fails / contract data does not match its schema | fix the machine or the contract (decide the intended behaviour first) |
 | HZ018 | a deciding transition changed (fields first, then `was:` / `now:`) and no covering contract fails against the old behaviour | change or add a contract that specifies the new behaviour; renaming or copying one does not count |
-| HZ019 (warning) | `invalidates` names a tag no query carries | tag the affected query, or remove the invalidation |
+| HZ019 (warning) | `invalidates` or `refresh` names a tag no query carries (or, for `refresh`, only server-cached ones) | tag the affected query, or remove the invalidation; a refreshed query reads with `freshness: 'request'` |
 | HZ020 | user-scoped data, but the project declares no session | declare `project({ session })`, or make the query public |
 | HZ021 | a query, mutation or endpoint without a resolver | `implement(...)` it in the resolvers of `app.ts` |
 | HZ022 | user data in a cacheable region | keep `scope: 'user'` queries out of cached pages |
@@ -45,7 +45,7 @@ around the rule. `npx hozu docs HZ083` prints one code: its cause, its fix and t
 | HZ033 | DOM text into an enum, number or boolean field | a `<select>`, radios or submit buttons with enum values; in a form, a flag through `ui.dom.formAll` and numbers parsed in the mutation input |
 | HZ034 | a state both handles and ignores an event | remove it from one of the two |
 | HZ035 | search schema is not a flat object of scalars with defaults | `z.object({ key: scalar.default(…) })` |
-| HZ036 (warning) | a form needs JavaScript: it reads other DOM values, or starts a `runs: 'browser'` mutation | read its values with `ui.dom.form('name')` / `ui.dom.formAll('name')`; a browser mutation needs JS by design |
+| HZ036 (warning) | a form submitted before the page has loaded is lost: its payload reads DOM values other than its named fields | read its values with `ui.dom.form('name')` / `ui.dom.formAll('name')` |
 | HZ037 | a redirect is not a path, hides a page or another redirect, or targets an unknown route | change or remove the `from` key; point `to` at `ui.link(...)` |
 | HZ038 | `http.headers` sets a header the framework owns, or an invalid name/value | remove it (`cache-control` is derived; CSP is `app({ csp })`) |
 | HZ039 | `basePath` is not `''` or `/segment[/segment…]` | e.g. `'/shop'`, no trailing slash |

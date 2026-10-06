@@ -62,6 +62,12 @@ const stop = (code: Failure['code'], tokens: Failure['tokens'], message: string,
 
 const show = (value: unknown) => JSON.stringify(value)
 
+const tagCall = (key: string) => {
+  const name = key.slice(key.indexOf('.') + 1)
+  const open = name.indexOf('(')
+  return open < 0 ? `${name}()` : name
+}
+
 function firstDifference(expected: Json, actual: Json, path: string[] = []): string {
   if (
     expected !== null &&
@@ -130,12 +136,16 @@ export function runContract(
     const apply = (step: Step) => {
       if (!step.taken) return
       taken.push(step.taken)
+      if (step.snapshot.entry !== snapshot.entry) {
+        elapsed = 0
+        fired = new Set()
+      }
       snapshot = step.snapshot
-      elapsed = 0
-      fired = new Set()
       for (const e of step.effects)
         if (e.type === 'invoke') invokes.push({ effect: e.effect, input: e.input })
         else if (e.type === 'navigate') invokes.push({ navigate: e.url })
+        else if (e.type === 'refresh') invokes.push({ refresh: e.tags })
+        else if (e.type === 'copy') invokes.push({ copy: e.text })
     }
     const pending = (effect: string, i: number) => {
       const invoke = stateOf(snapshot).invoke
@@ -212,7 +222,11 @@ export function runContract(
           .map((e) =>
             'navigate' in e
               ? `{ navigate: ${JSON.stringify(e.navigate)} }`
-              : `{ effect: ${e.effect.slice(e.effect.indexOf('.') + 1)}, input: ${JSON.stringify(e.input)} }`,
+              : 'copy' in e
+                ? `{ copy: ${JSON.stringify(e.copy)} }`
+                : 'refresh' in e
+                  ? `{ refresh: [${e.refresh.map(tagCall).join(', ')}] }`
+                  : `{ effect: ${e.effect.slice(e.effect.indexOf('.') + 1)}, input: ${JSON.stringify(e.input)} }`,
           )
           .join(', ')}],`,
       })

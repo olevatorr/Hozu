@@ -69,7 +69,7 @@ const verifyLine = (ir: ProjectIR) => {
   const paths = Object.keys(ir.pages).map((id) => ir.routes[id]!.path)
   const path = paths.find((p) => !p.includes(':')) ?? paths[0] ?? '/'
   const session = ir.session ? ` --session '${JSON.stringify(sampleOf(ir.session as Schema))}'` : ''
-  return `npx hozu browse ${path}${session} --js both --do '…'`
+  return `npx hozu browse ${path}${session} --do '…'`
 }
 
 function filesOf(build: BuildResult, cwd: string, app: string | null): MapFile[] {
@@ -124,7 +124,7 @@ export function runMap(loaded: Loaded, cwd: string): MapOutput {
           final: s.final,
           on: Object.entries(s.on).map(([event, list]) => ({
             event: local(event),
-            targets: list.map((t) => t.target),
+            targets: list.map((t) => (t.stay ? '(stays)' : t.target)),
           })),
           invoke: s.invoke
             ? {

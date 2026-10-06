@@ -23,7 +23,7 @@
       "adding/invoke/failed/Duplicate/0": {
         "behavior": "1ac6bd633baffe0e",
         "contracts": {
-          "duplicateSays": "34cb471aeee732b6"
+          "duplicateSays": "473e8e058a3597d0"
         },
         "decides": true,
         "fields": {
@@ -128,8 +128,35 @@
         },
         "summary": "adding --failed addSymbol.Unexpected--> previous · error := error.message"
       },
-      "editing/on/watchlist.Add/0": {
-        "behavior": "bc325ee19b5ad732",
+      "live/after/0": {
+        "behavior": "fab04f2b8839f852",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "live",
+            "timers": [
+              30000
+            ]
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null,
+          "refresh": [
+            {
+              "param": null,
+              "tag": "watchlist.quotesTag"
+            }
+          ]
+        },
+        "summary": "live --after 30000ms--> live · refresh quotesTag · after 30000ms"
+      },
+      "live/on/watchlist.Add/0": {
+        "behavior": "ea72b4d750e56433",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -176,10 +203,36 @@
           "guard": null,
           "navigate": null
         },
-        "summary": "editing --Add--> adding · symbol := event.symbol, error := null · invoke addSymbol({ symbol: ctx.symbol })"
+        "summary": "live --Add--> adding · symbol := event.symbol, error := null · invoke addSymbol({ symbol: ctx.symbol })"
       },
-      "editing/on/watchlist.Finish/0": {
-        "behavior": "7c44eecc5fa755b4",
+      "live/on/watchlist.CopyQuote/0": {
+        "behavior": "4bc85ffa79a11734",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "copy": {
+            "path": [
+              "text"
+            ],
+            "ref": "event"
+          },
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "live",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null,
+          "stay": true
+        },
+        "summary": "live --CopyQuote--> stays · copy event.text"
+      },
+      "live/on/watchlist.Pause/0": {
+        "behavior": "3627686d6804e5e7",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -188,17 +241,43 @@
             "effect": null,
             "final": false,
             "input": null,
-            "state": "idle",
+            "state": "paused",
             "timers": []
           },
           "fns": {},
           "guard": null,
           "navigate": null
         },
-        "summary": "editing --Finish--> idle"
+        "summary": "live --Pause--> paused"
       },
-      "editing/on/watchlist.Remove/0": {
-        "behavior": "e9229169a1b5c946",
+      "live/on/watchlist.RefreshNow/0": {
+        "behavior": "8aac5fd45d9ef4e5",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "live",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null,
+          "refresh": [
+            {
+              "param": null,
+              "tag": "watchlist.quotesTag"
+            }
+          ],
+          "stay": true
+        },
+        "summary": "live --RefreshNow--> stays · refresh quotesTag"
+      },
+      "live/on/watchlist.Remove/0": {
+        "behavior": "608ec939e0a71570",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -236,10 +315,10 @@
           "guard": null,
           "navigate": null
         },
-        "summary": "editing --Remove--> removing · symbol := event.symbol · invoke removeSymbol({ symbol: ctx.symbol })"
+        "summary": "live --Remove--> removing · symbol := event.symbol · invoke removeSymbol({ symbol: ctx.symbol })"
       },
-      "idle/on/watchlist.Add/0": {
-        "behavior": "f895624bdbb0d620",
+      "paused/on/watchlist.Add/0": {
+        "behavior": "272af122fee2e83a",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -286,10 +365,36 @@
           "guard": null,
           "navigate": null
         },
-        "summary": "idle --Add--> adding · symbol := event.symbol, error := null · invoke addSymbol({ symbol: ctx.symbol })"
+        "summary": "paused --Add--> adding · symbol := event.symbol, error := null · invoke addSymbol({ symbol: ctx.symbol })"
       },
-      "idle/on/watchlist.Edit/0": {
-        "behavior": "5e6e4e282b2f0443",
+      "paused/on/watchlist.CopyQuote/0": {
+        "behavior": "83b5e98ab0254d2a",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "copy": {
+            "path": [
+              "text"
+            ],
+            "ref": "event"
+          },
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "paused",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null,
+          "stay": true
+        },
+        "summary": "paused --CopyQuote--> stays · copy event.text"
+      },
+      "paused/on/watchlist.RefreshNow/0": {
+        "behavior": "b1817de1342bca8f",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -298,17 +403,92 @@
             "effect": null,
             "final": false,
             "input": null,
-            "state": "editing",
+            "state": "paused",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null,
+          "refresh": [
+            {
+              "param": null,
+              "tag": "watchlist.quotesTag"
+            }
+          ],
+          "stay": true
+        },
+        "summary": "paused --RefreshNow--> stays · refresh quotesTag"
+      },
+      "paused/on/watchlist.Remove/0": {
+        "behavior": "bbe353175744c45e",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "symbol"
+              ],
+              "value": {
+                "path": [
+                  "symbol"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": "watchlist.removeSymbol",
+            "final": false,
+            "input": {
+              "object": {
+                "symbol": {
+                  "path": [
+                    "symbol"
+                  ],
+                  "ref": "context"
+                }
+              }
+            },
+            "state": "removing",
             "timers": []
           },
           "fns": {},
           "guard": null,
           "navigate": null
         },
-        "summary": "idle --Edit--> editing"
+        "summary": "paused --Remove--> removing · symbol := event.symbol · invoke removeSymbol({ symbol: ctx.symbol })"
+      },
+      "paused/on/watchlist.Resume/0": {
+        "behavior": "a13b7a6162219101",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "live",
+            "timers": [
+              30000
+            ]
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null,
+          "refresh": [
+            {
+              "param": null,
+              "tag": "watchlist.quotesTag"
+            }
+          ]
+        },
+        "summary": "paused --Resume--> live · refresh quotesTag · after 30000ms"
       },
       "removing/invoke/done/0": {
-        "behavior": "f098b5f930c2a2b9",
+        "behavior": "d2f2ee9006bd282a",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -317,17 +497,17 @@
             "effect": null,
             "final": false,
             "input": null,
-            "state": "editing",
+            "state": "previous",
             "timers": []
           },
           "fns": {},
           "guard": null,
           "navigate": null
         },
-        "summary": "removing --done removeSymbol--> editing"
+        "summary": "removing --done removeSymbol--> previous"
       },
       "removing/invoke/failed/Unexpected/0": {
-        "behavior": "7e713d03c6e2a0c0",
+        "behavior": "4098f62df67aea3f",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -349,14 +529,14 @@
             "effect": null,
             "final": false,
             "input": null,
-            "state": "editing",
+            "state": "previous",
             "timers": []
           },
           "fns": {},
           "guard": null,
           "navigate": null
         },
-        "summary": "removing --failed removeSymbol.Unexpected--> editing · error := error.message"
+        "summary": "removing --failed removeSymbol.Unexpected--> previous · error := error.message"
       }
     }
   },

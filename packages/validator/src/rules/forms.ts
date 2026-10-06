@@ -43,33 +43,17 @@ export function progressiveForms(ctx: Ctx) {
     for (const [vid, view] of Object.entries(f.views))
       walkView(ir, f, vid, view, ({ node, pointer }) => {
         if (node.kind !== 'el' || node.tag !== 'form' || !node.on.submit) return
-        const browser = browserMutationOf(ir, f, node.on.submit.event)
-        if (browser) {
-          ctx.report(
-            'HZ036',
-            f.id,
-            at(pointer, 'on', 'submit'),
-            `This form only works with JavaScript: ${node.on.submit.event} starts ${browser}, which runs in the browser`,
-            "A mutation with runs: 'browser' uses the visitor's browser credentials, so a native post cannot run it (ADR 0049).",
-            {
-              summary:
-                "Keep it (the form needs JavaScript), or use runs: 'either' / 'server' if the mutation needs no browser credentials",
-              snippet: null,
-              patch: null,
-            },
-          )
-          return
-        }
+        if (browserMutationOf(ir, f, node.on.submit.event)) return
         if (formRunnable(node.on.submit.payload)) return
         ctx.report(
           'HZ036',
           f.id,
           at(pointer, 'on', 'submit', 'payload'),
-          `This form only works with JavaScript: its ${node.on.submit.event} payload reads values the server cannot see`,
-          'Without JavaScript the browser posts the named form fields and the pressed submit button; the server can use those, context, params and search, but not other DOM fields or each/query bindings.',
+          `A submit before the page has loaded loses this form: its ${node.on.submit.event} payload reads values only the loaded page has`,
+          'Until the script runs, the browser posts the named form fields and the pressed submit button; the server uses those, context, params and search, but not other DOM fields or each/query bindings.',
           {
             summary:
-              "Read the fields with ui.dom.form('name') or ui.dom.formAll('name') so the form also works before hydration and without JavaScript",
+              "Read the fields with ui.dom.form('name') or ui.dom.formAll('name'); the form then also works while the page loads",
             snippet: `on: { submit: ui.send(${node.on.submit.event.split('.').pop()}, { ${fieldsOf(node.on.submit.payload)} }) }`,
             patch: null,
           },

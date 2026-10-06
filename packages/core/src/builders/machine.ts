@@ -4,6 +4,7 @@ import type { Infer, Schema } from '../schema/standard.ts'
 import type { EffectDecl } from './effects.ts'
 import type { EventDecl } from './event.ts'
 import type { Condition } from './op.ts'
+import type { TagUse } from './tag.ts'
 import type { Href } from './ui.ts'
 
 export interface UnexpectedError {
@@ -20,6 +21,8 @@ export interface TransitionConfig<T extends string, A> {
   guard?: (arg: A) => Condition
   assign?: (arg: A) => Assign[] | void
   navigate?: (arg: A) => Href
+  refresh?: (arg: A) => TagUse[]
+  copy?: (arg: A) => string
 }
 
 export interface AfterConfig<T extends string> extends TransitionConfig<T, void> {

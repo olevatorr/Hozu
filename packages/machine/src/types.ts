@@ -17,6 +17,8 @@ export type Effect =
   | { type: 'invoke'; entry: number; effect: string; input: Json }
   | { type: 'timer'; entry: number; ms: number }
   | { type: 'navigate'; url: string }
+  | { type: 'refresh'; tags: string[] }
+  | { type: 'copy'; text: string }
 
 export interface Step {
   snapshot: Snapshot
@@ -28,6 +30,7 @@ export type Fns = Record<string, (input: never) => unknown>
 
 export interface Env {
   context?: Json
+  state?: Json
   input?: Json
   event?: Json
   result?: Json
@@ -47,8 +50,11 @@ export interface CompiledTransition {
   id: string
   guard: Test | null
   target: number
+  stay: boolean
   assign: Update[]
   navigate: Getter | null
+  refresh: Getter | null
+  copy: Getter | null
 }
 
 export interface CompiledState {

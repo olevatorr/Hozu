@@ -1,7 +1,7 @@
 # Forms
 
-- **Works without JavaScript** when the submit payload reads only `ui.dom.form('name')`, `ui.dom.formAll('name')`,
-  literals, context, params and search (else HZ036 warns). Put every value the submit needs in a named field.
+- **Submitted values:** read them with `ui.dom.form('name')` / `ui.dom.formAll('name')` (plus literals, context,
+  params, search), so a submit before the page has loaded still arrives (HZ036 otherwise). Name every field.
 ```ts
 ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title'), kind: ui.dom.form('kind') }) } }, [
   ui.label({ for: 'title' }, ['Title']),
@@ -32,7 +32,7 @@ ui.use(Button, { props: { type: 'submit' } }, ['Add']),
 ```
 - **Limit messages:** `z.string().min(2, 'Use at least 2 characters')`.
 - **Clear after success:** bind `value: ctx.draft` and reset it in `done`.
-- **Per-item actions without JS:** wrap each button in its own small form.
+- **Per-item actions:** wrap each button in its own small form.
 - **Enum source:** `ui.dom.form('kind')` or `ui.dom.value`.
 - **Several values:** `ui.dom.formAll('ids')` is every value of the name in tree order (`[]` when none) for checkbox
   groups, `select multiple` and controls inside `ui.each`, into a list field; `ui.dom.form(name)` is the first (HZ054).
@@ -43,5 +43,5 @@ ui.use(Button, { props: { type: 'submit' } }, ['Add']),
   `ui.form({ ref: bulk, … })`, `ui.input({ form: bulk, … })`; a string `form` is HZ014, a name no control has HZ055.
 - **A flag or a number:** a checkbox posts `'on'` only while checked: `ui.dom.formAll('remember')` into
   `z.array(z.string())`, or a radio pair. Send numbers as text and parse them in the mutation input (`z.coerce.number()`).
-- **Invalid without JS:** a native post whose payload or mutation input fails re-renders with 400 through
+- **An invalid native post:** a native post whose payload or mutation input fails re-renders with 400 through
   `failed.Invalid`, like the JS submit.

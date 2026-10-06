@@ -11,6 +11,7 @@ import {
   type Json,
   type ProjectIR,
   searchDefaults,
+  type TagExprIR,
   type ValueExpr,
 } from '@hozu/core/ir'
 import { resolveRef } from '../resolve.ts'
@@ -31,6 +32,9 @@ export interface BehaviorRecord {
   navigate: ValueExpr | null
   enters: EnteredRecord
   fns: Record<string, string | null>
+  refresh?: TagExprIR[]
+  copy?: ValueExpr
+  stay?: true
 }
 
 export interface LockEntryV2 {
@@ -80,6 +84,8 @@ export function recordOf(ir: ProjectIR, feature: FeatureIR, id: string): Behavio
   if (transition.guard) guardRefs(transition.guard, '', collect)
   for (const a of transition.assign) valueRefs(a.value, '', collect)
   if (transition.navigate) valueRefs(transition.navigate, '', collect)
+  if (transition.copy) valueRefs(transition.copy, '', collect)
+  for (const t of transition.refresh ?? []) if (t.param) valueRefs(t.param, '', collect)
   if (target?.invoke) valueRefs(target.invoke.input, '', collect)
   const fns: Record<string, string | null> = {}
   for (const ref of [...refs].sort()) {
@@ -99,6 +105,9 @@ export function recordOf(ir: ProjectIR, feature: FeatureIR, id: string): Behavio
       final: target?.final ?? false,
     },
     fns,
+    ...(transition.refresh?.length ? { refresh: transition.refresh } : {}),
+    ...(transition.copy ? { copy: transition.copy } : {}),
+    ...(transition.stay ? { stay: true as const } : {}),
   }
 }
 

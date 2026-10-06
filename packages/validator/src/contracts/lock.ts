@@ -45,12 +45,21 @@ export interface LockChange {
   fields: (keyof BehaviorRecord)[]
 }
 
-const same = (a: unknown, b: unknown) => hashJson(a as Json) === hashJson(b as Json)
+const same = (a: unknown, b: unknown) => hashJson((a ?? null) as Json) === hashJson((b ?? null) as Json)
 
 export const isV2 = (lock: unknown): lock is LockfileV2 =>
   typeof lock === 'object' && lock !== null && (lock as { version?: unknown }).version === 2
 
-const recordKeys: (keyof BehaviorRecord)[] = ['guard', 'assign', 'navigate', 'enters', 'fns']
+const recordKeys: (keyof BehaviorRecord)[] = [
+  'guard',
+  'assign',
+  'navigate',
+  'enters',
+  'fns',
+  'refresh',
+  'copy',
+  'stay',
+]
 
 export function changedFields(before: BehaviorRecord, after: BehaviorRecord): (keyof BehaviorRecord)[] {
   return recordKeys.filter((k) => !same(before[k], after[k]))

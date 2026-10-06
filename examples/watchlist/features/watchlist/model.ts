@@ -6,10 +6,13 @@ export const Quote = z.object({ symbol: z.string(), price: z.number(), change: z
 
 export const Add = event({ payload: z.object({ symbol: z.string() }) })
 export const Remove = event({ payload: z.object({ symbol: z.string() }) })
-export const Edit = event({ payload: z.object({}) })
-export const Finish = event({ payload: z.object({}) })
+export const Pause = event({ payload: z.object({}) })
+export const Resume = event({ payload: z.object({}) })
+export const RefreshNow = event({ payload: z.object({}) })
+export const CopyQuote = event({ payload: z.object({ text: z.string() }) })
 
 export const listTag = tag({ param: null })
+export const quotesTag = tag({ param: null })
 
 export const myList = query({
   input: z.object({}),
@@ -36,14 +39,15 @@ export const quotes = query({
   input: z.object({ symbols: z.array(z.string()) }),
   output: z.array(Quote),
   scope: 'public',
-  freshness: { poll: 30 },
+  freshness: 'request',
+  tags: () => [quotesTag()],
   runs: 'server',
 })
 
 export const listMachine = machine({
   context: z.object({ symbol: z.string(), error: z.string().nullable() }),
   initialContext: { symbol: '', error: null },
-  initial: 'idle',
+  initial: 'live',
   on: ({ ctx }) => [
     on(Add, {
       target: 'adding',
@@ -52,20 +56,21 @@ export const listMachine = machine({
         ctx.error = null
       },
     }),
+    on(Remove, {
+      target: 'removing',
+      assign: (e) => {
+        ctx.symbol = e.symbol
+      },
+    }),
+    on(RefreshNow, { refresh: () => [quotesTag()] }),
+    on(CopyQuote, { copy: (e) => e.text }),
   ],
   states: ({ ctx }) => ({
-    idle: { on: [on(Edit, { target: 'editing' })] },
-    editing: {
-      on: [
-        on(Finish, { target: 'idle' }),
-        on(Remove, {
-          target: 'removing',
-          assign: (e) => {
-            ctx.symbol = e.symbol
-          },
-        }),
-      ],
+    live: {
+      on: [on(Pause, { target: 'paused' })],
+      after: [{ ms: 30_000, target: 'live', refresh: () => [quotesTag()] }],
     },
+    paused: { on: [on(Resume, { target: 'live', refresh: () => [quotesTag()] })] },
     adding: {
       invoke: invoke(addSymbol, {
         input: { symbol: ctx.symbol },
@@ -95,10 +100,10 @@ export const listMachine = machine({
     removing: {
       invoke: invoke(removeSymbol, {
         input: { symbol: ctx.symbol },
-        done: 'editing',
+        done: 'previous',
         failed: {
           Unexpected: {
-            target: 'editing',
+            target: 'previous',
             assign: (e) => {
               ctx.error = e.message
             },
@@ -110,7 +115,7 @@ export const listMachine = machine({
 })
 
 export const duplicateSays = contract(listMachine, {
-  given: { state: 'adding', previous: 'editing', context: { symbol: 'AAPL' } },
+  given: { state: 'adding', previous: 'paused', context: { symbol: 'AAPL' } },
   when: [{ failed: addSymbol, error: 'Duplicate', data: { symbol: 'AAPL' } }],
-  expect: { state: 'editing', changes: { error: 'AAPL is already on your list' } },
+  expect: { state: 'paused', changes: { error: 'AAPL is already on your list' } },
 })
