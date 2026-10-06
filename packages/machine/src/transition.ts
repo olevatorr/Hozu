@@ -57,7 +57,9 @@ function fire(
     if (t.copy) effects.push({ type: 'copy', text: String(t.copy(env)) })
     if (!t.stay) enterEffects(machine, target, context, entry, effects)
     const state = machine.states[target]!.name
-    const previous = !machine.remembers || state === snapshot.state ? snapshot.previous : snapshot.state
+    const leaving = machine.states[machine.index.get(snapshot.state)!]
+    const previous =
+      !machine.remembers || state === snapshot.state || leaving?.invoke ? snapshot.previous : snapshot.state
     return {
       snapshot: { state, context, entry, ...(previous === undefined ? {} : { previous }) },
       effects,

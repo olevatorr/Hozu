@@ -21,8 +21,8 @@
   Exit code 1 when a step failed, the modes differ or an error was printed.
 - **A step that reloads the page** with JS on says `the page reloaded` (a form that should update in place);
   `--full` adds `N elements replaced` (a region drawn again), `--json` has both as `document` / `replaced`.
-- **A pending state:** `--do 'hold notes.addNote'` keeps that effect's answer back; the next steps (and
-  `--screenshot`) see the busy UI; `--do 'release'` answers it.
+- **A pending state:** `--do 'hold notes.addNote'` keeps that mutation back (server- or browser-run); the next steps
+  (and `--screenshot`) see the busy UI; `--do 'release'` lets it finish.
 - `browse` runs the `npm start` app: what only `hozu dev` does (reload on edits, DevTools) is not in it.
 - In code: `const page = await testApp(app).get('/')` from `@hozu/testing` → `{ status, headers, html, text, payload }`.
 - A build with errors renders nothing: run `hozu check`.

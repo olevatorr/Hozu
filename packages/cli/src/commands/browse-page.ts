@@ -1,5 +1,6 @@
 export const PAGE = String.raw`(() => {
   const norm = (s) => (s ?? '').replace(/\s+/g, ' ').trim().toLowerCase()
+  const bare = (s) => norm((s ?? '').replace(/[\p{S}\p{P}\p{Cf}\uFE00-\uFE0F\u20E3]/gu, ' '))
   const shown = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 || r.height > 0 }
   const spoken = (el) =>
     [...el.childNodes]
@@ -53,6 +54,10 @@ export const PAGE = String.raw`(() => {
         hits = [...(root ?? document.body).querySelectorAll('*')].filter(
           (el) => shown(el) && norm(el.textContent) === want && ![...el.children].some((c) => norm(c.textContent) === want),
         )
+      if (!hits.length && bare(name)) {
+        const loose = pool.filter((el) => bare(nameOf(el)) === bare(name) || bare(el.textContent) === bare(name))
+        if (loose.length === 1) hits = loose
+      }
       return hits
     }).filter((hits) => hits.length)
     if (!found.length) {

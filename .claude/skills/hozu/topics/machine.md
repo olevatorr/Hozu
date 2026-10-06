@@ -22,11 +22,11 @@ export const m = machine({
   `ctx.list = ctx.list.filter((i) => i.id !== e.id)`.
 - **guard** returns a condition: `on(Add, { target: 'adding', guard: (e) => e.title.length >= 2 })`; the first
   matching guard wins.
-- **invoke** runs a mutation on entry; the state drops events it does not handle. `failed` lists every declared error
+- **invoke** runs a mutation (or reads a query) on entry; the state drops events it does not handle. `failed` lists every declared error
   of the mutation plus `Unexpected` (`Invalid` optional, `hozu docs forms`).
 - An `on` without `target` stays: its timers keep running and an `invoke` keeps going. Naming the state enters it
   again (timers restart, `invoke` re-runs): a debounce, or a timer that repeats.
-- `target: 'previous'` (or `done: 'previous'`) returns to the state the machine came from, so a busy state entered
+- `target: 'previous'` (or `done: 'previous'`) returns to the last state without `invoke`, so a busy state entered
   from two modes (viewing, editing) needs no copy per mode.
 - **refresh** reads the page's queries with those tags again: `on(RefreshNow, { refresh: () => [quotesTag()] })`;
   every 30 s while live: `live: { after: [{ ms: 30_000, target: 'live', refresh: () => [quotesTag()] }] }` (Pause is

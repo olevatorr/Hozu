@@ -22,6 +22,10 @@ The list is the visitor's own: it lives in their browser, so two visitors never 
   `ready` branch, `ui.query(quotes, { symbols }, …)`.
 - Refresh controls (Pause / Resume / Refresh now): states `live` / `paused`, `refresh: () => [quotesTag()]` on
   `RefreshNow` and on `live`'s `after: [{ ms: 30_000, target: 'live', … }]`; adds return with `done: 'previous'`.
+- **Ask the server before saving** (normalize "2330" to "2330.TW"): a `runs: 'server'` query `resolveSymbol`, then
+  the browser mutation: `looking: { invoke: invoke(resolveSymbol, { input: { q: ctx.symbol }, done: { target:
+  'saving', assign: (r) => { ctx.symbol = r.symbol } }, failed: { … target: 'previous' } }) }`, `saving: { invoke:
+  invoke(addSymbol, { input: { symbol: ctx.symbol }, done: 'previous', … }) }`; `previous` skips both busy states.
 - Across devices the list needs sign-in and a database instead (`hozu docs auth`).
 
 ## A field chosen in the add form (an enum)

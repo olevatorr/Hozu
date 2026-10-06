@@ -1,6 +1,6 @@
 {
   "name": "@hozu/schema-zod",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "description": "Zod adapter for Hozu schemas (Standard Schema, stored as JSON Schema in the IR)",
   "keywords": [
     "hozu",

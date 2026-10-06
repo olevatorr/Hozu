@@ -1,4 +1,4 @@
-import { contract, event, feature, machine, on, project, ui } from '@hozu/core'
+import { contract, event, feature, invoke, machine, mutation, on, project, ui } from '@hozu/core'
 import { buildProject, type ProjectIR } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import { verify } from '@hozu/validator'
@@ -133,5 +133,46 @@ describe("ADR 0063 C2: target: 'previous'", () => {
       }),
     )
     expect(b.diagnostics.map((d) => d.message)).toContain('A state cannot be named "previous"')
+  })
+
+  it('HZ007 when a state is entered only through busy states, and for a busy given.previous (ADR 0065 B)', () => {
+    const load = mutation({ input: z.object({}), output: z.object({}), runs: 'browser' })
+    const check = mutation({ input: z.object({}), output: z.object({}), runs: 'browser' })
+    const chained = machine({
+      context: z.object({}),
+      initialContext: {},
+      initial: 'loading',
+      states: () => ({
+        loading: { invoke: invoke(load, { input: {}, done: 'checking', failed: { Unexpected: 'ready' } }) },
+        checking: { invoke: invoke(check, { input: {}, done: 'ready', failed: { Unexpected: 'previous' } }) },
+        ready: { final: true },
+      }),
+    })
+    const busyGiven = contract(chained, {
+      given: { state: 'checking', previous: 'loading' },
+      when: [{ failed: check, error: 'Unexpected', data: { message: 'x' } }],
+      expect: { state: 'loading' },
+    })
+    const b = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [
+          feature({
+            id: 'c',
+            intent: { summary: 'chain' },
+            declarations: [{ load, check, chained, busyGiven }],
+            fetch: new URL('./support/patch.ts', import.meta.url),
+          }),
+        ],
+      }),
+      { sources: true },
+    )
+    const messages = verify(b.ir, { sources: b.sources, bindings: b.bindings })
+      .diagnostics.filter((d) => d.code === 'HZ007')
+      .map((d) => d.message)
+    expect(messages).toContain('"checking" has no previous state to return to')
+    expect(messages).toContain('given.previous "loading" invokes c.load')
   })
 })

@@ -1,4 +1,4 @@
-import { event, feature, fn, machine, on, project, tag } from '@hozu/core'
+import { event, feature, fn, invoke, machine, mutation, on, project, tag } from '@hozu/core'
 import { buildProject, routeTable } from '@hozu/core/ir'
 import { compileMachine, enter, init, type Snapshot, transition } from '@hozu/machine'
 import { zodAdapter } from '@hozu/schema-zod'
@@ -335,5 +335,37 @@ describe('an on without target stays (ADR 0064 F)', () => {
     const saved = transition(compiled, typed.snapshot, { type: 'event', event: 's.Save', payload: {} })
     expect(saved.snapshot.entry).toBe(2)
     expect(saved.effects).toEqual([{ type: 'timer', entry: 2, ms: 3000 }])
+  })
+})
+
+describe("target: 'previous' skips busy states (ADR 0065 B)", () => {
+  const Save = event({ payload: z.object({}) })
+  const lookup = mutation({ input: z.object({}), output: z.object({}), runs: 'browser' })
+  const store = mutation({ input: z.object({}), output: z.object({}), runs: 'browser' })
+  const m = machine({
+    context: z.object({}),
+    initialContext: {},
+    initial: 'paused',
+    states: () => ({
+      paused: { on: [on(Save, { target: 'looking' })] },
+      looking: { invoke: invoke(lookup, { input: {}, done: 'saving', failed: { Unexpected: 'previous' } }) },
+      saving: { invoke: invoke(store, { input: {}, done: 'previous', failed: { Unexpected: 'previous' } }) },
+    }),
+  })
+  const f = feature({ id: 'c', intent: { summary: 'chain' }, declarations: [{ Save, lookup, store, m }] })
+  const b = buildProject(project({ schema: zodAdapter, routes: {}, pages: [], features: [f] }))
+  const compiled = compileMachine(b.ir.features.c!, b.bindings.fns)
+
+  it('returns from a chain of busy states to where the person was', () => {
+    const looking = transition(compiled, init(compiled).snapshot, {
+      type: 'event',
+      event: 'c.Save',
+      payload: {},
+    })
+    const saving = transition(compiled, looking.snapshot, { type: 'done', entry: 2, result: {} })
+    expect(saving.snapshot).toMatchObject({ state: 'saving', previous: 'paused' })
+    const back = transition(compiled, saving.snapshot, { type: 'done', entry: 3, result: {} })
+    expect(back.snapshot.state).toBe('paused')
+    expect(back.effects).toEqual([])
   })
 })

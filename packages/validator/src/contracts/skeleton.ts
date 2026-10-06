@@ -87,18 +87,29 @@ export function skeleton(ir: ProjectIR, feature: FeatureIR, id: string): string 
         : (effectSchemas(ir, s.invoke!.effect)?.error(error) ?? null)
     step = `{ failed: ${local(s.invoke!.effect)}, error: '${error}', data: ${ts(example(schema))} }`
   }
-  const back =
-    t?.target === 'previous'
-      ? (Object.entries(m.states).find(
-          ([name, other]) =>
-            name !== state &&
-            [
-              ...Object.values(other.on).flat(),
-              ...(other.invoke ? [...other.invoke.done, ...Object.values(other.invoke.failed).flat()] : []),
-              ...other.after.map((a) => a.transition),
-            ].some((x) => x.target === state),
-        )?.[0] ?? m.initial)
-      : null
+  const into = (to: string) =>
+    Object.entries(m.states).find(
+      ([name, other]) =>
+        name !== to &&
+        [
+          ...Object.values(other.on).flat(),
+          ...(other.invoke ? [...other.invoke.done, ...Object.values(other.invoke.failed).flat()] : []),
+          ...other.after.map((a) => a.transition),
+        ].some((x) => x.target === to),
+    )?.[0]
+  let back: string | null = null
+  if (t?.target === 'previous') {
+    const seen = new Set([state])
+    let from = into(state)
+    while (from && m.states[from]?.invoke && !seen.has(from)) {
+      seen.add(from)
+      from = into(from)
+    }
+    back =
+      from && !m.states[from]?.invoke
+        ? from
+        : (Object.keys(m.states).find((n) => !m.states[n]!.invoke && n !== state) ?? m.initial)
+  }
   const target = back ?? t?.target ?? state
   const entered = t?.stay ? undefined : m.states[target]?.invoke
   const calls: string[] = []

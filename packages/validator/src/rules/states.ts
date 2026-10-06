@@ -61,22 +61,38 @@ export function deadEnds(ctx: Ctx) {
     }
 }
 
-function enteredStates(sites: TransitionSite[]): Set<string> {
-  const into = new Map<string, Set<string>>()
-  const add = (to: string, from: string) => {
-    if (to === from) return false
-    const set = into.get(to) ?? new Set()
-    into.set(to, set)
-    return set.size < set.add(from).size
+/** States whose snapshot can hold a `previous`: entered from a state without invoke, directly or through busy ones. */
+function enteredStates(sites: TransitionSite[], states: Record<string, { invoke: unknown }>): Set<string> {
+  const busy = (s: string) => !!states[s]?.invoke
+  const edges = sites
+    .filter((t) => t.transition.target !== 'previous' && t.transition.target !== t.state)
+    .map((t) => [t.state, t.transition.target] as const)
+  const returning = sites.filter((t) => t.transition.target === 'previous').map((t) => t.state)
+  const calm = (to: string) => {
+    const found = new Set<string>()
+    const seen = new Set([to])
+    const queue = [to]
+    for (let i = 0; i < queue.length; i++)
+      for (const [from, next] of edges)
+        if (next === queue[i] && !seen.has(from)) {
+          seen.add(from)
+          if (busy(from)) queue.push(from)
+          else found.add(from)
+        }
+    return found
   }
-  for (const site of sites) if (site.transition.target !== 'previous') add(site.transition.target, site.state)
-  const returning = sites.filter((site) => site.transition.target === 'previous')
+  const known = new Set<string>()
   for (let changed = true; changed; ) {
     changed = false
-    for (const site of returning)
-      for (const from of [...(into.get(site.state) ?? [])]) changed = add(from, site.state) || changed
+    const add = (s: string) => {
+      if (known.has(s)) return
+      known.add(s)
+      changed = true
+    }
+    for (const [from, to] of edges) if (!busy(from) || known.has(from)) add(to)
+    for (const s of returning) if (known.has(s)) for (const t of calm(s)) add(t)
   }
-  return new Set(into.keys())
+  return known
 }
 
 export function stateNames(ctx: Ctx) {
@@ -100,7 +116,7 @@ export function stateNames(ctx: Ctx) {
       )
     }
     if (m && !known(m.initial)) dangling(featurePointer(f.id, 'machine', 'initial'), m.initial, 'initial')
-    const entered = enteredStates(transitionsOf(f))
+    const entered = enteredStates(transitionsOf(f), m?.states ?? {})
     for (const site of transitionsOf(f))
       if (site.transition.target === 'previous') {
         if (site.trigger.kind !== 'on' && !entered.has(site.state))
@@ -124,6 +140,15 @@ export function stateNames(ctx: Ctx) {
           featurePointer(f.id, 'contracts', cid, 'given', 'previous'),
           c.given.previous,
           'contract given',
+        )
+      else if (c.given.previous !== undefined && m?.states[c.given.previous]?.invoke)
+        ctx.report(
+          'HZ007',
+          f.id,
+          featurePointer(f.id, 'contracts', cid, 'given', 'previous'),
+          `given.previous "${c.given.previous}" invokes ${m.states[c.given.previous]!.invoke!.effect}`,
+          'previous is the last state without invoke the machine left, so a busy state is never it.',
+          { summary: 'Name the state the person was in before the busy states', snippet: null, patch: null },
         )
       if (!known(c.given.state))
         dangling(featurePointer(f.id, 'contracts', cid, 'given', 'state'), c.given.state, 'contract given')

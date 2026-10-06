@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.20.1
+
+- **`hold` works for browser-run mutations too:** `hozu browse --do 'hold watchlist.addSymbol'` keeps a `runs:
+  'browser'` (or `'either'`) mutation from running until `release`, so the busy UI of a localStorage app can be read
+  and screenshot. `hozu browse` serves the feature's fetch module through a wrapper; the production runtime is
+  unchanged.
+- **`target: 'previous'` returns to the last state without `invoke`:** A → looking → saving → `previous` comes back to
+  A (it went back to `looking` and ran its lookup again). A return from a state entered right after a busy one now
+  skips that busy state too, and a state entered only through busy states has nothing to return to (HZ007 for its
+  `done` / `failed` / `after` returns; a contract's `given.previous` that invokes is HZ007).
+- **`hozu dev` reloads only for files that changed since it started:** it records each file's time at start, so a
+  late or repeated file event (common under load) no longer reloads the page.
+- **`browse` targets ignore symbols** when no name matches exactly: `click 暫停` finds `❚❚ 暫停` or `⏸️ 暫停` (still one match only).
+- **A machine may invoke a query** (the guide said only mutations; the runtime always ran both): "ask the server,
+  then save in the browser" is `invoke(serverQuery)` → `invoke(browserMutation)` with `done: 'previous'`, as the
+  recipes topic shows. An invoked browser-run query no longer reads the page's queries again by its tags.
+
 ## 0.20.0 — Simple requests stay simple (ADR 0064)
 
 No source change is needed (`hozu migrate` raises the packages). An `accept` entry for HZ036 on a form that starts a

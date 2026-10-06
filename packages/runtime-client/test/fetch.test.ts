@@ -168,3 +168,92 @@ describe('the browser schema check', () => {
     expect(checked({ type: 'string', minLength: 2 }, 'a').issues).toEqual(['(root): too short'])
   })
 })
+
+describe('a machine invoking a browser query (ADR 0065 B)', () => {
+  const Look = event({ payload: z.object({}) })
+  const lookup = machine({
+    context: z.object({ found: z.number() }),
+    initialContext: { found: 0 },
+    initial: 'idle',
+    states: ({ ctx }) => ({
+      idle: { on: [on(Look, { target: 'looking' })] },
+      looking: {
+        invoke: invoke(mine, {
+          input: {},
+          done: {
+            target: 'idle',
+            assign: (r) => {
+              ctx.found = r.length
+            },
+          },
+          failed: { Unauthorized: 'idle', Unexpected: 'idle' },
+        }),
+      },
+    }),
+  })
+  const Finder = ui.view({
+    machine: lookup,
+    render: ({ ctx }) =>
+      ui.main({}, [
+        ui.query(
+          mine,
+          {},
+          {
+            ready: (list) => ui.p({}, [list.length]),
+            failed: { Unauthorized: () => null, Unexpected: () => null },
+          },
+        ),
+        ui.button({ type: 'button', on: { click: ui.send(Look, {}) } }, ['Look']),
+        ui.output({}, [ctx.found]),
+      ]),
+  })
+  const finderApp = project({
+    schema: zodAdapter,
+    session: z.object({ user: z.string() }),
+    routes: { home },
+    pages: [ui.page(home, { views: [Finder], head: { render: () => ({ title: 'Find' }) } })],
+    features: [
+      feature({
+        id: 'repos',
+        intent: { summary: 'invoke a browser query' },
+        declarations: [{ reposTag, mine, Look, lookup, Finder }],
+        fetch: pathToFileURL(join(dir, 'fetch.ts')),
+      }),
+    ],
+  })
+  const finderBuild = buildProject(finderApp, { sources: false })
+
+  it('runs the query once for the invoke, without re-reading by its tags', async () => {
+    let reads = 0
+    const { html } = await renderToString({
+      build: finderBuild,
+      data: createDataRuntime({ build: finderBuild, resolvers: resolvers(finderApp, () => []) }),
+      route: 'home',
+      assets: {
+        client: '/c.js',
+        fns: null,
+        styles: null,
+        preload: [],
+        components: {},
+        fetches: { repos: '/f/repos.js' },
+      },
+    })
+    const window = new Window()
+    const document = window.document as unknown as Document
+    document.write(html.replace(/<script type="module"[^>]*><\/script>/, ''))
+    await hydrate(document, {
+      loadFetch: async () => ({
+        mine: async () => {
+          reads++
+          return [{ id: '1', name: 'a' }]
+        },
+      }),
+    })
+    for (let i = 0; i < 20; i++) await tick()
+    expect(reads).toBe(1)
+    ;(document.querySelector('button') as HTMLButtonElement).click()
+    for (let i = 0; i < 20; i++) await tick()
+    expect(document.querySelector('output')?.textContent).toBe('1')
+    expect(reads).toBe(2)
+  })
+})

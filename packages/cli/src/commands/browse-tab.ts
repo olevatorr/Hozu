@@ -156,6 +156,27 @@ const pathOf = (url: string) => (url.startsWith(ORIGIN) ? url.slice(ORIGIN.lengt
 const pageAnswers = new Set([401, 403, 404, 410])
 const viewTransitionAbortedByNonHtmlAnswer = /^InvalidStateError: Transition was aborted/
 
+const FETCH_MODULE = /\/_hozu\/c\/fetch-(.+)-[A-Za-z0-9_]+\.js$/
+
+/** The names a bundled ES module exports: `export { a as b }` lists and `export const|function|class` declarations. */
+export function exportNames(source: string): string[] {
+  const names = new Set<string>()
+  for (const list of source.matchAll(/export\s*\{([^}]*)\}/g))
+    for (const item of list[1]!.split(',')) {
+      const name = item
+        .trim()
+        .split(/\s+as\s+/)
+        .pop()
+        ?.trim()
+      if (name && /^[A-Za-z_$][\w$]*$/.test(name) && name !== 'default') names.add(name)
+    }
+  for (const d of source.matchAll(
+    /export\s+(?:const|let|var|async\s+function|function|class)\s+([A-Za-z_$][\w$]*)/g,
+  ))
+    names.add(d[1]!)
+  return [...names]
+}
+
 export class Tab {
   sessionId = ''
   targetId = ''
@@ -424,15 +445,67 @@ export class Tab {
     return this.answer(params, session)
   }
 
-  /** Answers every effect call `hold` kept back, in order; how many there were. */
+  /** Answers every effect call `hold` kept back, in order, and lets held browser effects run; how many there were. */
   async release(): Promise<number> {
     const all = this.holding.splice(0)
     this.held.clear()
+    const waiting = await this.evaluate(
+      '(() => { const n = globalThis.__hozuWaiting ?? 0; globalThis.__hozuWaiting = 0; globalThis.__hozuHeld?.clear(); return n })()',
+    ).catch(() => 0)
     for (const h of all) {
       this.heldIds.delete(h.networkId)
       await h.answer()
     }
-    return all.length
+    return all.length + Number(waiting)
+  }
+
+  /** Holds a browser-run effect on the page: its call waits until `release` (ADR 0065 A). */
+  holdInPage(ref: string) {
+    return this.evaluate(`(globalThis.__hozuHeld ??= new Set()).add(${JSON.stringify(ref)}), true`)
+  }
+
+  /** Serves a feature's fetch module through a wrapper whose exports wait while `hold` names them (ADR 0065 A). */
+  private async holdable(params: any, session: string, feature: string): Promise<void> {
+    const r = params.request
+    const plain = {
+      ...params,
+      request: { ...r, url: `${r.url}${r.url.includes('?') ? '&' : '?'}hozu-original` },
+    }
+    try {
+      const original = await this.world.fetch(
+        { url: r.url, method: 'GET', headers: { ...r.headers, ...this.headers }, body: null },
+        () => {},
+      )
+      if (original.status !== 200 || !original.body) return this.answer(plain, session)
+      const from = JSON.stringify(`${pathOf(r.url).split('?')[0]}?hozu-original`)
+      const shim = [
+        `import * as __hozu$m from ${from}`,
+        `export * from ${from}`,
+        `const __hozu$held = (globalThis.__hozuHeld ??= new Set())`,
+        `for (const n of ${JSON.stringify([...this.held])}) __hozu$held.add(n)`,
+        `const __hozu$w = (n, f) => typeof f !== 'function' ? f : async (...a) => { if (globalThis.__hozuHeld?.has(n)) { globalThis.__hozuWaiting = (globalThis.__hozuWaiting ?? 0) + 1; while (globalThis.__hozuHeld?.has(n)) await new Promise((t) => setTimeout(t, 20)) } return f(...a) }`,
+        ...exportNames(Buffer.from(original.body).toString()).map(
+          (n) => `export const ${n} = __hozu$w(${JSON.stringify(`${feature}.${n}`)}, __hozu$m.${n})`,
+        ),
+      ].join('\n')
+      const headers = original.headers
+        .filter(([k]) => !['content-length', 'etag', 'cache-control', 'last-modified'].includes(k))
+        .map(([name, value]) => ({ name, value }))
+      return this.fulfill(
+        params.requestId,
+        session,
+        200,
+        [...headers, { name: 'cache-control', value: 'no-store' }],
+        shim,
+      )
+    } catch (error) {
+      this.error({ kind: 'request', text: `the app threw: ${String(error)}`, at: pathOf(r.url) }, session)
+      await this.send(
+        'Fetch.failRequest',
+        { requestId: params.requestId, errorReason: 'Failed' },
+        session,
+      ).catch(() => {})
+    }
   }
 
   /** Marks every element now on the page, so `newElements` can count what a step replaced. */
@@ -448,10 +521,12 @@ export class Tab {
     )
   }
 
-  private async answer(params: any, session: string) {
+  private async answer(params: any, session: string): Promise<void> {
     const r = params.request
     const existing = r.method === 'GET' ? this.live.get(r.url) : undefined
     if (existing) return existing.wait(params.requestId, session)
+    const module = r.method === 'GET' ? FETCH_MODULE.exec(pathOf(r.url).split('?')[0]!) : null
+    if (module && !r.url.includes('hozu-original')) return this.holdable(params, session, module[1]!)
     let live: Live | null = null
     try {
       const head = await this.world.fetch(

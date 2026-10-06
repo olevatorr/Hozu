@@ -320,7 +320,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   invalidation) and `copy: (arg) => text`; a bound render gets `is([...])` (`{ ref: 'state' }`); HZ036 no longer for
   browser mutations; HZ005's fix handles before ignoring; `hozu browse` defaults to `--js on`; P7 budget 9 KiB; an
   `on` without `target` stays (IR `stay: true`, no new entry, timers and invoke continue; the lock prints `stays`),
-  naming the state enters it again; `refresh` naming an uncarried or only server-cached tag is HZ019.
+  naming the state enters it again; `refresh` naming an uncarried or only server-cached tag is HZ019. 0.20.1
+  (ADR 0065): `hold` also holds browser-run mutations (browse wraps `/_hozu/c/fetch-*.js`); `previous` is the last
+  state without `invoke`; browse targets match without symbols when nothing matches exactly.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of
