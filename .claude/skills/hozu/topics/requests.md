@@ -1,7 +1,7 @@
 # Requests from Hozu DevTools
 
-- **Read every open one in one call:** `npx hozu requests --full` prints them as one prompt (saved under
-  `.hozu/requests/`, or pasted to you).
+- **Read every open one in one call:** `npx hozu requests --full` prints them as one prompt. Each one is saved
+  under `.hozu/requests/`, also when it was pasted to you (its last line names the file and number).
 - **Each item:** `Want` (the person's words), `Where` (`file:line:column` and the view), `Scope`, `Style`, `Text`,
   `Mind` (where a plain edit goes wrong), `Locate` (the IR pointer).
 - **Do it:** edit at `Where`; when the lines moved, `npx hozu why <pointer>` finds the node again. Style: replace the
@@ -19,7 +19,8 @@
 - **The person's language:** DevTools may show their own translation (`hozu dev --devtools-messages <file>`,
   `HOZU_DEVTOOLS_MESSAGES`); the request Markdown you read is always English.
 - **Where they come from:** under `npm run dev` (`hozu dev`) a person selects parts of the running app, describes the
-  change, tries styles or text, and saves a request to `.hozu/requests/NNNN-<title>.md` or pastes it to you.
+  change, tries styles or text, and saves a request to `.hozu/requests/NNNN-<title>.md` (Copy for AI saves it too,
+  then they paste it to you).
   `npx hozu requests` lists the numbers and places.
 - **The other fields:**
   - `Scope`: only this one, every item of a list, or every use of a component;

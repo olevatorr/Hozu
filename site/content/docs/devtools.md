@@ -23,7 +23,7 @@ order: 11
 2. The inspector says what it is in plain words: a shared button used in six places, a text that comes from your data, a message shared by two places.
 3. Write what should change. Try a style or other words (longer, Chinese, English) on the page first: it is a preview only. The **Design** panel is Figma's, in its order: Frame (W, H, corner radius), Auto layout (gap, padding), Layer (opacity), Fill, Stroke, Effects (drop shadow) and Text. In Builder, a value shows its design token first (`2xl · 24px`, `red · #fb3a0e`); in Developer, the class (`text-2xl · 24px`).
 4. Click the next part and describe it too. Every described part stays in the same request.
-5. **Copy for AI** and paste it to your agent, or **Save request**, which writes `.hozu/requests/0007-….md` and copies the line to give the agent.
+5. **Copy for AI** saves the request as `.hozu/requests/0007-….md` and copies the whole of it to paste to your agent (its last line names the file, so the agent can mark it done), or **Save request**, which saves it and copies only the line to give the agent. Both save one file, however many times you press them.
 
 A client component (one with a `client` module, such as a map or a canvas) draws its inside in the browser, so DevTools selects it as one part and says which module draws it. To select the parts around it, such as a toolbar or a panel, write them as views and keep only what needs browser code in the component.
 
