@@ -31,7 +31,7 @@
         "summary": "broken --Fix--> clean · broken := false"
       },
       "broken/on/home.Pick/0": {
-        "behavior": "bed3225cb3f0dad9",
+        "behavior": "bcaa74b8c69d1086",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -58,9 +58,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "broken --Pick--> broken · intent := event.intent"
+        "summary": "broken --Pick--> stays · intent := event.intent"
       },
       "clean/on/home.Break/0": {
         "behavior": "1e6b82d1814e5ae9",
@@ -101,7 +102,7 @@
         "summary": "clean --Break--> broken · broken := true, tried := true"
       },
       "clean/on/home.Pick/0": {
-        "behavior": "4dd889e7c78ebde1",
+        "behavior": "b4973259c873c32e",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -128,9 +129,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "clean --Pick--> clean · intent := event.intent"
+        "summary": "clean --Pick--> stays · intent := event.intent"
       }
     },
     "lab": {
