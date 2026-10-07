@@ -324,16 +324,18 @@ export function createApp(doc: Document, options: AppOptions): App {
           const k = payloadKey(node.query, input)
           return { input, k, r: payload.get(k) }
         }
-        let mine = false
-        const busy = (on: boolean, at: Node) => {
-          const el = at.parentNode as Element | null
-          if (on === mine || el?.nodeType !== 1) return
-          mine = on
+        let mine: Element | null = null
+        let owned = false
+        const busy = (on: boolean, at?: Node) => {
+          const el = (on ? at?.parentNode : mine) as Element | null
+          if (!on === !mine || el?.nodeType !== 1) return
+          mine = on ? el : null
           const n = (waiting.get(el) ?? 0) + (on ? 1 : -1)
           waiting.set(el, n)
           el.toggleAttribute('aria-busy', n > 0)
         }
         const key = (at: Node) => {
+          owned ||= !!mounted.add({ el: at, stop: () => at.parentNode !== mine && busy(false) })
           const { input, k, r } = read()
           if (r) shown = r
           else if (shown) request(k, node.query, input)

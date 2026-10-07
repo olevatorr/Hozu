@@ -1,4 +1,4 @@
-import type { Json } from '@hozu/core/ir'
+import { type Json, type ProjectIR, sharedViews } from '@hozu/core/ir'
 import type { Note } from './ast.ts'
 import { addRuns, addRunsServer, normalize010 } from './step-0.11.ts'
 import { ignoreHozu } from './step-0.12.ts'
@@ -133,11 +133,7 @@ function markSharedViews(ir: Json): Json {
       { views?: Record<string, { root: { kind: string; attrs?: Record<string, Json> } }> }
     >
   }
-  const counts = new Map<string, number>()
-  for (const page of Object.values(p.pages ?? {}))
-    for (const v of page.views) counts.set(v, (counts.get(v) ?? 0) + 1)
-  for (const [ref, n] of counts) {
-    if (n < 2) continue
+  for (const ref of sharedViews({ pages: p.pages ?? {} } as Pick<ProjectIR, 'pages'>)) {
     const dot = ref.indexOf('.')
     const root = p.features?.[ref.slice(0, dot)]?.views?.[ref.slice(dot + 1)]?.root
     if (root?.kind === 'el' && root.attrs) root.attrs['data-hz-view'] = { literal: ref }

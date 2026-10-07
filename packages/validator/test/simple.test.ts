@@ -325,5 +325,19 @@ describe('ADR 0064: refresh, copy and is()', () => {
     expect(built.diagnostics.map((d) => [d.code, d.location.pointer])).toEqual([
       ['HZ014', '/features/s/machine/states/idle/on/s.Type/0/replace'],
     ])
+    const both = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { home, other },
+        pages: [
+          ui.page(home, { views: [Search], head: { render: () => ({ title: 'x' }) } }),
+          ui.page(other, { views: [Search], head: { render: () => ({ title: 'y' }) } }),
+        ],
+        features: [
+          feature({ id: 's', intent: { summary: 'replace' }, declarations: [{ Type, finder, Search }] }),
+        ],
+      }),
+    )
+    expect(both.diagnostics.filter((d) => d.code === 'HZ014')).toEqual([])
   })
 })

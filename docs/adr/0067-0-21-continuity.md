@@ -60,12 +60,15 @@ derived from that knowledge, so authors write nothing new and agents cannot get 
   enters the kept state of a machine it shows too (same structure), so its timers run and C3 fades in what it adds.
   A prerendered page waits for `prerenderingchange` before it reads, since the click has not happened yet while it
   prerenders. Fields the address seeds come from the address. A kept snapshot comes back only to the same visitor:
-  the page carries `who`, a hash of the session value (absent without a session and on cacheable pages; it sits only
-  in that visitor's own uncached page, so it needs no salt, and a module-level random salt would break Workers, which
-  refuse random values at startup), and a different mark gives nothing back. A session value that changes on every
+  the page carries `who`, a hash of the session value (it sits only in that visitor's own uncached page, so it needs
+  no salt, and a module-level random salt would break Workers, which refuse random values at startup), and a
+  different mark gives nothing back. In an app with a session, a cacheable page cannot know its visitor (`who:
+  null`), so it keeps and restores nothing: a sign-out between two cached pages never hands a draft on. A session value that changes on every
   request (a `refreshSession` that stamps a time) therefore keeps nothing. Half an hour at most; a reload, framed pages
   and DevTools state previews keep nothing; a page whose server ran the machine (a native post) uses the server's
   snapshot.
+- A query read that fails stays the `Unexpected` answer for that input until a tag re-reads it; retrying by itself
+  while offline would loop.
 - Kept state is per machine, not per address: a draft in a machine that two `/posts/:id` pages show comes along to
   the next post unless the view seeds that field from the address. That is the contract to teach: what belongs to one
   item is seeded or reset.
@@ -90,8 +93,9 @@ derived from that knowledge, so authors write nothing new and agents cannot get 
   18.2. Elsewhere the page swaps instantly, as today.
 - C4's snapshot handoff must never carry user data past a session change, and must not restore into a different
   machine IR (the dev restore already checks this).
-- Client bytes: C1 removes code paths; C3's fade is a few lines in the main chunk (`el.animate`), not a separate
-  chunk, since a chunk request would cost more than it saves (P7 counted, budget 9 KiB).
+- Client bytes: C1 removes code paths; C3's fade is a few lines in the main chunk (`el.animate`). C4's keeping is a
+  lazy chunk (`keep.ts`, requested when hydration starts and never waited for, like `poll.ts`), so P7 is 8 935 B of 9 KiB;
+  a click before it loads is not kept, the page hide still is, and the page is ready (B2) before it applies.
 
 ## Scope: all of it in 0.21
 C1–C4 above, and the items of the 0.21 proposal (a Nuxt comparison from an agent's watchlist build):

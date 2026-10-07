@@ -541,7 +541,7 @@ export class Tab {
     return this.evaluate(`(() => {
       const s = Symbol.for('hozu.browse.seen')
       const g = globalThis
-      const sig = (el) => el.tagName + '|' + (el.getAttribute('class') ?? '') + '|' + el.textContent.replace(/\s+/g, ' ').trim()
+      const sig = (el) => el.tagName + '|' + (el.getAttribute('class') ?? '') + '|' + el.textContent.replace(/\\s+/g, ' ').trim()
       const gone = new Map()
       for (const el of g.__hozuSeen ?? []) if (!el.isConnected) gone.set(sig(el), (gone.get(sig(el)) ?? 0) + 1)
       let replaced = 0

@@ -112,6 +112,72 @@ describe('a query region settles instead of being replaced (ADR 0067 C1)', () =>
     expect(root.querySelector('section')!.hasAttribute('aria-busy')).toBe(false)
   })
 
+  it('a busy region that goes away leaves its parent no longer busy', async () => {
+    const hm = machine({
+      context: z.object({ symbols: z.array(z.string()), hidden: z.boolean() }),
+      initialContext: { symbols: ['A'], hidden: false },
+      initial: 'idle',
+      on: ({ ctx }) => [
+        on(Add, {
+          assign: (e) => {
+            ctx.symbols.push(e.symbol)
+          },
+        }),
+      ],
+      states: () => ({ idle: {} }),
+    })
+    const Hiding = ui.view({
+      machine: hm,
+      render: ({ ctx }) =>
+        ui.main({}, [
+          ui.button({ type: 'button', on: { click: ui.send(Add, { symbol: 'B' }) } }, ['Add']),
+          ui.button({ type: 'button', on: { click: ui.set(ctx.hidden, true) } }, ['Hide']),
+          ui.section({}, [
+            !ctx.hidden &&
+              ui.query(
+                quotes,
+                { symbols: ctx.symbols },
+                {
+                  ready: (rows) => ui.ul({}, [ui.each(rows, 'symbol', (q) => ui.li({}, [q.symbol]))]),
+                  failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },
+                },
+              ),
+          ]),
+        ]),
+    })
+    const hb = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [
+          feature({ id: 'h', intent: { summary: 'hide' }, declarations: [{ Add, quotes, hm, Hiding }] }),
+        ],
+      }),
+    )
+    expect(hb.diagnostics).toEqual([])
+    const root = document.createElement('div')
+    document.body.append(root)
+    mount(root, {
+      view: hb.ir.features.h!.views.Hiding!,
+      machine: compileMachine(hb.ir.features.h!, hb.bindings.fns),
+      payload: new Map<string, Result>([
+        [payloadKey('h.quotes', { symbols: ['A'] }), { ok: true, value: [{ symbol: 'A', price: 1 }] }],
+      ]),
+      fns: hb.bindings.fns,
+      onQuery: () => new Promise<Result>(() => {}),
+    })
+    const [add, hide] = root.querySelectorAll('button')
+    add!.click()
+    await tick()
+    expect(root.querySelector('section')!.hasAttribute('aria-busy')).toBe(true)
+    hide!.click()
+    await tick()
+    expect(root.querySelector('ul')).toBeNull()
+    expect(root.querySelector('section')!.hasAttribute('aria-busy')).toBe(false)
+    root.remove()
+  })
+
   it('shows pending only while there is no data yet', () => {
     const root = document.createElement('div')
     mount(root, {

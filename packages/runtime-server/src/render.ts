@@ -156,9 +156,15 @@ export async function renderPage({
     routes: {},
     live: {},
     ...(dev && devState ? { devState } : {}),
-    ...(!ir.session || session === undefined || session === null || plan.cacheable
-      ? {}
-      : { who: sha256(canonicalStringify(session)).slice(0, 16) }),
+    ...(ir.session
+      ? {
+          who: plan.cacheable
+            ? null
+            : session == null
+              ? ''
+              : sha256(canonicalStringify(session)).slice(0, 16),
+        }
+      : {}),
   }
   const polled = Object.fromEntries(
     [

@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import type { MachineIR } from '@hozu/core/ir'
 import { describe, expect, it } from 'vitest'
-import { kept, type PagePayload } from '../src/hydrate.ts'
+import type { PagePayload } from '../src/hydrate.ts'
+import { kept } from '../src/keep.ts'
 import type { App } from '../src/mount.ts'
 
 const machine = (initialContext: Record<string, unknown>) =>
@@ -59,6 +60,12 @@ describe('state that stays on screen stays (ADR 0067 C4)', () => {
     save({ state: 'live', context: { q: 'x' }, entry: 1 }, m)
     expect(take(payload('a', m))).toBeDefined()
     expect(take(payload('a', m))).toBeUndefined()
+  })
+
+  it('keeps nothing on a page that cannot know its visitor (a cacheable page of a session app)', () => {
+    const m = machine({ q: '' })
+    save({ state: 'live', context: { q: 'x' }, entry: 1 }, m, '')
+    expect(take({ ...payload(undefined, m), who: null } as PagePayload)).toBeUndefined()
   })
 
   it('keeps nothing for a DevTools state preview or a reload', () => {

@@ -39,7 +39,7 @@ export interface PagePayload {
   routes: Record<string, string>
   live: Record<string, LiveQuery>
   /** A mark of the visitor's session: a kept snapshot comes back only to the same one (ADR 0067 C4). */
-  who?: string
+  who?: string | null
   /** The context fields the address sets, per feature: they win over a kept snapshot. */
   seeds?: Record<string, string[]>
   /** Queries this page reads again on a timer, in seconds (ADR 0063 C1). */
@@ -140,6 +140,7 @@ export async function hydrate(
   const script = doc.getElementById('hozu-payload')
   if (!script?.textContent) return apps
   const payload = JSON.parse(script.textContent) as PagePayload
+  const keeping = Object.keys(payload.features).length ? import('./keep.ts') : null
   const shared: Store = { data: new Map(payload.data), versions: new Map() }
   const registered = (globalThis as { __hozuFns?: Record<string, Record<string, never>> }).__hozuFns ?? {}
   const own = (url: string) => registered[new URL(url, doc.baseURI).href]
@@ -261,10 +262,12 @@ export async function hydrate(
   })
   syncAll()
   for (const app of apps.values()) app.start()
-  const resume = kept(doc, payload, apps)
-  if ((doc as { prerendering?: boolean }).prerendering)
-    doc.addEventListener('prerenderingchange', resume, { once: true })
-  else resume()
+  void keeping?.then(({ kept }) => {
+    const resume = kept(doc, payload, apps)
+    if ((doc as { prerendering?: boolean }).prerendering)
+      doc.addEventListener('prerenderingchange', resume, { once: true })
+    else resume()
+  })
   if (liveKeys.length)
     (live ?? (await import('./live.ts')).liveStream(doc))(
       onTags,
@@ -275,54 +278,4 @@ export async function hydrate(
     (await import('./dev.ts')).expose(doc, apps, dev.machines, { invoke, query: onQuery })
   doc.documentElement.setAttribute('data-hozu-ready', '')
   return apps
-}
-
-const KEEP = 'hozu:keep'
-
-/**
- * State that stays on screen stays (ADR 0067 C4): when the page is left, each machine not in a busy state is kept
- * in the tab's sessionStorage (on a click too, since a prerendered next page may show before this one hides); the
- * next page, once shown, hydrates the server's view and then enters the kept state of a machine it shows too, if
- * the visitor's session mark is the same and it is under half an hour old. Fields the address sets come from the
- * address. A reload, a framed page (a preview, an embed) and a DevTools state preview keep nothing.
- */
-export function kept(doc: Document, payload: PagePayload, apps: Map<string, App>) {
-  const win = doc.defaultView
-  if (!win || win.top !== win || payload.devState) return () => undefined
-  const shape = (m: MachineIR) => JSON.stringify({ ...m, initialContext: null })
-  const who = payload.who ?? ''
-  const save = () => {
-    const machines: Record<string, [string, Snapshot]> = {}
-    for (const [id, app] of apps) {
-      const s = app.snapshot()
-      const m = payload.features[id]
-      if (s && m && !m.states[s.state]?.invoke) machines[id] = [shape(m), s]
-    }
-    try {
-      win.sessionStorage.setItem(KEEP, JSON.stringify({ who, at: Date.now(), machines }))
-    } catch {}
-  }
-  win.addEventListener('pagehide', save)
-  doc.addEventListener('click', save, true)
-  return () => {
-    let saved: { who: string; at: number; machines: Record<string, [string, Snapshot]> } | null = null
-    try {
-      saved = JSON.parse(win.sessionStorage.getItem(KEEP) ?? 'null')
-      win.sessionStorage.removeItem(KEEP)
-      if (
-        (win.performance.getEntriesByType('navigation')[0] as { type?: string } | undefined)?.type ===
-        'reload'
-      )
-        saved = null
-    } catch {}
-    if (!saved || saved.who !== who || Date.now() - saved.at >= 1_800_000) return
-    for (const [id, app] of apps) {
-      const entry = saved.machines[id]
-      const machine = payload.features[id]
-      if (!entry || !machine || entry[0] !== shape(machine) || payload.snapshots?.[id]) continue
-      const from = machine.initialContext as Record<string, Json>
-      const address = Object.fromEntries((payload.seeds?.[id] ?? []).map((k) => [k, from[k] ?? null]))
-      app.resume({ ...entry[1], context: { ...(entry[1].context as Record<string, Json>), ...address } })
-    }
-  }
 }

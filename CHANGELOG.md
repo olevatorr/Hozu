@@ -22,7 +22,9 @@ keeps the page calm with no code from you.
 - **A machine the next page shows too keeps its state** across the page change (the tab's `sessionStorage`, for the
   same visitor, under half an hour, calm states only, not on a reload; fields the address seeds come from the
   address). The page hydrates the server's view, then enters the kept state; a prerendered page does so when shown.
-  State that belongs to one item (a draft on `/posts/:id`) should be seeded from the address.
+  State that belongs to one item (a draft on `/posts/:id`) should be seeded from the address. In an app with a
+  session, cacheable pages keep nothing (they cannot know who is visiting). The code loads as a small chunk next to
+  hydration; the initial client is 8 935 B.
 - **`hozu browse` proves it:** a step that rebuilds elements unchanged reports a flash (`N elements rebuilt unchanged
   (a flash)`), and layout that moves without input reports `layout shift X` (as CLS counts it). The examples were
   fixed where it found flashes: controls are disabled while busy instead of hidden.
@@ -44,6 +46,8 @@ keeps the page calm with no code from you.
   constant the render reads does, GitHub issue #1 point 3); the manifest keeps `fn` fingerprints only.
 - The runtime makes no random value at module load (Cloudflare Workers refuse one at startup): `httpBus` picks its id
   when it first sends.
+- `replace` to a route that no page of the machine shows is HZ014; `aria-busy` is counted per parent and released
+  when a busy region goes away.
 - `hozu migrate` leaves out the paths it cannot predict before it counts, so a real IR difference is never hidden
   behind 50 fingerprint lines.
 - A changed lock entry lists only the fields that changed (`guard was …, now …`) before its `now:` line.
