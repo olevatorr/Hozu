@@ -312,24 +312,37 @@ export function createApp(doc: Document, options: AppOptions): App {
       }
       case 'query': {
         let bound: Json[] = scope
-        const key = () => {
-          const k = payloadKey(node.query, value(node.input, scope))
-          const r = payload.get(k)
-          if (r && bound !== scope) bound.splice(0, bound.length, ...scope, r.ok ? r.value : r.data)
-          return `${k}|${!r ? '' : r.ok ? 'ready' : node.failed[r.error] ? r.error : 'Unexpected'}`
-        }
-        region(c, block, key, (cc, inner) => {
+        let shown: Result | undefined
+        const read = () => {
           const input = value(node.input, scope)
           const k = payloadKey(node.query, input)
-          const result = payload.get(k)
+          return { input, k, r: payload.get(k) }
+        }
+        const busy = (on: boolean) => {
+          const el = c.parent as Element
+          if (el.nodeType === 1 && el.hasAttribute('aria-busy') !== on) el.toggleAttribute('aria-busy', on)
+        }
+        const key = () => {
+          const { input, k, r } = read()
+          if (r) shown = r
+          else if (shown) request(k, node.query, input)
+          busy(!r && !!shown)
+          if (shown && bound !== scope)
+            bound.splice(0, bound.length, ...scope, shown.ok ? shown.value : shown.data)
+          return !shown ? '' : shown.ok ? 'ready' : node.failed[shown.error] ? shown.error : 'Unexpected'
+        }
+        region(c, block, key, (cc, inner) => {
+          const { input, k, r } = read()
+          if (r) shown = r
           bound = scope
-          if (!result) {
+          if (!shown) {
             if (!cc.claim || options.readsInBrowser?.(node.query)) request(k, node.query, input)
             if (node.pending) render(node.pending, scope, cc, inner, ns)
             return
           }
-          const branch = result.ok ? node.ready : (node.failed[result.error] ?? node.failed.Unexpected)
-          bound = [...scope, result.ok ? result.value : result.data]
+          if (!r) request(k, node.query, input)
+          const branch = shown.ok ? node.ready : (node.failed[shown.error] ?? node.failed.Unexpected)
+          bound = [...scope, shown.ok ? shown.value : shown.data]
           if (branch) render(branch, bound, cc, inner, ns)
         })
         return
