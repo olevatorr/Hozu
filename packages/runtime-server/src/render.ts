@@ -40,9 +40,6 @@ import {
 } from './rendered.ts'
 import { seededContext, seedKeys } from './seed.ts'
 
-/** Per process, so the page's identity mark cannot be matched to a session value (ADR 0067 C4). */
-const SALT = globalThis.crypto.randomUUID()
-
 import { pruneScope } from './shape.ts'
 
 export interface Assets {
@@ -161,7 +158,7 @@ export async function renderPage({
     ...(dev && devState ? { devState } : {}),
     ...(!ir.session || session === undefined || session === null || plan.cacheable
       ? {}
-      : { who: sha256(SALT + canonicalStringify(session)).slice(0, 16) }),
+      : { who: sha256(canonicalStringify(session)).slice(0, 16) }),
   }
   const polled = Object.fromEntries(
     [

@@ -88,27 +88,22 @@ describe('client runtime', () => {
     expect(root.childNodes).toHaveLength(0)
   })
 
-  it('a resumed snapshot enters its state again, so its timers run (ADR 0067 C4)', () => {
+  it("resume() enters a kept state over the server's view, so its timers run (ADR 0067 C4)", () => {
     vi.useFakeTimers()
     const error = {
       state: 'error',
       context: { pending: { sku: '', qty: 1 }, error: 'x', orderId: null },
       entry: 4,
     }
-    const start = (resume: boolean) =>
-      mount(document.createElement('div'), {
-        view: cart.views.CartPanel!,
-        machine,
-        payload,
-        fns: bindings.fns,
-        snapshot: error,
-        resume,
-      })
-    const resumed = start(true)
-    const kept = start(false)
+    const root = document.createElement('div')
+    const app = mount(root, { view: cart.views.CartPanel!, machine, payload, fns: bindings.fns })
+    expect(root.querySelector('[role="alert"]')).toBeNull()
+    app.resume(error)
+    expect(app.snapshot()?.state).toBe('error')
+    expect(root.querySelector('[role="alert"]')?.textContent).toBe('x')
     vi.advanceTimersByTime(5000)
-    expect(resumed.snapshot()?.state).toBe('idle')
-    expect(kept.snapshot()?.state).toBe('error')
+    expect(app.snapshot()?.state).toBe('idle')
+    expect(root.querySelector('[role="alert"]')).toBeNull()
   })
 
   it('toggles class groups and binds CSS variables from context', () => {

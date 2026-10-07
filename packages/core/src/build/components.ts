@@ -5,7 +5,7 @@ import { hashJson, sha256 } from '../canonical/hash.ts'
 import { htmlTags, svgTags } from '../ir/dom-data.ts'
 import type { ComponentIR, ComponentLoad, JsonSchema } from '../ir/types.ts'
 import { infoOf } from '../model/decl.ts'
-import { createRef, exprOf, guardOf, ReferenceEscape } from '../model/expr.ts'
+import { createRef, exprOf, guardOf, ReferenceEscape, refProxy } from '../model/expr.ts'
 import { builtin } from '../platform.ts'
 import { isStandardSchema } from '../schema/standard.ts'
 import { type At, at, type FeatureScope, filePath, type ProjectScope } from './scope.ts'
@@ -275,7 +275,10 @@ function clientOf(scope: FeatureScope, p: At, def: ComponentDef, id: string): Co
   return { load: loads.has(def.load) ? (def.load as ComponentLoad) : 'visible', sourceHash }
 }
 
-/** A recorded render as plain data, references and declarations included, with no function text (ADR 0067 I). */
+/**
+ * A recorded render as plain data, references and declarations included, with no function text: a callback in it
+ * (an each item, a query branch) is recorded with a placeholder like its lowering (ADR 0067 I).
+ */
 function shapeOf(x: unknown, seen = new Set<object>()): unknown {
   const e = exprOf(x)
   if (e)
@@ -284,7 +287,16 @@ function shapeOf(x: unknown, seen = new Set<object>()): unknown {
       : ['call', shapeOf(e.fn, seen), shapeOf(e.arg, seen)]
   const g = guardOf(x)
   if (g) return ['guard', shapeOf(g, seen)]
-  if (typeof x === 'function') return ['fn', infoOf(x)?.kind ?? x.name]
+  if (typeof x === 'function') {
+    const kind = infoOf(x)?.kind
+    if (kind || seen.has(x)) return ['fn', kind ?? '#']
+    seen.add(x)
+    try {
+      return ['fn', shapeOf(x(refProxy('binding', seen.size)), seen)]
+    } catch {
+      return ['fn', x.name]
+    }
+  }
   if (x === null || typeof x !== 'object') return x ?? null
   const info = infoOf(x)
   if (info) return [info.kind, shapeOf(info.def, seen)]

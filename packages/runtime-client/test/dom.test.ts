@@ -14,6 +14,7 @@ let app: App
 let serverHtml = ''
 let elements: Element[] = []
 beforeEach(async () => {
+  sessionStorage.clear()
   const { html } = await renderToString({ build, data, route: 'home' })
   serverHtml = html
   document.open()

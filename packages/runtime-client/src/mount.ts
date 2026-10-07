@@ -34,8 +34,6 @@ export interface AppOptions {
   params?: Json
   search?: Json
   snapshot?: Snapshot
-  /** The snapshot was kept from the page before: enter its state again, so its timers run (ADR 0067 C4). */
-  resume?: boolean
   onInvoke?: (effect: string, input: Json) => Promise<Result>
   onRefresh?: (tags: string[]) => void
   onQuery?: (query: string, input: Json) => Promise<Result>
@@ -90,6 +88,8 @@ export interface App {
   attach(parent: Node, before: Node | null, node: ViewNode, scope: Json[], claim: boolean): void
   start(): void
   sync(): void
+  /** Takes a snapshot kept from the page before and enters its state again, so its timers run (ADR 0067 C4). */
+  resume(kept: Snapshot): void
   dispatch(input: Input): void
   snapshot(): Snapshot | null
   destroy(): void
@@ -176,19 +176,15 @@ function clear(start: Node, end: Node) {
   while (start.nextSibling && start.nextSibling !== end) start.nextSibling.remove()
 }
 
+const waiting = new WeakMap<Element, number>()
+const lost = (e: unknown): Result => ({ ok: false, error: 'Unexpected', data: { message: String(e) } })
+
 export function createApp(doc: Document, options: AppOptions): App {
   const { machine, fns = {}, params = null, search = null, routes = {} } = options
   const { data: payload } = store(options.payload)
   const ranges: [Node, Node][] = []
   const timers = new Set<ReturnType<typeof setTimeout>>()
-  const kept = options.snapshot
-  let first: Step | null = machine
-    ? kept
-      ? options.resume
-        ? enter(machine, kept.state, kept.context, kept.entry, kept.previous)
-        : null
-      : init(machine)
-    : null
+  let first: Step | null = machine && !options.snapshot ? init(machine) : null
   let snapshot: Snapshot | null = options.snapshot ?? first?.snapshot ?? null
   const root: Block = []
   const detached = new Set<() => void>()
@@ -328,15 +324,20 @@ export function createApp(doc: Document, options: AppOptions): App {
           const k = payloadKey(node.query, input)
           return { input, k, r: payload.get(k) }
         }
-        const busy = (on: boolean) => {
-          const el = c.parent as Element
-          if (el.nodeType === 1 && el.hasAttribute('aria-busy') !== on) el.toggleAttribute('aria-busy', on)
+        let mine = false
+        const busy = (on: boolean, at: Node) => {
+          const el = at.parentNode as Element | null
+          if (on === mine || el?.nodeType !== 1) return
+          mine = on
+          const n = (waiting.get(el) ?? 0) + (on ? 1 : -1)
+          waiting.set(el, n)
+          el.toggleAttribute('aria-busy', n > 0)
         }
-        const key = () => {
+        const key = (at: Node) => {
           const { input, k, r } = read()
           if (r) shown = r
           else if (shown) request(k, node.query, input)
-          busy(!r && !!shown)
+          busy(!r && !!shown, at)
           if (shown && bound !== scope)
             bound.splice(0, bound.length, ...scope, shown.ok ? shown.value : shown.data)
           return !shown ? '' : shown.ok ? 'ready' : node.failed[shown.error] ? shown.error : 'Unexpected'
@@ -468,12 +469,15 @@ export function createApp(doc: Document, options: AppOptions): App {
   const request = (key: string, query: string, input: Json) => {
     if (!options.onQuery || fetching.has(key)) return
     fetching.add(key)
-    void options.onQuery(query, input).then((result) => {
-      fetching.delete(key)
-      payload.set(key, result)
-      for (const u of root) u()
-      sweep()
-    })
+    void options
+      .onQuery(query, input)
+      .catch(lost)
+      .then((result) => {
+        fetching.delete(key)
+        payload.set(key, result)
+        for (const u of root) u()
+        sweep()
+      })
   }
 
   const sweep = () => {
@@ -486,34 +490,29 @@ export function createApp(doc: Document, options: AppOptions): App {
   }
 
   /** The default motion (ADR 0067 C3): what an update adds fades in, unless the person asked for reduced motion. */
-  const appear = (nodes: Node[], lift: boolean) => {
+  const appear = (nodes: Node[]) => {
     if (doc.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
     for (const n of nodes)
-      (n as Element).animate?.(
-        lift
-          ? [
-              { opacity: 0, transform: 'translateY(4px)' },
-              { opacity: 1, transform: 'none' },
-            ]
-          : [{ opacity: 0 }, { opacity: 1 }],
-        { duration: 160, easing: 'ease-out' },
-      )
+      (n as Element).animate?.([{ opacity: 0, translate: '0 4px' }], {
+        duration: 160,
+        easing: 'ease-out',
+      })
   }
 
   const region = (
     c: Cursor,
     block: Block,
-    key: () => unknown,
+    key: (start: Node) => unknown,
     fill: (c: Cursor, inner: Block) => void,
     motion: string | null = null,
   ) => {
     const start = marker(c, '[')
-    let current = key()
+    let current = key(start)
     let inner: Block = []
     fill(c, inner)
     const end = marker(c, ']')
     block.push(() => {
-      const next = key()
+      const next = key(start)
       if (next === current) {
         for (const u of inner) u()
         return
@@ -527,7 +526,7 @@ export function createApp(doc: Document, options: AppOptions): App {
         const [a, b] = span({ parent: end.parentNode!, next: end, claim: false }, () =>
           fill({ parent: end.parentNode!, next: end, claim: false }, inner),
         )
-        if (!motion && empty && a && b && a !== end) appear(range(a, b), false)
+        if (!motion && empty && a && b && a !== end) appear(range(a, b))
         return
       }
       m.leave(start.nextSibling === end ? [] : range(start.nextSibling!, end.previousSibling!), motion)
@@ -599,7 +598,7 @@ export function createApp(doc: Document, options: AppOptions): App {
       }
       items = next
       if (moving) moving.settle(next.map((i) => [range(i.first, i.last), fresh.has(i)]))
-      else if (!node.motion && !old.size) for (const item of fresh) appear(range(item.first, item.last), true)
+      else if (!node.motion && !old.size) for (const item of fresh) appear(range(item.first, item.last))
     })
   }
 
@@ -614,10 +613,14 @@ export function createApp(doc: Document, options: AppOptions): App {
         timers.add(t)
       } else if (e.type === 'refresh') options.onRefresh?.(e.tags)
       else if (e.type === 'copy') void navigator.clipboard?.writeText(e.text).catch(() => null)
-      else if (e.type === 'replace') doc.defaultView?.history.replaceState(history.state, '', e.url)
+      else if (e.type === 'replace')
+        try {
+          doc.defaultView?.history.replaceState(history.state, '', e.url)
+        } catch {}
       else
         options
           .onInvoke?.(e.effect, e.input)
+          .catch(lost)
           .then((r) =>
             dispatch(
               r.ok
@@ -626,6 +629,11 @@ export function createApp(doc: Document, options: AppOptions): App {
             ),
           )
     }
+  }
+
+  const stop = () => {
+    for (const t of timers) clearTimeout(t)
+    timers.clear()
   }
 
   function dispatch(input: Input) {
@@ -660,11 +668,19 @@ export function createApp(doc: Document, options: AppOptions): App {
       for (const u of root) u()
       sweep()
     },
+    resume(kept) {
+      if (!machine) return
+      stop()
+      const step = enter(machine, kept.state, kept.context, kept.entry, kept.previous)
+      snapshot = step.snapshot
+      for (const u of root) u()
+      sweep()
+      effects(step)
+    },
     dispatch,
     snapshot: () => snapshot,
     destroy: () => {
-      for (const t of timers) clearTimeout(t)
-      timers.clear()
+      stop()
       for (const m of mounted) m.stop()
       mounted.clear()
       root.length = 0

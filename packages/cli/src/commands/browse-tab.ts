@@ -518,7 +518,7 @@ export class Tab {
     }
   }
 
-  /** Marks every element now on the page, so `newElements` can count what a step replaced. */
+  /** Marks every element now on the page, so `smoothness` can count what a step replaced. */
   tagElements(): Promise<number> {
     return this.evaluate(`(() => {
       const s = Symbol.for('hozu.browse.seen')

@@ -5,7 +5,7 @@ import { join, resolveSource } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
 import { codes } from '../ir/codes.ts'
 import type { Diagnostic, DiagnosticCode, SourceIndex } from '../ir/diagnostic.ts'
-import type { AcceptIR, FeatureIR, JsonSchema, KitIR, ProjectIR, RouteIR } from '../ir/types.ts'
+import type { AcceptIR, FeatureIR, JsonSchema, KitIR, ProjectIR, RouteIR, TransitionIR } from '../ir/types.ts'
 import { freeNamesOf, transformedDecls } from '../lower.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
@@ -258,12 +258,60 @@ export interface BuildOptions {
   manifest?: Manifest
 }
 
-/** Views two or more pages show: their root keeps still across a page change (ADR 0067 C4). */
+/** Views two or more pages show, each once: their root keeps still across a page change (ADR 0067 C4). */
 export function sharedViews(ir: Pick<ProjectIR, 'pages'>): string[] {
   const counts = new Map<string, number>()
-  for (const page of Object.values(ir.pages))
-    for (const v of page.views) counts.set(v, (counts.get(v) ?? 0) + 1)
-  return [...counts].filter(([, n]) => n > 1).map(([v]) => v)
+  const twice = new Set<string>()
+  for (const page of Object.values(ir.pages)) {
+    const once = new Set(page.views)
+    for (const v of page.views.filter((v, i) => page.views.indexOf(v) !== i)) twice.add(v)
+    for (const v of once) counts.set(v, (counts.get(v) ?? 0) + 1)
+  }
+  return [...counts].filter(([v, n]) => n > 1 && !twice.has(v)).map(([v]) => v)
+}
+
+/** replace writes the address of the page the person is on: a link to another route is a navigate (ADR 0067 G). */
+function reportForeignReplace(scope: ProjectScope, ir: ProjectIR) {
+  const told = new Set<string>()
+  for (const [route, page] of Object.entries(ir.pages))
+    for (const id of new Set(page.views.map((v) => v.slice(0, v.indexOf('.'))))) {
+      const machine = ir.features[id]?.machine
+      for (const [name, state] of Object.entries(machine?.states ?? {})) {
+        const base = join('', 'features', id, 'machine', 'states', name)
+        const all: [TransitionIR, string][] = [
+          ...Object.entries(state.on).flatMap(([e, ts]) =>
+            ts.map((t, i): [TransitionIR, string] => [t, join(base, 'on', e, i)]),
+          ),
+          ...(state.invoke?.done ?? []).map((t, i): [TransitionIR, string] => [
+            t,
+            join(base, 'invoke', 'done', i),
+          ]),
+          ...Object.entries(state.invoke?.failed ?? {}).flatMap(([e, ts]) =>
+            ts.map((t, i): [TransitionIR, string] => [t, join(base, 'invoke', 'failed', e, i)]),
+          ),
+          ...state.after.map((a, i): [TransitionIR, string] => [
+            a.transition,
+            join(base, 'after', i, 'transition'),
+          ]),
+        ]
+        for (const [t, at] of all) {
+          const link = t.replace && 'link' in t.replace ? t.replace.link : null
+          if (
+            link &&
+            link !== route &&
+            !told.has(`${id} ${link} ${route}`) &&
+            told.add(`${id} ${link} ${route}`)
+          )
+            scope.report(
+              'HZ014',
+              id,
+              join(at, 'replace'),
+              `replace writes a ${link} address, but the machine runs on the ${route} page`,
+              'replace changes the address of the page the person is on; to go to another route, use navigate.',
+            )
+        }
+      }
+    }
 }
 
 export function buildProject(project: unknown, options: BuildOptions = {}): BuildResult {
@@ -546,6 +594,7 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     const root = features[ref.slice(0, ref.indexOf('.'))]?.views[ref.slice(ref.indexOf('.') + 1)]?.root
     if (root?.kind === 'el') root.attrs['data-hz-view'] = { literal: ref }
   }
+  reportForeignReplace(scope, ir)
   reportSharedParts(scope, new Set(Object.keys(features)))
   reportUndeclaredConnect(scope, features, env?.public ?? null)
   scope.bindings.assetOrder = scope.assetList

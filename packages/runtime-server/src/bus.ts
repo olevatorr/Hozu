@@ -47,7 +47,8 @@ export function httpBus({
   now = Date.now,
 }: HttpBusOptions): InvalidationBus {
   if (secret.length < 32) throw new Error('httpBus needs a secret of at least 32 characters')
-  const id = crypto.randomUUID()
+  let id = ''
+  const self = () => (id ||= crypto.randomUUID())
   const key = crypto.subtle.importKey(
     'raw',
     encoder.encode(secret),
@@ -81,7 +82,7 @@ export function httpBus({
   return {
     async publish(tags) {
       if (!tags.length) return
-      const body = JSON.stringify({ tags, at: now(), from: id })
+      const body = JSON.stringify({ tags, at: now(), from: self() })
       const signature = await sign(body)
       await Promise.all(peers.map((peer) => deliver(peer, body, signature)))
     },
@@ -100,7 +101,7 @@ export function httpBus({
       if (!valid) return new Response('Invalid signature', { status: 403 })
       const message = JSON.parse(body) as { tags: string[]; at: number; from: string }
       if (Math.abs(now() - message.at) > WINDOW_MS) return new Response('Expired message', { status: 403 })
-      if (message.from !== id) for (const listener of listeners) listener(message.tags)
+      if (message.from !== self()) for (const listener of listeners) listener(message.tags)
       return new Response(null, { status: 204 })
     },
   }

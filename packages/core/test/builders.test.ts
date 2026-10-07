@@ -469,6 +469,9 @@ describe('views two pages share (ADR 0067 C4)', () => {
     )
     expect(b.diagnostics).toEqual([])
     expect(sharedViews(b.ir)).toEqual(['s.Header'])
+    expect(
+      sharedViews({ pages: { a: { views: ['s.Body', 's.Body'] }, b: { views: ['s.Body'] } } } as never),
+    ).toEqual([])
     expect((b.ir.features.s!.views.Header!.root as { attrs: object }).attrs).toEqual({
       'data-hz-view': { literal: 's.Header' },
     })
@@ -498,5 +501,29 @@ describe('component fingerprints (ADR 0067 I)', () => {
     }
     expect(hashOf('New', true)).toBe(hashOf('New', false))
     expect(hashOf('New', true)).not.toBe(hashOf('Old', true))
+  })
+
+  it('follow what an each item renders, not the name of its callback', () => {
+    const hashOf = (cls: string) => {
+      const List = ui.component({
+        tag: 'ul',
+        props: z.object({ items: z.array(z.string()) }),
+        render: ({ props }) =>
+          ui.ul({}, [ui.each(props.items, null, (item) => ui.li({ class: cls }, [item]))]),
+      })
+      const V = ui.view({ render: () => ui.div({}, [ui.use(List, { props: { items: ['a'] } })]) })
+      const b = buildProject(
+        project({
+          schema: zodAdapter,
+          routes: {},
+          pages: [],
+          features: [feature({ id: 'k', declarations: [{ List, V }], ...base })],
+        }),
+      )
+      expect(b.diagnostics).toEqual([])
+      return b.ir.features.k!.components.List!.sourceHash
+    }
+    expect(hashOf('p-1')).not.toBe(hashOf('p-2'))
+    expect(hashOf('p-1')).toBe(hashOf('p-1'))
   })
 })

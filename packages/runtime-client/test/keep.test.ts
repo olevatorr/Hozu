@@ -20,19 +20,28 @@ const payload = (who: string | undefined, m: MachineIR, seeds?: string[]) =>
     ...(who ? { who } : {}),
     ...(seeds ? { seeds: { w: seeds } } : {}),
   }) as unknown as PagePayload
-const save = (snapshot: object, m: MachineIR, who = 'a') => {
+const save = (snapshot: object, m: MachineIR, who = 'a', on: 'pagehide' | 'click' = 'pagehide') => {
   sessionStorage.clear()
   const apps = new Map([['w', { snapshot: () => snapshot } as unknown as App]])
   kept(document, payload(who, m), apps)
-  window.dispatchEvent(new Event('pagehide'))
+  if (on === 'click') document.body.click()
+  else window.dispatchEvent(new Event('pagehide'))
+}
+const take = (p: PagePayload) => {
+  let got: object | undefined
+  kept(
+    document,
+    p,
+    new Map([['w', { snapshot: () => null, resume: (s: object) => (got = s) } as unknown as App]]),
+  )()
+  return got
 }
 
 describe('state that stays on screen stays (ADR 0067 C4)', () => {
   it('keeps a calm snapshot for the next page of the same visitor, with the address winning', () => {
     const m = machine({ q: '', paused: false })
-    save({ state: 'live', context: { q: 'old', paused: true }, entry: 3 }, m)
-    const take = kept(document, payload('a', machine({ q: 'park', paused: false }), ['q']), new Map())
-    expect(take('w', machine({ q: 'park', paused: false }))).toEqual({
+    save({ state: 'live', context: { q: 'old', paused: true }, entry: 3 }, m, 'a', 'click')
+    expect(take(payload('a', machine({ q: 'park', paused: false }), ['q']))).toEqual({
       state: 'live',
       context: { q: 'park', paused: true },
       entry: 3,
@@ -42,21 +51,29 @@ describe('state that stays on screen stays (ADR 0067 C4)', () => {
   it('gives nothing back to another visitor, another machine, a busy state or twice', () => {
     const m = machine({ q: '' })
     save({ state: 'live', context: { q: 'x' }, entry: 1 }, m)
-    expect(kept(document, payload('b', m), new Map())('w', m)).toBeUndefined()
+    expect(take(payload('b', m))).toBeUndefined()
     save({ state: 'live', context: { q: 'x' }, entry: 1 }, m)
-    const other = { ...m, initial: 'saving' } as MachineIR
-    expect(kept(document, payload('a', other), new Map())('w', other)).toBeUndefined()
+    expect(take(payload('a', { ...m, initial: 'saving' } as MachineIR))).toBeUndefined()
     save({ state: 'saving', context: { q: 'x' }, entry: 1 }, m)
-    expect(kept(document, payload('a', m), new Map())('w', m)).toBeUndefined()
+    expect(take(payload('a', m))).toBeUndefined()
     save({ state: 'live', context: { q: 'x' }, entry: 1 }, m)
-    kept(document, payload('a', m), new Map())
-    expect(kept(document, payload('a', m), new Map())('w', m)).toBeUndefined()
+    expect(take(payload('a', m))).toBeDefined()
+    expect(take(payload('a', m))).toBeUndefined()
   })
 
-  it('keeps nothing for a DevTools state preview', () => {
+  it('keeps nothing for a DevTools state preview or a reload', () => {
     const m = machine({ q: '' })
     save({ state: 'live', context: { q: 'x' }, entry: 1 }, m)
-    const preview = { ...payload('a', m), devState: { feature: 'w', state: 'live' } } as PagePayload
-    expect(kept(document, preview, new Map())('w', m)).toBeUndefined()
+    expect(
+      take({ ...payload('a', m), devState: { feature: 'w', state: 'live' } } as PagePayload),
+    ).toBeUndefined()
+    save({ state: 'live', context: { q: 'x' }, entry: 1 }, m)
+    const entries = performance.getEntriesByType
+    performance.getEntriesByType = () => [{ type: 'reload' }] as unknown as PerformanceEntryList
+    try {
+      expect(take(payload('a', m))).toBeUndefined()
+    } finally {
+      performance.getEntriesByType = entries
+    }
   })
 })

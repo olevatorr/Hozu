@@ -93,6 +93,25 @@ describe('a query region settles instead of being replaced (ADR 0067 C1)', () =>
     expect(root.querySelector('section')!.hasAttribute('aria-busy')).toBe(false)
   })
 
+  it('a request that fails shows the Unexpected branch (ADR 0067 C1)', async () => {
+    const payload: Payload = new Map<string, Result>([
+      [payloadKey('w.quotes', { symbols: ['A'] }), { ok: true, value: [{ symbol: 'A', price: 1 }] }],
+    ])
+    const root = document.createElement('div')
+    const onQuery = vi.fn(() => Promise.reject(new TypeError('offline')))
+    mount(root, {
+      view: b.ir.features.w!.views.Board!,
+      machine: compileMachine(b.ir.features.w!, b.bindings.fns),
+      payload,
+      fns: b.bindings.fns,
+      onQuery,
+    })
+    root.querySelector('button')!.click()
+    await tick()
+    expect(root.querySelector('[role="alert"]')?.textContent).toBe('Unavailable')
+    expect(root.querySelector('section')!.hasAttribute('aria-busy')).toBe(false)
+  })
+
   it('shows pending only while there is no data yet', () => {
     const root = document.createElement('div')
     mount(root, {
@@ -150,6 +169,32 @@ describe('a query region settles instead of being replaced (ADR 0067 C1)', () =>
 })
 
 describe('ui.set, the short form of a copying event (ADR 0067 H)', () => {
+  it('two fields that need one event name are HZ014', () => {
+    const panel = machine({
+      context: z.object({ a_b: z.boolean(), a: z.object({ b: z.boolean() }) }),
+      initialContext: { a_b: false, a: { b: false } },
+      initial: 'idle',
+      states: () => ({ idle: {} }),
+    })
+    const Panel = ui.view({
+      machine: panel,
+      render: ({ ctx }) =>
+        ui.div({}, [
+          ui.button({ type: 'button', on: { click: ui.set(ctx.a_b, true) } }, ['One']),
+          ui.button({ type: 'button', on: { click: ui.set(ctx.a.b, true) } }, ['Two']),
+        ]),
+    })
+    const built = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [feature({ id: 'p', intent: { summary: 'set' }, declarations: [{ panel, Panel }] })],
+      }),
+    )
+    expect(built.diagnostics.map((d) => d.code)).toEqual(['HZ014'])
+  })
+
   it('adds the event and a shared on that stays, and the click copies the value', async () => {
     const { verify } = await import('@hozu/validator')
     const panel = machine({
@@ -179,6 +224,8 @@ describe('ui.set, the short form of a copying event (ADR 0067 H)', () => {
     expect(built.diagnostics).toEqual([])
     const f = built.ir.features.p!
     expect(Object.keys(f.events).sort()).toEqual(['Set_open', 'Set_tab'])
+    expect(built.bindings.checks['p.Set_open#payload']!({ value: true })).toBeNull()
+    expect(built.bindings.checks['p.Set_tab#payload']!({ value: 'other' })).not.toBeNull()
     expect(f.machine!.states.idle!.on['p.Set_tab']).toEqual([
       {
         target: 'idle',

@@ -32,8 +32,8 @@ export const m = machine({
   every 30 s while live: `live: { after: [{ ms: 30_000, target: 'live', refresh: () => [quotesTag()] }] }` (Pause is
   another state). **copy** writes text to the clipboard: `on(CopyLink, { copy: (e) => e.url })` (on an event: the
   browser allows it only right after a click). **replace** writes the address without loading a page:
-  `replace: () => ui.link(home, null, { q: ctx.q })`, so a reload or a shared link keeps it (with `seed`). These
-  effects read the context after the transition's `assign`.
+  `replace: () => ui.link(home, null, { q: ctx.q })`, so a reload or a shared link keeps it (with `seed`). Effects
+  and `navigate` read the context after `assign`.
 
 <!-- more -->
 

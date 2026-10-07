@@ -82,6 +82,16 @@ function element(
               'ui.set takes a context field and its new value',
               'ui.set(ctx.tab, "design") copies the value into ctx.tab; anything else is an event with ui.send.',
             )
+          else if (
+            (scope.sets.get(`Set_${target.path.join('_')}`)?.join('.') ?? target.path.join('.')) !==
+            target.path.join('.')
+          )
+            scope.report(
+              'HZ014',
+              ep,
+              `ui.set(ctx.${target.path.join('.')}) and another ui.set both need the event Set_${target.path.join('_')}`,
+              'Rename one of the two context fields: a field name with "_" meets the nested field of the same words.',
+            )
           else {
             const name = `Set_${target.path.join('_')}`
             scope.sets.set(name, [...target.path])

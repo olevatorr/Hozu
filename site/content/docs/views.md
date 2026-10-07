@@ -58,9 +58,9 @@ Dialogs, popovers and menus need no machine state: `ui.button({ commandfor: 'd',
 Hozu knows the whole page before it runs, so it keeps the page calm without any code from you:
 
 - When a query's input changes (a filter, one more item), the rows on screen stay, marked `aria-busy`, and only what changed is updated, matched by key. `pending` shows only before the first answer.
-- What an update adds fades in; nothing animates on the first render or with reduced motion. A `motion` name still chooses your own.
+- What an update adds fades in (a region that was empty, rows added to a list); a swap does not fade, and nothing animates on the first render or with reduced motion. A `motion` name still chooses your own.
 - A view that two pages show (a header, a side panel) stays still while the rest of the page cross-fades on a link.
-- A machine that the next page shows too keeps its state across the page change, for the same visitor, with the fields the address sets taken from the address.
+- A machine that the next page shows too keeps its state across the page change (not on a reload), for the same visitor, with the fields the address sets taken from the address. State that belongs to one item, such as a draft on `/posts/:id`, is seeded from the address.
 
 `hozu browse` proves it: a step that rebuilds elements unchanged reports a flash, and layout that moves without input reports a layout shift.
 

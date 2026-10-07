@@ -573,6 +573,16 @@ function addSets(scope: FeatureScope, ir: FeatureIR) {
     const key = `s_${hashJson(payload as Json).slice(0, 16)}`
     ir.schemas[key] = payload
     ir.events[name] = { payload: key }
+    const whole = scope.project.bindings.checks[`${ir.id}#context`]
+    const start = ir.machine.initialContext
+    if (whole)
+      scope.project.bindings.checks[`${ref}#payload`] = (sent) => {
+        const context = structuredClone(start) as Record<string, Json>
+        let at = context
+        for (const k of path.slice(0, -1)) at = (at[k] ?? {}) as Record<string, Json>
+        at[path.at(-1)!] = (sent as { value?: Json } | null)?.value as Json
+        return whole(context)
+      }
     for (const [state, s] of Object.entries(ir.machine.states))
       if (!s.invoke && !s.final && !s.on[ref] && !s.ignore.includes(ref))
         s.on[ref] = [

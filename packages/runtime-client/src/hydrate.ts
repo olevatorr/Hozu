@@ -224,11 +224,8 @@ export async function hydrate(
   const dev = globalThis.__HOZU_DEV__
     ? { restore: (await import('./dev.ts')).restore(doc), machines: new Map<string, MachineIR | null>() }
     : null
-  const keep = kept(doc, payload, apps)
   for (const [id, machine] of Object.entries(payload.features)) {
-    const resumed = payload.snapshots?.[id] ? undefined : keep(id, machine)
-    const snapshot =
-      (globalThis.__HOZU_DEV__ && dev?.restore(id, machine)) || payload.snapshots?.[id] || resumed
+    const snapshot = (globalThis.__HOZU_DEV__ && dev?.restore(id, machine)) || payload.snapshots?.[id]
     if (globalThis.__HOZU_DEV__) dev?.machines.set(id, machine)
     apps.set(
       id,
@@ -237,7 +234,7 @@ export async function hydrate(
         payload: shared,
         params: payload.params,
         search: payload.search,
-        ...(snapshot ? { snapshot, resume: snapshot === resumed } : {}),
+        ...(snapshot ? { snapshot } : {}),
         fns,
         components,
         routes,
@@ -264,6 +261,10 @@ export async function hydrate(
   })
   syncAll()
   for (const app of apps.values()) app.start()
+  const resume = kept(doc, payload, apps)
+  if ((doc as { prerendering?: boolean }).prerendering)
+    doc.addEventListener('prerenderingchange', resume, { once: true })
+  else resume()
   if (liveKeys.length)
     (live ?? (await import('./live.ts')).liveStream(doc))(
       onTags,
@@ -280,23 +281,17 @@ const KEEP = 'hozu:keep'
 
 /**
  * State that stays on screen stays (ADR 0067 C4): when the page is left, each machine not in a busy state is kept
- * in the tab's sessionStorage; the next page takes it back for a machine it shows too, if the visitor's session mark
- * is the same and it is under half an hour old. Fields the address sets come from the address. A framed page (a
- * preview, an embed) and a DevTools state preview keep nothing.
+ * in the tab's sessionStorage (on a click too, since a prerendered next page may show before this one hides); the
+ * next page, once shown, hydrates the server's view and then enters the kept state of a machine it shows too, if
+ * the visitor's session mark is the same and it is under half an hour old. Fields the address sets come from the
+ * address. A reload, a framed page (a preview, an embed) and a DevTools state preview keep nothing.
  */
 export function kept(doc: Document, payload: PagePayload, apps: Map<string, App>) {
-  let store: Storage | null = null
-  let saved: { who: string; at: number; machines: Record<string, [string, Snapshot]> } | null = null
   const win = doc.defaultView
   if (!win || win.top !== win || payload.devState) return () => undefined
-  try {
-    store = win.sessionStorage
-    saved = JSON.parse(store?.getItem(KEEP) ?? 'null')
-    store?.removeItem(KEEP)
-  } catch {}
   const shape = (m: MachineIR) => JSON.stringify({ ...m, initialContext: null })
   const who = payload.who ?? ''
-  win.addEventListener('pagehide', () => {
+  const save = () => {
     const machines: Record<string, [string, Snapshot]> = {}
     for (const [id, app] of apps) {
       const s = app.snapshot()
@@ -304,15 +299,30 @@ export function kept(doc: Document, payload: PagePayload, apps: Map<string, App>
       if (s && m && !m.states[s.state]?.invoke) machines[id] = [shape(m), s]
     }
     try {
-      store?.setItem(KEEP, JSON.stringify({ who, at: Date.now(), machines }))
+      win.sessionStorage.setItem(KEEP, JSON.stringify({ who, at: Date.now(), machines }))
     } catch {}
-  })
-  return (id: string, machine: MachineIR | null): Snapshot | undefined => {
-    const entry =
-      saved && saved.who === who && Date.now() - saved.at < 1_800_000 ? saved.machines[id] : undefined
-    if (!entry || !machine || entry[0] !== shape(machine)) return undefined
-    const from = machine.initialContext as Record<string, Json>
-    const address = Object.fromEntries((payload.seeds?.[id] ?? []).map((k) => [k, from[k] ?? null]))
-    return { ...entry[1], context: { ...(entry[1].context as Record<string, Json>), ...address } }
+  }
+  win.addEventListener('pagehide', save)
+  doc.addEventListener('click', save, true)
+  return () => {
+    let saved: { who: string; at: number; machines: Record<string, [string, Snapshot]> } | null = null
+    try {
+      saved = JSON.parse(win.sessionStorage.getItem(KEEP) ?? 'null')
+      win.sessionStorage.removeItem(KEEP)
+      if (
+        (win.performance.getEntriesByType('navigation')[0] as { type?: string } | undefined)?.type ===
+        'reload'
+      )
+        saved = null
+    } catch {}
+    if (!saved || saved.who !== who || Date.now() - saved.at >= 1_800_000) return
+    for (const [id, app] of apps) {
+      const entry = saved.machines[id]
+      const machine = payload.features[id]
+      if (!entry || !machine || entry[0] !== shape(machine) || payload.snapshots?.[id]) continue
+      const from = machine.initialContext as Record<string, Json>
+      const address = Object.fromEntries((payload.seeds?.[id] ?? []).map((k) => [k, from[k] ?? null]))
+      app.resume({ ...entry[1], context: { ...(entry[1].context as Record<string, Json>), ...address } })
+    }
   }
 }
