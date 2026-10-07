@@ -86,6 +86,29 @@ describe('client runtime', () => {
     expect(root.childNodes).toHaveLength(0)
   })
 
+  it('a resumed snapshot enters its state again, so its timers run (ADR 0067 C4)', () => {
+    vi.useFakeTimers()
+    const error = {
+      state: 'error',
+      context: { pending: { sku: '', qty: 1 }, error: 'x', orderId: null },
+      entry: 4,
+    }
+    const start = (resume: boolean) =>
+      mount(document.createElement('div'), {
+        view: cart.views.CartPanel!,
+        machine,
+        payload,
+        fns: bindings.fns,
+        snapshot: error,
+        resume,
+      })
+    const resumed = start(true)
+    const kept = start(false)
+    vi.advanceTimersByTime(5000)
+    expect(resumed.snapshot()?.state).toBe('idle')
+    expect(kept.snapshot()?.state).toBe('error')
+  })
+
   it('toggles class groups and binds CSS variables from context', () => {
     const root = document.createElement('div')
     const app = mount(root, { view: cart.views.CartPanel!, machine, payload, fns: bindings.fns })

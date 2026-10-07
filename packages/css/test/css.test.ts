@@ -21,6 +21,26 @@ describe('styles', () => {
     expect(styles.files.some((f) => f.endsWith('saved.css'))).toBe(true)
   })
 
+  it('keeps the root of a view two pages share still across a page change (ADR 0067 C4)', async () => {
+    const { feature, project, route, ui } = await import('@hozu/core')
+    const { zodAdapter } = await import('@hozu/schema-zod')
+    const one = route({ path: '/', params: null, search: null })
+    const two = route({ path: '/two', params: null, search: null })
+    const Header = ui.view({ render: () => ui.header({ class: 'p-4' }, ['Site']) })
+    const head = { render: () => ({ title: 'x' }) }
+    const build = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { one, two },
+        pages: [ui.page(one, { views: [Header], head }), ui.page(two, { views: [Header], head })],
+        features: [feature({ id: 's', intent: { summary: 'x' }, declarations: [{ Header }] })],
+      }),
+      { sources: false },
+    )
+    const { css } = await compileStyles(build)
+    expect(css).toContain('[data-hz-view=s\\.Header]{view-transition-name:hz-s-Header}')
+  })
+
   it('HZ026 — unknown classes with a variant-preserving suggestion and a patch', async () => {
     const build = buildProject(cart, { sources: true })
     const ir = structuredClone(build.ir)

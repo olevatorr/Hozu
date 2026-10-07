@@ -32,7 +32,7 @@ describe('server rendering', () => {
   it('renders islands, reactive regions and a payload with only what islands need', async () => {
     const data = createDataRuntime({ build, resolvers: createResolvers() })
     const { html, tags, plan } = await renderToString({ build, data, route: 'home', session })
-    expect(html).toContain('<section class="grid gap-4"><h2>Products</h2>')
+    expect(html).toContain('<section class="grid gap-4" data-hz-view="catalog.ProductGrid"><h2>Products</h2>')
     expect(html).toContain('<h2>Cart</h2><!--i--><!--[--><div><ul class="divide-y"><!--[-->')
     expect(html).toContain('<li>Mug<!--i--><!--[--><button type="button">Add</button><!--]--></li>')
     expect(html).not.toContain('data-t=')

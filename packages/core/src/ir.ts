@@ -31,6 +31,7 @@ export {
   envFilesOf,
   INVALID_ERROR_SCHEMA,
   previewsModuleOf,
+  sharedViews,
   UNEXPECTED_ERROR_SCHEMA,
 } from './build/project.ts'
 export type { PartUse } from './build/scope.ts'

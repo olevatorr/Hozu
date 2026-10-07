@@ -449,3 +449,29 @@ describe('link search folding (ADR 0043 G)', () => {
     )
   })
 })
+
+describe('views two pages share (ADR 0067 C4)', () => {
+  it('mark their root, so CSS keeps it still across a page change', async () => {
+    const { route } = await import('@hozu/core')
+    const { sharedViews } = await import('@hozu/core/ir')
+    const one = route({ path: '/', params: null, search: null })
+    const two = route({ path: '/two', params: null, search: null })
+    const Header = ui.view({ render: () => ui.header({}, ['Site']) })
+    const Body = ui.view({ render: () => ui.main({}, ['One']) })
+    const head = { render: () => ({ title: 'x' }) }
+    const b = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { one, two },
+        pages: [ui.page(one, { views: [Header, Body], head }), ui.page(two, { views: [Header], head })],
+        features: [feature({ id: 's', declarations: [{ Header, Body }], ...base })],
+      }),
+    )
+    expect(b.diagnostics).toEqual([])
+    expect(sharedViews(b.ir)).toEqual(['s.Header'])
+    expect((b.ir.features.s!.views.Header!.root as { attrs: object }).attrs).toEqual({
+      'data-hz-view': { literal: 's.Header' },
+    })
+    expect((b.ir.features.s!.views.Body!.root as { attrs: object }).attrs).toEqual({})
+  })
+})

@@ -4,6 +4,7 @@ import {
   type CompiledMachine,
   compileValue,
   type Env,
+  enter,
   equal,
   type Getter,
   getIn,
@@ -33,6 +34,8 @@ export interface AppOptions {
   params?: Json
   search?: Json
   snapshot?: Snapshot
+  /** The snapshot was kept from the page before: enter its state again, so its timers run (ADR 0067 C4). */
+  resume?: boolean
   onInvoke?: (effect: string, input: Json) => Promise<Result>
   onRefresh?: (tags: string[]) => void
   onQuery?: (query: string, input: Json) => Promise<Result>
@@ -178,7 +181,14 @@ export function createApp(doc: Document, options: AppOptions): App {
   const { data: payload } = store(options.payload)
   const ranges: [Node, Node][] = []
   const timers = new Set<ReturnType<typeof setTimeout>>()
-  let first: Step | null = machine ? (options.snapshot ? null : init(machine)) : null
+  const kept = options.snapshot
+  let first: Step | null = machine
+    ? kept
+      ? options.resume
+        ? enter(machine, kept.state, kept.context, kept.entry, kept.previous)
+        : null
+      : init(machine)
+    : null
   let snapshot: Snapshot | null = options.snapshot ?? first?.snapshot ?? null
   const root: Block = []
   const detached = new Set<() => void>()

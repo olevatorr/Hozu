@@ -258,6 +258,14 @@ export interface BuildOptions {
   manifest?: Manifest
 }
 
+/** Views two or more pages show: their root keeps still across a page change (ADR 0067 C4). */
+export function sharedViews(ir: Pick<ProjectIR, 'pages'>): string[] {
+  const counts = new Map<string, number>()
+  for (const page of Object.values(ir.pages))
+    for (const v of page.views) counts.set(v, (counts.get(v) ?? 0) + 1)
+  return [...counts].filter(([, n]) => n > 1).map(([v]) => v)
+}
+
 export function buildProject(project: unknown, options: BuildOptions = {}): BuildResult {
   const sources = options.sources ?? true
   return withCapture(sources, () => build(project, sources, options.manifest ?? null))
@@ -533,6 +541,10 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     features,
     kits,
     accept: acceptOf(scope, config.accept ?? []),
+  }
+  for (const ref of sharedViews(ir)) {
+    const root = features[ref.slice(0, ref.indexOf('.'))]?.views[ref.slice(ref.indexOf('.') + 1)]?.root
+    if (root?.kind === 'el') root.attrs['data-hz-view'] = { literal: ref }
   }
   reportSharedParts(scope, new Set(Object.keys(features)))
   reportUndeclaredConnect(scope, features, env?.public ?? null)

@@ -484,6 +484,16 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(reloaded.added).not.toContain('Central Station')
   }, 60_000)
 
+  it('a machine the next page shows too keeps its state across the page change (ADR 0067 C4)', async () => {
+    const { code, out } = await browse(
+      ['/', '--js', 'on', '--do', 'click Pause; goto /'],
+      example('watchlist'),
+    )
+    expect(code).toBe(0)
+    expect(out.text).toContain('Resume')
+    expect(out.text).not.toContain('Pause')
+  }, 60_000)
+
   it('Pause, Resume and Refresh now through refresh on a transition (ADR 0064 A)', async () => {
     const { code, out } = await browse(
       [

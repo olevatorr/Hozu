@@ -172,7 +172,7 @@
         },
         "shift": {
           "type": "number",
-          "description": "The layout shift the step caused (the browser's layout-shift entries, summed)."
+          "description": "Layout shift no input explains (layout-shift entries without recent input, summed, as CLS counts them)."
         },
         "url": {
           "type": "string"

@@ -38,6 +38,10 @@ export interface PagePayload {
   components: Record<string, ComponentRef>
   routes: Record<string, string>
   live: Record<string, LiveQuery>
+  /** A mark of the visitor's session: a kept snapshot comes back only to the same one (ADR 0067 C4). */
+  who?: string
+  /** The context fields the address sets, per feature: they win over a kept snapshot. */
+  seeds?: Record<string, string[]>
   /** Queries this page reads again on a timer, in seconds (ADR 0063 C1). */
   poll?: Record<string, number>
   /** Effects this page can call that run in the browser (ADR 0049). */
@@ -220,8 +224,11 @@ export async function hydrate(
   const dev = globalThis.__HOZU_DEV__
     ? { restore: (await import('./dev.ts')).restore(doc), machines: new Map<string, MachineIR | null>() }
     : null
+  const keep = kept(doc, payload, apps)
   for (const [id, machine] of Object.entries(payload.features)) {
-    const snapshot = (globalThis.__HOZU_DEV__ && dev?.restore(id, machine)) || payload.snapshots?.[id]
+    const resumed = payload.snapshots?.[id] ? undefined : keep(id, machine)
+    const snapshot =
+      (globalThis.__HOZU_DEV__ && dev?.restore(id, machine)) || payload.snapshots?.[id] || resumed
     if (globalThis.__HOZU_DEV__) dev?.machines.set(id, machine)
     apps.set(
       id,
@@ -230,7 +237,7 @@ export async function hydrate(
         payload: shared,
         params: payload.params,
         search: payload.search,
-        ...(snapshot ? { snapshot } : {}),
+        ...(snapshot ? { snapshot, resume: snapshot === resumed } : {}),
         fns,
         components,
         routes,
@@ -267,4 +274,45 @@ export async function hydrate(
     (await import('./dev.ts')).expose(doc, apps, dev.machines, { invoke, query: onQuery })
   doc.documentElement.setAttribute('data-hozu-ready', '')
   return apps
+}
+
+const KEEP = 'hozu:keep'
+
+/**
+ * State that stays on screen stays (ADR 0067 C4): when the page is left, each machine not in a busy state is kept
+ * in the tab's sessionStorage; the next page takes it back for a machine it shows too, if the visitor's session mark
+ * is the same and it is under half an hour old. Fields the address sets come from the address. A framed page (a
+ * preview, an embed) and a DevTools state preview keep nothing.
+ */
+export function kept(doc: Document, payload: PagePayload, apps: Map<string, App>) {
+  let store: Storage | null = null
+  let saved: { who: string; at: number; machines: Record<string, [string, Snapshot]> } | null = null
+  const win = doc.defaultView
+  if (!win || win.top !== win || payload.devState) return () => undefined
+  try {
+    store = win.sessionStorage
+    saved = JSON.parse(store?.getItem(KEEP) ?? 'null')
+    store?.removeItem(KEEP)
+  } catch {}
+  const shape = (m: MachineIR) => JSON.stringify({ ...m, initialContext: null })
+  const who = payload.who ?? ''
+  win.addEventListener('pagehide', () => {
+    const machines: Record<string, [string, Snapshot]> = {}
+    for (const [id, app] of apps) {
+      const s = app.snapshot()
+      const m = payload.features[id]
+      if (s && m && !m.states[s.state]?.invoke) machines[id] = [shape(m), s]
+    }
+    try {
+      store?.setItem(KEEP, JSON.stringify({ who, at: Date.now(), machines }))
+    } catch {}
+  })
+  return (id: string, machine: MachineIR | null): Snapshot | undefined => {
+    const entry =
+      saved && saved.who === who && Date.now() - saved.at < 1_800_000 ? saved.machines[id] : undefined
+    if (!entry || !machine || entry[0] !== shape(machine)) return undefined
+    const from = machine.initialContext as Record<string, Json>
+    const address = Object.fromEntries((payload.seeds?.[id] ?? []).map((k) => [k, from[k] ?? null]))
+    return { ...entry[1], context: { ...(entry[1].context as Record<string, Json>), ...address } }
+  }
 }

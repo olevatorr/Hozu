@@ -45,15 +45,20 @@ derived from that knowledge, so authors write nothing new and agents cannot get 
   document case (C4) does use view transitions, where a page change is the snapshot anyway.
 
 ## C4 — navigation continuity without a single-page app
-- Links stay document navigations (ADR 0043 I: what an agent can verify), already prerendered by speculation rules.
-- **Shared-element transitions, derived:** the compiler knows which nodes two routes both render (the header, a
-  component used on both, a list item with the same key on the list and its detail page) and emits matching
-  cross-document `view-transition-name`s, so the card grows into the detail page instead of the page blinking.
-- **State that survives navigation, derived like a layout:** a feature whose view is on both the page left and the
-  page entered keeps its machine snapshot (the `pageswap` event writes it to the tab's `sessionStorage`,
-  `pagereveal` restores it before the first paint). This is the Nuxt layout behaviour: state of what stays on screen
-  stays. Context that the URL seeds still comes from the URL; a session change (sign-in, sign-out) drops every kept
-  snapshot.
+- Links stay document navigations (ADR 0043 I: what an agent can verify), already prerendered by speculation rules,
+  and cross-fade (`@view-transition { navigation: auto }`, since 0.8).
+- **The shell keeps still:** the build marks the root of every view two or more pages show with `data-hz-view`, and
+  `@hozu/css` gives it a `view-transition-name`, so a header or a panel on both pages stays in place while the rest
+  cross-fades. Derived from `ui.page` lists; nothing to write.
+- **State that stays on screen stays:** when a page is left (`pagehide`), each machine not in a busy state is kept in
+  the tab's `sessionStorage`; the next page takes it back for a machine it shows too (same structure), entering its
+  state again so its timers run. Fields the address seeds come from the address. A kept snapshot comes back only to
+  the same visitor: the page carries `who`, a per-process salted hash of the session (absent without a session and on
+  cacheable pages), and a different mark gives nothing back. Half an hour at most; framed pages and DevTools state
+  previews keep nothing; a page whose server ran the machine (a native post) uses the server's snapshot.
+- The server renders the page before the kept state is known, so a kept state that differs shows the server's view
+  for the moment until hydration swaps it (with C3's fade). Rendering the kept state on the server would need it in a
+  cookie; that is left for later.
 
 ## Options considered
 - **Become a reactive function framework (Vue / React style):** loses the IR, and with it the derived render plans,

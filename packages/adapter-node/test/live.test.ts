@@ -60,7 +60,8 @@ describe('client fetch for new query keys (G4) and live queries (G11)', () => {
       const input = document.querySelector('input')!
       input.value = 'ap'
       input.dispatchEvent(new window.Event('input', { bubbles: true }) as never)
-      expect(document.querySelector('p.pending')?.textContent).toBe('Searching…')
+      expect(document.querySelector('p.pending')).toBeNull()
+      expect(document.querySelectorAll('li')).toHaveLength(4)
       await until(() => document.querySelectorAll('li').length === 2)
       expect([...document.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['apple', 'apricot'])
       expect(queried).toEqual(['finder.search{"q":"ap"}'])

@@ -15,6 +15,7 @@ import {
   type ProjectIR,
   type QueryIR,
   routeTable,
+  sha256,
   type TagExprIR,
   type ValueExpr,
   type ViewNode,
@@ -37,7 +38,11 @@ import {
   renderTableFor,
   type Scope,
 } from './rendered.ts'
-import { seededContext } from './seed.ts'
+import { seededContext, seedKeys } from './seed.ts'
+
+/** Per process, so the page's identity mark cannot be matched to a session value (ADR 0067 C4). */
+const SALT = globalThis.crypto.randomUUID()
+
 import { pruneScope } from './shape.ts'
 
 export interface Assets {
@@ -154,6 +159,9 @@ export async function renderPage({
     routes: {},
     live: {},
     ...(dev && devState ? { devState } : {}),
+    ...(!ir.session || session === undefined || session === null || plan.cacheable
+      ? {}
+      : { who: sha256(SALT + canonicalStringify(session)).slice(0, 16) }),
   }
   const polled = Object.fromEntries(
     [
@@ -262,6 +270,8 @@ export async function renderPage({
       const machine = (scope.feature.machine as MachineIR | null) ?? null
       const seeded = machine ? seedOf(scope.feature) : null
       payload.features[scope.feature.id] = seeded ? { ...machine!, initialContext: seeded } : machine
+      const keys = machine ? seedKeys(ir, route, scope.feature) : []
+      if (keys.length) payload.seeds = { ...payload.seeds, [scope.feature.id]: keys }
     }
     if (preloaded) return '<!--i-->'
     preloaded = true
