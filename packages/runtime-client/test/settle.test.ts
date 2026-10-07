@@ -148,3 +148,63 @@ describe('a query region settles instead of being replaced (ADR 0067 C1)', () =>
     vi.restoreAllMocks()
   })
 })
+
+describe('ui.set, the short form of a copying event (ADR 0067 H)', () => {
+  it('adds the event and a shared on that stays, and the click copies the value', async () => {
+    const { verify } = await import('@hozu/validator')
+    const panel = machine({
+      context: z.object({ open: z.boolean(), tab: z.enum(['info', 'design']) }),
+      initialContext: { open: false, tab: 'info' },
+      initial: 'idle',
+      states: () => ({ idle: {} }),
+    })
+    const Panel = ui.view({
+      machine: panel,
+      render: ({ ctx }) =>
+        ui.div({}, [
+          ui.button({ type: 'button', on: { click: ui.set(ctx.open, !ctx.open) } }, ['Toggle']),
+          ui.button({ type: 'button', on: { click: ui.set(ctx.tab, 'design') } }, ['Design']),
+          ctx.open && ui.p({}, ['Open ', ctx.tab]),
+        ]),
+    })
+    const built = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [feature({ id: 'p', intent: { summary: 'set' }, declarations: [{ panel, Panel }] })],
+      }),
+      { sources: true },
+    )
+    expect(built.diagnostics).toEqual([])
+    const f = built.ir.features.p!
+    expect(Object.keys(f.events).sort()).toEqual(['Set_open', 'Set_tab'])
+    expect(f.machine!.states.idle!.on['p.Set_tab']).toEqual([
+      {
+        target: 'idle',
+        stay: true,
+        guard: null,
+        assign: [{ op: 'set', path: ['tab'], value: { ref: 'event', path: ['value'] } }],
+        navigate: null,
+      },
+    ])
+    const { diagnostics, lock } = verify(built.ir, { sources: built.sources, bindings: built.bindings })
+    expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([])
+    expect(lock!.features.p!['idle/on/p.Set_open/0']!.decides).toBe(false)
+    const root = document.createElement('div')
+    mount(root, {
+      view: f.views.Panel!,
+      machine: compileMachine(f, built.bindings.fns),
+      payload: new Map(),
+      fns: built.bindings.fns,
+    })
+    const [toggle, design] = [...root.querySelectorAll('button')]
+    toggle!.click()
+    design!.click()
+    await tick()
+    expect(root.querySelector('p')?.textContent).toBe('Open design')
+    toggle!.click()
+    await tick()
+    expect(root.querySelector('p')).toBeNull()
+  })
+})

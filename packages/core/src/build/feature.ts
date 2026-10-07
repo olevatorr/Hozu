@@ -16,6 +16,8 @@ import type {
   ExportsIR,
   FeatureIR,
   Freshness,
+  Json,
+  JsonSchema,
   MessagesIR,
   QueryIR,
   Runs,
@@ -439,6 +441,7 @@ export function buildFeature(project: ProjectScope, id: string, config: FeatureP
     fetch: fetchOf(scope, config.fetch, fetched),
     connect: connectOf(scope, config.connect),
   }
+  addSets(scope, ir)
   const effects = [
     ...Object.entries(ir.queries).map(([sym, e]) => [sym, 'queries', e.runs] as const),
     ...Object.entries(ir.mutations).map(([sym, e]) => [sym, 'mutations', e.runs] as const),
@@ -540,3 +543,46 @@ const buildMessages = (d: MessagesDef): MessagesIR => ({
     ]),
   ),
 })
+
+/** ui.set (ADR 0067 H): an event with the field's value and a shared on that stays and copies it, as written by hand. */
+function addSets(scope: FeatureScope, ir: FeatureIR) {
+  for (const [name, path] of scope.sets) {
+    const ref = `${ir.id}.${name}`
+    if (!ir.machine || Object.hasOwn(ir.events, name)) {
+      scope.report(
+        'HZ014',
+        scope.at('views'),
+        ir.machine
+          ? `ui.set needs the event name ${name}, which the feature declares`
+          : 'ui.set needs the view to have a machine',
+        ir.machine
+          ? 'Rename the declared event.'
+          : 'Bind the view to the feature machine: ui.view({ machine, … }).',
+      )
+      continue
+    }
+    let field: JsonSchema | null = (ir.schemas[ir.machine.context] as JsonSchema | undefined) ?? null
+    for (const key of path)
+      field = (field?.properties as Record<string, JsonSchema> | undefined)?.[key] ?? null
+    const payload: JsonSchema = {
+      type: 'object',
+      properties: { value: field ?? {} },
+      required: ['value'],
+      additionalProperties: false,
+    }
+    const key = `s_${hashJson(payload as Json).slice(0, 16)}`
+    ir.schemas[key] = payload
+    ir.events[name] = { payload: key }
+    for (const [state, s] of Object.entries(ir.machine.states))
+      if (!s.invoke && !s.final && !s.on[ref] && !s.ignore.includes(ref))
+        s.on[ref] = [
+          {
+            target: state,
+            stay: true,
+            guard: null,
+            assign: [{ op: 'set', path, value: { ref: 'event', path: ['value'] } }],
+            navigate: null,
+          },
+        ]
+  }
+}

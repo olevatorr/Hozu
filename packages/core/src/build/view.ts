@@ -1,7 +1,7 @@
 import type { ComponentDef } from '../builders/component.ts'
 import { builtinOf } from '../builders/i18n.ts'
 import { op } from '../builders/op.ts'
-import { type NodeDef, sendOf, type ViewDef, when } from '../builders/ui.ts'
+import { type NodeDef, sendOf, setOf, type ViewDef, when } from '../builders/ui.ts'
 import { htmlGlobalAttrs, svgGlobalAttrs, svgTags, tagAttrs, voidTags } from '../ir/dom-data.ts'
 import { domEvents } from '../ir/events.ts'
 import type {
@@ -67,6 +67,35 @@ function element(
         if (send === undefined) continue
         const ep = at(p, 'on', event)
         const s = sendOf(send)
+        const set = setOf(send)
+        if (set && eventSet.has(event)) {
+          const target = exprOf(set.field)
+          if (
+            target?.kind !== 'ref' ||
+            target.ref !== 'context' ||
+            !target.path.length ||
+            target.path.some((k) => !/^\w+$/.test(k))
+          )
+            scope.report(
+              'HZ014',
+              ep,
+              'ui.set takes a context field and its new value',
+              'ui.set(ctx.tab, "design") copies the value into ctx.tab; anything else is an event with ui.send.',
+            )
+          else {
+            const name = `Set_${target.path.join('_')}`
+            scope.sets.set(name, [...target.path])
+            on[event] = {
+              event: `${scope.id}.${name}`,
+              payload: scope.attempt(
+                at(ep, 'value'),
+                (): ValueExpr => ({ object: { value: scope.value(set.value, ep) } }),
+                { literal: null } as ValueExpr,
+              ),
+            }
+          }
+          continue
+        }
         if (!eventSet.has(event))
           scope.report(
             'HZ014',

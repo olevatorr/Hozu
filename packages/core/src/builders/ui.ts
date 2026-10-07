@@ -23,6 +23,7 @@ import { page } from './page.ts'
 import type { RouteDecl } from './route.ts'
 
 export const SEND = Symbol.for('hozu.send')
+export const SET = Symbol.for('hozu.set')
 export const LINK = Symbol.for('hozu.link')
 
 declare const HREF: unique symbol
@@ -211,6 +212,9 @@ export const ui = Object.freeze({
   formRef: (): FormRef => brand({}, 'formRef', null),
   send: <P>(event: EventDecl<P>, payload: NoInfer<Val<P>>): Send =>
     Object.freeze({ [SEND]: { event, payload } }),
+  /** Copies a value into a context field, the short form of an event and a shared `on` that stays (ADR 0067 H). */
+  set: <T>(field: T, value: NoInfer<Val<T>>): Send =>
+    Object.freeze({ [SET]: { field, value } }) as unknown as Send,
   each: <T>(
     source: Expr<readonly T[]> | readonly T[],
     key: [T] extends [object] ? keyof T & string : null,
@@ -243,6 +247,11 @@ export const ui = Object.freeze({
   og: openGraph,
   env: <S extends Schema>(_schema: S): Ref<Infer<S>> => refProxy('env', 0),
 })
+
+export const setOf = (value: unknown): { field: unknown; value: unknown } | null =>
+  typeof value === 'object' && value !== null
+    ? ((value as Record<symbol, { field: unknown; value: unknown } | undefined>)[SET] ?? null)
+    : null
 
 export const sendOf = (value: unknown): Send[typeof SEND] | null =>
   typeof value === 'object' && value !== null ? ((value as Partial<Send>)[SEND] ?? null) : null
