@@ -45,11 +45,24 @@ Bind a view to a machine when it needs state and events. A button can send a dec
 
 Read a form's values with `ui.dom.form('title')`, so a submit made before the page has loaded still arrives: the server runs the same machine for that post.
 
-A state with `invoke` drops every event it does not handle, so a repeated click cannot restart an in-flight operation. When such a state is entered from two modes (viewing and editing), `done: 'previous'` returns to the one it came from. A guard may be a field alone: `guard: () => ctx.auto`. An attribute can follow the machine state with `is`: `disabled: is(['saving'])`.
+A state with `invoke` drops every event it does not handle, so a repeated click cannot restart an in-flight operation. When such a state is entered from two modes (viewing and editing), `done: 'previous'` returns to the one it came from. A guard may be a field alone: `guard: () => ctx.auto`. `is` reads the machine state anywhere a condition goes: `disabled: is(['saving'])`, `is(['paused']) ? resume : pause`, `!is(['idle']) && ui.p({}, ['Saving…'])`. Keep a control and disable it while busy rather than hide it, so it does not flash.
 
-A transition can also read the page's queries again, `refresh: () => [quotesTag()]` (a Refresh button, or every 30 seconds with `after` while a `live` state lasts), and copy text to the clipboard, `copy: (e) => e.url`.
+A control that only sets a context field needs no event: `on: { click: ui.set(ctx.open, !ctx.open) }` or `on: { input: ui.set(ctx.q, ui.dom.value) }`. The build adds the event and a transition that copies the value, exactly as if you wrote them.
+
+A transition can also read the page's queries again, `refresh: () => [quotesTag()]` (a Refresh button, or every 30 seconds with `after` while a `live` state lasts), copy text to the clipboard, `copy: (e) => e.url`, and write the address without loading a page, `replace: () => ui.link(home, null, { q: ctx.q })`, so a reload or a shared link keeps a search.
 
 Dialogs, popovers and menus need no machine state: `ui.button({ commandfor: 'd', command: 'show-modal' })` opens `ui.dialog({ id: 'd', closedby: 'any' }, [...])`, and `popover` / `popovertarget` and `ui.details` work the same way.
+
+## A page that never flashes
+
+Hozu knows the whole page before it runs, so it keeps the page calm without any code from you:
+
+- When a query's input changes (a filter, one more item), the rows on screen stay, marked `aria-busy`, and only what changed is updated, matched by key. `pending` shows only before the first answer.
+- What an update adds fades in; nothing animates on the first render or with reduced motion. A `motion` name still chooses your own.
+- A view that two pages show (a header, a side panel) stays still while the rest of the page cross-fades on a link.
+- A machine that the next page shows too keeps its state across the page change, for the same visitor, with the fields the address sets taken from the address.
+
+`hozu browse` proves it: a step that rebuilds elements unchanged reports a flash, and layout that moves without input reports a layout shift.
 
 ## Images and Markdown
 

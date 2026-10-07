@@ -95,3 +95,9 @@ C1–C4 above, and the items of the 0.21 proposal (a Nuxt comparison from an age
   changed.
 - **K — the guide:** a `fn` computing an attribute (an SVG path), `vars` with arbitrary-value classes for dynamic
   sizes and colours, the chart example, and a Vue / React → Hozu table.
+
+## Later
+- A mode that busy states inherit: `is(['paused'])` while adding from paused is false today, so a control that
+  follows the mode swaps during the busy state (`hozu browse` reports it); parallel regions or busy states that show
+  their calm state would remove it.
+- Rendering a kept state on the server (it would need the state in a cookie), so the first paint already shows it.

@@ -13,25 +13,33 @@ export const Board = ui.view({
 - **Classes:** `class` is a static string of Tailwind classes that must exist (HZ026); conditional classes:
   `toggle: { 'bg-indigo-600 text-white': ctx.tab === t }`. No `style`.
 - **Conditions:** `ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error])`, `item.done ? 'done' : 'open'`.
-  By machine state: `when(['adding', 'saving'], [ui.p({}, ['Saving…'])])`; as a value (attributes): `disabled: is(['saving'])`.
+  By machine state: `is(['paused']) ? resume : pause`, `!is(['idle']) && ui.p({}, ['Saving…'])`,
+  `disabled: is(['saving'])` (keep a control and disable it rather than hide it while busy: no flash).
 - **Dialogs, popovers, menus:** native, no machine state: `ui.button({ commandfor: 'd', command: 'show-modal' })` +
   `ui.dialog({ id: 'd', closedby: 'any' }, [...])`, `popover` / `popovertarget`, `ui.details`.
 - **Lists:** `ui.each(items, 'id', (item) => ui.li({}, [item.title]))`. Never `.map` over data.
 - **Numbers and dates:** `ui.format.number(q.price, { style: 'currency', currency: 'USD' })`, `ui.format.date(x,
   { dateStyle: 'medium' })`, `ui.format.relative(n, 'day')`, `ui.format.list(xs)` (Intl, the page's locale).
 - **Events:** `on: { click: ui.send(Event, payload) }`; payload fields are literals, data, `ui.dom.value`,
-  `ui.dom.form('name')` (submit; `hozu docs forms`).
+  `ui.dom.form('name')` (submit; `hozu docs forms`). A control that only sets a context field:
+  `on: { click: ui.set(ctx.open, !ctx.open) }`, `on: { input: ui.set(ctx.q, ui.dom.value) }` (no event to declare).
 - **Links:** `ui.a({ href: ui.link(itemPage, { id: item.id }) }, [...])`; never a string path (HZ032).
 - **Data:** `ui.query(listItems, input, { ready: (items) => …, failed: { NotFound: () => …, Unexpected: () => … } })`;
-  `failed` lists every declared error plus `Unexpected`.
+  `failed` lists every declared error plus `Unexpected`. When the input changes, the rows stay (`aria-busy` on the
+  parent) and update by key; `pending` shows only before the first answer.
 - **Shared UI** (buttons, inputs, fields): `ui.use(Button, { variant, props, on }, ['Save'])` of a kit component
   (`hozu docs components`).
 
 <!-- more -->
 
+- **Motion:** what an update adds fades in by itself (not with reduced motion); a view two pages show stays still
+  across a page change. `hozu browse` reports a flash or a layout shift: fix those.
 - **Attributes:** HTML names in lower case (`for`, `minlength`, `aria-pressed`, `data-x`), typed per tag. Values are
   literals or data: `'aria-pressed': ctx.show === 'all'`, `title: ctx.error ?? 'OK'`.
-- **CSS variables:** `vars: { '--hue': item.hue }`.
+- **Sizes and colours from data:** `vars` with an arbitrary-value class: `class: 'w-[calc(var(--pct)*1%)]'`,
+  `vars: { '--pct': q.share }`; `class: 'bg-(--c)'`, `vars: { '--c': tag.color }`.
+- **Computed attributes:** a `fn` returns any value, an SVG path too: `ui.path({ d: sparkline({ points: q.history }) })`
+  (runs on the server, and in the browser inside an island).
 - **More conditions:** `list.length === 0 ? ui.p({}, ['Empty']) : ui.ul({}, [...])`; a `?:` / `&&` branch may be a list:
   `open ? [a, b] : null`. A query branch or an each item returns one node: wrap several in an element (HZ014).
   With an enter/leave animation: `ui.if(cond, [then], [else], 'fade')` (the motion name is required).
@@ -49,5 +57,9 @@ export const Board = ui.view({
 - **More data:** `pending: ui.p({}, ['Loading…'])` is optional; a branch may return `null` to render nothing.
   Server-fetched data is sent with the page and never fetched again; after a mutation, queries whose tags it
   invalidates refresh in place.
+- **From Vue or React:** `computed` → a `fn`; `ref` + `@click` → a context field + `ui.set`; `v-if` → `?:` / `&&`
+  (with `is([...])` for a machine state); `v-for` + `:key` → `ui.each(list, 'id', …)`; `setInterval` → `after` with
+  `refresh` (`hozu docs machine`); `watch` → a transition's `assign`; DOM libraries (charts, maps) → a client component
+  (`hozu docs components`; `examples/showcase` has a Chart.js one).
 - **Also:** `ui.html(post.html)` (trusted HTML from query data only, HZ030), `ui.asset(new URL('./x.png',
   import.meta.url))`, `ui.window({ on })` / `ui.document({ on })`, `ui.embed(OtherView)`.

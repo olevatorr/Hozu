@@ -46,8 +46,9 @@ isEmpty({ items, show: ctx.show })
   { ctx.search = e.text } })`; filter with a `fn({ input: z.object({ items, text: z.string() }), … })`.
 - **Toggle buttons:** for each option of a constant list,
   `ui.button({ type: 'button', 'aria-pressed': ctx.show === s.value, on: { click: ui.send(SetShow, { show: s.value }) } }, [s.label])`.
-- **In the URL and as you type** (`/?q=park` is a link to share, typing filters live): seed the machine from the URL
-  and read only the context. A GET form with `name="q"` sets it.
+- **In the URL and as you type** (`/?q=park` is a link to share, typing filters live): seed the machine from the URL,
+  read only the context, and write the address back with `replace` on the typing transition
+  (`replace: () => ui.link(home, null, { q: ctx.q })`). A GET form with `name="q"` sets it without JS.
 ```ts
 export const Board = ui.view({ machine: m, route: home, seed: ({ search }) => ({ q: search.q, district: search.district }),
   render: ({ ctx }) => ui.form({ method: 'get' }, [

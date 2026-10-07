@@ -29,6 +29,9 @@
 
 <!-- more -->
 
+- **A calm page:** a step that rebuilds elements unchanged says `N elements rebuilt unchanged (a flash)` (a control
+  hidden while busy: disable it instead), and layout that moves without input says `layout shift X`. Both are
+  problems to fix; a calm step prints neither. An address changed with `replace` stays `in place`.
 - **`hozu get`** prints the status, redirect, `set-cookie` attributes (`HttpOnly`, `SameSite`), title, alerts and
   visible text.
   - `--forms` lists each form: fields with their defaults, checkbox / radio groups with every value (checked ones

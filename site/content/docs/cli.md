@@ -73,7 +73,7 @@ It runs the `--do` steps with JavaScript and reports per step only the lines tha
 - `remember <name> from url|<selector> [@attr]`: keep a value that later steps read as `$name`;
 - any target may end with `in "<text>"`: the smallest list item, table row or form containing that text (for `fill` and `select`, before or after `=value`).
 
-Each step says whether the page reloaded, navigated or changed in place (`--full` adds how many elements were redrawn). Click and fill targets match the visible text and the accessible name (`aria-label`, or the text without `aria-hidden` parts). `browse` runs the built app, not `hozu dev`: its file watcher and DevTools are not part of a run.
+Each step says whether the page reloaded, navigated or changed in place (`--full` adds how many elements were redrawn), and reports a flash (elements rebuilt unchanged) or a layout shift no input explains, the two things that make a page feel unsteady. Click and fill targets match the visible text and the accessible name (`aria-label`, or the text without `aria-hidden` parts). `browse` runs the built app, not `hozu dev`: its file watcher and DevTools are not part of a run.
 
 One `--do` may hold several steps joined with `;` (outside quotes, before a step's verb). A target that is not on the page prints `Did you mean "<closest label>"?`. A step that loads a page answering 401, 403, 404 or 410 shows that status as its answer, such as `→ /notes/n1 (403)`, and is not an error, so an access check exits 0; the start page must still load.
 

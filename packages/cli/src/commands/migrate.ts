@@ -231,7 +231,9 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
   out.ir = {
     compared: true,
     skipped: null,
-    differences: differences(normalized, loaded.build(false).ir as unknown as Json),
+    differences: differences(normalized, loaded.build(false).ir as unknown as Json).filter(
+      (line) => !plan.some((s) => s.unpredictable?.test(line.slice(0, line.indexOf(': ')))),
+    ),
   }
   if (!options.dryRun) {
     const agents = ['.claude/skills/hozu', '.agents/skills/hozu'].filter((p) => existsSync(join(dir, p)))

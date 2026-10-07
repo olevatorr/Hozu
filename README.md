@@ -240,7 +240,7 @@ The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router 
 
 ## Requirements and status
 - **Node 22.18 or newer.** Config and app code are TypeScript run with Node's type stripping.
-- **Version 0.20.2.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
+- **Version 0.21.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
   and designers and the trial that checks DevTools requests. Every design decision is recorded in
   [`docs/adr`](docs/adr).
 

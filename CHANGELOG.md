@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.21.0 — Continuity: a page that never flashes (ADR 0067)
+
+No source change is needed: `hozu migrate` raises the packages. Run `hozu build` again before deploying (component
+fingerprints changed). Hozu knows the whole page before it runs, so it keeps the page calm with no code from you.
+
+### A calm page
+- **A query region settles instead of being replaced.** When its input changes (a filter, one more item), the rows
+  on screen stay, marked `aria-busy`, and update by key; only the new row is inserted. `pending` shows only before the
+  first answer. (Adding a symbol to the watchlist rebuilt 14 elements and flashed `pending`; it now inserts one row.)
+- **What an update adds fades in** (160 ms; a new list item also rises 4 px). Nothing animates on the first render or
+  with reduced motion; a `motion` name still chooses your own.
+- **Views two pages share keep still across a page change:** their root gets a derived `view-transition-name`, so a
+  header or a side panel stays while the rest cross-fades.
+- **A machine the next page shows too keeps its state** across the page change (the tab's `sessionStorage`, for the
+  same visitor, under half an hour, calm states only; fields the address seeds come from the address).
+- **`hozu browse` proves it:** a step that rebuilds elements unchanged reports a flash (`N elements rebuilt unchanged
+  (a flash)`), and layout that moves without input reports `layout shift X` (as CLS counts it). The examples were
+  fixed where it found flashes: controls are disabled while busy instead of hidden.
+
+### Shorter forms for common UI
+- **`is([...])` works for structure:** `is(['paused']) ? resume : pause`, `!is(['idle']) && saving`; HZ005 reads the
+  states each branch can show in. (A `!is(…)` was evaluated as JavaScript before.)
+- **`ui.set(ctx.field, value)`** in a view's `on`: a control that only sets a context field needs no event. The build
+  adds the event and a shared `on` that stays, the IR of the long form.
+- **`replace: () => ui.link(…)`** on a transition writes the address without loading a page, so a reload or a shared
+  link keeps a search (`examples/stations`). A link that copies context fields decides nothing (no contract).
+- Effects of a transition (`refresh`, `copy`, `replace`) read the context after its `assign`.
+
+### Fixes and tools
+- Component fingerprints hash the recorded render (a bundler cannot change them; a constant the render reads does,
+  GitHub issue #1 point 3); the manifest keeps `fn` fingerprints only.
+- A changed lock entry lists only the fields that changed (`guard was …, now …`) before its `now:` line.
+- `hozu browse`: a same-document address change (`replace`) is `in place`, not a page load; `release;` followed by
+  another step splits correctly.
+- The guide: `fn` for computed attributes (an SVG path), `vars` with arbitrary-value classes for sizes and colours,
+  the Chart.js client component in `examples/showcase`, and a Vue / React → Hozu table (`hozu docs views --more`).
+
 ## 0.20.2
 
 - **A bundled app with components or `fn`s matches its build manifest** (GitHub issue #1). The IR fingerprinted

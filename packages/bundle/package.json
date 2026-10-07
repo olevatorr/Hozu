@@ -1,6 +1,6 @@
 {
   "name": "@hozu/bundle",
-  "version": "0.20.2",
+  "version": "0.21.0",
   "description": "Bundles the client modules of Hozu client components with esbuild",
   "keywords": [
     "hozu",

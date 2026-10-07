@@ -15,6 +15,8 @@ export interface Step {
   normalize(ir: Json): Json
   /** Changes to files other than sources (`.gitignore`), relative to the app directory. */
   files?(dir: string, write: boolean): { file: string; edits: number }[]
+  /** IR paths whose new value cannot be derived from the old IR (a fingerprint computed another way). */
+  unpredictable?: RegExp
 }
 
 /** One step per release from 0.11 on (ADR 0049 §6); 0.10.0 is the oldest supported starting point. */
@@ -111,7 +113,37 @@ export const steps: Step[] = [
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.20',
+    to: '0.21',
+    summary:
+      'no source change; query regions settle in place, added parts fade in, views two pages share keep still and machines keep their state across a page change, is([...]) works for structure, ui.set and replace are new, and hozu browse reports flashes and layout shift (ADR 0067); component fingerprints hash the recorded render, so run hozu build again before deploying',
+    rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: markSharedViews,
+    unpredictable: /^\/(?:features\/[^/]+|kits\/[^/]+)\/components\/[^/]+\/sourceHash$/,
+  },
 ]
+
+/** 0.21 marks the root of a view two pages show (ADR 0067 C4). */
+function markSharedViews(ir: Json): Json {
+  const p = ir as {
+    pages?: Record<string, { views: string[] }>
+    features?: Record<
+      string,
+      { views?: Record<string, { root: { kind: string; attrs?: Record<string, Json> } }> }
+    >
+  }
+  const counts = new Map<string, number>()
+  for (const page of Object.values(p.pages ?? {}))
+    for (const v of page.views) counts.set(v, (counts.get(v) ?? 0) + 1)
+  for (const [ref, n] of counts) {
+    if (n < 2) continue
+    const dot = ref.indexOf('.')
+    const root = p.features?.[ref.slice(0, dot)]?.views?.[ref.slice(dot + 1)]?.root
+    if (root?.kind === 'el' && root.attrs) root.attrs['data-hz-view'] = { literal: ref }
+  }
+  return ir
+}
 
 export const OLDEST = steps[0]!.from
 

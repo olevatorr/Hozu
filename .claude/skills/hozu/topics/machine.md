@@ -31,7 +31,9 @@ export const m = machine({
 - **refresh** reads the page's queries with those tags again: `on(RefreshNow, { refresh: () => [quotesTag()] })`;
   every 30 s while live: `live: { after: [{ ms: 30_000, target: 'live', refresh: () => [quotesTag()] }] }` (Pause is
   another state). **copy** writes text to the clipboard: `on(CopyLink, { copy: (e) => e.url })` (on an event: the
-  browser allows it only right after a click).
+  browser allows it only right after a click). **replace** writes the address without loading a page:
+  `replace: () => ui.link(home, null, { q: ctx.q })`, so a reload or a shared link keeps it (with `seed`). These
+  effects read the context after the transition's `assign`.
 
 <!-- more -->
 
@@ -66,6 +68,8 @@ export const m = machine({
   }),
 })
 ```
+- A machine the next page shows too keeps its state across the page change (calm states only; fields the address
+  seeds come from the address).
 - **assign** values are event (`e`), result (`r`) or error fields, context, literals, operators and `fn()` calls.
 - **guard** conditions: a field (`() => ctx.auto`), comparisons, `&&`, `||`, `!`, or a boolean `fn()`.
 - **navigate** sends the browser to `ui.link(route, params, search?)` after the transition. It returns one link: to

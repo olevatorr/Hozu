@@ -441,3 +441,27 @@ contract(m, { when: [{ failed: q, error: 'NotAllowed' }] })
     ])
   }, 120_000)
 })
+
+describe('the 0.20 → 0.21 step (ADR 0067)', () => {
+  it('marks shared view roots and leaves component fingerprints out of the comparison', async () => {
+    const { steps } = await import('../src/migrate/steps.ts')
+    const step = steps.find((s) => s.from === '0.20')!
+    const ir = {
+      pages: { a: { views: ['s.Header', 's.Body'] }, b: { views: ['s.Header'] } },
+      features: {
+        s: {
+          views: {
+            Header: { root: { kind: 'el', attrs: {} } },
+            Body: { root: { kind: 'el', attrs: {} } },
+          },
+        },
+      },
+    }
+    const out = step.normalize(structuredClone(ir) as never) as typeof ir
+    expect(out.features.s.views.Header.root.attrs).toEqual({ 'data-hz-view': { literal: 's.Header' } })
+    expect(out.features.s.views.Body.root.attrs).toEqual({})
+    expect(step.unpredictable?.test('/features/s/components/Badge/sourceHash')).toBe(true)
+    expect(step.unpredictable?.test('/kits/ui/components/Button/sourceHash')).toBe(true)
+    expect(step.unpredictable?.test('/features/s/fns/total/sourceHash')).toBe(false)
+  })
+})
