@@ -59,6 +59,7 @@ const recordKeys: (keyof BehaviorRecord)[] = [
   'refresh',
   'copy',
   'stay',
+  'replace',
 ]
 
 export function changedFields(before: BehaviorRecord, after: BehaviorRecord): (keyof BehaviorRecord)[] {

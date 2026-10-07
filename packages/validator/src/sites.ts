@@ -90,6 +90,8 @@ export function refSites(ir: ProjectIR): RefSite[] {
       if (nav && hasRefs(nav)) valueRefs(nav, site.at('navigate'), fnRef)
       const copy = site.transition.copy
       if (copy && hasRefs(copy)) valueRefs(copy, site.at('copy'), fnRef)
+      const replace = site.transition.replace
+      if (replace && hasRefs(replace)) valueRefs(replace, site.at('replace'), fnRef)
       site.transition.refresh?.forEach(
         (t, i) => t.param && hasRefs(t.param) && valueRefs(t.param, site.at('refresh', i, 'param'), fnRef),
       )

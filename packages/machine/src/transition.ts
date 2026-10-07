@@ -53,8 +53,10 @@ function fire(
     for (const update of t.assign) context = update(context, env)
     const entry = t.stay ? snapshot.entry : snapshot.entry + 1
     const effects: Effect[] = t.navigate === null ? [] : [{ type: 'navigate', url: String(t.navigate(env)) }]
-    if (t.refresh) effects.push({ type: 'refresh', tags: t.refresh(env) as string[] })
-    if (t.copy) effects.push({ type: 'copy', text: String(t.copy(env)) })
+    const done = { ...env, context }
+    if (t.refresh) effects.push({ type: 'refresh', tags: t.refresh(done) as string[] })
+    if (t.copy) effects.push({ type: 'copy', text: String(t.copy(done)) })
+    if (t.replace) effects.push({ type: 'replace', url: String(t.replace(done)) })
     if (!t.stay) enterEffects(machine, target, context, entry, effects)
     const state = machine.states[target]!.name
     const leaving = machine.states[machine.index.get(snapshot.state)!]

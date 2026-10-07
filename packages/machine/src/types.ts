@@ -19,6 +19,7 @@ export type Effect =
   | { type: 'navigate'; url: string }
   | { type: 'refresh'; tags: string[] }
   | { type: 'copy'; text: string }
+  | { type: 'replace'; url: string }
 
 export interface Step {
   snapshot: Snapshot
@@ -55,6 +56,7 @@ export interface CompiledTransition {
   navigate: Getter | null
   refresh: Getter | null
   copy: Getter | null
+  replace: Getter | null
 }
 
 export interface CompiledState {

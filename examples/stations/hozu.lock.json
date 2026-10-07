@@ -40,7 +40,7 @@
         "summary": "favoriting --failed toggleFavorite.Unexpected--> idle"
       },
       "idle/on/stations.PickDistrict/0": {
-        "behavior": "52a3bdf1ec0a8602",
+        "behavior": "2e3ad080ef5dac4c",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -67,12 +67,34 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "replace": {
+            "link": "home",
+            "params": {
+              "literal": null
+            },
+            "search": {
+              "object": {
+                "district": {
+                  "path": [
+                    "district"
+                  ],
+                  "ref": "context"
+                },
+                "q": {
+                  "path": [
+                    "q"
+                  ],
+                  "ref": "context"
+                }
+              }
+            }
+          }
         },
-        "summary": "idle --PickDistrict--> idle · district := event.district"
+        "summary": "idle --PickDistrict--> idle · district := event.district · replace link(home, null, { q: ctx.q, district: ctx.district })"
       },
       "idle/on/stations.Search/0": {
-        "behavior": "58b0957a4a2cb404",
+        "behavior": "9b35615c211e71cb",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -99,9 +121,31 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "replace": {
+            "link": "home",
+            "params": {
+              "literal": null
+            },
+            "search": {
+              "object": {
+                "district": {
+                  "path": [
+                    "district"
+                  ],
+                  "ref": "context"
+                },
+                "q": {
+                  "path": [
+                    "q"
+                  ],
+                  "ref": "context"
+                }
+              }
+            }
+          }
         },
-        "summary": "idle --Search--> idle · q := event.text"
+        "summary": "idle --Search--> idle · q := event.text · replace link(home, null, { q: ctx.q, district: ctx.district })"
       },
       "idle/on/stations.Select/0": {
         "behavior": "9e764efcad23c30a",
@@ -300,7 +344,7 @@
         "summary": "touring --after 1500ms--> touring · selected := nextStop({ ids: ctx.tour, current: ctx.selected }) · after 1500ms · fns nextStop@dde84531"
       },
       "touring/on/stations.PickDistrict/0": {
-        "behavior": "042b9a46f7c97ab9",
+        "behavior": "e471f4d84d09369c",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -327,12 +371,34 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "replace": {
+            "link": "home",
+            "params": {
+              "literal": null
+            },
+            "search": {
+              "object": {
+                "district": {
+                  "path": [
+                    "district"
+                  ],
+                  "ref": "context"
+                },
+                "q": {
+                  "path": [
+                    "q"
+                  ],
+                  "ref": "context"
+                }
+              }
+            }
+          }
         },
-        "summary": "touring --PickDistrict--> idle · district := event.district"
+        "summary": "touring --PickDistrict--> idle · district := event.district · replace link(home, null, { q: ctx.q, district: ctx.district })"
       },
       "touring/on/stations.Search/0": {
-        "behavior": "796e72fc366f12c8",
+        "behavior": "c9c075dcad30718b",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -359,9 +425,31 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "replace": {
+            "link": "home",
+            "params": {
+              "literal": null
+            },
+            "search": {
+              "object": {
+                "district": {
+                  "path": [
+                    "district"
+                  ],
+                  "ref": "context"
+                },
+                "q": {
+                  "path": [
+                    "q"
+                  ],
+                  "ref": "context"
+                }
+              }
+            }
+          }
         },
-        "summary": "touring --Search--> idle · q := event.text"
+        "summary": "touring --Search--> idle · q := event.text · replace link(home, null, { q: ctx.q, district: ctx.district })"
       },
       "touring/on/stations.Select/0": {
         "behavior": "7a6515e7d77ee834",

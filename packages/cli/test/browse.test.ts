@@ -472,6 +472,18 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(text.stdout).toContain('1 element rebuilt unchanged (a flash)')
   }, 60_000)
 
+  it('replace writes the address in place, so a reload keeps the search (ADR 0067 G)', async () => {
+    const { code, out } = await browse(
+      ['/', '--js', 'on', '--do', 'fill Search=park', '--do', 'goto /?q=park'],
+      example('stations'),
+    )
+    expect(code).toBe(0)
+    const [typed, reloaded] = out.steps.map((s: { modes: Record<string, unknown>[] }) => s.modes[0])
+    expect([typed.url, typed.document]).toEqual(['/?q=park', 'in place'])
+    expect(typed.removed).toContain('Central Station')
+    expect(reloaded.added).not.toContain('Central Station')
+  }, 60_000)
+
   it('Pause, Resume and Refresh now through refresh on a transition (ADR 0064 A)', async () => {
     const { code, out } = await browse(
       [

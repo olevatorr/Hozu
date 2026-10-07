@@ -118,6 +118,8 @@ export function skeleton(ir: ProjectIR, feature: FeatureIR, id: string): string 
   if (t?.refresh?.length)
     calls.push(`{ refresh: [${t.refresh.map((r) => `${local(r.tag)}(${r.param ? '…' : ''})`).join(', ')}] }`)
   if (t?.copy) calls.push(`{ copy: '…' }`)
+  if (t?.replace && 'link' in t.replace)
+    calls.push(`{ replace: '${ir.routes[t.replace.link]?.path ?? '/'}' }`)
   if (entered)
     calls.push(
       `{ effect: ${local(entered.effect)}, input: ${ts(example(effectSchemas(ir, entered.effect)?.input ?? null))} }`,

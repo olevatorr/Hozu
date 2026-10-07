@@ -1,4 +1,4 @@
-import { contract, event, feature, machine, on, project, query, tag, ui } from '@hozu/core'
+import { contract, event, feature, machine, on, project, query, route, tag, ui } from '@hozu/core'
 import { buildProject, type ProjectIR } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import { verify } from '@hozu/validator'
@@ -207,5 +207,54 @@ describe('ADR 0064: refresh, copy and is()', () => {
     expect(sets({ op: 'or', args: [is('live'), is('adding')] })).toEqual([['live', 'adding'], ['paused']])
     expect(sets({ op: 'and', args: [is('live'), ctx] })).toEqual([['live'], null])
     expect(sets(ctx)).toEqual([null, null])
+  })
+
+  it('replace writes the address without a page load; copying context into it decides nothing (ADR 0067 G)', async () => {
+    const { compileMachine, init, transition } = await import('@hozu/machine')
+    const { routeTable } = await import('@hozu/core/ir')
+    const home = route({ path: '/', params: null, search: z.object({ q: z.string().default('') }) })
+    const Type = event({ payload: z.object({ q: z.string() }) })
+    const finder = machine({
+      context: z.object({ q: z.string() }),
+      initialContext: { q: '' },
+      initial: 'idle',
+      states: ({ ctx }) => ({
+        idle: {
+          on: [
+            on(Type, {
+              assign: (e) => {
+                ctx.q = e.q
+              },
+              replace: () => ui.link(home, null, { q: ctx.q }),
+            }),
+          ],
+        },
+      }),
+    })
+    const Search = ui.view({ machine: finder, route: home, render: ({ ctx }) => ui.p({}, [ctx.q]) })
+    const built = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { home },
+        pages: [ui.page(home, { views: [Search], head: { render: () => ({ title: 'x' }) } })],
+        features: [
+          feature({ id: 's', intent: { summary: 'replace' }, declarations: [{ Type, finder, Search }] }),
+        ],
+      }),
+      { sources: true },
+    )
+    expect(built.diagnostics).toEqual([])
+    const compiled = compileMachine(built.ir.features.s!, built.bindings.fns, routeTable(built.ir))
+    const step = transition(compiled, init(compiled).snapshot, {
+      type: 'event',
+      event: 's.Type',
+      payload: { q: 'park' },
+    })
+    expect(step.effects).toEqual([{ type: 'replace', url: '/?q=park' }])
+    const { diagnostics, lock } = verify(built.ir, { sources: built.sources, bindings: built.bindings })
+    expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([])
+    const entry = lock!.features.s!['idle/on/s.Type/0']!
+    expect(entry.decides).toBe(false)
+    expect(entry.summary).toContain('replace ')
   })
 })

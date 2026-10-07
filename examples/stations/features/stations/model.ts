@@ -1,5 +1,6 @@
-import { event, fn, invoke, machine, mutation, on, query, tag } from '@hozu/core'
+import { event, fn, invoke, machine, mutation, on, query, tag, ui } from '@hozu/core'
 import { z } from 'zod'
+import { home } from '../../routes.ts'
 
 export const Station = z.object({
   id: z.string(),
@@ -99,12 +100,14 @@ export const stationsMachine = machine({
       assign: (e) => {
         ctx.q = e.text
       },
+      replace: () => ui.link(home, null, { q: ctx.q, district: ctx.district }),
     }),
     on(PickDistrict, {
       target: 'idle',
       assign: (e) => {
         ctx.district = e.district
       },
+      replace: () => ui.link(home, null, { q: ctx.q, district: ctx.district }),
     }),
     on(Select, {
       assign: (e) => {

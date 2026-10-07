@@ -254,8 +254,8 @@ const same = (a: Snapshot, b: Snapshot, key: (url: string) => string = (u) => u)
   return key(a.url) === key(b.url) && x.length === y.length && minus(x, y).length === 0
 }
 
-const delta = (before: Snapshot, after: Snapshot) =>
-  before.url !== after.url
+const delta = (before: Snapshot, after: Snapshot, inPlace = false) =>
+  before.url !== after.url && !inPlace
     ? { added: linesOf(after), removed: [] }
     : { added: minus(linesOf(after), linesOf(before)), removed: minus(linesOf(before), linesOf(after)) }
 
@@ -384,6 +384,8 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
               }),
             )
             verb = parsed.verb
+            if (['fill', 'select', 'check', 'uncheck', 'click', 'submit', 'press'].includes(verb))
+              await tab.markInput()
             if (verb === 'hold') holdable(parsed.target)
             r = parsed.verb === 'remember' ? await remember(tab, parsed.target, own) : await act(tab, parsed)
           } catch (error) {
@@ -423,7 +425,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
             ...(shift >= 0.001 ? { shift } : {}),
             url: after.url,
             ...(tab.stepStatus !== null && tab.stepStatus !== 200 ? { status: tab.stepStatus } : {}),
-            ...delta(before, after),
+            ...delta(before, after, reloads === 0),
           }
           return { change, before, after, elsewhere }
         }),
@@ -525,7 +527,7 @@ const cut = (s: string, n: number, full: boolean) => (!full && s.length > n ? `$
 function describeChange(c: BrowseChange, full: boolean): string {
   if (!c.ok) return `FAILED — ${c.note}`
   if (c.jsOnly) return `js-only (${c.jsOnly})`
-  const moved = c.navigated
+  const moved = c.navigated && c.document !== 'in place'
   const items = [
     ...c.added.map((l) => (moved ? cut(l, WIDTH, full) : `+ ${cut(l, WIDTH, full)}`)),
     ...c.removed.map((l) => `− ${cut(l, WIDTH, full)}`),
@@ -545,7 +547,7 @@ function describeChange(c: BrowseChange, full: boolean): string {
   ]
     .filter(Boolean)
     .join(', ')
-  return [moved || status ? `→ ${c.url}${status}` : '', how, list].filter(Boolean).join(': ')
+  return [c.navigated || status ? `→ ${c.url}${status}` : '', how, list].filter(Boolean).join(': ')
 }
 
 export function describeBrowse(out: BrowseOutput, full = false): string {

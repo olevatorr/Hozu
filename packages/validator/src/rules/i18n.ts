@@ -266,6 +266,7 @@ export function i18n(ctx: Ctx) {
       if (t.guard) scanGuard(t.guard, join(tp, 'guard'), flag)
       t.assign.forEach((a, j) => scanValue(a.value, join(tp, 'assign', j, 'value'), flag))
       if (t.navigate) scanValue(t.navigate, join(tp, 'navigate'), flag)
+      if (t.replace) scanValue(t.replace, join(tp, 'replace'), flag)
     }
     const list = (ts: TransitionIR[], pointer: string) =>
       ts.forEach((t, i) => transition(t, join(pointer, i)))

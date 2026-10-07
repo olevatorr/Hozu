@@ -73,16 +73,18 @@ export function buildContract(scope: FeatureScope, symbol: string, decl: Decl): 
             ? { navigate: String(e.navigate) }
             : 'copy' in e
               ? { copy: String(e.copy) }
-              : 'refresh' in e
-                ? {
-                    refresh: e.refresh.map((u, j) =>
-                      tagKey(scope, u, at(p, 'expect', 'effects', i, 'refresh', j)),
-                    ),
-                  }
-                : {
-                    effect: scope.ref(e.effect, ['query', 'mutation'], at(p, 'expect', 'effects', i)),
-                    input: scope.json(e.input),
-                  },
+              : 'replace' in e
+                ? { replace: String(e.replace) }
+                : 'refresh' in e
+                  ? {
+                      refresh: e.refresh.map((u, j) =>
+                        tagKey(scope, u, at(p, 'expect', 'effects', i, 'refresh', j)),
+                      ),
+                    }
+                  : {
+                      effect: scope.ref(e.effect, ['query', 'mutation'], at(p, 'expect', 'effects', i)),
+                      input: scope.json(e.input),
+                    },
         ),
       },
     }),

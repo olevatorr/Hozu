@@ -290,6 +290,8 @@ export interface TransitionIR {
   refresh?: TagExprIR[]
   /** Text written to the clipboard (ADR 0064 D); absent when none. */
   copy?: ValueExpr
+  /** The address written with history.replaceState, without loading a page (ADR 0067 G); absent when none. */
+  replace?: ValueExpr
 }
 
 export type RefSource =
@@ -470,6 +472,7 @@ export type EffectCallIR =
   | { navigate: string }
   | { refresh: string[] }
   | { copy: string }
+  | { replace: string }
 
 export interface MessagesIR {
   base: string

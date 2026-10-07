@@ -603,6 +603,7 @@ export function createApp(doc: Document, options: AppOptions): App {
         timers.add(t)
       } else if (e.type === 'refresh') options.onRefresh?.(e.tags)
       else if (e.type === 'copy') void navigator.clipboard?.writeText(e.text).catch(() => null)
+      else if (e.type === 'replace') doc.defaultView?.history.replaceState(history.state, '', e.url)
       else
         options
           .onInvoke?.(e.effect, e.input)

@@ -92,6 +92,8 @@ function previousFeature(feature: FeatureIR, id: string, record: BehaviorRecord)
   else delete transition.copy
   if (record.stay) transition.stay = true
   else delete transition.stay
+  if (record.replace) transition.replace = record.replace
+  else delete transition.replace
   transition.target = record.enters.state
   const target = f.machine!.states[record.enters.state]
   if (target) {
@@ -134,6 +136,7 @@ const fieldText: Record<keyof BehaviorRecord, (r: BehaviorRecord) => string> = {
   refresh: (r) => (r.refresh ? showRefresh(r.refresh) : 'none'),
   copy: (r) => (r.copy ? showValue(r.copy) : 'none'),
   stay: (r) => (r.stay ? 'stays' : 'enters'),
+  replace: (r) => (r.replace ? showValue(r.replace) : 'none'),
 }
 
 function unspecified(ctx: Ctx, feature: FeatureIR, change: LockChange) {

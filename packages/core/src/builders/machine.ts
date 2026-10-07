@@ -23,6 +23,7 @@ export interface TransitionConfig<T extends string, A> {
   navigate?: (arg: A) => Href
   refresh?: (arg: A) => TagUse[]
   copy?: (arg: A) => string
+  replace?: (arg: A) => Href
 }
 
 export interface AfterConfig<T extends string> extends TransitionConfig<T, void> {
