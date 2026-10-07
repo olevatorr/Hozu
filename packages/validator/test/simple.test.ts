@@ -1,9 +1,10 @@
-import { contract, event, feature, machine, on, project, query, tag, ui } from '@hozu/core'
+import { contract, event, feature, machine, on, project, query, route, tag, ui } from '@hozu/core'
 import { buildProject, type ProjectIR } from '@hozu/core/ir'
 import { zodAdapter } from '@hozu/schema-zod'
 import { verify } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
+import { stateSplit } from '../src/walk.ts'
 
 const Pause = event({ payload: z.object({}) })
 const RefreshNow = event({ payload: z.object({}) })
@@ -152,5 +153,191 @@ describe('ADR 0064: refresh, copy and is()', () => {
     const found = verify(built.ir, { sources: built.sources, bindings: built.bindings }).diagnostics
     expect(found.filter((d) => d.code === 'HZ015')).toEqual([])
     expect(found.find((d) => d.code === 'HZ057')).toBeUndefined()
+  })
+
+  it('is([...]) works for structure: ?: and && become conditions HZ005 reads by state (ADR 0067 F)', () => {
+    const Toolbar = ui.view({
+      machine: m,
+      render: ({ is }) =>
+        ui.div({}, [
+          is(['paused'])
+            ? ui.button({ type: 'button', on: { click: ui.send(Pause, {}) } }, ['Resume'])
+            : ui.button({ type: 'button', disabled: !is(['live']), on: { click: ui.send(Pause, {}) } }, [
+                'Pause',
+              ]),
+          !is(['paused']) && ui.p({}, ['Live']),
+        ]),
+    })
+    const built = build({ Toolbar })
+    expect(built.diagnostics).toEqual([])
+    const root = built.ir.features.w!.views.Toolbar!.root as unknown as {
+      children: Record<string, unknown>[]
+    }
+    expect(root.children[0]).toMatchObject({
+      kind: 'if',
+      test: { op: 'eq', left: { ref: 'state', path: [] }, right: { literal: 'paused' } },
+    })
+    expect(root.children[1]).toMatchObject({ kind: 'if', test: { op: 'not' } })
+    const pause = (root.children[0] as { ifFalse: { attrs: Record<string, unknown> }[] }).ifFalse[0]!
+    expect(pause.attrs.disabled).toEqual({
+      test: { op: 'not', arg: { op: 'eq', left: { ref: 'state', path: [] }, right: { literal: 'live' } } },
+    })
+    const found = verify(built.ir, { sources: built.sources, bindings: built.bindings }).diagnostics
+    expect(found.filter((d) => d.code === 'HZ005')).toEqual([])
+  })
+
+  it('reads the states a condition allows, for HZ005 (ADR 0067 F)', () => {
+    const all = ['live', 'paused', 'adding']
+    const is = (s: string) => ({
+      op: 'eq' as const,
+      left: { ref: 'state' as const, path: [] },
+      right: { literal: s },
+    })
+    const ctx = {
+      op: 'fn' as const,
+      fn: '%truthy',
+      arg: { object: { v: { ref: 'context' as const, path: ['x'] } } },
+    }
+    const sets = (g: Parameters<typeof stateSplit>[0]) => {
+      const r = stateSplit(g, all)
+      return [r.yes && [...r.yes], r.no && [...r.no]]
+    }
+    expect(sets(is('paused'))).toEqual([['paused'], ['live', 'adding']])
+    expect(sets({ op: 'not', arg: is('paused') })).toEqual([['live', 'adding'], ['paused']])
+    expect(sets({ op: 'or', args: [is('live'), is('adding')] })).toEqual([['live', 'adding'], ['paused']])
+    expect(sets({ op: 'and', args: [is('live'), ctx] })).toEqual([['live'], null])
+    expect(sets(ctx)).toEqual([null, null])
+  })
+
+  it('replace writes the address without a page load; copying context into it decides nothing (ADR 0067 G)', async () => {
+    const { compileMachine, init, transition } = await import('@hozu/machine')
+    const { routeTable } = await import('@hozu/core/ir')
+    const home = route({ path: '/', params: null, search: z.object({ q: z.string().default('') }) })
+    const Type = event({ payload: z.object({ q: z.string() }) })
+    const finder = machine({
+      context: z.object({ q: z.string() }),
+      initialContext: { q: '' },
+      initial: 'idle',
+      states: ({ ctx }) => ({
+        idle: {
+          on: [
+            on(Type, {
+              assign: (e) => {
+                ctx.q = e.q
+              },
+              replace: () => ui.link(home, null, { q: ctx.q }),
+            }),
+          ],
+        },
+      }),
+    })
+    const Search = ui.view({ machine: finder, route: home, render: ({ ctx }) => ui.p({}, [ctx.q]) })
+    const built = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { home },
+        pages: [ui.page(home, { views: [Search], head: { render: () => ({ title: 'x' }) } })],
+        features: [
+          feature({ id: 's', intent: { summary: 'replace' }, declarations: [{ Type, finder, Search }] }),
+        ],
+      }),
+      { sources: true },
+    )
+    expect(built.diagnostics).toEqual([])
+    const compiled = compileMachine(built.ir.features.s!, built.bindings.fns, routeTable(built.ir))
+    const step = transition(compiled, init(compiled).snapshot, {
+      type: 'event',
+      event: 's.Type',
+      payload: { q: 'park' },
+    })
+    expect(step.effects).toEqual([{ type: 'replace', url: '/?q=park' }])
+    const { diagnostics, lock } = verify(built.ir, { sources: built.sources, bindings: built.bindings })
+    expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([])
+    const entry = lock!.features.s!['idle/on/s.Type/0']!
+    expect(entry.decides).toBe(false)
+    expect(entry.summary).toContain('replace ')
+  })
+
+  it('every effect of a transition reads the context after its assign, navigate too (ADR 0067 G)', async () => {
+    const { compileMachine, init, transition } = await import('@hozu/machine')
+    const { routeTable } = await import('@hozu/core/ir')
+    const home = route({ path: '/', params: null, search: z.object({ q: z.string().default('') }) })
+    const Go = event({ payload: z.object({ q: z.string() }) })
+    const finder = machine({
+      context: z.object({ q: z.string() }),
+      initialContext: { q: '' },
+      initial: 'idle',
+      states: ({ ctx }) => ({
+        idle: {
+          on: [
+            on(Go, {
+              assign: (e) => {
+                ctx.q = e.q
+              },
+              navigate: () => ui.link(home, null, { q: ctx.q }),
+            }),
+          ],
+        },
+      }),
+    })
+    const Search = ui.view({ machine: finder, route: home, render: ({ ctx }) => ui.p({}, [ctx.q]) })
+    const built = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { home },
+        pages: [ui.page(home, { views: [Search], head: { render: () => ({ title: 'x' }) } })],
+        features: [feature({ id: 's', intent: { summary: 'go' }, declarations: [{ Go, finder, Search }] })],
+      }),
+    )
+    const compiled = compileMachine(built.ir.features.s!, built.bindings.fns, routeTable(built.ir))
+    const step = transition(compiled, init(compiled).snapshot, {
+      type: 'event',
+      event: 's.Go',
+      payload: { q: 'x' },
+    })
+    expect(step.effects).toEqual([{ type: 'navigate', url: '/?q=x' }])
+  })
+
+  it('replace to another route is HZ014: that is a navigate (ADR 0067 G)', () => {
+    const home = route({ path: '/', params: null, search: z.object({ q: z.string().default('') }) })
+    const other = route({ path: '/other', params: null, search: null })
+    const Type = event({ payload: z.object({ q: z.string() }) })
+    const finder = machine({
+      context: z.object({ q: z.string() }),
+      initialContext: { q: '' },
+      initial: 'idle',
+      states: () => ({ idle: { on: [on(Type, { replace: () => ui.link(other, null) })] } }),
+    })
+    const Search = ui.view({ machine: finder, route: home, render: ({ ctx }) => ui.p({}, [ctx.q]) })
+    const built = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { home, other },
+        pages: [
+          ui.page(home, { views: [Search], head: { render: () => ({ title: 'x' }) } }),
+          ui.page(other, { views: [], head: { render: () => ({ title: 'y' }) } }),
+        ],
+        features: [
+          feature({ id: 's', intent: { summary: 'replace' }, declarations: [{ Type, finder, Search }] }),
+        ],
+      }),
+    )
+    expect(built.diagnostics.map((d) => [d.code, d.location.pointer])).toEqual([
+      ['HZ014', '/features/s/machine/states/idle/on/s.Type/0/replace'],
+    ])
+    const both = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { home, other },
+        pages: [
+          ui.page(home, { views: [Search], head: { render: () => ({ title: 'x' }) } }),
+          ui.page(other, { views: [Search], head: { render: () => ({ title: 'y' }) } }),
+        ],
+        features: [
+          feature({ id: 's', intent: { summary: 'replace' }, declarations: [{ Type, finder, Search }] }),
+        ],
+      }),
+    )
+    expect(both.diagnostics.filter((d) => d.code === 'HZ014')).toEqual([])
   })
 })

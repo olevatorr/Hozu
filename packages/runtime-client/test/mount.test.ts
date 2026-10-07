@@ -51,11 +51,13 @@ describe('client runtime', () => {
     expect(onInvoke).toHaveBeenCalledWith('cart.addItem', { sku: 'mug', qty: 1 })
     expect(app.snapshot()?.state).toBe('adding')
     expect(texts(root, 'p[aria-live]')).toEqual(['Saving…'])
-    expect(button(root, 'Checkout')).toBeUndefined()
+    const checkout = button(root, 'Checkout')!
+    expect(checkout.disabled).toBe(true)
     resolve({ ok: false, error: 'OutOfStock', data: { sku: 'mug', available: 0 } })
     await Promise.resolve()
     await Promise.resolve()
     expect(app.snapshot()?.state).toBe('error')
+    expect(checkout.isConnected).toBe(false)
     expect(texts(root, 'p[role="alert"]')).toEqual(['Out of stock'])
     expect(root.querySelector('h2')).toBe(heading)
   })
@@ -84,6 +86,24 @@ describe('client runtime', () => {
     expect(texts(root, 'p[role="alert"]')).toEqual([])
     app.destroy()
     expect(root.childNodes).toHaveLength(0)
+  })
+
+  it("resume() enters a kept state over the server's view, so its timers run (ADR 0067 C4)", () => {
+    vi.useFakeTimers()
+    const error = {
+      state: 'error',
+      context: { pending: { sku: '', qty: 1 }, error: 'x', orderId: null },
+      entry: 4,
+    }
+    const root = document.createElement('div')
+    const app = mount(root, { view: cart.views.CartPanel!, machine, payload, fns: bindings.fns })
+    expect(root.querySelector('[role="alert"]')).toBeNull()
+    app.resume(error)
+    expect(app.snapshot()?.state).toBe('error')
+    expect(root.querySelector('[role="alert"]')?.textContent).toBe('x')
+    vi.advanceTimersByTime(5000)
+    expect(app.snapshot()?.state).toBe('idle')
+    expect(root.querySelector('[role="alert"]')).toBeNull()
   })
 
   it('toggles class groups and binds CSS variables from context', () => {

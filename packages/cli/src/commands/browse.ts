@@ -52,7 +52,7 @@ interface Parsed {
 const unquote = (s: string) => s.replace(/^"(.*)"$/, '$1')
 
 const STEP =
-  /^\s*(?:fill|select|check|uncheck|click|submit|press|wait|goto|post|remember|hold|release)(?:\s|$)/
+  /^\s*(?:fill|select|check|uncheck|click|submit|press|wait|goto|post|remember|hold|release)(?:\s|;|$)/
 
 /** `--do 'fill Title=Milk; press Enter'` is two steps: split where a verb and a space follow a semicolon outside quotes, so values may hold one. */
 export const stepsOf = (text: string): string[] => {
@@ -254,8 +254,8 @@ const same = (a: Snapshot, b: Snapshot, key: (url: string) => string = (u) => u)
   return key(a.url) === key(b.url) && x.length === y.length && minus(x, y).length === 0
 }
 
-const delta = (before: Snapshot, after: Snapshot) =>
-  before.url !== after.url
+const delta = (before: Snapshot, after: Snapshot, inPlace = false) =>
+  before.url !== after.url && !inPlace
     ? { added: linesOf(after), removed: [] }
     : { added: minus(linesOf(after), linesOf(before)), removed: minus(linesOf(before), linesOf(after)) }
 
@@ -384,6 +384,8 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
               }),
             )
             verb = parsed.verb
+            if (['fill', 'select', 'check', 'uncheck', 'click', 'submit', 'press'].includes(verb))
+              await tab.markInput()
             if (verb === 'hold') holdable(parsed.target)
             r = parsed.verb === 'remember' ? await remember(tab, parsed.target, own) : await act(tab, parsed)
           } catch (error) {
@@ -395,7 +397,10 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
           await Promise.all(others.map((o) => o.settle()))
           const after = await tab.look()
           const reloads = tab.documentLoads - loadsBefore
-          const replaced = reloads ? 0 : await tab.newElements().catch(() => 0)
+          const calm = reloads
+            ? { replaced: 0, flashes: 0, shift: 0 }
+            : await tab.smoothness().catch(() => ({ replaced: 0, flashes: 0, shift: 0 }))
+          const { replaced, flashes, shift } = calm
           const elsewhere: BrowseElsewhere[] = []
           for (const o of others) {
             const was = o.snapshot
@@ -416,9 +421,11 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
                   ? 'navigated'
                   : 'reloaded',
             ...(replaced ? { replaced } : {}),
+            ...(flashes ? { flashes } : {}),
+            ...(shift >= 0.001 ? { shift } : {}),
             url: after.url,
             ...(tab.stepStatus !== null && tab.stepStatus !== 200 ? { status: tab.stepStatus } : {}),
-            ...delta(before, after),
+            ...delta(before, after, reloads === 0),
           }
           return { change, before, after, elsewhere }
         }),
@@ -520,7 +527,7 @@ const cut = (s: string, n: number, full: boolean) => (!full && s.length > n ? `$
 function describeChange(c: BrowseChange, full: boolean): string {
   if (!c.ok) return `FAILED — ${c.note}`
   if (c.jsOnly) return `js-only (${c.jsOnly})`
-  const moved = c.navigated
+  const moved = c.navigated && c.document !== 'in place'
   const items = [
     ...c.added.map((l) => (moved ? cut(l, WIDTH, full) : `+ ${cut(l, WIDTH, full)}`)),
     ...c.removed.map((l) => `− ${cut(l, WIDTH, full)}`),
@@ -529,13 +536,18 @@ function describeChange(c: BrowseChange, full: boolean): string {
   const more = items.length - shown.length
   const list = [...shown, ...(more ? [`… ${more} more`] : [])].join(' · ')
   const status = c.status ? ` (${c.status})` : ''
-  const how =
+  const how = [
     c.mode === 'on' && c.document === 'reloaded'
       ? 'the page reloaded'
       : full && c.replaced
         ? `${c.replaced} element${c.replaced === 1 ? '' : 's'} replaced`
-        : ''
-  return [moved || status ? `→ ${c.url}${status}` : '', how, list].filter(Boolean).join(': ')
+        : '',
+    c.flashes ? `${c.flashes} element${c.flashes === 1 ? '' : 's'} rebuilt unchanged (a flash)` : '',
+    c.shift ? `layout shift ${c.shift}` : '',
+  ]
+    .filter(Boolean)
+    .join(', ')
+  return [c.navigated || status ? `→ ${c.url}${status}` : '', how, list].filter(Boolean).join(': ')
 }
 
 export function describeBrowse(out: BrowseOutput, full = false): string {

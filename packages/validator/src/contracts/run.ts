@@ -146,6 +146,7 @@ export function runContract(
         else if (e.type === 'navigate') invokes.push({ navigate: e.url })
         else if (e.type === 'refresh') invokes.push({ refresh: e.tags })
         else if (e.type === 'copy') invokes.push({ copy: e.text })
+        else if (e.type === 'replace') invokes.push({ replace: e.url })
     }
     const pending = (effect: string, i: number) => {
       const invoke = stateOf(snapshot).invoke
@@ -224,9 +225,11 @@ export function runContract(
               ? `{ navigate: ${JSON.stringify(e.navigate)} }`
               : 'copy' in e
                 ? `{ copy: ${JSON.stringify(e.copy)} }`
-                : 'refresh' in e
-                  ? `{ refresh: [${e.refresh.map(tagCall).join(', ')}] }`
-                  : `{ effect: ${e.effect.slice(e.effect.indexOf('.') + 1)}, input: ${JSON.stringify(e.input)} }`,
+                : 'replace' in e
+                  ? `{ replace: ${JSON.stringify(e.replace)} }`
+                  : 'refresh' in e
+                    ? `{ refresh: [${e.refresh.map(tagCall).join(', ')}] }`
+                    : `{ effect: ${e.effect.slice(e.effect.indexOf('.') + 1)}, input: ${JSON.stringify(e.input)} }`,
           )
           .join(', ')}],`,
       })

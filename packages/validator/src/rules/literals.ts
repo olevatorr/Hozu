@@ -164,6 +164,7 @@ export function literals(ctx: Ctx) {
         const t = site.transition
         if (t.guard) checkGuard(ctx, env, t.guard, site.at('guard'))
         if (t.navigate) checkLinks(ctx, env, t.navigate, site.at('navigate'))
+        if (t.replace) checkLinks(ctx, env, t.replace, site.at('replace'))
         t.assign.forEach((a, i) => {
           if (!('literal' in a.value) && !('object' in a.value)) return
           const target = resolvePath(context, a.path)

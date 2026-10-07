@@ -199,6 +199,7 @@ export function compileMachine(
       navigate: t.navigate ? navigateTo(compileValue(t.navigate, fns), routes) : null,
       refresh: t.refresh?.length ? refreshOf(t.refresh, fns) : null,
       copy: t.copy ? compileValue(t.copy, fns) : null,
+      replace: t.replace ? navigateTo(compileValue(t.replace, fns), routes) : null,
     }
   }
   const states: CompiledState[] = names.map((name) => {

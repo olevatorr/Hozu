@@ -6,7 +6,15 @@ import type {
   StateConfig,
   TransitionConfig,
 } from '../builders/machine.ts'
-import type { AssignOp, GuardExpr, InvokeIR, MachineIR, StateIR, TransitionIR } from '../ir/types.ts'
+import type {
+  AssignOp,
+  GuardExpr,
+  InvokeIR,
+  MachineIR,
+  StateIR,
+  TransitionIR,
+  ValueExpr,
+} from '../ir/types.ts'
 import { transformedDecls } from '../lower.ts'
 import { type Decl, defOf, infoOf } from '../model/decl.ts'
 import { assignOf, exprOf, RecorderError, refProxy } from '../model/expr.ts'
@@ -78,6 +86,20 @@ function transition(
           null,
         )
       : null,
+    ...(t.replace
+      ? {
+          replace: scope.attempt(
+            at(p, 'replace'),
+            (): ValueExpr => {
+              const v = scope.value(scope.callback(t.replace!)(arg), at(p, 'replace'))
+              if (!('link' in v))
+                throw new RecorderError('replace must return one ui.link(route, params, search)')
+              return v
+            },
+            { literal: null } as ValueExpr,
+          ),
+        }
+      : {}),
     ...(t.copy
       ? {
           copy: scope.attempt(at(p, 'copy'), () => scope.value(scope.callback(t.copy!)(arg), at(p, 'copy')), {

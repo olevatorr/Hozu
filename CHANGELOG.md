@@ -1,5 +1,61 @@
 # Changelog
 
+## 0.21.0 — Continuity: a page that never flashes (ADR 0067)
+
+`hozu migrate` raises the packages; run `hozu build` again before deploying (component fingerprints changed). One
+behaviour to check: a transition's `navigate`, `refresh` and `copy` now read the context after its `assign` (below);
+`hozu check` shows a `navigate` that changes through its contract. Hozu knows the whole page before it runs, so it
+keeps the page calm with no code from you.
+
+### A calm page
+- **A query region settles instead of being replaced.** When its input changes (a filter, one more item), the rows
+  on screen stay, marked `aria-busy`, and update by key; only the new row is inserted. `pending` shows only before the
+  first answer. (Adding a symbol to the watchlist rebuilt 14 elements and flashed `pending`; it now inserts one row.)
+- **What an update adds fades in** (160 ms, rising 4 px): a region that was empty, rows added to
+  a list. A swap does not fade. Nothing animates on the first render or with reduced motion; a `motion` name still
+  chooses your own.
+- **A request that fails no longer leaves the page waiting:** a query read that cannot reach the server (offline, a
+  502 page) shows the `Unexpected` branch instead of the old rows, and a mutation that cannot reach it goes to
+  `failed.Unexpected` instead of staying in its busy state.
+- **Views two pages share keep still across a page change:** their root gets a derived `view-transition-name`, so a
+  header or a side panel stays while the rest cross-fades.
+- **A machine the next page shows too keeps its state** across the page change (the tab's `sessionStorage`, for the
+  same visitor, under half an hour, calm states only, not on a reload; fields the address seeds come from the
+  address). The page hydrates the server's view, then enters the kept state; a prerendered page does so when shown.
+  State that belongs to one item (a draft on `/posts/:id`) should be seeded from the address. In an app with a
+  session, cacheable pages keep nothing (they cannot know who is visiting). The code loads as a small chunk next to
+  hydration; the initial client is 8 935 B.
+- **`hozu browse` proves it:** a step that rebuilds elements unchanged reports a flash (`N elements rebuilt unchanged
+  (a flash)`), and layout that moves without input reports `layout shift X` (as CLS counts it). The examples were
+  fixed where it found flashes: controls are disabled while busy instead of hidden.
+
+### Shorter forms for common UI
+- **`is([...])` works for structure:** `is(['paused']) ? resume : pause`, `!is(['idle']) && saving`; HZ005 reads the
+  states each branch can show in. (A `!is(…)` was evaluated as JavaScript before.)
+- **`ui.set(ctx.field, value)`** in a view's `on`: a control that only sets a context field needs no event. The build
+  adds the event and a shared `on` that stays, the IR of the long form; a native post checks the value against the
+  field's schema.
+- **`replace: () => ui.link(…)`** on a transition writes the address without loading a page, so a reload or a shared
+  link keeps a search (`examples/stations`). A link that copies context fields decides nothing (no contract).
+- **Every effect of a transition reads the context after its `assign`** (`navigate`, `refresh`, `copy`, `replace`),
+  like the `invoke` input of the state it enters. `navigate` read it from before until 0.20. A `replace` to another
+  route is HZ014: that is a `navigate`.
+
+### Fixes and tools
+- Component fingerprints hash the recorded render, `ui.each` items included (a bundler cannot change them; a
+  constant the render reads does, GitHub issue #1 point 3); the manifest keeps `fn` fingerprints only.
+- The runtime makes no random value at module load (Cloudflare Workers refuse one at startup): `httpBus` picks its id
+  when it first sends.
+- `replace` to a route that no page of the machine shows is HZ014; `aria-busy` is counted per parent and released
+  when a busy region goes away.
+- `hozu migrate` leaves out the paths it cannot predict before it counts, so a real IR difference is never hidden
+  behind 50 fingerprint lines.
+- A changed lock entry lists only the fields that changed (`guard was …, now …`) before its `now:` line.
+- `hozu browse`: a same-document address change (`replace`) is `in place`, not a page load; `release;` followed by
+  another step splits correctly.
+- The guide: `fn` for computed attributes (an SVG path), `vars` with arbitrary-value classes for sizes and colours,
+  the Chart.js client component in `examples/showcase`, and a Vue / React → Hozu table (`hozu docs views --more`).
+
 ## 0.20.2
 
 - **A bundled app with components or `fn`s matches its build manifest** (GitHub issue #1). The IR fingerprinted

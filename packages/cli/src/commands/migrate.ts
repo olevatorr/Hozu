@@ -86,7 +86,7 @@ function recordWithInstalled(config: string): Json {
 }
 
 /** JSON pointers where two IRs differ, each with both values, at most 50. */
-export function differences(before: Json, after: Json, at = ''): string[] {
+export function differences(before: Json, after: Json, at = '', skip?: (path: string) => boolean): string[] {
   const out: string[] = []
   const show = (v: unknown) => {
     const s = v === undefined ? 'absent' : JSON.stringify(v)
@@ -98,6 +98,7 @@ export function differences(before: Json, after: Json, at = ''): string[] {
     const objects =
       a && b && typeof a === 'object' && typeof b === 'object' && Array.isArray(a) === Array.isArray(b)
     if (!objects) {
+      if (skip?.(path || '/')) return
       out.push(`${path || '/'}: ${show(a)} → ${show(b)}`)
       return
     }
@@ -231,7 +232,9 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
   out.ir = {
     compared: true,
     skipped: null,
-    differences: differences(normalized, loaded.build(false).ir as unknown as Json),
+    differences: differences(normalized, loaded.build(false).ir as unknown as Json, '', (path) =>
+      plan.some((s) => s.unpredictable?.test(path)),
+    ),
   }
   if (!options.dryRun) {
     const agents = ['.claude/skills/hozu', '.agents/skills/hozu'].filter((p) => existsSync(join(dir, p)))

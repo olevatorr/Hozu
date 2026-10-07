@@ -191,6 +191,7 @@ export function paths(ctx: Ctx) {
         t.assign.forEach((a, i) => checkAssign(ctx, env, a, site.at('assign', i)))
         if (t.navigate) checkValue(ctx, env, t.navigate, site.at('navigate'))
         if (t.copy) checkValue(ctx, env, t.copy, site.at('copy'))
+        if (t.replace) checkValue(ctx, env, t.replace, site.at('replace'))
         t.refresh?.forEach((r, i) => r.param && checkValue(ctx, env, r.param, site.at('refresh', i, 'param')))
       }
     }

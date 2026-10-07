@@ -166,6 +166,14 @@
           "type": "number",
           "description": "With the document kept: how many elements are new after the step (a region drawn again)."
         },
+        "flashes": {
+          "type": "number",
+          "description": "Elements the step removed and built again with the same tag, class and text: a visible flash (ADR 0067 C2)."
+        },
+        "shift": {
+          "type": "number",
+          "description": "Layout shift no input explains (layout-shift entries without recent input, summed, as CLS counts them)."
+        },
         "url": {
           "type": "string"
         },

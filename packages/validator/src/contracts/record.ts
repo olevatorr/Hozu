@@ -35,6 +35,7 @@ export interface BehaviorRecord {
   refresh?: TagExprIR[]
   copy?: ValueExpr
   stay?: true
+  replace?: ValueExpr
 }
 
 export interface LockEntryV2 {
@@ -85,6 +86,7 @@ export function recordOf(ir: ProjectIR, feature: FeatureIR, id: string): Behavio
   for (const a of transition.assign) valueRefs(a.value, '', collect)
   if (transition.navigate) valueRefs(transition.navigate, '', collect)
   if (transition.copy) valueRefs(transition.copy, '', collect)
+  if (transition.replace) valueRefs(transition.replace, '', collect)
   for (const t of transition.refresh ?? []) if (t.param) valueRefs(t.param, '', collect)
   if (target?.invoke) valueRefs(target.invoke.input, '', collect)
   const fns: Record<string, string | null> = {}
@@ -108,6 +110,7 @@ export function recordOf(ir: ProjectIR, feature: FeatureIR, id: string): Behavio
     ...(transition.refresh?.length ? { refresh: transition.refresh } : {}),
     ...(transition.copy ? { copy: transition.copy } : {}),
     ...(transition.stay ? { stay: true as const } : {}),
+    ...(transition.replace ? { replace: foldLinks(ir, transition.replace) } : {}),
   }
 }
 

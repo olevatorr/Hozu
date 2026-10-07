@@ -58,6 +58,7 @@ export function formNode(build: BuildResult, id: string): ElementNode | null {
 
 export interface FormOutcome {
   navigate: string | null
+  replace?: string
   snapshots: Record<string, Snapshot>
   unchanged: boolean
   unexpected: boolean
@@ -126,6 +127,7 @@ export async function runForm(options: {
     let next: Step | null = null
     for (const e of step.effects) {
       if (e.type === 'navigate') outcome.navigate = e.url
+      if (e.type === 'replace') outcome.replace = e.url
       if (e.type !== 'invoke') continue
       const dot = e.effect.indexOf('.')
       if (build.ir.features[e.effect.slice(0, dot)]?.mutations[e.effect.slice(dot + 1)]?.runs === 'browser') {

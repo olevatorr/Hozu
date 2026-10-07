@@ -77,6 +77,7 @@ export function decides(feature: FeatureIR, id: string): boolean {
   const { transition, target } = locate(feature, id)
   if (transition.guard || transition.navigate) return true
   if (transition.assign.some((a) => a.op === 'inc' || computes(a.value))) return true
+  if (transition.replace && computes(transition.replace)) return true
   if (
     (transition.copy && computes(transition.copy)) ||
     transition.refresh?.some((t) => t.param && computes(t.param))
@@ -166,6 +167,7 @@ export function summaryOf(feature: FeatureIR, id: string, record: BehaviorRecord
   if (record.navigate) parts.push(`navigate ${showValue(record.navigate)}`)
   if (record.refresh) parts.push(`refresh ${showRefresh(record.refresh)}`)
   if (record.copy) parts.push(`copy ${showValue(record.copy)}`)
+  if (record.replace) parts.push(`replace ${showValue(record.replace)}`)
   const enters = showEnters(record.enters)
   if (enters) parts.push(enters)
   if (Object.keys(record.fns).length) parts.push(`fns ${showFns(record.fns)}`)

@@ -38,6 +38,10 @@ export interface PagePayload {
   components: Record<string, ComponentRef>
   routes: Record<string, string>
   live: Record<string, LiveQuery>
+  /** A mark of the visitor's session: a kept snapshot comes back only to the same one (ADR 0067 C4). */
+  who?: string | null
+  /** The context fields the address sets, per feature: they win over a kept snapshot. */
+  seeds?: Record<string, string[]>
   /** Queries this page reads again on a timer, in seconds (ADR 0063 C1). */
   poll?: Record<string, number>
   /** Effects this page can call that run in the browser (ADR 0049). */
@@ -136,6 +140,7 @@ export async function hydrate(
   const script = doc.getElementById('hozu-payload')
   if (!script?.textContent) return apps
   const payload = JSON.parse(script.textContent) as PagePayload
+  const keeping = Object.keys(payload.features).length ? import('./keep.ts') : null
   const shared: Store = { data: new Map(payload.data), versions: new Map() }
   const registered = (globalThis as { __hozuFns?: Record<string, Record<string, never>> }).__hozuFns ?? {}
   const own = (url: string) => registered[new URL(url, doc.baseURI).href]
@@ -257,6 +262,12 @@ export async function hydrate(
   })
   syncAll()
   for (const app of apps.values()) app.start()
+  void keeping?.then(({ kept }) => {
+    const resume = kept(doc, payload, apps)
+    if ((doc as { prerendering?: boolean }).prerendering)
+      doc.addEventListener('prerenderingchange', resume, { once: true })
+    else resume()
+  })
   if (liveKeys.length)
     (live ?? (await import('./live.ts')).liveStream(doc))(
       onTags,

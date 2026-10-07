@@ -24,8 +24,8 @@ export interface Manifest {
   fetches?: Record<string, { hash: string; url: string }>
   styles: { href: string; preload: string[] } | null
   /**
-   * The text fingerprints `hozu build` saw, by component id and by `fn` ref (ADR 0066): a bundler reprints function
-   * text, so a build with a manifest reads these instead of hashing the bundled text.
+   * The `fn` body fingerprints `hozu build` saw, by ref (ADR 0066): a bundler reprints function text, so a build with
+   * a manifest reads these instead of hashing the bundled text. Components hash their lowered render (ADR 0067 I).
    */
-  sources?: { components: Record<string, string>; fns: Record<string, string> }
+  sources?: { fns: Record<string, string> }
 }

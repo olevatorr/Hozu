@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import type { Json } from '@hozu/core/ir'
 import { Ajv } from 'ajv'
 import { afterAll, describe, expect, it } from 'vitest'
-import { describeMigrate, runMigrate } from '../src/commands/migrate.ts'
+import { describeMigrate, differences, runMigrate } from '../src/commands/migrate.ts'
 import type { MigrateOutput } from '../src/contract.ts'
 import { load } from '../src/load.ts'
 import { main } from '../src/main.ts'
@@ -440,4 +440,41 @@ contract(m, { when: [{ failed: q, error: 'NotAllowed' }] })
       true,
     ])
   }, 120_000)
+})
+
+describe('the 0.20 → 0.21 step (ADR 0067)', () => {
+  it('marks shared view roots and leaves component fingerprints out of the comparison', async () => {
+    const { steps } = await import('../src/migrate/steps.ts')
+    const step = steps.find((s) => s.from === '0.20')!
+    const ir = {
+      pages: { a: { views: ['s.Header', 's.Body'] }, b: { views: ['s.Header'] } },
+      features: {
+        s: {
+          views: {
+            Header: { root: { kind: 'el', attrs: {} } },
+            Body: { root: { kind: 'el', attrs: {} } },
+          },
+        },
+      },
+    }
+    const out = step.normalize(structuredClone(ir) as never) as typeof ir
+    expect(out.features.s.views.Header.root.attrs).toEqual({ 'data-hz-view': { literal: 's.Header' } })
+    expect(out.features.s.views.Body.root.attrs).toEqual({})
+    expect(step.unpredictable?.test('/features/s/components/Badge/sourceHash')).toBe(true)
+    expect(step.unpredictable?.test('/kits/ui/components/Button/sourceHash')).toBe(true)
+    expect(step.unpredictable?.test('/features/s/fns/total/sourceHash')).toBe(false)
+  })
+
+  it('skips the unpredictable paths before it counts, so a real difference past 50 of them still shows', () => {
+    const components = (hash: string) =>
+      Object.fromEntries(Array.from({ length: 60 }, (_, i) => [`C${i}`, { sourceHash: `${hash}${i}` }]))
+    const unpredictable = chain('0.20', '0.21')![0]!.unpredictable!
+    const found = differences(
+      { features: { s: { components: components('a') } }, z: 1 } as Json,
+      { features: { s: { components: components('b') } }, z: 2 } as Json,
+      '',
+      (path) => unpredictable.test(path),
+    )
+    expect(found).toEqual(['/z: 1 → 2'])
+  })
 })

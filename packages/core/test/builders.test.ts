@@ -449,3 +449,81 @@ describe('link search folding (ADR 0043 G)', () => {
     )
   })
 })
+
+describe('views two pages share (ADR 0067 C4)', () => {
+  it('mark their root, so CSS keeps it still across a page change', async () => {
+    const { route } = await import('@hozu/core')
+    const { sharedViews } = await import('@hozu/core/ir')
+    const one = route({ path: '/', params: null, search: null })
+    const two = route({ path: '/two', params: null, search: null })
+    const Header = ui.view({ render: () => ui.header({}, ['Site']) })
+    const Body = ui.view({ render: () => ui.main({}, ['One']) })
+    const head = { render: () => ({ title: 'x' }) }
+    const b = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { one, two },
+        pages: [ui.page(one, { views: [Header, Body], head }), ui.page(two, { views: [Header], head })],
+        features: [feature({ id: 's', declarations: [{ Header, Body }], ...base })],
+      }),
+    )
+    expect(b.diagnostics).toEqual([])
+    expect(sharedViews(b.ir)).toEqual(['s.Header'])
+    expect(
+      sharedViews({ pages: { a: { views: ['s.Body', 's.Body'] }, b: { views: ['s.Body'] } } } as never),
+    ).toEqual([])
+    expect((b.ir.features.s!.views.Header!.root as { attrs: object }).attrs).toEqual({
+      'data-hz-view': { literal: 's.Header' },
+    })
+    expect((b.ir.features.s!.views.Body!.root as { attrs: object }).attrs).toEqual({})
+  })
+})
+
+describe('component fingerprints (ADR 0067 I)', () => {
+  it('follow the lowered render: a constant the render reads changes it, the function text alone does not', async () => {
+    const hashOf = (label: string, spaced: boolean) => {
+      const Badge = ui.component({
+        tag: 'span',
+        render: spaced
+          ? () => ui.span({ class: 'p-1' }, [label])
+          : () => [ui.span({ class: 'p-1' }, [label])][0]!,
+      })
+      const V = ui.view({ render: () => ui.div({}, [ui.use(Badge, {})]) })
+      const b = buildProject(
+        project({
+          schema: zodAdapter,
+          routes: {},
+          pages: [],
+          features: [feature({ id: 'k', declarations: [{ Badge, V }], ...base })],
+        }),
+      )
+      return b.ir.features.k!.components.Badge!.sourceHash
+    }
+    expect(hashOf('New', true)).toBe(hashOf('New', false))
+    expect(hashOf('New', true)).not.toBe(hashOf('Old', true))
+  })
+
+  it('follow what an each item renders, not the name of its callback', () => {
+    const hashOf = (cls: string) => {
+      const List = ui.component({
+        tag: 'ul',
+        props: z.object({ items: z.array(z.string()) }),
+        render: ({ props }) =>
+          ui.ul({}, [ui.each(props.items, null, (item) => ui.li({ class: cls }, [item]))]),
+      })
+      const V = ui.view({ render: () => ui.div({}, [ui.use(List, { props: { items: ['a'] } })]) })
+      const b = buildProject(
+        project({
+          schema: zodAdapter,
+          routes: {},
+          pages: [],
+          features: [feature({ id: 'k', declarations: [{ List, V }], ...base })],
+        }),
+      )
+      expect(b.diagnostics).toEqual([])
+      return b.ir.features.k!.components.List!.sourceHash
+    }
+    expect(hashOf('p-1')).not.toBe(hashOf('p-2'))
+    expect(hashOf('p-1')).toBe(hashOf('p-1'))
+  })
+})

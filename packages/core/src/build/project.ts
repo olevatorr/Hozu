@@ -5,7 +5,7 @@ import { join, resolveSource } from '../canonical/pointer.ts'
 import type { Bindings } from '../ir/bindings.ts'
 import { codes } from '../ir/codes.ts'
 import type { Diagnostic, DiagnosticCode, SourceIndex } from '../ir/diagnostic.ts'
-import type { AcceptIR, FeatureIR, JsonSchema, KitIR, ProjectIR, RouteIR } from '../ir/types.ts'
+import type { AcceptIR, FeatureIR, JsonSchema, KitIR, ProjectIR, RouteIR, TransitionIR } from '../ir/types.ts'
 import { freeNamesOf, transformedDecls } from '../lower.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
@@ -256,6 +256,57 @@ function projectSchema(
 export interface BuildOptions {
   sources?: boolean
   manifest?: Manifest
+}
+
+/** Views two or more pages show, each once: their root keeps still across a page change (ADR 0067 C4). */
+export function sharedViews(ir: Pick<ProjectIR, 'pages'>): string[] {
+  const counts = new Map<string, number>()
+  const twice = new Set<string>()
+  for (const page of Object.values(ir.pages)) {
+    const once = new Set(page.views)
+    for (const v of page.views.filter((v, i) => page.views.indexOf(v) !== i)) twice.add(v)
+    for (const v of once) counts.set(v, (counts.get(v) ?? 0) + 1)
+  }
+  return [...counts].filter(([v, n]) => n > 1 && !twice.has(v)).map(([v]) => v)
+}
+
+/** replace writes the address of a page that shows the machine: a link to a route without it is a navigate (ADR 0067 G). */
+function reportForeignReplace(scope: ProjectScope, ir: ProjectIR) {
+  for (const [id, feature] of Object.entries(ir.features)) {
+    const routes = Object.keys(ir.pages).filter((r) => ir.pages[r]!.views.some((v) => v.startsWith(`${id}.`)))
+    const told = new Set<string>()
+    for (const [name, state] of Object.entries(feature.machine?.states ?? {})) {
+      const base = join('', 'features', id, 'machine', 'states', name)
+      const all: [TransitionIR, string][] = [
+        ...Object.entries(state.on).flatMap(([e, ts]) =>
+          ts.map((t, i): [TransitionIR, string] => [t, join(base, 'on', e, i)]),
+        ),
+        ...(state.invoke?.done ?? []).map((t, i): [TransitionIR, string] => [
+          t,
+          join(base, 'invoke', 'done', i),
+        ]),
+        ...Object.entries(state.invoke?.failed ?? {}).flatMap(([e, ts]) =>
+          ts.map((t, i): [TransitionIR, string] => [t, join(base, 'invoke', 'failed', e, i)]),
+        ),
+        ...state.after.map((a, i): [TransitionIR, string] => [
+          a.transition,
+          join(base, 'after', i, 'transition'),
+        ]),
+      ]
+      for (const [t, at] of all) {
+        const link = t.replace && 'link' in t.replace ? t.replace.link : null
+        if (!link || !routes.length || routes.includes(link) || told.has(link)) continue
+        told.add(link)
+        scope.report(
+          'HZ014',
+          id,
+          join(at, 'replace'),
+          `replace writes a ${link} address, but no ${link} page shows ${id}`,
+          'replace changes the address of the page the person is on; to go to another route, use navigate.',
+        )
+      }
+    }
+  }
 }
 
 export function buildProject(project: unknown, options: BuildOptions = {}): BuildResult {
@@ -534,6 +585,11 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
     kits,
     accept: acceptOf(scope, config.accept ?? []),
   }
+  for (const ref of sharedViews(ir)) {
+    const root = features[ref.slice(0, ref.indexOf('.'))]?.views[ref.slice(ref.indexOf('.') + 1)]?.root
+    if (root?.kind === 'el') root.attrs['data-hz-view'] = { literal: ref }
+  }
+  reportForeignReplace(scope, ir)
   reportSharedParts(scope, new Set(Object.keys(features)))
   reportUndeclaredConnect(scope, features, env?.public ?? null)
   scope.bindings.assetOrder = scope.assetList

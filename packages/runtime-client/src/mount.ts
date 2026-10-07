@@ -4,6 +4,7 @@ import {
   type CompiledMachine,
   compileValue,
   type Env,
+  enter,
   equal,
   type Getter,
   getIn,
@@ -87,6 +88,8 @@ export interface App {
   attach(parent: Node, before: Node | null, node: ViewNode, scope: Json[], claim: boolean): void
   start(): void
   sync(): void
+  /** Takes a snapshot kept from the page before and enters its state again, so its timers run (ADR 0067 C4). */
+  resume(kept: Snapshot): void
   dispatch(input: Input): void
   snapshot(): Snapshot | null
   destroy(): void
@@ -173,12 +176,15 @@ function clear(start: Node, end: Node) {
   while (start.nextSibling && start.nextSibling !== end) start.nextSibling.remove()
 }
 
+const waiting = new WeakMap<Element, number>()
+const lost = (e: unknown): Result => ({ ok: false, error: 'Unexpected', data: { message: String(e) } })
+
 export function createApp(doc: Document, options: AppOptions): App {
   const { machine, fns = {}, params = null, search = null, routes = {} } = options
   const { data: payload } = store(options.payload)
   const ranges: [Node, Node][] = []
   const timers = new Set<ReturnType<typeof setTimeout>>()
-  let first: Step | null = machine ? (options.snapshot ? null : init(machine)) : null
+  let first: Step | null = machine && !options.snapshot ? init(machine) : null
   let snapshot: Snapshot | null = options.snapshot ?? first?.snapshot ?? null
   const root: Block = []
   const detached = new Set<() => void>()
@@ -312,24 +318,44 @@ export function createApp(doc: Document, options: AppOptions): App {
       }
       case 'query': {
         let bound: Json[] = scope
-        const key = () => {
-          const k = payloadKey(node.query, value(node.input, scope))
-          const r = payload.get(k)
-          if (r && bound !== scope) bound.splice(0, bound.length, ...scope, r.ok ? r.value : r.data)
-          return `${k}|${!r ? '' : r.ok ? 'ready' : node.failed[r.error] ? r.error : 'Unexpected'}`
-        }
-        region(c, block, key, (cc, inner) => {
+        let shown: Result | undefined
+        const read = () => {
           const input = value(node.input, scope)
           const k = payloadKey(node.query, input)
-          const result = payload.get(k)
+          return { input, k, r: payload.get(k) }
+        }
+        let mine: Element | null = null
+        let owned = false
+        const busy = (on: boolean, at?: Node) => {
+          const el = (on ? at?.parentNode : mine) as Element | null
+          if (!on === !mine || el?.nodeType !== 1) return
+          mine = on ? el : null
+          const n = (waiting.get(el) ?? 0) + (on ? 1 : -1)
+          waiting.set(el, n)
+          el.toggleAttribute('aria-busy', n > 0)
+        }
+        const key = (at: Node) => {
+          owned ||= !!mounted.add({ el: at, stop: () => at.parentNode !== mine && busy(false) })
+          const { input, k, r } = read()
+          if (r) shown = r
+          else if (shown) request(k, node.query, input)
+          busy(!r && !!shown, at)
+          if (shown && bound !== scope)
+            bound.splice(0, bound.length, ...scope, shown.ok ? shown.value : shown.data)
+          return !shown ? '' : shown.ok ? 'ready' : node.failed[shown.error] ? shown.error : 'Unexpected'
+        }
+        region(c, block, key, (cc, inner) => {
+          const { input, k, r } = read()
+          if (r) shown = r
           bound = scope
-          if (!result) {
+          if (!shown) {
             if (!cc.claim || options.readsInBrowser?.(node.query)) request(k, node.query, input)
             if (node.pending) render(node.pending, scope, cc, inner, ns)
             return
           }
-          const branch = result.ok ? node.ready : (node.failed[result.error] ?? node.failed.Unexpected)
-          bound = [...scope, result.ok ? result.value : result.data]
+          if (!r) request(k, node.query, input)
+          const branch = shown.ok ? node.ready : (node.failed[shown.error] ?? node.failed.Unexpected)
+          bound = [...scope, shown.ok ? shown.value : shown.data]
           if (branch) render(branch, bound, cc, inner, ns)
         })
         return
@@ -445,12 +471,15 @@ export function createApp(doc: Document, options: AppOptions): App {
   const request = (key: string, query: string, input: Json) => {
     if (!options.onQuery || fetching.has(key)) return
     fetching.add(key)
-    void options.onQuery(query, input).then((result) => {
-      fetching.delete(key)
-      payload.set(key, result)
-      for (const u of root) u()
-      sweep()
-    })
+    void options
+      .onQuery(query, input)
+      .catch(lost)
+      .then((result) => {
+        fetching.delete(key)
+        payload.set(key, result)
+        for (const u of root) u()
+        sweep()
+      })
   }
 
   const sweep = () => {
@@ -462,20 +491,30 @@ export function createApp(doc: Document, options: AppOptions): App {
       }
   }
 
+  /** The default motion (ADR 0067 C3): what an update adds fades in, unless the person asked for reduced motion. */
+  const appear = (nodes: Node[]) => {
+    if (doc.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    for (const n of nodes)
+      (n as Element).animate?.([{ opacity: 0, translate: '0 4px' }], {
+        duration: 160,
+        easing: 'ease-out',
+      })
+  }
+
   const region = (
     c: Cursor,
     block: Block,
-    key: () => unknown,
+    key: (start: Node) => unknown,
     fill: (c: Cursor, inner: Block) => void,
     motion: string | null = null,
   ) => {
     const start = marker(c, '[')
-    let current = key()
+    let current = key(start)
     let inner: Block = []
     fill(c, inner)
     const end = marker(c, ']')
     block.push(() => {
-      const next = key()
+      const next = key(start)
       if (next === current) {
         for (const u of inner) u()
         return
@@ -484,8 +523,12 @@ export function createApp(doc: Document, options: AppOptions): App {
       inner = []
       const m = options.motion
       if (!motion || !m || m.reduced(doc)) {
+        const empty = start.nextSibling === end
         clear(start, end)
-        fill({ parent: end.parentNode!, next: end, claim: false }, inner)
+        const [a, b] = span({ parent: end.parentNode!, next: end, claim: false }, () =>
+          fill({ parent: end.parentNode!, next: end, claim: false }, inner),
+        )
+        if (!motion && empty && a && b && a !== end) appear(range(a, b))
         return
       }
       m.leave(start.nextSibling === end ? [] : range(start.nextSibling!, end.previousSibling!), motion)
@@ -556,7 +599,8 @@ export function createApp(doc: Document, options: AppOptions): App {
         else for (const n of range(item.first, item.last)) parent.insertBefore(n, at)
       }
       items = next
-      moving?.settle(next.map((i) => [range(i.first, i.last), fresh.has(i)]))
+      if (moving) moving.settle(next.map((i) => [range(i.first, i.last), fresh.has(i)]))
+      else if (!node.motion && !old.size) for (const item of fresh) appear(range(item.first, item.last))
     })
   }
 
@@ -571,9 +615,14 @@ export function createApp(doc: Document, options: AppOptions): App {
         timers.add(t)
       } else if (e.type === 'refresh') options.onRefresh?.(e.tags)
       else if (e.type === 'copy') void navigator.clipboard?.writeText(e.text).catch(() => null)
+      else if (e.type === 'replace')
+        try {
+          doc.defaultView?.history.replaceState(history.state, '', e.url)
+        } catch {}
       else
         options
           .onInvoke?.(e.effect, e.input)
+          .catch(lost)
           .then((r) =>
             dispatch(
               r.ok
@@ -582,6 +631,11 @@ export function createApp(doc: Document, options: AppOptions): App {
             ),
           )
     }
+  }
+
+  const stop = () => {
+    for (const t of timers) clearTimeout(t)
+    timers.clear()
   }
 
   function dispatch(input: Input) {
@@ -616,11 +670,19 @@ export function createApp(doc: Document, options: AppOptions): App {
       for (const u of root) u()
       sweep()
     },
+    resume(kept) {
+      if (!machine) return
+      stop()
+      const step = enter(machine, kept.state, kept.context, kept.entry, kept.previous)
+      snapshot = step.snapshot
+      for (const u of root) u()
+      sweep()
+      effects(step)
+    },
     dispatch,
     snapshot: () => snapshot,
     destroy: () => {
-      for (const t of timers) clearTimeout(t)
-      timers.clear()
+      stop()
       for (const m of mounted) m.stop()
       mounted.clear()
       root.length = 0

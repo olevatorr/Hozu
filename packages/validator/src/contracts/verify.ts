@@ -92,6 +92,8 @@ function previousFeature(feature: FeatureIR, id: string, record: BehaviorRecord)
   else delete transition.copy
   if (record.stay) transition.stay = true
   else delete transition.stay
+  if (record.replace) transition.replace = record.replace
+  else delete transition.replace
   transition.target = record.enters.state
   const target = f.machine!.states[record.enters.state]
   if (target) {
@@ -134,6 +136,7 @@ const fieldText: Record<keyof BehaviorRecord, (r: BehaviorRecord) => string> = {
   refresh: (r) => (r.refresh ? showRefresh(r.refresh) : 'none'),
   copy: (r) => (r.copy ? showValue(r.copy) : 'none'),
   stay: (r) => (r.stay ? 'stays' : 'enters'),
+  replace: (r) => (r.replace ? showValue(r.replace) : 'none'),
 }
 
 function unspecified(ctx: Ctx, feature: FeatureIR, change: LockChange) {
@@ -174,8 +177,18 @@ const lineOf = (c: LockChange): string => {
       return `new ${c.id} · now: ${c.after!.summary}`
     case 'removed':
       return `removed ${c.id} · was: ${c.before!.summary}`
-    case 'changed':
-      return `changed ${c.id} (${c.fields.join(', ') || 'summary'})${c.before!.decides && !c.after!.decides ? ' · stops deciding: accept it, then delete the contracts HZ058 names' : ''} · was: ${c.before!.summary} · now: ${c.after!.summary}`
+    case 'changed': {
+      const fields = c.fields.length
+        ? c.fields
+            .map((k) => `${k} was ${fieldText[k](c.before!.fields)}, now ${fieldText[k](c.after!.fields)}`)
+            .join(' · ')
+        : `was: ${c.before!.summary}`
+      const stops =
+        c.before!.decides && !c.after!.decides
+          ? ' · stops deciding: accept it, then delete the contracts HZ058 names'
+          : ''
+      return `changed ${c.id}: ${fields}${stops} · now: ${c.after!.summary}`
+    }
     default:
       return `contracts ${c.id}: was ${names(c.before)}; now ${names(c.after)}`
   }

@@ -2,6 +2,7 @@ import {
   type At,
   at,
   type FeatureIR,
+  type GuardExpr,
   join,
   type ProjectIR,
   type TransitionIR,
@@ -104,6 +105,63 @@ export interface NodeSite {
   env: Env
 }
 
+/** The machine states in which a condition can be true (`yes`) and false (`no`); null when it reads more than the state. */
+export function stateSplit(g: GuardExpr, all: string[]): { yes: Set<string> | null; no: Set<string> | null } {
+  const every = (sets: (Set<string> | null)[], join: 'and' | 'or') => {
+    if (join === 'or' && sets.some((x) => x === null)) return null
+    const known = sets.filter((x): x is Set<string> => x !== null)
+    if (!known.length) return null
+    return new Set(
+      all.filter((st) => (join === 'and' ? known.every((x) => x.has(st)) : known.some((x) => x.has(st)))),
+    )
+  }
+  switch (g.op) {
+    case 'eq':
+      if (
+        'ref' in g.left &&
+        g.left.ref === 'state' &&
+        'literal' in g.right &&
+        typeof g.right.literal === 'string'
+      ) {
+        const s = g.right.literal
+        return { yes: new Set([s]), no: new Set(all.filter((x) => x !== s)) }
+      }
+      return { yes: null, no: null }
+    case 'not': {
+      const inner = stateSplit(g.arg, all)
+      return { yes: inner.no, no: inner.yes }
+    }
+    case 'and': {
+      const parts = g.args.map((a) => stateSplit(a, all))
+      return {
+        yes: every(
+          parts.map((x) => x.yes),
+          'and',
+        ),
+        no: every(
+          parts.map((x) => x.no),
+          'or',
+        ),
+      }
+    }
+    case 'or': {
+      const parts = g.args.map((a) => stateSplit(a, all))
+      return {
+        yes: every(
+          parts.map((x) => x.yes),
+          'or',
+        ),
+        no: every(
+          parts.map((x) => x.no),
+          'and',
+        ),
+      }
+    }
+    default:
+      return { yes: null, no: null }
+  }
+}
+
 export function walkView(
   ir: ProjectIR,
   feature: FeatureIR,
@@ -146,10 +204,14 @@ export function walkView(
       case 'component':
         node.children.forEach((c, i) => walk(c, at(pointer, 'children', i), visible, env))
         return
-      case 'if':
-        node.ifTrue.forEach((c, i) => walk(c, at(pointer, 'ifTrue', i), visible, env))
-        node.ifFalse.forEach((c, i) => walk(c, at(pointer, 'ifFalse', i), visible, env))
+      case 'if': {
+        const split = all ? stateSplit(node.test, all) : { yes: null, no: null }
+        const within = (side: Set<string> | null) =>
+          visible && side ? visible.filter((v) => side.has(v)) : visible
+        node.ifTrue.forEach((c, i) => walk(c, at(pointer, 'ifTrue', i), within(split.yes), env))
+        node.ifFalse.forEach((c, i) => walk(c, at(pointer, 'ifFalse', i), within(split.no), env))
         return
+      }
       case 'when': {
         const narrowed = visible ? visible.filter((s) => node.states.includes(s)) : null
         node.children.forEach((c, i) => walk(c, at(pointer, 'children', i), narrowed, env))

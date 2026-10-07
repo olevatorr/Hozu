@@ -53,7 +53,7 @@ describe('a bundled app with components and fns matches its build manifest (issu
     })
     expect(built.status, built.stderr).toBe(0)
     const manifest = JSON.parse(readFileSync(join(out, 'manifest.json'), 'utf8'))
-    expect(Object.keys(manifest.sources.components)).toContain('ui.Button')
+    expect(manifest.sources.components).toBeUndefined()
     expect(Object.keys(manifest.sources.fns)).toContain('bookmarks.visible')
     const outfile = join(bookmarks, '.issue1-entry.mjs')
     try {

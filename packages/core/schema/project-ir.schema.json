@@ -1519,6 +1519,10 @@
         "copy": {
           "$ref": "#/definitions/ValueExpr",
           "description": "Text written to the clipboard (ADR 0064 D); absent when none."
+        },
+        "replace": {
+          "$ref": "#/definitions/ValueExpr",
+          "description": "The address written with history.replaceState, without loading a page (ADR 0067 G); absent when none."
         }
       },
       "required": [
@@ -2535,6 +2539,18 @@
           },
           "required": [
             "copy"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "replace": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "replace"
           ],
           "additionalProperties": false
         }

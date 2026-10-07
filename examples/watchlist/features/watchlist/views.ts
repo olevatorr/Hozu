@@ -10,14 +10,9 @@ export const Board = ui.view({
       ui.div({ class: 'flex items-center justify-between' }, [
         ui.h1({ class: 'text-3xl font-bold' }, ['Watchlist']),
         ui.div({ class: 'flex gap-2' }, [
-          when(
-            ['paused'],
-            [ui.button({ type: 'button', class: button, on: { click: ui.send(Resume, {}) } }, ['Resume'])],
-          ),
-          when(
-            ['live'],
-            [ui.button({ type: 'button', class: button, on: { click: ui.send(Pause, {}) } }, ['Pause'])],
-          ),
+          is(['paused'])
+            ? ui.button({ type: 'button', class: button, on: { click: ui.send(Resume, {}) } }, ['Resume'])
+            : ui.button({ type: 'button', class: button, on: { click: ui.send(Pause, {}) } }, ['Pause']),
           ui.button({ type: 'button', class: button, on: { click: ui.send(RefreshNow, {}) } }, [
             'Refresh now',
           ]),

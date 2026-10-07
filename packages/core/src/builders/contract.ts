@@ -15,6 +15,7 @@ export type EffectCall =
   | { navigate: string }
   | { refresh: TagUse[] }
   | { copy: string }
+  | { replace: string }
 
 export interface ContractDef {
   machine: MachineDecl

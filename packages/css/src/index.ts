@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { extname, resolve } from 'node:path'
-import { type BuildResult, classCandidates, sha256, styledClasses } from '@hozu/core/ir'
+import { type BuildResult, classCandidates, sha256, sharedViews, styledClasses } from '@hozu/core/ir'
 import type { ClassStyle } from '@hozu/validator'
 import { closest } from '@hozu/validator'
 import { __unstable__loadDesignSystem, compile, optimize } from '@tailwindcss/node'
@@ -68,7 +68,10 @@ export async function compileStyles(
   build: BuildResult,
   { minify = true, base = process.cwd() }: { minify?: boolean; base?: string } = {},
 ): Promise<CompiledStyles> {
-  const source = [transitions, stylesSource(build)].join('\n')
+  const kept = sharedViews(build.ir)
+    .map((ref) => `[data-hz-view="${ref}"] { view-transition-name: hz-${ref.replace(/[^\w-]/g, '-')}; }`)
+    .join('\n')
+  const source = [transitions, kept, stylesSource(build)].filter(Boolean).join('\n')
   const files = new Set<string>()
   const compiler = await compile(source, {
     base,

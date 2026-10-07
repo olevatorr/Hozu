@@ -388,16 +388,21 @@ export class Tab {
     }
     if (main && method === 'Page.frameStartedLoading' && params.frameId === this.targetId) {
       this.loaded = false
-      this.documentLoads++
       this.activity++
-      for (const live of this.live.values()) this.world.cancel(live.id)
-      this.live.clear()
     }
     if (method === 'Page.frameNavigated' && !params.frame.parentId) {
       const url = new URL(params.frame.url)
       url.searchParams.delete('__hozu')
-      if (main) this.location = pathOf(url.href)
-      else this.prerendering = pathOf(url.href)
+      if (main) {
+        this.location = pathOf(url.href)
+        this.documentLoads++
+        for (const live of this.live.values()) this.world.cancel(live.id)
+        this.live.clear()
+      } else this.prerendering = pathOf(url.href)
+    }
+    if (main && method === 'Page.navigatedWithinDocument' && params.frameId === this.targetId) {
+      this.location = pathOf(params.url)
+      this.loaded = true
     }
     if (main && method === 'Page.loadEventFired') this.loaded = true
     return true
@@ -459,6 +464,11 @@ export class Tab {
     return all.length + Number(waiting)
   }
 
+  /** The moment a person's input happened: shifts within 500 ms of it are expected, as CLS counts them. */
+  markInput() {
+    return this.evaluate('globalThis.__hozuInputAt = performance.now()').catch(() => null)
+  }
+
   /** Holds a browser-run effect on the page: its call waits until `release` (ADR 0065 A). */
   holdInPage(ref: string) {
     return this.evaluate(`(globalThis.__hozuHeld ??= new Set()).add(${JSON.stringify(ref)}), true`)
@@ -508,17 +518,45 @@ export class Tab {
     }
   }
 
-  /** Marks every element now on the page, so `newElements` can count what a step replaced. */
+  /** Marks every element now on the page, so `smoothness` can count what a step replaced. */
   tagElements(): Promise<number> {
-    return this.evaluate(
-      `(() => { const s = Symbol.for('hozu.browse.seen'); let n = 0; for (const el of document.querySelectorAll('body *')) { el[s] = true; n++ } return n })()`,
-    )
+    return this.evaluate(`(() => {
+      const s = Symbol.for('hozu.browse.seen')
+      const g = globalThis
+      if (!g.__hozuShiftObserver && typeof PerformanceObserver === 'function') {
+        g.__hozuShiftObserver = new PerformanceObserver((list) => { for (const e of list.getEntries()) g.__hozuShifts.push(e) })
+        try { g.__hozuShiftObserver.observe({ type: 'layout-shift' }) } catch {}
+      }
+      g.__hozuShiftObserver?.takeRecords()
+      g.__hozuShifts = []
+      g.__hozuInputAt = -Infinity
+      g.__hozuSeen = []
+      for (const el of document.querySelectorAll('body *')) { el[s] = true; g.__hozuSeen.push(el) }
+      return g.__hozuSeen.length
+    })()`)
   }
 
-  newElements(): Promise<number> {
-    return this.evaluate(
-      `(() => { const s = Symbol.for('hozu.browse.seen'); let n = 0; for (const el of document.querySelectorAll('body *')) if (!el[s]) n++; return n })()`,
-    )
+  /** What a step did to the page in place: new elements, elements rebuilt unchanged (flashes) and layout shift (ADR 0067 C2). */
+  smoothness(): Promise<{ replaced: number; flashes: number; shift: number }> {
+    return this.evaluate(`(() => {
+      const s = Symbol.for('hozu.browse.seen')
+      const g = globalThis
+      const sig = (el) => el.tagName + '|' + (el.getAttribute('class') ?? '') + '|' + el.textContent.replace(/\\s+/g, ' ').trim()
+      const gone = new Map()
+      for (const el of g.__hozuSeen ?? []) if (!el.isConnected) gone.set(sig(el), (gone.get(sig(el)) ?? 0) + 1)
+      let replaced = 0
+      let flashes = 0
+      for (const el of document.querySelectorAll('body *')) {
+        if (el[s]) continue
+        replaced++
+        const n = gone.get(sig(el))
+        if (n) { flashes++; gone.set(sig(el), n - 1) }
+      }
+      for (const e of g.__hozuShiftObserver?.takeRecords() ?? []) g.__hozuShifts.push(e)
+      let shift = 0
+      for (const e of g.__hozuShifts ?? []) if (!e.hadRecentInput && e.startTime > g.__hozuInputAt + 500) shift += e.value
+      return { replaced, flashes, shift: Math.round(shift * 1000) / 1000 }
+    })()`)
   }
 
   private async answer(params: any, session: string): Promise<void> {

@@ -326,6 +326,21 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   #1): `Manifest.sources` holds component and `fn` fingerprints, read by a build given a manifest (bundlers reprint
   function text); `@hozu/bundle` loads Node and esbuild lazily; DevTools Copy for AI saves the request first (one
   file per request text, shared with Save request) and copies it with a last line naming the file and `done` command.
+- 0.21 (ADR 0067, Continuity): a query region keys on its branch, not its input, so a changed input keeps the DOM
+  (`aria-busy`, counted per parent) and updates by key, `pending` only before the first answer, a failed request is
+  `Unexpected`; what an update adds (an empty region filled, rows added) fades in (Web Animations, not with reduced
+  motion, swaps do not fade); views each page lists once on two or more pages get `data-hz-view` (core build,
+  `sharedViews`) and a `view-transition-name` from `@hozu/css`; machines a page shares with the next keep their
+  snapshot in `sessionStorage` (lazy `keep.ts`; saved on click and pagehide; `who` = session hash, `null` on
+  cacheable pages of session apps; `seeds` from the address; the page hydrates the server's view, then
+  `app.resume()`, after `prerenderingchange` when prerendered; not on reload, in frames or DevTools previews);
+  `hozu browse` reports `flashes` and `shift` (layout shift 500 ms after input); `is([...])` for structure (transform
+  lowers calls of render params; HZ005 via `stateSplit`); `ui.set(field, value)` (build adds `Set_<field>` + a staying
+  shared `on`, payload checked against the context schema, name clash HZ014); `replace` transition effect
+  (`history.replaceState`, native post redirects to it, a route no page of the machine shows is HZ014); every
+  transition effect, `navigate` included, reads the post-assign context; component `sourceHash` = recorded render
+  shape (callbacks recorded with placeholders); lock lines list changed fields; no module-level randomness (Workers);
+  P7 8 935 B.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

@@ -724,7 +724,9 @@ function handlerFor({
       })
     await dropPages(outcome.invalidated)
     const cookie = store && outcome.session ? await store.write(outcome.session.value, request) : null
-    const target = outcome.invalid ? null : (outcome.navigate ?? (outcome.unchanged ? back : null))
+    const target = outcome.invalid
+      ? null
+      : (outcome.navigate ?? outcome.replace ?? (outcome.unchanged ? back : null))
     if (target) {
       after(outcome.invalidated)
       return see(target, cookie)

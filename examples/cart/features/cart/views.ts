@@ -7,7 +7,7 @@ import { cartMachine, MAX_QTY } from './machine.ts'
 
 export const CartPanel = ui.view({
   machine: cartMachine,
-  render: ({ ctx, when }) =>
+  render: ({ ctx, when, is }) =>
     ui.section({ class: 'grid gap-6' }, [
       ui.h2({}, ['Cart']),
       ui.query(
@@ -26,10 +26,14 @@ export const CartPanel = ui.view({
                       ' × ',
                       item.qty,
                       when(
-                        ['idle'],
+                        ['idle', 'adding', 'removing', 'checkingOut'],
                         [
                           ui.button(
-                            { type: 'button', on: { click: ui.send(RemoveItem, { sku: item.sku }) } },
+                            {
+                              type: 'button',
+                              disabled: !is(['idle']),
+                              on: { click: ui.send(RemoveItem, { sku: item.sku }) },
+                            },
                             ['Remove'],
                           ),
                         ],
@@ -45,7 +49,7 @@ export const CartPanel = ui.view({
         },
       ),
       when(
-        ['idle'],
+        ['idle', 'adding', 'removing', 'checkingOut'],
         [
           ui.label(
             {
@@ -60,6 +64,7 @@ export const CartPanel = ui.view({
                 min: 1,
                 max: MAX_QTY,
                 value: ctx.pending.qty,
+                disabled: !is(['idle']),
                 on: { input: ui.send(SetQuantity, { qty: ui.dom.valueAsNumber }) },
               }),
               ui.span({ class: 'h-1 w-24 rounded bg-gray-200' }, [
@@ -85,11 +90,12 @@ export const CartPanel = ui.view({
                 ui.li({}, [
                   product.name,
                   when(
-                    ['idle'],
+                    ['idle', 'adding', 'removing', 'checkingOut'],
                     [
                       ui.button(
                         {
                           type: 'button',
+                          disabled: !is(['idle']),
                           on: { click: ui.send(AddItem, { sku: product.sku, qty: ctx.pending.qty }) },
                         },
                         ['Add'],
@@ -113,7 +119,14 @@ export const CartPanel = ui.view({
         ],
         'fade',
       ),
-      when(['idle'], [ui.button({ type: 'button', on: { click: ui.send(Checkout, {}) } }, ['Checkout'])]),
+      when(
+        ['idle', 'adding', 'removing', 'checkingOut'],
+        [
+          ui.button({ type: 'button', disabled: !is(['idle']), on: { click: ui.send(Checkout, {}) } }, [
+            'Checkout',
+          ]),
+        ],
+      ),
       when(['placed'], [ui.p({}, ['Order ', ctx.orderId, ' placed'])]),
     ]),
 })

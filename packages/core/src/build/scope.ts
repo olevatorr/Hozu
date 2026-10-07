@@ -201,6 +201,8 @@ export class FeatureScope {
   readonly base: string
   readonly schemas: Record<string, JsonSchema> = {}
   stateNames: string[] = []
+  /** Context fields a view writes with ui.set, by the event the build adds for each (ADR 0067 H). */
+  sets = new Map<string, string[]>()
   lowering = false
   inRender = 0
 
