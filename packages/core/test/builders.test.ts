@@ -475,3 +475,28 @@ describe('views two pages share (ADR 0067 C4)', () => {
     expect((b.ir.features.s!.views.Body!.root as { attrs: object }).attrs).toEqual({})
   })
 })
+
+describe('component fingerprints (ADR 0067 I)', () => {
+  it('follow the lowered render: a constant the render reads changes it, the function text alone does not', async () => {
+    const hashOf = (label: string, spaced: boolean) => {
+      const Badge = ui.component({
+        tag: 'span',
+        render: spaced
+          ? () => ui.span({ class: 'p-1' }, [label])
+          : () => [ui.span({ class: 'p-1' }, [label])][0]!,
+      })
+      const V = ui.view({ render: () => ui.div({}, [ui.use(Badge, {})]) })
+      const b = buildProject(
+        project({
+          schema: zodAdapter,
+          routes: {},
+          pages: [],
+          features: [feature({ id: 'k', declarations: [{ Badge, V }], ...base })],
+        }),
+      )
+      return b.ir.features.k!.components.Badge!.sourceHash
+    }
+    expect(hashOf('New', true)).toBe(hashOf('New', false))
+    expect(hashOf('New', true)).not.toBe(hashOf('Old', true))
+  })
+})

@@ -305,10 +305,8 @@ export function buildComponent(scope: FeatureScope, p: At, decl: object): Compon
     extend: def.extend,
     owned: ownedOf(def, root),
     client: clientOf(scope, p, def, id),
-    sourceHash:
-      scope.project.manifest?.sources?.components[id] ??
-      scope.fingerprint(
-        `${def.tag}\n${String(def.render)}\n${JSON.stringify(tv ? { base: tv.base, slots: tv.slots, variants: tv.variants, defaultVariants: tv.defaultVariants, compoundVariants: tv.compoundVariants } : null)}`,
-      ),
+    sourceHash: scope.fingerprint(
+      `${def.tag}\n${root ? JSON.stringify(root) : String(def.render)}\n${JSON.stringify(tv ? { base: tv.base, slots: tv.slots, variants: tv.variants, defaultVariants: tv.defaultVariants, compoundVariants: tv.compoundVariants } : null)}`,
+    ),
   }
 }
