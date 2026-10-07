@@ -475,6 +475,21 @@ export function createApp(doc: Document, options: AppOptions): App {
       }
   }
 
+  /** The default motion (ADR 0067 C3): what an update adds fades in, unless the person asked for reduced motion. */
+  const appear = (nodes: Node[], lift: boolean) => {
+    if (doc.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    for (const n of nodes)
+      (n as Element).animate?.(
+        lift
+          ? [
+              { opacity: 0, transform: 'translateY(4px)' },
+              { opacity: 1, transform: 'none' },
+            ]
+          : [{ opacity: 0 }, { opacity: 1 }],
+        { duration: 160, easing: 'ease-out' },
+      )
+  }
+
   const region = (
     c: Cursor,
     block: Block,
@@ -498,7 +513,10 @@ export function createApp(doc: Document, options: AppOptions): App {
       const m = options.motion
       if (!motion || !m || m.reduced(doc)) {
         clear(start, end)
-        fill({ parent: end.parentNode!, next: end, claim: false }, inner)
+        const [a, b] = span({ parent: end.parentNode!, next: end, claim: false }, () =>
+          fill({ parent: end.parentNode!, next: end, claim: false }, inner),
+        )
+        if (!motion && a && b && a !== end) appear(range(a, b), false)
         return
       }
       m.leave(start.nextSibling === end ? [] : range(start.nextSibling!, end.previousSibling!), motion)
@@ -569,7 +587,8 @@ export function createApp(doc: Document, options: AppOptions): App {
         else for (const n of range(item.first, item.last)) parent.insertBefore(n, at)
       }
       items = next
-      moving?.settle(next.map((i) => [range(i.first, i.last), fresh.has(i)]))
+      if (moving) moving.settle(next.map((i) => [range(i.first, i.last), fresh.has(i)]))
+      else if (!node.motion) for (const item of fresh) appear(range(item.first, item.last), true)
     })
   }
 

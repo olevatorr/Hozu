@@ -36,11 +36,13 @@ derived from that knowledge, so authors write nothing new and agents cannot get 
   calm, so "a website with quality" becomes something an agent proves.
 
 ## C3 — motion by default, derived
-- A region that swaps branch or a keyed list that inserts, removes or moves animates with the same-document View
-  Transitions API: the compiler gives each region and keyed item a stable `view-transition-name` from its node id and
-  key. Crossfade and move by default, `motion` names still choose a custom one, `prefers-reduced-motion` turns it off,
-  browsers without the API swap instantly.
-- No author code: names come from the IR, not from strings the author must keep unique.
+- What an update adds fades in (160 ms; a new list item also rises 4 px): a region that swaps branch, a `?:` or
+  `when` that shows its other side, a keyed list's new items. Nothing animates on the first render, items that stay
+  keep still (C1), `prefers-reduced-motion` turns it off, and a `motion` name still chooses a custom one.
+- **Implementation choice:** the Web Animations API on the added elements, not `document.startViewTransition`. A view
+  transition snapshots the whole page and holds input while it runs, so a keystroke that updates the context would
+  freeze typing; animating only what was added costs nothing elsewhere and works in every current browser. The cross-
+  document case (C4) does use view transitions, where a page change is the snapshot anyway.
 
 ## C4 — navigation continuity without a single-page app
 - Links stay document navigations (ADR 0043 I: what an agent can verify), already prerendered by speculation rules.

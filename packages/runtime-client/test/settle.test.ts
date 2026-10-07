@@ -4,7 +4,7 @@ import { buildProject } from '@hozu/core/ir'
 import { compileMachine } from '@hozu/machine'
 import { mount, type Payload, payloadKey, type Result } from '@hozu/runtime-client'
 import { zodAdapter } from '@hozu/schema-zod'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 
 const Add = event({ payload: z.object({ symbol: z.string() }) })
@@ -103,5 +103,48 @@ describe('a query region settles instead of being replaced (ADR 0067 C1)', () =>
       onQuery: () => new Promise<Result>(() => {}),
     })
     expect(root.textContent).toContain('Loading')
+  })
+
+  it('fades in what an update adds, nothing on the first render, and nothing for reduced motion (ADR 0067 C3)', async () => {
+    const calls: string[] = []
+    const animate = vi.spyOn(Element.prototype, 'animate').mockImplementation(function (this: Element) {
+      calls.push(this.textContent ?? '')
+      return {} as Animation
+    })
+    const payload: Payload = new Map<string, Result>([
+      [payloadKey('w.quotes', { symbols: ['A'] }), { ok: true, value: [{ symbol: 'A', price: 1 }] }],
+      [
+        payloadKey('w.quotes', { symbols: ['A', 'B'] }),
+        {
+          ok: true,
+          value: [
+            { symbol: 'A', price: 1 },
+            { symbol: 'B', price: 2 },
+          ],
+        },
+      ],
+    ])
+    const start = (reduce: boolean) => {
+      vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: reduce } as MediaQueryList)
+      const root = document.createElement('div')
+      mount(root, {
+        view: b.ir.features.w!.views.Board!,
+        machine: compileMachine(b.ir.features.w!, b.bindings.fns),
+        payload,
+        fns: b.bindings.fns,
+      })
+      return root
+    }
+    const root = start(false)
+    expect(calls).toEqual([])
+    root.querySelector('button')!.click()
+    await tick()
+    expect(calls).toEqual(['B 2'])
+    calls.length = 0
+    start(true).querySelector('button')!.click()
+    await tick()
+    expect(calls).toEqual([])
+    animate.mockRestore()
+    vi.restoreAllMocks()
   })
 })
