@@ -190,7 +190,8 @@ describe('Phase 1 behavior catalog', () => {
     const diagnostics = run(ir, baseline).diagnostics
     expect(diagnostics.map((d) => d.code)).not.toContain('HZ018')
     const stale = diagnostics.find((d) => d.code === 'HZ057')!
-    expect(stale.cause).toContain('changed idle/on/cart.SetQuantity/0 (guard) · stops deciding:')
+    expect(stale.cause).toContain('changed idle/on/cart.SetQuantity/0: guard was ')
+    expect(stale.cause).toContain(', now none · stops deciding:')
   })
 
   it('a transition that only copies values needs no contract; the lock summarises it (ADR 0037)', () => {
@@ -227,7 +228,7 @@ describe('Phase 1 behavior catalog', () => {
     expect(diagnostics[0]!.message).toBe('hozu.lock.json is out of date for cart: 1 changed')
     expect(diagnostics[0]!.location.pointer).toBe('/features/cart/machine/states/idle')
     expect(diagnostics[0]!.cause.split('\n')[1]).toBe(
-      'changed idle/on/cart.Dismiss/0 (assign) · was: idle --Dismiss--> idle · error := null · now: idle --Dismiss--> idle · error := "dismissed"',
+      'changed idle/on/cart.Dismiss/0: assign was error := null, now error := "dismissed" · now: idle --Dismiss--> idle · error := "dismissed"',
     )
     expect(diagnostics[0]!.fix?.summary).toContain('--update-lock')
     const { sources, bindings } = cartBuild()

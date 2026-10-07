@@ -177,8 +177,18 @@ const lineOf = (c: LockChange): string => {
       return `new ${c.id} · now: ${c.after!.summary}`
     case 'removed':
       return `removed ${c.id} · was: ${c.before!.summary}`
-    case 'changed':
-      return `changed ${c.id} (${c.fields.join(', ') || 'summary'})${c.before!.decides && !c.after!.decides ? ' · stops deciding: accept it, then delete the contracts HZ058 names' : ''} · was: ${c.before!.summary} · now: ${c.after!.summary}`
+    case 'changed': {
+      const fields = c.fields.length
+        ? c.fields
+            .map((k) => `${k} was ${fieldText[k](c.before!.fields)}, now ${fieldText[k](c.after!.fields)}`)
+            .join(' · ')
+        : `was: ${c.before!.summary}`
+      const stops =
+        c.before!.decides && !c.after!.decides
+          ? ' · stops deciding: accept it, then delete the contracts HZ058 names'
+          : ''
+      return `changed ${c.id}: ${fields}${stops} · now: ${c.after!.summary}`
+    }
     default:
       return `contracts ${c.id}: was ${names(c.before)}; now ${names(c.after)}`
   }
