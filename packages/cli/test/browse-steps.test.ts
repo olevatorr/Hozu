@@ -161,6 +161,7 @@ describe('step parsing', () => {
       'fill Body=a; b',
       'click Save',
     ])
+    expect(stepsOf('wait 700; release; click Refresh')).toEqual(['wait 700', 'release', 'click Refresh'])
   })
 
   it('splits steps only outside quotes and before a whole verb, and a value may hold in "…"=', () => {

@@ -383,7 +383,6 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
       example('watchlist'),
     )
     const [, , pressed, released] = browserRun.out.steps
-    expect(pressed.modes[0].removed).toContain('Pause')
     expect(pressed.modes[0].added).not.toContain('AAPL')
     expect(released.modes[0].note).toBe('released 1 held answer')
     expect(released.modes[0].added).toContain('AAPL')
@@ -440,6 +439,37 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     )
     expect(code).toBe(0)
     expect(JSON.parse(stdout).steps[0].modes.map((m: { mode: string }) => m.mode)).toEqual(['on'])
+  }, 60_000)
+
+  it('reports a flash and a layout shift no input explains, and nothing for a calm step (ADR 0067 C2)', async () => {
+    const watchlist = example('watchlist')
+    const { code, out } = await browse(
+      [
+        '/',
+        '--js',
+        'on',
+        '--do',
+        'fill Symbol=AAPL; press Enter; click Pause; fill Symbol=MSFT; press Enter; hold watchlist.addSymbol; fill Symbol=AAPL; press Enter; wait 700; release; click Refresh now',
+      ],
+      watchlist,
+    )
+    expect(code).toBe(0)
+    const modes = out.steps.map((s: { modes: Record<string, unknown>[] }) => s.modes[0])
+    expect(modes[1].flashes).toBeUndefined()
+    expect(modes[4].flashes).toBe(1)
+    expect(modes[9].shift).toBeGreaterThan(0)
+    expect([modes[10].flashes, modes[10].shift]).toEqual([undefined, undefined])
+    const text = await human(
+      [
+        '/',
+        '--js',
+        'on',
+        '--do',
+        'fill Symbol=AAPL; press Enter; click Pause; fill Symbol=MSFT; press Enter',
+      ],
+      watchlist,
+    )
+    expect(text.stdout).toContain('1 element rebuilt unchanged (a flash)')
   }, 60_000)
 
   it('Pause, Resume and Refresh now through refresh on a transition (ADR 0064 A)', async () => {

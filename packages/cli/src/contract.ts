@@ -392,6 +392,10 @@ export interface BrowseChange {
   document?: 'in place' | 'reloaded' | 'navigated'
   /** With the document kept: how many elements are new after the step (a region drawn again). */
   replaced?: number
+  /** Elements the step removed and built again with the same tag, class and text: a visible flash (ADR 0067 C2). */
+  flashes?: number
+  /** Layout shift no input explains (layout-shift entries without recent input, summed, as CLS counts them). */
+  shift?: number
   url: string
   /** The status of the page the step loaded, when it is not 200 (a 403 an access check expects). */
   status?: number

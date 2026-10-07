@@ -6,7 +6,7 @@ import { text } from './messages.ts'
 
 export const ReadingList = ui.view({
   machine: savedMachine,
-  render: ({ ctx, when }) =>
+  render: ({ ctx, when, is }) =>
     ui.aside({ class: 'reading-list mx-auto mt-8 max-w-2xl' }, [
       ui.h2({ class: 'text-lg font-semibold' }, [text.heading]),
       ui.query(
@@ -23,28 +23,25 @@ export const ReadingList = ui.view({
                     ui.each(posts, 'slug', (post) =>
                       ui.li({ class: 'flex items-center gap-2 py-1' }, [
                         ui.span({ class: 'flex-1' }, [post.title]),
-                        when(
-                          ['idle'],
-                          [
-                            ui.button(
-                              {
-                                type: 'button',
-                                class:
-                                  'rounded-md bg-brand-600 px-2 py-0.5 text-xs text-white hover:bg-brand-700',
-                                on: { click: ui.send(Save, { slug: post.slug }) },
-                              },
-                              [text.save],
-                            ),
-                            ui.button(
-                              {
-                                type: 'button',
-                                class:
-                                  'rounded-md border px-2 py-0.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800',
-                                on: { click: ui.send(Unsave, { slug: post.slug }) },
-                              },
-                              [text.remove],
-                            ),
-                          ],
+                        ui.button(
+                          {
+                            type: 'button',
+                            class:
+                              'rounded-md bg-brand-600 px-2 py-0.5 text-xs text-white hover:bg-brand-700',
+                            disabled: !is(['idle']),
+                            on: { click: ui.send(Save, { slug: post.slug }) },
+                          },
+                          [text.save],
+                        ),
+                        ui.button(
+                          {
+                            type: 'button',
+                            class:
+                              'rounded-md border px-2 py-0.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800',
+                            disabled: !is(['idle']),
+                            on: { click: ui.send(Unsave, { slug: post.slug }) },
+                          },
+                          [text.remove],
                         ),
                       ]),
                     ),

@@ -323,6 +323,7 @@ export function transform(source: string, _file = ''): TransformResult {
       const c = n.callee
       if (isUiMember(c) && !c.computed && UI_REFS.has(c.property.name)) return true
       if ((c.type === 'Identifier' && builderNames.has(c.name)) || isUiMember(c)) return false
+      if (c.type === 'Identifier' && lookup(s, c.name)) return true
       return n.arguments.some((a: Node) => holdsRef(a, s))
     }
     return false

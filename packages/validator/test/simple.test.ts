@@ -4,6 +4,7 @@ import { zodAdapter } from '@hozu/schema-zod'
 import { verify } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
+import { stateSplit } from '../src/walk.ts'
 
 const Pause = event({ payload: z.object({}) })
 const RefreshNow = event({ payload: z.object({}) })
@@ -152,5 +153,59 @@ describe('ADR 0064: refresh, copy and is()', () => {
     const found = verify(built.ir, { sources: built.sources, bindings: built.bindings }).diagnostics
     expect(found.filter((d) => d.code === 'HZ015')).toEqual([])
     expect(found.find((d) => d.code === 'HZ057')).toBeUndefined()
+  })
+
+  it('is([...]) works for structure: ?: and && become conditions HZ005 reads by state (ADR 0067 F)', () => {
+    const Toolbar = ui.view({
+      machine: m,
+      render: ({ is }) =>
+        ui.div({}, [
+          is(['paused'])
+            ? ui.button({ type: 'button', on: { click: ui.send(Pause, {}) } }, ['Resume'])
+            : ui.button({ type: 'button', disabled: !is(['live']), on: { click: ui.send(Pause, {}) } }, [
+                'Pause',
+              ]),
+          !is(['paused']) && ui.p({}, ['Live']),
+        ]),
+    })
+    const built = build({ Toolbar })
+    expect(built.diagnostics).toEqual([])
+    const root = built.ir.features.w!.views.Toolbar!.root as unknown as {
+      children: Record<string, unknown>[]
+    }
+    expect(root.children[0]).toMatchObject({
+      kind: 'if',
+      test: { op: 'eq', left: { ref: 'state', path: [] }, right: { literal: 'paused' } },
+    })
+    expect(root.children[1]).toMatchObject({ kind: 'if', test: { op: 'not' } })
+    const pause = (root.children[0] as { ifFalse: { attrs: Record<string, unknown> }[] }).ifFalse[0]!
+    expect(pause.attrs.disabled).toEqual({
+      test: { op: 'not', arg: { op: 'eq', left: { ref: 'state', path: [] }, right: { literal: 'live' } } },
+    })
+    const found = verify(built.ir, { sources: built.sources, bindings: built.bindings }).diagnostics
+    expect(found.filter((d) => d.code === 'HZ005')).toEqual([])
+  })
+
+  it('reads the states a condition allows, for HZ005 (ADR 0067 F)', () => {
+    const all = ['live', 'paused', 'adding']
+    const is = (s: string) => ({
+      op: 'eq' as const,
+      left: { ref: 'state' as const, path: [] },
+      right: { literal: s },
+    })
+    const ctx = {
+      op: 'fn' as const,
+      fn: '%truthy',
+      arg: { object: { v: { ref: 'context' as const, path: ['x'] } } },
+    }
+    const sets = (g: Parameters<typeof stateSplit>[0]) => {
+      const r = stateSplit(g, all)
+      return [r.yes && [...r.yes], r.no && [...r.no]]
+    }
+    expect(sets(is('paused'))).toEqual([['paused'], ['live', 'adding']])
+    expect(sets({ op: 'not', arg: is('paused') })).toEqual([['live', 'adding'], ['paused']])
+    expect(sets({ op: 'or', args: [is('live'), is('adding')] })).toEqual([['live', 'adding'], ['paused']])
+    expect(sets({ op: 'and', args: [is('live'), ctx] })).toEqual([['live'], null])
+    expect(sets(ctx)).toEqual([null, null])
   })
 })

@@ -510,15 +510,40 @@ export class Tab {
 
   /** Marks every element now on the page, so `newElements` can count what a step replaced. */
   tagElements(): Promise<number> {
-    return this.evaluate(
-      `(() => { const s = Symbol.for('hozu.browse.seen'); let n = 0; for (const el of document.querySelectorAll('body *')) { el[s] = true; n++ } return n })()`,
-    )
+    return this.evaluate(`(() => {
+      const s = Symbol.for('hozu.browse.seen')
+      const g = globalThis
+      if (!g.__hozuShiftObserver && typeof PerformanceObserver === 'function') {
+        g.__hozuShiftObserver = new PerformanceObserver((list) => { for (const e of list.getEntries()) if (!e.hadRecentInput) g.__hozuShift += e.value })
+        try { g.__hozuShiftObserver.observe({ type: 'layout-shift' }) } catch {}
+      }
+      g.__hozuShiftObserver?.takeRecords()
+      g.__hozuShift = 0
+      g.__hozuSeen = []
+      for (const el of document.querySelectorAll('body *')) { el[s] = true; g.__hozuSeen.push(el) }
+      return g.__hozuSeen.length
+    })()`)
   }
 
-  newElements(): Promise<number> {
-    return this.evaluate(
-      `(() => { const s = Symbol.for('hozu.browse.seen'); let n = 0; for (const el of document.querySelectorAll('body *')) if (!el[s]) n++; return n })()`,
-    )
+  /** What a step did to the page in place: new elements, elements rebuilt unchanged (flashes) and layout shift (ADR 0067 C2). */
+  smoothness(): Promise<{ replaced: number; flashes: number; shift: number }> {
+    return this.evaluate(`(() => {
+      const s = Symbol.for('hozu.browse.seen')
+      const g = globalThis
+      const sig = (el) => el.tagName + '|' + (el.getAttribute('class') ?? '') + '|' + [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join(' ')
+      const gone = new Map()
+      for (const el of g.__hozuSeen ?? []) if (!el.isConnected) gone.set(sig(el), (gone.get(sig(el)) ?? 0) + 1)
+      let replaced = 0
+      let flashes = 0
+      for (const el of document.querySelectorAll('body *')) {
+        if (el[s]) continue
+        replaced++
+        const n = gone.get(sig(el))
+        if (n) { flashes++; gone.set(sig(el), n - 1) }
+      }
+      for (const e of g.__hozuShiftObserver?.takeRecords() ?? []) if (!e.hadRecentInput) g.__hozuShift += e.value
+      return { replaced, flashes, shift: Math.round((g.__hozuShift ?? 0) * 1000) / 1000 }
+    })()`)
   }
 
   private async answer(params: any, session: string): Promise<void> {

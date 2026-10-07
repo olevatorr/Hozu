@@ -52,7 +52,7 @@ interface Parsed {
 const unquote = (s: string) => s.replace(/^"(.*)"$/, '$1')
 
 const STEP =
-  /^\s*(?:fill|select|check|uncheck|click|submit|press|wait|goto|post|remember|hold|release)(?:\s|$)/
+  /^\s*(?:fill|select|check|uncheck|click|submit|press|wait|goto|post|remember|hold|release)(?:\s|;|$)/
 
 /** `--do 'fill Title=Milk; press Enter'` is two steps: split where a verb and a space follow a semicolon outside quotes, so values may hold one. */
 export const stepsOf = (text: string): string[] => {
@@ -395,7 +395,10 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
           await Promise.all(others.map((o) => o.settle()))
           const after = await tab.look()
           const reloads = tab.documentLoads - loadsBefore
-          const replaced = reloads ? 0 : await tab.newElements().catch(() => 0)
+          const calm = reloads
+            ? { replaced: 0, flashes: 0, shift: 0 }
+            : await tab.smoothness().catch(() => ({ replaced: 0, flashes: 0, shift: 0 }))
+          const { replaced, flashes, shift } = calm
           const elsewhere: BrowseElsewhere[] = []
           for (const o of others) {
             const was = o.snapshot
@@ -416,6 +419,8 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
                   ? 'navigated'
                   : 'reloaded',
             ...(replaced ? { replaced } : {}),
+            ...(flashes ? { flashes } : {}),
+            ...(shift >= 0.001 ? { shift } : {}),
             url: after.url,
             ...(tab.stepStatus !== null && tab.stepStatus !== 200 ? { status: tab.stepStatus } : {}),
             ...delta(before, after),
@@ -529,12 +534,17 @@ function describeChange(c: BrowseChange, full: boolean): string {
   const more = items.length - shown.length
   const list = [...shown, ...(more ? [`… ${more} more`] : [])].join(' · ')
   const status = c.status ? ` (${c.status})` : ''
-  const how =
+  const how = [
     c.mode === 'on' && c.document === 'reloaded'
       ? 'the page reloaded'
       : full && c.replaced
         ? `${c.replaced} element${c.replaced === 1 ? '' : 's'} replaced`
-        : ''
+        : '',
+    c.flashes ? `${c.flashes} element${c.flashes === 1 ? '' : 's'} rebuilt unchanged (a flash)` : '',
+    c.shift ? `layout shift ${c.shift}` : '',
+  ]
+    .filter(Boolean)
+    .join(', ')
   return [moved || status ? `→ ${c.url}${status}` : '', how, list].filter(Boolean).join(': ')
 }
 
