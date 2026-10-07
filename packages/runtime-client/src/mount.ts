@@ -522,11 +522,12 @@ export function createApp(doc: Document, options: AppOptions): App {
       inner = []
       const m = options.motion
       if (!motion || !m || m.reduced(doc)) {
+        const empty = start.nextSibling === end
         clear(start, end)
         const [a, b] = span({ parent: end.parentNode!, next: end, claim: false }, () =>
           fill({ parent: end.parentNode!, next: end, claim: false }, inner),
         )
-        if (!motion && a && b && a !== end) appear(range(a, b), false)
+        if (!motion && empty && a && b && a !== end) appear(range(a, b), false)
         return
       }
       m.leave(start.nextSibling === end ? [] : range(start.nextSibling!, end.previousSibling!), motion)
@@ -598,7 +599,7 @@ export function createApp(doc: Document, options: AppOptions): App {
       }
       items = next
       if (moving) moving.settle(next.map((i) => [range(i.first, i.last), fresh.has(i)]))
-      else if (!node.motion) for (const item of fresh) appear(range(item.first, item.last), true)
+      else if (!node.motion && !old.size) for (const item of fresh) appear(range(item.first, item.last), true)
     })
   }
 

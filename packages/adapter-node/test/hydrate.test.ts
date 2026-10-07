@@ -37,6 +37,7 @@ describe('end-to-end hydration', () => {
     const checkout = [...document.querySelectorAll('button')].find((b) => b.textContent === 'Checkout')!
     add.click()
     expect(apps.get('cart')!.snapshot()?.state).toBe('adding')
+    expect(checkout.disabled).toBe(true)
     await vi.waitFor(() => expect(apps.get('cart')!.snapshot()?.state).toBe('idle'))
     expect(transport).toHaveBeenCalledWith('cart.addItem', { sku: 'mug', qty: 1 }, ['cart.getCart{}'])
     expect(document.body.textContent).toContain('Mug × 1')
@@ -45,7 +46,8 @@ describe('end-to-end hydration', () => {
     expect(
       before.filter((e) => e.tagName === 'H2' || e.tagName === 'SECTION').every((e) => e.isConnected),
     ).toBe(true)
-    expect(checkout.isConnected).toBe(false)
+    expect(checkout.isConnected).toBe(true)
+    expect(checkout.disabled).toBe(false)
 
     const list = document.querySelector('ul.divide-y')!
     const line = list.querySelector('li')!
