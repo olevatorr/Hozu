@@ -536,7 +536,7 @@ export class Tab {
       const chain = Symbol.for('hozu.browse.chain')
       for (const el of document.querySelectorAll('body *')) {
         const p = el.parentElement
-        el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '')
+        el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '') + ':' + [...(p.parentElement?.children ?? [])].indexOf(p)
         el[s] = true
         el[Symbol.for('hozu.browse.parent')] = p
         g.__hozuSeen.push(el)
@@ -574,7 +574,7 @@ export class Tab {
         if (el[s]) continue
         replaced++
         const p = el.parentElement
-        el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '')
+        el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '') + ':' + [...(p.parentElement?.children ?? [])].indexOf(p)
         const was = gone.get(sig(el)) ?? []
         const i = was.findIndex((q) => !q?.isConnected || q === p)
         if (i < 0) continue

@@ -678,8 +678,9 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
       lines.push(`${head}${texts[0] ? `: ${texts[0]}` : ''}${s.ok && s.note ? ` — ${s.note}` : ''}${flag}`)
     else {
       lines.push(`${head}${flag}`)
-      changes.forEach((c, k) => {
-        lines.push(`      ${c.mode}: ${texts[k] || '(no change)'}${c.ok && c.note ? ` — ${c.note}` : ''}`)
+      changes.forEach((c) => {
+        const own = describeChange(c, full)
+        lines.push(`      ${c.mode}: ${own || '(no change)'}${c.ok && c.note ? ` — ${c.note}` : ''}`)
       })
     }
     for (const c of changes)

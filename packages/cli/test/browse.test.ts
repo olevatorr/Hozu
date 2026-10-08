@@ -464,6 +464,8 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(modes[9].shift).toBeGreaterThan(0)
     expect(modes[10].shift).toBeUndefined()
     const flash = `${root}packages/cli/test/fixtures/flash`
+    const capped = await browse(['/', '--js', 'on', '--do', 'click Prepend'], flash)
+    expect(capped.out.steps[0].modes[0].flashes).toBeUndefined()
     const shaped = await browse(['/', '--js', 'on', '--do', 'click Toggle'], flash)
     expect(shaped.out.steps[0].modes[0].flashes).toEqual({
       count: 1,
@@ -480,7 +482,7 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     )
     expect(code).toBe(1)
     expect(out.steps[0].note).toBe(
-      'the click would land on <h3>, which contains it (a ::before or ::after above it, or pointer-events: none on it), above <a href="/">: a person cannot click it',
+      'the click would land on <h3 class="after:absolute…">, which contains it (a ::before or ::after above it, or pointer-events: none on it), above <a href="/">: a person cannot click it',
     )
   }, 60_000)
 
@@ -490,7 +492,7 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
       `${root}packages/cli/test/fixtures/flash`,
     )
     const [on, off] = out.steps[0].modes
-    expect(on.added).toContain('Less')
+    expect(on.added.join(' ')).toContain('Less')
     expect(off.jsOnly).toBe('a shortcut needs JavaScript')
   }, 60_000)
 

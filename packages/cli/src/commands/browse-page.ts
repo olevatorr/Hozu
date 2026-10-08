@@ -115,7 +115,11 @@ export const PAGE = String.raw`(() => {
     const top = document.elementFromPoint(x, y)
     const label = el.control ?? null
     const hit = top && (el.contains(top) || top === label || (top.tagName === 'LABEL' && top.control === el))
-    const tag = (e) => '<' + e.tagName.toLowerCase() + (e.getAttribute('href') ? ' href="' + e.getAttribute('href') + '"' : '') + '>'
+    const tag = (e) => {
+      const name = ['id', 'aria-label', 'href'].find((k) => e.getAttribute(k))
+      const cls = (e.getAttribute('class') ?? '').trim().split(/\s+/)[0]
+      return '<' + e.tagName.toLowerCase() + (name ? ' ' + name + '="' + e.getAttribute(name) + '"' : cls ? ' class="' + cls + '…"' : '') + '>'
+    }
     const covered = hit ? null : !top ? 'nothing' : tag(top) + (top.contains(el) ? ', which contains it (a ::before or ::after above it, or pointer-events: none on it)' : '')
     return { x, y, covered, target: tag(el) }
   }
