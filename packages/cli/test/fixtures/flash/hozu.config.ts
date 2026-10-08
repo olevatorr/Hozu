@@ -14,7 +14,7 @@ const Board = ui.view({
   machine: m,
   render: ({ ctx }) =>
     ui.main({}, [
-      ui.button({ type: 'button', on: { click: ui.set(ctx.more, !ctx.more) } }, ['Toggle']),
+      ui.button({ type: 'button', keys: ['Mod+k'], on: { click: ui.set(ctx.more, !ctx.more) } }, ['Toggle']),
       ctx.more ? ui.div({}, [go, ui.span({}, ['More'])]) : ui.div({}, [go]),
       ctx.more ? ui.button({ type: 'button' }, ['Less']) : ui.button({ type: 'button' }, ['More']),
       ui.article({ class: 'relative' }, [

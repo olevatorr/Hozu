@@ -179,6 +179,8 @@ export const PAGE = String.raw`(() => {
       const el = document.activeElement
       const tag = el && el !== document.body ? el.tagName.toLowerCase() : null
       if (key === 'Tab') return null
+      if (/\+./.test(key) || (!tag && key !== 'Enter' && document.querySelector('[data-hozu-keys]')))
+        return 'a shortcut needs JavaScript'
       if (key === 'Enter') {
         if (!tag) return 'nothing is focused'
         if (tag === 'a') return el.hasAttribute('href') ? null : 'a link without href'

@@ -590,6 +590,8 @@ export async function renderPage({
         for (const url of fnUrls) buffer += `<script type="module" src="${escapeHtml(url)}"></script>`
         buffer += `<script type="module" src="${escapeHtml(assets.client)}"></script>`
       }
+      if (keyed(ir, plan.views))
+        buffer += `<script type="module" src="${escapeHtml(assets.client.replace('/client.js', '/keys.js'))}"></script>`
       buffer += '</body></html>'
       flush()
       out.end()
@@ -695,6 +697,33 @@ function fnsFor(build: BuildResult, locale: string) {
 
 const plans = new WeakMap<ProjectIR, Map<string, RoutePlan>>()
 const suspendMemo = new WeakMap<ViewNode, boolean>()
+const keyedMemo = new WeakMap<ProjectIR, Map<string, boolean>>()
+
+/** Whether a page has an element with `keys`: then it loads the small shortcut module, islands or not (ADR 0073 B). */
+function keyed(ir: ProjectIR, views: string[]): boolean {
+  const memo = keyedMemo.get(ir) ?? new Map<string, boolean>()
+  keyedMemo.set(ir, memo)
+  const key = views.join(' ')
+  let hit = memo.get(key)
+  if (hit === undefined) {
+    const seen = new Set<string>()
+    const has = (ref: string): boolean => {
+      if (seen.has(ref)) return false
+      seen.add(ref)
+      const dot = ref.indexOf('.')
+      const view = ir.features[ref.slice(0, dot)]?.views[ref.slice(dot + 1)]
+      const json = view ? JSON.stringify(view.root) : ''
+      return (
+        json.includes('"data-hozu-keys"') ||
+        [...json.matchAll(/"kind":"embed","view":"([^"]+)"/g)].some((m) => has(m[1]!))
+      )
+    }
+    hit = views.some(has)
+    memo.set(key, hit)
+  }
+  return hit
+}
+
 const loadsMemo = new WeakMap<ViewNode, { motion: boolean; visible: boolean; extras: boolean }>()
 
 function loadsOf(n: ViewNode) {
@@ -704,7 +733,7 @@ function loadsOf(n: ViewNode) {
     hit = {
       motion: json.includes('"motion":"'),
       visible: json.includes('"visible":'),
-      extras: /"keys":\[|"tag":"dialog"|"href":\{"link"/.test(json),
+      extras: /"tag":"dialog"|"href":\{"link"/.test(json),
     }
     loadsMemo.set(n, hit)
   }

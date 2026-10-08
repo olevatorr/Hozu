@@ -220,6 +220,27 @@ export const steps: Step[] = [
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.25',
+    to: '0.26',
+    changes: [
+      "keys move from ui.send to the control they press: ui.button({ type: 'submit', keys: ['Mod+s'] }) (a field is focused, anything else clicked; no machine needed)",
+      'hozu check counts a shared on once in its coverage line',
+      'session cookies keep Secure except over plain HTTP on a loopback host, so Safari signs in under hozu serve (ADR 0073)',
+    ],
+    rewrite: (file, source) => ({
+      code: source,
+      notes: [...source.matchAll(/ui\.send\([^)]*\{\s*keys\s*:/g)].map((m) => ({
+        file,
+        line: source.slice(0, m.index).split('\n').length,
+        message:
+          "keys left ui.send: put them on the control whose click or focus this shortcut stands for, e.g. ui.button({ keys: ['Mod+s'] }) (HZ014)",
+        see: 'views',
+      })),
+      count: 0,
+    }),
+    normalize: (ir) => ir,
+  },
 ]
 
 /** 0.22 marks a shared view only when each page lists it once (ADR 0067, 0.22 review). */

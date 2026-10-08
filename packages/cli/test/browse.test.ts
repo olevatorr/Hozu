@@ -484,6 +484,16 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     )
   }, 60_000)
 
+  it('press takes modifiers and presses the control with those keys; without JS it says a shortcut needs it (ADR 0073 B)', async () => {
+    const { out } = await browse(
+      ['/', '--js', 'both', '--do', 'press Mod+k'],
+      `${root}packages/cli/test/fixtures/flash`,
+    )
+    const [on, off] = out.steps[0].modes
+    expect(on.added).toContain('Less')
+    expect(off.jsOnly).toBe('a shortcut needs JavaScript')
+  }, 60_000)
+
   it('replace writes the address in place, so a reload keeps the search (ADR 0067 G)', async () => {
     const { code, out } = await browse(
       ['/', '--js', 'on', '--do', 'fill Search=park', '--do', 'goto /?q=park'],

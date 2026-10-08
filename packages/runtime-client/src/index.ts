@@ -1,6 +1,6 @@
 export { attrText, classText, domField, SVG_NS, styleText, text } from './dom.ts'
 export * as extras from './extras.ts'
-export { currentOf, shortcut } from './extras.ts'
+export { currentOf } from './extras.ts'
 export type {
   ClientEffect,
   EffectResponse,
@@ -12,6 +12,7 @@ export type {
   Transport,
 } from './hydrate.ts'
 export { fetchQuery, fetchTransport, hydrate } from './hydrate.ts'
+export { listen as listenKeys, pressed, shortcut } from './keys.ts'
 export * as motion from './motion.ts'
 export type {
   App,

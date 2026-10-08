@@ -612,7 +612,8 @@ function handlerFor({
       if ((!refreshing && perRequest.has(ref)) || data.tagsOf(ref, input).some((t) => changed.has(t)))
         refreshed.push([key, (await scope.run(ref, input, undefined, true)) as Result])
     }
-    const cookie = store && scope.written ? localCookie(await store.write(scope.written.value, request), request) : null
+    const cookie =
+      store && scope.written ? localCookie(await store.write(scope.written.value, request), request) : null
     const { invalidated: _, session: __, ...rest } = result
     const response: EffectResponse = {
       result: rest as Result,
@@ -737,7 +738,10 @@ function handlerFor({
         headers: { 'content-type': 'text/html; charset=utf-8', ...(await secureHeaders()) },
       })
     await dropPages(outcome.invalidated)
-    const cookie = store && outcome.session ? localCookie(await store.write(outcome.session.value, request), request) : null
+    const cookie =
+      store && outcome.session
+        ? localCookie(await store.write(outcome.session.value, request), request)
+        : null
     const target = outcome.invalid
       ? null
       : (outcome.navigate ?? outcome.replace ?? (outcome.unchanged ? back : null))
@@ -894,7 +898,8 @@ function handlerFor({
     else input = await endpointForm(feature.schemas[e.input] ?? null, request).catch(() => null)
     const scope = await dataFor(request)
     const result = await scope.endpoint(ref, input, { request, ...(bytes ? { bytes } : {}) })
-    const cookie = store && scope.written ? localCookie(await store.write(scope.written.value, request), request) : null
+    const cookie =
+      store && scope.written ? localCookie(await store.write(scope.written.value, request), request) : null
     const finish = (response: Response) => {
       const out = new Response(response.body, response)
       for (const [k, v] of Object.entries(base)) if (!out.headers.has(k)) out.headers.set(k, v)
@@ -1238,5 +1243,7 @@ const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]'])
 /** Safari keeps no `Secure` cookie over plain HTTP, even on this machine: `hozu serve` on 127.0.0.1 signed nobody in. */
 export function localCookie(cookie: string, at: Request | URL): string {
   const url = at instanceof URL ? at : new URL(at.url)
-  return url.protocol === 'http:' && LOOPBACK.has(url.hostname) ? cookie.replace(/; Secure(?=;|$)/, '') : cookie
+  return url.protocol === 'http:' && LOOPBACK.has(url.hostname)
+    ? cookie.replace(/; Secure(?=;|$)/, '')
+    : cookie
 }

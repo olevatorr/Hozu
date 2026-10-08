@@ -2,7 +2,7 @@
 import { event, feature, fn, machine, on, project, route, ui } from '@hozu/core'
 import { buildProject, type ViewNode } from '@hozu/core/ir'
 import { compileMachine } from '@hozu/machine'
-import { extras, mount } from '@hozu/runtime-client'
+import { mount } from '@hozu/runtime-client'
 import { zodAdapter } from '@hozu/schema-zod'
 import { expect, it } from 'vitest'
 import { z } from 'zod'
@@ -94,87 +94,6 @@ it('the merged element is kept: text, class, attributes and the listener follow 
   button.click()
   expect(button.textContent).toBe('Pause')
   expect(button.getAttribute('class')).toBe('px-2')
-})
-
-const Open = event({ payload: z.object({}) })
-const Find = event({ payload: z.object({}) })
-const k = machine({
-  context: z.object({ opened: z.number(), found: z.number() }),
-  initialContext: { opened: 0, found: 0 },
-  initial: 'idle',
-  on: ({ ctx }) => [
-    on(Open, {
-      assign: () => {
-        ctx.opened += 1
-      },
-    }),
-    on(Find, {
-      assign: () => {
-        ctx.found += 1
-      },
-    }),
-  ],
-  states: () => ({ idle: {} }),
-})
-const Keys = ui.view({
-  machine: k,
-  render: () =>
-    ui.main({}, [
-      ui.window({ on: { keydown: ui.send(Open, {}, { keys: ['Ctrl+k', '/', 'Escape'] }) } }),
-      ui.input({ name: 'q', on: { keydown: ui.send(Find, {}, { keys: ['Enter'] }) } }),
-    ]),
-})
-const keyed = (view: unknown) =>
-  buildProject(
-    project({
-      schema: zodAdapter,
-      routes: {},
-      pages: [],
-      features: [feature({ id: 'k', intent: { summary: 'keys' }, declarations: [{ Open, Find, k, view }] })],
-    }),
-  )
-
-it('a send with keys fires only on those presses, stops the browser shortcut, and lets fields type (ADR 0072 B)', () => {
-  const b = keyed(Keys)
-  expect(b.diagnostics.filter((d) => d.severity === 'error')).toEqual([])
-  const root = document.createElement('div')
-  document.body.append(root)
-  const app = mount(root, {
-    view: b.ir.features.k!.views.view!,
-    machine: compileMachine(b.ir.features.k!, b.bindings.fns),
-    payload: new Map(),
-    fns: b.bindings.fns,
-    extras,
-  })
-  const press = (target: EventTarget, init: KeyboardEventInit) => {
-    const e = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init })
-    target.dispatchEvent(e)
-    return e.defaultPrevented
-  }
-  expect(press(window, { key: 'k', ctrlKey: true })).toBe(true)
-  expect(press(window, { key: 'k' })).toBe(false)
-  expect(press(window, { key: 'K', ctrlKey: true, shiftKey: true })).toBe(false)
-  expect(press(document.body, { key: '/' })).toBe(true)
-  const input = root.querySelector('input')!
-  expect(press(input, { key: '/' })).toBe(false)
-  expect(press(input, { key: 'Enter' })).toBe(true)
-  expect(press(input, { key: 'Escape' })).toBe(true)
-  expect(press(window, { key: '/', isComposing: true })).toBe(false)
-  expect(app.snapshot()!.context).toEqual({ opened: 3, found: 1 })
-})
-
-it('a bad shortcut is HZ014 at record time', () => {
-  const Bad = ui.view({
-    machine: k,
-    render: () =>
-      ui.main({ on: { click: ui.send(Open, {}, { keys: ['Mod+k'] }) } }, [
-        ui.input({ name: 'q', on: { keydown: ui.send(Find, {}, { keys: ['Hyper+x', 'Ctrl+Ctrl+a'] }) } }),
-      ]),
-  })
-  const messages = keyed(Bad)
-    .diagnostics.filter((d) => d.code === 'HZ014')
-    .map((d) => d.message)
-  expect(messages).toEqual(['keys work on keydown and keyup, not on click', '"Hyper+x" is not a shortcut'])
 })
 
 it('branches that compute from data the other side hides, or link elsewhere, are not merged', () => {

@@ -62,6 +62,12 @@ function element(
     if (key === 'class' || key === 'toggle' || key === 'vars') {
       if (key === 'class') cls = classOf(scope, value, p)
       else styling(scope, key, value, key === 'toggle' ? toggle : vars, p)
+    } else if (key === 'keys' && keyedTags.has(d.tag)) {
+      const keys = keysOf(scope, value, at(p, 'keys'))
+      if (keys) {
+        attrs['data-hozu-keys'] = { literal: keys.join(' ') }
+        attrs['aria-keyshortcuts'] = { literal: ariaKeys(keys) }
+      }
     } else if (key === 'on') {
       for (const [event, send] of Object.entries(value as object)) {
         if (send === undefined) continue
@@ -848,28 +854,61 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
     root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0),
   }
   scope.lowering = false
+  sameKeys(scope, out.root, at(p, 'root'))
   return out
+}
+
+/** Two controls of one view that are always shown together cannot share a shortcut (ADR 0073 B). */
+function sameKeys(scope: FeatureScope, root: ViewNode, p: At) {
+  const owner = new Map<string, string>()
+  const walk = (n: ViewNode) => {
+    if (n.kind !== 'el') return
+    const keys = n.attrs['data-hozu-keys']
+    if (keys && 'literal' in keys)
+      for (const k of String(keys.literal).split(' ')) {
+        const first = owner.get(k)
+        if (first)
+          scope.report(
+            'HZ014',
+            p,
+            `Two controls of this view both take the shortcut ${k}`,
+            'Both are always shown, so one press would have two meanings. Give each its own keys, or show one of them under a condition.',
+          )
+        else owner.set(k, n.id)
+      }
+    n.children.forEach(walk)
+  }
+  walk(root)
 }
 
 const NAMED_KEYS =
   /^(Escape|Enter|Tab|Backspace|Delete|Space|Insert|Home|End|PageUp|PageDown|Arrow(Up|Down|Left|Right)|F([1-9]|1[0-2]))$/
 
-function keysOf(scope: FeatureScope, event: string, keys: unknown, ep: At): string[] | undefined {
+const keyedTags = new Set(['a', 'button', 'input', 'select', 'summary', 'textarea'])
+
+const ariaKeys = (keys: string[]) =>
+  keys
+    .flatMap((k) => {
+      const parts = k.split(/\+(?!$)/)
+      const key = parts.pop()!
+      const name = key === 'Space' ? 'Space' : key.length === 1 ? key.toUpperCase() : key
+      const mods = (m: string[]) => [...m, name].join('+')
+      const rest = parts.filter((m) => m !== 'Mod').map((m) => (m === 'Ctrl' ? 'Control' : m))
+      return parts.includes('Mod') ? [mods(['Control', ...rest]), mods(['Meta', ...rest])] : [mods(rest)]
+    })
+    .join(' ')
+
+function keysOf(scope: FeatureScope, keys: unknown, ep: At): string[] | undefined {
   const bad = (cause: string) => {
     scope.report(
       'HZ014',
-      at(ep, 'keys'),
+      ep,
       cause,
-      'A shortcut is a KeyboardEvent.key with optional Mod (⌘ on Apple, Ctrl elsewhere), Ctrl, Meta, Alt and Shift, on keydown or keyup.',
-      {
-        summary: 'List the shortcuts on keydown',
-        snippet: "on: { keydown: ui.send(Open, {}, { keys: ['Mod+k', '/'] }) }",
-        patch: null,
-      },
+      'A shortcut is a KeyboardEvent.key with optional Mod (⌘ on Apple, Ctrl elsewhere), Ctrl, Meta, Alt and Shift.',
+      { summary: 'List the shortcuts on the control', snippet: "keys: ['Mod+s']", patch: null },
     )
     return undefined
   }
-  if (event !== 'keydown' && event !== 'keyup') return bad(`keys work on keydown and keyup, not on ${event}`)
   if (!Array.isArray(keys) || !keys.length) return bad('keys is a list of one or more shortcuts')
   for (const k of keys) {
     const m = typeof k === 'string' ? /^((?:(?:Mod|Ctrl|Meta|Alt|Shift)\+)*)(.+)$/.exec(k) : null
@@ -878,7 +917,8 @@ function keysOf(scope: FeatureScope, event: string, keys: unknown, ep: At): stri
       !m ||
       new Set(mods).size !== mods.length ||
       (m[2]!.length > 1 && !NAMED_KEYS.test(m[2]!)) ||
-      m[2] === ' '
+      m[2] === ' ' ||
+      /\s/.test(k as string)
     )
       return bad(`"${String(k)}" is not a shortcut`)
   }
@@ -887,14 +927,24 @@ function keysOf(scope: FeatureScope, event: string, keys: unknown, ep: At): stri
 
 function sendIR(
   scope: FeatureScope,
-  event: string,
+  _event: string,
   s: { event: unknown; payload: unknown; keys?: unknown },
   ep: At,
 ): SendIR {
-  const keys = 'keys' in s ? keysOf(scope, event, s.keys, ep) : undefined
+  if ('keys' in s)
+    scope.report(
+      'HZ014',
+      at(ep, 'keys'),
+      'ui.send takes no keys since 0.26',
+      'A shortcut presses a control: put keys on the button, link or field whose click or focus sends this event.',
+      {
+        summary: 'Move keys to the control',
+        snippet: "ui.button({ type: 'submit', keys: ['Mod+s'] }, ['Save'])",
+        patch: null,
+      },
+    )
   return {
     event: scope.ref(s.event, ['event'], ep),
     payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
-    ...(keys ? { keys } : {}),
   }
 }
