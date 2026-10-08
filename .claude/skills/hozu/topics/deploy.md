@@ -4,10 +4,9 @@
   `app({ resolvers, session?, components?, … })` from `@hozu/runtime-server`. `hozu serve`, `hozu check`, `hozu get`,
   `hozu browse` and `testApp(app)` all run it, so what the tools verify is what production serves.
 - **Which host:** nobody marks pages static. `npx hozu export` writes every page for a static host (GitHub Pages,
-  Netlify, Cloudflare Pages, Vercel) to `dist/` and exits 1 naming each page or effect that needs a server; then
-  use Node (`npm start`, a Docker image) or Cloudflare Workers.
-- **Node:** `npm start` is `hozu serve` (adapter-node on `PORT`, `HOST`). Docker: `node:22-slim`, `npm ci
-  --omit=dev`, `CMD ["npx", "hozu", "serve"]`.
+  Netlify, Cloudflare Pages) to `dist/` and exits 1 naming each page or effect that needs a server; then
+  `npx hozu build --target node | workers | vercel` writes what that platform deploys as is and lists what it needs.
+- **Node:** `npm start` is `hozu serve` (`PORT`, `HOST`); `--target node` writes its `Dockerfile`.
 - Set `SESSION_SECRET` when the app has sessions: `npm start` (`hozu serve`) runs as production unless `NODE_ENV` is set, and production refuses to start without it. `hozu dev`, `get`, `browse` and `call` do not need it.
 - Workers, several instances, sessions in KV, upgrading: see --more.
 
@@ -24,14 +23,16 @@
   `dist/public/`, `dist/manifest.json` and `dist/server/render.js`. It compresses answers as they stream (gzip),
   and framework files with brotli or gzip from the `.br` / `.gz` that `hozu build` writes. Live streams are not
   compressed. The edge handler leaves compression to the platform.
-- **Edge (Cloudflare Workers, Bun, Deno):** `hozu build --out build` (git-ignore `build/`), then bundle an entry with esbuild and
-  `hozuTransform()` from `@hozu/transform/esbuild` (it gives each app file its own `import.meta.url`, which a
-  Worker lacks). The entry creates the handler on the first request, when the platform's `env` is known:
-  `handler ??= createHandler(app, { manifest, render, env })` from `@hozu/runtime-server`, with
-  `import * as render from './build/server/render.js'`. Serve `build/public` as static assets (wrangler
-  `[assets] directory`) and let other requests reach the Worker (`/_hozu/f/…` fn modules come from the handler).
-  Build and bundle from the same source on every deploy: the manifest holds the fingerprints. Workers keep no memory
-  between requests: data goes in a database.
+- **Workers and Vercel:** `npx hozu build --target workers` writes `dist/workers/` (`worker.mjs`, `assets/`,
+  `wrangler.jsonc`; then `npx wrangler deploy` there); `--target vercel` writes `.vercel/output/` (an Edge Function;
+  then `npx vercel deploy --prebuilt`). Both need `@hozu/bundle`, bundle the app with its resolvers (a resolver that
+  imports Node-only code fails the build there) and print what the platform needs: env, `SESSION_SECRET`, a KV
+  namespace bound as `SESSIONS` on Workers, a shared session store on Vercel. Workers keep no memory between
+  requests: data goes in a database. Check the bundle before deploying: `npx hozu browse / --build dist/workers`
+  (env from your shell; `--session` signs in through its KV).
+- **Another edge (Bun, Deno):** `hozu build --out build`, then an entry that calls
+  `createHandler(app, { manifest, render, env })` with `import * as render from './build/server/render.js'`,
+  bundled with `hozuTransform()` from `@hozu/transform/esbuild` (the target's entry is the model).
 - **Static host:** `npx hozu export [--out dist]` (`@hozu/adapter-static`, in new apps) empties the folder, writes
   every page without per-request server data plus `.nojekyll`, and prints what it skipped. Pages whose data runs in
   the browser (`runs: 'browser'` / `'either'`) export completely; a page that calls a server effect is listed

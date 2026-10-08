@@ -164,7 +164,7 @@ change, depending on how one Nuxt step is counted ([trial 0021](docs/trials/0021
 
 | | Hozu | Best of the others |
 |---|---|---|
-| Initial JS (gzip) | 7.8 KB (9.0 KB in 0.25) | Preact 5.4 KB |
+| Initial JS (gzip) | 7.8 KB (8.9 KB in 0.26) | Preact 5.4 KB |
 | Interactive at | 28.2 ms | Preact 26.6 ms |
 | 200 clicks | 11.4 ms | Svelte 8.6 ms |
 | Server renders per second | 54.0 k | Svelte 98.6 k |
@@ -240,7 +240,7 @@ The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router 
 
 ## Requirements and status
 - **Node 22.18 or newer.** Config and app code are TypeScript run with Node's type stripping.
-- **Version 0.25.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
+- **Version 0.26.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
   and designers and the trial that checks DevTools requests. Every design decision is recorded in
   [`docs/adr`](docs/adr).
 

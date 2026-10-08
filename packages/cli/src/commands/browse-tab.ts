@@ -47,10 +47,15 @@ export class World {
   private readonly heads = new Map<number, { resolve(h: Head): void; reject(e: Error): void }>()
   private readonly chunks = new Map<number, (chunk: string | null) => void>()
 
-  constructor(config: string | undefined, cwd: string, sessions: (string | undefined)[]) {
+  constructor(
+    config: string | undefined,
+    cwd: string,
+    sessions: (string | undefined)[],
+    built: string | null = null,
+  ) {
     const self = fileURLToPath(import.meta.url)
     this.worker = new Worker(join(dirname(self), `browse-world${extname(self)}`), {
-      workerData: { config, cwd, sessions },
+      workerData: { config, cwd, sessions, built },
     })
     this.cookies = new Promise((resolve, reject) => {
       this.worker.on('message', (m: WorldReply) => {

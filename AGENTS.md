@@ -373,6 +373,14 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   P7 9 199 B; budgets S1 / S2 over `examples/*/browse.json` (`bench/smooth.ts`); browse: covering ancestors fail a click,
   `arrived` (prerendered / loaded, ms), a moved element is no flash, `--select` prints class; modes in context
   (`examples/watchlist` `paused`).
+- 0.26 (ADR 0073): `hozu build --target workers | vercel | node` (`commands/target.ts`; `bundleServer` in
+  `@hozu/bundle`: one web-only bundle of the app, its resolvers and render.js; Workers `dist/workers` + `wrangler.jsonc`,
+  Vercel `.vercel/output` Edge Function, node = Dockerfile; prints what the platform needs; `hozu export` stays the
+  static form); `hozu browse --build <dir>` drives the bundle (Workers sessions through its KV); `keys` on controls
+  (`a button input select summary textarea`: focus a field, click the rest; `data-hozu-keys` + `aria-keyshortcuts`;
+  `keys.js` on pages with keys; HZ014 for `ui.send` keys and for one key on two always-shown controls); `localCookie`
+  drops `Secure` only over HTTP on a loopback host (Safari); coverage line and `hozu why` count a shared `on` once;
+  browse flash detection compares sibling positions; Arc's blank frame on document loads documented (ADR 0073 D).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

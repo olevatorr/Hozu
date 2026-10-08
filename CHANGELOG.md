@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.26.0 — Deploying is one command (ADR 0073)
+
+Two things people met in 0.25: deploying anywhere but Node took a hand-written entry, a bundler and a platform file,
+and a shortcut could only send an event. `hozu migrate` raises the packages and lists each `ui.send(…, { keys })` to
+move by hand.
+
+### Deploying
+- **`hozu build --target workers | vercel | node`.** Workers: `dist/workers/` with one bundled `worker.mjs` (no
+  `node:` import), `assets/` and `wrangler.jsonc`; then `npx wrangler deploy`. Vercel: `.vercel/output/` (Build
+  Output API, an Edge Function); then `npx vercel deploy --prebuilt`. Node: a `Dockerfile` for `hozu serve`. Hozu never
+  contacts a platform. Needs `@hozu/bundle`.
+- **What the platform needs is printed**, read from the declarations: the server env, `SESSION_SECRET`, a KV
+  namespace bound as `SESSIONS` on Workers, a shared session store on Vercel, a stream limit for live queries.
+- **`hozu browse --build dist/workers`** drives the bundled entry and its static files, so what you upload is what you
+  verified; `--session` signs in through its KV.
+- `hozu export` stays the static form; `--target static` points to it.
+
+### Views
+- **Keyboard shortcuts belong to the control they press** (breaking): `ui.input({ name: 'q', keys: ['/'] })` focuses
+  the field, `ui.button({ type: 'submit', keys: ['Mod+s'] }, ['Save'])` clicks it, so a form submits and no machine is
+  needed. Only visible, enabled controls count, inside an open modal only its own. The server writes
+  `aria-keyshortcuts`; a page with shortcuts loads `keys.js` (about 0.7 KB), islands or not. `ui.send(…, { keys })`
+  and one key on two controls always shown together are HZ014. `hozu browse --do 'press Mod+s'` presses it.
+
+### Fixes
+- **Safari could not sign in under `hozu serve` on this machine:** session cookies were `Secure` over plain HTTP,
+  which Safari refuses on `127.0.0.1`. `Secure` is now left out only over HTTP on a loopback host.
+- `hozu check`'s coverage line and `hozu why` count a shared `on` copied into every state as one decision, as HZ016
+  does (the trial apps showed 26/35 and 7/8 with no error); `why` says the lock reviews a transition that does not
+  decide, instead of "uncovered".
+- `hozu browse`: a capped list that prepends a row is no longer a flash (positions are compared); `--js both` split
+  lines show their own arrival; a covering element is named by id, `aria-label` or class; `--select` prints `class`
+  last and cut (`--json` has it whole).
+- `@hozu/cli` ships `CHANGELOG.md`.
+
+### Guide and site
+- A staff tool may show `Unexpected`'s message (production's `Internal error (call <id>)` matches the log line); a
+  customer page shows a fixed text. Browse never shows `prerendered` (Chrome turns prerendering off under DevTools).
+- Arc blanks the window on every document load (a plain multi-page site too); "How it works" says so and why Hozu
+  keeps document loads (ADR 0073 D).
+- The deploy topic and the site's Deploying page use `--target`.
+
 ## 0.25.0 — What mainstream frameworks do, at Hozu's cost (ADR 0072)
 
 Judged three ways: what a React / Vue / Svelte app gives a person without asking, where Hozu must stay ahead in bytes,

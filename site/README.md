@@ -1,6 +1,6 @@
 # Hozu website
 
-The official site at https://hozu.org is a Hozu 0.25 application built from its own component kit. Every query is
+The official site at https://hozu.org is a Hozu 0.26 application built from its own component kit. Every query is
 public and static. Two machine views ship JavaScript (the home page, with the demo and the playground, and the How it
 works lab); a copy button loads on pages with code. There are no mutations, sessions, analytics or external font requests.
 

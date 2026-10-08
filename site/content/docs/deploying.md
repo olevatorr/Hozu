@@ -132,99 +132,42 @@ An app whose resolvers run in Go through `remote()` (see [Resolvers in Go](/docs
 - After changing a remote declaration, run `npx hozu gen`, rebuild the service and deploy both together. A service built from an older contract answers 409 to the effects that changed.
 - On shutdown, let the service finish the calls in flight; the `main.go` in [Resolvers in Go](/docs/go) does.
 
-## Cloudflare Workers
+## Cloudflare Workers and Vercel
 
-A Worker runs the web-standard handler, `createHandler` from `@hozu/runtime-server`. The edge cannot generate the render module at startup, so build first and bundle the result (add `build/` to `.gitignore`: it is generated):
-
-```sh
-npm install -D esbuild wrangler
-npx hozu build --out build
-```
-
-```ts
-// worker.ts
-import { createHandler, type Handler } from '@hozu/runtime-server'
-import app from './app.ts'
-import manifest from './build/manifest.json' with { type: 'json' }
-import * as render from './build/server/render.js'
-
-let handler: Handler | undefined
-
-export default {
-  fetch(request: Request, env: Record<string, string | undefined>) {
-    handler ??= createHandler(app, { manifest, render, env })
-    return handler.fetch(request)
-  },
-}
-```
-
-```js
-// bundle.mjs
-import { build } from 'esbuild'
-import { hozuTransform } from '@hozu/transform/esbuild'
-
-await build({
-  entryPoints: ['worker.ts'],
-  outfile: 'build/worker.js',
-  bundle: true,
-  format: 'esm',
-  platform: 'browser',
-  conditions: ['workerd', 'worker', 'browser'],
-  plugins: [hozuTransform()],
-})
-```
-
-```toml
-# wrangler.toml
-name = "my-app"
-main = "build/worker.js"
-compatibility_date = "2026-09-01"
-
-[assets]
-directory = "build/public"
-```
+One command writes the folder the platform deploys as it is. Hozu never contacts the platform: its own CLI uploads the folder with your account.
 
 ```sh
-npx hozu build --out build && node bundle.mjs
-npx wrangler dev      # local
-npx wrangler deploy   # your Cloudflare account
+npm install -D @hozu/bundle
+npx hozu build --target workers   # dist/workers: worker.mjs, assets/, wrangler.jsonc
+cd dist/workers && npx wrangler deploy
+
+npx hozu build --target vercel    # .vercel/output: an Edge Function and its static files
+npx vercel deploy --prebuilt
 ```
 
-- `hozuTransform()` lowers views and machines as `hozu serve` does; without it the handler refuses to start (HZ044). It also gives each of your files its own `import.meta.url`, which a Worker does not have, so `new URL('./app.css', import.meta.url)` in `hozu.config.ts` keeps working (0.17.2 and later).
-- `[assets]` serves `build/public` (the client, chunks, styles and assets) before the Worker runs. The Worker answers pages, queries, effects and endpoints. Compression is left to Cloudflare.
-- Environment variables and secrets come from `wrangler.toml` `[vars]` and `wrangler secret put`; the Worker passes them to the handler on the first request.
-- A Worker's memory is not shared and does not last: data kept in resolver variables is lost between isolates, so keep app data in a database (D1, KV or an external one).
-- An app with sessions keeps them in Workers KV with `kvSessions`. Create a namespace (`npx wrangler kv namespace create SESSIONS`), bind it in `wrangler.toml`, set the secret (`npx wrangler secret put SESSION_SECRET`), and pass the store to the handler:
+The command also prints what the platform needs from you, read from your declarations: the server env your project declares, `SESSION_SECRET` for an app with sessions, and the session store. For example, on the cart example:
 
-```ts
-import { createHandler, type Handler, kvSessions, type SessionKV } from '@hozu/runtime-server'
-
-let handler: Handler | undefined
-
-export default {
-  fetch(request: Request, env: { SESSIONS: SessionKV; SESSION_SECRET: string }) {
-    handler ??= createHandler(app, {
-      manifest,
-      render,
-      env: env as unknown as Record<string, string>,
-      session: kvSessions(env.SESSIONS, { secret: env.SESSION_SECRET }),
-    })
-    return handler.fetch(request)
-  },
-}
+```text
+hozu build --target workers → dist/workers
+  wrote dist/workers/worker.mjs
+  wrote dist/workers/assets/
+  wrote dist/workers/wrangler.jsonc
+  the platform needs:
+    - SESSION_SECRET (32+ characters): signs the session cookie
+    - server env: STOCK_LIMIT
+    - a KV namespace bound as SESSIONS: npx wrangler kv namespace create SESSIONS, then its id in wrangler.jsonc
+next: cd dist/workers && npx wrangler deploy
 ```
 
-```toml
-[[kv_namespaces]]
-binding = "SESSIONS"
-id = "<the id wrangler printed>"
-```
-
-  The cookie holds only a signed id; the session lives in KV and is deleted on sign-out. KV can take up to a minute to show a change in other regions, so a sign-out may be seen late far away.
+- **One bundle.** The app, its resolvers and the generated render module become one file with no `node:` import. A resolver that imports Node-only code (a driver that needs `node:net`, `node:fs`) fails the build with that module's name: on these platforms data goes through an HTTP or edge-ready client.
+- **Static files first.** The client, chunks, styles and assets are served by the platform before the function runs; the function answers pages, queries, effects and endpoints.
+- **Sessions.** On Workers the entry uses `kvSessions` over the KV namespace bound as `SESSIONS` (create it, then put its id in `wrangler.jsonc`, and `npx wrangler secret put SESSION_SECRET`). On Vercel every instance needs one store: pass `app({ session: kvSessions(kv, { secret }) })` over a KV you choose. The cookie holds only a signed id. KV can take up to a minute to show a sign-out in other regions.
+- **Memory does not last.** A Worker or an Edge Function keeps nothing between requests: keep app data in a database.
+- **Check what you upload.** `npx hozu browse / --build dist/workers --do '…'` drives the bundled entry and its static files in Chrome, with the env from your shell; `--session '{"user":"ada"}'` signs in through its KV.
 
 ### Other web-standard runtimes
 
-Deno, Bun and other runtimes that serve `Request` / `Response` take the same handler. Build ahead, bundle with `hozuTransform()`, pass the manifest and render module, and serve `build/public` through the runtime's static files:
+Deno, Bun and other runtimes that serve `Request` / `Response` take the same handler. Build ahead with `hozu build --out build`, bundle an entry with `hozuTransform()` from `@hozu/transform/esbuild` (the Workers target's `worker.mjs` is the model), pass the manifest and render module, and serve `build/public` through the runtime's static files:
 
 ```ts
 const handler = createHandler(app, { manifest, render, env })

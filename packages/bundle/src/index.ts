@@ -126,3 +126,37 @@ async function bundleFetches(project: BuildResult, out: ComponentBundle, minify:
     }
   }
 }
+
+/** What `bundleServer` reports: the files it read, for a message naming the module that cannot run there. */
+export interface ServerBundle {
+  inputs: string[]
+}
+
+/**
+ * Bundles a server entry for a platform without a file system (Workers, Vercel Edge; ADR 0073 A1): every import is
+ * inlined, app files get their builder callbacks lowered and their own `import.meta.url` (`@hozu/transform`).
+ */
+export async function bundleServer(options: {
+  source: string
+  resolveDir: string
+  outfile: string
+  conditions: string[]
+}): Promise<ServerBundle> {
+  const { build, resolve } = await tools()
+  const { hozuTransform } = await load('@hozu/transform/esbuild')
+  const result = await build({
+    stdin: { contents: options.source, resolveDir: options.resolveDir, sourcefile: 'entry.ts', loader: 'ts' },
+    outfile: options.outfile,
+    bundle: true,
+    format: 'esm',
+    platform: 'neutral',
+    target: 'es2022',
+    mainFields: ['module', 'main'],
+    conditions: options.conditions,
+    define: { 'process.env.NODE_ENV': '"production"' },
+    plugins: [hozuTransform()],
+    metafile: true,
+    logLevel: 'silent',
+  })
+  return { inputs: inputsOf(result.metafile, resolve) }
+}
