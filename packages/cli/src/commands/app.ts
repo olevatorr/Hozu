@@ -17,7 +17,31 @@ import type { Loaded } from '../load.ts'
 export interface AppOptions {
   resolvers: unknown
   components?: (build: BuildResult) => Promise<{ diagnostics?: Diagnostic[] }>
+  dispose?: () => void | Promise<void>
   [key: string]: unknown
+}
+
+export const DISPOSE_MS = 2000
+
+const disposers = new Set<() => void | Promise<void>>()
+
+export async function disposeApps(ms = DISPOSE_MS, warn: (line: string) => void = () => {}): Promise<void> {
+  const all = [...disposers]
+  disposers.clear()
+  if (!all.length) return
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<'late'>((done) => {
+    timer = setTimeout(() => done('late'), ms)
+  })
+  const settled = Promise.allSettled(all.map(async (dispose) => dispose())).then((results) => {
+    for (const r of results)
+      if (r.status === 'rejected')
+        warn(`app({ dispose }) failed: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`)
+    return 'done' as const
+  })
+  if ((await Promise.race([settled, late])) === 'late')
+    warn(`app({ dispose }) did not finish within ${ms} ms; exiting anyway`)
+  clearTimeout(timer)
 }
 
 export interface AppModule {
@@ -153,6 +177,7 @@ export async function inspectApp(
         ),
       ],
     }
+  if (typeof options.dispose === 'function') disposers.add(options.dispose)
   const diagnostics: Diagnostic[] = []
   const clients = usedClientComponents(build.ir)
   if (clients.length && !options.components)

@@ -32,6 +32,11 @@ export interface AppOptions<Session = unknown, Env = unknown>
     session: NoInfer<Session>,
     ctx: { env: NoInfer<Env> },
   ) => NoInfer<Session> | null | undefined | Promise<NoInfer<Session> | null | undefined>
+  /**
+   * Closes what the app opened, such as a database pool (ADR 0069 A1): called by `hozu serve` on SIGTERM / SIGINT and
+   * by one-shot CLI commands (`get`, `call`, `browse`, `check`, …) before they exit, with a short timeout.
+   */
+  dispose?: () => void | Promise<void>
 }
 
 export interface App {
@@ -60,7 +65,7 @@ export const appOptionsOf = (value: unknown): AppOptions | null =>
 export const projectOfApp = (a: App): unknown => resolverSetOf(a[APP].resolvers).project
 
 export function appHandlerOptions(a: App, host: AppHost = {}): HandlerOptions {
-  const { components: _, ...options } = a[APP]
+  const { components: _, dispose: __, ...options } = a[APP]
   const build = buildProject(projectOfApp(a), {
     sources: host.dev !== undefined,
     ...(host.manifest ? { manifest: host.manifest } : {}),

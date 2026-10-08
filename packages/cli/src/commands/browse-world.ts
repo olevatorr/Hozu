@@ -2,10 +2,11 @@ import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { dirname, extname, join } from 'node:path'
 import { parentPort, workerData } from 'node:worker_threads'
+import type { ServerError } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import { load } from '../load.ts'
 import { BuildFailed } from './app.ts'
-import { appParts } from './request.ts'
+import { appParts, collectingErrors } from './request.ts'
 
 export type WorldRequest =
   | { id: number; url: string; method: string; headers: Record<string, string>; body: Uint8Array | null }
@@ -18,6 +19,7 @@ export type WorldReply =
   | { id: number; chunk: string }
   | { id: number; end: true }
   | { id: number; error: string }
+  | { serverError: ServerError }
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -56,6 +58,7 @@ try {
     env: process.env,
     readFile: (file: string) => readFile(file),
     ...(parts.session ? { session: parts.session } : {}),
+    onError: collectingErrors(parts.module.options, (serverError) => post({ serverError })),
   })
   const publicDir = join(root, 'public')
   const respond = async (request: Request): Promise<Response> => {

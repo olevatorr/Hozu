@@ -49,11 +49,12 @@ const replacePage = (source: string, route: string, text: string): string | null
 }
 
 export const append = (source: string, pattern: RegExp, item: string): string | null => {
-  const m = pattern.exec(source)
-  if (!m) return null
+  const m = new RegExp(pattern.source, `${pattern.flags.replace('d', '')}d`).exec(source)
+  if (!m?.indices?.[1]) return null
+  const [start, end] = m.indices[1]
   const inner = m[1]!.trim().replace(/,$/, '')
-  const replaced = m[0].replace(m[1]!, inner ? `${inner}, ${item}` : item)
-  return source.slice(0, m.index) + replaced + source.slice(m.index + m[0].length)
+  const pad = source[start - 1] === '{' ? ' ' : ''
+  return source.slice(0, start) + pad + (inner ? `${inner}, ${item}` : item) + pad + source.slice(end)
 }
 
 export async function runAddFeature(
@@ -178,7 +179,7 @@ export async function runAddFeature(
     config ?? 'hozu.config.ts',
     (s) => {
       let next: string | null = addImport(
-        s,
+        s.replace(/pages:\s*\[\]/, 'pages: [\n  ]'),
         `import { ${[n.View, ...(w.detail ? [n.Detail] : [])].sort().join(', ')} } from './features/${name}/views.ts'\n`,
       )
       if (next) next = addImport(next, `import { ${n.feature} } from './features/${name}/feature.ts'\n`)
@@ -202,12 +203,14 @@ export async function runAddFeature(
         ...(w.detail ? [n.detailRoute] : []),
       ]
       for (const r of routeNames) if (next) next = append(next, /routes:\s*\{([^}]*)\}/, r)
+      if (next && routeNames.length && !/from '\.\/routes\.ts'/.test(next))
+        next = addImport(next, `import {} from './routes.ts'\n`)
       if (next && routeNames.length)
         next =
-          next.replace(/import \{([^}]*)\} from '\.\/routes\.ts'/, (all, names: string) =>
-            all.replace(
-              names,
-              ` ${[
+          next.replace(
+            /import \{([^}]*)\} from '\.\/routes\.ts'/,
+            (_, names: string) =>
+              `import { ${[
                 ...names
                   .split(',')
                   .map((x) => x.trim())
@@ -215,8 +218,7 @@ export async function runAddFeature(
                 ...routeNames,
               ]
                 .sort()
-                .join(', ')} `,
-            ),
+                .join(', ')} } from './routes.ts'`,
           ) ?? null
       if (next && w.detail)
         next = next.replace(

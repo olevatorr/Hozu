@@ -7,8 +7,8 @@
   `hozu call api.who --input '{"room":"a"}' --header 'Authorization: Bearer t'` (a POST needs `--write`).
 - **Drive the app in a real browser, still without a server:**
   `hozu browse / --session '{"user":"ada"}' --do 'fill New note=Milk' --do 'press Enter' --do 'click Pin in "Milk"'`.
-  - Steps: `fill <label>=<value>`, `select <label>=<option>`, `check` / `uncheck <label>`, `click <name>`,
-    `submit "<form>"`, `press <key>`, `wait <ms>`, `goto <path>`, `post <path> a=1&b=2`,
+  - Steps: `fill <label>=<value>` (`\n`, `\t` work), `select <label>=<option>`, `check` / `uncheck <label>`,
+    `click <name>`, `submit "<form>"`, `press <key>`, `wait <ms>`, `goto <path>`, `post <path> a=1&b=2`,
     `remember <name> from url|<selector> [@attr]` (later steps read `$name`); a target may end with `in "<text>"`
     (for fill and select, before or after `=value`).
   - Labels are what `hozu get <page> --forms` lists; a missing one prints `Did you mean "…"?`. One `--do` may hold
@@ -29,8 +29,12 @@
 
 <!-- more -->
 
-- **A calm page:** a step that rebuilds elements unchanged says `N elements rebuilt unchanged (a flash)` (a control
-  hidden while busy: disable it instead), and layout that moves without input says `layout shift X`. Both are
+- **Server errors:** what the app's `onError` receives (a resolver that threw, an invalid input) is listed under the
+  step or the `get` request that caused it, `server error: <message> (<feature.effect>)`; `--json` `serverErrors`.
+- **A calm page:** a step that rebuilds elements unchanged says `N elements rebuilt unchanged (a flash: main > form >
+  button[type=submit])`, naming up to five (`--json` `flashes.elements` has all; a control hidden while busy: disable
+  it instead). Equal means tag, class, text, `name`, `id`, `href`, `src`, `type` and parent path; a node that moved is
+  no flash. Layout that moves without input says `layout shift X`. Both are
   problems to fix; a calm step prints neither. An address changed with `replace` stays `in place`.
 - **`hozu get`** prints the status, redirect, `set-cookie` attributes (`HttpOnly`, `SameSite`), title, alerts and
   visible text.

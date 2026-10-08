@@ -3,7 +3,7 @@ import { relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { describeAdd, runAddFeature } from './commands/add.ts'
 import { describeAddComponent, runAddComponent } from './commands/add-component.ts'
-import { BuildFailed } from './commands/app.ts'
+import { BuildFailed, disposeApps } from './commands/app.ts'
 import {
   type BrowseJs,
   type BrowseOptions,
@@ -217,6 +217,21 @@ export function browsePlan(tokens: Token[]): Pick<BrowseOptions, 'actors' | 'pla
   return { actors, plan }
 }
 
+let running = false
+
+const flushed = (stream: NodeJS.WriteStream) => new Promise<void>((done) => stream.write('', () => done()))
+
+export async function cli(argv: string[]): Promise<void> {
+  const code = await main(argv)
+  if (running) {
+    process.exitCode = code
+    return
+  }
+  await disposeApps(undefined, (line) => process.stderr.write(`hozu: ${line}\n`))
+  await Promise.all([flushed(process.stdout), flushed(process.stderr)])
+  process.exit(code)
+}
+
 export async function main(
   argv: string[],
   cwd = process.cwd(),
@@ -427,6 +442,7 @@ export async function main(
           ? null
           : messagesFileOf(values['devtools-messages'], cwd, (line) => out(`${line}\n`)),
       )
+      running = true
       return 0
     }
     if (command === 'devtools') {
@@ -466,7 +482,10 @@ export async function main(
       return result.ok ? 0 : 1
     }
     if (command === 'serve') {
-      await runServe(loaded, (line) => out(`${line}\n`))
+      const server = await runServe(loaded, (line) => out(`${line}\n`))
+      running = true
+      for (const signal of ['SIGINT', 'SIGTERM'] as const)
+        process.once(signal, () => void server.close().finally(() => process.exit(0)))
       return 0
     }
     if (command === 'map') {

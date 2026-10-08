@@ -2,7 +2,7 @@ import { dirname, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
 import type { Cdp } from '../cdp.ts'
-import type { BrowseError, BrowseMode } from '../contract.ts'
+import type { BrowseError, BrowseMode, ServerError } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import { BuildFailed } from './app.ts'
 import { PAGE } from './browse-page.ts'
@@ -41,6 +41,7 @@ interface Head {
 /** One app world (module graph, data, session store) per mode, in its own worker. */
 export class World {
   readonly cookies: Promise<(string | null)[]>
+  readonly serverErrors: ServerError[] = []
   private readonly worker: Worker
   private next = 0
   private readonly heads = new Map<number, { resolve(h: Head): void; reject(e: Error): void }>()
@@ -54,6 +55,7 @@ export class World {
     this.cookies = new Promise((resolve, reject) => {
       this.worker.on('message', (m: WorldReply) => {
         if ('ready' in m) return resolve(m.cookies)
+        if ('serverError' in m) return void this.serverErrors.push(m.serverError)
         if ('failed' in m) {
           const { code, message, suggestions, diagnostics } = m.failed
           return reject(
@@ -531,31 +533,59 @@ export class Tab {
       g.__hozuShifts = []
       g.__hozuInputAt = -Infinity
       g.__hozuSeen = []
-      for (const el of document.querySelectorAll('body *')) { el[s] = true; g.__hozuSeen.push(el) }
+      const chain = Symbol.for('hozu.browse.chain')
+      for (const el of document.querySelectorAll('body *')) {
+        const p = el.parentElement
+        el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '')
+        el[s] = true
+        g.__hozuSeen.push(el)
+      }
       return g.__hozuSeen.length
     })()`)
   }
 
-  /** What a step did to the page in place: new elements, elements rebuilt unchanged (flashes) and layout shift (ADR 0067 C2). */
-  smoothness(): Promise<{ replaced: number; flashes: number; shift: number }> {
+  /** What a step did to the page in place: new elements, elements rebuilt unchanged (flashes, ADR 0069 A3) and layout shift (ADR 0067 C2). */
+  smoothness(): Promise<{ replaced: number; flashes: number; flashed: string[]; shift: number }> {
     return this.evaluate(`(() => {
       const s = Symbol.for('hozu.browse.seen')
+      const chain = Symbol.for('hozu.browse.chain')
       const g = globalThis
-      const sig = (el) => el.tagName + '|' + (el.getAttribute('class') ?? '') + '|' + el.textContent.replace(/\\s+/g, ' ').trim()
+      const KEYS = ['name', 'id', 'href', 'src', 'type']
+      const own = (el) => el.tagName + '|' + (el.getAttribute('class') ?? '') + '|' + KEYS.map((k) => el.getAttribute(k) ?? '').join('|') + '|' + el.textContent.replace(/\\s+/g, ' ').trim()
+      const sig = (el) => (el[chain] ?? '') + '#' + own(el)
       const gone = new Map()
       for (const el of g.__hozuSeen ?? []) if (!el.isConnected) gone.set(sig(el), (gone.get(sig(el)) ?? 0) + 1)
       let replaced = 0
       let flashes = 0
+      const flashed = new Set()
       for (const el of document.querySelectorAll('body *')) {
         if (el[s]) continue
         replaced++
+        const p = el.parentElement
+        el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '')
         const n = gone.get(sig(el))
-        if (n) { flashes++; gone.set(sig(el), n - 1) }
+        if (n) { flashes++; flashed.add(el); gone.set(sig(el), n - 1) }
       }
+      const css = (v) => /^[\\w:/.-]+$/.test(v) ? v : JSON.stringify(v)
+      const name = (el, last) => {
+        const tag = el.tagName.toLowerCase()
+        const id = el.getAttribute('id')
+        if (id) return tag + '#' + css(id)
+        const key = last ? ['name', 'href', 'src', 'type'].find((k) => el.hasAttribute(k)) : el.hasAttribute('name') ? 'name' : null
+        if (key) return tag + '[' + key + '=' + css(el.getAttribute(key)) + ']'
+        const cls = (el.getAttribute('class') ?? '').trim().split(/\\s+/)[0]
+        return cls && last ? tag + '.' + css(cls) : tag
+      }
+      const path = (el) => {
+        const parts = [name(el, true)]
+        for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) parts.unshift(name(p, false))
+        return (parts.length > 5 ? ['…', ...parts.slice(-4)] : parts).join(' > ')
+      }
+      const outer = [...flashed].filter((el) => !flashed.has(el.parentElement)).map(path)
       for (const e of g.__hozuShiftObserver?.takeRecords() ?? []) g.__hozuShifts.push(e)
       let shift = 0
       for (const e of g.__hozuShifts ?? []) if (!e.hadRecentInput && e.startTime > g.__hozuInputAt + 500) shift += e.value
-      return { replaced, flashes, shift: Math.round(shift * 1000) / 1000 }
+      return { replaced, flashes, flashed: outer, shift: Math.round(shift * 1000) / 1000 }
     })()`)
   }
 

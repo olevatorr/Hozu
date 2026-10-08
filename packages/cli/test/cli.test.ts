@@ -755,6 +755,25 @@ describe('hozu get --select reads head scripts (0.15 dogfood)', () => {
   })
 })
 
+describe('hozu get --select takes attribute operators (ADR 0069 A5)', () => {
+  it('matches ^= $= *= ~= and =, quoted or not', async () => {
+    const { elementsOf } = await import('../src/commands/request.ts')
+    const html =
+      '<head><meta property="og:title" content="Hi"><meta property="og:image" content="/a.png"><meta name="description" content="Plain words"><link rel="icon preload" href="/i.svg"></head>'
+    const names = (selector: string) =>
+      elementsOf(html, selector).map((e) => e.attrs.property ?? e.attrs.name ?? e.attrs.rel)
+    expect(names('meta[property^="og:"]')).toEqual(['og:title', 'og:image'])
+    expect(names("meta[property^='og:']")).toEqual(['og:title', 'og:image'])
+    expect(names('meta[content$=".png"]')).toEqual(['og:image'])
+    expect(names('meta[content*=words]')).toEqual(['description'])
+    expect(names('link[rel~=preload]')).toEqual(['icon preload'])
+    expect(names('link[rel~=pre]')).toEqual([])
+    expect(names('meta[property="og:title"]')).toEqual(['og:title'])
+    expect(names('meta[property^=""]')).toEqual([])
+    expect(() => elementsOf(html, 'meta[property|="og"]')).toThrow('Unsupported selector')
+  })
+})
+
 describe('a lock for pages without machines (0.15 dogfood)', () => {
   it('an app whose pages have something to lock reports the lock missing, and --update-lock writes it', async () => {
     const app = mkdtempSync(join(tmpdir(), 'hozu-lock-'))
