@@ -357,8 +357,8 @@ function handlerFor({
       scope = session(request).then((who) => {
         const real = data.scope(who, { preview: previewing.get(request) === true })
         if (!answers) return real
-        const run = (ref: string, input: Json, files?: Parameters<typeof real.run>[2]) =>
-          ref in answers ? Promise.resolve(answers[ref] as never) : real.run(ref, input, files)
+        const run = (ref: string, input: Json, files?: Parameters<typeof real.run>[2], sent?: boolean) =>
+          ref in answers ? Promise.resolve(answers[ref] as never) : real.run(ref, input, files, sent)
         return new Proxy(real, {
           get: (target, key) => {
             if (key === 'run') return run
@@ -607,7 +607,7 @@ function handlerFor({
       if (!ref || (refreshing && !serverRun.has(ref))) continue
       const input = JSON.parse(key.slice(ref.length)) as Json
       if ((!refreshing && perRequest.has(ref)) || data.tagsOf(ref, input).some((t) => changed.has(t)))
-        refreshed.push([key, (await scope.run(ref, input)) as Result])
+        refreshed.push([key, (await scope.run(ref, input, undefined, true)) as Result])
     }
     const cookie = store && scope.written ? await store.write(scope.written.value, request) : null
     const { invalidated: _, session: __, ...rest } = result
@@ -922,7 +922,7 @@ function handlerFor({
       if (browserOnly.has(query)) return plain(400, `${query} runs in the browser; the server never runs it`)
       if (!queries.includes(query)) return plain(400, 'Unknown query')
       const scope = await dataFor(request)
-      const result = await scope.run(query, input)
+      const result = await scope.run(query, input, undefined, true)
       return json(result, privately(scope.readSession))
     }
     if (

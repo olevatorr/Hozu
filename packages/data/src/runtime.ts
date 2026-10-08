@@ -135,7 +135,13 @@ export interface RequestData {
   readonly session: unknown
   readonly readSession: boolean
   readonly written: { value: unknown } | null
-  run(ref: string, input: Json, files?: Map<string, FileLike>): Promise<Result | MutationResult>
+  /** `sent`: the input came in a request (`/_hozu/query`), so a bad one is the caller's, not reported. */
+  run(
+    ref: string,
+    input: Json,
+    files?: Map<string, FileLike>,
+    sent?: boolean,
+  ): Promise<Result | MutationResult>
   endpoint(ref: string, input: Json, ctx: { request: unknown; bytes?: Uint8Array }): Promise<EndpointResult>
 }
 
@@ -779,7 +785,12 @@ export function createDataRuntime({
       return null
     }
 
-    async run(ref: string, raw: Json, files?: Map<string, FileLike>): Promise<Result | MutationResult> {
+    async run(
+      ref: string,
+      raw: Json,
+      files?: Map<string, FileLike>,
+      sent = false,
+    ): Promise<Result | MutationResult> {
       const effect = effects.get(ref)
       if (!effect) return unexpected(`Unknown effect ${ref}`)
       if (effect.scope === 'user') {
@@ -793,7 +804,7 @@ export function createDataRuntime({
         if (!parsed.ok) {
           if (effect.kind === 'mutation') return { ...invalid(effect.fields, parsed.issues), invalidated: [] }
           const message = `Invalid input for ${ref}: ${parsed.issues.join('; ')} (a query input comes from the app: a head input, a ui.query input, an invoke or a seed; a route param is a string, so read numbers with z.coerce.number())`
-          onError(new Error(message), { effect: ref })
+          if (!sent) onError(new Error(message), { effect: ref })
           return unexpected(message)
         }
         known = { input: parsed.value, key: `${ref}${canonicalStringify(parsed.value)}` }

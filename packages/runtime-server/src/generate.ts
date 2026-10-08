@@ -254,7 +254,8 @@ class Emitter {
           else this.expr(`h.attr(${q(name)}, ${this.value(v)})`)
         }
         const href = n.tag === 'a' && !('aria-current' in n.attrs) ? n.attrs.href : undefined
-        if (href && 'link' in href) this.expr(`h.attr('aria-current', h.current(${this.value(href)}, s.url))`)
+        if (href && 'link' in href)
+          this.expr(`h.attr('aria-current', h.current(${this.value(href)}, s.url, s.root))`)
         const submit = n.tag === 'form' ? n.on.submit : undefined
         if (submit && !('method' in n.attrs) && formRunnable(submit.payload)) {
           const id = encodeURIComponent(n.id)

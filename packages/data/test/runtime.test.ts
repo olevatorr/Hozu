@@ -114,6 +114,19 @@ describe('cart data runtime', () => {
     )
   })
 
+  it('input a request sent (/_hozu/query) belongs to the caller, so it is not reported (ADR 0069 A2)', async () => {
+    const seen: unknown[] = []
+    const data = createDataRuntime({
+      build,
+      resolvers: await createResolvers(),
+      onError: (e) => seen.push(e),
+    })
+    expect(await data.scope().run('catalog.getProduct', { sku: 1 }, undefined, true)).toMatchObject({
+      error: 'Unexpected',
+    })
+    expect(seen).toEqual([])
+  })
+
   it('rejects invalid input and session before running resolvers', async () => {
     const { data } = await setup()
     expect(await data.query(getProduct, { sku: 1 } as never)).toMatchObject({

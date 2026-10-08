@@ -84,6 +84,7 @@ export async function runServe(
   const close = async () => {
     await new Promise<void>((done) => {
       server.close(done)
+      ;(server as { closeAllConnections?: () => void }).closeAllConnections?.()
       setTimeout(done, DISPOSE_MS).unref()
     })
     await disposeApps(DISPOSE_MS, log)

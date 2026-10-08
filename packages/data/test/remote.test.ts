@@ -220,6 +220,16 @@ describe('remote() resolvers (ADR 0068)', () => {
     ])
   })
 
+  it('a service may answer Forbidden for user data, as access would (ADR 0069 B8)', async () => {
+    answers['notes.mine'] = { body: { fail: { name: 'Forbidden', data: { message: 'Staff only' } } } }
+    expect(await runtime().query(mine, {}, { user: 'ada' })).toEqual({
+      ok: false,
+      error: 'Forbidden',
+      data: { message: 'Staff only' },
+    })
+    answers['notes.mine'] = { body: { ok: [{ id: 'n1', text: 'Tea' }] } }
+  })
+
   it("sends an endpoint's request headers without the cookie, and a mutation's uploads", async () => {
     const data = runtime().scope({ user: 'ada' })
     const request = new Request('http://app.test/api/hook', {

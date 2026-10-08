@@ -210,6 +210,8 @@ export async function renderPage({
 
   const routes = routesOf(ir, locale)
   const url = pathOf(routes[route] ?? '/', params, search)
+  const home = Object.keys(ir.routes).find((id) => ir.routes[id]!.path === '/')
+  const root = home ? (routes[home] ?? '/') : '/'
   const alternate: Record<string, string> = Object.fromEntries(
     (ir.site?.locales ?? []).map((l) => [l, pathOf(routesOf(ir, l)[route] ?? '/', params, search)]),
   )
@@ -256,6 +258,7 @@ export async function renderPage({
       search,
       routes,
       url,
+      root,
       locale: lang,
       alternate,
       env,
@@ -288,6 +291,7 @@ export async function renderPage({
       payload.features[scope.feature.id] = seeded ? { ...machine!, initialContext: seeded } : machine
       const keys = machine ? seedKeys(ir, route, scope.feature) : []
       if (keys.length) payload.seeds = { ...payload.seeds, [scope.feature.id]: keys }
+      payload.here ??= [url, root]
       if (machine && keepable.has(scope.feature.id))
         payload.keep = [...(payload.keep ?? []), scope.feature.id]
     }
@@ -303,7 +307,7 @@ export async function renderPage({
       if (x !== null) attrs += x === '' ? ` ${name}` : ` ${name}="${escapeHtml(x)}"`
     }
     const href = n.tag === 'a' && !('aria-current' in n.attrs) ? n.attrs.href : undefined
-    const current = href && 'link' in href ? currentOf(value(href, scope), url) : null
+    const current = href && 'link' in href ? currentOf(value(href, scope), url, root) : null
     if (current) attrs += ` aria-current="${current}"`
     const submit = n.tag === 'form' ? n.on.submit : undefined
     if (submit && !('method' in n.attrs) && formRunnable(submit.payload))
@@ -491,6 +495,7 @@ export async function renderPage({
     search,
     routes,
     url,
+    root,
     locale: lang,
     alternate,
     env,

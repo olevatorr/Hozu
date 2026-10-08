@@ -121,6 +121,14 @@ type Invalid struct {
 func (e Invalid) Error() string                  { return "Invalid: " + e.Message }
 func (e Invalid) failure() (string, string, any) { return "", "Invalid", e }
 
+// Forbidden answers as access does when the visitor may not have it (user-scoped queries and mutations).
+type Forbidden struct {
+	Message string `json:"message,omitempty"`
+}
+
+func (e Forbidden) Error() string                  { return "Forbidden: " + e.Message }
+func (e Forbidden) failure() (string, string, any) { return "", "Forbidden", e }
+
 // Ctx is one call. Session is nil when the visitor is signed out or the effect reads no session. Preview is
 // true in preview mode; Header holds an endpoint's request headers (no cookie).
 type Ctx struct {

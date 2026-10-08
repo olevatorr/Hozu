@@ -1,4 +1,4 @@
-import type { FeatureIR, Json, ProjectIR, ValueExpr } from '@hozu/core/ir'
+import type { FeatureIR, Json, ProjectIR } from '@hozu/core/ir'
 import { compileValue } from '@hozu/machine'
 
 /** The context fields the page's address sets for this feature: they win over a kept snapshot (ADR 0067 C4). */
@@ -12,14 +12,11 @@ export function seedKeys(ir: ProjectIR, route: string, feature: FeatureIR): stri
   return []
 }
 
-const reads = (v: ValueExpr, depth: number): boolean =>
-  'ref' in v
-    ? v.ref === 'binding' && v.depth === depth
-    : 'object' in v
-      ? Object.values(v.object).some((x) => reads(x, depth))
-      : 'fn' in v
-        ? reads(v.arg, depth)
-        : false
+const reads = (v: unknown, depth: number): boolean => {
+  if (typeof v !== 'object' || v === null) return false
+  const x = v as { ref?: unknown; depth?: unknown }
+  return x.ref === 'binding' ? x.depth === depth : Object.values(v).some((y) => reads(y, depth))
+}
 
 /** The initial context of a feature on this page: its view's seed from the address and seed queries (ADR 0069 B2). */
 export async function seededContext(

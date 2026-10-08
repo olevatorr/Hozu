@@ -32,6 +32,8 @@ export interface AppOptions {
   payload: Payload | Store
   fns?: Record<string, (input: never) => unknown>
   params?: Json
+  /** The page's canonical address and the address of its home route, for `aria-current` (ADR 0069 B4). */
+  here?: [string, string]
   search?: Json
   snapshot?: Snapshot
   onInvoke?: (effect: string, input: Json) => Promise<Result>
@@ -177,6 +179,7 @@ function clear(start: Node, end: Node) {
 }
 
 const waiting = new WeakMap<Element, number>()
+const quiet = new WeakSet<Node>()
 const lost = (e: unknown): Result => ({ ok: false, error: 'Unexpected', data: { message: String(e) } })
 
 export function createApp(doc: Document, options: AppOptions): App {
@@ -276,8 +279,15 @@ export function createApp(doc: Document, options: AppOptions): App {
           bind(block, v, scope, (x) => {
             if (name === 'open' && node.tag === 'dialog') {
               const d = el as HTMLDialogElement
-              d.close?.()
-              if (x === true) d.showModal?.()
+              if (x === true) {
+                d.removeAttribute('open')
+                const show = () => d.isConnected && !d.open && d.showModal?.()
+                if (d.isConnected) show()
+                else queueMicrotask(show)
+              } else if (d.open) {
+                quiet.add(d)
+                d.close?.()
+              }
               return
             }
             if (prop) {
@@ -294,7 +304,11 @@ export function createApp(doc: Document, options: AppOptions): App {
         const href = node.tag === 'a' && !('aria-current' in node.attrs) ? node.attrs.href : undefined
         if (href && 'link' in href && (!claimed || reads(href)))
           bind(block, href, scope, (x) => {
-            const at = currentOf(x, location.pathname + location.search)
+            const at = currentOf(
+              x,
+              options.here?.[0] ?? location.pathname + location.search,
+              options.here?.[1],
+            )
             if (at) el.setAttribute('aria-current', at)
             else el.removeAttribute('aria-current')
           })
@@ -304,6 +318,7 @@ export function createApp(doc: Document, options: AppOptions): App {
           el.addEventListener(
             event,
             (e) => {
+              if (event === 'close' && quiet.delete(el)) return
               if (event === 'submit') e.preventDefault()
               dispatch({ type: 'event', event: send.event, payload: value(send.payload, scope, domField(e)) })
             },
