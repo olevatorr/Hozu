@@ -417,6 +417,8 @@ export async function renderPage({
           n.tag === 'form' &&
           scope.sealed &&
           n.on.submit &&
+          !('method' in n.attrs) &&
+          !('action' in n.attrs) &&
           formRunnable(n.on.submit.payload)
         )
           buffer += `<input type="hidden" name="${STATE_FIELD}" value="${escapeHtml(scope.sealed)}">`

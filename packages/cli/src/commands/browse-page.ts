@@ -90,7 +90,9 @@ export const PAGE = String.raw`(() => {
     const type = (el.getAttribute('type') ?? '').toLowerCase()
     if (tag === 'a') return el.hasAttribute('href') ? null : 'a link without href'
     if (tag === 'button') {
-      if ((el.hasAttribute('commandfor') && el.hasAttribute('command')) || el.hasAttribute('popovertarget')) return null
+      const native = ['show-modal', 'close', 'request-close', 'show-popover', 'hide-popover', 'toggle-popover']
+      if ((el.hasAttribute('commandfor') && native.includes(el.getAttribute('command'))) || el.hasAttribute('popovertarget'))
+        return null
       return type === 'button' ? 'a type=button button' : el.form ? null : 'a button outside a form'
     }
     if (tag === 'input') {

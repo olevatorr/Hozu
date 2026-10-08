@@ -105,6 +105,9 @@ describe('a native multi-step form keeps its step (ADR 0070 B1)', () => {
               ui.input({ name: 'card' }),
               ui.button({ type: 'submit' }, ['Pay']),
             ]),
+        ui.form({ method: 'get', on: { submit: ui.send(Pay, { card: ui.dom.form('q') }) } }, [
+          ui.input({ name: 'q' }),
+        ]),
       ]),
   })
   const Placed = ui.view({ render: () => ui.p({}, ['Thanks']) })
@@ -148,6 +151,7 @@ describe('a native multi-step form keeps its step (ADR 0070 B1)', () => {
     expect(step2.replaceAll('<!---->', '')).toContain('Ship to 18 Birch Ave')
     const token = tokenOf(step2)
     expect(token).toBeDefined()
+    expect(step2.match(/__hozu_state/g)).toHaveLength(1)
     const done = await post(actionOf(step2), { card: '4242', __hozu_state: token! })
     expect(done.status).toBe(303)
     expect(done.headers.get('location')).toBe('/placed')
@@ -159,5 +163,20 @@ describe('a native multi-step form keeps its step (ADR 0070 B1)', () => {
     const forged = `${tokenOf(step2)!.slice(0, -2)}xx`
     const res = await post(actionOf(step2), { card: '4242', __hozu_state: forged })
     expect(res.headers.get('location')).not.toBe('/placed')
+  })
+})
+
+describe('the sealed state is bound and kept to forms Hozu posts (0.23 review)', () => {
+  it('a token signed with the secret, for another session or tampered, is refused; without a secret a plain token works', async () => {
+    const { seal, unseal } = await import('../src/seal.ts')
+    const snap = { state: 'payment', context: { line1: 'A' }, entry: 2 }
+    const signed = (await seal('s3cret-0123456789abcdef', 'c', 'bind-a', snap))!
+    expect(await unseal('s3cret-0123456789abcdef', 'c', 'bind-a', signed)).toEqual(snap)
+    expect(await unseal('s3cret-0123456789abcdef', 'c', 'bind-b', signed)).toBeNull()
+    expect(await unseal('s3cret-0123456789abcdef', 'd', 'bind-a', signed)).toBeNull()
+    expect(await unseal('s3cret-0123456789abcdef', 'c', 'bind-a', `${signed.split('.')[0]}.`)).toBeNull()
+    const plain = (await seal(undefined, 'c', 'bind-a', snap))!
+    expect(await unseal(undefined, 'c', 'bind-a', plain)).toEqual(snap)
+    expect(await unseal('s3cret-0123456789abcdef', 'c', 'bind-a', plain)).toBeNull()
   })
 })

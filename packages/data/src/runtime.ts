@@ -137,6 +137,8 @@ const base64 = (bytes: Uint8Array) => {
   return (globalThis as unknown as { btoa(s: string): string }).btoa(text)
 }
 
+const fault = (message: string, call: string) => Object.assign(new Error(message), { call })
+
 const fileUrl = (path: string) =>
   `file://${path.startsWith('/') ? '' : '/'}${encodeURI(path.replace(/\\/g, '/'))}`
 
@@ -147,6 +149,11 @@ export interface DataRuntimeOptions {
   fetches?: FetchLoader
   now?: () => number
   onError?: OnError
+  /**
+   * Whether an `Unexpected` answer carries the error's message (development, tools); `false` in production, where
+   * the browser sees `Internal error` and the call id of a remote service, and `onError` keeps the message.
+   */
+  expose?: boolean
   /** The raw environment to parse; `null` skips parsing (tools that check bindings, not a running app). */
   env?: unknown
   /** Public query results (ADR 0050 A); by default `memoryDataCache()`, at most 10,000 entries. */
@@ -231,6 +238,7 @@ export function createDataRuntime({
   staticTtl,
   now = Date.now,
   onError = () => {},
+  expose = true,
   env: rawEnv = {},
   fetches,
 }: DataRuntimeOptions): DataRuntime {
@@ -568,20 +576,23 @@ export function createDataRuntime({
       } catch (error) {
         const name = (error as { name?: unknown } | null)?.name
         if (name === 'TimeoutError' || name === 'AbortError')
-          throw new Error(
+          throw fault(
             `${effect.ref}: the service at ${url} did not answer within ${ms} ms (call ${call}); check that it runs, or raise remote() timeout`,
+            call,
           )
-        throw new Error(
+        throw fault(
           `${effect.ref}: no service answers at ${url} (${reasonOf(error)}); start it or ${where}`,
+          call,
         )
       }
       if (res.status === 409)
-        throw new Error(
+        throw fault(
           `${effect.ref}: the service at ${url} was built from another contract; run hozu gen and rebuild it`,
+          call,
         )
       if (!res.ok) {
         const text = (await res.text()).trim().split('\n')[0]?.slice(0, 200) || 'no message'
-        throw new Error(`${effect.ref}: ${text} (${url} answered ${res.status}, call ${call})`)
+        throw fault(`${effect.ref}: ${text} (${url} answered ${res.status}, call ${call})`, call)
       }
       const reply = (await res.json()) as {
         ok?: unknown
@@ -737,6 +748,8 @@ export function createDataRuntime({
       }
       const report = (error: unknown) => {
         onError(error, { effect: effect.ref })
+        const call = (error as { call?: unknown } | null)?.call
+        if (!expose) return unexpected(`Internal error${typeof call === 'string' ? ` (call ${call})` : ''}`)
         return unexpected(error instanceof Error ? error.message : String(error))
       }
       const ctx = {
@@ -854,7 +867,7 @@ export function createDataRuntime({
           if (effect.kind === 'mutation') return { ...invalid(effect.fields, parsed.issues), invalidated: [] }
           const message = `Invalid input for ${ref}: ${joinIssues(parsed.issues)} (a query input comes from the app: a head input, a ui.query input, an invoke or a seed; a route param is a string, so read numbers with z.coerce.number())`
           if (!sent) onError(new Error(message), { effect: ref })
-          return unexpected(message)
+          return unexpected(expose ? message : 'Internal error')
         }
         known = { input: parsed.value, key: `${ref}${canonicalStringify(parsed.value)}` }
         if (shared !== null) parsedInputs.set(shared, known)

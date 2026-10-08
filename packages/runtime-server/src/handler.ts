@@ -345,6 +345,7 @@ function handlerFor({
     resolvers,
     now,
     onError,
+    expose: rawEnv.NODE_ENV !== 'production',
     env: rawEnv,
     ...(fetches ? { fetches } : {}),
     ...(dataCache ? { cache: dataCache } : {}),
@@ -707,7 +708,15 @@ function handlerFor({
     const fields = await formFields(request)
     const scope = await dataFor(request)
     const owner = form.on.submit!.event.slice(0, form.on.submit!.event.indexOf('.'))
-    const start = await unseal(rawEnv.SESSION_SECRET, owner, fields.first[STATE_FIELD])
+    const bindTo = (feature: string, session: unknown) =>
+      hashJson({ machine: ir.features[feature]?.machine ?? null, session: session ?? null } as never)
+    const kept = await unseal(
+      rawEnv.SESSION_SECRET,
+      owner,
+      bindTo(owner, scope.session),
+      fields.first[STATE_FIELD],
+    )
+    const start = kept && !build.bindings.checks[`${owner}#context`]?.(kept.context) ? kept : null
     const outcome = await runForm({
       start,
       build,
@@ -736,9 +745,15 @@ function handlerFor({
       return see(target, cookie)
     }
     const sealed: Record<string, string> = {}
+    const now = outcome.session ? outcome.session.value : scope.session
     for (const [f, snap] of Object.entries(outcome.snapshots)) {
-      const token = await seal(rawEnv.SESSION_SECRET, f, snap)
+      const token = await seal(rawEnv.SESSION_SECRET, f, bindTo(f, now), snap)
       if (token) sealed[f] = token
+      else
+        onError(
+          new Error(`${f}: the state is too large to carry in a form; a native post starts this form over`),
+          { path },
+        )
     }
     const rendered = await renderPage({
       build,

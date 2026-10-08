@@ -18,9 +18,10 @@ fingerprint per effect).
 - `hozu get` / `browse` print each server error once per step.
 
 ### Forms and links
-- **A multi-step form keeps its step without JavaScript.** After a native post, every form the server renders carries
-  the machine's state in a signed hidden field (`__hozu_state`, HMAC with `SESSION_SECRET`), and the next post
-  continues from it: no more re-posting every earlier field. A changed or foreign token is ignored.
+- **A multi-step form keeps its step without JavaScript.** After a native post, every form Hozu posts (no `method` or
+  `action` of yours) carries the machine's state in a hidden field (`__hozu_state`), and the next post continues from
+  it: no more re-posting every earlier field. The state is bound to the visitor's session and the machine's shape,
+  lasts a day, is checked against the context schema, and is signed with `SESSION_SECRET` when the server has one.
 - **`ui.link(route, params, { ...search, page: 2 })`** keeps the current search and changes one field.
 - **Every access but `'anyone'` types the resolver's `session` as present** (`{ allow }` and `{ owner }` too).
 
@@ -32,6 +33,11 @@ fingerprint per effect).
 - String enums are named Go types with constants; `hozu gen` notes number fields that look like ids or counts
   (`z.int()` makes them `int64`); `hozu docs data --more` links `examples/notes-go` and shows a `main.go`.
 - A wrong answer's schema issues are collapsed (`rows.*.tone: … (10×)`).
+
+### Errors in production
+- **The browser no longer sees error messages in production** (`NODE_ENV=production`): an `Unexpected` answer says
+  `Internal error` (with the call id of a Go service), and `onError` keeps the full message. Development, `hozu get`,
+  `browse` and `call` show it as before.
 
 ### Tools
 - A changed lock line lists only the assignments that differ (`assign - total := …, + total := …`) and leaves out a

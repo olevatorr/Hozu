@@ -211,6 +211,7 @@ export function goContract(contract: RemoteContract, pkg: string): string {
     'Fingerprint',
     'Empty',
     'Upload',
+    'Forbidden',
   ])
   const session = contract.session ? types.struct(contract.session, 'Session', contract.session, true) : null
   const errorTypes: string[] = []
@@ -453,7 +454,7 @@ export const goFingerprints = (text: string): Record<string, string> =>
     [...text.matchAll(/^\tcase "([^"]+)":\n\t\treturn "([0-9a-f]+)"$/gm)].map((m) => [m[1]!, m[2]!]),
   )
 
-const counted = /^(id|count|qty|quantity|total.*)$|(Id|_id|ID|Count|_count|Qty|Quantity)$/i
+const counted = /^(id|count|qty|quantity|cents)$|(Id|_id|ID|Count|_count|Qty|Quantity|Cents|_cents)$/
 
 /**
  * Number fields named like an id or a count: `z.number()` is float64 in Go, so they are notes suggesting `z.int()`
