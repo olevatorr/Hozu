@@ -344,6 +344,16 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   shape (callbacks recorded with placeholders); lock lines list changed fields; no module-level randomness (Workers);
   P7 8 935 B. 0.21.1: busy states also ignore `ui.set` events (no HZ005 for a field visible while saving); the
   example app, topics and site use `ui.set` / `is()`.
+- 0.22 (ADR 0068, 0069): `remote(options, decls)` in `@hozu/data` implements `runs: 'server'` effects in a Go
+  service (`hozu gen` writes the contract; HZ093; required 16+ character secret; headers, preview and uploads cross;
+  `examples/notes-go`, `bench/remote`); from the CMS / shop admin / storefront trials: `seed` reads queries
+  (`query(decl, input)`, `ViewIR.seedQueries`, plan regions), resolvers `fail('Forbidden')`, `access: 'signedIn'`
+  narrows `session`, invalid query input reaches `onError`, `head.input/render` get `search`, links to the page shown
+  get `aria-current` (`currentOf`), `<dialog open>` bound to the machine calls `showModal()` / `close()`,
+  `ui.format.plural`, `null` / `false` dropped from children lists, `rel` on `a` / `area` / `form`, HZ033 accepts a
+  hidden enum context field, kept state only through a shared view or the same address (`payload.keep`), one-shot
+  CLI commands exit and `app({ dispose })`, browse/get list server errors, flashes named by path, scaffold / select
+  / fill / routes fixes; `part()` shares access rules, layouts are page helpers (recipes).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

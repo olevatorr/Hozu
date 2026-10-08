@@ -143,6 +143,14 @@ export default app({
 
 `refreshSession` runs once per request, when the request first reads the session and before any resolver sees it, so the page, its queries and its mutations all get the renewed value. Return the new session (it replaces the old one on the server; the cookie stays the same), `null` to sign out, or `undefined` to keep it. Within one server process, the requests of one session that arrive together, or in the ten seconds after a renewal, share one call, so a single-use refresh token is spent once there; with several instances, renew where the token endpoint tolerates a second use. A session signed out while the hook runs stays signed out. A hook that throws keeps the session and reports through `onError`. The value is checked against the session schema. Keep tokens in the session rather than in module variables: those are lost on a restart and differ between instances.
 
+## Use a database
+- Create one pool per process in `app.ts` and close it in `app({ dispose: () => pool.end() })`, so one-shot commands such as `hozu get` exit and `hozu serve` stops cleanly. A transaction lives in one mutation resolver.
+- Keep migrations and seed data as idempotent scripts in `package.json`; read the connection URL from the server env.
+- Route params and form fields arrive as strings: declare numeric ids with `z.coerce.number()`. A query input that fails its schema is reported to `onError` with the field, since the app built it.
+- Data the whole staff shares but only staff may read is `scope: 'user'` with `access`. Share a rule between effects with `part()`: `const staffOnly = part(({ session }) => session.role !== 'editor')`, then `access: { allow: staffOnly }`.
+- A resolver may answer `fail('Forbidden', { message })`. With `access: 'signedIn'` its `session` is typed as present.
+- When another app writes the same database, give this app a signed endpoint that `invalidates` the affected tags and call it after each write.
+
 ## Load a Markdown collection
 
 `@hozu/content` loads Markdown files into entries with `slug`, validated front matter, HTML and headings. Call `loadCollection({ dir: new URL('./content/posts/', import.meta.url), schema })` in server code, then return the entries through public queries. This website uses that pattern for its documentation and original trial records.

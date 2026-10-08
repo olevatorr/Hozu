@@ -17,7 +17,7 @@ import type {
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { type Snapshot, type StepResult, sleep, Tab, World } from './browse-tab.ts'
-import { describeElement, parseSession } from './request.ts'
+import { describeElement, describeServerError, parseSession } from './request.ts'
 
 const LIMIT = 1500
 
@@ -71,6 +71,13 @@ export const stepsOf = (text: string): string[] => {
   return steps.map((step) => step.trim()).filter(Boolean)
 }
 
+const ESCAPES: Record<string, string> = { n: '\n', t: '\t', '\\': '\\' }
+
+export const unescapeValue = (value: string): string =>
+  value.replace(/\\([nt\\])/g, (_, c: string) => ESCAPES[c]!)
+
+const fillValue = (verb: string, value: string) => (verb === 'fill' ? unescapeValue(value) : value)
+
 export function parseStep(text: string): Parsed {
   const space = text.indexOf(' ')
   const verb = space < 0 ? text : text.slice(0, space)
@@ -83,12 +90,23 @@ export function parseStep(text: string): Parsed {
   }
   if ((verb === 'fill' || verb === 'select') && within === null) {
     const before = /^("[^"]*"|[^="]*?)\s+in\s+"([^"]+)"\s*=(.*)$/.exec(rest)
-    if (before) return { verb, target: unquote(before[1]!.trim()), value: before[3]!, within: before[2]! }
+    if (before)
+      return {
+        verb,
+        target: unquote(before[1]!.trim()),
+        value: fillValue(verb, before[3]!),
+        within: before[2]!,
+      }
   }
   if (verb === 'fill' || verb === 'select') {
     const eq = rest.indexOf('=', rest.startsWith('"') ? Math.max(rest.indexOf('"', 1), 0) : 0)
     if (eq <= 0) throw new Error(`"${text}" needs <label>=<value>`)
-    return { verb, target: unquote(rest.slice(0, eq).trim()), value: rest.slice(eq + 1), within }
+    return {
+      verb,
+      target: unquote(rest.slice(0, eq).trim()),
+      value: fillValue(verb, rest.slice(eq + 1)),
+      within,
+    }
   }
   return { verb, target: verb === 'post' || verb === 'remember' ? rest : unquote(rest), value: '', within }
 }
@@ -284,6 +302,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
   const sessions = options.actors.map((a) => a.session)
   const worlds = modes.map(() => new World(loaded.path, dirname(loaded.path), sessions))
   const vars = new Map<BrowseMode, Map<string, string>>(modes.map((m) => [m, new Map()]))
+  const inStep = modes.map(() => new Set<number>())
   const pageKey = routeKey(Object.values(loaded.build().ir.routes).map((r) => routePattern(r.path).pattern))
   const mutations = new Map<string, string>(
     Object.values(loaded.build().ir.features).flatMap((f) =>
@@ -363,10 +382,11 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
         continue
       }
       const results = await Promise.all(
-        modes.map(async (mode) => {
+        modes.map(async (mode, m) => {
           const tab = tabOf(mode, item.actor)
           const others = tabs.filter((t) => t.mode === mode && t !== tab)
           const before = tab.snapshot
+          const serverSince = worlds[m]!.serverErrors.length
           tab.requested = false
           const loadsBefore = tab.documentLoads
           await tab.tagElements().catch(() => 0)
@@ -380,7 +400,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
               text.replace(/\$([A-Za-z_]\w*)/g, (_, name: string) => {
                 const value = own.get(name)
                 if (value === undefined) throw new Error(`$${name} was not remembered before this step`)
-                return value
+                return /^\s*fill\s/.test(text) ? value.replaceAll('\\', '\\\\') : value
               }),
             )
             verb = parsed.verb
@@ -398,9 +418,11 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
           const after = await tab.look()
           const reloads = tab.documentLoads - loadsBefore
           const calm = reloads
-            ? { replaced: 0, flashes: 0, shift: 0 }
-            : await tab.smoothness().catch(() => ({ replaced: 0, flashes: 0, shift: 0 }))
-          const { replaced, flashes, shift } = calm
+            ? { replaced: 0, flashes: 0, flashed: [], shift: 0 }
+            : await tab.smoothness().catch(() => ({ replaced: 0, flashes: 0, flashed: [], shift: 0 }))
+          const { replaced, flashes, flashed, shift } = calm
+          const serverErrors = worlds[m]!.serverErrors.slice(serverSince)
+          for (let i = serverSince; i < serverSince + serverErrors.length; i++) inStep[m]!.add(i)
           const elsewhere: BrowseElsewhere[] = []
           for (const o of others) {
             const was = o.snapshot
@@ -421,8 +443,9 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
                   ? 'navigated'
                   : 'reloaded',
             ...(replaced ? { replaced } : {}),
-            ...(flashes ? { flashes } : {}),
+            ...(flashes ? { flashes: { count: flashes, elements: flashed } } : {}),
             ...(shift >= 0.001 ? { shift } : {}),
+            ...(serverErrors.length ? { serverErrors } : {}),
             url: after.url,
             ...(tab.stepStatus !== null && tab.stepStatus !== 200 ? { status: tab.stepStatus } : {}),
             ...delta(before, after, reloads === 0),
@@ -452,6 +475,12 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
       if (!ok) failed = true
     }
 
+    modes.forEach((mode, m) => {
+      worlds[m]!.serverErrors.forEach((e, i) => {
+        if (!inStep[m]!.has(i))
+          errors.push({ kind: 'server', text: describeServerError(e), at: e.path ?? null, mode })
+      })
+    })
     const order = (e: BrowseError) =>
       options.actors.findIndex((a) => a.name === (e.actor ?? null)) * 2 + modes.indexOf(e.mode ?? modes[0]!)
     errors.sort((a, b) => order(a) - order(b))
@@ -515,7 +544,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
 
 export const browseFailed = (out: BrowseOutput) =>
   out.errors.length > 0 ||
-  out.steps.some((s) => !s.ok || s.differs) ||
+  out.steps.some((s) => !s.ok || s.differs || s.modes?.some((c) => c.serverErrors?.length)) ||
   out.components.some((c) => c.state === 'failed')
 
 const ITEMS = 6
@@ -523,6 +552,18 @@ const WIDTH = 60
 const TEXT = 600
 
 const cut = (s: string, n: number, full: boolean) => (!full && s.length > n ? `${s.slice(0, n)}…` : s)
+
+const FLASHES_SHOWN = 5
+
+function flashText({ count, elements }: NonNullable<BrowseChange['flashes']>): string {
+  const counted = new Map<string, number>()
+  for (const e of elements) counted.set(e, (counted.get(e) ?? 0) + 1)
+  const named = [...counted].map(([e, n]) => (n > 1 ? `${e} ×${n}` : e))
+  const shown = named.slice(0, FLASHES_SHOWN)
+  const more = named.length - shown.length
+  const list = [...shown, ...(more ? [`${more} more`] : [])].join('; ')
+  return `${count} element${count === 1 ? '' : 's'} rebuilt unchanged (a flash${list ? `: ${list}` : ''})`
+}
 
 function describeChange(c: BrowseChange, full: boolean): string {
   if (!c.ok) return `FAILED — ${c.note}`
@@ -542,7 +583,7 @@ function describeChange(c: BrowseChange, full: boolean): string {
       : full && c.replaced
         ? `${c.replaced} element${c.replaced === 1 ? '' : 's'} replaced`
         : '',
-    c.flashes ? `${c.flashes} element${c.flashes === 1 ? '' : 's'} rebuilt unchanged (a flash)` : '',
+    c.flashes ? flashText(c.flashes) : '',
     c.shift ? `layout shift ${c.shift}` : '',
   ]
     .filter(Boolean)
@@ -573,6 +614,9 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
         lines.push(`      ${c.mode}: ${texts[k] || '(no change)'}${c.ok && c.note ? ` — ${c.note}` : ''}`)
       })
     }
+    for (const c of changes)
+      for (const e of c.serverErrors ?? [])
+        lines.push(`      server error${modes.length > 1 ? ` (${c.mode})` : ''}: ${describeServerError(e)}`)
     for (const e of s.elsewhere ?? [])
       lines.push(
         `      ${e.actor || 'page'}${modes.length > 1 ? ` (${e.mode})` : ''}: ${describeChange(

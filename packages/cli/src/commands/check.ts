@@ -6,6 +6,7 @@ import type { CheckOutput, TypeIssue } from '../contract.ts'
 import type { Loaded } from '../load.ts'
 import { relativize } from '../output.ts'
 import { checkPreviews, loadPreviews } from '../previews.ts'
+import { remoteDiagnostics, remoteGroups } from '../remote.ts'
 
 import { projectStyles } from '../styles.ts'
 import { componentUses, overridesOf } from '../uses.ts'
@@ -113,12 +114,16 @@ export async function runCheck(
   const validating = performance.now()
   const validate = await runValidate(loaded, undefined, cwd, updateLock)
   const traced = loaded.build(true)
-  const { diagnostics: app } = await inspectApp(loaded, traced)
+  const { module, diagnostics: app } = await inspectApp(loaded, traced)
+  const remotes = module
+    ? remoteDiagnostics(loaded, await remoteGroups(loaded, traced, module.options.resolvers), module.path)
+    : []
   const tokens = Object.keys(traced.ir.kits).length
     ? ((await projectStyles(loaded.path, traced))?.tokens ?? null)
     : null
   const entry = [
     ...app,
+    ...remotes,
     ...(await kitConfigDiagnostics(traced, root, loaded.path, tokens)),
     ...envFilesIgnored(loaded, traced.ir.env?.files ?? []),
     ...(await previewDiagnostics(loaded, traced)),

@@ -167,12 +167,35 @@
           "description": "With the document kept: how many elements are new after the step (a region drawn again)."
         },
         "flashes": {
-          "type": "number",
-          "description": "Elements the step removed and built again with the same tag, class and text: a visible flash (ADR 0067 C2)."
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "number"
+            },
+            "elements": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "count",
+            "elements"
+          ],
+          "additionalProperties": false,
+          "description": "Elements the step removed and built again unchanged: same tag, class, text, `name`, `id`, `href`, `src`, `type` and parent path (ADR 0067 C2, ADR 0069 A3). `count` counts every such element, `elements` names the outermost ones as CSS-like paths (`main > form > input[name=card]`)."
         },
         "shift": {
           "type": "number",
           "description": "Layout shift no input explains (layout-shift entries without recent input, summed, as CLS counts them)."
+        },
+        "serverErrors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServerError"
+          },
+          "description": "What the app's `onError` received during the step (ADR 0069 A2)."
         },
         "url": {
           "type": "string"
@@ -214,6 +237,32 @@
         "off"
       ]
     },
+    "ServerError": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "effect": {
+          "type": "string",
+          "description": "The effect (`feature.symbol`) whose resolver or input failed, when known."
+        },
+        "path": {
+          "type": "string",
+          "description": "The request path, when known."
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "The other fields `onError` received, such as the schema issues of an invalid input and where it came from."
+        }
+      },
+      "required": [
+        "message"
+      ],
+      "additionalProperties": false,
+      "description": "One call of the app's `onError` (ADR 0069 A2): a resolver that threw, an invalid input, a failed stream."
+    },
     "BrowseElsewhere": {
       "type": "object",
       "properties": {
@@ -252,8 +301,10 @@
           "enum": [
             "exception",
             "console",
-            "request"
-          ]
+            "request",
+            "server"
+          ],
+          "description": "`server`: the app's `onError` was called outside any step (opening the page); a step lists its own."
         },
         "text": {
           "type": "string"

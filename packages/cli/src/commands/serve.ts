@@ -4,7 +4,7 @@ import type { BuildResult, IsolatedUse } from '@hozu/core/ir'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { devPreviews, loadPreviews, renderUse } from '../previews.ts'
-import { importer, requireApp } from './app.ts'
+import { DISPOSE_MS, disposeApps, importer, requireApp } from './app.ts'
 
 interface Listening {
   listen(port: number, ...rest: [string, () => void] | [() => void]): unknown
@@ -81,15 +81,23 @@ export async function runServe(
     else server.listen(port, ready)
   })
   const url = `http://${host ?? 'localhost'}:${port}`
+  const close = async () => {
+    await new Promise<void>((done) => {
+      server.close(done)
+      ;(server as { closeAllConnections?: () => void }).closeAllConnections?.()
+      setTimeout(done, DISPOSE_MS).unref()
+    })
+    await disposeApps(DISPOSE_MS, log)
+  }
   const parent = Number(process.env.HOZU_DEV_PARENT)
   if (parent)
     setInterval(() => {
       try {
         process.kill(parent, 0)
       } catch {
-        process.exit(0)
+        void close().finally(() => process.exit(0))
       }
     }, 500).unref()
   log(`${name} on ${url}${process.env.HOZU_DEV === '1' ? '' : ` · stop: kill ${process.pid}`}`)
-  return { url, close: () => new Promise<void>((done) => server.close(done)) }
+  return { url, close }
 }

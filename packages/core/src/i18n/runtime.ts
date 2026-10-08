@@ -73,6 +73,12 @@ export const i18nFns: Record<string, Impl> = {
     const d = new Date(input.v)
     return Number.isNaN(d.getTime()) ? '' : new Intl.DateTimeFormat(input.l, input.o).format(d)
   } as Impl,
+  '#plural': function plural(input: { v: number; c: Record<string, string>; l: string }): Json {
+    if (typeof input.v !== 'number') return ''
+    const text =
+      input.c[`=${input.v}`] ?? input.c[new Intl.PluralRules(input.l).select(input.v)] ?? input.c.other ?? ''
+    return text.replaceAll('#', new Intl.NumberFormat(input.l).format(input.v))
+  } as Impl,
   '#relative': function relative(input: { v: number; u: Intl.RelativeTimeFormatUnit; l: string }): Json {
     return typeof input.v === 'number'
       ? new Intl.RelativeTimeFormat(input.l, { numeric: 'auto' }).format(input.v, input.u)

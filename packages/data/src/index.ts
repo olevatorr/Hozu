@@ -8,10 +8,11 @@ export type {
   Implementation,
   MutationContext,
   QueryContext,
+  RemoteOptions,
   ResolverSet,
   Upload,
 } from './resolvers.ts'
-export { redirectOf, resolverSetOf, resolvers } from './resolvers.ts'
+export { redirectOf, remote, remotesOf, resolverSetOf, resolvers } from './resolvers.ts'
 export type {
   DataRuntime,
   DataRuntimeOptions,

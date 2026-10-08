@@ -337,6 +337,16 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
   const routes: Record<string, RouteIR> = {}
   for (const [id, route] of Object.entries(config.routes ?? {})) {
     const p = join('', 'routes', id)
+    if (infoOf(route)?.kind !== 'route') {
+      scope.report(
+        'HZ014',
+        null,
+        p,
+        `routes.${id} is not a route() declaration`,
+        'project({ routes }) takes only route() values; pass an object of routes, not a module that exports other values.',
+      )
+      continue
+    }
     scope.mark(p, route)
     if (scope.routes.has(route)) {
       scope.report(

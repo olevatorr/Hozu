@@ -56,6 +56,18 @@ async function freshApp() {
 
 const dirname = (p: string) => p.slice(0, p.lastIndexOf('/'))
 
+function emptyConfig(app: string) {
+  const path = join(app, 'hozu.config.ts')
+  const source = readFileSync(path, 'utf8')
+    .replace(/^import \{[^}]*\} from '\.\/(features\/site\/[\w.]+|routes\.ts)'\n/gm, '')
+    .replace(/routes: \{[^}]*\},/, 'routes: {},')
+    .replace(/pages: \[.*\],/, 'pages: [],')
+    .replace(/features: \[[^\]]*\],/, 'features: [],')
+  expect(source).toContain('features: [],')
+  expect(source).not.toContain('./routes.ts')
+  writeFileSync(path, source)
+}
+
 describe('the agent loop (ADR 0027)', () => {
   it('scaffolds a feature on the home page that checks clean and renders through get', async () => {
     const app = await freshApp()
@@ -173,26 +185,32 @@ describe('the agent loop (ADR 0027)', () => {
     expect(search).toMatchObject({ method: 'get', fields: [field('q', '', 'search')], buttons: [] })
   })
 
-  it('checks clean for every combination of --with parts', async () => {
-    const parts = ['detail', 'toggle', 'filter', 'remove']
-    for (let mask = 0; mask < 16; mask++) {
+  it('checks clean for every combination of --with parts, also on a config with empty lists (ADR 0069 A4)', async () => {
+    const parts = ['auth', 'detail', 'toggle', 'filter', 'remove']
+    for (let mask = 0; mask < 32; mask++) {
       const chosen = parts.filter((_, i) => mask & (1 << i))
+      const empty = mask % 2 === 1 || mask === 0
       const app = await freshApp()
+      if (empty) emptyConfig(app)
       const args = [
         'add',
         'feature',
         'tasks',
         '--page',
-        '/',
+        empty ? '/tasks' : '/',
         ...(chosen.length ? ['--with', chosen.join(',')] : []),
       ]
+      const label = `${chosen.join(',')}${empty ? ' (empty config)' : ''}`
       const added = await json('add', args, app)
-      expect(added.out.manual, chosen.join(',')).toEqual([])
+      expect(added.out.manual, label).toEqual([])
+      const config = readFileSync(join(app, 'hozu.config.ts'), 'utf8')
+      expect(config, label).toMatch(/^ {2}features: \[[\w, ]+\],$/m)
+      expect(config, label).toMatch(/^ {2}routes: \{ [\w, ]+ \},$/m)
       const check = await json('check', ['check'], app)
-      expect(check.out.types.errors, chosen.join(',')).toEqual([])
-      expect(check.out.validate.summary, chosen.join(',')).toEqual({ errors: 0, warnings: 0, accepted: 0 })
+      expect(check.out.types.errors, label).toEqual([])
+      expect(check.out.validate.summary, label).toEqual({ errors: 0, warnings: 0, accepted: 0 })
     }
-  }, 120_000)
+  }, 300_000)
 
   it.skipIf(!chrome)(
     'runs the full scaffold like a user: toggle, detail, remove and a 404',

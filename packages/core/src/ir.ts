@@ -61,6 +61,8 @@ export { domEvents, eventFields, passiveEvents } from './ir/events.ts'
 export { FORM_FIELD, type FormEntries, formEntries, formRefOf, formRunnable } from './ir/forms.ts'
 export { type Operator, operators, unimplementedOperators } from './ir/operators.ts'
 export { anyGuardRef, anyRef, eachGuardRef, eachRef, type RefExpr } from './ir/refs.ts'
+export type { RemoteContract, RemoteEffect, RemoteKind } from './ir/remote.ts'
+export { remoteContract } from './ir/remote.ts'
 export type { PageTables, RouteKey, RouteModifier } from './ir/routes.ts'
 export {
   localeOf,

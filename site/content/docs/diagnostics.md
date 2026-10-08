@@ -104,6 +104,7 @@ This table is generated from the diagnostic registry, so it lists every code the
 | HZ090 (warning) | `access: 'anyone'` on a `scope: 'user'` query: every visitor, signed in or not, may read it | say who may read it (`'signedIn'`, `{ owner: { row, session } }`), or accept the warning with a reason |
 | HZ091 | a query with `owner` access returned rows the visitor does not own (reported at run time) | read only the visitor's rows in the resolver (filter by the session); production drops the extra rows and logs this |
 | HZ092 | a preview in `project({ previews })` no longer fits the app: data off its query output schema, an error the query does not declare, a route without a page, or a component use that does not build | update the preview to the current schema, error, page or component (previews are for people: they never ship) |
+| HZ093 | a `remote()` resolver that cannot answer: its generated contract is missing or stale, or it lists an effect the browser runs or a non-JSON endpoint | run `hozu gen` and rebuild the service; implement browser-run effects in fetch.ts and non-JSON endpoints in TypeScript |
 <!-- /codes -->
 
 ## Keep a warning on purpose

@@ -34,7 +34,7 @@ export function localeFns(
 ): Record<string, (x: Json) => Json> {
   const out: Record<string, (x: Json) => Json> = { ...fns }
   const generic = i18nFns as unknown as Record<string, (x: Json) => Json>
-  for (const name of ['#number', '#date', '#relative', '#list'])
+  for (const name of ['#number', '#date', '#relative', '#list', '#plural'])
     out[name] = (x) => generic[name]!({ ...(x as Record<string, Json>), l: locale })
   for (const f of Object.values(ir.features)) {
     if (!f.messages) continue

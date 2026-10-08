@@ -159,7 +159,15 @@ type QueryErrors<E> = {
 function view<C, S extends string, P = null, Q = null>(config: {
   machine: MachineDecl<C, S>
   route?: RouteDecl<P, Q>
-  seed?: (scope: { params: Ref<P>; search: Ref<Q> }) => { [K in keyof C]?: Val<C[K]> }
+  /**
+   * Starts the machine from the address and, with `query(decl, input)`, from server data (ADR 0069 B2): a checkout
+   * prefilled from the member. A query that fails leaves its fields at initialContext.
+   */
+  seed?: (scope: {
+    params: Ref<P>
+    search: Ref<Q>
+    query: <I, O>(decl: QueryDecl<I, O, any, any, any>, input: Val<I>) => Ref<O>
+  }) => { [K in keyof C]?: Val<C[K]> }
   render: (scope: ViewScope<C, S, P, Q>) => NodeDecl
 }): ViewDecl
 function view<P = null, Q = null>(config: {

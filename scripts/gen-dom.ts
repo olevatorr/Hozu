@@ -42,6 +42,7 @@ const presentationSet = new Set(presentation)
 const attrs: Record<string, string[]> = {}
 for (const tag of htmlTags) attrs[tag] = (html[tag] ?? []).filter(keep).sort()
 attrs.textarea = [...attrs.textarea!, 'value'].sort()
+for (const tag of ['a', 'area', 'form']) attrs[tag] = [...attrs[tag]!, 'rel'].sort()
 for (const tag of svgTags) {
   const own = (svg[tag] ?? []).filter((a) => keep(a) && !presentationSet.has(a))
   if (

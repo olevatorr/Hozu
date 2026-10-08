@@ -456,7 +456,8 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(code).toBe(0)
     const modes = out.steps.map((s: { modes: Record<string, unknown>[] }) => s.modes[0])
     expect(modes[1].flashes).toBeUndefined()
-    expect(modes[4].flashes).toBe(1)
+    expect(modes[4].flashes.count).toBe(1)
+    expect(modes[4].flashes.elements).toHaveLength(1)
     expect(modes[9].shift).toBeGreaterThan(0)
     expect([modes[10].flashes, modes[10].shift]).toEqual([undefined, undefined])
     const text = await human(
@@ -469,7 +470,7 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
       ],
       watchlist,
     )
-    expect(text.stdout).toContain('1 element rebuilt unchanged (a flash)')
+    expect(text.stdout).toContain(`1 element rebuilt unchanged (a flash: ${modes[4].flashes.elements[0]})`)
   }, 60_000)
 
   it('replace writes the address in place, so a reload keeps the search (ADR 0067 G)', async () => {

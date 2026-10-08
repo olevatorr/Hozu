@@ -8,6 +8,8 @@ import {
   type Freshness,
   type Json,
   join,
+  type RemoteEffect,
+  remoteContract,
   resolveSource,
   type TagExprIR,
 } from '@hozu/core/ir'
@@ -18,6 +20,7 @@ import {
   failureOf,
   implementationOf,
   REDIRECT,
+  type RemoteOptions,
   type ResolverSet,
   type Run,
   redirectOf,
@@ -84,6 +87,25 @@ export type FetchLoader = (feature: string) => Promise<FetchModule | null>
 
 const FETCH_FAIL = Symbol.for('hozu.fetchFail')
 
+interface HttpReply {
+  status: number
+  ok: boolean
+  text(): Promise<string>
+  json(): Promise<unknown>
+}
+
+const http = (url: string, init: object): Promise<HttpReply> =>
+  (globalThis as unknown as { fetch: (url: string, init: object) => Promise<HttpReply> }).fetch(url, init)
+
+const timeout = (ms: number): unknown =>
+  (globalThis as unknown as { AbortSignal: { timeout(ms: number): unknown } }).AbortSignal.timeout(ms)
+
+const base64 = (bytes: Uint8Array) => {
+  let text = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return (globalThis as unknown as { btoa(s: string): string }).btoa(text)
+}
+
 const fileUrl = (path: string) =>
   `file://${path.startsWith('/') ? '' : '/'}${encodeURI(path.replace(/\\/g, '/'))}`
 
@@ -113,7 +135,13 @@ export interface RequestData {
   readonly session: unknown
   readonly readSession: boolean
   readonly written: { value: unknown } | null
-  run(ref: string, input: Json, files?: Map<string, FileLike>): Promise<Result | MutationResult>
+  /** `sent`: the input came in a request (`/_hozu/query`), so a bad one is the caller's, not reported. */
+  run(
+    ref: string,
+    input: Json,
+    files?: Map<string, FileLike>,
+    sent?: boolean,
+  ): Promise<Result | MutationResult>
   endpoint(ref: string, input: Json, ctx: { request: unknown; bytes?: Uint8Array }): Promise<EndpointResult>
 }
 
@@ -264,8 +292,9 @@ export function createDataRuntime({
   }
 
   const runs = new Map<string, Run>()
+  const remotes = new Map<RemoteOptions, string[]>()
   for (const impl of resolverSetOf(resolvers).list) {
-    const { decl, run } = implementationOf(impl)
+    const { decl, run, remote } = implementationOf(impl)
     const ref = bindings.refs.get(decl)
     if (!ref) {
       problem(
@@ -280,6 +309,23 @@ export function createDataRuntime({
           snippet: null,
         },
       )
+      continue
+    }
+    if (remote) {
+      if (runs.has(ref))
+        problem(
+          pointerOf(ir, ref),
+          ref.split('.')[0]!,
+          `${ref} is implemented twice`,
+          'Each effect has exactly one implementation.',
+          undefined,
+          {
+            summary: `List ${ref.split('.')[1]} in one remote() or one implement(…), not both`,
+            snippet: null,
+          },
+        )
+      remotes.set(remote, [...(remotes.get(remote) ?? []), ref])
+      runs.set(ref, run)
       continue
     }
     if (runsOf(ref) !== 'server') {
@@ -309,6 +355,53 @@ export function createDataRuntime({
         },
       )
     runs.set(ref, run)
+  }
+
+  const serverEnv = (ir.env?.server?.properties ?? {}) as Record<string, unknown>
+  for (const [options, refs] of remotes) {
+    const contract = remoteContract(ir, refs)
+    const hz093 = (ref: string | null, message: string, summary: string) =>
+      problems.push({
+        code: 'HZ093',
+        severity: codes.HZ093.severity,
+        message,
+        location: {
+          feature: ref?.split('.')[0] ?? null,
+          pointer: ref ? pointerOf(ir, ref) : '/app',
+          source: ref ? resolveSource(build.sources, pointerOf(ir, ref)) : null,
+        },
+        cause:
+          'A remote service answers JSON for server effects only, through the contract hozu gen writes (ADR 0068).',
+        fix: { summary, snippet: null, patch: null },
+      })
+    for (const p of contract.problems)
+      hz093(
+        p.ref,
+        p.message,
+        'Implement it with implement(…) in app.ts (or fetch.ts for a browser-run effect), and remove it from remote()',
+      )
+    if (!options.secret?.env)
+      hz093(
+        null,
+        'remote() has no secret, so anyone who reaches the service could call it with any session',
+        "Add secret: { env: 'SERVICE_SECRET' } to remote() and the same value to the service's Options.Secret",
+      )
+    for (const variable of [options.url, options.secret])
+      if (typeof variable === 'object' && variable && !(variable.env in serverEnv))
+        hz093(
+          null,
+          `remote() reads ${variable.env}, which project({ env: { server } }) does not declare`,
+          `Add ${variable.env}: z.string().min(16) to the server env schema of hozu.config.ts`,
+        )
+    const secretValue = options.secret?.env ? (env as Record<string, unknown>)[options.secret.env] : undefined
+    if (typeof secretValue === 'string' && secretValue.length < 16)
+      hz093(
+        null,
+        `remote() secret ${options.secret.env} holds ${secretValue.length} characters; it needs 16 or more`,
+        `Set ${options.secret.env} to a random value of 16 characters or more (openssl rand -hex 16)`,
+      )
+    for (const effect of contract.effects)
+      runs.set(effect.ref, remoteRun(options, effect, contract.fingerprint))
   }
 
   const tagsOf = (list: TagExprIR[]) =>
@@ -390,6 +483,66 @@ export function createDataRuntime({
       ])
   }
   if (problems.length) throw new DataRuntimeError(problems)
+
+  /** A server effect answered by a service of another language over HTTP (ADR 0068). */
+  function remoteRun(options: RemoteOptions, effect: RemoteEffect, fingerprint: string): Run {
+    const read = (from: string | { env: string }, what: string) => {
+      const value = typeof from === 'string' ? from : (env as Record<string, unknown>)[from.env]
+      if (typeof value !== 'string' || !value)
+        throw new Error(
+          `${effect.ref} is remote, but ${what} ${typeof from === 'string' ? '' : from.env} is not set`,
+        )
+      return value
+    }
+    return async (input, ctx) => {
+      const url = read(options.url, 'its URL')
+      const headers: Record<string, string> = {
+        'content-type': 'application/json',
+        'x-hozu-fingerprint': fingerprint,
+      }
+      headers['x-hozu-secret'] = read(options.secret, 'its secret')
+      const session = effect.session ? ((ctx as { session?: unknown }).session ?? null) : null
+      const request = ctx.request as { headers?: Iterable<[string, string]> } | undefined
+      const forwarded =
+        effect.kind === 'endpoint' && request?.headers
+          ? Object.fromEntries([...request.headers].filter(([name]) => name !== 'cookie'))
+          : {}
+      const files: Record<string, { name: string; type: string; size: number; data: string }> = {}
+      for (const [token, f] of ctx.uploads ?? [])
+        files[token] = {
+          name: f.name,
+          type: f.type,
+          size: f.size,
+          data: base64(new Uint8Array(await f.arrayBuffer())),
+        }
+      const res = await http(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          effect: effect.ref,
+          input,
+          session,
+          preview: ctx.preview,
+          headers: forwarded,
+          files,
+        }),
+        signal: timeout(options.timeout ?? 10_000),
+      })
+      if (res.status === 409)
+        throw new Error(
+          `${effect.ref}: the service at ${url} was built from another contract; run hozu gen and rebuild it`,
+        )
+      if (!res.ok)
+        throw new Error(`${effect.ref}: ${url} answered ${res.status} ${(await res.text()).slice(0, 200)}`)
+      const reply = (await res.json()) as {
+        ok?: unknown
+        fail?: { name: string; data: unknown }
+        session?: unknown
+      }
+      if (Object.hasOwn(reply, 'session')) ctx.setSession(reply.session)
+      return reply.fail ? ctx.fail(reply.fail.name, reply.fail.data) : reply.ok
+    }
+  }
 
   function compileAccess(a: AccessIR): Access {
     const fns = bindings.fns as never
@@ -542,6 +695,7 @@ export function createDataRuntime({
         preview: this.preview,
         fail,
         file,
+        uploads: files,
         setSession: effect.kind === 'mutation' ? this.setSession : noSession,
       }
       try {
@@ -560,6 +714,12 @@ export function createDataRuntime({
               : { ...filled, data: { ...(filled.data as object), message: data.message } }
           }
           return report(new Error(`Invalid data from ${effect.ref} must be { message, fields }`))
+        }
+        if (failure.error === 'Forbidden' && (effect.scope === 'user' || effect.kind === 'mutation')) {
+          const message = (failure.data as { message?: unknown } | null)?.message
+          return typeof message === 'string'
+            ? { ok: false, error: 'Forbidden', data: { message } }
+            : forbidden()
         }
         if (!effect.errors.has(failure.error))
           return report(new Error(`Undeclared error "${failure.error}" from ${effect.ref}`))
@@ -625,7 +785,12 @@ export function createDataRuntime({
       return null
     }
 
-    async run(ref: string, raw: Json, files?: Map<string, FileLike>): Promise<Result | MutationResult> {
+    async run(
+      ref: string,
+      raw: Json,
+      files?: Map<string, FileLike>,
+      sent = false,
+    ): Promise<Result | MutationResult> {
       const effect = effects.get(ref)
       if (!effect) return unexpected(`Unknown effect ${ref}`)
       if (effect.scope === 'user') {
@@ -636,10 +801,12 @@ export function createDataRuntime({
       let known = shared === null ? undefined : parsedInputs.get(shared)
       if (!known) {
         const parsed = parse(ref, raw)
-        if (!parsed.ok)
-          return effect.kind === 'mutation'
-            ? { ...invalid(effect.fields, parsed.issues), invalidated: [] }
-            : unexpected(`Invalid input for ${ref}: ${parsed.issues.join('; ')}`)
+        if (!parsed.ok) {
+          if (effect.kind === 'mutation') return { ...invalid(effect.fields, parsed.issues), invalidated: [] }
+          const message = `Invalid input for ${ref}: ${parsed.issues.join('; ')} (a query input comes from the app: a head input, a ui.query input, an invoke or a seed; a route param is a string, so read numbers with z.coerce.number())`
+          if (!sent) onError(new Error(message), { effect: ref })
+          return unexpected(message)
+        }
         known = { input: parsed.value, key: `${ref}${canonicalStringify(parsed.value)}` }
         if (shared !== null) parsedInputs.set(shared, known)
       }

@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/GenOutput",
+  "definitions": {
+    "GenOutput": {
+      "type": "object",
+      "properties": {
+        "contracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "type": "string",
+                "description": "The contract file, relative to the working directory."
+              },
+              "package": {
+                "type": "string"
+              },
+              "fingerprint": {
+                "type": "string"
+              },
+              "effects": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "The effects it implements: feature.symbol."
+              },
+              "written": {
+                "type": "boolean",
+                "description": "False when the file already held this contract."
+              },
+              "problems": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Effects that cannot be remote (the server refuses to start with them, HZ093)."
+              }
+            },
+            "required": [
+              "file",
+              "package",
+              "fingerprint",
+              "effects",
+              "written",
+              "problems"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "contracts"
+      ],
+      "additionalProperties": false,
+      "description": "`hozu gen` (ADR 0068)."
+    }
+  }
+}

@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.22.0 — Resolvers in Go, and what a CMS, a shop admin and a storefront asked for (ADR 0068, 0069)
+
+Two agents built a CMS with a shop back office and its storefront on 0.21.1, sharing one MySQL database, then
+reviewed Hozu. This release answers them. `hozu migrate` raises the packages; run `hozu build` again before
+deploying (component fingerprints changed). Behaviour to check: kept state now follows only a view two pages share,
+or the visitor coming back to the same address.
+
+### Resolvers in another language (ADR 0068)
+- **`remote(options, [decls])`** implements server effects in a service of another language over HTTP; `hozu gen`
+  writes its Go contract (types, the `Resolvers` interface, `Handler`, gofmt-clean, standard library only).
+  `access`, caching, tags and the output check stay in the Hozu server. HZ093: a missing or stale contract, a
+  browser-run effect, a non-JSON endpoint, an undeclared env variable, or a missing or short secret.
+- The secret is required (16+ characters): the service trusts the session it is sent. Endpoints forward their
+  request headers (no cookie), every call carries `preview` and the uploads (`ctx.File(token)` in Go).
+- `examples/notes-go` is the notes app with every resolver in Go; `hozu docs data --more` has the loop.
+
+### Data and the server
+- **A seed reads server data:** `seed: ({ params, search, query }) => ({ email: query(me, {}).email })` starts a
+  machine prefilled from a query (server render, hydration, no-JS posts; the render plan counts the query; a failed
+  one leaves `initialContext`).
+- **A resolver may answer `fail('Forbidden', { message })`**, and with `access: 'signedIn'` its `session` is typed
+  as present.
+- **A query input that fails its schema reaches `onError`** with the field and a hint (`z.coerce.number()` for route
+  params and form fields), instead of a silent 500.
+- **`head.input` and `head.render` get `search`**, so `/journal?topic=makers` has its own title.
+- **`part()` shares an access rule:** `const staffOnly = part(({ session }) => …)`, `access: { allow: staffOnly }`.
+- `hozu docs data --more` covers databases: the pool and `app({ dispose })`, transactions, migrations, numeric ids,
+  staff-shared data, a second app writing the same database. `hozu docs http` lists every CSP key.
+
+### Views
+- **Links to the page shown get `aria-current`** (`page`, or `true` for the same path with another search and for a
+  section above it), on the server and in the browser: a menu needs no current-route logic.
+- **`ui.dialog({ open: is(['editing']) })`** opens as a modal and closes with the machine.
+- **`ui.format.plural(n, { one: '# item', other: '# items' })`.**
+- `null` and `false` render nothing inside a constant list too; `rel` is allowed on `a`, `area` and `form`.
+- HZ033 accepts a hidden input whose value is a context field of the same enum.
+- **Kept state** (0.21) follows a machine to another page only through a view both pages show, or back to the same
+  address: the quantity chosen on one product no longer appears on the next.
+
+### Tools
+- One-shot commands (`hozu get`, `call`, `browse`, `check`, …) exit when done even if the app holds a database pool;
+  `app({ dispose })` closes it (also on `hozu serve` shutdown).
+- `hozu get` and `hozu browse` list the server errors of each page and step.
+- A flash is an element removed and an equal one (tag, class, text, `name`, `id`, `href`, `src`, `type`, parent
+  path) added in the same step; the report names them (`main > form > input[name=card]`).
+- `--json` changes: browse's `flashes` is `{ count, elements }`, and `get` / `browse` add `serverErrors`.
+- `hozu add feature --with auth` writes a valid config; `--select` takes `^= $= *= ~=`; `fill` values take `\n`;
+  `project({ routes })` with a non-route value is HZ014 naming the key.
+
 ## 0.21.1
 
 - **`ui.set` works on a field that stays visible while the machine is busy.** A state with `invoke` drops every

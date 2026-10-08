@@ -6,5 +6,5 @@ if (major < 22 || (major === 22 && minor < 18)) {
   )
   process.exit(1)
 }
-const { main } = await import('../dist/main.js')
-process.exitCode = await main(process.argv.slice(2))
+const { cli } = await import('../dist/main.js')
+await cli(process.argv.slice(2))

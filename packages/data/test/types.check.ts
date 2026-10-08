@@ -29,6 +29,27 @@ const mine = query({
   access: 'anyone',
 })
 
+const signed = query({
+  input: z.object({}),
+  output: z.string(),
+  scope: 'user',
+  freshness: 'request',
+  runs: 'server',
+  access: 'signedIn',
+})
+const save = mutation({ input: z.object({}), output: z.string(), runs: 'server', access: 'signedIn' })
+const open = mutation({ input: z.object({}), output: z.string(), runs: 'server', access: 'anyone' })
+
+resolvers(p, (implement) => [
+  implement(signed, (_, { session }) => session.userId),
+  implement(save, (_, { session }) => session.userId),
+  // @ts-expect-error access 'anyone' does not promise a session
+  implement(open, (_, { session }) => session.userId),
+  implement(signed, (_, { fail }) => fail('Forbidden', { message: 'Staff only' })),
+  // @ts-expect-error a public query cannot answer Forbidden
+  implement(pub, (_, { fail }) => fail('Forbidden', {})),
+])
+
 resolvers(p, (implement) => [
   implement(mine, (_, { session }) => session?.userId ?? ''),
   // @ts-expect-error public resolvers never see the session

@@ -23,10 +23,10 @@ export const Board = ui.view({
 - **Events:** `on: { click: ui.send(Event, payload) }`; payload fields are literals, data, `ui.dom.value`,
   `ui.dom.form('name')` (submit; `hozu docs forms`). A control that only sets a context field:
   `on: { click: ui.set(ctx.open, !ctx.open) }`, `on: { input: ui.set(ctx.q, ui.dom.value) }` (no event to declare).
-- **Links:** `ui.a({ href: ui.link(itemPage, { id: item.id }) }, [...])`; never a string path (HZ032).
+- **Links:** `ui.a({ href: ui.link(itemPage, { id: item.id }) }, [...])`; never a string path (HZ032). Menus,
+  dialogs, plurals: --more.
 - **Data:** `ui.query(listItems, input, { ready: (items) => …, failed: { NotFound: () => …, Unexpected: () => … } })`;
-  `failed` lists every declared error plus `Unexpected`. When the input changes, the rows stay (`aria-busy` on the
-  parent) and update by key; `pending` shows only before the first answer.
+  `failed` lists every declared error plus `Unexpected`.
 - **Shared UI** (buttons, inputs, fields): `ui.use(Button, { variant, props, on }, ['Save'])` of a kit component
   (`hozu docs components`).
 
@@ -63,3 +63,13 @@ export const Board = ui.view({
   (`hozu docs components`; `examples/showcase` has a Chart.js one).
 - **Also:** `ui.html(post.html)` (trusted HTML from query data only, HZ030), `ui.asset(new URL('./x.png',
   import.meta.url))`, `ui.window({ on })` / `ui.document({ on })`, `ui.embed(OtherView)`.
+
+## Menus, dialogs, counting
+- When a query's input changes, the rows stay (`aria-busy` on the parent) and update by key; `pending` shows only
+  before the first answer.
+- A link to the page shown gets `aria-current="page"` (`"true"` for its section): `aria-[current]:font-bold`.
+- `ui.dialog({ open: is(['editing']), on: { close: ui.send(Cancel, {}) } }, [...])` opens as a modal and closes with
+  the machine; Escape sends `close`.
+- `ui.format.plural(n, { one: '# item', other: '# items' })` picks the case for the page's language (`=0` works).
+- `null` and `false` render nothing, also inside a constant list:
+  `ui.ul({}, [...kinds.map((k) => (k === 'draft' ? null : ui.li({}, [k])))])`.

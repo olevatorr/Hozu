@@ -7,6 +7,7 @@ import type {
   RequestFormGroup,
   RequestOutput,
   RequestStep,
+  ServerError,
 } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
@@ -158,9 +159,10 @@ const VOID = new Set([
 ])
 
 const selectorOf = (selector: string) => {
-  const m = /^([a-z][\w-]*)?(?:#([\w-]+))?(?:\[([\w:-]+)(?:=["']?([^"'\]]*)["']?)?\])?$/i.exec(
-    selector.trim(),
-  )
+  const m =
+    /^([a-z][\w-]*)?(?:#([\w-]+))?(?:\[([\w:-]+)(?:([~^$*]?=)(?:"([^"]*)"|'([^']*)'|([^"'\]]*)))?\])?$/i.exec(
+      selector.trim(),
+    )
   if (!m || (!m[1] && !m[2] && !m[3]))
     throw new HozuCliError('usage', `Unsupported selector "${selector}"`, [
       'button',
@@ -168,9 +170,30 @@ const selectorOf = (selector: string) => {
       '[role=alert]',
       'a[href]',
       'input[name=title]',
+      'meta[property^="og:"]',
     ])
-  return { tag: m[1]?.toLowerCase(), id: m[2], attr: m[3]?.toLowerCase(), value: m[4] }
+  return {
+    tag: m[1]?.toLowerCase(),
+    id: m[2],
+    attr: m[3]?.toLowerCase(),
+    op: (m[4] ?? '=') as AttrOp,
+    value: m[4] === undefined ? undefined : (m[5] ?? m[6] ?? m[7]!),
+  }
 }
+
+type AttrOp = '=' | '^=' | '$=' | '*=' | '~='
+
+const matches = (actual: string, op: AttrOp, value: string): boolean =>
+  op === '='
+    ? actual === value
+    : op === '~='
+      ? value !== '' && !/\s/.test(value) && actual.split(/\s+/).includes(value)
+      : value !== '' &&
+        (op === '^='
+          ? actual.startsWith(value)
+          : op === '$='
+            ? actual.endsWith(value)
+            : actual.includes(value))
 
 export function elementsOf(html: string, selector: string): RequestElement[] {
   if (selector.includes(','))
@@ -190,7 +213,10 @@ export function elementsOf(html: string, selector: string): RequestElement[] {
     if (sel.tag && sel.tag !== tag) continue
     const attrs = attrsOf(m[2]!.replace(/\/$/, ''))
     if (sel.id && attrs.id !== sel.id) continue
-    if (sel.attr && (!(sel.attr in attrs) || (sel.value !== undefined && attrs[sel.attr] !== sel.value)))
+    if (
+      sel.attr &&
+      (!(sel.attr in attrs) || (sel.value !== undefined && !matches(attrs[sel.attr]!, sel.op, sel.value)))
+    )
       continue
     let text = ''
     if (!VOID.has(tag)) {
@@ -257,14 +283,61 @@ export async function appParts(loaded: Loaded, command: string, sessions: (strin
   return { importFrom, build, module, session: store, cookies }
 }
 
+const plainJson = (value: unknown): unknown => {
+  try {
+    return JSON.parse(JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? String(v) : v)))
+  } catch {
+    return String(value)
+  }
+}
+
+export function serverErrorOf(error: unknown, info: unknown): ServerError {
+  const { effect, path, ...rest } = (typeof info === 'object' && info !== null ? info : {}) as Record<
+    string,
+    unknown
+  >
+  const issues = error instanceof Error && 'issues' in error ? { issues: plainJson(error.issues) } : {}
+  const details = { ...(plainJson(rest) as Record<string, unknown>), ...issues }
+  return {
+    message: error instanceof Error ? error.message : String(error),
+    ...(typeof effect === 'string' ? { effect } : {}),
+    ...(typeof path === 'string' ? { path } : {}),
+    ...(Object.keys(details).length ? { details } : {}),
+  }
+}
+
+type OnError = (error: unknown, info: unknown) => void
+
+export const collectingErrors = (
+  options: Record<string, unknown>,
+  push: (e: ServerError) => void,
+): OnError => {
+  const own = typeof options.onError === 'function' ? (options.onError as OnError) : null
+  return (error, info) => {
+    push(serverErrorOf(error, info))
+    own?.(error, info)
+  }
+}
+
+export const describeServerError = (e: ServerError) =>
+  `${e.message}${e.effect ? ` (${e.effect})` : ''}${e.details ? ` ${JSON.stringify(e.details)}` : ''}`
+
 export async function runRequest(loaded: Loaded, options: RequestOptions): Promise<RequestOutput> {
   if (!options.paths.length) throw new HozuCliError('usage', 'hozu get needs a path', ['hozu get /'])
   const parts = await appParts(loaded, 'get', [options.session])
   const { testApp } = await parts.importFrom<TestingModule>('@hozu/testing', ['npm install -D @hozu/testing'])
-  const app = testApp(parts.module.app, {
-    env: process.env,
-    ...(parts.session ? { session: parts.session } : {}),
-  })
+  const server = await parts.importFrom<{ app(options: unknown): unknown }>('@hozu/runtime-server')
+  const serverErrors: ServerError[] = []
+  const app = testApp(
+    server.app({
+      ...parts.module.options,
+      onError: collectingErrors(parts.module.options, (e) => serverErrors.push(e)),
+    }),
+    {
+      env: process.env,
+      ...(parts.session ? { session: parts.session } : {}),
+    },
+  )
   const cookies = new Map<string, string>()
   const [cookie] = parts.cookies
   if (cookie) {
@@ -282,7 +355,7 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
     }
   }
   const steps: RequestStep[] = []
-  const record = (path: string, page: TestPage, final: boolean) => {
+  const record = (path: string, page: TestPage, final: boolean, since: number) => {
     const location = page.headers.get('location')
     const text = page.text.length > LIMIT && !options.full ? `${page.text.slice(0, LIMIT)}…` : page.text
     steps.push({
@@ -297,15 +370,17 @@ export async function runRequest(loaded: Loaded, options: RequestOptions): Promi
       truncated: final && page.text.length > LIMIT && !options.full,
       elements: final ? options.select.flatMap((q) => elementsOf(page.html, q)) : [],
       forms: final && options.forms ? formsOf(page.html, path) : [],
+      serverErrors: serverErrors.slice(since),
     })
   }
   for (let path of options.paths)
     for (let hops = 0; hops < 5; hops++) {
+      const since = serverErrors.length
       const page = await app.get(path, init())
       remember(page)
       const location = page.headers.get('location')
       const redirect = page.status >= 300 && page.status < 400 && location
-      record(path, page, !redirect)
+      record(path, page, !redirect, since)
       if (!redirect) break
       const next = new URL(location, 'http://localhost/')
       path = next.pathname + next.search
@@ -342,6 +417,7 @@ export function describeRequest(out: RequestOutput): string {
   for (const s of out.steps) {
     lines.push(`${s.method} ${s.path} → ${s.status}${s.location ? ` ${s.location}` : ''}`)
     for (const c of s.cookies) lines.push(`  set-cookie: ${c}`)
+    for (const e of s.serverErrors) lines.push(`  server error: ${describeServerError(e)}`)
     if (s.text === null) continue
     if (s.title) lines.push(`  title: ${s.title}`)
     for (const a of s.alerts) lines.push(`  alert: ${a}`)

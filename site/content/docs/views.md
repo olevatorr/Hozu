@@ -64,6 +64,11 @@ Hozu knows the whole page before it runs, so it keeps the page calm without any 
 
 `hozu browse` proves it: a step that rebuilds elements unchanged reports a flash, and layout that moves without input reports a layout shift.
 
+## Menus, dialogs and counts
+- A link to the page being shown gets `aria-current="page"`, and a link to its section `aria-current="true"`, on the server and in the browser. Style a menu with `aria-[current]:font-bold`; there is no current-route value to compare.
+- `ui.dialog({ open: is(['editing']), on: { close: ui.send(Cancel, {}) } }, [...])` opens as a modal when the machine enters `editing` and closes when it leaves; Escape sends the dialog's `close` event.
+- `ui.format.plural(n, { one: '# item', other: '# items' })` chooses the case for the page's language. `null` and `false` render nothing, also inside a list built with `.map`.
+
 ## Images and Markdown
 
 Use `ui.asset(new URL('./image.png', import.meta.url))` for local assets and provide image width and height. The optional image package can generate responsive WebP variants.
