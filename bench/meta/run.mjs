@@ -141,8 +141,8 @@ async function throughput(port, path, headers = {}) {
 
 const hozuTiming = (source) =>
   source.replace(
-    /(\w+)\(document\);?\s*$/,
-    'var __hs=performance.now();$1(document).then(()=>{window.__hydrated={start:__hs,end:performance.now()}});',
+    /(\w+)\(document\)(?=\.then\(|;?\s*$)/,
+    '(globalThis.__hs=performance.now(),$1(document).then((r)=>((window.__hydrated={start:globalThis.__hs,end:performance.now()}),r)))',
   )
 
 async function bytesAndSanity(browser, url, isHozu) {

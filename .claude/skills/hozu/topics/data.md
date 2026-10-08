@@ -6,7 +6,7 @@
 |---|---|---|
 | the visitor's own, no sign-in (a watchlist, favourites, settings) | `'browser'` / `'user'` | `localStorage`, in `fetch.ts` (`hozu docs recipes`) |
 | a signed-in user's, on every device | `'server'` / `'user'` + `access` | the app's database |
-| everyone's (posts, a shared board) | `'server'` / `'public'` + a deliberate `access` | the app's database |
+| everyone's (posts, a shared board) | `'server'` / `'public'`; `access` on its mutations | the app's database |
 | a public third-party API (quotes, weather) | `'either'` / `'public'` | nowhere: read it |
 
 The arrays in Hozu's examples and scaffolds are stand-ins that keep them short: one list for every visitor, gone on
@@ -16,7 +16,7 @@ restart. Never ship one; replace it with the store above.
 export const itemsTag = tag({ param: null })                    // tag({ param: z.string() }) → itemTag(id)
 export const listItems = query({
   input: z.object({}), output: z.array(Item),
-  scope: 'public',                  // 'user' = the session's data (needs project({ session }))
+  scope: 'public',                  // 'user' = per visitor (server-run: needs project({ session }))
   freshness: 'static',              // | 'request' | { revalidate: s } | { swr: s } | 'live' | { poll: s }
   tags: () => [itemsTag()],          // optional; (input) => [...]
   runs: 'server',                   // where the implementation lives: 'server' | 'browser' | 'either' (required); hozu docs fetch
@@ -144,7 +144,7 @@ func main() {
 - Route params and form fields are strings: a numeric id is `z.coerce.number()` in the query or mutation input
   (a query input that fails its schema is a program error, reported to `onError` with the field).
 - Data the whole staff shares but only staff may read is `scope: 'user'` with `access` (it is never cached across
-  requests). Share one rule: `const staffOnly = part(({ session }) => session.role !== 'editor')`, then
+  requests). Share one rule: `const staffOnly = part(({ session }) => session.role === 'staff')`, then
   `access: { allow: staffOnly }` on each effect.
 - A resolver may answer `fail('Forbidden', { message })` (a check `access` cannot make); with any access but
   `'anyone'` its `session` is never null.

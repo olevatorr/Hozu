@@ -7,7 +7,7 @@ import { getRelease } from './model.ts'
 
 export const support = 'https://ko-fi.com/hozu'
 
-const marked = 'aria-[current]:text-red'
+const marked = 'aria-[current]:text-ember'
 const links = part((current: (route: RouteDecl<any, any>) => boolean) => [
   ...(
     [

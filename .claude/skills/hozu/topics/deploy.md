@@ -15,7 +15,8 @@
 
 ## Details
 - **App options:** `app({ resolvers: resolvers(project, (implement) => [...]), session?, components?, og?, csp?,
-  onError?, preview? })`. There is no wrapper position: headers go through `project({ http })`, statuses through
+  onError?, preview?, refreshSession?, dispose?, dataCache?, cache?, bus?, staticTtl? })` (`refreshSession`:
+  `hozu docs auth`; `dispose` closes a database pool; the caches and `bus`: below). There is no wrapper position: headers go through `project({ http })`, statuses through
   `head.failed` and endpoint `failed`, the language through the URL.
 - **Node:** adapter-node serves `process.env`, styles and every `ui.asset` (hashed under `/_hozu/a/`). There is no
   `public/` folder served at the root: a file the page shows is a `ui.asset(new URL(...))`; a file named in data
@@ -44,7 +45,8 @@
   handler: `createHandler(app, { manifest, render, env, session: kvSessions(env.SESSIONS, { secret:
   env.SESSION_SECRET }) })`. Cloudflare KV may take up to a minute to show a sign-out in other regions.
 - **Another store:** implement `SessionStore` (`read`, `write`, `issue`) and pass it as `app({ session })` or the
-  handler's `session`; keep the cookie an opaque signed id (ADR 0043 B).
+  handler's `session`; keep the cookie an opaque signed id (ADR 0043 B). With `app({ refreshSession })` it also
+  needs `update(request, value)`: replace the value under the request's id, keep the id, and say whether it did.
 
 ## Caches and many instances
 - **Bounded caches:** public query results and cached pages are LRU caches, at most 10,000 entries and 5,000 pages

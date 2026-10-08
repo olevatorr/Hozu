@@ -221,6 +221,13 @@ try {
         await wide.waitForTimeout(50)
         const covered = await wide.evaluate(() => {
           const header = document.querySelector('header')!.getBoundingClientRect()
+          const leaving = (el: Element) => {
+            const parent = el.parentElement!
+            const end =
+              parent.getBoundingClientRect().bottom -
+              Number.parseFloat(getComputedStyle(parent).paddingBottom)
+            return el.getBoundingClientRect().bottom >= end - 1
+          }
           const sticky = [...document.querySelectorAll('main *')].filter(
             (el) => getComputedStyle(el).position === 'sticky' && el.getBoundingClientRect().height > 0,
           )
@@ -228,6 +235,7 @@ try {
             header.top,
             sticky.length,
             ...sticky
+              .filter((el) => !leaving(el))
               .map((el) => el.getBoundingClientRect())
               .filter((box) => box.top < header.bottom || box.height > innerHeight - header.bottom)
               .map((box) => `${Math.round(box.top)}..${Math.round(box.bottom)} under ${header.bottom}`),

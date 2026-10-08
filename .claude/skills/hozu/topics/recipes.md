@@ -107,8 +107,9 @@ One machine per feature: an order list (filters, selection) and an order page (s
 ## A multi-step checkout that also works without JavaScript
 Each step is a state and each step's form posts only its own fields: after a native post the server renders the next
 step, and every form on that page carries the machine's state in a signed hidden field, so the next post continues
-from it (going back to edit a step too). Prefill from the member with
-`seed: ({ query }) => ({ email: query(me, {}).email })`.
+from it (going back to edit a step too; the field is `__hozu_state`, sealed with `SESSION_SECRET`). Prefill from
+the member on the view that has both `machine` and `route` (HZ048):
+`ui.view({ machine: checkout, route: checkoutPage, seed: ({ query }) => ({ email: query(me, {}).email }), render })`.
 
 ## A notice after saving
 A `notice` context field set in `done` and cleared by `after: [{ ms: 4000, target: 'idle' }]` on a `saved` state;

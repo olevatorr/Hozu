@@ -15,18 +15,17 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 2. Edit everything the change needs (table below).
 3. `npx hozu check` once. For an intended behaviour change, `npx hozu check --update-lock`, then list the accepted
    `now:` lines in your summary.
-4. Verify once with the line `hozu map` prints: `npx hozu browse <path> --session '…' --do '…'` (no server, no
-   `curl`).
+4. Verify with the line `hozu map` prints: `npx hozu browse <path> --session '…' --do '…'` (no server).
 5. Show the person the change: `npx hozu show <file:line> --note "<in their words>"`.
 
 ## What to touch
 | Change | Touch |
 |---|---|
 | UI state or a mode (a tab, paused) | a context field → views: `on: { click: ui.set(ctx.tab, 'design') }` |
-| Filter / sort in the URL | the route's `search` (with a default) → `ui.link(route, params, { key })` → `search.key`; while typing: `seed` from `search`, `replace: () => ui.link(…)` |
+| Filter / sort in the URL | the route's `search` → `ui.link(route, params, { key })` → `search.key`; while typing: `seed` from `search`, `replace: () => ui.link(…)` |
 | A per-item action (pin, archive) | model: the item field, an event, a mutation that `invalidates` the list tag, an `on` into a state with `invoke` → views: the per-item form (`hozu docs patterns`) |
 | A control every state handles | `machine({ on: [...] })` |
-| Refresh (a button, a timer) | `refresh: () => [tag()]` on a transition |
+| Refresh | data that changes alone: `freshness: { poll: s }`; on a button or pause: `refresh: () => [tag()]` |
 | New page | `routes.ts` → a view with `route` → `ui.page(...)` in `hozu.config.ts` |
 | UI (a button, a field) | `ui.use` of a kit component (`npx hozu docs components`) |
 

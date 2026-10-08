@@ -53,39 +53,39 @@ export interface SpeedRow {
   js: string
   interactive: string
 }
-/** bench/meta (2026-10-04): the same page in each framework's production server, rendered per request. */
+/** bench/meta (2026-10-08, Hozu 0.25.0): the same page in each framework's production server, rendered per request. */
 export const speed: SpeedRow[] = [
   {
     id: 'hozu',
-    framework: 'Hozu 0.16.0',
+    framework: 'Hozu 0.25.0',
     versions: 'adapter-node',
-    requests: '16,870',
-    js: '8.1 KB',
-    interactive: '54 ms',
+    requests: '15,818',
+    js: '9.7 KB',
+    interactive: '60 ms',
   },
   {
     id: 'sveltekit',
     framework: 'SvelteKit 3.0.0',
     versions: 'Svelte 5.57.1, adapter-node 6.0.0',
-    requests: '6,867',
+    requests: '6,581',
     js: '33.0 KB',
-    interactive: '94 ms',
+    interactive: '101 ms',
   },
   {
     id: 'nuxt',
     framework: 'Nuxt 4.5.2',
     versions: 'Vue 3.5.43, Nitro 2.13.4',
-    requests: '3,236',
+    requests: '2,953',
     js: '75.8 KB',
-    interactive: '87 ms',
+    interactive: '91 ms',
   },
   {
     id: 'next',
     framework: 'Next.js 16.3.8',
     versions: 'React 19.3.0, App Router',
-    requests: '1,701',
+    requests: '1,616',
     js: '130.9 KB',
-    interactive: '166 ms',
+    interactive: '164 ms',
   },
 ]
 export const speedSource = 'https://github.com/olevatorr/Hozu/blob/main/bench/meta/README.md'

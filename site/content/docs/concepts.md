@@ -18,13 +18,13 @@ This lets the tools answer questions about an application before serving it: whi
 
 A feature groups related declarations: queries, mutations, events, views and, when needed, one state machine. The feature lists the modules that hold them, `declarations: [model, views]`, and every exported declaration is registered under its export name. Other features can use only declarations exposed through its `exports`; consumers declare the feature in `imports`.
 
-Static content does not need a machine. Add one when the UI has an interaction with state or side effects.
+Static content does not need a machine. Add one when the UI has an interaction with state or side effects. A view with a route can start its machine from the address and from server data: `seed: ({ search, query }) => ({ q: search.q, email: query(me, {}).email })` runs on the server render, in hydration and for posts without JavaScript alike; a failed query leaves the initial context.
 
 ## Behaviour has a contract
 
 A machine describes states and transitions. A contract states the starting state, the events or effect results that occur, and the expected state, data changes and effects. Transitions that decide something (a guard, a navigation or a computed value) need a contract. Transitions that only copy values are recorded in readable form in `hozu.lock.json`, so a change to them is reviewed as a lock diff.
 
-`expect.changes` is a deep patch: omitted fields must remain unchanged, and arrays replace the old value. `given.context` defaults to the machine's initial context. The lock must equal the one Hozu computes: any difference is reported until `hozu check --update-lock` accepts it, and a change to a transition that decides is accepted only when a contract fails against the previous behaviour. A contract over transitions that only copy values is flagged, because the lock already reviews them.
+[Machines and contracts](/docs/machines) walks through both. `expect.changes` is a deep patch: omitted fields must remain unchanged, and arrays replace the old value. `given.context` defaults to the machine's initial context. The lock must equal the one Hozu computes: any difference is reported until `hozu check --update-lock` accepts it, and a change to a transition that decides is accepted only when a contract fails against the previous behaviour. A contract over transitions that only copy values is flagged, because the lock already reviews them.
 
 ## Logic stays explicit
 

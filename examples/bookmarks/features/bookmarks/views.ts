@@ -24,7 +24,7 @@ const shows = [
 export const Board = ui.view({
   machine: bookmarksMachine,
   route: home,
-  render: ({ ctx, search, when }) =>
+  render: ({ ctx, search, is }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [
       ui.h1({ class: 'text-3xl font-bold' }, ['Bookmarks']),
       ui.form(
@@ -55,20 +55,16 @@ export const Board = ui.view({
             { name: 'kind', 'aria-label': 'Kind', class: 'rounded border px-2 py-2' },
             kinds.map((k) => ui.option({ value: k, selected: ctx.kind === k }, [k])),
           ),
-          ui.use(Button, { props: { type: 'submit' } }, ['Add']),
+          ui.use(Button, { props: { type: 'submit', disabled: is(['adding']) } }, ['Add']),
         ],
       ),
       ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),
-      when(
-        ['adding'],
-        [
-          ui.p({ class: 'rounded border px-4 py-3 opacity-50', 'aria-busy': 'true' }, [
-            'Adding ',
-            ctx.draft,
-            '…',
-          ]),
-        ],
-      ),
+      is(['adding']) &&
+        ui.p({ class: 'rounded border px-4 py-3 opacity-50', 'aria-busy': 'true' }, [
+          'Adding ',
+          ctx.draft,
+          '…',
+        ]),
       ui.nav(
         { class: 'flex gap-2', 'aria-label': 'Show' },
         shows.map((s) =>

@@ -158,7 +158,7 @@ export const renderDiagram = () =>
         ['static', 'Static'],
         ['isr', 'Revalidate'],
         ['swr', 'Stale while revalidate'],
-        ['live', 'Live'],
+        ['live', 'Every request or live'],
       ].map(([id, title], index) =>
         ui.label({}, [
           ui.input({ type: 'radio', name: 'freshness', value: id!, checked: index === 0 }),
@@ -284,7 +284,7 @@ export const renderDiagram = () =>
       [
         'live',
         'Request-time region',
-        'Live freshness requires request-time data and the framework’s live transport. It cannot be exported as a static-only page.',
+        "Public data declared 'request' is read again on every request; 'live' also pushes changes over the framework’s live transport. A static export leaves a per-request region to the browser when its query declares runs: 'either'; otherwise the page needs a server.",
       ],
       [
         'user',
@@ -295,6 +295,6 @@ export const renderDiagram = () =>
       ui.div({ 'data-render-result': id! }, [ui.h3({}, [title!]), ui.p({}, [body!])]),
     ),
     ui.p({ 'data-explorer-note': '' }, [
-      'Hydration is a separate decision: only machine-bound nodes become islands. These controls are native HTML and use no JavaScript.',
+      'Not shown: { poll: s }, which has the browser re-read the data on a timer and caches public results for half the interval. Hydration is a separate decision: machine-bound nodes, client components and browser-run regions become islands. These controls are native HTML and use no JavaScript.',
     ]),
   ])

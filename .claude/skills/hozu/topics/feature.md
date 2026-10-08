@@ -29,7 +29,7 @@ export const items = machine({
         done: { target: 'idle', assign: () => { ctx.draft = '' } },
         failed: {
           Duplicate: { target: 'idle', assign: () => { ctx.error = 'Already listed' } },
-          Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } },
+          Unexpected: { target: 'idle', assign: () => { ctx.error = 'Try again' } },
         },
       }),
     },
@@ -38,14 +38,14 @@ export const items = machine({
 // views.ts
 export const Board = ui.view({
   machine: items,
-  render: ({ ctx, when }) =>
+  render: ({ ctx, is }) =>
     ui.main({ class: 'mx-auto max-w-xl' }, [
       ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } }, [
         ui.input({ name: 'title', required: true, value: ctx.draft }),
-        ui.button({ type: 'submit' }, ['Add']),
+        ui.button({ type: 'submit', disabled: is(['adding']) }, ['Add']),
       ]),
       ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error]),
-      when(['adding'], [ui.p({ 'aria-busy': 'true' }, [`Adding ${ctx.draft}…`])]),
+      is(['adding']) && ui.p({ 'aria-busy': 'true' }, [`Adding ${ctx.draft}…`]),
       ui.query(listItems, {}, {
         ready: (list) => ui.ul({}, [ui.each(list, 'id', (i) => ui.li({}, [i.title, i.done ? ' ✓' : '']))]),
         failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Unavailable']) },
@@ -73,7 +73,7 @@ Every declaration a listed module exports is registered under its name; schemas 
 - A mutation runs when the machine **enters** a state whose `invoke` calls it; that state drops other events, and
   `done` / `failed` leave it.
 - A filter in the URL starts the machine: `seed: ({ search }) => ({ q: search.q })` on the view, then read `ctx.q`.
-  `machine({ on })` holds transitions every idle state shares; `fn` bodies may call helpers from the same module.
+  `machine({ on })` holds transitions every state without `invoke` shares; `fn` bodies may call helpers from the same module.
 - Reusable view logic is a `part((…) => …)`, inlined where it is used (`hozu docs views`).
 
 ## Files

@@ -17,6 +17,7 @@ http: {
   headers: [{ routes: 'all', set: { 'permissions-policy': 'camera=()' } }],   // not cache-control (HZ038)
 },
 ```
-Server options live in the app module: `app({ resolvers, session?, components?, onError?, csp?, og?, preview? })`.
+Server options live in the app module: `app({ resolvers, session?, components?, onError?, csp?, og?, preview?,
+refreshSession?, dispose?, dataCache?, cache?, bus?, staticTtl? })` (`hozu docs deploy`).
 A strict CSP, `nosniff` and a cross-site POST check are on by default; `csp: { img: ['https://…'] }` adds sources
 (`script style img font connect frame media`).

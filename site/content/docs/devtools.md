@@ -1,7 +1,7 @@
 ---
 title: Hozu DevTools
 description: Point at the screen; give your agent a request that names the file, the line and the Hozu way to change it.
-order: 11
+order: 17
 ---
 
 ## Start it
@@ -15,7 +15,10 @@ order: 11
 | Page | The page's title, description and other head fields |
 | Layers | Every part of the page, the states that are not on screen, and the page's previews |
 | Assets | Every component of the app on one board, and the design tokens |
+| API | The data the page reads and the changes it can make, run with your own input |
 | Frame | The page at an exact size: phone, tablet, laptop, or drag the corner |
+| Agent | Notes your agent left on this page with `hozu show`; it appears when there are some |
+| Settings | Builder or Developer, the appearance, whether requests carry code excerpts, and the keys |
 
 ## Describe a change
 
@@ -90,7 +93,7 @@ The part gets a numbered red frame on your page, and an **Agent** button appears
 
 ## Builder or Developer
 
-The settings switch between plain words (Builder, the default) and the source view (Developer): files, code excerpts, components, transitions and node ids. `npm run dev -- --devtools developer` starts in the source view. Light and dark follow your system.
+The settings switch between plain words (Builder, the default) and the source view (Developer): files, code excerpts, components, transitions and node ids. `npm run dev -- --devtools developer` starts in the source view. The appearance follows your system unless you choose light or dark there, and **Add the code excerpt** puts seven lines around each place into a request (off by default: the agent reads the file anyway).
 
 ## In your language
 

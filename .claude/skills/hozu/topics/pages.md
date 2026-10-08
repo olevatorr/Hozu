@@ -66,4 +66,6 @@ export default project({
 - A detail view: `ui.view({ route: itemPage, render: ({ params }) => ui.query(getItem, { id: params.id }, { ready,
   failed: { NotFound: () => ui.p({}, ['Not found']), Unexpected: () => … } }) })`.
 - A page loads JS only when a machine-bound part renders on it (`hozu plan <route or path>`). Every link loads a document;
-  state across pages lives in the URL (`seed`), on the server (queries) or in a client component's own storage.
+  a machine whose view both pages show (or the same address) resumes its calm state, the last state without `invoke`,
+  from `sessionStorage`; a reload or a page without that view starts from `initialContext` (or `seed`). What must
+  survive a reload lives in the URL (`seed`), on the server (queries) or in a client component's own storage.

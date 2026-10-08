@@ -11,7 +11,7 @@ export const m = machine({
       invoke: invoke(addItem, {
         input: { title: ctx.draft },
         done: { target: 'idle', assign: () => { ctx.draft = '' } },
-        failed: { Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } } },
+        failed: { Unexpected: { target: 'idle', assign: () => { ctx.error = 'Try again' } } },
       }),
     },
   }),
@@ -59,7 +59,7 @@ export const m = machine({
         done: { target: 'idle', assign: () => { ctx.draft = '' }, navigate: (r) => ui.link(itemPage, { id: r.id }) },
         failed: {                               // every declared error + Unexpected (+ optional Invalid)
           Duplicate: { target: 'idle', assign: () => { ctx.error = 'Already exists' } },
-          Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } },
+          Unexpected: { target: 'idle', assign: () => { ctx.error = 'unexpected' } },   // a code; the view words it
         },
       }),
     },
@@ -68,7 +68,11 @@ export const m = machine({
   }),
 })
 ```
-- Calm state follows the visitor to a page that shows the same view, and back to the same address.
+- **Across pages:** the calm state (the last state without `invoke`, with its context) is kept in `sessionStorage`
+  and resumed on a page that shows the same machine view, or on the same address; a reload or a page without that
+  view starts from `initialContext` (or `seed`).
+- `Unexpected`'s `message` is `Internal error (call <id>)` in production (the real one reaches `onError`): store a
+  code or a fixed text, never `e.message`.
 - **assign** values are event (`e`), result (`r`) or error fields, context, literals, operators and `fn()` calls.
 - **guard** conditions: a field (`() => ctx.auto`), comparisons, `&&`, `||`, `!`, or a boolean `fn()`.
 - **navigate** sends the browser to `ui.link(route, params, search?)` after the transition. It returns one link: to

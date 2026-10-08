@@ -41,7 +41,7 @@ describe('SKILL.md (ADR 0043 K)', () => {
       '## What to touch',
       '| A per-item action (pin, archive)',
       '**Ask where data lives when it could be shared or follow a user across devices.**',
-      '| Refresh (a button, a timer) | `refresh: () => [tag()]`',
+      '| Refresh | data that changes alone: `freshness: { poll: s }`; on a button or pause: `refresh: () => [tag()]`',
       '**Query resolvers only read.**',
       'in one `browse` chain',
       '**Contracts only where a transition decides:**',

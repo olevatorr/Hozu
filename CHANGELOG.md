@@ -34,6 +34,21 @@ and what an agent can verify cheaply. No source change is needed: `hozu migrate`
 - A mode the person sets (paused, a view mode) is a context field, not a machine state: busy states keep it.
   `examples/watchlist` holds `paused` in its context, and its Pause button no longer turns into Resume while adding.
 - A menu is a constant list mapped to links, with `current(a) || current(b)` per section (it lowers inside `.map`).
+- One form for "show this in that state": `is(['adding']) && …` and `disabled: is(['adding'])`; `when(states,
+  children, motion)` only when an enter / leave motion is needed. The example app, the scaffold and the topics use it.
+- Topic fixes: `head.render`'s `locale` is its third argument; public queries take no `access` (their mutations do);
+  `createHandler(app, { session })`; the calm state kept across pages (shared view or same address) is one story in
+  machine, patterns and pages; contracts list `refresh` / `copy` / `replace` effects; testing covers the 0.25 browse
+  output; deploy lists every `app()` option; diagnostic summaries updated (HZ005, HZ007, HZ041, HZ045, HZ049, HZ059,
+  HZ093).
+
+### Site
+- Six new docs pages: Components and kits, Machines and contracts, Forms, Resolvers in Go, Languages, Verify and
+  test. Every page brought to 0.25 (shortcuts, `current(route, params)`, `{ ...search }` links, parsed params,
+  `hozu gen`, production error masking, the DevTools dock).
+- The home page shows a backend in Go and how agents check their own work; "How it works" corrected (freshness
+  `{ poll }` and public `'request'`, state kept across pages, what `hozu plan` prints, where effects run).
+- Speed table re-run on 0.25.0 (bench/meta, 2026-10-08).
 
 ## 0.24.0 — Sections are yours to say (ADR 0071)
 

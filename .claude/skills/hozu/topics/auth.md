@@ -1,7 +1,7 @@
 # Sign-in, sessions, who may read and change what
 
 - **Start:** `hozu add feature notes --page / --with auth` (sign-in page, sign-out, `me`); set `SESSION_SECRET`.
-- `project({ session: z.object({ user: z.string() }) })`. `scope: 'user'` queries and mutations get `session`;
+- `project({ session: z.object({ user: z.string() }) })`. `scope: 'user'` queries and every mutation get `session`;
   a mutation calls `setSession(value)` (`null` signs out).
 - **Every server-run user query and mutation says who may run it**, like `runs` (HZ088):
   - `access: 'signedIn'`: any signed-in visitor; the resolver reads that visitor's data by `session`.
@@ -29,7 +29,7 @@
 - Sessions live on the server: the default store is `memorySessions()` (from `@hozu/runtime-server`); the cookie holds
   only an opaque, signed, HttpOnly id, so `setSession(null)` revokes it and the session never reaches browser
   JavaScript. It is per process: a restart signs everyone out, and an edge or multi-instance deployment passes a
-  shared store explicitly (`createHandler({ session })`).
+  shared store explicitly (`createHandler(app, { session })`).
 - `setSession` also applies in a failing mutation (expiry: `setSession(null)` then `fail('Expired', …)`).
 - After a sign-in or sign-out the page's queries are re-read with the new session; nothing from the old one stays.
 - A role on top of sign-in: `'signedIn'` plus a declared error (`NotAdmin`) mapped to 403 keeps "signed out → login"

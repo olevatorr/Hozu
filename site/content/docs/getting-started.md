@@ -36,7 +36,7 @@ Use `--agent agents` for Codex, Cursor or Copilot, or `--agent both` for a team 
 
 ## Add a feature
 
-A scaffold gives you a list query, an add form, a state machine, contracts and in-memory resolvers. Give the feature a name and an explicit route:
+A scaffold gives you a list query, an add form, a state machine and stand-in resolvers. Give the feature a name and an explicit route:
 
 ```sh
 npx hozu add feature tasks --page /tasks
@@ -44,7 +44,7 @@ npx hozu check
 npx hozu get /tasks
 ```
 
-The output tells you which files and user-facing text to edit. To include common interactions from the start, add `--with detail,toggle,filter,remove`. The `auth` option also scaffolds an account flow; replace its demonstration sign-in before using it in production.
+The output tells you which files and user-facing text to edit. To include common interactions from the start, add `--with detail,toggle,filter,remove`. The `auth` option also scaffolds an account flow with its contracts; replace its demonstration sign-in before using it in production. Other transitions only copy values, so the scaffold writes no contract for them: `hozu.lock.json` records them (see [Machines and contracts](/docs/machines)).
 
 ## Find your way around
 
@@ -67,7 +67,7 @@ Edit the scaffold's text or data model, then run `npx hozu check`. It checks Typ
 
 For local browser development, `npm run dev` starts the app with reloads on every edit and [Hozu DevTools](/docs/devtools): select a part of the page and hand your agent a request that names its file and line. `npm start` runs the same app without them (`hozu serve`, which runs the app module named by `project({ app })`) as production, unless `NODE_ENV` is set: an app with sessions then needs `SESSION_SECRET` (`openssl rand -hex 32`), and refuses to start without it. The in-process commands are enough to inspect text, status codes, links and native forms during a change.
 
-The scaffold keeps data in memory. Add durable storage in the server resolvers when your application needs persistence.
+The scaffold keeps its data in a module-level array named `demo…`: every visitor shares it and a restart loses it. Decide where the data really lives, [whose data it is](/docs/data), and replace the `demo…` stand-ins in the resolvers before you ship.
 
 ## Understand the design
 

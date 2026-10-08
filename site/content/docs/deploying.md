@@ -1,7 +1,7 @@
 ---
 title: Deploying
 description: Find out whether your app needs a server, then deploy it to a static host, a Docker container or Cloudflare Workers.
-order: 9
+order: 15
 ---
 
 ## Does my app need a server?
@@ -118,6 +118,19 @@ Use a fixed `SESSION_SECRET` from your platform's secrets in production; a new o
 There is no `public/` folder served at the root: a file named in data, such as a cover image in front matter, is served by a GET endpoint with `output: 'response'`. Resolvers, the session store and the client components bundle are named in `app.ts`, headers in `project({ http })`, statuses in `head.failed`.
 
 The adapter includes an ISR page cache, tag revalidation, CSP and cross-site POST checks. It compresses as it streams (gzip, or brotli when only that is accepted), flushing whenever the stream waits, and serves files from the `.br` and `.gz` that `hozu build` writes next to each file over 1 KB in `dist/public`. Private and cookie-setting answers are compressed per request only; live streams, `HEAD`, 204 and 304 answers and already-compressed types are sent as they are.
+
+### Errors in production
+
+With `NODE_ENV=production`, the browser never sees an error's message: an `Unexpected` answer says `Internal error`, with the call id when a Go service failed. `app({ onError })` still receives the full error, so log it there. Development, `hozu get`, `browse` and `call` show the message.
+
+### A Go service beside it
+
+An app whose resolvers run in Go through `remote()` (see [Resolvers in Go](/docs/go)) deploys as two processes: the Hozu server above, and the service.
+
+- Run the service on a private address only the Hozu server reaches: it trusts the session each call carries.
+- Read both values from the server environment: `remote({ url: { env: 'NOTES_SERVICE_URL' }, secret: { env: 'NOTES_SERVICE_SECRET' }, … })`. The secret is the same value on both sides and at least 16 characters long (HZ093 otherwise).
+- After changing a remote declaration, run `npx hozu gen`, rebuild the service and deploy both together. A service built from an older contract answers 409 to the effects that changed.
+- On shutdown, let the service finish the calls in flight; the `main.go` in [Resolvers in Go](/docs/go) does.
 
 ## Cloudflare Workers
 

@@ -1,7 +1,7 @@
 ---
 title: Data
 description: Declare reads, writes and refresh rules independently of their server implementations.
-order: 4
+order: 7
 ---
 
 ## First: whose data is it?
@@ -106,7 +106,9 @@ For example, an `addArticle` mutation can declare `invalidates: () => [articlesT
 
 Endpoints declare `invalidates` the same way; it applies when the endpoint succeeds. A write that happens outside Hozu, such as a job, calls `await server.revalidate([articlesTag()])`, which returns the number of dropped cache entries and pages as `{ entries, pages }`.
 
-Every mutation also has the framework error `Invalid`, with a message and field errors. Schema validation can produce it, or your resolver can call `fail('Invalid', ...)`. Handle it explicitly when you want field-level feedback; otherwise the unexpected-error path handles it.
+Every mutation also has the framework error `Invalid`, with a message and field errors. Schema validation can produce it, or your resolver can call `fail('Invalid', ...)`. Handle it explicitly when you want field-level feedback ([Forms](/docs/forms) shows how); otherwise the unexpected-error path handles it.
+
+A machine state can also `invoke` a query, to read data once a person asks for it, such as a preview loaded on a click. Its result and its declared errors arrive in `done` and `failed`, as a mutation's do. Data a page shows from the start belongs in `ui.query` or a view's `seed` instead.
 
 ## Implement the declaration
 
@@ -128,6 +130,23 @@ export default app({
 `hozu serve`, `hozu check`, `hozu get`, `hozu browse` and `testApp(app)` all run this one module.
 
 Replace the stand-in implementation with your database or service without changing the view's data contract. Server-fetched data is serialized into the page payload instead of being fetched again on hydration.
+
+## Resolvers in another language
+
+When the person asks for it, or a Go service already exists, `remote()` from `@hozu/data` sends server effects to that service over HTTP:
+
+```ts
+...remote(
+  {
+    url: { env: 'NOTES_SERVICE_URL' },
+    secret: { env: 'NOTES_SERVICE_SECRET' },
+    contract: new URL('./service/hozu/contract.go', import.meta.url),
+  },
+  [listNotes, addNote],
+),
+```
+
+`npx hozu gen` writes the Go contract (types, a `Resolvers` interface and the HTTP handler), and `hozu check` reports HZ093 when the contract is older than the declarations. Each effect has its own fingerprint, so after a change only that effect answers 409 until you regenerate. Access, caching, tags and the output check stay in the Hozu server. The secret is required and at least 16 characters long, every call carries an `x-hozu-call` id that the service's log names, and `examples/notes-go` is the reference app. [Resolvers in Go](/docs/go) has the whole loop.
 
 ## Keep a session valid while reading
 
