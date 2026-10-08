@@ -122,7 +122,26 @@ export const steps: Step[] = [
     normalize: markSharedViews,
     unpredictable: /^\/(?:features\/[^/]+|kits\/[^/]+)\/components\/[^/]+\/sourceHash$/,
   },
+  {
+    from: '0.21',
+    to: '0.22',
+    summary:
+      "no source change; resolvers may be in Go through remote() and hozu gen (ADR 0068); a seed reads queries, links to the page shown get aria-current, a dialog's open follows the machine, ui.format.plural, head reads search, resolvers answer Forbidden, signedIn narrows the session type, one-shot commands exit (app({ dispose }) closes a pool), and kept state follows a view two pages share or the same address (ADR 0069); run hozu build again before deploying",
+    rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: remarkSharedViews,
+    unpredictable: /^\/(?:features\/[^/]+|kits\/[^/]+)\/components\/[^/]+\/sourceHash$/,
+  },
 ]
+
+/** 0.22 marks a shared view only when each page lists it once (ADR 0067, 0.22 review). */
+function remarkSharedViews(ir: Json): Json {
+  const p = ir as {
+    features?: Record<string, { views?: Record<string, { root: { attrs?: Record<string, Json> } }> }>
+  }
+  for (const f of Object.values(p.features ?? {}))
+    for (const v of Object.values(f.views ?? {})) if (v.root.attrs) delete v.root.attrs['data-hz-view']
+  return markSharedViews(ir)
+}
 
 /** 0.21 marks the root of a view two pages show (ADR 0067 C4). */
 function markSharedViews(ir: Json): Json {
