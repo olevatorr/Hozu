@@ -379,7 +379,7 @@ function handlerFor({
     read ? { 'cache-control': 'private, no-cache', ...(hasSession ? { vary: 'Cookie' } : {}) } : {}
   const internal = (path: string | null) =>
     path && /^\/(?![/\\])/.test(path) && ![...path].some((c) => c < ' ') ? path : null
-  const enterPreview = async (url: URL) => {
+  const enterPreview = async (url: URL, request: Request) => {
     const given = new TextEncoder().encode(url.searchParams.get('secret') ?? '')
     const want = new TextEncoder().encode(preview?.secret ?? '')
     let same = given.length === want.length && want.length > 0
@@ -388,15 +388,15 @@ function handlerFor({
     if (!previewCookie || !same || !to) return plain(401, 'Invalid preview request')
     return new Response(null, {
       status: 307,
-      headers: { location: to, 'set-cookie': localCookie(await previewCookie.write(true), url) },
+      headers: { location: to, 'set-cookie': localCookie(await previewCookie.write(true), request) },
     })
   }
-  const exitPreview = async (url: URL) =>
+  const exitPreview = async (url: URL, request: Request) =>
     new Response(null, {
       status: 307,
       headers: {
         location: internal(url.searchParams.get('path')) ?? publicPath(ir, '/'),
-        ...(previewCookie ? { 'set-cookie': localCookie(await previewCookie.write(null), url) } : {}),
+        ...(previewCookie ? { 'set-cookie': localCookie(await previewCookie.write(null), request) } : {}),
       },
     })
   const base: Record<string, string> = {
@@ -1087,8 +1087,8 @@ function handlerFor({
         },
       )
     }
-    if (path === '/_hozu/preview') return enterPreview(url)
-    if (path === '/_hozu/preview/exit') return exitPreview(url)
+    if (path === '/_hozu/preview') return enterPreview(url, request)
+    if (path === '/_hozu/preview/exit') return exitPreview(url, request)
     const head = request.method === 'HEAD'
     if (request.method !== 'GET' && !head) return plain(405, null, { allow: 'GET, HEAD, POST' })
     const client = clientBundle()[path]
@@ -1240,10 +1240,16 @@ export function withSiteUrl(build: BuildResult, env: Record<string, string | und
 
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]'])
 
-/** Safari keeps no `Secure` cookie over plain HTTP, even on this machine: `hozu serve` on 127.0.0.1 signed nobody in. */
-export function localCookie(cookie: string, at: Request | URL): string {
-  const url = at instanceof URL ? at : new URL(at.url)
-  return url.protocol === 'http:' && LOOPBACK.has(url.hostname)
+/**
+ * Safari keeps no `Secure` cookie over plain HTTP, even on this machine: `hozu serve` on 127.0.0.1 signed nobody in.
+ * A request a proxy forwarded (an HTTPS front on the same host) keeps `Secure`.
+ */
+export function localCookie(cookie: string, request: Request): string {
+  const url = new URL(request.url)
+  const proxied = ['forwarded', 'x-forwarded-for', 'x-forwarded-proto', 'x-forwarded-host'].some((h) =>
+    request.headers.has(h),
+  )
+  return url.protocol === 'http:' && LOOPBACK.has(url.hostname) && !proxied
     ? cookie.replace(/; Secure(?=;|$)/, '')
     : cookie
 }

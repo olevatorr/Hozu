@@ -92,3 +92,23 @@ describe.skipIf(!findBrowser())('hozu browse --build (ADR 0073 A3)', () => {
     expect(result.steps[0].modes[0].added).toContain('Mug × 1')
   }, 120_000)
 })
+
+describe('hozu build --target never empties the app (ADR 0073 A1)', () => {
+  it('refuses an output that holds the app, and a full folder it did not write', () => {
+    const here = spawnSync(process.execPath, [bin, 'build', '--target', 'workers', '--out', '.'], {
+      cwd: cart,
+      encoding: 'utf8',
+    })
+    expect(here.status).not.toBe(0)
+    expect(here.stdout + here.stderr).toContain('holds the app')
+    expect(existsSync(join(cart, 'hozu.config.ts'))).toBe(true)
+    const full = mkdtempSync(join(tmpdir(), 'hozu-full-'))
+    spawnSync('sh', ['-c', `echo keep > ${join(full, 'notes.txt')}`])
+    const other = spawnSync(process.execPath, [bin, 'build', '--target', 'vercel', '--out', full], {
+      cwd: cart,
+      encoding: 'utf8',
+    })
+    expect(other.status).not.toBe(0)
+    expect(existsSync(join(full, 'notes.txt'))).toBe(true)
+  })
+})

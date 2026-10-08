@@ -246,5 +246,7 @@ describe('Secure cookies on this machine (0.26)', () => {
     expect(at('http://[::1]:3000/')).not.toContain('Secure')
     expect(at('https://127.0.0.1/')).toContain('; Secure')
     expect(at('http://shop.example/')).toContain('; Secure')
+    const forwarded = new Request('http://127.0.0.1:3000/', { headers: { 'x-forwarded-proto': 'https' } })
+    expect(localCookie(cookie, forwarded)).toContain('; Secure')
   })
 })

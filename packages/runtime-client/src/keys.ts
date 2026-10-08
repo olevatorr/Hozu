@@ -35,8 +35,7 @@ const PRESSED = /^(button|submit|reset|checkbox|radio|image|file|color)$/
 export function pressed(doc: Document, e: KeyboardEvent): HTMLElement | null {
   const modal = doc.querySelector('dialog:modal')
   for (const el of (modal ?? doc).querySelectorAll<HTMLElement>('[data-hozu-keys]')) {
-    if ((el as HTMLButtonElement).disabled || el.closest('[hidden], [inert]') || !el.getClientRects().length)
-      continue
+    if (el.matches(':disabled') || el.closest('[hidden], [inert]') || !el.getClientRects().length) continue
     if (shortcut(e, el.dataset.hozuKeys!.split(' '))) return el
   }
   return null
@@ -49,6 +48,7 @@ export function listen(doc: Document): void {
     const el = pressed(doc, e)
     if (!el) return
     e.preventDefault()
+    if (e.repeat) return
     const field =
       FIELD.test(el.tagName) && !(el.tagName === 'INPUT' && PRESSED.test((el as HTMLInputElement).type))
     if (!field) return el.click()

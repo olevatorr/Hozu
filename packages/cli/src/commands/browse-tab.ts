@@ -541,9 +541,10 @@ export class Tab {
       const chain = Symbol.for('hozu.browse.chain')
       for (const el of document.querySelectorAll('body *')) {
         const p = el.parentElement
-        el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '') + ':' + [...(p.parentElement?.children ?? [])].indexOf(p)
+        el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '')
         el[s] = true
         el[Symbol.for('hozu.browse.parent')] = p
+        el[Symbol.for('hozu.browse.at')] = p ? [...(p.parentElement?.children ?? [])].indexOf(p) : -1
         g.__hozuSeen.push(el)
       }
       return g.__hozuSeen.length
@@ -568,7 +569,8 @@ export class Tab {
       const g = globalThis
       const KEYS = ['name', 'id', 'href', 'src', 'type']
       const own = (el) => el.tagName + '|' + (el.getAttribute('class') ?? '') + '|' + KEYS.map((k) => el.getAttribute(k) ?? '').join('|') + '|' + el.textContent.replace(/\\s+/g, ' ').trim()
-      const sig = (el) => (el[chain] ?? '') + '#' + own(el)
+      const at = (el) => { const p = el.parentElement; return p ? [...(p.parentElement?.children ?? [])].indexOf(p) : -1 }
+      const sig = (el) => (el[chain] ?? '') + '@' + (el[Symbol.for('hozu.browse.at')] ?? at(el)) + '#' + own(el)
       const parent = Symbol.for('hozu.browse.parent')
       const gone = new Map()
       for (const el of g.__hozuSeen ?? []) if (!el.isConnected) gone.set(sig(el), [...(gone.get(sig(el)) ?? []), el[parent]])
@@ -579,7 +581,7 @@ export class Tab {
         if (el[s]) continue
         replaced++
         const p = el.parentElement
-        el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '') + ':' + [...(p.parentElement?.children ?? [])].indexOf(p)
+        el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '')
         const was = gone.get(sig(el)) ?? []
         const i = was.findIndex((q) => !q?.isConnected || q === p)
         if (i < 0) continue
@@ -712,7 +714,8 @@ export class Tab {
       text: pressed,
     }
     const base = {
-      key: pressed === 'Space' ? ' ' : pressed,
+      key:
+        pressed === 'Space' ? ' ' : modifiers & 8 && pressed.length === 1 ? pressed.toUpperCase() : pressed,
       code: key.code,
       windowsVirtualKeyCode: key.keyCode,
       modifiers,

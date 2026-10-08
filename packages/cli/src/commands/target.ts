@@ -1,7 +1,7 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, join, relative, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { appModuleOf, type BuildResult } from '@hozu/core/ir'
 import { HozuCliError } from '../errors.ts'
@@ -21,6 +21,26 @@ export interface TargetOutput {
 }
 
 const DEFAULT_OUT: Record<Target, string> = { node: '.', workers: 'dist/workers', vercel: '.vercel/output' }
+
+const MARK: Record<'workers' | 'vercel', string> = { workers: 'wrangler.jsonc', vercel: 'config.json' }
+
+/** Empties the output only when it is a folder this target wrote before (or empty), never the app or one above it. */
+async function clearOutput(dir: string, kept: string[], target: 'workers' | 'vercel') {
+  const inside = (a: string, b: string) => a === b || a.startsWith(`${b}${sep}`)
+  if (kept.some((k) => inside(k, dir)))
+    throw new HozuCliError(
+      'usage',
+      `--out ${dir} holds the app: hozu build --target ${target} empties its output`,
+      [`hozu build --target ${target} --out ${DEFAULT_OUT[target]}`],
+    )
+  if (existsSync(dir) && readdirSync(dir).length && !existsSync(join(dir, MARK[target])))
+    throw new HozuCliError(
+      'usage',
+      `${dir} is not empty and no earlier --target ${target} output: nothing was removed`,
+      ['Choose an empty folder, or remove this one yourself'],
+    )
+  await rm(dir, { recursive: true, force: true })
+}
 
 /** What this app needs from any server, and what each target adds (ADR 0073 A2). */
 export function needsOf(build: BuildResult, target: Target): string[] {
@@ -88,7 +108,7 @@ export async function runTarget(
 ): Promise<TargetOutput> {
   const build = loaded.build(false)
   const root = dirname(loaded.path)
-  const dir = resolve(cwd, out ?? DEFAULT_OUT[target])
+  const dir = resolve(target === 'node' && out === undefined ? root : cwd, out ?? DEFAULT_OUT[target])
   const needs = needsOf(build, target)
   const files: string[] = []
   const write = async (file: string, text: string, keep = false) => {
@@ -100,7 +120,7 @@ export async function runTarget(
   }
   if (target === 'node') {
     await write('Dockerfile', DOCKERFILE, true)
-    await write('.dockerignore', 'node_modules\n.hozu\ndist\n.env*\n!.env.example\n', true)
+    await write('.dockerignore', 'node_modules\n.git\n.hozu\n.vercel\ndist\n.env*\n!.env.example\n', true)
     return {
       target,
       out: dir,
@@ -125,7 +145,7 @@ export async function runTarget(
       ['npm install -D @hozu/bundle'],
     )
   })
-  await rm(dir, { recursive: true, force: true })
+  await clearOutput(dir, [root, cwd], target)
   const staged = join(dir, '.build')
   await runBuild(loaded, staged, cwd)
   const assets = target === 'workers' ? 'assets' : 'static'

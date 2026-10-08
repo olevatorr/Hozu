@@ -67,9 +67,18 @@ async function builtHandler(
   }
   return {
     async fetch(request) {
-      const path = decodeURIComponent(new URL(request.url).pathname)
+      let path = ''
+      try {
+        path = decodeURIComponent(new URL(request.url).pathname)
+      } catch {}
       const file = join(assets, path)
-      if (request.method === 'GET' && file.startsWith(assets) && existsSync(file) && !path.endsWith('/'))
+      if (
+        request.method === 'GET' &&
+        path &&
+        file.startsWith(`${assets}/`) &&
+        existsSync(file) &&
+        !path.endsWith('/')
+      )
         return new Response(await readFile(file), {
           headers: { 'content-type': MIME[extname(file)] ?? 'application/octet-stream' },
         })
@@ -90,6 +99,19 @@ try {
   const styles = await css.compileStyles(build, { base: root })
   const components = parts.module.options.components ? await parts.module.options.components(build) : null
   const kv = new Map<string, string>()
+  if (
+    built &&
+    sessions.some((j) => j !== undefined) &&
+    (!process.env.SESSION_SECRET || !existsSync(join(built, 'wrangler.jsonc')))
+  )
+    throw new HozuCliError(
+      'usage',
+      '--session with --build signs in through a Workers bundle and SESSION_SECRET',
+      [
+        "SESSION_SECRET=… hozu browse / --build dist/workers --session '{…}'",
+        'Without them, sign in with steps: --do "fill Email=…" --do "click Sign in"',
+      ],
+    )
   if (built && process.env.SESSION_SECRET) {
     const store = server.kvSessions(
       {

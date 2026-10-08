@@ -139,3 +139,27 @@ describe('static export under a base path', () => {
     expect(await readFile(join(outDir, 'robots.txt'), 'utf8')).toContain('/shop/sitemap.xml')
   })
 })
+
+describe('a page with shortcuts and no islands (ADR 0073 B)', () => {
+  it('writes keys.js beside it, so the shortcut works on a static host', async () => {
+    const { feature, project: define, route, ui } = await import('@hozu/core')
+    const { resolvers } = await import('@hozu/data')
+    const { zodAdapter } = await import('@hozu/schema-zod')
+    const home = route({ path: '/', params: null, search: null })
+    const Search = ui.view({ render: () => ui.input({ name: 'q', 'aria-label': 'Search', keys: ['/'] }) })
+    const site = define({
+      schema: zodAdapter,
+      routes: { home },
+      pages: [ui.page(home, { views: [Search], head: { render: () => ({ title: 'Keys' }) } })],
+      features: [feature({ id: 's', intent: { summary: 'search' }, declarations: [{ Search }] })],
+    })
+    const outDir = await mkdtemp(join(tmpdir(), 'hozu-static-keys-'))
+    await exportStatic({
+      build: buildProject(site, { sources: false }),
+      resolvers: resolvers(site, () => []),
+      outDir,
+    })
+    expect(await readFile(join(outDir, 'index.html'), 'utf8')).toContain('/_hozu/keys.js')
+    expect(await missingFiles(outDir)).toEqual([])
+  })
+})
