@@ -21,6 +21,7 @@ import { describeDevtoolsMessages, messagesFileOf, runDevtoolsMessages } from '.
 import { runDocs } from './commands/docs.ts'
 import { describeEnv, runEnv } from './commands/env.ts'
 import { describeExport, runExport } from './commands/export.ts'
+import { describeGen, runGen } from './commands/gen.ts'
 import { runInspect } from './commands/inspect.ts'
 import { describeAddKit, runAddKit } from './commands/kits.ts'
 import { describeMap, runMap } from './commands/map.ts'
@@ -72,6 +73,9 @@ Commands:
   get <path>...             Request pages in-process (no server): status, title, alerts, visible text, forms
   env [--example]           Every env variable the app reads: side, required, default, set now, internal URL;
                             --example writes .env.example
+  gen                       Write the contract of every remote() in app.ts (a Go file: types, the Resolvers
+                            interface, the HTTP handler) for resolvers in another language; hozu check reports a
+                            stale one (HZ093)
   call <feature>.<effect>   Run one query, mutation or endpoint in-process (no server) through the app's own
                             handler: --input '<json>', --session '<json>', --header 'Name: value' (endpoints);
                             a mutation or a POST endpoint writes real data and needs --write
@@ -287,6 +291,7 @@ export async function main(
       'get',
       'call',
       'env',
+      'gen',
       'browse',
       'add',
       'inspect',
@@ -472,6 +477,11 @@ export async function main(
     if (command === 'env') {
       const result = runEnv(loaded, values.example === true)
       out(asJson ? json(result) : describeEnv(result))
+      return 0
+    }
+    if (command === 'gen') {
+      const result = await runGen(loaded, cwd)
+      out(asJson ? json(result) : describeGen(result))
       return 0
     }
     if (command === 'call') {

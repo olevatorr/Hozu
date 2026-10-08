@@ -641,4 +641,12 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
       'a preview in `project({ previews })` no longer fits the app: data off its query output schema, an error the query does not declare, a route without a page, or a component use that does not build',
     fix: 'update the preview to the current schema, error, page or component (previews are for people: they never ship)',
   },
+  HZ093: {
+    name: 'remote-contract',
+    severity: 'error',
+    topic: 'data',
+    summary:
+      'a `remote()` resolver that cannot answer: its generated contract is missing or stale, or it lists an effect the browser runs or a non-JSON endpoint',
+    fix: 'run `hozu gen` and rebuild the service; implement browser-run effects in fetch.ts and non-JSON endpoints in TypeScript',
+  },
 }

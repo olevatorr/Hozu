@@ -545,6 +545,22 @@ export interface EnvVariable {
   internal: string | null
 }
 
+/** `hozu gen` (ADR 0068). */
+export interface GenOutput {
+  contracts: {
+    /** The contract file, relative to the working directory. */
+    file: string
+    package: string
+    fingerprint: string
+    /** The effects it implements: feature.symbol. */
+    effects: string[]
+    /** False when the file already held this contract. */
+    written: boolean
+    /** Effects that cannot be remote (the server refuses to start with them, HZ093). */
+    problems: string[]
+  }[]
+}
+
 /** `hozu env` (ADR 0052). */
 export interface EnvOutput {
   /** project({ env: { files } }). */

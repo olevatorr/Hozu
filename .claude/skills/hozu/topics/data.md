@@ -73,3 +73,33 @@ export default app({ resolvers: resolvers(project, (implement) => [
   defaults and transforms applied.
 - Every mutation also has `Invalid` = `{ message, fields }` (input failing its schema, or
   `fail('Invalid', { message, fields: { title: 'Taken' } })`); never declare `Invalid` or `Unexpected` yourself.
+
+## Resolvers in another language (Go)
+Only when the person asks for it or the service already exists in Go: TypeScript resolvers are the default and need
+no second process. `remote()` sends server effects to a service over HTTP; everything else (access, caching, tags,
+the output schema check) stays in the Hozu server, so a wrong answer is `Unexpected`, never a wrong page.
+```ts
+import { remote, resolvers } from '@hozu/data'
+export default app({
+  resolvers: resolvers(project, (implement) => [
+    implement(me, (_, { session }) => ({ name: session?.user ?? '' })),
+    ...remote(
+      {
+        url: { env: 'NOTES_SERVICE_URL' },
+        secret: { env: 'NOTES_SERVICE_SECRET' },
+        contract: new URL('./service/hozu/contract.go', import.meta.url),
+      },
+      [listNotes, addNote],
+    ),
+  ]),
+})
+```
+- The loop: change the declaration in TypeScript → `npx hozu gen` (writes the contract: types, the `Resolvers`
+  interface, `Handler`) → implement the interface until `go test ./...` passes → restart the service → `hozu check`.
+  A contract older than the declarations is HZ093; the service answers 409 to calls from other declarations.
+- In Go: return a declared error as the error value (`hozu.NotesAddNoteDuplicate{Text: t}`), `hozu.Invalid{…}` for
+  input problems; `ctx.Session` is nil when signed out; `ctx.SetSession(…)` / `ctx.SignOut()` in mutations. Public
+  queries never receive the session. Serve `hozu.Handler(r, hozu.Options{Secret: …})` on a private address.
+- `.meta({ title: 'Note' })` on a schema makes it one Go type wherever it appears; `z.int()` is `int64`, a plain
+  number `float64`. Only `runs: 'server'` effects and JSON endpoints can be remote (HZ093).
+- `examples/notes-go` is the reference: the notes app with every resolver in Go.
