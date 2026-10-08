@@ -35,7 +35,8 @@ export const Board = ui.view({
 - **Motion:** what an update adds fades in by itself (not with reduced motion); a view two pages show stays still
   across a page change. `hozu browse` reports a flash or a layout shift: fix those. `c ? a : b` whose branches are
   one element of the same tag and shape (`ctx.paused ? resumeButton : pauseButton`) keeps the element: its text,
-  classes, attributes and listener follow `c`, and focus stays.
+  classes, attributes and listener follow `c`, and focus stays (not when a differing value computes, such as a `fn`
+  or a template string, or links elsewhere).
 - **Attributes:** HTML names in lower case (`for`, `minlength`, `aria-pressed`, `data-x`), typed per tag. Values are
   literals or data: `'aria-pressed': ctx.show === 'all'`, `title: ctx.error ?? 'OK'`.
 - **Sizes and colours from data:** `vars` with an arbitrary-value class: `class: 'w-[calc(var(--pct)*1%)]'`,
@@ -54,8 +55,8 @@ export const Board = ui.view({
 - **More events:** any DOM event name plus `visible` (entered the viewport). Payload fields also:
   `ui.dom.formAll('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`. Keyboard shortcuts:
   `ui.window({ on: { keydown: ui.send(Open, {}, { keys: ['Mod+k', '/'] }) } })` sends only on those presses and
-  stops the browser's own (`Mod` is ⌘ on Apple, Ctrl elsewhere; also `Ctrl`, `Meta`, `Alt`, `Shift`); on the window
-  a key without a modifier waits while the person types in a field. `ui.dom.value` / `ui.dom.form`
+  stops the browser's own (`Mod` is ⌘ on Apple, Ctrl elsewhere; also `Ctrl`, `Meta`, `Alt`, `Shift`); a printable
+  key without a modifier waits while the person types in a field (`Escape` does not). `ui.dom.value` / `ui.dom.form`
   fill an enum field only from a `<select>`, radios or submit buttons whose literal values are all members (HZ033).
 - **Search in links:** the third argument of `ui.link` is optional and exists only when the route declares `search`:
   omitted means every default, and a search lists only the fields that differ: `ui.link(home, null, { show: 'done' })`.

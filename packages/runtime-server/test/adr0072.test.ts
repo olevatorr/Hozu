@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { event, feature, machine, on, project, ui } from '@hozu/core'
+import { event, feature, fn, machine, on, project, route, ui } from '@hozu/core'
 import { buildProject, type ViewNode } from '@hozu/core/ir'
 import { compileMachine } from '@hozu/machine'
 import { extras, mount } from '@hozu/runtime-client'
@@ -120,7 +120,7 @@ const Keys = ui.view({
   machine: k,
   render: () =>
     ui.main({}, [
-      ui.window({ on: { keydown: ui.send(Open, {}, { keys: ['Ctrl+k', '/'] }) } }),
+      ui.window({ on: { keydown: ui.send(Open, {}, { keys: ['Ctrl+k', '/', 'Escape'] }) } }),
       ui.input({ name: 'q', on: { keydown: ui.send(Find, {}, { keys: ['Enter'] }) } }),
     ]),
 })
@@ -158,7 +158,9 @@ it('a send with keys fires only on those presses, stops the browser shortcut, an
   const input = root.querySelector('input')!
   expect(press(input, { key: '/' })).toBe(false)
   expect(press(input, { key: 'Enter' })).toBe(true)
-  expect(app.snapshot()!.context).toEqual({ opened: 2, found: 1 })
+  expect(press(input, { key: 'Escape' })).toBe(true)
+  expect(press(window, { key: '/', isComposing: true })).toBe(false)
+  expect(app.snapshot()!.context).toEqual({ opened: 3, found: 1 })
 })
 
 it('a bad shortcut is HZ014 at record time', () => {
@@ -173,4 +175,47 @@ it('a bad shortcut is HZ014 at record time', () => {
     .diagnostics.filter((d) => d.code === 'HZ014')
     .map((d) => d.message)
   expect(messages).toEqual(['keys work on keydown and keyup, not on click', '"Hyper+x" is not a shortcut'])
+})
+
+it('branches that compute from data the other side hides, or link elsewhere, are not merged', () => {
+  const Picked = event({ payload: z.object({ name: z.string().nullable() }) })
+  const p = machine({
+    context: z.object({ picked: z.string().nullable() }),
+    initialContext: { picked: null },
+    initial: 'idle',
+    on: ({ ctx }) => [
+      on(Picked, {
+        assign: (e) => {
+          ctx.picked = e.name
+        },
+      }),
+    ],
+    states: () => ({ idle: {} }),
+  })
+  const shout = fn({ input: z.string(), output: z.string(), impl: (s) => s.toUpperCase() })
+  const there = route({ path: '/there', params: null, search: null })
+  const here = route({ path: '/', params: null, search: null })
+  const View = ui.view({
+    machine: p,
+    render: ({ ctx }) =>
+      ui.main({}, [
+        ctx.picked !== null ? ui.h2({}, [shout(ctx.picked)]) : ui.h2({}, ['Pick one']),
+        ctx.picked !== null
+          ? ui.a({ href: ui.link(there, null) }, ['There'])
+          : ui.a({ href: ui.link(here, null) }, ['Here']),
+      ]),
+  })
+  const b = buildProject(
+    project({
+      schema: zodAdapter,
+      routes: { here, there },
+      pages: [],
+      features: [
+        feature({ id: 'p', intent: { summary: 'pick' }, declarations: [{ Picked, p, shout, View }] }),
+      ],
+    }),
+  )
+  expect(b.diagnostics.filter((d) => d.severity === 'error')).toEqual([])
+  const kids = (b.ir.features.p!.views.View!.root as Extract<ViewNode, { kind: 'el' }>).children
+  expect(kids.map((k) => (k.kind === 'if' ? sharedElement(k) : 'not an if'))).toEqual([null, null])
 })

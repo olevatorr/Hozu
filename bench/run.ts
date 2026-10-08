@@ -297,6 +297,7 @@ if (process.env.CHROMIUM_PATH) {
     results.at(-2)!.ok = false
     console.log(smooth.problems.join('\n'))
   }
+  if (smooth.shifts.length) console.log(smooth.shifts.join('\n'))
 } else console.log('S1, S2 skipped: no CHROMIUM_PATH')
 
 const bytes = (dir: string): number =>

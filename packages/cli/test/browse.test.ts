@@ -480,7 +480,7 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     )
     expect(code).toBe(1)
     expect(out.steps[0].note).toBe(
-      'the click would land on <h3> (its ::before or ::after), above <a href="/">: a person cannot click it',
+      'the click would land on <h3>, which contains it (a ::before or ::after above it, or pointer-events: none on it), above <a href="/">: a person cannot click it',
     )
   }, 60_000)
 

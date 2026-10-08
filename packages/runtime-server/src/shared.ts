@@ -22,8 +22,15 @@ const CLOSED = new Set(['form', 'dialog', 'input', 'select', 'textarea', 'img', 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 const tokens = (c: string | null) => (c ?? '').split(/\s+/).filter(Boolean)
 
-function cond(test: GuardExpr, a: ValueExpr, b: ValueExpr): ValueExpr {
-  return same(a, b) ? a : { fn: '%cond', arg: { object: { c: { test }, a, b } } }
+const computes = (v: ValueExpr) => JSON.stringify(v).includes('"fn":')
+
+/**
+ * One value for both branches, or null when they differ and either side computes: `%cond` evaluates both sides, and a
+ * `fn` on the side not shown may throw on the data that hides it (`ctx.picked !== null ? title(ctx.picked) : …`).
+ */
+function cond(test: GuardExpr, a: ValueExpr, b: ValueExpr): ValueExpr | null {
+  if (same(a, b)) return a
+  return computes(a) || computes(b) ? null : { fn: '%cond', arg: { object: { c: { test }, a, b } } }
 }
 
 function values(
@@ -31,17 +38,23 @@ function values(
   a: Record<string, ValueExpr>,
   b: Record<string, ValueExpr>,
   absent: ValueExpr,
-): Record<string, ValueExpr> {
+): Record<string, ValueExpr> | null {
   const out: Record<string, ValueExpr> = {}
-  for (const k of new Set([...Object.keys(a), ...Object.keys(b)]))
-    out[k] = cond(test, a[k] ?? absent, b[k] ?? absent)
+  for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const v = cond(test, a[k] ?? absent, b[k] ?? absent)
+    if (!v) return null
+    out[k] = v
+  }
   return out
 }
+
+const text = (x: TextNode, value: ValueExpr | null): TextNode | null => (value ? { ...x, value } : null)
 
 function element(test: GuardExpr, a: ElementNode, b: ElementNode): ElementNode | null {
   if (a.tag !== b.tag || CLOSED.has(a.tag) || a.ref || b.ref) return null
   if (a.use?.component !== b.use?.component || a.children.length !== b.children.length) return null
   if (!same(a.on.visible, b.on.visible)) return null
+  if (a.tag === 'a' && !same(a.attrs.href, b.attrs.href)) return null
   const children: ViewNode[] = []
   for (let i = 0; i < a.children.length; i++) {
     const x = a.children[i]!
@@ -50,12 +63,15 @@ function element(test: GuardExpr, a: ElementNode, b: ElementNode): ElementNode |
       x.kind === 'el' && y.kind === 'el'
         ? element(test, x, y)
         : x.kind === 'text' && y.kind === 'text'
-          ? ({ ...x, value: cond(test, x.value, y.value) } satisfies TextNode)
+          ? text(x, cond(test, x.value, y.value))
           : null
     if (!c) return null
     children.push(c)
   }
   const toggle = values(test, a.toggle, b.toggle, { literal: false })
+  const attrs = values(test, a.attrs, b.attrs, { literal: null })
+  const vars = values(test, a.vars, b.vars, { literal: null })
+  if (!toggle || !attrs || !vars) return null
   let cls = a.class
   if (a.class !== b.class) {
     const ta = tokens(a.class)
@@ -79,8 +95,8 @@ function element(test: GuardExpr, a: ElementNode, b: ElementNode): ElementNode |
     ...a,
     class: cls,
     toggle,
-    attrs: values(test, a.attrs, b.attrs, { literal: null }),
-    vars: values(test, a.vars, b.vars, { literal: null }),
+    attrs,
+    vars,
     on: on as Record<string, SendIR>,
     children,
   }

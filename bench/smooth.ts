@@ -13,14 +13,17 @@ export interface Smoothness {
   flashes: number
   shift: number
   runs: number
+  /** Failed steps and flashes (S1). */
   problems: string[]
+  /** Steps whose layout shift is above 0.01 (S2). */
+  shifts: string[]
 }
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const cli = join(root, 'packages/cli/bin/hozu.js')
 
 export function smoothness(only: string[] = []): Smoothness {
-  const out: Smoothness = { flashes: 0, shift: 0, runs: 0, problems: [] }
+  const out: Smoothness = { flashes: 0, shift: 0, runs: 0, problems: [], shifts: [] }
   for (const name of readdirSync(join(root, 'examples')).sort()) {
     const dir = join(root, 'examples', name)
     const file = join(dir, 'browse.json')
@@ -55,7 +58,7 @@ export function smoothness(only: string[] = []): Smoothness {
           }
           if (m.shift) {
             out.shift = Math.max(out.shift, m.shift)
-            if (m.shift >= 0.01) out.problems.push(`${at}: ${s.step}: layout shift ${m.shift}`)
+            if (m.shift > 0.01) out.shifts.push(`${at}: ${s.step}: layout shift ${m.shift}`)
           }
         }
       }
@@ -67,5 +70,5 @@ export function smoothness(only: string[] = []): Smoothness {
 if (import.meta.main) {
   const r = smoothness(process.argv.slice(2))
   console.log(JSON.stringify(r, null, 2))
-  if (r.problems.length) process.exitCode = 1
+  if (r.problems.length || r.shifts.length) process.exitCode = 1
 }

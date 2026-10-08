@@ -109,14 +109,14 @@ export const PAGE = String.raw`(() => {
   }
   const at = (el) => {
     el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' })
-    const r = el.getBoundingClientRect()
+    const r = el.getClientRects()[0] ?? el.getBoundingClientRect()
     const x = r.left + r.width / 2
     const y = r.top + r.height / 2
     const top = document.elementFromPoint(x, y)
     const label = el.control ?? null
     const hit = top && (el.contains(top) || top === label || (top.tagName === 'LABEL' && top.control === el))
     const tag = (e) => '<' + e.tagName.toLowerCase() + (e.getAttribute('href') ? ' href="' + e.getAttribute('href') + '"' : '') + '>'
-    const covered = hit ? null : !top ? 'nothing' : tag(top) + (top.contains(el) ? ' (its ::before or ::after)' : '')
+    const covered = hit ? null : !top ? 'nothing' : tag(top) + (top.contains(el) ? ', which contains it (a ::before or ::after above it, or pointer-events: none on it)' : '')
     return { x, y, covered, target: tag(el) }
   }
   const FILLED = Symbol.for('hozu.browse.filled')
@@ -211,7 +211,7 @@ export const PAGE = String.raw`(() => {
         const name = el.getAttribute('data-hozu-component')
         const state = el.getAttribute('data-hozu-component-state')
         const load = expected.find(([n]) => n === name)?.[1]
-        const r = el.getBoundingClientRect()
+        const r = el.getClientRects()[0] ?? el.getBoundingClientRect()
         const empty = !el.children.length && !el.textContent.trim()
         components.push({
           name,

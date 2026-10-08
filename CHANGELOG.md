@@ -8,10 +8,12 @@ and what an agent can verify cheaply. No source change is needed: `hozu migrate`
 ### Views
 - **`c ? a : b` keeps its element** when both branches are one element of the same tag and shape
   (`ctx.paused ? resumeButton : pauseButton`): the text, classes, attributes and listener follow `c`, focus stays, and
-  nothing flashes. The IR still holds both branches for every check; the renderers draw one element.
+  nothing flashes. The IR still holds both branches for every check; the renderers draw one element. Branches whose
+  differing values compute (a `fn`, a template string) or link to different routes are drawn as before.
 - **Keyboard shortcuts:** `ui.send(Open, {}, { keys: ['Mod+k', '/'] })` on `keydown` / `keyup` sends only on those
-  presses and stops the browser's own (`Mod` is ⌘ on Apple, Ctrl elsewhere). On `ui.window` / `ui.document` a key
-  without a modifier waits while the person types in a field. A bad list is HZ014.
+  presses and stops the browser's own (`Mod` is ⌘ on Apple, Ctrl elsewhere). A printable key without a modifier
+  waits while the person types in a field inside the listener (`/` still types a slash; `Escape` still fires), and
+  nothing fires while an input method composes. A bad list is HZ014.
 - **`current(route, params)`** compares those params with the page shown and ignores search:
   `current(shop, { category: 'apparel' })` marks a store's category in its header. A param the route lacks is HZ007.
 
@@ -19,11 +21,11 @@ and what an agent can verify cheaply. No source change is needed: `hozu migrate`
 - The client keeps its 9 KiB budget (P7 9 207 B): dialogs bound to the machine, `aria-current` of links in islands
   and shortcut matching load in a small chunk only on pages that have them.
 - **New budgets S1 / S2:** every example with a machine has `browse.json`, the steps a person takes; `pnpm bench`
-  runs them and requires no element rebuilt unchanged and no layout shift of 0.01 or more (11 runs, both 0).
+  runs them and requires no element rebuilt unchanged and no layout shift above 0.01 (11 runs, both 0).
 
 ### Tools
-- `hozu browse` fails a click that would land on another element, naming it (`the click would land on <h3> (its
-  ::before or ::after), above <a href="/products/mug">`); an ancestor covering its link counted as a hit before.
+- `hozu browse` fails a click that would land on another element, naming it (`the click would land on <h3>, which
+  contains it (a ::before or ::after above it, …), above <a href="/products/mug">`); an ancestor covering its link counted as a hit before.
 - `hozu browse` names how a navigation arrived and its time to the first paint (`→ /products/mug (loaded, 32 ms)`).
 - An element that moves to another parent (a Load more button under the next page) is no longer reported as a flash.
 - `hozu get --select` / `browse --select` print `class`.
