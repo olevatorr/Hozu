@@ -1,6 +1,6 @@
 {
   "name": "@hozu/core",
-  "version": "0.26.0",
+  "version": "0.26.1",
   "description": "Hozu IR types and the typed builders you author apps with: feature, machine, query, mutation, ui, contract, project",
   "keywords": [
     "hozu",

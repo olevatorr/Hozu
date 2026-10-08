@@ -1,6 +1,6 @@
 {
   "name": "@hozu/variants",
-  "version": "0.26.0",
+  "version": "0.26.1",
   "description": "tailwind-variants for Hozu components, run at record time; /config generates the tailwind-merge config",
   "keywords": [
     "hozu",

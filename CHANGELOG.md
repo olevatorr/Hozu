@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.26.1 — Deploying without an extra install
+
+- A new app has `@hozu/bundle`, so `hozu build --target workers | vercel` works right after `create-hozu`. An app
+  without it gets `npm install -D @hozu/bundle` as the fix, not `Cannot find module` (the 0.26.0 release check found
+  it on a fresh install).
+
 ## 0.26.0 — Deploying is one command (ADR 0073)
 
 Two things people met in 0.25: deploying anywhere but Node took a hand-written entry, a bundler and a platform file,
