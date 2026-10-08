@@ -148,8 +148,9 @@ export default app({
 - Keep migrations and seed data as idempotent scripts in `package.json`; read the connection URL from the server env.
 - Route params and form fields arrive as strings: declare numeric ids with `z.coerce.number()`. A query input that fails its schema is reported to `onError` with the field, since the app built it.
 - Data the whole staff shares but only staff may read is `scope: 'user'` with `access`. Share a rule between effects with `part()`: `const staffOnly = part(({ session }) => session.role !== 'editor')`, then `access: { allow: staffOnly }`.
-- A resolver may answer `fail('Forbidden', { message })`. With `access: 'signedIn'` its `session` is typed as present.
-- When another app writes the same database, give this app a signed endpoint that `invalidates` the affected tags and call it after each write.
+- A resolver may answer `fail('Forbidden', { message })`. With any access but `'anyone'` its `session` is typed as present.
+- Declare the failures you can expect (a row that is gone, a state that forbids the change) as errors of the effect and handle them in `failed`: they render the same with and without JavaScript. A thrown error is `Unexpected`, a server fault: a native post answers 500, and production shows `Internal error`.
+- When another app writes the same database, give this app a signed endpoint that `invalidates` the affected tags and call it after each write. Every query those writes change needs a tag; one without tags refreshes only on its freshness time.
 
 ## Load a Markdown collection
 

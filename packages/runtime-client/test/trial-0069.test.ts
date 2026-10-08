@@ -61,15 +61,13 @@ it('a dialog whose open follows the machine opens as a modal and closes (ADR 006
   vi.restoreAllMocks()
 })
 
-it('aria-current: a section, never the home of a locale or a base path (ADR 0069 B4)', async () => {
-  const { currentOf } = await import('@hozu/runtime-client')
-  expect(currentOf('/shop/orders', '/shop/orders/7')).toBe('true')
-  expect(currentOf('/shop/orders?status=paid', '/shop/orders?status=paid')).toBe('page')
-  expect(currentOf('/de', '/de/about', '/de')).toBeNull()
-  expect(currentOf('/docs/', '/docs/guide/', '/docs/')).toBeNull()
-  expect(currentOf('/', '/about')).toBeNull()
-  expect(currentOf('/shop/orders?page=2', '/shop/orders')).toBeNull()
+it('aria-current marks only the address shown; a section is current(route) (ADR 0071 A1)', async () => {
+  const { currentOf, attrText } = await import('@hozu/runtime-client')
+  expect(currentOf('/shop/orders?page=2', '/shop/orders?page=2')).toBe('page')
+  expect(currentOf('/shop/orders', '/shop/orders/7')).toBeNull()
   expect(currentOf('/shop/orders', '/shop/orders?page=2')).toBeNull()
+  expect(attrText('aria-current', false)).toBeNull()
+  expect(attrText('aria-current', true)).toBe('true')
 })
 
 it('a dialog the server rendered open stays open through hydration, and closing it sends no close event', async () => {

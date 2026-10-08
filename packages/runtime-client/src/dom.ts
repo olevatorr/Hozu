@@ -11,25 +11,15 @@ export const text = (v: Json | undefined) =>
 export function attrText(name: string, x: Json | undefined): string | null {
   if (x === null || x === undefined) return null
   if (typeof x === 'boolean') {
+    if (name === 'aria-current' && !x) return null
     if (name.startsWith('aria-') || name.startsWith('data-') || stringBooleans.has(name)) return String(x)
     return x ? '' : null
   }
   return text(x)
 }
 
-/**
- * `aria-current` of an internal link (ADR 0069 B4, ADR 0070 A3): `page` for the address being shown, `true` for a
- * section above it (`/orders` while on `/orders/7`), nothing for the same path with another search (a next page).
- */
-export function currentOf(href: Json, here: string, root = '/'): string | null {
-  if (typeof href !== 'string' || !href.startsWith('/')) return null
-  if (href === here) return 'page'
-  const path = href.split('?')[0]!
-  const at = here.split('?')[0]!
-  return path !== '/' && path !== root && at.startsWith(path.endsWith('/') ? path : `${path}/`)
-    ? 'true'
-    : null
-}
+/** `aria-current="page"` for a link to the address shown; a section is the author's `current(route)` (ADR 0071 A1). */
+export const currentOf = (href: Json, here: string): string | null => (href === here ? 'page' : null)
 
 export const properties = new Set(['value', 'checked', 'selected', 'muted'])
 

@@ -146,7 +146,11 @@ func main() {
 - Data the whole staff shares but only staff may read is `scope: 'user'` with `access` (it is never cached across
   requests). Share one rule: `const staffOnly = part(({ session }) => session.role !== 'editor')`, then
   `access: { allow: staffOnly }` on each effect.
-- A resolver may answer `fail('Forbidden', { message })` (a row deleted meanwhile, a check `access` cannot make);
-  with `access: 'signedIn'` its `session` is never null.
+- A resolver may answer `fail('Forbidden', { message })` (a check `access` cannot make); with any access but
+  `'anyone'` its `session` is never null.
+- A failure you can expect (a row gone, a state that forbids the change) is a declared error of the effect
+  (`errors: { NotFound }`, `fail('NotFound', …)`), handled in `failed` with and without JavaScript. A thrown error is
+  `Unexpected`: a server fault (500 on a native post, `Internal error` in production).
 - Another app writing the same database: give the reading app a signed `endpoint` that `invalidates` the tags, and
-  call it after a write (`hozu docs endpoints`).
+  call it after a write (`hozu docs endpoints`). Every query that app's writes change needs a tag, or only its
+  freshness time refreshes it.

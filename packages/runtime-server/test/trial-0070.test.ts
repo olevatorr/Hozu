@@ -180,3 +180,50 @@ describe('the sealed state is bound and kept to forms Hozu posts (0.23 review)',
     expect(await unseal('s3cret-0123456789abcdef', 'c', 'bind-a', plain)).toBeNull()
   })
 })
+
+describe('current(route) marks a section explicitly (ADR 0071 A1)', () => {
+  const list = route({
+    path: '/orders',
+    params: null,
+    search: z.object({ status: z.string().default('all') }),
+  })
+  const detail = route({ path: '/orders/:id', params: z.object({ id: z.coerce.number() }), search: null })
+  const settings = route({ path: '/settings', params: null, search: null })
+  const Sidebar = ui.view({
+    render: ({ current }) =>
+      ui.nav({}, [
+        ui.a({ href: ui.link(list, null), 'aria-current': current(list) || current(detail) }, ['Orders']),
+        ui.a({ href: ui.link(settings, null), 'aria-current': current(settings) }, ['Settings']),
+      ]),
+  })
+  const Body = ui.view({ render: () => ui.main({}, ['body']) })
+  const head = { render: () => ({ title: 'x' }) }
+  const back = project({
+    schema: zodAdapter,
+    routes: { list, detail, settings },
+    pages: [
+      ui.page(list, { views: [Sidebar, Body], head }),
+      ui.page(detail, { views: [Sidebar, Body], head }),
+      ui.page(settings, { views: [Sidebar, Body], head }),
+    ],
+    features: [feature({ id: 'n', intent: { summary: 'menu' }, declarations: [{ Sidebar, Body }] })],
+  })
+  const h = createHandler({
+    build: buildProject(back, { sources: false }),
+    resolvers: resolvers(back, () => []),
+  })
+  const nav = async (path: string) => {
+    const html = await (await h.fetch(new Request(`http://localhost${path}`))).text()
+    return /<nav[^>]*>(.*?)<\/nav>/.exec(html)?.[1]
+  }
+
+  it('on a filtered list and on a detail page, and nothing on the other link', async () => {
+    for (const path of ['/orders', '/orders?status=open', '/orders/7'])
+      expect(await nav(path)).toBe(
+        '<a href="/orders" aria-current="true">Orders</a><a href="/settings">Settings</a>',
+      )
+    expect(await nav('/settings')).toBe(
+      '<a href="/orders">Orders</a><a href="/settings" aria-current="true">Settings</a>',
+    )
+  })
+})

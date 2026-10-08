@@ -1,6 +1,6 @@
 {
   "name": "@hozu/testing",
-  "version": "0.23.0",
+  "version": "0.24.0",
   "description": "Test rendered Hozu pages through the real handler: status, headers, visible text, payload, form posts",
   "keywords": [
     "hozu",

@@ -139,6 +139,14 @@ export const steps: Step[] = [
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.23',
+    to: '0.24',
+    summary:
+      "no source change; aria-current marks only the address shown (mark a menu's sections with current(route) in the render) and false writes no attribute; hozu get --select takes descendant selectors, hozu call shows an endpoint's invalidated tags (ADR 0071)",
+    rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 /** 0.22 marks a shared view only when each page lists it once (ADR 0067, 0.22 review). */

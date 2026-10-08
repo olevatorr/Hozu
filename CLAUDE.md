@@ -359,6 +359,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   remote: per-effect fingerprints (`Fingerprint(effect)` in Go), `x-hozu-call` ids, connection errors name effect and
   URL, named enum types, `hozu gen` id/count notes, collapsed issues; browse: `commandfor` is native, `--js both`
   names differing words.
+- 0.24 (ADR 0071): asks judged by the framework (accepted / declined with reasons); `aria-current` only for the address
+  shown (`currentOf`), sections via the render's `current(route)` (a guard on the `route` reference, `payload.here` =
+  [url, route id]), `aria-current` false omitted; tools: `get --select` combinators, `call` endpoint tags, HZ093 old
+  contract format, migrate bullets, browse production-errors note, `hozu gen` untitled-enum note.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

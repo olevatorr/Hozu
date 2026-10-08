@@ -89,7 +89,8 @@ const staffHead = { query: me, render: (m) => ({ title: `${m.name} · Admin` }),
 const staff = (route, View) => ui.page(route, { views: [Sidebar, View], head: staffHead })
 export default project({ /* … */ pages: [staff(orders, OrderList), staff(orderDetail, OrderPage), …] })
 ```
-The sidebar's links mark the page shown with `aria-current` by themselves (`aria-[current]:font-bold`).
+The sidebar marks its sections with `current(route)` from its render:
+`'aria-current': current(orders) || current(orderDetail)`, styled `aria-[current]:font-bold`.
 
 ## Screens with different state
 One machine per feature: an order list (filters, selection) and an order page (shipping, refund) are two features,

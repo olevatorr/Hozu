@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.24.0 — Sections are yours to say (ADR 0071)
+
+The 0.23 retest asks, judged by the framework rather than taken as given. `hozu migrate` raises the packages.
+Behaviour to check: a link to a section (`/orders` while on `/orders/7` or `/orders?status=open`) no longer gets
+`aria-current` by itself; mark it with `current(route)`.
+
+### Views
+- **`current(route)` in a view's render** is true on that route's pages (any params and search):
+  `'aria-current': current(orders) || current(orderDetail)` marks a menu's section on the list, a filtered list and a
+  detail page. The framework marks only the address shown (`aria-current="page"`); 0.22 and 0.23 guessed sections
+  from URL prefixes and every guess misfired somewhere (a next-page link, a "Back to editor" link, a filtered list).
+- `aria-current: false` writes no attribute, so `aria-[current]:` styles only marked links.
+
+### Tools
+- `hozu get --select` takes descendant and child combinators (`nav a[aria-current]`).
+- `hozu call <endpoint> --write` prints the tags it invalidated.
+- HZ093 says when a Go contract is in the pre-0.23 format (run `hozu gen`), instead of "every effect is missing".
+- `hozu migrate` lists each step's changes as bullets.
+- `hozu browse` / `get` say once that a production server shows `Internal error` where they show a message.
+- `hozu gen` notes untitled enums with the same members and suggests `.meta({ title })` to make them one Go type.
+
+### Guide
+- Expected failures (a row gone, a state that forbids the change) are declared errors, handled in `failed` with and
+  without JavaScript; a thrown error is `Unexpected`, a server fault.
+- A query that another app's writes change needs a tag, or only its freshness time refreshes it.
+
 ## 0.23.0 — What the 0.22 retest and a Go backend found (ADR 0070)
 
 The two trial agents upgraded their CMS / shop admin and storefront to 0.22 (`hozu migrate` rewrote nothing), and the

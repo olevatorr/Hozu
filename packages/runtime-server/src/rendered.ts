@@ -16,8 +16,8 @@ export interface Scope {
   search: Json
   routes: Record<string, string>
   url: string
-  /** The address of the route whose path is `/` in this locale and base path: never a section (ADR 0069 B4). */
-  root: string
+  /** The id of the route shown, read by `current(route)` in a view (ADR 0071 A1). */
+  route: string
   locale: string
   alternate: Record<string, string>
   env: Json
