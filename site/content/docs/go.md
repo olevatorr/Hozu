@@ -50,9 +50,6 @@ A contract older than the declarations is HZ093, naming the effects that changed
 
 ```go
 func (r *resolvers) NotesAddNote(ctx *hozu.Ctx, in hozu.NotesAddNoteInput) (hozu.Note, error) {
-	if ctx.Session == nil {
-		return hozu.Note{}, hozu.Invalid{Message: "Signed out", Fields: map[string]string{"text": "Sign in first"}}
-	}
 	text := strings.TrimSpace(in.Text)
 	if r.exists(ctx.Session.User, text) {
 		return hozu.Note{}, hozu.NotesAddNoteDuplicate{Text: text}
@@ -63,7 +60,7 @@ func (r *resolvers) NotesAddNote(ctx *hozu.Ctx, in hozu.NotesAddNoteInput) (hozu
 
 - **Declared errors** are Go values: return `hozu.NotesAddNoteDuplicate{…}` as the error, and `hozu.Invalid{Message, Fields}` for input problems. They reach `failed` as they would from TypeScript.
 - **Any other error** answers 500 with its first line. It reaches `onError` and `Unexpected` with the call's id, the `x-hozu-call` header that the service's log line also names: `hozu: notes.listNotes (call 3fa2c1d0): …`. A service that is not running is reported as `no service answers at <url>`.
-- **The session:** `ctx.Session` is nil when the visitor is signed out. Mutations and endpoints sign in with `ctx.SetSession(hozu.Session{…})` and out with `ctx.SignOut()`. Public queries never receive the session.
+- **The session:** `addNote` declares `access: 'signedIn'`, so the Hozu server refuses a signed-out call before it reaches the service and `ctx.Session` is set. Without such an access rule `ctx.Session` is nil when the visitor is signed out. Mutations and endpoints sign in with `ctx.SetSession(hozu.Session{…})` and out with `ctx.SignOut()`. Public queries never receive the session.
 - **Also on `ctx`:** `ctx.File(token)` reads an upload, `ctx.Header` holds an endpoint's request headers (no cookie), `ctx.Preview` is true in preview mode, and `ctx.Context` ends with the call.
 
 ## Types

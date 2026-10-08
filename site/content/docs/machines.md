@@ -39,7 +39,7 @@ export const items = machine({
         done: { target: 'idle', assign: () => { ctx.draft = '' } },
         failed: {
           Duplicate: { target: 'idle', assign: () => { ctx.error = 'duplicate' } },
-          Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } },
+          Unexpected: { target: 'idle', assign: () => { ctx.error = 'Could not save. Try again.' } },
         },
       }),
     },

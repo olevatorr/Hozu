@@ -91,7 +91,7 @@ The original interpreter and contract design is recorded in [ADR 0004](https://g
 
 A few shorter forms keep the machine readable without hiding a decision:
 - `ui.set(ctx.field, value)` in a view sends a framework-made event that assigns one context field (since 0.21); the payload is checked against the context schema, and busy states ignore it.
-- `target: 'previous'` returns to the state the machine was in before the current one, for example after closing a dialog (since 0.19); contracts give it `given.previous`.
+- `target: 'previous'` returns to the last state without `invoke`, the calm state a busy one was entered from, so one save serves two modes (since 0.19); contracts give it `given.previous`.
 - A mode the person sets, such as paused or a list layout, is a context field rather than a state, so a busy state that saves something does not reset it (the 0.25 guide).
 - `ui.send(Open, {}, { keys: ['Mod+k', '/'] })` on `keydown` sends only for those keys (since 0.25). A key without a modifier waits while the person types in a field, and nothing fires while an input method composes.
 - A transition that stops deciding, because its guard, navigation or computed value was removed, is reviewed by the lock alone (since 0.19): HZ018 asks for `hozu check --update-lock`, and HZ058 then names the contracts that no longer cover a decision.

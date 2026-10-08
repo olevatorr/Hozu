@@ -103,7 +103,7 @@ export const todos = machine({
       invoke: invoke(addTodo, {
         input: { title: ctx.draft },
         done: { target: 'idle', assign: () => { ctx.draft = '' } },
-        failed: { Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } } },
+        failed: { Unexpected: { target: 'idle', assign: () => { ctx.error = 'Could not save. Try again.' } } },
       }),
     },
   }),

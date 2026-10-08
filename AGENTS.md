@@ -370,7 +370,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `{ test, a, b }`; the IR keeps both branches); `ui.send(E, p, { keys: ['Mod+k'] })` (keydown / keyup, HZ014,
   `preventDefault`, bare keys on window wait while typing); `current(route, params)` (the `here` reference = the
   page's params, HZ007 for an unknown param); lazy `extras.ts` (dialog, link `aria-current`, shortcuts; `payload.extras`),
-  P7 9 207 B; budgets S1 / S2 over `examples/*/browse.json` (`bench/smooth.ts`); browse: covering ancestors fail a click,
+  P7 9 199 B; budgets S1 / S2 over `examples/*/browse.json` (`bench/smooth.ts`); browse: covering ancestors fail a click,
   `arrived` (prerendered / loaded, ms), a moved element is no flash, `--select` prints class; modes in context
   (`examples/watchlist` `paused`).
 - Pages: `project({ site, pages: [ui.page(route,

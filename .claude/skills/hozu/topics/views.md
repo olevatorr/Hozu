@@ -14,7 +14,7 @@ export const Board = ui.view({
   `toggle: { 'bg-indigo-600 text-white': ctx.tab === t }`. No `style`.
 - **Conditions:** `ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error])`, `item.done ? 'done' : 'open'`.
   By machine state: `!is(['idle']) && ui.p({}, ['Saving…'])`,
-  `disabled: is(['saving'])` (disable a control while busy, not hide it: no flash).
+  `disabled: is(['saving'])` (disable a control while busy, not hide it: it stays put).
 - **Dialogs, popovers, menus:** native (bound to the machine: --more): `ui.button({ commandfor: 'd', command:
   'show-modal' })` + `ui.dialog({ id: 'd', closedby: 'any' }, [...])`, `popover` / `popovertarget`, `ui.details`.
 - **Lists:** `ui.each(items, 'id', (item) => ui.li({}, [item.title]))`. Never `.map` over data.

@@ -8,7 +8,7 @@ and what an agent can verify cheaply. No source change is needed: `hozu migrate`
 ### Views
 - **`c ? a : b` keeps its element** when both branches are one element of the same tag and shape
   (`ctx.paused ? resumeButton : pauseButton`): the text, classes, attributes and listener follow `c`, focus stays, and
-  nothing flashes. The IR still holds both branches for every check; the renderers draw one element. Branches whose
+  the element is kept. The IR still holds both branches for every check; the renderers draw one element. Branches whose
   differing values compute (a `fn`, a template string) or link to different routes are drawn as before.
 - **Keyboard shortcuts:** `ui.send(Open, {}, { keys: ['Mod+k', '/'] })` on `keydown` / `keyup` sends only on those
   presses and stops the browser's own (`Mod` is ⌘ on Apple, Ctrl elsewhere). A printable key without a modifier
@@ -18,7 +18,7 @@ and what an agent can verify cheaply. No source change is needed: `hozu migrate`
   `current(shop, { category: 'apparel' })` marks a store's category in its header. A param the route lacks is HZ007.
 
 ### Performance
-- The client keeps its 9 KiB budget (P7 9 207 B): dialogs bound to the machine, `aria-current` of links in islands
+- The client keeps its 9 KiB budget (P7 9 199 B): dialogs bound to the machine, `aria-current` of links in islands
   and shortcut matching load in a small chunk only on pages that have them.
 - **New budgets S1 / S2:** every example with a machine has `browse.json`, the steps a person takes; `pnpm bench`
   runs them and requires no element rebuilt unchanged and no layout shift above 0.01 (11 runs, both 0).

@@ -30,9 +30,8 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     name: 'undeclared-effect',
     severity: 'error',
     topic: 'data',
-    summary:
-      "unknown effect, reference, route or state name; `'previous'` with nothing to return to; `given.previous` naming a state with `invoke`; a `current()` param the route lacks",
-    fix: 'export it from a module the feature lists in `declarations`, register it, or fix the name (the patch suggests one)',
+    summary: 'unknown effect / query',
+    fix: 'export it from a module the feature lists in `declarations`, or fix the name (the patch suggests one)',
   },
   HZ004: {
     name: 'unhandled-declared-error',

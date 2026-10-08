@@ -47,7 +47,7 @@ on(Add, { target: 'adding', assign: (e) => { ctx.draft = e.title; ctx.fields = {
 failed: {
   Invalid: { target: 'idle', assign: (e) => { ctx.fields = e.fields } },
   Duplicate: { target: 'idle', assign: () => { ctx.error = 'duplicate' } },
-  Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } },
+  Unexpected: { target: 'idle', assign: () => { ctx.error = 'Could not save. Try again.' } },
 }
 ```
 

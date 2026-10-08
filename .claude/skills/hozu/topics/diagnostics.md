@@ -12,7 +12,7 @@ around the rule. `npx hozu docs HZ083` prints one code: its cause, its fix and t
 | --- | --- | --- |
 | HZ001 | state unreachable | add a transition to it or delete it |
 | HZ002 | event handled nowhere | handle it in a state or remove it |
-| HZ003 | unknown effect, reference, route or state name; `'previous'` with nothing to return to; `given.previous` naming a state with `invoke`; a `current()` param the route lacks | export it from a module the feature lists in `declarations`, register it, or fix the name (the patch suggests one) |
+| HZ003 | unknown effect / query | export it from a module the feature lists in `declarations`, or fix the name (the patch suggests one) |
 | HZ004 | a declared error is not handled | add every `failed` key, plus `Unexpected`, in `invoke` and `ui.query` |
 | HZ005 | a node sends an event in a state (without `invoke`) that does not handle it | handle it there (`machine({ on })` handles it in every state), show the node only in the states that handle it (`is([...]) && …`), or `ignore: [Event]` to drop it |
 | HZ006 | crossing a feature boundary | import the feature and use its `exports` |
