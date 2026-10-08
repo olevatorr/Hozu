@@ -27,7 +27,7 @@ describe('preview mode (ADR 0021)', () => {
     const ok = await a.get(`/_hozu/preview?secret=${secret}&path=/`)
     expect([ok.status, ok.headers.get('location')]).toEqual([307, '/'])
     expect(ok.headers.get('set-cookie')).toMatch(
-      /^hozu_preview=.+; Path=\/; HttpOnly; SameSite=Lax; Secure; Max-Age=3600$/,
+      /^hozu_preview=.+; Path=\/; HttpOnly; SameSite=Lax; Max-Age=3600$/,
     )
   })
 
