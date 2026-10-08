@@ -1,5 +1,5 @@
 import { canonicalStringify } from '@hozu/core/canonical'
-import type { GuardExpr, Json, ValueExpr, ViewIR, ViewNode } from '@hozu/core/ir'
+import type { GuardExpr, Json, SendIR, ValueExpr, ViewIR, ViewNode } from '@hozu/core/ir'
 import {
   type CompiledMachine,
   compileValue,
@@ -14,9 +14,10 @@ import {
   type Step,
   transition,
 } from '@hozu/machine'
-import { attrText, classText, currentOf, domField, passive, properties, SVG_NS, text } from './dom.ts'
+import { attrText, classText, domField, passive, properties, SVG_NS, text } from './dom.ts'
 
 export type Motion = typeof import('./motion.ts')
+export type Extras = typeof import('./extras.ts')
 
 export type Result = { ok: true; value: Json } | { ok: false; error: string; data: Json }
 
@@ -45,6 +46,8 @@ export interface AppOptions {
   components?: Record<string, ComponentRef>
   routes?: Record<string, string>
   motion?: Motion | undefined
+  /** Dialogs, aria-current and shortcuts, loaded when the page has them (ADR 0072 D1). */
+  extras?: Extras | undefined
   /** Renders a client component use; loaded with component.ts only on pages that have one (ADR 0057 A1). */
   component?: ComponentRenderer | undefined
   loadComponent?: (url: string) => Promise<ComponentSetup>
@@ -106,6 +109,8 @@ export interface Cursor {
   next: Node | null
   claim: boolean
 }
+
+type Pick = { test: GuardExpr; a: SendIR | null; b: SendIR | null }
 
 interface Item {
   key: string
@@ -179,11 +184,10 @@ function clear(start: Node, end: Node) {
 }
 
 const waiting = new WeakMap<Element, number>()
-const quiet = new WeakSet<Node>()
 const lost = (e: unknown): Result => ({ ok: false, error: 'Unexpected', data: { message: String(e) } })
 
 export function createApp(doc: Document, options: AppOptions): App {
-  const { machine, fns = {}, params = null, search = null, routes = {} } = options
+  const { machine, fns = {}, params = null, search = null, routes = {}, extras } = options
   const { data: payload } = store(options.payload)
   const ranges: [Node, Node][] = []
   const timers = new Set<ReturnType<typeof setTimeout>>()
@@ -204,6 +208,7 @@ export function createApp(doc: Document, options: AppOptions): App {
       context: snapshot?.context ?? null,
       state: snapshot?.state ?? null,
       route: options.here?.[1] ?? null,
+      here: params,
       bindings: scope,
       params,
       search,
@@ -281,14 +286,8 @@ export function createApp(doc: Document, options: AppOptions): App {
           const prop = properties.has(name) && name in el
           if (claimed && !reads(v)) continue
           bind(block, v, scope, (x) => {
-            if (name === 'open' && node.tag === 'dialog') {
-              const d = el as HTMLDialogElement
-              if (x === true) {
-                d.removeAttribute('open')
-                queueMicrotask(() => d.isConnected && !d.open && d.showModal())
-              } else if (d.open) quiet.add(d) && d.close()
-              return
-            }
+            if (name === 'open' && node.tag === 'dialog' && extras)
+              return extras.dialog(el as HTMLDialogElement, x)
             if (prop) {
               const p = el as unknown as Record<string, unknown>
               const next = name === 'value' ? text(x) : x === true
@@ -301,24 +300,21 @@ export function createApp(doc: Document, options: AppOptions): App {
           })
         }
         const own = node.attrs['aria-current']
-        if (href)
-          bind(block, { object: own ? { h: href, o: own } : { h: href } }, scope, (x) => {
-            const at = currentOf(
-              (x as Record<string, Json>).h!,
-              options.here?.[0] ?? '',
-              (x as Record<string, Json>).o,
-            )
-            if (at) el.setAttribute('aria-current', at)
-            else el.removeAttribute('aria-current')
-          })
+        if (href && extras)
+          bind(block, { object: own ? { h: href, o: own } : { h: href } }, scope, (x) =>
+            extras.current(el, x as Record<string, Json>, options.here?.[0] ?? ''),
+          )
         styling(el, node, scope, block)
         for (const event in node.on) {
-          const send = node.on[event]!
+          const on = node.on[event] as SendIR | Pick
           el.addEventListener(
             event,
             (e) => {
-              if (event === 'close' && quiet.delete(el)) return
+              if (event === 'close' && extras?.quiet.delete(el)) return
               if (event === 'submit') e.preventDefault()
+              const send = 'test' in on ? (value(on, scope) ? on.a : on.b) : on
+              if (!send || (send.keys && !extras?.shortcut(e as KeyboardEvent, send.keys))) return
+              if (send.keys) e.preventDefault()
               dispatch({ type: 'event', event: send.event, payload: value(send.payload, scope, domField(e)) })
             },
             passive.has(event) ? { passive: true } : undefined,
@@ -438,8 +434,11 @@ export function createApp(doc: Document, options: AppOptions): App {
         const stops: (() => void)[] = []
         for (const event in node.on) {
           const send = node.on[event]!
-          const listener = (e: Event) =>
+          const listener = (e: Event) => {
+            if (send.keys && !extras?.shortcut(e as KeyboardEvent, send.keys)) return
+            if (send.keys) e.preventDefault()
             dispatch({ type: 'event', event: send.event, payload: value(send.payload, scope, domField(e)) })
+          }
           const opts = passive.has(event) ? { passive: true } : undefined
           target.addEventListener(event, listener, opts)
           stops.push(() => target.removeEventListener(event, listener))

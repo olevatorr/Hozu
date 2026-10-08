@@ -3,10 +3,12 @@ import {
   i18nFns,
   type Json,
   type ProjectIR,
+  type SendIR,
   type ValueExpr,
   type ViewNode,
 } from '@hozu/core/ir'
 import { getIn } from '@hozu/machine'
+import type { SendPick } from './shared.ts'
 
 export interface Lowering {
   locale: string
@@ -49,8 +51,17 @@ export function lowerNode(n: ViewNode, l: Lowering): ViewNode {
   const v = (x: ValueExpr) => lowerValue(x, l)
   const map = (m: Record<string, ValueExpr>) =>
     Object.fromEntries(Object.entries(m).map(([k, x]) => [k, v(x)]))
-  const sends = (on: Record<string, { event: string; payload: ValueExpr }>) =>
-    Object.fromEntries(Object.entries(on).map(([k, s]) => [k, { ...s, payload: v(s.payload) }]))
+  const send = (s: SendIR) => ({ ...s, payload: v(s.payload) })
+  const sends = (on: Record<string, SendIR>) =>
+    Object.fromEntries(
+      Object.entries(on).map(([k, x]) => {
+        const s = x as SendIR | SendPick
+        return [
+          k,
+          'test' in s ? { test: lowerGuard(s.test, l), a: s.a && send(s.a), b: s.b && send(s.b) } : send(s),
+        ]
+      }),
+    ) as Record<string, SendIR>
   const list = (xs: ViewNode[]) => xs.map((x) => lowerNode(x, l))
   switch (n.kind) {
     case 'el':

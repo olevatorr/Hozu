@@ -1,7 +1,7 @@
 ---
 title: Routing
 description: Declare route identities, connect pages and enumerate static URLs.
-order: 6
+order: 10
 ---
 
 ## Declare the URL shape
@@ -22,11 +22,15 @@ export const article = route({
 
 Register these in `project({ routes })`. A view bound to `article` receives the typed `params.slug` reference.
 
+Params are parsed by their schema before anything reads them: `params: z.object({ id: z.coerce.number() })` gives views and resolvers a number, as the type says.
+
 ## Link by identity
 
 Use `ui.a({ href: ui.link(article, { slug: 'hello' }) }, ['Hello'])`. Internal path strings such as `'/articles/hello'` are rejected in views because they bypass the route declaration. External URLs remain ordinary strings.
 
-A machine transition can navigate with `navigate: result => ui.link(article, { slug: result.slug })`. Its contract includes the expected navigation URL.
+A machine transition can navigate with `navigate: result => ui.link(article, { slug: result.slug })`. Its contract includes the expected navigation URL. To write the address without loading a page, such as a search the visitor typed, a transition declares `replace: () => ui.link(home, null, { q: ctx.q })`; a reload or a shared link then keeps it (see [Machines and contracts](/docs/machines)).
+
+A menu marks the section being shown with the render's `current(route)`, or `current(route, params)` to compare params too; see [Views](/docs/views).
 
 ## Connect a page
 
@@ -49,9 +53,11 @@ The head is a closed set of fields: `title`, `description`, `type`, `image`, `pu
 
 ## Search and optional segments
 
-Search schemas contain flat scalar values with defaults or nullable values. Use `ui.link(route, params, search)` to generate canonical query strings. Put shareable filters in the URL instead of a machine's private context.
+Search schemas contain flat scalar values with defaults or nullable values. Use `ui.link(route, params, search)` to generate canonical query strings: keys sorted, defaults left out. Put shareable filters in the URL instead of a machine's private context.
 
-Route modifiers support optional segments (`:slug?`, nullable string), one or more segments (`:path+`, string array), and zero or more segments (`:path*`, string array). The schema must match the modifier.
+To keep the current search and change one field, spread it: `ui.link(home, null, { ...search, page: 2 })` in a view whose render reads `search`.
+
+Route modifiers support optional segments (`:slug?`, nullable string), one or more segments (`:path+`, string array), and zero or more segments (`:path*`, string array). The schema must match the modifier (HZ024). Defaults are left out after an optional segment too: `/shop/:category?` links and canonicals to `/shop/apparel`, not `/shop/apparel?page=1`.
 
 ## Shared layouts
 Pages are configuration, so a function is the layout: `const staff = (route, View) => ui.page(route, { views: [Sidebar, View], head: staffHead })`. A view's `seed` can start its machine from the address and from server data: `seed: ({ search, query }) => ({ step: search.step, email: query(me, {}).email })`. `head.input` and `head.render` receive `search` after `locale`, so a filtered page can have its own title.

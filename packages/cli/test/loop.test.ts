@@ -260,7 +260,7 @@ describe('the agent loop (ADR 0027)', () => {
 
   it('shows an on without target as (stays) (ADR 0064 F)', async () => {
     const { stdout } = await run(['map'], join(root, 'examples', 'watchlist'))
-    expect(stdout).toContain('RefreshNow→(stays); CopyQuote→(stays); after 30000ms→live')
+    expect(stdout).toContain('RefreshNow→(stays); CopyQuote→(stays); after 30000ms→idle')
   })
 
   it('starts with the session shape, the verify line and the files with their roles (ADR 0043 K)', async () => {

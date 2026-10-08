@@ -2,10 +2,10 @@
 
 ```ts
 export const Board = ui.view({
-  machine: m,        // optional: without it, no ctx / when / events, and 0 JS
+  machine: m,        // optional: without it, no ctx / is / events, and 0 JS
   route: home,       // optional: render gets { params, search } typed by the route
   seed: ({ search }) => ({ q: search.q }),   // optional, with machine + route: context fields from the URL
-  render: ({ ctx, when, is, params, search, locale }) => ui.main({ class: 'mx-auto max-w-xl' }, [ /* children */ ]),
+  render: ({ ctx, is, current, params, search, locale }) => ui.main({ class: 'mx-auto max-w-xl' }, [ /* children */ ]),
 })
 ```
 - **Elements:** `ui.<tag>(attrs, children)` for every HTML and SVG element; void tags (`input`, `img`) take only attrs.
@@ -13,10 +13,10 @@ export const Board = ui.view({
 - **Classes:** `class` is a static string of Tailwind classes that must exist (HZ026); conditional classes:
   `toggle: { 'bg-indigo-600 text-white': ctx.tab === t }`. No `style`.
 - **Conditions:** `ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error])`, `item.done ? 'done' : 'open'`.
-  By machine state: `is(['paused']) ? resume : pause`, `!is(['idle']) && ui.p({}, ['Saving…'])`,
-  `disabled: is(['saving'])` (keep a control and disable it rather than hide it while busy: no flash).
-- **Dialogs, popovers, menus:** native, no machine state: `ui.button({ commandfor: 'd', command: 'show-modal' })` +
-  `ui.dialog({ id: 'd', closedby: 'any' }, [...])`, `popover` / `popovertarget`, `ui.details`.
+  By machine state: `!is(['idle']) && ui.p({}, ['Saving…'])`,
+  `disabled: is(['saving'])` (disable a control while busy, not hide it: it stays put).
+- **Dialogs, popovers, menus:** native (bound to the machine: --more): `ui.button({ commandfor: 'd', command:
+  'show-modal' })` + `ui.dialog({ id: 'd', closedby: 'any' }, [...])`, `popover` / `popovertarget`, `ui.details`.
 - **Lists:** `ui.each(items, 'id', (item) => ui.li({}, [item.title]))`. Never `.map` over data.
 - **Numbers and dates:** `ui.format.number(q.price, { style: 'currency', currency: 'USD' })`, `ui.format.date(x,
   { dateStyle: 'medium' })`, `ui.format.relative(n, 'day')`, `ui.format.list(xs)` (Intl, the page's locale).
@@ -33,7 +33,10 @@ export const Board = ui.view({
 <!-- more -->
 
 - **Motion:** what an update adds fades in by itself (not with reduced motion); a view two pages show stays still
-  across a page change. `hozu browse` reports a flash or a layout shift: fix those.
+  across a page change. `hozu browse` reports a flash or a layout shift: fix those. `c ? a : b` whose branches are
+  one element of the same tag and shape (`ctx.paused ? resumeButton : pauseButton`) keeps the element: its text,
+  classes, attributes and listener follow `c`, and focus stays (not when a differing value computes, such as a `fn`
+  or a template string, or links elsewhere).
 - **Attributes:** HTML names in lower case (`for`, `minlength`, `aria-pressed`, `data-x`), typed per tag. Values are
   literals or data: `'aria-pressed': ctx.show === 'all'`, `title: ctx.error ?? 'OK'`.
 - **Sizes and colours from data:** `vars` with an arbitrary-value class: `class: 'w-[calc(var(--pct)*1%)]'`,
@@ -42,7 +45,9 @@ export const Board = ui.view({
   (runs on the server, and in the browser inside an island).
 - **More conditions:** `list.length === 0 ? ui.p({}, ['Empty']) : ui.ul({}, [...])`; a `?:` / `&&` branch may be a list:
   `open ? [a, b] : null`. A query branch or an each item returns one node: wrap several in an element (HZ014).
-  With an enter/leave animation: `ui.if(cond, [then], [else], 'fade')` (the motion name is required).
+  With an enter/leave animation (only then): `ui.if(cond, [then], [else], 'fade')`, by machine state
+  `when(['saving'], [children], 'fade')`, and list rows `ui.each(items, 'id', row, 'fade')` (the motion name is
+  required; without a motion, `is([...]) && …`).
 - **More lists:** `ui.each(tags, null, (t) => …)` for primitives. `.map` only over constants:
   `['a', 'b'].map((k) => ui.option({ value: k }, [k]))`.
 - **Text:** template strings work: `` `${n} items` ``.
@@ -50,27 +55,34 @@ export const Board = ui.view({
   `row(item)`; it is inlined, so the IR equals the inline form. A plain function that receives data is HZ059.
 - **Shared UI:** use the kit component, not a styled `ui.button` per page (`example/` uses a kit).
 - **More events:** any DOM event name plus `visible` (entered the viewport). Payload fields also:
-  `ui.dom.formAll('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`. `ui.dom.value` / `ui.dom.form`
+  `ui.dom.formAll('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`. Keyboard shortcuts:
+  `ui.window({ on: { keydown: ui.send(Open, {}, { keys: ['Mod+k', '/'] }) } })` sends only on those presses and
+  stops the browser's own (`Mod` is ⌘ on Apple, Ctrl elsewhere; also `Ctrl`, `Meta`, `Alt`, `Shift`); a printable
+  key without a modifier waits while the person types in a field (`Escape` does not). `ui.dom.value` / `ui.dom.form`
   fill an enum field only from a `<select>`, radios or submit buttons whose literal values are all members (HZ033).
 - **Search in links:** the third argument of `ui.link` is optional and exists only when the route declares `search`:
   omitted means every default, and a search lists only the fields that differ: `ui.link(home, null, { show: 'done' })`.
 - **More data:** `pending: ui.p({}, ['Loading…'])` is optional; a branch may return `null` to render nothing.
   Server-fetched data is sent with the page and never fetched again; after a mutation, queries whose tags it
-  invalidates refresh in place.
+  invalidates refresh in place. When a query's input changes, the rows stay (`aria-busy` on the parent) and update
+  by key; `pending` shows only before the first answer.
 - **From Vue or React:** `computed` → a `fn`; `ref` + `@click` → a context field + `ui.set`; `v-if` → `?:` / `&&`
-  (with `is([...])` for a machine state); `v-for` + `:key` → `ui.each(list, 'id', …)`; `setInterval` → `after` with
-  `refresh` (`hozu docs machine`); `watch` → a transition's `assign`; DOM libraries (charts, maps) → a client component
+  (with `is([...])` for a machine state); `v-for` + `:key` → `ui.each(list, 'id', …)`; `setInterval` → `freshness: { poll: s }`
+  for data that changes on its own (`hozu docs data`), `after` with `refresh` for a refresh the visitor pauses
+  (`hozu docs machine`); `watch` → a transition's `assign`; DOM libraries (charts, maps) → a client component
   (`hozu docs components`; `examples/showcase` has a Chart.js one).
 - **Also:** `ui.html(post.html)` (trusted HTML from query data only, HZ030), `ui.asset(new URL('./x.png',
   import.meta.url))`, `ui.window({ on })` / `ui.document({ on })`, `ui.embed(OtherView)`.
 
 ## Menus, dialogs, counting
-- When a query's input changes, the rows stay (`aria-busy` on the parent) and update by key; `pending` shows only
-  before the first answer.
 - A link to the address shown gets `aria-current="page"`. Which links mark a section is yours to say: the render's
   `current(route)` is true on that route's pages, so a menu writes
   `ui.a({ href: ui.link(orders, null), 'aria-current': current(orders) || current(orderDetail) }, ['Orders'])` and
   styles `aria-[current]:font-bold`: `true` is written `"page"` on the address itself, `false` writes nothing.
+  `current(shop, { category: 'apparel' })` also compares those params (search is ignored). A menu is a constant
+  list mapped to links, one line per section:
+  `...[[orders, 'Orders'], [customers, 'Customers']].map(([r, label]) => ui.a({ href: ui.link(r, null),
+  'aria-current': current(r) }, [label]))`; `current(a) || current(b)` works there too.
 - `ui.dialog({ open: is(['editing']), on: { close: ui.send(Cancel, {}) } }, [...])` opens as a modal and closes with
   the machine; Escape sends `close`. It needs JavaScript: a dialog that must open without it uses the native
   `commandfor` button (the short form) and closes when the data that shows it changes.

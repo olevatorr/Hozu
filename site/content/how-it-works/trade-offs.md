@@ -50,6 +50,10 @@ If your existing application relies heavily on those patterns, adopting Hozu may
 
 Hozu has its own fine-grained DOM runtime rather than compiling to an established component renderer. Existing framework-specific components therefore are not drop-in Hozu views. The relevant question is whether its documented capabilities cover your application and whether the remaining integrations fit a client component's boundary. The repository does not provide an ecosystem-size benchmark, so this guide does not invent one.
 
+The server side is less tied to TypeScript. Since 0.22, `runs: 'server'` effects can be implemented in a Go service through `remote()`, with a contract that `hozu gen` writes from the declarations, while access, caching and the output check stay in the Hozu server ([ADR 0068](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0068-resolvers-in-go.md)). A trial agent moved a shop admin's order lifecycle, inventory and dashboard statistics to Go; its own verdict was to keep TypeScript unless a Go service already exists or a measured need asks for one ([ADR 0070](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0070-0-23.md)). The boundary also costs a process hop per call, which only pays off when a resolver does real work.
+
+Some of what mainstream component frameworks give without asking had to be added deliberately. 0.25, for example, keeps one element when both branches of a condition have the same shape, so focus stays, and adds declared keyboard shortcuts ([ADR 0072](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0072-0-25.md)). Expect to find such gaps; the changelog records each one as it closes.
+
 A small exploratory feature can answer more than a general promise. Scaffold it, inspect its declarations, make a realistic change and verify the result:
 
 ```sh

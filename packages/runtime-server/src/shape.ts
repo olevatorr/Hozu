@@ -1,4 +1,5 @@
-import { eachGuardRef, eachRef, type Json, type ValueExpr, type ViewNode } from '@hozu/core/ir'
+import { eachGuardRef, eachRef, type Json, type SendIR, type ValueExpr, type ViewNode } from '@hozu/core/ir'
+import type { SendPick } from './shared.ts'
 
 const usesMemo = new WeakMap<ViewNode, Uses>()
 
@@ -39,7 +40,13 @@ export function bindingUses(n: ViewNode): Uses {
         return
       case 'el':
         for (const m of [x.attrs, x.toggle, x.vars]) for (const k in m) valueUses(m[k]!, out)
-        for (const k in x.on) valueUses(x.on[k]!.payload, out)
+        for (const k in x.on) {
+          const s = x.on[k] as SendIR | SendPick
+          if ('test' in s) {
+            eachGuardRef(s.test, (r) => valueUses(r, out))
+            for (const t of [s.a, s.b]) if (t) valueUses(t.payload, out)
+          } else valueUses(s.payload, out)
+        }
         for (const c of x.children) walk(c)
         return
       case 'when':

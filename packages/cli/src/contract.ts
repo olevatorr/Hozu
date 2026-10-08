@@ -412,6 +412,11 @@ export interface BrowseChange {
    * ones as CSS-like paths (`main > form > input[name=card]`).
    */
   flashes?: { count: number; elements: string[] }
+  /**
+   * How a navigation arrived (ADR 0072 D3): from a speculation prerender or loaded, and the milliseconds from the
+   * activation (prerendered) or the navigation start to the first contentful paint.
+   */
+  arrived?: { prerendered: boolean; ms: number }
   /** Layout shift no input explains (layout-shift entries without recent input, summed, as CLS counts them). */
   shift?: number
   /** What the app's `onError` received during the step (ADR 0069 A2). */

@@ -2,7 +2,8 @@
 
 # @hozu/data
 
-Hozu data runtime: resolvers bound by declaration, cache, tags, dedup and invalidation.
+Hozu data runtime: resolvers bound by declaration, cache, tags, dedup and invalidation, and `remote()` for
+resolvers in a Go service (its contract written by `hozu gen`).
 
 Part of [Hozu](https://github.com/olevatorr/Hozu#readme), an AI-first web framework. Most apps start from
 `npm create hozu@latest`, which installs the right packages and sets up Claude Code or `AGENTS.md` agents.

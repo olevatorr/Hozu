@@ -1,7 +1,7 @@
 ---
 title: CLI
 description: Check, inspect and exercise your app from the terminal.
-order: 7
+order: 13
 ---
 
 ## The daily loop
@@ -27,8 +27,9 @@ npx hozu get / --json
 | `hozu why tasks.listItems --json` | What a target is, where it is (file:line), what uses it and what it affects. The target is a declaration, a component (`ui.Button`), a state (`tasks.idle`: its transitions, guards and covering contracts), a view node (a DevTools id, an IR pointer, or `views.ts:42`: the outermost node written on that line; a line two files share is refused with both paths) or a page (`page:home`). `explain`, `impact` and `locate` were removed in 0.15, and `graph` in 0.14. |
 | `hozu plan home --json` | Show the derived render plan for a route name, or for a path such as `/products/mug`. |
 | `hozu get /tasks --json` | Request one or more pages in-process without a server. |
+| `hozu gen --json` | Write the contract of every `remote()` in `app.ts`: a Go file with the types, the `Resolvers` interface and the HTTP handler. Run it after changing a remote effect's declaration; `hozu check` reports a stale contract as HZ093. See [Resolvers in Go](/docs/go). |
 | `hozu env --json` | Every env variable: server or public, required, default, whether it is set now, its internal URL; `--example` writes `.env.example`. |
-| `hozu call tasks.listItems --input '{}' --json` | Run one query or mutation through the app's handler without a server: the value or the declared error, and for a mutation (`--write`) the tags it invalidated and the queries they refresh. `--session '<json>'` signs in. An endpoint takes `--header 'Authorization: Bearer …'` and prints its status; a POST endpoint needs `--write`. |
+| `hozu call tasks.listItems --input '{}' --json` | Run one query or mutation through the app's handler without a server: the value or the declared error, and for a mutation (`--write`) the tags it invalidated and the queries they refresh. `--session '<json>'` signs in. An endpoint takes `--header 'Authorization: Bearer …'` and prints its status; a POST endpoint needs `--write` and prints the tags it invalidated. |
 | `hozu browse /tasks --do 'click Save' --json` | Run steps in headless Chrome without a server (with JS; `--js off` or `both` for a page that must also work without it): what each step changed, errors and client components. `--as <name>` adds actors, `--header` adds a request header (to every actor, or to one after its `--as`), `remember <name> from url|<selector>` keeps a value for `$name` in later steps, and `post <path> a=1` forges a native form post. `--viewport 390x844` opens at a phone's size, `--screenshot <file>` saves a PNG after the steps. |
 | `hozu build --json` | Write deployment assets, generated server rendering code and the manifest. |
 | `hozu export --json` | Write every page as files for a static host to `dist/` (`--out` elsewhere), with `.nojekyll`; it exits 1 and names each page and server effect a static host cannot answer. See [Deploying](/docs/deploying). |
@@ -51,7 +52,7 @@ Use `hozu --help` for the options supported by your installed version. `--config
 
 ## Inspect pages without a server
 
-`get` reports the status, title, alerts and visible text. `--full` removes the text truncation. `--select` inspects matching elements and their attributes; `--select script` prints the head's scripts raw, to check the JSON-LD. `--forms` lists native forms: fields and defaults, checkbox and radio groups with every value, controls that join a form through `form=`, and submit buttons with their name and value.
+`get` reports the status, title, alerts and visible text, and the server errors the request caused. `--full` removes the text truncation. `--select` inspects matching elements with their attributes and `class`; it takes attribute operators (`^= $= *= ~=`) and descendant and child combinators (`nav a[aria-current]`, `main > form input`). `--select script` prints the head's scripts raw, to check the JSON-LD. `--forms` lists native forms: fields and defaults, checkbox and radio groups with every value, controls that join a form through `form=`, and submit buttons with their name and value.
 
 ```sh
 npx hozu get /tasks --select a --forms
@@ -59,6 +60,8 @@ npx hozu get /tasks --select 'button[aria-pressed=true]'
 ```
 
 It runs the real request handler and needs no browser. It does not run client code or submit forms: for that, use `browse`.
+
+`get`, `browse` and `call` show an unexpected error's message. A production server (`NODE_ENV=production`) answers `Internal error` there instead, with the call id of a Go service, and `onError` keeps the full message; `get` and `browse` say so once.
 
 ## Check the browser without a server
 
@@ -73,7 +76,9 @@ It runs the `--do` steps with JavaScript and reports per step only the lines tha
 - `remember <name> from url|<selector> [@attr]`: keep a value that later steps read as `$name`;
 - any target may end with `in "<text>"`: the smallest list item, table row or form containing that text (for `fill` and `select`, before or after `=value`).
 
-Each step says whether the page reloaded, navigated or changed in place (`--full` adds how many elements were redrawn), and reports a flash (elements rebuilt unchanged) or a layout shift no input explains, the two things that make a page feel unsteady. Click and fill targets match the visible text and the accessible name (`aria-label`, or the text without `aria-hidden` parts). `browse` runs the built app, not `hozu dev`: its file watcher and DevTools are not part of a run.
+Each step says whether the page reloaded, navigated or changed in place (`--full` adds how many elements were redrawn), and reports elements rebuilt unchanged or a layout shift no input explains. An element that moves to another parent, such as a Load more button under the next page, is not counted as rebuilt. A navigation names how the page arrived and its time to the first paint: `→ /products/mug (loaded, 32 ms)`, or `prerendered`.
+
+A click that would land on another element fails and names it, as a person's click would: `the click would land on <h3>, which contains it (a ::before or ::after above it, …), above <a href="/products/mug">: a person cannot click it`. Fix the covering element rather than the step. Click and fill targets match the visible text and the accessible name (`aria-label`, or the text without `aria-hidden` parts). `browse` runs the built app, not `hozu dev`: its file watcher and DevTools are not part of a run.
 
 One `--do` may hold several steps joined with `;` (outside quotes, before a step's verb). A target that is not on the page prints `Did you mean "<closest label>"?`. A step that loads a page answering 401, 403, 404 or 410 shows that status as its answer, such as `→ /notes/n1 (403)`, and is not an error, so an access check exits 0; the start page must still load.
 

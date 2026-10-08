@@ -178,6 +178,14 @@ export function walkView(
       ...(bound ? { state: { type: 'string', enum: Object.keys(feature.machine!.states) } } : {}),
       locale: { type: 'string' },
       route: { type: 'string', enum: Object.keys(ir.routes) },
+      here: {
+        type: 'object',
+        properties: Object.fromEntries(
+          Object.values(ir.routes).flatMap((r) =>
+            Object.keys(r.params?.properties ?? {}).map((k) => [k, {}]),
+          ),
+        ),
+      },
       alternate: null,
       env: ir.env?.public ?? { type: 'object', properties: {}, additionalProperties: false },
     },

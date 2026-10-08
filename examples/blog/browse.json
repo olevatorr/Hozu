@@ -1,0 +1,10 @@
+[
+  {
+    "path": "/",
+    "steps": [
+      "click Save in \"Hello, Hozu\"",
+      "click Save in \"Islands, derived\"",
+      "click Remove in \"Hello, Hozu\""
+    ]
+  }
+]

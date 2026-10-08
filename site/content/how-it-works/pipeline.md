@@ -28,7 +28,7 @@ The transform turns this into a conditional node whose test (`error ≠ null`) a
 
 The validator checks more than the shape of individual declarations. It can find a reference to an unregistered mutation, an event that a visible control sends into a state that cannot handle it, or a feature that accesses another feature's private declaration. Render-related checks also prevent user-scoped data from entering a shared cacheable region.
 
-Contracts add execution to those structural checks. They place a machine in a known state, send events or effect results and compare the resulting state, context and effects with the author's expectation. Transition coverage identifies the transitions that decide (a guard, a navigation, a computed value) and have no contract. The behaviour lock compares changes with the contracts that cover them.
+Contracts add execution to those structural checks. They place a machine in a known state, send events or effect results and compare the resulting state, context and effects with the author's expectation. Transition coverage identifies the transitions that decide (a guard, a navigation, a computed value) and have no contract. The behaviour lock, `hozu.lock.json`, records every transition, who may run each query and mutation, the endpoints, redirects and how each page answers a failed head query; `hozu check` recomputes it and reports any difference (HZ057), so a change is accepted only with `hozu check --update-lock`.
 
 Diagnostics identify a location, cause and suggested fix. The JSON form supports tooling, while the text form makes the same information readable in a terminal. Some failures require a decision about intent, so a useful diagnostic does not always include an automatic patch. The diagnostic design is documented in [ADR 0003](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0003-diagnostics-and-cli.md).
 
@@ -51,6 +51,6 @@ pnpm exec hozu why items.idle
 pnpm exec hozu plan home
 ```
 
-`inspect` exposes a feature's summary and IR. `why` describes a state's transitions, effects and covering contracts. `plan` shows the rendering decision for a named route, including islands and persistence opportunities. These commands answer different questions, so running all of them for every small edit adds unnecessary work.
+`inspect` exposes a feature's summary and IR. `why` describes a state's transitions, effects and covering contracts. `plan` shows the rendering decision for a route or path: each region with its mode and the queries behind it, whether the page is cacheable, and its islands. These commands answer different questions, so running all of them for every small edit adds unnecessary work.
 
 After an intended change, `hozu check` runs the combined verification. Use `hozu get` for rendered text, attributes and forms, and `hozu browse` for a flow in a real browser. The [CLI reference](/docs/cli) lists the commands, and [machines and contracts](/how-it-works/machines-and-contracts) explains the behaviour checks in detail.

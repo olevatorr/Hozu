@@ -10,6 +10,7 @@ export const formRunnable = (payload: ValueExpr): boolean =>
         r.ref === 'params' ||
         r.ref === 'search' ||
         r.ref === 'route' ||
+        r.ref === 'here' ||
         (r.ref === 'dom' && (r.path[0] === 'form' || r.path[0] === 'formAll'))
       ),
   )

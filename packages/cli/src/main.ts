@@ -398,7 +398,14 @@ export async function main(
       const result = await runAddFeature(cwd, values.config, positionals[2], values.page, values.with)
       const lock = await seedLockIsolated(values.config, cwd, featuresCreated(result.created))
       if (lock) (lock.created ? result.created : result.edited).push(relative(cwd, lock.path))
-      out(asJson ? json(result) : describeAdd(result))
+      out(
+        asJson
+          ? json(result)
+          : describeAdd(
+              result,
+              (values.with ?? '').split(',').some((p) => p.trim() === 'auth'),
+            ),
+      )
       return 0
     }
     const showOptions = {

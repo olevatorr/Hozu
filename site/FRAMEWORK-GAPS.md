@@ -1,6 +1,8 @@
-# Framework gaps found while building hozu.org on 0.9
+# Framework gaps found while building hozu.org (0.9, rechecked on 0.25)
 
-Each entry: approach → result → root cause. Nothing here is worked around silently.
+Each entry: approach → result → root cause. Nothing here is worked around silently. Found on 0.9; on 0.25 array props
+still hold literals only (HZ014), an asset is still not a prop type, and the validator still rebuilds the previous
+timers with `timers.includes(a.ms)`, so HZ018 still misses a changed duration.
 
 ## A list of internal links cannot be an array prop
 - **Approach:** `Receipt` took `pay: [{ label, value, href }]` and the view filled `href` with `ui.link(trial, …)`.

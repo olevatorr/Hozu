@@ -33,7 +33,7 @@ export const notice = machine({
 })
 ```
 
-Here, the delay is an illustrative application choice, not a measured framework result. The framework owns the timer. The `ignore` declaration makes repeated acknowledgements intentional instead of leaving a visible event unhandled. A transition back to the same state would re-enter it, which matters especially when state entry invokes a mutation.
+Here, the delay is an illustrative application choice, not a measured framework result. The framework owns the timer. The `ignore` declaration makes repeated acknowledgements intentional instead of leaving a visible event unhandled. An `on` without a `target` stays where it is (since 0.20): timers and an invoked effect carry on. Naming the current state as the target re-enters it, which matters especially when state entry invokes a mutation.
 
 For the reading-list form, a busy state instead declares `invoke(addItem, ...)`. A state with `invoke` drops every event it does not handle, so the repeated click needs no declaration. Its `done` transitions describe successful results, and its `failed` transitions handle declared errors plus the framework’s unexpected-error path. The form sends an event; it does not hide an asynchronous request inside its view. See the [data guide](/docs/data) for that boundary.
 
@@ -86,6 +86,15 @@ The behaviour lock records accepted behaviour. HZ018 detects a change: for a dec
 Suppose the acknowledgement should now last longer. Decide that requirement first, change the timer, and run the checks: HZ018 shows `acknowledged --after 2000ms--> idle` becoming `after 5000ms`. Once the change is intended, `hozu check --update-lock` accepts the new baseline. The same process applies when a mutation begins navigating after success or a guard changes which submissions are allowed.
 
 The original interpreter and contract design is recorded in [ADR 0004](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0004-machine-runtime-and-contracts.md). The shorter contract authoring form is explained in [ADR 0022](https://github.com/olevatorr/Hozu/blob/main/docs/adr/0022-authoring-surface-diet.md). Historical examples use the former framework name; the principles remain relevant, while the installed skill defines today’s syntax.
+
+## Smaller forms for common decisions
+
+A few shorter forms keep the machine readable without hiding a decision:
+- `ui.set(ctx.field, value)` in a view sends a framework-made event that assigns one context field (since 0.21); the payload is checked against the context schema, and busy states ignore it.
+- `target: 'previous'` returns to the last state without `invoke`, the calm state a busy one was entered from, so one save serves two modes (since 0.19); contracts give it `given.previous`.
+- A mode the person sets, such as paused or a list layout, is a context field rather than a state, so a busy state that saves something does not reset it (the 0.25 guide).
+- `ui.send(Open, {}, { keys: ['Mod+k', '/'] })` on `keydown` sends only for those keys (since 0.25). A key without a modifier waits while the person types in a field, and nothing fires while an input method composes.
+- A transition that stops deciding, because its guard, navigation or computed value was removed, is reviewed by the lock alone (since 0.19): HZ018 asks for `hozu check --update-lock`, and HZ058 then names the contracts that no longer cover a decision.
 
 ## Know the boundary of the proof
 

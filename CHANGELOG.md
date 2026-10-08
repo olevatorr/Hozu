@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.25.0 — What mainstream frameworks do, at Hozu's cost (ADR 0072)
+
+Judged three ways: what a React / Vue / Svelte app gives a person without asking, where Hozu must stay ahead in bytes,
+and what an agent can verify cheaply. No source change is needed: `hozu migrate` raises the packages.
+
+### Views
+- **`c ? a : b` keeps its element** when both branches are one element of the same tag and shape
+  (`ctx.paused ? resumeButton : pauseButton`): the text, classes, attributes and listener follow `c`, focus stays, and
+  the element is kept. The IR still holds both branches for every check; the renderers draw one element. Branches whose
+  differing values compute (a `fn`, a template string) or link to different routes are drawn as before.
+- **Keyboard shortcuts:** `ui.send(Open, {}, { keys: ['Mod+k', '/'] })` on `keydown` / `keyup` sends only on those
+  presses and stops the browser's own (`Mod` is ⌘ on Apple, Ctrl elsewhere). A printable key without a modifier
+  waits while the person types in a field inside the listener (`/` still types a slash; `Escape` still fires), and
+  nothing fires while an input method composes. A bad list is HZ014.
+- **`current(route, params)`** compares those params with the page shown and ignores search:
+  `current(shop, { category: 'apparel' })` marks a store's category in its header. A param the route lacks is HZ007.
+
+### Performance
+- The client keeps its 9 KiB budget (P7 9 199 B): dialogs bound to the machine, `aria-current` of links in islands
+  and shortcut matching load in a small chunk only on pages that have them.
+- **New budgets S1 / S2:** every example with a machine has `browse.json`, the steps a person takes; `pnpm bench`
+  runs them and requires no element rebuilt unchanged and no layout shift above 0.01 (11 runs, both 0).
+
+### Tools
+- `hozu browse` fails a click that would land on another element, naming it (`the click would land on <h3>, which
+  contains it (a ::before or ::after above it, …), above <a href="/products/mug">`); an ancestor covering its link counted as a hit before.
+- `hozu browse` names how a navigation arrived and its time to the first paint (`→ /products/mug (loaded, 32 ms)`).
+- An element that moves to another parent (a Load more button under the next page) is no longer reported as a flash.
+- `hozu get --select` / `browse --select` print `class`.
+
+### Guide
+- A mode the person sets (paused, a view mode) is a context field, not a machine state: busy states keep it.
+  `examples/watchlist` holds `paused` in its context, and its Pause button no longer turns into Resume while adding.
+- A menu is a constant list mapped to links, with `current(a) || current(b)` per section (it lowers inside `.map`).
+- One form for "show this in that state": `is(['adding']) && …` and `disabled: is(['adding'])`; `when(states,
+  children, motion)` only when an enter / leave motion is needed. The example app, the scaffold and the topics use it.
+- Topic fixes: `head.render`'s `locale` is its third argument; public queries take no `access` (their mutations do);
+  `createHandler(app, { session })`; the calm state kept across pages (shared view or same address) is one story in
+  machine, patterns and pages; contracts list `refresh` / `copy` / `replace` effects; testing covers the 0.25 browse
+  output; deploy lists every `app()` option; diagnostic summaries updated (HZ005, HZ007, HZ041, HZ045, HZ049, HZ059,
+  HZ093).
+
+### Site
+- Six new docs pages: Components and kits, Machines and contracts, Forms, Resolvers in Go, Languages, Verify and
+  test. Every page brought to 0.25 (shortcuts, `current(route, params)`, `{ ...search }` links, parsed params,
+  `hozu gen`, production error masking, the DevTools dock).
+- The home page shows a backend in Go and how agents check their own work; "How it works" corrected (freshness
+  `{ poll }` and public `'request'`, state kept across pages, what `hozu plan` prints, where effects run).
+- Speed table re-run on 0.25.0 (bench/meta, 2026-10-08).
+
 ## 0.24.0 — Sections are yours to say (ADR 0071)
 
 The 0.23 retest asks, judged by the framework rather than taken as given. `hozu migrate` raises the packages.

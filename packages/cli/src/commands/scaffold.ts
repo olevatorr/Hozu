@@ -230,7 +230,7 @@ export function views(n: Names, w: With, listRoute: string | null): string {
 `,
     `export const ${n.View} = ui.view({`,
     `  machine: ${n.machine},`,
-    '  render: ({ ctx, when }) =>',
+    '  render: ({ ctx, is }) =>',
     `    ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [`,
     `      ui.h1({ class: 'text-3xl font-bold' }, ['${n.title}']),`,
     `      ui.form({ class: 'flex gap-2', on: { submit: ui.send(Add, { title: ui.dom.form('title') }) } }, [`,
@@ -247,7 +247,7 @@ export function views(n: Names, w: With, listRoute: string | null): string {
     `          class: 'flex-1 rounded border px-3 py-2',`,
     '          on: { input: ui.set(ctx.draft, ui.dom.value) },',
     '        }),',
-    `        ui.button({ type: 'submit', class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),`,
+    `        ui.button({ type: 'submit', disabled: is(['adding']), class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),`,
     '      ]),',
     `      ui.p({ id: '${n.id}-title-error', class: 'text-sm text-rose-600' }, [ctx.fields.title]),`,
     `      ctx.error !== null &&`,
@@ -258,7 +258,7 @@ export function views(n: Names, w: With, listRoute: string | null): string {
     (w.toggle || w.remove) && `              ? 'This ${n.one} no longer exists'`,
     `${w.toggle || w.remove ? '              ' : '            '}: 'Something went wrong. Try again.',`,
     `        ]),`,
-    `      when(['adding'], [ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…'])]),`,
+    `      is(['adding']) && ui.p({ class: 'opacity-50', 'aria-busy': 'true' }, ['Adding ', ctx.draft, '…']),`,
     w.filter &&
       `      ui.nav(
         { class: 'flex gap-2', 'aria-label': 'Show' },
@@ -362,9 +362,8 @@ export function server(n: Names, w: With): string {
       : `export function ${n.resolvers}<Session, Env>(implement: Implement<Session, Env>) {`,
     w.auth
       ? `  const demoStore = new Map<string, ${Row}[]>()
-  const listOf = (session: { user: string } | null): ${Row}[] => (session ? (demoStore.get(session.user) ?? []) : [])
-  const ownListOf = (session: { user: string } | null) => {
-    if (!session) return []
+  const listOf = (session: { user: string }): ${Row}[] => demoStore.get(session.user) ?? []
+  const ownListOf = (session: { user: string }) => {
     const list = demoStore.get(session.user) ?? []
     demoStore.set(session.user, list)
     return list
@@ -556,7 +555,7 @@ import { me, signIn, signOut } from './model.ts'
 
 export function accountResolvers<Env>(implement: Implement<{ user: string }, Env>) {
   return [
-    implement(me, (_, { session }) => ({ name: session?.user ?? '' })),
+    implement(me, (_, { session }) => ({ name: session.user })),
     implement(signIn, ({ name }, { setSession }) => {
       setSession({ user: name.trim().toLowerCase() })
       return {}

@@ -37,11 +37,11 @@ export default previews((p) => [
       rows: [
         {
           id: 'hozu',
-          framework: 'Hozu 0.17.0',
+          framework: 'Hozu 0.25.0',
           versions: 'adapter-node',
-          requests: '16,870',
-          js: '8.1 KB',
-          interactive: '54 ms',
+          requests: '15,818',
+          js: '9.7 KB',
+          interactive: '60 ms',
         },
       ],
     },

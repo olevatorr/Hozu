@@ -309,6 +309,8 @@ export type RefSource =
   | 'session'
   | 'state'
   | 'route'
+  /** The params of the page shown, read by `current(route, params)` (ADR 0072 E2). */
+  | 'here'
 
 export type ValueExpr =
   | { ref: RefSource; path: string[] }
@@ -354,6 +356,8 @@ export type { DomEvent, DomField, DomFields } from './events.ts'
 export interface SendIR {
   event: string
   payload: ValueExpr
+  /** Only these key presses send it, and they do not reach the browser's own shortcuts (ADR 0072 B). */
+  keys?: string[]
 }
 
 export type ViewNode =

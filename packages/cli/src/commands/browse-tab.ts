@@ -538,9 +538,20 @@ export class Tab {
         const p = el.parentElement
         el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '')
         el[s] = true
+        el[Symbol.for('hozu.browse.parent')] = p
         g.__hozuSeen.push(el)
       }
       return g.__hozuSeen.length
+    })()`)
+  }
+
+  /** How the page shown arrived: prerendered or loaded, and its first contentful paint after activation (ADR 0072 D3). */
+  arrival(): Promise<{ prerendered: boolean; ms: number }> {
+    return this.evaluate(`(() => {
+      const n = performance.getEntriesByType('navigation')[0]
+      const a = n?.activationStart ?? 0
+      const paint = performance.getEntriesByType('paint').find((e) => e.name === 'first-contentful-paint')?.startTime
+      return { prerendered: a > 0, ms: Math.round(Math.max(0, (paint ?? n?.domContentLoadedEventEnd ?? 0) - a)) }
     })()`)
   }
 
@@ -553,8 +564,9 @@ export class Tab {
       const KEYS = ['name', 'id', 'href', 'src', 'type']
       const own = (el) => el.tagName + '|' + (el.getAttribute('class') ?? '') + '|' + KEYS.map((k) => el.getAttribute(k) ?? '').join('|') + '|' + el.textContent.replace(/\\s+/g, ' ').trim()
       const sig = (el) => (el[chain] ?? '') + '#' + own(el)
+      const parent = Symbol.for('hozu.browse.parent')
       const gone = new Map()
-      for (const el of g.__hozuSeen ?? []) if (!el.isConnected) gone.set(sig(el), (gone.get(sig(el)) ?? 0) + 1)
+      for (const el of g.__hozuSeen ?? []) if (!el.isConnected) gone.set(sig(el), [...(gone.get(sig(el)) ?? []), el[parent]])
       let replaced = 0
       let flashes = 0
       const flashed = new Set()
@@ -563,8 +575,12 @@ export class Tab {
         replaced++
         const p = el.parentElement
         el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '')
-        const n = gone.get(sig(el))
-        if (n) { flashes++; flashed.add(el); gone.set(sig(el), n - 1) }
+        const was = gone.get(sig(el)) ?? []
+        const i = was.findIndex((q) => !q?.isConnected || q === p)
+        if (i < 0) continue
+        was.splice(i, 1)
+        flashes++
+        flashed.add(el)
       }
       const css = (v) => /^[\\w:/.-]+$/.test(v) ? v : JSON.stringify(v)
       const name = (el, last) => {

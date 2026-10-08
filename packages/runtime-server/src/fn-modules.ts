@@ -1,4 +1,5 @@
 import { type BuildResult, hashJson, type ProjectIR } from '@hozu/core/ir'
+import { renderBuild } from './shared.ts'
 
 /** One browser module of `fn` implementations (ADR 0050 C). */
 export interface FnModule {
@@ -99,7 +100,8 @@ function moduleSource(build: BuildResult, refs: string[]): string {
 }
 
 /** The browser `fn` modules of a build, by module name, at content-hashed paths under `/_hozu/f/`. */
-export function fnModules(build: BuildResult): Record<string, FnModule> {
+export function fnModules(built: BuildResult): Record<string, FnModule> {
+  const build = renderBuild(built)
   const groups = new Map<string, string[]>()
   const builtins = Object.keys(build.bindings.fns).filter((ref) => moduleOfFn(ref) === 'hozu')
   for (const ref of [...new Set([...clientFns(build.ir), ...builtins])].sort()) {

@@ -30,7 +30,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     name: 'undeclared-effect',
     severity: 'error',
     topic: 'data',
-    summary: 'unknown effect / reference',
+    summary: 'unknown effect / query',
     fix: 'export it from a module the feature lists in `declarations`, or fix the name (the patch suggests one)',
   },
   HZ004: {
@@ -45,7 +45,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     severity: 'error',
     topic: 'machine',
     summary: 'a node sends an event in a state (without `invoke`) that does not handle it',
-    fix: 'handle it there (`machine({ on })` handles it in every state), show the node only via `when`, or `ignore: [Event]` to drop it',
+    fix: 'handle it there (`machine({ on })` handles it in every state), show the node only in the states that handle it (`is([...]) && …`), or `ignore: [Event]` to drop it',
   },
   HZ006: {
     name: 'boundary-violation',
@@ -58,8 +58,9 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     name: 'dangling-reference',
     severity: 'error',
     topic: 'feature',
-    summary: 'unknown effect / reference',
-    fix: 'export it from a module the feature lists in `declarations`, or fix the name (the patch suggests one)',
+    summary:
+      "unknown effect, reference, route or state name; `'previous'` with nothing to return to; `given.previous` naming a state with `invoke`; a `current()` param the route lacks",
+    fix: 'export it from a module the feature lists in `declarations`, register it, or fix the name (the patch suggests one)',
   },
   HZ008: {
     name: 'invalid-reference-path',
@@ -303,7 +304,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     name: 'message-in-machine',
     severity: 'error',
     topic: 'i18n',
-    summary: 'a machine uses a message, `ui.format` or `locale`',
+    summary: 'a machine uses a message, `ui.format`, `locale` or the env',
     fix: 'store a code in context; choose the message in the view',
   },
   HZ042: {
@@ -333,7 +334,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     severity: 'error',
     topic: 'deploy',
     summary:
-      'no `project({ app })`, its default export is not `app(…)`, or views use client components and `app()` has no bundle',
+      'no `project({ app })`, its default export is not `app(…)`, or views use client components (or a feature has `fetch.ts`) and `app()` has no bundle',
     fix: '`export default app({ resolvers, components: bundleComponents })`',
   },
   HZ046: {
@@ -364,7 +365,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     severity: 'error',
     topic: 'data',
     summary: "a `scope: 'user'` query is cached (`'static'`, `revalidate`, `swr`)",
-    fix: "`freshness: 'request'` (patch), or `'live'` for push",
+    fix: "`freshness: 'request'` (patch), `'live'` for push, or `{ poll: s }` for a timer",
   },
   HZ050: {
     name: 'live-without-tags',
@@ -435,7 +436,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     severity: 'error',
     topic: 'views',
     summary:
-      'data reached plain JavaScript: a plain helper, a global (`Boolean`, `Object.keys`, `String`…), `typeof`, a spread or `in`',
+      'data reached plain JavaScript: a plain helper, a global (`Boolean`, `Object.keys`, `String`…), `typeof`, an array spread or `in` (an object spread such as `{ ...search, x }` is lowered)',
     fix: 'make the helper a `part()`; for a global use an operator or a `fn()`',
   },
   HZ060: {
@@ -646,7 +647,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     severity: 'error',
     topic: 'data',
     summary:
-      'a `remote()` resolver that cannot answer: its generated contract is missing or stale, or it lists an effect the browser runs or a non-JSON endpoint',
-    fix: 'run `hozu gen` and rebuild the service; implement browser-run effects in fetch.ts and non-JSON endpoints in TypeScript',
+      'a `remote()` resolver that cannot answer: its generated contract is missing or stale, its secret is missing, undeclared in `env.server` or under 16 characters, or it lists an effect the browser runs or a non-JSON endpoint',
+    fix: 'run `hozu gen` and rebuild the service; set a 16+ character secret from `env.server`; implement browser-run effects in fetch.ts and non-JSON endpoints in TypeScript',
   },
 }

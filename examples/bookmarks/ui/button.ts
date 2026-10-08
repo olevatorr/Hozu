@@ -16,8 +16,12 @@ const styles = tv({
 export const Button = ui.component({
   tag: 'button',
   styles,
-  props: z.object({ type: z.enum(['button', 'submit']).default('button') }),
+  props: z.object({
+    type: z.enum(['button', 'submit']).default('button'),
+    disabled: z.boolean().default(false),
+  }),
   children: true,
   events: ['press'],
-  render: ({ props, children, on }) => ui.button({ type: props.type, on: { click: on.press } }, children),
+  render: ({ props, children, on }) =>
+    ui.button({ type: props.type, disabled: props.disabled, on: { click: on.press } }, children),
 })

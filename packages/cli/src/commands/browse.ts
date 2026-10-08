@@ -119,7 +119,7 @@ async function aim(tab: Tab, call: string) {
     const at = await tab.page(call)
     if (at.error || !at.covered) return at
     if (Date.now() - start > 1500)
-      return { error: `${at.covered} covers the target where it would be clicked` }
+      return { error: `the click would land on ${at.covered}, above ${at.target}: a person cannot click it` }
     await sleep(50)
   }
 }
@@ -470,6 +470,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
             ? { replaced: 0, flashes: 0, flashed: [], shift: 0 }
             : await tab.smoothness().catch(() => ({ replaced: 0, flashes: 0, flashed: [], shift: 0 }))
           const { replaced, flashes, flashed, shift } = calm
+          const arrived = reloads && before.url !== after.url ? await tab.arrival().catch(() => null) : null
           const serverErrors = worlds[m]!.serverErrors.slice(serverSince)
           for (let i = serverSince; i < serverSince + serverErrors.length; i++) inStep[m]!.add(i)
           const elsewhere: BrowseElsewhere[] = []
@@ -492,6 +493,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
                   ? 'navigated'
                   : 'reloaded',
             ...(replaced ? { replaced } : {}),
+            ...(arrived ? { arrived } : {}),
             ...(flashes ? { flashes: { count: flashes, elements: flashed } } : {}),
             ...(shift >= 0.001 ? { shift } : {}),
             ...(serverErrors.length ? { serverErrors } : {}),
@@ -619,7 +621,7 @@ function flashText({ count, elements }: NonNullable<BrowseChange['flashes']>): s
   return `${count} element${count === 1 ? '' : 's'} rebuilt unchanged (a flash${list ? `: ${list}` : ''})`
 }
 
-function describeChange(c: BrowseChange, full: boolean): string {
+function describeChange(c: BrowseChange, full: boolean, arrival?: string): string {
   if (!c.ok) return `FAILED — ${c.note}`
   if (c.jsOnly) return `js-only (${c.jsOnly})`
   const moved = c.navigated && c.document !== 'in place'
@@ -642,7 +644,9 @@ function describeChange(c: BrowseChange, full: boolean): string {
   ]
     .filter(Boolean)
     .join(', ')
-  return [c.navigated || status ? `→ ${c.url}${status}` : '', how, list].filter(Boolean).join(': ')
+  const arrived =
+    arrival ?? (c.arrived ? ` (${c.arrived.prerendered ? 'prerendered' : 'loaded'}, ${c.arrived.ms} ms)` : '')
+  return [c.navigated || status ? `→ ${c.url}${status}${arrived}` : '', how, list].filter(Boolean).join(': ')
 }
 
 export function describeBrowse(out: BrowseOutput, full = false): string {
@@ -658,7 +662,12 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
     const who = s.actor ? `${s.actor}: ` : ''
     const head = `  ${i + 1} ${who}${s.step}`
     const changes = s.modes ?? []
-    const texts = changes.map((c) => describeChange(c, full))
+    const timed = changes.filter((c) => c.arrived)
+    const arrival =
+      timed.length > 1
+        ? ` (${timed.map((c) => `${c.mode}: ${c.arrived!.prerendered ? 'prerendered' : 'loaded'}, ${c.arrived!.ms} ms`).join('; ')})`
+        : undefined
+    const texts = changes.map((c) => describeChange(c, full, arrival))
     const flag = !s.differs
       ? ''
       : s.differences?.length

@@ -23,7 +23,7 @@ changing either.
   and the contract.
 ```ts
 export const addsValid = contract(m, {
-  given: { state: 'idle' },                          // context: initialContext; { touring: true } overrides fields
+  given: { state: 'idle' },                          // context omitted = initialContext; context: { touring: true } patches it
   when: [
     { send: Add, payload: { title: 'Milk' } },
     { done: addItem, result: { id: 'i9', title: 'Milk', done: false } },
@@ -35,3 +35,5 @@ export const addsValid = contract(m, {
   },
 })
 ```
+- Other effects: `{ refresh: [itemsTag()] }`, `{ copy: 'https://…' }` (the clipboard text) and
+  `{ replace: '/?q=milk' }` (the address written in place).

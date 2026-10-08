@@ -1,7 +1,7 @@
 ---
 title: Environment
 description: Declare every variable once, keep secrets on the server, and let the server call your APIs on the inside.
-order: 5
+order: 9
 ---
 
 ## Declare it once
@@ -48,6 +48,10 @@ A resolver (`runs: 'server'`) simply reads the internal variable. An effect with
 - the CSP `connect-src` lists the public origin only.
 
 A mapping to undeclared variables is HZ085.
+
+## A service's address and secret
+
+Resolvers in another language (`remote()`, see [Resolvers in Go](/docs/go)) name server variables instead of values: `url: { env: 'NOTES_SERVICE_URL' }` and `secret: { env: 'NOTES_SERVICE_SECRET' }`. Declare both in `env.server`, the secret with `z.string().min(16)`, so a short or missing one stops the app at startup; an undeclared name is HZ093. The service reads the same secret from its own environment.
 
 ## Where the values come from
 

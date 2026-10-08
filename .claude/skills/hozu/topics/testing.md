@@ -80,6 +80,13 @@
     `--select <css>`, `--screenshot shot.png` (after the steps), `--viewport 390x844` (a phone; default 1280x800) and
     `--reduced-motion`.
   - It also prints the client components on the page (mounted, failed, size, canvases).
+- **More checks in a step:**
+  - A click that would land on another element fails the step: `the click would land on <h3>, which contains it, above
+    <a href="/x">: a person cannot click it` (an overlay, a card covering its link).
+  - A navigation shows how it arrived: `→ /x (loaded, 32 ms)` or `(prerendered, 4 ms)`; with `--js both`, per mode.
+  - `--select` prints each element's `class` too. An element moved to another parent is not a flash.
+- A server error that `get` or `browse` lists is noted once with `a production server shows "Internal error" here`:
+  the visitor sees that text and the call id; `onError` gets the message.
 - **`testApp`:** `app` is the default export of `app.ts`; `.post(path, fields)` submits a native form, with fields as
   a record or as `[name, value]` pairs for repeated names. `testApp(app, { session: store })` may swap only the
   session store (a test issuer). `testApp` reads no env files: pass `testApp(app, { env: process.env })` (or a record)

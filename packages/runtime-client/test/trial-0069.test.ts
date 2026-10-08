@@ -6,6 +6,7 @@ import { mount } from '@hozu/runtime-client'
 import { zodAdapter } from '@hozu/schema-zod'
 import { expect, it, vi } from 'vitest'
 import { z } from 'zod'
+import * as extras from '../src/extras.ts'
 
 const Edit = event({ payload: z.object({}) })
 const Done = event({ payload: z.object({}) })
@@ -51,6 +52,7 @@ it('a dialog whose open follows the machine opens as a modal and closes (ADR 006
     machine: compileMachine(b.ir.features.d!, b.bindings.fns),
     payload: new Map(),
     fns: b.bindings.fns,
+    extras,
   })
   expect(showModal).not.toHaveBeenCalled()
   root.querySelector('button')!.click()
@@ -93,6 +95,7 @@ it('a dialog the server rendered open stays open through hydration, and closing 
     machine: compileMachine(b.ir.features.d!, b.bindings.fns),
     payload: new Map(),
     fns: b.bindings.fns,
+    extras,
     snapshot: { state: 'editing', context: {}, entry: 1 },
   })
   app.attach(root, root.firstChild, b.ir.features.d!.views.Board!.root, [], true)
@@ -134,6 +137,7 @@ it('an island reads current(route) from the page it is on (ADR 0071 A1)', async 
       machine: compileMachine(built.ir.features.d!, built.bindings.fns),
       payload: new Map(),
       fns: built.bindings.fns,
+      extras,
       routes: { list: '/orders', detail: '/orders/:id' },
       here,
     })

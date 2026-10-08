@@ -20,8 +20,8 @@ The list is the visitor's own: it lives in their browser, so two visitors never 
 - **feature.ts:** `fetch: new URL('./fetch.ts', import.meta.url)`; `app.ts`: `components: bundleComponents`.
 - **Data about the items** (quotes, prices) is public: a `runs: 'server'` (or `'either'`) query inside the list's
   `ready` branch, `ui.query(quotes, { symbols }, …)`.
-- Refresh controls (Pause / Resume / Refresh now): states `live` / `paused`, `refresh: () => [quotesTag()]` on
-  `RefreshNow` and on `live`'s `after: [{ ms: 30_000, target: 'live', … }]`; adds return with `done: 'previous'`.
+- Pause / Resume / Refresh now: `paused` is a context field (a mode), `refresh: () => [quotesTag()]` on
+  `RefreshNow`, on `Resume` (`target: 'idle'` restarts the timer) and on the guarded `after` (`hozu docs machine`).
 - **Ask the server before saving** (normalize "2330" to "2330.TW"): a `runs: 'server'` query `resolveSymbol`, then
   the browser mutation: `looking: { invoke: invoke(resolveSymbol, { input: { q: ctx.symbol }, done: { target:
   'saving', assign: (r) => { ctx.symbol = r.symbol } }, failed: { … target: 'previous' } }) }`, `saving: { invoke:
@@ -89,8 +89,16 @@ const staffHead = { query: me, render: (m) => ({ title: `${m.name} · Admin` }),
 const staff = (route, View) => ui.page(route, { views: [Sidebar, View], head: staffHead })
 export default project({ /* … */ pages: [staff(orders, OrderList), staff(orderDetail, OrderPage), …] })
 ```
-The sidebar marks its sections with `current(route)` from its render:
-`'aria-current': current(orders) || current(orderDetail)`, styled `aria-[current]:font-bold`.
+The sidebar marks its sections with `current(route)` from its render, one line per section:
+```ts
+render: ({ current }) => ui.nav({}, [
+  ...[
+    [orders, 'Orders', current(orders) || current(orderDetail)],
+    [customers, 'Customers', current(customers) || current(customer)],
+  ].map(([r, label, here]) => ui.a({ href: ui.link(r, null), 'aria-current': here, class: 'aria-[current]:font-bold' }, [label])),
+])
+```
+A store's categories: `current(shop, { category: c })` over a constant list of categories.
 
 ## Screens with different state
 One machine per feature: an order list (filters, selection) and an order page (shipping, refund) are two features,
@@ -99,8 +107,9 @@ One machine per feature: an order list (filters, selection) and an order page (s
 ## A multi-step checkout that also works without JavaScript
 Each step is a state and each step's form posts only its own fields: after a native post the server renders the next
 step, and every form on that page carries the machine's state in a signed hidden field, so the next post continues
-from it (going back to edit a step too). Prefill from the member with
-`seed: ({ query }) => ({ email: query(me, {}).email })`.
+from it (going back to edit a step too; the field is `__hozu_state`, sealed with `SESSION_SECRET`). Prefill from
+the member on the view that has both `machine` and `route` (HZ048):
+`ui.view({ machine: checkout, route: checkoutPage, seed: ({ query }) => ({ email: query(me, {}).email }), render })`.
 
 ## A notice after saving
 A `notice` context field set in `done` and cleared by `after: [{ ms: 4000, target: 'idle' }]` on a `saved` state;

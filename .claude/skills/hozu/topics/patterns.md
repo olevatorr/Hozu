@@ -3,9 +3,9 @@
 The controls are plain elements; in an app with a kit, use its components (`ui.use(Button, …)`,
 `hozu docs components`).
 
-- **Busy state:** render every control once; the state with `invoke` drops repeated submits. Progress:
-  `when(['adding'], [ui.p({ 'aria-busy': 'true' }, ['Saving…'])])`. Do not duplicate controls under `when`.
-- **Optimistic item:** `when(['adding'], [ui.li({ class: 'opacity-50' }, [ctx.draft])])`; leaving the state removes it
+- **Busy state:** render every control once and disable it: `disabled: is(['adding'])` (`invoke` drops repeats).
+  Progress: `is(['adding']) && ui.p({ 'aria-busy': 'true' }, ['Saving…'])`.
+- **Optimistic item:** `is(['adding']) && ui.li({ class: 'opacity-50' }, [ctx.draft])`; leaving the state removes it
   and the refreshed query shows the real item.
 - **Refresh after a mutation:** tag the query, list the tag in the mutation's `invalidates`.
 - **Go to what was just created:** `done: { target: 'idle', navigate: (r) => ui.link(itemPage, { id: r.id }) }`.
@@ -82,6 +82,7 @@ ui.each(items, 'id', (item) => ui.li({}, [ui.input({ type: 'checkbox', form: bul
   `ui.each(ctx.cursors, null, (cursor) => ui.query(listPage, { cursor }, { ready: (page) => … }))`; on the last page
   (`cursor === ctx.last && page.next !== null`) a sentinel `on: { visible: ui.send(More, { cursor: page.next }) }`;
   `More` pushes the cursor, guarded by `e.cursor !== null && e.cursor !== ctx.last`.
-- **A link starts the page again:** every internal link is a document navigation, so a machine's context starts
-  from `initialContext` (or `seed`). Keep what must survive in the URL: put both filters in `search` and `seed` the
-  context from it, instead of one in the URL and one in context.
+- **What a link keeps:** every internal link loads a document. A machine whose view both pages show (or the same
+  address) resumes its calm state, the last state without `invoke`, from `sessionStorage`; a reload or a page
+  without that view starts from `initialContext` (or `seed`). Keep what must survive a reload or a shared link in
+  the URL: put both filters in `search` and `seed` the context from it, not one in the URL and one in context.

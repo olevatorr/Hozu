@@ -285,7 +285,7 @@ export function textsOf(source: string, file: string): AddOutput['texts'] {
     const label = /\blabel: '([^']+)'/.exec(line)
     if (label) texts.push({ file, line: i + 1, text: label[1]! })
     if (file.endsWith('model.ts')) return
-    const scan = line.replace(/when\(\[[^\]]*\]/g, '')
+    const scan = line.replace(/\b(when|is)\(\[[^\]]*\]/g, '')
     const found = new Set<string>()
     for (const lead of scan.matchAll(/\[\s*'([^']*)'\s*,/g)) found.add(lead[1]!)
     for (const group of scan.matchAll(/\[([^[\]]*)\]/g))
@@ -297,7 +297,7 @@ export function textsOf(source: string, file: string): AddOutput['texts'] {
   return texts
 }
 
-export function describeAdd(out: AddOutput): string {
+export function describeAdd(out: AddOutput, perUser = false): string {
   const lines = [
     ...out.created.map((f) => `created   ${f}`),
     ...out.edited.map((f) => `edited    ${f}`),
@@ -310,7 +310,7 @@ export function describeAdd(out: AddOutput): string {
           .map((t) => JSON.stringify(t.text))
           .join(' ')}`,
     ),
-    "store     the resolvers keep a demo list in memory: one list for every visitor, gone on restart. Ask where the data lives, then use a database, or browser storage for a visitor's own list (hozu docs data)",
+    `store     the resolvers keep a demo list in memory: ${perUser ? 'one list per signed-in user' : 'one list for every visitor'}, gone on restart. Ask where the data lives, then use a database, or browser storage for a visitor's own list (hozu docs data)`,
     'next      edit the texts above to the spec (no need to print the files; hozu map shows the structure), then hozu check',
   ]
   return `${lines.join('\n')}\n`

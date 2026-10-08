@@ -5,12 +5,12 @@ const button = 'rounded border border-slate-300 px-2 py-1 text-sm'
 
 export const Board = ui.view({
   machine: listMachine,
-  render: ({ ctx, when, is }) =>
+  render: ({ ctx, is }) =>
     ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-10' }, [
       ui.div({ class: 'flex items-center justify-between' }, [
         ui.h1({ class: 'text-3xl font-bold' }, ['Watchlist']),
         ui.div({ class: 'flex gap-2' }, [
-          is(['paused'])
+          ctx.paused
             ? ui.button({ type: 'button', class: button, on: { click: ui.send(Resume, {}) } }, ['Resume'])
             : ui.button({ type: 'button', class: button, on: { click: ui.send(Pause, {}) } }, ['Pause']),
           ui.button({ type: 'button', class: button, on: { click: ui.send(RefreshNow, {}) } }, [

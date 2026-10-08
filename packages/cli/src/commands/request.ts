@@ -534,6 +534,6 @@ export function describeRequest(out: RequestOutput): string {
 
 export const describeElement = (e: RequestElement) =>
   `${e.selector}: <${e.tag}${Object.entries(e.attrs)
-    .filter(([k]) => k !== 'class' && k !== 'style')
+    .filter(([k]) => k !== 'style')
     .map(([k, v]) => (v === '' ? ` ${k}` : ` ${k}="${v}"`))
     .join('')}>${e.text ? ` ${e.text}` : ''}`

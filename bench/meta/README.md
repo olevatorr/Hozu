@@ -14,9 +14,9 @@ This directory is **not** part of the pnpm workspace. Each app has its own `pack
 | Next.js | `next` 16.3.8, App Router | `react` / `react-dom` 19.3.0 | `next start` | Turbopack (Next 16 default) |
 | Nuxt | `nuxt` 4.5.2 | `vue` 3.5.43, `vue-router` 4.6.4 | `node .output/server/index.mjs` (Nitro 2.13.4, `node-server` preset, h3 1.15.11) | Vite 8.3.2 |
 | SvelteKit | `@sveltejs/kit` 3.0.0 | `svelte` 5.57.1 | `node build/index.js` (`@sveltejs/adapter-node` 6.0.0) | Vite 8.3.2, `@sveltejs/vite-plugin-svelte` 7.3.1 |
-| Hozu | `@hozu/*` 0.16.0, workspace build at commit `e0474b4` (branch `release-0.16`) | own runtime (`@hozu/runtime-client`) | `hozu serve` → `@hozu/adapter-node` | prebuilt `client.js` from `@hozu/runtime-client` |
+| Hozu | `@hozu/*` 0.25.0, workspace build at commit `e4f33e5c` (branch `release/0.25.0`); the 2026-10-04 run used 0.16.0 at `e0474b4` | own runtime (`@hozu/runtime-client`) | `hozu serve` → `@hozu/adapter-node` | prebuilt `client.js` from `@hozu/runtime-client` |
 
-Environment: Node v22.22.2, Google Chrome 154.0.8037.93 (driven by `playwright-core` 1.63.0), Apple M4 Pro,
+Environment: Node v22.22.2, Google Chrome 154.0.8037.98 (154.0.8037.93 on 2026-10-04; driven by `playwright-core` 1.63.0), Apple M4 Pro,
 24 GB, macOS (Darwin 25.5.0, arm64). Every server ran with `NODE_ENV=production`, on 127.0.0.1.
 
 ## What each app does
@@ -26,7 +26,7 @@ Environment: Node v22.22.2, Google Chrome 154.0.8037.93 (driven by `playwright-c
 | Next.js | `/`: `export const dynamic = 'force-dynamic'`, so a full RSC + SSR render on every request. `/static`: `export const dynamic = 'force-static'`, prerendered at build time and served from disk (reported as its own row) | Server component `page.tsx` imports `products` and passes them as props to **one client component** (`Products.tsx`: `<ul>` + counter, `useState`). The whole list is in the client component because every item has an interactive button that writes the shared counter. The props are serialized into the RSC payload inlined in the HTML. | start: `instrumentation-client.ts` (Next's hook that runs before hydration); end: `useEffect` in `Products` |
 | Nuxt | SSR on every request (no `routeRules`, no prerender) | `useFetch('/api/products')` against a Nitro server route (`server/api/products.get.ts`). During SSR this is an in-process call, and the result is serialized into the Nuxt payload in the HTML | start: client plugin with `enforce: 'pre'`; end: `onMounted` in `pages/index.vue` |
 | SvelteKit | SSR on every request (prerender off, the default) | `+page.server.js` `load` returns `products`, which are serialized into the page data in the HTML | start: `init` in `hooks.client.js`; end: `onMount` in `+page.svelte` |
-| Hozu | `listProducts` declared `scope: 'public'`, `freshness: 'request'`, so the region is rendered on every request (`hozu plan home` prints `cacheable: no`, region `request`) | A `query` resolved by a server resolver (`app.ts`). Its result is serialized into the page payload | No app-level hook exists. In the **timing runs only**, the runner rewrites the last statement of the served `/_hozu/client.js` (`X(document);`) to `start = performance.now(); X(document).then(() => end)`. This matches `bench/frameworks/apps/entries.ts`. Byte counts come from a separate, unmodified load |
+| Hozu | `listProducts` declared `scope: 'public'`, `freshness: 'request'`, so the region is rendered on every request (`hozu plan home` prints `cacheable: no`, region `request`) | A `query` resolved by a server resolver (`app.ts`). Its result is serialized into the page payload | No app-level hook exists. In the **timing runs only**, the runner rewrites the boot call of the served `/_hozu/client.js` (`X(document)`, the last statement before 0.21, then followed by `.then(…)`) to `start = performance.now(); X(document).then(() => end)`. This matches `bench/frameworks/apps/entries.ts`. Byte counts come from a separate, unmodified load |
 
 Hozu runs as a real Hozu project (`hozu.config.ts`, `app.ts`, `features/shop`, `hozu.lock.json`), checked with
 `hozu check` (0 errors, 0 warnings). `node hozu/link.mjs` symlinks the workspace packages
@@ -62,6 +62,31 @@ Hozu runs as a real Hozu project (`hozu.config.ts`, `app.ts`, `features/shop`, `
 - Frameworks run one at a time: start the server, run the sanity/bytes load, run the load test, run the browser
   timings, stop the server by PID, then move to the next. Ports 4811–4815.
 
+## Results (2026-10-08, Hozu 0.25.0)
+
+All sanity checks passed for every row. The other frameworks ran their existing builds of the same versions.
+
+| Framework (exact versions) | Page | req/s (identity) | req/s (gzip accepted) | HTML KB (gz) | JS files | JS KB (gz) | Hydrate ms | Interactive at ms | 200 clicks ms |
+|---|---|---|---|---|---|---|---|---|---|
+| Next.js 16.3.8 (App Router, React 19.3.0, react-dom 19.3.0) | per request (`dynamic = 'force-dynamic'`) | 1616 | 1502 (gzip) | 18.8 (3.1) | 6 | 443.5 (130.9) | 104.3 | 163.5 | 100.3 |
+| Next.js 16.3.8 (App Router, React 19.3.0, react-dom 19.3.0) | static prerender (`dynamic = 'force-static'`) | 6664 | 5933 (gzip) | 19.3 (3.1) | 6 | 443.5 (130.9) | 104.5 | 166.1 | 105.3 |
+| Nuxt 4.5.2 (Vue 3.5.43, Nitro 2.13.4, node-server preset) | per request (SSR, no route rules) | 2953 | 3014 (identity) | 15.0 (2.8) | 6 | 199.6 (75.8) | 19.4 | 90.9 | 32.3 |
+| SvelteKit 3.0.0 (Svelte 5.57.1, adapter-node 6.0.0) | per request (SSR, prerender off) | 6581 | 6665 (identity) | 13.4 (2.0) | 10 | 85.0 (33.0) | 18.9 | 100.9 | 11.0 |
+| Hozu 0.25.0 (workspace build @ e4f33e5c, hozu serve → @hozu/adapter-node) | per request (query `freshness: 'request'`) | 15818 | 11454 (gzip) | 12.4 (1.9) | 3 | 22.7 (9.7) | 9.7 | 60.1 | 16.1 |
+| node:http v22.22.2 calibration (fixed 12 KB buffer, no framework) | load-generator ceiling | 54083 | — | — | — | — | — | — | — |
+
+- **Hozu against its 0.16 row:** 9.7 KB of JavaScript in three files (`client.js` 9 199 B gz, the page's fn module
+  and one shared chunk) against 8.1 KB in two; interactive at 60.1 ms against 54.4 ms; 200 clicks 16.1 ms against
+  10.2 ms; 15 818 req/s against 16 870 (identity), 11 454 against 11 875 (gzip). The client grew with 0.17–0.25
+  (P7 budget 9 KiB), and nothing in this page uses the added features.
+- The other rows moved by 2–6 % against 2026-10-04 with the same builds; the calibration server measured 54 083
+  against 59 716 req/s, so the machine was somewhat busier. Compare rows within one run.
+- **Transferred** on the JS first load: Hozu 9 038 B (brotli; `@hozu/adapter-node` now compresses scripts), Next
+  134 376 (gzip), Nuxt 204 411 (identity), SvelteKit 30 559 (brotli).
+- The first attempt of this run failed the Hozu timing: since 0.21 `client.js` ends with `X(document).then(…)`, which
+  the runner's rewrite did not match. The rewrite now matches both forms; the numbers above are from the second,
+  complete run.
+
 ## Results (2026-10-04, second run: Hozu 0.16 with compression)
 
 All sanity checks passed for every row.
@@ -78,7 +103,8 @@ All sanity checks passed for every row.
 The req/s rounds were stable within about 3 %. Per-load samples are in `out/results.json`.
 
 - **Hozu with gzip accepted:** 10,168 req/s in this run, before 0.16 flushed a compressed page only when the stream
-  waits; 11,875 req/s after (a Hozu-only run, `BENCH_ONLY=hozu`). The site uses the second number.
+  waits; 11,875 req/s after (a Hozu-only run, `BENCH_ONLY=hozu`). The site used the second number until the
+  2026-10-08 run replaced it.
 - **The first run** (0.15.0, uncompressed): Hozu 16,423 / Next.js 1,630 / Nuxt 3,058 / SvelteKit 6,786 req/s; the
   ratios are the same.
 
@@ -96,11 +122,12 @@ The req/s rounds were stable within about 3 %. Per-load samples are in `out/resu
   - Next gzips HTML and JS on the fly.
   - SvelteKit serves precompressed brotli/gzip for its static assets, but not for its HTML.
   - Nuxt (Nitro `node-server`) sends everything uncompressed.
-  - `@hozu/adapter-node` compresses from 0.16 on (the gzip column); the transferred bytes below were measured
-    uncompressed.
+  - `@hozu/adapter-node` compresses pages from 0.16 on (the gzip column) and serves scripts brotli-compressed in the
+    2026-10-08 run.
 
   The gz columns therefore use our own gzip for every framework. Bytes actually transferred on the JS first load
-  were: Next 134 376 (gzip), Nuxt 204 411 (identity), SvelteKit 30 559 (brotli), Hozu 19 812 (identity). In
+  were: Next 134 376 (gzip), Nuxt 204 411 (identity), SvelteKit 30 559 (brotli), Hozu 9 038 (brotli; 19 812
+  uncompressed on 2026-10-04). In
   production a reverse proxy or CDN usually compresses.
 - **Next's HTML includes the RSC payload.** About 9.7 K characters of inline `self.__next_f.push(...)` script hold the
   serialized props and the component tree. That is part of the HTML figure.
@@ -117,9 +144,10 @@ The req/s rounds were stable within about 3 %. Per-load samples are in `out/resu
 - **Server work differs by design.** Next renders an RSC tree and then HTML. Nuxt runs the Vue SSR renderer plus the
   `useFetch` in-process call. SvelteKit runs `load` plus SSR. Hozu runs generated render code (ADR 0024) plus one query
   resolver. Every server is a single Node process, with no cluster mode for any of them.
-- **Hozu's version is a workspace build of 0.16 before its release** (e0474b4; the table says 0.15.0 because the
+- **On 2026-10-04, Hozu's version was a workspace build of 0.16 before its release** (e0474b4; the table says 0.15.0 because the
   version was not raised yet), not an npm install. The site labels it 0.16.0.
-- One unrelated, idle Node process (the site server on port 4401) was running on the machine during the run.
+- One unrelated, idle Node process (the site server on port 4401) was running on the machine during the 2026-10-04
+  run; on 2026-10-08, two unrelated idle Node servers (ports 3000 and 3001) were.
 - These numbers come from one machine and one run. Treat differences under about 5 % as noise.
 
 ## Reproduce

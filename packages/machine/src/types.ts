@@ -39,6 +39,7 @@ export interface Env {
   params?: Json
   search?: Json
   route?: Json
+  here?: Json
   bindings?: Json[]
   dom?: (field: string) => Json
   routes?: Record<string, string>

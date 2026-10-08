@@ -1,0 +1,13 @@
+[
+  {
+    "path": "/",
+    "steps": [
+      "fill New task=Plan the retro",
+      "click Add task",
+      "click To do",
+      "click All",
+      "click Move in \"Fix the sign-in redirect\"",
+      "click Remove in \"Design the empty states\""
+    ]
+  }
+]

@@ -207,6 +207,23 @@
           "additionalProperties": false,
           "description": "Elements the step removed and built again unchanged: same tag, class, text, `name`, `id`, `href`, `src`, `type` and parent path (ADR 0067 C2, ADR 0069 A3). `count` counts every such element, `elements` names the outermost ones as CSS-like paths (`main > form > input[name=card]`)."
         },
+        "arrived": {
+          "type": "object",
+          "properties": {
+            "prerendered": {
+              "type": "boolean"
+            },
+            "ms": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "prerendered",
+            "ms"
+          ],
+          "additionalProperties": false,
+          "description": "How a navigation arrived (ADR 0072 D3): from a speculation prerender or loaded, and the milliseconds from the activation (prerendered) or the navigation start to the first contentful paint."
+        },
         "shift": {
           "type": "number",
           "description": "Layout shift no input explains (layout-shift entries without recent input, summed, as CLS counts them)."

@@ -1,4 +1,6 @@
-export { attrText, classText, currentOf, domField, SVG_NS, styleText, text } from './dom.ts'
+export { attrText, classText, domField, SVG_NS, styleText, text } from './dom.ts'
+export * as extras from './extras.ts'
+export { currentOf, shortcut } from './extras.ts'
 export type {
   ClientEffect,
   EffectResponse,

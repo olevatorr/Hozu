@@ -18,6 +18,8 @@ export interface Scope {
   url: string
   /** The id of the route shown, read by `current(route)` in a view (ADR 0071 A1). */
   route: string
+  /** The page's params, read by `current(route, params)` (ADR 0072 E2). */
+  here: Json
   locale: string
   alternate: Record<string, string>
   env: Json

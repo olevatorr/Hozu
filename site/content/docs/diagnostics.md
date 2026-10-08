@@ -1,7 +1,7 @@
 ---
 title: Diagnostics
 description: Turn a failed check into a focused change.
-order: 8
+order: 14
 ---
 
 ## Read the cause before changing code
@@ -19,11 +19,11 @@ This table is generated from the diagnostic registry, so it lists every code the
 | --- | --- | --- |
 | HZ001 | state unreachable | add a transition to it or delete it |
 | HZ002 | event handled nowhere | handle it in a state or remove it |
-| HZ003 | unknown effect / reference | export it from a module the feature lists in `declarations`, or fix the name (the patch suggests one) |
+| HZ003 | unknown effect / query | export it from a module the feature lists in `declarations`, or fix the name (the patch suggests one) |
 | HZ004 | a declared error is not handled | add every `failed` key, plus `Unexpected`, in `invoke` and `ui.query` |
-| HZ005 | a node sends an event in a state (without `invoke`) that does not handle it | handle it there (`machine({ on })` handles it in every state), show the node only via `when`, or `ignore: [Event]` to drop it |
+| HZ005 | a node sends an event in a state (without `invoke`) that does not handle it | handle it there (`machine({ on })` handles it in every state), show the node only in the states that handle it (`is([...]) && …`), or `ignore: [Event]` to drop it |
 | HZ006 | crossing a feature boundary | import the feature and use its `exports` |
-| HZ007 | unknown effect / reference | export it from a module the feature lists in `declarations`, or fix the name (the patch suggests one) |
+| HZ007 | unknown effect, reference, route or state name; `'previous'` with nothing to return to; `given.previous` naming a state with `invoke`; a `current()` param the route lacks | export it from a module the feature lists in `declarations`, register it, or fix the name (the patch suggests one) |
 | HZ008 | a path does not exist in the schema | fix the property name |
 | HZ009 | a guardless transition shadows later ones | put guarded transitions first |
 | HZ010 (warning) | a state has no way out (not final; no `on`, `invoke` or `after`) | mark it `final: true` or add a transition out of it |
@@ -57,15 +57,15 @@ This table is generated from the diagnostic registry, so it lists every code the
 | HZ038 | `http.headers` sets a header the framework owns, or an invalid name/value | remove it (`cache-control` is derived; CSP is `app({ csp })`) |
 | HZ039 | `basePath` is not `''` or `/segment[/segment…]` | e.g. `'/shop'`, no trailing slash |
 | HZ040 | a locale lacks a message, or uses other `{placeholders}` | add/translate the key in that locale |
-| HZ041 | a machine uses a message, `ui.format` or `locale` | store a code in context; choose the message in the view |
+| HZ041 | a machine uses a message, `ui.format`, `locale` or the env | store a code in context; choose the message in the view |
 | HZ042 | `site.locales` empty / missing `site.lang` / not a canonical tag, or `ui.alternate` of an undeclared locale | fix the list (`'zh-TW'`, not `'zh_tw'`) |
 | HZ043 | `site.offline` has params, no page, or per-request data | point it at a static page, or remove `offline` |
 | HZ044 | a feature file was loaded without the Hozu transform | run node with `--import @hozu/transform/register` (`npm start` does), or add `hozuTransform()` to Vite / Vitest |
-| HZ045 | no `project({ app })`, its default export is not `app(…)`, or views use client components and `app()` has no bundle | `export default app({ resolvers, components: bundleComponents })` |
+| HZ045 | no `project({ app })`, its default export is not `app(…)`, or views use client components (or a feature has `fetch.ts`) and `app()` has no bundle | `export default app({ resolvers, components: bundleComponents })` |
 | HZ046 | an endpoint path is reserved, has params or collides; an error without a status, or with one an endpoint error cannot answer; a form posting to it with another method or an undeclared field | a static path such as `/api/…` (patch); map every error in `failed` to 400, 401, 403, 404, 409, 410, 422 or 429 |
 | HZ047 | a `fn` body uses an imported name or `let` state (it is sent to the browser as source) | pass the value as input, or write it as a `const` helper in the module |
 | HZ048 | `seed` names a field the context lacks, has no machine or route, or two views on one page seed a machine | seed top-level context fields, on one view per page |
-| HZ049 | a `scope: 'user'` query is cached (`'static'`, `revalidate`, `swr`) | `freshness: 'request'` (patch), or `'live'` for push |
+| HZ049 | a `scope: 'user'` query is cached (`'static'`, `revalidate`, `swr`) | `freshness: 'request'` (patch), `'live'` for push, or `{ poll: s }` for a timer |
 | HZ050 | a `'live'` query has no tags | add the tags its writers invalidate, or use `'request'` |
 | HZ051 | `head.failed` misses a declared error of the head query, or maps another one | choose per error: a route (303), `403`, `404` or `410` (an intent decision: no patch) |
 | HZ052 | a route that no page renders | link to the endpoint with `ui.link(endpoint, input)` (patch), or add its `ui.page` |
@@ -75,7 +75,7 @@ This table is generated from the diagnostic registry, so it lists every code the
 | HZ056 (warning) | a submit button also sends on click | `name`/`value` on the button, read in submit; or `type: 'button'` |
 | HZ057 | `hozu.lock.json` differs from the computed lock (new, removed or copy-only changes, contract maps, a missing or 0.7 file) | if intended, `hozu check --update-lock`, then list the accepted `now:` lines in your summary |
 | HZ058 (warning) | contracts that fire only copy-only transitions and evaluate no guard | none needed: the lock entries it names review those transitions |
-| HZ059 | data reached plain JavaScript: a plain helper, a global (`Boolean`, `Object.keys`, `String`…), `typeof`, a spread or `in` | make the helper a `part()`; for a global use an operator or a `fn()` |
+| HZ059 | data reached plain JavaScript: a plain helper, a global (`Boolean`, `Object.keys`, `String`…), `typeof`, an array spread or `in` (an object spread such as `{ ...search, x }` is lowered) | make the helper a `part()`; for a global use an operator or a `fn()` |
 | HZ060 | a page route starts with a locale segment (`/de/…` under `site.locales`) | rename the route (patch); the locale prefix is added for you |
 | HZ061 (warning) | a form-fed event payload declares limits | move them to the mutation input |
 | HZ062 (warning) | a GET endpoint declares `invalidates` | `method: 'POST'`, or keep it on purpose (e-mail links) |
@@ -104,7 +104,7 @@ This table is generated from the diagnostic registry, so it lists every code the
 | HZ090 (warning) | `access: 'anyone'` on a `scope: 'user'` query: every visitor, signed in or not, may read it | say who may read it (`'signedIn'`, `{ owner: { row, session } }`), or accept the warning with a reason |
 | HZ091 | a query with `owner` access returned rows the visitor does not own (reported at run time) | read only the visitor's rows in the resolver (filter by the session); production drops the extra rows and logs this |
 | HZ092 | a preview in `project({ previews })` no longer fits the app: data off its query output schema, an error the query does not declare, a route without a page, or a component use that does not build | update the preview to the current schema, error, page or component (previews are for people: they never ship) |
-| HZ093 | a `remote()` resolver that cannot answer: its generated contract is missing or stale, or it lists an effect the browser runs or a non-JSON endpoint | run `hozu gen` and rebuild the service; implement browser-run effects in fetch.ts and non-JSON endpoints in TypeScript |
+| HZ093 | a `remote()` resolver that cannot answer: its generated contract is missing or stale, its secret is missing, undeclared in `env.server` or under 16 characters, or it lists an effect the browser runs or a non-JSON endpoint | run `hozu gen` and rebuild the service; set a 16+ character secret from `env.server`; implement browser-run effects in fetch.ts and non-JSON endpoints in TypeScript |
 <!-- /codes -->
 
 ## Keep a warning on purpose

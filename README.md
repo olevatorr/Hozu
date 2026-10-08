@@ -26,7 +26,7 @@ npm create hozu@latest my-app
   assignments; `@hozu/transform` lowers them to the checked data form, so the rules stay out of your way.
 - **Every diagnostic is structured:** JSON with a location, a cause and a suggested fix, which an agent can apply
   directly.
-- **Behaviour is specified.** Each feature has one state machine. Every transition that decides something (a guard,
+- **Behaviour is specified.** Each feature has at most one state machine. Every transition that decides something (a guard,
   a navigation, a computed value) is covered by a contract (given / when / expect); the lock file records every
   transition in readable form, so no behaviour change goes unreviewed.
 - **Rendering is derived, never chosen.** Queries declare `scope` and `freshness`; the compiler decides static, ISR,
@@ -103,7 +103,7 @@ export const todos = machine({
       invoke: invoke(addTodo, {
         input: { title: ctx.draft },
         done: { target: 'idle', assign: () => { ctx.draft = '' } },
-        failed: { Unexpected: { target: 'idle', assign: (e) => { ctx.error = e.message } } },
+        failed: { Unexpected: { target: 'idle', assign: () => { ctx.error = 'Could not save. Try again.' } } },
       }),
     },
   }),
@@ -164,7 +164,7 @@ change, depending on how one Nuxt step is counted ([trial 0021](docs/trials/0021
 
 | | Hozu | Best of the others |
 |---|---|---|
-| Initial JS (gzip) | 7.8 KB | Preact 5.4 KB |
+| Initial JS (gzip) | 7.8 KB (9.0 KB in 0.25) | Preact 5.4 KB |
 | Interactive at | 28.2 ms | Preact 26.6 ms |
 | 200 clicks | 11.4 ms | Svelte 8.6 ms |
 | Server renders per second | 54.0 k | Svelte 98.6 k |
@@ -195,7 +195,7 @@ The data cache keeps at most 10,000 entries by default: one million distinct key
 |---|---|
 | [`create-hozu`](https://www.npmjs.com/package/create-hozu) | Creates an app, set up for Claude Code or `AGENTS.md` agents |
 | [`@hozu/core`](https://www.npmjs.com/package/@hozu/core) | IR types and the builders you write apps with |
-| [`@hozu/cli`](https://www.npmjs.com/package/@hozu/cli) | `hozu check`, `get`, `browse`, `call`, `map`, `inspect`, `add`, `requests`, `show`, `why`, `plan`, `env`, `build`, `export`, `dev`, `serve`, `docs`, `migrate`, `skill` (all `--json`) |
+| [`@hozu/cli`](https://www.npmjs.com/package/@hozu/cli) | `check`, `map`, `why`, `show`, `get`, `browse`, `call`, `plan`, `inspect`, `render`, `add`, `env`, `gen`, `requests`, `devtools`, `build`, `export`, `dev`, `serve`, `docs`, `migrate`, `skill` (all `--json`) |
 | [`@hozu/transform`](https://www.npmjs.com/package/@hozu/transform) | Lowers the ordinary TypeScript in views and machines to the checked IR form |
 | [`@hozu/schema-zod`](https://www.npmjs.com/package/@hozu/schema-zod) | Zod schemas (the default adapter) |
 | [`@hozu/data`](https://www.npmjs.com/package/@hozu/data) | Resolvers, cache, tags, invalidation |
@@ -240,7 +240,7 @@ The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router 
 
 ## Requirements and status
 - **Node 22.18 or newer.** Config and app code are TypeScript run with Node's type stripping.
-- **Version 0.24.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
+- **Version 0.25.0.** The API may change before 1.0, which follows a feedback round with engineers, non-engineers
   and designers and the trial that checks DevTools requests. Every design decision is recorded in
   [`docs/adr`](docs/adr).
 
