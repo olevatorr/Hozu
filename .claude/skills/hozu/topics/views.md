@@ -23,8 +23,8 @@ export const Board = ui.view({
 - **Events:** `on: { click: ui.send(Event, payload) }`; payload fields are literals, data, `ui.dom.value`,
   `ui.dom.form('name')` (submit; `hozu docs forms`). A control that only sets a context field:
   `on: { click: ui.set(ctx.open, !ctx.open) }`, `on: { input: ui.set(ctx.q, ui.dom.value) }` (no event to declare).
-- **Links:** `ui.a({ href: ui.link(itemPage, { id: item.id }) }, [...])`; never a string path (HZ032). Menus: see
-  --more (`aria-current`), as for dialogs and plurals.
+- **Links:** `ui.a({ href: ui.link(itemPage, { id: item.id }) }, [...])`; never a string path (HZ032). Menus,
+  dialogs, plurals: --more.
 - **Data:** `ui.query(listItems, input, { ready: (items) => …, failed: { NotFound: () => …, Unexpected: () => … } })`;
   `failed` lists every declared error plus `Unexpected`.
 - **Shared UI** (buttons, inputs, fields): `ui.use(Button, { variant, props, on }, ['Save'])` of a kit component

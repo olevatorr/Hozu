@@ -21,7 +21,10 @@ execFileSync('go', ['build', '-o', binary, '.'], { cwd: service, stdio: 'inherit
 const SERVICE_ADDR = '127.0.0.1:4891'
 const BENCH_SECRET = 'bench-secret-0123456789'
 const UPSTREAM_ADDR = '127.0.0.1:4892'
-const child = spawn(binary, [], { env: { ...process.env, SERVICE_ADDR, UPSTREAM_ADDR, BENCH_SECRET }, stdio: 'inherit' })
+const child = spawn(binary, [], {
+  env: { ...process.env, SERVICE_ADDR, UPSTREAM_ADDR, BENCH_SECRET },
+  stdio: 'inherit',
+})
 const upstream = `http://${UPSTREAM_ADDR}/delay`
 for (let i = 0; i < 100; i++) {
   try {

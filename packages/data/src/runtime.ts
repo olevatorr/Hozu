@@ -711,7 +711,9 @@ export function createDataRuntime({
         }
         if (failure.error === 'Forbidden' && (effect.scope === 'user' || effect.kind === 'mutation')) {
           const message = (failure.data as { message?: unknown } | null)?.message
-          return typeof message === 'string' ? { ok: false, error: 'Forbidden', data: { message } } : forbidden()
+          return typeof message === 'string'
+            ? { ok: false, error: 'Forbidden', data: { message } }
+            : forbidden()
         }
         if (!effect.errors.has(failure.error))
           return report(new Error(`Undeclared error "${failure.error}" from ${effect.ref}`))

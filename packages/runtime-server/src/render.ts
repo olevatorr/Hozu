@@ -47,8 +47,8 @@ const shared = new WeakMap<object, Set<string>>()
 
 /** Features whose machine this page shows through a view another page shows too: only they keep state (ADR 0069 B1). */
 function keptFeatures(ir: BuildResult['ir'], route: string): Set<string> {
-  let views = shared.get(ir)
-  if (!views) shared.set(ir, (views = new Set(sharedViews(ir))))
+  const views = shared.get(ir) ?? new Set(sharedViews(ir))
+  shared.set(ir, views)
   return new Set(
     (ir.pages[route]?.views ?? []).filter((v) => views.has(v)).map((v) => v.slice(0, v.indexOf('.'))),
   )

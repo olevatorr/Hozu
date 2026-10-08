@@ -45,6 +45,7 @@ or the visitor coming back to the same address.
 - `hozu get` and `hozu browse` list the server errors of each page and step.
 - A flash is an element removed and an equal one (tag, class, text, `name`, `id`, `href`, `src`, `type`, parent
   path) added in the same step; the report names them (`main > form > input[name=card]`).
+- `--json` changes: browse's `flashes` is `{ count, elements }`, and `get` / `browse` add `serverErrors`.
 - `hozu add feature --with auth` writes a valid config; `--select` takes `^= $= *= ~=`; `fill` values take `\n`;
   `project({ routes })` with a non-route value is HZ014 naming the key.
 
