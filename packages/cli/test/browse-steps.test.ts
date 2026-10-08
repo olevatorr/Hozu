@@ -3,9 +3,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { type Cdp, findBrowser, launch } from '../src/cdp.ts'
-import { act, parseStep, stepsOf } from '../src/commands/browse.ts'
+import { act, describeBrowse, differences, parseStep, stepsOf } from '../src/commands/browse.ts'
 import { Tab, type World } from '../src/commands/browse-tab.ts'
-import type { BrowseError, BrowseMode } from '../src/contract.ts'
+import type { BrowseError, BrowseMode, BrowseOutput } from '../src/contract.ts'
 
 const PAGE = `<!doctype html><title>Steps</title>
 <ul><li>Groceries: Milk, Bread
@@ -22,7 +22,9 @@ const PAGE = `<!doctype html><title>Steps</title>
   <button type="button" onclick="document.title = 'clicked'">Toggle</button>
 </form>
 <label><input type="checkbox" name="ids" value="n3" form="bulk"> Pears</label>
-<button type="submit" name="action" value="archive" form="bulk">Archive</button>`
+<button type="submit" name="action" value="archive" form="bulk">Archive</button>
+<button type="button" commandfor="sheet" command="show-modal">Open sheet</button>
+<dialog id="sheet"><p>Sheet body</p><button type="button" commandfor="sheet" command="close">Close sheet</button></dialog>`
 
 const decode = (body: Uint8Array | null) => new TextDecoder().decode(body ?? new Uint8Array())
 
@@ -204,6 +206,69 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
     expect((await on.look()).title).toBe('clicked')
     expect(errors).toEqual([])
   }, 30_000)
+
+  it('a commandfor button is native: without JS the click opens and closes the dialog (ADR 0070 C8)', async () => {
+    const off = await tab('off')
+    expect(await run(off, 'click Open sheet')).toEqual({ ok: true, note: null, jsOnly: null })
+    expect((await off.look()).text).toContain('Sheet body')
+    expect(await run(off, 'click Close sheet')).toEqual({ ok: true, note: null, jsOnly: null })
+    expect((await off.look()).text).not.toContain('Sheet body')
+    expect(errors).toEqual([])
+  }, 30_000)
+})
+
+describe('--js both differences (ADR 0070 B6)', () => {
+  const page = (text: string, url = '/orders') => ({ url, title: 'Orders', text, component: [] })
+
+  it('names the words that differ when each mode wrote its own row', () => {
+    const on = page('Orders\nOrder #1307 placed for 2 items\nShip')
+    const off = page('Orders\nOrder #1306 placed for 2 items\nShip')
+    expect(differences(on, off)).toEqual([{ on: '#1307', off: '#1306' }])
+    expect(differences(page('A\nOrder placed'), page('A'))).toEqual([{ on: 'Order placed', off: '' }])
+    expect(differences(page('A', '/orders/7'), page('A', '/orders/8'))).toEqual([
+      { on: '/orders/7', off: '/orders/8' },
+    ])
+    const text = describeBrowse({
+      path: '/orders',
+      url: '/orders',
+      status: 200,
+      title: 'Orders',
+      hydrated: true,
+      modes: ['on', 'off'],
+      steps: [
+        {
+          step: 'click Place order',
+          ok: true,
+          note: null,
+          differs: true,
+          differences: [
+            { on: '#1307', off: '#1306' },
+            { on: 'Placed', off: '' },
+          ],
+          modes: (['on', 'off'] as const).map((mode) => ({
+            mode,
+            ok: true,
+            note: null,
+            jsOnly: null,
+            requested: true,
+            navigated: false,
+            url: '/orders',
+            added: ['Placed'],
+            removed: [],
+          })),
+        },
+      ],
+      errors: [],
+      components: [],
+      text: '',
+      truncated: false,
+      elements: [],
+      screenshot: null,
+    } satisfies BrowseOutput)
+    expect(text).toContain(
+      '1 click Place order: + Placed  ≠ DIFFERS (on vs off): "#1307" vs "#1306"; "Placed" vs (nothing)',
+    )
+  })
 })
 
 describe('step parsing', () => {

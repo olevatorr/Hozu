@@ -221,6 +221,11 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     const [on, off] = out.steps[1].modes
     expect(on.added).toContain('Milk')
     expect(off.added).toContain('Write something')
+    expect(out.steps[1].differences).toEqual([
+      { on: '3', off: '2' },
+      { on: 'Milk', off: 'Write something' },
+      { on: 'Pin', off: '' },
+    ])
   }, 60_000)
 
   it('runs simultaneous actors in one world, each in its own browser, with live updates on the others', async () => {

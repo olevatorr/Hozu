@@ -89,7 +89,10 @@ export const PAGE = String.raw`(() => {
     const tag = el.tagName.toLowerCase()
     const type = (el.getAttribute('type') ?? '').toLowerCase()
     if (tag === 'a') return el.hasAttribute('href') ? null : 'a link without href'
-    if (tag === 'button') return type === 'button' ? 'a type=button button' : el.form ? null : 'a button outside a form'
+    if (tag === 'button') {
+      if ((el.hasAttribute('commandfor') && el.hasAttribute('command')) || el.hasAttribute('popovertarget')) return null
+      return type === 'button' ? 'a type=button button' : el.form ? null : 'a button outside a form'
+    }
     if (tag === 'input') {
       if (type === 'button') return 'a type=button input'
       if (['submit', 'image', 'reset'].includes(type)) return el.form ? null : 'a button outside a form'

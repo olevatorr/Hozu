@@ -436,7 +436,10 @@ export interface BrowseStep {
   note: string | null
   actor?: string
   modes?: BrowseChange[]
+  /** Both modes made a request and the resulting text differs. */
   differs?: boolean
+  /** The words that differ, at most three lines (ADR 0070 B6); a URL pair first when the pages differ. */
+  differences?: { on: string; off: string }[]
   elsewhere?: BrowseElsewhere[]
 }
 
