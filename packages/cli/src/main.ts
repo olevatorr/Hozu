@@ -97,7 +97,7 @@ Options:
                        before the first --as for every actor, after an --as for that actor
   --session <json>     get/browse: start signed in with this session (a real one: sign-out works); after --as, that actor's
   --full               get/browse: print the whole visible text and every changed line
-  --select <selector>  get/browse: print matching elements with their attributes: button, #id, [role=alert], a[href]
+  --select <selector>  get/browse: print matching elements with their attributes: button, #id, [role=alert], a[href], nav a[aria-current], main > form input
   --forms              get: list the page's forms: fields with defaults, checkbox groups, form= controls, submit buttons
   --do <step>          browse: 'fill <label>=<value>', 'select <label>=<option>', 'check <label>', 'uncheck <label>',
                        'click <name>', 'submit "<form>"', 'press <key>', 'wait <ms>', 'goto <path>',

@@ -17,7 +17,7 @@ import type {
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { type Snapshot, type StepResult, sleep, Tab, World } from './browse-tab.ts'
-import { describeElement, describeServerError, parseSession } from './request.ts'
+import { describeElement, describeServerError, IN_PRODUCTION, parseSession } from './request.ts'
 
 const LIMIT = 1500
 
@@ -653,6 +653,7 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
     } · js ${modes.join('+')}`,
     `  title: ${out.title}`,
   ]
+  let noted = false
   out.steps.forEach((s, i) => {
     const who = s.actor ? `${s.actor}: ` : ''
     const head = `  ${i + 1} ${who}${s.step}`
@@ -673,8 +674,11 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
       })
     }
     for (const c of changes)
-      for (const text of new Set((c.serverErrors ?? []).map(describeServerError)))
+      for (const text of new Set((c.serverErrors ?? []).map(describeServerError))) {
         lines.push(`      server error${modes.length > 1 ? ` (${c.mode})` : ''}: ${text}`)
+        if (!noted) lines.push(`      ${IN_PRODUCTION}`)
+        noted = true
+      }
     for (const e of s.elsewhere ?? [])
       lines.push(
         `      ${e.actor || 'page'}${modes.length > 1 ? ` (${e.mode})` : ''}: ${describeChange(
@@ -694,12 +698,15 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
       )
   })
   if (!out.errors.length) lines.push('  errors: none')
-  for (const e of out.errors)
+  for (const e of out.errors) {
     lines.push(
       `  error (${[e.kind, e.type, e.actor, modes.length > 1 ? e.mode : undefined].filter(Boolean).join(', ')}): ${e.text}${
         e.at ? ` at ${e.at}` : ''
       }${e.url && e.url !== e.at ? ` on ${e.url}` : ''}`,
     )
+    if (e.kind === 'server' && !noted) lines.push(`    ${IN_PRODUCTION}`)
+    if (e.kind === 'server') noted = true
+  }
   for (const c of out.components)
     lines.push(
       `  component ${c.name}: ${c.state}${c.width === null ? '' : ` ${c.width}×${c.height}`}${

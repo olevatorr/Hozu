@@ -41,15 +41,23 @@
               },
               "summary": {
                 "type": "string"
+              },
+              "changes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             },
             "required": [
               "from",
               "to",
-              "summary"
+              "summary",
+              "changes"
             ],
             "additionalProperties": false
-          }
+          },
+          "description": "Each step's changes: `summary` joins `changes` with \"; \"."
         },
         "changed": {
           "type": "array",
