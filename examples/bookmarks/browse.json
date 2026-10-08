@@ -4,7 +4,7 @@
     "steps": [
       "fill Title=Reading list",
       "select Kind=video",
-      "click Add",
+      "press Mod+Enter",
       "click Back",
       "click Mark read in \"Closed-world UI\"",
       "click Unread",

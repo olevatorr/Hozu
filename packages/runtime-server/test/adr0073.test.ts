@@ -115,3 +115,41 @@ it('two controls always shown together cannot share a shortcut', () => {
     'Two controls of this view both take the shortcut /',
   )
 })
+
+it('ui.use passes keys to a component whose root is a control, and refuses one that is not', async () => {
+  const { tv } = await import('@hozu/variants')
+  const Button = ui.component({
+    tag: 'button',
+    styles: tv({ base: 'px-2' }),
+    children: true,
+    render: ({ children }) => ui.button({ type: 'button' }, children),
+  })
+  const Card = ui.component({
+    tag: 'div',
+    styles: tv({ base: 'p-2' }),
+    children: true,
+    render: ({ children }) => ui.div({}, children),
+  })
+  const View = ui.view({
+    render: () =>
+      ui.main({}, [
+        ui.use(Button, { keys: ['Mod+k'] }, ['Open']),
+        ui.use(Card, { keys: ['x'] } as never, ['Card']),
+      ]),
+  })
+  const b = buildProject(
+    project({
+      schema: zodAdapter,
+      routes: { home },
+      kits: [ui.kit({ id: 'ui', components: [{ Button, Card }] })],
+      pages: [ui.page(home, { views: [View], head: { render: () => ({ title: 'x' }) } })],
+      features: [feature({ id: 'u', intent: { summary: 'use' }, declarations: [{ View }] })],
+    }),
+    { sources: false },
+  )
+  expect(b.diagnostics.map((d) => `${d.code} ${d.message}`)).toContain(
+    'HZ014 ui.Card renders a <div>, which a shortcut cannot press',
+  )
+  const root = b.ir.features.u!.views.View!.root as { children: { attrs?: Record<string, unknown> }[] }
+  expect(root.children[0]!.attrs?.['aria-keyshortcuts']).toEqual({ literal: 'Control+K Meta+K' })
+})

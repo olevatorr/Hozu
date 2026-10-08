@@ -63,6 +63,7 @@ A shortcut presses a control, so `keys` goes on the control: a link, button, `su
 ui.input({ name: 'q', 'aria-label': 'Search', keys: ['/'] })
 ui.button({ type: 'submit', keys: ['Mod+s'] }, ['Save'])
 ui.button({ type: 'button', keys: ['Escape'], on: { click: ui.send(Dismiss, {}) } }, ['Close'])
+ui.use(Button, { props: { type: 'submit' }, keys: ['Mod+Enter'] }, ['Add'])   // a kit control whose root is a button
 ```
 
 - A press does what the control does: a field is focused (its text selected), anything else is clicked. A submit button submits its form, a link follows its address, a `commandfor` button opens its dialog. The machine sees the same event a click sends, so contracts are unchanged, and no machine is needed for a shortcut at all.

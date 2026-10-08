@@ -48,6 +48,8 @@ export type ComponentUse<T extends ComponentTypes> = {
   slots?: { [K in T['slots']]?: Child }
   on?: T['on']
   class?: string
+  /** Shortcuts that press the component's root (a button, link, summary or field; ADR 0073 B). */
+  keys?: readonly string[]
 } & (Record<never, never> extends T['props'] ? { props?: Val<T['props']> } : { props: Val<T['props']> })
 
 export interface ComponentDef {

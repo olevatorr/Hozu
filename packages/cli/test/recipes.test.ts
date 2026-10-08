@@ -96,8 +96,8 @@ describe('hozu docs recipes (ADR 0028, ADR 0041 E)', () => {
         "ui.send(Add, { title: ui.dom.form('title'), priority: ui.dom.form('priority') })",
       ],
       [
-        "        ui.button({ type: 'submit', disabled: is(['adding']), class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),",
-        "        ui.select({ name: 'priority', 'aria-label': 'Priority', class: 'rounded border px-2' }, ['low', 'normal', 'high'].map((p) => ui.option({ value: p, selected: p === 'normal' }, [p]))),\n        ui.button({ type: 'submit', disabled: is(['adding']), class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),",
+        "        ui.button({ type: 'submit', disabled: is(['adding']), keys: ['Mod+Enter'], class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),",
+        "        ui.select({ name: 'priority', 'aria-label': 'Priority', class: 'rounded border px-2' }, ['low', 'normal', 'high'].map((p) => ui.option({ value: p, selected: p === 'normal' }, [p]))),\n        ui.button({ type: 'submit', disabled: is(['adding']), keys: ['Mod+Enter'], class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),",
       ],
       [
         "ui.span({ class: 'text-xs text-slate-500' }, [item.done ? 'done' : 'open']),",

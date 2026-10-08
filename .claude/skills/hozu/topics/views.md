@@ -57,7 +57,8 @@ export const Board = ui.view({
 - **More events:** any DOM event name plus `visible` (entered the viewport). Payload fields also:
   `ui.dom.formAll('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`. Keyboard shortcuts
   belong to the control they press: `ui.input({ name: 'q', keys: ['/'] })` focuses the field, `ui.button({ type:
-  'submit', keys: ['Mod+s'] }, ['Save'])` clicks it (so the form submits; no machine needed). `Mod` is ⌘ on Apple,
+  'submit', keys: ['Mod+s'] }, ['Save'])` clicks it (so the form submits; no machine needed); a kit control takes
+  them too: `ui.use(Button, { props, keys: ['Mod+Enter'] }, ['Add'])`. `Mod` is ⌘ on Apple,
   Ctrl elsewhere; also `Ctrl`, `Meta`, `Alt`, `Shift`. A printable key without a modifier waits while the person types
   in another field (`Escape` does not); inside an open modal only its controls count. The page loads a small module
   for it and writes `aria-keyshortcuts`; two controls always shown together with one key is HZ014. `ui.dom.value` / `ui.dom.form`

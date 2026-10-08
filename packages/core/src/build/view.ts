@@ -256,7 +256,7 @@ const nothing = (id: string): ViewNode => ({
   ifTrue: [],
   ifFalse: [],
 })
-const useKeys = new Set(['variant', 'props', 'slots', 'on', 'class'])
+const useKeys = new Set(['variant', 'props', 'slots', 'on', 'class', 'keys'])
 
 const isRef = (v: unknown) => exprOf(v) !== null || guardOf(v) !== null
 
@@ -359,7 +359,7 @@ function componentUse(
         'HZ014',
         at(p, key),
         `ui.use of a component takes no "${key}"`,
-        'The keys are variant, props, slots, on and class (ADR 0045 B).',
+        'The keys are variant, props, slots, on, class and keys (ADR 0045 B, ADR 0073 B).',
       )
   const chosen = variantOf(scope, def, o.variant, p)
   const variant = {
@@ -453,11 +453,27 @@ function componentUse(
       return nothing(id)
     }
     const cls = [...styled.root, ...added]
+    if (o.keys !== undefined && !keyedTags.has(def.tag)) {
+      scope.report(
+        'HZ014',
+        at(p, 'keys'),
+        `${entry.id} renders a <${def.tag}>, which a shortcut cannot press`,
+        'keys go on a component whose root is a button, link, summary or field.',
+      )
+      return nothing(id)
+    }
     scope.escapes(root, p)
     const out = scope.within(root, () =>
       element(
         scope,
-        { ...rd, props: { ...rd.props, class: cls.length ? cls.join(' ') : undefined } },
+        {
+          ...rd,
+          props: {
+            ...rd.props,
+            class: cls.length ? cls.join(' ') : undefined,
+            ...(o.keys !== undefined ? { keys: o.keys } : {}),
+          },
+        },
         id,
         p,
         depth,
