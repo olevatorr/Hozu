@@ -42,6 +42,8 @@ export interface PagePayload {
   who?: string | null
   /** The context fields the address sets, per feature: they win over a kept snapshot. */
   seeds?: Record<string, string[]>
+  /** Features this page shows through a view another page shows too: their state follows to other pages (ADR 0069 B1). */
+  keep?: string[]
   /** Queries this page reads again on a timer, in seconds (ADR 0063 C1). */
   poll?: Record<string, number>
   /** Effects this page can call that run in the browser (ADR 0049). */

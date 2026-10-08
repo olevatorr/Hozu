@@ -1,6 +1,6 @@
 import type { BuildResult, FeatureIR, Json, ValueExpr, ViewNode } from '@hozu/core/ir'
 import { equal, getIn, pathOf } from '@hozu/machine'
-import { attrText, classText, styleText, text } from '@hozu/runtime-client'
+import { attrText, classText, currentOf, styleText, text } from '@hozu/runtime-client'
 import { escapeHtml } from './escape.ts'
 import { generateRender } from './generate.ts'
 import { responsive, type Variants } from './images.ts'
@@ -69,6 +69,7 @@ export const helpers = {
   getIn,
   equal,
   pathOf,
+  current: currentOf,
   num: (x: Json) => (typeof x === 'number' || typeof x === 'string' ? x : Number.NaN),
   call: (fns: Fns, name: string, arg: Json) => {
     const impl = fns[name]

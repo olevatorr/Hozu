@@ -68,6 +68,19 @@ describe('state that stays on screen stays (ADR 0067 C4)', () => {
     expect(take({ ...payload(undefined, m), who: null } as PagePayload)).toBeUndefined()
   })
 
+  it('another address starts fresh unless a view two pages share shows the machine (ADR 0069 B1)', () => {
+    const m = machine({ q: '' })
+    history.replaceState(null, '', '/products/mug')
+    save({ state: 'live', context: { q: 'x' }, entry: 1 }, m)
+    history.replaceState(null, '', '/products/tee')
+    expect(take(payload('a', m))).toBeUndefined()
+    history.replaceState(null, '', '/products/mug')
+    save({ state: 'live', context: { q: 'x' }, entry: 1 }, m)
+    history.replaceState(null, '', '/cart')
+    expect(take({ ...payload('a', m), keep: ['w'] } as PagePayload)).toBeDefined()
+    history.replaceState(null, '', '/')
+  })
+
   it('keeps nothing for a DevTools state preview or a reload', () => {
     const m = machine({ q: '' })
     save({ state: 'live', context: { q: 'x' }, entry: 1 }, m)

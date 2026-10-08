@@ -17,6 +17,20 @@ export function attrText(name: string, x: Json | undefined): string | null {
   return text(x)
 }
 
+/**
+ * `aria-current` of an internal link (ADR 0069 B4): `page` for the address being shown, `true` for the same path with
+ * another search or a section above it (`/orders` while on `/orders/7`), nothing otherwise.
+ */
+export function currentOf(href: Json, here: string): string | null {
+  if (typeof href !== 'string' || !href.startsWith('/')) return null
+  if (href === here) return 'page'
+  const path = href.split('?')[0]!
+  const at = here.split('?')[0]!
+  return path === at || (path !== '/' && at.startsWith(path.endsWith('/') ? path : `${path}/`))
+    ? 'true'
+    : null
+}
+
 export const properties = new Set(['value', 'checked', 'selected', 'muted'])
 
 export const passive = new Set([

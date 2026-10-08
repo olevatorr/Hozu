@@ -14,7 +14,7 @@ import {
   type Step,
   transition,
 } from '@hozu/machine'
-import { attrText, classText, domField, passive, properties, SVG_NS, text } from './dom.ts'
+import { attrText, classText, currentOf, domField, passive, properties, SVG_NS, text } from './dom.ts'
 
 export type Motion = typeof import('./motion.ts')
 
@@ -274,6 +274,12 @@ export function createApp(doc: Document, options: AppOptions): App {
           const prop = properties.has(name) && name in el
           if (claimed && !reads(v)) continue
           bind(block, v, scope, (x) => {
+            if (name === 'open' && node.tag === 'dialog') {
+              const d = el as HTMLDialogElement
+              d.close?.()
+              if (x === true) d.showModal?.()
+              return
+            }
             if (prop) {
               const p = el as unknown as Record<string, unknown>
               const next = name === 'value' ? text(x) : x === true
@@ -285,6 +291,13 @@ export function createApp(doc: Document, options: AppOptions): App {
             else if (el.getAttribute(name) !== s) el.setAttribute(name, s)
           })
         }
+        const href = node.tag === 'a' && !('aria-current' in node.attrs) ? node.attrs.href : undefined
+        if (href && 'link' in href && (!claimed || reads(href)))
+          bind(block, href, scope, (x) => {
+            const at = currentOf(x, location.pathname + location.search)
+            if (at) el.setAttribute('aria-current', at)
+            else el.removeAttribute('aria-current')
+          })
         styling(el, node, scope, block)
         for (const event in node.on) {
           const send = node.on[event]!

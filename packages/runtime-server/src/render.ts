@@ -16,6 +16,7 @@ import {
   type QueryIR,
   routeTable,
   sha256,
+  sharedViews,
   type TagExprIR,
   type ValueExpr,
   type ViewNode,
@@ -23,7 +24,7 @@ import {
 import type { DataRuntime, RequestData } from '@hozu/data'
 import { compileGuard, compileValue, type Getter, pathOf, type Snapshot } from '@hozu/machine'
 import type { ClientEffect, PagePayload, Result } from '@hozu/runtime-client'
-import { attrText, text } from '@hozu/runtime-client'
+import { attrText, currentOf, text } from '@hozu/runtime-client'
 import { clientUrl } from './assets.ts'
 import { escapeHtml, scriptJson, scriptSafe } from './escape.ts'
 import { fnModules, linkTargets, modulesOfPage } from './fn-modules.ts'
@@ -41,6 +42,17 @@ import {
 import { seededContext, seedKeys } from './seed.ts'
 
 import { pruneScope } from './shape.ts'
+
+const shared = new WeakMap<object, Set<string>>()
+
+/** Features whose machine this page shows through a view another page shows too: only they keep state (ADR 0069 B1). */
+function keptFeatures(ir: BuildResult['ir'], route: string): Set<string> {
+  let views = shared.get(ir)
+  if (!views) shared.set(ir, (views = new Set(sharedViews(ir))))
+  return new Set(
+    (ir.pages[route]?.views ?? []).filter((v) => views.has(v)).map((v) => v.slice(0, v.indexOf('.'))),
+  )
+}
 
 export interface Assets {
   client: string
@@ -212,6 +224,7 @@ export async function renderPage({
       return m?.text[lang]?.[key] ?? m?.text[m.base]?.[key] ?? ''
     },
   }
+  const keepable = keptFeatures(ir, route)
   const seeds = new Map<string, Json | null>()
   const seedOf = (feature: FeatureIR) => {
     if (!seeds.has(feature.id))
@@ -275,6 +288,8 @@ export async function renderPage({
       payload.features[scope.feature.id] = seeded ? { ...machine!, initialContext: seeded } : machine
       const keys = machine ? seedKeys(ir, route, scope.feature) : []
       if (keys.length) payload.seeds = { ...payload.seeds, [scope.feature.id]: keys }
+      if (machine && keepable.has(scope.feature.id))
+        payload.keep = [...(payload.keep ?? []), scope.feature.id]
     }
     if (preloaded) return '<!--i-->'
     preloaded = true
@@ -287,6 +302,9 @@ export async function renderPage({
       const x = attrText(name, value(n.attrs[name]!, scope))
       if (x !== null) attrs += x === '' ? ` ${name}` : ` ${name}="${escapeHtml(x)}"`
     }
+    const href = n.tag === 'a' && !('aria-current' in n.attrs) ? n.attrs.href : undefined
+    const current = href && 'link' in href ? currentOf(value(href, scope), url) : null
+    if (current) attrs += ` aria-current="${current}"`
     const submit = n.tag === 'form' ? n.on.submit : undefined
     if (submit && !('method' in n.attrs) && formRunnable(submit.payload))
       attrs += ` method="post" action="${escapeHtml(`${url}${url.includes('?') ? '&' : '?'}${FORM_FIELD}=${encodeURIComponent(n.id)}`)}"`
