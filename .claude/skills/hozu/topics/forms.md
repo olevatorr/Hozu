@@ -7,7 +7,7 @@ ui.form({ on: { submit: ui.send(Add, { title: ui.dom.form('title'), kind: ui.dom
   ui.label({ for: 'title' }, ['Title']),
   ui.input({ id: 'title', name: 'title', required: true, minlength: 2, value: ctx.draft,
     'aria-invalid': ctx.fields.title !== null, 'aria-describedby': 'title-error',
-    on: { input: ui.send(Draft, { text: ui.dom.value }) } }),
+    on: { input: ui.set(ctx.draft, ui.dom.value) } }),
   ui.select({ name: 'kind', 'aria-label': 'Kind' }, kinds.map((k) => ui.option({ value: k, selected: ctx.kind === k }, [k]))),
   ui.button({ type: 'submit' }, ['Add']),
 ])
@@ -27,7 +27,7 @@ ui.p({ id: 'title-error', class: 'text-sm text-rose-600' }, [ctx.fields.title])
 ```ts
 ui.use(Field, { props: { for: 'title', label: 'Title', error: ctx.fields.title, errorId: 'title-error' },
   slots: { control: ui.use(Input, { props: { id: 'title', name: 'title', value: ctx.draft, required: true,
-    invalid: ctx.fields.title !== null, describedby: 'title-error' }, on: { input: ui.send(Draft, { text: ui.dom.value }) } }) } }),
+    invalid: ctx.fields.title !== null, describedby: 'title-error' }, on: { input: ui.set(ctx.draft, ui.dom.value) } }) } }),
 ui.use(Button, { props: { type: 'submit' } }, ['Add']),
 ```
 - **Limit messages:** `z.string().min(2, 'Use at least 2 characters')`.

@@ -30,8 +30,8 @@
         },
         "summary": "broken --Fix--> clean · broken := false"
       },
-      "broken/on/home.Pick/0": {
-        "behavior": "bcaa74b8c69d1086",
+      "broken/on/home.Set_intent/0": {
+        "behavior": "692e9b31b8cba31f",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -43,7 +43,7 @@
               ],
               "value": {
                 "path": [
-                  "intent"
+                  "value"
                 ],
                 "ref": "event"
               }
@@ -61,7 +61,7 @@
           "navigate": null,
           "stay": true
         },
-        "summary": "broken --Pick--> stays · intent := event.intent"
+        "summary": "broken --Set_intent--> stays · intent := event.value"
       },
       "clean/on/home.Break/0": {
         "behavior": "1e6b82d1814e5ae9",
@@ -101,8 +101,8 @@
         },
         "summary": "clean --Break--> broken · broken := true, tried := true"
       },
-      "clean/on/home.Pick/0": {
-        "behavior": "b4973259c873c32e",
+      "clean/on/home.Set_intent/0": {
+        "behavior": "c366cf8ca7534783",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -114,7 +114,7 @@
               ],
               "value": {
                 "path": [
-                  "intent"
+                  "value"
                 ],
                 "ref": "event"
               }
@@ -132,7 +132,7 @@
           "navigate": null,
           "stay": true
         },
-        "summary": "clean --Pick--> stays · intent := event.intent"
+        "summary": "clean --Set_intent--> stays · intent := event.value"
       }
     },
     "lab": {
@@ -204,38 +204,6 @@
         },
         "summary": "blocked --Run--> source · if ctx.missing eq false · after 2400ms"
       },
-      "blocked/on/lab.SetBinding/0": {
-        "behavior": "22c772d5159490aa",
-        "contracts": {},
-        "decides": false,
-        "fields": {
-          "assign": [
-            {
-              "op": "set",
-              "path": [
-                "binding"
-              ],
-              "value": {
-                "path": [
-                  "value"
-                ],
-                "ref": "event"
-              }
-            }
-          ],
-          "enters": {
-            "effect": null,
-            "final": false,
-            "input": null,
-            "state": "blocked",
-            "timers": []
-          },
-          "fns": {},
-          "guard": null,
-          "navigate": null
-        },
-        "summary": "blocked --SetBinding--> blocked · binding := event.value"
-      },
       "blocked/on/lab.SetContract/0": {
         "behavior": "b57e8e928f6f1128",
         "contracts": {
@@ -270,8 +238,41 @@
         },
         "summary": "blocked --SetContract--> idle · missing := event.missing"
       },
-      "blocked/on/lab.SetFreshness/0": {
-        "behavior": "9c7a58e87dfadf4c",
+      "blocked/on/lab.Set_binding/0": {
+        "behavior": "0915c99d9041eef2",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "binding"
+              ],
+              "value": {
+                "path": [
+                  "value"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "blocked",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null,
+          "stay": true
+        },
+        "summary": "blocked --Set_binding--> stays · binding := event.value"
+      },
+      "blocked/on/lab.Set_freshness/0": {
+        "behavior": "4b04dc7c9122e1fd",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -298,12 +299,13 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "blocked --SetFreshness--> blocked · freshness := event.value"
+        "summary": "blocked --Set_freshness--> stays · freshness := event.value"
       },
-      "blocked/on/lab.SetScope/0": {
-        "behavior": "1e0e0c095a3bec04",
+      "blocked/on/lab.Set_scope/0": {
+        "behavior": "a6104524842bf4ca",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -330,9 +332,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "blocked --SetScope--> blocked · scope := event.value"
+        "summary": "blocked --Set_scope--> stays · scope := event.value"
       },
       "brokenIr/after/0": {
         "behavior": "7f2e7143874b489a",
@@ -353,8 +356,8 @@
         },
         "summary": "brokenIr --after 2400ms--> blocked"
       },
-      "brokenIr/on/lab.SetBinding/0": {
-        "behavior": "48dce3f8691a54f1",
+      "brokenIr/on/lab.Set_binding/0": {
+        "behavior": "21aad527ffe86236",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -377,18 +380,17 @@
             "final": false,
             "input": null,
             "state": "brokenIr",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "brokenIr --SetBinding--> brokenIr · binding := event.value · after 2400ms"
+        "summary": "brokenIr --Set_binding--> stays · binding := event.value"
       },
-      "brokenIr/on/lab.SetFreshness/0": {
-        "behavior": "013fe04fbe0c9dcb",
+      "brokenIr/on/lab.Set_freshness/0": {
+        "behavior": "5e367bd863dd339b",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -411,18 +413,17 @@
             "final": false,
             "input": null,
             "state": "brokenIr",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "brokenIr --SetFreshness--> brokenIr · freshness := event.value · after 2400ms"
+        "summary": "brokenIr --Set_freshness--> stays · freshness := event.value"
       },
-      "brokenIr/on/lab.SetScope/0": {
-        "behavior": "cf1eac168f24f558",
+      "brokenIr/on/lab.Set_scope/0": {
+        "behavior": "86fe7383901d24b6",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -445,15 +446,14 @@
             "final": false,
             "input": null,
             "state": "brokenIr",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "brokenIr --SetScope--> brokenIr · scope := event.value · after 2400ms"
+        "summary": "brokenIr --Set_scope--> stays · scope := event.value"
       },
       "brokenSource/after/0": {
         "behavior": "647741ee2267db2e",
@@ -480,8 +480,8 @@
         },
         "summary": "brokenSource --after 2400ms--> brokenIr · after 2400ms"
       },
-      "brokenSource/on/lab.SetBinding/0": {
-        "behavior": "654e71bd7d13cc5b",
+      "brokenSource/on/lab.Set_binding/0": {
+        "behavior": "5bf1ab2f0cbe77fe",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -504,18 +504,17 @@
             "final": false,
             "input": null,
             "state": "brokenSource",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "brokenSource --SetBinding--> brokenSource · binding := event.value · after 2400ms"
+        "summary": "brokenSource --Set_binding--> stays · binding := event.value"
       },
-      "brokenSource/on/lab.SetFreshness/0": {
-        "behavior": "c1485e6e8403fdc6",
+      "brokenSource/on/lab.Set_freshness/0": {
+        "behavior": "10d6d732de06e7da",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -538,18 +537,17 @@
             "final": false,
             "input": null,
             "state": "brokenSource",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "brokenSource --SetFreshness--> brokenSource · freshness := event.value · after 2400ms"
+        "summary": "brokenSource --Set_freshness--> stays · freshness := event.value"
       },
-      "brokenSource/on/lab.SetScope/0": {
-        "behavior": "6c1953e6dbb1237d",
+      "brokenSource/on/lab.Set_scope/0": {
+        "behavior": "bf8115209ebafa00",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -572,15 +570,14 @@
             "final": false,
             "input": null,
             "state": "brokenSource",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "brokenSource --SetScope--> brokenSource · scope := event.value · after 2400ms"
+        "summary": "brokenSource --Set_scope--> stays · scope := event.value"
       },
       "compiled/after/0": {
         "behavior": "a0d4beae39bdc2cb",
@@ -603,8 +600,8 @@
         },
         "summary": "compiled --after 2400ms--> done"
       },
-      "compiled/on/lab.SetBinding/0": {
-        "behavior": "9bced5652e6ec7e3",
+      "compiled/on/lab.Set_binding/0": {
+        "behavior": "6d5637a57ec61c9f",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -627,18 +624,17 @@
             "final": false,
             "input": null,
             "state": "compiled",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "compiled --SetBinding--> compiled · binding := event.value · after 2400ms"
+        "summary": "compiled --Set_binding--> stays · binding := event.value"
       },
-      "compiled/on/lab.SetFreshness/0": {
-        "behavior": "efcc2bd9dc166fcf",
+      "compiled/on/lab.Set_freshness/0": {
+        "behavior": "be3e1779f3b047c6",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -661,18 +657,17 @@
             "final": false,
             "input": null,
             "state": "compiled",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "compiled --SetFreshness--> compiled · freshness := event.value · after 2400ms"
+        "summary": "compiled --Set_freshness--> stays · freshness := event.value"
       },
-      "compiled/on/lab.SetScope/0": {
-        "behavior": "90f7144309002cac",
+      "compiled/on/lab.Set_scope/0": {
+        "behavior": "82af5098e0456cd2",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -695,15 +690,14 @@
             "final": false,
             "input": null,
             "state": "compiled",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "compiled --SetScope--> compiled · scope := event.value · after 2400ms"
+        "summary": "compiled --Set_scope--> stays · scope := event.value"
       },
       "done/on/lab.Run/0": {
         "behavior": "b0372b114aa2ecff",
@@ -773,38 +767,6 @@
         },
         "summary": "done --Run--> source · if ctx.missing eq false · after 2400ms"
       },
-      "done/on/lab.SetBinding/0": {
-        "behavior": "91aaa8e1fb24d4f0",
-        "contracts": {},
-        "decides": false,
-        "fields": {
-          "assign": [
-            {
-              "op": "set",
-              "path": [
-                "binding"
-              ],
-              "value": {
-                "path": [
-                  "value"
-                ],
-                "ref": "event"
-              }
-            }
-          ],
-          "enters": {
-            "effect": null,
-            "final": false,
-            "input": null,
-            "state": "done",
-            "timers": []
-          },
-          "fns": {},
-          "guard": null,
-          "navigate": null
-        },
-        "summary": "done --SetBinding--> done · binding := event.value"
-      },
       "done/on/lab.SetContract/0": {
         "behavior": "4c91cb59e5debc2e",
         "contracts": {},
@@ -837,8 +799,41 @@
         },
         "summary": "done --SetContract--> idle · missing := event.missing"
       },
-      "done/on/lab.SetFreshness/0": {
-        "behavior": "dbe989884845ace4",
+      "done/on/lab.Set_binding/0": {
+        "behavior": "405170e0542f5d98",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "binding"
+              ],
+              "value": {
+                "path": [
+                  "value"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "done",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null,
+          "stay": true
+        },
+        "summary": "done --Set_binding--> stays · binding := event.value"
+      },
+      "done/on/lab.Set_freshness/0": {
+        "behavior": "cf5ce3f9f55a5bbd",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -865,12 +860,13 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "done --SetFreshness--> done · freshness := event.value"
+        "summary": "done --Set_freshness--> stays · freshness := event.value"
       },
-      "done/on/lab.SetScope/0": {
-        "behavior": "484dd011869b2b50",
+      "done/on/lab.Set_scope/0": {
+        "behavior": "36c1a4d7aa15ee39",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -897,9 +893,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "done --SetScope--> done · scope := event.value"
+        "summary": "done --Set_scope--> stays · scope := event.value"
       },
       "idle/on/lab.Run/0": {
         "behavior": "97f6ac8abbd4c933",
@@ -971,38 +968,6 @@
         },
         "summary": "idle --Run--> source · if ctx.missing eq false · after 2400ms"
       },
-      "idle/on/lab.SetBinding/0": {
-        "behavior": "303268495c3b87e5",
-        "contracts": {},
-        "decides": false,
-        "fields": {
-          "assign": [
-            {
-              "op": "set",
-              "path": [
-                "binding"
-              ],
-              "value": {
-                "path": [
-                  "value"
-                ],
-                "ref": "event"
-              }
-            }
-          ],
-          "enters": {
-            "effect": null,
-            "final": false,
-            "input": null,
-            "state": "idle",
-            "timers": []
-          },
-          "fns": {},
-          "guard": null,
-          "navigate": null
-        },
-        "summary": "idle --SetBinding--> idle · binding := event.value"
-      },
       "idle/on/lab.SetContract/0": {
         "behavior": "9c05f949687798b7",
         "contracts": {},
@@ -1035,8 +1000,41 @@
         },
         "summary": "idle --SetContract--> idle · missing := event.missing"
       },
-      "idle/on/lab.SetFreshness/0": {
-        "behavior": "e6d8638d24951157",
+      "idle/on/lab.Set_binding/0": {
+        "behavior": "86034c8976b41f4e",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "binding"
+              ],
+              "value": {
+                "path": [
+                  "value"
+                ],
+                "ref": "event"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "idle",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null,
+          "stay": true
+        },
+        "summary": "idle --Set_binding--> stays · binding := event.value"
+      },
+      "idle/on/lab.Set_freshness/0": {
+        "behavior": "c730e31f9db3e60a",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1063,12 +1061,13 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "idle --SetFreshness--> idle · freshness := event.value"
+        "summary": "idle --Set_freshness--> stays · freshness := event.value"
       },
-      "idle/on/lab.SetScope/0": {
-        "behavior": "055b91cd1429ef03",
+      "idle/on/lab.Set_scope/0": {
+        "behavior": "075f11a974b3ae10",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1095,9 +1094,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "idle --SetScope--> idle · scope := event.value"
+        "summary": "idle --Set_scope--> stays · scope := event.value"
       },
       "ir/after/0": {
         "behavior": "a7b9d0abfe1329a4",
@@ -1122,8 +1122,8 @@
         },
         "summary": "ir --after 2400ms--> validated · after 2400ms"
       },
-      "ir/on/lab.SetBinding/0": {
-        "behavior": "0cd4cbe28538a8af",
+      "ir/on/lab.Set_binding/0": {
+        "behavior": "1471a9b25399f9a8",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1146,18 +1146,17 @@
             "final": false,
             "input": null,
             "state": "ir",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "ir --SetBinding--> ir · binding := event.value · after 2400ms"
+        "summary": "ir --Set_binding--> stays · binding := event.value"
       },
-      "ir/on/lab.SetFreshness/0": {
-        "behavior": "6c6a9aa64e889a08",
+      "ir/on/lab.Set_freshness/0": {
+        "behavior": "45445568744f6c82",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1180,18 +1179,17 @@
             "final": false,
             "input": null,
             "state": "ir",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "ir --SetFreshness--> ir · freshness := event.value · after 2400ms"
+        "summary": "ir --Set_freshness--> stays · freshness := event.value"
       },
-      "ir/on/lab.SetScope/0": {
-        "behavior": "5a3964ccd57dd0e5",
+      "ir/on/lab.Set_scope/0": {
+        "behavior": "2f3054224fbe94cc",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1214,15 +1212,14 @@
             "final": false,
             "input": null,
             "state": "ir",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "ir --SetScope--> ir · scope := event.value · after 2400ms"
+        "summary": "ir --Set_scope--> stays · scope := event.value"
       },
       "source/after/0": {
         "behavior": "d3f2e104ecd49416",
@@ -1250,8 +1247,8 @@
         },
         "summary": "source --after 2400ms--> ir · after 2400ms"
       },
-      "source/on/lab.SetBinding/0": {
-        "behavior": "92d8763b9c1272d2",
+      "source/on/lab.Set_binding/0": {
+        "behavior": "3c04c23c9a336772",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1274,18 +1271,17 @@
             "final": false,
             "input": null,
             "state": "source",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "source --SetBinding--> source · binding := event.value · after 2400ms"
+        "summary": "source --Set_binding--> stays · binding := event.value"
       },
-      "source/on/lab.SetFreshness/0": {
-        "behavior": "6ba6419ac80ed89c",
+      "source/on/lab.Set_freshness/0": {
+        "behavior": "725554e64d7ff6ad",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1308,18 +1304,17 @@
             "final": false,
             "input": null,
             "state": "source",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "source --SetFreshness--> source · freshness := event.value · after 2400ms"
+        "summary": "source --Set_freshness--> stays · freshness := event.value"
       },
-      "source/on/lab.SetScope/0": {
-        "behavior": "a1c7d56a4aa9f505",
+      "source/on/lab.Set_scope/0": {
+        "behavior": "0d0bdd89b8e4f2de",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1342,15 +1337,14 @@
             "final": false,
             "input": null,
             "state": "source",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "source --SetScope--> source · scope := event.value · after 2400ms"
+        "summary": "source --Set_scope--> stays · scope := event.value"
       },
       "validated/after/0": {
         "behavior": "bf618cfe107e2a94",
@@ -1375,8 +1369,8 @@
         },
         "summary": "validated --after 2400ms--> compiled · after 2400ms"
       },
-      "validated/on/lab.SetBinding/0": {
-        "behavior": "5951e796d309969f",
+      "validated/on/lab.Set_binding/0": {
+        "behavior": "33910e1b03e11cb7",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1399,18 +1393,17 @@
             "final": false,
             "input": null,
             "state": "validated",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "validated --SetBinding--> validated · binding := event.value · after 2400ms"
+        "summary": "validated --Set_binding--> stays · binding := event.value"
       },
-      "validated/on/lab.SetFreshness/0": {
-        "behavior": "5e3300eef1ac7cb3",
+      "validated/on/lab.Set_freshness/0": {
+        "behavior": "f1c987725f89bb9e",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1433,18 +1426,17 @@
             "final": false,
             "input": null,
             "state": "validated",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "validated --SetFreshness--> validated · freshness := event.value · after 2400ms"
+        "summary": "validated --Set_freshness--> stays · freshness := event.value"
       },
-      "validated/on/lab.SetScope/0": {
-        "behavior": "7c88cdbfbb32258a",
+      "validated/on/lab.Set_scope/0": {
+        "behavior": "61d1e9e926182aa9",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -1467,15 +1459,14 @@
             "final": false,
             "input": null,
             "state": "validated",
-            "timers": [
-              2400
-            ]
+            "timers": []
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "validated --SetScope--> validated · scope := event.value · after 2400ms"
+        "summary": "validated --Set_scope--> stays · scope := event.value"
       }
     }
   },

@@ -4,7 +4,7 @@
       "adding/invoke/done/0": {
         "behavior": "fa03982714335dd2",
         "contracts": {
-          "addsBookmark": "39ba85d31e946877"
+          "addsBookmark": "018c828c8f2e2d8a"
         },
         "decides": true,
         "fields": {
@@ -143,7 +143,7 @@
       "idle/on/bookmarks.Add/0": {
         "behavior": "175961e1416f806b",
         "contracts": {
-          "addsBookmark": "39ba85d31e946877"
+          "addsBookmark": "018c828c8f2e2d8a"
         },
         "decides": false,
         "fields": {
@@ -222,8 +222,8 @@
         },
         "summary": "idle --Add--> adding · draft := event.title, kind := event.kind, error := null, fields := {\"title\":null,\"kind\":null} · invoke addBookmark({ title: ctx.draft, kind: ctx.kind })"
       },
-      "idle/on/bookmarks.Draft/0": {
-        "behavior": "de525f7a56260498",
+      "idle/on/bookmarks.Set_draft/0": {
+        "behavior": "a1eebfda2fdf6c15",
         "contracts": {},
         "decides": false,
         "fields": {
@@ -235,7 +235,7 @@
               ],
               "value": {
                 "path": [
-                  "text"
+                  "value"
                 ],
                 "ref": "event"
               }
@@ -250,9 +250,10 @@
           },
           "fns": {},
           "guard": null,
-          "navigate": null
+          "navigate": null,
+          "stay": true
         },
-        "summary": "idle --Draft--> idle · draft := event.text"
+        "summary": "idle --Set_draft--> stays · draft := event.value"
       },
       "idle/on/bookmarks.ToggleRead/0": {
         "behavior": "441bb3e4b437d54e",

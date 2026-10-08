@@ -342,7 +342,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   (`history.replaceState`, native post redirects to it, a route no page of the machine shows is HZ014); every
   transition effect, `navigate` included, reads the post-assign context; component `sourceHash` = recorded render
   shape (callbacks recorded with placeholders); lock lines list changed fields; no module-level randomness (Workers);
-  P7 8 935 B.
+  P7 8 935 B. 0.21.1: busy states also ignore `ui.set` events (no HZ005 for a field visible while saving); the
+  example app, topics and site use `ui.set` / `is()`.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

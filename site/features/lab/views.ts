@@ -3,7 +3,7 @@ import { chapter, doc, how, trials } from '../../routes.ts'
 import { Button } from '../../site/button.ts'
 import { listChapters } from '../content/model.ts'
 import { content } from '../content/views.ts'
-import { contracts, m, Run, SetBinding, SetContract, SetFreshness, SetScope } from './model.ts'
+import { contracts, m, Run, SetContract } from './model.ts'
 
 const code = (text: string) =>
   ui.pre({ tabindex: 0, class: 'overflow-x-auto bg-ink p-4 font-mono text-xs text-paper' }, [
@@ -301,7 +301,7 @@ export const How = ui.view({
                       type: 'button',
                       class: pressed,
                       'aria-pressed': ctx.scope === value,
-                      on: { click: ui.send(SetScope, { value }) },
+                      on: { click: ui.set(ctx.scope, value) },
                     },
                     [value],
                   ),
@@ -315,7 +315,7 @@ export const How = ui.view({
                       type: 'button',
                       class: pressed,
                       'aria-pressed': ctx.freshness === value,
-                      on: { click: ui.send(SetFreshness, { value }) },
+                      on: { click: ui.set(ctx.freshness, value) },
                     },
                     [value],
                   ),
@@ -329,7 +329,7 @@ export const How = ui.view({
                       type: 'button',
                       class: pressed,
                       'aria-pressed': ctx.binding === value,
-                      on: { click: ui.send(SetBinding, { value }) },
+                      on: { click: ui.set(ctx.binding, value) },
                     },
                     [value ? 'Bound' : 'None'],
                   ),
@@ -473,5 +473,5 @@ export const lab = feature({
   id: 'lab',
   intent: { summary: 'Interactive, explicitly illustrative walkthrough of Hozu validation and rendering' },
   imports: [content],
-  declarations: [{ Run, SetContract, SetScope, SetFreshness, SetBinding, m, How, ...contracts }],
+  declarations: [{ Run, SetContract, m, How, ...contracts }],
 })

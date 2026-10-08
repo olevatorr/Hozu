@@ -44,7 +44,7 @@ export const m = machine({
   context: z.object({ draft: z.string(), error: z.string().nullable(), target: z.string() }),
   initialContext: { draft: '', error: null, target: '' },
   initial: 'idle',
-  on: ({ ctx }) => [on(Draft, { assign: (e) => { ctx.draft = e.text } })],   // shared by every state without invoke
+  on: ({ ctx }) => [on(Draft, { assign: (e) => { ctx.draft = e.text; ctx.error = null } })],   // every state without invoke
   states: ({ ctx }) => ({
     idle: {
       on: [

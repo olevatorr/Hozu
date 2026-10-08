@@ -18,7 +18,7 @@ import { catches, claim, speed, speedSource } from '../content/claims.ts'
 import { getStart, listChapters } from '../content/model.ts'
 import { figmaCards } from './devtools.ts'
 import { films } from './media.ts'
-import { Break, Fix, getPlayground, m, Pick } from './model.ts'
+import { Break, Fix, getPlayground, m } from './model.ts'
 
 const claimLink = (id: string, text: string) =>
   ui.a(
@@ -57,7 +57,7 @@ const choice =
 export const Home = ui.view({
   machine: m,
   route: home,
-  render: ({ ctx, when }) =>
+  render: ({ ctx, is }) =>
     ui.main({ id: 'main' }, [
       ui.div({ class: 'relative overflow-hidden bg-paper' }, [
         ui.div({ class: 'mx-auto grid max-w-6xl gap-10 px-5 py-16 md:grid-cols-2 md:items-center' }, [
@@ -107,23 +107,16 @@ export const Home = ui.view({
                         ui.span({ class: 'hidden sm:inline' }, ['signed in as ']),
                         'ada',
                       ]),
-                      when(
-                        ['broken'],
-                        [
-                          ui.button(
+                      is(['broken'])
+                        ? ui.button(
                             {
                               type: 'button',
                               class: 'shrink-0 whitespace-nowrap bg-green px-3 py-1 font-black text-ink',
                               on: { click: ui.send(Fix, {}) },
                             },
                             ['APPLY FIX'],
-                          ),
-                        ],
-                      ),
-                      when(
-                        ['clean'],
-                        [
-                          ui.button(
+                          )
+                        : ui.button(
                             {
                               type: 'button',
                               class: 'shrink-0 whitespace-nowrap bg-red px-3 py-1 font-black text-ink',
@@ -132,8 +125,6 @@ export const Home = ui.view({
                             },
                             ['AI CHANGE'],
                           ),
-                        ],
-                      ),
                     ],
                   ),
                   ui.p({ class: 'px-3 py-2' }, ['Buy milk']),
@@ -512,7 +503,7 @@ export const Home = ui.view({
                 type: 'button',
                 class: choice,
                 'aria-pressed': ctx.intent === 'solid',
-                on: { click: ui.send(Pick, { intent: 'solid' }) },
+                on: { click: ui.set(ctx.intent, 'solid') },
               },
               ['intent: solid'],
             ),
@@ -521,7 +512,7 @@ export const Home = ui.view({
                 type: 'button',
                 class: choice,
                 'aria-pressed': ctx.intent === 'outline',
-                on: { click: ui.send(Pick, { intent: 'outline' }) },
+                on: { click: ui.set(ctx.intent, 'outline') },
               },
               ['intent: outline'],
             ),

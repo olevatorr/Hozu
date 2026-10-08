@@ -20,8 +20,8 @@ ui.form({ on: { submit: ui.send(Toggle, { id: ui.dom.form('id') }) } }, [
 ```
 - **Filter in the URL** (shareable, no JS): `search` on the route, options as
   `ui.a({ href: ui.link(home, null, { show: s.value }), 'aria-current': search.show === s.value }, [s.label])`.
-- **Filter as you type, empty state:** context `search: z.string()`, `on: { input: ui.send(Search, { text:
-  ui.dom.value }) }`, filter and test emptiness with a `fn` (see --more).
+- **Filter as you type, empty state:** context `search: z.string()`, `on: { input: ui.set(ctx.search, ui.dom.value)
+  }`, filter and test emptiness with a `fn` (see --more).
 - **Detail page with a 404:** `hozu docs pages`.
 
 <!-- more -->
@@ -42,10 +42,10 @@ isEmpty({ items, show: ctx.show })
   : ui.ul({}, [ui.each(visible({ items, show: ctx.show }), 'id', (i) => ui.li({}, [i.title]))])
 ```
 - **Search as you type:** context `search: z.string()`; `ui.input({ type: 'search', 'aria-label': 'Search', value:
-  ctx.search, on: { input: ui.send(Search, { text: ui.dom.value }) } })`; `on(Search, { target: 'idle', assign: (e) =>
-  { ctx.search = e.text } })`; filter with a `fn({ input: z.object({ items, text: z.string() }), … })`.
+  ctx.search, on: { input: ui.set(ctx.search, ui.dom.value) } })`; filter with a
+  `fn({ input: z.object({ items, text: z.string() }), … })`.
 - **Toggle buttons:** for each option of a constant list,
-  `ui.button({ type: 'button', 'aria-pressed': ctx.show === s.value, on: { click: ui.send(SetShow, { show: s.value }) } }, [s.label])`.
+  `ui.button({ type: 'button', 'aria-pressed': ctx.show === s.value, on: { click: ui.set(ctx.show, s.value) } }, [s.label])`.
 - **In the URL and as you type** (`/?q=park` is a link to share, typing filters live): seed the machine from the URL,
   read only the context, and write the address back with `replace` on the typing transition
   (`replace: () => ui.link(home, null, { q: ctx.q })`). A GET form with `name="q"` sets it without JS.
@@ -55,9 +55,10 @@ export const Board = ui.view({ machine: m, route: home, seed: ({ search }) => ({
     ui.input({ type: 'search', name: 'q', 'aria-label': 'Search', value: ctx.q, on: { input: ui.send(Search, { q: ui.dom.value }) } }),
     /* … */ ui.each(visible({ items, q: ctx.q, district: ctx.district }), 'id', (s) => …) ]) })
 ```
-- **A mode with shared controls** (a tour, an edit mode): put what every mode handles the same way in
-  `machine({ on: [on(Search, { assign: (e) => { ctx.q = e.q } })] })` (no `target`: stays in its state); each state
-  lists only what differs.
+- **A mode with shared controls** (a tour, an edit mode): a `ui.set` already works in every state without `invoke`;
+  put other transitions every mode handles the same way in
+  `machine({ on: [on(Search, { assign: (e) => { ctx.q = e.q; ctx.page = 1 } })] })` (no `target`: stays in its
+  state); each state lists only what differs.
 - **Select many, then act** (bulk delete): checkboxes in the list join one form through a formRef; the invoke
   state drops events, so the checkboxes are disabled while it runs:
 ```ts
