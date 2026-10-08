@@ -29,8 +29,10 @@
 
 <!-- more -->
 
-- **A calm page:** a step that rebuilds elements unchanged says `N elements rebuilt unchanged (a flash)` (a control
-  hidden while busy: disable it instead), and layout that moves without input says `layout shift X`. Both are
+- **A calm page:** a step that rebuilds elements unchanged says `N elements rebuilt unchanged (a flash: main > form >
+  button[type=submit])`, naming up to five (`--json` `flashes.elements` has all; a control hidden while busy: disable
+  it instead). Equal means tag, class, text, `name`, `id`, `href`, `src`, `type` and parent path; a node that moved is
+  no flash. Layout that moves without input says `layout shift X`. Both are
   problems to fix; a calm step prints neither. An address changed with `replace` stays `in place`.
 - **`hozu get`** prints the status, redirect, `set-cookie` attributes (`HttpOnly`, `SameSite`), title, alerts and
   visible text.

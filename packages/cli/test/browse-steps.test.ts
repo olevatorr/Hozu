@@ -120,6 +120,55 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
     expect(await text(t)).toBe('/echo tag=&tag=&body=one%0D%0Atwo%09three+%5Cn+%5Cd&action=delete')
   }, 30_000)
 
+  describe('flashes (ADR 0069 A3)', () => {
+    const step = async (t: Tab, change: string) => {
+      await t.tagElements()
+      await t.evaluate(`(() => { ${change} })()`)
+      return t.smoothness()
+    }
+    const html = (markup: string) => `document.body.innerHTML = ${JSON.stringify(markup)}`
+
+    it('two empty inputs of one class with different names are not a flash', async () => {
+      const t = await tab('on')
+      await t.evaluate(html('<main><form><input class="f" name="card"></form></main>'))
+      const r = await step(
+        t,
+        `document.querySelector('input').replaceWith(Object.assign(document.createElement('input'), { className: 'f', name: 'code' }))`,
+      )
+      expect([r.replaced, r.flashes, r.flashed]).toEqual([1, 0, []])
+    }, 30_000)
+
+    it('a node built again in another place is not a flash', async () => {
+      const t = await tab('on')
+      await t.evaluate(html('<main><ul class="todo"><li>Milk</li></ul><ul class="done"></ul></main>'))
+      const r = await step(
+        t,
+        `const li = document.querySelector('.todo li'); li.remove(); document.querySelector('.done').append(li.cloneNode(true))`,
+      )
+      expect([r.replaced, r.flashes, r.flashed]).toEqual([1, 0, []])
+      const moved = await step(
+        t,
+        `document.querySelector('.todo').append(document.querySelector('.done li'))`,
+      )
+      expect([moved.replaced, moved.flashes]).toEqual([0, 0])
+    }, 30_000)
+
+    it('names a real flash by its path, once for the outermost element', async () => {
+      const t = await tab('on')
+      await t.evaluate(
+        html(
+          '<main><form class="pay"><input class="f" name="card"><p class="hint"><b>Card</b> number</p></form></main>',
+        ),
+      )
+      const r = await step(
+        t,
+        `for (const el of document.querySelectorAll('input, p')) el.replaceWith(el.cloneNode(true))`,
+      )
+      expect(r.flashes).toBe(3)
+      expect(r.flashed).toEqual(['main > form > input[name=card]', 'main > form > p.hint'])
+    }, 30_000)
+  })
+
   it('submit "<form>" and press Enter submit natively, with the default button as the submitter', async () => {
     const t = await tab('off')
     expect(await run(t, 'submit "Bulk"')).toMatchObject({ ok: true })

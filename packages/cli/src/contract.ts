@@ -392,8 +392,12 @@ export interface BrowseChange {
   document?: 'in place' | 'reloaded' | 'navigated'
   /** With the document kept: how many elements are new after the step (a region drawn again). */
   replaced?: number
-  /** Elements the step removed and built again with the same tag, class and text: a visible flash (ADR 0067 C2). */
-  flashes?: number
+  /**
+   * Elements the step removed and built again unchanged: same tag, class, text, `name`, `id`, `href`, `src`, `type`
+   * and parent path (ADR 0067 C2, ADR 0069 A3). `count` counts every such element, `elements` names the outermost
+   * ones as CSS-like paths (`main > form > input[name=card]`).
+   */
+  flashes?: { count: number; elements: string[] }
   /** Layout shift no input explains (layout-shift entries without recent input, summed, as CLS counts them). */
   shift?: number
   url: string

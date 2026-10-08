@@ -416,9 +416,9 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
           const after = await tab.look()
           const reloads = tab.documentLoads - loadsBefore
           const calm = reloads
-            ? { replaced: 0, flashes: 0, shift: 0 }
-            : await tab.smoothness().catch(() => ({ replaced: 0, flashes: 0, shift: 0 }))
-          const { replaced, flashes, shift } = calm
+            ? { replaced: 0, flashes: 0, flashed: [], shift: 0 }
+            : await tab.smoothness().catch(() => ({ replaced: 0, flashes: 0, flashed: [], shift: 0 }))
+          const { replaced, flashes, flashed, shift } = calm
           const elsewhere: BrowseElsewhere[] = []
           for (const o of others) {
             const was = o.snapshot
@@ -439,7 +439,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
                   ? 'navigated'
                   : 'reloaded',
             ...(replaced ? { replaced } : {}),
-            ...(flashes ? { flashes } : {}),
+            ...(flashes ? { flashes: { count: flashes, elements: flashed } } : {}),
             ...(shift >= 0.001 ? { shift } : {}),
             url: after.url,
             ...(tab.stepStatus !== null && tab.stepStatus !== 200 ? { status: tab.stepStatus } : {}),
@@ -542,6 +542,18 @@ const TEXT = 600
 
 const cut = (s: string, n: number, full: boolean) => (!full && s.length > n ? `${s.slice(0, n)}…` : s)
 
+const FLASHES_SHOWN = 5
+
+function flashText({ count, elements }: NonNullable<BrowseChange['flashes']>): string {
+  const counted = new Map<string, number>()
+  for (const e of elements) counted.set(e, (counted.get(e) ?? 0) + 1)
+  const named = [...counted].map(([e, n]) => (n > 1 ? `${e} ×${n}` : e))
+  const shown = named.slice(0, FLASHES_SHOWN)
+  const more = named.length - shown.length
+  const list = [...shown, ...(more ? [`${more} more`] : [])].join('; ')
+  return `${count} element${count === 1 ? '' : 's'} rebuilt unchanged (a flash${list ? `: ${list}` : ''})`
+}
+
 function describeChange(c: BrowseChange, full: boolean): string {
   if (!c.ok) return `FAILED — ${c.note}`
   if (c.jsOnly) return `js-only (${c.jsOnly})`
@@ -560,7 +572,7 @@ function describeChange(c: BrowseChange, full: boolean): string {
       : full && c.replaced
         ? `${c.replaced} element${c.replaced === 1 ? '' : 's'} replaced`
         : '',
-    c.flashes ? `${c.flashes} element${c.flashes === 1 ? '' : 's'} rebuilt unchanged (a flash)` : '',
+    c.flashes ? flashText(c.flashes) : '',
     c.shift ? `layout shift ${c.shift}` : '',
   ]
     .filter(Boolean)

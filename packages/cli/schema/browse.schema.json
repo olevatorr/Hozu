@@ -167,8 +167,24 @@
           "description": "With the document kept: how many elements are new after the step (a region drawn again)."
         },
         "flashes": {
-          "type": "number",
-          "description": "Elements the step removed and built again with the same tag, class and text: a visible flash (ADR 0067 C2)."
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "number"
+            },
+            "elements": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "count",
+            "elements"
+          ],
+          "additionalProperties": false,
+          "description": "Elements the step removed and built again unchanged: same tag, class, text, `name`, `id`, `href`, `src`, `type` and parent path (ADR 0067 C2, ADR 0069 A3). `count` counts every such element, `elements` names the outermost ones as CSS-like paths (`main > form > input[name=card]`)."
         },
         "shift": {
           "type": "number",
