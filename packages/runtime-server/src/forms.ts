@@ -91,6 +91,8 @@ export async function runForm(options: {
   route: string
   params: Json
   search: Json
+  /** The state a natively rendered form posted back, signed (ADR 0070 B1). */
+  start?: Snapshot | null
 }): Promise<FormOutcome | null> {
   const { build, data, routes, form, fields, route, params, search } = options
   const send = form.on.submit!
@@ -99,9 +101,10 @@ export async function runForm(options: {
   const fns = build.bindings.fns as Record<string, (x: never) => unknown>
   const machine = compileMachine(feature, fns, routes)
   const seeded = await seededContext(build.ir, route, feature, fns, params, search, data)
-  const start = seeded
-    ? enter(machine, machine.states[machine.initial]!.name, seeded).snapshot
-    : init(machine).snapshot
+  const kept = options.start && machine.index.has(options.start.state) ? options.start : null
+  const start =
+    kept ??
+    (seeded ? enter(machine, machine.states[machine.initial]!.name, seeded).snapshot : init(machine).snapshot)
   const payload = compileValue(
     send.payload,
     fns,

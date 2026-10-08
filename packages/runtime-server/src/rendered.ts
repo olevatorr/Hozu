@@ -7,6 +7,8 @@ import { responsive, type Variants } from './images.ts'
 
 export interface Scope {
   feature: FeatureIR
+  /** The signed state a natively rendered form posts back (ADR 0070 B1). */
+  sealed: string | null
   context: Json
   state: string | null
   bindings: Json[]

@@ -26,7 +26,9 @@ export function currentOf(href: Json, here: string, root = '/'): string | null {
   if (href === here) return 'page'
   const path = href.split('?')[0]!
   const at = here.split('?')[0]!
-  return path !== '/' && path !== root && at.startsWith(path.endsWith('/') ? path : `${path}/`) ? 'true' : null
+  return path !== '/' && path !== root && at.startsWith(path.endsWith('/') ? path : `${path}/`)
+    ? 'true'
+    : null
 }
 
 export const properties = new Set(['value', 'checked', 'selected', 'muted'])

@@ -96,10 +96,10 @@ One machine per feature: an order list (filters, selection) and an order page (s
 `orders` and `order`, sharing declarations through `exports`. Each machine stays small and its contracts few.
 
 ## A multi-step checkout that also works without JavaScript
-Each step is a state; the server runs the machine per request, so without JS a step's form posts every earlier field
-again as hidden inputs (`ui.input({ type: 'hidden', name: 'line1', value: ctx.line1 })`), and the last step's
-mutation receives them all. A button that goes back to edit an earlier step posts them too, or the step comes back
-empty. Prefill from the member with `seed: ({ query }) => ({ email: query(me, {}).email })`.
+Each step is a state and each step's form posts only its own fields: after a native post the server renders the next
+step, and every form on that page carries the machine's state in a signed hidden field, so the next post continues
+from it (going back to edit a step too). Prefill from the member with
+`seed: ({ query }) => ({ email: query(me, {}).email })`.
 
 ## A notice after saving
 A `notice` context field set in `done` and cleared by `after: [{ ms: 4000, target: 'idle' }]` on a `saved` state;

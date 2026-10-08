@@ -251,7 +251,7 @@ function projectSchema(
   const check = toCheck(schema)
   if (check) scope.bindings.checks[key] = check
   const parse = key.startsWith('#route:') ? toParse(schema) : null
-  if (parse) (scope.bindings.parses ??= {})[key] = parse
+  if (parse) scope.bindings.parses = { ...scope.bindings.parses, [key]: parse }
   return adapter.toJsonSchema(schema)
 }
 

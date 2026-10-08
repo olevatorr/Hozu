@@ -1,4 +1,4 @@
-import { feature, project, query, route, ui } from '@hozu/core'
+import { event, feature, machine, on, project, query, route, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { resolvers } from '@hozu/data'
 import { createHandler } from '@hozu/runtime-server'
@@ -65,5 +65,99 @@ describe('0.23 fixes from the 0.22 trials (ADR 0070)', () => {
   it('a link keeps the current search with a spread and changes one field (ADR 0070 B2)', async () => {
     const html = await (await handler.fetch(new Request('https://shop.example/shop/apparel?sort=new'))).text()
     expect(html).toContain('href="/shop/mugs?page=2&amp;sort=new">Next</a>')
+  })
+})
+
+describe('a native multi-step form keeps its step (ADR 0070 B1)', () => {
+  const Next = event({ payload: z.object({ line1: z.string() }) })
+  const Pay = event({ payload: z.object({ card: z.string() }) })
+  const placed = route({ path: '/placed', params: null, search: null })
+  const checkout = route({ path: '/checkout', params: null, search: null })
+  const flow = machine({
+    context: z.object({ line1: z.string() }),
+    initialContext: { line1: '' },
+    initial: 'address',
+    states: ({ ctx }) => ({
+      address: {
+        on: [
+          on(Next, {
+            target: 'payment',
+            assign: (e) => {
+              ctx.line1 = e.line1
+            },
+          }),
+        ],
+      },
+      payment: { on: [on(Pay, { target: 'address', navigate: () => ui.link(placed, null) })] },
+    }),
+  })
+  const Checkout = ui.view({
+    machine: flow,
+    render: ({ is, ctx }) =>
+      ui.main({}, [
+        is(['address'])
+          ? ui.form({ on: { submit: ui.send(Next, { line1: ui.dom.form('line1') }) } }, [
+              ui.input({ name: 'line1' }),
+              ui.button({ type: 'submit' }, ['Continue']),
+            ])
+          : ui.form({ on: { submit: ui.send(Pay, { card: ui.dom.form('card') }) } }, [
+              ui.p({}, ['Ship to ', ctx.line1]),
+              ui.input({ name: 'card' }),
+              ui.button({ type: 'submit' }, ['Pay']),
+            ]),
+      ]),
+  })
+  const Placed = ui.view({ render: () => ui.p({}, ['Thanks']) })
+  const shop = project({
+    schema: zodAdapter,
+    routes: { checkout, placed },
+    pages: [
+      ui.page(checkout, { views: [Checkout], head: { render: () => ({ title: 'Checkout' }) } }),
+      ui.page(placed, { views: [Placed], head: { render: () => ({ title: 'Placed' }) } }),
+    ],
+    features: [
+      feature({
+        id: 'c',
+        intent: { summary: 'two steps' },
+        declarations: [{ Next, Pay, flow, Checkout, Placed }],
+      }),
+    ],
+  })
+  const h = createHandler({
+    build: buildProject(shop, { sources: false }),
+    resolvers: resolvers(shop, () => []),
+  })
+  const actionOf = (html: string) =>
+    /<form method="post" action="([^"]+)"/.exec(html)![1]!.replaceAll('&amp;', '&')
+  const post = (action: string, body: Record<string, string>) =>
+    h.fetch(
+      new Request(`http://localhost${action}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded', origin: 'http://localhost' },
+        body: new URLSearchParams(body),
+      }),
+    )
+  const tokenOf = (html: string) =>
+    /name="__hozu_state" value="([^"]+)"/.exec(html)?.[1]?.replaceAll('&amp;', '&')
+
+  it('the second step posts the signed state back and finishes', async () => {
+    const page = await (await h.fetch(new Request('http://localhost/checkout'))).text()
+    const r1 = await post(actionOf(page), { line1: '18 Birch Ave' })
+    const step2 = await r1.text()
+    expect(r1.status).toBe(200)
+    expect(step2.replaceAll('<!---->', '')).toContain('Ship to 18 Birch Ave')
+    const token = tokenOf(step2)
+    expect(token).toBeDefined()
+    const done = await post(actionOf(step2), { card: '4242', __hozu_state: token! })
+    expect(done.status).toBe(303)
+    expect(done.headers.get('location')).toBe('/placed')
+  })
+
+  it('a changed token is ignored: the form starts over', async () => {
+    const page = await (await h.fetch(new Request('http://localhost/checkout'))).text()
+    const step2 = await (await post(actionOf(page), { line1: 'A' })).text()
+    const forged = `${tokenOf(step2)!.slice(0, -2)}xx`
+    const res = await post(actionOf(step2), { card: '4242', __hozu_state: forged })
+    expect(res.headers.get('location')).not.toBe('/placed')
   })
 })

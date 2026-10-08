@@ -56,6 +56,7 @@ import {
 } from './render.ts'
 import { instantiate, type RenderModule } from './rendered.ts'
 import { matcher } from './routing.ts'
+import { STATE_FIELD, seal, unseal } from './seal.ts'
 import { parseSearch, queryInput } from './search.ts'
 import {
   type CspSources,
@@ -705,7 +706,10 @@ function handlerFor({
     const search = parseSearch(ir.routes[found.route]?.search ?? null, query)
     const fields = await formFields(request)
     const scope = await dataFor(request)
+    const owner = form.on.submit!.event.slice(0, form.on.submit!.event.indexOf('.'))
+    const start = await unseal(rawEnv.SESSION_SECRET, owner, fields.first[STATE_FIELD])
     const outcome = await runForm({
+      start,
       build,
       data: scope,
       routes: tableOf(locale),
@@ -731,6 +735,11 @@ function handlerFor({
       after(outcome.invalidated)
       return see(target, cookie)
     }
+    const sealed: Record<string, string> = {}
+    for (const [f, snap] of Object.entries(outcome.snapshots)) {
+      const token = await seal(rawEnv.SESSION_SECRET, f, snap)
+      if (token) sealed[f] = token
+    }
     const rendered = await renderPage({
       build,
       dev: dev !== undefined,
@@ -740,6 +749,7 @@ function handlerFor({
       params: found.params,
       search,
       snapshots: outcome.snapshots,
+      sealed,
       assets,
       images: variants,
       ...(generated ? { render: generated } : {}),
