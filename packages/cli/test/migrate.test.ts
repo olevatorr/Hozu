@@ -120,6 +120,14 @@ describe('hozu migrate on a 0.10 app (ADR 0049 §6)', () => {
       recordIR: () => before,
     })
     expect(ajv.validate(schema, first), JSON.stringify(ajv.errors)).toBe(true)
+    expect(first.steps).toEqual([
+      {
+        from: '0.10',
+        to: '0.11',
+        summary: "runs: 'server' on every query and mutation without runs (0.11 defaults to 'either')",
+        changes: ["runs: 'server' on every query and mutation without runs (0.11 defaults to 'either')"],
+      },
+    ])
     expect(first.phase).toBe('rewrite')
     expect(first.changed).toEqual([{ file: 'features/bookmarks/model.ts', edits: 4 }])
     expect(readFileSync(join(dir, 'features/bookmarks/model.ts'), 'utf8')).toContain("runs: 'server'")
@@ -249,6 +257,36 @@ describe('the migrate summary', () => {
     expect(describeMigrate({ ...base, phase: 'verify', record: null, check })).toContain(
       'hozu check: failed · types skipped (npm install -D typescript) · 0 errors, 0 warnings',
     )
+  })
+})
+
+describe('the migrate plan lists each step as bullets (0.24)', () => {
+  it('prints one line per change and keeps summary in --json as the changes joined', () => {
+    const step = chain('0.21', '0.22')![0]!
+    const steps = [{ from: step.from, to: step.to, summary: step.changes.join('; '), changes: step.changes }]
+    const text = describeMigrate({
+      ok: true,
+      from: '0.21.0',
+      to: '0.22.0',
+      phase: 'current',
+      dryRun: false,
+      steps,
+      changed: [],
+      notes: [],
+      packages: [],
+      record: null,
+      ir: { compared: false, skipped: null, differences: [] },
+      guide: [],
+      check: null,
+      next: [],
+    })
+    expect(text).toContain('  0.21 → 0.22:\n    - no source change\n    - resolvers may be in Go')
+    expect(text.split('\n').filter((l) => l.startsWith('    - '))).toHaveLength(step.changes.length)
+    for (const s of chain('0.10', '0.23')!)
+      for (const c of s.changes) {
+        expect(c).not.toContain('; ')
+        expect(c.length, c).toBeLessThan(140)
+      }
   })
 })
 

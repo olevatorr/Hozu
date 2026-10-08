@@ -527,7 +527,8 @@ export interface MigrateOutput {
    */
   phase: 'rewrite' | 'verify' | 'current'
   dryRun: boolean
-  steps: { from: string; to: string; summary: string }[]
+  /** Each step's changes: `summary` joins `changes` with "; ". */
+  steps: { from: string; to: string; summary: string; changes: string[] }[]
   changed: { file: string; edits: number }[]
   notes: MigrateNote[]
   packages: { name: string; from: string; to: string }[]
