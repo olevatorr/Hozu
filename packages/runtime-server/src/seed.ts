@@ -1,4 +1,4 @@
-import type { FeatureIR, Json, ProjectIR } from '@hozu/core/ir'
+import type { FeatureIR, Json, ProjectIR, ValueExpr } from '@hozu/core/ir'
 import { compileValue } from '@hozu/machine'
 
 /** The context fields the page's address sets for this feature: they win over a kept snapshot (ADR 0067 C4). */
@@ -12,25 +12,47 @@ export function seedKeys(ir: ProjectIR, route: string, feature: FeatureIR): stri
   return []
 }
 
-export function seededContext(
+const reads = (v: ValueExpr, depth: number): boolean =>
+  'ref' in v
+    ? v.ref === 'binding' && v.depth === depth
+    : 'object' in v
+      ? Object.values(v.object).some((x) => reads(x, depth))
+      : 'fn' in v
+        ? reads(v.arg, depth)
+        : false
+
+/** The initial context of a feature on this page: its view's seed from the address and seed queries (ADR 0069 B2). */
+export async function seededContext(
   ir: ProjectIR,
   route: string,
   feature: FeatureIR,
   fns: Record<string, (x: never) => unknown>,
   params: Json,
   search: Json,
-): Json | null {
+  data?: { run(ref: string, input: Json): Promise<unknown> },
+): Promise<Json | null> {
   const machine = feature.machine
   const page = ir.pages[route]
   if (!machine || !page) return null
   for (const ref of page.views) {
     const dot = ref.indexOf('.')
     if (ref.slice(0, dot) !== feature.id) continue
-    const seed = feature.views[ref.slice(dot + 1)]?.seed
+    const view = feature.views[ref.slice(dot + 1)]
+    const seed = view?.seed
     if (!seed) continue
-    const env = { context: machine.initialContext, state: null, bindings: [], params, search } as never
+    const base = { context: machine.initialContext, state: null, bindings: [], params, search } as never
+    const results = await Promise.all(
+      (view.seedQueries ?? []).map(async (q) => {
+        const r = data
+          ? ((await data.run(q.ref, compileValue(q.input, fns)(base))) as { ok: boolean; value?: Json })
+          : null
+        return r?.ok ? (r.value ?? null) : undefined
+      }),
+    )
+    const env = { ...(base as object), bindings: results.map((r) => r ?? null) } as never
     const context = { ...(machine.initialContext as Record<string, Json>) }
-    for (const [key, v] of Object.entries(seed)) context[key] = compileValue(v, fns)(env)
+    for (const [key, v] of Object.entries(seed))
+      if (!results.some((r, i) => r === undefined && reads(v, i))) context[key] = compileValue(v, fns)(env)
     return context
   }
   return null

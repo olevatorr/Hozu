@@ -788,6 +788,7 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
       : scope.callback(d.render)({ params, search, locale: refProxy('locale', 0) })
   const root = scope.attempt(at(p, 'root'), render, null)
   let seed: Record<string, ValueExpr> | null = null
+  const seedQueries: { ref: string; input: ValueExpr }[] = []
   if (d.seed) {
     const sp = at(p, 'seed')
     if (!d.machine || !d.route)
@@ -797,7 +798,15 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
         'seed needs a view with both a machine and a route',
         'seed starts the machine from the page URL, so the view must bind a machine and declare the route it reads.',
       )
-    const fields = scope.attempt(sp, () => scope.callback(d.seed!)({ params, search }), null)
+    const query = (decl: object, input: unknown) => {
+      const qp = at(sp, 'query', seedQueries.length)
+      seedQueries.push({
+        ref: scope.ref(decl, ['query'], qp),
+        input: scope.attempt(at(qp, 'input'), () => scope.value(input, at(qp, 'input')), { literal: null }),
+      })
+      return refProxy('binding', seedQueries.length - 1)
+    }
+    const fields = scope.attempt(sp, () => scope.callback(d.seed!)({ params, search, query }), null)
     if (fields === null || typeof fields !== 'object' || Array.isArray(fields) || exprOf(fields))
       scope.report(
         'HZ048',
@@ -811,7 +820,13 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
         seed[key] = scope.attempt(at(sp, key), () => scope.value(v, at(sp, key)), { literal: null })
     }
   }
-  const out = { machine, route, seed, root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0) }
+  const out = {
+    machine,
+    route,
+    seed,
+    ...(seedQueries.length ? { seedQueries } : {}),
+    root: node(scope, root, `${scope.id}.${symbol}`, at(p, 'root'), 0),
+  }
   scope.lowering = false
   return out
 }

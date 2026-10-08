@@ -226,11 +226,11 @@ export async function renderPage({
   }
   const keepable = keptFeatures(ir, route)
   const seeds = new Map<string, Json | null>()
-  const seedOf = (feature: FeatureIR) => {
-    if (!seeds.has(feature.id))
-      seeds.set(feature.id, seededContext(ir, route, feature, fns as never, params, search))
-    return seeds.get(feature.id)!
+  for (const id of new Set((ir.pages[route]?.views ?? []).map((v) => v.slice(0, v.indexOf('.'))))) {
+    const feature = ir.features[id]
+    if (feature) seeds.set(id, await seededContext(ir, route, feature, fns as never, params, search, data))
   }
+  const seedOf = (feature: FeatureIR) => seeds.get(feature.id) ?? null
   const featureScope = (feature: FeatureIR, bound: boolean): Scope => {
     const held =
       dev && bound && devState && 'feature' in devState && devState.feature === feature.id ? devState : null

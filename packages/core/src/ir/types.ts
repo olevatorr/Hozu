@@ -340,6 +340,11 @@ export interface ViewIR {
   machine: string | null
   route: string | null
   seed: Record<string, ValueExpr> | null
+  /**
+   * Queries the seed reads (ADR 0069 B2), in order: the seed's values read result i as `{ ref: 'binding', depth: i }`.
+   * A query that fails leaves the fields reading it at initialContext. Absent when the seed reads none.
+   */
+  seedQueries?: { ref: string; input: ValueExpr }[]
   root: ViewNode
 }
 

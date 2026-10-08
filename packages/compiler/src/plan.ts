@@ -162,6 +162,23 @@ export function planRoute(ir: ProjectIR, route: string): { plan: RoutePlan; issu
         pointer: join('', 'pages', route, 'head'),
       })
   }
+  for (const ref of page.views) {
+    const { feature, symbol } = resolve(ir, ref)
+    for (const [i, sq] of (feature?.views[symbol]?.seedQueries ?? []).entries()) {
+      const { feature: owner, symbol: name } = resolve(ir, sq.ref)
+      const q = owner?.queries[name]
+      if (q)
+        regions.push({
+          id: `seed:${ref}:${i}`,
+          parent: 'shell',
+          query: sq.ref,
+          scope: q.scope,
+          ...combine(shell, own(q)),
+          reactive: false,
+          pointer: join('', 'features', feature!.id, 'views', symbol, 'seedQueries', i),
+        })
+    }
+  }
   const nodes: NodePlan[] = []
   const islands: string[] = []
   let certain = false

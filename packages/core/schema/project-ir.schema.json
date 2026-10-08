@@ -1673,6 +1673,26 @@
             }
           ]
         },
+        "seedQueries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "input": {
+                "$ref": "#/definitions/ValueExpr"
+              }
+            },
+            "required": [
+              "ref",
+              "input"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Queries the seed reads (ADR 0069 B2), in order: the seed's values read result i as `{ ref: 'binding', depth: i }`. A query that fails leaves the fields reading it at initialContext. Absent when the seed reads none."
+        },
         "root": {
           "$ref": "#/definitions/ViewNode"
         }

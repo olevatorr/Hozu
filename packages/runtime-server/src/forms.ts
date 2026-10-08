@@ -98,7 +98,7 @@ export async function runForm(options: {
   if (!feature?.machine) return null
   const fns = build.bindings.fns as Record<string, (x: never) => unknown>
   const machine = compileMachine(feature, fns, routes)
-  const seeded = seededContext(build.ir, route, feature, fns, params, search)
+  const seeded = await seededContext(build.ir, route, feature, fns, params, search, data)
   const start = seeded
     ? enter(machine, machine.states[machine.initial]!.name, seeded).snapshot
     : init(machine).snapshot

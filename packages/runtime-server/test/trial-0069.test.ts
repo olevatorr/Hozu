@@ -152,3 +152,88 @@ describe('kept state follows only a view two pages share (ADR 0069 B1)', () => {
     expect(html).toContain('"keep":["h"]')
   })
 })
+
+describe('a seed reads a query (ADR 0069 B2)', () => {
+  const Pay = event({ payload: z.object({ email: z.string() }) })
+  const member = query({
+    input: z.object({}),
+    output: z.object({ email: z.string() }),
+    scope: 'user',
+    freshness: 'request',
+    runs: 'server',
+    access: 'signedIn',
+  })
+  const checkout = machine({
+    context: z.object({ email: z.string(), step: z.string() }),
+    initialContext: { email: '', step: 'address' },
+    initial: 'idle',
+    states: ({ ctx }) => ({
+      idle: {
+        on: [
+          on(Pay, {
+            assign: (e) => {
+              ctx.email = e.email
+            },
+          }),
+        ],
+      },
+    }),
+  })
+  const pay = route({
+    path: '/checkout',
+    params: null,
+    search: z.object({ step: z.string().default('address') }),
+  })
+  const Checkout = ui.view({
+    machine: checkout,
+    route: pay,
+    seed: ({ search, query }) => ({ step: search.step, email: query(member, {}).email }),
+    render: ({ ctx }) =>
+      ui.form({ on: { submit: ui.send(Pay, { email: ui.dom.form('email') }) } }, [
+        ui.input({ name: 'email', value: ctx.email }),
+        ui.p({}, [ctx.step]),
+      ]),
+  })
+  const shop = project({
+    schema: zodAdapter,
+    session: z.object({ email: z.string() }),
+    routes: { pay },
+    pages: [ui.page(pay, { views: [Checkout], head: { render: () => ({ title: 'Checkout' }) } })],
+    features: [
+      feature({
+        id: 'k',
+        intent: { summary: 'checkout' },
+        declarations: [{ Pay, member, checkout, Checkout }],
+      }),
+    ],
+  })
+  const build = buildProject(shop, { sources: false })
+  const run = (session?: object) =>
+    createHandler({
+      build,
+      resolvers: resolvers(shop, (implement) => [
+        implement(member, (_, { session }) => ({ email: session.email })),
+      ]),
+      ...(session
+        ? { session: { read: async () => session, write: async () => '', issue: async () => '' } }
+        : {}),
+    }).fetch(new Request('http://localhost/checkout?step=pay'))
+
+  it('prefills the context from the member, next to the address', async () => {
+    expect(build.diagnostics).toEqual([])
+    expect(build.ir.features.k!.views.Checkout!.seedQueries).toEqual([
+      { ref: 'k.member', input: { literal: {} } },
+    ])
+    const res = await run({ email: 'ada@example.com' })
+    const html = await res.text()
+    expect(html).toContain('value="ada@example.com"')
+    expect(html).toContain('<p>pay</p>')
+    expect(res.headers.get('cache-control') ?? '').not.toMatch(/public/)
+  })
+
+  it('a seed query that fails leaves its fields at initialContext', async () => {
+    const html = await (await run()).text()
+    expect(html).toContain('<input name="email" value>')
+    expect(html).toContain('<p>pay</p>')
+  })
+})
