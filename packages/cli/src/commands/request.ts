@@ -257,25 +257,30 @@ const matches = (actual: string, op: AttrOp, value: string): boolean =>
             ? actual.endsWith(value)
             : actual.includes(value))
 
-interface Node {
+interface Opened {
   tag: string
   attrs: Record<string, string>
-  parent: Node | null
+  parent: Opened | null
 }
 
-const fits = (node: Node, c: Compound) =>
+const fits = (node: Opened, c: Compound) =>
   (!c.tag || c.tag === node.tag) &&
   (!c.id || node.attrs.id === c.id) &&
   c.attrs.every(
     (a) => a.name in node.attrs && (a.value === undefined || matches(node.attrs[a.name]!, a.op, a.value)),
   )
 
-const chainFits = (node: Node, steps: Step[], last: number): boolean => {
+const chainFits = (node: Opened, steps: Step[], last: number): boolean => {
   if (!fits(node, steps[last]!.compound)) return false
   if (last === 0) return true
   if (steps[last]!.child) return node.parent !== null && chainFits(node.parent, steps, last - 1)
   for (let up = node.parent; up; up = up.parent) if (chainFits(up, steps, last - 1)) return true
   return false
+}
+
+const closed = (open: Opened | null, tag: string): Opened | null => {
+  for (let up = open; up; up = up.parent) if (up.tag === tag) return up.parent
+  return open
 }
 
 export function elementsOf(html: string, selector: string): RequestElement[] {
@@ -295,18 +300,14 @@ export function elementsOf(html: string, selector: string): RequestElement[] {
   })
   const source = raw ? html : html.replace(hidden, (m) => ' '.repeat(m.length))
   const out: RequestElement[] = []
-  let parent: Node | null = null
+  let parent: Opened | null = null
   for (const m of shape.matchAll(/<(\/?)([a-z][\w-]*)\b([^>]*)>/gi)) {
     const tag = m[2]!.toLowerCase()
     if (m[1]) {
-      for (let up = parent; up; up = up.parent)
-        if (up.tag === tag) {
-          parent = up.parent
-          break
-        }
+      parent = closed(parent, tag)
       continue
     }
-    const node: Node = { tag, attrs: attrsOf(m[3]!.replace(/\/$/, '')), parent }
+    const node: Opened = { tag, attrs: attrsOf(m[3]!.replace(/\/$/, '')), parent }
     if (!VOID.has(tag) && !m[3]!.endsWith('/')) parent = node
     if ((!raw && HIDDEN.has(tag)) || !chainFits(node, steps, steps.length - 1)) continue
     let text = ''
