@@ -100,6 +100,12 @@ const http = (url: string, init: object): Promise<HttpReply> =>
 const timeout = (ms: number): unknown =>
   (globalThis as unknown as { AbortSignal: { timeout(ms: number): unknown } }).AbortSignal.timeout(ms)
 
+const base64 = (bytes: Uint8Array) => {
+  let text = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return (globalThis as unknown as { btoa(s: string): string }).btoa(text)
+}
+
 const fileUrl = (path: string) =>
   `file://${path.startsWith('/') ? '' : '/'}${encodeURI(path.replace(/\\/g, '/'))}`
 
@@ -368,13 +374,26 @@ export function createDataRuntime({
         p.message,
         'Implement it with implement(…) in app.ts (or fetch.ts for a browser-run effect), and remove it from remote()',
       )
+    if (!options.secret?.env)
+      hz093(
+        null,
+        'remote() has no secret, so anyone who reaches the service could call it with any session',
+        "Add secret: { env: 'SERVICE_SECRET' } to remote() and the same value to the service's Options.Secret",
+      )
     for (const variable of [options.url, options.secret])
       if (typeof variable === 'object' && variable && !(variable.env in serverEnv))
         hz093(
           null,
           `remote() reads ${variable.env}, which project({ env: { server } }) does not declare`,
-          `Add ${variable.env}: z.string() to the server env schema of hozu.config.ts`,
+          `Add ${variable.env}: z.string().min(16) to the server env schema of hozu.config.ts`,
         )
+    const secretValue = options.secret?.env ? (env as Record<string, unknown>)[options.secret.env] : undefined
+    if (typeof secretValue === 'string' && secretValue.length < 16)
+      hz093(
+        null,
+        `remote() secret ${options.secret.env} holds ${secretValue.length} characters; it needs 16 or more`,
+        `Set ${options.secret.env} to a random value of 16 characters or more (openssl rand -hex 16)`,
+      )
     for (const effect of contract.effects)
       runs.set(effect.ref, remoteRun(options, effect, contract.fingerprint))
   }
@@ -475,12 +494,32 @@ export function createDataRuntime({
         'content-type': 'application/json',
         'x-hozu-fingerprint': fingerprint,
       }
-      if (options.secret) headers['x-hozu-secret'] = read(options.secret, 'its secret')
+      headers['x-hozu-secret'] = read(options.secret, 'its secret')
       const session = effect.session ? ((ctx as { session?: unknown }).session ?? null) : null
+      const request = ctx.request as { headers?: Iterable<[string, string]> } | undefined
+      const forwarded =
+        effect.kind === 'endpoint' && request?.headers
+          ? Object.fromEntries([...request.headers].filter(([name]) => name !== 'cookie'))
+          : {}
+      const files: Record<string, { name: string; type: string; size: number; data: string }> = {}
+      for (const [token, f] of ctx.uploads ?? [])
+        files[token] = {
+          name: f.name,
+          type: f.type,
+          size: f.size,
+          data: base64(new Uint8Array(await f.arrayBuffer())),
+        }
       const res = await http(url, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ effect: effect.ref, input, session }),
+        body: JSON.stringify({
+          effect: effect.ref,
+          input,
+          session,
+          preview: ctx.preview,
+          headers: forwarded,
+          files,
+        }),
         signal: timeout(options.timeout ?? 10_000),
       })
       if (res.status === 409)
@@ -650,6 +689,7 @@ export function createDataRuntime({
         preview: this.preview,
         fail,
         file,
+        uploads: files,
         setSession: effect.kind === 'mutation' ? this.setSession : noSession,
       }
       try {

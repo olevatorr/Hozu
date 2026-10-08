@@ -209,12 +209,32 @@ type Invalid struct {
 func (e Invalid) Error() string                  { return "Invalid: " + e.Message }
 func (e Invalid) failure() (string, string, any) { return "", "Invalid", e }
 
-// Ctx is one call. Session is nil when the visitor is signed out or the effect reads no session.
+// Ctx is one call. Session is nil when the visitor is signed out or the effect reads no session. Preview is
+// true in preview mode; Header holds an endpoint's request headers (no cookie).
 type Ctx struct {
 \tContext context.Context
 \tSession *${sessionType}
+\tPreview bool
+\tHeader  http.Header
+\tfiles   map[string]Upload
 \tchanged bool
 \tnext    *${sessionType}
+}
+
+// Upload is a file a form sent with the call; Data holds its bytes.
+type Upload struct {
+\tName string \`json:"name"\`
+\tType string \`json:"type"\`
+\tSize int64  \`json:"size"\`
+\tData []byte \`json:"data"\`
+}
+
+// File returns the upload a form field's token names, or nil (mutations and endpoints only).
+func (c *Ctx) File(token string) *Upload {
+\tif f, ok := c.files[token]; ok {
+\t\treturn &f
+\t}
+\treturn nil
 }
 
 // SetSession signs the visitor in as s (mutations and endpoints only).
@@ -228,7 +248,8 @@ type Resolvers interface {
 ${methods.map((m) => `${describe(m.e, m.errors)}\n\t${m.base}(ctx *Ctx, in ${m.input}) (${m.output}, error)`).join('\n')}
 }
 
-// Options configures Handler. Secret, when set, must equal the x-hozu-secret header of every call.
+// Options configures Handler. Secret (16 characters or more) must equal the x-hozu-secret header of every call:
+// the handler trusts the session a call carries, so it answers only the Hozu server.
 type Options struct {
 \tSecret string
 }
@@ -243,6 +264,9 @@ ${aligned([
   ['Effect', 'string', '`json:"effect"`'],
   ['Input', 'json.RawMessage', '`json:"input"`'],
   ['Session', `*${sessionType}`, '`json:"session"`'],
+  ['Preview', 'bool', '`json:"preview"`'],
+  ['Headers', 'map[string]string', '`json:"headers"`'],
+  ['Files', 'map[string]Upload', '`json:"files"`'],
 ]).join('\n')}
 }
 
@@ -291,12 +315,15 @@ func fill(v reflect.Value) {
 
 // Handler answers the calls of the Hozu server: POST { effect, input, session } → { ok } | { fail } (+ session).
 func Handler(r Resolvers, o Options) http.Handler {
+\tif len(o.Secret) < 16 {
+\t\tpanic("hozu: Options.Secret must hold the 16 or more characters of the app's remote() secret")
+\t}
 \treturn http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 \t\tif req.Method != http.MethodPost {
 \t\t\thttp.Error(w, "POST only", http.StatusMethodNotAllowed)
 \t\t\treturn
 \t\t}
-\t\tif o.Secret != "" && subtle.ConstantTimeCompare([]byte(req.Header.Get("X-Hozu-Secret")), []byte(o.Secret)) != 1 {
+\t\tif subtle.ConstantTimeCompare([]byte(req.Header.Get("X-Hozu-Secret")), []byte(o.Secret)) != 1 {
 \t\t\thttp.Error(w, "wrong x-hozu-secret", http.StatusUnauthorized)
 \t\t\treturn
 \t\t}
@@ -309,7 +336,10 @@ func Handler(r Resolvers, o Options) http.Handler {
 \t\t\thttp.Error(w, err.Error(), http.StatusBadRequest)
 \t\t\treturn
 \t\t}
-\t\tctx := &Ctx{Context: req.Context(), Session: body.Session}
+\t\tctx := &Ctx{Context: req.Context(), Session: body.Session, Preview: body.Preview, Header: http.Header{}, files: body.Files}
+\t\tfor k, v := range body.Headers {
+\t\t\tctx.Header.Set(k, v)
+\t\t}
 \t\tvar out any
 \t\tvar err error
 \t\tswitch body.Effect {

@@ -44,6 +44,7 @@ const signIn = mutation({
   access: 'anyone',
 })
 const feed = endpoint({ method: 'GET', path: '/feed.xml', input: z.object({}), output: 'response' })
+const hook = endpoint({ method: 'POST', path: '/api/hook', input: z.object({}), output: z.object({}) })
 const p = project({
   schema: zodAdapter,
   session: z.object({ user: z.string() }),
@@ -54,7 +55,7 @@ const p = project({
     feature({
       id: 'notes',
       intent: { summary: 'remote resolvers (ADR 0068)' },
-      declarations: [{ mine, total, inBrowser, add, signIn, feed }],
+      declarations: [{ mine, total, inBrowser, add, signIn, feed, hook }],
     }),
   ],
 })
@@ -62,7 +63,14 @@ const build = buildProject(p)
 
 interface Seen {
   headers: IncomingMessage['headers']
-  body: { effect: string; input: unknown; session: unknown }
+  body: {
+    effect: string
+    input: unknown
+    session: unknown
+    preview: boolean
+    headers: Record<string, string>
+    files: Record<string, { name: string; type: string; size: number; data: string }>
+  }
 }
 
 const seen: Seen[] = []
@@ -71,6 +79,7 @@ const answers: Record<string, { status?: number; body: unknown }> = {
   'notes.total': { body: { ok: 3 } },
   'notes.add': { body: { fail: { name: 'Duplicate', data: { text: 'Tea' } } } },
   'notes.signIn': { body: { ok: {}, session: { user: 'ada' } } },
+  'notes.hook': { body: { ok: {} } },
 }
 let server: Server
 let url = ''
@@ -100,9 +109,9 @@ const options = () => ({
 const runtime = () =>
   createDataRuntime({
     build,
-    env: { SVC_SECRET: 's3cret' },
+    env: { SVC_SECRET: 's3cret-0123456789abcdef' },
     resolvers: resolvers(p, (implement) => [
-      ...remote(options(), [mine, total, add, signIn]),
+      ...remote(options(), [mine, total, add, signIn, hook]),
       implement(feed, () => new Response('')),
     ]),
   })
@@ -114,10 +123,18 @@ describe('remote() resolvers (ADR 0068)', () => {
       ok: true,
       value: [{ id: 'n1', text: 'Tea' }],
     })
-    expect(last().body).toEqual({ effect: 'notes.mine', input: {}, session: { user: 'ada' } })
-    expect(last().headers['x-hozu-secret']).toBe('s3cret')
+    expect(last().body).toEqual({
+      effect: 'notes.mine',
+      input: {},
+      session: { user: 'ada' },
+      preview: false,
+      headers: {},
+      files: {},
+    })
+    expect(last().headers['x-hozu-secret']).toBe('s3cret-0123456789abcdef')
     expect(last().headers['x-hozu-fingerprint']).toBe(
-      remoteContract(build.ir, ['notes.mine', 'notes.total', 'notes.add', 'notes.signIn']).fingerprint,
+      remoteContract(build.ir, ['notes.mine', 'notes.total', 'notes.add', 'notes.signIn', 'notes.hook'])
+        .fingerprint,
     )
   })
 
@@ -152,13 +169,14 @@ describe('remote() resolvers (ADR 0068)', () => {
       try {
         createDataRuntime({
           build,
-          env: { SVC_SECRET: 's' },
+          env: { SVC_SECRET: 's3cret-0123456789abcdef' },
           resolvers: resolvers(p, (implement) => [
             ...remote(o, list),
             ...[mine, total, add, signIn]
               .filter((d) => !list.includes(d))
               .map((d) => implement(d as typeof total, () => 0)),
             ...(list.includes(feed) ? [] : [implement(feed, () => new Response(''))]),
+            ...(list.includes(hook) ? [] : [implement(hook, () => ({}))]),
           ]),
         })
         return []
@@ -175,6 +193,44 @@ describe('remote() resolvers (ADR 0068)', () => {
     expect(codes([total], { ...options(), url: { env: 'SVC_URL' } } as never)).toEqual([
       'HZ093 remote() reads SVC_URL, which project({ env: { server } }) does not declare',
     ])
+  })
+
+  it('HZ093: a remote() without a secret of 16 characters or more, since the service trusts the session it is sent', () => {
+    const run = (o: object, secret: string) => {
+      try {
+        createDataRuntime({
+          build,
+          env: { SVC_SECRET: secret },
+          resolvers: resolvers(p, (implement) => [
+            ...remote(o as never, [mine, total, add, signIn, hook]),
+            implement(feed, () => new Response('')),
+          ]),
+        })
+        return []
+      } catch (error) {
+        return (error as DataRuntimeError).diagnostics.map((d) => d.message)
+      }
+    }
+    const { secret: _, ...open } = options()
+    expect(run(open, 's3cret-0123456789abcdef')).toEqual([
+      'remote() has no secret, so anyone who reaches the service could call it with any session',
+    ])
+    expect(run(options(), 'short')).toEqual([
+      'remote() secret SVC_SECRET holds 5 characters; it needs 16 or more',
+    ])
+  })
+
+  it("sends an endpoint's request headers without the cookie, and a mutation's uploads", async () => {
+    const data = runtime().scope({ user: 'ada' })
+    const request = new Request('http://app.test/api/hook', {
+      method: 'POST',
+      headers: { authorization: 'Bearer t0ken', cookie: 'hozu-session=abc' },
+    })
+    expect(await data.endpoint('notes.hook', {}, { request })).toMatchObject({ ok: true })
+    expect(last().body.headers).toEqual({ authorization: 'Bearer t0ken' })
+    const files = new Map([['f1', new File([new Uint8Array([104, 105])], 'hi.txt', { type: 'text/plain' })]])
+    await data.run('notes.add', { text: 'Tea' }, files)
+    expect(last().body.files).toEqual({ f1: { name: 'hi.txt', type: 'text/plain', size: 2, data: 'aGk=' } })
   })
 
   it('the fingerprint follows the declarations', () => {

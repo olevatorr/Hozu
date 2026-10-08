@@ -71,6 +71,11 @@ export type Run = (
     fail: Fail<any>
     setSession(value: unknown): void
     file(token: string): Promise<Upload | null>
+    /** The files this call carries, by token: a remote() resolver sends them to its service (ADR 0068). */
+    uploads?: ReadonlyMap<
+      string,
+      { name: string; type: string; size: number; arrayBuffer(): Promise<ArrayBuffer> }
+    >
     request?: unknown
     redirect?(to: unknown): unknown
     bytes?: Uint8Array | null
@@ -83,8 +88,11 @@ export interface RemoteOptions {
   url: string | { env: string }
   /** The contract `hozu gen` writes for the service; `hozu check` compares it with the declarations (HZ093). */
   contract: { readonly href: string }
-  /** A server env variable whose value every call sends as `x-hozu-secret`. */
-  secret?: { env: string }
+  /**
+   * A server env variable (16 characters or more) whose value every call sends as `x-hozu-secret`: the service
+   * trusts the session in the call, so it must answer only the Hozu server.
+   */
+  secret: { env: string }
   /** Milliseconds before a call answers `Unexpected`; 10 000 by default. */
   timeout?: number
 }

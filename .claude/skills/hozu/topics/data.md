@@ -99,7 +99,10 @@ export default app({
   A contract older than the declarations is HZ093; the service answers 409 to calls from other declarations.
 - In Go: return a declared error as the error value (`hozu.NotesAddNoteDuplicate{Text: t}`), `hozu.Invalid{…}` for
   input problems; `ctx.Session` is nil when signed out; `ctx.SetSession(…)` / `ctx.SignOut()` in mutations. Public
-  queries never receive the session. Serve `hozu.Handler(r, hozu.Options{Secret: …})` on a private address.
+  queries never receive the session. `ctx.File(token)` reads an upload, `ctx.Header` an endpoint's request headers
+  (no cookie), `ctx.Preview` preview mode. The secret is required (16+ characters, the same value on both sides,
+  HZ093): the service trusts the session it is sent, so serve `hozu.Handler(r, hozu.Options{Secret: …})` on a private
+  address (it refuses to start without one).
 - `.meta({ title: 'Note' })` on a schema makes it one Go type wherever it appears; `z.int()` is `int64`, a plain
   number `float64`. Only `runs: 'server'` effects and JSON endpoints can be remote (HZ093).
 - `examples/notes-go` is the reference: the notes app with every resolver in Go.

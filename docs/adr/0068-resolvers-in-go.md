@@ -1,6 +1,6 @@
 # ADR 0068 — Resolvers in Go: the IR as a cross-language contract
 
-- **Status:** proposed, implemented on `feat/go-resolvers` for review (owner, 2026-10-08: "希望妳能提案這個全端框架後端推薦
+- **Status:** accepted for 0.22 after review (below); first proposed and implemented on `feat/go-resolvers` for review (owner, 2026-10-08: "希望妳能提案這個全端框架後端推薦
   後端使用的語言，我自己傾向Go … 要知道這是ai-first全端框架"; after the spike: "照你建議，你可以跑看看驗證嗎？如果沒問題再正式提案給我";
   after this ADR: "可以先寫，我在交由主agent定奪"). Not in a release; the main line decides whether and when.
 
@@ -39,7 +39,7 @@ resolvers(project, (implement) => [
   ...remote(
     {
       url: { env: 'NOTES_SERVICE_URL' },          // or a literal URL
-      secret: { env: 'NOTES_SERVICE_SECRET' },    // sent as x-hozu-secret
+      secret: { env: 'NOTES_SERVICE_SECRET' },    // required, 16+ characters, sent as x-hozu-secret
       contract: new URL('./service/hozu/contract.go', import.meta.url),
       // timeout: 10_000
     },
@@ -50,7 +50,9 @@ resolvers(project, (implement) => [
 - An implementation like any other (bound by declaration identity), so HZ021 (missing / twice) and every runtime rule
   apply unchanged. `access` runs in the Hozu server before the call; the answer is checked against the output and
   error schemas as for a TS resolver (`runtime.ts`), so a wrong service fails closed as `Unexpected`.
-- A call is `POST { effect, input, session }` with `x-hozu-fingerprint`; the answer is `{ ok }` or
+- A call is `POST { effect, input, session, preview, headers, files }` with `x-hozu-fingerprint` and
+  `x-hozu-secret`: `headers` are an endpoint's request headers without the cookie (an `Authorization` webhook works),
+  `files` the uploads the call carries (base64; `ctx.File(token)` in Go); the answer is `{ ok }` or
   `{ fail: { name, data } }`, plus `session` when it changed (`null` = signed out). Public queries never send the
   session (ADR 0005). A 409 (another contract) or any non-2xx is `Unexpected` naming the cause.
 - The URL and secret are read from the server env, which must declare them (HZ093), so `hozu env` lists them.
@@ -116,6 +118,15 @@ included), DevTools and `hozu why` work as before: they go through the Hozu serv
 | A direct call to the service skips `access` | private address plus `secret` (constant-time compare in `Handler`) |
 | Two toolchains for an agent | one loop in `hozu docs data --more`; `hozu gen` prints the next step |
 | `go` absent on a machine | the CLI never needs Go; the example's Go test is skipped |
+
+## Review (main agent, 2026-10-08) — accepted for 0.22 with three changes
+- **The secret is required.** The service trusts the session in the call, so without a secret anyone who reached
+  it could act as any visitor and skip `access`. `remote()` without `secret`, or a value under 16 characters, is
+  HZ093; the generated `Handler` panics on an empty or short `Options.Secret` instead of answering everyone.
+- **Endpoints get their request headers** (no cookie) and every call `preview`, so a JSON webhook with
+  `Authorization` can live in Go.
+- **Uploads cross the boundary** (`files`, `ctx.File`), instead of a token the service cannot read.
+- The owner chose to ship it in 0.22 with the fixes from the two trial apps (ADR 0069), then rerun both trials.
 
 ## Not done (for the decision)
 - No `hozu add` for a Go service; `go.mod` is the person's.
