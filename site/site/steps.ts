@@ -12,9 +12,11 @@ export const Steps = ui.component({
       title: 'font-black uppercase',
     },
   }),
-  props: z.object({ items: z.array(Item) }),
-  render: ({ props, classes }) =>
+  props: z.object({ items: z.array(Item).default([]) }),
+  children: true,
+  render: ({ props, children, classes }) =>
     ui.ol({}, [
+      ...children,
       ui.each(props.items, 'id', (i) =>
         ui.li({ class: classes.item }, [
           ui.p({ class: classes.title }, [i.title]),
@@ -22,4 +24,11 @@ export const Steps = ui.component({
         ]),
       ),
     ]),
+})
+export const Step = ui.component({
+  tag: 'li',
+  styles: tv({ slots: { base: 'border-4 border-ink p-5', title: 'font-black uppercase' } }),
+  props: z.object({ title: z.string(), body: z.string() }),
+  render: ({ props, classes }) =>
+    ui.li({}, [ui.p({ class: classes.title }, [props.title]), ui.p({ class: 'mt-2' }, [props.body])]),
 })

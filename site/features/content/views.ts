@@ -5,6 +5,7 @@ import { Prose } from '../../site/prose.ts'
 import { Chapter, Docs } from './articles.ts'
 import { articleBody } from './body.ts'
 import { Footer, Header } from './chrome.ts'
+import * as messages from './messages.ts'
 import {
   getChangelog,
   getChapter,
@@ -124,5 +125,6 @@ export const content = feature({
       Changelog,
       NotFound,
     },
+    messages,
   ],
 })

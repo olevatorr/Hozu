@@ -1,48 +1,22 @@
 import { ui } from '@hozu/core'
+import { contentText as t } from './messages.ts'
 
 const steps = [
-  [
-    'source',
-    'Source',
-    'Declare the intent',
-    'Typed feature builders describe views, queries, events and behaviour. References point to declarations, not copied strings.',
-  ],
-  [
-    'ir',
-    'Feature IR',
-    'Record the program',
-    'The intermediate representation stores those declarations and their relationships. The same structure is available to every tool.',
-  ],
-  [
-    'validator',
-    'Validator',
-    'Check the relationships',
-    'Rules catch invalid references and unsafe data flow. Contracts exercise machine transitions against the intended result.',
-  ],
-  [
-    'compiler',
-    'Compiler',
-    'Derive the plan',
-    'Scope and freshness determine rendering regions. Machine bindings determine the islands that need client JavaScript.',
-  ],
-  [
-    'runtime',
-    'Runtime',
-    'Execute the plan',
-    'The server renders HTML and serializes data. The browser only hydrates the interactive islands that the plan calls for.',
-  ],
+  ['source', t.stageSource, t.sourceTitle, t.sourceBody],
+  ['ir', t.stageIr, t.irTitle, t.irBody],
+  ['validator', t.stageValidator, t.validatorTitle, t.validatorBody],
+  ['compiler', t.stageCompiler, t.compilerTitle, t.compilerBody],
+  ['runtime', t.stageRuntime, t.runtimeTitle, t.runtimeBody],
 ] as const
 export const pipelineDiagram = () =>
   ui.section({ 'data-explorer': '', 'aria-labelledby': 'pipeline-explorer-title' }, [
-    ui.h2({ id: 'pipeline-explorer-title' }, ['Follow a feature through Hozu']),
-    ui.p({}, [
-      'Select a stage to see what it takes in and what it makes explicit. You can also use the arrow keys within the group.',
-    ]),
+    ui.h2({ id: 'pipeline-explorer-title' }, [t.pipelineTitle]),
+    ui.p({}, [t.pipelineIntro]),
     ui.svg(
       {
         role: 'img',
         viewBox: '0 0 640 90',
-        'aria-label': 'Source flows into Feature IR, then validator, compiler and runtime.',
+        'aria-label': t.pipelineAria,
         'data-diagram': '',
       },
       [
@@ -90,7 +64,7 @@ export const pipelineDiagram = () =>
       {
         role: 'img',
         viewBox: '0 0 300 355',
-        'aria-label': 'Source, Feature IR, validator, compiler and runtime in sequence.',
+        'aria-label': t.pipelineMobileAria,
         'data-mobile-diagram': '',
       },
       steps.map((step, index) =>
@@ -129,7 +103,7 @@ export const pipelineDiagram = () =>
       ),
     ),
     ui.fieldset({ 'data-pipeline-controls': '' }, [
-      ui.legend({}, ['Pipeline stage']),
+      ui.legend({}, [t.pipelineLegend]),
       ...steps.map(([id, title], index) =>
         ui.label({}, [
           ui.input({ type: 'radio', name: 'pipeline-stage', value: id, checked: index === 0 }),
@@ -138,31 +112,32 @@ export const pipelineDiagram = () =>
       ),
     ]),
     ...steps.map(([id, title, subtitle, body]) =>
-      ui.div({ 'data-stage': id }, [ui.h3({}, [title, ': ', subtitle]), ui.p({}, [body])]),
+      ui.div({ 'data-stage': id }, [ui.h3({}, [title, t.colon, subtitle]), ui.p({}, [body])]),
     ),
   ])
 export const renderDiagram = () =>
   ui.section({ 'data-render-explorer': '', 'aria-labelledby': 'render-explorer-title' }, [
-    ui.h2({ id: 'render-explorer-title' }, ['Try a render plan']),
-    ui.p({}, [
-      'Change the declarations. This illustrates one query in a static shell; nested dependencies can make a region more dynamic.',
+    ui.h2({ id: 'render-explorer-title' }, [t.renderTitle]),
+    ui.p({}, [t.renderIntro]),
+    ui.fieldset({}, [
+      ui.legend({}, [t.whoSees]),
+      ui.label({}, [
+        ui.input({ type: 'radio', name: 'scope', value: 'public', checked: true }),
+        t.scopePublic,
+      ]),
+      ui.label({}, [ui.input({ type: 'radio', name: 'scope', value: 'user' }), t.scopeUser]),
     ]),
     ui.fieldset({}, [
-      ui.legend({}, ['Who can see this data?']),
-      ui.label({}, [ui.input({ type: 'radio', name: 'scope', value: 'public', checked: true }), 'Public']),
-      ui.label({}, [ui.input({ type: 'radio', name: 'scope', value: 'user' }), 'Signed-in user']),
-    ]),
-    ui.fieldset({}, [
-      ui.legend({}, ['How fresh must it be?']),
+      ui.legend({}, [t.howFresh]),
       ...[
-        ['static', 'Static'],
-        ['isr', 'Revalidate'],
-        ['swr', 'Stale while revalidate'],
-        ['live', 'Every request or live'],
+        ['static', t.freshStatic],
+        ['isr', t.freshRevalidate],
+        ['swr', t.freshSwr],
+        ['live', t.freshLive],
       ].map(([id, title], index) =>
         ui.label({}, [
-          ui.input({ type: 'radio', name: 'freshness', value: id!, checked: index === 0 }),
-          title!,
+          ui.input({ type: 'radio', name: 'freshness', value: id as string, checked: index === 0 }),
+          title as typeof t.freshLive,
         ]),
       ),
     ]),
@@ -170,7 +145,7 @@ export const renderDiagram = () =>
       {
         role: 'img',
         viewBox: '0 0 640 90',
-        'aria-label': 'Declared scope and freshness feed the compiler, which derives a render region.',
+        'aria-label': t.renderAria,
         'data-diagram': '',
       },
       [
@@ -187,7 +162,7 @@ export const renderDiagram = () =>
           [],
         ),
         ui.text({ x: 105, y: 46, 'text-anchor': 'middle', fill: 'var(--color-ink)', 'font-size': 16 }, [
-          'Scope + freshness',
+          t.scopeFreshness,
         ]),
         ui.path({ d: 'M218 40h38m-6-6 6 6-6 6', stroke: 'var(--color-red)', fill: 'none' }, []),
         ui.rect(
@@ -203,7 +178,7 @@ export const renderDiagram = () =>
           [],
         ),
         ui.text({ x: 331, y: 46, 'text-anchor': 'middle', fill: 'var(--color-ink)', 'font-size': 16 }, [
-          'Compiler',
+          t.stageCompiler,
         ]),
         ui.path({ d: 'M404 40h38m-6-6 6 6-6 6', stroke: 'var(--color-red)', fill: 'none' }, []),
         ui.rect(
@@ -219,7 +194,7 @@ export const renderDiagram = () =>
           [],
         ),
         ui.text({ x: 546, y: 46, 'text-anchor': 'middle', fill: 'var(--color-ink)', 'font-size': 16 }, [
-          'Render region',
+          t.renderRegion,
         ]),
       ],
     ),
@@ -227,10 +202,10 @@ export const renderDiagram = () =>
       {
         role: 'img',
         viewBox: '0 0 300 210',
-        'aria-label': 'Scope and freshness flow into the compiler and determine the render region.',
+        'aria-label': t.renderMobileAria,
         'data-mobile-diagram': '',
       },
-      ['Scope + freshness', 'Compiler', 'Render region'].map((label, index) =>
+      [t.scopeFreshness, t.stageCompiler, t.renderRegion].map((label, index) =>
         ui.g({}, [
           ui.rect(
             {
@@ -266,35 +241,16 @@ export const renderDiagram = () =>
       ),
     ),
     ...[
-      [
-        'static',
-        'Static HTML',
-        'Public, static data can be rendered ahead of time. A view without machine bindings ships no client application JavaScript.',
-      ],
-      [
-        'isr',
-        'Incremental static regeneration',
-        'Public data uses the declared revalidation interval. The cached region can be regenerated by a server; this is not a GitHub Pages-only deployment.',
-      ],
-      [
-        'swr',
-        'Stale while revalidate',
-        'Public cached data can be served while the server refreshes it. Cache policy follows the declaration rather than a route-level override.',
-      ],
-      [
-        'live',
-        'Request-time region',
-        "Public data declared 'request' is read again on every request; 'live' also pushes changes over the framework’s live transport. A static export leaves a per-request region to the browser when its query declares runs: 'either'; otherwise the page needs a server.",
-      ],
-      [
-        'user',
-        'Private, request-time region',
-        "User scope wins over every freshness choice. This data never reaches a shared cacheable region: a server reads it per request, or the browser reads it after the page loads (runs: 'browser').",
-      ],
+      ['static', t.staticTitle, t.staticBody],
+      ['isr', t.isrTitle, t.isrBody],
+      ['swr', t.freshSwr, t.swrBody],
+      ['live', t.liveTitle, t.liveBody],
+      ['user', t.userTitle, t.userBody],
     ].map(([id, title, body]) =>
-      ui.div({ 'data-render-result': id! }, [ui.h3({}, [title!]), ui.p({}, [body!])]),
+      ui.div({ 'data-render-result': id as string }, [
+        ui.h3({}, [title as typeof t.freshLive]),
+        ui.p({}, [body as typeof t.freshLive]),
+      ]),
     ),
-    ui.p({ 'data-explorer-note': '' }, [
-      'Not shown: { poll: s }, which has the browser re-read the data on a timer and caches public results for half the interval. Hydration is a separate decision: machine-bound nodes, client components and browser-run regions become islands. These controls are native HTML and use no JavaScript.',
-    ]),
+    ui.p({ 'data-explorer-note': '' }, [t.explorerNote({ poll: '{ poll: s }' })]),
   ])

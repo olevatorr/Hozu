@@ -15,6 +15,7 @@ import {
   listChapters,
   listDocs,
   listTrials,
+  Translated,
 } from './features/content/model.ts'
 import { mediaOrigin } from './features/home/media.ts'
 import { getPlayground } from './features/home/model.ts'
@@ -66,24 +67,38 @@ const rewriteLinks = (html: string, source: string) =>
       const path = new URL(src, `https://source.local/${source}`).pathname.slice(1)
       return path.startsWith('docs/trials/') ? `src="/trials/${path.slice(12)}"` : match
     })
-const docs = (await loadCollection({ dir: new URL('./content/docs/', import.meta.url), schema: Frontmatter }))
-  .map(({ slug, data, html, headings }) => ({
-    slug,
-    ...data,
-    html: highlight(html),
-    headings: headings.map((heading) => ({ ...heading, href: `#${heading.id}` })),
-  }))
-  .sort((a, b) => a.order - b.order)
-const chapters = (
-  await loadCollection({ dir: new URL('./content/how-it-works/', import.meta.url), schema: Frontmatter })
-)
-  .map(({ slug, data, html, headings }) => ({
-    slug,
-    ...data,
-    html: highlight(html),
-    headings: headings.map((heading) => ({ ...heading, href: `#${heading.id}` })),
-  }))
-  .sort((a, b) => a.order - b.order)
+const collection = async (path: string, translated = false) =>
+  (
+    await loadCollection({
+      dir: new URL(path, import.meta.url),
+      schema: translated ? Translated : Frontmatter,
+    }).catch(() => [])
+  )
+    .map(({ slug, data, html, headings }) => ({
+      slug,
+      title: data.title,
+      description: data.description,
+      order: data.order,
+      html: highlight(html),
+      headings: headings.map((heading) => ({ ...heading, href: `#${heading.id}` })),
+    }))
+    .sort((a, b) => a.order - b.order)
+const docs = await collection('./content/docs/')
+const chapters = await collection('./content/how-it-works/')
+/** Translated pages by locale; a page without one shows the English text with translated: false (ADR 0074). */
+const translations: Record<string, { docs: typeof docs; chapters: typeof docs }> = {
+  'zh-TW': {
+    docs: await collection('./content/zh-TW/docs/', true),
+    chapters: await collection('./content/zh-TW/how-it-works/', true),
+  },
+}
+const localized = (items: typeof docs, kind: 'docs' | 'chapters', locale: string) => {
+  const own = translations[locale]?.[kind] ?? []
+  return items.map((item) => {
+    const t = own.find((x) => x.slug === item.slug)
+    return t ? { ...t, order: item.order, translated: true } : { ...item, translated: locale === 'en' }
+  })
+}
 const trials = await Promise.all(
   (await loadCollection({ dir: new URL('../docs/trials/', import.meta.url), schema: z.object({}) })).map(
     async ({ slug, html, headings }) => {
@@ -108,19 +123,30 @@ const changelog = (await loadCollection({ dir: new URL('../', import.meta.url), 
 )
 if (!changelog) throw new Error('CHANGELOG.md was not loaded')
 const changelogHtml = highlight(rewriteLinks(changelog.html, 'CHANGELOG.md'))
-const summary = ({ slug, title, description, order }: (typeof docs)[number]) => ({
+const summary = ({
+  slug,
+  title,
+  description,
+  order,
+}: {
+  slug: string
+  title: string
+  description: string
+  order: number
+}) => ({
   slug,
   title,
   description,
   order,
 })
-const article = (items: typeof docs, slug: string) => {
+const article = (items: ((typeof docs)[number] & { translated?: boolean })[], slug: string) => {
   const index = items.findIndex((item) => item.slug === slug)
   const item = items[index]
   return item
     ? {
         ...item,
         hasCode: item.html.includes('<pre'),
+        translated: item.translated ?? true,
         previous: items.slice(Math.max(0, index - 1), index).map(summary),
         next: items.slice(index + 1, index + 2).map(summary),
       }
@@ -128,15 +154,23 @@ const article = (items: typeof docs, slug: string) => {
 }
 export default app({
   resolvers: resolvers(project, (implement) => [
-    implement(listChapters, () => chapters.map(summary)),
-    implement(getChapter, ({ slug }, { fail }) => article(chapters, slug) ?? fail('NotFound', { slug })),
+    implement(listChapters, ({ locale }) => localized(chapters, 'chapters', locale).map(summary)),
+    implement(
+      getChapter,
+      ({ slug, locale }, { fail }) =>
+        article(localized(chapters, 'chapters', locale), slug) ?? fail('NotFound', { slug }),
+    ),
     implement(getStart, () => ({
       html: highlight(
         '<pre><code class="language-sh">npm create hozu@latest my-app -- --agent claude\ncd my-app\nnpm install\nnpx hozu add feature tasks --page /tasks\nnpx hozu check</code></pre>',
       ),
     })),
-    implement(listDocs, () => docs.map(summary)),
-    implement(getDoc, ({ slug }, { fail }) => article(docs, slug) ?? fail('NotFound', { slug })),
+    implement(listDocs, ({ locale }) => localized(docs, 'docs', locale).map(summary)),
+    implement(
+      getDoc,
+      ({ slug, locale }, { fail }) =>
+        article(localized(docs, 'docs', locale), slug) ?? fail('NotFound', { slug }),
+    ),
     implement(listTrials, () => trials.map(summary)),
     implement(getTrial, ({ slug }, { fail }) => article(trials, slug) ?? fail('NotFound', { slug })),
     implement(getPlayground, () => playground),

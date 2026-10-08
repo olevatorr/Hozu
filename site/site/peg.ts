@@ -1,4 +1,4 @@
-import { ui } from '@hozu/core'
+import { ui, type Val } from '@hozu/core'
 
 type Mood = 'calm' | 'hello' | 'wait' | 'fits' | 'oops'
 
@@ -10,14 +10,14 @@ const art: Record<Mood, { file: string; width: number; height: number; alt: stri
   oops: { file: 'peg-oops-animated', width: 360, height: 510, alt: 'Peg holds up a sign: OOPS!' },
 }
 
-export const peg = (mood: Mood, body: number, className: string, decorative = false) => {
+export const peg = (mood: Mood, body: number, className: string, decorative = false, label?: Val<string>) => {
   const scale = body / 250
   const { file, width, height, alt } = art[mood]
   return ui.img({
     src: ui.asset(new URL(`../assets/peg/${file}.svg`, import.meta.url)),
     width: Math.round(width * scale),
     height: Math.round(height * scale),
-    alt: decorative ? '' : alt,
+    alt: decorative ? '' : (label ?? alt),
     class: className,
   })
 }

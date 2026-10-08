@@ -36,3 +36,11 @@ timers with `timers.includes(a.ms)`, so HZ018 still misses a changed duration.
   cannot tell the change apart. The site specifies the pace in a way the rebuild cannot satisfy (the second stage
   is reached at 2.5 s), and keeps the 2.3 s lower bound as a separate contract. The fix belongs in the validator:
   restore the old `ms` values instead of filtering.
+
+## A translated message cannot sit in an array prop (0.26, the zh-TW site)
+- **Approach:** `Display`, `Steps`, `StatTable` and `Ticker` took arrays of strings; the Chinese site passed
+  `homeText.x` messages into them.
+- **Result:** the same rule as the first entry: array props hold literals only, and a message is a reference.
+- **Root cause:** as above. The site gave those components children (one item component per entry) and kept the array
+  props for the English-only DevTools page, so each now has two ways to receive its items. Allowing references in
+  array props would remove the second way.

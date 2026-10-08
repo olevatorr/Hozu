@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { access, readdir, readFile, stat } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
@@ -10,6 +11,25 @@ import { catches, claims, speed } from './features/content/claims.ts'
 import { films, mediaOrigin } from './features/home/media.ts'
 
 const app = testApp(site)
+
+const translated = new URL('./content/zh-TW/', import.meta.url)
+const stale: string[] = []
+for (const kind of await readdir(translated)) {
+  for (const file of await readdir(new URL(`${kind}/`, translated))) {
+    const text = await readFile(new URL(`${kind}/${file}`, translated), 'utf8')
+    const source = /^source:\s*(\w+)/m.exec(text)?.[1]
+    const english = await readFile(new URL(`./content/${kind}/${file}`, import.meta.url))
+    const now = createHash('sha256').update(english).digest('hex').slice(0, 12)
+    if (source !== now)
+      stale.push(`content/zh-TW/${kind}/${file} (source ${source ?? 'missing'}, English now ${now})`)
+  }
+}
+assert.deepEqual(
+  stale,
+  [],
+  `translations older than their English page: update each and its source hash\n${stale.join('\n')}`,
+)
+console.log('Every zh-TW translation matches the English page it was made from')
 for (const [path, status, text] of [
   ['/', 200, 'Hozu checks it'],
   ['/', 200, 'It costs about what Nuxt does'],
@@ -28,6 +48,11 @@ for (const [path, status, text] of [
   ['/trials/0012-correctness-notes', 200, '67/72'],
   ['/changelog', 200, '0.3.0'],
   ['/does-not-exist', 404, 'Nothing fits here'],
+  ['/zh-TW', 200, 'English'],
+  ['/zh-TW/docs/concepts', 200, '核心概念'],
+  ['/zh-TW/docs/views', 200, '本頁目前只有英文版'],
+  ['/zh-TW/how-it-works/pipeline', 200, 'IR'],
+  ['/', 200, '中文'],
   ['/docs/does-not-exist', 404, 'Page not found'],
   ['/trials/does-not-exist', 404, 'Page not found'],
 ] as const) {
@@ -160,15 +185,18 @@ for (const file of files.filter((name) => name.endsWith('.html'))) {
   const html = await readFile(new URL(file, root), 'utf8')
   assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1, `${file}: one main heading`)
   assert.equal((html.match(/<main[ >]/g) ?? []).length, 1, `${file}: one main landmark`)
-  const interactive = file === 'how-it-works/index.html'
+  const english = !file.startsWith('zh-TW/')
+  const interactive = file.replace(/^zh-TW\//, '') === 'how-it-works/index.html'
   if (interactive) {
     assert.match(
       html,
       /<script type="module" src="\/_hozu\/client\.js\?v=[0-9a-f]{12}">/,
       'Overview loads its Hozu island',
     )
-    assert.ok(html.includes('Run example'), 'Pipeline interaction exported')
-    assert.ok(html.includes('Machine binding'), 'Render-plan interaction exported')
+    if (english) {
+      assert.ok(html.includes('Run example'), 'Pipeline interaction exported')
+      assert.ok(html.includes('Machine binding'), 'Render-plan interaction exported')
+    }
   } else if (html.includes('<pre')) {
     assert.match(
       html,
@@ -225,7 +253,7 @@ for (const file of files.filter((name) => name.endsWith('.html'))) {
   const html = await readFile(new URL(file, root), 'utf8')
   const payload = html.match(/<script type="application\/json" id="hozu-payload">(.*?)<\/script>/s)?.[1]
   const ids: string[] = payload ? JSON.parse(payload).ids : []
-  const allowed = islandFeatures[file] ?? (html.includes('<pre') ? ['content'] : [])
+  const allowed = islandFeatures[file.replace(/^zh-TW\//, '')] ?? (html.includes('<pre') ? ['content'] : [])
   for (const id of ids) assert.ok(allowed.includes(id.split('.')[0]!), `${file}: unexpected island ${id}`)
   assert.ok(
     ids.length > 0 || !html.includes('/_hozu/client.js'),
@@ -247,7 +275,9 @@ const jointBundle = homePage.match(/\/_hozu\/c\/site-Joint-[A-Z0-9]+\.js/)?.[0]
 assert.ok(jointBundle, 'the home page references the joint bundle')
 const jointBytes = gzipSync(await readFile(new URL(`.${jointBundle}`, root))).length
 assert.ok(jointBytes <= 180 * 1024, `joint bundle is ${jointBytes} B gzip, limit 180 KB`)
-for (const file of files.filter((name) => name.endsWith('.html') && name !== 'index.html'))
+for (const file of files.filter(
+  (name) => name.endsWith('.html') && !['index.html', 'zh-TW/index.html'].includes(name),
+))
   assert.ok(
     !(await readFile(new URL(file, root), 'utf8')).includes('site-Joint-'),
     `${file}: no joint bundle`,

@@ -14,7 +14,9 @@ import {
 } from './features/content/views.ts'
 import { DevToolsPage } from './features/home/devtools.ts'
 import { homePage } from './features/home/feature.ts'
+import { homeText } from './features/home/messages.ts'
 import { Home } from './features/home/views.ts'
+import { labText } from './features/lab/messages.ts'
 import { How, lab } from './features/lab/views.ts'
 import { changelog, chapter, devtools, doc, home, how, notFound, trial, trials } from './routes.ts'
 import { kit } from './site/kit.ts'
@@ -26,7 +28,14 @@ export default project({
   app: new URL('./app.ts', import.meta.url),
   previews: new URL('./previews.ts', import.meta.url),
   styles: new URL('./app.css', import.meta.url),
-  site: { url: 'https://hozu.org', name: 'Hozu', lang: 'en', icon, themeColor: '#f1ede4' },
+  site: {
+    url: 'https://hozu.org',
+    name: 'Hozu',
+    lang: 'en',
+    locales: ['en', 'zh-TW'],
+    icon,
+    themeColor: '#f1ede4',
+  },
   notFound,
   routes: { home, doc, trials, trial, changelog, notFound, how, chapter, devtools },
   pages: [
@@ -35,8 +44,8 @@ export default project({
       assert: 'static',
       head: {
         render: () => ({
-          title: 'How Hozu works',
-          description: 'Explore the design, its checks and its trade-offs.',
+          title: labText.headTitle,
+          description: labText.headDescription,
           image: share,
         }),
       },
@@ -46,19 +55,19 @@ export default project({
       assert: 'static',
       head: {
         query: getChapter,
-        input: (params) => ({ slug: params.slug }),
+        input: (params, locale) => ({ slug: params.slug, locale }),
         failed: { NotFound: 404 },
         render: (article) => ({ title: article.title, description: article.description, image: share }),
       },
-      entries: { query: listChapters, input: {}, params: (item) => ({ slug: item.slug }) },
+      entries: { query: listChapters, input: { locale: 'en' }, params: (item) => ({ slug: item.slug }) },
     }),
     ui.page(home, {
       views: [Header, Home, Footer],
       assert: 'static',
       head: {
         render: () => ({
-          title: 'Hozu — An AI-first web framework',
-          description: 'Invalid programs are hard to express. Valid programs are cheap to verify.',
+          title: homeText.headTitle,
+          description: homeText.headDescription,
           image: share,
         }),
       },
@@ -68,11 +77,11 @@ export default project({
       assert: 'static',
       head: {
         query: getDoc,
-        input: (params) => ({ slug: params.slug }),
+        input: (params, locale) => ({ slug: params.slug, locale }),
         failed: { NotFound: 404 },
         render: (article) => ({ title: article.title, description: article.description, image: share }),
       },
-      entries: { query: listDocs, input: {}, params: (item) => ({ slug: item.slug }) },
+      entries: { query: listDocs, input: { locale: 'en' }, params: (item) => ({ slug: item.slug }) },
     }),
     ui.page(devtools, {
       views: [Header, DevToolsPage, Footer],

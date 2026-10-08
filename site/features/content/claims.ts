@@ -5,6 +5,8 @@ export interface Claim {
   label: string
   value: string
   trial: string
+  /** A count out of a total, written per language ('29 of 29', '29／29'); `value` is the English form. */
+  of?: [number, number]
 }
 export const claims: Claim[] = [
   {
@@ -20,11 +22,18 @@ export const claims: Claim[] = [
     trial: '0024-learning-cost',
   },
   { id: 'coldCalls', label: 'Tool calls, 8 unseen changes', value: '148 vs 86', trial: '0024-learning-cost' },
-  { id: 'passed', label: 'Changes with every check passing', value: '29 of 29', trial: '0024-learning-cost' },
+  {
+    id: 'passed',
+    label: 'Changes with every check passing',
+    value: '29 of 29',
+    of: [29, 29],
+    trial: '0024-learning-cost',
+  },
   {
     id: 'nuxtSilent',
     label: 'Changes where Nuxt silently broke a feature',
     value: '3 of 29',
+    of: [3, 29],
     trial: '0024-learning-cost',
   },
   { id: 'tokens', label: 'Tokens per change, against Nuxt', value: '1.34–1.72×', trial: '0021-0-8-long-run' },

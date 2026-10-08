@@ -5,6 +5,8 @@
 - A new app has `@hozu/bundle`, so `hozu build --target workers | vercel` works right after `create-hozu`. An app
   without it gets `npm install -D @hozu/bundle` as the fix, not `Cannot find module` (the 0.26.0 release check found
   it on a fresh install).
+- The S1 / S2 smoothness budgets no longer run `examples/playground`, which calls a public API: a bench must not
+  depend on the network.
 
 ## 0.26.0 — Deploying is one command (ADR 0073)
 

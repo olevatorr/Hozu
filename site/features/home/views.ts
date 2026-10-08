@@ -1,4 +1,4 @@
-import { ui } from '@hozu/core'
+import { ui, type Val } from '@hozu/core'
 import { changelog, chapter, devtools, doc, home, how, trial, trials } from '../../routes.ts'
 import { Button } from '../../site/button.ts'
 import { CatchCard } from '../../site/catch-card.ts'
@@ -10,17 +10,18 @@ import { peg } from '../../site/peg.ts'
 import { Receipt, ReceiptLine } from '../../site/receipt.ts'
 import { Section } from '../../site/section.ts'
 import { SpeedTable } from '../../site/speed-table.ts'
-import { StatTable } from '../../site/stat-table.ts'
-import { Steps } from '../../site/steps.ts'
+import { StatRow, StatTable } from '../../site/stat-table.ts'
+import { Step, Steps } from '../../site/steps.ts'
 import { Ticker } from '../../site/ticker.ts'
 import { support } from '../content/chrome.ts'
 import { catches, claim, speed, speedSource } from '../content/claims.ts'
 import { getStart, listChapters } from '../content/model.ts'
 import { figmaCards } from './devtools.ts'
 import { films } from './media.ts'
+import { homeText as t } from './messages.ts'
 import { Break, Fix, getPlayground, m } from './model.ts'
 
-const claimLink = (id: string, text: string) =>
+const claimLink = (id: string, text: Val<string>) =>
   ui.a(
     {
       href: ui.link(trial, { slug: claim(id).trial }),
@@ -29,6 +30,24 @@ const claimLink = (id: string, text: string) =>
     },
     [text],
   )
+const claimLabels: Record<string, Val<string>> = {
+  cold: t.claimCold,
+  known: t.claimKnown,
+  coldCalls: t.claimColdCalls,
+  passed: t.claimPassed,
+  nuxtSilent: t.claimNuxtSilent,
+  js: t.claimJs,
+}
+const stories: Record<string, Val<string>> = {
+  HZ049: t.storyHZ049,
+  HZ054: t.storyHZ054,
+  HZ091: t.storyHZ091,
+  HZ057: t.storyHZ057,
+}
+const shown = (id: string) => {
+  const c = claim(id)
+  return c.of ? t.ofValue({ a: c.of[0], b: c.of[1] }) : c.value
+}
 const receiptLines = (ids: string[]) =>
   ui.div(
     {},
@@ -36,14 +55,14 @@ const receiptLines = (ids: string[]) =>
       ui.use(ReceiptLine, {
         props: {
           claim: id,
-          label: claim(id).label,
-          value: claim(id).value,
+          label: claimLabels[id] ?? claim(id).label,
+          value: shown(id),
           href: ui.link(trial, { slug: claim(id).trial }),
         },
       }),
     ),
   )
-const curve = (slug: string, alt: string) =>
+const curve = (slug: string, alt: Val<string>) =>
   ui.img({
     src: ui.asset(new URL(`../../../docs/trials/${slug}.svg`, import.meta.url)),
     width: 960,
@@ -51,44 +70,41 @@ const curve = (slug: string, alt: string) =>
     alt,
     class: 'mt-6 w-full border-4 border-ink bg-white',
   })
+const rise = (text: Val<string>, accent: boolean) =>
+  ui.span({}, [
+    ui.span({ class: accent ? 'inline-block animate-rise text-red' : 'inline-block animate-rise' }, [text]),
+    ' ',
+  ])
 const choice =
   'border-4 border-paper px-3 py-2 font-mono text-xs font-bold aria-pressed:bg-paper aria-pressed:text-ink'
 
 export const Home = ui.view({
   machine: m,
   route: home,
-  render: ({ ctx, is }) =>
+  render: ({ ctx, is, locale }) =>
     ui.main({ id: 'main' }, [
       ui.div({ class: 'relative overflow-hidden bg-paper' }, [
         ui.div({ class: 'mx-auto grid max-w-6xl gap-10 px-5 py-16 md:grid-cols-2 md:items-center' }, [
           ui.div({}, [
-            ui.use(Display, {
-              props: {
-                words: [
-                  { id: '1', text: 'Your', accent: false },
-                  { id: '2', text: 'AI', accent: false },
-                  { id: '3', text: 'writes', accent: false },
-                  { id: '4', text: 'the app.', accent: false },
-                  { id: '5', text: 'Hozu', accent: true },
-                  { id: '6', text: 'checks', accent: true },
-                  { id: '7', text: 'it.', accent: true },
-                ],
-              },
-            }),
-            ui.p({ class: 'mt-5 max-w-md text-lg' }, [
-              'Your AI has never seen Hozu. While it learns, a change costs more than in Nuxt; once it knows Hozu, about the same. Every change is checked before it reaches anyone.',
+            ui.use(Display, {}, [
+              rise(t.word1, false),
+              rise(t.word2, false),
+              rise(t.word3, false),
+              rise(t.word4, false),
+              rise(t.word5, true),
+              rise(t.word6, true),
+              rise(t.word7, true),
             ]),
+            ui.p({ class: 'mt-5 max-w-md text-lg' }, [t.lead]),
             ui.div({ class: 'mt-6 flex flex-wrap gap-3' }, [
               ui.use(Button, { props: { href: ui.link(doc, { slug: 'getting-started' }) } }, [
-                'Start building →',
+                t.startBuilding,
               ]),
               ui.use(Button, { variant: { intent: 'outline' }, props: { href: ui.link(trials, null) } }, [
-                'See the proof',
+                t.seeProof,
               ]),
             ]),
-            ui.p({ class: 'mt-8 font-mono text-xs font-bold text-ember' }, [
-              '↓ Press AI CHANGE: an agent edits this app, and Hozu checks the change.',
-            ]),
+            ui.p({ class: 'mt-8 font-mono text-xs font-bold text-ember' }, [t.pressHint]),
             ui.div({ class: 'mt-3 flex max-w-xl items-end gap-3' }, [
               ui.div(
                 {
@@ -104,7 +120,7 @@ export const Home = ui.view({
                     [
                       ui.span({}, [
                         'notes · ',
-                        ui.span({ class: 'hidden sm:inline' }, ['signed in as ']),
+                        ui.span({ class: 'hidden sm:inline' }, [t.signedInAs]),
                         'ada',
                       ]),
                       is(['broken'])
@@ -114,7 +130,7 @@ export const Home = ui.view({
                               class: 'shrink-0 whitespace-nowrap bg-green px-3 py-1 font-black text-ink',
                               on: { click: ui.send(Fix, {}) },
                             },
-                            ['APPLY FIX'],
+                            [t.applyFix],
                           )
                         : ui.button(
                             {
@@ -123,14 +139,14 @@ export const Home = ui.view({
                               toggle: { 'animate-nudge': !ctx.tried },
                               on: { click: ui.send(Break, {}) },
                             },
-                            ['AI CHANGE'],
+                            [t.aiChange],
                           ),
                     ],
                   ),
-                  ui.p({ class: 'px-3 py-2' }, ['Buy milk']),
+                  ui.p({ class: 'px-3 py-2' }, [t.buyMilk]),
                   ui.if(
                     ctx.broken === true,
-                    [ui.p({ class: 'overflow-hidden bg-red/10 px-3 py-2' }, ["Bob's secret · bob ⚠"])],
+                    [ui.p({ class: 'overflow-hidden bg-red/10 px-3 py-2' }, [t.bobSecret])],
                     [],
                     'intrude',
                   ),
@@ -141,11 +157,7 @@ export const Home = ui.view({
                       toggle: { 'bg-red text-ink': ctx.broken, 'animate-pass': !ctx.broken && ctx.tried },
                       'aria-live': 'polite',
                     },
-                    [
-                      ctx.broken
-                        ? '✘ HZ049 your notes would be cached and shown to bob'
-                        : '✔ types ok · 0 errors · lock current',
-                    ],
+                    [ctx.broken ? t.brokenLine : '✔ types ok · 0 errors · lock current'],
                   ),
                 ],
               ),
@@ -155,37 +167,51 @@ export const Home = ui.view({
                     'relative flex h-[136px] w-24 shrink-0 items-end justify-start sm:h-[196px] sm:w-[138px]',
                 },
                 [
-                  ui.if(ctx.broken === true, [peg('wait', 96, 'h-auto w-24 sm:w-[138px]')], [], 'pop'),
-                  ui.if(!ctx.broken && ctx.tried, [peg('fits', 96, 'h-auto w-24 sm:w-[138px]')], [], 'pop'),
-                  ui.if(!ctx.tried, [peg('hello', 96, 'h-auto w-[53px] sm:w-[77px]')], [], 'pop'),
+                  ui.if(
+                    ctx.broken === true,
+                    [peg('wait', 96, 'h-auto w-24 sm:w-[138px]', false, t.pegWait)],
+                    [],
+                    'pop',
+                  ),
+                  ui.if(
+                    !ctx.broken && ctx.tried,
+                    [peg('fits', 96, 'h-auto w-24 sm:w-[138px]', false, t.pegFits)],
+                    [],
+                    'pop',
+                  ),
+                  ui.if(
+                    !ctx.tried,
+                    [peg('hello', 96, 'h-auto w-[53px] sm:w-[77px]', false, t.pegHello)],
+                    [],
+                    'pop',
+                  ),
                 ],
               ),
             ]),
           ]),
           ui.use(Joint, { props: { split: ctx.broken } }),
         ]),
-        ui.use(Ticker, {
-          slots: {
-            source: ui.a({ href: ui.link(trial, { slug: claim('cold').trial }), class: 'underline' }, [
-              'Sources',
-            ]),
+        ui.use(
+          Ticker,
+          {
+            slots: {
+              source: ui.a({ href: ui.link(trial, { slug: claim('cold').trial }), class: 'underline' }, [
+                t.sources,
+              ]),
+            },
           },
-          props: {
-            items: [
-              `${claim('passed').value} changes passed every check`,
-              `${claim('cold').value} Nuxt’s tokens while learning`,
-              `${claim('known').value} once known`,
-              'every change checked',
-            ],
-          },
-        }),
+          [
+            ui.span({}, [t.tickerPassed({ v: shown('passed') }), ' ■']),
+            ui.span({}, [t.tickerLearning({ v: claim('cold').value }), ' ■']),
+            ui.span({}, [t.tickerKnown({ v: claim('known').value }), ' ■']),
+            ui.span({}, [t.tickerChecked, ' ■']),
+          ],
+        ),
       ]),
       ui.div({}, [
-        ui.use(Section, { props: { kicker: 'Watch · 2 min' } }, [
-          ui.use(Heading, {}, ['Two minutes. No code.']),
-          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
-            'You dream it, your AI builds it, and Peg, the red peg that locks the joint, checks every change before it reaches anyone. For vibe coders and designers.',
-          ]),
+        ui.use(Section, { props: { kicker: t.watchKicker } }, [
+          ui.use(Heading, {}, [t.watchHeading]),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [t.watchLead]),
           ui.video(
             {
               controls: true,
@@ -204,14 +230,13 @@ export const Home = ui.view({
               }),
             ],
           ),
-          ui.p({ class: 'mt-3 font-mono text-xs' }, ['English captions · voice generated by elevenlabs.io']),
+          ui.p({ class: 'mt-3 font-mono text-xs' }, [t.captions]),
         ]),
-        ui.use(Section, { props: { kicker: 'The bill' } }, [
-          ui.use(Heading, {}, [
-            'Your AI has never seen Hozu. It costs about what Nuxt does once it knows it.',
-          ]),
+        ui.use(Section, { props: { kicker: t.billKicker } }, [
+          ui.use(Heading, {}, [t.billHeading]),
           ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[28rem_minmax(0,1fr)]' }, [
             ui.use(Receipt, {
+              props: { pay: t.youPay, get: t.youGet },
               slots: {
                 pay: receiptLines(['cold', 'known', 'coldCalls']),
                 get: receiptLines(['passed', 'nuxtSilent', 'js']),
@@ -219,73 +244,66 @@ export const Home = ui.view({
             }),
             ui.div({ class: 'grid content-start gap-4 text-lg' }, [
               ui.p({}, [
-                'Every model already knows Nuxt. Hozu it learns from our guide, in every session. Even so, a change costs ',
-                claimLink('cold', `${claim('cold').value} Nuxt’s tokens`),
-                ', and once the guide is known, ',
-                claimLink('known', claim('known').value),
-                ': about the same. What is left is learning, not the framework.',
+                t.billCostA,
+                claimLink('cold', t.nuxtTokens({ v: claim('cold').value })),
+                t.billCostB,
+                claimLink('known', t.knownValue({ v: claim('known').value })),
+                t.billCostC,
               ]),
               ui.p({}, [
-                'What it buys: over 29 changes, Hozu passed every check of every step. Nuxt silently broke a working export in ',
-                claimLink('nuxtSilent', `${claim('nuxtSilent').value} changes`),
-                ' while its typecheck and build stayed green. Your agent runs the checker and fixes what it finds before it says “done”.',
+                t.billBuysA,
+                claimLink('nuxtSilent', t.silentChanges({ v: shown('nuxtSilent') })),
+                t.billBuysB,
               ]),
               ui.p({ class: 'font-mono text-xs' }, [
-                'These are trial 0024’s numbers: Hozu 0.14 against Nuxt 4.5.2, one app, one model (Claude Opus). Later versions have not been measured this way. Earlier versions cost more: ',
-                claimLink('oldCost', `${claim('oldCost').value} on Hozu 0.7`),
-                ', ',
-                claimLink('tokens', `${claim('tokens').value} on 0.8`),
-                '.',
+                t.billNoteA,
+                claimLink('oldCost', t.onHozu07({ v: claim('oldCost').value })),
+                t.comma,
+                claimLink('tokens', t.on08({ v: claim('tokens').value })),
+                t.period,
               ]),
             ]),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'Speed' } }, [
-          ui.use(Heading, {}, ['Checked, and still the lightest page.']),
-          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
-            'The same page, 100 products and a cart counter, built with each framework and run in its own production server. Every request is rendered fresh. Only the parts that react to clicks ship JavaScript.',
-          ]),
+        ui.use(Section, { props: { kicker: t.speedKicker } }, [
+          ui.use(Heading, {}, [t.speedHeading]),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [t.speedLead]),
           ui.use(SpeedTable, {
             class: 'mt-8',
-            props: { caption: 'One page, four frameworks, rendered per request', rows: speed },
+            props: {
+              caption: t.speedCaption,
+              rows: speed,
+              labels: {
+                framework: t.colFramework,
+                requests: t.colRequests,
+                requestsShort: t.colRequestsShort,
+                js: t.colJs,
+                jsShort: t.colJsShort,
+                interactive: t.colInteractive,
+                interactiveShort: t.colInteractiveShort,
+              },
+            },
           }),
           ui.p({ class: 'mt-3 max-w-3xl font-mono text-xs' }, [
-            'Measured on 2026-10-08 with Hozu 0.25.0: one run on an Apple M4 Pro, Node 22.22.2, Chrome 154; browser timings with the CPU slowed four times. Next.js serving the page prerendered reaches 6,664 requests per second. With gzip accepted, Hozu answers 11,454 and Next.js 1,502; Nuxt and SvelteKit send their pages uncompressed. JavaScript sizes are all gzipped the same way. ',
-            ui.a({ href: speedSource, class: 'underline' }, ['How we measured']),
+            t.speedNote,
+            ui.a({ href: speedSource, class: 'underline' }, [t.howMeasured]),
             ' · ',
             ui.a(
               {
                 href: 'https://github.com/olevatorr/Hozu/blob/main/docs/benchmarks/0001-frameworks.md',
                 class: 'underline',
               },
-              ['The libraries alone (React, Vue, Preact, Svelte)'],
+              [t.librariesAlone],
             ),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'How you work' } }, [
-          ui.use(Heading, {}, ['Three steps. Your agent does the typing.']),
-          ui.use(Steps, {
-            class: 'mt-8',
-            props: {
-              items: [
-                {
-                  id: '1',
-                  title: '1 · Create',
-                  body: 'One command makes the app and puts the Hozu guide next to it.',
-                },
-                {
-                  id: '2',
-                  title: '2 · Ask your agent',
-                  body: '“Add sharing to my notes.” Or point at the screen with Hozu DevTools: it hands your agent the file and line.',
-                },
-                {
-                  id: '3',
-                  title: '3 · It checks itself',
-                  body: 'It runs hozu check and fixes what it finds before it tells you it is done.',
-                },
-              ],
-            },
-          }),
+        ui.use(Section, { props: { kicker: t.workKicker } }, [
+          ui.use(Heading, {}, [t.workHeading]),
+          ui.use(Steps, { class: 'mt-8' }, [
+            ui.use(Step, { props: { title: t.workCreate, body: t.workCreateBody } }),
+            ui.use(Step, { props: { title: t.workAsk, body: t.workAskBody } }),
+            ui.use(Step, { props: { title: t.workChecks, body: t.workChecksBody } }),
+          ]),
           ui.query(
             getStart,
             {},
@@ -300,271 +318,163 @@ export const Home = ui.view({
                 ),
               pending: null,
               failed: {
-                Unexpected: () => ui.p({ role: 'alert' }, ['The start commands are unavailable.']),
+                Unexpected: () => ui.p({ role: 'alert' }, [t.startUnavailable]),
               },
             },
           ),
         ]),
-        ui.use(Section, { props: { kicker: 'Checked by the agent' } }, [
-          ui.use(Heading, {}, ['Your agent checks its own work. In a real browser.']),
-          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
-            'hozu check reads the whole program before anything runs. Then hozu browse uses the page the way a person would, in Chrome, and reports what each step changed. Your agent runs both before it tells you it is done, and you can run them too.',
+        ui.use(Section, { props: { kicker: t.agentKicker } }, [
+          ui.use(Heading, {}, [t.agentHeading]),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [t.agentLead]),
+          ui.use(Steps, { class: 'mt-8' }, [
+            ui.use(Step, { props: { title: 'hozu check', body: t.agentCheckBody } }),
+            ui.use(Step, { props: { title: 'hozu browse', body: t.agentBrowseBody } }),
+            ui.use(Step, { props: { title: t.agentHold, body: t.agentHoldBody } }),
           ]),
-          ui.use(Steps, {
-            class: 'mt-8',
-            props: {
-              items: [
-                {
-                  id: 'check',
-                  title: 'hozu check',
-                  body: 'Types, every rule with its suggested fix, a contract for every decision, and the lock of what each part does.',
-                },
-                {
-                  id: 'browse',
-                  title: 'hozu browse',
-                  body: 'Fill, click, submit and move between pages, with JavaScript on, off or both, as Ada and Bob at once.',
-                },
-                {
-                  id: 'hold',
-                  title: 'hold, then release',
-                  body: 'Keep a save waiting and read the busy page. Each step reports reloads, flashes and layout shift.',
-                },
-              ],
-            },
-          }),
           ui.p({ class: 'mt-6 max-w-2xl' }, [
-            'A storefront card in one trial looked right, and its link still could not be clicked: the heading’s ::after lay on top of it. Since 0.25, hozu browse fails that click and names what is on top. ',
-            ui.a({ href: ui.link(changelog, null), class: 'underline decoration-red' }, [
-              'What 0.25 changed',
-            ]),
+            t.agentStory,
+            ui.a({ href: ui.link(changelog, null), class: 'underline decoration-red' }, [t.agentChanged]),
           ]),
           ui.div({ class: 'mt-8 flex flex-wrap gap-3' }, [
-            ui.use(Button, { props: { href: ui.link(doc, { slug: 'cli' }) } }, ['The commands →']),
+            ui.use(Button, { props: { href: ui.link(doc, { slug: 'cli' }) } }, [t.agentCommands]),
             ui.use(
               Button,
               { variant: { intent: 'outline' }, props: { href: ui.link(doc, { slug: 'ai-agents' }) } },
-              ['Working with agents'],
+              [t.agentWorking],
             ),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'Who may see it' } }, [
-          ui.use(Heading, {}, ['Your notes stay yours. Hozu checks.']),
-          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
-            'Every query and change over a visitor’s data says who may run it. Forget to say it, and the app does not type-check. Hozu refuses everyone else before your code runs, and checks that a list holds only the visitor’s own rows.',
+        ui.use(Section, { props: { kicker: t.accessKicker } }, [
+          ui.use(Heading, {}, [t.accessHeading]),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [t.accessLead]),
+          ui.use(Steps, { class: 'mt-8' }, [
+            ui.use(Step, { props: { title: "access: 'signedIn'", body: t.accessDeclareBody } }),
+            ui.use(Step, { props: { title: 'Forbidden', body: t.accessRefuseBody } }),
+            ui.use(Step, { props: { title: t.accessTry, body: t.accessTryBody } }),
           ]),
-          ui.use(Steps, {
-            class: 'mt-8',
-            props: {
-              items: [
-                {
-                  id: 'declare',
-                  title: "access: 'signedIn'",
-                  body: 'Or the row’s owner, or a condition such as an admin role. One line next to the query.',
-                },
-                {
-                  id: 'refuse',
-                  title: 'Forbidden',
-                  body: 'Anyone else gets a refusal, and the page answers 403 or sends them to sign in.',
-                },
-                {
-                  id: 'try',
-                  title: 'Try it as Bob',
-                  body: 'One hozu browse command signs in as Ada and Bob and opens Ada’s page as Bob.',
-                },
-              ],
-            },
-          }),
           ui.div({ class: 'mt-8 flex flex-wrap gap-3' }, [
-            ui.use(Button, { props: { href: ui.link(doc, { slug: 'data' }) } }, ['Who may run it →']),
+            ui.use(Button, { props: { href: ui.link(doc, { slug: 'data' }) } }, [t.accessButton]),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'Data' } }, [
-          ui.use(Heading, {}, ['Your API, called from where it belongs.']),
-          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
-            'Each query and mutation says what it needs, and Hozu decides where it runs. A public API is rendered on the server first, then called straight from the browser: no second hop, no double traffic. A token that lives in the browser never travels to your server, and an app without a server exports to GitHub Pages.',
+        ui.use(Section, { props: { kicker: t.dataKicker } }, [
+          ui.use(Heading, {}, [t.dataHeading]),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [t.dataLead]),
+          ui.use(Steps, { class: 'mt-8' }, [
+            ui.use(Step, { props: { title: "runs: 'server'", body: t.dataServerBody } }),
+            ui.use(Step, { props: { title: "runs: 'either'", body: t.dataEitherBody } }),
+            ui.use(Step, { props: { title: "runs: 'browser'", body: t.dataBrowserBody } }),
           ]),
-          ui.use(Steps, {
-            class: 'mt-8',
-            props: {
-              items: [
-                {
-                  id: 'server',
-                  title: "runs: 'server'",
-                  body: 'A database, a secret or the session. The resolver in app.ts, as before.',
-                },
-                {
-                  id: 'either',
-                  title: "runs: 'either'",
-                  body: 'A public API, or your own with CORS. In the HTML on first paint, then from the browser.',
-                },
-                {
-                  id: 'browser',
-                  title: "runs: 'browser'",
-                  body: "The visitor's own token. Loading state on the server, the API call in the browser.",
-                },
-              ],
-            },
-          }),
           ui.div({ class: 'mt-8 flex flex-wrap gap-3' }, [
-            ui.use(Button, { props: { href: ui.link(doc, { slug: 'data' }) } }, ['Where data runs →']),
+            ui.use(Button, { props: { href: ui.link(doc, { slug: 'data' }) } }, [t.dataButton]),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'Backend' } }, [
-          ui.use(Heading, {}, ['Your backend can be Go.']),
-          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
-            'A resolver is ordinary backend code behind a typed declaration, so it does not have to be TypeScript. Name the effects in remote(), run hozu gen, and implement the Go interface it writes. Who may call, caching, tags and the check of every answer against its output schema stay in the Hozu server, so a service that answers wrongly fails closed.',
+        ui.use(Section, { props: { kicker: t.goKicker } }, [
+          ui.use(Heading, {}, [t.goHeading]),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [t.goLead]),
+          ui.use(Steps, { class: 'mt-8' }, [
+            ui.use(Step, { props: { title: 'remote()', body: t.goRemoteBody } }),
+            ui.use(Step, { props: { title: 'hozu gen', body: t.goGenBody } }),
+            ui.use(Step, { props: { title: t.goTried, body: t.goTriedBody } }),
           ]),
-          ui.use(Steps, {
-            class: 'mt-8',
-            props: {
-              items: [
-                {
-                  id: 'remote',
-                  title: 'remote()',
-                  body: 'One entry in app.ts names the service, its secret and the effects it implements. The rest stays in TypeScript.',
-                },
-                {
-                  id: 'gen',
-                  title: 'hozu gen',
-                  body: 'Writes the Go contract from your declarations. Change one and forget to regenerate: hozu check says which effects are stale.',
-                },
-                {
-                  id: 'tried',
-                  title: 'Tried by agents',
-                  body: 'An agent moved a shop admin’s order lifecycle, inventory and dashboard to Go. The notes app passes its hidden browser checks with every resolver in Go.',
-                },
-              ],
-            },
-          }),
-          ui.p({ class: 'mt-3 max-w-3xl font-mono text-xs' }, [
-            'Go pays off when a resolver does real work; for a thin one, the extra hop costs more than it saves. TypeScript stays the default.',
-          ]),
+          ui.p({ class: 'mt-3 max-w-3xl font-mono text-xs' }, [t.goNote]),
           ui.div({ class: 'mt-8 flex flex-wrap gap-3' }, [
-            ui.use(Button, { props: { href: ui.link(doc, { slug: 'go' }) } }, ['Resolvers in Go →']),
+            ui.use(Button, { props: { href: ui.link(doc, { slug: 'go' }) } }, [t.goButton]),
             ui.a(
               {
                 href: 'https://github.com/olevatorr/Hozu/tree/main/examples/notes-go',
                 class: 'self-center underline',
               },
-              ['The notes app in Go'],
+              [t.goNotes],
             ),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'Test as you build' } }, [
-          ui.use(Heading, {}, ['Run your API next to the page.']),
-          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
-            'npm run dev puts an API drawer under every page: the data it reads, the changes it makes and your endpoints, with the requests each call really sent. The environment is declared once, secrets stay on the server, and the server can call your APIs on the inside.',
-          ]),
-          ui.div({ class: 'mt-8' }, [
-            apiDemo(
-              'The API drawer docked under a task board: a query ran through the server and its answer shows as a table, with the request the page sent listed below',
-            ),
-          ]),
+        ui.use(Section, { props: { kicker: t.testKicker } }, [
+          ui.use(Heading, {}, [t.testHeading]),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [t.testLead]),
+          ui.div({ class: 'mt-8' }, [apiDemo(t.testDemo)]),
           ui.div({ class: 'mt-8 flex flex-wrap gap-3' }, [
-            ui.use(Button, { props: { href: ui.link(devtools, null) } }, ['See the drawer →']),
+            ui.use(Button, { props: { href: ui.link(devtools, null) } }, [t.testButton]),
             ui.use(
               Button,
               { variant: { intent: 'outline' }, props: { href: ui.link(doc, { slug: 'environment' }) } },
-              ['Environment'],
+              [t.testEnvironment],
             ),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'Scale' } }, [
-          ui.use(Heading, {}, ['Five hundred features. Same page.']),
-          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [
-            'We generated apps of 50 and 500 features and fixed what grew with the app instead of the page. A page now loads only its own code and links, the check after an edit runs the type check alongside everything else, and several servers keep one another’s caches honest.',
+        ui.use(Section, { props: { kicker: t.scaleKicker } }, [
+          ui.use(Heading, {}, [t.scaleHeading]),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [t.scaleLead]),
+          ui.use(Steps, { class: 'mt-8' }, [
+            ui.use(Step, { props: { title: t.scaleCheck, body: t.scaleCheckBody } }),
+            ui.use(Step, { props: { title: t.scalePage, body: t.scalePageBody } }),
+            ui.use(Step, { props: { title: t.scaleServers, body: t.scaleServersBody } }),
           ]),
-          ui.use(Steps, {
-            class: 'mt-8',
-            props: {
-              items: [
-                {
-                  id: 'check',
-                  title: '1.9 s check',
-                  body: 'hozu check after a one-line edit at 500 features. It was 4.6 s.',
-                },
-                {
-                  id: 'page',
-                  title: 'Same page size',
-                  body: 'A page carries the same data at 50 and at 500 features, and loads only its own code: 237 bytes here.',
-                },
-                {
-                  id: 'servers',
-                  title: 'Many servers',
-                  body: 'A change on one server clears the others’ caches. Memory stays bounded.',
-                },
-              ],
-            },
-          }),
           ui.div({ class: 'mt-8 flex flex-wrap gap-3' }, [
-            ui.use(Button, { props: { href: ui.link(doc, { slug: 'deploying' }) } }, ['Deploy several →']),
+            ui.use(Button, { props: { href: ui.link(doc, { slug: 'deploying' }) } }, [t.scaleButton]),
             ui.a(
               {
                 href: 'https://github.com/olevatorr/Hozu/blob/main/docs/benchmarks/0003-scale.md',
                 class: 'self-center underline',
               },
-              ['How we measured'],
+              [t.howMeasured],
             ),
           ]),
         ]),
         ui.use(Section, { props: { kicker: 'DevTools' } }, [
-          ui.use(Heading, {}, ['Point at it. Your agent gets the line.']),
+          ui.use(Heading, {}, [t.devtoolsHeading]),
           ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-center' }, [
-            selectDemo(
-              'Hozu DevTools on a task board: the Add task button is selected and the inspector says it is shared by six places',
-            ),
+            selectDemo(t.devtoolsDemo),
             ui.div({ class: 'grid content-start gap-4 text-lg' }, [
-              ui.p({}, [
-                'Run npm run dev, choose Select and click what is wrong. Say what should change, try a size, a colour or other words right on the page, and hand it over.',
-              ]),
-              ui.p({}, [
-                'The request names the file, the line and the Hozu way to make the change: one button or every button, a message shared by two places, a state that needs a contract. Your agent stops searching and starts fixing.',
-              ]),
-              ui.p({}, [
-                'And it points back: each part it changed gets a numbered frame on your page, with a note in your words.',
-              ]),
+              ui.p({}, [t.devtoolsSelect]),
+              ui.p({}, [t.devtoolsRequest]),
+              ui.p({}, [t.devtoolsBack]),
               ui.div({ class: 'mt-2 flex flex-wrap gap-3' }, [
-                ui.use(Button, { props: { href: ui.link(devtools, null) } }, ['Meet DevTools →']),
+                ui.use(Button, { props: { href: ui.link(devtools, null) } }, [t.devtoolsButton]),
               ]),
             ]),
           ]),
         ]),
-        ui.use(Section, { props: { kicker: 'For designers' } }, [
-          ui.use(Heading, {}, ['Feels like Figma.']),
+        ui.use(Section, { props: { kicker: t.designKicker } }, [
+          ui.use(Heading, {}, [t.designHeading]),
           ui.div({ class: 'mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-center' }, [
-            measureDemo(
-              'The Add task button is selected and shows 136 × 40; holding Alt and pointing at nearby parts draws red lines with the distance in px',
-            ),
+            measureDemo(t.designDemo),
             ui.div({ class: 'grid content-start gap-4 text-lg' }, [
-              ui.p({}, [
-                'DevTools uses the keys, the measuring and the words a designer already has: Shift+Enter goes up a level, Alt measures, the Design panel reads like Figma’s, with your tokens first.',
-              ]),
-              ui.p({}, [
-                'Assets shows every component and variant on one page, with the screens you name in previews.ts. Try a change on the page, then hand it to your agent. It writes the code; you never open a file.',
-              ]),
+              ui.p({}, [t.designKeys]),
+              ui.p({}, [t.designAssets]),
               ui.div({ class: 'mt-2 flex flex-wrap gap-3' }, [
-                ui.use(Button, { props: { href: ui.link(devtools, null) } }, ['See it in motion →']),
+                ui.use(Button, { props: { href: ui.link(devtools, null) } }, [t.designButton]),
               ]),
             ]),
           ]),
-          figmaCards('border-ink'),
+          figmaCards('border-ink', [
+            ['Shift+Enter · Enter · Tab', t.figmaSelect],
+            ['Alt', t.figmaAlt],
+            ['W × H', t.figmaSize],
+            [t.figmaPanel, t.figmaPanelBody],
+            [t.figmaVariables, t.figmaVariablesBody],
+            [t.figmaComments, t.figmaCommentsBody],
+          ]),
         ]),
         ui.use(
           Section,
           {
             variant: { tone: 'ink' },
-            props: { kicker: 'What it catches' },
+            props: { kicker: t.catchesKicker },
           },
           [
-            ui.use(Heading, {}, ['Mistakes that look fine and still break.']),
-            ui.p({ class: 'mt-4 max-w-2xl' }, [
-              'Each of these type-checks and builds. Hozu stops it anyway, and says what to do. Tap, hover or tab to a card to see the real diagnostic.',
-            ]),
+            ui.use(Heading, {}, [t.catchesHeading]),
+            ui.p({ class: 'mt-4 max-w-2xl' }, [t.catchesLead]),
             ui.div(
               { class: 'mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4' },
               catches.map((c) =>
                 ui.use(CatchCard, {
-                  props: { code: c.code, name: c.name, story: c.story, message: c.message, fix: c.fix },
+                  props: {
+                    code: c.code,
+                    name: c.name,
+                    story: stories[c.code] ?? c.story,
+                    message: c.message,
+                    fix: c.fix,
+                  },
                 }),
               ),
             ),
@@ -575,14 +485,12 @@ export const Home = ui.view({
         Section,
         {
           variant: { tone: 'ink' },
-          props: { kicker: 'Components' },
+          props: { kicker: t.componentsKicker },
         },
         [
-          ui.use(Heading, {}, ['Declared UI. Checked class by class.']),
-          ui.p({ class: 'mt-4 max-w-2xl' }, [
-            'A button is a declaration in a kit, not a helper that disappears. Pick a variant: the preview, its source and what hozu render prints all come from the same component. This site is built from the same kit.',
-          ]),
-          ui.div({ class: 'mt-6 flex gap-3', role: 'group', 'aria-label': 'Button variant' }, [
+          ui.use(Heading, {}, [t.componentsHeading]),
+          ui.p({ class: 'mt-4 max-w-2xl' }, [t.componentsLead]),
+          ui.div({ class: 'mt-6 flex gap-3', role: 'group', 'aria-label': t.variantGroup }, [
             ui.button(
               {
                 type: 'button',
@@ -611,10 +519,10 @@ export const Home = ui.view({
                   ui.div({ class: 'grid place-items-center border-4 border-paper bg-paper p-8' }, [
                     ctx.intent === 'solid'
                       ? ui.use(Button, { variant: { intent: 'solid' }, props: { href: '#' } }, [
-                          'Start building',
+                          t.previewLabel,
                         ])
                       : ui.use(Button, { variant: { intent: 'outline' }, props: { href: '#' } }, [
-                          'Start building',
+                          t.previewLabel,
                         ]),
                   ]),
                   ui.div({ class: 'prose prose-invert min-w-0 max-w-none prose-figcaption:text-paper' }, [
@@ -635,21 +543,17 @@ export const Home = ui.view({
                   ]),
                 ]),
               pending: null,
-              failed: { Unexpected: () => ui.p({ role: 'alert' }, ['The playground is unavailable.']) },
+              failed: { Unexpected: () => ui.p({ role: 'alert' }, [t.playgroundUnavailable]) },
             },
           ),
           ui.p({ class: 'mt-6 max-w-2xl text-sm' }, [
-            'Two classes that set one property on one element are reported as HZ079, so an override never wins by accident. ',
+            t.overrideNote,
             ui.a({ href: ui.link(doc, { slug: 'views' }), class: 'underline decoration-red' }, [
-              'Read about components',
+              t.readComponents,
             ]),
           ]),
-          ui.h3({ class: 'mt-16 text-2xl font-black uppercase' }, [
-            'The 3D joint at the top is a component too.',
-          ]),
-          ui.p({ class: 'mt-3 max-w-2xl' }, [
-            'A Blender script builds the model, three.js renders it in a client component, and the same machine that runs the demo tells it when to split. Without JavaScript it is a still image.',
-          ]),
+          ui.h3({ class: 'mt-16 text-2xl font-black uppercase' }, [t.jointHeading]),
+          ui.p({ class: 'mt-3 max-w-2xl' }, [t.jointLead]),
           ui.query(
             getPlayground,
             {},
@@ -659,22 +563,18 @@ export const Home = ui.view({
                   ui.use(CodeBlock, {}, [ui.html(play.joint)]),
                 ]),
               pending: null,
-              failed: { Unexpected: () => ui.p({ role: 'alert' }, ['The source is unavailable.']) },
+              failed: { Unexpected: () => ui.p({ role: 'alert' }, [t.sourceUnavailable]) },
             },
           ),
         ],
       ),
-      ui.use(Section, { props: { kicker: 'Under the hood' } }, [
+      ui.use(Section, { props: { kicker: t.hoodKicker } }, [
         ui.use(Heading, {}, ['feature() → IR → validator → compiler → runtime']),
-        ui.p({ class: 'mt-4 max-w-3xl text-lg' }, [
-          'Every page is planned from what its data declares: who may see it and how fresh it must be. Only nodes bound to a machine ship JavaScript; everything else on this page is plain HTML.',
-        ]),
-        ui.div({ class: 'mt-6' }, [
-          ui.use(Button, { props: { href: ui.link(how, null) } }, ['Open the lab →']),
-        ]),
+        ui.p({ class: 'mt-4 max-w-3xl text-lg' }, [t.hoodLead]),
+        ui.div({ class: 'mt-6' }, [ui.use(Button, { props: { href: ui.link(how, null) } }, [t.hoodButton])]),
         ui.query(
           listChapters,
-          {},
+          { locale },
           {
             ready: (items) =>
               ui.ul({ class: 'mt-8 grid gap-2 md:grid-cols-2' }, [
@@ -691,137 +591,131 @@ export const Home = ui.view({
                 ),
               ]),
             pending: null,
-            failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Chapters are unavailable.']) },
+            failed: { Unexpected: () => ui.p({ role: 'alert' }, [t.chaptersUnavailable]) },
           },
         ),
       ]),
       ui.div({}, [
-        ui.use(Section, { props: { kicker: 'The trials' } }, [
-          ui.use(Heading, {}, ['Measured, with the rough edges included.']),
+        ui.use(Section, { props: { kicker: t.trialsKicker } }, [
+          ui.use(Heading, {}, [t.trialsHeading]),
           ui.p({ class: 'mt-4 max-w-3xl' }, [
-            'Trial 0024: the same notes app built and changed 28 times, with Hozu learned from the guide, with it already known, and with Nuxt. The last eight changes were written by a session that never saw Hozu. Held out: ',
-            claimLink('cold', `${claim('cold').value} Nuxt’s tokens`),
-            ' learning, ',
-            claimLink('known', `${claim('known').value} once known`),
-            ' (two runs each).',
+            t.trialsA,
+            claimLink('cold', t.nuxtTokens({ v: claim('cold').value })),
+            t.trialsB,
+            claimLink('known', t.onceKnown({ v: claim('known').value })),
+            t.trialsC,
           ]),
-          ui.use(StatTable, {
-            class: 'mt-6',
-            props: {
-              caption: 'Trial 0024: 29 steps, the same model and the same hidden checks',
-              before: 'Hozu 0.14',
-              after: 'Nuxt 4.5.2',
-              rows: [
-                { id: 'p', label: 'Changes with every check passing', before: '29', after: '26' },
-                { id: 's', label: 'Silent failures (build green, feature broken)', before: '0', after: '3' },
-                {
-                  id: 'c',
-                  label: 'Tokens per unseen change, against Nuxt',
-                  before: claim('cold').value,
-                  after: 'baseline',
-                },
-                {
-                  id: 'k',
-                  label: 'The same, once Hozu is known',
-                  before: claim('known').value,
-                  after: 'baseline',
-                },
-              ],
+          ui.use(
+            StatTable,
+            {
+              class: 'mt-6',
+              props: {
+                caption: t.table24Caption,
+                before: 'Hozu 0.14',
+                after: 'Nuxt 4.5.2',
+              },
             },
-          }),
+            [
+              ui.use(StatRow, { props: { label: t.claimPassed, before: '29', after: '26' } }),
+              ui.use(StatRow, { props: { label: t.rowSilent, before: '0', after: '3' } }),
+              ui.use(StatRow, {
+                props: { label: t.rowUnseen, before: claim('cold').value, after: t.baseline },
+              }),
+              ui.use(StatRow, {
+                props: { label: t.rowKnown, before: claim('known').value, after: t.baseline },
+              }),
+            ],
+          ),
           ui.p({ class: 'mt-10 max-w-3xl' }, [
-            'Before that, trial 0021 (Hozu 0.8). Cost: ',
-            claimLink('tokens', `${claim('tokens').value} Nuxt’s tokens per change`),
-            ' (steps 13–20, one run per framework), against ',
-            claimLink('oldCost', `${claim('oldCost').value} on Hozu 0.7`),
-            '. Outcome: ',
-            claimLink('regressions', `${claim('regressions').value} regressions`),
-            ' and ',
-            claimLink('silent', `${claim('silent').value} silent failures`),
-            ' over 16 changes, against ',
-            claimLink('old', `${claim('old').value} regression failures`),
-            ' and silent failures at ',
-            claimLink('oldSilent', `${claim('oldSilent').value} steps`),
-            ' on Hozu 0.7. Not met: the cost ratio still rises slightly over the run.',
+            t.olderA,
+            claimLink('tokens', t.tokensPerChange({ v: claim('tokens').value })),
+            t.olderB,
+            claimLink('oldCost', t.onHozu07({ v: claim('oldCost').value })),
+            t.olderC,
+            claimLink('regressions', t.regressions({ v: claim('regressions').value })),
+            t.olderD,
+            claimLink('silent', t.silentFailures({ v: claim('silent').value })),
+            t.olderE,
+            claimLink('old', t.regressionFailures({ v: claim('old').value })),
+            t.olderF,
+            claimLink('oldSilent', t.steps({ v: claim('oldSilent').value })),
+            t.olderG,
           ]),
-          ui.use(StatTable, {
-            class: 'mt-6',
-            props: {
-              caption: 'Trial 0021: the same notes app, changed 16 more times by an agent',
-              before: 'Hozu 0.7',
-              after: 'Hozu 0.8',
-              rows: [
-                {
-                  id: 'r',
-                  label: 'Regression failures',
+          ui.use(
+            StatTable,
+            {
+              class: 'mt-6',
+              props: {
+                caption: t.table21Caption,
+                before: 'Hozu 0.7',
+                after: 'Hozu 0.8',
+              },
+            },
+            [
+              ui.use(StatRow, {
+                props: {
+                  label: t.rowRegressions,
                   before: claim('old').value,
                   after: claim('regressions').value,
                 },
-                {
-                  id: 's',
-                  label: 'Steps with silent failures',
+              }),
+              ui.use(StatRow, {
+                props: {
+                  label: t.rowSilentSteps,
                   before: claim('oldSilent').value,
                   after: claim('silent').value,
                 },
-                {
-                  id: 'c',
-                  label: 'Cost against Nuxt (geometric mean)',
-                  before: claim('oldCost').value,
-                  after: claim('tokens').value,
-                },
-              ],
-            },
-          }),
-          curve('0021-0-8-long-run', 'Trial 0021 per-step cost, lines and checks for Hozu 0.8 and Nuxt'),
+              }),
+              ui.use(StatRow, {
+                props: { label: t.rowCost, before: claim('oldCost').value, after: claim('tokens').value },
+              }),
+            ],
+          ),
+          curve('0021-0-8-long-run', t.curveAlt),
           ui.p({ class: 'mt-2 font-mono text-xs' }, [
-            'Raw records; Nuxt step 14 is undercounted there, and the report explains the correction. ',
-            ui.a({ href: ui.link(trial, { slug: claim('tokens').trial }), class: 'underline' }, [
-              'Read trial 0021',
-            ]),
+            t.rawRecords,
+            ui.a({ href: ui.link(trial, { slug: claim('tokens').trial }), class: 'underline' }, [t.read0021]),
             ' · ',
-            ui.a({ href: ui.link(trial, { slug: claim('cold').trial }), class: 'underline' }, [
-              'Read trial 0024',
-            ]),
+            ui.a({ href: ui.link(trial, { slug: claim('cold').trial }), class: 'underline' }, [t.read0024]),
             ' · ',
-            ui.a({ href: ui.link(trials, null), class: 'underline' }, ['All trials']),
+            ui.a({ href: ui.link(trials, null), class: 'underline' }, [t.allTrials]),
           ]),
         ]),
-        ui.use(Section, { variant: { tone: 'ink' }, props: { kicker: 'Start' } }, [
+        ui.use(Section, { variant: { tone: 'ink' }, props: { kicker: t.startKicker } }, [
           ui.div({ class: 'flex items-end justify-between gap-6' }, [
-            ui.use(Heading, {}, ['Build something. Then try to break it.']),
+            ui.use(Heading, {}, [t.startHeading]),
             peg('hello', 120, 'hidden h-auto shrink-0 sm:block', true),
           ]),
           ui.div({ class: 'mt-8 flex flex-wrap gap-4' }, [
             ui.use(
               Button,
               { variant: { intent: 'light' }, props: { href: ui.link(doc, { slug: 'getting-started' }) } },
-              ['Start building →'],
+              [t.startBuilding],
             ),
             ui.use(
               Button,
               { variant: { intent: 'lightOutline' }, props: { href: 'https://github.com/olevatorr/Hozu' } },
               ['GitHub'],
             ),
-            ui.use(Button, { variant: { intent: 'lightOutline' }, props: { href: support } }, [
-              'Buy Peg a coffee',
-            ]),
+            ui.use(Button, { variant: { intent: 'lightOutline' }, props: { href: support } }, [t.coffee]),
           ]),
         ]),
-        ui.use(Ticker, {
-          slots: {
-            source: ui.a({ href: ui.link(trial, { slug: claim('cold').trial }), class: 'underline' }, [
-              'Sources',
-            ]),
+        ui.use(
+          Ticker,
+          {
+            slots: {
+              source: ui.a({ href: ui.link(trial, { slug: claim('cold').trial }), class: 'underline' }, [
+                t.sources,
+              ]),
+            },
           },
-          props: {
-            items: [
-              `${claim('passed').value} changes passed every check`,
-              `${claim('known').value} Nuxt’s tokens once known`,
-              `${claim('js').value} client JS on the notes list (Hozu 0.8 vs Nuxt 4)`,
-              'every change checked',
-            ],
-          },
-        }),
+          [
+            ui.span({}, [t.tickerPassed({ v: shown('passed') }), ' ■']),
+            ui.span({}, [t.tickerKnownTokens({ v: claim('known').value }), ' ■']),
+            ui.span({}, [t.tickerJs({ v: claim('js').value }), ' ■']),
+            ui.span({}, [t.tickerChecked, ' ■']),
+          ],
+        ),
       ]),
     ]),
 })

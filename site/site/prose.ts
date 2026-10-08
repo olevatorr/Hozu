@@ -17,16 +17,16 @@ const styles = tv({
 export const Prose = ui.component({
   tag: 'main',
   styles,
-  props: z.object({}),
+  props: z.object({ pagerLabel: z.string().default('Previous and next pages') }),
   slots: ['nav', 'aside', 'pager'],
   children: true,
-  render: ({ slots, children, classes }) =>
+  render: ({ props, slots, children, classes }) =>
     ui.main({ id: 'main' }, [
       ui.div({ class: classes.grid }, [
         ui.div({ class: classes.nav }, [slots.nav]),
         ui.article({ class: classes.body }, [
           ...children,
-          ui.nav({ class: classes.pager, 'aria-label': 'Previous and next pages' }, [slots.pager]),
+          ui.nav({ class: classes.pager, 'aria-label': props.pagerLabel }, [slots.pager]),
         ]),
         ui.div({ class: classes.aside }, [slots.aside]),
       ]),

@@ -22,7 +22,29 @@ export const SpeedTable = ui.component({
       stats: 'mt-2 grid grid-cols-3 gap-2',
     },
   }),
-  props: z.object({ caption: z.string(), rows: z.array(Row) }),
+  props: z.object({
+    caption: z.string(),
+    rows: z.array(Row),
+    labels: z
+      .object({
+        framework: z.string(),
+        requests: z.string(),
+        requestsShort: z.string(),
+        js: z.string(),
+        jsShort: z.string(),
+        interactive: z.string(),
+        interactiveShort: z.string(),
+      })
+      .default({
+        framework: 'Framework',
+        requests: 'Requests per second',
+        requestsShort: 'Requests/s',
+        js: 'JavaScript (gzip)',
+        jsShort: 'JS (gzip)',
+        interactive: 'Interactive at',
+        interactiveShort: 'Interactive',
+      }),
+  }),
   render: ({ props, classes }) =>
     ui.div({}, [
       ui.div({ class: classes.cards }, [
@@ -33,12 +55,15 @@ export const SpeedTable = ui.component({
             ui.p({ class: 'text-xs' }, [r.versions]),
             ui.dl({ class: classes.stats }, [
               ui.div({}, [
-                ui.dt({ class: 'text-xs' }, ['Requests/s']),
+                ui.dt({ class: 'text-xs' }, [props.labels.requestsShort]),
                 ui.dd({ class: 'font-bold' }, [r.requests]),
               ]),
-              ui.div({}, [ui.dt({ class: 'text-xs' }, ['JS (gzip)']), ui.dd({ class: 'font-bold' }, [r.js])]),
               ui.div({}, [
-                ui.dt({ class: 'text-xs' }, ['Interactive']),
+                ui.dt({ class: 'text-xs' }, [props.labels.jsShort]),
+                ui.dd({ class: 'font-bold' }, [r.js]),
+              ]),
+              ui.div({}, [
+                ui.dt({ class: 'text-xs' }, [props.labels.interactiveShort]),
                 ui.dd({ class: 'font-bold' }, [r.interactive]),
               ]),
             ]),
@@ -49,10 +74,10 @@ export const SpeedTable = ui.component({
         ui.caption({ class: 'py-2 text-left font-bold' }, [props.caption]),
         ui.thead({}, [
           ui.tr({}, [
-            ui.th({ scope: 'col', class: classes.cell }, ['Framework']),
-            ui.th({ scope: 'col', class: classes.cell }, ['Requests per second']),
-            ui.th({ scope: 'col', class: classes.cell }, ['JavaScript (gzip)']),
-            ui.th({ scope: 'col', class: classes.cell }, ['Interactive at']),
+            ui.th({ scope: 'col', class: classes.cell }, [props.labels.framework]),
+            ui.th({ scope: 'col', class: classes.cell }, [props.labels.requests]),
+            ui.th({ scope: 'col', class: classes.cell }, [props.labels.js]),
+            ui.th({ scope: 'col', class: classes.cell }, [props.labels.interactive]),
           ]),
         ]),
         ui.tbody({}, [
