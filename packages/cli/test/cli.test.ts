@@ -774,6 +774,31 @@ describe('hozu get --select takes attribute operators (ADR 0069 A5)', () => {
   })
 })
 
+describe('hozu get --select takes descendant and child combinators (0.24)', () => {
+  it('matches nav a[aria-current] and main > form input, and keeps quoted values with spaces or >', async () => {
+    const { elementsOf } = await import('../src/commands/request.ts')
+    const html =
+      '<header><a href="/" aria-current="page">Home</a></header><nav><ul><li><a href="/a" aria-current="page">A</a></li><li><a href="/b">B</a></li></ul></nav>' +
+      '<main><form method="post"><input name="title"><div><input name="deep"></div><svg><path d="M0"/></svg><input name="after"></form></main>' +
+      '<form><input name="outside"><button title="a &gt; b">Go</button></form><script>"<nav><a aria-current>x</a></nav>"</script>'
+    const texts = (selector: string) => elementsOf(html, selector).map((e) => e.text || e.attrs.name)
+    expect(texts('nav a[aria-current]')).toEqual(['A'])
+    expect(texts('nav  li   a')).toEqual(['A', 'B'])
+    expect(texts('main > form input')).toEqual(['title', 'deep', 'after'])
+    expect(texts('main > form > input')).toEqual(['title', 'after'])
+    expect(texts('main>form>input')).toEqual(['title', 'after'])
+    expect(texts('form > input[name=outside]')).toEqual(['outside'])
+    expect(texts('body form input')).toEqual([])
+    expect(texts('form button[title="a > b"]')).toEqual(['Go'])
+    expect(texts('ul > a')).toEqual([])
+    expect(texts('form[method=post] input[name^=d], nav a[href="/b"]')).toEqual(['deep', 'B'])
+    expect(() => elementsOf(html, '> a')).toThrow('Unsupported selector')
+    expect(() => elementsOf(html, 'nav >')).toThrow('Unsupported selector')
+    expect(() => elementsOf(html, 'nav > > a')).toThrow('Unsupported selector')
+    expect(() => elementsOf(html, 'nav ~ a')).toThrow('Unsupported selector')
+  })
+})
+
 describe('a lock for pages without machines (0.15 dogfood)', () => {
   it('an app whose pages have something to lock reports the lock missing, and --update-lock writes it', async () => {
     const app = mkdtempSync(join(tmpdir(), 'hozu-lock-'))

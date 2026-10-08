@@ -158,30 +158,92 @@ const VOID = new Set([
   'wbr',
 ])
 
-const selectorOf = (selector: string) => {
-  const m =
-    /^([a-z][\w-]*)?(?:#([\w-]+))?(?:\[([\w:-]+)(?:([~^$*]?=)(?:"([^"]*)"|'([^']*)'|([^"'\]]*)))?\])?$/i.exec(
-      selector.trim(),
-    )
-  if (!m || (!m[1] && !m[2] && !m[3]))
-    throw new HozuCliError('usage', `Unsupported selector "${selector}"`, [
-      'button',
-      '#id',
-      '[role=alert]',
-      'a[href]',
-      'input[name=title]',
-      'meta[property^="og:"]',
-    ])
-  return {
-    tag: m[1]?.toLowerCase(),
-    id: m[2],
-    attr: m[3]?.toLowerCase(),
-    op: (m[4] ?? '=') as AttrOp,
-    value: m[4] === undefined ? undefined : (m[5] ?? m[6] ?? m[7]!),
-  }
-}
+const HIDDEN = new Set(['script', 'style', 'template'])
+
+const SELECTOR_FORMS = [
+  'button',
+  '#id',
+  '[role=alert]',
+  'a[href]',
+  'input[name=title]',
+  'meta[property^="og:"]',
+  'nav a[aria-current]',
+  'main > form input',
+]
 
 type AttrOp = '=' | '^=' | '$=' | '*=' | '~='
+
+interface AttrTest {
+  name: string
+  op: AttrOp
+  value: string | undefined
+}
+
+interface Compound {
+  tag: string | undefined
+  id: string | undefined
+  attrs: AttrTest[]
+}
+
+interface Step {
+  compound: Compound
+  child: boolean
+}
+
+const unsupported = (selector: string) =>
+  new HozuCliError('usage', `Unsupported selector "${selector}"`, SELECTOR_FORMS)
+
+const compoundOf = (part: string, selector: string): Compound => {
+  const m = /^([a-z][\w-]*)?(?:#([\w-]+))?((?:\[[^\]]*\])*)$/i.exec(part)
+  if (!m || (!m[1] && !m[2] && !m[3])) throw unsupported(selector)
+  const attrs: AttrTest[] = []
+  for (const a of m[3]!.match(/\[[^\]]*\]/g) ?? []) {
+    const t = /^\[([\w:-]+)(?:([~^$*]?=)(?:"([^"]*)"|'([^']*)'|([^"'\]]*)))?\]$/.exec(a)
+    if (!t) throw unsupported(selector)
+    attrs.push({
+      name: t[1]!.toLowerCase(),
+      op: (t[2] ?? '=') as AttrOp,
+      value: t[2] === undefined ? undefined : (t[3] ?? t[4] ?? t[5]!),
+    })
+  }
+  return { tag: m[1]?.toLowerCase(), id: m[2], attrs }
+}
+
+const stepsOf = (selector: string): Step[] => {
+  const parts: string[] = []
+  const joins: boolean[] = []
+  let word = ''
+  let child = false
+  let quote = ''
+  let bracket = false
+  const end = () => {
+    if (!word) return
+    if (parts.length) joins.push(child)
+    else if (child) throw unsupported(selector)
+    parts.push(word)
+    word = ''
+    child = false
+  }
+  for (const c of selector.trim()) {
+    if (quote) quote = c === quote ? '' : quote
+    else if (bracket && (c === '"' || c === "'")) quote = c
+    else if (c === '[') bracket = true
+    else if (c === ']') bracket = false
+    else if (!bracket && /\s/.test(c)) {
+      end()
+      continue
+    } else if (!bracket && c === '>') {
+      end()
+      if (child) throw unsupported(selector)
+      child = true
+      continue
+    }
+    word += c
+  }
+  end()
+  if (!parts.length || child || quote || bracket) throw unsupported(selector)
+  return parts.map((p, i) => ({ compound: compoundOf(p, selector), child: i > 0 && joins[i - 1]! }))
+}
 
 const matches = (actual: string, op: AttrOp, value: string): boolean =>
   op === '='
@@ -195,29 +257,58 @@ const matches = (actual: string, op: AttrOp, value: string): boolean =>
             ? actual.endsWith(value)
             : actual.includes(value))
 
+interface Node {
+  tag: string
+  attrs: Record<string, string>
+  parent: Node | null
+}
+
+const fits = (node: Node, c: Compound) =>
+  (!c.tag || c.tag === node.tag) &&
+  (!c.id || node.attrs.id === c.id) &&
+  c.attrs.every(
+    (a) => a.name in node.attrs && (a.value === undefined || matches(node.attrs[a.name]!, a.op, a.value)),
+  )
+
+const chainFits = (node: Node, steps: Step[], last: number): boolean => {
+  if (!fits(node, steps[last]!.compound)) return false
+  if (last === 0) return true
+  if (steps[last]!.child) return node.parent !== null && chainFits(node.parent, steps, last - 1)
+  for (let up = node.parent; up; up = up.parent) if (chainFits(up, steps, last - 1)) return true
+  return false
+}
+
 export function elementsOf(html: string, selector: string): RequestElement[] {
   if (selector.includes(','))
     return selector
       .split(',')
       .filter((part) => part.trim())
       .flatMap((part) => elementsOf(html, part.trim()))
-  const sel = selectorOf(selector)
-  const raw = sel.tag === 'script' || sel.tag === 'style'
-  const source = raw
-    ? html
-    : html.replace(/<(script|style|template)\b[\s\S]*?<\/\1>/gi, (m) => ' '.repeat(m.length))
+  const steps = stepsOf(selector)
+  const target = steps[steps.length - 1]!.compound
+  const raw = target.tag === 'script' || target.tag === 'style'
+  const hidden = /<(script|style|template)\b[\s\S]*?<\/\1>/gi
+  const shape = html.replace(hidden, (m) => {
+    const open = /^<[^>]*>/.exec(m)![0]
+    const close = /<\/[^>]*>$/.exec(m)![0]
+    return open + ' '.repeat(m.length - open.length - close.length) + close
+  })
+  const source = raw ? html : html.replace(hidden, (m) => ' '.repeat(m.length))
   const out: RequestElement[] = []
-  const open = /<([a-z][\w-]*)\b([^>]*)>/gi
-  for (const m of source.matchAll(open)) {
-    const tag = m[1]!.toLowerCase()
-    if (sel.tag && sel.tag !== tag) continue
-    const attrs = attrsOf(m[2]!.replace(/\/$/, ''))
-    if (sel.id && attrs.id !== sel.id) continue
-    if (
-      sel.attr &&
-      (!(sel.attr in attrs) || (sel.value !== undefined && !matches(attrs[sel.attr]!, sel.op, sel.value)))
-    )
+  let parent: Node | null = null
+  for (const m of shape.matchAll(/<(\/?)([a-z][\w-]*)\b([^>]*)>/gi)) {
+    const tag = m[2]!.toLowerCase()
+    if (m[1]) {
+      for (let up = parent; up; up = up.parent)
+        if (up.tag === tag) {
+          parent = up.parent
+          break
+        }
       continue
+    }
+    const node: Node = { tag, attrs: attrsOf(m[3]!.replace(/\/$/, '')), parent }
+    if (!VOID.has(tag) && !m[3]!.endsWith('/')) parent = node
+    if ((!raw && HIDDEN.has(tag)) || !chainFits(node, steps, steps.length - 1)) continue
     let text = ''
     if (!VOID.has(tag)) {
       const start = m.index + m[0].length
@@ -235,7 +326,12 @@ export function elementsOf(html: string, selector: string): RequestElement[] {
       text = raw ? source.slice(start, end).trim() : plain(source.slice(start, end))
     }
     const limit = raw ? 2000 : 120
-    out.push({ selector, tag, attrs, text: text.length > limit ? `${text.slice(0, limit)}…` : text })
+    out.push({
+      selector,
+      tag,
+      attrs: node.attrs,
+      text: text.length > limit ? `${text.slice(0, limit)}…` : text,
+    })
   }
   return out
 }
