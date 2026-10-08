@@ -138,13 +138,16 @@ export async function runTarget(
       "app: new URL('./app.ts', import.meta.url)",
     ])
   const require = createRequire(loaded.path)
-  const bundler = await import(pathToFileURL(require.resolve('@hozu/bundle')).href).catch(() => {
+  let bundler: unknown
+  try {
+    bundler = await import(pathToFileURL(require.resolve('@hozu/bundle')).href)
+  } catch {
     throw new HozuCliError(
       'build',
       `hozu build --target ${target} needs @hozu/bundle installed in the project`,
       ['npm install -D @hozu/bundle'],
     )
-  })
+  }
   await clearOutput(dir, [root, cwd], target)
   const staged = join(dir, '.build')
   await runBuild(loaded, staged, cwd)
