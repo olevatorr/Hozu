@@ -158,9 +158,10 @@ const VOID = new Set([
 ])
 
 const selectorOf = (selector: string) => {
-  const m = /^([a-z][\w-]*)?(?:#([\w-]+))?(?:\[([\w:-]+)(?:=["']?([^"'\]]*)["']?)?\])?$/i.exec(
-    selector.trim(),
-  )
+  const m =
+    /^([a-z][\w-]*)?(?:#([\w-]+))?(?:\[([\w:-]+)(?:([~^$*]?=)(?:"([^"]*)"|'([^']*)'|([^"'\]]*)))?\])?$/i.exec(
+      selector.trim(),
+    )
   if (!m || (!m[1] && !m[2] && !m[3]))
     throw new HozuCliError('usage', `Unsupported selector "${selector}"`, [
       'button',
@@ -168,9 +169,30 @@ const selectorOf = (selector: string) => {
       '[role=alert]',
       'a[href]',
       'input[name=title]',
+      'meta[property^="og:"]',
     ])
-  return { tag: m[1]?.toLowerCase(), id: m[2], attr: m[3]?.toLowerCase(), value: m[4] }
+  return {
+    tag: m[1]?.toLowerCase(),
+    id: m[2],
+    attr: m[3]?.toLowerCase(),
+    op: (m[4] ?? '=') as AttrOp,
+    value: m[4] === undefined ? undefined : (m[5] ?? m[6] ?? m[7]!),
+  }
 }
+
+type AttrOp = '=' | '^=' | '$=' | '*=' | '~='
+
+const matches = (actual: string, op: AttrOp, value: string): boolean =>
+  op === '='
+    ? actual === value
+    : op === '~='
+      ? value !== '' && !/\s/.test(value) && actual.split(/\s+/).includes(value)
+      : value !== '' &&
+        (op === '^='
+          ? actual.startsWith(value)
+          : op === '$='
+            ? actual.endsWith(value)
+            : actual.includes(value))
 
 export function elementsOf(html: string, selector: string): RequestElement[] {
   if (selector.includes(','))
@@ -190,7 +212,10 @@ export function elementsOf(html: string, selector: string): RequestElement[] {
     if (sel.tag && sel.tag !== tag) continue
     const attrs = attrsOf(m[2]!.replace(/\/$/, ''))
     if (sel.id && attrs.id !== sel.id) continue
-    if (sel.attr && (!(sel.attr in attrs) || (sel.value !== undefined && attrs[sel.attr] !== sel.value)))
+    if (
+      sel.attr &&
+      (!(sel.attr in attrs) || (sel.value !== undefined && !matches(attrs[sel.attr]!, sel.op, sel.value)))
+    )
       continue
     let text = ''
     if (!VOID.has(tag)) {
