@@ -549,7 +549,7 @@ export interface CallOutput {
   result: { ok: true; value: Json } | { ok: false; error: string; data: Json }
   /** Milliseconds for the request. */
   ms: number
-  /** Tags a mutation invalidated. */
+  /** Tags a mutation or a writing endpoint invalidated. */
   invalidated: string[]
   /** The queries those tags refresh. */
   refreshes: string[]

@@ -77,7 +77,7 @@
           "items": {
             "type": "string"
           },
-          "description": "Tags a mutation invalidated."
+          "description": "Tags a mutation or a writing endpoint invalidated."
         },
         "refreshes": {
           "type": "array",

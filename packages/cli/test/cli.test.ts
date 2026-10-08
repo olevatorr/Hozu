@@ -689,7 +689,16 @@ describe('hozu call on an endpoint (ADR 0056 C)', () => {
     const booked = JSON.parse(
       (await run(['call', 'api.book', '--input', '{"room":"blue"}', '--write', '--json'], app)).stdout,
     )
-    expect(booked).toMatchObject({ status: 200, result: { ok: true, value: { booked: 'blue' } } })
+    expect(booked).toMatchObject({
+      status: 200,
+      result: { ok: true, value: { booked: 'blue' } },
+      invalidated: [expect.stringContaining('bookingsTag')],
+      refreshes: ['api.bookings'],
+    })
+    expectSchema('call', booked)
+    const text = (await run(['call', 'api.book', '--input', '{"room":"red"}', '--write'], app)).stdout
+    expect(text).toMatch(/^invalidated: .*bookingsTag/m)
+    expect(text).toContain('refreshes: api.bookings')
     const bad = await run(['call', 'api.who', '--header', 'Bearer', '--json'], app)
     expect(JSON.parse(bad.stdout).error.message).toBe('--header takes "Name: value", not "Bearer"')
   })
