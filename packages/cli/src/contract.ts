@@ -581,7 +581,10 @@ export interface GenOutput {
     written: boolean
     /** Effects that cannot be remote (the server refuses to start with them, HZ093). */
     problems: string[]
-    /** Number fields named like an id or a count, which may want z.int() (ADR 0070 C4); not diagnostics. */
+    /**
+     * Number fields named like an id or a count, which may want z.int() (ADR 0070 C4), and enums without a title that
+     * became several Go types, which a title makes one; not diagnostics.
+     */
     notes: string[]
   }[]
 }
