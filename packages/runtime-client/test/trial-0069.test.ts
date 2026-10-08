@@ -35,7 +35,7 @@ const b = buildProject(
   }),
 )
 
-it('a dialog whose open follows the machine opens as a modal and closes (ADR 0069 B3)', () => {
+it('a dialog whose open follows the machine opens as a modal and closes (ADR 0069 B3)', async () => {
   const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal').mockImplementation(function (
     this: HTMLDialogElement,
   ) {
@@ -54,6 +54,7 @@ it('a dialog whose open follows the machine opens as a modal and closes (ADR 006
   })
   expect(showModal).not.toHaveBeenCalled()
   root.querySelector('button')!.click()
+  await Promise.resolve()
   expect(showModal).toHaveBeenCalledTimes(1)
   app.dispatch({ type: 'event', event: 'd.Done', payload: {} })
   expect(root.querySelector('dialog')!.hasAttribute('open')).toBe(false)
@@ -93,6 +94,7 @@ it('a dialog the server rendered open stays open through hydration, and closing 
   })
   app.attach(root, root.firstChild, b.ir.features.d!.views.Board!.root, [], true)
   expect(close).not.toHaveBeenCalled()
+  await Promise.resolve()
   expect(showModal).toHaveBeenCalledTimes(1)
   app.dispatch({ type: 'event', event: 'd.Done', payload: {} })
   expect(app.snapshot()?.state).toBe('idle')

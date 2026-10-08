@@ -33,7 +33,7 @@ export interface AppOptions {
   fns?: Record<string, (input: never) => unknown>
   params?: Json
   /** The page's canonical address and the address of its home route, for `aria-current` (ADR 0069 B4). */
-  here?: [string, string]
+  here?: [string, string?]
   search?: Json
   snapshot?: Snapshot
   onInvoke?: (effect: string, input: Json) => Promise<Result>
@@ -281,13 +281,8 @@ export function createApp(doc: Document, options: AppOptions): App {
               const d = el as HTMLDialogElement
               if (x === true) {
                 d.removeAttribute('open')
-                const show = () => d.isConnected && !d.open && d.showModal?.()
-                if (d.isConnected) show()
-                else queueMicrotask(show)
-              } else if (d.open) {
-                quiet.add(d)
-                d.close?.()
-              }
+                queueMicrotask(() => d.isConnected && !d.open && d.showModal())
+              } else if (d.open) quiet.add(d) && d.close()
               return
             }
             if (prop) {
@@ -304,11 +299,7 @@ export function createApp(doc: Document, options: AppOptions): App {
         const href = node.tag === 'a' && !('aria-current' in node.attrs) ? node.attrs.href : undefined
         if (href && 'link' in href && (!claimed || reads(href)))
           bind(block, href, scope, (x) => {
-            const at = currentOf(
-              x,
-              options.here?.[0] ?? location.pathname + location.search,
-              options.here?.[1],
-            )
+            const at = currentOf(x, ...(options.here ?? ['']))
             if (at) el.setAttribute('aria-current', at)
             else el.removeAttribute('aria-current')
           })
