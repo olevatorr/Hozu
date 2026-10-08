@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.23.0 — What the 0.22 retest and a Go backend found (ADR 0070)
+
+The two trial agents upgraded their CMS / shop admin and storefront to 0.22 (`hozu migrate` rewrote nothing), and the
+admin moved its order lifecycle, inventory and dashboard to a Go service. This release answers what they found.
+`hozu migrate` raises the packages. If you have a Go service: run `hozu gen` and rebuild it (the contract now has a
+fingerprint per effect).
+
+### Fixes
+- **Canonical URLs and links leave defaults out after an optional segment.** `/shop/:category?` with search defaults
+  produced `<link rel="canonical" href="/shop/apparel?availability=all&page=1&…">`, and links built from search values
+  kept the defaults (since 0.17).
+- **Route params are parsed:** `params: z.object({ id: z.coerce.number() })` now gives resolvers a number, as its type
+  says (it was the string from the URL).
+- **`aria-current` marks the page and the sections above it only**: a next-page link (same path, another search) gets
+  nothing; an `aria-current` you set wins.
+- `hozu get` / `browse` print each server error once per step.
+
+### Forms and links
+- **A multi-step form keeps its step without JavaScript.** After a native post, every form Hozu posts (no `method` or
+  `action` of yours) carries the machine's state in a hidden field (`__hozu_state`), and the next post continues from
+  it: no more re-posting every earlier field. The state is bound to the visitor's session and the machine's shape,
+  lasts a day, is checked against the context schema, and is signed with `SESSION_SECRET` when the server has one.
+- **`ui.link(route, params, { ...search, page: 2 })`** keeps the current search and changes one field.
+- **Every access but `'anyone'` types the resolver's `session` as present** (`{ allow }` and `{ owner }` too).
+
+### Resolvers in Go
+- A service that does not answer names the effect, the URL and what to start; every call carries `x-hozu-call`, and
+  the Go handler answers its error's first line with that id (`resolver failed: …`), so `onError` shows the cause.
+- **One fingerprint per effect:** changing one declaration makes only that effect answer 409 until `hozu gen`, and
+  HZ093 names it. The Go contract's `Fingerprint` is a function of the effect.
+- String enums are named Go types with constants; `hozu gen` notes number fields that look like ids or counts
+  (`z.int()` makes them `int64`); `hozu docs data --more` links `examples/notes-go` and shows a `main.go`.
+- A wrong answer's schema issues are collapsed (`rows.*.tone: … (10×)`).
+
+### Errors in production
+- **The browser no longer sees error messages in production** (`NODE_ENV=production`): an `Unexpected` answer says
+  `Internal error` (with the call id of a Go service), and `onError` keeps the full message. Development, `hozu get`,
+  `browse` and `call` show it as before.
+
+### Tools
+- A changed lock line lists only the assignments that differ (`assign - total := …, + total := …`) and leaves out a
+  `now:` longer than 120 characters.
+- `hozu browse --js both` names the words that differ (`"#1307" vs "#1306"`) when each mode wrote its own row.
+- A native `commandfor` / `popovertarget` button is not `js-only`: without JavaScript the dialog still opens.
+- `--json` changes: `hozu gen` effects are `{ ref, fingerprint }[]` with `notes`; browse adds `differences`.
+
 ## 0.22.0 — Resolvers in Go, and what a CMS, a shop admin and a storefront asked for (ADR 0068, 0069)
 
 Two agents built a CMS with a shop back office and its storefront on 0.21.1, sharing one MySQL database, then

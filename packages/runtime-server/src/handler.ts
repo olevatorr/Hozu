@@ -56,6 +56,7 @@ import {
 } from './render.ts'
 import { instantiate, type RenderModule } from './rendered.ts'
 import { matcher } from './routing.ts'
+import { STATE_FIELD, seal, unseal } from './seal.ts'
 import { parseSearch, queryInput } from './search.ts'
 import {
   type CspSources,
@@ -344,6 +345,7 @@ function handlerFor({
     resolvers,
     now,
     onError,
+    expose: rawEnv.NODE_ENV !== 'production',
     env: rawEnv,
     ...(fetches ? { fetches } : {}),
     ...(dataCache ? { cache: dataCache } : {}),
@@ -705,7 +707,18 @@ function handlerFor({
     const search = parseSearch(ir.routes[found.route]?.search ?? null, query)
     const fields = await formFields(request)
     const scope = await dataFor(request)
+    const owner = form.on.submit!.event.slice(0, form.on.submit!.event.indexOf('.'))
+    const bindTo = (feature: string, session: unknown) =>
+      hashJson({ machine: ir.features[feature]?.machine ?? null, session: session ?? null } as never)
+    const kept = await unseal(
+      rawEnv.SESSION_SECRET,
+      owner,
+      bindTo(owner, scope.session),
+      fields.first[STATE_FIELD],
+    )
+    const start = kept && !build.bindings.checks[`${owner}#context`]?.(kept.context) ? kept : null
     const outcome = await runForm({
+      start,
       build,
       data: scope,
       routes: tableOf(locale),
@@ -731,6 +744,17 @@ function handlerFor({
       after(outcome.invalidated)
       return see(target, cookie)
     }
+    const sealed: Record<string, string> = {}
+    const now = outcome.session ? outcome.session.value : scope.session
+    for (const [f, snap] of Object.entries(outcome.snapshots)) {
+      const token = await seal(rawEnv.SESSION_SECRET, f, bindTo(f, now), snap)
+      if (token) sealed[f] = token
+      else
+        onError(
+          new Error(`${f}: the state is too large to carry in a form; a native post starts this form over`),
+          { path },
+        )
+    }
     const rendered = await renderPage({
       build,
       dev: dev !== undefined,
@@ -740,6 +764,7 @@ function handlerFor({
       params: found.params,
       search,
       snapshots: outcome.snapshots,
+      sealed,
       assets,
       images: variants,
       ...(generated ? { render: generated } : {}),

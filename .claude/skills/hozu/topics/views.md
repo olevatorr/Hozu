@@ -67,9 +67,11 @@ export const Board = ui.view({
 ## Menus, dialogs, counting
 - When a query's input changes, the rows stay (`aria-busy` on the parent) and update by key; `pending` shows only
   before the first answer.
-- A link to the page shown gets `aria-current="page"` (`"true"` for its section): `aria-[current]:font-bold`.
+- A link to the page shown gets `aria-current="page"`, a link to a section above it (`/orders` on `/orders/7`)
+  `"true"`; the same path with another search (a next page) gets nothing. An `aria-current` you set wins.
 - `ui.dialog({ open: is(['editing']), on: { close: ui.send(Cancel, {}) } }, [...])` opens as a modal and closes with
-  the machine; Escape sends `close`.
+  the machine; Escape sends `close`. It needs JavaScript: a dialog that must open without it uses the native
+  `commandfor` button (the short form) and closes when the data that shows it changes.
 - `ui.format.plural(n, { one: '# item', other: '# items' })` picks the case for the page's language (`=0` works).
 - `null` and `false` render nothing, also inside a constant list:
   `ui.ul({}, [...kinds.map((k) => (k === 'draft' ? null : ui.li({}, [k])))])`.

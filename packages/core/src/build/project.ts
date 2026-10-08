@@ -9,7 +9,7 @@ import type { AcceptIR, FeatureIR, JsonSchema, KitIR, ProjectIR, RouteIR, Transi
 import { freeNamesOf, transformedDecls } from '../lower.ts'
 import { type DeclKind, defOf, infoOf } from '../model/decl.ts'
 import type { SchemaAdapterDef } from '../schema/adapter.ts'
-import { toCheck, toEnvParse } from '../schema/check.ts'
+import { toCheck, toEnvParse, toParse } from '../schema/check.ts'
 import { isStandardSchema } from '../schema/standard.ts'
 import { withCapture } from '../source/capture.ts'
 import { buildComponent } from './components.ts'
@@ -250,6 +250,8 @@ function projectSchema(
   }
   const check = toCheck(schema)
   if (check) scope.bindings.checks[key] = check
+  const parse = key.startsWith('#route:') ? toParse(schema) : null
+  if (parse) scope.bindings.parses = { ...scope.bindings.parses, [key]: parse }
   return adapter.toJsonSchema(schema)
 }
 

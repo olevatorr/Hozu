@@ -270,6 +270,10 @@ class Emitter {
           if ('literal' in content) this.lit(escapeHtml(text(content.literal)))
           else this.expr(`h.escapeHtml(h.text(${this.value(content)}))`)
         } else this.children(n.children, island, depth)
+        if (submit && !('method' in n.attrs) && !('action' in n.attrs) && formRunnable(submit.payload))
+          this.expr(
+            `(s.sealed ? '<input type="hidden" name="__hozu_state" value="' + h.escapeHtml(s.sealed) + '">' : '')`,
+          )
         this.lit(`</${n.tag}>`)
         return
       }

@@ -39,6 +39,7 @@ import {
   renderTableFor,
   type Scope,
 } from './rendered.ts'
+import { STATE_FIELD } from './seal.ts'
 import { seededContext, seedKeys } from './seed.ts'
 
 import { pruneScope } from './shape.ts'
@@ -87,6 +88,8 @@ export interface RenderOptions {
   params?: Json
   search?: Json
   snapshots?: Record<string, Snapshot>
+  /** Signed snapshots a native post produced, posted back by the page's forms (ADR 0070 B1). */
+  sealed?: Record<string, string>
   session?: unknown
   assets?: Assets
   locale?: string | null
@@ -129,6 +132,7 @@ export async function renderPage({
   params = null,
   search = null,
   snapshots = {},
+  sealed = {},
   session,
   assets = {
     client: clientUrl(),
@@ -211,7 +215,7 @@ export async function renderPage({
   const routes = routesOf(ir, locale)
   const url = pathOf(routes[route] ?? '/', params, search)
   const home = Object.keys(ir.routes).find((id) => ir.routes[id]!.path === '/')
-  const root = home ? (routes[home] ?? '/') : '/'
+  const root = home ? pathOf(routes[home] ?? '/', null) : '/'
   const alternate: Record<string, string> = Object.fromEntries(
     (ir.site?.locales ?? []).map((l) => [l, pathOf(routesOf(ir, l)[route] ?? '/', params, search)]),
   )
@@ -251,6 +255,7 @@ export async function renderPage({
     if (snap) payload.snapshots = { ...payload.snapshots, [feature.id]: snap }
     return {
       feature,
+      sealed: bound && !held ? (sealed[feature.id] ?? null) : null,
       context: bound ? (snap?.context ?? seedOf(feature) ?? feature.machine?.initialContext ?? null) : null,
       state: bound ? (snap?.state ?? feature.machine?.initial ?? null) : null,
       bindings: [],
@@ -407,6 +412,16 @@ export async function renderPage({
         const inner = n.kind === 'component' && islandIds.has(n.id) ? false : island
         for (let i = 0; i < n.children.length; i++)
           await render(n.children[i]!, scope, inner, separated(n.children, i))
+        if (
+          n.kind === 'el' &&
+          n.tag === 'form' &&
+          scope.sealed &&
+          n.on.submit &&
+          !('method' in n.attrs) &&
+          !('action' in n.attrs) &&
+          formRunnable(n.on.submit.payload)
+        )
+          buffer += `<input type="hidden" name="${STATE_FIELD}" value="${escapeHtml(scope.sealed)}">`
         buffer += `</${tag}>`
         return
       }
@@ -488,6 +503,7 @@ export async function renderPage({
   const path = url
   const empty: Scope = {
     feature: { id: '' } as FeatureIR,
+    sealed: null,
     context: null,
     state: null,
     bindings: [],

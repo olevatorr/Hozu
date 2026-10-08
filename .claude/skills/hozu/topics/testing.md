@@ -69,6 +69,8 @@
   navigation prints `→ <path>` and the new page's lines; a live update on another actor's page prints under the step
   (`bob: + Milk`).
   - `≠ DIFFERS` marks a step where both modes made a request and the resulting text differs: a no-JS/JS parity bug.
+    It names the differing words (`≠ DIFFERS (on vs off): "#1307" vs "#1306"`): the two modes write twice to the same
+    data, so a new row per mode (an order number, a count) differs without a bug.
   - Errors: uncaught exceptions, `console.error`s, CSP violations and failed requests, each with the page, the
     resource type and the mode. A 400 re-render of an invalid native post is not an error, and a page answering
     401, 403, 404 or 410 is the step's status (`→ /notes/n1 (403)`), so an access check exits 0.

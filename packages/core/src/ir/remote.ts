@@ -14,19 +14,22 @@ export interface RemoteEffect {
   session: boolean
   /** The framework error `Invalid { message, fields }` may be returned (mutations and endpoints). */
   invalid: boolean
+  /**
+   * 16 hex characters over this effect and, when it reads one, the session (ADR 0070 C3): the generated contract
+   * lists it, each call carries it, and only a changed effect answers 409.
+   */
+  fingerprint: string
 }
 
 export interface RemoteContract {
   session: JsonSchema | null
   effects: RemoteEffect[]
-  /** 16 hex characters over the session and every effect; the generated contract and each call carry it. */
-  fingerprint: string
   /** Effects that cannot be implemented remotely, one line each. */
   problems: { ref: string; message: string }[]
 }
 
 export function remoteContract(ir: ProjectIR, refs: readonly string[]): RemoteContract {
-  const effects: RemoteEffect[] = []
+  const effects: Omit<RemoteEffect, 'fingerprint'>[] = []
   const problems: RemoteContract['problems'] = []
   for (const ref of [...new Set(refs)].sort()) {
     const dot = ref.indexOf('.')
@@ -84,5 +87,12 @@ export function remoteContract(ir: ProjectIR, refs: readonly string[]): RemoteCo
     problems.push({ ref, message: `${ref} is not a query, mutation or endpoint` })
   }
   const session = effects.some((e) => e.session) ? ir.session : null
-  return { session, effects, fingerprint: hashJson({ session, effects }).slice(0, 16), problems }
+  return {
+    session,
+    effects: effects.map((e) => ({
+      ...e,
+      fingerprint: hashJson({ session: e.session ? ir.session : null, effect: e }).slice(0, 16),
+    })),
+    problems,
+  }
 }

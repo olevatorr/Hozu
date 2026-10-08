@@ -40,7 +40,7 @@ export function equal(a: Json | undefined, b: Json | undefined): boolean {
 }
 
 export const pathOf = (pattern: string, params: Json | undefined, search?: Json): string => {
-  const [route = '', defaults = ''] = pattern.split('?')
+  const [route = '', defaults = ''] = pattern.split('#')
   const path =
     route.replace(/\/:([A-Za-z]\w*)[?*+]?/g, (_, key: string) => {
       const x = getIn(params, [key])

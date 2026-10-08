@@ -114,6 +114,21 @@ describe('cart data runtime', () => {
     )
   })
 
+  it('in production an Unexpected answer says Internal error; onError keeps the message (0.23 review)', async () => {
+    const seen: string[] = []
+    const data = createDataRuntime({
+      build,
+      resolvers: await createResolvers(),
+      expose: false,
+      onError: (e) => seen.push((e as Error).message),
+    })
+    expect(await data.query(getProduct, { sku: 1 } as never)).toMatchObject({
+      error: 'Unexpected',
+      data: { message: 'Internal error' },
+    })
+    expect(seen[0]).toMatch(/^Invalid input for catalog.getProduct/)
+  })
+
   it('input a request sent (/_hozu/query) belongs to the caller, so it is not reported (ADR 0069 A2)', async () => {
     const seen: unknown[] = []
     const data = createDataRuntime({

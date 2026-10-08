@@ -3,8 +3,13 @@ import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, w
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { feature, mutation, project, query } from '@hozu/core'
+import { buildProject, remoteContract } from '@hozu/core/ir'
+import { zodAdapter } from '@hozu/schema-zod'
 import { Ajv } from 'ajv'
 import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
+import { goContract, goNotes } from '../src/gen/go.ts'
 import { main } from '../src/main.ts'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
@@ -47,8 +52,14 @@ describe('hozu gen and HZ093 (ADR 0068)', () => {
     const ajv = new Ajv({ strict: false })
     expect(ajv.validate(schema, out), JSON.stringify(ajv.errors)).toBe(true)
     expect(code).toBe(0)
-    expect(out.contracts).toMatchObject([{ file: contract, package: 'hozu', written: false, problems: [] }])
+    expect(out.contracts).toMatchObject([
+      { file: contract, package: 'hozu', written: false, problems: [], notes: [] },
+    ])
     expect(out.contracts[0].effects).toHaveLength(11)
+    expect(out.contracts[0].effects[0]).toEqual({
+      ref: 'account.accounts',
+      fingerprint: expect.stringMatching(/^[0-9a-f]{16}$/),
+    })
     expect(await hz093(dir)).toEqual([])
     rmSync(dir, { recursive: true })
   })
@@ -65,7 +76,7 @@ describe('hozu gen and HZ093 (ADR 0068)', () => {
       )
     })
     expect(await hz093(dir)).toEqual([
-      expect.stringMatching(/^The remote contract service\/hozu\/contract.go is stale/),
+      'The remote contract service/hozu/contract.go is stale: notes.addNote changed',
     ])
     const { stdout } = await run(['gen'], dir)
     expect(stdout).toMatch(/^wrote service\/hozu\/contract.go/)
@@ -100,4 +111,63 @@ describe('hozu gen and HZ093 (ADR 0068)', () => {
     },
     120_000,
   )
+})
+
+describe('the Go contract (ADR 0070 C4, C6)', () => {
+  const Status = z.enum(['pending', 'paid', 'in-transit']).meta({ title: 'OrderStatus' })
+  const Order = z
+    .object({ id: z.number(), status: Status, tone: z.enum(['calm', 'loud']), totalCents: z.number() })
+    .meta({ title: 'Order' })
+  const list = query({
+    input: z.object({ status: Status.optional() }),
+    output: z.object({ rows: z.array(Order), count: z.number(), share: z.number(), lines: z.int() }),
+    scope: 'public',
+    freshness: 'request',
+    runs: 'server',
+  })
+  const ship = mutation({
+    input: z.object({ orderId: z.number(), qty: z.int() }),
+    output: Order,
+    runs: 'server',
+    access: 'anyone',
+  })
+  const ir = buildProject(
+    project({
+      schema: zodAdapter,
+      routes: {},
+      pages: [],
+      features: [feature({ id: 'shop', intent: { summary: 'orders' }, declarations: [{ list, ship }] })],
+    }),
+  ).ir
+  const contract = remoteContract(ir, ['shop.list', 'shop.ship'])
+
+  it('a string enum is a named type with one constant per member', () => {
+    const go = goContract(contract, 'hozu')
+    expect(go).toContain(
+      'type OrderStatus string\n\nconst (\n\tOrderStatusPending   OrderStatus = "pending"\n\tOrderStatusPaid      OrderStatus = "paid"\n\tOrderStatusInTransit OrderStatus = "in-transit"\n)',
+    )
+    expect(go).toContain('type OrderTone string')
+    expect(go).toContain('\tStatus     OrderStatus `json:"status"`')
+    expect(go).toContain('\tStatus *OrderStatus `json:"status,omitempty"`')
+    expect(go.match(/type OrderStatus string/g)).toHaveLength(1)
+    expect(goContract(contract, 'hozu')).toBe(go)
+    if (hasGo) {
+      const dir = realpathSync(mkdtempSync(join(tmpdir(), 'hozu-go-')))
+      writeFileSync(join(dir, 'contract.go'), go)
+      const fmt = spawnSync('gofmt', ['-l', '-e', 'contract.go'], { cwd: dir, encoding: 'utf8' })
+      expect(fmt.stdout + fmt.stderr).toBe('')
+      rmSync(dir, { recursive: true })
+    }
+  })
+
+  it('names number fields that look like ids or counts, as notes', () => {
+    expect(goNotes(contract)).toEqual([
+      'shop.list: output.rows[].id is a number (float64 in Go); if it holds whole numbers, declare it z.int() (int64)',
+      'shop.list: output.rows[].totalCents is a number (float64 in Go); if it holds whole numbers, declare it z.int() (int64)',
+      'shop.list: output.count is a number (float64 in Go); if it holds whole numbers, declare it z.int() (int64)',
+      'shop.ship: input.orderId is a number (float64 in Go); if it holds whole numbers, declare it z.int() (int64)',
+      'shop.ship: output.id is a number (float64 in Go); if it holds whole numbers, declare it z.int() (int64)',
+      'shop.ship: output.totalCents is a number (float64 in Go); if it holds whole numbers, declare it z.int() (int64)',
+    ])
+  })
 })

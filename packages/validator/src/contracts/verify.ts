@@ -167,6 +167,17 @@ function unspecified(ctx: Ctx, feature: FeatureIR, change: LockChange) {
   )
 }
 
+/** Only the assignments that differ (ADR 0070 B5): `assign - total := …, + total := …`. */
+const assignDiff = (c: LockChange): string => {
+  const was = c.before!.fields.assign.map((op) => showAssign([op]))
+  const now = c.after!.fields.assign.map((op) => showAssign([op]))
+  const out = [
+    ...was.filter((x) => !now.includes(x)).map((x) => `- ${x}`),
+    ...now.filter((x) => !was.includes(x)).map((x) => `+ ${x}`),
+  ]
+  return `assign ${out.join(', ') || 'reordered'}`
+}
+
 const lineOf = (c: LockChange): string => {
   const names = (e: LockChange['before']) =>
     Object.entries(e?.contracts ?? {})
@@ -180,14 +191,18 @@ const lineOf = (c: LockChange): string => {
     case 'changed': {
       const fields = c.fields.length
         ? c.fields
-            .map((k) => `${k} was ${fieldText[k](c.before!.fields)}, now ${fieldText[k](c.after!.fields)}`)
+            .map((k) =>
+              k === 'assign'
+                ? assignDiff(c)
+                : `${k} was ${fieldText[k](c.before!.fields)}, now ${fieldText[k](c.after!.fields)}`,
+            )
             .join(' · ')
         : `was: ${c.before!.summary}`
       const stops =
         c.before!.decides && !c.after!.decides
           ? ' · stops deciding: accept it, then delete the contracts HZ058 names'
           : ''
-      return `changed ${c.id}: ${fields}${stops} · now: ${c.after!.summary}`
+      return `changed ${c.id}: ${fields}${stops}${c.fields.length && c.after!.summary.length > 120 ? '' : ` · now: ${c.after!.summary}`}`
     }
     default:
       return `contracts ${c.id}: was ${names(c.before)}; now ${names(c.after)}`

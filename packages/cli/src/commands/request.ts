@@ -417,7 +417,7 @@ export function describeRequest(out: RequestOutput): string {
   for (const s of out.steps) {
     lines.push(`${s.method} ${s.path} → ${s.status}${s.location ? ` ${s.location}` : ''}`)
     for (const c of s.cookies) lines.push(`  set-cookie: ${c}`)
-    for (const e of s.serverErrors) lines.push(`  server error: ${describeServerError(e)}`)
+    for (const text of new Set(s.serverErrors.map(describeServerError))) lines.push(`  server error: ${text}`)
     if (s.text === null) continue
     if (s.title) lines.push(`  title: ${s.title}`)
     for (const a of s.alerts) lines.push(`  alert: ${a}`)

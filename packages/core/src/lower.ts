@@ -94,6 +94,10 @@ export const lower = Object.freeze({
   length: (v: any): any => (plain(v) ? v.length : builtinCall('%length', { v })),
   plus: (a: any, b: any): any => (plain(a, b) ? a + b : builtinCall('%plus', { a, b })),
   minus: (a: any, b: any): any => (plain(a, b) ? a - b : builtinCall('%minus', { a, b })),
+  merge: (...p: unknown[]): any =>
+    plain(...p)
+      ? Object.assign({}, ...p)
+      : builtinCall('%merge', Object.fromEntries(p.map((x, i) => [String(i), x]))),
   includes: (l: any, v: unknown): any => (plain(l, v) ? l.includes(v) : builtinCall('%includes', { l, v })),
   method: (target: any, name: string, ...args: unknown[]): any => {
     if (plain(target, ...args) && typeof target?.[name] === 'function') return target[name](...args)

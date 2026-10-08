@@ -545,6 +545,26 @@ export function transform(source: string, _file = ''): TransformResult {
       replace(n, `${H}.concat(${parts.join(', ')})`)
       return
     }
+    if (
+      n.type === 'ObjectExpression' &&
+      n.properties.some((p: Node) => p.type === 'SpreadElement' && isRef(p.argument, s))
+    ) {
+      for (const c of children(n)) visit(c, s, false, guardFn)
+      const parts: string[] = []
+      let group: string[] = []
+      for (const p of n.properties) {
+        if (p.type !== 'SpreadElement') {
+          group.push(gen(p))
+          continue
+        }
+        if (group.length) parts.push(`{ ${group.join(', ')} }`)
+        group = []
+        parts.push(gen(p.argument))
+      }
+      if (group.length) parts.push(`{ ${group.join(', ')} }`)
+      replace(n, `${H}.merge(${parts.join(', ')})`)
+      return
+    }
     if (n.type === 'CallExpression') {
       for (const c of children(n)) visit(c, s, false, guardFn)
       const callee = n.callee.type === 'ChainExpression' ? n.callee.expression : n.callee

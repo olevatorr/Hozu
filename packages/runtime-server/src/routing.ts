@@ -26,7 +26,8 @@ export function matcher(build: BuildResult): (pathname: string) => Match | null 
       if (!hasParams) return { route: id, params: null }
       const params = routeParams(keys, m)
       if (!params || build.bindings.checks[`#route:${id}`]?.(params)) continue
-      return { route: id, params }
+      const parsed = build.bindings.parses?.[`#route:${id}`]?.(params)
+      return { route: id, params: parsed?.ok ? (parsed.value as Json) : params }
     }
     return null
   }

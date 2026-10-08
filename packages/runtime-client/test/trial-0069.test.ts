@@ -68,6 +68,8 @@ it('aria-current: a section, never the home of a locale or a base path (ADR 0069
   expect(currentOf('/de', '/de/about', '/de')).toBeNull()
   expect(currentOf('/docs/', '/docs/guide/', '/docs/')).toBeNull()
   expect(currentOf('/', '/about')).toBeNull()
+  expect(currentOf('/shop/orders?page=2', '/shop/orders')).toBeNull()
+  expect(currentOf('/shop/orders', '/shop/orders?page=2')).toBeNull()
 })
 
 it('a dialog the server rendered open stays open through hydration, and closing it sends no close event', async () => {

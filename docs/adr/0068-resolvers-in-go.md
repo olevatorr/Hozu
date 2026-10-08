@@ -50,11 +50,14 @@ resolvers(project, (implement) => [
 - An implementation like any other (bound by declaration identity), so HZ021 (missing / twice) and every runtime rule
   apply unchanged. `access` runs in the Hozu server before the call; the answer is checked against the output and
   error schemas as for a TS resolver (`runtime.ts`), so a wrong service fails closed as `Unexpected`.
-- A call is `POST { effect, input, session, preview, headers, files }` with `x-hozu-fingerprint` and
-  `x-hozu-secret`: `headers` are an endpoint's request headers without the cookie (an `Authorization` webhook works),
+- A call is `POST { effect, input, session, preview, headers, files }` with `x-hozu-fingerprint` (the effect's,
+  0.23), `x-hozu-call` (a short random id made per call, 0.23) and `x-hozu-secret`: `headers` are an endpoint's request headers without the cookie (an `Authorization` webhook works),
   `files` the uploads the call carries (base64; `ctx.File(token)` in Go); the answer is `{ ok }` or
   `{ fail: { name, data } }`, plus `session` when it changed (`null` = signed out). Public queries never send the
-  session (ADR 0005). A 409 (another contract) or any non-2xx is `Unexpected` naming the cause.
+  session (ADR 0005). A 409 (another contract) or any non-2xx is `Unexpected` naming the cause; since 0.23 the
+  generated `Handler` logs a failure with the call id and answers `500 resolver failed: <the error's first line>`,
+  which the thrown error carries with the id, and a call no service answers names the effect and the URL
+  (ADR 0070 C1, C2).
 - The URL and secret are read from the server env, which must declare them (HZ093), so `hozu env` lists them.
 
 ### R2 — `hozu gen`
@@ -74,6 +77,9 @@ The data runtime (so the server refuses to start): a remote effect that is not `
 not JSON (`'redirect'`, `'response'`, `input: 'raw'`), or an env variable `remote()` reads that the server env does
 not declare. The fingerprint is `hashJson({ session, effects })` over exactly the listed effects
 (`remoteContract` in `@hozu/core/ir`), so changing an effect implemented in TypeScript never stales a Go contract.
+Since 0.23 (ADR 0070 C3) each effect has its own fingerprint (`hashJson({ session, effect })`, the session only when
+the effect reads it): the contract's `Fingerprint(effect)` lists them, each call carries its effect's, the handler
+answers 409 for that effect alone, and HZ093 names the effects that changed. There is no whole-contract fingerprint.
 
 ### R4 — guide and example
 `hozu docs data --more` gains "Resolvers in another language (Go)": when to choose it (asked for, or the service
@@ -114,7 +120,7 @@ included), DevTools and `hozu why` work as before: they go through the Hozu serv
 | Risk | Mitigation |
 |---|---|
 | ~0.07 ms and a second process per call | TS stays the default; the guide says when Go is worth it |
-| Contract drift | fingerprint in the file (HZ093) and on every call (409) |
+| Contract drift | a fingerprint per effect in the file (HZ093) and on every call (409) |
 | A direct call to the service skips `access` | private address plus `secret` (constant-time compare in `Handler`) |
 | Two toolchains for an agent | one loop in `hozu docs data --more`; `hozu gen` prints the next step |
 | `go` absent on a machine | the CLI never needs Go; the example's Go test is skipped |

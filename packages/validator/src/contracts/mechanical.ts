@@ -99,6 +99,10 @@ function showCall(fn: string, arg: ValueExpr): string {
   if (o && fn === '%length' && o.v) return `${showValue(o.v)}.length`
   if (o && fn === '%includes' && o.l && o.v) return `${showValue(o.l)}.includes(${showValue(o.v)})`
   if (o && fn === '%truthy' && o.v) return `!!${showValue(o.v)}`
+  if (o && fn === '%merge')
+    return `{ ${Object.values(o)
+      .map((x) => `...${showValue(x)}`)
+      .join(', ')} }`
   return `${short(fn)}(${showValue(arg)})`
 }
 

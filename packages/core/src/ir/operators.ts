@@ -7,6 +7,7 @@ export const operators = [
   '%plus',
   '%minus',
   '%includes',
+  '%merge',
 ] as const
 
 export type Operator = (typeof operators)[number]

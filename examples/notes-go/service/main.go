@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"example.com/notes-go/hozu"
 )
@@ -19,6 +24,19 @@ func main() {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/effect", hozu.Handler(newResolvers(), hozu.Options{Secret: secret}))
-	log.Printf("notes service on http://%s/effect", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	server := &http.Server{Addr: addr, Handler: mux}
+	go func() {
+		log.Printf("notes service on http://%s/effect", addr)
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal(err)
+		}
+	}()
+	stop, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	<-stop.Done()
+	ctx, done := context.WithTimeout(context.Background(), 5*time.Second)
+	defer done()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Print(err)
+	}
 }

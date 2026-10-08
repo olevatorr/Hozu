@@ -138,7 +138,7 @@ func (r *resolvers) NotesRemoveNotes(ctx *hozu.Ctx, in hozu.NotesRemoveNotesInpu
 	list := r.own(user)
 	kept := slices.DeleteFunc(slices.Clone(list), func(n hozu.Note) bool { return slices.Contains(in.Ids, n.Id) })
 	r.notes[user] = kept
-	return hozu.NotesRemoveNotesOutput{Count: float64(len(list) - len(kept))}, nil
+	return hozu.NotesRemoveNotesOutput{Count: int64(len(list) - len(kept))}, nil
 }
 
 func (r *resolvers) NotesPinNotes(ctx *hozu.Ctx, in hozu.NotesPinNotesInput) (hozu.NotesPinNotesOutput, error) {
@@ -152,7 +152,7 @@ func (r *resolvers) NotesPinNotes(ctx *hozu.Ctx, in hozu.NotesPinNotesInput) (ho
 			count++
 		}
 	}
-	return hozu.NotesPinNotesOutput{Count: float64(count)}, nil
+	return hozu.NotesPinNotesOutput{Count: int64(count)}, nil
 }
 
 func (r *resolvers) NotesTogglePin(ctx *hozu.Ctx, in hozu.NotesTogglePinInput) (hozu.Note, error) {

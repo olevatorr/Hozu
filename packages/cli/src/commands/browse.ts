@@ -272,6 +272,55 @@ const same = (a: Snapshot, b: Snapshot, key: (url: string) => string = (u) => u)
   return key(a.url) === key(b.url) && x.length === y.length && minus(x, y).length === 0
 }
 
+const DIFFERENCES_SHOWN = 3
+
+const shownWords = (words: string) => (words ? JSON.stringify(words) : '(nothing)')
+
+const wordsOf = (line: string) => line.trim().split(/\s+/).filter(Boolean)
+
+/** The words two lines share at the start and the end. */
+const sharedEnds = (a: string[], b: string[]) => {
+  let head = 0
+  while (head < a.length && head < b.length && a[head] === b[head]) head++
+  let tail = 0
+  while (tail < a.length - head && tail < b.length - head && a.at(-1 - tail) === b.at(-1 - tail)) tail++
+  return { head, tail }
+}
+
+/**
+ * The words that differ between the two modes' pages (ADR 0070 B6): lines that share words at their ends are
+ * paired first (`Order #1307 placed` / `Order #1306 placed` → `"#1307"` vs `"#1306"`), the rest in order.
+ */
+export const differences = (on: Snapshot, off: Snapshot, key: (url: string) => string = (u) => u) => {
+  const x = minus(comparable(on), comparable(off)).map(wordsOf)
+  const y = minus(comparable(off), comparable(on)).map(wordsOf)
+  const pairs: [string[], string[]][] = []
+  const left = new Set(y.keys())
+  const lone: string[][] = []
+  for (const a of x) {
+    let best = -1
+    let shared = 0
+    for (const j of left) {
+      const { head, tail } = sharedEnds(a, y[j]!)
+      if (head + tail > shared) [best, shared] = [j, head + tail]
+    }
+    if (best < 0) lone.push(a)
+    else {
+      pairs.push([a, y[best]!])
+      left.delete(best)
+    }
+  }
+  const rest = [...left].map((j) => y[j]!)
+  for (let i = 0; i < Math.max(lone.length, rest.length); i++) pairs.push([lone[i] ?? [], rest[i] ?? []])
+  const out: { on: string; off: string }[] =
+    key(on.url) === key(off.url) ? [] : [{ on: on.url, off: off.url }]
+  for (const [a, b] of pairs.slice(0, DIFFERENCES_SHOWN - out.length)) {
+    const { head, tail } = sharedEnds(a, b)
+    out.push({ on: a.slice(head, a.length - tail).join(' '), off: b.slice(head, b.length - tail).join(' ') })
+  }
+  return out
+}
+
 const delta = (before: Snapshot, after: Snapshot, inPlace = false) =>
   before.url !== after.url && !inPlace
     ? { added: linesOf(after), removed: [] }
@@ -462,6 +511,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
         on.change.requested &&
         off.change.requested &&
         !same(on.after, off.after, pageKey)
+      const differing = differs ? differences(on.after, off.after, pageKey) : []
       const elsewhere = results.flatMap((x) => x.elsewhere)
       const ok = changes.every((c) => c.ok)
       steps.push({
@@ -469,7 +519,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
         ok,
         note: combine(changes),
         modes: changes,
-        ...(differs ? { differs } : {}),
+        ...(differs ? { differs, differences: differing } : {}),
         ...(elsewhere.length ? { elsewhere } : {}),
       })
       if (!ok) failed = true
@@ -477,8 +527,12 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
 
     modes.forEach((mode, m) => {
       worlds[m]!.serverErrors.forEach((e, i) => {
-        if (!inStep[m]!.has(i))
-          errors.push({ kind: 'server', text: describeServerError(e), at: e.path ?? null, mode })
+        const text = describeServerError(e)
+        if (
+          !inStep[m]!.has(i) &&
+          !errors.some((x) => x.kind === 'server' && x.text === text && x.mode === mode)
+        )
+          errors.push({ kind: 'server', text, at: e.path ?? null, mode })
       })
     })
     const order = (e: BrowseError) =>
@@ -604,7 +658,11 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
     const head = `  ${i + 1} ${who}${s.step}`
     const changes = s.modes ?? []
     const texts = changes.map((c) => describeChange(c, full))
-    const flag = s.differs ? '  ≠ DIFFERS: both modes made a request and the resulting text differs' : ''
+    const flag = !s.differs
+      ? ''
+      : s.differences?.length
+        ? `  ≠ DIFFERS (on vs off): ${s.differences.map((d) => `${shownWords(d.on)} vs ${shownWords(d.off)}`).join('; ')}`
+        : '  ≠ DIFFERS: both modes made a request and the resulting text differs'
     if (!changes.length) lines.push(`${head}${s.note ? ` — ${s.note}` : ''}`)
     else if (texts.every((t) => t === texts[0]))
       lines.push(`${head}${texts[0] ? `: ${texts[0]}` : ''}${s.ok && s.note ? ` — ${s.note}` : ''}${flag}`)
@@ -615,8 +673,8 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
       })
     }
     for (const c of changes)
-      for (const e of c.serverErrors ?? [])
-        lines.push(`      server error${modes.length > 1 ? ` (${c.mode})` : ''}: ${describeServerError(e)}`)
+      for (const text of new Set((c.serverErrors ?? []).map(describeServerError)))
+        lines.push(`      server error${modes.length > 1 ? ` (${c.mode})` : ''}: ${text}`)
     for (const e of s.elsewhere ?? [])
       lines.push(
         `      ${e.actor || 'page'}${modes.length > 1 ? ` (${e.mode})` : ''}: ${describeChange(

@@ -131,6 +131,14 @@ export const steps: Step[] = [
     normalize: remarkSharedViews,
     unpredictable: /^\/(?:features\/[^/]+|kits\/[^/]+)\/components\/[^/]+\/sourceHash$/,
   },
+  {
+    from: '0.22',
+    to: '0.23',
+    summary:
+      'no source change; route params are parsed (z.coerce applies), canonical URLs and links leave defaults out after an optional segment, aria-current marks sections above the page only, native multi-step forms keep their step, { ...search } works in ui.link, and a Go service needs hozu gen and a rebuild (a fingerprint per effect) (ADR 0070)',
+    rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 /** 0.22 marks a shared view only when each page lists it once (ADR 0067, 0.22 review). */

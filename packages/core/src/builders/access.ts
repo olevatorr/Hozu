@@ -36,12 +36,8 @@ export type AccessDef =
       input: ((input: unknown) => unknown) | null
     }
 
-/** Whether an access rule guarantees a signed-in session to the resolver (ADR 0069 B7). */
-export type SignedBy<A> = [A] extends [never]
-  ? false
-  : A extends 'signedIn' | { owner: unknown }
-    ? true
-    : false
+/** Every rule but `'anyone'` refuses a null session before the resolver runs (ADR 0069 B7, ADR 0070 B3). */
+export type SignedBy<A> = [A] extends [never] ? false : A extends 'anyone' ? false : true
 
 const isFn = (x: unknown): x is (...args: never[]) => unknown => typeof x === 'function'
 

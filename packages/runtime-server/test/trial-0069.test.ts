@@ -91,7 +91,7 @@ describe('0.22 fixes from the trial apps (ADR 0069)', () => {
     expect(html).toContain('1 article<')
     expect(html).toContain('<li>makers</li></ul>')
     expect(html).toContain('rel="noopener"')
-    expect(html).toContain('<a href="/journal" aria-current="true">Journal</a>')
+    expect(html).toContain('<a href="/journal">Journal</a>')
     expect(html).toContain('<a href="/journal?topic=makers" aria-current="page">Makers</a>')
     expect(html).toContain('<a href="/secret">Secret</a>')
     const all = await (await handler().fetch(new Request('http://localhost/journal'))).text()

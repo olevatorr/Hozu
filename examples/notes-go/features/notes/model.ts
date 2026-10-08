@@ -67,7 +67,7 @@ export const togglePin = mutation({
 })
 
 const NoteIds = z.object({ ids: z.array(z.string()).min(1, 'Select at least one note') })
-const Count = z.object({ count: z.number() })
+const Count = z.object({ count: z.int() })
 
 export const removeNotes = mutation({
   input: NoteIds,
