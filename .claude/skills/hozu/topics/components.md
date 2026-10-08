@@ -20,8 +20,8 @@ export const Button = ui.component({
 ui.use(Button, { variant: { tone: 'ghost' }, props: { busy: ctx.saving }, slots: { icon: ui.span({}, ['+']) },
   on: { press: ui.send(Save, {}) }, class: 'w-full' }, ['Save'])           // in a view; its id is ui.Button
 ```
-- **`ui.use` keys** (all optional): `variant` (literals only, HZ071), `props` (anything that changes while the page
-  runs), `slots`, `on`, `class`; children only with `children: true`.
+- **`ui.use` keys** (all optional): `variant` (literals only, HZ071), `props` (what changes at run time), `slots`,
+  `on`, `class`, `keys` (a control root); children only with `children: true`.
 - **Render** reads only `props`, `slots`, `children`, `on` and `classes`; the caller passes sends, links and text
   in (HZ070).
 - **`class`** may only add classes that set none of the component's properties (`w-full`, `md:hidden`); to change
