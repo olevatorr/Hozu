@@ -415,6 +415,8 @@ export const collectingErrors = (
   }
 }
 
+export const IN_PRODUCTION = '(a production server shows "Internal error" here; onError keeps the message)'
+
 export const describeServerError = (e: ServerError) =>
   `${e.message}${e.effect ? ` (${e.effect})` : ''}${e.details ? ` ${JSON.stringify(e.details)}` : ''}`
 
@@ -510,10 +512,15 @@ export function describeForm(f: RequestForm): string {
 
 export function describeRequest(out: RequestOutput): string {
   const lines: string[] = []
+  let noted = false
   for (const s of out.steps) {
     lines.push(`${s.method} ${s.path} → ${s.status}${s.location ? ` ${s.location}` : ''}`)
     for (const c of s.cookies) lines.push(`  set-cookie: ${c}`)
     for (const text of new Set(s.serverErrors.map(describeServerError))) lines.push(`  server error: ${text}`)
+    if (s.serverErrors.length && !noted) {
+      noted = true
+      lines.push(`  ${IN_PRODUCTION}`)
+    }
     if (s.text === null) continue
     if (s.title) lines.push(`  title: ${s.title}`)
     for (const a of s.alerts) lines.push(`  alert: ${a}`)
