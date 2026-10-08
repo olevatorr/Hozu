@@ -165,6 +165,7 @@ describe('create-hozu', () => {
     expect(await has(join(dir, '.gitignore'))).toBe(true)
     expect(pkg.scripts.dev).toBe('hozu dev')
     expect(pkg.devDependencies['@hozu/dev']).toBe('^0.1.0')
+    expect(pkg.devDependencies['@hozu/bundle']).toBe('^0.1.0')
     expect(await readFile(join(dir, '.gitignore'), 'utf8')).toContain('.hozu/')
     expect(guide).toContain('pnpm exec hozu requests --full')
   })
