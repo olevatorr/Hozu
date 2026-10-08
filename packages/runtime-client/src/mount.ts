@@ -301,11 +301,13 @@ export function createApp(doc: Document, options: AppOptions): App {
           })
         }
         const own = node.attrs['aria-current']
-        const marked: ValueExpr | undefined = href && { object: own ? { h: href, o: own } : { h: href } }
-        if (marked && (!claimed || reads(marked)))
-          bind(block, marked, scope, (x) => {
-            const { h, o } = x as { h: Json; o?: Json }
-            const at = currentOf(h, options.here?.[0] ?? '', o)
+        if (href)
+          bind(block, { object: own ? { h: href, o: own } : { h: href } }, scope, (x) => {
+            const at = currentOf(
+              (x as Record<string, Json>).h!,
+              options.here?.[0] ?? '',
+              (x as Record<string, Json>).o,
+            )
             if (at) el.setAttribute('aria-current', at)
             else el.removeAttribute('aria-current')
           })
