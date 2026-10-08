@@ -198,8 +198,12 @@ export const steps: Step[] = [
   {
     from: '0.23',
     to: '0.24',
-    summary:
-      "no source change; aria-current marks only the address shown (mark a menu's sections with current(route) in the render) and false writes no attribute; hozu get --select takes descendant selectors, hozu call shows an endpoint's invalidated tags (ADR 0071)",
+    changes: [
+      'no source change',
+      "aria-current marks only the address shown: mark a menu's sections with current(route) in the render",
+      'aria-current false writes no attribute',
+      "hozu get --select takes descendant and child selectors; hozu call shows an endpoint's invalidated tags (ADR 0071)",
+    ],
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
