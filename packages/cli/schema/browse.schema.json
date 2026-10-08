@@ -190,6 +190,13 @@
           "type": "number",
           "description": "Layout shift no input explains (layout-shift entries without recent input, summed, as CLS counts them)."
         },
+        "serverErrors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServerError"
+          },
+          "description": "What the app's `onError` received during the step (ADR 0069 A2)."
+        },
         "url": {
           "type": "string"
         },
@@ -230,6 +237,32 @@
         "off"
       ]
     },
+    "ServerError": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "effect": {
+          "type": "string",
+          "description": "The effect (`feature.symbol`) whose resolver or input failed, when known."
+        },
+        "path": {
+          "type": "string",
+          "description": "The request path, when known."
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "The other fields `onError` received, such as the schema issues of an invalid input and where it came from."
+        }
+      },
+      "required": [
+        "message"
+      ],
+      "additionalProperties": false,
+      "description": "One call of the app's `onError` (ADR 0069 A2): a resolver that threw, an invalid input, a failed stream."
+    },
     "BrowseElsewhere": {
       "type": "object",
       "properties": {
@@ -268,8 +301,10 @@
           "enum": [
             "exception",
             "console",
-            "request"
-          ]
+            "request",
+            "server"
+          ],
+          "description": "`server`: the app's `onError` was called outside any step (opening the page); a step lists its own."
         },
         "text": {
           "type": "string"

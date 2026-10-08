@@ -29,6 +29,8 @@
 
 <!-- more -->
 
+- **Server errors:** what the app's `onError` receives (a resolver that threw, an invalid input) is listed under the
+  step or the `get` request that caused it, `server error: <message> (<feature.effect>)`; `--json` `serverErrors`.
 - **A calm page:** a step that rebuilds elements unchanged says `N elements rebuilt unchanged (a flash: main > form >
   button[type=submit])`, naming up to five (`--json` `flashes.elements` has all; a control hidden while busy: disable
   it instead). Equal means tag, class, text, `name`, `id`, `href`, `src`, `type` and parent path; a node that moved is

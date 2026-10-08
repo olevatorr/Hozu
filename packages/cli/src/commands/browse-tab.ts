@@ -2,7 +2,7 @@ import { dirname, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
 import type { Cdp } from '../cdp.ts'
-import type { BrowseError, BrowseMode } from '../contract.ts'
+import type { BrowseError, BrowseMode, ServerError } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import { BuildFailed } from './app.ts'
 import { PAGE } from './browse-page.ts'
@@ -41,6 +41,7 @@ interface Head {
 /** One app world (module graph, data, session store) per mode, in its own worker. */
 export class World {
   readonly cookies: Promise<(string | null)[]>
+  readonly serverErrors: ServerError[] = []
   private readonly worker: Worker
   private next = 0
   private readonly heads = new Map<number, { resolve(h: Head): void; reject(e: Error): void }>()
@@ -54,6 +55,7 @@ export class World {
     this.cookies = new Promise((resolve, reject) => {
       this.worker.on('message', (m: WorldReply) => {
         if ('ready' in m) return resolve(m.cookies)
+        if ('serverError' in m) return void this.serverErrors.push(m.serverError)
         if ('failed' in m) {
           const { code, message, suggestions, diagnostics } = m.failed
           return reject(

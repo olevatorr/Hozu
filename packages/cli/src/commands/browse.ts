@@ -17,7 +17,7 @@ import type {
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { type Snapshot, type StepResult, sleep, Tab, World } from './browse-tab.ts'
-import { describeElement, parseSession } from './request.ts'
+import { describeElement, describeServerError, parseSession } from './request.ts'
 
 const LIMIT = 1500
 
@@ -302,6 +302,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
   const sessions = options.actors.map((a) => a.session)
   const worlds = modes.map(() => new World(loaded.path, dirname(loaded.path), sessions))
   const vars = new Map<BrowseMode, Map<string, string>>(modes.map((m) => [m, new Map()]))
+  const inStep = modes.map(() => new Set<number>())
   const pageKey = routeKey(Object.values(loaded.build().ir.routes).map((r) => routePattern(r.path).pattern))
   const mutations = new Map<string, string>(
     Object.values(loaded.build().ir.features).flatMap((f) =>
@@ -381,10 +382,11 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
         continue
       }
       const results = await Promise.all(
-        modes.map(async (mode) => {
+        modes.map(async (mode, m) => {
           const tab = tabOf(mode, item.actor)
           const others = tabs.filter((t) => t.mode === mode && t !== tab)
           const before = tab.snapshot
+          const serverSince = worlds[m]!.serverErrors.length
           tab.requested = false
           const loadsBefore = tab.documentLoads
           await tab.tagElements().catch(() => 0)
@@ -419,6 +421,8 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
             ? { replaced: 0, flashes: 0, flashed: [], shift: 0 }
             : await tab.smoothness().catch(() => ({ replaced: 0, flashes: 0, flashed: [], shift: 0 }))
           const { replaced, flashes, flashed, shift } = calm
+          const serverErrors = worlds[m]!.serverErrors.slice(serverSince)
+          for (let i = serverSince; i < serverSince + serverErrors.length; i++) inStep[m]!.add(i)
           const elsewhere: BrowseElsewhere[] = []
           for (const o of others) {
             const was = o.snapshot
@@ -441,6 +445,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
             ...(replaced ? { replaced } : {}),
             ...(flashes ? { flashes: { count: flashes, elements: flashed } } : {}),
             ...(shift >= 0.001 ? { shift } : {}),
+            ...(serverErrors.length ? { serverErrors } : {}),
             url: after.url,
             ...(tab.stepStatus !== null && tab.stepStatus !== 200 ? { status: tab.stepStatus } : {}),
             ...delta(before, after, reloads === 0),
@@ -470,6 +475,12 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
       if (!ok) failed = true
     }
 
+    modes.forEach((mode, m) => {
+      worlds[m]!.serverErrors.forEach((e, i) => {
+        if (!inStep[m]!.has(i))
+          errors.push({ kind: 'server', text: describeServerError(e), at: e.path ?? null, mode })
+      })
+    })
     const order = (e: BrowseError) =>
       options.actors.findIndex((a) => a.name === (e.actor ?? null)) * 2 + modes.indexOf(e.mode ?? modes[0]!)
     errors.sort((a, b) => order(a) - order(b))
@@ -533,7 +544,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
 
 export const browseFailed = (out: BrowseOutput) =>
   out.errors.length > 0 ||
-  out.steps.some((s) => !s.ok || s.differs) ||
+  out.steps.some((s) => !s.ok || s.differs || s.modes?.some((c) => c.serverErrors?.length)) ||
   out.components.some((c) => c.state === 'failed')
 
 const ITEMS = 6
@@ -603,6 +614,9 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
         lines.push(`      ${c.mode}: ${texts[k] || '(no change)'}${c.ok && c.note ? ` — ${c.note}` : ''}`)
       })
     }
+    for (const c of changes)
+      for (const e of c.serverErrors ?? [])
+        lines.push(`      server error${modes.length > 1 ? ` (${c.mode})` : ''}: ${describeServerError(e)}`)
     for (const e of s.elsewhere ?? [])
       lines.push(
         `      ${e.actor || 'page'}${modes.length > 1 ? ` (${e.mode})` : ''}: ${describeChange(

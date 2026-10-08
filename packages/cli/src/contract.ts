@@ -190,6 +190,19 @@ export interface RequestStep {
   truncated: boolean
   elements: RequestElement[]
   forms: RequestForm[]
+  /** What the app's `onError` received while answering this request (ADR 0069 A2). */
+  serverErrors: ServerError[]
+}
+
+/** One call of the app's `onError` (ADR 0069 A2): a resolver that threw, an invalid input, a failed stream. */
+export interface ServerError {
+  message: string
+  /** The effect (`feature.symbol`) whose resolver or input failed, when known. */
+  effect?: string
+  /** The request path, when known. */
+  path?: string
+  /** The other fields `onError` received, such as the schema issues of an invalid input and where it came from. */
+  details?: Record<string, unknown>
 }
 
 export interface RequestElement {
@@ -362,7 +375,8 @@ export interface RenderOutput {
 export type BrowseMode = 'on' | 'off'
 
 export interface BrowseError {
-  kind: 'exception' | 'console' | 'request'
+  /** `server`: the app's `onError` was called outside any step (opening the page); a step lists its own. */
+  kind: 'exception' | 'console' | 'request' | 'server'
   text: string
   at: string | null
   url?: string
@@ -400,6 +414,8 @@ export interface BrowseChange {
   flashes?: { count: number; elements: string[] }
   /** Layout shift no input explains (layout-shift entries without recent input, summed, as CLS counts them). */
   shift?: number
+  /** What the app's `onError` received during the step (ADR 0069 A2). */
+  serverErrors?: ServerError[]
   url: string
   /** The status of the page the step loaded, when it is not 200 (a 403 an access check expects). */
   status?: number
