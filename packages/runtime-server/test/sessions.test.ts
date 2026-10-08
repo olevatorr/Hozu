@@ -235,3 +235,18 @@ describe('ADR 0043 B: a session change is a barrier', () => {
     ).toThrow(/HZ021|no implementation/)
   })
 })
+
+describe('Secure cookies on this machine (0.26)', () => {
+  it('drops Secure only over plain HTTP on a loopback host, where Safari would refuse the cookie', async () => {
+    const { localCookie } = await import('../src/handler.ts')
+    const cookie = 'sid=a.b; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=60'
+    const at = (url: string) => localCookie(cookie, new Request(url))
+    expect(at('http://127.0.0.1:4710/login')).toBe('sid=a.b; Path=/; HttpOnly; SameSite=Lax; Max-Age=60')
+    expect(at('http://localhost:3000/')).not.toContain('Secure')
+    expect(at('http://[::1]:3000/')).not.toContain('Secure')
+    expect(at('https://127.0.0.1/')).toContain('; Secure')
+    expect(at('http://shop.example/')).toContain('; Secure')
+    const forwarded = new Request('http://127.0.0.1:3000/', { headers: { 'x-forwarded-proto': 'https' } })
+    expect(localCookie(cookie, forwarded)).toContain('; Secure')
+  })
+})

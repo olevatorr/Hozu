@@ -142,7 +142,9 @@ export async function exportStatic({
       for (const call of serverCalls(build, html)) result.needsServer.push({ path: entry.path, ...call })
       await write(file, html)
       result.written.push(file)
-      js ||= html.includes(`<script type="module" src="${assets.client}">`)
+      js ||=
+        html.includes(`<script type="module" src="${assets.client}">`) ||
+        html.includes(`<script type="module" src="${assets.client.replace('/client.js', '/keys.js')}">`)
     }
   }
   if (build.ir.notFound) {

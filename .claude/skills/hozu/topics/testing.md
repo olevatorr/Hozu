@@ -29,6 +29,7 @@
 
 <!-- more -->
 
+- `press Mod+s` (with `Mod`, `Ctrl`, `Meta`, `Alt`, `Shift`) presses the control whose `keys` match, as a person would; with `--js off` it reports that a shortcut needs JavaScript.
 - **Server errors:** what the app's `onError` receives (a resolver that threw, an invalid input) is listed under the
   step or the `get` request that caused it, `server error: <message> (<feature.effect>)`; `--json` `serverErrors`.
 - **A calm page:** a step that rebuilds elements unchanged says `N elements rebuilt unchanged (a flash: main > form >
@@ -83,7 +84,8 @@
 - **More checks in a step:**
   - A click that would land on another element fails the step: `the click would land on <h3>, which contains it, above
     <a href="/x">: a person cannot click it` (an overlay, a card covering its link).
-  - A navigation shows how it arrived: `→ /x (loaded, 32 ms)` or `(prerendered, 4 ms)`; with `--js both`, per mode.
+  - A navigation shows how it arrived: `→ /x (loaded, 32 ms)`; with `--js both`, per mode. Browse always shows
+    `loaded`: Chrome turns prerendering off under DevTools request interception, so this is the worst case.
   - `--select` prints each element's `class` too. An element moved to another parent is not a flash.
 - A server error that `get` or `browse` lists is noted once with `a production server shows "Internal error" here`:
   the visitor sees that text and the call id; `onError` gets the message.

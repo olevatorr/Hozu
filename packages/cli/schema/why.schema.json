@@ -224,6 +224,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "decides": {
+          "type": "boolean",
+          "description": "Whether it decides, so a contract must cover it; otherwise the lock reviews it (ADR 0037)."
         }
       },
       "required": [
@@ -234,7 +238,8 @@
         "guard",
         "assign",
         "navigate",
-        "coveredBy"
+        "coveredBy",
+        "decides"
       ],
       "additionalProperties": false
     },

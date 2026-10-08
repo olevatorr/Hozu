@@ -47,10 +47,15 @@ export class World {
   private readonly heads = new Map<number, { resolve(h: Head): void; reject(e: Error): void }>()
   private readonly chunks = new Map<number, (chunk: string | null) => void>()
 
-  constructor(config: string | undefined, cwd: string, sessions: (string | undefined)[]) {
+  constructor(
+    config: string | undefined,
+    cwd: string,
+    sessions: (string | undefined)[],
+    built: string | null = null,
+  ) {
     const self = fileURLToPath(import.meta.url)
     this.worker = new Worker(join(dirname(self), `browse-world${extname(self)}`), {
-      workerData: { config, cwd, sessions },
+      workerData: { config, cwd, sessions, built },
     })
     this.cookies = new Promise((resolve, reject) => {
       this.worker.on('message', (m: WorldReply) => {
@@ -539,6 +544,7 @@ export class Tab {
         el[chain] = p === document.body || !p ? '' : (p[chain] ?? '') + '>' + p.tagName + '.' + (p.getAttribute('class') ?? '')
         el[s] = true
         el[Symbol.for('hozu.browse.parent')] = p
+        el[Symbol.for('hozu.browse.at')] = p ? [...(p.parentElement?.children ?? [])].indexOf(p) : -1
         g.__hozuSeen.push(el)
       }
       return g.__hozuSeen.length
@@ -563,7 +569,8 @@ export class Tab {
       const g = globalThis
       const KEYS = ['name', 'id', 'href', 'src', 'type']
       const own = (el) => el.tagName + '|' + (el.getAttribute('class') ?? '') + '|' + KEYS.map((k) => el.getAttribute(k) ?? '').join('|') + '|' + el.textContent.replace(/\\s+/g, ' ').trim()
-      const sig = (el) => (el[chain] ?? '') + '#' + own(el)
+      const at = (el) => { const p = el.parentElement; return p ? [...(p.parentElement?.children ?? [])].indexOf(p) : -1 }
+      const sig = (el) => (el[chain] ?? '') + '@' + (el[Symbol.for('hozu.browse.at')] ?? at(el)) + '#' + own(el)
       const parent = Symbol.for('hozu.browse.parent')
       const gone = new Map()
       for (const el of g.__hozuSeen ?? []) if (!el.isConnected) gone.set(sig(el), [...(gone.get(sig(el)) ?? []), el[parent]])
@@ -697,16 +704,26 @@ export class Tab {
   }
 
   async key(name: string) {
-    const key = KEYS[name] ?? {
-      code: `Key${name.toUpperCase()}`,
-      keyCode: name.toUpperCase().charCodeAt(0),
-      text: name,
+    const parts = name.split(/\+(?!$)/)
+    const pressed = parts.pop()!
+    const bit = { Alt: 1, Ctrl: 2, Meta: 4, Shift: 8, Mod: process.platform === 'darwin' ? 4 : 2 }
+    const modifiers = parts.reduce((m, p) => m | (bit[p as keyof typeof bit] ?? 0), 0)
+    const key = KEYS[pressed] ?? {
+      code: pressed === '/' ? 'Slash' : `Key${pressed.toUpperCase()}`,
+      keyCode: pressed === '/' ? 191 : pressed.toUpperCase().charCodeAt(0),
+      text: pressed,
     }
-    const base = { key: name === 'Space' ? ' ' : name, code: key.code, windowsVirtualKeyCode: key.keyCode }
+    const base = {
+      key:
+        pressed === 'Space' ? ' ' : modifiers & 8 && pressed.length === 1 ? pressed.toUpperCase() : pressed,
+      code: key.code,
+      windowsVirtualKeyCode: key.keyCode,
+      modifiers,
+    }
     await this.send('Input.dispatchKeyEvent', {
       type: 'keyDown',
       ...base,
-      ...(key.text ? { text: key.text } : {}),
+      ...(key.text && !(modifiers & 7) ? { text: key.text } : {}),
     })
     await this.send('Input.dispatchKeyEvent', { type: 'keyUp', ...base })
   }

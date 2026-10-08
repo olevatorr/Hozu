@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { dirname, extname, join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { parentPort, workerData } from 'node:worker_threads'
 import type { ServerError } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
@@ -35,10 +36,55 @@ const MIME: Record<string, string> = {
   '.woff2': 'font/woff2',
 }
 
-const { config, cwd, sessions } = workerData as {
+const { config, cwd, sessions, built } = workerData as {
   config: string | undefined
   cwd: string
   sessions: (string | undefined)[]
+  built: string | null
+}
+
+/** The entry `hozu build --target` wrote, with the platform's static files served first (ADR 0073 A3). */
+async function builtHandler(
+  dir: string,
+  kv: Map<string, string>,
+): Promise<{ fetch(request: Request): Promise<Response> }> {
+  const workers = existsSync(join(dir, 'wrangler.jsonc'))
+  const assets = join(dir, workers ? 'assets' : 'static')
+  const entry = join(dir, workers ? 'worker.mjs' : 'functions/index.func/index.js')
+  if (!existsSync(entry))
+    throw new Error(
+      `${dir} has no ${workers ? 'worker.mjs' : 'functions/index.func/index.js'}: run hozu build --target workers | vercel`,
+    )
+  const mod = (await import(pathToFileURL(entry).href)) as { default: any }
+  const env = {
+    ...process.env,
+    NODE_ENV: 'production',
+    SESSIONS: {
+      get: async (k: string) => kv.get(k) ?? null,
+      put: async (k: string, v: string) => void kv.set(k, v),
+      delete: async (k: string) => void kv.delete(k),
+    },
+  }
+  return {
+    async fetch(request) {
+      let path = ''
+      try {
+        path = decodeURIComponent(new URL(request.url).pathname)
+      } catch {}
+      const file = join(assets, path)
+      if (
+        request.method === 'GET' &&
+        path &&
+        file.startsWith(`${assets}/`) &&
+        existsSync(file) &&
+        !path.endsWith('/')
+      )
+        return new Response(await readFile(file), {
+          headers: { 'content-type': MIME[extname(file)] ?? 'application/octet-stream' },
+        })
+      return workers ? mod.default.fetch(request, env) : mod.default(request)
+    },
+  }
 }
 const port = parentPort!
 const post = (reply: WorldReply) => port.postMessage(reply)
@@ -52,14 +98,43 @@ try {
   const css = await parts.importFrom<any>('@hozu/css', ['npm install @hozu/css'])
   const styles = await css.compileStyles(build, { base: root })
   const components = parts.module.options.components ? await parts.module.options.components(build) : null
-  const handler: { fetch(request: Request): Promise<Response> } = server.createHandler(parts.module.app, {
-    styles,
-    components,
-    env: process.env,
-    readFile: (file: string) => readFile(file),
-    ...(parts.session ? { session: parts.session } : {}),
-    onError: collectingErrors(parts.module.options, (serverError) => post({ serverError })),
-  })
+  const kv = new Map<string, string>()
+  if (
+    built &&
+    sessions.some((j) => j !== undefined) &&
+    (!process.env.SESSION_SECRET || !existsSync(join(built, 'wrangler.jsonc')))
+  )
+    throw new HozuCliError(
+      'usage',
+      '--session with --build signs in through a Workers bundle and SESSION_SECRET',
+      [
+        "SESSION_SECRET=… hozu browse / --build dist/workers --session '{…}'",
+        'Without them, sign in with steps: --do "fill Email=…" --do "click Sign in"',
+      ],
+    )
+  if (built && process.env.SESSION_SECRET) {
+    const store = server.kvSessions(
+      {
+        get: async (k: string) => kv.get(k) ?? null,
+        put: async (k: string, v: string) => void kv.set(k, v),
+        delete: async (k: string) => void kv.delete(k),
+      },
+      { secret: process.env.SESSION_SECRET },
+    )
+    parts.cookies = await Promise.all(
+      sessions.map((json) => (json === undefined ? null : store.issue(JSON.parse(json)))),
+    )
+  }
+  const handler: { fetch(request: Request): Promise<Response> } = built
+    ? await builtHandler(built, kv)
+    : server.createHandler(parts.module.app, {
+        styles,
+        components,
+        env: process.env,
+        readFile: (file: string) => readFile(file),
+        ...(parts.session ? { session: parts.session } : {}),
+        onError: collectingErrors(parts.module.options, (serverError) => post({ serverError })),
+      })
   const publicDir = join(root, 'public')
   const respond = async (request: Request): Promise<Response> => {
     const response = await handler.fetch(request)

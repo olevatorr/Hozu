@@ -101,10 +101,17 @@ export async function runValidate(
   const coverage: Record<string, Coverage> = {}
   for (const [fid, entries] of Object.entries(verified.lock?.features ?? {})) {
     if (feature && fid !== feature) continue
-    const decisions = Object.entries(entries).filter(([id]) => decides(first.ir.features[fid]!, id))
+    const source = (id: string) => {
+      const pointer = join('', 'features', fid, 'machine', 'states', ...id.split('/'))
+      return first.bindings.copies[pointer] ?? pointer
+    }
+    const decisions = new Map<string, boolean>()
+    for (const [id, e] of Object.entries(entries))
+      if (decides(first.ir.features[fid]!, id))
+        decisions.set(source(id), (decisions.get(source(id)) ?? false) || Object.keys(e.contracts).length > 0)
     coverage[fid] = {
-      covered: decisions.filter(([, e]) => Object.keys(e.contracts).length > 0).length,
-      total: decisions.length,
+      covered: [...decisions.values()].filter(Boolean).length,
+      total: decisions.size,
       transitions: Object.keys(entries).length,
     }
   }

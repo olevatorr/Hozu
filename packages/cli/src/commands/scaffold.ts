@@ -247,7 +247,7 @@ export function views(n: Names, w: With, listRoute: string | null): string {
     `          class: 'flex-1 rounded border px-3 py-2',`,
     '          on: { input: ui.set(ctx.draft, ui.dom.value) },',
     '        }),',
-    `        ui.button({ type: 'submit', disabled: is(['adding']), class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),`,
+    `        ui.button({ type: 'submit', disabled: is(['adding']), keys: ['Mod+Enter'], class: 'rounded bg-indigo-600 px-4 py-2 text-white' }, ['Add']),`,
     '      ]),',
     `      ui.p({ id: '${n.id}-title-error', class: 'text-sm text-rose-600' }, [ctx.fields.title]),`,
     `      ctx.error !== null &&`,

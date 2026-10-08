@@ -833,6 +833,9 @@ importers:
       '@hozu/core':
         specifier: workspace:*
         version: link:../core
+      '@hozu/transform':
+        specifier: workspace:*
+        version: link:../transform
       esbuild:
         specifier: 0.28.2
         version: 0.28.2

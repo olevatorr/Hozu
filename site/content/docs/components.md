@@ -62,6 +62,7 @@ ui.use(Button, { variant: { tone: 'quiet' }, props: { disabled: is(['saving']) }
 
 - **`variant`** chooses a fixed look and takes literals only (HZ071). Anything that changes while the page runs is a **prop**.
 - **`slots`** fill named places, `on` handles the component's `events`, and children are allowed only with `children: true`.
+- **`keys`** give a component whose root is a button, link, `summary` or field a keyboard shortcut, as on the plain element ([Views](/docs/views#keyboard-shortcuts)).
 - Style a state through the attribute that announces it (`disabled:`, `aria-pressed:`, `aria-busy:`, `aria-invalid:`, `open:`); `toggle` is for states without one.
 - A pure component is inlined when the view is recorded: it adds no JavaScript, and the page's IR equals the inline form.
 

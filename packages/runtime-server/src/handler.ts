@@ -379,7 +379,7 @@ function handlerFor({
     read ? { 'cache-control': 'private, no-cache', ...(hasSession ? { vary: 'Cookie' } : {}) } : {}
   const internal = (path: string | null) =>
     path && /^\/(?![/\\])/.test(path) && ![...path].some((c) => c < ' ') ? path : null
-  const enterPreview = async (url: URL) => {
+  const enterPreview = async (url: URL, request: Request) => {
     const given = new TextEncoder().encode(url.searchParams.get('secret') ?? '')
     const want = new TextEncoder().encode(preview?.secret ?? '')
     let same = given.length === want.length && want.length > 0
@@ -388,15 +388,15 @@ function handlerFor({
     if (!previewCookie || !same || !to) return plain(401, 'Invalid preview request')
     return new Response(null, {
       status: 307,
-      headers: { location: to, 'set-cookie': await previewCookie.write(true) },
+      headers: { location: to, 'set-cookie': localCookie(await previewCookie.write(true), request) },
     })
   }
-  const exitPreview = async (url: URL) =>
+  const exitPreview = async (url: URL, request: Request) =>
     new Response(null, {
       status: 307,
       headers: {
         location: internal(url.searchParams.get('path')) ?? publicPath(ir, '/'),
-        ...(previewCookie ? { 'set-cookie': await previewCookie.write(null) } : {}),
+        ...(previewCookie ? { 'set-cookie': localCookie(await previewCookie.write(null), request) } : {}),
       },
     })
   const base: Record<string, string> = {
@@ -612,7 +612,8 @@ function handlerFor({
       if ((!refreshing && perRequest.has(ref)) || data.tagsOf(ref, input).some((t) => changed.has(t)))
         refreshed.push([key, (await scope.run(ref, input, undefined, true)) as Result])
     }
-    const cookie = store && scope.written ? await store.write(scope.written.value, request) : null
+    const cookie =
+      store && scope.written ? localCookie(await store.write(scope.written.value, request), request) : null
     const { invalidated: _, session: __, ...rest } = result
     const response: EffectResponse = {
       result: rest as Result,
@@ -737,7 +738,10 @@ function handlerFor({
         headers: { 'content-type': 'text/html; charset=utf-8', ...(await secureHeaders()) },
       })
     await dropPages(outcome.invalidated)
-    const cookie = store && outcome.session ? await store.write(outcome.session.value, request) : null
+    const cookie =
+      store && outcome.session
+        ? localCookie(await store.write(outcome.session.value, request), request)
+        : null
     const target = outcome.invalid
       ? null
       : (outcome.navigate ?? outcome.replace ?? (outcome.unchanged ? back : null))
@@ -894,7 +898,8 @@ function handlerFor({
     else input = await endpointForm(feature.schemas[e.input] ?? null, request).catch(() => null)
     const scope = await dataFor(request)
     const result = await scope.endpoint(ref, input, { request, ...(bytes ? { bytes } : {}) })
-    const cookie = store && scope.written ? await store.write(scope.written.value, request) : null
+    const cookie =
+      store && scope.written ? localCookie(await store.write(scope.written.value, request), request) : null
     const finish = (response: Response) => {
       const out = new Response(response.body, response)
       for (const [k, v] of Object.entries(base)) if (!out.headers.has(k)) out.headers.set(k, v)
@@ -1026,7 +1031,7 @@ function handlerFor({
           const { session: value } = (await request.json()) as { session: unknown }
           const issues = value === null ? null : (build.bindings.checks['#session']?.(value) ?? null)
           if (issues) return devJson({ error: issues.join('; ') }, { status: 400 })
-          const cookie = await store.write(value, request)
+          const cookie = localCookie(await store.write(value, request), request)
           return devJson({ current: value }, { headers: { 'set-cookie': cookie } })
         }
         return devJson({
@@ -1082,8 +1087,8 @@ function handlerFor({
         },
       )
     }
-    if (path === '/_hozu/preview') return enterPreview(url)
-    if (path === '/_hozu/preview/exit') return exitPreview(url)
+    if (path === '/_hozu/preview') return enterPreview(url, request)
+    if (path === '/_hozu/preview/exit') return exitPreview(url, request)
     const head = request.method === 'HEAD'
     if (request.method !== 'GET' && !head) return plain(405, null, { allow: 'GET, HEAD, POST' })
     const client = clientBundle()[path]
@@ -1231,4 +1236,20 @@ export function withSiteUrl(build: BuildResult, env: Record<string, string | und
       `site.url reads ${site.urlEnv}, which must be set to an origin such as https://example.org (got ${raw ? JSON.stringify(raw) : 'nothing'})`,
     )
   return { ...build, ir: { ...build.ir, site: { ...site, url: url.origin } } }
+}
+
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]'])
+
+/**
+ * Safari keeps no `Secure` cookie over plain HTTP, even on this machine: `hozu serve` on 127.0.0.1 signed nobody in.
+ * A request a proxy forwarded (an HTTPS front on the same host) keeps `Secure`.
+ */
+export function localCookie(cookie: string, request: Request): string {
+  const url = new URL(request.url)
+  const proxied = ['forwarded', 'x-forwarded-for', 'x-forwarded-proto', 'x-forwarded-host'].some((h) =>
+    request.headers.has(h),
+  )
+  return url.protocol === 'http:' && LOOPBACK.has(url.hostname) && !proxied
+    ? cookie.replace(/; Secure(?=;|$)/, '')
+    : cookie
 }

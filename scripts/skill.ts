@@ -95,6 +95,7 @@ export async function pack() {
     await rm(target, { recursive: true, force: true })
     await cp(skill, target, { recursive: true })
   }
+  await cp(join(root, 'CHANGELOG.md'), join(root, 'packages', 'cli', 'CHANGELOG.md'))
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

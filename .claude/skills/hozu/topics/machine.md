@@ -71,8 +71,9 @@ export const m = machine({
 - **Across pages:** the calm state (the last state without `invoke`, with its context) is kept in `sessionStorage`
   and resumed on a page that shows the same machine view, or on the same address; a reload or a page without that
   view starts from `initialContext` (or `seed`).
-- `Unexpected`'s `message` is `Internal error (call <id>)` in production (the real one reaches `onError`): store a
-  code or a fixed text, never `e.message`.
+- `Unexpected`'s `message` is `Internal error (call <id>)` in production (the real one reaches `onError`). A page
+  for customers stores a code or a fixed text; a staff tool may show `e.message`, whose call id matches the server
+  log line.
 - **assign** values are event (`e`), result (`r`) or error fields, context, literals, operators and `fn()` calls.
 - **guard** conditions: a field (`() => ctx.auto`), comparisons, `&&`, `||`, `!`, or a boolean `fn()`.
 - **navigate** sends the browser to `ui.link(route, params, search?)` after the transition. It returns one link: to

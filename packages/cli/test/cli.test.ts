@@ -62,6 +62,15 @@ describe('hozu skill', () => {
 })
 
 describe('A5 CLI contract', () => {
+  it('counts a shared on copied into every state as one decision, as HZ016 does', async () => {
+    const { code, stdout } = await run(
+      ['check', '--no-types', '--json'],
+      `${root}packages/cli/test/fixtures/shared-on`,
+    )
+    expect(code).toBe(0)
+    expect(JSON.parse(stdout).validate.coverage).toEqual({ shared: { covered: 1, total: 1, transitions: 4 } })
+  })
+
   it('check --no-types --json is clean for the cart and matches its schema; validate is gone', async () => {
     const { code, stdout } = await run(['check', '--no-types', '--json'])
     const out = JSON.parse(stdout)
@@ -168,6 +177,7 @@ describe('A5 CLI contract', () => {
       assign: ['context.pending = event'],
       navigate: null,
       coveredBy: ['addFailsUnexpectedly', 'addsItem', 'rejectsOutOfStock'],
+      decides: true,
     })
     expect(out.sends.map((s: { event: string }) => s.event)).toEqual([
       'cart.RemoveItem',

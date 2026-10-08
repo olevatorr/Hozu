@@ -1,0 +1,139 @@
+{
+  "features": {
+    "shared": {
+      "a/on/shared.Bump/0": {
+        "behavior": "76f52e2229fc44ea",
+        "contracts": {
+          "bumps": "9d0a41ad28047cdc"
+        },
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "n"
+              ],
+              "value": {
+                "arg": {
+                  "object": {
+                    "a": {
+                      "path": [
+                        "n"
+                      ],
+                      "ref": "context"
+                    },
+                    "b": {
+                      "literal": 1
+                    }
+                  }
+                },
+                "fn": "%plus"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "a",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null,
+          "stay": true
+        },
+        "summary": "a --Bump--> stays · n := (ctx.n + 1)"
+      },
+      "a/on/shared.Switch/0": {
+        "behavior": "4c0950eb789f6df1",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "b",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "a --Switch--> b"
+      },
+      "b/on/shared.Bump/0": {
+        "behavior": "56ab9b80e10cdd9c",
+        "contracts": {},
+        "decides": true,
+        "fields": {
+          "assign": [
+            {
+              "op": "set",
+              "path": [
+                "n"
+              ],
+              "value": {
+                "arg": {
+                  "object": {
+                    "a": {
+                      "path": [
+                        "n"
+                      ],
+                      "ref": "context"
+                    },
+                    "b": {
+                      "literal": 1
+                    }
+                  }
+                },
+                "fn": "%plus"
+              }
+            }
+          ],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "b",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null,
+          "stay": true
+        },
+        "summary": "b --Bump--> stays · n := (ctx.n + 1)"
+      },
+      "b/on/shared.Switch/0": {
+        "behavior": "60c15db5e18a616b",
+        "contracts": {},
+        "decides": false,
+        "fields": {
+          "assign": [],
+          "enters": {
+            "effect": null,
+            "final": false,
+            "input": null,
+            "state": "a",
+            "timers": []
+          },
+          "fns": {},
+          "guard": null,
+          "navigate": null
+        },
+        "summary": "b --Switch--> a"
+      }
+    }
+  },
+  "pages": {
+    "access": {},
+    "endpoints": {},
+    "head": {},
+    "redirects": {}
+  },
+  "version": 2
+}

@@ -532,8 +532,19 @@ export function describeRequest(out: RequestOutput): string {
   return `${lines.join('\n')}\n`
 }
 
-export const describeElement = (e: RequestElement) =>
-  `${e.selector}: <${e.tag}${Object.entries(e.attrs)
-    .filter(([k]) => k !== 'style')
+const CLASS_WIDTH = 60
+
+/** One selected element: its attributes, then its class last and cut (`--json` has it whole), then its text. */
+export const describeElement = (e: RequestElement) => {
+  const cls = e.attrs.class
+  const shown =
+    cls === undefined
+      ? ''
+      : cls.length > CLASS_WIDTH
+        ? ` class="${cls.slice(0, CLASS_WIDTH)}…"`
+        : ` class="${cls}"`
+  return `${e.selector}: <${e.tag}${Object.entries(e.attrs)
+    .filter(([k]) => k !== 'style' && k !== 'class')
     .map(([k, v]) => (v === '' ? ` ${k}` : ` ${k}="${v}"`))
-    .join('')}>${e.text ? ` ${e.text}` : ''}`
+    .join('')}${shown}>${e.text ? ` ${e.text}` : ''}`
+}

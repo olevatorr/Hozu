@@ -57,16 +57,20 @@ Dialogs, popovers and menus need no machine state: `ui.button({ commandfor: 'd',
 
 ## Keyboard shortcuts
 
-Give `ui.send` a list of keys, on a `keydown` or `keyup` listener:
+A shortcut presses a control, so `keys` goes on the control: a link, button, `summary` or field.
 
 ```ts
-ui.window({ on: { keydown: ui.send(OpenSearch, {}, { keys: ['Mod+k', '/'] }) } })
+ui.input({ name: 'q', 'aria-label': 'Search', keys: ['/'] })
+ui.button({ type: 'submit', keys: ['Mod+s'] }, ['Save'])
+ui.button({ type: 'button', keys: ['Escape'], on: { click: ui.send(Dismiss, {}) } }, ['Close'])
+ui.use(Button, { props: { type: 'submit' }, keys: ['Mod+Enter'] }, ['Add'])   // a kit control whose root is a button
 ```
 
-- It sends only on those presses and stops the browser's own action for them. `Mod` is ⌘ on Apple devices and Ctrl elsewhere; `Ctrl`, `Meta`, `Alt` and `Shift` name one key.
-- A printable key without a modifier, such as `/`, waits while the person types in a field inside the listener, so the slash is still typed there. `Escape` fires anyway.
-- Nothing fires while an input method composes text, such as Chinese or Japanese input.
-- A key list Hozu cannot read is HZ014.
+- A press does what the control does: a field is focused (its text selected), anything else is clicked. A submit button submits its form, a link follows its address, a `commandfor` button opens its dialog. The machine sees the same event a click sends, so contracts are unchanged, and no machine is needed for a shortcut at all.
+- `Mod` is ⌘ on Apple devices and Ctrl elsewhere; `Ctrl`, `Meta`, `Alt` and `Shift` name one key. The browser's own action for the press is stopped.
+- Only visible, enabled controls count, and inside an open modal dialog only its own. A printable key without a modifier, such as `/`, waits while the person types in another field. `Escape` fires anyway; nothing fires while an input method composes text.
+- The server writes `aria-keyshortcuts` (`Control+S Meta+S` for `Mod+s`), and a page with shortcuts loads a small module (about 0.7 KB) for them, islands or not.
+- A key list Hozu cannot read, or two controls always shown together with one key, is HZ014. `hozu browse --do 'press Mod+s'` presses it.
 
 ## How updates land
 

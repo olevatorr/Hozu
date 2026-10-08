@@ -55,7 +55,9 @@ export const Board = ui.view({
             { name: 'kind', 'aria-label': 'Kind', class: 'rounded border px-2 py-2' },
             kinds.map((k) => ui.option({ value: k, selected: ctx.kind === k }, [k])),
           ),
-          ui.use(Button, { props: { type: 'submit', disabled: is(['adding']) } }, ['Add']),
+          ui.use(Button, { props: { type: 'submit', disabled: is(['adding']) }, keys: ['Mod+Enter'] }, [
+            'Add',
+          ]),
         ],
       ),
       ctx.error !== null && ui.p({ role: 'alert', class: 'text-rose-600' }, [ctx.error]),

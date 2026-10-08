@@ -92,6 +92,8 @@ export interface ExplainTransition {
   assign: string[]
   navigate: string | null
   coveredBy: string[]
+  /** Whether it decides, so a contract must cover it; otherwise the lock reviews it (ADR 0037). */
+  decides: boolean
 }
 
 export interface ExplainSend {

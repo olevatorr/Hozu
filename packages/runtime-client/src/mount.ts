@@ -313,8 +313,7 @@ export function createApp(doc: Document, options: AppOptions): App {
               if (event === 'close' && extras?.quiet.delete(el)) return
               if (event === 'submit') e.preventDefault()
               const send = 'test' in on ? (value(on, scope) ? on.a : on.b) : on
-              if (!send || (send.keys && !extras?.shortcut(e as KeyboardEvent, send.keys))) return
-              if (send.keys) e.preventDefault()
+              if (!send) return
               dispatch({ type: 'event', event: send.event, payload: value(send.payload, scope, domField(e)) })
             },
             passive.has(event) ? { passive: true } : undefined,
@@ -434,11 +433,8 @@ export function createApp(doc: Document, options: AppOptions): App {
         const stops: (() => void)[] = []
         for (const event in node.on) {
           const send = node.on[event]!
-          const listener = (e: Event) => {
-            if (send.keys && !extras?.shortcut(e as KeyboardEvent, send.keys)) return
-            if (send.keys) e.preventDefault()
+          const listener = (e: Event) =>
             dispatch({ type: 'event', event: send.event, payload: value(send.payload, scope, domField(e)) })
-          }
           const opts = passive.has(event) ? { passive: true } : undefined
           target.addEventListener(event, listener, opts)
           stops.push(() => target.removeEventListener(event, listener))

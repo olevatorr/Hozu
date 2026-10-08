@@ -33,6 +33,7 @@ import { describeRequests, runRequests } from './commands/requests.ts'
 import { runServe } from './commands/serve.ts'
 import { describeShow, runShow } from './commands/show.ts'
 import { runSkill } from './commands/skill.ts'
+import { describeTarget, runTarget, TARGETS, type Target } from './commands/target.ts'
 import { featuresCreated, seedLockIsolated } from './commands/validate.ts'
 import { describeWhy, runWhy } from './commands/why.ts'
 import { HozuCliError } from './errors.ts'
@@ -49,6 +50,7 @@ Commands:
                             and contracts, a view node (DevTools id or IR pointer) or a page (page:home)
   plan <route|path>         Derived render plan of a route (home) or a path (/products/mug): regions, cache modes, islands
   build                     Write dist/public, dist/server/render.js and dist/manifest.json for deployment
+  build --target <t>        A folder the platform deploys as it is: node (a Dockerfile), workers, vercel
   export                    Write every page as files for a static host (GitHub Pages, Netlify…) to dist; fails
                             when a page needs a server and lists why (needs @hozu/adapter-static)
   serve                     Start the app module (project({ app })) on PORT with adapter-node: what npm start runs
@@ -251,6 +253,8 @@ export async function main(
         'no-types': { type: 'boolean', default: false },
         more: { type: 'boolean', default: false },
         out: { type: 'string' },
+        target: { type: 'string' },
+        build: { type: 'string' },
         agent: { type: 'string' },
         session: { type: 'string' },
         header: { type: 'string', multiple: true },
@@ -542,6 +546,7 @@ export async function main(
         reducedMotion: values['reduced-motion'] === true,
         viewport: browseViewport(values.viewport),
         full: values.full === true,
+        built: values.build ? resolve(cwd, values.build) : undefined,
       })
       out(asJson ? json(result) : describeBrowse(result, values.full === true))
       return browseFailed(result) ? 1 : 0
@@ -553,9 +558,22 @@ export async function main(
       else out(json({ feature: result.feature, hash: result.hash, summary: result.summary }))
       return 0
     }
+    if (command === 'build' && values.target !== undefined) {
+      if (!TARGETS.includes(values.target as Target))
+        throw new HozuCliError('usage', `Unknown target "${values.target}"`, [
+          `hozu build --target ${TARGETS.join(' | ')}   (a static host: hozu export)`,
+        ])
+      const result = await runTarget(loaded, values.target as Target, values.out, cwd)
+      out(asJson ? json(result) : describeTarget(result))
+      return 0
+    }
     if (command === 'build') {
       const result = await runBuild(loaded, values.out, cwd)
-      out(asJson ? json(result) : `✔ wrote ${result.files.length} static files and ${result.manifest}\n`)
+      out(
+        asJson
+          ? json(result)
+          : `✔ wrote ${result.files.length} static files and ${result.manifest}\nnext: hozu build --target node | workers | vercel writes what that platform deploys (a static host: hozu export)\n`,
+      )
       return 0
     }
     if (command === 'export') {

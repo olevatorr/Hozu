@@ -61,7 +61,7 @@ export interface Send {
   readonly [SEND]: { event: EventDecl; payload: unknown; keys?: unknown }
 }
 
-/** A keyboard shortcut: `KeyboardEvent.key` with optional `Mod` (⌘ on Apple, Ctrl elsewhere), `Ctrl`, `Meta`, `Alt`, `Shift` (ADR 0072 B). */
+/** A keyboard shortcut: `KeyboardEvent.key` with optional `Mod` (⌘ on Apple, Ctrl elsewhere), `Ctrl`, `Meta`, `Alt`, `Shift` (ADR 0072 B, on elements since ADR 0073 B). */
 export type Shortcut = string
 
 export interface NodeDecl extends Decl<'node'> {}
@@ -81,14 +81,18 @@ export type Branch = NodeDecl | readonly Child[]
 
 export type AttrValue = Val<string | number | boolean | null> | Guard | Asset | undefined
 
-export type Props<T extends Tag = Tag> = TagProps[T] & {
-  class?: string
-  toggle?: Record<string, Guard | Val<boolean>>
-  vars?: Record<`--${string}`, Val<string | number | null>>
-  on?: { [E in DomEvent]?: Send }
-  [data: `data-${string}`]: AttrValue | undefined
-  [aria: `aria-${string}`]: AttrValue | undefined
-}
+/** Elements a shortcut presses: a field is focused, a control clicked (ADR 0073 B). */
+export type KeyedTag = 'a' | 'button' | 'input' | 'select' | 'summary' | 'textarea'
+
+export type Props<T extends Tag = Tag> = TagProps[T] &
+  (T extends KeyedTag ? { keys?: readonly Shortcut[] } : unknown) & {
+    class?: string
+    toggle?: Record<string, Guard | Val<boolean>>
+    vars?: Record<`--${string}`, Val<string | number | null>>
+    on?: { [E in DomEvent]?: Send }
+    [data: `data-${string}`]: AttrValue | undefined
+    [aria: `aria-${string}`]: AttrValue | undefined
+  }
 
 export type NodeDef =
   | { kind: 'el'; tag: string; props: Record<string, unknown>; children: readonly unknown[] }
@@ -228,8 +232,8 @@ export const ui = Object.freeze({
   view,
   dom,
   formRef: (): FormRef => brand({}, 'formRef', null),
-  send: <P>(event: EventDecl<P>, payload: NoInfer<Val<P>>, options?: { keys: Shortcut[] }): Send =>
-    Object.freeze({ [SEND]: options ? { event, payload, keys: options.keys } : { event, payload } }),
+  send: <P>(event: EventDecl<P>, payload: NoInfer<Val<P>>, ...removed: never[]): Send =>
+    Object.freeze({ [SEND]: removed.length ? { event, payload, keys: removed[0] } : { event, payload } }),
   /** Copies a value into a context field, the short form of an event and a shared `on` that stays (ADR 0067 H). */
   set: <T>(field: T, value: NoInfer<Val<T>>): Send =>
     Object.freeze({ [SET]: { field, value } }) as unknown as Send,

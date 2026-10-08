@@ -35,6 +35,8 @@ export interface BrowseOptions {
   reducedMotion: boolean
   viewport: { width: number; height: number }
   full: boolean
+  /** A folder `hozu build --target workers | vercel` wrote: requests go through its entry, not the source (ADR 0073 A3). */
+  built?: string | undefined
 }
 
 const TARGETED = new Set(['fill', 'select', 'check', 'uncheck', 'click', 'submit'])
@@ -349,7 +351,9 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
     ])
   const modes: BrowseMode[] = options.js === 'both' ? ['on', 'off'] : [options.js]
   const sessions = options.actors.map((a) => a.session)
-  const worlds = modes.map(() => new World(loaded.path, dirname(loaded.path), sessions))
+  const worlds = modes.map(
+    () => new World(loaded.path, dirname(loaded.path), sessions, options.built ?? null),
+  )
   const vars = new Map<BrowseMode, Map<string, string>>(modes.map((m) => [m, new Map()]))
   const inStep = modes.map(() => new Set<number>())
   const pageKey = routeKey(Object.values(loaded.build().ir.routes).map((r) => routePattern(r.path).pattern))
@@ -678,8 +682,9 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
       lines.push(`${head}${texts[0] ? `: ${texts[0]}` : ''}${s.ok && s.note ? ` — ${s.note}` : ''}${flag}`)
     else {
       lines.push(`${head}${flag}`)
-      changes.forEach((c, k) => {
-        lines.push(`      ${c.mode}: ${texts[k] || '(no change)'}${c.ok && c.note ? ` — ${c.note}` : ''}`)
+      changes.forEach((c) => {
+        const own = describeChange(c, full)
+        lines.push(`      ${c.mode}: ${own || '(no change)'}${c.ok && c.note ? ` — ${c.note}` : ''}`)
       })
     }
     for (const c of changes)

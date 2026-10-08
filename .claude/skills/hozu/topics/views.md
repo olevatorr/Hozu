@@ -55,10 +55,13 @@ export const Board = ui.view({
   `row(item)`; it is inlined, so the IR equals the inline form. A plain function that receives data is HZ059.
 - **Shared UI:** use the kit component, not a styled `ui.button` per page (`example/` uses a kit).
 - **More events:** any DOM event name plus `visible` (entered the viewport). Payload fields also:
-  `ui.dom.formAll('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`. Keyboard shortcuts:
-  `ui.window({ on: { keydown: ui.send(Open, {}, { keys: ['Mod+k', '/'] }) } })` sends only on those presses and
-  stops the browser's own (`Mod` is ⌘ on Apple, Ctrl elsewhere; also `Ctrl`, `Meta`, `Alt`, `Shift`); a printable
-  key without a modifier waits while the person types in a field (`Escape` does not). `ui.dom.value` / `ui.dom.form`
+  `ui.dom.formAll('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`. Keyboard shortcuts
+  belong to the control they press: `ui.input({ name: 'q', keys: ['/'] })` focuses the field, `ui.button({ type:
+  'submit', keys: ['Mod+s'] }, ['Save'])` clicks it (so the form submits; no machine needed); a kit control takes
+  them too: `ui.use(Button, { props, keys: ['Mod+Enter'] }, ['Add'])`. `Mod` is ⌘ on Apple,
+  Ctrl elsewhere; also `Ctrl`, `Meta`, `Alt`, `Shift`. A printable key without a modifier waits while the person types
+  in another field (`Escape` does not); inside an open modal only its controls count. The page loads a small module
+  for it and writes `aria-keyshortcuts`; two controls always shown together with one key is HZ014. `ui.dom.value` / `ui.dom.form`
   fill an enum field only from a `<select>`, radios or submit buttons whose literal values are all members (HZ033).
 - **Search in links:** the third argument of `ui.link` is optional and exists only when the route declares `search`:
   omitted means every default, and a search lists only the fields that differ: `ui.link(home, null, { show: 'done' })`.
