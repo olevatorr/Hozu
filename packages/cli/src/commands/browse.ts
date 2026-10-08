@@ -477,8 +477,12 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
 
     modes.forEach((mode, m) => {
       worlds[m]!.serverErrors.forEach((e, i) => {
-        if (!inStep[m]!.has(i))
-          errors.push({ kind: 'server', text: describeServerError(e), at: e.path ?? null, mode })
+        const text = describeServerError(e)
+        if (
+          !inStep[m]!.has(i) &&
+          !errors.some((x) => x.kind === 'server' && x.text === text && x.mode === mode)
+        )
+          errors.push({ kind: 'server', text, at: e.path ?? null, mode })
       })
     })
     const order = (e: BrowseError) =>
@@ -615,8 +619,8 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
       })
     }
     for (const c of changes)
-      for (const e of c.serverErrors ?? [])
-        lines.push(`      server error${modes.length > 1 ? ` (${c.mode})` : ''}: ${describeServerError(e)}`)
+      for (const text of new Set((c.serverErrors ?? []).map(describeServerError)))
+        lines.push(`      server error${modes.length > 1 ? ` (${c.mode})` : ''}: ${text}`)
     for (const e of s.elsewhere ?? [])
       lines.push(
         `      ${e.actor || 'page'}${modes.length > 1 ? ` (${e.mode})` : ''}: ${describeChange(

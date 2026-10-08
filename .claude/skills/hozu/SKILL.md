@@ -46,10 +46,10 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 ## Topics (`npx hozu docs <topic>`; `--more`: options, edge cases)
 | Task | Topic |
 |---|---|
-| a new feature, the files, a complete example | `feature` |
+| a new feature, its files, an example | `feature` |
 | elements, attributes, events, lists, links, reuse | `views` |
 | states, events, invoke, timers, guards | `machine` |
-| queries, mutations, tags, `fn()`, resolvers | `data` |
+| queries, mutations, tags, `fn()`, resolvers, a database | `data` |
 | where effects run, `fetch.ts`, browser storage, static hosts | `fetch` |
 | contracts and the lock | `contracts` |
 | routes, search, pages, `head`, 403 / 404 | `pages` |

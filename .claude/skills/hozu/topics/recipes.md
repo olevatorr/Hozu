@@ -98,7 +98,8 @@ One machine per feature: an order list (filters, selection) and an order page (s
 ## A multi-step checkout that also works without JavaScript
 Each step is a state; the server runs the machine per request, so without JS a step's form posts every earlier field
 again as hidden inputs (`ui.input({ type: 'hidden', name: 'line1', value: ctx.line1 })`), and the last step's
-mutation receives them all. Prefill from the member with `seed: ({ query }) => ({ email: query(me, {}).email })`.
+mutation receives them all. A button that goes back to edit an earlier step posts them too, or the step comes back
+empty. Prefill from the member with `seed: ({ query }) => ({ email: query(me, {}).email })`.
 
 ## A notice after saving
 A `notice` context field set in `done` and cleared by `after: [{ ms: 4000, target: 'idle' }]` on a `saved` state;
