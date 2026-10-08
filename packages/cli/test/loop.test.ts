@@ -302,7 +302,8 @@ describe('the agent loop (ADR 0027)', () => {
     expect(last.elements[0]).toMatchObject({ tag: 'button', attrs: { 'aria-pressed': 'true' }, text: 'All' })
     expect(last.forms.map((f: { buttons: { text: string }[] }) => f.buttons[0]?.text)).toEqual(['Add'])
     expect(last.forms[0].fields.map((f: { name: string }) => f.name)).toEqual(['title'])
-    expect((await run(['get', '/', '--select', 'div > p'], app)).code).toBe(2)
+    expect((await run(['get', '/', '--select', 'div > p'], app)).code).toBe(0)
+    expect((await run(['get', '/', '--select', 'div + p'], app)).code).toBe(2)
   })
 
   it('scaffolds accounts: sign in, per-user data, sign out, and a second feature reusing the account', async () => {
