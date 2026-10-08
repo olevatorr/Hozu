@@ -53,6 +53,9 @@ Search schemas contain flat scalar values with defaults or nullable values. Use 
 
 Route modifiers support optional segments (`:slug?`, nullable string), one or more segments (`:path+`, string array), and zero or more segments (`:path*`, string array). The schema must match the modifier.
 
+## Shared layouts
+Pages are configuration, so a function is the layout: `const staff = (route, View) => ui.page(route, { views: [Sidebar, View], head: staffHead })`. A view's `seed` can start its machine from the address and from server data: `seed: ({ search, query }) => ({ step: search.step, email: query(me, {}).email })`. `head.input` and `head.render` receive `search` after `locale`, so a filtered page can have its own title.
+
 ## Missing pages and redirects
 
 Declare a static error route and pass it as `project({ notFound })`. Hozu uses its page for unmatched URLs. `project({ error })` supplies a server-error page. When a page's head query declares errors, `head.failed` maps each one to a route without params (a 303 redirect) or to 403, 404 or 410, for example `failed: { Unauthorized: login, Forbidden: 403 }`.

@@ -224,6 +224,9 @@ Keep resolver dependencies compatible with the runtime: the handler itself impor
 
 On a host, set the variables in the platform. `hozu serve` also reads the files listed in `env.files`; an edge handler reads none, so pass `env` to `createHandler`. A static export writes public values into the pages when you export. [Environment](/docs/environment) has the details.
 
+## Security headers
+Every response carries a strict Content-Security-Policy, `nosniff`, and a check that refuses cross-site POSTs. Add sources with `app({ csp: { img: ['https://picsum.photos', 'https://fastly.picsum.photos'] } })`; the keys are `script`, `style`, `img`, `font`, `connect`, `frame` and `media`. An image CDN that redirects needs both hosts.
+
 ## Several instances
 
 Each instance keeps its own bounded caches: at most 10,000 query results and 5,000 pages by default (`app({ dataCache: memoryDataCache({ maxEntries }) })`, `app({ cache: memoryCache({ maxPages }) })`; `server.stats()` reports the sizes). When several instances serve one app, a mutation on one must tell the others. Give every instance the same bus:

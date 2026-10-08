@@ -50,6 +50,7 @@ export default app({ resolvers: resolvers(project, (implement) => [
   shows it, also from the browser. `'live'` is for data your own mutations change. A refresh the visitor controls
   (a button, Pause / Resume) is `refresh: () => [tag()]` on a machine transition (`hozu docs machine`).
 - Call a `fn` from views or machines: `ui.each(visible({ items, show: ctx.show }), 'id', …)`.
+- **A database** (a pool, transactions, migrations, numeric ids from forms and params): see --more.
 
 <!-- more -->
 
@@ -106,3 +107,18 @@ export default app({
 - `.meta({ title: 'Note' })` on a schema makes it one Go type wherever it appears; `z.int()` is `int64`, a plain
   number `float64`. Only `runs: 'server'` effects and JSON endpoints can be remote (HZ093).
 - `examples/notes-go` is the reference: the notes app with every resolver in Go.
+
+## A database
+- One pool per process, made in `app.ts`; close it in `app({ dispose: () => pool.end() })` so `hozu get`, `call` and
+  `browse` exit and `hozu serve` stops cleanly. Transactions belong in one mutation resolver (`BEGIN` … `COMMIT`).
+- Migrations and seed data are scripts in `package.json` (`"db:migrate": "node db/migrate.ts"`), idempotent, run
+  before `npm start`; the URL and password are server env (`project({ env: { server } })`, `hozu docs env`).
+- Route params and form fields are strings: a numeric id is `z.coerce.number()` in the query or mutation input
+  (a query input that fails its schema is a program error, reported to `onError` with the field).
+- Data the whole staff shares but only staff may read is `scope: 'user'` with `access` (it is never cached across
+  requests). Share one rule: `const staffOnly = part(({ session }) => session.role !== 'editor')`, then
+  `access: { allow: staffOnly }` on each effect.
+- A resolver may answer `fail('Forbidden', { message })` (a row deleted meanwhile, a check `access` cannot make);
+  with `access: 'signedIn'` its `session` is never null.
+- Another app writing the same database: give the reading app a signed `endpoint` that `invalidates` the tags, and
+  call it after a write (`hozu docs endpoints`).

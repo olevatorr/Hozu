@@ -81,3 +81,25 @@ Run a fresh scaffold into a scratch app with `--with detail`, and copy the parts
 - Following the system needs no code: Tailwind's `dark:` classes (`bg-white dark:bg-slate-900`).
 - A switch the visitor chooses: a client component (`hozu docs components`) puts `dark` on `<html>` and keeps the
   choice in `localStorage`; `app.css` adds `@custom-variant dark (&:where(.dark, .dark *));`.
+
+## A shell shared by many pages (a back office)
+Pages are config, so a helper is the layout:
+```ts
+const staffHead = { query: me, render: (m) => ({ title: `${m.name} · Admin` }), failed: { Forbidden: signIn } }
+const staff = (route, View) => ui.page(route, { views: [Sidebar, View], head: staffHead })
+export default project({ /* … */ pages: [staff(orders, OrderList), staff(orderDetail, OrderPage), …] })
+```
+The sidebar's links mark the page shown with `aria-current` by themselves (`aria-[current]:font-bold`).
+
+## Screens with different state
+One machine per feature: an order list (filters, selection) and an order page (shipping, refund) are two features,
+`orders` and `order`, sharing declarations through `exports`. Each machine stays small and its contracts few.
+
+## A multi-step checkout that also works without JavaScript
+Each step is a state; the server runs the machine per request, so without JS a step's form posts every earlier field
+again as hidden inputs (`ui.input({ type: 'hidden', name: 'line1', value: ctx.line1 })`), and the last step's
+mutation receives them all. Prefill from the member with `seed: ({ query }) => ({ email: query(me, {}).email })`.
+
+## A notice after saving
+A `notice` context field set in `done` and cleared by `after: [{ ms: 4000, target: 'idle' }]` on a `saved` state;
+the view shows `ctx.notice !== null && ui.p({ role: 'status' }, [ctx.notice])`. There is no global toast store.

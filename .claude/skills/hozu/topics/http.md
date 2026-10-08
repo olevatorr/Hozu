@@ -18,4 +18,5 @@ http: {
 },
 ```
 Server options live in the app module: `app({ resolvers, session?, components?, onError?, csp?, og?, preview? })`.
-A strict CSP, `nosniff` and a cross-site POST check are on by default; `csp: { script: ['https://…'] }` adds sources.
+A strict CSP, `nosniff` and a cross-site POST check are on by default; `csp: { img: ['https://picsum.photos'] }` adds
+sources (keys `script`, `style`, `img`, `font`, `connect`, `frame`, `media`; an image CDN that redirects needs both hosts).
