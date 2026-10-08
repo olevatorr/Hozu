@@ -215,7 +215,7 @@ export async function renderPage({
   const routes = routesOf(ir, locale)
   const url = pathOf(routes[route] ?? '/', params, search)
   const home = Object.keys(ir.routes).find((id) => ir.routes[id]!.path === '/')
-  const root = home ? (routes[home] ?? '/') : '/'
+  const root = home ? pathOf(routes[home] ?? '/', null) : '/'
   const alternate: Record<string, string> = Object.fromEntries(
     (ir.site?.locales ?? []).map((l) => [l, pathOf(routesOf(ir, l)[route] ?? '/', params, search)]),
   )

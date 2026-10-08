@@ -29,7 +29,7 @@ export function routeTable(ir: ProjectIR, locale: string | null = null): Record<
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
       .join('&')
     const path = publicPath(ir, r.path, locale)
-    out[id] = q ? `${path}?${q}` : path
+    out[id] = q ? `${path}#${q}` : path
   }
   for (const f of Object.values(ir.features ?? {}))
     for (const [sym, e] of Object.entries(f.endpoints ?? {}))

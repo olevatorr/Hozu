@@ -352,6 +352,13 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   hidden enum context field, kept state only through a shared view or the same address (`payload.keep`), one-shot
   CLI commands exit and `app({ dispose })`, browse/get list server errors, flashes named by path, scaffold / select
   / fill / routes fixes; `part()` shares access rules, layouts are page helpers (recipes).
+- 0.23 (ADR 0070): `pathOf` finds the defaults `?` after an optional segment (canonical, links); route params parsed
+  (`bindings.parses['#route:…']`); `aria-current` `true` only for a section above; native posts seal the machine
+  snapshot into `__hozu_state` (`seal.ts`, HMAC with `SESSION_SECRET` or a lazy per-process key) and `runForm` starts
+  from it; `%merge` lowers `{ ...search, x }`; every access but `anyone` narrows `session`; lock lines diff `assign`;
+  remote: per-effect fingerprints (`Fingerprint(effect)` in Go), `x-hozu-call` ids, connection errors name effect and
+  URL, named enum types, `hozu gen` id/count notes, collapsed issues; browse: `commandfor` is native, `--js both`
+  names differing words.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of
