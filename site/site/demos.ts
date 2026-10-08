@@ -72,7 +72,7 @@ export const selectDemo = (label: Val<string>) =>
     cursor(),
   ])
 
-export const backDemo = (label: string) =>
+export const backDemo = (label: Val<string>) =>
   stage('back', label, [
     board(),
     dock(true),
@@ -105,7 +105,7 @@ export const backDemo = (label: string) =>
 
 const states = ['Tasks ready', 'Loading summary', 'Summary failed', 'Confirm remove', 'Saving']
 
-export const layersDemo = (label: string) =>
+export const layersDemo = (label: Val<string>) =>
   stage('layers', label, [
     d('layers', [
       s('h', 'Layers · states of this page'),
@@ -202,7 +202,7 @@ const field = (name: string, label: string, before: string, after?: string) =>
     d('val', after ? [s('was', before), s('now', after)] : [s('was', before)]),
   ])
 
-export const designDemo = (label: string) =>
+export const designDemo = (label: Val<string>) =>
   stage('design', label, [
     d('canvas', [d('card', [s('t', 'New task'), d('btn', [s('label', 'Add task')])])]),
     d('panel', [
@@ -231,7 +231,7 @@ export const designDemo = (label: string) =>
 const tile = (name: string, label: string, body: Child[]) =>
   ui.div({ 'data-d': 'tile', 'data-t': name }, [d('tbody', body), s('cap', label)])
 
-export const assetsDemo = (label: string) =>
+export const assetsDemo = (label: Val<string>) =>
   stage('assets', label, [
     d('bar', [
       ui.b({}, ['Assets']),

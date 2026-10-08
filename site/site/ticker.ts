@@ -14,22 +14,16 @@ const styles = tv({
 export const Ticker = ui.component({
   tag: 'div',
   styles,
-  props: z.object({ items: z.array(z.string()).default([]) }),
+  props: z.object({}),
   slots: ['source'],
   children: true,
-  render: ({ props, slots, children, classes }) =>
+  render: ({ slots, children, classes }) =>
     ui.div({ 'data-ticker': '' }, [
       ui.div({ class: classes.source }, [slots.source]),
       ui.div({ class: classes.window, 'aria-hidden': 'true' }, [
         ui.div({ class: classes.track, 'data-ticker-track': '' }, [
-          ui.span({ class: classes.copy }, [
-            ...children,
-            ui.each(props.items, null, (i) => ui.span({}, [i, ' ■'])),
-          ]),
-          ui.span({ class: classes.copy }, [
-            ...children,
-            ui.each(props.items, null, (i) => ui.span({}, [i, ' ■'])),
-          ]),
+          ui.span({ class: classes.copy }, children),
+          ui.span({ class: classes.copy }, children),
         ]),
       ]),
     ]),

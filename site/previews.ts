@@ -5,7 +5,7 @@ import { Button } from './site/button.ts'
 import { CatchCard } from './site/catch-card.ts'
 import { ReceiptLine } from './site/receipt.ts'
 import { SpeedTable } from './site/speed-table.ts'
-import { Steps } from './site/steps.ts'
+import { Step } from './site/steps.ts'
 
 const trial = (n: number, title: string) => ({
   slug: `${String(n).padStart(4, '0')}-preview`,
@@ -46,13 +46,10 @@ export default previews((p) => [
       ],
     },
   }),
-  p.component(Steps, 'Five steps', {
+  p.component(Step, 'Long body', {
     props: {
-      items: [1, 2, 3, 4, 5].map((n) => ({
-        id: String(n),
-        title: `${n} · Step`,
-        body: 'One short sentence about it.',
-      })),
+      title: '4 · See it back',
+      body: 'Your agent frames each part it changed on your page, numbered, with a note in your words. Reply, or resolve it, and the frame goes away.',
     },
   }),
   p.page(trials, 'No trials yet', [p.data(listTrials, [])]),

@@ -41,6 +41,8 @@ timers with `timers.includes(a.ms)`, so HZ018 still misses a changed duration.
 - **Approach:** `Display`, `Steps`, `StatTable` and `Ticker` took arrays of strings; the Chinese site passed
   `homeText.x` messages into them.
 - **Result:** the same rule as the first entry: array props hold literals only, and a message is a reference.
-- **Root cause:** as above. The site gave those components children (one item component per entry) and kept the array
-  props for the English-only DevTools page, so each now has two ways to receive its items. Allowing references in
-  array props would remove the second way.
+- **Root cause:** as above. The site gave those components children (one item component per entry). Once the DevTools
+  page was translated too, no array-prop use was left, so the array props were removed: each component receives its
+  items one way, as children (`Step`, `StatRow`, the `rise` helper for `Display`, spans for `Ticker`). The cost is a
+  `Steps` preview: `previews.ts` children are a string, so the preview now shows one long `Step` instead of five
+  steps. Allowing references in array props would let a list of messages be passed as data again.

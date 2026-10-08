@@ -10,8 +10,9 @@
 |---|---|---|
 | Home, header, navigation, mobile menu, footer, page heads of those pages | yes | What a reader sees before deciding to try Hozu |
 | Docs: Getting started, Concepts | yes | The first two pages a new user reads |
+| The DevTools page and the DevTools docs page | yes (owner, 2026-10-09: "devtool也要翻譯，畢竟是賣點之一") | One of the reasons to try Hozu |
 | How it works: the landing view, its diagrams and six chapters | yes | The design rationale; it changes rarely |
-| Every other docs page, Trials, Changelog, the DevTools page, the agent guide (topics) | no | They follow the API release by release; English stays the one source |
+| Every other docs page, Trials, Changelog, the agent guide (topics) | no | They follow the API release by release; English stays the one source |
 
 - **The URL holds the language** (ADR 0043 F): `site.locales: ['en', 'zh-TW']`; English keeps its URLs and Chinese
   pages live under `/zh-TW/…`. A header link switches with `ui.alternate`.
