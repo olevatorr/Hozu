@@ -52,6 +52,8 @@ for (const [path, status, text] of [
   ['/zh-TW/docs/concepts', 200, '核心概念'],
   ['/zh-TW/docs/views', 200, '本頁目前只有英文版'],
   ['/zh-TW/how-it-works/pipeline', 200, 'IR'],
+  ['/zh-TW/devtools', 200, '點三下，然後它會回頭指給你看。'],
+  ['/zh-TW/docs/devtools', 200, '描述一項修改'],
   ['/', 200, '中文'],
   ['/docs/does-not-exist', 404, 'Page not found'],
   ['/trials/does-not-exist', 404, 'Page not found'],
@@ -61,6 +63,9 @@ for (const [path, status, text] of [
   assert.ok(response.text.includes(text), `${path}: missing ${text}`)
   console.log(`${path}: ${status}, expected text present`)
 }
+const zhDevtools = await app.get('/zh-TW/docs/devtools')
+assert.ok(!zhDevtools.text.includes('本頁目前只有英文版'), '/zh-TW/docs/devtools is translated')
+console.log('/zh-TW/docs/devtools: translated, no English-only notice')
 const release = JSON.parse(await readFile(new URL('../packages/core/package.json', import.meta.url), 'utf8'))
 const homePage = await readFile(new URL('./dist/index.html', import.meta.url), 'utf8')
 assert.ok(homePage.includes(`data-version="${release.version}"`), `header shows ${release.version}`)

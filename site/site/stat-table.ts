@@ -2,7 +2,6 @@ import { ui } from '@hozu/core'
 import { z } from 'zod'
 import { tv } from './tv.ts'
 
-const Row = z.object({ id: z.string(), label: z.string(), before: z.string(), after: z.string() })
 export const StatTable = ui.component({
   tag: 'div',
   styles: tv({
@@ -16,7 +15,6 @@ export const StatTable = ui.component({
     caption: z.string(),
     before: z.string(),
     after: z.string(),
-    rows: z.array(Row).default([]),
   }),
   children: true,
   render: ({ props, children, classes }) =>
@@ -30,16 +28,7 @@ export const StatTable = ui.component({
             ui.th({ scope: 'col', class: classes.cell }, [props.after]),
           ]),
         ]),
-        ui.tbody({}, [
-          ...children,
-          ui.each(props.rows, 'id', (r) =>
-            ui.tr({}, [
-              ui.th({ scope: 'row', class: classes.cell }, [r.label]),
-              ui.td({ class: classes.cell }, [r.before]),
-              ui.td({ class: classes.cell }, [r.after]),
-            ]),
-          ),
-        ]),
+        ui.tbody({}, children),
       ]),
     ]),
 })

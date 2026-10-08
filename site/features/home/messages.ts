@@ -11,10 +11,10 @@ export const homeText = ui.messages('en', {
     word5: 'Hozu',
     word6: 'checks',
     word7: 'it.',
-    lead: 'Your AI has never seen Hozu. While it learns, a change costs more than in Nuxt; once it knows Hozu, about the same. Every change is checked before it reaches anyone.',
+    lead: 'Describe the app you want. Your AI builds it, and Hozu checks every change so nothing breaks behind your back.',
     startBuilding: 'Start building →',
     seeProof: 'See the proof',
-    pressHint: '↓ Press AI CHANGE: an agent edits this app, and Hozu checks the change.',
+    pressHint: '↓ Press AI CHANGE and watch an AI edit this app while Hozu checks its work.',
     signedInAs: 'signed in as ',
     applyFix: 'APPLY FIX',
     aiChange: 'AI CHANGE',
@@ -25,10 +25,9 @@ export const homeText = ui.messages('en', {
     pegFits: 'Peg holds up a sign: FITS!',
     pegHello: 'Peg, the red peg that checks, waving',
     sources: 'Sources',
-    tickerPassed: '{v} changes passed every check',
-    tickerLearning: '{v} Nuxt’s tokens while learning',
-    tickerKnown: '{v} once known',
-    tickerChecked: 'every change checked',
+    tickerPassed: '{v} AI changes passed every check',
+    tickerChecked: 'Checked before anyone sees it',
+    tickerNuxtBroke: 'The same changes broke Nuxt apps {v} times without a word',
     tickerKnownTokens: '{v} Nuxt’s tokens once known',
     ofValue: '{a} of {b}',
     tickerJs: '{v} client JS on the notes list (Hozu 0.8 vs Nuxt 4)',
@@ -187,6 +186,99 @@ export const homeText = ui.messages('en', {
     figmaVariablesBody: 'Tokens first: red · #fb3a0e, 2xl · 24px.',
     figmaComments: 'Comments',
     figmaCommentsBody: 'Your agent’s notes are numbered pins: reply or resolve.',
+    dtHeadDescription:
+      'Point at the screen; your agent gets the file, the line and the Hozu way to change it.',
+    dtWord1: 'Point',
+    dtWord2: 'at',
+    dtWord3: 'it.',
+    dtWord4: 'Your',
+    dtWord5: 'agent',
+    dtWord6: 'gets',
+    dtWord7: 'the line.',
+    dtLead:
+      'Select what is wrong on the screen and say what should change. The request names the file, the line and the Hozu way to make the change, so your agent stops searching and starts fixing. When it is done, it points back: every part it changed gets a numbered frame on your page.',
+    dtGuide: 'Read the guide →',
+    dtVideo: 'Hozu DevTools in under two minutes',
+    dtHowKicker: 'How it works',
+    dtHowHeading: 'Three clicks, then it points back.',
+    dtStep1: '1 · Select',
+    dtStep1Body:
+      'Choose Select and click the part, with Figma’s keys: Shift+Enter goes up a level, Alt measures, a double-click picks a text.',
+    dtStep2: '2 · Describe',
+    dtStep2Body:
+      'Say what should change. Try a size, a colour or other words first: it is a preview on your screen only.',
+    dtStep3: '3 · Hand it over',
+    dtStep3Body: 'Copy for AI, or save it. Tell your agent: “Do the open Hozu requests.”',
+    dtStep4: '4 · See it back',
+    dtStep4Body:
+      'Your agent frames each part it changed on your page, numbered, with a note in your words. Reply, or resolve it.',
+    dtSelectDemo:
+      'Hozu DevTools on a task board: the Add task button is selected and the inspector shows it is a shared Button used in six places',
+    dtFigmaKicker: 'Feels like Figma',
+    dtFigmaHeading: 'Your Figma hands already know it.',
+    dtFigmaLead:
+      'The same keys, the same measuring, the Design panel in the same order and your design tokens first. In Builder and in Developer alike.',
+    dtDesignDemo:
+      'The Design panel in Figma’s order: changing Fill to red, Corner radius to full and Font size to base previews on the button and becomes the class to use',
+    dtAssetsHeading: 'Every component on one page.',
+    dtAssetsLead:
+      'No showcase page to write, no Storybook. Assets draws every component of your app, each variant and the states you named, from the app itself. See where each is used, frame its instances, and ask your agent to change the main component. Styles lists your tokens.',
+    dtAssetsDemo:
+      'Assets shows every component with its variants and named previews; opening Button lists where it is used, and a note to change the main component is added to the request',
+    dtPreviewsBody:
+      'Name the screens you care about: a long label, an empty list, a failed load, fifty rows. Each page screen answers its queries with your data, under npm run dev only.',
+    dtNeverShipped: 'Never shipped',
+    dtNeverShippedBody:
+      'The build and the production server never load it, your agent leaves it alone unless asked, and hozu check says when a preview no longer fits the app.',
+    dtRequestKicker: 'The request',
+    dtRequestHeading: 'What your agent reads.',
+    dtRequestLead:
+      'Where, what and how far the change reaches, the theme class to use, and a reminder only where a plain edit would go wrong. The pointer finds the part again after the lines move.',
+    dtBackKicker: 'The way back',
+    dtBackHeading: 'See what your agent changed.',
+    dtBackLead:
+      'After a change, your agent points at each part it touched, with a note in your words. You check the result on the page, not in a diff.',
+    dtBackDemo:
+      'Your agent runs hozu show twice: numbered red frames appear on the Add task button and on a list row, and the Agent panel steps through both notes',
+    dtFrames: 'Numbered frames',
+    dtFramesA: 'Each part gets a red frame and a number. A file and line is enough; ',
+    dtFramesB: ' picks one row of a list.',
+    dtReply: 'Reply or resolve',
+    dtReplyBody:
+      'The Agent panel steps through the notes. Send reply hands your answer back as a request; Resolve removes the note.',
+    dtFresh: 'Never out of date',
+    dtFreshBody:
+      'hozu show lists the open notes and marks one stale when its part has moved or gone, so your agent fixes the note before you see it.',
+    dtStatesKicker: 'Every state',
+    dtStatesHeading: 'See the screens you never get to.',
+    dtStatesLead:
+      'Loading, failed, saving, an error message, a confirmation dialog: Layers lists every state the page can be in, read from the app itself. Preview one without running anything, at a phone’s exact size.',
+    dtLayersDemo:
+      'Layers lists the states of the page; previewing each one switches the phone-size page to loading, failed, a remove confirmation and saving',
+    dtDataKicker: 'Your data',
+    dtDataHeading: 'Test the API while you build it.',
+    dtDataLead:
+      'API opens a drawer with what the page reads and what it can change: where each one runs, how it is cached and the line that implements it. Edit the input, run it and read the answer as a table. A change asks first, then the page updates in place, as if a button had made it.',
+    dtSent: 'What it sent',
+    dtSentBody:
+      'Every request a call sent out, from the server and the browser: headers, bodies, status, time. Copy it as curl.',
+    dtEndpoints: 'Your endpoints',
+    dtEndpointsBody:
+      'Send a request to each endpoint you declared, with a body and your own headers, such as a bearer token.',
+    dtActAs: 'Act as anyone',
+    dtActAsBody: 'Set this browser’s session to any user while developing, and see the page as they do.',
+    dtApiDemo:
+      'The API drawer under the task board: running the Summary query shows its answer as a table and the request it sent; running Add task asks to confirm, then the page shows three to do',
+    dtEveryoneKicker: 'For everyone',
+    dtEveryoneHeading: 'Plain words, or the source.',
+    dtBuilderBody:
+      '“A shared Button: the same design is used in 6 places.” No code names, the scope as a question.',
+    dtDeveloperBody: 'Files and excerpts, components, conditions, transitions and node ids.',
+    dtZeroCost: 'Zero cost',
+    dtZeroCostBody: 'Only under npm run dev. A production build carries no marker and no DevTools code.',
+    dtLanguage: 'Your language',
+    dtLanguageBody:
+      'One file translates every word of it, for you or your whole team: npx hozu devtools messages. What your agent reads stays English.',
     catchesKicker: 'What it catches',
     catchesHeading: 'Mistakes that look fine and still break.',
     catchesLead:
@@ -261,10 +353,10 @@ export const homeText = ui.messages('en', {
     word5: 'Hozu',
     word6: '負責檢查。',
     word7: '',
-    lead: '你的 AI 從沒看過 Hozu。在它學習的階段，一次修改的成本比 Nuxt 高；等它熟悉 Hozu 之後，就差不多了。每次修改在送到任何人面前之前，都會先經過檢查。',
+    lead: '說出你想要的 app，AI 幫你做出來；AI 每改一次，Hozu 就先檢查一次，不讓東西在你沒注意時壞掉。',
     startBuilding: '開始動手 →',
     seeProof: '看看實證',
-    pressHint: '↓ 按下「AI 修改」：agent 會修改這個應用程式，再由 Hozu 檢查這次修改。',
+    pressHint: '↓ 按下「AI 修改」，看 AI 改這個 app，Hozu 同時檢查它的成果。',
     signedInAs: '登入身分：',
     applyFix: '套用修正',
     aiChange: 'AI 修改',
@@ -275,10 +367,9 @@ export const homeText = ui.messages('en', {
     pegFits: 'Peg 舉著寫有 FITS! 的牌子。',
     pegHello: '負責檢查的紅色木釘 Peg 正在揮手',
     sources: '資料來源',
-    tickerPassed: '通過所有檢查的修改：{v}',
-    tickerLearning: '學習期間的 token 為 Nuxt 的 {v}',
-    tickerKnown: '熟悉之後 {v}',
-    tickerChecked: '每次修改都經過檢查',
+    tickerPassed: 'AI 的修改全數通過檢查：{v}',
+    tickerChecked: '每次修改都先檢查，再給別人看',
+    tickerNuxtBroke: '同樣的修改，Nuxt 默默弄壞了 {v} 次',
     tickerKnownTokens: '熟悉之後的 token 為 Nuxt 的 {v}',
     ofValue: '{a}／{b}',
     tickerJs: '筆記列表的瀏覽器端 JS：{v}（Hozu 0.8 vs Nuxt 4）',
@@ -429,6 +520,96 @@ export const homeText = ui.messages('en', {
     figmaVariablesBody: 'token 優先：red · #fb3a0e、2xl · 24px。',
     figmaComments: 'Comments',
     figmaCommentsBody: '你的 agent 留下的說明是編號圖釘：可以回覆或標為已解決。',
+    dtHeadDescription: '指著畫面，你的 agent 就會拿到檔案、行號，以及用 Hozu 的方式該怎麼改。',
+    dtWord1: '指著它，',
+    dtWord2: '',
+    dtWord3: '',
+    dtWord4: '你的',
+    dtWord5: 'agent',
+    dtWord6: '就拿到',
+    dtWord7: '那一行。',
+    dtLead:
+      '在畫面上選取有問題的地方，說明該怎麼改。這份請求會指出檔案、行號，以及用 Hozu 的方式該怎麼改，讓你的 agent 不用再找，直接開始修。完成後，它會回頭指給你看：每個改過的部分都會在你的頁面上加上編號框。',
+    dtGuide: '閱讀指南 →',
+    dtVideo: '兩分鐘內看懂 Hozu DevTools',
+    dtHowKicker: '運作方式',
+    dtHowHeading: '點三下，然後它會回頭指給你看。',
+    dtStep1: '1 · 選取',
+    dtStep1Body:
+      '選擇 Select（選取），再點擊那個部分，快捷鍵和 Figma 一樣：Shift+Enter 往上一層，Alt 測量，按兩下選取一段文字。',
+    dtStep2: '2 · 描述',
+    dtStep2Body: '說明該怎麼改。先試試尺寸、顏色或其他文字：這只是你螢幕上的預覽。',
+    dtStep3: '3 · 交出去',
+    dtStep3Body:
+      '按 Copy for AI（複製給 AI），或把它存起來。然後告訴你的 agent：「Do the open Hozu requests.」',
+    dtStep4: '4 · 看它回報',
+    dtStep4Body:
+      '你的 agent 會在你的頁面上替每個改過的部分加上編號框，並附上用你的話寫的說明。你可以回覆，或標為已解決。',
+    dtSelectDemo:
+      'Hozu DevTools 開在任務看板上：Add task 按鈕已被選取，檢視器顯示它是在六個地方使用的共用 Button',
+    dtFigmaKicker: '用起來就像 Figma',
+    dtFigmaHeading: '你用慣 Figma 的手早就會了。',
+    dtFigmaLead:
+      '同樣的快捷鍵、同樣的測量方式、順序相同的 Design 面板，而且你的 design token 排在最前面。Builder 與 Developer 模式都一樣。',
+    dtDesignDemo:
+      '依 Figma 順序排列的 Design 面板：把 Fill 改成 red、Corner radius 改成 full、Font size 改成 base，會在按鈕上預覽，並成為要使用的 class',
+    dtAssetsHeading: '所有元件，一頁看完。',
+    dtAssetsLead:
+      '不用另外寫展示頁，也不需要 Storybook。Assets（素材）直接從應用程式本身畫出每個元件、每個 variant，以及你命名的狀態。看看每個元件用在哪裡、框出它的每個 instance，並請你的 agent 修改主元件（main component）。Styles 會列出你的 token。',
+    dtAssetsDemo:
+      'Assets 顯示每個元件及其 variant 與具名預覽；打開 Button 會列出它用在哪裡，並在請求中加入一則修改主元件的說明',
+    dtPreviewsBody:
+      '為你在意的畫面命名：很長的標籤、空的列表、載入失敗、五十列資料。每個頁面畫面都會用你提供的資料回答它的 query，而且只在 npm run dev 下生效。',
+    dtNeverShipped: '永遠不會上線',
+    dtNeverShippedBody:
+      '建置與正式環境的伺服器都不會載入它；除非你要求，你的 agent 不會動它；當某個預覽不再符合應用程式時，hozu check 會告訴你。',
+    dtRequestKicker: '這份請求',
+    dtRequestHeading: '你的 agent 讀到的內容。',
+    dtRequestLead:
+      '在哪裡、改什麼、影響範圍多大、要用哪個主題 class，只有在單純修改會出錯的地方才附上提醒。即使行號移動了，指標（pointer）也能再找到那個部分。',
+    dtBackKicker: '回頭指給你看',
+    dtBackHeading: '看看你的 agent 改了什麼。',
+    dtBackLead:
+      '完成修改後，你的 agent 會指出它動過的每個部分，並附上用你的話寫的說明。你在頁面上檢查結果，而不是看 diff。',
+    dtBackDemo:
+      '你的 agent 執行兩次 hozu show：Add task 按鈕與列表中的一列出現編號紅框，Agent 面板逐一顯示這兩則說明',
+    dtFrames: '編號框',
+    dtFramesA: '每個部分都會有紅框與編號。給檔案與行號就夠了；',
+    dtFramesB: ' 可以挑出列表中的某一列。',
+    dtReply: '回覆或標為已解決',
+    dtReplyBody:
+      'Agent 面板會逐一顯示這些說明。Send reply（送出回覆）會把你的回答以請求的形式交回去；Resolve（已解決）會移除這則說明。',
+    dtFresh: '永遠不會過時',
+    dtFreshBody:
+      'hozu show 會列出尚未處理的說明；當某則說明指向的部分移動或消失時，會把它標為過時，讓你的 agent 在你看到之前就修正它。',
+    dtStatesKicker: '每一種狀態',
+    dtStatesHeading: '看見你平常碰不到的畫面。',
+    dtStatesLead:
+      '載入中、失敗、儲存中、錯誤訊息、確認對話框：Layers（圖層）會列出頁面可能處於的每一種狀態，直接從應用程式本身讀取。不必執行任何東西就能預覽其中一種，而且是手機的精確尺寸。',
+    dtLayersDemo:
+      'Layers 列出頁面的各種狀態；逐一預覽時，手機尺寸的頁面會切換成載入中、失敗、移除確認與儲存中',
+    dtDataKicker: '你的資料',
+    dtDataHeading: '一邊開發，一邊測試 API。',
+    dtDataLead:
+      'API 會打開一個抽屜，列出頁面讀取的資料與它能做的變更：每一項在哪裡執行、如何快取，以及實作它的那一行。編輯輸入、執行，然後以表格閱讀回應。變更會先詢問你，接著頁面就地更新，就像是頁面上的按鈕做的一樣。',
+    dtSent: '它送出了什麼',
+    dtSentBody: '一次呼叫從伺服器與瀏覽器送出的每個請求：headers、body、狀態碼、時間。可以複製成 curl。',
+    dtEndpoints: '你的 endpoint',
+    dtEndpointsBody: '對你宣告的每個 endpoint 送出請求，可附上 body 與你自己的 headers，例如 bearer token。',
+    dtActAs: '以任何人的身分操作',
+    dtActAsBody: '開發時把這個瀏覽器的 session 設成任何使用者，看到和他們一樣的頁面。',
+    dtApiDemo:
+      '任務看板下方的 API 抽屜：執行 Summary query 會以表格顯示回應與它送出的請求；執行 Add task 會先要求確認，接著頁面顯示三項待辦',
+    dtEveryoneKicker: '給每個人',
+    dtEveryoneHeading: '白話說明，或是原始碼。',
+    dtBuilderBody:
+      '「A shared Button: the same design is used in 6 places.」（共用的 Button：同樣的設計用在 6 個地方。）沒有程式碼名稱，影響範圍以提問的方式呈現。',
+    dtDeveloperBody: '檔案與程式碼片段、元件、條件、transition 與 node id。',
+    dtZeroCost: '零成本',
+    dtZeroCostBody: '只在 npm run dev 下出現。正式版建置不帶任何標記，也沒有 DevTools 程式碼。',
+    dtLanguage: '你的語言',
+    dtLanguageBody:
+      '一個檔案就能翻譯它的每一個字，給你自己或整個團隊使用：npx hozu devtools messages。你的 agent 讀的內容維持英文。',
     catchesKicker: '它抓得到什麼',
     catchesHeading: '看起來沒問題，實際上會壞的錯誤。',
     catchesLead:

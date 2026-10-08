@@ -4,7 +4,7 @@ import { Button } from '../../site/button.ts'
 import { CatchCard } from '../../site/catch-card.ts'
 import { CodeBlock } from '../../site/code-block.ts'
 import { apiDemo, measureDemo, selectDemo } from '../../site/demos.ts'
-import { Display, Heading } from '../../site/display.ts'
+import { Display, Heading, rise } from '../../site/display.ts'
 import { Joint } from '../../site/joint.ts'
 import { peg } from '../../site/peg.ts'
 import { Receipt, ReceiptLine } from '../../site/receipt.ts'
@@ -70,11 +70,6 @@ const curve = (slug: string, alt: Val<string>) =>
     alt,
     class: 'mt-6 w-full border-4 border-ink bg-white',
   })
-const rise = (text: Val<string>, accent: boolean) =>
-  ui.span({}, [
-    ui.span({ class: accent ? 'inline-block animate-rise text-red' : 'inline-block animate-rise' }, [text]),
-    ' ',
-  ])
 const choice =
   'border-4 border-paper px-3 py-2 font-mono text-xs font-bold aria-pressed:bg-paper aria-pressed:text-ink'
 
@@ -202,8 +197,7 @@ export const Home = ui.view({
           },
           [
             ui.span({}, [t.tickerPassed({ v: shown('passed') }), ' ■']),
-            ui.span({}, [t.tickerLearning({ v: claim('cold').value }), ' ■']),
-            ui.span({}, [t.tickerKnown({ v: claim('known').value }), ' ■']),
+            ui.span({}, [t.tickerNuxtBroke({ v: claim('nuxtSilent').of?.[0] ?? 0 }), ' ■']),
             ui.span({}, [t.tickerChecked, ' ■']),
           ],
         ),
@@ -446,14 +440,7 @@ export const Home = ui.view({
               ]),
             ]),
           ]),
-          figmaCards('border-ink', [
-            ['Shift+Enter · Enter · Tab', t.figmaSelect],
-            ['Alt', t.figmaAlt],
-            ['W × H', t.figmaSize],
-            [t.figmaPanel, t.figmaPanelBody],
-            [t.figmaVariables, t.figmaVariablesBody],
-            [t.figmaComments, t.figmaCommentsBody],
-          ]),
+          figmaCards('border-ink'),
         ]),
         ui.use(
           Section,

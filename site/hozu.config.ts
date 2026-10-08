@@ -89,8 +89,7 @@ export default project({
       head: {
         render: () => ({
           title: 'Hozu DevTools',
-          description:
-            'Point at the screen; your agent gets the file, the line and the Hozu way to change it.',
+          description: homeText.dtHeadDescription,
           image: ui.asset(new URL('./assets/og-devtools.png', import.meta.url)),
         }),
       },
