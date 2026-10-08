@@ -228,7 +228,7 @@ describe('Phase 1 behavior catalog', () => {
     expect(diagnostics[0]!.message).toBe('hozu.lock.json is out of date for cart: 1 changed')
     expect(diagnostics[0]!.location.pointer).toBe('/features/cart/machine/states/idle')
     expect(diagnostics[0]!.cause.split('\n')[1]).toBe(
-      'changed idle/on/cart.Dismiss/0: assign was error := null, now error := "dismissed" · now: idle --Dismiss--> idle · error := "dismissed"',
+      'changed idle/on/cart.Dismiss/0: assign - error := null, + error := "dismissed" · now: idle --Dismiss--> idle · error := "dismissed"',
     )
     expect(diagnostics[0]!.fix?.summary).toContain('--update-lock')
     const { sources, bindings } = cartBuild()
