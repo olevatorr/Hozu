@@ -54,6 +54,7 @@ export const packageJson = (name: string, version: string) => ({
     zod: '^4.6.5',
   },
   devDependencies: {
+    '@hozu/bundle': `^${version}`,
     '@hozu/dev': `^${version}`,
     '@hozu/testing': `^${version}`,
     '@types/node': '^22.20.4',
