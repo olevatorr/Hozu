@@ -26,6 +26,7 @@ export interface PagePayload {
   islands: [node: number, lead: number, ...tails: Json[][]][]
   motion?: true
   visible?: true
+  extras?: true
   data: [string, Result][]
   features: Record<string, MachineIR | null>
   nodes: Record<string, ViewNode>
@@ -158,6 +159,7 @@ export async function hydrate(
     : {}
   const { components, routes } = payload
   const motion = payload.motion ? await import('./motion.ts') : undefined
+  const extras = payload.extras ? await import('./extras.ts') : undefined
   const component = Object.keys(components).length
     ? (await import('./component.ts')).renderComponent
     : undefined
@@ -245,6 +247,7 @@ export async function hydrate(
         components,
         routes,
         motion,
+        extras,
         component,
         loadComponent,
         onQuery,

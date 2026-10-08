@@ -68,6 +68,7 @@ import {
   needsJavaScriptHtml,
 } from './security.ts'
 import { memorySessions, type SessionStore, signedCookie } from './session.ts'
+import { renderBuild } from './shared.ts'
 import { publicAssets } from './static.ts'
 
 export interface HandlerOptions {
@@ -253,7 +254,7 @@ function handlerFor({
     throw new Error('The build manifest does not match this project; run `hozu build` again')
   const untransformed = build.diagnostics.find((d) => ['HZ044', 'HZ047', 'HZ059'].includes(d.code))
   if (untransformed) throw new Error(`${untransformed.message}. ${untransformed.fix?.summary ?? ''}`)
-  build = withSiteUrl(build, rawEnv)
+  build = renderBuild(withSiteUrl(build, rawEnv))
   const { ir } = build
   if (sessionOption === undefined && ir.session && !rawEnv.SESSION_SECRET && rawEnv.NODE_ENV === 'production')
     throw new Error(

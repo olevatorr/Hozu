@@ -13,7 +13,7 @@ export const Board = ui.view({
 - **Classes:** `class` is a static string of Tailwind classes that must exist (HZ026); conditional classes:
   `toggle: { 'bg-indigo-600 text-white': ctx.tab === t }`. No `style`.
 - **Conditions:** `ctx.error !== null && ui.p({ role: 'alert' }, [ctx.error])`, `item.done ? 'done' : 'open'`.
-  By machine state: `is(['paused']) ? resume : pause`, `!is(['idle']) && ui.p({}, ['Saving…'])`,
+  By machine state: `!is(['idle']) && ui.p({}, ['Saving…'])`,
   `disabled: is(['saving'])` (keep a control and disable it rather than hide it while busy: no flash).
 - **Dialogs, popovers, menus:** native, no machine state: `ui.button({ commandfor: 'd', command: 'show-modal' })` +
   `ui.dialog({ id: 'd', closedby: 'any' }, [...])`, `popover` / `popovertarget`, `ui.details`.
@@ -33,7 +33,9 @@ export const Board = ui.view({
 <!-- more -->
 
 - **Motion:** what an update adds fades in by itself (not with reduced motion); a view two pages show stays still
-  across a page change. `hozu browse` reports a flash or a layout shift: fix those.
+  across a page change. `hozu browse` reports a flash or a layout shift: fix those. `c ? a : b` whose branches are
+  one element of the same tag and shape (`ctx.paused ? resumeButton : pauseButton`) keeps the element: its text,
+  classes, attributes and listener follow `c`, and focus stays.
 - **Attributes:** HTML names in lower case (`for`, `minlength`, `aria-pressed`, `data-x`), typed per tag. Values are
   literals or data: `'aria-pressed': ctx.show === 'all'`, `title: ctx.error ?? 'OK'`.
 - **Sizes and colours from data:** `vars` with an arbitrary-value class: `class: 'w-[calc(var(--pct)*1%)]'`,
@@ -50,7 +52,10 @@ export const Board = ui.view({
   `row(item)`; it is inlined, so the IR equals the inline form. A plain function that receives data is HZ059.
 - **Shared UI:** use the kit component, not a styled `ui.button` per page (`example/` uses a kit).
 - **More events:** any DOM event name plus `visible` (entered the viewport). Payload fields also:
-  `ui.dom.formAll('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`. `ui.dom.value` / `ui.dom.form`
+  `ui.dom.formAll('name')`, `ui.dom.checked`, `ui.dom.valueAsNumber`, `ui.dom.key`. Keyboard shortcuts:
+  `ui.window({ on: { keydown: ui.send(Open, {}, { keys: ['Mod+k', '/'] }) } })` sends only on those presses and
+  stops the browser's own (`Mod` is ⌘ on Apple, Ctrl elsewhere; also `Ctrl`, `Meta`, `Alt`, `Shift`); on the window
+  a key without a modifier waits while the person types in a field. `ui.dom.value` / `ui.dom.form`
   fill an enum field only from a `<select>`, radios or submit buttons whose literal values are all members (HZ033).
 - **Search in links:** the third argument of `ui.link` is optional and exists only when the route declares `search`:
   omitted means every default, and a search lists only the fields that differ: `ui.link(home, null, { show: 'done' })`.
@@ -71,6 +76,10 @@ export const Board = ui.view({
   `current(route)` is true on that route's pages, so a menu writes
   `ui.a({ href: ui.link(orders, null), 'aria-current': current(orders) || current(orderDetail) }, ['Orders'])` and
   styles `aria-[current]:font-bold`: `true` is written `"page"` on the address itself, `false` writes nothing.
+  `current(shop, { category: 'apparel' })` also compares those params (search is ignored). A menu is a constant
+  list mapped to links, one line per section:
+  `...[[orders, 'Orders'], [customers, 'Customers']].map(([r, label]) => ui.a({ href: ui.link(r, null),
+  'aria-current': current(r) }, [label]))`; `current(a) || current(b)` works there too.
 - `ui.dialog({ open: is(['editing']), on: { close: ui.send(Cancel, {}) } }, [...])` opens as a modal and closes with
   the machine; Escape sends `close`. It needs JavaScript: a dialog that must open without it uses the native
   `commandfor` button (the short form) and closes when the data that shows it changes.

@@ -166,7 +166,7 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(stdout.trimEnd().split('\n')).toHaveLength(10)
     expect(stdout).toContain('  2 press Enter: + Notes: 3 · + Milk · + Pin · + Delete · − Notes: 2\n')
     expect(stdout).toContain('  3 click Pin in "Milk": + pinned · + Unpin · − Pin\n')
-    expect(stdout).toContain('  6 click Sign out: → /login: ')
+    expect(stdout).toMatch(/ {2}6 click Sign out: → \/login \(on: loaded, \d+ ms; off: loaded, \d+ ms\): /)
     const { out } = await browse(chain, example('notes'))
     expect(out.modes).toEqual(['on', 'off'])
     expect(
@@ -460,22 +460,28 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     )
     expect(code).toBe(0)
     const modes = out.steps.map((s: { modes: Record<string, unknown>[] }) => s.modes[0])
-    expect(modes[1].flashes).toBeUndefined()
-    expect(modes[4].flashes.count).toBe(1)
-    expect(modes[4].flashes.elements).toHaveLength(1)
+    expect(modes.map((m: { flashes?: unknown }) => m.flashes ?? null)).toEqual(modes.map(() => null))
     expect(modes[9].shift).toBeGreaterThan(0)
-    expect([modes[10].flashes, modes[10].shift]).toEqual([undefined, undefined])
-    const text = await human(
-      [
-        '/',
-        '--js',
-        'on',
-        '--do',
-        'fill Symbol=AAPL; press Enter; click Pause; fill Symbol=MSFT; press Enter',
-      ],
-      watchlist,
+    expect(modes[10].shift).toBeUndefined()
+    const flash = `${root}packages/cli/test/fixtures/flash`
+    const shaped = await browse(['/', '--js', 'on', '--do', 'click Toggle'], flash)
+    expect(shaped.out.steps[0].modes[0].flashes).toEqual({
+      count: 1,
+      elements: ['main > div > button[type=button]'],
+    })
+    const text = await human(['/', '--js', 'on', '--do', 'click Toggle'], flash)
+    expect(text.stdout).toContain('1 element rebuilt unchanged (a flash: main > div > button[type=button])')
+  }, 60_000)
+
+  it('fails a click that would land on an element covering the target, an ancestor too (ADR 0072 E1)', async () => {
+    const { code, out } = await browse(
+      ['/', '--js', 'on', '--do', 'click Mug'],
+      `${root}packages/cli/test/fixtures/flash`,
     )
-    expect(text.stdout).toContain(`1 element rebuilt unchanged (a flash: ${modes[4].flashes.elements[0]})`)
+    expect(code).toBe(1)
+    expect(out.steps[0].note).toBe(
+      'the click would land on <h3> (its ::before or ::after), above <a href="/">: a person cannot click it',
+    )
   }, 60_000)
 
   it('replace writes the address in place, so a reload keeps the search (ADR 0067 G)', async () => {

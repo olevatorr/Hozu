@@ -45,9 +45,9 @@ export const quotes = query({
 })
 
 export const listMachine = machine({
-  context: z.object({ symbol: z.string(), error: z.string().nullable() }),
-  initialContext: { symbol: '', error: null },
-  initial: 'live',
+  context: z.object({ symbol: z.string(), error: z.string().nullable(), paused: z.boolean() }),
+  initialContext: { symbol: '', error: null, paused: false },
+  initial: 'idle',
   on: ({ ctx }) => [
     on(Add, {
       target: 'adding',
@@ -62,34 +62,44 @@ export const listMachine = machine({
         ctx.symbol = e.symbol
       },
     }),
+    on(Pause, {
+      assign: () => {
+        ctx.paused = true
+      },
+    }),
+    on(Resume, {
+      target: 'idle',
+      assign: () => {
+        ctx.paused = false
+      },
+      refresh: () => [quotesTag()],
+    }),
     on(RefreshNow, { refresh: () => [quotesTag()] }),
     on(CopyQuote, { copy: (e) => e.text }),
   ],
   states: ({ ctx }) => ({
-    live: {
-      on: [on(Pause, { target: 'paused' })],
-      after: [{ ms: 30_000, target: 'live', refresh: () => [quotesTag()] }],
+    idle: {
+      after: [{ ms: 30_000, target: 'idle', guard: () => !ctx.paused, refresh: () => [quotesTag()] }],
     },
-    paused: { on: [on(Resume, { target: 'live', refresh: () => [quotesTag()] })] },
     adding: {
       invoke: invoke(addSymbol, {
         input: { symbol: ctx.symbol },
-        done: 'previous',
+        done: 'idle',
         failed: {
           Duplicate: {
-            target: 'previous',
+            target: 'idle',
             assign: (e) => {
               ctx.error = `${e.symbol} is already on your list`
             },
           },
           Invalid: {
-            target: 'previous',
+            target: 'idle',
             assign: (e) => {
               ctx.error = e.message
             },
           },
           Unexpected: {
-            target: 'previous',
+            target: 'idle',
             assign: (e) => {
               ctx.error = e.message
             },
@@ -100,10 +110,10 @@ export const listMachine = machine({
     removing: {
       invoke: invoke(removeSymbol, {
         input: { symbol: ctx.symbol },
-        done: 'previous',
+        done: 'idle',
         failed: {
           Unexpected: {
-            target: 'previous',
+            target: 'idle',
             assign: (e) => {
               ctx.error = e.message
             },
@@ -114,8 +124,20 @@ export const listMachine = machine({
   }),
 })
 
+export const pausedSkipsRefresh = contract(listMachine, {
+  given: { state: 'idle', context: { paused: true } },
+  when: [{ elapse: 30_000 }],
+  expect: { state: 'idle' },
+})
+
+export const liveRefreshes = contract(listMachine, {
+  given: { state: 'idle' },
+  when: [{ elapse: 30_000 }],
+  expect: { state: 'idle', effects: [{ refresh: [quotesTag()] }] },
+})
+
 export const duplicateSays = contract(listMachine, {
-  given: { state: 'adding', previous: 'paused', context: { symbol: 'AAPL' } },
+  given: { state: 'adding', context: { symbol: 'AAPL' } },
   when: [{ failed: addSymbol, error: 'Duplicate', data: { symbol: 'AAPL' } }],
-  expect: { state: 'paused', changes: { error: 'AAPL is already on your list' } },
+  expect: { state: 'idle', changes: { error: 'AAPL is already on your list' } },
 })

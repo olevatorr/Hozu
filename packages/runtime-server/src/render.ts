@@ -41,8 +41,8 @@ import {
 } from './rendered.ts'
 import { STATE_FIELD } from './seal.ts'
 import { seededContext, seedKeys } from './seed.ts'
-
 import { pruneScope } from './shape.ts'
+import { renderBuild } from './shared.ts'
 
 const shared = new WeakMap<object, Set<string>>()
 
@@ -125,7 +125,7 @@ function patched(base: Json, patch: Json): Json {
 }
 
 export async function renderPage({
-  build,
+  build: built,
   data: dataRuntime,
   scope: given,
   route,
@@ -136,7 +136,7 @@ export async function renderPage({
   session,
   assets = {
     client: clientUrl(),
-    fns: Object.fromEntries(Object.entries(fnModules(build)).map(([name, m]) => [name, m.path])),
+    fns: Object.fromEntries(Object.entries(fnModules(built)).map(([name, m]) => [name, m.path])),
     styles: null,
     preload: [],
     components: {},
@@ -149,6 +149,7 @@ export async function renderPage({
   devState = null,
   deferEither = false,
 }: RenderOptions): Promise<RenderedPage> {
+  const build = renderBuild(built)
   const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
   const data = given ?? dataRuntime.scope(session)
   const { ir, bindings } = build
@@ -262,6 +263,7 @@ export async function renderPage({
       routes,
       url,
       route,
+      here: params,
       locale: lang,
       alternate,
       env,
@@ -278,9 +280,10 @@ export async function renderPage({
       const node = i18n ? lowerCached(n, lowering) : n
       payload.nodes[n.id] = node.kind === 'component' ? { ...node, children: [] } : node
       for (const ref of clientComponentsIn(n, ir)) runtime.component(ref)
-      const { motion, visible } = loadsOf(node)
+      const { motion, visible, extras } = loadsOf(node)
       if (motion) payload.motion = true
       if (visible) payload.visible = true
+      if (extras) payload.extras = true
     }
     let lead = 0
     while (lead < scoped.length && scoped[lead] === null) lead++
@@ -508,6 +511,7 @@ export async function renderPage({
     state: null,
     bindings: [],
     params,
+    here: params,
     search,
     routes,
     url,
@@ -691,13 +695,17 @@ function fnsFor(build: BuildResult, locale: string) {
 
 const plans = new WeakMap<ProjectIR, Map<string, RoutePlan>>()
 const suspendMemo = new WeakMap<ViewNode, boolean>()
-const loadsMemo = new WeakMap<ViewNode, { motion: boolean; visible: boolean }>()
+const loadsMemo = new WeakMap<ViewNode, { motion: boolean; visible: boolean; extras: boolean }>()
 
 function loadsOf(n: ViewNode) {
   let hit = loadsMemo.get(n)
   if (!hit) {
     const json = JSON.stringify(n)
-    hit = { motion: json.includes('"motion":"'), visible: json.includes('"visible":') }
+    hit = {
+      motion: json.includes('"motion":"'),
+      visible: json.includes('"visible":'),
+      extras: /"keys":\[|"tag":"dialog"|"href":\{"link"/.test(json),
+    }
     loadsMemo.set(n, hit)
   }
   return hit

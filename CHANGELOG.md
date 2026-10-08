@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.25.0 — What mainstream frameworks do, at Hozu's cost (ADR 0072)
+
+Judged three ways: what a React / Vue / Svelte app gives a person without asking, where Hozu must stay ahead in bytes,
+and what an agent can verify cheaply. No source change is needed: `hozu migrate` raises the packages.
+
+### Views
+- **`c ? a : b` keeps its element** when both branches are one element of the same tag and shape
+  (`ctx.paused ? resumeButton : pauseButton`): the text, classes, attributes and listener follow `c`, focus stays, and
+  nothing flashes. The IR still holds both branches for every check; the renderers draw one element.
+- **Keyboard shortcuts:** `ui.send(Open, {}, { keys: ['Mod+k', '/'] })` on `keydown` / `keyup` sends only on those
+  presses and stops the browser's own (`Mod` is ⌘ on Apple, Ctrl elsewhere). On `ui.window` / `ui.document` a key
+  without a modifier waits while the person types in a field. A bad list is HZ014.
+- **`current(route, params)`** compares those params with the page shown and ignores search:
+  `current(shop, { category: 'apparel' })` marks a store's category in its header. A param the route lacks is HZ007.
+
+### Performance
+- The client keeps its 9 KiB budget (P7 9 207 B): dialogs bound to the machine, `aria-current` of links in islands
+  and shortcut matching load in a small chunk only on pages that have them.
+- **New budgets S1 / S2:** every example with a machine has `browse.json`, the steps a person takes; `pnpm bench`
+  runs them and requires no element rebuilt unchanged and no layout shift of 0.01 or more (11 runs, both 0).
+
+### Tools
+- `hozu browse` fails a click that would land on another element, naming it (`the click would land on <h3> (its
+  ::before or ::after), above <a href="/products/mug">`); an ancestor covering its link counted as a hit before.
+- `hozu browse` names how a navigation arrived and its time to the first paint (`→ /products/mug (loaded, 32 ms)`).
+- An element that moves to another parent (a Load more button under the next page) is no longer reported as a flash.
+- `hozu get --select` / `browse --select` print `class`.
+
+### Guide
+- A mode the person sets (paused, a view mode) is a context field, not a machine state: busy states keep it.
+  `examples/watchlist` holds `paused` in its context, and its Pause button no longer turns into Resume while adding.
+- A menu is a constant list mapped to links, with `current(a) || current(b)` per section (it lowers inside `.map`).
+
 ## 0.24.0 — Sections are yours to say (ADR 0071)
 
 The 0.23 retest asks, judged by the framework rather than taken as given. `hozu migrate` raises the packages.

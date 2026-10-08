@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/",
+    "steps": [
+      "click Pause",
+      "fill Symbol=AAPL",
+      "press Enter",
+      "click Resume",
+      "fill Symbol=MSFT",
+      "press Enter",
+      "click Remove"
+    ]
+  }
+]

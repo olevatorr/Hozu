@@ -22,7 +22,7 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 ## What to touch
 | Change | Touch |
 |---|---|
-| UI-only state (a tab, a toggle) | a context field → views: `on: { click: ui.set(ctx.tab, 'design') }` |
+| UI state or a mode (a tab, paused) | a context field → views: `on: { click: ui.set(ctx.tab, 'design') }` |
 | Filter / sort in the URL | the route's `search` (with a default) → `ui.link(route, params, { key })` → `search.key`; while typing: `seed` from `search`, `replace: () => ui.link(…)` |
 | A per-item action (pin, archive) | model: the item field, an event, a mutation that `invalidates` the list tag, an `on` into a state with `invoke` → views: the per-item form (`hozu docs patterns`) |
 | A control every state handles | `machine({ on: [...] })` |

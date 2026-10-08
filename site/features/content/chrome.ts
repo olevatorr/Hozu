@@ -9,17 +9,15 @@ export const support = 'https://ko-fi.com/hozu'
 
 const marked = 'aria-[current]:text-red'
 const links = part((current: (route: RouteDecl<any, any>) => boolean) => [
-  ui.a({ href: ui.link(doc, { slug: 'getting-started' }), 'aria-current': current(doc), class: marked }, [
-    'Docs',
-  ]),
-  ui.a({ href: ui.link(devtools, null), 'aria-current': current(devtools), class: marked }, ['DevTools']),
-  ui.a({ href: ui.link(how, null), 'aria-current': current(how) || current(chapter), class: marked }, [
-    'How it works',
-  ]),
-  ui.a({ href: ui.link(trials, null), 'aria-current': current(trials) || current(trial), class: marked }, [
-    'Trials',
-  ]),
-  ui.a({ href: ui.link(changelog, null), 'aria-current': current(changelog), class: marked }, ['Changelog']),
+  ...(
+    [
+      [ui.link(doc, { slug: 'getting-started' }), 'Docs', current(doc)],
+      [ui.link(devtools, null), 'DevTools', current(devtools)],
+      [ui.link(how, null), 'How it works', current(how) || current(chapter)],
+      [ui.link(trials, null), 'Trials', current(trials) || current(trial)],
+      [ui.link(changelog, null), 'Changelog', current(changelog)],
+    ] as const
+  ).map(([href, label, here]) => ui.a({ href, 'aria-current': here, class: marked }, [label])),
   ui.a({ href: 'https://github.com/olevatorr/Hozu' }, ['GitHub']),
   ui.a({ href: 'https://www.npmjs.com/package/create-hozu' }, ['npm']),
 ])

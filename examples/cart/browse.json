@@ -1,0 +1,4 @@
+[
+  { "path": "/", "steps": ["click Add in \"Mug\"", "click Add in \"T-shirt\"", "click Dismiss"] },
+  { "path": "/", "steps": ["click Add in \"Mug\"", "click Checkout"] }
+]

@@ -113,6 +113,7 @@ export async function runForm(options: {
     params,
     search,
     route,
+    here: params,
     routes,
     dom: (field) => (field === 'form' ? fields.first : field === 'formAll' ? fields.all : null),
   })

@@ -36,6 +36,7 @@ export {
 } from './build/project.ts'
 export type { PartUse } from './build/scope.ts'
 export { foldSearch } from './build/scope.ts'
+export { operatorFns } from './builders/operators.ts'
 export { hashJson, sha256, sha256Bytes } from './canonical/hash.ts'
 export type { At } from './canonical/pointer.ts'
 export { at, join, parsePointer, pointer, resolveAt, resolveSource } from './canonical/pointer.ts'

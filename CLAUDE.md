@@ -363,6 +363,14 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   shown (`currentOf`), sections via the render's `current(route)` (a guard on the `route` reference, `payload.here` =
   [url, route id]), `aria-current` false omitted; tools: `get --select` combinators, `call` endpoint tags, HZ093 old
   contract format, migrate bullets, browse production-errors note, `hozu gen` untitled-enum note.
+- 0.25 (ADR 0072): judged by parity / performance / AI; `c ? a : b` whose branches are one element of one shape
+  renders one element (`renderBuild` in runtime-server: `%cond` values, class differences as toggles, a listener pick
+  `{ test, a, b }`; the IR keeps both branches); `ui.send(E, p, { keys: ['Mod+k'] })` (keydown / keyup, HZ014,
+  `preventDefault`, bare keys on window wait while typing); `current(route, params)` (the `here` reference = the
+  page's params, HZ007 for an unknown param); lazy `extras.ts` (dialog, link `aria-current`, shortcuts; `payload.extras`),
+  P7 9 207 B; budgets S1 / S2 over `examples/*/browse.json` (`bench/smooth.ts`); browse: covering ancestors fail a click,
+  `arrived` (prerendered / loaded, ms), a moved element is no flash, `--select` prints class; modes in context
+  (`examples/watchlist` `paused`).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

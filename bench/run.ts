@@ -282,6 +282,23 @@ if (process.env.CHROMIUM_PATH) {
   }
 } else console.log('B2 skipped: no CHROMIUM_PATH')
 
+if (process.env.CHROMIUM_PATH) {
+  const { smoothness } = await import('./smooth.ts')
+  const smooth = smoothness()
+  record(
+    'S1',
+    `elements rebuilt unchanged over the examples' browse.json (${smooth.runs} runs)`,
+    smooth.flashes,
+    '',
+    0,
+  )
+  record('S2', "largest layout shift of a step over the examples' browse.json", smooth.shift, '', 0.01)
+  if (smooth.problems.length) {
+    results.at(-2)!.ok = false
+    console.log(smooth.problems.join('\n'))
+  }
+} else console.log('S1, S2 skipped: no CHROMIUM_PATH')
+
 const bytes = (dir: string): number =>
   readdirSync(dir).reduce((sum, name) => {
     if (name === 'node_modules') return sum

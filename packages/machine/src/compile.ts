@@ -79,6 +79,7 @@ export function compileValue(v: ValueExpr, fns: Fns): Getter {
     | 'params'
     | 'search'
     | 'route'
+    | 'here'
   if (path.length === 0) return (env) => env[ref] ?? null
   return (env) => getIn(env[ref], path)
 }

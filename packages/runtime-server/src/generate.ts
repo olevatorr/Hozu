@@ -15,6 +15,7 @@ import { attrText, text } from '@hozu/runtime-client'
 import { escapeHtml } from './escape.ts'
 import { responsive, type Variants } from './images.ts'
 import { bindingUses, type Shape, shapeOf } from './shape.ts'
+import { renderBuild } from './shared.ts'
 
 export const SEP = '<!---->'
 export const OPEN = '<!--[-->'
@@ -396,7 +397,8 @@ function reachable(site: Site, add: (n: ViewNode, island: boolean, sep: boolean,
   return walk
 }
 
-export function generateRender(build: BuildResult, images: Variants | null = null, dev = false): string {
+export function generateRender(built: BuildResult, images: Variants | null = null, dev = false): string {
+  const build = renderBuild(built)
   const { ir } = build
   const prepare = (root: ViewNode) => (images ? responsive(root, images) : root)
   const consts: string[] = []

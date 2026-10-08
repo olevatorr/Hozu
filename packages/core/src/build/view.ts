@@ -120,11 +120,7 @@ function element(
             'on handlers must be ui.send(Event, payload)',
             'Views cannot run arbitrary functions.',
           )
-        else
-          on[event] = {
-            event: scope.ref(s.event, ['event'], ep),
-            payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
-          }
+        else on[event] = sendIR(scope, event, s, ep)
       }
     } else if (key === 'ref') {
       if (d.tag === 'form' && infoOf(value)?.kind === 'formRef') {
@@ -685,10 +681,7 @@ function nodeOf(scope: FeatureScope, value: unknown, id: string, p: At, depth: n
             )
             continue
           }
-          on[event] = {
-            event: scope.ref(s.event, ['event'], ep),
-            payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
-          }
+          on[event] = sendIR(scope, event, s, ep)
         }
         return { id, kind: 'global', target: d.target, on }
       }
@@ -763,7 +756,7 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
   }
   const params = refProxy('params', 0)
   const search = refProxy('search', 0)
-  const current = (route: object) => {
+  const current = (route: object, params?: Record<string, unknown>) => {
     const id = scope.project.routes.get(route)
     if (!id)
       scope.report(
@@ -772,7 +765,22 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
         'current(route) names a route missing from project({ routes })',
         'Pass a route() that the project registers.',
       )
-    return op.eq(refProxy('route', 0) as unknown as string, id ?? '')
+    const here = refProxy('here', 0) as unknown as Record<string, string>
+    const schema = (defOf(route as Decl) as { params?: unknown } | null)?.params
+    const known = Object.keys((schema ? schemaJson(scope.project, schema) : null)?.properties ?? {})
+    const given = Object.entries(params ?? {})
+    for (const [k] of given)
+      if (!known.includes(k))
+        scope.report(
+          'HZ007',
+          at(p, 'root'),
+          `current(route, params) names "${k}", which the route has no param for`,
+          known.length
+            ? `Its params: ${known.join(', ')}.`
+            : 'The route has no params: write current(route).',
+        )
+    const same = op.eq(refProxy('route', 0) as unknown as string, id ?? '')
+    return given.length ? op.and(same, ...given.map(([k, v]) => op.eq(here[k]!, v as string))) : same
   }
   scope.lowering = transformedDecls().has(decl)
   const render = () =>
@@ -841,4 +849,52 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
   }
   scope.lowering = false
   return out
+}
+
+const NAMED_KEYS =
+  /^(Escape|Enter|Tab|Backspace|Delete|Space|Insert|Home|End|PageUp|PageDown|Arrow(Up|Down|Left|Right)|F([1-9]|1[0-2]))$/
+
+function keysOf(scope: FeatureScope, event: string, keys: unknown, ep: At): string[] | undefined {
+  const bad = (cause: string) => {
+    scope.report(
+      'HZ014',
+      at(ep, 'keys'),
+      cause,
+      'A shortcut is a KeyboardEvent.key with optional Mod (⌘ on Apple, Ctrl elsewhere), Ctrl, Meta, Alt and Shift, on keydown or keyup.',
+      {
+        summary: 'List the shortcuts on keydown',
+        snippet: "on: { keydown: ui.send(Open, {}, { keys: ['Mod+k', '/'] }) }",
+        patch: null,
+      },
+    )
+    return undefined
+  }
+  if (event !== 'keydown' && event !== 'keyup') return bad(`keys work on keydown and keyup, not on ${event}`)
+  if (!Array.isArray(keys) || !keys.length) return bad('keys is a list of one or more shortcuts')
+  for (const k of keys) {
+    const m = typeof k === 'string' ? /^((?:(?:Mod|Ctrl|Meta|Alt|Shift)\+)*)(.+)$/.exec(k) : null
+    const mods = (m?.[1] ?? '').split('+').filter(Boolean)
+    if (
+      !m ||
+      new Set(mods).size !== mods.length ||
+      (m[2]!.length > 1 && !NAMED_KEYS.test(m[2]!)) ||
+      m[2] === ' '
+    )
+      return bad(`"${String(k)}" is not a shortcut`)
+  }
+  return keys as string[]
+}
+
+function sendIR(
+  scope: FeatureScope,
+  event: string,
+  s: { event: unknown; payload: unknown; keys?: unknown },
+  ep: At,
+): SendIR {
+  const keys = 'keys' in s ? keysOf(scope, event, s.keys, ep) : undefined
+  return {
+    event: scope.ref(s.event, ['event'], ep),
+    payload: scope.attempt(at(ep, 'payload'), () => scope.value(s.payload, ep), { literal: null }),
+    ...(keys ? { keys } : {}),
+  }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@hozu/data",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "Hozu data runtime: resolvers bound by declaration, cache, tags, dedup and invalidation",
   "keywords": [
     "hozu",

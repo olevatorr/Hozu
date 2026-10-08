@@ -58,8 +58,11 @@ type GlobalAttr<T extends Tag> = T extends SvgTag
 export type HtmlAttr<T extends Tag = Tag> = (typeof tagAttrs)[T][number] | GlobalAttr<T>
 
 export interface Send {
-  readonly [SEND]: { event: EventDecl; payload: unknown }
+  readonly [SEND]: { event: EventDecl; payload: unknown; keys?: unknown }
 }
+
+/** A keyboard shortcut: `KeyboardEvent.key` with optional `Mod` (⌘ on Apple, Ctrl elsewhere), `Ctrl`, `Meta`, `Alt`, `Shift` (ADR 0072 B). */
+export type Shortcut = string
 
 export interface NodeDecl extends Decl<'node'> {}
 
@@ -127,7 +130,7 @@ export interface ViewScope<C, S extends string, P, Q = null> {
   when: When<S>
   is: (states: S[]) => boolean
   /** True on the pages of that route: a menu marks its section with `'aria-current': current(orders)` (ADR 0071 A1). */
-  current: (route: RouteDecl<any, any>) => boolean
+  current: <R>(route: RouteDecl<R, any>, params?: Partial<NoInfer<Val<NonNullable<R>>>>) => boolean
   params: Ref<P>
   search: Ref<Q>
   locale: Ref<string>
@@ -178,7 +181,7 @@ function view<P = null, Q = null>(config: {
   render: (scope: {
     params: Ref<P>
     search: Ref<Q>
-    current: (route: RouteDecl<any, any>) => boolean
+    current: <R>(route: RouteDecl<R, any>, params?: Partial<NoInfer<Val<NonNullable<R>>>>) => boolean
     locale: Ref<string>
   }) => NodeDecl
 }): ViewDecl
@@ -225,8 +228,8 @@ export const ui = Object.freeze({
   view,
   dom,
   formRef: (): FormRef => brand({}, 'formRef', null),
-  send: <P>(event: EventDecl<P>, payload: NoInfer<Val<P>>): Send =>
-    Object.freeze({ [SEND]: { event, payload } }),
+  send: <P>(event: EventDecl<P>, payload: NoInfer<Val<P>>, options?: { keys: Shortcut[] }): Send =>
+    Object.freeze({ [SEND]: options ? { event, payload, keys: options.keys } : { event, payload } }),
   /** Copies a value into a context field, the short form of an event and a shared `on` that stays (ADR 0067 H). */
   set: <T>(field: T, value: NoInfer<Val<T>>): Send =>
     Object.freeze({ [SET]: { field, value } }) as unknown as Send,

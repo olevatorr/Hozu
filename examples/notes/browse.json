@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/login",
+    "steps": [
+      "fill Name=Ada",
+      "click Sign in",
+      "fill New note=Water the plants",
+      "click Add",
+      "click Pin in \"Buy milk\"",
+      "click Delete in \"Call Bob\"",
+      "fill Search=milk"
+    ]
+  }
+]
