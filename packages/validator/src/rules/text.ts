@@ -10,7 +10,7 @@ import {
   type ViewNode,
 } from '@hozu/core/ir'
 import type { Ctx } from '../context.ts'
-import { eventSchema } from '../env.ts'
+import { eventSchema, schemaIn } from '../env.ts'
 import { itemsOf, resolvePath } from '../schema.ts'
 import { walkView } from '../walk.ts'
 import { type FormModel, formsOf } from './form-model.ts'
@@ -94,7 +94,11 @@ interface Named {
   unnamed: boolean
 }
 
-function namedChoices(form: FormModel | undefined, name: string): Named {
+function namedChoices(
+  form: FormModel | undefined,
+  name: string,
+  context: (path: string[]) => JsonSchema | null,
+): Named {
   const out: Named = { values: [], fixed: true, found: false, unnamed: false }
   if (!form) return out
   const submits = form.controls.filter((c) => c.submit)
@@ -110,7 +114,16 @@ function namedChoices(form: FormModel | undefined, name: string): Named {
       const v = literal(el.attrs.value) ?? (c.submit ? null : el.attrs.value === undefined ? 'on' : null)
       if (v === null) out.fixed = false
       else out.values.push(v)
-    } else out.fixed = false
+    } else {
+      const v = el.attrs.value
+      const own =
+        el.tag === 'input' && literal(el.attrs.type) === 'hidden' && v && 'ref' in v && v.ref === 'context'
+          ? context(v.path)
+          : null
+      const listed = own ? choices(own) : null
+      if (listed) out.values.push(...listed)
+      else out.fixed = false
+    }
   }
   out.unnamed =
     submits.some((c) => c.name === name) &&
@@ -204,7 +217,10 @@ export function domText(ctx: Ctx) {
                 ? node.tag === 'select'
                   ? { ...optionsOf(node), found: true, unnamed: false }
                   : { values: [], fixed: false, found: false, unnamed: false }
-                : namedChoices(form, name)
+                : namedChoices(form, name, (path) => {
+                    const r = resolvePath(schemaIn(f, f.machine?.context), path)
+                    return r.ok ? r.schema : null
+                  })
             const outside = found.values.filter((x) => !allowed.includes(x))
             const unnamed = found.unnamed && kindOfRead === 'form' && !nullable(resolved)
             if (found.found && found.fixed && !outside.length && found.values.length && !unnamed) return

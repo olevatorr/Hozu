@@ -341,3 +341,35 @@ describe('ADR 0064: refresh, copy and is()', () => {
     expect(both.diagnostics.filter((d) => d.code === 'HZ014')).toEqual([])
   })
 })
+
+describe('HZ033 and a hidden input that carries an enum field (ADR 0069 B10)', () => {
+  it('accepts a hidden value read from a context field of the same enum', () => {
+    const Country = z.enum(['TW', 'JP'])
+    const Pay = event({ payload: z.object({ country: Country }) })
+    const checkout = machine({
+      context: z.object({ country: Country }),
+      initialContext: { country: 'TW' },
+      initial: 'idle',
+      states: () => ({ idle: { on: [on(Pay, { target: 'idle' })] } }),
+    })
+    const Form = ui.view({
+      machine: checkout,
+      render: ({ ctx }) =>
+        ui.form({ on: { submit: ui.send(Pay, { country: ui.dom.form('country') }) } }, [
+          ui.input({ type: 'hidden', name: 'country', value: ctx.country }),
+          ui.button({ type: 'submit' }, ['Pay']),
+        ]),
+    })
+    const built = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [feature({ id: 'c', intent: { summary: 'pay' }, declarations: [{ Pay, checkout, Form }] })],
+      }),
+      { sources: true },
+    )
+    const { diagnostics } = verify(built.ir, { sources: built.sources, bindings: built.bindings })
+    expect(diagnostics.filter((d) => d.code === 'HZ033')).toEqual([])
+  })
+})
