@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.21.1
+
+- **`ui.set` works on a field that stays visible while the machine is busy.** A state with `invoke` drops every
+  declared event it does not handle, but not the event `ui.set` adds, so `on: { input: ui.set(ctx.draft,
+  ui.dom.value) }` on an input shown during `adding` was HZ005. Busy states now drop it too, like any event.
+- **The guide uses the 0.21 forms:** the example app (`examples/bookmarks`, the skill's `example/`) binds its title
+  input with `ui.set` instead of a `Draft` event; `hozu docs forms` and `patterns` (search as you type, toggle
+  buttons, shared controls) teach `ui.set` for a control that only sets a field, and an event for a transition that
+  decides or does more.
+- **hozu.org uses them too:** the home page's variant picker is `ui.set` and its demo swaps its button with
+  `is(['broken']) ? … : …`; the How it works lab sets scope, freshness and binding with `ui.set`, so changing one
+  while the walkthrough runs no longer restarts the current step.
+
 ## 0.21.0 — Continuity: a page that never flashes (ADR 0067)
 
 `hozu migrate` raises the packages; run `hozu build` again before deploying (component fingerprints changed). One

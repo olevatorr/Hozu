@@ -123,6 +123,15 @@ C1–C4 above, and the items of the 0.21 proposal (a Nuxt comparison from an age
 - **K — the guide:** a `fn` computing an attribute (an SVG path), `vars` with arbitrary-value classes for dynamic
   sizes and colours, the chart example, and a Vue / React → Hozu table.
 
+## 0.21.1
+- A state with `invoke` lists every declared event it does not handle in `ignore` (ADR 0037); the events `ui.set`
+  adds came after that list, so a field bound with `ui.set` and visible in a busy state was HZ005. `addSets` now adds
+  them to the busy states' `ignore` too.
+- The reference app, the skill topics and hozu.org are rewritten with `ui.set` and `is()` where a control only sets a
+  field or a branch follows a state; a release review now checks that the example app and the site use the new forms.
+- Left on the long form on purpose: `examples/notes` is the reference of the notes trial (its baseline would move),
+  and `showcase`, `studio` and the `trial-*` apps are test benches, not apps an agent copies.
+
 ## Later
 - A mode that busy states inherit: `is(['paused'])` while adding from paused is false today, so a control that
   follows the mode swaps during the busy state (`hozu browse` reports it); parallel regions or busy states that show

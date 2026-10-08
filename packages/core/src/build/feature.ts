@@ -584,7 +584,8 @@ function addSets(scope: FeatureScope, ir: FeatureIR) {
         return whole(context)
       }
     for (const [state, s] of Object.entries(ir.machine.states))
-      if (!s.invoke && !s.final && !s.on[ref] && !s.ignore.includes(ref))
+      if (s.invoke && !s.on[ref]) s.ignore = [...s.ignore, ref].sort()
+      else if (!s.invoke && !s.final && !s.on[ref] && !s.ignore.includes(ref))
         s.on[ref] = [
           {
             target: state,

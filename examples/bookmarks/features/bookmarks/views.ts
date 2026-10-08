@@ -8,7 +8,6 @@ import {
   Add,
   addBookmark,
   bookmarksMachine,
-  Draft,
   getBookmark,
   isEmpty,
   listBookmarks,
@@ -48,7 +47,7 @@ export const Board = ui.view({
                   invalid: ctx.fields.title !== null,
                   describedby: 'title-error',
                 },
-                on: { input: ui.send(Draft, { text: ui.dom.value }) },
+                on: { input: ui.set(ctx.draft, ui.dom.value) },
               }),
             },
           }),
@@ -142,7 +141,7 @@ export const addsBookmark = contract(bookmarksMachine, {
   given: { state: 'idle' },
   when: [
     { send: Add, payload: { title: 'Hozu talk', kind: 'podcast' } },
-    { send: Draft, payload: { text: 'ignored while adding' } },
+    { send: ToggleRead, payload: { id: 'b1' } },
     { done: addBookmark, result: { id: 'b3', title: 'Hozu talk', kind: 'podcast', read: false } },
   ],
   expect: {

@@ -3,11 +3,6 @@ import { z } from 'zod'
 
 export const Run = event({ payload: z.object({}) })
 export const SetContract = event({ payload: z.object({ missing: z.boolean() }) })
-export const SetScope = event({ payload: z.object({ value: z.enum(['public', 'user']) }) })
-export const SetFreshness = event({
-  payload: z.object({ value: z.enum(['static', 'revalidate', 'swr', 'live']) }),
-})
-export const SetBinding = event({ payload: z.object({ value: z.boolean() }) })
 type Stage =
   | 'idle'
   | 'source'
@@ -28,28 +23,7 @@ export const m = machine({
   initialContext: { missing: false, scope: 'public', freshness: 'static', binding: false },
   initial: 'idle',
   states: ({ ctx }) => {
-    const settings = (target: Stage) => [
-      on(SetScope, {
-        target,
-        assign: (e) => {
-          ctx.scope = e.value
-        },
-      }),
-      on(SetFreshness, {
-        target,
-        assign: (e) => {
-          ctx.freshness = e.value
-        },
-      }),
-      on(SetBinding, {
-        target,
-        assign: (e) => {
-          ctx.binding = e.value
-        },
-      }),
-    ]
-    const controls = (target: Stage) => [
-      ...settings(target),
+    const controls = () => [
       on(SetContract, {
         target: 'idle',
         assign: (e) => {
@@ -59,21 +33,20 @@ export const m = machine({
       on(Run, { target: 'brokenSource', guard: () => ctx.missing === true }),
       on(Run, { target: 'source', guard: () => ctx.missing === false }),
     ]
-    const running = (state: Stage, target: Stage) => ({
-      on: settings(state),
+    const running = (target: Stage) => ({
       ignore: [Run, SetContract],
       after: [{ ms: 2400, target }],
     })
     return {
-      idle: { on: controls('idle') },
-      source: running('source', 'ir'),
-      ir: running('ir', 'validated'),
-      validated: running('validated', 'compiled'),
-      compiled: running('compiled', 'done'),
-      brokenSource: running('brokenSource', 'brokenIr'),
-      brokenIr: running('brokenIr', 'blocked'),
-      blocked: { on: controls('blocked') },
-      done: { on: controls('done') },
+      idle: { on: controls() },
+      source: running('ir'),
+      ir: running('validated'),
+      validated: running('compiled'),
+      compiled: running('done'),
+      brokenSource: running('brokenIr'),
+      brokenIr: running('blocked'),
+      blocked: { on: controls() },
+      done: { on: controls() },
     }
   },
 })

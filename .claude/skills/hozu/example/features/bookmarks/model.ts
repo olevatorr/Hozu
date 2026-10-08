@@ -11,7 +11,6 @@ const NewBookmark = z.object({
   kind: Kind,
 })
 
-export const Draft = event({ payload: z.object({ text: z.string() }) })
 export const Add = event({ payload: z.object({ title: z.string(), kind: Kind }) })
 export const ToggleRead = event({ payload: BookmarkKey })
 
@@ -89,12 +88,6 @@ export const bookmarksMachine = machine({
   states: ({ ctx }) => ({
     idle: {
       on: [
-        on(Draft, {
-          target: 'idle',
-          assign: (e) => {
-            ctx.draft = e.text
-          },
-        }),
         on(Add, {
           target: 'adding',
           assign: (e) => {

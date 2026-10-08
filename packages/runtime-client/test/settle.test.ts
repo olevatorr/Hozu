@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { event, feature, machine, on, project, query, ui } from '@hozu/core'
+import { event, feature, invoke, machine, mutation, on, project, query, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { compileMachine } from '@hozu/machine'
 import { mount, type Payload, payloadKey, type Result } from '@hozu/runtime-client'
@@ -235,6 +235,51 @@ describe('a query region settles instead of being replaced (ADR 0067 C1)', () =>
 })
 
 describe('ui.set, the short form of a copying event (ADR 0067 H)', () => {
+  it('a busy state drops the added event like every declared one, so a field stays visible while saving', async () => {
+    const { verify } = await import('@hozu/validator')
+    const save = mutation({
+      input: z.object({ text: z.string() }),
+      output: z.object({}),
+      runs: 'server',
+      access: 'anyone',
+    })
+    const Save = event({ payload: z.object({}) })
+    const editor = machine({
+      context: z.object({ text: z.string() }),
+      initialContext: { text: '' },
+      initial: 'idle',
+      states: ({ ctx }) => ({
+        idle: { on: [on(Save, { target: 'saving' })] },
+        saving: {
+          invoke: invoke(save, { input: { text: ctx.text }, done: 'idle', failed: { Unexpected: 'idle' } }),
+        },
+      }),
+    })
+    const Editor = ui.view({
+      machine: editor,
+      render: ({ ctx }) =>
+        ui.div({}, [
+          ui.input({ name: 'text', value: ctx.text, on: { input: ui.set(ctx.text, ui.dom.value) } }),
+          ui.button({ type: 'button', on: { click: ui.send(Save, {}) } }, ['Save']),
+        ]),
+    })
+    const built = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [
+          feature({ id: 'e', intent: { summary: 'edit' }, declarations: [{ save, Save, editor, Editor }] }),
+        ],
+      }),
+      { sources: true },
+    )
+    expect(built.diagnostics).toEqual([])
+    expect(built.ir.features.e!.machine!.states.saving!.ignore).toContain('e.Set_text')
+    const { diagnostics } = verify(built.ir, { sources: built.sources, bindings: built.bindings })
+    expect(diagnostics.filter((d) => d.code === 'HZ005')).toEqual([])
+  })
+
   it('two fields that need one event name are HZ014', () => {
     const panel = machine({
       context: z.object({ a_b: z.boolean(), a: z.object({ b: z.boolean() }) }),
