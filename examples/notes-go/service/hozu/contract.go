@@ -11,10 +11,38 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strings"
 )
 
-// Fingerprint is the contract this file was generated from; every call carries it.
-const Fingerprint = "eaedc6a1d776e73d"
+// Fingerprint is the contract of one effect this file was generated from, or "" for another effect. Every call
+// carries its effect's, so changing one declaration answers 409 for that effect alone.
+func Fingerprint(effect string) string {
+	switch effect {
+	case "account.accounts":
+		return "53d3ed3933cbba9a"
+	case "account.me":
+		return "b3d512da23c29498"
+	case "account.signIn":
+		return "f012a86406638b33"
+	case "account.signOut":
+		return "83ecf475d2d715e6"
+	case "notes.addNote":
+		return "208c99e4dfbc205b"
+	case "notes.listNotes":
+		return "e4b13631d7555885"
+	case "notes.notesApi":
+		return "b97b81437df120c2"
+	case "notes.pinNotes":
+		return "986381f30c45785d"
+	case "notes.removeNote":
+		return "a93c356d5e3fd15a"
+	case "notes.removeNotes":
+		return "328e014cf81af1b6"
+	case "notes.togglePin":
+		return "665cb6debfd55200"
+	}
+	return ""
+}
 
 type Session struct {
 	User string `json:"user"`
@@ -61,7 +89,7 @@ type NotesPinNotesInput struct {
 }
 
 type NotesPinNotesOutput struct {
-	Count float64 `json:"count"`
+	Count int64 `json:"count"`
 }
 
 type NotesRemoveNoteInput struct {
@@ -81,7 +109,7 @@ type NotesRemoveNotesInput struct {
 }
 
 type NotesRemoveNotesOutput struct {
-	Count float64 `json:"count"`
+	Count int64 `json:"count"`
 }
 
 type NotesTogglePinInput struct {
@@ -266,15 +294,21 @@ func Handler(r Resolvers, o Options) http.Handler {
 			http.Error(w, "wrong x-hozu-secret", http.StatusUnauthorized)
 			return
 		}
-		if got := req.Header.Get("X-Hozu-Fingerprint"); got != Fingerprint {
-			http.Error(w, "contract "+got+" is not "+Fingerprint+": run hozu gen and rebuild", http.StatusConflict)
-			return
-		}
 		var body request
 		if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		want := Fingerprint(body.Effect)
+		if want == "" {
+			http.Error(w, "unknown effect "+body.Effect, http.StatusNotFound)
+			return
+		}
+		if got := req.Header.Get("X-Hozu-Fingerprint"); got != want {
+			http.Error(w, body.Effect+" is "+want+" here, not "+got+": run hozu gen and rebuild", http.StatusConflict)
+			return
+		}
+		id := req.Header.Get("X-Hozu-Call")
 		ctx := &Ctx{Context: req.Context(), Session: body.Session, Preview: body.Preview, Header: http.Header{}, files: body.Files}
 		for k, v := range body.Headers {
 			ctx.Header.Set(k, v)
@@ -304,9 +338,6 @@ func Handler(r Resolvers, o Options) http.Handler {
 			out, err = call(ctx, body.Input, r.NotesRemoveNotes)
 		case "notes.togglePin":
 			out, err = call(ctx, body.Input, r.NotesTogglePin)
-		default:
-			http.Error(w, "unknown effect "+body.Effect, http.StatusNotFound)
-			return
 		}
 		res := map[string]any{}
 		var f failure
@@ -316,14 +347,15 @@ func Handler(r Resolvers, o Options) http.Handler {
 		case errors.As(err, &f):
 			effect, name, data := f.failure()
 			if effect != "" && effect != body.Effect {
-				log.Printf("hozu: %s returned %s, an error of %s", body.Effect, name, effect)
-				http.Error(w, "undeclared error", http.StatusInternalServerError)
+				log.Printf("hozu: %s (call %s) returned %s, an error of %s", body.Effect, id, name, effect)
+				http.Error(w, "resolver failed: "+name+" is an error of "+effect, http.StatusInternalServerError)
 				return
 			}
 			res["fail"] = map[string]any{"name": name, "data": data}
 		default:
-			log.Printf("hozu: %s: %v", body.Effect, err)
-			http.Error(w, "resolver failed", http.StatusInternalServerError)
+			log.Printf("hozu: %s (call %s): %v", body.Effect, id, err)
+			line, _, _ := strings.Cut(err.Error(), "\n")
+			http.Error(w, "resolver failed: "+line, http.StatusInternalServerError)
 			return
 		}
 		if ctx.changed {
@@ -331,7 +363,7 @@ func Handler(r Resolvers, o Options) http.Handler {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(res); err != nil {
-			log.Printf("hozu: %s: %v", body.Effect, err)
+			log.Printf("hozu: %s (call %s): %v", body.Effect, id, err)
 		}
 	})
 }

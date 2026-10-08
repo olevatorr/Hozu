@@ -17,15 +17,25 @@
               "package": {
                 "type": "string"
               },
-              "fingerprint": {
-                "type": "string"
-              },
               "effects": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "ref": {
+                      "type": "string"
+                    },
+                    "fingerprint": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ref",
+                    "fingerprint"
+                  ],
+                  "additionalProperties": false
                 },
-                "description": "The effects it implements: feature.symbol."
+                "description": "The effects it implements (feature.symbol), each with the fingerprint its calls carry (ADR 0070 C3)."
               },
               "written": {
                 "type": "boolean",
@@ -37,15 +47,22 @@
                   "type": "string"
                 },
                 "description": "Effects that cannot be remote (the server refuses to start with them, HZ093)."
+              },
+              "notes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Number fields named like an id or a count, which may want z.int() (ADR 0070 C4); not diagnostics."
               }
             },
             "required": [
               "file",
               "package",
-              "fingerprint",
               "effects",
               "written",
-              "problems"
+              "problems",
+              "notes"
             ],
             "additionalProperties": false
           }

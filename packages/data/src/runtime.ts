@@ -100,6 +100,37 @@ const http = (url: string, init: object): Promise<HttpReply> =>
 const timeout = (ms: number): unknown =>
   (globalThis as unknown as { AbortSignal: { timeout(ms: number): unknown } }).AbortSignal.timeout(ms)
 
+/** A short id per remote call, created per call: Workers forbid random values at module load (ADR 0070 C2). */
+const callId = () =>
+  [
+    ...(
+      globalThis as unknown as { crypto: { getRandomValues(a: Uint8Array): Uint8Array } }
+    ).crypto.getRandomValues(new Uint8Array(4)),
+  ]
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+
+/** `fetch failed: ECONNREFUSED`: the reason under undici's `fetch failed`. */
+const reasonOf = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error)
+  const cause = (error as { cause?: { code?: unknown; message?: unknown } } | null)?.cause
+  const why =
+    typeof cause?.code === 'string' ? cause.code : typeof cause?.message === 'string' ? cause.message : ''
+  return why ? `${message}: ${why}` : message
+}
+
+/** Issues that differ only by an array index are one line with a count: `rows.*.tone: … (10×)` (ADR 0070 C7). */
+const joinIssues = (issues: readonly string[]): string => {
+  const groups = new Map<string, string[]>()
+  for (const issue of issues) {
+    const at = issue.indexOf(': ')
+    const line =
+      at < 0 ? issue : `${issue.slice(0, at).replace(/(^|\.)\d+(?=\.|$)/g, '$1*')}${issue.slice(at)}`
+    groups.set(line, [...(groups.get(line) ?? []), issue])
+  }
+  return [...groups].map(([line, all]) => (all.length > 1 ? `${line} (${all.length}×)` : all[0])).join('; ')
+}
+
 const base64 = (bytes: Uint8Array) => {
   let text = ''
   for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
@@ -187,7 +218,7 @@ const invalid = (keys: string[], issues: string[], given: Record<string, Json> =
     const key = at < 0 ? '' : (issue.slice(0, at).split('.')[0] ?? '')
     if (key in fields && fields[key] === null) fields[key] = at < 0 ? issue : issue.slice(at + 2)
   }
-  return { ok: false, error: 'Invalid', data: { message: issues.join('; '), fields } }
+  return { ok: false, error: 'Invalid', data: { message: joinIssues(issues), fields } }
 }
 
 const tagKey = (tag: TagExprIR, get: Getter | null) => (input: Json) =>
@@ -206,7 +237,7 @@ export function createDataRuntime({
   const { ir, bindings } = build
   const parsedEnv = rawEnv === null ? undefined : bindings.env.server?.(rawEnv)
   if (parsedEnv && !parsedEnv.ok)
-    throw new Error(`Invalid server environment: ${parsedEnv.issues.join('; ')}`)
+    throw new Error(`Invalid server environment: ${joinIssues(parsedEnv.issues)}`)
   const env = parsedEnv?.ok ? parsedEnv.value : {}
   const effects = new Map<string, Effect>()
   const problems: Diagnostic[] = []
@@ -400,8 +431,7 @@ export function createDataRuntime({
         `remote() secret ${options.secret.env} holds ${secretValue.length} characters; it needs 16 or more`,
         `Set ${options.secret.env} to a random value of 16 characters or more (openssl rand -hex 16)`,
       )
-    for (const effect of contract.effects)
-      runs.set(effect.ref, remoteRun(options, effect, contract.fingerprint))
+    for (const effect of contract.effects) runs.set(effect.ref, remoteRun(options, effect))
   }
 
   const tagsOf = (list: TagExprIR[]) =>
@@ -484,8 +514,8 @@ export function createDataRuntime({
   }
   if (problems.length) throw new DataRuntimeError(problems)
 
-  /** A server effect answered by a service of another language over HTTP (ADR 0068). */
-  function remoteRun(options: RemoteOptions, effect: RemoteEffect, fingerprint: string): Run {
+  /** A server effect answered by a service of another language over HTTP (ADR 0068, 0070 C1–C3). */
+  function remoteRun(options: RemoteOptions, effect: RemoteEffect): Run {
     const read = (from: string | { env: string }, what: string) => {
       const value = typeof from === 'string' ? from : (env as Record<string, unknown>)[from.env]
       if (typeof value !== 'string' || !value)
@@ -494,11 +524,16 @@ export function createDataRuntime({
         )
       return value
     }
+    const where =
+      typeof options.url === 'string' ? 'check the url remote() names' : `check ${options.url.env}`
+    const ms = options.timeout ?? 10_000
     return async (input, ctx) => {
       const url = read(options.url, 'its URL')
+      const call = callId()
       const headers: Record<string, string> = {
         'content-type': 'application/json',
-        'x-hozu-fingerprint': fingerprint,
+        'x-hozu-fingerprint': effect.fingerprint,
+        'x-hozu-call': call,
       }
       headers['x-hozu-secret'] = read(options.secret, 'its secret')
       const session = effect.session ? ((ctx as { session?: unknown }).session ?? null) : null
@@ -515,25 +550,39 @@ export function createDataRuntime({
           size: f.size,
           data: base64(new Uint8Array(await f.arrayBuffer())),
         }
-      const res = await http(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          effect: effect.ref,
-          input,
-          session,
-          preview: ctx.preview,
-          headers: forwarded,
-          files,
-        }),
-        signal: timeout(options.timeout ?? 10_000),
-      })
+      let res: HttpReply
+      try {
+        res = await http(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            effect: effect.ref,
+            input,
+            session,
+            preview: ctx.preview,
+            headers: forwarded,
+            files,
+          }),
+          signal: timeout(ms),
+        })
+      } catch (error) {
+        const name = (error as { name?: unknown } | null)?.name
+        if (name === 'TimeoutError' || name === 'AbortError')
+          throw new Error(
+            `${effect.ref}: the service at ${url} did not answer within ${ms} ms (call ${call}); check that it runs, or raise remote() timeout`,
+          )
+        throw new Error(
+          `${effect.ref}: no service answers at ${url} (${reasonOf(error)}); start it or ${where}`,
+        )
+      }
       if (res.status === 409)
         throw new Error(
           `${effect.ref}: the service at ${url} was built from another contract; run hozu gen and rebuild it`,
         )
-      if (!res.ok)
-        throw new Error(`${effect.ref}: ${url} answered ${res.status} ${(await res.text()).slice(0, 200)}`)
+      if (!res.ok) {
+        const text = (await res.text()).trim().split('\n')[0]?.slice(0, 200) || 'no message'
+        throw new Error(`${effect.ref}: ${text} (${url} answered ${res.status}, call ${call})`)
+      }
       const reply = (await res.json()) as {
         ok?: unknown
         fail?: { name: string; data: unknown }
@@ -670,7 +719,7 @@ export function createDataRuntime({
 
     setSession = (value: unknown) => {
       const issues = value === null ? null : check('#session', value)
-      if (issues) throw new Error(`Invalid session: ${issues.join('; ')}`)
+      if (issues) throw new Error(`Invalid session: ${joinIssues(issues)}`)
       this.session = value
       this.#checked = true
       this.written = { value }
@@ -725,11 +774,11 @@ export function createDataRuntime({
           return report(new Error(`Undeclared error "${failure.error}" from ${effect.ref}`))
         const issues = check(`${effect.ref}#error:${failure.error}`, failure.data)
         if (issues)
-          return report(new Error(`Invalid ${failure.error} data from ${effect.ref}: ${issues.join('; ')}`))
+          return report(new Error(`Invalid ${failure.error} data from ${effect.ref}: ${joinIssues(issues)}`))
         return { ok: false, error: failure.error, data: failure.data as Json }
       }
       const issues = check(`${effect.ref}#output`, out)
-      if (issues) return report(new Error(`Invalid output from ${effect.ref}: ${issues.join('; ')}`))
+      if (issues) return report(new Error(`Invalid output from ${effect.ref}: ${joinIssues(issues)}`))
       const owned = effect.kind === 'query' ? this.#owned(effect, out as Json) : null
       if (owned) return owned.result ?? { ok: true, value: owned.rows }
       return { ok: true, value: out as Json }
@@ -780,7 +829,7 @@ export function createDataRuntime({
     #validSession(): Result | null {
       if (this.#checked || this.session === null) return null
       const issues = check('#session', this.session)
-      if (issues) return unexpected(`Invalid session: ${issues.join('; ')}`)
+      if (issues) return unexpected(`Invalid session: ${joinIssues(issues)}`)
       this.#checked = true
       return null
     }
@@ -803,7 +852,7 @@ export function createDataRuntime({
         const parsed = parse(ref, raw)
         if (!parsed.ok) {
           if (effect.kind === 'mutation') return { ...invalid(effect.fields, parsed.issues), invalidated: [] }
-          const message = `Invalid input for ${ref}: ${parsed.issues.join('; ')} (a query input comes from the app: a head input, a ui.query input, an invoke or a seed; a route param is a string, so read numbers with z.coerce.number())`
+          const message = `Invalid input for ${ref}: ${joinIssues(parsed.issues)} (a query input comes from the app: a head input, a ui.query input, an invoke or a seed; a route param is a string, so read numbers with z.coerce.number())`
           if (!sent) onError(new Error(message), { effect: ref })
           return unexpected(message)
         }

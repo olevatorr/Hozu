@@ -97,16 +97,44 @@ export default app({
 ```
 - The loop: change the declaration in TypeScript → `npx hozu gen` (writes the contract: types, the `Resolvers`
   interface, `Handler`) → implement the interface until `go test ./...` passes → restart the service → `hozu check`.
-  A contract older than the declarations is HZ093; the service answers 409 to calls from other declarations.
+  A contract older than the declarations is HZ093 naming the changed effects; each effect has its own fingerprint, so
+  the service answers 409 only to calls of an effect that changed.
 - In Go: return a declared error as the error value (`hozu.NotesAddNoteDuplicate{Text: t}`), `hozu.Invalid{…}` for
   input problems; `ctx.Session` is nil when signed out; `ctx.SetSession(…)` / `ctx.SignOut()` in mutations. Public
   queries never receive the session. `ctx.File(token)` reads an upload, `ctx.Header` an endpoint's request headers
   (no cookie), `ctx.Preview` preview mode. The secret is required (16+ characters, the same value on both sides,
   HZ093): the service trusts the session it is sent, so serve `hozu.Handler(r, hozu.Options{Secret: …})` on a private
   address (it refuses to start without one).
+- Any other Go error answers 500 with its first line, which reaches `onError` and `Unexpected` as a thrown TypeScript
+  error does, with the call's id (`x-hozu-call`) that the service's log line names
+  (`hozu: notes.listNotes (call 3fa2c1d0): …`). A service that is not running is `no service answers at <url>`.
 - `.meta({ title: 'Note' })` on a schema makes it one Go type wherever it appears; `z.int()` is `int64`, a plain
-  number `float64`. Only `runs: 'server'` effects and JSON endpoints can be remote (HZ093).
-- `examples/notes-go` is the reference: the notes app with every resolver in Go.
+  number `float64` (`hozu gen` notes number fields named like ids or counts); a string `z.enum` is a named type with
+  one constant per member (`hozu.OrderStatusPending`, named by its title or its field). Only `runs: 'server'` effects
+  and JSON endpoints can be remote (HZ093).
+- [`examples/notes-go`](https://github.com/olevatorr/Hozu/tree/main/examples/notes-go) is the reference: the notes
+  app with every resolver in Go. Its `service/main.go` is all a service needs besides the resolvers (`go.mod` is
+  yours; the contract's folder is the `hozu` package):
+```go
+func main() {
+	secret := os.Getenv("NOTES_SERVICE_SECRET") // the app's remote() secret, 16+ characters
+	addr := os.Getenv("NOTES_SERVICE_ADDR")     // the app's NOTES_SERVICE_URL is http://<addr>/effect
+	mux := http.NewServeMux()
+	mux.Handle("/effect", hozu.Handler(newResolvers(), hozu.Options{Secret: secret}))
+	server := &http.Server{Addr: addr, Handler: mux}
+	go func() {
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal(err)
+		}
+	}()
+	stop, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	<-stop.Done() // finish the calls in flight, then exit
+	ctx, done := context.WithTimeout(context.Background(), 5*time.Second)
+	defer done()
+	server.Shutdown(ctx)
+}
+```
 
 ## A database
 - One pool per process, made in `app.ts`; close it in `app({ dispose: () => pool.end() })` so `hozu get`, `call` and

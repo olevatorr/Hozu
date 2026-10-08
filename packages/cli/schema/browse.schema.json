@@ -110,7 +110,28 @@
           }
         },
         "differs": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Both modes made a request and the resulting text differs."
+        },
+        "differences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "on": {
+                "type": "string"
+              },
+              "off": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "on",
+              "off"
+            ],
+            "additionalProperties": false
+          },
+          "description": "The words that differ, at most three lines (ADR 0070 B6); a URL pair first when the pages differ."
         },
         "elsewhere": {
           "type": "array",

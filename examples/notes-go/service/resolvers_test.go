@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,8 +15,13 @@ const secret = "test-secret-0123456789"
 
 func post(t *testing.T, h http.Handler, body string, header map[string]string) (int, string) {
 	t.Helper()
+	var call struct{ Effect string }
+	if err := json.Unmarshal([]byte(body), &call); err != nil {
+		t.Fatal(err)
+	}
 	req := httptest.NewRequest(http.MethodPost, "/effect", strings.NewReader(body))
-	req.Header.Set("X-Hozu-Fingerprint", hozu.Fingerprint)
+	req.Header.Set("X-Hozu-Fingerprint", hozu.Fingerprint(call.Effect))
+	req.Header.Set("X-Hozu-Call", "c0ffee01")
 	req.Header.Set("X-Hozu-Secret", secret)
 	for k, v := range header {
 		req.Header.Set(k, v)
@@ -52,5 +59,26 @@ func TestRefusals(t *testing.T) {
 	}
 	if code, _ := post(t, h, body, map[string]string{"X-Hozu-Secret": "wrong"}); code != http.StatusUnauthorized {
 		t.Errorf("wrong secret: %d, want 401", code)
+	}
+	other := `{"effect":"notes.addNote","input":{"text":"Tea"},"session":{"user":"ada"}}`
+	if code, _ := post(t, h, other, map[string]string{"X-Hozu-Fingerprint": hozu.Fingerprint("notes.listNotes")}); code != http.StatusConflict {
+		t.Errorf("another effect's fingerprint: %d, want 409", code)
+	}
+	if code, _ := post(t, h, `{"effect":"notes.nothing","input":{}}`, nil); code != http.StatusNotFound {
+		t.Errorf("unknown effect: %d, want 404", code)
+	}
+}
+
+type failing struct{ hozu.Resolvers }
+
+func (failing) NotesListNotes(*hozu.Ctx, hozu.Empty) ([]hozu.Note, error) {
+	return nil, errors.New("database closed\nat resolvers.go:12")
+}
+
+func TestFailure(t *testing.T) {
+	h := hozu.Handler(failing{newResolvers()}, hozu.Options{Secret: secret})
+	code, got := post(t, h, `{"effect":"notes.listNotes","input":{},"session":{"user":"ada"}}`, nil)
+	if code != http.StatusInternalServerError || got != "resolver failed: database closed" {
+		t.Errorf("failure: %d %q, want 500 with the first line", code, got)
 	}
 }
