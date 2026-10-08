@@ -218,12 +218,15 @@ describe('current(route) marks a section explicitly (ADR 0071 A1)', () => {
   }
 
   it('on a filtered list and on a detail page, and nothing on the other link', async () => {
-    for (const path of ['/orders', '/orders?status=open', '/orders/7'])
+    expect(await nav('/orders')).toBe(
+      '<a href="/orders" aria-current="page">Orders</a><a href="/settings">Settings</a>',
+    )
+    for (const path of ['/orders?status=open', '/orders/7'])
       expect(await nav(path)).toBe(
         '<a href="/orders" aria-current="true">Orders</a><a href="/settings">Settings</a>',
       )
     expect(await nav('/settings')).toBe(
-      '<a href="/orders">Orders</a><a href="/settings" aria-current="true">Settings</a>',
+      '<a href="/orders">Orders</a><a href="/settings" aria-current="page">Settings</a>',
     )
   })
 })

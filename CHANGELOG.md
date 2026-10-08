@@ -11,7 +11,9 @@ Behaviour to check: a link to a section (`/orders` while on `/orders/7` or `/ord
   `'aria-current': current(orders) || current(orderDetail)` marks a menu's section on the list, a filtered list and a
   detail page. The framework marks only the address shown (`aria-current="page"`); 0.22 and 0.23 guessed sections
   from URL prefixes and every guess misfired somewhere (a next-page link, a "Back to editor" link, a filtered list).
-- `aria-current: false` writes no attribute, so `aria-[current]:` styles only marked links.
+- `aria-current: false` writes no attribute, so `aria-[current]:` styles only marked links, and `true` is written
+  `"page"` on the address itself (a screen reader then says "current page").
+- A form whose submit reads `current(route)` still posts without JavaScript.
 
 ### Tools
 - `hozu get --select` takes descendant and child combinators (`nav a[aria-current]`).

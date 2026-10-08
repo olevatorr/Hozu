@@ -70,7 +70,7 @@ export const Board = ui.view({
 - A link to the address shown gets `aria-current="page"`. Which links mark a section is yours to say: the render's
   `current(route)` is true on that route's pages, so a menu writes
   `ui.a({ href: ui.link(orders, null), 'aria-current': current(orders) || current(orderDetail) }, ['Orders'])` and
-  styles `aria-[current]:font-bold` (`false` writes no attribute). An `aria-current` you set wins.
+  styles `aria-[current]:font-bold`: `true` is written `"page"` on the address itself, `false` writes nothing.
 - `ui.dialog({ open: is(['editing']), on: { close: ui.send(Cancel, {}) } }, [...])` opens as a modal and closes with
   the machine; Escape sends `close`. It needs JavaScript: a dialog that must open without it uses the native
   `commandfor` button (the short form) and closes when the data that shows it changes.

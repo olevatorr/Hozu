@@ -305,12 +305,14 @@ export async function renderPage({
 
   const element = (n: Extract<ViewNode, { kind: 'el' }>, scope: Scope) => {
     let attrs = classAndStyle(n, (v) => value(v, scope))
+    const href = n.tag === 'a' && n.attrs.href && 'link' in n.attrs.href ? n.attrs.href : undefined
     for (const name in n.attrs) {
+      if (href && name === 'aria-current') continue
       const x = attrText(name, value(n.attrs[name]!, scope))
       if (x !== null) attrs += x === '' ? ` ${name}` : ` ${name}="${escapeHtml(x)}"`
     }
-    const href = n.tag === 'a' && !('aria-current' in n.attrs) ? n.attrs.href : undefined
-    const current = href && 'link' in href ? currentOf(value(href, scope), url) : null
+    const own = n.attrs['aria-current']
+    const current = href ? currentOf(value(href, scope), url, own && value(own, scope)) : null
     if (current) attrs += ` aria-current="${current}"`
     const submit = n.tag === 'form' ? n.on.submit : undefined
     if (submit && !('method' in n.attrs) && formRunnable(submit.payload))

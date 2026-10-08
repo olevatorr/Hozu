@@ -65,7 +65,7 @@ Hozu knows the whole page before it runs, so it keeps the page calm without any 
 `hozu browse` proves it: a step that rebuilds elements unchanged reports a flash, and layout that moves without input reports a layout shift.
 
 ## Menus, dialogs and counts
-- A link to the address being shown gets `aria-current="page"`, on the server and in the browser. A menu marks its sections itself: the render's `current(route)` is true on that route's pages, so `'aria-current': current(orders) || current(orderDetail)` marks "Orders" on the list, on a filtered list and on an order. Style it with `aria-[current]:font-bold`.
+- A link to the address being shown gets `aria-current="page"`, on the server and in the browser. A menu marks its sections itself: the render's `current(route)` is true on that route's pages, so `'aria-current': current(orders) || current(orderDetail)` marks "Orders" on the list (`"page"` on the address itself), on a filtered list and on an order (`"true"`). Style it with `aria-[current]:font-bold`.
 - `ui.dialog({ open: is(['editing']), on: { close: ui.send(Cancel, {}) } }, [...])` opens as a modal when the machine enters `editing` and closes when it leaves; Escape sends the dialog's `close` event.
 - `ui.format.plural(n, { one: '# item', other: '# items' })` chooses the case for the page's language. `null` and `false` render nothing, also inside a list built with `.map`.
 

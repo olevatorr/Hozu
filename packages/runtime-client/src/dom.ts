@@ -18,8 +18,18 @@ export function attrText(name: string, x: Json | undefined): string | null {
   return text(x)
 }
 
-/** `aria-current="page"` for a link to the address shown; a section is the author's `current(route)` (ADR 0071 A1). */
-export const currentOf = (href: Json, here: string): string | null => (href === here ? 'page' : null)
+/**
+ * `aria-current` of an internal link (ADR 0071 A1): `page` for the address shown; the author's value otherwise, where
+ * `true` (a section, from `current(route)`) becomes `page` on the address itself and `false` writes nothing.
+ */
+export const currentOf = (href: Json, here: string, own?: Json): string | null =>
+  own === undefined || own === true
+    ? href === here
+      ? 'page'
+      : own
+        ? 'true'
+        : null
+    : attrText('aria-current', own)
 
 export const properties = new Set(['value', 'checked', 'selected', 'muted'])
 

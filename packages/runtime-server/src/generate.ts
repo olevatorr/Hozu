@@ -245,16 +245,21 @@ class Emitter {
         if (this.site.dev) this.lit(staticAttr('data-hz', n.id))
         this.classAndStyle(n)
         let content: ValueExpr | null = null
+        const href = n.tag === 'a' && n.attrs.href && 'link' in n.attrs.href ? n.attrs.href : undefined
         for (const [name, v] of Object.entries(n.attrs)) {
           if (n.tag === 'textarea' && name === 'value') {
             content = v
             continue
           }
+          if (href && name === 'aria-current') continue
           if ('literal' in v) this.lit(staticAttr(name, v.literal))
           else this.expr(`h.attr(${q(name)}, ${this.value(v)})`)
         }
-        const href = n.tag === 'a' && !('aria-current' in n.attrs) ? n.attrs.href : undefined
-        if (href && 'link' in href) this.expr(`h.attr('aria-current', h.current(${this.value(href)}, s.url))`)
+        const own = n.attrs['aria-current']
+        if (href)
+          this.expr(
+            `h.attr('aria-current', h.current(${this.value(href)}, s.url${own ? `, ${this.value(own)}` : ''}))`,
+          )
         const submit = n.tag === 'form' ? n.on.submit : undefined
         if (submit && !('method' in n.attrs) && formRunnable(submit.payload)) {
           const id = encodeURIComponent(n.id)

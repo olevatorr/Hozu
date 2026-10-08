@@ -273,7 +273,10 @@ export function createApp(doc: Document, options: AppOptions): App {
           if (node.class) el.setAttribute('class', node.class)
           c.parent.insertBefore(el, c.next)
         }
+        const href =
+          node.tag === 'a' && node.attrs.href && 'link' in node.attrs.href ? node.attrs.href : undefined
         for (const name in node.attrs) {
+          if (href && name === 'aria-current') continue
           const v = node.attrs[name]!
           const prop = properties.has(name) && name in el
           if (claimed && !reads(v)) continue
@@ -297,10 +300,12 @@ export function createApp(doc: Document, options: AppOptions): App {
             else if (el.getAttribute(name) !== s) el.setAttribute(name, s)
           })
         }
-        const href = node.tag === 'a' && !('aria-current' in node.attrs) ? node.attrs.href : undefined
-        if (href && 'link' in href && (!claimed || reads(href)))
-          bind(block, href, scope, (x) => {
-            const at = currentOf(x, options.here?.[0] ?? '')
+        const own = node.attrs['aria-current']
+        const marked: ValueExpr | undefined = href && { object: own ? { h: href, o: own } : { h: href } }
+        if (marked && (!claimed || reads(marked)))
+          bind(block, marked, scope, (x) => {
+            const { h, o } = x as { h: Json; o?: Json }
+            const at = currentOf(h, options.here?.[0] ?? '', o)
             if (at) el.setAttribute('aria-current', at)
             else el.removeAttribute('aria-current')
           })
