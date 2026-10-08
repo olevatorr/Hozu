@@ -7,12 +7,12 @@
   `hozu call api.who --input '{"room":"a"}' --header 'Authorization: Bearer t'` (a POST needs `--write`).
 - **Drive the app in a real browser, still without a server:**
   `hozu browse / --session '{"user":"ada"}' --do 'fill New note=Milk' --do 'press Enter' --do 'click Pin in "Milk"'`.
-  - Steps: `fill <label>=<value>`, `select <label>=<option>`, `check` / `uncheck <label>`, `click <name>`,
-    `submit "<form>"`, `press <key>`, `wait <ms>`, `goto <path>`, `post <path> a=1&b=2`,
+  - Steps: `fill <label>=<value>` (`\n`, `\t` work), `select <label>=<option>`, `check` / `uncheck <label>`,
+    `click <name>`, `submit "<form>"`, `press <key>`, `wait <ms>`, `goto <path>`, `post <path> a=1&b=2`,
     `remember <name> from url|<selector> [@attr]` (later steps read `$name`); a target may end with `in "<text>"`
     (for fill and select, before or after `=value`).
   - Labels are what `hozu get <page> --forms` lists; a missing one prints `Did you mean "…"?`. One `--do` may hold
-    several steps: `--do 'fill Title=Milk; press Enter'`. In a fill value `\n` is a line break, `\t` a tab.
+    several steps: `--do 'fill Title=Milk; press Enter'`.
 - **Other users, other pages, after a reload, after sign-out:** verify any such statement once, in one `browse`
   chain. `--as <name>` starts an actor with its own browser; all actors share one app.
   - A stale form (sent after the data changed elsewhere): `--do 'remember save from form:has([name=title]) @action'`,
