@@ -71,6 +71,13 @@ export const stepsOf = (text: string): string[] => {
   return steps.map((step) => step.trim()).filter(Boolean)
 }
 
+const ESCAPES: Record<string, string> = { n: '\n', t: '\t', '\\': '\\' }
+
+export const unescapeValue = (value: string): string =>
+  value.replace(/\\([nt\\])/g, (_, c: string) => ESCAPES[c]!)
+
+const fillValue = (verb: string, value: string) => (verb === 'fill' ? unescapeValue(value) : value)
+
 export function parseStep(text: string): Parsed {
   const space = text.indexOf(' ')
   const verb = space < 0 ? text : text.slice(0, space)
@@ -83,12 +90,23 @@ export function parseStep(text: string): Parsed {
   }
   if ((verb === 'fill' || verb === 'select') && within === null) {
     const before = /^("[^"]*"|[^="]*?)\s+in\s+"([^"]+)"\s*=(.*)$/.exec(rest)
-    if (before) return { verb, target: unquote(before[1]!.trim()), value: before[3]!, within: before[2]! }
+    if (before)
+      return {
+        verb,
+        target: unquote(before[1]!.trim()),
+        value: fillValue(verb, before[3]!),
+        within: before[2]!,
+      }
   }
   if (verb === 'fill' || verb === 'select') {
     const eq = rest.indexOf('=', rest.startsWith('"') ? Math.max(rest.indexOf('"', 1), 0) : 0)
     if (eq <= 0) throw new Error(`"${text}" needs <label>=<value>`)
-    return { verb, target: unquote(rest.slice(0, eq).trim()), value: rest.slice(eq + 1), within }
+    return {
+      verb,
+      target: unquote(rest.slice(0, eq).trim()),
+      value: fillValue(verb, rest.slice(eq + 1)),
+      within,
+    }
   }
   return { verb, target: verb === 'post' || verb === 'remember' ? rest : unquote(rest), value: '', within }
 }
@@ -380,7 +398,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
               text.replace(/\$([A-Za-z_]\w*)/g, (_, name: string) => {
                 const value = own.get(name)
                 if (value === undefined) throw new Error(`$${name} was not remembered before this step`)
-                return value
+                return /^\s*fill\s/.test(text) ? value.replaceAll('\\', '\\\\') : value
               }),
             )
             verb = parsed.verb

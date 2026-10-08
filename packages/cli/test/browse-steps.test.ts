@@ -113,6 +113,13 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
     )
   }, 30_000)
 
+  it('fill turns \\n and \\t into a line break and a tab, and \\\\ into one backslash (ADR 0069 A6)', async () => {
+    const t = await tab('off')
+    await run(t, 'fill Body=one\\ntwo\\tthree \\\\n \\d')
+    await run(t, 'submit "Bulk"')
+    expect(await text(t)).toBe('/echo tag=&tag=&body=one%0D%0Atwo%09three+%5Cn+%5Cd&action=delete')
+  }, 30_000)
+
   it('submit "<form>" and press Enter submit natively, with the default button as the submitter', async () => {
     const t = await tab('off')
     expect(await run(t, 'submit "Bulk"')).toMatchObject({ ok: true })
@@ -208,5 +215,14 @@ describe('step parsing', () => {
       value: '',
       within: 'Milk',
     })
+  })
+})
+
+describe('fill escapes (ADR 0069 A6)', () => {
+  it('reads \\n, \\t and \\\\ in fill values only, and keeps any other backslash', () => {
+    expect(parseStep('fill Body=a\\nb\\tc').value).toBe('a\nb\tc')
+    expect(parseStep('fill Body=C:\\\\new \\d').value).toBe('C:\\new \\d')
+    expect(parseStep('fill Body in "Milk"=x\\ny').value).toBe('x\ny')
+    expect(parseStep('select Size=a\\nb').value).toBe('a\\nb')
   })
 })
