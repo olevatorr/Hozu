@@ -12,6 +12,8 @@ const methodOf = (ref: string) => ref.split('.').map(pascal).join('')
 interface Struct {
   name: string
   fields: string[][]
+  /** A string enum: `type Name string` with one constant per member (ADR 0070 C6). */
+  members?: string[][]
 }
 
 const isRef = (t: string) => /^(\[\]|map\[|\*|json\.)/.test(t)
@@ -26,8 +28,13 @@ const aligned = (rows: string[][]) => {
   )
 }
 
-const render = (s: Struct) =>
-  s.fields.length ? `type ${s.name} struct {\n${aligned(s.fields).join('\n')}\n}` : `type ${s.name} struct{}`
+const render = (s: Struct) => {
+  if (s.members)
+    return `type ${s.name} string\n\nconst (\n${aligned(s.members.map(([name, value]) => [name!, s.name, `= ${value}`])).join('\n')}\n)`
+  return s.fields.length
+    ? `type ${s.name} struct {\n${aligned(s.fields).join('\n')}\n}`
+    : `type ${s.name} struct{}`
+}
 
 class Types {
   readonly structs: Struct[] = []
@@ -56,6 +63,8 @@ class Types {
       return 'json.RawMessage'
     }
     const values = (schema.enum ?? (schema.const !== undefined ? [schema.const] : null)) as unknown[] | null
+    if (schema.enum && values?.every((v) => typeof v === 'string'))
+      return this.#enum(values as string[], typeof schema.title === 'string' ? pascal(schema.title) : name)
     if (values) return values.every((v) => typeof v === 'string') ? 'string' : 'json.RawMessage'
     const types = Array.isArray(schema.type) ? (schema.type as string[]) : [schema.type as string]
     const nullable = types.includes('null')
@@ -107,28 +116,57 @@ class Types {
     return this.#add(name, (unique) => this.#fields(schema, unique, root))
   }
 
+  #enum(values: string[], name: string): string {
+    return this.#named(
+      name,
+      () => [],
+      JSON.stringify(values),
+      (unique) => {
+        const used = new Set<string>()
+        return values.map((v) => {
+          let constant = `${unique}${pascal(v)}`
+          for (let n = 2; used.has(constant) || this.#names.has(constant); n++)
+            constant = `${unique}${pascal(v)}${n}`
+          used.add(constant)
+          this.#names.add(constant)
+          return [constant, JSON.stringify(v)]
+        })
+      },
+    )
+  }
+
   #empty(): string {
     if (!this.structs.some((s) => s.name === 'Empty')) this.structs.push({ name: 'Empty', fields: [] })
     return 'Empty'
   }
 
   /** A titled shape is one Go type wherever it appears; the same title with another shape gets a number. */
-  #named(name: string, fields: () => string[][], shape = '{}'): string {
+  #named(
+    name: string,
+    fields: () => string[][],
+    shape = '{}',
+    members?: (unique: string) => string[][],
+  ): string {
     const key = `${name} ${shape}`
     const known = this.#byShape.get(key)
     if (known) return known
-    const unique = this.#add(name, () => fields())
+    const unique = this.#add(name, () => fields(), members)
     this.#byShape.set(key, unique)
     return unique
   }
 
-  #add(wanted: string, fields: (unique: string) => string[][]): string {
+  #add(
+    wanted: string,
+    fields: (unique: string) => string[][],
+    members?: (unique: string) => string[][],
+  ): string {
     let unique = wanted
     for (let n = 2; this.#names.has(unique); n++) unique = `${wanted}${n}`
     this.#names.add(unique)
     const struct: Struct = { name: unique, fields: [] }
     this.structs.push(struct)
-    struct.fields = fields(unique)
+    if (members) struct.members = members(unique)
+    else struct.fields = fields(unique)
     return unique
   }
 
@@ -139,11 +177,12 @@ class Types {
         const t = this.type(s, `${owner}${pascal(prop)}`, root)
         const optional = !required.has(prop)
         const values = (s.enum ?? null) as unknown[] | null
+        const named = values?.every((v) => typeof v === 'string')
         return [
           pascal(prop),
           `${optional && !isRef(t) ? '*' : ''}${t}`,
           `\`json:"${prop}${optional ? ',omitempty' : ''}"\``,
-          ...(values ? [`// one of ${values.map((v) => JSON.stringify(v)).join(', ')}`] : []),
+          ...(values && !named ? [`// one of ${values.map((v) => JSON.stringify(v)).join(', ')}`] : []),
         ]
       },
     )
@@ -202,10 +241,17 @@ import (
 \t"log"
 \t"net/http"
 \t"reflect"
+\t"strings"
 )
 
-// Fingerprint is the contract this file was generated from; every call carries it.
-const Fingerprint = "${contract.fingerprint}"
+// Fingerprint is the contract of one effect this file was generated from, or "" for another effect. Every call
+// carries its effect's, so changing one declaration answers 409 for that effect alone.
+func Fingerprint(effect string) string {
+\tswitch effect {
+${contract.effects.map((e) => `\tcase "${e.ref}":\n\t\treturn "${e.fingerprint}"`).join('\n')}
+\t}
+\treturn ""
+}
 
 ${types.structs.map(render).join('\n\n')}
 
@@ -346,15 +392,21 @@ func Handler(r Resolvers, o Options) http.Handler {
 \t\t\thttp.Error(w, "wrong x-hozu-secret", http.StatusUnauthorized)
 \t\t\treturn
 \t\t}
-\t\tif got := req.Header.Get("X-Hozu-Fingerprint"); got != Fingerprint {
-\t\t\thttp.Error(w, "contract "+got+" is not "+Fingerprint+": run hozu gen and rebuild", http.StatusConflict)
-\t\t\treturn
-\t\t}
 \t\tvar body request
 \t\tif err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 \t\t\thttp.Error(w, err.Error(), http.StatusBadRequest)
 \t\t\treturn
 \t\t}
+\t\twant := Fingerprint(body.Effect)
+\t\tif want == "" {
+\t\t\thttp.Error(w, "unknown effect "+body.Effect, http.StatusNotFound)
+\t\t\treturn
+\t\t}
+\t\tif got := req.Header.Get("X-Hozu-Fingerprint"); got != want {
+\t\t\thttp.Error(w, body.Effect+" is "+want+" here, not "+got+": run hozu gen and rebuild", http.StatusConflict)
+\t\t\treturn
+\t\t}
+\t\tid := req.Header.Get("X-Hozu-Call")
 \t\tctx := &Ctx{Context: req.Context(), Session: body.Session, Preview: body.Preview, Header: http.Header{}, files: body.Files}
 \t\tfor k, v := range body.Headers {
 \t\t\tctx.Header.Set(k, v)
@@ -363,9 +415,6 @@ func Handler(r Resolvers, o Options) http.Handler {
 \t\tvar err error
 \t\tswitch body.Effect {
 ${methods.map((m) => `\t\tcase "${m.e.ref}":\n\t\t\tout, err = call(ctx, body.Input, r.${m.base})`).join('\n')}
-\t\tdefault:
-\t\t\thttp.Error(w, "unknown effect "+body.Effect, http.StatusNotFound)
-\t\t\treturn
 \t\t}
 \t\tres := map[string]any{}
 \t\tvar f failure
@@ -375,14 +424,15 @@ ${methods.map((m) => `\t\tcase "${m.e.ref}":\n\t\t\tout, err = call(ctx, body.In
 \t\tcase errors.As(err, &f):
 \t\t\teffect, name, data := f.failure()
 \t\t\tif effect != "" && effect != body.Effect {
-\t\t\t\tlog.Printf("hozu: %s returned %s, an error of %s", body.Effect, name, effect)
-\t\t\t\thttp.Error(w, "undeclared error", http.StatusInternalServerError)
+\t\t\t\tlog.Printf("hozu: %s (call %s) returned %s, an error of %s", body.Effect, id, name, effect)
+\t\t\t\thttp.Error(w, "resolver failed: "+name+" is an error of "+effect, http.StatusInternalServerError)
 \t\t\t\treturn
 \t\t\t}
 \t\t\tres["fail"] = map[string]any{"name": name, "data": data}
 \t\tdefault:
-\t\t\tlog.Printf("hozu: %s: %v", body.Effect, err)
-\t\t\thttp.Error(w, "resolver failed", http.StatusInternalServerError)
+\t\t\tlog.Printf("hozu: %s (call %s): %v", body.Effect, id, err)
+\t\t\tline, _, _ := strings.Cut(err.Error(), "\\n")
+\t\t\thttp.Error(w, "resolver failed: "+line, http.StatusInternalServerError)
 \t\t\treturn
 \t\t}
 \t\tif ctx.changed {
@@ -390,13 +440,56 @@ ${methods.map((m) => `\t\tcase "${m.e.ref}":\n\t\t\tout, err = call(ctx, body.In
 \t\t}
 \t\tw.Header().Set("Content-Type", "application/json")
 \t\tif err := json.NewEncoder(w).Encode(res); err != nil {
-\t\t\tlog.Printf("hozu: %s: %v", body.Effect, err)
+\t\t\tlog.Printf("hozu: %s (call %s): %v", body.Effect, id, err)
 \t\t}
 \t})
 }
 `)
 }
 
-/** The fingerprint a generated Go contract declares, or null when the text has none. */
-export const goFingerprint = (text: string): string | null =>
-  /^const Fingerprint = "([0-9a-f]+)"$/m.exec(text)?.[1] ?? null
+/** The fingerprint of each effect a generated Go contract declares, by ref. */
+export const goFingerprints = (text: string): Record<string, string> =>
+  Object.fromEntries(
+    [...text.matchAll(/^\tcase "([^"]+)":\n\t\treturn "([0-9a-f]+)"$/gm)].map((m) => [m[1]!, m[2]!]),
+  )
+
+const counted = /^(id|count|qty|quantity|total.*)$|(Id|_id|ID|Count|_count|Qty|Quantity)$/i
+
+/**
+ * Number fields named like an id or a count: `z.number()` is float64 in Go, so they are notes suggesting `z.int()`
+ * (ADR 0070 C4), not diagnostics.
+ */
+export function goNotes(contract: RemoteContract): string[] {
+  const notes = new Set<string>()
+  const walk = (schema: JsonSchema, path: string, root: JsonSchema, seen: Set<string>) => {
+    const ref = schema.$ref
+    if (typeof ref === 'string') {
+      const key = ref.replace(/^#\/\$defs\//, '')
+      const def = (root.$defs as Record<string, JsonSchema> | undefined)?.[key]
+      if (def && !seen.has(key)) walk(def, path, root, new Set([...seen, key]))
+      return
+    }
+    for (const s of (schema.anyOf ?? schema.oneOf ?? []) as JsonSchema[]) walk(s, path, root, seen)
+    if (schema.items) walk(schema.items as JsonSchema, `${path}[]`, root, seen)
+    for (const [prop, s] of Object.entries(
+      (schema.properties as Record<string, JsonSchema> | undefined) ?? {},
+    )) {
+      const number = [s, ...((s.anyOf ?? s.oneOf ?? []) as JsonSchema[])].some((x) =>
+        (Array.isArray(x.type) ? x.type : [x.type]).includes('number'),
+      )
+      if (number && counted.test(prop))
+        notes.add(
+          `${path}.${prop} is a number (float64 in Go); if it holds whole numbers, declare it z.int() (int64)`,
+        )
+      walk(s, `${path}.${prop}`, root, seen)
+    }
+  }
+  for (const e of contract.effects) {
+    walk(e.input, `${e.ref}: input`, e.input, new Set())
+    walk(e.output, `${e.ref}: output`, e.output, new Set())
+    for (const [name, schema] of Object.entries(e.errors))
+      walk(schema, `${e.ref}: ${name}`, schema, new Set())
+  }
+  if (contract.session) walk(contract.session, 'session', contract.session, new Set())
+  return [...notes]
+}

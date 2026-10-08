@@ -93,7 +93,7 @@ beforeAll(async () => {
       seen.push({ headers: req.headers, body })
       const answer = answers[body.effect] ?? { status: 404, body: 'unknown' }
       res.writeHead(answer.status ?? 200, { 'content-type': 'application/json' })
-      res.end(JSON.stringify(answer.body))
+      res.end(typeof answer.body === 'string' ? answer.body : JSON.stringify(answer.body))
     })
   })
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
@@ -132,10 +132,89 @@ describe('remote() resolvers (ADR 0068)', () => {
       files: {},
     })
     expect(last().headers['x-hozu-secret']).toBe('s3cret-0123456789abcdef')
+    const contract = remoteContract(build.ir, [
+      'notes.mine',
+      'notes.total',
+      'notes.add',
+      'notes.signIn',
+      'notes.hook',
+    ])
     expect(last().headers['x-hozu-fingerprint']).toBe(
-      remoteContract(build.ir, ['notes.mine', 'notes.total', 'notes.add', 'notes.signIn', 'notes.hook'])
-        .fingerprint,
+      contract.effects.find((e) => e.ref === 'notes.mine')?.fingerprint,
     )
+    expect(last().headers['x-hozu-call']).toMatch(/^[0-9a-f]{8}$/)
+    const first = last().headers['x-hozu-call']
+    await runtime().query(total, {})
+    expect(last().headers['x-hozu-fingerprint']).toBe(
+      contract.effects.find((e) => e.ref === 'notes.total')?.fingerprint,
+    )
+    expect(last().headers['x-hozu-call']).not.toBe(first)
+  })
+
+  it('a service that does not answer names the effect, the URL and what to do (ADR 0070 C1)', async () => {
+    const closed = createServer()
+    await new Promise<void>((r) => closed.listen(0, '127.0.0.1', r))
+    const port = (closed.address() as AddressInfo).port
+    await new Promise<void>((r) => closed.close(() => r()))
+    const errors: unknown[] = []
+    const down = createDataRuntime({
+      build,
+      env: { SVC_SECRET: 's3cret-0123456789abcdef' },
+      onError: (e) => errors.push(e),
+      resolvers: resolvers(p, (implement) => [
+        ...remote({ ...options(), url: `http://127.0.0.1:${port}/effect` }, [mine, total, add, signIn, hook]),
+        implement(feed, () => new Response('')),
+      ]),
+    })
+    expect(await down.query(total, {})).toMatchObject({ ok: false, error: 'Unexpected' })
+    expect(String(errors[0])).toBe(
+      `Error: notes.total: no service answers at http://127.0.0.1:${port}/effect (fetch failed: ECONNREFUSED); start it or check the url remote() names`,
+    )
+  })
+
+  it('a service that answers too late names the effect, the URL and the timeout (ADR 0070 C1)', async () => {
+    const slow = createServer(() => {})
+    await new Promise<void>((r) => slow.listen(0, '127.0.0.1', r))
+    const at = `http://127.0.0.1:${(slow.address() as AddressInfo).port}/effect`
+    const errors: unknown[] = []
+    const late = createDataRuntime({
+      build,
+      env: { SVC_SECRET: 's3cret-0123456789abcdef' },
+      onError: (e) => errors.push(e),
+      resolvers: resolvers(p, (implement) => [
+        ...remote({ ...options(), url: at, timeout: 50 }, [mine, total, add, signIn, hook]),
+        implement(feed, () => new Response('')),
+      ]),
+    })
+    expect(await late.query(total, {})).toMatchObject({ ok: false, error: 'Unexpected' })
+    expect(String(errors[0])).toMatch(
+      new RegExp(
+        `^Error: notes.total: the service at ${at} did not answer within 50 ms \\(call [0-9a-f]{8}\\)`,
+      ),
+    )
+    slow.closeAllConnections()
+    await new Promise<void>((r) => slow.close(() => r()))
+  })
+
+  it("a failing service's first line and the call id reach the error (ADR 0070 C2)", async () => {
+    answers['notes.total'] = { status: 500, body: 'resolver failed: database closed\nmore' }
+    const errors: unknown[] = []
+    const failing = createDataRuntime({
+      build,
+      env: { SVC_SECRET: 's3cret-0123456789abcdef' },
+      onError: (e) => errors.push(e),
+      resolvers: resolvers(p, (implement) => [
+        ...remote(options(), [mine, total, add, signIn, hook]),
+        implement(feed, () => new Response('')),
+      ]),
+    })
+    const result = await failing.query(total, {})
+    expect(result).toMatchObject({ ok: false, error: 'Unexpected' })
+    const id = last().headers['x-hozu-call']
+    expect(String(errors[0])).toBe(
+      `Error: notes.total: resolver failed: database closed (${url} answered 500, call ${id})`,
+    )
+    answers['notes.total'] = { body: { ok: 3 } }
   })
 
   it('never sends the session for public data (ADR 0005)', async () => {
@@ -243,8 +322,29 @@ describe('remote() resolvers (ADR 0068)', () => {
     expect(last().body.files).toEqual({ f1: { name: 'hi.txt', type: 'text/plain', size: 2, data: 'aGk=' } })
   })
 
-  it('the fingerprint follows the declarations', () => {
-    const before = remoteContract(build.ir, ['notes.add']).fingerprint
+  it('an output wrong in every row is one line with a count (ADR 0070 C7)', async () => {
+    answers['notes.mine'] = { body: { ok: [1, 2, 3].map((n) => ({ id: `n${n}`, text: n })) } }
+    const errors: unknown[] = []
+    const checked = createDataRuntime({
+      build,
+      env: { SVC_SECRET: 's3cret-0123456789abcdef' },
+      onError: (e) => errors.push(e),
+      resolvers: resolvers(p, (implement) => [
+        ...remote(options(), [mine, total, add, signIn, hook]),
+        implement(feed, () => new Response('')),
+      ]),
+    })
+    await checked.query(mine, {}, { user: 'ada' })
+    expect(String(errors[0])).toBe(
+      'Error: Invalid output from notes.mine: *.text: Invalid input: expected string, received number (3×)',
+    )
+    answers['notes.mine'] = { body: { ok: [{ id: 'n1', text: 'Tea' }] } }
+  })
+
+  it('each effect has its own fingerprint, which follows only its declaration and the session (ADR 0070 C3)', () => {
+    const of = (ir: typeof build.ir, ref: string) =>
+      remoteContract(ir, ['notes.add', 'notes.total']).effects.find((e) => e.ref === ref)?.fingerprint
+    const before = of(build.ir, 'notes.add')
     const changed = buildProject(
       project({
         schema: zodAdapter,
@@ -269,7 +369,8 @@ describe('remote() resolvers (ADR 0068)', () => {
         ],
       }),
     )
-    expect(remoteContract(changed.ir, ['notes.add']).fingerprint).not.toBe(before)
-    expect(remoteContract(build.ir, ['notes.add']).fingerprint).toBe(before)
+    expect(of(changed.ir, 'notes.add')).not.toBe(before)
+    expect(of(build.ir, 'notes.add')).toBe(before)
+    expect(remoteContract(build.ir, ['notes.add']).effects[0]?.fingerprint).toBe(before)
   })
 })

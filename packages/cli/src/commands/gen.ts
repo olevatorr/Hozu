@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, extname, relative } from 'node:path'
 import type { GenOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
-import { goContract } from '../gen/go.ts'
+import { goContract, goNotes } from '../gen/go.ts'
 import type { Loaded } from '../load.ts'
 import { remoteGroups } from '../remote.ts'
 import { inspectApp } from './app.ts'
@@ -33,10 +33,10 @@ export async function runGen(loaded: Loaded, cwd: string): Promise<GenOutput> {
     contracts.push({
       file,
       package: g.pkg,
-      fingerprint: g.contract.fingerprint,
-      effects: g.contract.effects.map((e) => e.ref),
+      effects: g.contract.effects.map((e) => ({ ref: e.ref, fingerprint: e.fingerprint })),
       written,
       problems: g.contract.problems.map((p) => p.message),
+      notes: goNotes(g.contract),
     })
   }
   return { contracts }
@@ -46,10 +46,12 @@ export function describeGen(out: GenOutput): string {
   const lines: string[] = []
   for (const c of out.contracts) {
     lines.push(
-      `${c.written ? 'wrote' : 'unchanged'} ${c.file} (package ${c.package}, ${c.fingerprint}): ${c.effects.length} ${c.effects.length === 1 ? 'effect' : 'effects'}`,
+      `${c.written ? 'wrote' : 'unchanged'} ${c.file} (package ${c.package}): ${c.effects.length} ${c.effects.length === 1 ? 'effect' : 'effects'}`,
     )
-    for (const e of c.effects) lines.push(`  ${e}`)
+    const width = Math.max(...c.effects.map((e) => e.ref.length))
+    for (const e of c.effects) lines.push(`  ${e.ref.padEnd(width)}  ${e.fingerprint}`)
     for (const p of c.problems) lines.push(`  ✖ ${p}`)
+    for (const n of c.notes) lines.push(`  note: ${n}`)
   }
   lines.push('', 'next: implement the Resolvers interface (go build), restart the service, then hozu check')
   return `${lines.join('\n')}\n`

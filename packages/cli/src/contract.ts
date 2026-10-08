@@ -571,13 +571,14 @@ export interface GenOutput {
     /** The contract file, relative to the working directory. */
     file: string
     package: string
-    fingerprint: string
-    /** The effects it implements: feature.symbol. */
-    effects: string[]
+    /** The effects it implements (feature.symbol), each with the fingerprint its calls carry (ADR 0070 C3). */
+    effects: { ref: string; fingerprint: string }[]
     /** False when the file already held this contract. */
     written: boolean
     /** Effects that cannot be remote (the server refuses to start with them, HZ093). */
     problems: string[]
+    /** Number fields named like an id or a count, which may want z.int() (ADR 0070 C4); not diagnostics. */
+    notes: string[]
   }[]
 }
 
