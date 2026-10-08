@@ -100,6 +100,20 @@ describe('cart data runtime', () => {
     expect(data.stats().fetches).toBe(3)
   })
 
+  it('reports a query input that fails its schema to onError, since the app built it (ADR 0069 A2)', async () => {
+    const seen: string[] = []
+    const data = createDataRuntime({
+      build,
+      resolvers: await createResolvers(),
+      onError: (error, info) => seen.push(`${info.effect}: ${(error as Error).message}`),
+    })
+    expect(await data.query(getProduct, { sku: 1 } as never)).toMatchObject({ error: 'Unexpected' })
+    expect(seen).toHaveLength(1)
+    expect(seen[0]).toMatch(
+      /^catalog.getProduct: Invalid input for catalog.getProduct: .*z\.coerce\.number\(\)/,
+    )
+  })
+
   it('rejects invalid input and session before running resolvers', async () => {
     const { data } = await setup()
     expect(await data.query(getProduct, { sku: 1 } as never)).toMatchObject({

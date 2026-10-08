@@ -709,6 +709,10 @@ export function createDataRuntime({
           }
           return report(new Error(`Invalid data from ${effect.ref} must be { message, fields }`))
         }
+        if (failure.error === 'Forbidden' && (effect.scope === 'user' || effect.kind === 'mutation')) {
+          const message = (failure.data as { message?: unknown } | null)?.message
+          return typeof message === 'string' ? { ok: false, error: 'Forbidden', data: { message } } : forbidden()
+        }
         if (!effect.errors.has(failure.error))
           return report(new Error(`Undeclared error "${failure.error}" from ${effect.ref}`))
         const issues = check(`${effect.ref}#error:${failure.error}`, failure.data)
@@ -784,10 +788,12 @@ export function createDataRuntime({
       let known = shared === null ? undefined : parsedInputs.get(shared)
       if (!known) {
         const parsed = parse(ref, raw)
-        if (!parsed.ok)
-          return effect.kind === 'mutation'
-            ? { ...invalid(effect.fields, parsed.issues), invalidated: [] }
-            : unexpected(`Invalid input for ${ref}: ${parsed.issues.join('; ')}`)
+        if (!parsed.ok) {
+          if (effect.kind === 'mutation') return { ...invalid(effect.fields, parsed.issues), invalidated: [] }
+          const message = `Invalid input for ${ref}: ${parsed.issues.join('; ')} (a query input comes from the app: a head input, a ui.query input, an invoke or a seed; a route param is a string, so read numbers with z.coerce.number())`
+          onError(new Error(message), { effect: ref })
+          return unexpected(message)
+        }
         known = { input: parsed.value, key: `${ref}${canonicalStringify(parsed.value)}` }
         if (shared !== null) parsedInputs.set(shared, known)
       }

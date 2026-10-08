@@ -20,8 +20,8 @@ export interface PageDef {
   assert?: 'static' | 'cacheable'
   head: {
     query?: QueryDecl
-    input?: (params: any, locale: any) => unknown
-    render: (data: any, params: any, locale: any) => HeadFields
+    input?: (params: any, locale: any, search: any) => unknown
+    render: (data: any, params: any, locale: any, search: any) => HeadFields
     failed?: Record<string, RouteDecl | HeadStatus>
   }
   entries?: {
@@ -45,15 +45,15 @@ export type HeadFailed<E> = [E] extends [never]
     ? { failed?: { Forbidden?: HeadAnswer } }
     : { failed: { [K in keyof E]: HeadAnswer } & { Forbidden?: HeadAnswer } }
 
-export const page = <P, I = never, O = never, E = never, EI = never, EO = never, EE = never>(
-  route: RouteDecl<P>,
+export const page = <P, I = never, O = never, E = never, EI = never, EO = never, EE = never, S = never>(
+  route: RouteDecl<P, S>,
   config: {
     views: ViewDecl[]
     assert?: 'static' | 'cacheable'
     head: {
       query?: QueryDecl<I, O, E, any>
-      input?: (params: Ref<P>, locale: Ref<string>) => Val<I>
-      render: (data: Ref<O>, params: Ref<P>, locale: Ref<string>) => HeadFields
+      input?: (params: Ref<P>, locale: Ref<string>, search: Ref<S>) => Val<I>
+      render: (data: Ref<O>, params: Ref<P>, locale: Ref<string>, search: Ref<S>) => HeadFields
     } & HeadFailed<E>
     entries?: {
       query: QueryDecl<EI, EO[], EE, any>

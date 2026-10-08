@@ -170,7 +170,9 @@ function element(
     scope.report('HZ014', at(p, 'children'), `<${d.tag}> needs a children array`, 'Pass [] when it has none.')
   else if (voidSet.has(d.tag) && d.children.length)
     scope.report('HZ014', at(p, 'children'), `<${d.tag}> cannot have children`, 'It is a void element.')
-  const listed = Array.isArray(d.children) ? d.children : []
+  const listed = (Array.isArray(d.children) ? (d.children as unknown[]) : []).filter(
+    (c) => c !== null && c !== false,
+  )
   const children = (scope.inRender ? listed.filter((c) => c !== undefined) : listed).map((c, i) =>
     node(scope, c, `${id}/${i}`, at(p, 'children', i), depth),
   )

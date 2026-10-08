@@ -115,6 +115,7 @@ export interface TagProps {
       | 'strict-origin-when-cross-origin'
       | 'unsafe-url'
     >
+    rel?: V
     shape?: V
     target?: V
     type?: V
@@ -138,6 +139,7 @@ export interface TagProps {
       | 'strict-origin-when-cross-origin'
       | 'unsafe-url'
     >
+    rel?: V
     shape?: E<'circle' | 'default' | 'poly' | 'rect'>
     target?: V
     type?: V
@@ -244,6 +246,7 @@ export interface TagProps {
     method?: E<'get' | 'post' | 'dialog'>
     name?: V
     novalidate?: V
+    rel?: V
     target?: V
     ref?: FR
   }

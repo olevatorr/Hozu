@@ -104,11 +104,13 @@ type DateOptions = Pick<
   'dateStyle' | 'timeStyle' | 'year' | 'month' | 'day' | 'weekday' | 'hour' | 'minute' | 'timeZone'
 >
 type ListOptions = Pick<Intl.ListFormatOptions, 'type' | 'style'>
+type PluralCases = { other: string } & Partial<Record<Intl.LDMLPluralRule | `=${number}`, string>>
 
 const number = builtin('#number')
 const date = builtin('#date')
 const relative = builtin('#relative')
 const list = builtin('#list')
+const plural = builtin('#plural')
 const og = builtin('#og')
 
 export const openGraph = (card: { title: Val<string>; subtitle?: Val<string | null> }): Expr<string> =>
@@ -123,6 +125,8 @@ export const format = Object.freeze({
     relative({ v: value, u: unit }),
   list: (value: Val<readonly string[]>, options: ListOptions = {}): Expr<string> =>
     list({ v: value, o: options }),
+  /** The case for the count in the page's language; `#` is the count: `plural(n, { one: '# item', other: '# items' })`. */
+  plural: (value: Val<number | null>, cases: PluralCases): Expr<string> => plural({ v: value, c: cases }),
 })
 
 export const alternate = (locale: string): Href => createRef('alternate', 0, [locale])

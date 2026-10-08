@@ -27,14 +27,14 @@ Every item below names who hit it, the decision, and why. "Docs" means the frame
 | B3 | A native `<dialog>` cannot be closed by the machine (admin, 20–40 min per agent) | `ui.dialog({ open: is(['editing']) })`: a dynamic `open` on `<dialog>` calls `showModal()` / `close()`; Escape sends the dialog's `close` event as usual. |
 | B4 | No current page for a shared navigation; 11 `:has()` CSS rules (admin) | Every `ui.link` to the page being rendered gets `aria-current="page"` (server and client), so `aria-[current=page]:font-bold` styles the menu. |
 | B5 | Every page repeats `views: [Sidebar, X]` and the staff head guard (admin) | **Docs:** pages are config, so a helper is the layout: `const staff = (route, View) => ui.page(route, { views: [Sidebar, View], head: staffHead })`. A recipe shows it. No new concept. |
-| B6 | `access: { allow }` cannot be shared, the same line 20 times (admin) | `access: staffOnly` where `const staffOnly = access(({ session }) => session.role !== 'editor')` from `@hozu/core`, lowered like a guard. |
-| B7 | `session` stays `Session \| null` after `access: 'signedIn'` (both) | Resolvers of effects whose access is `'signedIn'` or `{ owner }` get `session: Session`. |
+| B6 | `access: { allow }` cannot be shared, the same line 20 times (admin) | **Docs:** `part()` already shares it: `const staffOnly = part(({ session }) => session.role !== 'editor')`, then `access: { allow: staffOnly }` (tested). A plain arrow is not lowered, which is what the admin hit; no new export (A3 keeps core at 16). |
+| B7 | `session` stays `Session \| null` after `access: 'signedIn'` (both) | Resolvers of effects with `access: 'signedIn'` get `session: Session` (the declaration's type carries it). `{ owner }` with callbacks cannot be inferred by TypeScript and keeps `Session \| null`. |
 | B8 | A resolver cannot answer `Forbidden` (both) | `fail('Forbidden', { message? })` in any server resolver of a user effect, the framework error that `failed` / `head.failed` already handle. |
 | B9 | `head.input` cannot read `search`, so `/journal?topic=makers` has the same `<title>` (store) | `head.input(params, { search, locale })` for a route with `search`. |
 | B10 | HZ033 refused a hidden input whose value is an enum context field (store) | A `value` that is a reference to a field whose schema is the enum is accepted. |
 | B11 | `null` / `false` in a constant `.map` was "Invalid view child", although the guide says they render nothing (admin) | Lists drop `null` and `false` (and so `cond && node` in `.map`). |
 | B12 | `<a rel>` was refused (admin) | `rel` on `a`, `area` and `form` (the DOM table had dropped it globally). |
-| B13 | `props.x !== undefined` was "Unsupported value (undefined)" (admin) | The message says why and the fix: optional props get `.default(…)` and are compared to it. |
+| B13 | `props.x !== undefined` was "Unsupported value (undefined)" (admin) | Not reproduced (`props.x !== undefined` and `&&` build); the message for an `undefined` value now says to give the prop `.default(…)` and compare with it. |
 | B14 | Counting words in views ("1 items") (admin) | `ui.format.plural(n, { one: '# item', other: '# items' })` (Intl.PluralRules, server-lowered like the other formats). |
 
 ## C. Kept as they are, with the reason in the guide

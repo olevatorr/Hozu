@@ -581,7 +581,11 @@ export class FeatureScope {
           }
         : { object }
     }
-    throw new RecorderError(`Unsupported value (${describe(v)}); use literals, references or fn() calls`)
+    throw new RecorderError(
+      v === undefined
+        ? 'Unsupported value (undefined): a value here is a literal, a reference or a fn() call; an optional prop or field compared with undefined has no value to record, so give it .default(…) and compare with that default'
+        : `Unsupported value (${describe(v)}); use literals, references or fn() calls`,
+    )
   }
 
   json(v: unknown): Json {

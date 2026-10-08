@@ -30,6 +30,7 @@ export const fanout = query({
 
 export default project({
   schema: zodAdapter,
+  env: { server: z.object({ BENCH_SECRET: z.string().min(16) }) },
   routes: {},
   pages: [],
   features: [

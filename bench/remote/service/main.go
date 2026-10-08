@@ -85,6 +85,6 @@ func main() {
 	})
 	go func() { log.Fatal(http.ListenAndServe(os.Getenv("UPSTREAM_ADDR"), upstream)) }()
 	mux := http.NewServeMux()
-	mux.Handle("/effect", hozu.Handler(work{upstream: "http://" + os.Getenv("UPSTREAM_ADDR") + "/delay"}, hozu.Options{}))
+	mux.Handle("/effect", hozu.Handler(work{upstream: "http://" + os.Getenv("UPSTREAM_ADDR") + "/delay"}, hozu.Options{Secret: os.Getenv("BENCH_SECRET")}))
 	log.Fatal(http.ListenAndServe(os.Getenv("SERVICE_ADDR"), mux))
 }

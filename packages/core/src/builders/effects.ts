@@ -1,7 +1,7 @@
 import { brand, type Decl, type Typed } from '../model/decl.ts'
 import type { Ref } from '../model/expr.ts'
 import type { Infer, InferInput, Schema } from '../schema/standard.ts'
-import type { Access } from './access.ts'
+import type { Access, SignedBy } from './access.ts'
 import type { TagUse } from './tag.ts'
 
 export type Freshness =
@@ -20,13 +20,15 @@ export type Scope = 'public' | 'user'
 
 export type Runs = 'server' | 'browser' | 'either'
 
-export interface EffectTypes<I, O, E, Sc = Scope, W = I> {
+export interface EffectTypes<I, O, E, Sc = Scope, W = I, Sg = boolean> {
   input: I
   /** What a caller passes: the schema's input type (`z.coerce.number()` takes a string), ADR 0057 C. */
   wire: W
   output: O
   errors: E
   scope: Sc
+  /** Its access guarantees a session (`'signedIn'`, `{ owner }`): the resolver's session is not null. */
+  signed: Sg
 }
 
 export interface QueryDef {
@@ -49,27 +51,27 @@ export interface MutationDef {
   access?: Access
 }
 
-export interface QueryDecl<I = any, O = any, E = any, Sc extends Scope = Scope>
+export interface QueryDecl<I = any, O = any, E = any, Sc extends Scope = Scope, Sg extends boolean = boolean>
   extends Decl<'query'>,
-    Typed<EffectTypes<I, O, E, Sc>> {}
+    Typed<EffectTypes<I, O, E, Sc, I, Sg>> {}
 
-export interface MutationDecl<I = any, O = any, E = any, W = I>
+export interface MutationDecl<I = any, O = any, E = any, W = I, Sg extends boolean = boolean>
   extends Decl<'mutation'>,
-    Typed<EffectTypes<I, O, E, Scope, W>> {}
+    Typed<EffectTypes<I, O, E, Scope, W, Sg>> {}
 
 export type EffectDecl<I = any, O = any, E = any, W = I> = QueryDecl<I, O, E> | MutationDecl<I, O, E, W>
 
 type RowOf<O> = O extends readonly (infer T)[] ? T : O
 
 /** `access` is required where the server can enforce it: a server-run user query, and a server-run mutation. */
-type QueryAccess<Sc, R, I, Row> = Sc extends 'user'
+type QueryAccess<Sc, R, A> = Sc extends 'user'
   ? R extends 'server'
-    ? { /** Who may read it (ADR 0056 B). */ access: Access<I, Row> }
+    ? { /** Who may read it (ADR 0056 B). */ access: A }
     : { access?: never }
   : { access?: never }
 
-type MutationAccess<R, I> = R extends 'server'
-  ? { /** Who may run it (ADR 0056 B). */ access: Access<I, any> }
+type MutationAccess<R, A> = R extends 'server'
+  ? { /** Who may run it (ADR 0056 B). */ access: A }
   : { access?: never }
 
 export const query = <
@@ -78,6 +80,7 @@ export const query = <
   Sc extends Scope,
   R extends Runs,
   E extends ErrorSchemas = Record<never, never>,
+  A extends Access<Infer<I>, RowOf<Infer<O>>> = Access<Infer<I>, RowOf<Infer<O>>>,
 >(
   config: {
     input: I
@@ -88,8 +91,8 @@ export const query = <
     tags?: (input: Ref<Infer<I>>) => TagUse[]
     /** Where the implementation runs (ADR 0049); required since 0.14 (ADR 0053 A). */
     runs: R
-  } & QueryAccess<Sc, R, Infer<I>, RowOf<Infer<O>>>,
-): QueryDecl<Infer<I>, Infer<O>, ErrorTypes<E>, Sc> =>
+  } & QueryAccess<Sc, R, A>,
+): QueryDecl<Infer<I>, Infer<O>, ErrorTypes<E>, Sc, SignedBy<A>> =>
   brand({}, 'query', { errors: {}, tags: () => [], ...config } as QueryDef)
 
 export const mutation = <
@@ -97,6 +100,7 @@ export const mutation = <
   O extends Schema,
   R extends Runs,
   E extends ErrorSchemas = Record<never, never>,
+  A extends Access<Infer<I>, any> = Access<Infer<I>, any>,
 >(
   config: {
     input: I
@@ -105,6 +109,6 @@ export const mutation = <
     invalidates?: (input: Ref<Infer<I>>) => TagUse[]
     /** Where the implementation runs (ADR 0049); required since 0.14 (ADR 0053 A). */
     runs: R
-  } & MutationAccess<R, Infer<I>>,
-): MutationDecl<Infer<I>, Infer<O>, ErrorTypes<E>, InferInput<I>> =>
+  } & MutationAccess<R, A>,
+): MutationDecl<Infer<I>, Infer<O>, ErrorTypes<E>, InferInput<I>, SignedBy<A>> =>
   brand({}, 'mutation', { errors: {}, invalidates: () => [], ...config } as MutationDef)

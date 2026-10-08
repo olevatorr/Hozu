@@ -12,8 +12,22 @@ export type Fail<E> = <K extends keyof E & string>(error: K, data: E[K]) => Fail
 
 type Out<O, E> = O | Failure<E> | Promise<O | Failure<E>>
 
-export type QueryContext<Sc extends Scope, Session, E, Env = unknown> = Sc extends 'user'
-  ? { session: Session | null; fail: Fail<E>; env: Env; preview: boolean }
+/** The framework error a resolver of a user effect may answer, like `access` would (ADR 0069 B8). */
+export type WithForbidden<E> = E & { Forbidden: { message?: string } }
+
+export type QueryContext<
+  Sc extends Scope,
+  Session,
+  E,
+  Env = unknown,
+  Sg extends boolean = false,
+> = Sc extends 'user'
+  ? {
+      session: Sg extends true ? Session : Session | null
+      fail: Fail<WithForbidden<E>>
+      env: Env
+      preview: boolean
+    }
   : { fail: Fail<E>; env: Env; preview: boolean }
 
 export interface InvalidInput<I = Record<string, unknown>> {
@@ -23,11 +37,17 @@ export interface InvalidInput<I = Record<string, unknown>> {
 
 export type WithInvalid<E, I = Record<string, unknown>> = E & { Invalid: InvalidInput<I> }
 
-export interface MutationContext<Session, E, Env = unknown, I = Record<string, unknown>> {
+export interface MutationContext<
+  Session,
+  E,
+  Env = unknown,
+  I = Record<string, unknown>,
+  Sg extends boolean = false,
+> {
   env: Env
   preview: boolean
-  session: Session | null
-  fail: Fail<WithInvalid<E, I>>
+  session: Sg extends true ? Session : Session | null
+  fail: Fail<WithForbidden<WithInvalid<E, I>>>
   setSession(value: Session | null): void
   file(token: string): Promise<Upload | null>
 }
@@ -102,16 +122,16 @@ export interface Implementation {
 }
 
 export interface Implement<Session, Env = unknown> {
-  <I, O, E, Sc extends Scope>(
-    decl: QueryDecl<I, O, E, Sc>,
-    run: (input: I, ctx: QueryContext<Sc, Session, E, Env>) => Out<O, E>,
+  <I, O, E, Sc extends Scope, Sg extends boolean>(
+    decl: QueryDecl<I, O, E, Sc, Sg>,
+    run: (input: I, ctx: QueryContext<Sc, Session, E, Env, Sg>) => Out<O, WithForbidden<E>>,
   ): Implementation
-  <I, O, E>(
-    decl: MutationDecl<I, O, E, any>,
+  <I, O, E, Sg extends boolean>(
+    decl: MutationDecl<I, O, E, any, Sg>,
     run: (
       input: I,
-      ctx: MutationContext<Session, NoInfer<E>, Env, NoInfer<I>>,
-    ) => Out<O, WithInvalid<NoInfer<E>, NoInfer<I>>>,
+      ctx: MutationContext<Session, NoInfer<E>, Env, NoInfer<I>, Sg>,
+    ) => Out<O, WithForbidden<WithInvalid<NoInfer<E>, NoInfer<I>>>>,
   ): Implementation
   <I, O, E>(
     decl: EndpointDecl<I, O, E>,
