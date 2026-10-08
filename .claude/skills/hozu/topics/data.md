@@ -50,7 +50,7 @@ export default app({ resolvers: resolvers(project, (implement) => [
   shows it, also from the browser. `'live'` is for data your own mutations change. A refresh the visitor controls
   (a button, Pause / Resume) is `refresh: () => [tag()]` on a machine transition (`hozu docs machine`).
 - Call a `fn` from views or machines: `ui.each(visible({ items, show: ctx.show }), 'id', …)`.
-- **A database** (a pool, transactions, migrations, numeric ids from forms and params): see --more.
+- **A database** (pool, migrations, numeric ids): see --more.
 
 <!-- more -->
 

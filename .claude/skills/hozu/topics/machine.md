@@ -68,8 +68,7 @@ export const m = machine({
   }),
 })
 ```
-- State follows the visitor (calm states only, address-seeded fields from the address): to another page through a
-  view both pages show (a header, a panel), and back to the same address; another item of one route starts fresh.
+- Calm state follows the visitor to a page that shows the same view, and back to the same address.
 - **assign** values are event (`e`), result (`r`) or error fields, context, literals, operators and `fn()` calls.
 - **guard** conditions: a field (`() => ctx.auto`), comparisons, `&&`, `||`, `!`, or a boolean `fn()`.
 - **navigate** sends the browser to `ui.link(route, params, search?)` after the transition. It returns one link: to
@@ -80,9 +79,8 @@ export const m = machine({
   and neither handles nor ignores the event itself. Without `target` they stay in the state they fire in; one
   contract covers every copy.
 - **Start from the URL or server data:** a view with a `route` may declare
-  `seed: ({ params, search, query }) => ({ q: search.q, email: query(me, {}).email })`; the page's machine then starts
-  with those context fields (server render, hydration and no-JS posts alike). A query that fails leaves its fields at
-  `initialContext`. One view per page may seed a machine (HZ048).
+  `seed: ({ params, search, query }) => ({ q: search.q, email: query(me, {}).email })` (server render, hydration and
+  no-JS posts alike; a failed query leaves `initialContext`). One view per page may seed a machine (HZ048).
 - In an app with `site.locales`, machines never hold
   translated text (HZ041): store a code (`ctx.error = 'duplicate'`) and choose the message in the view. The
   scaffold does this in every app.
