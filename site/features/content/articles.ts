@@ -37,16 +37,14 @@ const articleView = (
                           ui.ul({ class: 'grid gap-2' }, [
                             ui.each(items, 'slug', (item) =>
                               ui.li({}, [
-                                params.slug === item.slug
-                                  ? ui.a(
-                                      {
-                                        href: ui.link(route, { slug: item.slug }),
-                                        'aria-current': 'page',
-                                        class: 'font-black underline decoration-red decoration-4',
-                                      },
-                                      [item.title],
-                                    )
-                                  : ui.a({ href: ui.link(route, { slug: item.slug }) }, [item.title]),
+                                ui.a(
+                                  {
+                                    href: ui.link(route, { slug: item.slug }),
+                                    class:
+                                      'aria-[current=page]:font-black aria-[current=page]:underline aria-[current=page]:decoration-red aria-[current=page]:decoration-4',
+                                  },
+                                  [item.title],
+                                ),
                               ]),
                             ),
                           ]),

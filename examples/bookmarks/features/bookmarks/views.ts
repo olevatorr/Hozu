@@ -75,9 +75,8 @@ export const Board = ui.view({
           ui.a(
             {
               href: ui.link(home, null, { show: s.value }),
-              'aria-current': search.show === s.value,
               class:
-                'rounded-full border px-3 py-1 aria-[current=true]:bg-indigo-600 aria-[current=true]:text-white',
+                'rounded-full border px-3 py-1 aria-[current=page]:bg-indigo-600 aria-[current=page]:text-white',
             },
             [s.label],
           ),
