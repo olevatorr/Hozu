@@ -1,5 +1,5 @@
-import type { FeatureIR, TransitionIR, ViewNode } from '@hozu/core/ir'
-import { closest, verify } from '@hozu/validator'
+import { type FeatureIR, join, type TransitionIR, type ViewNode } from '@hozu/core/ir'
+import { closest, decides, verify } from '@hozu/validator'
 import type { ExplainOutput, ExplainSend, ExplainTransition } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import { type Loaded, requireFeature } from '../load.ts'
@@ -19,6 +19,7 @@ function transitionsOf(feature: FeatureIR, coveredBy: (id: string) => string[]):
       assign: t.assign.map(renderAssign),
       navigate: t.navigate && 'link' in t.navigate ? t.navigate.link : null,
       coveredBy: coveredBy(id),
+      decides: decides(feature, id),
     })
   for (const [name, s] of Object.entries(feature.machine?.states ?? {})) {
     for (const [event, list] of Object.entries(s.on))
@@ -90,7 +91,15 @@ export function runExplain(loaded: Loaded, target: string | undefined): ExplainO
   }
   const { lock } = verify(build.ir, { bindings: build.bindings })
   const entries = lock?.features[fid] ?? {}
-  const all = transitionsOf(feature, (id) => Object.keys(entries[id]?.contracts ?? {}))
+  const source = (id: string) => {
+    const pointer = join('', 'features', fid, 'machine', 'states', ...id.split('/'))
+    return build.bindings.copies[pointer] ?? pointer
+  }
+  const bySource = new Map<string, Set<string>>()
+  for (const [id, e] of Object.entries(entries))
+    for (const name of Object.keys(e.contracts))
+      bySource.set(source(id), (bySource.get(source(id)) ?? new Set()).add(name))
+  const all = transitionsOf(feature, (id) => [...(bySource.get(source(id)) ?? [])].sort())
   const effect = s.invoke ? build.ir.features[s.invoke.effect.split('.')[0]!] : undefined
   const effectSymbol = s.invoke ? local(s.invoke.effect) : ''
   const declared = effect?.queries[effectSymbol]?.errors ?? effect?.mutations[effectSymbol]?.errors ?? {}
@@ -118,7 +127,11 @@ export function describeExplain(out: ExplainOutput): string {
     const guard = t.guard ? ` [${t.guard}]` : ''
     const effects = [...t.assign, ...(t.navigate ? [`navigate(${t.navigate})`] : [])]
     const body = effects.length ? `  { ${effects.join('; ')} }` : ''
-    const covered = t.coveredBy.length ? `  ✓ ${t.coveredBy.join(', ')}` : '  ✗ uncovered'
+    const covered = t.coveredBy.length
+      ? `  ✓ ${t.coveredBy.join(', ')}`
+      : t.decides
+        ? '  ✗ uncovered'
+        : '  · the lock reviews it'
     return dir === 'out'
       ? `  ${t.trigger}${guard} → ${t.to}${body}${covered}`
       : `  ${t.from} --${t.trigger}${guard}--> ${out.state}`

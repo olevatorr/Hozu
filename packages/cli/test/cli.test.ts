@@ -177,6 +177,7 @@ describe('A5 CLI contract', () => {
       assign: ['context.pending = event'],
       navigate: null,
       coveredBy: ['addFailsUnexpectedly', 'addsItem', 'rejectsOutOfStock'],
+      decides: true,
     })
     expect(out.sends.map((s: { event: string }) => s.event)).toEqual([
       'cart.RemoveItem',
