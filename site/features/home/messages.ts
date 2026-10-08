@@ -30,6 +30,7 @@ export const homeText = ui.messages('en', {
     tickerKnown: '{v} once known',
     tickerChecked: 'every change checked',
     tickerKnownTokens: '{v} Nuxt’s tokens once known',
+    ofValue: '{a} of {b}',
     tickerJs: '{v} client JS on the notes list (Hozu 0.8 vs Nuxt 4)',
     watchKicker: 'Watch · 2 min',
     watchHeading: 'Two minutes. No code.',
@@ -279,7 +280,8 @@ export const homeText = ui.messages('en', {
     tickerKnown: '熟悉之後 {v}',
     tickerChecked: '每次修改都經過檢查',
     tickerKnownTokens: '熟悉之後的 token 為 Nuxt 的 {v}',
-    tickerJs: '筆記列表的用戶端 JS：{v}（Hozu 0.8 vs Nuxt 4）',
+    ofValue: '{a}／{b}',
+    tickerJs: '筆記列表的瀏覽器端 JS：{v}（Hozu 0.8 vs Nuxt 4）',
     watchKicker: '影片 · 2 分鐘',
     watchHeading: '兩分鐘，不用寫程式。',
     watchLead:
@@ -294,7 +296,7 @@ export const homeText = ui.messages('en', {
     claimColdCalls: '工具呼叫次數，8 次全新的修改',
     claimPassed: '所有檢查都通過的修改',
     claimNuxtSilent: 'Nuxt 默默弄壞功能的修改',
-    claimJs: '筆記列表的用戶端 JS（Hozu 0.8、Nuxt 4）',
+    claimJs: '筆記列表的瀏覽器端 JS（Hozu 0.8、Nuxt 4）',
     billCostA:
       '每個模型都早已熟悉 Nuxt；Hozu 則要在每個 session 中從我們的指南學起。即便如此，一次修改花費的是 ',
     nuxtTokens: 'Nuxt 的 {v} token',

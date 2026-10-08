@@ -133,7 +133,7 @@ export const contentText = ui.messages('en', {
     validatorBody:
       '規則會抓出無效的參照與不安全的資料流。contract 則依預期結果實際執行 machine 的 transition。',
     compilerTitle: '推導計畫',
-    compilerBody: 'scope 與 freshness 決定渲染區域。machine 綁定決定哪些 island 需要用戶端 JavaScript。',
+    compilerBody: 'scope 與 freshness 決定渲染區域。machine 綁定決定哪些 island 需要瀏覽器端 JavaScript。',
     runtimeTitle: '執行計畫',
     runtimeBody: '伺服器渲染 HTML 並序列化資料。瀏覽器只對計畫中需要互動的 island 進行 hydration。',
     renderTitle: '試試渲染計畫',
@@ -151,8 +151,7 @@ export const contentText = ui.messages('en', {
     scopeFreshness: 'Scope + freshness',
     renderRegion: '渲染區域',
     staticTitle: '靜態 HTML',
-    staticBody:
-      '公開且靜態的資料可以預先渲染。沒有 machine 綁定的 view 不會送出任何用戶端應用程式 JavaScript。',
+    staticBody: '公開且靜態的資料可以預先渲染。沒有 machine 綁定的 view 不會送出任何瀏覽器端 JavaScript。',
     isrTitle: '增量靜態再生（ISR）',
     isrBody:
       '公開資料依宣告的重新驗證間隔更新。快取區域可由伺服器重新產生；這不是只靠 GitHub Pages 就能完成的部署。',

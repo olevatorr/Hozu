@@ -44,6 +44,10 @@ const stories: Record<string, Val<string>> = {
   HZ091: t.storyHZ091,
   HZ057: t.storyHZ057,
 }
+const shown = (id: string) => {
+  const c = claim(id)
+  return c.of ? t.ofValue({ a: c.of[0], b: c.of[1] }) : c.value
+}
 const receiptLines = (ids: string[]) =>
   ui.div(
     {},
@@ -52,7 +56,7 @@ const receiptLines = (ids: string[]) =>
         props: {
           claim: id,
           label: claimLabels[id] ?? claim(id).label,
-          value: claim(id).value,
+          value: shown(id),
           href: ui.link(trial, { slug: claim(id).trial }),
         },
       }),
@@ -197,7 +201,7 @@ export const Home = ui.view({
             },
           },
           [
-            ui.span({}, [t.tickerPassed({ v: claim('passed').value }), ' ■']),
+            ui.span({}, [t.tickerPassed({ v: shown('passed') }), ' ■']),
             ui.span({}, [t.tickerLearning({ v: claim('cold').value }), ' ■']),
             ui.span({}, [t.tickerKnown({ v: claim('known').value }), ' ■']),
             ui.span({}, [t.tickerChecked, ' ■']),
@@ -248,7 +252,7 @@ export const Home = ui.view({
               ]),
               ui.p({}, [
                 t.billBuysA,
-                claimLink('nuxtSilent', t.silentChanges({ v: claim('nuxtSilent').value })),
+                claimLink('nuxtSilent', t.silentChanges({ v: shown('nuxtSilent') })),
                 t.billBuysB,
               ]),
               ui.p({ class: 'font-mono text-xs' }, [
@@ -706,7 +710,7 @@ export const Home = ui.view({
             },
           },
           [
-            ui.span({}, [t.tickerPassed({ v: claim('passed').value }), ' ■']),
+            ui.span({}, [t.tickerPassed({ v: shown('passed') }), ' ■']),
             ui.span({}, [t.tickerKnownTokens({ v: claim('known').value }), ' ■']),
             ui.span({}, [t.tickerJs({ v: claim('js').value }), ' ■']),
             ui.span({}, [t.tickerChecked, ' ■']),
