@@ -177,6 +177,7 @@ export function walkView(
       ...root.sources,
       ...(bound ? { state: { type: 'string', enum: Object.keys(feature.machine!.states) } } : {}),
       locale: { type: 'string' },
+      route: { type: 'string', enum: Object.keys(ir.routes) },
       alternate: null,
       env: ir.env?.public ?? { type: 'object', properties: {}, additionalProperties: false },
     },

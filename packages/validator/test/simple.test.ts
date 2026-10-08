@@ -373,3 +373,25 @@ describe('HZ033 and a hidden input that carries an enum field (ADR 0069 B10)', (
     expect(diagnostics.filter((d) => d.code === 'HZ033')).toEqual([])
   })
 })
+
+describe('current(route) in a render (ADR 0071 A1)', () => {
+  it('reads the route reference without HZ008', () => {
+    const list = route({ path: '/orders', params: null, search: null })
+    const Menu = ui.view({
+      render: ({ current }) =>
+        ui.nav({}, [ui.a({ href: ui.link(list, null), 'aria-current': current(list) }, ['Orders'])]),
+    })
+    const built = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { list },
+        pages: [ui.page(list, { views: [Menu], head: { render: () => ({ title: 'x' }) } })],
+        features: [feature({ id: 'm', intent: { summary: 'menu' }, declarations: [{ Menu }] })],
+      }),
+      { sources: true },
+    )
+    expect(built.diagnostics).toEqual([])
+    const { diagnostics } = verify(built.ir, { sources: built.sources, bindings: built.bindings })
+    expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([])
+  })
+})

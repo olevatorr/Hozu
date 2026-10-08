@@ -1,5 +1,5 @@
-import { ui } from '@hozu/core'
-import { changelog, devtools, doc, home, how, trials } from '../../routes.ts'
+import { part, type RouteDecl, ui } from '@hozu/core'
+import { changelog, chapter, devtools, doc, home, how, trial, trials } from '../../routes.ts'
 import { SiteFooter } from '../../site/footer.ts'
 import { SiteHeader } from '../../site/header.ts'
 import { Tag } from '../../site/tag.ts'
@@ -7,17 +7,24 @@ import { getRelease } from './model.ts'
 
 export const support = 'https://ko-fi.com/hozu'
 
-const links = () => [
-  ui.a({ href: ui.link(doc, { slug: 'getting-started' }) }, ['Docs']),
-  ui.a({ href: ui.link(devtools, null) }, ['DevTools']),
-  ui.a({ href: ui.link(how, null) }, ['How it works']),
-  ui.a({ href: ui.link(trials, null) }, ['Trials']),
-  ui.a({ href: ui.link(changelog, null) }, ['Changelog']),
+const marked = 'aria-[current]:text-red'
+const links = part((current: (route: RouteDecl<any, any>) => boolean) => [
+  ui.a({ href: ui.link(doc, { slug: 'getting-started' }), 'aria-current': current(doc), class: marked }, [
+    'Docs',
+  ]),
+  ui.a({ href: ui.link(devtools, null), 'aria-current': current(devtools), class: marked }, ['DevTools']),
+  ui.a({ href: ui.link(how, null), 'aria-current': current(how) || current(chapter), class: marked }, [
+    'How it works',
+  ]),
+  ui.a({ href: ui.link(trials, null), 'aria-current': current(trials) || current(trial), class: marked }, [
+    'Trials',
+  ]),
+  ui.a({ href: ui.link(changelog, null), 'aria-current': current(changelog), class: marked }, ['Changelog']),
   ui.a({ href: 'https://github.com/olevatorr/Hozu' }, ['GitHub']),
   ui.a({ href: 'https://www.npmjs.com/package/create-hozu' }, ['npm']),
-]
+])
 export const Header = ui.view({
-  render: () =>
+  render: ({ current }) =>
     ui.query(
       getRelease,
       {},
@@ -43,14 +50,14 @@ export const Header = ui.view({
                   ui.use(Tag, { variant: { tone: 'red' } }, [release.version]),
                 ],
               ),
-              nav: ui.div({ class: 'flex gap-6' }, links()),
+              nav: ui.div({ class: 'flex gap-6' }, links(current)),
               menu: ui.nav(
                 {
                   'aria-label': 'Mobile navigation',
                   class:
                     "grid [&>a]:flex [&>a]:items-center [&>a]:justify-between [&>a]:border-b-2 [&>a]:border-ink [&>a]:py-3 [&>a]:text-2xl [&>a]:font-black [&>a]:uppercase [&>a]:tracking-tight [&>a]:after:text-red [&>a]:after:content-['→'] [&>a:last-child]:border-b-0 [&>a:hover]:text-red motion-safe:group-open:[&>a]:animate-menu-item [&>a:nth-child(2)]:[animation-delay:40ms] [&>a:nth-child(3)]:[animation-delay:80ms] [&>a:nth-child(4)]:[animation-delay:120ms] [&>a:nth-child(5)]:[animation-delay:160ms] [&>a:nth-child(6)]:[animation-delay:200ms] [&>a:nth-child(7)]:[animation-delay:240ms]",
                 },
-                links(),
+                links(current),
               ),
             },
           }),
