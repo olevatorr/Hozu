@@ -64,14 +64,14 @@ export type EffectDecl<I = any, O = any, E = any, W = I> = QueryDecl<I, O, E> | 
 type RowOf<O> = O extends readonly (infer T)[] ? T : O
 
 /** `access` is required where the server can enforce it: a server-run user query, and a server-run mutation. */
-type QueryAccess<Sc, R, A> = Sc extends 'user'
+type QueryAccess<Sc, R> = Sc extends 'user'
   ? R extends 'server'
-    ? { /** Who may read it (ADR 0056 B). */ access: A }
+    ? { /** Who may read it (ADR 0056 B). */ access: unknown }
     : { access?: never }
   : { access?: never }
 
-type MutationAccess<R, A> = R extends 'server'
-  ? { /** Who may run it (ADR 0056 B). */ access: A }
+type MutationAccess<R> = R extends 'server'
+  ? { /** Who may run it (ADR 0056 B). */ access: unknown }
   : { access?: never }
 
 export const query = <
@@ -91,7 +91,8 @@ export const query = <
     tags?: (input: Ref<Infer<I>>) => TagUse[]
     /** Where the implementation runs (ADR 0049); required since 0.14 (ADR 0053 A). */
     runs: R
-  } & QueryAccess<Sc, R, A>,
+    access?: A
+  } & QueryAccess<Sc, R>,
 ): QueryDecl<Infer<I>, Infer<O>, ErrorTypes<E>, Sc, SignedBy<A>> =>
   brand({}, 'query', { errors: {}, tags: () => [], ...config } as QueryDef)
 
@@ -109,6 +110,7 @@ export const mutation = <
     invalidates?: (input: Ref<Infer<I>>) => TagUse[]
     /** Where the implementation runs (ADR 0049); required since 0.14 (ADR 0053 A). */
     runs: R
-  } & MutationAccess<R, A>,
+    access?: A
+  } & MutationAccess<R>,
 ): MutationDecl<Infer<I>, Infer<O>, ErrorTypes<E>, InferInput<I>, SignedBy<A>> =>
   brand({}, 'mutation', { errors: {}, invalidates: () => [], ...config } as MutationDef)

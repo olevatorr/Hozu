@@ -28,6 +28,7 @@ const Shop = ui.view({
   render: ({ search }) =>
     ui.nav({}, [
       ui.a({ href: ui.link(shop, { category: 'mugs' }, { sort: search.sort, page: search.page }) }, ['Mugs']),
+      ui.a({ href: ui.link(shop, { category: 'mugs' }, { ...search, page: 2 }) }, ['Next']),
     ]),
 })
 const app = project({
@@ -59,5 +60,10 @@ describe('0.23 fixes from the 0.22 trials (ADR 0070)', () => {
     const html = await (await handler.fetch(new Request('https://shop.example/shop/apparel'))).text()
     expect(html).toContain('<link rel="canonical" href="https://shop.example/shop/apparel">')
     expect(html).toContain('href="/shop/mugs"')
+  })
+
+  it('a link keeps the current search with a spread and changes one field (ADR 0070 B2)', async () => {
+    const html = await (await handler.fetch(new Request('https://shop.example/shop/apparel?sort=new'))).text()
+    expect(html).toContain('href="/shop/mugs?page=2&amp;sort=new">Next</a>')
   })
 })

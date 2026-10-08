@@ -39,10 +39,17 @@ const signed = query({
 })
 const save = mutation({ input: z.object({}), output: z.string(), runs: 'server', access: 'signedIn' })
 const open = mutation({ input: z.object({}), output: z.string(), runs: 'server', access: 'anyone' })
+const staff = mutation({
+  input: z.object({}),
+  output: z.string(),
+  runs: 'server',
+  access: { allow: ({ session }) => session.userId !== '' },
+})
 
 resolvers(p, (implement) => [
   implement(signed, (_, { session }) => session.userId),
   implement(save, (_, { session }) => session.userId),
+  implement(staff, (_, { session }) => session.userId),
   // @ts-expect-error access 'anyone' does not promise a session
   implement(open, (_, { session }) => session.userId),
   implement(signed, (_, { fail }) => fail('Forbidden', { message: 'Staff only' })),
