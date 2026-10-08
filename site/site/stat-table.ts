@@ -12,8 +12,14 @@ export const StatTable = ui.component({
       cell: 'border-t-2 border-ink px-3 py-2 text-left',
     },
   }),
-  props: z.object({ caption: z.string(), before: z.string(), after: z.string(), rows: z.array(Row) }),
-  render: ({ props, classes }) =>
+  props: z.object({
+    caption: z.string(),
+    before: z.string(),
+    after: z.string(),
+    rows: z.array(Row).default([]),
+  }),
+  children: true,
+  render: ({ props, children, classes }) =>
     ui.div({}, [
       ui.table({ class: classes.table }, [
         ui.caption({ class: 'py-2 text-left font-bold' }, [props.caption]),
@@ -25,6 +31,7 @@ export const StatTable = ui.component({
           ]),
         ]),
         ui.tbody({}, [
+          ...children,
           ui.each(props.rows, 'id', (r) =>
             ui.tr({}, [
               ui.th({ scope: 'row', class: classes.cell }, [r.label]),
@@ -34,5 +41,16 @@ export const StatTable = ui.component({
           ),
         ]),
       ]),
+    ]),
+})
+export const StatRow = ui.component({
+  tag: 'tr',
+  styles: tv({ slots: { base: '', cell: 'border-t-2 border-ink px-3 py-2 text-left' } }),
+  props: z.object({ label: z.string(), before: z.string(), after: z.string() }),
+  render: ({ props, classes }) =>
+    ui.tr({}, [
+      ui.th({ scope: 'row', class: classes.cell }, [props.label]),
+      ui.td({ class: classes.cell }, [props.before]),
+      ui.td({ class: classes.cell }, [props.after]),
     ]),
 })

@@ -1,4 +1,4 @@
-import { ui } from '@hozu/core'
+import { ui, type Val } from '@hozu/core'
 
 type Child = Parameters<typeof ui.div>[1][number]
 
@@ -18,7 +18,7 @@ const cursor = () =>
     ),
   ])
 
-const stage = (name: string, label: string, children: Child[]) =>
+const stage = (name: string, label: Val<string>, children: Child[]) =>
   ui.div({ 'data-demo': name, role: 'img', 'aria-label': label }, [
     ui.div({ 'data-d': 'stage', 'aria-hidden': 'true' }, [...children, d('veil')]),
   ])
@@ -52,7 +52,7 @@ const dock = (agent: boolean) =>
     ...(agent ? [d('agent', [ui.span({}, ['Agent']), s('n1', '1'), s('n2', '2')])] : []),
   ])
 
-export const selectDemo = (label: string) =>
+export const selectDemo = (label: Val<string>) =>
   stage('select', label, [
     board(),
     dock(false),
@@ -137,7 +137,7 @@ export const layersDemo = (label: string) =>
     cursor(),
   ])
 
-export const apiDemo = (label: string) =>
+export const apiDemo = (label: Val<string>) =>
   stage('api', label, [
     d('top', [
       s('title', 'Team tasks'),
@@ -183,7 +183,7 @@ export const apiDemo = (label: string) =>
     cursor(),
   ])
 
-export const measureDemo = (label: string) =>
+export const measureDemo = (label: Val<string>) =>
   stage('measure', label, [
     board(),
     dock(false),

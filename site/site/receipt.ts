@@ -12,14 +12,14 @@ const styles = tv({
 export const Receipt = ui.component({
   tag: 'div',
   styles,
-  props: z.object({}),
+  props: z.object({ pay: z.string().default('You pay'), get: z.string().default('You get') }),
   slots: ['pay', 'get'],
-  render: ({ slots, classes }) =>
+  render: ({ props, slots, classes }) =>
     ui.div({}, [
-      ui.p({ class: classes.head }, ['You pay']),
+      ui.p({ class: classes.head }, [props.pay]),
       slots.pay,
       ui.hr({ class: classes.rule }),
-      ui.p({ class: classes.head }, ['You get']),
+      ui.p({ class: classes.head }, [props.get]),
       slots.get,
     ]),
 })

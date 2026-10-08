@@ -1,4 +1,4 @@
-import { ui } from '@hozu/core'
+import { ui, type Val } from '@hozu/core'
 import { devtools, doc } from '../../routes.ts'
 import { Button } from '../../site/button.ts'
 import { CodeBlock } from '../../site/code-block.ts'
@@ -40,10 +40,13 @@ const figma = [
   ['Comments', 'Your agent’s notes are numbered pins: reply or resolve.'],
 ]
 
-export const figmaCards = (frame: 'border-ink' | 'border-paper') =>
+export const figmaCards = (
+  frame: 'border-ink' | 'border-paper',
+  cards: (readonly [Val<string>, Val<string>])[] = figma.map(([k, v]) => [k!, v!] as const),
+) =>
   ui.div(
     { class: 'mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3' },
-    figma.map(([k, v]) =>
+    cards.map(([k, v]) =>
       ui.div({ class: `border-4 ${frame} p-4` }, [
         ui.h3({ class: 'font-mono text-sm font-bold' }, [k!]),
         ui.p({ class: 'mt-2' }, [v!]),
@@ -76,19 +79,23 @@ export const DevToolsPage = ui.view({
           [
             ui.div({}, [
               ui.p({ class: 'font-mono text-xs font-bold uppercase text-ember' }, ['Hozu DevTools']),
-              ui.use(Display, {
-                props: {
-                  words: [
-                    { id: '1', text: 'Point', accent: false },
-                    { id: '2', text: 'at', accent: false },
-                    { id: '3', text: 'it.', accent: false },
-                    { id: '4', text: 'Your', accent: true },
-                    { id: '5', text: 'agent', accent: true },
-                    { id: '6', text: 'gets', accent: true },
-                    { id: '7', text: 'the line.', accent: true },
-                  ],
+              ui.use(
+                Display,
+                {
+                  props: {
+                    words: [
+                      { id: '1', text: 'Point', accent: false },
+                      { id: '2', text: 'at', accent: false },
+                      { id: '3', text: 'it.', accent: false },
+                      { id: '4', text: 'Your', accent: true },
+                      { id: '5', text: 'agent', accent: true },
+                      { id: '6', text: 'gets', accent: true },
+                      { id: '7', text: 'the line.', accent: true },
+                    ],
+                  },
                 },
-              }),
+                [],
+              ),
               ui.p({ class: 'mt-5 max-w-md text-lg' }, [
                 'Select what is wrong on the screen and say what should change. The request names the file, the line and the Hozu way to make the change, so your agent stops searching and starts fixing. When it is done, it points back: every part it changed gets a numbered frame on your page.',
               ]),
@@ -128,33 +135,37 @@ export const DevToolsPage = ui.view({
       ]),
       ui.use(Section, { props: { kicker: 'How it works' } }, [
         ui.use(Heading, {}, ['Three clicks, then it points back.']),
-        ui.use(Steps, {
-          class: 'mt-8 md:grid-cols-2! lg:grid-cols-4!',
-          props: {
-            items: [
-              {
-                id: '1',
-                title: '1 · Select',
-                body: 'Choose Select and click the part, with Figma’s keys: Shift+Enter goes up a level, Alt measures, a double-click picks a text.',
-              },
-              {
-                id: '2',
-                title: '2 · Describe',
-                body: 'Say what should change. Try a size, a colour or other words first: it is a preview on your screen only.',
-              },
-              {
-                id: '3',
-                title: '3 · Hand it over',
-                body: 'Copy for AI, or save it. Tell your agent: “Do the open Hozu requests.”',
-              },
-              {
-                id: '4',
-                title: '4 · See it back',
-                body: 'Your agent frames each part it changed on your page, numbered, with a note in your words. Reply, or resolve it.',
-              },
-            ],
+        ui.use(
+          Steps,
+          {
+            class: 'mt-8 md:grid-cols-2! lg:grid-cols-4!',
+            props: {
+              items: [
+                {
+                  id: '1',
+                  title: '1 · Select',
+                  body: 'Choose Select and click the part, with Figma’s keys: Shift+Enter goes up a level, Alt measures, a double-click picks a text.',
+                },
+                {
+                  id: '2',
+                  title: '2 · Describe',
+                  body: 'Say what should change. Try a size, a colour or other words first: it is a preview on your screen only.',
+                },
+                {
+                  id: '3',
+                  title: '3 · Hand it over',
+                  body: 'Copy for AI, or save it. Tell your agent: “Do the open Hozu requests.”',
+                },
+                {
+                  id: '4',
+                  title: '4 · See it back',
+                  body: 'Your agent frames each part it changed on your page, numbered, with a note in your words. Reply, or resolve it.',
+                },
+              ],
+            },
           },
-        }),
+          [],
+        ),
         ui.div({ class: 'mt-8 w-full' }, [
           selectDemo(
             'Hozu DevTools on a task board: the Add task button is selected and the inspector shows it is a shared Button used in six places',

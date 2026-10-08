@@ -3,6 +3,8 @@ import { chapter, doc, how, trials } from '../../routes.ts'
 import { Button } from '../../site/button.ts'
 import { listChapters } from '../content/model.ts'
 import { content } from '../content/views.ts'
+import * as messages from './messages.ts'
+import { labText as t } from './messages.ts'
 import { contracts, m, Run, SetContract } from './model.ts'
 
 const code = (text: string) =>
@@ -16,7 +18,7 @@ const pressed =
 export const How = ui.view({
   machine: m,
   route: how,
-  render: ({ ctx, when }) =>
+  render: ({ ctx, when, locale }) =>
     ui.main({ id: 'main', class: 'bg-paper' }, [
       ui.section(
         {
@@ -25,18 +27,16 @@ export const How = ui.view({
         },
         [
           ui.div({}, [
-            ui.p({ class: kicker }, ['Understand the design. Try the decisions.']),
+            ui.p({ class: kicker }, [t.kicker]),
             ui.h1(
               { class: 'mt-4 whitespace-pre-line text-5xl font-black uppercase leading-[0.9] md:text-7xl' },
-              ['An idea goes in.\nA checked app comes out.'],
+              [t.title],
             ),
-            ui.p({ class: 'mt-5 max-w-xl text-lg' }, [
-              'Follow a feature through Hozu. Break a contract. Change the data rules. See what the framework can make explicit.',
-            ]),
+            ui.p({ class: 'mt-5 max-w-xl text-lg' }, [t.lead]),
             ui.div({ class: 'mt-6 flex flex-wrap gap-3' }, [
-              ui.use(Button, { props: { href: '#pipeline-lab' } }, ['Try the pipeline']),
+              ui.use(Button, { props: { href: '#pipeline-lab' } }, [t.tryPipeline]),
               ui.use(Button, { variant: { intent: 'outline' }, props: { href: '#design-chapters' } }, [
-                'Read the design',
+                t.readDesign,
               ]),
             ]),
           ]),
@@ -48,8 +48,8 @@ export const How = ui.view({
               alt: '',
             }),
             ui.p({ class: 'mt-3 flex justify-between font-mono text-xs font-bold' }, [
-              ui.span({}, ['Intent']),
-              ui.span({}, ['Structure']),
+              ui.span({}, [t.intent]),
+              ui.span({}, [t.structure]),
             ]),
           ]),
         ],
@@ -63,47 +63,40 @@ export const How = ui.view({
         [
           ui.div({ class: 'mx-auto grid max-w-6xl gap-4 md:grid-cols-2 md:items-end' }, [
             ui.div({}, [
-              ui.p({ class: kicker }, ['Explore the pipeline']),
+              ui.p({ class: kicker }, [t.explorePipeline]),
               ui.h2({ id: 'pipeline-heading', class: 'text-3xl font-black uppercase md:text-5xl' }, [
-                'Make it. Check it. Then ship it.',
+                t.pipelineHeading,
               ]),
             ]),
-            ui.p({}, [
-              'A preset walkthrough, powered by a real Hozu machine. It illustrates the design; it does not compile source in your browser.',
-            ]),
+            ui.p({}, [t.pipelineLead]),
           ]),
           ui.div({ class: 'mx-auto mt-8 grid max-w-6xl gap-6 lg:grid-cols-2' }, [
             ui.div({ class: 'grid content-start gap-4' }, [
-              ui.div({ class: pane }, [ui.span({}, ['feature.ts']), ui.span({}, ['A guarded toggle'])]),
+              ui.div({ class: pane }, [ui.span({}, ['feature.ts']), ui.span({}, [t.guardedToggle])]),
               code(
                 "const Toggle = event({ payload: z.object({}) })\n\nconst m = machine({\n  context: z.object({ allowed: z.boolean() }),\n  initialContext: { allowed: true },\n  initial: 'off',\n  states: ({ ctx }) => ({\n    off: { on: [on(Toggle, { target: 'on', guard: () => ctx.allowed === true })] },\n    on: { on: [on(Toggle, { target: 'off' })] },\n  }),\n})",
               ),
               ui.div({ class: 'grid gap-3' }, [
-                ui.div({ class: pane }, [
-                  ui.span({}, ['contracts.ts']),
-                  ui.span({}, ['The off → on decision']),
-                ]),
+                ui.div({ class: pane }, [ui.span({}, ['contracts.ts']), ui.span({}, [t.decision])]),
                 ctx.missing === false
                   ? code(
                       "contract(m, {\n  given: { state: 'off' },\n  when: [{ send: Toggle, payload: {} }],\n  expect: { state: 'on' },\n})",
                     )
                   : ui.div({ class: 'border-4 border-red p-4' }, [
-                      ui.strong({}, ['Contract removed']),
-                      ui.p({}, ['The guard still decides. What it should decide is no longer written down.']),
+                      ui.strong({}, [t.contractRemoved]),
+                      ui.p({}, [t.contractRemovedBody]),
                     ]),
-                ui.p({ class: 'text-xs' }, [
-                  'Excerpts: imports and feature registration are omitted. on → off decides nothing, so the lock records it and it needs no contract.',
-                ]),
+                ui.p({ class: 'text-xs' }, [t.excerpts]),
               ]),
             ]),
             ui.div({ class: 'grid content-start gap-4' }, [
-              ui.ol({ class: 'grid gap-2', 'aria-label': 'Pipeline stages' }, [
+              ui.ol({ class: 'grid gap-2', 'aria-label': t.stagesLabel }, [
                 ...[
-                  ['Source', 'Typed declarations', ['idle', 'source', 'brokenSource']],
-                  ['Feature IR', 'One shared representation', ['ir', 'brokenIr']],
-                  ['Validator', 'Rules and contracts', ['validated', 'blocked']],
-                  ['Compiler', 'Derived rendering', ['compiled']],
-                  ['Runtime', 'HTML and islands', ['done']],
+                  [t.stageSource, t.stageSourceBody, ['idle', 'source', 'brokenSource']],
+                  [t.stageIr, t.stageIrBody, ['ir', 'brokenIr']],
+                  [t.stageValidator, t.stageValidatorBody, ['validated', 'blocked']],
+                  [t.stageCompiler, t.stageCompilerBody, ['compiled']],
+                  [t.stageRuntime, t.stageRuntimeBody, ['done']],
                 ].map(([title, description, states], index) =>
                   ui.li(
                     {
@@ -112,8 +105,8 @@ export const How = ui.view({
                     [
                       ui.span({ class: 'font-mono text-xs font-bold text-ember' }, [String(index + 1)]),
                       ui.div({ class: 'grid flex-1' }, [
-                        ui.strong({ class: 'uppercase' }, [title as string]),
-                        ui.small({}, [description as string]),
+                        ui.strong({ class: 'uppercase' }, [title as typeof t.lead]),
+                        ui.small({}, [description as typeof t.lead]),
                       ]),
                       when(
                         states as (
@@ -129,7 +122,7 @@ export const How = ui.view({
                         )[],
                         [
                           ui.span({ class: 'absolute inset-0 -z-0 bg-red/15', 'aria-hidden': 'true' }, []),
-                          ui.span({ class: 'relative text-ember', 'aria-label': 'Current stage' }, ['●']),
+                          ui.span({ class: 'relative text-ember', 'aria-label': t.currentStage }, ['●']),
                         ],
                         'fade',
                       ),
@@ -148,10 +141,8 @@ export const How = ui.view({
                     ['idle'],
                     [
                       ui.div({}, [
-                        ui.p({ class: 'font-black uppercase' }, ['Your feature is ready.']),
-                        ui.p({}, [
-                          'Run the valid example first. Then remove its contract and find out where Hozu stops.',
-                        ]),
+                        ui.p({ class: 'font-black uppercase' }, [t.idleTitle]),
+                        ui.p({}, [t.idleBody]),
                       ]),
                     ],
                     'fade',
@@ -160,8 +151,8 @@ export const How = ui.view({
                     ['source', 'brokenSource'],
                     [
                       ui.div({}, [
-                        ui.p({ class: 'font-black uppercase' }, ['Reading the declarations…']),
-                        ui.p({}, ['Events, states and transitions describe the program before it executes.']),
+                        ui.p({ class: 'font-black uppercase' }, [t.sourceTitle]),
+                        ui.p({}, [t.sourceBody]),
                       ]),
                     ],
                     'fade',
@@ -170,7 +161,7 @@ export const How = ui.view({
                     ['ir', 'brokenIr'],
                     [
                       ui.div({}, [
-                        ui.p({ class: 'font-black uppercase' }, ['Recording the feature IR…']),
+                        ui.p({ class: 'font-black uppercase' }, [t.irTitle]),
                         code('off ── Toggle ──▶ on\non  ── Toggle ──▶ off'),
                       ]),
                     ],
@@ -180,10 +171,8 @@ export const How = ui.view({
                     ['validated'],
                     [
                       ui.div({}, [
-                        ui.p({ class: 'font-black uppercase' }, ['The behaviour is covered.']),
-                        ui.p({}, [
-                          'Every transition that decides has a contract. The pipeline can continue.',
-                        ]),
+                        ui.p({ class: 'font-black uppercase' }, [t.validatedTitle]),
+                        ui.p({}, [t.validatedBody]),
                       ]),
                     ],
                     'fade',
@@ -192,10 +181,8 @@ export const How = ui.view({
                     ['compiled'],
                     [
                       ui.div({}, [
-                        ui.p({ class: 'font-black uppercase' }, ['Deriving the render plan…']),
-                        ui.p({}, [
-                          'The machine-bound toggle becomes an interactive island. The surrounding content remains HTML.',
-                        ]),
+                        ui.p({ class: 'font-black uppercase' }, [t.compiledTitle]),
+                        ui.p({}, [t.compiledBody]),
                       ]),
                     ],
                     'fade',
@@ -205,10 +192,8 @@ export const How = ui.view({
                     [
                       ui.div({}, [
                         ui.div({ class: 'border-l-8 border-green pl-3' }, [
-                          ui.p({ class: 'font-black uppercase' }, ['Ready to render.']),
-                          ui.p({}, [
-                            'The declarations, contracts and rendering plan agree. Now try removing the contract and run it again.',
-                          ]),
+                          ui.p({ class: 'font-black uppercase' }, [t.doneTitle]),
+                          ui.p({}, [t.doneBody]),
                         ]),
                       ]),
                     ],
@@ -219,11 +204,9 @@ export const How = ui.view({
                     [
                       ui.div({}, [
                         ui.div({ class: 'border-l-8 border-red pl-3' }, [
-                          ui.p({ class: 'font-black uppercase' }, ['Stopped at validation.']),
+                          ui.p({ class: 'font-black uppercase' }, [t.blockedTitle]),
                           ui.code({}, ['HZ016 · uncovered transition']),
-                          ui.p({}, [
-                            'The off → on transition has a guard, so it decides and needs a contract. Restore its expected behaviour before continuing.',
-                          ]),
+                          ui.p({}, [t.blockedBody]),
                         ]),
                       ]),
                     ],
@@ -238,7 +221,7 @@ export const How = ui.view({
                     class: 'bg-red px-4 py-2 font-black uppercase text-ink',
                     on: { click: ui.send(Run, {}) },
                   },
-                  ['Run example'],
+                  [t.runExample],
                 ),
                 ui.button(
                   {
@@ -246,27 +229,19 @@ export const How = ui.view({
                     class: 'border-4 border-ink px-4 py-1.5 font-black uppercase',
                     on: { click: ui.send(SetContract, { missing: ctx.missing === false }) },
                   },
-                  [ctx.missing === false ? 'Remove contract' : 'Restore contract'],
+                  [ctx.missing === false ? t.removeContract : t.restoreContract],
                 ),
                 ui.div({ class: 'h-5 min-w-0 flex-1' }, [
                   when(
                     ['source', 'ir', 'validated', 'compiled', 'brokenSource', 'brokenIr'],
-                    [
-                      ui.p({ class: 'font-mono text-xs', role: 'status' }, [
-                        'Running… Controls unlock when this walkthrough finishes.',
-                      ]),
-                    ],
+                    [ui.p({ class: 'font-mono text-xs', role: 'status' }, [t.running])],
                     'fade',
                   ),
                 ]),
               ]),
             ]),
           ]),
-          ui.noscript({}, [
-            ui.p({ class: 'mx-auto mt-6 max-w-6xl font-mono text-xs' }, [
-              'This walkthrough needs JavaScript. The six design chapters below explain the same pipeline without it.',
-            ]),
-          ]),
+          ui.noscript({}, [ui.p({ class: 'mx-auto mt-6 max-w-6xl font-mono text-xs' }, [t.noscript])]),
         ],
       ),
       ui.section(
@@ -276,25 +251,23 @@ export const How = ui.view({
         },
         [
           ui.div({ class: 'grid content-start gap-3' }, [
-            ui.p({ class: kicker }, ['Explore the render plan']),
+            ui.p({ class: kicker }, [t.exploreRender]),
             ui.h2({ id: 'render-heading', class: 'whitespace-pre-line text-3xl font-black uppercase' }, [
-              'You describe the data.\nHozu places the boundaries.',
+              t.renderHeading,
             ]),
-            ui.p({}, [
-              'Change these declarations and watch the diagram respond. Caching and interactivity are separate decisions.',
-            ]),
+            ui.p({}, [t.renderLead]),
             ui.a(
               {
                 href: ui.link(chapter, { slug: 'derived-rendering' }),
                 class: 'font-bold underline decoration-red',
               },
-              ['Read about derived rendering'],
+              [t.readDerived],
             ),
           ]),
           ui.div({ class: 'grid gap-6' }, [
             ui.div({ class: 'grid gap-4' }, [
               ui.fieldset({ class: 'flex flex-wrap gap-2' }, [
-                ui.legend({ class: 'mb-2 font-mono text-xs font-bold uppercase' }, ['Data scope']),
+                ui.legend({ class: 'mb-2 font-mono text-xs font-bold uppercase' }, [t.dataScope]),
                 ...(['public', 'user'] as const).map((value) =>
                   ui.button(
                     {
@@ -308,7 +281,7 @@ export const How = ui.view({
                 ),
               ]),
               ui.fieldset({ class: 'flex flex-wrap gap-2' }, [
-                ui.legend({ class: 'mb-2 font-mono text-xs font-bold uppercase' }, ['Freshness']),
+                ui.legend({ class: 'mb-2 font-mono text-xs font-bold uppercase' }, [t.freshness]),
                 ...(['static', 'revalidate', 'swr', 'live'] as const).map((value) =>
                   ui.button(
                     {
@@ -322,7 +295,7 @@ export const How = ui.view({
                 ),
               ]),
               ui.fieldset({ class: 'flex flex-wrap gap-2' }, [
-                ui.legend({ class: 'mb-2 font-mono text-xs font-bold uppercase' }, ['Machine binding']),
+                ui.legend({ class: 'mb-2 font-mono text-xs font-bold uppercase' }, [t.machineBinding]),
                 ...([false, true] as const).map((value) =>
                   ui.button(
                     {
@@ -331,20 +304,20 @@ export const How = ui.view({
                       'aria-pressed': ctx.binding === value,
                       on: { click: ui.set(ctx.binding, value) },
                     },
-                    [value ? 'Bound' : 'None'],
+                    [value ? t.bound : t.none],
                   ),
                 ),
               ]),
             ]),
             ui.div({ class: 'border-4 border-ink bg-white', 'aria-live': 'polite', 'aria-atomic': 'true' }, [
               ui.div({ class: 'flex justify-between bg-ink px-3 py-2 font-mono text-xs text-paper' }, [
-                ui.span({}, ['Your page']),
-                ui.span({}, ['Render-plan illustration']),
+                ui.span({}, [t.yourPage]),
+                ui.span({}, [t.illustration]),
               ]),
               ui.div({ class: 'grid gap-3 p-4' }, [
                 ui.div({ class: 'flex justify-between border-2 border-dashed border-ink p-3' }, [
-                  ui.span({}, ['Static shell']),
-                  ui.small({}, ['Navigation, headings, article']),
+                  ui.span({}, [t.staticShell]),
+                  ui.small({}, [t.staticShellBody]),
                 ]),
                 ui.div(
                   {
@@ -352,31 +325,17 @@ export const How = ui.view({
                     toggle: { 'border-red': ctx.scope === 'user', 'border-ink': ctx.scope !== 'user' },
                   },
                   [
-                    ui.small({}, ['Query region']),
+                    ui.small({}, [t.queryRegion]),
                     ctx.scope === 'user'
-                      ? [
-                          ui.h3({}, ['Private · request-time']),
-                          ui.p({}, ['Never in a shared cache. User scope takes priority over freshness.']),
-                        ]
+                      ? [ui.h3({}, [t.privateTitle]), ui.p({}, [t.privateBody])]
                       : [
                           ctx.freshness === 'static' && [
-                            ui.h3({}, ['Static HTML']),
-                            ui.p({}, ['Public, static data can be rendered ahead of time.']),
+                            ui.h3({}, [t.staticTitle]),
+                            ui.p({}, [t.staticBody]),
                           ],
-                          ctx.freshness === 'revalidate' && [
-                            ui.h3({}, ['ISR']),
-                            ui.p({}, [
-                              'A server regenerates the cached region on its revalidation schedule.',
-                            ]),
-                          ],
-                          ctx.freshness === 'swr' && [
-                            ui.h3({}, ['Stale while revalidate']),
-                            ui.p({}, ['Serve cached public data while the server refreshes it.']),
-                          ],
-                          ctx.freshness === 'live' && [
-                            ui.h3({}, ['Request-time data']),
-                            ui.p({}, ['Live freshness needs a server and the framework’s live transport.']),
-                          ],
+                          ctx.freshness === 'revalidate' && [ui.h3({}, [t.isrTitle]), ui.p({}, [t.isrBody])],
+                          ctx.freshness === 'swr' && [ui.h3({}, [t.swrTitle]), ui.p({}, [t.swrBody])],
+                          ctx.freshness === 'live' && [ui.h3({}, [t.liveTitle]), ui.p({}, [t.liveBody])],
                         ],
                   ],
                 ),
@@ -387,14 +346,8 @@ export const How = ui.view({
                   },
                   [
                     ctx.binding === true
-                      ? [
-                          ui.strong({}, ['Interactive island']),
-                          ui.p({}, ['This machine-bound node needs client JavaScript.']),
-                        ]
-                      : [
-                          ui.strong({}, ['Plain HTML']),
-                          ui.p({}, ['No machine binding. This node does not hydrate.']),
-                        ],
+                      ? [ui.strong({}, [t.islandTitle]), ui.p({}, [t.islandBody])]
+                      : [ui.strong({}, [t.plainTitle]), ui.p({}, [t.plainBody])],
                   ],
                 ),
               ]),
@@ -405,29 +358,27 @@ export const How = ui.view({
                 },
                 [
                   ctx.scope === 'public' && ctx.freshness === 'static'
-                    ? ui.span({}, ['Data: static export possible'])
-                    : ui.span({}, ['Data: server required']),
+                    ? ui.span({}, [t.dataStatic])
+                    : ui.span({}, [t.dataServer]),
                   ctx.binding === true
-                    ? ui.span({}, ['Interaction: client JS'])
-                    : ui.span({}, ['Interaction: no hydration']),
+                    ? ui.span({}, [t.interactionClient])
+                    : ui.span({}, [t.interactionNone]),
                 ],
               ),
             ]),
-            ui.p({ class: 'font-mono text-xs' }, [
-              'This models one query in a static shell. Dependencies can make a region more dynamic. The controls update a local illustration; they do not fetch private or live data.',
-            ]),
+            ui.p({ class: 'font-mono text-xs' }, [t.modelNote]),
           ]),
         ],
       ),
       ui.section({ id: 'design-chapters', class: 'border-t-4 border-ink bg-ink px-5 py-14 text-paper' }, [
         ui.div({}, [
-          ui.p({ class: 'font-mono text-xs font-bold uppercase text-red' }, ['Go a little deeper']),
-          ui.h2({ class: 'text-3xl font-black uppercase md:text-5xl' }, ['The reasoning behind the rules.']),
-          ui.p({}, ['Six chapters, from the first design decision to the costs that remain.']),
+          ui.p({ class: 'font-mono text-xs font-bold uppercase text-red' }, [t.deeper]),
+          ui.h2({ class: 'text-3xl font-black uppercase md:text-5xl' }, [t.reasoning]),
+          ui.p({}, [t.sixChapters]),
         ]),
         ui.query(
           listChapters,
-          {},
+          { locale },
           {
             ready: (items) =>
               ui.ol({ class: 'mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3' }, [
@@ -451,7 +402,7 @@ export const How = ui.view({
                 ),
               ]),
             pending: null,
-            failed: { Unexpected: () => ui.p({ role: 'alert' }, ['Chapters are unavailable.']) },
+            failed: { Unexpected: () => ui.p({ role: 'alert' }, [t.chaptersUnavailable]) },
           },
         ),
         ui.div({ class: 'mt-8 flex flex-wrap items-center gap-6' }, [
@@ -460,11 +411,9 @@ export const How = ui.view({
               href: ui.link(doc, { slug: 'getting-started' }),
               class: 'bg-red px-4 py-3 font-black uppercase text-ink',
             },
-            ['Build your first feature'],
+            [t.firstFeature],
           ),
-          ui.a({ href: ui.link(trials, null), class: 'font-bold underline' }, [
-            'Examine the measured results',
-          ]),
+          ui.a({ href: ui.link(trials, null), class: 'font-bold underline' }, [t.measured]),
         ]),
       ]),
     ]),
@@ -473,5 +422,5 @@ export const lab = feature({
   id: 'lab',
   intent: { summary: 'Interactive, explicitly illustrative walkthrough of Hozu validation and rendering' },
   imports: [content],
-  declarations: [{ Run, SetContract, m, How, ...contracts }],
+  declarations: [{ Run, SetContract, m, How, ...contracts }, messages],
 })

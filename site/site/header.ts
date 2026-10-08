@@ -19,14 +19,20 @@ const styles = tv({
 export const SiteHeader = ui.component({
   tag: 'header',
   styles,
-  props: z.object({ version: z.string() }),
+  props: z.object({
+    version: z.string(),
+    skip: z.string().default('Skip to content'),
+    navLabel: z.string().default('Main navigation'),
+    menu: z.string().default('Menu'),
+    close: z.string().default('Close'),
+  }),
   slots: ['brand', 'nav', 'menu'],
   render: ({ props, slots, classes }) =>
     ui.header({}, [
-      ui.a({ href: '#main', class: classes.skip }, ['Skip to content']),
+      ui.a({ href: '#main', class: classes.skip }, [props.skip]),
       ui.div({ class: classes.bar, 'data-version': props.version }, [
         slots.brand,
-        ui.nav({ 'aria-label': 'Main navigation', class: classes.desktop }, [slots.nav]),
+        ui.nav({ 'aria-label': props.navLabel, class: classes.desktop }, [slots.nav]),
         ui.details({ class: classes.mobile }, [
           ui.summary({ class: classes.toggle }, [
             ui.span({ class: classes.bars, 'aria-hidden': 'true' }, [
@@ -34,8 +40,8 @@ export const SiteHeader = ui.component({
               ui.i({}, []),
               ui.i({}, []),
             ]),
-            ui.span({ class: 'group-open:hidden' }, ['Menu']),
-            ui.span({ class: 'hidden group-open:inline' }, ['Close']),
+            ui.span({ class: 'group-open:hidden' }, [props.menu]),
+            ui.span({ class: 'hidden group-open:inline' }, [props.close]),
           ]),
           ui.div({ class: classes.panel }, [slots.menu]),
         ]),

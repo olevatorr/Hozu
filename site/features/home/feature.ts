@@ -1,6 +1,7 @@
 import { feature } from '@hozu/core'
 import { content } from '../content/views.ts'
 import * as devtools from './devtools.ts'
+import * as messages from './messages.ts'
 import * as model from './model.ts'
 import * as views from './views.ts'
 
@@ -11,6 +12,6 @@ export const homePage = feature({
       'The home page: an AI change Hozu catches, the bill, DevTools, the playground and the evidence; the DevTools page',
   },
   imports: [content],
-  declarations: [model, views, devtools],
+  declarations: [model, views, devtools, messages],
   styles: [new URL('../../site/demos.css', import.meta.url)],
 })
