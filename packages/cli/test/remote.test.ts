@@ -99,6 +99,26 @@ describe('hozu gen and HZ093 (ADR 0068)', () => {
     )
   })
 
+  it('a contract from before 0.23 (one fingerprint for the whole contract) is named as such, not as missing effects', async () => {
+    const dir = copy((d) => {
+      const file = join(d, contract)
+      writeFileSync(
+        file,
+        readFileSync(file, 'utf8').replace(
+          /^\/\/ Fingerprint is[\s\S]*?^}\n/m,
+          '// Fingerprint is the contract this file was generated from; every call carries it.\nconst Fingerprint = "0123456789abcdef"\n',
+        ),
+      )
+    })
+    expect(readFileSync(join(dir, contract), 'utf8')).toContain('const Fingerprint = "0123456789abcdef"')
+    expect(await hz093(dir)).toEqual([
+      'The remote contract service/hozu/contract.go was written by an older hozu gen (one fingerprint for the whole contract); run hozu gen and rebuild the service',
+    ])
+    await run(['gen'], dir)
+    expect(await hz093(dir)).toEqual([])
+    rmSync(dir, { recursive: true })
+  })
+
   it.skipIf(!hasGo)(
     'the example service builds, is gofmt-clean and passes its tests',
     () => {

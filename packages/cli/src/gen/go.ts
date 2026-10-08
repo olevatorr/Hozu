@@ -448,6 +448,9 @@ ${methods.map((m) => `\t\tcase "${m.e.ref}":\n\t\t\tout, err = call(ctx, body.In
 `)
 }
 
+/** A contract hozu gen wrote before 0.23: one `const Fingerprint` for the whole contract, none per effect. */
+export const goWholeContract = (text: string): boolean => /^const Fingerprint = "[0-9a-f]+"$/m.test(text)
+
 /** The fingerprint of each effect a generated Go contract declares, by ref. */
 export const goFingerprints = (text: string): Record<string, string> =>
   Object.fromEntries(
