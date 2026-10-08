@@ -3,7 +3,7 @@ import { basename, dirname, extname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { type BuildResult, codes, type Diagnostic, type RemoteContract, remoteContract } from '@hozu/core/ir'
 import { importer } from './commands/app.ts'
-import { goFingerprints } from './gen/go.ts'
+import { goFingerprints, goWholeContract } from './gen/go.ts'
 import type { Loaded } from './load.ts'
 
 export interface RemoteGroup {
@@ -82,7 +82,16 @@ export function remoteDiagnostics(loaded: Loaded, groups: RemoteGroup[], app: st
       )
       continue
     }
-    const found = goFingerprints(readFileSync(g.file, 'utf8'))
+    const text = readFileSync(g.file, 'utf8')
+    const found = goFingerprints(text)
+    if (!Object.keys(found).length && goWholeContract(text)) {
+      problem(
+        `The remote contract ${shown(g.file)} was written by an older hozu gen (one fingerprint for the whole contract); run hozu gen and rebuild the service`,
+        'Since 0.23 the contract carries one fingerprint per effect, so the service answers 409 for every call.',
+        'Run hozu gen, fix the service until go build passes, and rebuild it',
+      )
+      continue
+    }
     const stale = [
       ...g.contract.effects
         .filter((e) => found[e.ref] !== e.fingerprint)

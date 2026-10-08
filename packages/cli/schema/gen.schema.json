@@ -53,7 +53,7 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "Number fields named like an id or a count, which may want z.int() (ADR 0070 C4); not diagnostics."
+                "description": "Number fields named like an id or a count, which may want z.int() (ADR 0070 C4), and enums without a title that became several Go types, which a title makes one; not diagnostics."
               }
             },
             "required": [

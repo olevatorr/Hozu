@@ -689,7 +689,16 @@ describe('hozu call on an endpoint (ADR 0056 C)', () => {
     const booked = JSON.parse(
       (await run(['call', 'api.book', '--input', '{"room":"blue"}', '--write', '--json'], app)).stdout,
     )
-    expect(booked).toMatchObject({ status: 200, result: { ok: true, value: { booked: 'blue' } } })
+    expect(booked).toMatchObject({
+      status: 200,
+      result: { ok: true, value: { booked: 'blue' } },
+      invalidated: [expect.stringContaining('bookingsTag')],
+      refreshes: ['api.bookings'],
+    })
+    expectSchema('call', booked)
+    const text = (await run(['call', 'api.book', '--input', '{"room":"red"}', '--write'], app)).stdout
+    expect(text).toMatch(/^invalidated: .*bookingsTag/m)
+    expect(text).toContain('refreshes: api.bookings')
     const bad = await run(['call', 'api.who', '--header', 'Bearer', '--json'], app)
     expect(JSON.parse(bad.stdout).error.message).toBe('--header takes "Name: value", not "Bearer"')
   })
@@ -771,6 +780,31 @@ describe('hozu get --select takes attribute operators (ADR 0069 A5)', () => {
     expect(names('meta[property="og:title"]')).toEqual(['og:title'])
     expect(names('meta[property^=""]')).toEqual([])
     expect(() => elementsOf(html, 'meta[property|="og"]')).toThrow('Unsupported selector')
+  })
+})
+
+describe('hozu get --select takes descendant and child combinators (0.24)', () => {
+  it('matches nav a[aria-current] and main > form input, and keeps quoted values with spaces or >', async () => {
+    const { elementsOf } = await import('../src/commands/request.ts')
+    const html =
+      '<header><a href="/" aria-current="page">Home</a></header><nav><ul><li><a href="/a" aria-current="page">A</a></li><li><a href="/b">B</a></li></ul></nav>' +
+      '<main><form method="post"><input name="title"><div><input name="deep"></div><svg><path d="M0"/></svg><input name="after"></form></main>' +
+      '<form><input name="outside"><button title="a &gt; b">Go</button></form><script>"<nav><a aria-current>x</a></nav>"</script>'
+    const texts = (selector: string) => elementsOf(html, selector).map((e) => e.text || e.attrs.name)
+    expect(texts('nav a[aria-current]')).toEqual(['A'])
+    expect(texts('nav  li   a')).toEqual(['A', 'B'])
+    expect(texts('main > form input')).toEqual(['title', 'deep', 'after'])
+    expect(texts('main > form > input')).toEqual(['title', 'after'])
+    expect(texts('main>form>input')).toEqual(['title', 'after'])
+    expect(texts('form > input[name=outside]')).toEqual(['outside'])
+    expect(texts('body form input')).toEqual([])
+    expect(texts('form button[title="a > b"]')).toEqual(['Go'])
+    expect(texts('ul > a')).toEqual([])
+    expect(texts('form[method=post] input[name^=d], nav a[href="/b"]')).toEqual(['deep', 'B'])
+    expect(() => elementsOf(html, '> a')).toThrow('Unsupported selector')
+    expect(() => elementsOf(html, 'nav >')).toThrow('Unsupported selector')
+    expect(() => elementsOf(html, 'nav > > a')).toThrow('Unsupported selector')
+    expect(() => elementsOf(html, 'nav ~ a')).toThrow('Unsupported selector')
   })
 })
 

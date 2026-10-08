@@ -308,6 +308,7 @@ export type RefSource =
   | 'env'
   | 'session'
   | 'state'
+  | 'route'
 
 export type ValueExpr =
   | { ref: RefSource; path: string[] }

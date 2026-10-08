@@ -11,6 +11,7 @@ export const text = (v: Json | undefined) =>
 export function attrText(name: string, x: Json | undefined): string | null {
   if (x === null || x === undefined) return null
   if (typeof x === 'boolean') {
+    if (name === 'aria-current' && !x) return null
     if (name.startsWith('aria-') || name.startsWith('data-') || stringBooleans.has(name)) return String(x)
     return x ? '' : null
   }
@@ -18,18 +19,17 @@ export function attrText(name: string, x: Json | undefined): string | null {
 }
 
 /**
- * `aria-current` of an internal link (ADR 0069 B4, ADR 0070 A3): `page` for the address being shown, `true` for a
- * section above it (`/orders` while on `/orders/7`), nothing for the same path with another search (a next page).
+ * `aria-current` of an internal link (ADR 0071 A1): `page` for the address shown; the author's value otherwise, where
+ * `true` (a section, from `current(route)`) becomes `page` on the address itself and `false` writes nothing.
  */
-export function currentOf(href: Json, here: string, root = '/'): string | null {
-  if (typeof href !== 'string' || !href.startsWith('/')) return null
-  if (href === here) return 'page'
-  const path = href.split('?')[0]!
-  const at = here.split('?')[0]!
-  return path !== '/' && path !== root && at.startsWith(path.endsWith('/') ? path : `${path}/`)
-    ? 'true'
-    : null
-}
+export const currentOf = (href: Json, here: string, own?: Json): string | null =>
+  own === undefined || own === true
+    ? href === here
+      ? 'page'
+      : own
+        ? 'true'
+        : null
+    : attrText('aria-current', own)
 
 export const properties = new Set(['value', 'checked', 'selected', 'muted'])
 

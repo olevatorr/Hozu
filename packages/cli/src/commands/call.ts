@@ -1,4 +1,4 @@
-import type { EndpointIR, Json, ProjectIR, Runs } from '@hozu/core/ir'
+import type { EndpointIR, Json, ProjectIR, Runs, TagExprIR } from '@hozu/core/ir'
 import { impact } from '@hozu/validator'
 import type { CallOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
@@ -21,6 +21,12 @@ interface Server {
   ): Record<string, unknown> & { build: { ir: ProjectIR } }
   createHandler(options: unknown): { fetch(request: Request): Promise<Response> }
   usedClientComponents(ir: ProjectIR): string[]
+}
+
+interface Bus {
+  publish(tags: string[]): void | Promise<void>
+  subscribe(onTags: (tags: string[]) => void): () => void
+  accept?(request: Request): Promise<Response>
 }
 
 const ORIGIN = 'http://localhost'
@@ -82,9 +88,19 @@ export async function runCall(loaded: Loaded, options: CallOptions): Promise<Cal
     ...(parts.session ? { session: parts.session } : {}),
   })
   const ir = rest.build.ir
+  const published: string[] = []
+  const bus = rest.bus as Bus | undefined
   const handler = server.createHandler({
     ...rest,
     onError: () => {},
+    bus: {
+      publish: (tags: string[]) => {
+        published.push(...tags)
+        return bus?.publish(tags)
+      },
+      subscribe: (onTags: (tags: string[]) => void) => bus?.subscribe(onTags) ?? (() => {}),
+      ...(bus?.accept ? { accept: bus.accept.bind(bus) } : {}),
+    },
     ...(rest.components || rest.manifest
       ? {}
       : {
@@ -101,7 +117,10 @@ export async function runCall(loaded: Loaded, options: CallOptions): Promise<Cal
   })
   const [cookie] = parts.cookies
   if (endpoint)
-    return callEndpoint(handler, target, endpoint, ir, input, { ...headers, ...(cookie ? { cookie } : {}) })
+    return callEndpoint(handler, target, endpoint, ir, input, published, {
+      ...headers,
+      ...(cookie ? { cookie } : {}),
+    })
   const started = performance.now()
   const response = await handler.fetch(
     new Request(`${ORIGIN}/_hozu/${kind === 'query' ? 'query' : 'effect'}`, {
@@ -151,6 +170,7 @@ async function callEndpoint(
   e: EndpointIR,
   ir: ProjectIR,
   input: Json,
+  published: string[],
   headers: Record<string, string>,
 ): Promise<CallOutput> {
   const query = e.method === 'GET' ? flat(input).toString() : ''
@@ -186,9 +206,18 @@ async function callEndpoint(
     status: response.status,
     result: ok ? { ok: true, value: body } : { ok: false, error, data: body },
     ms,
-    invalidated: [],
-    refreshes: [],
+    invalidated: [...new Set(published)],
+    refreshes: published.length ? refreshedBy(ir, e.invalidates ?? []) : [],
   }
+}
+
+const refreshedBy = (ir: ProjectIR, tags: TagExprIR[]) => {
+  const names = new Set(tags.map((t) => t.tag))
+  const out = new Set<string>()
+  for (const f of Object.values(ir.features))
+    for (const [sym, q] of Object.entries(f.queries))
+      if (q.tags.some((t) => names.has(t.tag))) out.add(`${f.id}.${sym}`)
+  return [...out].sort()
 }
 
 export function describeCall(out: CallOutput): string {

@@ -61,15 +61,16 @@ it('a dialog whose open follows the machine opens as a modal and closes (ADR 006
   vi.restoreAllMocks()
 })
 
-it('aria-current: a section, never the home of a locale or a base path (ADR 0069 B4)', async () => {
-  const { currentOf } = await import('@hozu/runtime-client')
-  expect(currentOf('/shop/orders', '/shop/orders/7')).toBe('true')
-  expect(currentOf('/shop/orders?status=paid', '/shop/orders?status=paid')).toBe('page')
-  expect(currentOf('/de', '/de/about', '/de')).toBeNull()
-  expect(currentOf('/docs/', '/docs/guide/', '/docs/')).toBeNull()
-  expect(currentOf('/', '/about')).toBeNull()
-  expect(currentOf('/shop/orders?page=2', '/shop/orders')).toBeNull()
+it('aria-current marks only the address shown; a section is current(route) (ADR 0071 A1)', async () => {
+  const { currentOf, attrText } = await import('@hozu/runtime-client')
+  expect(currentOf('/shop/orders?page=2', '/shop/orders?page=2')).toBe('page')
+  expect(currentOf('/shop/orders', '/shop/orders/7')).toBeNull()
   expect(currentOf('/shop/orders', '/shop/orders?page=2')).toBeNull()
+  expect(currentOf('/orders', '/orders', true)).toBe('page')
+  expect(currentOf('/orders', '/orders/7', true)).toBe('true')
+  expect(currentOf('/orders', '/orders', false)).toBeNull()
+  expect(attrText('aria-current', false)).toBeNull()
+  expect(attrText('aria-current', true)).toBe('true')
 })
 
 it('a dialog the server rendered open stays open through hydration, and closing it sends no close event', async () => {
@@ -105,4 +106,39 @@ it('a dialog the server rendered open stays open through hydration, and closing 
   expect(app.snapshot()?.state).toBe('editing')
   vi.restoreAllMocks()
   root.remove()
+})
+
+it('an island reads current(route) from the page it is on (ADR 0071 A1)', async () => {
+  const { project: proj, route, feature: feat } = await import('@hozu/core')
+  const list = route({ path: '/orders', params: null, search: null })
+  const detail = route({ path: '/orders/:id', params: z.object({ id: z.string() }), search: null })
+  const Nav = ui.view({
+    machine: m,
+    render: ({ current }) =>
+      ui.nav({}, [
+        ui.a({ href: ui.link(list, null), 'aria-current': current(list) || current(detail) }, ['Orders']),
+      ]),
+  })
+  const built = buildProject(
+    proj({
+      schema: zodAdapter,
+      routes: { list, detail },
+      pages: [],
+      features: [feat({ id: 'd', intent: { summary: 'nav' }, declarations: [{ Edit, Done, m, Nav }] })],
+    }),
+  )
+  const at = (here: [string, string]) => {
+    const root = document.createElement('div')
+    mount(root, {
+      view: built.ir.features.d!.views.Nav!,
+      machine: compileMachine(built.ir.features.d!, built.bindings.fns),
+      payload: new Map(),
+      fns: built.bindings.fns,
+      routes: { list: '/orders', detail: '/orders/:id' },
+      here,
+    })
+    return root.querySelector('a')!.getAttribute('aria-current')
+  }
+  expect(at(['/orders', 'list'])).toBe('page')
+  expect(at(['/orders/7', 'detail'])).toBe('true')
 })

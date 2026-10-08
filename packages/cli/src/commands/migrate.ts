@@ -187,7 +187,12 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
     const plan = chain(from, to)
     if (!plan) throw new HozuCliError('usage', `No migration path from ${from} to ${to}`, [])
     out.phase = 'rewrite'
-    out.steps = plan.map((s) => ({ from: s.from, to: s.to, summary: s.summary }))
+    out.steps = plan.map((s) => ({
+      from: s.from,
+      to: s.to,
+      summary: s.changes.join('; '),
+      changes: s.changes,
+    }))
     const ir = (options.recordIR ?? recordWithInstalled)(config)
     for (const file of sources(dir)) {
       let code = readFileSync(file, 'utf8')
@@ -226,7 +231,7 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
   out.record = rel(saved)
   const { from: was, ir: before } = JSON.parse(readFileSync(saved, 'utf8')) as { from: string; ir: Json }
   const plan = chain(was, to) ?? []
-  out.steps = plan.map((s) => ({ from: s.from, to: s.to, summary: s.summary }))
+  out.steps = plan.map((s) => ({ from: s.from, to: s.to, summary: s.changes.join('; '), changes: s.changes }))
   const loaded = await load(options.config, cwd)
   const normalized = plan.reduce((ir, step) => step.normalize(ir), before)
   out.ir = {
@@ -272,7 +277,10 @@ export function describeMigrate(r: MigrateOutput): string {
   const lines: string[] = []
   const title = r.phase === 'rewrite' ? 'rewrite' : r.phase === 'verify' ? 'verify' : 'nothing to do'
   lines.push(`hozu migrate ${r.from} → ${r.to}: ${title}${r.dryRun ? ' (dry run, nothing written)' : ''}`)
-  for (const s of r.steps) lines.push(`  ${s.from} → ${s.to}: ${s.summary}`)
+  for (const s of r.steps) {
+    lines.push(`  ${s.from} → ${s.to}:`)
+    for (const c of s.changes) lines.push(`    - ${c}`)
+  }
   if (r.phase === 'rewrite') {
     lines.push(`  rewrote ${r.changed.length} ${r.changed.length === 1 ? 'file' : 'files'}`)
     for (const c of r.changed) lines.push(`    ${c.file} (${c.edits} ${c.edits === 1 ? 'edit' : 'edits'})`)

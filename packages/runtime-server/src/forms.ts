@@ -112,6 +112,7 @@ export async function runForm(options: {
     context: start.context,
     params,
     search,
+    route,
     routes,
     dom: (field) => (field === 'form' ? fields.first : field === 'formAll' ? fields.all : null),
   })

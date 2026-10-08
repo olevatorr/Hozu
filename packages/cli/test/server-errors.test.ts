@@ -44,6 +44,9 @@ async function run(args: string[], cwd: string) {
   return { code, stdout }
 }
 
+const production = '(a production server shows "Internal error" here; onError keeps the message)'
+const times = (text: string, part: string) => text.split(part).length - 1
+
 const expected = { message: 'the database is down', effect: 'bookmarks.listBookmarks' }
 
 describe('server errors per step (ADR 0069 A2)', () => {
@@ -54,9 +57,16 @@ describe('server errors per step (ADR 0069 A2)', () => {
     expect(ajv.validate(schema('request'), out), JSON.stringify(ajv.errors)).toBe(true)
     expect(out.steps[0].serverErrors).toEqual([expect.objectContaining(expected)])
     const human = await run(['get', '/'], app)
-    expect(human.stdout).toContain('  server error: the database is down (bookmarks.listBookmarks)')
+    expect(human.stdout).toContain(
+      `  server error: the database is down (bookmarks.listBookmarks)\n  ${production}\n`,
+    )
+    const twice = await run(['get', '/', '/bookmarks/b1'], app)
+    expect(times(twice.stdout, 'server error:')).toBe(2)
+    expect(times(twice.stdout, production)).toBe(1)
+    expect(JSON.stringify(out)).not.toContain('production server')
     const calm = await run(['get', '/', '--json'], `${root}examples/bookmarks`)
     expect(JSON.parse(calm.stdout).steps[0].serverErrors).toEqual([])
+    expect((await run(['get', '/'], `${root}examples/bookmarks`)).stdout).not.toContain(production)
   }, 60_000)
 
   it.skipIf(!findBrowser())(
@@ -78,6 +88,11 @@ describe('server errors per step (ADR 0069 A2)', () => {
       const human = await run(args, app)
       expect(human.stdout).toContain('      server error: the row is locked (bookmarks.getBookmark)')
       expect(human.stdout).toContain('  error (server): the database is down (bookmarks.listBookmarks)')
+      expect(human.stdout).toContain(
+        `      server error: the row is locked (bookmarks.getBookmark)\n      ${production}\n`,
+      )
+      expect(times(human.stdout, production)).toBe(1)
+      expect(stdout).not.toContain('production server')
     },
     60_000,
   )

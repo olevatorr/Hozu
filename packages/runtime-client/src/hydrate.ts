@@ -44,7 +44,7 @@ export interface PagePayload {
   seeds?: Record<string, string[]>
   /** Features this page shows through a view another page shows too: their state follows to other pages (ADR 0069 B1). */
   keep?: string[]
-  /** The canonical address shown and its home route's address (ADR 0069 B4). */
+  /** The canonical address shown and its route id (ADR 0071 A1). */
   here?: [string, string]
   /** Queries this page reads again on a timer, in seconds (ADR 0063 C1). */
   poll?: Record<string, number>

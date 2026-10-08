@@ -38,6 +38,7 @@ export interface Env {
   error?: Json
   params?: Json
   search?: Json
+  route?: Json
   bindings?: Json[]
   dom?: (field: string) => Json
   routes?: Record<string, string>

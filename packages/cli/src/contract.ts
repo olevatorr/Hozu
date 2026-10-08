@@ -527,7 +527,8 @@ export interface MigrateOutput {
    */
   phase: 'rewrite' | 'verify' | 'current'
   dryRun: boolean
-  steps: { from: string; to: string; summary: string }[]
+  /** Each step's changes: `summary` joins `changes` with "; ". */
+  steps: { from: string; to: string; summary: string; changes: string[] }[]
   changed: { file: string; edits: number }[]
   notes: MigrateNote[]
   packages: { name: string; from: string; to: string }[]
@@ -549,7 +550,7 @@ export interface CallOutput {
   result: { ok: true; value: Json } | { ok: false; error: string; data: Json }
   /** Milliseconds for the request. */
   ms: number
-  /** Tags a mutation invalidated. */
+  /** Tags a mutation or a writing endpoint invalidated. */
   invalidated: string[]
   /** The queries those tags refresh. */
   refreshes: string[]
@@ -580,7 +581,10 @@ export interface GenOutput {
     written: boolean
     /** Effects that cannot be remote (the server refuses to start with them, HZ093). */
     problems: string[]
-    /** Number fields named like an id or a count, which may want z.int() (ADR 0070 C4); not diagnostics. */
+    /**
+     * Number fields named like an id or a count, which may want z.int() (ADR 0070 C4), and enums without a title that
+     * became several Go types, which a title makes one; not diagnostics.
+     */
     notes: string[]
   }[]
 }

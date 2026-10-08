@@ -126,6 +126,8 @@ export interface ViewScope<C, S extends string, P, Q = null> {
   ctx: Ref<C>
   when: When<S>
   is: (states: S[]) => boolean
+  /** True on the pages of that route: a menu marks its section with `'aria-current': current(orders)` (ADR 0071 A1). */
+  current: (route: RouteDecl<any, any>) => boolean
   params: Ref<P>
   search: Ref<Q>
   locale: Ref<string>
@@ -173,7 +175,12 @@ function view<C, S extends string, P = null, Q = null>(config: {
 function view<P = null, Q = null>(config: {
   machine?: never
   route?: RouteDecl<P, Q>
-  render: (scope: { params: Ref<P>; search: Ref<Q>; locale: Ref<string> }) => NodeDecl
+  render: (scope: {
+    params: Ref<P>
+    search: Ref<Q>
+    current: (route: RouteDecl<any, any>) => boolean
+    locale: Ref<string>
+  }) => NodeDecl
 }): ViewDecl
 function view(config: Partial<ViewDef> & Pick<ViewDef, 'render'>): ViewDecl {
   return brand({}, 'view', {

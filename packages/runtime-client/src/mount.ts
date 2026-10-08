@@ -32,8 +32,8 @@ export interface AppOptions {
   payload: Payload | Store
   fns?: Record<string, (input: never) => unknown>
   params?: Json
-  /** The page's canonical address and the address of its home route, for `aria-current` (ADR 0069 B4). */
-  here?: [string, string?]
+  /** The page's canonical address and route id, for `aria-current` and `current(route)` (ADR 0071 A1). */
+  here?: [string, string]
   search?: Json
   snapshot?: Snapshot
   onInvoke?: (effect: string, input: Json) => Promise<Result>
@@ -203,6 +203,7 @@ export function createApp(doc: Document, options: AppOptions): App {
     return get({
       context: snapshot?.context ?? null,
       state: snapshot?.state ?? null,
+      route: options.here?.[1] ?? null,
       bindings: scope,
       params,
       search,
@@ -272,7 +273,10 @@ export function createApp(doc: Document, options: AppOptions): App {
           if (node.class) el.setAttribute('class', node.class)
           c.parent.insertBefore(el, c.next)
         }
+        const href =
+          node.tag === 'a' && node.attrs.href && 'link' in node.attrs.href ? node.attrs.href : undefined
         for (const name in node.attrs) {
+          if (href && name === 'aria-current') continue
           const v = node.attrs[name]!
           const prop = properties.has(name) && name in el
           if (claimed && !reads(v)) continue
@@ -296,10 +300,14 @@ export function createApp(doc: Document, options: AppOptions): App {
             else if (el.getAttribute(name) !== s) el.setAttribute(name, s)
           })
         }
-        const href = node.tag === 'a' && !('aria-current' in node.attrs) ? node.attrs.href : undefined
-        if (href && 'link' in href && (!claimed || reads(href)))
-          bind(block, href, scope, (x) => {
-            const at = currentOf(x, ...(options.here ?? ['']))
+        const own = node.attrs['aria-current']
+        if (href)
+          bind(block, { object: own ? { h: href, o: own } : { h: href } }, scope, (x) => {
+            const at = currentOf(
+              (x as Record<string, Json>).h!,
+              options.here?.[0] ?? '',
+              (x as Record<string, Json>).o,
+            )
             if (at) el.setAttribute('aria-current', at)
             else el.removeAttribute('aria-current')
           })

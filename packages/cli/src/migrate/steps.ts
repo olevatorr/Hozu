@@ -8,8 +8,8 @@ import { accessStep, normalize014Renamed } from './step-0.15.ts'
 export interface Step {
   from: string
   to: string
-  /** What the step changes, in one line for the plan. */
-  summary: string
+  /** What the step changes, one point per line in the plan. */
+  changes: string[]
   rewrite(file: string, source: string): { code: string; notes: Note[]; count: number }
   /** The IR of `from` in `to` terms: every difference left after it is a behaviour change to review. */
   normalize(ir: Json): Json
@@ -24,14 +24,14 @@ export const steps: Step[] = [
   {
     from: '0.10',
     to: '0.11',
-    summary: "runs: 'server' on every query and mutation without runs (0.11 defaults to 'either')",
+    changes: ["runs: 'server' on every query and mutation without runs (0.11 defaults to 'either')"],
     rewrite: addRunsServer,
     normalize: normalize010,
   },
   {
     from: '0.11',
     to: '0.12',
-    summary: '.hozu/ in .gitignore (0.12 caches the transform and the type check there)',
+    changes: ['.hozu/ in .gitignore (0.12 caches the transform and the type check there)'],
     rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
     files: ignoreHozu,
@@ -39,8 +39,10 @@ export const steps: Step[] = [
   {
     from: '0.12',
     to: '0.13',
-    summary:
-      'connect: [] on every feature and env files / internal in the IR (ADR 0051, 0052); new warnings HZ083 and HZ084',
+    changes: [
+      'connect: [] on every feature and env files / internal in the IR (ADR 0051, 0052)',
+      'new warnings HZ083 and HZ084',
+    ],
     rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => {
       const features = (ir as { features?: Record<string, Record<string, unknown>> }).features ?? {}
@@ -56,8 +58,10 @@ export const steps: Step[] = [
   {
     from: '0.13',
     to: '0.14',
-    summary:
-      "runs: 'either' where runs is omitted (0.14 requires it); package.json scripts call hozu check, and hozu graph scripts are removed (ADR 0053)",
+    changes: [
+      "runs: 'either' where runs is omitted (0.14 requires it)",
+      'package.json scripts call hozu check, and hozu graph scripts are removed (ADR 0053)',
+    ],
     rewrite: (file, source) => addRuns('either', file, source),
     normalize: (ir) => {
       ;(ir as { accept?: unknown[] }).accept ??= []
@@ -68,56 +72,89 @@ export const steps: Step[] = [
   {
     from: '0.14',
     to: '0.15',
-    summary:
-      "access: 'anyone' on every server-run user query and mutation, the 0.14 behaviour (ADR 0056 B); HZ090 then lists the user queries to tighten; an error the app named Forbidden (the framework's access error since 0.15) becomes NotAllowed",
+    changes: [
+      "access: 'anyone' on every server-run user query and mutation, the 0.14 behaviour (ADR 0056 B)",
+      'HZ090 then lists the user queries to tighten',
+      "an error the app named Forbidden (the framework's access error since 0.15) becomes NotAllowed",
+    ],
     rewrite: accessStep,
     normalize: normalize014Renamed,
   },
   {
     from: '0.15',
     to: '0.16',
-    summary:
-      'no source change; an app without machines now locks its pages, so run hozu check --update-lock if it says the lock is missing; an endpoint at /sitemap.xml, /robots.txt or (with a site) /manifest.webmanifest is now HZ046, and a head.render field Hozu does not know is HZ014: move them to entries, noindex or site (ADR 0057)',
+    changes: [
+      'no source change',
+      'an app without machines now locks its pages, so run hozu check --update-lock if it says the lock is missing',
+      'an endpoint at /sitemap.xml, /robots.txt or (with a site) /manifest.webmanifest is now HZ046',
+      'a head.render field Hozu does not know is HZ014: move them to entries, noindex or site (ADR 0057)',
+    ],
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
   {
     from: '0.16',
     to: '0.17',
-    summary:
-      'no source change; DevTools follows Figma (Shift+Enter selects the parent, Alt measures), and feature({ styles }) must be a list (HZ014) (ADR 0058)',
+    changes: [
+      'no source change',
+      'DevTools follows Figma (Shift+Enter selects the parent, Alt measures)',
+      'feature({ styles }) must be a list (HZ014) (ADR 0058)',
+    ],
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
   {
     from: '0.17',
     to: '0.18',
-    summary:
-      'no source change; a page whose head query fails is titled with the site name, app({ refreshSession }) can renew a session while reading, hozu browse --viewport, and DevTools in your language (--devtools-messages) (ADR 0060)',
+    changes: [
+      'no source change',
+      'a page whose head query fails is titled with the site name',
+      'app({ refreshSession }) can renew a session while reading',
+      'hozu browse --viewport',
+      'DevTools in your language (--devtools-messages) (ADR 0060)',
+    ],
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
   {
     from: '0.18',
     to: '0.19',
-    summary:
-      "no source change; freshness: { poll: seconds } re-reads a query on a timer, target: 'previous' returns to the state a machine came from, a field alone is a guard, and hozu browse says per step what changed (hold / release keep an effect pending) (ADR 0063)",
+    changes: [
+      'no source change',
+      'freshness: { poll: seconds } re-reads a query on a timer',
+      "target: 'previous' returns to the state a machine came from",
+      'a field alone is a guard',
+      'hozu browse says per step what changed (hold / release keep an effect pending) (ADR 0063)',
+    ],
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
   {
     from: '0.19',
     to: '0.20',
-    summary:
-      "no source change; transitions take refresh: () => [tag()] and copy, a render gets is([...]), HZ036 no longer warns about a form that starts a runs: 'browser' mutation (delete such accept entries, HZ087), hozu browse runs with JavaScript by default, and an on without target stays without entering its state again (accept the lock with hozu check --update-lock if HZ057 lists --> stays) (ADR 0064)",
+    changes: [
+      'no source change',
+      'transitions take refresh: () => [tag()] and copy',
+      'a render gets is([...])',
+      "HZ036 no longer warns about a form that starts a runs: 'browser' mutation (delete such accept entries, HZ087)",
+      'hozu browse runs with JavaScript by default',
+      'an on without target stays without entering its state again (ADR 0064)',
+      'accept the lock with hozu check --update-lock if HZ057 lists --> stays',
+    ],
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
   {
     from: '0.20',
     to: '0.21',
-    summary:
-      'no source change; query regions settle in place, added parts fade in, views two pages share keep still and machines keep their state across a page change, is([...]) works for structure, ui.set and replace are new, and hozu browse reports flashes and layout shift (ADR 0067); component fingerprints hash the recorded render, so run hozu build again before deploying',
+    changes: [
+      'no source change',
+      'query regions settle in place, added parts fade in',
+      'views two pages share keep still and machines keep their state across a page change',
+      'is([...]) works for structure, ui.set and replace are new',
+      'hozu browse reports flashes and layout shift (ADR 0067)',
+      'component fingerprints hash the recorded render, so run hozu build again before deploying',
+    ],
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: markSharedViews,
     unpredictable: /^\/(?:features\/[^/]+|kits\/[^/]+)\/components\/[^/]+\/sourceHash$/,
@@ -125,8 +162,20 @@ export const steps: Step[] = [
   {
     from: '0.21',
     to: '0.22',
-    summary:
-      "no source change; resolvers may be in Go through remote() and hozu gen (ADR 0068); a seed reads queries, links to the page shown get aria-current, a dialog's open follows the machine, ui.format.plural, head reads search, resolvers answer Forbidden, signedIn narrows the session type, one-shot commands exit (app({ dispose }) closes a pool), and kept state follows a view two pages share or the same address (ADR 0069); run hozu build again before deploying",
+    changes: [
+      'no source change',
+      'resolvers may be in Go through remote() and hozu gen (ADR 0068)',
+      'a seed reads queries',
+      'links to the page shown get aria-current',
+      "a dialog's open follows the machine",
+      'ui.format.plural',
+      'head reads search',
+      'resolvers answer Forbidden',
+      'signedIn narrows the session type',
+      'one-shot commands exit (app({ dispose }) closes a pool)',
+      'kept state follows a view two pages share or the same address (ADR 0069)',
+      'run hozu build again before deploying',
+    ],
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: remarkSharedViews,
     unpredictable: /^\/(?:features\/[^/]+|kits\/[^/]+)\/components\/[^/]+\/sourceHash$/,
@@ -134,8 +183,27 @@ export const steps: Step[] = [
   {
     from: '0.22',
     to: '0.23',
-    summary:
-      'no source change; route params are parsed (z.coerce applies), canonical URLs and links leave defaults out after an optional segment, aria-current marks sections above the page only, native multi-step forms keep their step, { ...search } works in ui.link, and a Go service needs hozu gen and a rebuild (a fingerprint per effect) (ADR 0070)',
+    changes: [
+      'no source change',
+      'route params are parsed (z.coerce applies)',
+      'canonical URLs and links leave defaults out after an optional segment',
+      'aria-current marks sections above the page only',
+      'native multi-step forms keep their step',
+      '{ ...search } works in ui.link',
+      'a Go service needs hozu gen and a rebuild (a fingerprint per effect) (ADR 0070)',
+    ],
+    rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
+  {
+    from: '0.23',
+    to: '0.24',
+    changes: [
+      'no source change',
+      "aria-current marks only the address shown: mark a menu's sections with current(route) in the render",
+      'aria-current false writes no attribute',
+      "hozu get --select takes descendant and child selectors; hozu call shows an endpoint's invalidated tags (ADR 0071)",
+    ],
     rewrite: (_, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },

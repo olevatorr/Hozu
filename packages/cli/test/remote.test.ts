@@ -99,6 +99,26 @@ describe('hozu gen and HZ093 (ADR 0068)', () => {
     )
   })
 
+  it('a contract from before 0.23 (one fingerprint for the whole contract) is named as such, not as missing effects', async () => {
+    const dir = copy((d) => {
+      const file = join(d, contract)
+      writeFileSync(
+        file,
+        readFileSync(file, 'utf8').replace(
+          /^\/\/ Fingerprint is[\s\S]*?^}\n/m,
+          '// Fingerprint is the contract this file was generated from; every call carries it.\nconst Fingerprint = "0123456789abcdef"\n',
+        ),
+      )
+    })
+    expect(readFileSync(join(dir, contract), 'utf8')).toContain('const Fingerprint = "0123456789abcdef"')
+    expect(await hz093(dir)).toEqual([
+      'The remote contract service/hozu/contract.go was written by an older hozu gen (one fingerprint for the whole contract); run hozu gen and rebuild the service',
+    ])
+    await run(['gen'], dir)
+    expect(await hz093(dir)).toEqual([])
+    rmSync(dir, { recursive: true })
+  })
+
   it.skipIf(!hasGo)(
     'the example service builds, is gofmt-clean and passes its tests',
     () => {
@@ -169,5 +189,41 @@ describe('the Go contract (ADR 0070 C4, C6)', () => {
       'shop.ship: output.id is a number (float64 in Go); if it holds whole numbers, declare it z.int() (int64)',
       'shop.ship: output.totalCents is a number (float64 in Go); if it holds whole numbers, declare it z.int() (int64)',
     ])
+  })
+})
+
+describe('hozu gen notes enums without a title (0.24)', () => {
+  const effect = (output: z.ZodType) =>
+    query({ input: z.object({}), output, scope: 'public', freshness: 'request', runs: 'server' })
+  const contractOf = (declarations: Record<string, unknown>) =>
+    remoteContract(
+      buildProject(
+        project({
+          schema: zodAdapter,
+          routes: {},
+          pages: [],
+          features: [feature({ id: 'mood', intent: { summary: 'tones' }, declarations: [declarations] })],
+        }),
+      ).ir,
+      Object.keys(declarations).map((k) => `mood.${k}`),
+    )
+
+  it('one members list in several fields and Go types is a note naming the most common field; a title is none', () => {
+    const tone = () => z.enum(['calm', 'loud'])
+    const contract = contractOf({
+      a: effect(z.object({ tone: tone(), other: z.enum(['x', 'y']) })),
+      b: effect(z.object({ tone: tone(), rows: z.array(z.object({ tone: tone(), voice: tone() })) })),
+    })
+    expect(goNotes(contract)).toEqual([
+      'Tone-like enum ["calm","loud"] appears in 4 fields as 4 Go types; give the schema .meta({ title: \'Tone\' }) to make it one',
+    ])
+    expect(goContract(contract, 'hozu').match(/^type \w+ string$/gm)).toHaveLength(5)
+    const Tone = z.enum(['calm', 'loud']).meta({ title: 'Tone' })
+    const titled = contractOf({
+      a: effect(z.object({ tone: Tone })),
+      b: effect(z.object({ tone: Tone, rows: z.array(z.object({ voice: Tone })) })),
+    })
+    expect(goNotes(titled)).toEqual([])
+    expect(goContract(titled, 'hozu').match(/^type \w+ string$/gm)).toEqual(['type Tone string'])
   })
 })

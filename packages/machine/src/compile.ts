@@ -69,7 +69,16 @@ export function compileValue(v: ValueExpr, fns: Fns): Getter {
     return (env) =>
       env.dom && field ? (getIn(env.dom(field), rest) ?? (field === 'formAll' ? [] : null)) : null
   }
-  const ref = r.ref as 'context' | 'state' | 'input' | 'event' | 'result' | 'error' | 'params' | 'search'
+  const ref = r.ref as
+    | 'context'
+    | 'state'
+    | 'input'
+    | 'event'
+    | 'result'
+    | 'error'
+    | 'params'
+    | 'search'
+    | 'route'
   if (path.length === 0) return (env) => env[ref] ?? null
   return (env) => getIn(env[ref], path)
 }

@@ -544,7 +544,8 @@
         "alternate",
         "env",
         "session",
-        "state"
+        "state",
+        "route"
       ]
     },
     "GuardExpr": {

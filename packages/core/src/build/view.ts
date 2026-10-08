@@ -763,6 +763,17 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
   }
   const params = refProxy('params', 0)
   const search = refProxy('search', 0)
+  const current = (route: object) => {
+    const id = scope.project.routes.get(route)
+    if (!id)
+      scope.report(
+        'HZ007',
+        at(p, 'root'),
+        'current(route) names a route missing from project({ routes })',
+        'Pass a route() that the project registers.',
+      )
+    return op.eq(refProxy('route', 0) as unknown as string, id ?? '')
+  }
   scope.lowering = transformedDecls().has(decl)
   const render = () =>
     d.machine
@@ -783,9 +794,10 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
           },
           params,
           search,
+          current,
           locale: refProxy('locale', 0),
         })
-      : scope.callback(d.render)({ params, search, locale: refProxy('locale', 0) })
+      : scope.callback(d.render)({ params, search, current, locale: refProxy('locale', 0) })
   const root = scope.attempt(at(p, 'root'), render, null)
   let seed: Record<string, ValueExpr> | null = null
   const seedQueries: { ref: string; input: ValueExpr }[] = []
