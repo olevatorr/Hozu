@@ -37,6 +37,7 @@ const Board = ui.view({
         },
         ['Prepend'],
       ),
+      ui.input({ name: 'q', 'aria-label': 'Search', keys: ['/'] }),
       ui.ul({}, [
         ui.each(ctx.rows, 'id', (r) => ui.li({}, [ui.span({ class: 'border' }, ['Priya']), r.label])),
       ]),

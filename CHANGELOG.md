@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.26.2 — A deploy that cannot work says why (ADR 0075)
+
+From the sixth round of trial 0025: both apps read MySQL over TCP, so Workers and Vercel cannot serve them. That was
+right; the way it failed was not.
+
+- **`--target workers | vercel` names the chain to each Node built-in** (`server/db.ts → mysql2 → net, tls`) and
+  the ways out: `--target node`, a database driver over HTTP, or `remote()` for those effects. It is a `build` error
+  (`--json` said `usage`), and the output folder is removed when the build fails, so a retry is not refused.
+- **`hozu build` says which targets can serve the app** before you choose one (with `@hozu/bundle` installed).
+- **`--target node`** lists each service the app reaches through `remote()` (deploy it too; its folder stays out of
+  the image) and each env value on `127.0.0.1` / `localhost`, which inside a container is the container itself.
+- `hozu browse`: `press` says where focus went (`focused <input name="q">`); a covering element inside a dialog is
+  named by the dialog (`in the dialog "Create a discount"`).
+- `create-hozu` ignores `.vercel/`. The site's code blocks say 複製 on Chinese pages.
+
 ## 0.26.1 — Deploying without an extra install
 
 - A new app has `@hozu/bundle`, so `hozu build --target workers | vercel` works right after `create-hozu`. An app

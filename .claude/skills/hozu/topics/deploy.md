@@ -25,8 +25,10 @@
   compressed. The edge handler leaves compression to the platform.
 - **Workers and Vercel:** `npx hozu build --target workers` writes `dist/workers/` (`worker.mjs`, `assets/`,
   `wrangler.jsonc`; then `npx wrangler deploy` there); `--target vercel` writes `.vercel/output/` (an Edge Function;
-  then `npx vercel deploy --prebuilt`). Both need `@hozu/bundle`, bundle the app with its resolvers (a resolver that
-  imports Node-only code fails the build there) and print what the platform needs: env, `SESSION_SECRET`, a KV
+  then `npx vercel deploy --prebuilt`). Both need `@hozu/bundle` and bundle the app with its resolvers. A resolver
+  whose imports need Node (a MySQL or Postgres driver over TCP, `node:fs`) stops the build with the chain
+  (`server/db.ts → mysql2 → net, tls`) and the ways out: `--target node`, a driver over HTTP, or `remote()`; plain
+  `hozu build` already says which targets can serve the app. They print what the platform needs: env, `SESSION_SECRET`, a KV
   namespace bound as `SESSIONS` on Workers, a shared session store on Vercel. Workers keep no memory between
   requests: data goes in a database. Check the bundle before deploying: `npx hozu browse / --build dist/workers`
   (env from your shell; `--session` signs in through its KV).

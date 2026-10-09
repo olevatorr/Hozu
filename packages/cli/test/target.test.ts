@@ -112,3 +112,84 @@ describe('hozu build --target never empties the app (ADR 0073 A1)', () => {
     expect(existsSync(join(full, 'notes.txt'))).toBe(true)
   })
 })
+
+describe('a deploy that cannot work says why (ADR 0075)', () => {
+  const app = `${root}packages/cli/test/fixtures/edge-node`
+  const fake = join(app, 'node_modules/fakedb')
+  spawnSync('mkdir', ['-p', fake])
+  spawnSync('sh', [
+    '-c',
+    `printf '{ "name": "fakedb", "type": "module", "main": "index.js" }' > ${join(fake, 'package.json')} && printf "import net from 'net'\\nimport tls from 'tls'\\nexport const connect = () => typeof net + typeof tls\\n" > ${join(fake, 'index.js')}`,
+  ])
+  for (const [name, code] of [
+    ['events', 'export default class EventEmitter {}\n'],
+    ['webpkg', "import EventEmitter from 'events'\nexport const bus = () => typeof EventEmitter\n"],
+  ]) {
+    spawnSync('mkdir', ['-p', join(app, 'node_modules', name!)])
+    spawnSync('sh', [
+      '-c',
+      `printf '{ "name": "${name}", "type": "module", "main": "index.js" }' > ${join(app, 'node_modules', name!, 'package.json')} && printf "${code}" > ${join(app, 'node_modules', name!, 'index.js')}`,
+    ])
+  }
+  const run = (args: string[]) => spawnSync(process.execPath, [bin, ...args], { cwd: app, encoding: 'utf8' })
+
+  it('names the chain from the app file to each Node built-in, leaves no folder, and is a build error', () => {
+    const out = mkdtempSync(join(tmpdir(), 'hozu-edge-node-'))
+    const r = run(['build', '--target', 'workers', '--out', out, '--json'])
+    expect(r.status).not.toBe(0)
+    const error = JSON.parse(r.stdout).error
+    expect(error.code).toBe('build')
+    expect(error.message).toContain('server/db.ts → fakedb → net, tls')
+    expect(error.message).toContain('server/db.ts → fs/promises')
+    expect(error.message).not.toContain('events')
+    expect(error.suggestions[0]).toContain('hozu build --target node')
+    expect(existsSync(out)).toBe(false)
+  }, 120_000)
+
+  it('hozu build says which targets can serve the app before one is chosen', () => {
+    const out = mkdtempSync(join(tmpdir(), 'hozu-edge-plain-'))
+    const r = run(['build', '--out', out])
+    expect(r.stdout).toContain('targets: node can serve this app; workers and vercel cannot')
+    expect(r.stdout).toContain('server/db.ts → fakedb → net, tls')
+  }, 120_000)
+
+  it('--target node names env values on this machine, which a container cannot reach', () => {
+    const out = mkdtempSync(join(tmpdir(), 'hozu-node-env-'))
+    spawnSync('sh', [
+      '-c',
+      `printf 'DATABASE_URL=mysql://u:secret@127.0.0.1:3306/db\\n' > ${join(app, '.env')}`,
+    ])
+    try {
+      const r = run(['build', '--target', 'node', '--out', out, '--json'])
+      const needs: string[] = JSON.parse(r.stdout).needs
+      expect(
+        needs.some((n) => n.startsWith('DATABASE_URL points at this machine (mysql://127.0.0.1:3306/db)')),
+      ).toBe(true)
+    } finally {
+      spawnSync('rm', ['-f', join(app, '.env')])
+    }
+  })
+})
+
+describe('--target node env and services (ADR 0075 A4, A5)', () => {
+  it('names loopback values without their credentials, and nothing else', async () => {
+    const { loopback } = await import('../src/commands/target.ts')
+    expect(loopback('postgres://u:a/b@localhost:5432/db')).toBe('postgres://localhost:5432/db')
+    expect(loopback('http://[::1]:3000')).toBe('http://[::1]:3000')
+    expect(loopback('mysql://u:p@127.0.0.1:3317/x')).toBe('mysql://127.0.0.1:3317/x')
+    expect(loopback('localhost:6379')).toBe('localhost:6379')
+    expect(loopback('https://localhost.example.com/')).toBeNull()
+    expect(loopback('https://db.example.com')).toBeNull()
+  })
+
+  it('lists a remote() service and keeps its Go module out of the image', () => {
+    const out = mkdtempSync(join(tmpdir(), 'hozu-notes-go-'))
+    const r = spawnSync(process.execPath, [bin, 'build', '--target', 'node', '--out', out, '--json'], {
+      cwd: `${root}examples/notes-go`,
+      encoding: 'utf8',
+    })
+    const result = JSON.parse(r.stdout)
+    expect(result.needs.some((n: string) => n.startsWith('the service NOTES_SERVICE_URL names'))).toBe(true)
+    expect(readFileSync(join(out, '.dockerignore'), 'utf8').split('\n')).toContain('service')
+  })
+})

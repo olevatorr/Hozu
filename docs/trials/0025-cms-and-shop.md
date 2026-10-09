@@ -1,20 +1,25 @@
-# Trial 0025 — A CMS, a shop admin and a storefront on one database, over five releases (ADR 0068–0073)
+# Trial 0025 — A CMS, a shop admin and a storefront on one database, over six releases (ADR 0068–0075)
 
 **Question:** can an agent build a real, data-backed application with Hozu alone: a CMS plus shop back office, and
 the storefront that sells from it, against a real database that both share? And does the framework hold up when it
 changes under the apps, release after release, while the same agents keep working on them?
 
-**Answer (qualitative, two agents, one day):**
+**Answer (qualitative, two agents, two days):**
 - **Both apps were built to the end without intervention**, on 0.21.1, from `create-hozu` and the shipped guide only.
   They share one MySQL database: orders placed on the storefront went through their lifecycle in the admin, and stock
   moved in both directions.
 - **Eight upgrades (each app to 0.22, 0.23, 0.24 and 0.25) needed no hand edit to migrate.** Each time `hozu migrate`
   rewrote 0 files and reported the IR equal; every change after that was the agent adopting a new form (on 0.23 the
   admin also re-ran `hozu gen` for its Go contract, as `hozu check` asked).
+- **The two upgrades to 0.26.1 were the first with a breaking change.** `hozu migrate` listed each old
+  `ui.send(…, { keys })` by file and line, and the second run, after `npm install`, flagged the IR difference at those
+  places as an undeclared behaviour change. Each agent took about 5 minutes by hand.
 - **The asks shrank from round to round.** After round 1 the agents reported framework friction in back-office work of
   20–30 % of their time (admin) and about 1.5 h of 5 h (storefront, its own estimate). By round 4 they mostly asked for
   tool details and ergonomics, plus structural limits that were declined on principle. In round 5 the one new
-  feature they tried, keyboard shortcuts, showed four limits with one cause, and 0.26 redesigned it.
+  feature they tried, keyboard shortcuts, showed four limits with one cause, and 0.26 redesigned it. In round 6 the
+  redesign held for both agents; the new asks came from 0.26's one-command deploys, which could not build either app
+  for Workers or Vercel and did not say why.
 - **Both agents would choose Hozu again for this kind of app.** Both named the same limits: one machine per feature,
   parts that cannot cross features, how little a view can compute, and no global notice.
 - **Not measured:** tokens, cost or correctness against a hidden acceptance. This is a record of what two agents did
@@ -49,6 +54,7 @@ changes under the apps, release after release, while the same agents keep workin
 | 3 | 0.23.0 | The same retest. The store writes a start command for its site, so that the admin can test revalidation against the real storefront | [ADR 0071](../adr/0071-0-24.md) |
 | 4 | 0.24.0 | The same retest, with the declined asks named, so that each agent could say whether it still needs them | [ADR 0072](../adr/0072-0-25.md) E |
 | 5 | 0.25.0 | The same retest, on the 0.25 changes: `current(route, params)`, keyboard shortcuts (`keys` on `ui.send`), the covering-click check, `class` in `--select` | [ADR 0073](../adr/0073-0-26.md) B, C |
+| 6 (2026-10-09) | 0.26.1 | The same retest, on the 0.26 changes: `keys` on the control it presses, the coverage count, `--select`, and the new `hozu build --target node \| workers \| vercel` | [ADR 0075](../adr/0075-0-26-2.md) |
 
 - **Who judged:** the lead session (the owner's coordinator) relayed every release note and judged every ask against
   Hozu's principles. The owner approved each ADR. Each later round also told the agents what had changed.
@@ -81,7 +87,8 @@ changes under the apps, release after release, while the same agents keep workin
 All results below are the agents' own reports. The lead did not re-run their acceptance; it re-ran only `hozu check`
 on both apps after round 4 (the table above). After round 5 the agents reported `contracts 26/35 decisions` (admin)
 and `contracts 7/8 decisions` (store), both with 0 errors and 0 warnings; the gap is a counting bug (C1 below), not
-missing contracts.
+missing contracts. After round 6 they reported `contracts 25/25 decisions` (admin) and `6/6` (store): the count
+was fixed.
 
 | Round | Admin | Storefront |
 |---|---|---|
@@ -91,6 +98,7 @@ missing contracts.
 | 3 (0.23.0) | **Check:** 0 / 0; `go vet` / `go test` pass. **Lifecycle:** order #1312 packed, shipped, delivered, refunded; stock 21 → 22. **Revalidation, first time against the real storefront:** a product renamed in the admin changed on the storefront at once. **Go errors:** one traced by call id across both logs. **Contract:** a changed declaration staled only its own effect | **Check:** 6/6. **Get:** 24 URLs. **`--js both`:** a guest multi-step checkout with edit-back and a declined card (#1311 / #1312), and a member checkout with a coupon (#1314 / #1315). **In the database:** `coupons.used_count` incremented. **Start command:** `store-endpoint.md` starts the site in about 0.9 s; revalidate answers 200 with the token and 401 without |
 | 4 (0.24.0) | **Check:** 0 / 0. **Go:** two new NotFound tests. **Get:** 26 URLs, including filtered and paged lists, detail, preview, 404, CSV. **Lifecycle:** order #1315 cancelled; two items restocked by 1 each. **A vanished variant:** the same message, status 200, with and without JS (in 0.23 the no-JS path answered a 500 page) | **Get:** 24 URLs. **Navigation:** `aria-current` checked on every page type. **`--js both`:** category, filter, product card, colour, add, cart +1, checkout, edit back, pay. Orders #1317 / #1318 checked in the database |
 | 5 (0.25.0) | **Check:** 0 / 0; `hozu build` passes. **Lifecycle:** storefront order #1304 shipped, delivered, refunded; stock 62 → 63. **Stock adjustment** with and without JS. **Go stopped:** a clear error. **Sidebar:** `aria-current` right on 9 page types, filtered and paged lists included. **Shortcuts, two actors:** Priya marked #1304 packed, Mei pressed `r` on the dashboard and the activity feed showed it at once; `Escape` closed a toast | **Check:** green; 3 machine changes accepted into the lock. **Get:** 26 URLs. **`--js both`:** the round-4 flow; orders #1319 / #1320 checked in the database. **The old card bug:** the overlay put back on the heading failed the click step with and without JS, naming the `<h3>` (then reverted). **Shortcut:** `/` opens `/search` with JS, waits while the person types in a field, and is reported `js-only` without JS. **Start command:** ready in 0.7 s |
+| 6 (0.26.1) | **Check:** 0 / 0, `contracts 25/25 decisions`; `hozu build` and `--target node` pass. **Get:** 26 URLs at their expected status. **Shortcuts:** with JS, `Mod+s` saved an article, a page and a product (`+ Article saved`); `Escape` closed a toast; the server writes `aria-keyshortcuts="Control+S Meta+S"`; without JS the step says `js-only (a shortcut needs JavaScript)` and the button still works. **Lifecycle:** storefront order #1319 shipped, delivered, refunded, 2 items returned; the ledger is right with the store's #1321 / #1322 (−2 each) in between: 9 − 4 + 2 = 7. **Go:** a declared error and a stopped service give the right messages. **`--js both`:** the two sides now print their own result. **Deploy:** `--target workers` / `vercel` fail (below) | **Check:** green, `contracts 6/6`; 3 lock changes accepted. **Shortcut:** `/` focuses the header search field (seen with `--select ':focus'`), then `press Enter` → `/search?q=`; `js-only` without JS. **`--js both`:** the round-4 flow with an edit-back adding `Apt 6`; orders #1321 / #1322 checked in the database (`paid`, the address line, one stock row, events `placed,paid`). **Coverage:** a shared `on` with `navigate` put back for the test counted 7/7 (0.25: 7/8), then reverted. **The card bug** put back once more: still fails the step, naming `<h3 class="mt-1…">`. **Deploy:** `--target node` passes; `--target workers` / `vercel` fail (below) |
 
 - **A bug of the storefront's own, found in round 4:** product and article cards "could not be clicked in a real
   browser" since round 1.
@@ -106,6 +114,18 @@ missing contracts.
   - **Arc blanks the window on every document load,** query-only changes included. A plain multi-page site without
     Hozu does the same, and Chrome and Safari do not. Documented, not worked around: a client router would reverse
     ADR 0043 I for one browser (ADR 0073 D).
+
+- **The one-command deploys (0.26, first tried in round 6):**
+  - **`--target node`** built for both: it printed what the platform needs (`SESSION_SECRET`, the server env) and
+    wrote a `Dockerfile` and `.dockerignore`. Neither agent reported running the image; the store says it did not run
+    `docker build`.
+  - **`--target workers` and `vercel`** failed for both, because their TypeScript resolvers use `mysql2` over TCP,
+    which a Worker or an Edge Function cannot open. The failure was right; the message was not: esbuild's raw output
+    ("Build failed with 25 errors" for the store, 23 for the admin; 5 shown), no file of the app named, no way out,
+    and `--json` reported the code `usage`.
+  - **The retry was refused:** the failed build left a partial `dist/workers`, and the next run answered "is not empty
+    and no earlier --target workers output … remove this one yourself".
+  - Both asked for the import chain and a way out (`--target node`, a database driver over HTTP, or `remote()`).
 
 ## What each round asked, and what was decided
 Who: **A** = admin, **S** = storefront. The rows below are the asks that changed the framework or were declined
@@ -183,6 +203,24 @@ In round 4, asked about the two round-3 refusals, the storefront said:
 The store also noted that the guide undersold `current(shop, { category })`: it works on query data inside `ui.each`,
 not only over a constant list.
 
+### Round 6 (0.26.1 → 0.26.2, ADR 0075)
+| Ask | Who | Decision |
+|---|---|---|
+| An edge build that cannot work prints esbuild's raw errors (5 of 25 / 23 shown), names no file of the app, gives no way out, and `--json` says `usage` | A, S | **Accepted (A1):** the bundle records the chain from the app file to the Node built-in (`server/db.ts → mysql2 → net, tls`); the build stops with `build` and names the ways out: `--target node`, a database driver over HTTP, or `remote()` |
+| A failed build leaves a partial folder that refuses the retry | A, S | **Accepted (A2):** the output is removed when the build fails; a folder holding only an earlier partial build counts as this target's output |
+| Know before choosing a platform, not at build time | S | **Accepted (A3):** `hozu build` without `--target` says per target whether it can serve the app, with the chain when it cannot |
+| `--target node` does not mention the Go service; the `Dockerfile` copies `service/` | A | **Accepted (A4):** services reached through `remote()` are listed under "the platform needs", and their folders go in `.dockerignore` |
+| `DATABASE_URL` on 127.0.0.1 cannot be reached from inside a container | S | **Accepted (A5):** `--target node` names each env value on a loopback host |
+| A covering element named by its first class; the admin needed "the Create a discount dialog" | A | **Accepted (A6):** the nearest dialog's accessible name comes first |
+| `press` does not show where focus went (the store needed `--select ':focus'`) | S | **Accepted (A7):** the step says `focused <input name="q">` |
+| `.vercel/` is not in the scaffold's `.gitignore` | A | **Accepted (A8)** |
+| A global toast store (third time) | A | **Declined:** no global mutable client store; the recipe "A notice after saving" stays |
+| `app(({ env }) => …)`, more machines per feature, kit components taking data objects | S | **Declined,** unchanged reasons; 0.26's `keys` removed the reason the store gave for a second machine |
+| Enabling Cloudflare's `nodejs_compat` so that Node modules bundle anyway | — (weighed by the lead) | **Declined:** a second runtime contract to keep and test; HTTP drivers and `remote()` are the supported ways |
+
+Round 5's open item, a prepended row reported as a flash, did not recur: the admin's `r` refresh in 0.26 showed only
+the content change.
+
 ## How the upgrades went
 | Upgrade | `hozu migrate` | Code the agent changed afterwards (excluding lock and skill) |
 |---|---|---|
@@ -195,6 +233,8 @@ not only over a constant list.
 | Store → 0.24 | 0 files rewritten, IR equal | 3 files, +21 / −19 |
 | Admin → 0.25 | 0 files rewritten, IR equal, `hozu check: ok`; `hozu gen` reported the Go contract unchanged | 3 files, +22 / −25. The 22-line, 11-level nested ternary of the sidebar became one line per section with `current()` (+18 / −25); two shortcuts; `Mod+s` tried and reverted (HZ027) |
 | Store → 0.25 | 0 files rewritten, IR equal | 2 files, +17 / −6: `current(shop, { category })` on the header categories, the `/` shortcut with a contract, `final` removed from one state |
+| Admin → 0.26.1 | **The first breaking change.** "rewrote 0 files", and under `by hand:` the 3 old forms by line (`features/dashboard/views.ts:21  keys left ui.send: put them on the control …`). After `npm install` the second run reported "the IR differs from the saved one … at 3 places" and asked to review each. About 5 minutes; the Go contract unchanged | Shortcuts: 6 files, +5 / −8 (`r` on a `Button`, `Escape` on the kit `Toast`'s close button, `Mod+s` on the article, page and product editors). Also the generated `Dockerfile` / `.dockerignore` (+16), `@hozu/bundle`, `.vercel` in `.gitignore` |
+| Store → 0.26.1 | The same: `features/site/views.ts:152` listed by hand; the second run `! …/Footer/root/children/0/on/keydown/keys: ["/"] → absent`, `hozu check: failed`, "Review each IR difference: it is a behaviour change the migration did not declare". About 5 minutes | 5 files, +33 / −26; code 2 files, +5 / −14: `keys: ['/']` on the header search field; the footer machine's workaround (`ui.window` listener, `OpenSearch`, the shared `on`, its contract) removed and `final` put back on `subscribed`. Plus the generated `Dockerfile` / `.dockerignore` |
 
 - **The storefront in round 2:** the upgrade was "the best framework upgrade process I have used". Its one complaint,
   a one-line change summary, became bullets in 0.24.
@@ -202,6 +242,8 @@ not only over a constant list.
   `body:has(` or `session?.`). That was not taken up.
 - **The admin in round 5:** the release note pointed at a CHANGELOG that the installed packages did not contain; it
   learnt the changes from the migrate bullets and the guide's topics instead (C9 ships it).
+- **Round 6:** the CHANGELOG was in `node_modules/@hozu/cli/CHANGELOG.md`. The store: "the first upgrade with a
+  breaking change"; the tool gave the exact line and warned that it is a behaviour change.
 
 ## The agents' verdicts (translated)
 | | Admin | Storefront |
@@ -213,10 +255,12 @@ not only over a constant list.
 | Round 3 | Go debugging "close to the 'one process' level"; one regression (the sidebar mark) | "My first choice among similar projects"; "would pick Hozu again without hesitation" |
 | Round 4 | `current(route)` is "better overall". **Disagrees:** the framework knows the route hierarchy, yet leaves sections entirely to the app; a missed detail route gets no diagnostic | Explicit sections are "better than 0.23". The release's biggest gain was "`browse` catching my own bug" |
 | Round 5 | "Zero hand edits, and the Go contract did not change." 0.25 answered "the main complaint of my last report" (the sidebar's nested ternary); shortcuts and the covering-click message "actually useful". Against: the coverage figures contradict each other, `--select` is harder to read, and "`Mod+s` to save, the most typical back-office shortcut, still cannot be done" | Upgrade "as painless as the earlier versions"; no regressions. The covering-click check "hit the problem squarely". "The remaining pain is all at site level: shortcuts, focus, header state" |
-| Still open after round 5 | Sections kept by hand: a new detail route missed in `current()` gets no diagnostic (declined again). A diagnostic for expectable errors. A Go health check at start. Machine dialogs without JS. A global notice | One machine per feature. Parts across features (`productTile` written three times). `app()` reading env. Declarative focus and shortcuts without a machine (0.26's redesign, not yet retested) |
+| Still open after round 5 | Sections kept by hand: a new detail route missed in `current()` gets no diagnostic (declined again). A diagnostic for expectable errors. A Go health check at start. Machine dialogs without JS. A global notice | One machine per feature. Parts across features (`productTile` written three times). `app()` reading env. Declarative focus and shortcuts without a machine (answered by 0.26, retested in round 6) |
+| Round 6 | `Mod+s` "finally" works on the three editors; the four complaints of round 5 (coverage, `hozu why`, `--select`, the flash) fixed. Against: `--target workers` / `vercel` cannot build the app, and the message "did not tell me what to do". Its plan: Node and Docker, with the Go service in a second container | "The new shortcut design is right": no machine, `aria-keyshortcuts` written, both frictions of round 5 gone, a net 9 lines fewer; no regressions. Against: for "Node plus a traditional database", the most common combination, a failed edge build is "clearly below the level of the rest of the framework". `--target node` with Docker is the right route for this store |
+| Still open after round 6 | Edge deploys for a TCP database (0.26.2 names the chain and the ways out). A global notice (declined a third time) | `app()` reading env, kit components taking data objects, more than one machine per feature (all declined again) |
 
 ## What changed in Hozu
-The trial drove five releases. Each ADR records every ask with the decision and the reason.
+The trial drove six releases. Each ADR records every ask with the decision and the reason.
 - **0.22 ([ADR 0068](../adr/0068-resolvers-in-go.md), [ADR 0069](../adr/0069-0-22-trial-feedback.md)):**
   - one-shot commands exit, and `app({ dispose })`;
   - server errors surface in `onError`, `get` and `browse`;
@@ -247,6 +291,14 @@ The trial drove five releases. Each ADR records every ask with the decision and 
   - `--select` prints `class` last and cut; a covering element is named; `--js both` no longer repeats the arrival;
   - the CHANGELOG ships in `@hozu/cli`, and `hozu migrate` prints each step's entry;
   - from the owner's manual test: `hozu serve` signs in on Safari over http, and the guide says why Arc flashes.
+- **0.26.2 ([ADR 0075](../adr/0075-0-26-2.md)):**
+  - an edge build that cannot work names the chain (`server/db.ts → mysql2 → net, tls`) and the ways out, with the
+    code `build`; `hozu build` without `--target` says before the choice which targets can serve the app;
+  - a failed build removes its output, so the retry runs;
+  - `--target node` lists the `remote()` services to deploy too, keeps their folders out of the image, and names env
+    values on a loopback host;
+  - `browse` names the dialog over a covered click and says where `press` moved focus; `.vercel/` in the scaffold's
+    `.gitignore`.
 - **The lesson recorded in ADR 0071:** accepting an ask as stated can be wrong.
   - 0.22's automatic `aria-current` answered the admin's ask. It misfired on the next-page link, and the narrower rule
     of 0.23 misfired on filtered lists.
@@ -255,6 +307,9 @@ The trial drove five releases. Each ADR records every ask with the decision and 
 - **Round 5's lesson (ADR 0073 B):** four asks about one new feature (`Mod+s`, `/` to focus, a machine for every
   shortcut, final states) had one cause: a shortcut is "press this control", not "send this event". One redesign
   answered all four instead of four additions.
+- **Round 6's lesson (ADR 0075):** the redesign held on its first retest. The new failure was in the deploys, the one
+  0.26 feature this trial did not drive: refusing `mysql2` on an edge target was right, but the message broke
+  principle 7 (a diagnostic names its place, cause and fix).
 
 ## Limits
 - **Qualitative.** No hidden acceptance, no held-out changes, no token or cost measurement, and no comparison
@@ -273,8 +328,9 @@ The trial drove five releases. Each ADR records every ask with the decision and 
   show that the fix generalises.
 - **Writes on a shared database:** `--js both` wrote twice to the shared database, and test orders and edits stayed
   in it. Both agents report cleaning up most of them.
-- **Round 5's decisions are not retested.** 0.26 changed the shortcut form after the agents' last run, so no agent has
-  used `keys` on an element yet.
+- **Round 5's decisions were retested in round 6;** round 6's are not. Both agents used `keys` on controls on 0.26.1.
+  0.26.2's deploy diagnostics were written after their last run, and no app has been deployed: `--target node` built,
+  but no agent reported running the image, and `--target workers` / `vercel` failed for both.
 - **Agent verification covers one browser family.** `hozu browse` drives a Chromium-based browser against the
   in-process handler; the Safari sign-in failure and Arc's blank frames surfaced only in the owner's manual test in
   round 5.

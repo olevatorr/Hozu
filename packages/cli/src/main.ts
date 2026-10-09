@@ -33,7 +33,14 @@ import { describeRequests, runRequests } from './commands/requests.ts'
 import { runServe } from './commands/serve.ts'
 import { describeShow, runShow } from './commands/show.ts'
 import { runSkill } from './commands/skill.ts'
-import { describeTarget, runTarget, TARGETS, type Target } from './commands/target.ts'
+import {
+  describeTarget,
+  describeTargets,
+  edgeCheck,
+  runTarget,
+  TARGETS,
+  type Target,
+} from './commands/target.ts'
 import { featuresCreated, seedLockIsolated } from './commands/validate.ts'
 import { describeWhy, runWhy } from './commands/why.ts'
 import { HozuCliError } from './errors.ts'
@@ -569,10 +576,11 @@ export async function main(
     }
     if (command === 'build') {
       const result = await runBuild(loaded, values.out, cwd)
+      const edge = await edgeCheck(loaded, result.out)
       out(
         asJson
-          ? json(result)
-          : `✔ wrote ${result.files.length} static files and ${result.manifest}\nnext: hozu build --target node | workers | vercel writes what that platform deploys (a static host: hozu export)\n`,
+          ? json({ ...result, edge })
+          : `✔ wrote ${result.files.length} static files and ${result.manifest}\n${describeTargets(edge)}`,
       )
       return 0
     }

@@ -496,6 +496,14 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(off.jsOnly).toBe('a shortcut needs JavaScript')
   }, 60_000)
 
+  it('press says where focus went (ADR 0075 A7)', async () => {
+    const { out } = await browse(
+      ['/', '--js', 'on', '--do', 'press /'],
+      `${root}packages/cli/test/fixtures/flash`,
+    )
+    expect(out.steps[0].modes[0].note).toBe('focused <input name="q">')
+  }, 60_000)
+
   it('replace writes the address in place, so a reload keeps the search (ADR 0067 G)', async () => {
     const { code, out } = await browse(
       ['/', '--js', 'on', '--do', 'fill Search=park', '--do', 'goto /?q=park'],

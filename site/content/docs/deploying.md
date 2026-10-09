@@ -86,6 +86,8 @@ Set public environment variables in the host's dashboard; the export writes them
 
 ### Docker
 
+`npx hozu build --target node` writes this `Dockerfile` and a `.dockerignore` (it keeps yours when they exist), and lists what the server needs: the env your project declares, `SESSION_SECRET`, each service the app reaches through `remote()` (deploy it too; a `.dockerignore` this command writes leaves the service's Go module out of the image when no app code lives in it), and every env value that points at `127.0.0.1` or `localhost`, which inside a container is the container itself.
+
 ```dockerfile
 # Dockerfile
 FROM node:22-slim
@@ -159,7 +161,17 @@ hozu build --target workers → dist/workers
 next: cd dist/workers && npx wrangler deploy
 ```
 
-- **One bundle.** The app, its resolvers and the generated render module become one file with no `node:` import. A resolver that imports Node-only code (a driver that needs `node:net`, `node:fs`) fails the build with that module's name: on these platforms data goes through an HTTP or edge-ready client.
+- **One bundle.** The app, its resolvers and the generated render module become one file with no `node:` import. When an import needs Node, the build stops and names the chain from your file, then the ways out:
+
+  ```text
+  hozu: Cloudflare Workers has no Node built-ins, and these imports need them:
+    server/db.ts → mysql2 → net, tls
+    hozu build --target node   # these modules run there as they are
+    or read the data through a driver that speaks HTTP (or the platform's own database binding)
+    or move those effects to a service with remote()   (hozu docs data --more)
+  ```
+
+  A plain `hozu build` already says which targets can serve the app, so you know before choosing one.
 - **Static files first.** The client, chunks, styles and assets are served by the platform before the function runs; the function answers pages, queries, effects and endpoints.
 - **Sessions.** On Workers the entry uses `kvSessions` over the KV namespace bound as `SESSIONS` (create it, then put its id in `wrangler.jsonc`, and `npx wrangler secret put SESSION_SECRET`). On Vercel every instance needs one store: pass `app({ session: kvSessions(kv, { secret }) })` over a KV you choose. The cookie holds only a signed id. KV can take up to a minute to show a sign-out in other regions.
 - **Memory does not last.** A Worker or an Edge Function keeps nothing between requests: keep app data in a database.

@@ -12,13 +12,15 @@ export interface RemoteGroup {
   /** The Go package: the contract's folder name. */
   pkg: string
   contract: RemoteContract
+  /** Where the app reaches the service: a URL, or the env variable that holds it. */
+  url: string
 }
 
 interface Data {
   remotesOf(
     set: unknown,
     refOf: (decl: object) => string | undefined,
-  ): { options: { contract: { href: string } }; refs: string[] }[]
+  ): { options: { contract: { href: string }; url: string | { env: string } }; refs: string[] }[]
 }
 
 export const packageOf = (file: string) =>
@@ -37,7 +39,8 @@ export async function remoteGroups(
     .remotesOf(resolvers, (decl) => build.bindings.refs.get(decl))
     .map(({ options, refs }) => {
       const file = fileURLToPath(options.contract.href)
-      return { file, pkg: packageOf(file), contract: remoteContract(build.ir, refs) }
+      const url = typeof options.url === 'string' ? options.url : options.url.env
+      return { file, pkg: packageOf(file), contract: remoteContract(build.ir, refs), url }
     })
 }
 

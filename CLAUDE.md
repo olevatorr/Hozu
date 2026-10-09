@@ -379,6 +379,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `keys.js` on pages with keys; HZ014 for `ui.send` keys and for one key on two always-shown controls); `localCookie`
   drops `Secure` only over HTTP on a loopback host (Safari); coverage line and `hozu why` count a shared `on` once;
   browse flash detection compares sibling positions; Arc's blank frame on document loads documented (ADR 0073 D).
+- 0.26.2 (ADR 0075): `bundleServer` keeps Node built-ins out and reports `node` chains (`server/db.ts → mysql2 → net,
+  tls`); `--target workers | vercel` stops with a `build` error naming them and removes its output on failure;
+  plain `hozu build` prints which targets can serve the app (`edgeCheck`); `--target node` lists `remote()` services
+  and loopback env values; browse `press` reports focus, covering elements name their dialog.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

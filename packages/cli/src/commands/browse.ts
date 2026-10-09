@@ -169,8 +169,10 @@ export async function act(tab: Tab, p: Parsed): Promise<StepResult> {
     if (!p.target) throw new Error('press takes a key such as Enter')
     const reason: string | null = off ? await tab.page(`keyJsOnly(${q(p.target)})`) : null
     if (reason) return { ok: true, note: null, jsOnly: reason }
+    const before = await tab.page('focused()').catch(() => null)
     await tab.key(p.target)
-    return done({})
+    const after = await tab.page('focused()').catch(() => null)
+    return done({ note: after && after !== before ? `focused ${after}` : null })
   }
   if (p.verb === 'wait') {
     const ms = Number(p.target)
