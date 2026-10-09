@@ -142,7 +142,23 @@ export const PAGE = String.raw`(() => {
       const el = document.activeElement
       if (!el || el === document.body) return null
       const name = ['name', 'id', 'aria-label', 'href'].find((k) => el.getAttribute(k))
-      return '<' + el.tagName.toLowerCase() + (name ? ' ' + name + '="' + el.getAttribute(name) + '"' : '') + '>'
+      const label = (el.getAttribute('aria-label') || el.labels?.[0]?.innerText || el.getAttribute('placeholder') || '').trim()
+      return '<' + el.tagName.toLowerCase() + (name ? ' ' + name + '="' + el.getAttribute(name) + '"' : '') + '>' +
+        (label && name !== 'aria-label' ? ' "' + label.replace(/\s+/g, ' ').slice(0, 60) + '"' : '')
+    },
+    keyed(key) {
+      const mac = /Mac|iP/.test(navigator.platform)
+      const norm = (k) => {
+        const p = k.split(/\+(?!$)/)
+        const last = p.pop().toLowerCase()
+        return [...new Set(p.map((m) => (m === 'Mod' ? (mac ? 'Meta' : 'Ctrl') : m)))].sort().concat(last).join('+')
+      }
+      const want = norm(key)
+      const modal = document.querySelector('dialog:modal')
+      const els = [...(modal ?? document).querySelectorAll('[data-hozu-keys]')].filter((el) =>
+        el.dataset.hozuKeys.split(' ').some((k) => norm(k) === want))
+      const shown = els.filter((el) => !el.closest('[hidden], [inert]') && el.getClientRects().length)
+      return els.length && !shown.length ? 'no visible control has ' + key + ' (' + els.length + ' hidden)' : null
     },
     point(name, within) {
       const f = find('click', name, within)

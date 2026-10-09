@@ -14,7 +14,7 @@ import {
 } from './commands/browse.ts'
 import { runBuild } from './commands/build.ts'
 import { describeCall, runCall } from './commands/call.ts'
-import { runCheck, startTypes } from './commands/check.ts'
+import { describeMismatch, runCheck, startTypes } from './commands/check.ts'
 import { describeComponent } from './commands/components.ts'
 import { runDev } from './commands/dev.ts'
 import { describeDevtoolsMessages, messagesFileOf, runDevtoolsMessages } from './commands/devtools.ts'
@@ -477,6 +477,7 @@ export async function main(
       const result = await runCheck(loaded, cwd, values['update-lock'] === true, typeRun, loadMs)
       if (asJson) out(json(result))
       else {
+        out(describeMismatch(result.versions))
         for (const e of result.types.errors) out(`${e.file}:${e.line}:${e.column}  ${e.code}  ${e.message}\n`)
         if (result.types.errors.length) out('\n')
         for (const d of result.validate.diagnostics) out(`${human(d)}\n\n`)
@@ -487,6 +488,8 @@ export async function main(
           )
         for (const o of result.overrides) out(`${describeOverrides(o)}\n`)
         if (result.overrides.length) out('\n')
+        if (result.validate.diagnostics.length + result.types.errors.length > 5)
+          out(describeMismatch(result.versions))
         const v = result.validate
         const types = result.types.skipped
           ? values['no-types'] === true

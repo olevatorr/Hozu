@@ -176,6 +176,8 @@ export interface CheckOutput {
   types: { ok: boolean; skipped: boolean; errors: TypeIssue[] }
   validate: ValidateOutput
   overrides: CheckOverrides[]
+  /** The CLI's version and the app's installed `@hozu/core`; check fails when they differ (ADR 0076 A3). */
+  versions: { cli: string; core: string | null }
   /** Milliseconds; the type check runs in parallel with loading and validating (ADR 0050 D). */
   timings: { types: number; load: number; validate: number }
 }
@@ -529,10 +531,11 @@ export interface MigrateOutput {
   to: string
   /**
    * `rewrite`: the source was older than the CLI, so it was rewritten and the dependencies raised.
+   * `upgrade`: the CLI is newer by a patch, so only the dependencies were raised (ADR 0076 A1).
    * `verify`: the dependencies are current, so the saved IR was compared and the app checked.
    * `current`: nothing to migrate.
    */
-  phase: 'rewrite' | 'verify' | 'current'
+  phase: 'rewrite' | 'upgrade' | 'verify' | 'current'
   dryRun: boolean
   /** Each step's changes: `summary` joins `changes` with "; ". */
   steps: { from: string; to: string; summary: string; changes: string[] }[]

@@ -20,10 +20,11 @@
           "type": "string",
           "enum": [
             "rewrite",
+            "upgrade",
             "verify",
             "current"
           ],
-          "description": "`rewrite`: the source was older than the CLI, so it was rewritten and the dependencies raised. `verify`: the dependencies are current, so the saved IR was compared and the app checked. `current`: nothing to migrate."
+          "description": "`rewrite`: the source was older than the CLI, so it was rewritten and the dependencies raised. `upgrade`: the CLI is newer by a patch, so only the dependencies were raised (ADR 0076 A1). `verify`: the dependencies are current, so the saved IR was compared and the app checked. `current`: nothing to migrate."
         },
         "dryRun": {
           "type": "boolean"
@@ -245,6 +246,26 @@
             "$ref": "#/definitions/CheckOverrides"
           }
         },
+        "versions": {
+          "type": "object",
+          "properties": {
+            "cli": {
+              "type": "string"
+            },
+            "core": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "cli",
+            "core"
+          ],
+          "additionalProperties": false,
+          "description": "The CLI's version and the app's installed `@hozu/core`; check fails when they differ (ADR 0076 A3)."
+        },
         "timings": {
           "type": "object",
           "properties": {
@@ -272,6 +293,7 @@
         "types",
         "validate",
         "overrides",
+        "versions",
         "timings"
       ],
       "additionalProperties": false

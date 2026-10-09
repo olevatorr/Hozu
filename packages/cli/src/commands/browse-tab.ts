@@ -147,6 +147,8 @@ export interface StepResult {
   ok: boolean
   note: string | null
   jsOnly: string | null
+  /** A press: what had focus before it (`''` for nothing), read again once the page settles (ADR 0076 A8). */
+  focus?: string
 }
 
 const bodyOf = (request: { postData?: string; postDataEntries?: { bytes?: string }[] }) => {

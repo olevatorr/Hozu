@@ -10,6 +10,7 @@ import { remoteDiagnostics, remoteGroups } from '../remote.ts'
 
 import { projectStyles } from '../styles.ts'
 import { componentUses, overridesOf } from '../uses.ts'
+import { cliVersion, compareVersion, installedCore } from '../versions.ts'
 import { applyAccepted } from './accept.ts'
 import { inspectApp } from './app.ts'
 import { envFilesIgnored } from './env-ignore.ts'
@@ -103,6 +104,19 @@ const previewDiagnostics = async (loaded: Loaded, build: Parameters<typeof check
   return [...problems, ...checkPreviews(loaded, build, set)]
 }
 
+export const mismatched = (v: CheckOutput['versions']): boolean =>
+  v.core !== null && compareVersion(v.core, v.cli) !== 0
+
+/** The first lines of a check whose CLI and packages differ: the cause of most of what follows (ADR 0076 A3). */
+export const describeMismatch = (v: CheckOutput['versions']): string =>
+  mismatched(v)
+    ? `✖ hozu ${v.cli} is checking an app on @hozu/core ${v.core}: the diagnostics below may come from that difference alone.\n  fix: ${
+        compareVersion(v.core!, v.cli) < 0
+          ? 'npx hozu migrate   # raises every @hozu/* to this CLI, then install'
+          : `npx -p @hozu/cli@${v.core} hozu check   # this CLI is older than the app`
+      }\n\n`
+    : ''
+
 export async function runCheck(
   loaded: Loaded,
   cwd: string,
@@ -112,7 +126,8 @@ export async function runCheck(
 ): Promise<CheckOutput> {
   const root = dirname(loaded.path)
   const validating = performance.now()
-  const validate = await runValidate(loaded, undefined, cwd, updateLock)
+  const versions = { cli: cliVersion(), core: installedCore(loaded.path) }
+  const validate = await runValidate(loaded, undefined, cwd, updateLock && !mismatched(versions))
   const traced = loaded.build(true)
   const { module, diagnostics: app } = await inspectApp(loaded, traced)
   const remotes = module
@@ -135,10 +150,11 @@ export async function runCheck(
   const validateMs = performance.now() - validating
   const { types, ms } = await typeRun
   return {
-    ok: types.ok && validate.ok,
+    ok: types.ok && validate.ok && !mismatched(versions),
     types,
     validate,
     overrides,
+    versions,
     timings: { types: Math.round(ms), load: Math.round(loadMs), validate: Math.round(validateMs) },
   }
 }

@@ -8,6 +8,7 @@ import type { CheckOutput, MigrateOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import { load } from '../load.ts'
 import { chain, compareMinor, minorOf, OLDEST } from '../migrate/steps.ts'
+import { cliVersion, compareVersion, installedCore } from '../versions.ts'
 import { runCheck } from './check.ts'
 import { runSkill } from './skill.ts'
 
@@ -22,22 +23,6 @@ export interface MigrateOptions {
   recordIR?: (config: string) => Json
   /** Tests: skip the type check and validation of the verify phase. */
   check?: boolean
-}
-
-const cliVersion = (): string => {
-  const pkg = new URL('../../package.json', import.meta.url)
-  return (JSON.parse(readFileSync(fileURLToPath(pkg), 'utf8')) as { version: string }).version
-}
-
-export function installedCore(config: string): string | null {
-  let d = dirname(config)
-  for (;;) {
-    const pkg = join(d, 'node_modules/@hozu/core/package.json')
-    if (existsSync(pkg)) return (JSON.parse(readFileSync(pkg, 'utf8')) as { version: string }).version
-    const up = dirname(d)
-    if (up === d) return null
-    d = up
-  }
 }
 
 export function sources(dir: string): string[] {
@@ -161,7 +146,7 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
       `hozu migrate starts at ${OLDEST}.0; this app is on ${installed}. Upgrade it to ${OLDEST} by hand with the CHANGELOG first`,
       ['https://github.com/olevatorr/Hozu/blob/main/CHANGELOG.md'],
     )
-  if (compareMinor(from, to) > 0)
+  if (compareVersion(installed, target) > 0)
     throw new HozuCliError('usage', `The app is on ${installed}, newer than this CLI (${target})`, [
       `npx @hozu/cli@${installed} …`,
     ])
@@ -212,7 +197,7 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
     out.packages = raisePackages(join(dir, 'package.json'), target, !options.dryRun)
     if (!options.dryRun) {
       mkdirSync(dirname(record), { recursive: true })
-      writeFileSync(join(dir, `.hozu/migrate-${to}.json`), JSON.stringify({ from, to, ir }))
+      writeFileSync(join(dir, `.hozu/migrate-${to}.json`), JSON.stringify({ from, to, version: target, ir }))
     }
     out.record = rel(join(dir, `.hozu/migrate-${to}.json`))
     out.next.push(
@@ -223,7 +208,33 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
   }
 
   const saved = join(dir, `.hozu/migrate-${to}.json`)
-  if (!existsSync(saved)) {
+  const { version: recorded, verified } = existsSync(saved)
+    ? (JSON.parse(readFileSync(saved, 'utf8')) as { version?: string; verified?: string })
+    : {}
+  const current =
+    recorded !== undefined &&
+    minorOf(recorded) === to &&
+    compareVersion(recorded, target) <= 0 &&
+    (verified === undefined || verified === installed)
+  if (existsSync(saved) && !current) {
+    if (!options.dryRun) rmSync(saved)
+    out.notes.push({
+      file: rel(saved),
+      line: 1,
+      message: `${options.dryRun ? 'would remove' : 'removed'} a stale record (${verified ? `verified on ${verified}, now ${installed}` : `written for ${recorded ?? 'a version before 0.26.3'}`}): its IR is not compared`,
+      see: null,
+    })
+  }
+  if (compareVersion(installed, target) < 0) {
+    out.phase = 'upgrade'
+    out.packages = raisePackages(join(dir, 'package.json'), target, !options.dryRun)
+    out.next.push(
+      `${installCommand(dir)}   # installs Hozu ${target}`,
+      `npx hozu ${current ? 'migrate   # again: compares the IR with the old one and runs hozu check' : 'check'}`,
+    )
+    return out
+  }
+  if (!current) {
     out.next.push('Nothing to migrate: the app is on this CLI’s version.')
     return out
   }
@@ -266,7 +277,8 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
   if (out.ok && !options.dryRun) {
     rmSync(saved)
     out.next.push('Done. Commit the migration; hozu.lock.json was not touched.')
-  }
+  } else if (!options.dryRun)
+    writeFileSync(saved, JSON.stringify({ ...JSON.parse(readFileSync(saved, 'utf8')), verified: installed }))
   return out
 }
 
@@ -275,7 +287,14 @@ const typesOf = (t: CheckOutput['types']) =>
 
 export function describeMigrate(r: MigrateOutput): string {
   const lines: string[] = []
-  const title = r.phase === 'rewrite' ? 'rewrite' : r.phase === 'verify' ? 'verify' : 'nothing to do'
+  const title =
+    r.phase === 'rewrite'
+      ? 'rewrite'
+      : r.phase === 'verify'
+        ? 'verify'
+        : r.phase === 'upgrade'
+          ? 'upgrade, no source changes'
+          : 'nothing to do'
   lines.push(`hozu migrate ${r.from} → ${r.to}: ${title}${r.dryRun ? ' (dry run, nothing written)' : ''}`)
   for (const s of r.steps) {
     lines.push(`  ${s.from} → ${s.to}:`)
@@ -287,6 +306,7 @@ export function describeMigrate(r: MigrateOutput): string {
     for (const p of r.packages) lines.push(`  ${p.name}: ${p.from} → ${p.to}`)
     if (r.record) lines.push(`  ${r.dryRun ? 'would save' : 'saved'} the old IR to ${r.record}`)
   }
+  if (r.phase === 'upgrade') for (const p of r.packages) lines.push(`  ${p.name}: ${p.from} → ${p.to}`)
   if (r.notes.length) lines.push('  by hand:')
   for (const n of r.notes)
     lines.push(`    ${n.file}:${n.line}  ${n.message}${n.see ? `  (hozu docs ${n.see})` : ''}`)

@@ -17,6 +17,8 @@ export interface TargetOutput {
   target: Target
   out: string
   files: string[]
+  /** Files that were there already and were not overwritten (ADR 0076 A5). */
+  kept: string[]
   /** What the platform needs from the person: env vars, a session store, a KV namespace (ADR 0073 A2). */
   needs: string[]
   next: string[]
@@ -115,7 +117,7 @@ const PLATFORM: Record<'workers' | 'vercel', string> = {
 const nodeOnly = (target: 'workers' | 'vercel', node: string[]) =>
   new HozuCliError(
     'build',
-    `${PLATFORM[target]} has no Node built-ins, and these imports need them:\n${node.map((n) => `  ${n}`).join('\n')}`,
+    `hozu build --target ${target} bundles no Node built-ins for ${PLATFORM[target]}${target === 'workers' ? " (Cloudflare's nodejs_compat stays off)" : ''}, and these imports need them:\n${node.map((n) => `  ${n}`).join('\n')}`,
     [
       'hozu build --target node   # these modules run there as they are',
       "or read the data through a driver that speaks HTTP (or the platform's own database binding)",
@@ -204,9 +206,13 @@ export async function runTarget(
   const dir = resolve(target === 'node' && out === undefined ? root : cwd, out ?? DEFAULT_OUT[target])
   const needs = needsOf(build, target)
   const files: string[] = []
+  const kept: string[] = []
   const write = async (file: string, text: string, keep = false) => {
     const path = join(dir, file)
-    if (keep && existsSync(path)) return
+    if (keep && existsSync(path)) {
+      kept.push(relative(cwd, path))
+      return
+    }
     await mkdir(dirname(path), { recursive: true })
     await writeFile(path, text)
     files.push(relative(cwd, path))
@@ -230,21 +236,36 @@ export async function runTarget(
       .map((s) => serviceRoot(s.file, root))
       .filter((d): d is string => d !== null)
       .map((d) => relative(root, d))
+    const lines = ['node_modules', '.git', '.hozu', '.vercel', 'dist', '.env*', '!.env.example', ...ignored]
+    const ignoreName = dir === root ? '.dockerignore' : 'Dockerfile.dockerignore'
+    const ignore = join(dir, ignoreName)
+    if (existsSync(ignore)) {
+      const has = new Set(
+        readFileSync(ignore, 'utf8')
+          .split('\n')
+          .map((l) => l.trim().replace(/^\/|\/$/g, '')),
+      )
+      const missing = lines.filter((l) => !has.has(l))
+      if (missing.length)
+        needs.push(
+          `the kept ${relative(cwd, ignore)} lacks: ${missing.join(', ')} (add them, or the image copies them)`,
+        )
+    }
     await write('Dockerfile', DOCKERFILE, true)
-    await write(
-      '.dockerignore',
-      ['node_modules', '.git', '.hozu', '.vercel', 'dist', '.env*', '!.env.example', ...ignored].join('\n') +
-        '\n',
-      true,
-    )
+    await write(ignoreName, `${lines.join('\n')}\n`, true)
+    const at = (p: string) => relative(cwd, p) || '.'
+    const env = existsSync(join(root, '.env')) ? ` --env-file ${at(join(root, '.env'))}` : ''
     return {
       target,
       out: dir,
       files,
+      kept,
       needs,
       next: [
-        'docker build -t app .',
-        'docker run -p 3000:3000 --env-file .env app   # or npm start on a Node host',
+        dir === root
+          ? `docker build -t app ${at(root)}`
+          : `docker build -f ${at(join(dir, 'Dockerfile'))} -t app ${at(root)}   # the app is the build context`,
+        `docker run -p 3000:3000${env} app   # or npm start on a Node host`,
       ],
     }
   }
@@ -265,6 +286,8 @@ export async function runTarget(
     )
   }
   await clearOutput(dir, [root, cwd], target)
+  let made = dir
+  while (!existsSync(dirname(made))) made = dirname(made)
   const staged = join(dir, '.build')
   const assets = target === 'workers' ? 'assets' : 'static'
   const entry = target === 'workers' ? 'worker.mjs' : 'functions/index.func/index.js'
@@ -279,7 +302,7 @@ export async function runTarget(
     })
     if (node.length) throw nodeOnly(target, node)
   } catch (error) {
-    await rm(dir, { recursive: true, force: true })
+    await rm(made, { recursive: true, force: true })
     throw error instanceof HozuCliError ? error : new HozuCliError('build', bundleFailure(error), [])
   }
   files.push(relative(cwd, join(dir, entry)), `${relative(cwd, join(dir, assets))}/`)
@@ -314,6 +337,7 @@ export async function runTarget(
       target,
       out: dir,
       files,
+      kept,
       needs,
       next: [`cd ${relative(cwd, dir) || '.'} && npx wrangler deploy`],
     }
@@ -326,11 +350,15 @@ export async function runTarget(
     'config.json',
     `${JSON.stringify({ version: 3, routes: [{ handle: 'filesystem' }, { src: '/(.*)', dest: '/index' }] }, null, 2)}\n`,
   )
-  return { target, out: dir, files, needs, next: ['npx vercel deploy --prebuilt'] }
+  return { target, out: dir, files, kept, needs, next: ['npx vercel deploy --prebuilt'] }
 }
 
 export function describeTarget(r: TargetOutput): string {
-  const lines = [`hozu build --target ${r.target} → ${r.out}`, ...r.files.map((f) => `  wrote ${f}`)]
+  const lines = [
+    `hozu build --target ${r.target} → ${r.out}`,
+    ...r.files.map((f) => `  wrote ${f}`),
+    ...r.kept.map((f) => `  kept ${f} (it was there; not overwritten)`),
+  ]
   if (r.needs.length) lines.push('  the platform needs:', ...r.needs.map((n) => `    - ${n}`))
   for (const n of r.next) lines.push(`next: ${n}`)
   return `${lines.join('\n')}\n`

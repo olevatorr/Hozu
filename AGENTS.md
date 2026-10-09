@@ -385,6 +385,11 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   tls`); `--target workers | vercel` stops with a `build` error naming them and removes its output on failure;
   plain `hozu build` prints which targets can serve the app (`edgeCheck`); `--target node` lists `remote()` services
   and loopback env values; browse `press` reports focus, covering elements name their dialog.
+- 0.26.3 (ADR 0076): versions compare in full (`src/versions.ts`); `hozu migrate` phase `upgrade` raises a patch
+  release (no rewrite); a record carries `version` and any other record is removed with a note; `hozu check` fails
+  on a CLI / `@hozu/core` mismatch (`versions`); `--target` names kept files and missing `.dockerignore` lines,
+  prints `docker build -f` for `--out`, removes every folder a failed build made; browse `press` always reports focus
+  with the accessible name and hidden-only keys.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

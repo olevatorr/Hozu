@@ -77,5 +77,6 @@
 
 ## Upgrading Hozu
 `npx -p @hozu/cli@latest hozu migrate` (preview with `--dry-run`), then run the `next:` lines it prints: install, and
-`npx hozu migrate` again, which checks the IR is unchanged and runs `hozu check`. Never raise `@hozu/*` by hand.
+`npx hozu migrate` again, which checks the IR is unchanged and runs `hozu check` (a patch release: install, then
+`npx hozu check`). Never raise `@hozu/*` by hand.
 Each release's notes are in `node_modules/@hozu/cli/CHANGELOG.md`.

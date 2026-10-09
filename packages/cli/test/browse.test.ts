@@ -164,7 +164,9 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(code).toBe(0)
     expect(stdout.length).toBeLessThanOrEqual(1536)
     expect(stdout.trimEnd().split('\n')).toHaveLength(10)
-    expect(stdout).toContain('  2 press Enter: + Notes: 3 · + Milk · + Pin · + Delete · − Notes: 2\n')
+    expect(stdout).toContain(
+      '  2 press Enter: + Notes: 3 · + Milk · + Pin · + Delete · − Notes: 2 — on: focus stays on <input name="text"> "New note"\n',
+    )
     expect(stdout).toContain('  3 click Pin in "Milk": + pinned · + Unpin · − Pin\n')
     expect(stdout).toMatch(/ {2}6 click Sign out: → \/login \(on: loaded, \d+ ms; off: loaded, \d+ ms\): /)
     const { out } = await browse(chain, example('notes'))
@@ -496,12 +498,16 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     expect(off.jsOnly).toBe('a shortcut needs JavaScript')
   }, 60_000)
 
-  it('press says where focus went (ADR 0075 A7)', async () => {
+  it('press says where focus went, by name, on every press, and when only hidden controls have the key (ADR 0076 A8, A9)', async () => {
     const { out } = await browse(
-      ['/', '--js', 'on', '--do', 'press /'],
+      ['/', '--js', 'on', '--do', 'press /', '--do', 'press Escape', '--do', 'press Mod+j'],
       `${root}packages/cli/test/fixtures/flash`,
     )
-    expect(out.steps[0].modes[0].note).toBe('focused <input name="q">')
+    expect(out.steps.map((s: { modes: { note: string | null }[] }) => s.modes[0]!.note)).toEqual([
+      'focused <input name="q"> "Search"',
+      'focus stays on <input name="q"> "Search"',
+      'no visible control has Mod+j (1 hidden); focus stays on <input name="q"> "Search"',
+    ])
   }, 60_000)
 
   it('replace writes the address in place, so a reload keeps the search (ADR 0067 G)', async () => {

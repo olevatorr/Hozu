@@ -86,16 +86,16 @@ Set public environment variables in the host's dashboard; the export writes them
 
 ### Docker
 
-`npx hozu build --target node` writes this `Dockerfile` and a `.dockerignore` (it keeps yours when they exist), and lists what the server needs: the env your project declares, `SESSION_SECRET`, each service the app reaches through `remote()` (deploy it too; a `.dockerignore` this command writes leaves the service's Go module out of the image when no app code lives in it), and every env value that points at `127.0.0.1` or `localhost`, which inside a container is the container itself.
+`npx hozu build --target node` writes this `Dockerfile` and a `.dockerignore` (it keeps yours when they exist, says so, and names the lines your `.dockerignore` lacks), and lists what the server needs: the env your project declares, `SESSION_SECRET`, each service the app reaches through `remote()` (deploy it too; a `.dockerignore` this command writes leaves the service's Go module out of the image when no app code lives in it), and every env value that points at `127.0.0.1` or `localhost`, which inside a container is the container itself.
 
 ```dockerfile
 # Dockerfile
 FROM node:22-slim
 WORKDIR /app
-ENV NODE_ENV=production
-COPY package.json package-lock.json ./
+COPY package*.json ./
 RUN npm ci --omit=dev
 COPY . .
+ENV NODE_ENV=production PORT=3000 HOST=0.0.0.0
 EXPOSE 3000
 CMD ["npx", "hozu", "serve"]
 ```
@@ -103,10 +103,15 @@ CMD ["npx", "hozu", "serve"]
 ```text
 # .dockerignore
 node_modules
+.git
 .hozu
+.vercel
 dist
 .env*
+!.env.example
 ```
+
+The app folder is the build context. With `--out <dir>`, it writes `<dir>/Dockerfile.dockerignore` (Docker reads it next to that Dockerfile) and prints `docker build -f <dir>/Dockerfile -t app <app folder>`.
 
 ```sh
 docker build -t my-app .
@@ -164,7 +169,7 @@ next: cd dist/workers && npx wrangler deploy
 - **One bundle.** The app, its resolvers and the generated render module become one file with no `node:` import. When an import needs Node, the build stops and names the chain from your file, then the ways out:
 
   ```text
-  hozu: Cloudflare Workers has no Node built-ins, and these imports need them:
+  hozu: hozu build --target workers bundles no Node built-ins for Cloudflare Workers (Cloudflare's nodejs_compat stays off), and these imports need them:
     server/db.ts → mysql2 → net, tls
     hozu build --target node   # these modules run there as they are
     or read the data through a driver that speaks HTTP (or the platform's own database binding)
