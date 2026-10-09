@@ -1,6 +1,6 @@
 {
   "name": "@hozu/compiler",
-  "version": "0.26.1",
+  "version": "0.26.2",
   "description": "Hozu compiler: derives per-node render plans (static, ISR, SWR, streamed, client) from the IR",
   "keywords": [
     "hozu",

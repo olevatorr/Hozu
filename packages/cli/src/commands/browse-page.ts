@@ -120,7 +120,9 @@ export const PAGE = String.raw`(() => {
       const cls = (e.getAttribute('class') ?? '').trim().split(/\s+/)[0]
       return '<' + e.tagName.toLowerCase() + (name ? ' ' + name + '="' + e.getAttribute(name) + '"' : cls ? ' class="' + cls + '…"' : '') + '>'
     }
-    const covered = hit ? null : !top ? 'nothing' : tag(top) + (top.contains(el) ? ', which contains it (a ::before or ::after above it, or pointer-events: none on it)' : '')
+    const dialog = top?.closest('dialog, [role=dialog], [role=alertdialog]')
+    const where = dialog && dialog !== top && nameOf(dialog) ? ' in the dialog "' + nameOf(dialog).replace(/\s+/g, ' ').trim() + '"' : ''
+    const covered = hit ? null : !top ? 'nothing' : tag(top) + where + (top.contains(el) ? ', which contains it (a ::before or ::after above it, or pointer-events: none on it)' : '')
     return { x, y, covered, target: tag(el) }
   }
   const FILLED = Symbol.for('hozu.browse.filled')
@@ -131,6 +133,12 @@ export const PAGE = String.raw`(() => {
   }
   const TEXT_TYPES = ['text', 'search', 'email', 'url', 'tel', 'password', 'number', 'date', 'datetime-local', 'month', 'time', 'week']
   return {
+    focused() {
+      const el = document.activeElement
+      if (!el || el === document.body) return null
+      const name = ['name', 'id', 'aria-label', 'href'].find((k) => el.getAttribute(k))
+      return '<' + el.tagName.toLowerCase() + (name ? ' ' + name + '="' + el.getAttribute(name) + '"' : '') + '>'
+    },
     point(name, within) {
       const f = find('click', name, within)
       if (f.error) return f

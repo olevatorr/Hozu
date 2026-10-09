@@ -112,3 +112,50 @@ describe('hozu build --target never empties the app (ADR 0073 A1)', () => {
     expect(existsSync(join(full, 'notes.txt'))).toBe(true)
   })
 })
+
+describe('a deploy that cannot work says why (ADR 0075)', () => {
+  const app = `${root}packages/cli/test/fixtures/edge-node`
+  const fake = join(app, 'node_modules/fakedb')
+  spawnSync('mkdir', ['-p', fake])
+  spawnSync('sh', [
+    '-c',
+    `printf '{ "name": "fakedb", "type": "module", "main": "index.js" }' > ${join(fake, 'package.json')} && printf "import net from 'net'\\nimport tls from 'tls'\\nexport const connect = () => typeof net + typeof tls\\n" > ${join(fake, 'index.js')}`,
+  ])
+  const run = (args: string[]) => spawnSync(process.execPath, [bin, ...args], { cwd: app, encoding: 'utf8' })
+
+  it('names the chain from the app file to each Node built-in, leaves no folder, and is a build error', () => {
+    const out = mkdtempSync(join(tmpdir(), 'hozu-edge-node-'))
+    const r = run(['build', '--target', 'workers', '--out', out, '--json'])
+    expect(r.status).not.toBe(0)
+    const error = JSON.parse(r.stdout).error
+    expect(error.code).toBe('build')
+    expect(error.message).toContain('server/db.ts → fakedb → net, tls')
+    expect(error.message).toContain('server/db.ts → fs/promises')
+    expect(error.suggestions[0]).toContain('hozu build --target node')
+    expect(existsSync(out)).toBe(false)
+  }, 120_000)
+
+  it('hozu build says which targets can serve the app before one is chosen', () => {
+    const out = mkdtempSync(join(tmpdir(), 'hozu-edge-plain-'))
+    const r = run(['build', '--out', out])
+    expect(r.stdout).toContain('targets: node can serve this app; workers and vercel cannot')
+    expect(r.stdout).toContain('server/db.ts → fakedb → net, tls')
+  }, 120_000)
+
+  it('--target node names env values on this machine, which a container cannot reach', () => {
+    const out = mkdtempSync(join(tmpdir(), 'hozu-node-env-'))
+    spawnSync('sh', [
+      '-c',
+      `printf 'DATABASE_URL=mysql://u:secret@127.0.0.1:3306/db\\n' > ${join(app, '.env')}`,
+    ])
+    try {
+      const r = run(['build', '--target', 'node', '--out', out, '--json'])
+      const needs: string[] = JSON.parse(r.stdout).needs
+      expect(
+        needs.some((n) => n.startsWith('DATABASE_URL points at this machine (mysql://…@127.0.0.1:3306/db)')),
+      ).toBe(true)
+    } finally {
+      spawnSync('rm', ['-f', join(app, '.env')])
+    }
+  })
+})

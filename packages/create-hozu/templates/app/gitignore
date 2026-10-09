@@ -3,3 +3,4 @@ dist
 .hozu/
 .env
 .env.local
+.vercel

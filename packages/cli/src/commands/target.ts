@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, relative, resolve, sep } from 'node:path'
@@ -6,6 +6,8 @@ import { pathToFileURL } from 'node:url'
 import { appModuleOf, type BuildResult } from '@hozu/core/ir'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
+import { remoteGroups } from '../remote.ts'
+import { inspectApp } from './app.ts'
 import { runBuild } from './build.ts'
 
 export const TARGETS = ['node', 'workers', 'vercel'] as const
@@ -33,7 +35,12 @@ async function clearOutput(dir: string, kept: string[], target: 'workers' | 'ver
       `--out ${dir} holds the app: hozu build --target ${target} empties its output`,
       [`hozu build --target ${target} --out ${DEFAULT_OUT[target]}`],
     )
-  if (existsSync(dir) && readdirSync(dir).length && !existsSync(join(dir, MARK[target])))
+  if (
+    existsSync(dir) &&
+    readdirSync(dir).length &&
+    !existsSync(join(dir, MARK[target])) &&
+    !existsSync(join(dir, '.build'))
+  )
     throw new HozuCliError(
       'usage',
       `${dir} is not empty and no earlier --target ${target} output: nothing was removed`,
@@ -90,6 +97,56 @@ const entrySource = (build: BuildResult, app: string, at: string, target: 'worke
   ].join('\n')
 }
 
+interface Bundler {
+  bundleServer(o: object): Promise<{ node: string[] }>
+}
+
+const CONDITIONS: Record<'workers' | 'vercel', string[]> = {
+  workers: ['workerd', 'worker', 'browser'],
+  vercel: ['edge-light', 'worker', 'browser'],
+}
+
+const PLATFORM: Record<'workers' | 'vercel', string> = {
+  workers: 'Cloudflare Workers',
+  vercel: 'Vercel Edge',
+}
+
+/** The build stops when an import needs Node, naming the chain from the app file and the ways out (ADR 0075 A1). */
+const nodeOnly = (target: 'workers' | 'vercel', node: string[]) =>
+  new HozuCliError(
+    'build',
+    `${PLATFORM[target]} has no Node built-ins, and these imports need them:\n${node.map((n) => `  ${n}`).join('\n')}`,
+    [
+      'hozu build --target node   # these modules run there as they are',
+      "or read the data through a driver that speaks HTTP (or the platform's own database binding)",
+      'or move those effects to a service with remote()   (hozu docs data --more)',
+    ],
+  )
+
+const bundleFailure = (error: unknown) => {
+  const errors = (error as { errors?: { text: string; location?: { file: string; line: number } | null }[] })
+    .errors
+  if (!errors?.length) return String(error)
+  return `the server bundle has ${errors.length} error${errors.length === 1 ? '' : 's'}:\n${errors
+    .map((e) => `  ${e.location ? `${e.location.file}:${e.location.line}  ` : ''}${e.text}`)
+    .join('\n')}`
+}
+
+/** The env values the CLI reads for the app (.env files), to warn about loopback hosts in a container. */
+const envOf = (loaded: Loaded): Record<string, string> => {
+  const out: Record<string, string> = {}
+  for (const file of new Set(['.env', ...loaded.envFiles])) {
+    const text = existsSync(join(dirname(loaded.path), file))
+      ? readFileSync(join(dirname(loaded.path), file), 'utf8')
+      : ''
+    for (const line of text.split('\n')) {
+      const m = /^\s*([A-Z_][A-Z0-9_]*)\s*=\s*"?([^"#]*)"?/.exec(line)
+      if (m) out[m[1]!] = m[2]!.trim()
+    }
+  }
+  return out
+}
+
 const DOCKERFILE = `FROM node:22-slim
 WORKDIR /app
 COPY package*.json ./
@@ -118,9 +175,28 @@ export async function runTarget(
     await writeFile(path, text)
     files.push(relative(cwd, path))
   }
+  const { module } = await inspectApp(loaded, build)
+  const services = module ? await remoteGroups(loaded, build, module.options.resolvers) : []
+  for (const s of services)
+    needs.push(
+      `the service ${s.url} names (remote(), contract ${relative(root, s.file)}): deploy it too, where the app can reach it`,
+    )
   if (target === 'node') {
+    for (const [name, value] of Object.entries(envOf(loaded)))
+      if (/\b(localhost|127\.\d+\.\d+\.\d+|\[::1\])\b/.test(value))
+        needs.push(
+          `${name} points at this machine (${value.replace(/\/\/[^@/]*@/, '//…@')}): inside a container that is the container itself; use the host's address (host.docker.internal on Docker Desktop)`,
+        )
+    const ignored = services
+      .map((s) => relative(root, dirname(dirname(s.file))))
+      .filter((d) => d && !d.startsWith('..'))
     await write('Dockerfile', DOCKERFILE, true)
-    await write('.dockerignore', 'node_modules\n.git\n.hozu\n.vercel\ndist\n.env*\n!.env.example\n', true)
+    await write(
+      '.dockerignore',
+      ['node_modules', '.git', '.hozu', '.vercel', 'dist', '.env*', '!.env.example', ...ignored].join('\n') +
+        '\n',
+      true,
+    )
     return {
       target,
       out: dir,
@@ -150,16 +226,22 @@ export async function runTarget(
   }
   await clearOutput(dir, [root, cwd], target)
   const staged = join(dir, '.build')
-  await runBuild(loaded, staged, cwd)
   const assets = target === 'workers' ? 'assets' : 'static'
-  await cp(join(staged, 'public'), join(dir, assets), { recursive: true })
   const entry = target === 'workers' ? 'worker.mjs' : 'functions/index.func/index.js'
-  await (bundler as { bundleServer(o: object): Promise<unknown> }).bundleServer({
-    source: entrySource(build, app, staged, target),
-    resolveDir: root,
-    outfile: join(dir, entry),
-    conditions: target === 'workers' ? ['workerd', 'worker', 'browser'] : ['edge-light', 'worker', 'browser'],
-  })
+  try {
+    await runBuild(loaded, staged, cwd)
+    await cp(join(staged, 'public'), join(dir, assets), { recursive: true })
+    const { node } = await (bundler as Bundler).bundleServer({
+      source: entrySource(build, app, staged, target),
+      resolveDir: root,
+      outfile: join(dir, entry),
+      conditions: CONDITIONS[target],
+    })
+    if (node.length) throw nodeOnly(target, node)
+  } catch (error) {
+    await rm(dir, { recursive: true, force: true })
+    throw error instanceof HozuCliError ? error : new HozuCliError('build', bundleFailure(error), [])
+  }
   files.push(relative(cwd, join(dir, entry)), `${relative(cwd, join(dir, assets))}/`)
   await rm(staged, { recursive: true, force: true })
   if (target === 'workers') {
@@ -212,4 +294,37 @@ export function describeTarget(r: TargetOutput): string {
   if (r.needs.length) lines.push('  the platform needs:', ...r.needs.map((n) => `    - ${n}`))
   for (const n of r.next) lines.push(`next: ${n}`)
   return `${lines.join('\n')}\n`
+}
+
+/**
+ * Whether Workers and Vercel Edge can serve this app, from the build `hozu build` just wrote (ADR 0075 A3): the Node
+ * built-ins its imports need, or null when `@hozu/bundle` is not installed to tell.
+ */
+export async function edgeCheck(loaded: Loaded, built: string): Promise<string[] | null> {
+  const app = appModuleOf(loaded.project)
+  if (!app) return null
+  let bundler: Bundler
+  try {
+    bundler = (await import(
+      pathToFileURL(createRequire(loaded.path).resolve('@hozu/bundle')).href
+    )) as Bundler
+  } catch {
+    return null
+  }
+  const { node } = await bundler.bundleServer({
+    source: entrySource(loaded.build(false), app, built, 'workers'),
+    resolveDir: dirname(loaded.path),
+    outfile: join(built, '.edge-check.mjs'),
+    conditions: CONDITIONS.workers,
+    write: false,
+  })
+  return node
+}
+
+export function describeTargets(node: string[] | null): string {
+  if (node === null)
+    return 'targets: node · workers and vercel: npm install -D @hozu/bundle to check them (a static host: hozu export)\n'
+  if (!node.length)
+    return 'targets: node, workers and vercel can each serve this app: hozu build --target <one> (a static host: hozu export)\n'
+  return `targets: node can serve this app; workers and vercel cannot, these imports need Node:\n${node.map((n) => `  ${n}`).join('\n')}\n`
 }
