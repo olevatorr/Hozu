@@ -644,7 +644,10 @@ describe('hozu check stops on a CLI and packages of different versions (ADR 0076
       `hozu ${cli} cannot check an app on @hozu/core 0.0.1: its diagnostics would come from that difference alone`,
     )
     expect(versionStop(older)?.code).toBe('config')
-    expect(versionStop(older)?.suggestions[0]).toContain('npx hozu migrate')
+    expect(
+      versionStop(older)?.suggestions[0],
+      'names the version: npx alone runs the installed CLI',
+    ).toContain(`npx -p @hozu/cli@${cli} hozu migrate`)
     expect(versionStop(appOn('0.0.1', `^${cli}`))?.suggestions[0]).toContain('npm install')
     expect(versionStop(appOn('0.0.1', `~${cli}`))?.suggestions[0]).toContain('npm install')
     expect(versionStop(appOn('99.0.0', '^99.0.0'))?.suggestions[0]).toBe(

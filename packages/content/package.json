@@ -1,6 +1,6 @@
 {
   "name": "@hozu/content",
-  "version": "0.26.4",
+  "version": "0.26.5",
   "description": "Markdown content collections with typed front matter for Hozu",
   "keywords": [
     "hozu",

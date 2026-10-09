@@ -573,7 +573,7 @@ export async function main(
           `hozu build --target ${TARGETS.join(' | ')}   (a static host: hozu export)`,
         ])
       const result = await runTarget(loaded, values.target as Target, values.out, cwd)
-      out(asJson ? json(result) : describeTarget(result))
+      out(asJson ? json(result) : describeTarget(result, cwd))
       return 0
     }
     if (command === 'build') {

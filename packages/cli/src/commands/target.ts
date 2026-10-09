@@ -29,12 +29,12 @@ const DEFAULT_OUT: Record<Target, string> = { node: '.', workers: 'dist/workers'
 const MARK: Record<'workers' | 'vercel', string> = { workers: 'wrangler.jsonc', vercel: 'config.json' }
 
 /** Empties the output only when it is a folder this target wrote before (or empty), never the app or one above it. */
-async function clearOutput(dir: string, kept: string[], target: 'workers' | 'vercel') {
+async function clearOutput(dir: string, kept: string[], target: 'workers' | 'vercel', cwd: string) {
   const inside = (a: string, b: string) => a === b || a.startsWith(`${b}${sep}`)
   if (kept.some((k) => inside(k, dir)))
     throw new HozuCliError(
       'usage',
-      `--out ${dir} holds the app: hozu build --target ${target} empties its output`,
+      `--out ${shownPath(cwd, dir)} holds the app: hozu build --target ${target} empties its output`,
       [`hozu build --target ${target} --out ${DEFAULT_OUT[target]}`],
     )
   if (
@@ -45,7 +45,7 @@ async function clearOutput(dir: string, kept: string[], target: 'workers' | 'ver
   )
     throw new HozuCliError(
       'usage',
-      `${dir} is not empty and no earlier --target ${target} output: nothing was removed`,
+      `${shownPath(cwd, dir)} is not empty and no earlier --target ${target} output: nothing was removed`,
       ['Choose an empty folder, or remove this one yourself'],
     )
   await rm(dir, { recursive: true, force: true })
@@ -185,6 +185,18 @@ const envOf = (loaded: Loaded): Record<string, string> => {
   return out
 }
 
+/** A path as output shows it: relative inside the current folder, absolute outside it (ADR 0078 A4). */
+const shownPath = (cwd: string, p: string): string => {
+  const r = relative(cwd, p) || '.'
+  return r === '..' || r.startsWith(`..${sep}`) ? p : r
+}
+
+/** A shown path quoted for a shell line, when it needs quotes. */
+const shellPath = (cwd: string, p: string): string => {
+  const shown = shownPath(cwd, p)
+  return /^[\w@%+=:,./-]+$/.test(shown) ? shown : `'${shown.replace(/'/g, `'\\''`)}'`
+}
+
 /** The image name: package.json's `name` as Docker accepts it, one path component (ADR 0077 A9). */
 export const imageName = (root: string): string => {
   const pkg = join(root, 'package.json')
@@ -227,12 +239,12 @@ export async function runTarget(
   const write = async (file: string, text: string, keep = false) => {
     const path = join(dir, file)
     if (keep && existsSync(path)) {
-      kept.push(relative(cwd, path))
+      kept.push(shownPath(cwd, path))
       return
     }
     await mkdir(dirname(path), { recursive: true })
     await writeFile(path, text)
-    files.push(relative(cwd, path))
+    files.push(shownPath(cwd, path))
   }
   const services = await inspectApp(loaded, build)
     .then(({ module }) => (module ? remoteGroups(loaded, build, module.options.resolvers) : []))
@@ -278,16 +290,12 @@ export async function runTarget(
       const missing = lines.filter((l) => !has.has(l))
       if (missing.length)
         needs.push(
-          `the kept ${relative(cwd, ignore)} lacks: ${missing.join(', ')} (add them, or the image copies them)`,
+          `the kept ${shownPath(cwd, ignore)} lacks: ${missing.join(', ')} (add them, or the image copies them)`,
         )
     }
     await write('Dockerfile', DOCKERFILE, true)
     await write(ignoreName, `${lines.join('\n')}\n`, true)
-    const at = (p: string) => {
-      const r = relative(cwd, p) || '.'
-      const shown = r === '..' || r.startsWith(`..${sep}`) ? p : r
-      return /^[\w@%+=:,./-]+$/.test(shown) ? shown : `'${shown.replace(/'/g, `'\\''`)}'`
-    }
+    const at = (p: string) => shellPath(cwd, p)
     const env = existsSync(join(root, '.env')) ? ` --env-file ${at(join(root, '.env'))}` : ''
     const image = imageName(root)
     return {
@@ -320,7 +328,7 @@ export async function runTarget(
       ['npm install -D @hozu/bundle'],
     )
   }
-  await clearOutput(dir, [root, cwd], target)
+  await clearOutput(dir, [root, cwd], target, cwd)
   let made = dir
   while (!existsSync(dirname(made))) made = dirname(made)
   const staged = join(dir, '.build')
@@ -340,7 +348,7 @@ export async function runTarget(
     await rm(made, { recursive: true, force: true })
     throw error instanceof HozuCliError ? error : new HozuCliError('build', bundleFailure(error), [])
   }
-  files.push(relative(cwd, join(dir, entry)), `${relative(cwd, join(dir, assets))}/`)
+  files.push(shownPath(cwd, join(dir, entry)), `${shownPath(cwd, join(dir, assets))}/`)
   await rm(staged, { recursive: true, force: true })
   if (target === 'workers') {
     const name = (build.ir.site?.name ?? 'hozu-app')
@@ -374,7 +382,7 @@ export async function runTarget(
       files,
       kept,
       needs,
-      next: [`cd ${relative(cwd, dir) || '.'} && npx wrangler deploy`],
+      next: [`cd ${shellPath(cwd, dir)} && npx wrangler deploy`],
     }
   }
   await write(
@@ -388,9 +396,9 @@ export async function runTarget(
   return { target, out: dir, files, kept, needs, next: ['npx vercel deploy --prebuilt'] }
 }
 
-export function describeTarget(r: TargetOutput): string {
+export function describeTarget(r: TargetOutput, cwd: string): string {
   const lines = [
-    `hozu build --target ${r.target} → ${r.out}`,
+    `hozu build --target ${r.target} → ${shownPath(cwd, r.out)}`,
     ...r.files.map((f) => `  wrote ${f}`),
     ...r.kept.map((f) => `  kept ${f} (it was there; not overwritten)`),
   ]

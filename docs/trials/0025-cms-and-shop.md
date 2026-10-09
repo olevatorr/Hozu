@@ -1,4 +1,4 @@
-# Trial 0025 — A CMS, a shop admin and a storefront on one database, over eight releases (ADR 0068–0077)
+# Trial 0025 — A CMS, a shop admin and a storefront on one database, over nine releases (ADR 0068–0078)
 
 **Question:** can an agent build a real, data-backed application with Hozu alone: a CMS plus shop back office, and
 the storefront that sells from it, against a real database that both share? And does the framework hold up when it
@@ -21,7 +21,8 @@ changes under the apps, release after release, while the same agents keep workin
   redesign held for both agents; the new asks came from 0.26's one-command deploys, which could not build either app
   for Workers or Vercel and did not say why. In round 7 those messages worked and the storefront ran in Docker, but
   `hozu migrate` broke the patch upgrade itself. In round 8, on 0.26.3, both apps upgraded by the printed `next:`
-  lines alone and ended with a clean `hozu check`.
+  lines alone and ended with a clean `hozu check`; round 9, on 0.26.4, did the same and found no regression. The
+  storefront: "nothing currently blocks normal development".
 - **Both agents would choose Hozu again for this kind of app.** Both named the same limits: one machine per feature,
   parts that cannot cross features, how little a view can compute, and no global notice.
 - **Not measured:** tokens, cost or correctness against a hidden acceptance. This is a record of what two agents did
@@ -57,6 +58,9 @@ changes under the apps, release after release, while the same agents keep workin
 | 4 | 0.24.0 | The same retest, with the declined asks named, so that each agent could say whether it still needs them | [ADR 0072](../adr/0072-0-25.md) E |
 | 5 | 0.25.0 | The same retest, on the 0.25 changes: `current(route, params)`, keyboard shortcuts (`keys` on `ui.send`), the covering-click check, `class` in `--select` | [ADR 0073](../adr/0073-0-26.md) B, C |
 | 6 (2026-10-09) | 0.26.1 | The same retest, on the 0.26 changes: `keys` on the control it presses, the coverage count, `--select`, and the new `hozu build --target node \| workers \| vercel` | [ADR 0075](../adr/0075-0-26-2.md) |
+| 7 | 0.26.2 | The same retest, on 0.26.2's deploy messages: the import chains, `--target node` with Docker, focus after `press` | [ADR 0076](../adr/0076-0-26-3.md) |
+| 8 | 0.26.3 | Upgrade only by the printed `next:` lines; retest the mismatch warning, kept Docker files, `--out`, focus notes; the store builds and inspects the image | [ADR 0077](../adr/0077-0-26-4.md) |
+| 9 | 0.26.4 | The same, with `check` run before installing; shortcuts inside dialogs; the image name and contents | [ADR 0078](../adr/0078-0-26-5.md) |
 
 - **Who judged:** the lead session (the owner's coordinator) relayed every release note and judged every ask against
   Hozu's principles. The owner approved each ADR. Each later round also told the agents what had changed.
@@ -90,7 +94,7 @@ All results below are the agents' own reports. The lead did not re-run their acc
 on both apps after round 4 (the table above). After round 5 the agents reported `contracts 26/35 decisions` (admin)
 and `contracts 7/8 decisions` (store), both with 0 errors and 0 warnings; the gap is a counting bug (C1 below), not
 missing contracts. After round 6 they reported `contracts 25/25 decisions` (admin) and `6/6` (store): the count
-was fixed. Rounds 7 and 8 kept both counts.
+was fixed. Rounds 7–9 kept both counts.
 
 | Round | Admin | Storefront |
 |---|---|---|
@@ -103,6 +107,7 @@ was fixed. Rounds 7 and 8 kept both counts.
 | 6 (0.26.1) | **Check:** 0 / 0, `contracts 25/25 decisions`; `hozu build` and `--target node` pass. **Get:** 26 URLs at their expected status. **Shortcuts:** with JS, `Mod+s` saved an article, a page and a product (`+ Article saved`); `Escape` closed a toast; the server writes `aria-keyshortcuts="Control+S Meta+S"`; without JS the step says `js-only (a shortcut needs JavaScript)` and the button still works. **Lifecycle:** storefront order #1319 shipped, delivered, refunded, 2 items returned; the ledger is right with the store's #1321 / #1322 (−2 each) in between: 9 − 4 + 2 = 7. **Go:** a declared error and a stopped service give the right messages. **`--js both`:** the two sides now print their own result. **Deploy:** `--target workers` / `vercel` fail (below) | **Check:** green, `contracts 6/6`; 3 lock changes accepted. **Shortcut:** `/` focuses the header search field (seen with `--select ':focus'`), then `press Enter` → `/search?q=`; `js-only` without JS. **`--js both`:** the round-4 flow with an edit-back adding `Apt 6`; orders #1321 / #1322 checked in the database (`paid`, the address line, one stock row, events `placed,paid`). **Coverage:** a shared `on` with `navigate` put back for the test counted 7/7 (0.25: 7/8), then reverted. **The card bug** put back once more: still fails the step, naming `<h3 class="mt-1…">`. **Deploy:** `--target node` passes; `--target workers` / `vercel` fail (below) |
 | 7 (0.26.2) | **Check:** 0 / 0, `contracts 25/25 decisions` once the packages were raised by hand (below). **Lifecycle:** storefront order #1322 cancelled with `--js both`: stock 7 → 9 and one `cancel +2` in the ledger; the second mode was refused `NotAllowed`, so stock came back once. **Shortcut:** `Mod+s` on the article editor, `js-only` without JS. **Deploy:** `--target workers` / `vercel` name the chains and the ways out, exit 2 with `build`, and a second run gives the same message; `--target node` lists the Go service and three loopback env values with the password removed; the covered click names `the dialog "Create a discount"` | **Check:** `contracts 6/6 · lock current`. **`--js both`:** the round-4 flow; orders #1323 / #1324 checked in the database (`paid`, the address line `Bât B`, one stock row, events `placed,paid`). **Docker, the first deploy of the trial:** the `--target node` image built in about 10 s (Docker Desktop 27.4.0), the container was ready in about 2 s with `DATABASE_URL` on `host.docker.internal`, and `/`, a category, a product with stock from the database, a journal filter, a page and the cart answered 200, a missing product 404, and `POST /api/revalidate` with the token `{"ok":true}`; container and image removed afterwards |
 | 8 (0.26.3) | **Upgrade:** `migrate` → `npm install` → `npx hozu check`: `0 errors, 0 warnings · contracts 25/25 decisions · lock current`, nothing by hand. **Deploy:** with the `service` line removed from its kept `.dockerignore`, `--target node` said `the kept .dockerignore lacks: service`; `--out` wrote `Dockerfile.dockerignore` and printed `docker build -f …`; failed edge builds left no folder. **Focus:** `press Mod+s … focus stays on <textarea name="excerpt"> "Excerpt"`, `press Tab — focused <textarea name="body"> "Body"`. **Lifecycle:** order #1324 packed, shipped, delivered, refunded: stock 5 → 7, ledger `sale -2 / return +2`, one row per stage; the second mode refused `NotAllowed` | **Upgrade:** the same, `contracts 6/6 · lock current`; `--update-lock` during the mismatch left the lock byte-identical. **Docker:** built with exactly the printed command; inside the image no `.env`, no `.git`, and `node_modules` from `npm ci` (no `typescript`); `/`, a category, a product, a journal filter 200 and a missing product 404 from the container. **Focus:** `press /` named the header field of two `name="q"` fields; at 390 px `no visible control has / (1 hidden)`. **Orders:** #1325 / #1326 checked in the database; 25 URLs at their expected status |
+| 9 (0.26.4) | **Before upgrading:** the 0.26.4 CLI on the 0.26.3 app stopped with two lines and exit 2, no diagnostics, the lock untouched. **Upgrade:** `done: removed the record of an earlier migration .hozu/migrate-0.23.json`, `updated .claude/skills/hozu`; then `contracts 25/25 decisions · lock current`. **Dialogs:** `Mod+Enter` added to submit in the ship, cancel and refund dialogs (kept); the same key in two dialogs passes HZ014; `no control in the open dialog has Mod+s`, `no visible control has Mod+Enter (3 hidden)`; `press r` → `no control has r`. **Deploy:** `docker build -t admin .`; the kept `.dockerignore` named its four missing agent lines. **Lifecycle:** order #1326 packed, shipped and refunded with `Mod+Enter`: stock 3 → 5, ledger `sale -2 / return +2` | **Before upgrading:** two lines, exit 2; after `migrate`, the fix became `npm install`. **Upgrade:** `updated .claude/skills/hozu` without a separate `hozu skill`; `contracts 6/6 · lock current`. **Dialog:** `/` on the menu dialog's search field passes HZ014 (refused in round 8) and was kept; at 390 px `press /` with the menu open focused `<input name="q"> "Search"`, the menu's field. **Docker:** `-t store`; inside `/app` no `.claude`, `CLAUDE.md`, `.env` or `.git`. **Orders:** #1327 / #1328 in the database; 25 URLs as before |
 
 - **A bug of the storefront's own, found in round 4:** product and article cards "could not be clicked in a real
   browser" since round 1.
@@ -260,6 +265,16 @@ the content change.
 | A Dockerfile or compose file for the Go service | A | **Declined:** how a service builds is the app's own |
 | The three structural asks | S | The store: "I still think they have value, but I understand they are not on this road; I will not pursue them" |
 
+### Round 9 (0.26.4 → 0.26.5, ADR 0078)
+| Ask | Who | Decision |
+|---|---|---|
+| The mismatch fix `npx hozu migrate` runs the project's older CLI and does nothing | A, S | **Accepted (A1), a bug:** the fix names the version |
+| Focus notes do not name buttons and links | A | **Accepted (A2)** |
+| Without JS, a key no control has says `nothing is focused` | A | **Accepted (A3)** |
+| `wrote ../../…` next to an absolute `docker build -f` | S | **Accepted (A4)** |
+| A shrinking progress list (five steps to two) reported as a flash | A | **Investigated:** accurate. The new row takes a removed row's place and fades in; the app's fix is stable keys. A same-place swap is a 0.27 question |
+| `--update-ignore`; a version tag on the image | A, S | **Declined** |
+
 ## How the upgrades went
 | Upgrade | `hozu migrate` | Code the agent changed afterwards (excluding lock and skill) |
 |---|---|---|
@@ -279,6 +294,8 @@ the content change.
 | Store → 0.26.2 | The same: 216 errors, 50 places; about 10 minutes to find that the packages had not moved | `package.json` ±13; no code |
 | Admin → 0.26.3 | `0.26.2 → 0.26.3: upgrade, no source changes`, 13 packages raised, the stale record removed, `next: npm install` and `next: npx hozu check`; after them `hozu check` clean. "No workaround was needed" | `package.json` ±13 by migrate; no code |
 | Store → 0.26.3 | The same; "the smoothest of these rounds: follow the `next:` lines and that is it". The guide was refreshed only by a separate `npx hozu skill` (0.26.4 does it in the upgrade) | `package.json` ±13 by migrate; guide +3 / −2; no code |
+| Admin → 0.26.4 | `0.26.3 → 0.26.4: upgrade, no source changes`, `done:` one earlier record, guide updated; clean check | `package.json` ±13, guide +3 / −2, `.dockerignore` +4 (the agent files), `Mod+Enter` on three dialog buttons ±3 |
+| Store → 0.26.4 | The same; "the cleanest upgrade of the nine rounds" | `package.json` ±13, guide 1 line, `keys: ['/']` on the menu's search field +1 / −1 |
 
 - **The storefront in round 2:** the upgrade was "the best framework upgrade process I have used". Its one complaint,
   a one-line change summary, became bullets in 0.24.
@@ -304,10 +321,11 @@ the content change.
 | Round 7 | The deploy messages "go straight at" its round-6 asks; the loopback warning "very practical". Against: "following the official upgrade steps gave a broken combination", and the IR comparison's false alarms "would bury a real behaviour change" | Deploying went "from esbuild errors I could not read to knowing the next step", and Docker worked the first time. "The upgrade itself regressed, and it is the first step of every round": 216 errors at the start of a patch upgrade "hurt confidence more than any one missing feature" |
 | Still open after round 6 | Edge deploys for a TCP database (0.26.2 names the chain and the ways out). A global notice (declined a third time) | `app()` reading env, kit components taking data objects, more than one machine per feature (all declined again) |
 | Round 8 | Following the official steps needed "no manual rescue"; the round-7 problems "mostly fixed". Against: the mismatch warning came first but 3 449 lines followed, and `by hand:` named something already done | The upgrade "completely normal", the image "clean". What remains is "static checks stricter than the runtime, or hints not precise enough, which do not affect the shop" |
+| Round 9 | Upgraded "in one go"; the round-8 items "mostly fixed as promised". Against: the printed fix ran the old CLI | "The cleanest upgrade of the nine rounds"; "for this storefront, Hozu currently has nothing that blocks normal development" |
 | Still open after round 7 | A Dockerfile for the Go service and a compose file (its own work). Chains from `app.ts` (declined) | The same three structural asks (declined again); splitting its database migrations from the runtime code (its own work) |
 
 ## What changed in Hozu
-The trial drove eight releases. Each ADR records every ask with the decision and the reason.
+The trial drove nine releases. Each ADR records every ask with the decision and the reason.
 - **0.22 ([ADR 0068](../adr/0068-resolvers-in-go.md), [ADR 0069](../adr/0069-0-22-trial-feedback.md)):**
   - one-shot commands exit, and `app({ dispose })`;
   - server errors surface in `onError`, `get` and `browse`;
@@ -358,6 +376,8 @@ The trial drove eight releases. Each ADR records every ask with the decision and
   - `hozu migrate` lists what it did under `done:`, removes earlier records and refreshes the guide on an upgrade;
   - `--target node` names the image after `package.json` and leaves agent files out of it; `press` names a key no
     control has.
+- **0.26.5 ([ADR 0078](../adr/0078-0-26-5.md)):** the mismatch fix names the CLI version; focus notes name buttons and
+  links; JS-off notes say `no control has`; printed paths follow one rule.
 - **The lesson recorded in ADR 0071:** accepting an ask as stated can be wrong.
   - 0.22's automatic `aria-current` answered the admin's ask. It misfired on the next-page link, and the narrower rule
     of 0.23 misfired on filtered lists.
@@ -372,6 +392,9 @@ The trial drove eight releases. Each ADR records every ask with the decision and
 - **Round 7's lesson (ADR 0076):** the release fixed what it set out to fix, and its own upgrade broke. Every
   earlier upgrade crossed a minor; this was the first patch upgrade the agents ran with `hozu migrate`, and no test
   covered it. The upgrade is the first thing a person meets in every release.
+- **Rounds 6–9:** four patch releases in a row (0.26.2–0.26.5) corrected the previous one's hints (a fix that did nothing, a list
+  under the wrong heading, a path). The tests checked what the tools do, not whether a person can follow what they
+  print; before 1.0 the printed fixes need a check of their own.
 - **Round 8 (ADR 0077):** the fix held for both agents on their real apps. The one new bug was a static check
   stricter than the runtime (HZ014 and a dialog), the kind a diagnostic must not be.
 
@@ -392,7 +415,7 @@ The trial drove eight releases. Each ADR records every ask with the decision and
   show that the fix generalises.
 - **Writes on a shared database:** `--js both` wrote twice to the shared database, and test orders and edits stayed
   in it. Both agents report cleaning up most of them.
-- **Round 7's decisions were retested in round 8;** round 8's are not: 0.26.4 was written after their last run.
+- **Round 8's decisions were retested in round 9;** round 9's are not: 0.26.5 was written after their last run.
 - **One deploy:** the storefront ran its `--target node` image on Docker Desktop, on the same machine as the database
   (`host.docker.internal`). Nothing ran on a hosting platform, and the admin with its Go service was not deployed.
   `--target workers` / `vercel` cannot serve either app (MySQL over TCP).

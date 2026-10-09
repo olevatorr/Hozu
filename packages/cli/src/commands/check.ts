@@ -125,7 +125,7 @@ export function versionStop(config: string): HozuCliError | null {
       ? `npx -p @hozu/cli@${v.core} hozu check   # this CLI is older than the app`
       : range !== undefined && range.replace(/^[\^~=]/, '') === v.cli
         ? `${installCommand(dirname(config))}   # package.json names this version; node_modules still has the old one`
-        : 'npx hozu migrate   # raises every @hozu/* to this CLI, then install'
+        : `npx -p @hozu/cli@${v.cli} hozu migrate   # raises every @hozu/* to this CLI, then install`
   return new HozuCliError(
     'config',
     `hozu ${v.cli} cannot check an app on @hozu/core ${v.core}: its diagnostics would come from that difference alone`,

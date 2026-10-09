@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.26.5 — A printed fix runs the version it names (ADR 0078)
+
+From the ninth round of trial 0025: both apps upgraded from 0.26.3 by the printed lines alone, with no regression.
+
+- **`hozu check` on a version mismatch** now prints `npx -p @hozu/cli@<version> hozu migrate`: inside the project,
+  `npx hozu migrate` ran the installed, older CLI and did nothing.
+- `hozu browse`: focus notes name a link, button or summary by its text (`focused <button> "Refund"`); without JS, a key
+  no control has says `no control has <key>`, as with JS.
+- `hozu build --target`: every printed path follows one rule (relative inside the current folder, absolute outside it).
+
 ## 0.26.4 — A mismatch stops the check; a shortcut inside a dialog is its own (ADR 0077)
 
 From the eighth round of trial 0025, where both apps upgraded from 0.26.2 by the printed `next:` lines alone and

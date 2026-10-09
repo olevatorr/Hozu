@@ -1,6 +1,6 @@
 {
   "name": "create-hozu",
-  "version": "0.26.4",
+  "version": "0.26.5",
   "description": "Create a Hozu app, set up for Claude Code or for agents that read AGENTS.md",
   "keywords": [
     "hozu",
