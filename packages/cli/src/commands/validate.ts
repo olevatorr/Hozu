@@ -58,6 +58,7 @@ export async function runValidate(
     lock: previous,
     accept: updateLock,
     unknownClasses: styles?.unknown ?? null,
+    palette: styles?.palette ?? null,
     classes: styles?.classes ?? null,
   })
   const traced = loaded.build(true)

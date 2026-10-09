@@ -272,7 +272,7 @@ the content change.
 | Focus notes do not name buttons and links | A | **Accepted (A2)** |
 | Without JS, a key no control has says `nothing is focused` | A | **Accepted (A3)** |
 | `wrote ../../…` next to an absolute `docker build -f` | S | **Accepted (A4)** |
-| A shrinking progress list (five steps to two) reported as a flash | A | **Investigated:** accurate. The new row takes a removed row's place and fades in; the app's fix is stable keys. A same-place swap is a 0.27 question |
+| A shrinking progress list (five steps to two) reported as a flash | A | **Investigated:** the first reading (the new row fades in) was wrong and is corrected in ADR 0079 B: nothing fades or blinks; browse counts the new row's unchanged child as rebuilt because it cannot see keys |
 | `--update-ignore`; a version tag on the image | A, S | **Declined** |
 
 ## How the upgrades went

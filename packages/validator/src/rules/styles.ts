@@ -31,6 +31,57 @@ const withoutBang = (c: string) =>
 const trailingBang = (c: string) => `${withoutBang(c)}!`
 
 const self = (key: string) => !key.includes(' ')
+
+const SIDES: Record<string, string[]> = {
+  '': ['top', 'right', 'bottom', 'left'],
+  inline: ['left', 'right'],
+  block: ['top', 'bottom'],
+  'inline-start': ['left'],
+  'inline-end': ['right'],
+  'block-start': ['top'],
+  'block-end': ['bottom'],
+  top: ['top'],
+  right: ['right'],
+  bottom: ['bottom'],
+  left: ['left'],
+  x: ['left', 'right'],
+  y: ['top', 'bottom'],
+}
+const CORNERS: Record<string, string[]> = {
+  '': ['top-left', 'top-right', 'bottom-right', 'bottom-left'],
+  'top-left': ['top-left'],
+  'top-right': ['top-right'],
+  'bottom-right': ['bottom-right'],
+  'bottom-left': ['bottom-left'],
+  'start-start': ['top-left'],
+  'start-end': ['top-right'],
+  'end-end': ['bottom-right'],
+  'end-start': ['bottom-left'],
+}
+const SIDE = '(top|right|bottom|left|inline|block|inline-start|inline-end|block-start|block-end)'
+
+/**
+ * The longhands a property sets, so a shorthand and its longhands compare as one (ADR 0079 A1): `padding` is
+ * `padding:top` … `padding:left`, `padding-inline` is `padding:left` and `padding:right`, `gap` is both gaps.
+ */
+export function longhands(key: string): string[] {
+  const space = key.lastIndexOf(' ')
+  const part = space < 0 ? '' : key.slice(0, space + 1)
+  const prop = key.slice(space + 1)
+  const sides = (family: string, side: string | undefined) =>
+    (SIDES[side ?? ''] ?? [side!]).map((s) => `${part}${family}:${s}`)
+  let m = /^(padding|margin|scroll-padding|scroll-margin)(?:-(.+))?$/.exec(prop)
+  if (m && SIDES[m[2] ?? '']) return sides(m[1]!, m[2])
+  m = /^inset(?:-(.+))?$/.exec(prop)
+  if (m && SIDES[m[1] ?? '']) return sides('inset', m[1])
+  if (/^(top|right|bottom|left)$/.test(prop)) return sides('inset', prop)
+  m = new RegExp(`^border(?:-${SIDE})?(?:-(width|color|style))?$`).exec(prop)
+  if (m) return (m[2] ? [m[2]] : ['width', 'color', 'style']).flatMap((k) => sides(`border-${k}`, m![1]))
+  m = /^border(?:-(.+))?-radius$/.exec(prop)
+  if (m && CORNERS[m[1] ?? '']) return CORNERS[m[1] ?? '']!.map((c) => `${part}radius:${c}`)
+  if (prop === 'gap') return [`${part}row-gap`, `${part}column-gap`]
+  return [key]
+}
 const MARGIN = /^margin(-(top|right|bottom|left|inline|block)(-(start|end))?)?$/
 const INHERITED = new Set([
   'color',
@@ -305,9 +356,23 @@ function componentOf(ctx: Ctx, id: string): ComponentIR | null {
 const VARIANT_SNIPPET = (name: string, c: string) =>
   `styles: tv({ variants: { tone: { custom: '${withoutBang(c)}' } } }), then ui.use(${name}, { variant: { tone: 'custom' } })`
 
+/** Components whose root is in the top layer (a dialog or a popover), where `margin: auto` centres it (ADR 0079 A2). */
+function topLayer(ctx: Ctx): Set<string> {
+  const out = new Set<string>()
+  for (const [, owner, name, component] of components(ctx))
+    if (component.tag === 'dialog') out.add(`${owner}.${name}`)
+  eachStyled(ctx, (_feature, node) => {
+    if (node.kind === 'el' && node.use && 'popover' in node.attrs) out.add(node.use.component)
+  })
+  return out
+}
+
+const AUTO_MARGIN = /^-?m[xy]?-auto!?$/
+
 export function componentStyles(ctx: Ctx) {
   const styles = ctx.classes
   const propsOf = (c: string) => Object.keys(styles?.get(c)?.properties ?? {})
+  const centred = topLayer(ctx)
   for (const [feature, owner, name, component, p] of components(ctx)) {
     const id = `${owner}.${name}`
     component.owned.forEach((c, i) => {
@@ -325,7 +390,7 @@ export function componentStyles(ctx: Ctx) {
           },
         )
       const margins = propsOf(c).filter((k) => self(k) && MARGIN.test(k))
-      if (margins.length)
+      if (margins.length && !(centred.has(id) && AUTO_MARGIN.test(c.slice(classVariant(c).length))))
         ctx.report(
           'HZ076',
           feature,
@@ -359,11 +424,11 @@ export function componentStyles(ctx: Ctx) {
     if (!use) return
     const component = componentOf(ctx, use.component)
     if (!component) return
-    const owned = new Set(component.owned.flatMap(propsOf))
+    const owned = new Set(component.owned.flatMap(propsOf).flatMap(longhands))
     const cp = at(pointer, 'class')
     for (const c of use.added) {
       const props = propsOf(c)
-      const hits = props.filter((k) => owned.has(k))
+      const hits = props.filter((k) => longhands(k).some((l) => owned.has(l)))
       if (!component.extend || (hits.length && !important(c))) {
         ctx.report(
           'HZ072',

@@ -241,7 +241,30 @@ export const steps: Step[] = [
     }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.26',
+    to: '0.27',
+    changes: [
+      'no source change',
+      'head.render may compute noindex (e.g. noindex: search.notice !== null); a computed type is HZ014 (ADR 0079)',
+      'HZ072 compares shorthands with longhands (p-8 against px-3 py-2); HZ076 accepts m-auto on a dialog or popover root',
+      'HZ094 warns when two stylesheets define one @theme variable with different values',
+      'HZ026 lists the project’s colours for a colour utility it does not know; hozu add kit syncs every kit’s tv.ts',
+    ],
+    rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: noindexAsValue,
+    unpredictable: /^\/pages\/[^/]+\/head\/noindex(\/|$)/,
+  },
 ]
+
+/** 0.27 stores a page's noindex as a value, so a literal true becomes { literal: true } (ADR 0079 A3a). */
+function noindexAsValue(ir: Json): Json {
+  const p = ir as { pages?: Record<string, { head?: { noindex?: Json } }> }
+  for (const page of Object.values(p.pages ?? {}))
+    if (page.head && typeof page.head.noindex === 'boolean')
+      page.head.noindex = { literal: page.head.noindex }
+  return ir
+}
 
 /** 0.22 marks a shared view only when each page lists it once (ADR 0067, 0.22 review). */
 function remarkSharedViews(ir: Json): Json {

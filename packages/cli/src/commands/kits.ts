@@ -88,6 +88,86 @@ export async function kitConfigDiagnostics(
   return out
 }
 
+interface ThemeDefinition {
+  file: string
+  line: number
+  value: string
+}
+
+/** The `--name: value` declarations directly inside each `@theme` block of a stylesheet, with their lines. */
+export function themeVariables(text: string, file: string): Map<string, ThemeDefinition> {
+  const out = new Map<string, ThemeDefinition>()
+  const blank = (m: string) => m.replace(/[^\n]/g, ' ')
+  const css = text.replace(/\/\*[\s\S]*?\*\//g, blank)
+  const shape = css
+    .replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, (m) => `"${blank(m.slice(2))}"`)
+    .replace(/url\([^)]*\)/gi, (m) => `url(${blank(m.slice(4, -1))})`)
+  for (const m of shape.matchAll(/@theme\b[^{;]*\{/g)) {
+    let depth = 1
+    let from = m.index + m[0].length
+    for (let i = from; i < shape.length && depth; i++) {
+      const ch = shape[i]
+      if (ch === '{') {
+        depth++
+        from = i + 1
+      } else if (ch === '}') {
+        depth--
+        from = i + 1
+      } else if (ch === ';' || (depth === 1 && shape[i + 1] === '}')) {
+        if (depth === 1) {
+          const end = ch === ';' ? i : i + 1
+          const d = /^\s*(--[\w-]+)\s*:\s*([\s\S]+?)\s*$/.exec(css.slice(from, end))
+          if (d && !d[1]!.includes('*'))
+            out.set(d[1]!, {
+              file,
+              line: css.slice(0, from + css.slice(from, end).indexOf(d[1]!)).split('\n').length,
+              value: d[2]!.replace(/\s+/g, ' '),
+            })
+        }
+        if (ch === ';') from = i + 1
+      }
+    }
+  }
+  return out
+}
+
+/** HZ094: two stylesheets of the project define one `@theme` variable with different values (ADR 0079 A4). */
+export async function themeDiagnostics(build: BuildResult, root: string): Promise<Diagnostic[]> {
+  const { entry, kits, features } = build.bindings.styles
+  const files = [
+    ...new Set(
+      [entry, ...Object.values(kits), ...Object.values(features).flat()].filter((f): f is string => !!f),
+    ),
+  ].filter((f) => existsSync(f))
+  const seen = new Map<string, ThemeDefinition[]>()
+  for (const file of files)
+    for (const [name, d] of themeVariables(await readFile(file, 'utf8'), file))
+      seen.set(name, [...(seen.get(name) ?? []), d])
+  const out: Diagnostic[] = []
+  for (const [name, defs] of seen) {
+    if (new Set(defs.map((d) => d.value)).size < 2) continue
+    const winner = defs.at(-1)!
+    const where = (d: ThemeDefinition) => `${relative(root, d.file)}:${d.line} (${d.value})`
+    out.push({
+      code: 'HZ094',
+      severity: codes.HZ094.severity,
+      message: `${name} is defined by ${defs.length} stylesheets with different values; ${relative(root, winner.file)} wins`,
+      location: {
+        feature: null,
+        pointer: '/styles',
+        source: { file: winner.file, line: winner.line, column: 1 },
+      },
+      cause: `${defs.map(where).join(', ')}. The stylesheet imported last wins (the project's, then each kit's, then each feature's), so one of them changes the other's colours without a word (ADR 0079 A4).`,
+      fix: {
+        summary: `Rename ${name} in one stylesheet, or remove the copy that should not apply; keep an intended override with project({ accept })`,
+        snippet: `accept: [{ code: 'HZ094', at: '${name}', reason: '…' }]`,
+        patch: null,
+      },
+    })
+  }
+  return out
+}
+
 const spec = (core: string | undefined) =>
   core === undefined
     ? 'latest'
@@ -112,6 +192,18 @@ export async function addKit(loaded: Loaded, cwd: string, id: string | undefined
     ])
   const out: AddOutput = { created: [], edited: [], manual: [], declarations: { kit: [id] }, texts: [] }
   const tv = join(root, id, 'tv.ts')
+  const syncOthers = async () => {
+    for (const other of Object.keys(build.ir.kits)) {
+      const file = join(root, other, 'tv.ts')
+      if (other === id || !existsSync(file)) continue
+      const source = await readFile(file, 'utf8')
+      const next = gen.config.syncConfig(source, other, gen.value)
+      if (next !== null && next !== source) {
+        await writeFile(file, next)
+        out.edited.push(relative(cwd, file))
+      }
+    }
+  }
   if (sync) {
     const source = existsSync(tv) ? await readFile(tv, 'utf8') : null
     const next = source === null ? null : gen.config.syncConfig(source, id, gen.value)
@@ -123,6 +215,7 @@ export async function addKit(loaded: Loaded, cwd: string, id: string | undefined
       await writeFile(tv, next)
       out.edited.push(relative(cwd, tv))
     }
+    await syncOthers()
     return out
   }
   const kitFile = join(root, id, 'kit.ts')
@@ -133,6 +226,7 @@ export async function addKit(loaded: Loaded, cwd: string, id: string | undefined
   await writeFile(tv, gen.config.tvModule(id, gen.value))
   await writeFile(kitFile, KIT(id))
   out.created.push(relative(cwd, tv), relative(cwd, kitFile))
+  await syncOthers()
   const edit = async (path: string, change: (s: string) => string | null, manual: string) => {
     const source = existsSync(path) ? await readFile(path, 'utf8') : null
     const next = source === null ? null : change(source)

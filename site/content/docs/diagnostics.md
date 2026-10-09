@@ -105,6 +105,7 @@ This table is generated from the diagnostic registry, so it lists every code the
 | HZ091 | a query with `owner` access returned rows the visitor does not own (reported at run time) | read only the visitor's rows in the resolver (filter by the session); production drops the extra rows and logs this |
 | HZ092 | a preview in `project({ previews })` no longer fits the app: data off its query output schema, an error the query does not declare, a route without a page, or a component use that does not build | update the preview to the current schema, error, page or component (previews are for people: they never ship) |
 | HZ093 | a `remote()` resolver that cannot answer: its generated contract is missing or stale, its secret is missing, undeclared in `env.server` or under 16 characters, or it lists an effect the browser runs or a non-JSON endpoint | run `hozu gen` and rebuild the service; set a 16+ character secret from `env.server`; implement browser-run effects in fetch.ts and non-JSON endpoints in TypeScript |
+| HZ094 (warning) | two stylesheets (the project, a kit, a feature) define one `@theme` variable with different values; the one imported last silently wins | rename the variable in one stylesheet or remove the copy that should not apply; keep an intended override with `project({ accept })` |
 <!-- /codes -->
 
 ## Keep a warning on purpose

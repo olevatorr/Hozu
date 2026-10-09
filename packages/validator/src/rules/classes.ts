@@ -56,6 +56,14 @@ export function classNames(ctx: Ctx) {
                 .map((c) => unknown.get(c) ?? c)
                 .join(' ')
             : null
+          const colours = bad.flatMap((c) => {
+            const options = ctx.palette?.get(c)
+            return options?.length
+              ? [
+                  `If "${c}" is meant as a colour, this project's colours for it are ${options.slice(0, 16).join(', ')}.`,
+                ]
+              : []
+          })
           ctx.report(
             'HZ026',
             f.id,
@@ -63,7 +71,10 @@ export function classNames(ctx: Ctx) {
             bad.length === 1
               ? `Class "${bad[0]}" produces no CSS.${didYouMean(fixes[0]!)}`
               : `Classes ${bad.map((c) => `"${c}"`).join(', ')} produce no CSS`,
-            'Every class must be a Tailwind utility or a class defined in the project stylesheets. Use data-* attributes as script hooks.',
+            [
+              'Every class must be a Tailwind utility or a class defined in the project stylesheets. Use data-* attributes as script hooks.',
+              ...colours,
+            ].join(' '),
             {
               summary: fixed ? `Use "${fixed}"` : 'Fix the class name or define it in a stylesheet',
               snippet: null,

@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.27.0 — The checks a UI kit needs (ADR 0079)
+
+From the UI kit spike (23 components on two trial screens) and the licensing review. No API change:
+`npx -p @hozu/cli@latest hozu migrate`, then the printed lines. HZ072 may now report a caller class it missed before;
+where the override is intended, write it with a trailing `!`.
+
+- **`noindex` may be computed** in `head.render` (`noindex: search.notice !== null`), so an address carrying a one-time
+  notice is not indexed. It was silently dropped before. A computed `type` is HZ014 instead of being ignored.
+- **HZ072 compares shorthands with longhands:** a caller's `p-8` on a component that owns `px-3 py-2` is reported (it
+  had no effect), and so is `px-6` on one that owns `p-4`, which the rule always meant to cover. The same for margin,
+  inset, border, radius and gap.
+- **HZ076 accepts `m-auto` on a `dialog` or popover root,** which centres it in the top layer.
+- **HZ094 (warning):** two stylesheets (the project, a kit, a feature) define one `@theme` variable with different
+  values, naming both and the one that wins. A kit's `--color-ink` silently recoloured an app's header in the spike.
+- **HZ026 for a colour utility lists the project's own colours** (`text-alert`: "if it is meant as a colour, this
+  project's colours for it are text-ink, text-danger, …") instead of guessing by spelling (`text-left`). A near
+  spelling still wins (`text-smal` → `text-sm`), and an opacity is kept (`bg-brnd-600/50` → `bg-brand-600/50`).
+- A literal `noindex` that is not a boolean is HZ014; HZ024 also checks `noindex` for params a route does not have.
+- **`hozu add kit` and `--sync` rewrite every kit's `tv.ts`,** so adding one kit no longer stales the others (HZ078).
+- `THIRD_PARTY_NOTICES.md` credits `html-element-attributes` and `svg-element-attributes` (MIT), from which
+  `@hozu/core`'s tag and attribute tables are generated; it ships in `@hozu/core`.
+- Correction: 0.26.5's note on a shrinking keyed list was wrong. Rows that replace removed ones do not fade or blink;
+  `hozu browse` may still count a new row's unchanged child as rebuilt, because it does not see keys (ADR 0079 B).
+
 ## 0.26.5 — A printed fix runs the version it names (ADR 0078)
 
 From the ninth round of trial 0025: both apps upgraded from 0.26.3 by the printed lines alone, with no regression.

@@ -4,6 +4,10 @@ import { compileValue } from '@hozu/machine'
 import { escapeHtml } from './escape.ts'
 import { pathOf } from './render.ts'
 
+/** A page the sitemap leaves out: only a literal noindex; a computed one depends on the request (ADR 0079 A3a). */
+const hidden = (noindex: ValueExpr | undefined) =>
+  !!noindex && 'literal' in noindex && noindex.literal === true
+
 export interface PageEntry {
   route: string
   params: Json
@@ -50,7 +54,7 @@ export async function pageEntries(build: BuildResult, data: DataRuntime): Promis
 
 export function sitemapXml(build: BuildResult, entries: PageEntry[]): string {
   const site = build.ir.site
-  const listed = entries.filter((e) => !build.ir.pages[e.route]?.head.noindex)
+  const listed = entries.filter((e) => !hidden(build.ir.pages[e.route]?.head.noindex))
   const groups = new Map<string, PageEntry[]>()
   for (const e of listed) {
     const key = `${e.route} ${JSON.stringify(e.params)}`
@@ -79,15 +83,15 @@ export function sitemapXml(build: BuildResult, entries: PageEntry[]): string {
 
 export function robotsTxt(build: BuildResult): string {
   const { ir } = build
-  const hidden = Object.entries(ir.pages)
-    .filter(([route, p]) => p.head.noindex && ir.routes[route] && !ir.routes[route]!.params)
+  const disallowed = Object.entries(ir.pages)
+    .filter(([route, p]) => hidden(p.head.noindex) && ir.routes[route] && !ir.routes[route]!.params)
     .flatMap(([route]) =>
       (ir.site?.locales ?? [null]).map((l) => `Disallow: ${publicPath(ir, ir.routes[route]!.path, l)}`),
     )
   return [
     'User-agent: *',
     'Allow: /',
-    ...hidden,
+    ...disallowed,
     ...(ir.site ? [`Sitemap: ${ir.site.url}${ir.http.basePath}/sitemap.xml`] : []),
     '',
   ].join('\n')

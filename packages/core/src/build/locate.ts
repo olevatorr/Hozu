@@ -275,7 +275,7 @@ function locatePage(build: BuildResult, route: string, dev: DevOptions): DevNode
         description: value(page.head.description),
         image: value(page.head.image),
         type: page.head.type,
-        noindex: page.head.noindex,
+        noindex: 'literal' in page.head.noindex && page.head.noindex.literal === true,
         query: page.head.query?.ref ?? null,
       },
     },

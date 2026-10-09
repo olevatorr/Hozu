@@ -923,7 +923,7 @@ function headHtml(
     `<script type="speculationrules">${speculationRules(ir)}</script>`,
     `<title>${escapeHtml(title)}</title>`,
     meta('name', 'description', description),
-    h.noindex || status !== 200 ? '<meta name="robots" content="noindex">' : '',
+    value(h.noindex) === true || status !== 200 ? '<meta name="robots" content="noindex">' : '',
     url && status === 200 ? `<link rel="canonical" href="${escapeHtml(url)}">` : '',
     meta('property', 'og:title', title),
     meta('property', 'og:description', description),

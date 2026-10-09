@@ -11,6 +11,7 @@ interface CssModule {
     options: { minify: boolean; base: string },
   ): Promise<{
     unknown: Map<string, string | null>
+    palette?: Map<string, string[]>
     classes: Map<string, ClassStyle>
     tokens: DesignTokens | null
     files: string[]
@@ -27,12 +28,14 @@ interface Cache {
   key: string
   files: string[]
   unknown: [string, string | null][]
+  palette: [string, string[]][]
   classes: [string, ClassStyle][]
   tokens: DesignTokens | null
 }
 
 export interface ProjectStyles {
   unknown: Map<string, string | null>
+  palette: Map<string, string[]>
   classes: Map<string, ClassStyle>
   tokens: DesignTokens | null
 }
@@ -53,25 +56,38 @@ export async function projectStyles(configPath: string, build: BuildResult): Pro
   try {
     cached = existsSync(cacheFile) ? (JSON.parse(readFileSync(cacheFile, 'utf8')) as Cache) : null
   } catch {}
-  if (cached?.classes && cached.tokens !== undefined && cached.key === keyOf(build, cached.files))
-    return { unknown: new Map(cached.unknown), classes: new Map(cached.classes), tokens: cached.tokens }
+  if (
+    cached?.classes &&
+    cached.palette &&
+    cached.tokens !== undefined &&
+    cached.key === keyOf(build, cached.files)
+  )
+    return {
+      unknown: new Map(cached.unknown),
+      palette: new Map(cached.palette),
+      classes: new Map(cached.classes),
+      tokens: cached.tokens,
+    }
   let css: CssModule
   try {
     css = (await import(pathToFileURL(createRequire(configPath).resolve('@hozu/css')).href)) as CssModule
   } catch {
     return null
   }
-  const { unknown, classes, tokens, files } = await css.compileStyles(build, { minify: false, base })
+  const compiled = await css.compileStyles(build, { minify: false, base })
+  const { unknown, classes, tokens, files } = compiled
+  const palette = compiled.palette ?? new Map<string, string[]>()
   try {
     mkdirSync(dirname(cacheFile), { recursive: true })
     const entry: Cache = {
       key: keyOf(build, files),
       files,
       unknown: [...unknown],
+      palette: [...palette],
       classes: [...classes],
       tokens,
     }
     writeFileSync(cacheFile, JSON.stringify(entry))
   } catch {}
-  return { unknown, classes, tokens }
+  return { unknown, palette, classes, tokens }
 }

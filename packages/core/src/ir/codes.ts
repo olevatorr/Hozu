@@ -650,4 +650,12 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
       'a `remote()` resolver that cannot answer: its generated contract is missing or stale, its secret is missing, undeclared in `env.server` or under 16 characters, or it lists an effect the browser runs or a non-JSON endpoint',
     fix: 'run `hozu gen` and rebuild the service; set a 16+ character secret from `env.server`; implement browser-run effects in fetch.ts and non-JSON endpoints in TypeScript',
   },
+  HZ094: {
+    name: 'theme-variable-clash',
+    severity: 'warning',
+    topic: 'components',
+    summary:
+      'two stylesheets (the project, a kit, a feature) define one `@theme` variable with different values; the one imported last silently wins',
+    fix: 'rename the variable in one stylesheet or remove the copy that should not apply; keep an intended override with `project({ accept })`',
+  },
 }
