@@ -185,6 +185,23 @@ const envOf = (loaded: Loaded): Record<string, string> => {
   return out
 }
 
+/** The image name: package.json's `name` as Docker accepts it, one path component (ADR 0077 A9). */
+export const imageName = (root: string): string => {
+  const pkg = join(root, 'package.json')
+  const name = existsSync(pkg) ? (JSON.parse(readFileSync(pkg, 'utf8')) as { name?: string }).name : undefined
+  const parts = (name ?? '')
+    .toLowerCase()
+    .replace(/^@/, '')
+    .split('/')
+    .map((part) =>
+      part
+        .replace(/[^a-z0-9]+/g, (s) => (/^[._-]$/.test(s) ? s : '-'))
+        .replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, ''),
+    )
+    .filter(Boolean)
+  return parts.join('-') || 'app'
+}
+
 const DOCKERFILE = `FROM node:22-slim
 WORKDIR /app
 COPY package*.json ./
@@ -236,7 +253,20 @@ export async function runTarget(
       .map((s) => serviceRoot(s.file, root))
       .filter((d): d is string => d !== null)
       .map((d) => relative(root, d))
-    const lines = ['node_modules', '.git', '.hozu', '.vercel', 'dist', '.env*', '!.env.example', ...ignored]
+    const lines = [
+      'node_modules',
+      '.git',
+      '.hozu',
+      '.vercel',
+      'dist',
+      '.env*',
+      '!.env.example',
+      '.claude',
+      '.agents',
+      'CLAUDE.md',
+      'AGENTS.md',
+      ...ignored,
+    ]
     const ignoreName = dir === root ? '.dockerignore' : 'Dockerfile.dockerignore'
     const ignore = join(dir, ignoreName)
     if (existsSync(ignore)) {
@@ -253,8 +283,13 @@ export async function runTarget(
     }
     await write('Dockerfile', DOCKERFILE, true)
     await write(ignoreName, `${lines.join('\n')}\n`, true)
-    const at = (p: string) => relative(cwd, p) || '.'
+    const at = (p: string) => {
+      const r = relative(cwd, p) || '.'
+      const shown = r === '..' || r.startsWith(`..${sep}`) ? p : r
+      return /^[\w@%+=:,./-]+$/.test(shown) ? shown : `'${shown.replace(/'/g, `'\\''`)}'`
+    }
     const env = existsSync(join(root, '.env')) ? ` --env-file ${at(join(root, '.env'))}` : ''
+    const image = imageName(root)
     return {
       target,
       out: dir,
@@ -263,9 +298,9 @@ export async function runTarget(
       needs,
       next: [
         dir === root
-          ? `docker build -t app ${at(root)}`
-          : `docker build -f ${at(join(dir, 'Dockerfile'))} -t app ${at(root)}   # the app is the build context`,
-        `docker run -p 3000:3000${env} app   # or npm start on a Node host`,
+          ? `docker build -t ${image} ${at(root)}`
+          : `docker build -f ${at(join(dir, 'Dockerfile'))} -t ${image} ${at(root)}   # the app is the build context`,
+        `docker run -p 3000:3000${env} ${image}   # or npm start on a Node host`,
       ],
     }
   }

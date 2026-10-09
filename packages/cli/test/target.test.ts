@@ -208,8 +208,25 @@ describe('--target node env and services (ADR 0075 A4, A5)', () => {
       'docker reads only the context root or <Dockerfile>.dockerignore',
     ).toBe(false)
     expect(result.next[0]).toMatch(
-      /^docker build -f .+\/Dockerfile -t app \. {3}# the app is the build context$/,
+      /^docker build -f \/\S+\/Dockerfile -t example-notes-go \. {3}# the app is the build context$/,
     )
+  })
+
+  it('names the image after package.json as Docker accepts it (ADR 0077 A9)', async () => {
+    const { imageName } = await import('../src/commands/target.ts')
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-image-name-'))
+    const named = (name?: string) => {
+      writeFileSync(join(dir, 'package.json'), JSON.stringify(name === undefined ? {} : { name }))
+      return imageName(dir)
+    }
+    expect(['@My.Org/App', 'a._b', 'x..y', '.hidden', 'Hello World', undefined].map(named)).toEqual([
+      'my.org-app',
+      'a-b',
+      'x-y',
+      'hidden',
+      'hello-world',
+      'app',
+    ])
   })
 
   it('names kept files and the lines a kept .dockerignore lacks (ADR 0076 A5)', () => {
@@ -222,7 +239,7 @@ describe('--target node env and services (ADR 0075 A4, A5)', () => {
     const result = JSON.parse(r.stdout)
     expect(result.kept).toEqual([relative(`${root}examples/notes-go`, join(out, 'Dockerfile.dockerignore'))])
     expect(result.needs.find((n: string) => n.startsWith('the kept '))).toContain(
-      'lacks: .hozu, .vercel, dist, .env*, !.env.example, service',
+      'lacks: .hozu, .vercel, dist, .env*, !.env.example, .claude, .agents, CLAUDE.md, AGENTS.md, service',
     )
     expect(readFileSync(join(out, 'Dockerfile.dockerignore'), 'utf8')).toBe('node_modules\n.git/\n')
   })

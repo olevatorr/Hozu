@@ -137,6 +137,23 @@ export const PAGE = String.raw`(() => {
     return { names: [own, ...buttons.map((b) => nameOf(b))].filter(Boolean).map((n) => n.replace(/\s+/g, ' ').trim()), buttons }
   }
   const TEXT_TYPES = ['text', 'search', 'email', 'url', 'tel', 'password', 'number', 'date', 'datetime-local', 'month', 'time', 'week']
+  const NAMED_KEYS = /^(Shift\+)?(Tab|Enter|Escape|Space|Backspace|Delete|Insert|Home|End|PageUp|PageDown|Arrow(Up|Down|Left|Right)|F([1-9]|1[0-2]))$/
+  const holders = (key) => {
+    const mac = /Mac|iP/.test(navigator.platform)
+    const norm = (k) => {
+      const p = k.split(/\+(?!$)/)
+      const last = p.pop().toLowerCase()
+      return [...new Set(p.map((m) => (m === 'Mod' ? (mac ? 'Meta' : 'Ctrl') : m)))].sort().concat(last).join('+')
+    }
+    const want = norm(key)
+    const modal = document.querySelector('dialog:modal')
+    return [...(modal ?? document).querySelectorAll('[data-hozu-keys]')].filter((el) =>
+      el.dataset.hozuKeys.split(' ').some((k) => norm(k) === want))
+  }
+  const typing = () => {
+    const el = document.activeElement
+    return !!el && (el.isContentEditable || /^(TEXTAREA|SELECT)$/.test(el.tagName) || (el.tagName === 'INPUT' && TEXT_TYPES.includes(el.type)))
+  }
   return {
     focused() {
       const el = document.activeElement
@@ -147,18 +164,14 @@ export const PAGE = String.raw`(() => {
         (label && name !== 'aria-label' ? ' "' + label.replace(/\s+/g, ' ').slice(0, 60) + '"' : '')
     },
     keyed(key) {
-      const mac = /Mac|iP/.test(navigator.platform)
-      const norm = (k) => {
-        const p = k.split(/\+(?!$)/)
-        const last = p.pop().toLowerCase()
-        return [...new Set(p.map((m) => (m === 'Mod' ? (mac ? 'Meta' : 'Ctrl') : m)))].sort().concat(last).join('+')
+      const els = holders(key)
+      if (!els.length) {
+        const plain = !/\+./.test(key) || /^Shift\+.$/.test(key)
+        if (NAMED_KEYS.test(key) || (plain && typing())) return null
+        return document.querySelector('dialog:modal') ? 'no control in the open dialog has ' + key : 'no control has ' + key
       }
-      const want = norm(key)
-      const modal = document.querySelector('dialog:modal')
-      const els = [...(modal ?? document).querySelectorAll('[data-hozu-keys]')].filter((el) =>
-        el.dataset.hozuKeys.split(' ').some((k) => norm(k) === want))
       const shown = els.filter((el) => !el.closest('[hidden], [inert]') && el.getClientRects().length)
-      return els.length && !shown.length ? 'no visible control has ' + key + ' (' + els.length + ' hidden)' : null
+      return shown.length ? null : 'no visible control has ' + key + ' (' + els.length + ' hidden)'
     },
     point(name, within) {
       const f = find('click', name, within)
@@ -211,9 +224,10 @@ export const PAGE = String.raw`(() => {
     keyJsOnly(key) {
       const el = document.activeElement
       const tag = el && el !== document.body ? el.tagName.toLowerCase() : null
-      if (key === 'Tab') return null
-      if (/\+./.test(key) || (!tag && key !== 'Enter' && document.querySelector('[data-hozu-keys]')))
-        return 'a shortcut needs JavaScript'
+      if (key === 'Tab' || key === 'Shift+Tab') return null
+      if (holders(key).length) return 'a shortcut needs JavaScript'
+      if (key === 'Escape' && document.querySelector('dialog[open], :popover-open')) return null
+      if (/^Shift\+./.test(key)) return this.keyJsOnly(key.slice(6))
       if (key === 'Enter') {
         if (!tag) return 'nothing is focused'
         if (tag === 'a') return el.hasAttribute('href') ? null : 'a link without href'

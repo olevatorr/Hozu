@@ -236,6 +236,7 @@ describe('the migrate summary', () => {
     dryRun: true,
     steps: [],
     changed: [],
+    done: [],
     notes: [],
     packages: [],
     record: '.hozu/migrate-0.11.json',
@@ -273,6 +274,7 @@ describe('the migrate plan lists each step as bullets (0.24)', () => {
       dryRun: false,
       steps,
       changed: [],
+      done: [],
       notes: [],
       packages: [],
       record: null,
@@ -538,12 +540,18 @@ describe('an upgrade within a minor (ADR 0076 A1, A2)', () => {
 
   it('raises the packages and says install, without comparing a record from an earlier migration', async () => {
     const dir = app({ from: '0.25', to: '0.26', ir: {} })
+    writeFileSync(join(dir, '.hozu/migrate-0.23.json'), '{}')
+    writeFileSync(join(dir, '.hozu/migrate-0.27.json'), '{}')
+    mkdirSync(join(dir, '.claude/skills/hozu'), { recursive: true })
     const r = await runMigrate(dir, {
       config: undefined,
       dryRun: false,
       versions: { installed: '0.26.1', target: '0.26.3' },
     })
     expect(ajv.validate(schema, r), JSON.stringify(ajv.errors)).toBe(true)
+    expect(r.guide, 'the upgrade writes the guide from this CLI (ADR 0077 A6)').toContain(
+      '.claude/skills/hozu',
+    )
     expect(r.phase).toBe('upgrade')
     expect(r.ir.compared).toBe(false)
     expect(r.packages).toEqual([
@@ -552,10 +560,21 @@ describe('an upgrade within a minor (ADR 0076 A1, A2)', () => {
     ])
     expect(readFileSync(join(dir, 'package.json'), 'utf8')).toContain('"@hozu/core": "^0.26.3"')
     expect(existsSync(join(dir, '.hozu/migrate-0.26.json'))).toBe(false)
-    expect(r.notes[0]?.message).toContain('removed a stale record (written for a version before 0.26.3')
+    expect(r.done).toEqual([
+      'removed the stale record .hozu/migrate-0.26.json (written for a version before 0.26.3): its IR is not compared',
+      'removed the record of an earlier migration .hozu/migrate-0.23.json',
+    ])
+    expect(r.notes).toEqual([])
+    expect(existsSync(join(dir, '.hozu/migrate-0.23.json'))).toBe(false)
+    expect(
+      existsSync(join(dir, '.hozu/migrate-0.27.json')),
+      'a newer minor’s record waits for its own CLI',
+    ).toBe(true)
     expect(r.next).toEqual(['npm install   # installs Hozu 0.26.3', 'npx hozu check'])
     const text = describeMigrate(r)
     expect(text).toContain('hozu migrate 0.26.1 → 0.26.3: upgrade, no source changes')
+    expect(text).toContain('  done:\n    removed the stale record')
+    expect(text).not.toContain('by hand:')
     expect(text).toContain('@hozu/core: ^0.26.1 → ^0.26.3')
   })
 
@@ -591,7 +610,9 @@ describe('an upgrade within a minor (ADR 0076 A1, A2)', () => {
       versions: { installed: '0.26.3', target: '0.26.3' },
     })
     expect(r.phase).toBe('current')
-    expect(r.notes[0]?.message).toContain('would remove a stale record (verified on 0.26.0, now 0.26.3)')
+    expect(r.done[0]).toContain(
+      'would remove the stale record .hozu/migrate-0.26.json (verified on 0.26.0, now 0.26.3)',
+    )
     expect(existsSync(join(dir, '.hozu/migrate-0.26.json')), 'a dry run writes nothing').toBe(true)
     await expect(
       runMigrate(dir, {
@@ -603,18 +624,38 @@ describe('an upgrade within a minor (ADR 0076 A1, A2)', () => {
   })
 })
 
-describe('hozu check names a CLI and packages of different versions (ADR 0076 A3)', () => {
-  it('fails with both versions and the fix, and says nothing when they match', async () => {
-    const { describeMismatch, mismatched } = await import('../src/commands/check.ts')
-    expect(mismatched({ cli: '0.26.3', core: '0.26.1' })).toBe(true)
-    expect(describeMismatch({ cli: '0.26.3', core: '0.26.1' })).toContain(
-      'hozu 0.26.3 is checking an app on @hozu/core 0.26.1',
+describe('hozu check stops on a CLI and packages of different versions (ADR 0076 A3, ADR 0077 A2, A3)', () => {
+  const appOn = (core: string, range: string) => {
+    const dir = join(root, '.tmp', `check-versions-${process.pid}-${made.length}`)
+    rmSync(dir, { recursive: true, force: true })
+    mkdirSync(join(dir, 'node_modules/@hozu/core'), { recursive: true })
+    made.push(dir)
+    writeFileSync(join(dir, 'node_modules/@hozu/core/package.json'), JSON.stringify({ version: core }))
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ dependencies: { '@hozu/core': range } }))
+    return join(dir, 'hozu.config.ts')
+  }
+
+  it('names both versions and the fix for the state the app is in, and passes when they match', async () => {
+    const { versionStop } = await import('../src/commands/check.ts')
+    const { cliVersion } = await import('../src/versions.ts')
+    const cli = cliVersion()
+    const older = appOn('0.0.1', '^0.0.1')
+    expect(versionStop(older)?.message).toBe(
+      `hozu ${cli} cannot check an app on @hozu/core 0.0.1: its diagnostics would come from that difference alone`,
     )
+    expect(versionStop(older)?.code).toBe('config')
+    expect(versionStop(older)?.suggestions[0]).toContain('npx hozu migrate')
+    expect(versionStop(appOn('0.0.1', `^${cli}`))?.suggestions[0]).toContain('npm install')
+    expect(versionStop(appOn('0.0.1', `~${cli}`))?.suggestions[0]).toContain('npm install')
+    expect(versionStop(appOn('99.0.0', '^99.0.0'))?.suggestions[0]).toBe(
+      'npx -p @hozu/cli@99.0.0 hozu check   # this CLI is older than the app',
+    )
+    expect(versionStop(appOn(cli, `^${cli}`))).toBeNull()
+  })
+
+  it('compares pre-releases in order', async () => {
+    const { mismatched } = await import('../src/commands/check.ts')
     expect(mismatched({ cli: '0.26.3', core: null })).toBe(false)
-    expect(describeMismatch({ cli: '0.26.3', core: '0.26.3' })).toBe('')
-    expect(describeMismatch({ cli: '0.26.2', core: '0.26.3' })).toContain(
-      'npx -p @hozu/cli@0.26.3 hozu check   # this CLI is older than the app',
-    )
     expect(mismatched({ cli: '0.27.0-rc.1', core: '0.27.0-rc.2' })).toBe(true)
     const { compareVersion } = await import('../src/versions.ts')
     expect(['0.27.0', '0.26.10', '0.27.0-rc.10', '0.27.0-rc.2'].sort(compareVersion)).toEqual([

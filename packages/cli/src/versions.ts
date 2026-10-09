@@ -29,3 +29,11 @@ export const compareVersion = (a: string, b: string): number => {
   if (bp === undefined) return -1
   return ap.localeCompare(bp, 'en', { numeric: true })
 }
+
+/** The install command of the package manager whose lockfile the app has. */
+export const installCommand = (dir: string): string =>
+  existsSync(join(dir, 'pnpm-lock.yaml'))
+    ? 'pnpm install'
+    : existsSync(join(dir, 'yarn.lock'))
+      ? 'yarn install'
+      : 'npm install'

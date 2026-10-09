@@ -510,6 +510,17 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     ])
   }, 60_000)
 
+  it('press names a key no control has, and without JS calls only a declared key a shortcut (ADR 0077 A7, A8)', async () => {
+    const fixture = `${root}packages/cli/test/fixtures/flash`
+    const { out } = await browse(['/', '--js', 'both', '--do', 'press r', '--do', 'press Escape'], fixture)
+    const [r, esc] = out.steps.map(
+      (s: { modes: { note: string | null; jsOnly: string | null }[] }) => s.modes,
+    )
+    expect(r[0].note).toBe('no control has r')
+    expect(esc[0].note).toBeNull()
+    expect(esc[1].jsOnly).toBe('Escape has no native action')
+  }, 60_000)
+
   it('replace writes the address in place, so a reload keeps the search (ADR 0067 G)', async () => {
     const { code, out } = await browse(
       ['/', '--js', 'on', '--do', 'fill Search=park', '--do', 'goto /?q=park'],

@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, relative } from 'node:path'
 import type { CheckOutput, TypeIssue } from '../contract.ts'
+import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { relativize } from '../output.ts'
 import { checkPreviews, loadPreviews } from '../previews.ts'
@@ -10,7 +11,7 @@ import { remoteDiagnostics, remoteGroups } from '../remote.ts'
 
 import { projectStyles } from '../styles.ts'
 import { componentUses, overridesOf } from '../uses.ts'
-import { cliVersion, compareVersion, installedCore } from '../versions.ts'
+import { cliVersion, compareVersion, installCommand, installedCore } from '../versions.ts'
 import { applyAccepted } from './accept.ts'
 import { inspectApp } from './app.ts'
 import { envFilesIgnored } from './env-ignore.ts'
@@ -107,15 +108,30 @@ const previewDiagnostics = async (loaded: Loaded, build: Parameters<typeof check
 export const mismatched = (v: CheckOutput['versions']): boolean =>
   v.core !== null && compareVersion(v.core, v.cli) !== 0
 
-/** The first lines of a check whose CLI and packages differ: the cause of most of what follows (ADR 0076 A3). */
-export const describeMismatch = (v: CheckOutput['versions']): string =>
-  mismatched(v)
-    ? `✖ hozu ${v.cli} is checking an app on @hozu/core ${v.core}: the diagnostics below may come from that difference alone.\n  fix: ${
-        compareVersion(v.core!, v.cli) < 0
-          ? 'npx hozu migrate   # raises every @hozu/* to this CLI, then install'
-          : `npx -p @hozu/cli@${v.core} hozu check   # this CLI is older than the app`
-      }\n\n`
-    : ''
+/**
+ * A check whose CLI and packages differ stops before loading the app: every diagnostic would come from the difference
+ * (ADR 0077 A2). The fix follows the state (A3).
+ */
+export function versionStop(config: string): HozuCliError | null {
+  const v = { cli: cliVersion(), core: installedCore(config) }
+  if (!mismatched(v)) return null
+  const pkg = join(dirname(config), 'package.json')
+  const deps = existsSync(pkg)
+    ? (JSON.parse(readFileSync(pkg, 'utf8')) as Record<string, Record<string, string> | undefined>)
+    : {}
+  const range = deps.dependencies?.['@hozu/core'] ?? deps.devDependencies?.['@hozu/core']
+  const fix =
+    compareVersion(v.core!, v.cli) > 0
+      ? `npx -p @hozu/cli@${v.core} hozu check   # this CLI is older than the app`
+      : range !== undefined && range.replace(/^[\^~=]/, '') === v.cli
+        ? `${installCommand(dirname(config))}   # package.json names this version; node_modules still has the old one`
+        : 'npx hozu migrate   # raises every @hozu/* to this CLI, then install'
+  return new HozuCliError(
+    'config',
+    `hozu ${v.cli} cannot check an app on @hozu/core ${v.core}: its diagnostics would come from that difference alone`,
+    [fix],
+  )
+}
 
 export async function runCheck(
   loaded: Loaded,

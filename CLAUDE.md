@@ -388,6 +388,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   on a CLI / `@hozu/core` mismatch (`versions`); `--target` names kept files and missing `.dockerignore` lines,
   prints `docker build -f` for `--out`, removes every folder a failed build made; browse `press` always reports focus
   with the accessible name and hidden-only keys.
+- 0.26.4 (ADR 0077): `hozu check` stops on a CLI / core mismatch before loading (`versionStop`, `config` error, fix by
+  state); HZ014 `keys` duplicates scoped per `dialog` (runtime: innermost open modal); migrate `done:` list (`MigrateOutput.done`), removes
+  other minors' records, upgrade refreshes the guide; `--target node` image named from `package.json`, absolute paths
+  outside cwd, agent files ignored; browse `no control has <key>`, JS-off shortcut wording only for declared keys.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

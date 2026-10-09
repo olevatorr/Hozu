@@ -8,7 +8,7 @@ import type { CheckOutput, MigrateOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import { load } from '../load.ts'
 import { chain, compareMinor, minorOf, OLDEST } from '../migrate/steps.ts'
-import { cliVersion, compareVersion, installedCore } from '../versions.ts'
+import { cliVersion, compareVersion, installCommand, installedCore } from '../versions.ts'
 import { runCheck } from './check.ts'
 import { runSkill } from './skill.ts'
 
@@ -117,12 +117,20 @@ function raisePackages(pkgPath: string, version: string, write: boolean): Migrat
   return out
 }
 
-const installCommand = (dir: string): string =>
-  existsSync(join(dir, 'pnpm-lock.yaml'))
-    ? 'pnpm install'
-    : existsSync(join(dir, 'yarn.lock'))
-      ? 'yarn install'
-      : 'npm install'
+/** Writes the agent guide from this CLI's copy, where the app has one (ADR 0077 A6). */
+async function refreshGuide(dir: string, out: MigrateOutput, rel: (p: string) => string) {
+  const agents = ['.claude/skills/hozu', '.agents/skills/hozu'].filter((p) => existsSync(join(dir, p)))
+  if (!agents.length) return
+  const written = await runSkill(dir, undefined)
+  out.guide = written.written.map((f) => rel(resolve(dir, f)))
+  for (const c of written.custom)
+    out.notes.push({
+      file: rel(resolve(dir, c.guide)),
+      line: 1,
+      message: `not a Hozu template: replace its Hozu section with this block\n${c.block}`,
+      see: null,
+    })
+}
 
 export async function runMigrate(cwd: string, options: MigrateOptions): Promise<MigrateOutput> {
   const config = resolve(cwd, options.config ?? 'hozu.config.ts')
@@ -159,6 +167,7 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
     dryRun: options.dryRun,
     steps: [],
     changed: [],
+    done: [],
     notes: [],
     packages: [],
     record: null,
@@ -216,18 +225,24 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
     minorOf(recorded) === to &&
     compareVersion(recorded, target) <= 0 &&
     (verified === undefined || verified === installed)
+  const removed = options.dryRun ? 'would remove' : 'removed'
   if (existsSync(saved) && !current) {
     if (!options.dryRun) rmSync(saved)
-    out.notes.push({
-      file: rel(saved),
-      line: 1,
-      message: `${options.dryRun ? 'would remove' : 'removed'} a stale record (${verified ? `verified on ${verified}, now ${installed}` : `written for ${recorded ?? 'a version before 0.26.3'}`}): its IR is not compared`,
-      see: null,
-    })
+    out.done.push(
+      `${removed} the stale record ${rel(saved)} (${verified ? `verified on ${verified}, now ${installed}` : `written for ${recorded ?? 'a version before 0.26.3'}`}): its IR is not compared`,
+    )
+  }
+  const hozu = join(dir, '.hozu')
+  for (const name of existsSync(hozu) ? readdirSync(hozu).sort() : []) {
+    const minor = /^migrate-(\d+\.\d+)\.json$/.exec(name)?.[1]
+    if (!minor || compareMinor(minor, to) >= 0) continue
+    if (!options.dryRun) rmSync(join(hozu, name))
+    out.done.push(`${removed} the record of an earlier migration ${rel(join(hozu, name))}`)
   }
   if (compareVersion(installed, target) < 0) {
     out.phase = 'upgrade'
     out.packages = raisePackages(join(dir, 'package.json'), target, !options.dryRun)
+    if (!options.dryRun) await refreshGuide(dir, out, rel)
     out.next.push(
       `${installCommand(dir)}   # installs Hozu ${target}`,
       `npx hozu ${current ? 'migrate   # again: compares the IR with the old one and runs hozu check' : 'check'}`,
@@ -252,20 +267,7 @@ export async function runMigrate(cwd: string, options: MigrateOptions): Promise<
       plan.some((s) => s.unpredictable?.test(path)),
     ),
   }
-  if (!options.dryRun) {
-    const agents = ['.claude/skills/hozu', '.agents/skills/hozu'].filter((p) => existsSync(join(dir, p)))
-    if (agents.length) {
-      const written = await runSkill(dir, undefined)
-      out.guide = written.written.map((f) => rel(resolve(dir, f)))
-      for (const c of written.custom)
-        out.notes.push({
-          file: rel(resolve(dir, c.guide)),
-          line: 1,
-          message: `not a Hozu template: replace its Hozu section with this block\n${c.block}`,
-          see: null,
-        })
-    }
-  }
+  if (!options.dryRun) await refreshGuide(dir, out, rel)
   if (options.check !== false) {
     out.check = await runCheck(loaded, cwd, false)
     if (!out.check.ok)
@@ -307,6 +309,7 @@ export function describeMigrate(r: MigrateOutput): string {
     if (r.record) lines.push(`  ${r.dryRun ? 'would save' : 'saved'} the old IR to ${r.record}`)
   }
   if (r.phase === 'upgrade') for (const p of r.packages) lines.push(`  ${p.name}: ${p.from} → ${p.to}`)
+  if (r.done.length) lines.push('  done:', ...r.done.map((d) => `    ${d}`))
   if (r.notes.length) lines.push('  by hand:')
   for (const n of r.notes)
     lines.push(`    ${n.file}:${n.line}  ${n.message}${n.see ? `  (hozu docs ${n.see})` : ''}`)

@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.26.4 — A mismatch stops the check; a shortcut inside a dialog is its own (ADR 0077)
+
+From the eighth round of trial 0025, where both apps upgraded from 0.26.2 by the printed `next:` lines alone and
+ended with a clean `hozu check`.
+
+- **`hozu check` stops when the CLI and `@hozu/core` differ,** before loading the app: one `config` error with both
+  versions and the fix for the state the app is in (`npm install` when `package.json` already names this version,
+  `npx hozu migrate` when the app is older, the app's own CLI when it is newer). The diagnostics it printed before all
+  came from the difference.
+- **HZ014 treats a `<dialog>` as its own scope for `keys`,** as the runtime does: one `/` in a menu dialog and one in
+  the header are allowed; two inside one dialog still clash. A popover stays in the page's scope (it is not modal).
+  With two modal dialogs open, shortcuts are looked up in the innermost.
+- **`hozu migrate`:** what it did itself is listed under `done:` (`by hand:` is only for you); records of earlier
+  minors are removed (a newer minor's waits for its CLI); the upgrade phase refreshes the agent guide.
+- **`hozu build --target node`:** the image is named after `package.json` (as Docker accepts it); paths outside the
+  current folder are printed absolute, quoted when they hold a space; the generated ignore file also leaves out `.claude`, `.agents`, `CLAUDE.md` and `AGENTS.md`.
+- `hozu browse`: `press r` says `no control has r` when nothing declares it (not for typing in a field or for keys such
+  as Tab, Shift+Tab and Escape); without JS only a declared key is called a shortcut, and Escape counts as native while
+  a dialog or popover is open.
+
 ## 0.26.3 — Upgrading within a minor works (ADR 0076)
 
 From the seventh round of trial 0025. Upgrading from 0.26.1 to 0.26.2 with `hozu migrate` left `@hozu/*` at 0.26.1,

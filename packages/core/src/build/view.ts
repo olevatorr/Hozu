@@ -874,11 +874,18 @@ export function buildView(scope: FeatureScope, symbol: string, decl: Decl): View
   return out
 }
 
-/** Two controls of one view that are always shown together cannot share a shortcut (ADR 0073 B). */
+/**
+ * Two controls of one view that are always shown together cannot share a shortcut (ADR 0073 B). A dialog is its own
+ * scope: the runtime counts only an open modal's controls, and a closed one's are hidden (ADR 0077).
+ */
 function sameKeys(scope: FeatureScope, root: ViewNode, p: At) {
-  const owner = new Map<string, string>()
-  const walk = (n: ViewNode) => {
+  const walk = (n: ViewNode, owner: Map<string, string>) => {
     if (n.kind !== 'el') return
+    if (n !== root && n.tag === 'dialog') {
+      const own = new Map<string, string>()
+      n.children.forEach((c) => walk(c, own))
+      return
+    }
     const keys = n.attrs['data-hozu-keys']
     if (keys && 'literal' in keys)
       for (const k of String(keys.literal).split(' ')) {
@@ -892,9 +899,9 @@ function sameKeys(scope: FeatureScope, root: ViewNode, p: At) {
           )
         else owner.set(k, n.id)
       }
-    n.children.forEach(walk)
+    n.children.forEach((c) => walk(c, owner))
   }
-  walk(root)
+  walk(root, new Map())
 }
 
 const NAMED_KEYS =

@@ -79,6 +79,13 @@
             "additionalProperties": false
           }
         },
+        "done": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "What migrate did itself beyond rewriting, such as removing stale records (ADR 0077 A4)."
+        },
         "notes": {
           "type": "array",
           "items": {
@@ -171,6 +178,7 @@
         "dryRun",
         "steps",
         "changed",
+        "done",
         "notes",
         "packages",
         "record",

@@ -540,6 +540,8 @@ export interface MigrateOutput {
   /** Each step's changes: `summary` joins `changes` with "; ". */
   steps: { from: string; to: string; summary: string; changes: string[] }[]
   changed: { file: string; edits: number }[]
+  /** What migrate did itself beyond rewriting, such as removing stale records (ADR 0077 A4). */
+  done: string[]
   notes: MigrateNote[]
   packages: { name: string; from: string; to: string }[]
   record: string | null

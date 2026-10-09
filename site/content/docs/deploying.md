@@ -109,9 +109,13 @@ node_modules
 dist
 .env*
 !.env.example
+.claude
+.agents
+CLAUDE.md
+AGENTS.md
 ```
 
-The app folder is the build context. With `--out <dir>`, it writes `<dir>/Dockerfile.dockerignore` (Docker reads it next to that Dockerfile) and prints `docker build -f <dir>/Dockerfile -t app <app folder>`.
+The app folder is the build context. With `--out <dir>`, it writes `<dir>/Dockerfile.dockerignore` (Docker reads it next to that Dockerfile) and prints `docker build -f <dir>/Dockerfile -t <name> <app folder>`, where `<name>` comes from `package.json`.
 
 ```sh
 docker build -t my-app .

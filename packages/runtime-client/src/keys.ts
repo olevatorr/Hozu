@@ -33,7 +33,7 @@ const PRESSED = /^(button|submit|reset|checkbox|radio|image|file|color)$/
 
 /** The element a press presses: visible, enabled, inside the open modal dialog when there is one, first in order. */
 export function pressed(doc: Document, e: KeyboardEvent): HTMLElement | null {
-  const modal = doc.querySelector('dialog:modal')
+  const modal = [...doc.querySelectorAll('dialog:modal')].pop()
   for (const el of (modal ?? doc).querySelectorAll<HTMLElement>('[data-hozu-keys]')) {
     if (el.matches(':disabled') || el.closest('[hidden], [inert]') || !el.getClientRects().length) continue
     if (shortcut(e, el.dataset.hozuKeys!.split(' '))) return el
