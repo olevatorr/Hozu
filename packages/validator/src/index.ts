@@ -110,6 +110,8 @@ export interface ValidateOptions {
   lock?: unknown
   accept?: boolean
   unknownClasses?: Map<string, string | null> | null
+  /** For an unknown colour utility, the project's colours with its prefix (ADR 0079 A6). */
+  palette?: Map<string, string[]> | null
   /** CSS properties per class from the CSS stage (`compileStyles(...).classes`); HZ072, HZ075–HZ077 and HZ079 need it. */
   classes?: Map<string, ClassStyle> | null
 }
@@ -127,6 +129,7 @@ export function verify(ir: ProjectIR, options: ValidateOptions = {}): Verificati
     options.bindings?.assets ?? {},
   )
   ctx.classes = options.classes ?? null
+  ctx.palette = options.palette ?? null
   ctx.components = options.bindings?.components ?? null
   for (const rule of rules) rule(ctx)
   const lock = options.bindings

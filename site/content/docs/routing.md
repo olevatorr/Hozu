@@ -49,7 +49,7 @@ entries: {
 
 The exporter and sitemap now know which concrete URLs exist. A route pattern alone cannot enumerate them. `lastmod` is optional: an ISO date, written as the sitemap's `<lastmod>`.
 
-The head is a closed set of fields: `title`, `description`, `type`, `image`, `published` and `noindex`. Any other field, such as `twitter` or `jsonLd`, is HZ014, because the rest is derived: canonical, Open Graph, `twitter:card` and the JSON-LD. The share card is derived from the image: `og:image:width` and `height` from the file, `og:image:alt` from the title, and a large `twitter:card` from 600 px wide; use a 1200×630 image. `/sitemap.xml`, `/robots.txt` and, with a `site`, `/manifest.webmanifest` are derived too: an endpoint there is HZ046.
+The head is a closed set of fields: `title`, `description`, `type`, `image`, `published` and `noindex`. Every field but `type` may be computed from the data and the address, for example `noindex: search.notice !== null` keeps a page with a one-time notice out of search results; the sitemap and `robots.txt` leave out only a page whose `noindex` is the literal `true`. Any other field, such as `twitter` or `jsonLd`, is HZ014, because the rest is derived: canonical, Open Graph, `twitter:card` and the JSON-LD. The share card is derived from the image: `og:image:width` and `height` from the file, `og:image:alt` from the title, and a large `twitter:card` from 600 px wide; use a 1200×630 image. `/sitemap.xml`, `/robots.txt` and, with a `site`, `/manifest.webmanifest` are derived too: an endpoint there is HZ046.
 
 ## Search and optional segments
 

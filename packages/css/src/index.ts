@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { extname, resolve } from 'node:path'
 import { type BuildResult, classCandidates, sha256, sharedViews, styledClasses } from '@hozu/core/ir'
 import type { ClassStyle } from '@hozu/validator'
-import { closest } from '@hozu/validator'
+import { closest, distance } from '@hozu/validator'
 import { __unstable__loadDesignSystem, compile, optimize } from '@tailwindcss/node'
 import { withFallbacks } from './fonts.ts'
 import { classStyles, resolveCss } from './properties.ts'
@@ -16,6 +16,8 @@ export interface CompiledStyles {
   files: string[]
   candidates: Set<string>
   unknown: Map<string, string | null>
+  /** For an unknown colour utility, the project's own colours with its prefix (ADR 0079 A6). */
+  palette: Map<string, string[]>
   classes: Map<string, ClassStyle>
   tokens: DesignTokens | null
 }
@@ -23,6 +25,8 @@ export interface CompiledStyles {
 export { classCandidates }
 
 const markers = /^(group|peer)(\/[\w-]+)?$/
+const COLOUR =
+  /^(text|bg|border(?:-[xytrbles])?|ring|ring-offset|fill|stroke|outline|decoration|accent|caret|divide|placeholder|from|via|to|shadow|inset-shadow)-([a-z][\w-]*(?:\/\d+)?)$/
 const motion = /-(enter-from|enter-active|enter-to|leave-from|leave-active|leave-to|move)$/
 
 const unescapeCss = (id: string) =>
@@ -111,14 +115,41 @@ export async function compileStyles(
   )
   const { styles: classes, ds: loaded } = await classStyles(source, base, styled.sort(), raw)
   const typos = missing.filter((c) => !motion.test(c))
+  const palette = new Map<string, string[]>()
   if (typos.length) {
     const ds = loaded ?? (await __unstable__loadDesignSystem(source, { base }))
     const vocabulary = [...new Set([...ds.getClassList().map(([name]) => name), ...known])]
+    const plain = await defaultDesignSystem(base)
+    const colours = [...ds.theme.values.keys()]
+      .filter((k) => k.startsWith('--color-') && !k.includes('*') && !plain.theme.values.has(k))
+      .map((k) => k.slice('--color-'.length))
+      .sort()
     for (const c of typos) {
       const cut = c.lastIndexOf(':')
       const variant = cut > 0 && !c.slice(0, cut).includes('[') ? c.slice(0, cut + 1) : ''
-      const guess = closest(c.slice(variant.length), vocabulary)
-      unknown.set(c, guess ? variant + guess : null)
+      const rest = c.slice(variant.length)
+      const spelled = closest(rest, vocabulary)
+      const close =
+        spelled !== null &&
+        distance(spelled, rest) <= 2 &&
+        spelled.split('-').at(-1)![0] === rest.split('-').at(-1)![0]
+      const m = COLOUR.exec(rest)
+      if (m && colours.length) {
+        const [, prefix, raw] = m as unknown as [string, string, string]
+        const alpha = /\/\d+$/.exec(raw)?.[0] ?? ''
+        const value = raw.slice(0, raw.length - alpha.length)
+        const guess = closest(value, colours)
+        const near = guess !== null && distance(guess, value) <= Math.max(2, Math.floor(value.length / 3))
+        if (near || !close) {
+          unknown.set(c, near ? `${variant}${prefix}-${guess}${alpha}` : null)
+          palette.set(
+            c,
+            colours.map((n) => `${variant}${prefix}-${n}`),
+          )
+          continue
+        }
+      }
+      unknown.set(c, spelled ? variant + spelled : null)
     }
   }
   return {
@@ -129,6 +160,7 @@ export async function compileStyles(
     files: [...files],
     candidates,
     unknown,
+    palette,
     classes,
     tokens: loaded ? tokensOf(loaded, await defaultDesignSystem(base)) : null,
   }

@@ -70,7 +70,7 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
       type: 'website',
       image: { literal: null },
       published: { literal: null },
-      noindex: false,
+      noindex: { literal: false },
     }
   const known = ['title', 'description', 'type', 'image', 'published', 'noindex']
   const keys = exprOf(fields) === null ? Object.keys(fields as object) : []
@@ -85,6 +85,27 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
       )
   const v = (key: string, x: unknown, absent: unknown = null) =>
     scope.attempt(join(p, key), () => scope.value(x === undefined ? absent : x, join(p, key)), empty)
+  if (exprOf(fields) === null && (typeof fields.noindex === 'string' || typeof fields.noindex === 'number'))
+    scope.report(
+      'HZ014',
+      join(p, 'noindex'),
+      'head.render returns a noindex that is not a boolean',
+      'noindex is true, false or a computed boolean (search.notice !== null); any other value would be silently ignored (ADR 0079 A3).',
+      { summary: 'Return a boolean', snippet: 'noindex: search.notice !== null', patch: null },
+    )
+  if (
+    exprOf(fields) === null &&
+    fields.type !== undefined &&
+    fields.type !== 'article' &&
+    fields.type !== 'website'
+  )
+    scope.report(
+      'HZ014',
+      join(p, 'type'),
+      'head.render returns a computed type',
+      "type is 'article' or 'website' as a literal: it decides the page's JSON-LD and Open Graph type (ADR 0079 A3).",
+      { summary: "Write type: 'article' or type: 'website'", snippet: "type: 'article'", patch: null },
+    )
   return {
     failed,
     query,
@@ -93,7 +114,7 @@ function head(scope: PageScope, d: PageDef['head'], p: string): HeadIR {
     type: fields.type === 'article' ? 'article' : 'website',
     image: v('image', fields.image),
     published: v('published', fields.published),
-    noindex: fields.noindex === true,
+    noindex: v('noindex', fields.noindex, false),
   }
 }
 

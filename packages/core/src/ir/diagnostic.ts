@@ -91,6 +91,7 @@ export type DiagnosticCode =
   | 'HZ091'
   | 'HZ092'
   | 'HZ093'
+  | 'HZ094'
 
 export interface SourceLoc {
   file: string

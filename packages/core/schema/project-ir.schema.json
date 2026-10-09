@@ -360,7 +360,8 @@
           "$ref": "#/definitions/ValueExpr"
         },
         "noindex": {
-          "type": "boolean"
+          "$ref": "#/definitions/ValueExpr",
+          "description": "Computed per request like the other fields (ADR 0079 A3a); the sitemap leaves out only a literal true."
         },
         "failed": {
           "type": "object",

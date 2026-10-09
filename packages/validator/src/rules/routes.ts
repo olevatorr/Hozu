@@ -85,7 +85,14 @@ export function routeParams(ctx: Ctx) {
     })
     const h = page.head
     const params = ir.routes[route]?.params ?? null
-    const values = [h.title, h.description, h.image, h.published, ...(h.query ? [h.query.input] : [])]
+    const values = [
+      h.title,
+      h.description,
+      h.image,
+      h.published,
+      h.noindex,
+      ...(h.query ? [h.query.input] : []),
+    ]
     if (!params && values.some(readsParams))
       ctx.report(
         'HZ024',

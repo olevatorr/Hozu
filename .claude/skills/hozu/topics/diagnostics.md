@@ -3,7 +3,7 @@
 Every diagnostic carries `file:line`, a cause and a fix, and often a snippet or patch. Apply the fix; do not work
 around the rule. `npx hozu docs HZ083` prints one code: its cause, its fix and the topic to read.
 
-- Errors fail `hozu check`. Warnings (HZ010, HZ019, HZ025, HZ036, HZ056, HZ058, HZ061, HZ062, HZ063, HZ075, HZ076, HZ077, HZ080, HZ083, HZ084, HZ086, HZ087, HZ089, HZ090) do not, but each one names something to decide.
+- Errors fail `hozu check`. Warnings (HZ010, HZ019, HZ025, HZ036, HZ056, HZ058, HZ061, HZ062, HZ063, HZ075, HZ076, HZ077, HZ080, HZ083, HZ084, HZ086, HZ087, HZ089, HZ090, HZ094) do not, but each one names something to decide.
 - A warning you keep on purpose goes in `project({ accept: [{ code, at, reason }] })`; errors cannot be accepted.
 
 <!-- more -->
@@ -98,3 +98,4 @@ around the rule. `npx hozu docs HZ083` prints one code: its cause, its fix and t
 | HZ091 | a query with `owner` access returned rows the visitor does not own (reported at run time) | read only the visitor's rows in the resolver (filter by the session); production drops the extra rows and logs this |
 | HZ092 | a preview in `project({ previews })` no longer fits the app: data off its query output schema, an error the query does not declare, a route without a page, or a component use that does not build | update the preview to the current schema, error, page or component (previews are for people: they never ship) |
 | HZ093 | a `remote()` resolver that cannot answer: its generated contract is missing or stale, its secret is missing, undeclared in `env.server` or under 16 characters, or it lists an effect the browser runs or a non-JSON endpoint | run `hozu gen` and rebuild the service; set a 16+ character secret from `env.server`; implement browser-run effects in fetch.ts and non-JSON endpoints in TypeScript |
+| HZ094 (warning) | two stylesheets (the project, a kit, a feature) define one `@theme` variable with different values; the one imported last silently wins | rename the variable in one stylesheet or remove the copy that should not apply; keep an intended override with `project({ accept })` |

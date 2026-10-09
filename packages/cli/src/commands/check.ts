@@ -15,7 +15,7 @@ import { cliVersion, compareVersion, installCommand, installedCore } from '../ve
 import { applyAccepted } from './accept.ts'
 import { inspectApp } from './app.ts'
 import { envFilesIgnored } from './env-ignore.ts'
-import { kitConfigDiagnostics } from './kits.ts'
+import { kitConfigDiagnostics, themeDiagnostics } from './kits.ts'
 import { runValidate } from './validate.ts'
 
 function typescriptBin(from: string): string | null {
@@ -156,6 +156,7 @@ export async function runCheck(
     ...app,
     ...remotes,
     ...(await kitConfigDiagnostics(traced, root, loaded.path, tokens)),
+    ...(await themeDiagnostics(traced, root)),
     ...envFilesIgnored(loaded, traced.ir.env?.files ?? []),
     ...(await previewDiagnostics(loaded, traced)),
   ]

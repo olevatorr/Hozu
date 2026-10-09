@@ -1,8 +1,8 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { kitConfigDiagnostics } from '@hozu/cli'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { kitConfigDiagnostics, themeDiagnostics } from '@hozu/cli'
 import { contract, endpoint, event, feature, fn, machine, on, part, project, route, ui } from '@hozu/core'
 import { buildProject, codes, type Diagnostic, type DiagnosticCode } from '@hozu/core/ir'
 import { compileStyles } from '@hozu/css'
@@ -279,6 +279,16 @@ const Spaced = ui.component({
   render: () => ui.div({}, []),
 })
 const Unspaced = ui.component({ tag: 'div', styles: tv({ base: 'rounded' }), render: () => ui.div({}, []) })
+const AutoMargin = ui.component({
+  tag: 'div',
+  styles: tv({ base: 'm-auto rounded' }),
+  render: () => ui.div({}, []),
+})
+const Centred = ui.component({
+  tag: 'dialog',
+  styles: tv({ base: 'm-auto rounded' }),
+  render: () => ui.dialog({}, []),
+})
 const using = (render: () => unknown) => ui.view({ render: () => ui.main({}, [render() as never]) })
 const BaseAgainstToggle = ui.view({
   machine: Panel,
@@ -343,6 +353,30 @@ const kitWithTv = async (theme: string[]) => {
     { sources: false },
   )
   return kitConfigDiagnostics(build, root, fileURLToPath(new URL('../../../package.json', import.meta.url)))
+}
+
+const themes = async (kitInk: string) => {
+  const root = mkdtempSync(join(tmpdir(), 'hozu-theme-'))
+  mkdirSync(join(root, 'ui'))
+  writeFileSync(
+    join(root, 'app.css'),
+    '@import "tailwindcss";\n@theme {\n  --color-ink: oklch(0.2 0 0);\n}\n',
+  )
+  writeFileSync(join(root, 'ui/theme.css'), `@theme {\n  ${kitInk}: oklch(0.95 0 0);\n}\n`)
+  const build = buildProject(
+    project({
+      schema: zodAdapter,
+      styles: pathToFileURL(join(root, 'app.css')),
+      routes: { home },
+      pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'Home' }) } })],
+      kits: [
+        ui.kit({ id: 'ui', components: [{ Quiet }], styles: pathToFileURL(join(root, 'ui/theme.css')) }),
+      ],
+      features: [feature({ id: 'look', intent: { summary: 'kit' }, declarations: [{ Home }] })],
+    }),
+    { sources: false },
+  )
+  return themeDiagnostics(build, root)
 }
 
 const catalog: SourceMistake[] = [
@@ -462,6 +496,20 @@ const catalog: SourceMistake[] = [
     fixed: () => styled({ Unspaced, Uses: using(() => ui.use(Unspaced, { class: 'mt-4' })) }),
   },
   {
+    name: 'a dialog centred by m-auto is not outer spacing (ADR 0079 A2)',
+    code: 'HZ076',
+    stage: 'css',
+    mistake: () => styled({ AutoMargin, Uses: using(() => ui.use(AutoMargin, {})) }),
+    fixed: () => styled({ Centred, Uses: using(() => ui.use(Centred, {})) }),
+  },
+  {
+    name: 'a caller shorthand covers longhands the component owns (ADR 0079 A1)',
+    code: 'HZ072',
+    stage: 'css',
+    mistake: () => styled({ Btn, Uses: using(() => ui.use(Btn, { class: 'p-8' }, ['Save'])) }),
+    fixed: () => styled({ Btn, Uses: using(() => ui.use(Btn, { class: 'p-8!' }, ['Save'])) }),
+  },
+  {
     name: 'a ! on a property the component does not own',
     code: 'HZ077',
     stage: 'css',
@@ -495,6 +543,13 @@ const catalog: SourceMistake[] = [
     stage: 'css',
     mistake: () => kitWithTv(['--text-hero']),
     fixed: () => kitWithTv([]),
+  },
+  {
+    name: 'a kit and the app define one @theme variable with different values (ADR 0079 A4)',
+    code: 'HZ094',
+    stage: 'css',
+    mistake: () => themes('--color-ink'),
+    fixed: () => themes('--color-surface'),
   },
   {
     name: 'an endpoint answers a hand-written HTML page',

@@ -29,6 +29,7 @@ export class Ctx {
   readonly assets: Bindings['assets']
   readonly envs = new Map<string, Env>()
   classes: Map<string, ClassStyle> | null = null
+  palette: Map<string, string[]> | null = null
   components: Bindings['components'] | null = null
 
   constructor(

@@ -395,8 +395,13 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   other minors' records, upgrade refreshes the guide; `--target node` image named from `package.json`, absolute paths
   outside cwd, agent files ignored; browse `no control has <key>`, JS-off shortcut wording only for declared keys.
 - 0.26.5 (ADR 0078): the mismatch fix names the CLI version (`npx -p @hozu/cli@<v> hozu migrate`); focus notes name
-  links / buttons by text; JS-off `no control has`; `shellPath` for every printed `--target` path. A keyed row that
-  replaces a removed one at the same place fades in (accurate flash; same-place swap is a 0.27 question).
+  links / buttons by text; JS-off `no control has`; `shellPath` for every printed `--target` path.
+- 0.27 (ADR 0079): `HeadIR.noindex` is a value (computed per request; sitemap / robots.txt skip only literal true;
+  migrate 0.26 → 0.27 maps the boolean), a computed head `type` is HZ014; HZ072 compares `longhands()`; HZ076 accepts
+  `m-auto` on a `dialog` / popover root; HZ094 `@theme` variable clash across stylesheets (`themeDiagnostics` in
+  `cli/commands/kits.ts`); HZ026 colour utilities list the project colours (`CompiledStyles.palette`); `hozu add kit`
+  syncs every kit's `tv.ts`; `THIRD_PARTY_NOTICES.md` (root and `@hozu/core`). Browse cannot see keys: a flash in a
+  re-keyed list may be a different row (ADR 0079 B, corrects ADR 0078).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

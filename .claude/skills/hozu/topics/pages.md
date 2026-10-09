@@ -13,8 +13,8 @@ export const docs = route({ path: '/docs/:path+', params: z.object({ path: z.arr
 - **Head from a query:** `head: { query: getItem, input: (params, locale) => ({ id: params.id }), render: (item) => ({ title:
   item.title }), failed: { NotFound: 404 } }`. Both also get `search`. `failed` maps every declared error of the query (HZ051) to a route
   without params (303) or to `403`, `404` or `410`.
-- `head.render` fields: `title`, `description`, `type` (`'website' | 'article'`), `image`, `published`, `noindex`;
-  any other is HZ014 (Open Graph, `twitter:card` and the JSON-LD are derived from these).
+- `head.render` fields: `title`, `description`, `type` (`'website'`/`'article'`), `image`,
+  `published`, `noindex` (computable); any other is HZ014 (Open Graph and JSON-LD are derived).
 - A route no page renders is HZ052.
 
 <!-- more -->

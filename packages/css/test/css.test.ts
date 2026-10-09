@@ -41,6 +41,33 @@ describe('styles', () => {
     expect(css).toContain('[data-hz-view=s\\.Header]{view-transition-name:hz-s-Header}')
   })
 
+  it('HZ026 — a colour utility lists the project colours, and a near miss is corrected (ADR 0079 A6)', async () => {
+    const build = buildProject(blog, { sources: true })
+    const ir = structuredClone(build.ir)
+    const root = ir.features.posts!.views.PostList!.root
+    if (root.kind !== 'el') throw new Error('fixture')
+    root.class = 'text-alert hover:bg-brnd-600 text-smal bg-brnd-600/50'
+    const styles = await compileStyles({ ...build, ir })
+    expect(styles.unknown).toEqual(
+      new Map([
+        ['bg-brnd-600/50', 'bg-brand-600/50'],
+        ['hover:bg-brnd-600', 'hover:bg-brand-600'],
+        ['text-alert', null],
+        ['text-smal', 'text-sm'],
+      ]),
+    )
+    expect(styles.palette.get('text-alert')).toEqual(['text-brand-50', 'text-brand-600', 'text-brand-700'])
+    const [found] = validate(ir, {
+      sources: build.sources,
+      unknownClasses: styles.unknown,
+      palette: styles.palette,
+    }).filter((d) => d.code === 'HZ026')
+    expect(found?.cause).toContain(
+      'If "text-alert" is meant as a colour, this project\'s colours for it are text-brand-50, text-brand-600, text-brand-700.',
+    )
+    expect(found?.message).not.toContain('text-left')
+  })
+
   it('HZ026 — unknown classes with a variant-preserving suggestion and a patch', async () => {
     const build = buildProject(cart, { sources: true })
     const ir = structuredClone(build.ir)

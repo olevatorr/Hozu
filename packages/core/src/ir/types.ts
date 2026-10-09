@@ -74,7 +74,8 @@ export interface HeadIR {
   type: 'website' | 'article'
   image: ValueExpr
   published: ValueExpr
-  noindex: boolean
+  /** Computed per request like the other fields (ADR 0079 A3a); the sitemap leaves out only a literal true. */
+  noindex: ValueExpr
   failed: Record<string, HeadFailureIR>
 }
 
