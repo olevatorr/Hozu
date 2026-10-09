@@ -39,7 +39,7 @@ async function clearOutput(dir: string, kept: string[], target: 'workers' | 'ver
     existsSync(dir) &&
     readdirSync(dir).length &&
     !existsSync(join(dir, MARK[target])) &&
-    !existsSync(join(dir, '.build'))
+    !existsSync(join(dir, '.build', 'manifest.json'))
   )
     throw new HozuCliError(
       'usage',
@@ -132,6 +132,40 @@ const bundleFailure = (error: unknown) => {
     .join('\n')}`
 }
 
+/** An env value on a loopback host, shown without its credentials; null otherwise. */
+export function loopback(value: string): string | null {
+  const local = (host: string) =>
+    host === 'localhost' || host === '[::1]' || host === '::1' || /^127\./.test(host)
+  let url: URL | null = null
+  try {
+    url = new URL(value)
+  } catch {}
+  if (url?.hostname) {
+    if (!local(url.hostname)) return null
+    url.username = ''
+    url.password = ''
+    return url.href.replace(/\/$/, '')
+  }
+  const m = /^([a-z][\w+.-]*:\/\/)(?:.*@)?(localhost|127\.\d+\.\d+\.\d+|\[::1\])([:/?].*)?$/i.exec(value)
+  if (m) return `${m[1]}${m[2]}${m[3] ?? ''}`
+  return local(value.replace(/:\d+$/, '')) ? value : null
+}
+
+/** The Go module of a remote() contract (the nearest go.mod above it, inside the app), unless app code lives there. */
+function serviceRoot(contract: string, root: string): string | null {
+  for (let dir = dirname(contract); dir.startsWith(`${root}${sep}`); dir = dirname(dir)) {
+    if (!existsSync(join(dir, 'go.mod'))) continue
+    const ts = (d: string): boolean =>
+      readdirSync(d, { withFileTypes: true }).some((e) =>
+        e.isDirectory()
+          ? e.name !== 'node_modules' && !e.name.startsWith('.') && ts(join(d, e.name))
+          : /\.[cm]?tsx?$/.test(e.name),
+      )
+    return ts(dir) ? null : dir
+  }
+  return null
+}
+
 /** The env values the CLI reads for the app (.env files), to warn about loopback hosts in a container. */
 const envOf = (loaded: Loaded): Record<string, string> => {
   const out: Record<string, string> = {}
@@ -140,8 +174,10 @@ const envOf = (loaded: Loaded): Record<string, string> => {
       ? readFileSync(join(dirname(loaded.path), file), 'utf8')
       : ''
     for (const line of text.split('\n')) {
-      const m = /^\s*([A-Z_][A-Z0-9_]*)\s*=\s*"?([^"#]*)"?/.exec(line)
-      if (m) out[m[1]!] = m[2]!.trim()
+      const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line)
+      if (!m) continue
+      const raw = m[2]!.trim()
+      out[m[1]!] = /^(["']).*\1$/.test(raw) ? raw.slice(1, -1) : raw.replace(/\s+#.*$/, '')
     }
   }
   return out
@@ -175,21 +211,25 @@ export async function runTarget(
     await writeFile(path, text)
     files.push(relative(cwd, path))
   }
-  const { module } = await inspectApp(loaded, build)
-  const services = module ? await remoteGroups(loaded, build, module.options.resolvers) : []
+  const services = await inspectApp(loaded, build)
+    .then(({ module }) => (module ? remoteGroups(loaded, build, module.options.resolvers) : []))
+    .catch(() => [])
   for (const s of services)
     needs.push(
       `the service ${s.url} names (remote(), contract ${relative(root, s.file)}): deploy it too, where the app can reach it`,
     )
   if (target === 'node') {
-    for (const [name, value] of Object.entries(envOf(loaded)))
-      if (/\b(localhost|127\.\d+\.\d+\.\d+|\[::1\])\b/.test(value))
+    for (const [name, value] of Object.entries(envOf(loaded))) {
+      const shown = loopback(value)
+      if (shown)
         needs.push(
-          `${name} points at this machine (${value.replace(/\/\/[^@/]*@/, '//…@')}): inside a container that is the container itself; use the host's address (host.docker.internal on Docker Desktop)`,
+          `${name} points at this machine (${shown}): inside a container that is the container itself; use the host's address (host.docker.internal on Docker Desktop)`,
         )
+    }
     const ignored = services
-      .map((s) => relative(root, dirname(dirname(s.file))))
-      .filter((d) => d && !d.startsWith('..'))
+      .map((s) => serviceRoot(s.file, root))
+      .filter((d): d is string => d !== null)
+      .map((d) => relative(root, d))
     await write('Dockerfile', DOCKERFILE, true)
     await write(
       '.dockerignore',
@@ -300,30 +340,38 @@ export function describeTarget(r: TargetOutput): string {
  * Whether Workers and Vercel Edge can serve this app, from the build `hozu build` just wrote (ADR 0075 A3): the Node
  * built-ins its imports need, or null when `@hozu/bundle` is not installed to tell.
  */
-export async function edgeCheck(loaded: Loaded, built: string): Promise<string[] | null> {
+export type EdgeCheck = { node: string[] } | { unavailable: true } | { failed: string }
+
+export async function edgeCheck(loaded: Loaded, built: string): Promise<EdgeCheck> {
   const app = appModuleOf(loaded.project)
-  if (!app) return null
+  if (!app) return { unavailable: true }
   let bundler: Bundler
   try {
     bundler = (await import(
       pathToFileURL(createRequire(loaded.path).resolve('@hozu/bundle')).href
     )) as Bundler
   } catch {
-    return null
+    return { unavailable: true }
   }
-  const { node } = await bundler.bundleServer({
-    source: entrySource(loaded.build(false), app, built, 'workers'),
-    resolveDir: dirname(loaded.path),
-    outfile: join(built, '.edge-check.mjs'),
-    conditions: CONDITIONS.workers,
-    write: false,
-  })
-  return node
+  try {
+    const { node } = await bundler.bundleServer({
+      source: entrySource(loaded.build(false), app, built, 'workers'),
+      resolveDir: dirname(loaded.path),
+      outfile: join(built, '.edge-check.mjs'),
+      conditions: CONDITIONS.workers,
+      write: false,
+    })
+    return { node }
+  } catch (error) {
+    return { failed: bundleFailure(error) }
+  }
 }
 
-export function describeTargets(node: string[] | null): string {
-  if (node === null)
+export function describeTargets(check: EdgeCheck): string {
+  if ('unavailable' in check)
     return 'targets: node · workers and vercel: npm install -D @hozu/bundle to check them (a static host: hozu export)\n'
+  if ('failed' in check) return `targets: node · workers and vercel could not be checked: ${check.failed}\n`
+  const node = check.node
   if (!node.length)
     return 'targets: node, workers and vercel can each serve this app: hozu build --target <one> (a static host: hozu export)\n'
   return `targets: node can serve this app; workers and vercel cannot, these imports need Node:\n${node.map((n) => `  ${n}`).join('\n')}\n`

@@ -576,11 +576,11 @@ export async function main(
     }
     if (command === 'build') {
       const result = await runBuild(loaded, values.out, cwd)
-      const node = await edgeCheck(loaded, result.out).catch(() => null)
+      const edge = await edgeCheck(loaded, result.out)
       out(
         asJson
-          ? json({ ...result, edge: node === null ? null : { node } })
-          : `✔ wrote ${result.files.length} static files and ${result.manifest}\n${describeTargets(node)}`,
+          ? json({ ...result, edge })
+          : `✔ wrote ${result.files.length} static files and ${result.manifest}\n${describeTargets(edge)}`,
       )
       return 0
     }

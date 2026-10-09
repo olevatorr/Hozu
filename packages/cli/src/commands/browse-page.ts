@@ -121,7 +121,12 @@ export const PAGE = String.raw`(() => {
       return '<' + e.tagName.toLowerCase() + (name ? ' ' + name + '="' + e.getAttribute(name) + '"' : cls ? ' class="' + cls + '…"' : '') + '>'
     }
     const dialog = top?.closest('dialog, [role=dialog], [role=alertdialog]')
-    const where = dialog && dialog !== top && nameOf(dialog) ? ' in the dialog "' + nameOf(dialog).replace(/\s+/g, ' ').trim() + '"' : ''
+    const titled = dialog
+      ? dialog.getAttribute('aria-label') ??
+        (dialog.getAttribute('aria-labelledby') ? document.getElementById(dialog.getAttribute('aria-labelledby'))?.textContent : null) ??
+        dialog.querySelector('h1, h2, h3')?.textContent
+      : null
+    const where = titled ? ' in the dialog "' + titled.replace(/\s+/g, ' ').trim().slice(0, 60) + '"' : ''
     const covered = hit ? null : !top ? 'nothing' : tag(top) + where + (top.contains(el) ? ', which contains it (a ::before or ::after above it, or pointer-events: none on it)' : '')
     return { x, y, covered, target: tag(el) }
   }

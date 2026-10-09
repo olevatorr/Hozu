@@ -86,7 +86,7 @@ Set public environment variables in the host's dashboard; the export writes them
 
 ### Docker
 
-`npx hozu build --target node` writes this `Dockerfile` and a `.dockerignore` (it keeps yours when they exist), and lists what the server needs: the env your project declares, `SESSION_SECRET`, each service the app reaches through `remote()` (deploy it too; its folder is left out of the image), and every env value that points at `127.0.0.1` or `localhost`, which inside a container is the container itself.
+`npx hozu build --target node` writes this `Dockerfile` and a `.dockerignore` (it keeps yours when they exist), and lists what the server needs: the env your project declares, `SESSION_SECRET`, each service the app reaches through `remote()` (deploy it too; a `.dockerignore` this command writes leaves the service's Go module out of the image when no app code lives in it), and every env value that points at `127.0.0.1` or `localhost`, which inside a container is the container itself.
 
 ```dockerfile
 # Dockerfile

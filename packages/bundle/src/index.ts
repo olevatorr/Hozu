@@ -141,7 +141,12 @@ const packageOf = (file: string) => {
   return rest[0]!.startsWith('@') ? `${rest[0]}/${rest[1]}` : rest[0]!
 }
 
-/** Records which app file, through which packages, asks for each Node built-in; built-ins stay out of the bundle. */
+const TRACED = Symbol('hozu.node-trace')
+
+/**
+ * Records which app file, through which packages, asks for each Node built-in; built-ins stay out of the bundle. A
+ * bare name an npm package provides (`events`, `buffer` polyfills) is that package, not the built-in.
+ */
 async function nodeTrace(root: string) {
   const { builtinModules } = await load('node:module')
   const { relative } = await load('node:path')
@@ -156,15 +161,35 @@ async function nodeTrace(root: string) {
   const plugin = {
     name: 'hozu-node-trace',
     setup(build: {
-      onResolve(o: { filter: RegExp }, f: (a: { path: string; importer: string }) => unknown): void
+      onResolve(
+        o: { filter: RegExp },
+        f: (a: {
+          path: string
+          importer: string
+          resolveDir: string
+          kind: string
+          pluginData?: unknown
+        }) => unknown,
+      ): void
+      resolve(
+        path: string,
+        o: { importer: string; resolveDir: string; kind: string; pluginData: unknown },
+      ): Promise<{ errors: unknown[]; external: boolean }>
     }) {
-      build.onResolve({ filter: /^[^./]/ }, ({ path, importer }) => {
+      build.onResolve({ filter: /^[^./]/ }, async ({ path, importer, resolveDir, kind, pluginData }) => {
+        if (pluginData === TRACED) return undefined
         const pkg = packageOf(importer)
         const from = pkg ?? relative(root, importer)
         if (!pkg) apps.add(from)
         if (builtin.test(path)) {
-          add(wants, from, path.replace(/^node:/, ''))
-          return { path, external: true }
+          const polyfill =
+            !path.startsWith('node:') &&
+            (await build.resolve(path, { importer, resolveDir, kind, pluginData: TRACED })).errors.length ===
+              0
+          if (!polyfill) {
+            add(wants, from, path.replace(/^node:/, ''))
+            return { path, external: true }
+          }
         }
         const name = path.startsWith('@') ? path.split('/').slice(0, 2).join('/') : path.split('/')[0]!
         if (name !== from) add(usedBy, name, from)
@@ -185,6 +210,8 @@ async function nodeTrace(root: string) {
         for (const p of parents) walk(p, [at, ...trail])
       }
       walk(from, [])
+      if (![...out].some((line) => line.endsWith([...mods].sort().join(', '))))
+        out.add(`${from} → ${[...mods].sort().join(', ')}`)
     }
     return [...out].sort()
   }
