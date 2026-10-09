@@ -1,6 +1,6 @@
 {
   "name": "@hozu/css",
-  "version": "0.26.3",
+  "version": "0.26.4",
   "description": "Tailwind CSS v4 for Hozu, compiled from the classes the IR declares",
   "keywords": [
     "hozu",

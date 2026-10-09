@@ -116,6 +116,45 @@ it('two controls always shown together cannot share a shortcut', () => {
   )
 })
 
+it('a dialog is its own scope for shortcuts; a popover is not, since the runtime does not scope it (ADR 0077 A1)', () => {
+  const Menu = ui.view({
+    render: () =>
+      ui.main({}, [
+        ui.input({ name: 'q', 'aria-label': 'Search', keys: ['/'] }),
+        ui.dialog({}, [ui.input({ name: 'q', 'aria-label': 'Search in menu', keys: ['/'] })]),
+      ]),
+  })
+  const Twice = ui.view({
+    render: () =>
+      ui.main({}, [
+        ui.dialog({}, [
+          ui.input({ name: 'a', 'aria-label': 'A', keys: ['/'] }),
+          ui.input({ name: 'b', 'aria-label': 'B', keys: ['/'] }),
+        ]),
+      ]),
+  })
+  const codes = (view: typeof Menu) =>
+    buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { home },
+        pages: [ui.page(home, { views: [view], head: { render: () => ({ title: 'x' }) } })],
+        features: [feature({ id: 'd', intent: { summary: 'dialog' }, declarations: [{ view }] })],
+      }),
+      { sources: false },
+    ).diagnostics.filter((d) => d.code === 'HZ014')
+  const Popover = ui.view({
+    render: () =>
+      ui.main({}, [
+        ui.input({ name: 'q', 'aria-label': 'Search', keys: ['/'] }),
+        ui.div({ popover: 'auto' }, [ui.button({ type: 'button', keys: ['/'] }, ['Find'])]),
+      ]),
+  })
+  expect(codes(Menu)).toEqual([])
+  expect(codes(Popover)).toHaveLength(1)
+  expect(codes(Twice).map((d) => d.message)).toEqual(['Two controls of this view both take the shortcut /'])
+})
+
 it('ui.use passes keys to a component whose root is a control, and refuses one that is not', async () => {
   const { tv } = await import('@hozu/variants')
   const Button = ui.component({
