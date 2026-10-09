@@ -394,6 +394,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   state); HZ014 `keys` duplicates scoped per `dialog` (runtime: innermost open modal); migrate `done:` list (`MigrateOutput.done`), removes
   other minors' records, upgrade refreshes the guide; `--target node` image named from `package.json`, absolute paths
   outside cwd, agent files ignored; browse `no control has <key>`, JS-off shortcut wording only for declared keys.
+- 0.26.5 (ADR 0078): the mismatch fix names the CLI version (`npx -p @hozu/cli@<v> hozu migrate`); focus notes name
+  links / buttons by text; JS-off `no control has`; `shellPath` for every printed `--target` path. A keyed row that
+  replaces a removed one at the same place fades in (accurate flash; same-place swap is a 0.27 question).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

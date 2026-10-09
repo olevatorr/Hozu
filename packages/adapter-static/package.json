@@ -1,6 +1,6 @@
 {
   "name": "@hozu/adapter-static",
-  "version": "0.26.4",
+  "version": "0.26.5",
   "description": "Export a Hozu app as static files",
   "keywords": [
     "hozu",

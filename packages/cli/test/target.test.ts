@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, relative } from 'node:path'
+import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { findBrowser } from '../src/cdp.ts'
@@ -237,7 +237,10 @@ describe('--target node env and services (ADR 0075 A4, A5)', () => {
       encoding: 'utf8',
     })
     const result = JSON.parse(r.stdout)
-    expect(result.kept).toEqual([relative(`${root}examples/notes-go`, join(out, 'Dockerfile.dockerignore'))])
+    expect(result.kept, 'outside the current folder: absolute, like every printed path').toEqual([
+      join(out, 'Dockerfile.dockerignore'),
+    ])
+    expect(result.files.every((f: string) => f.startsWith('/'))).toBe(true)
     expect(result.needs.find((n: string) => n.startsWith('the kept '))).toContain(
       'lacks: .hozu, .vercel, dist, .env*, !.env.example, .claude, .agents, CLAUDE.md, AGENTS.md, service',
     )

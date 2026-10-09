@@ -159,7 +159,7 @@ export const PAGE = String.raw`(() => {
       const el = document.activeElement
       if (!el || el === document.body) return null
       const name = ['name', 'id', 'aria-label', 'href'].find((k) => el.getAttribute(k))
-      const label = (el.getAttribute('aria-label') || el.labels?.[0]?.innerText || el.getAttribute('placeholder') || '').trim()
+      const label = (nameOf(el) || '').trim()
       return '<' + el.tagName.toLowerCase() + (name ? ' ' + name + '="' + el.getAttribute(name) + '"' : '') + '>' +
         (label && name !== 'aria-label' ? ' "' + label.replace(/\s+/g, ' ').slice(0, 60) + '"' : '')
     },
@@ -221,13 +221,13 @@ export const PAGE = String.raw`(() => {
       form.requestSubmit(formName(form).buttons[0])
       return { note: note(hits.length, 1) }
     },
-    keyJsOnly(key) {
+    keyJsOnly(key, pressed) {
       const el = document.activeElement
       const tag = el && el !== document.body ? el.tagName.toLowerCase() : null
       if (key === 'Tab' || key === 'Shift+Tab') return null
       if (holders(key).length) return 'a shortcut needs JavaScript'
       if (key === 'Escape' && document.querySelector('dialog[open], :popover-open')) return null
-      if (/^Shift\+./.test(key)) return this.keyJsOnly(key.slice(6))
+      if (/^Shift\+./.test(key)) return this.keyJsOnly(key.slice(6), pressed ?? key)
       if (key === 'Enter') {
         if (!tag) return 'nothing is focused'
         if (tag === 'a') return el.hasAttribute('href') ? null : 'a link without href'
@@ -242,7 +242,8 @@ export const PAGE = String.raw`(() => {
         }
         return 'Enter on a <' + tag + '> has no native action'
       }
-      if (key === 'Space' || key.length === 1) return tag ? null : 'nothing is focused'
+      if (key === 'Space') return tag ? null : 'nothing is focused'
+      if (key.length === 1) return tag ? null : 'no control has ' + (pressed ?? key)
       return key + ' has no native action'
     },
     snapshot() {
