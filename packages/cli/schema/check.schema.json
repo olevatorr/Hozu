@@ -40,6 +40,26 @@
             "$ref": "#/definitions/CheckOverrides"
           }
         },
+        "versions": {
+          "type": "object",
+          "properties": {
+            "cli": {
+              "type": "string"
+            },
+            "core": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "cli",
+            "core"
+          ],
+          "additionalProperties": false,
+          "description": "The CLI's version and the app's installed `@hozu/core`; check fails when they differ (ADR 0076 A3)."
+        },
         "timings": {
           "type": "object",
           "properties": {
@@ -67,6 +87,7 @@
         "types",
         "validate",
         "overrides",
+        "versions",
         "timings"
       ],
       "additionalProperties": false

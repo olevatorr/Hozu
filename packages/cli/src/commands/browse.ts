@@ -23,6 +23,13 @@ const LIMIT = 1500
 
 export type BrowseJs = 'on' | 'off' | 'both'
 
+/** Where focus went during a press, once the page settled in place (ADR 0076 A8). */
+async function focusNote(tab: Tab, before: string | null): Promise<string | null> {
+  const after = await tab.page('focused()').catch(() => null)
+  if (after) return after === before ? `focus stays on ${after}` : `focused ${after}`
+  return before ? `focus left ${before}` : null
+}
+
 export type BrowsePlan = ({ open: number } | { actor: number; step: string })[]
 
 export interface BrowseOptions {
@@ -170,9 +177,9 @@ export async function act(tab: Tab, p: Parsed): Promise<StepResult> {
     const reason: string | null = off ? await tab.page(`keyJsOnly(${q(p.target)})`) : null
     if (reason) return { ok: true, note: null, jsOnly: reason }
     const before = await tab.page('focused()').catch(() => null)
+    const hidden = await tab.page(`keyed(${q(p.target)})`).catch(() => null)
     await tab.key(p.target)
-    const after = await tab.page('focused()').catch(() => null)
-    return done({ note: after && after !== before ? `focused ${after}` : null })
+    return { ...done({ note: hidden }), focus: before ?? '' }
   }
   if (p.verb === 'wait') {
     const ms = Number(p.target)
@@ -472,6 +479,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
           await Promise.all(others.map((o) => o.settle()))
           const after = await tab.look()
           const reloads = tab.documentLoads - loadsBefore
+          const focus = reloads || r.focus === undefined ? null : await focusNote(tab, r.focus || null)
           const calm = reloads
             ? { replaced: 0, flashes: 0, flashed: [], shift: 0 }
             : await tab.smoothness().catch(() => ({ replaced: 0, flashes: 0, flashed: [], shift: 0 }))
@@ -488,7 +496,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
           const change: BrowseChange = {
             mode,
             ok: r.ok,
-            note: r.note,
+            note: [r.note, focus].filter(Boolean).join('; ') || null,
             jsOnly: r.jsOnly,
             requested: tab.requested,
             navigated: before.url !== after.url,

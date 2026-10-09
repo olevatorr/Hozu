@@ -29,7 +29,7 @@
 
 <!-- more -->
 
-- `press Mod+s` (with `Mod`, `Ctrl`, `Meta`, `Alt`, `Shift`) presses the control whose `keys` match, as a person would, and says `focused <input name="q">` when focus moved; with `--js off` it reports that a shortcut needs JavaScript.
+- `press Mod+s` (with `Mod`, `Ctrl`, `Meta`, `Alt`, `Shift`) presses the control whose `keys` match, as a person would, and says where focus is (`focused <input name="q"> "Search"`, `focus stays on …`, `focus left …`) and when only hidden controls have the key; with `--js off` it reports that a shortcut needs JavaScript.
 - **Server errors:** what the app's `onError` receives (a resolver that threw, an invalid input) is listed under the
   step or the `get` request that caused it, `server error: <message> (<feature.effect>)`; `--json` `serverErrors`.
 - **A calm page:** a step that rebuilds elements unchanged says `N elements rebuilt unchanged (a flash: main > form >

@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { findBrowser } from '../src/cdp.ts'
@@ -143,7 +143,19 @@ describe('a deploy that cannot work says why (ADR 0075)', () => {
     expect(error.message).toContain('server/db.ts → fs/promises')
     expect(error.message).not.toContain('events')
     expect(error.suggestions[0]).toContain('hozu build --target node')
+    expect(error.message).toContain(
+      "hozu build --target workers bundles no Node built-ins for Cloudflare Workers (Cloudflare's nodejs_compat stays off)",
+    )
     expect(existsSync(out)).toBe(false)
+  }, 120_000)
+
+  it('a failed build removes every folder it made, not only its output (ADR 0076 A7)', () => {
+    const base = mkdtempSync(join(tmpdir(), 'hozu-edge-vercel-'))
+    const r = run(['build', '--target', 'vercel', '--out', join(base, '.vercel/output'), '--json'])
+    expect(r.status).not.toBe(0)
+    expect(JSON.parse(r.stdout).error.message).toContain('bundles no Node built-ins for Vercel Edge,')
+    expect(existsSync(join(base, '.vercel'))).toBe(false)
+    expect(existsSync(base)).toBe(true)
   }, 120_000)
 
   it('hozu build says which targets can serve the app before one is chosen', () => {
@@ -190,6 +202,28 @@ describe('--target node env and services (ADR 0075 A4, A5)', () => {
     })
     const result = JSON.parse(r.stdout)
     expect(result.needs.some((n: string) => n.startsWith('the service NOTES_SERVICE_URL names'))).toBe(true)
-    expect(readFileSync(join(out, '.dockerignore'), 'utf8').split('\n')).toContain('service')
+    expect(readFileSync(join(out, 'Dockerfile.dockerignore'), 'utf8').split('\n')).toContain('service')
+    expect(
+      existsSync(join(out, '.dockerignore')),
+      'docker reads only the context root or <Dockerfile>.dockerignore',
+    ).toBe(false)
+    expect(result.next[0]).toMatch(
+      /^docker build -f .+\/Dockerfile -t app \. {3}# the app is the build context$/,
+    )
+  })
+
+  it('names kept files and the lines a kept .dockerignore lacks (ADR 0076 A5)', () => {
+    const out = mkdtempSync(join(tmpdir(), 'hozu-notes-go-kept-'))
+    writeFileSync(join(out, 'Dockerfile.dockerignore'), 'node_modules\n.git/\n')
+    const r = spawnSync(process.execPath, [bin, 'build', '--target', 'node', '--out', out, '--json'], {
+      cwd: `${root}examples/notes-go`,
+      encoding: 'utf8',
+    })
+    const result = JSON.parse(r.stdout)
+    expect(result.kept).toEqual([relative(`${root}examples/notes-go`, join(out, 'Dockerfile.dockerignore'))])
+    expect(result.needs.find((n: string) => n.startsWith('the kept '))).toContain(
+      'lacks: .hozu, .vercel, dist, .env*, !.env.example, service',
+    )
+    expect(readFileSync(join(out, 'Dockerfile.dockerignore'), 'utf8')).toBe('node_modules\n.git/\n')
   })
 })

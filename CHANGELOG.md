@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.26.3 — Upgrading within a minor works (ADR 0076)
+
+From the seventh round of trial 0025. Upgrading from 0.26.1 to 0.26.2 with `hozu migrate` left `@hozu/*` at 0.26.1,
+then compared the app against a record from the 0.25 migration: the new CLI checked the old packages (hundreds of
+errors) and listed the app's own edits as behaviour changes.
+
+- **If `hozu migrate` showed you that on 0.26.2:** run `npx -p @hozu/cli@latest hozu migrate`, install, then
+  `npx hozu check`. Your app was fine; the versions differed.
+- **`hozu migrate` raises a patch release** (phase `upgrade`): `@hozu/*` to the CLI's version, no source change,
+  then `next:` install and `hozu check`. A record names the version it was written for; any other record is removed
+  with a note instead of compared.
+- **`hozu check` names a CLI and packages of different versions** first (and again under many diagnostics), with
+  the fix, and fails. `--json` has `versions: { cli, core }`.
+- **Deploy messages:** `--target workers | vercel` says the build bundles no Node built-ins (Cloudflare's
+  `nodejs_compat` stays off), not that the platform has none. `--target node` lists the files it kept and the lines a
+  kept `.dockerignore` lacks; with `--out` it writes `Dockerfile.dockerignore` beside the Dockerfile and prints
+  `docker build -f <out>/Dockerfile -t app <app>`, since the app is the build context. A failed build removes every folder it made (no empty `.vercel/`).
+- `hozu browse`: `press` reports focus on every press, with the field's name (`focused <input name="q"> "Search"`,
+  `focus stays on …`, `focus left …`), and says `no visible control has Mod+k` when only hidden controls have it.
+
 ## 0.26.2 — A deploy that cannot work says why (ADR 0075)
 
 From the sixth round of trial 0025: both apps read MySQL over TCP, so Workers and Vercel cannot serve them. That was
