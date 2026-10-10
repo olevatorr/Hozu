@@ -75,3 +75,18 @@ The trial runs as registered above, on Hozu 0.28.0, with these changes, each fix
 
 Every other part (the ten changes, isolated sentence author, acceptance checks validated on a reference first,
 targets, reading the result) is unchanged. The record goes to `docs/trials/0023-devtools.md`.
+
+### Revision before the first run (2026-10-10)
+The trial author found that changes 7–9 of the table above describe what `examples/studio` already does (the saving
+text names the task, the detail page's tab title is the task title, `Move` takes Doing to Done since commit
+`bfc27a53`). A check could not tell a no-op from a correct change, so they are replaced, each probing the same thing,
+each verified missing in the frozen app; the sentences come from the isolated author as before:
+| # | Change (brief for the author) | What it probes |
+|---|---|---|
+| 7 | While a task is being removed, the remove dialog should say that it is removing that task (by name), instead of still asking the question | context text in a busy state (`removing`) that is not on screen |
+| 8 | When a task's page is shared in a chat, its preview text should give the task's status and due date, not only the owner | page head: the `description` field |
+| 9 | Removing a task that is already Done should happen straight away, without the confirmation dialog; other tasks still ask | behaviour: a deciding change and its contract |
+
+Checks read behaviour only; whether a run wrote a contract for 9 is read from `hozu check` and the run's tool log
+and reported as secondary. Arm A's address is the path (`/`, `/tasks/t1`); the first edit is the first Edit / Write
+in the run's tool log. Overlay findings made while saving the requests are in the trial record.
