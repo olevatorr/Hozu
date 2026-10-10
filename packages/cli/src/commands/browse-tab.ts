@@ -663,6 +663,13 @@ export class Tab {
     return this.evaluate(`${PAGE}.${call}`)
   }
 
+  async setFiles(files: string[]) {
+    const { result } = await this.send('Runtime.evaluate', {
+      expression: "window[Symbol.for('hozu.browse.upload')]",
+    })
+    await this.send('DOM.setFileInputFiles', { files, objectId: result.objectId })
+  }
+
   /** The status of the page this step loaded, if it loaded one. */
   stepStatus: number | null = null
   /** After the start page: a page a step loads may answer 401, 403, 404 or 410 on purpose; the start page may not. */

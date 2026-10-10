@@ -411,6 +411,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   may return `null`; HZ028 accepts classes fixing the size (CSS stage); HZ063 names the client component; browse
   `press` PageDown…F12, overlay targets first, CSP hint; DevTools style Mind line, shared `on` once, Workbench
   device sizes; HZ016 / HZ018 report a shared `on` once, skeletons satisfy the guard (`contracts/solve.ts`).
+- 0.30 (ADR 0084, from the Mori back office): transform lowers a `?:` whose branch is a reference even with a plain
+  test (a nested conditional as a test was always true); an unconvertible schema is HZ014, not a crash; browse
+  disables Local Network Access checks, `upload <label>=<file>`, match places in notes, `in` covers details/article;
+  recipes: uploads, a checkbox bound to context, `Invalid` display.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

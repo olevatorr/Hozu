@@ -20,10 +20,11 @@ export const PAGE = String.raw`(() => {
   const KINDS = {
     fill: 'input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]):not([type=image]):not([type=reset]), textarea, [contenteditable=true]',
     select: 'select',
+    upload: 'input[type=file]',
     check: 'input[type=checkbox], input[type=radio]',
     click: 'button, a[href], [role=button], [role=link], [role=tab], [role=option], [role=menuitem], [role=checkbox], [role=switch], input[type=submit], input[type=button], input[type=image], summary, [title], label',
   }
-  const SCOPES = 'li, tr, form, [role=listitem], [role=row]'
+  const SCOPES = 'li, tr, form, [role=listitem], [role=row], details, article'
   const scopeOf = (within) => {
     if (within === null) return { roots: [null] }
     const want = norm(within)
@@ -31,13 +32,22 @@ export const PAGE = String.raw`(() => {
     const exact = all.filter((el) => el.innerText.split('\n').some((l) => norm(l) === want))
     const pool = exact.length ? exact : all
     const roots = pool.filter((el) => !pool.some((o) => o !== el && el.contains(o)))
-    if (!roots.length) return { error: 'No list item, table row or form contains "' + within + '"' }
+    if (!roots.length) return { error: 'No list item, table row, form, details or article contains "' + within + '"' }
     return { roots }
   }
   const inside = (root, el) => root === null || root.contains(el) || (root.tagName === 'FORM' && el.form === root)
-  const note = (count, scoped) =>
-    [count > 1 ? count + ' matched; used the first' : null, scoped > 1 ? scoped + ' places contain the text and the target; used the first' : null]
-      .filter(Boolean).join('; ') || null
+  const placeOf = (el) => {
+    const host = el.closest(SCOPES.replace('form, ', '')) ?? el.closest('form')
+    const words = (host?.innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 30)
+    return words ? 'in ' + JSON.stringify(words) : null
+  }
+  const note = (count, scoped, els = []) => {
+    const places = count > 1 ? [...new Set(els.map(placeOf).filter(Boolean))].slice(0, 4) : []
+    return [
+      count > 1 ? count + ' matched; used the first' + (places.length > 1 ? ' (' + places.join(', ') + '; add one with in "<text>")' : '') : null,
+      scoped > 1 ? scoped + ' places contain the text and the target; used the first' : null,
+    ].filter(Boolean).join('; ') || null
+  }
   const layer = (el) => {
     const modal = el.closest('dialog:modal, [aria-modal=true], [role=dialog], [role=alertdialog]')
     if (modal) return modal
@@ -53,7 +63,7 @@ export const PAGE = String.raw`(() => {
     const want = norm(name)
     let all = []
     const found = scope.roots.map((root) => {
-      const pool = [...document.querySelectorAll(KINDS[kind])].filter((el) => shown(el) && inside(root, el))
+      const pool = [...document.querySelectorAll(KINDS[kind])].filter((el) => (kind === 'upload' || shown(el)) && inside(root, el))
       all = all.concat(pool)
       let hits = pool.filter(
         (el) => norm(nameOf(el)) === want || norm(el.getAttribute('title')) === want || norm(el.textContent) === want,
@@ -195,13 +205,13 @@ export const PAGE = String.raw`(() => {
     point(name, within) {
       const f = find('click', name, within)
       if (f.error) return f
-      return { ...at(f.els[0]), jsOnly: jsOnly(f.els[0]), note: note(f.els.length, f.scoped) }
+      return { ...at(f.els[0]), jsOnly: jsOnly(f.els[0]), note: note(f.els.length, f.scoped, f.els) }
     },
     checkable(name, within) {
       const f = find('check', name, within)
       if (f.error) return f
       const el = f.els[0]
-      return { ...at(el), checked: el.checked, radio: el.type === 'radio', note: note(f.els.length, f.scoped) }
+      return { ...at(el), checked: el.checked, radio: el.type === 'radio', note: note(f.els.length, f.scoped, f.els) }
     },
     fill(name, value, within) {
       const f = find('fill', name, within)
@@ -211,6 +221,12 @@ export const PAGE = String.raw`(() => {
       done.add(f.els[index])
       setValue(f.els[index], value)
       return { note: f.els.length > 1 ? 'filled ' + (index + 1) + ' of ' + f.els.length + ' named "' + name + '"' : note(1, f.scoped) }
+    },
+    upload(name, within) {
+      const f = find('upload', name, within)
+      if (f.error) return f
+      window[Symbol.for('hozu.browse.upload')] = f.els[0]
+      return { note: note(f.els.length, f.scoped), multiple: f.els[0].multiple }
     },
     select(name, option, within) {
       const f = find('select', name, within)

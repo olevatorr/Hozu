@@ -7,10 +7,10 @@
   `hozu call api.who --input '{"room":"a"}' --header 'Authorization: Bearer t'` (a POST needs `--write`).
 - **Drive the app in a real browser, still without a server:**
   `hozu browse / --session '{"user":"ada"}' --do 'fill New note=Milk' --do 'press Enter' --do 'click Pin in "Milk"'`.
-  - Steps: `fill <label>=<value>` (`\n`, `\t` work), `select <label>=<option>`, `check` / `uncheck <label>`,
+  - Steps: `fill <label>=<value>` (`\n`, `\t` work), `select <label>=<option>`, `upload <label>=<file>`, `check` / `uncheck <label>`,
     `click <name>`, `submit "<form>"`, `press <key>`, `wait <ms>`, `goto <path>`, `post <path> a=1&b=2`,
-    `remember <name> from url|<selector> [@attr]` (later steps read `$name`); a target may end with `in "<text>"`
-    (for fill and select, before or after `=value`).
+    `remember <name> from url|<selector> [@attr]` (read as `$name`); a target may end with `in "<text>"`
+    (fill and select: before or after `=value`).
   - Labels are what `hozu get <page> --forms` lists; a missing one prints `Did you mean "…"?`. One `--do` may hold
     several steps: `--do 'fill Title=Milk; press Enter'`.
 - **Other users, other pages, after a reload, after sign-out:** verify any such statement once, in one `browse`
@@ -57,7 +57,7 @@
     `click <name>` on a submit button posts with its name and value; `submit "<form>"` takes a form's `aria-label` or
     its submit button text. Labels and names are what a user reads (aria-label, `<label>`, placeholder, button text,
     `title`), or a field's `name`.
-  - `in "<text>"` picks the smallest list item, table row or form containing that text
+  - `in "<text>"` picks the smallest list item, table row, form, `details` or `article` containing that text
     (`click Delete in "Buy milk"`).
   - A step with no native effect prints `js-only (<reason>)` in the off column, e.g. a `type=button` button.
 - **Actors:** the steps after an `--as <name>` are that actor's, and a later `--as <name>` switches back. `--session`

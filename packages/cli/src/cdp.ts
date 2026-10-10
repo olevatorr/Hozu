@@ -64,7 +64,7 @@ export function launch(browser: string, profile: string): Cdp {
       '--mute-audio',
       '--hide-scrollbars',
       '--enable-unsafe-swiftshader',
-      '--disable-features=Prerender2FallbackPrefetchSpecRules',
+      '--disable-features=Prerender2FallbackPrefetchSpecRules,LocalNetworkAccessChecks',
       'about:blank',
     ],
     { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] },

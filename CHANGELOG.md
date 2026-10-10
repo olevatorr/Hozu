@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.30.0 — What the Mori back office met (ADR 0084)
+
+From rebuilding the Mori back office with Hozu (43 routes, two roles). No API change:
+`npx -p @hozu/cli@latest hozu migrate`, then the printed lines.
+
+- **A condition built from a conditional is no longer always true.** `(l.admin ? isAdmin : true) ? link : null`
+  showed the link to everyone, with no diagnostic; it now tests `isAdmin`. If a view relied on the old result, its
+  IR changes after the upgrade: `hozu migrate` shows it. Such a conditional passed to a plain helper, a global,
+  `typeof` or an `if` is now reported (HZ059) even when its test is a constant.
+- **`hozu check` no longer crashes on a schema it cannot convert** (`reading '_zod'`): it reports HZ014 at the
+  declaration.
+- **`hozu browse`:** `upload <label>=<file>` fills a file input; images from another local port (a local API)
+  load; "2 matched" says where the matches are; `in "<text>"` also scopes to `details` and `article`.
+- **Guide:** recipes for uploading files, a checkbox bound to context, and showing an `Invalid` error.
+
 ## 0.29.0 — What a real site rebuild and the DevTools trial met (ADR 0083)
 
 From rebuilding the Mori public site with Hozu and from trial 0023. No API change:
