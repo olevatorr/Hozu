@@ -438,6 +438,7 @@ describe('hozu add component (ADR 0045 I, phase 4)', () => {
     expect(readFileSync(join(app, 'app.ts'), 'utf8')).toContain('components: bundleComponents,')
     const pkg = JSON.parse(readFileSync(join(app, 'package.json'), 'utf8'))
     expect(pkg.dependencies['@hozu/bundle']).toBe(pkg.dependencies['@hozu/core'])
+    expect(pkg.devDependencies?.['@hozu/bundle']).toBeUndefined()
     const views = join(app, 'features/tasks/views.ts')
     const heading = "ui.h1({ class: 'text-3xl font-bold' }, ['Tasks']),"
     writeFileSync(

@@ -140,19 +140,29 @@ export async function runAddComponent(
   await edit(
     pkg,
     (s) => {
-      const json = JSON.parse(s) as { dependencies?: Record<string, string> }
+      const json = JSON.parse(s) as {
+        dependencies?: Record<string, string>
+        devDependencies?: Record<string, string>
+      }
       const deps = json.dependencies ?? {}
-      if (deps['@hozu/bundle']) return s
+      const dev = json.devDependencies ?? {}
+      if (deps['@hozu/bundle'] && !dev['@hozu/bundle']) return s
+      if (dev['@hozu/bundle']) {
+        delete dev['@hozu/bundle']
+        json.devDependencies = dev
+      }
       json.dependencies = Object.fromEntries(
-        Object.entries({ ...deps, '@hozu/bundle': bundleSpec(deps['@hozu/core']) }).sort(([a], [b]) =>
-          a.localeCompare(b),
-        ),
+        Object.entries({
+          ...deps,
+          '@hozu/bundle': deps['@hozu/bundle'] ?? bundleSpec(deps['@hozu/core']),
+        }).sort(([a], [b]) => a.localeCompare(b)),
       )
       return `${JSON.stringify(json, null, 2)}\n`
     },
-    'add @hozu/bundle to dependencies',
+    'move @hozu/bundle to dependencies (the server imports it)',
   )
-  if (out.edited.includes(relative(cwd, pkg))) out.manual.push('run npm install (adds @hozu/bundle)')
+  if (out.edited.includes(relative(cwd, pkg)))
+    out.manual.push('run npm install (installs @hozu/bundle as a dependency)')
   return out
 }
 

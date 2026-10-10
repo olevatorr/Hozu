@@ -252,6 +252,35 @@ describe('--target node env and services (ADR 0075 A4, A5)', () => {
     ])
   })
 
+  it('names a package listed in dependencies and devDependencies, which npm ci --omit=dev drops (ADR 0085)', async () => {
+    const { devDuplicates } = await import('../src/commands/target.ts')
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-duplicates-'))
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify({
+        dependencies: { '@hozu/bundle': '^0.30.0', zod: '^4' },
+        devDependencies: { '@hozu/bundle': '^0.30.0', typescript: '^7' },
+      }),
+    )
+    expect(devDuplicates(dir)).toEqual(['@hozu/bundle'])
+  })
+
+  it('names a devDependency that the stylesheets load, which hozu serve needs (ADR 0085)', async () => {
+    const { devOnlyStyles } = await import('../src/commands/target.ts')
+    const dir = mkdtempSync(join(tmpdir(), 'hozu-dev-styles-'))
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify({
+        dependencies: { '@hozu/css': '^0.30.0' },
+        devDependencies: { '@tailwindcss/typography': '^0.5', typescript: '^7' },
+      }),
+    )
+    const css = join(dir, 'app.css')
+    writeFileSync(css, '@import "tailwindcss";\n@plugin "@tailwindcss/typography";\n@import "./local.css";\n')
+    const build = { bindings: { styles: { entry: css, kits: {}, features: {} } } }
+    expect(devOnlyStyles(dir, build as never)).toEqual(['@tailwindcss/typography'])
+  })
+
   it('names kept files and the lines a kept .dockerignore lacks (ADR 0076 A5)', () => {
     const out = mkdtempSync(join(tmpdir(), 'hozu-notes-go-kept-'))
     writeFileSync(join(out, 'Dockerfile.dockerignore'), 'node_modules\n.git/\n')

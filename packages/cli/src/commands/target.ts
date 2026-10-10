@@ -265,6 +265,46 @@ EXPOSE 3000
 CMD ["npx", "hozu", "serve"]
 `
 
+/** Packages listed both as dependencies and devDependencies: `npm ci --omit=dev` installs neither. */
+export function devDuplicates(root: string): string[] {
+  try {
+    const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>
+      devDependencies?: Record<string, string>
+    }
+    return Object.keys(pkg.dependencies ?? {})
+      .filter((name) => name in (pkg.devDependencies ?? {}))
+      .sort()
+  } catch {
+    return []
+  }
+}
+
+const packageOf = (specifier: string) =>
+  specifier.startsWith('@') ? specifier.split('/').slice(0, 2).join('/') : specifier.split('/')[0]!
+
+/** Packages the app's stylesheets load by name (`@plugin`, `@import`) that only devDependencies list. */
+export function devOnlyStyles(root: string, build: BuildResult): string[] {
+  let pkg: { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }
+  try {
+    pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
+  } catch {
+    return []
+  }
+  const { entry, kits, features } = build.bindings.styles
+  const found = new Set<string>()
+  for (const file of [entry, ...Object.values(kits), ...Object.values(features).flat()]) {
+    if (!file || !existsSync(file)) continue
+    for (const [, spec] of readFileSync(file, 'utf8').matchAll(
+      /@(?:plugin|import|reference|config)\s+["']([^"'./][^"']*)["']/g,
+    )) {
+      const name = packageOf(spec!)
+      if (name in (pkg.devDependencies ?? {}) && !(name in (pkg.dependencies ?? {}))) found.add(name)
+    }
+  }
+  return [...found].sort()
+}
+
 export async function runTarget(
   loaded: Loaded,
   target: Target,
@@ -295,6 +335,14 @@ export async function runTarget(
       `the service ${s.url} names (remote(), contract ${relative(root, s.file)}): deploy it too, where the app can reach it`,
     )
   if (target === 'node') {
+    for (const name of devDuplicates(root))
+      needs.push(
+        `${name} is in both dependencies and devDependencies, so npm ci --omit=dev leaves it out of the image: remove it from devDependencies`,
+      )
+    for (const name of devOnlyStyles(root, build))
+      needs.push(
+        `${name} is a devDependency, but hozu serve compiles the stylesheets that load it: move it to dependencies`,
+      )
     for (const [name, value] of Object.entries(envOf(loaded))) {
       const shown = loopback(value)
       if (shown)
