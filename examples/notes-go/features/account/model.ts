@@ -4,7 +4,7 @@ import { home, login } from '../../routes.ts'
 
 export const Session = z.object({ user: z.string() })
 export const Name = z.object({
-  name: z.string().regex(/^\s*[A-Za-z]{2,20}\s*$/, 'Use 2–20 letters'),
+  name: z.string().regex(/^\s*\p{L}[\p{L}\p{M} '’.·・‧-]{0,19}\s*$/u, 'Use 1–20 letters, in any language'),
 })
 
 export const SignIn = event({ payload: z.object({ name: z.string() }) })

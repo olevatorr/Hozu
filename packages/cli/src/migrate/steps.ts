@@ -255,6 +255,17 @@ export const steps: Step[] = [
     normalize: noindexAsValue,
     unpredictable: /^\/pages\/[^/]+\/head\/noindex(\/|$)/,
   },
+  {
+    from: '0.27',
+    to: '0.28',
+    changes: [
+      'no source change',
+      "hozu add feature --with auth accepts names in any language; an app scaffolded before keeps its ASCII-only rule in features/account/model.ts (change it to /^\\s*\\p{L}[\\p{L}\\p{M} '’.·・‧-]{0,19}\\s*$/u by hand if you want it)",
+      'hozu build --target node keeps .gitignore entries out of the image and prints a volume for data folders',
+    ],
+    rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 /** 0.27 stores a page's noindex as a value, so a literal true becomes { literal: true } (ADR 0079 A3a). */

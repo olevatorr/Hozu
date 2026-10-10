@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -26,7 +26,7 @@ describe('hozu build --target (ADR 0073 A)', () => {
     const result = build('workers', out)
     expect(result.needs).toEqual([
       'SESSION_SECRET (32+ characters): signs the session cookie',
-      'server env: STOCK_LIMIT',
+      'server env with a default (set only to change it): STOCK_LIMIT',
       'a KV namespace bound as SESSIONS: npx wrangler kv namespace create SESSIONS, then its id in wrangler.jsonc',
     ])
     const worker = readFileSync(join(out, 'worker.mjs'), 'utf8')
@@ -183,6 +183,29 @@ describe('a deploy that cannot work says why (ADR 0075)', () => {
   })
 })
 
+describe('--target node keeps what git ignores out of the image (ADR 0082 A4, A5)', () => {
+  it('lists .gitignore entries in the ignore file and names a volume for a data folder', () => {
+    const app = mkdtempSync(join(tmpdir(), 'hozu-gitignored-'))
+    cpSync(`${root}packages/cli/test/fixtures/flash`, app, { recursive: true })
+    symlinkSync(`${root}examples/cart/node_modules`, join(app, 'node_modules'))
+    writeFileSync(join(app, '.gitignore'), 'node_modules\ndata/*\n!data/.gitkeep\n*.log\n.idea\n')
+    mkdirSync(join(app, 'data'))
+    mkdirSync(join(app, '.idea'))
+    const r = spawnSync(process.execPath, [bin, 'build', '--target', 'node', '--json'], {
+      cwd: app,
+      encoding: 'utf8',
+    })
+    const result = JSON.parse(r.stdout)
+    const ignore = readFileSync(join(app, '.dockerignore'), 'utf8').split('\n')
+    expect(ignore).toContain('data/*')
+    expect(ignore).toContain('*.log')
+    expect(ignore).toContain('production.env')
+    expect(result.next[1], 'no secrets to pass, no tool folders as volumes, names prefixed (review)').toMatch(
+      /^docker run -p 3000:3000 -v (\S+)-data:\/app\/data \1 {3}#/,
+    )
+  })
+})
+
 describe('--target node env and services (ADR 0075 A4, A5)', () => {
   it('names loopback values without their credentials, and nothing else', async () => {
     const { loopback } = await import('../src/commands/target.ts')
@@ -242,7 +265,7 @@ describe('--target node env and services (ADR 0075 A4, A5)', () => {
     ])
     expect(result.files.every((f: string) => f.startsWith('/'))).toBe(true)
     expect(result.needs.find((n: string) => n.startsWith('the kept '))).toContain(
-      'lacks: .hozu, .vercel, dist, .env*, !.env.example, .claude, .agents, CLAUDE.md, AGENTS.md, service',
+      'lacks: .hozu, .vercel, dist, .env*, !.env.example, production.env, .claude, .agents, CLAUDE.md, AGENTS.md, service',
     )
     expect(readFileSync(join(out, 'Dockerfile.dockerignore'), 'utf8')).toBe('node_modules\n.git/\n')
   })

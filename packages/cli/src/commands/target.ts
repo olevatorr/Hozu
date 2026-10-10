@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, relative, resolve, sep } from 'node:path'
@@ -54,11 +54,27 @@ async function clearOutput(dir: string, kept: string[], target: 'workers' | 'ver
 /** What this app needs from any server, and what each target adds (ADR 0073 A2). */
 export function needsOf(build: BuildResult, target: Target): string[] {
   const out: string[] = []
-  const server = Object.keys(
-    (build.ir.env?.server as { properties?: Record<string, unknown> } | null)?.properties ?? {},
-  )
+  const schema = build.ir.env?.server as {
+    properties?: Record<string, { default?: unknown }>
+    required?: string[]
+  } | null
+  const server = Object.entries(schema?.properties ?? {})
+  const required = server
+    .filter(([k, p]) => schema?.required?.includes(k) && p.default === undefined)
+    .map(([k]) => k)
+  const optional = server.filter(([, p]) => p.default !== undefined).map(([k]) => k)
   if (build.ir.session) out.push('SESSION_SECRET (32+ characters): signs the session cookie')
-  if (server.length) out.push(`server env: ${server.join(', ')}`)
+  if (required.length) out.push(`server env: ${required.join(', ')}`)
+  if (optional.length) out.push(`server env with a default (set only to change it): ${optional.join(', ')}`)
+  const site = build.ir.site
+  if (
+    site &&
+    !site.urlEnv &&
+    /^https?:\/\/(localhost|127\.\d+\.\d+\.\d+|\[::1\]|0\.0\.0\.0)(?=[:/]|$)/.test(site.url)
+  )
+    out.push(
+      `site.url is ${site.url}: canonical links, Open Graph and the sitemap will point there; set the public address (or site.url: { env: 'SITE_URL' })`,
+    )
   if (build.ir.session && target === 'workers')
     out.push(
       'a KV namespace bound as SESSIONS: npx wrangler kv namespace create SESSIONS, then its id in wrangler.jsonc',
@@ -185,6 +201,31 @@ const envOf = (loaded: Loaded): Record<string, string> => {
   return out
 }
 
+/** What the app's `.gitignore` keeps out of git, which the image leaves out too (ADR 0082 A4). */
+function gitIgnored(root: string): string[] {
+  const file = join(root, '.gitignore')
+  if (!existsSync(file)) return []
+  return readFileSync(file, 'utf8')
+    .split('\n')
+    .map((l) => l.trim().replace(/^\//, '').replace(/\/$/, ''))
+    .filter((l) => l && !l.startsWith('#'))
+}
+
+const NOT_DATA = /^(\..*|node_modules|dist|build|out|coverage|tmp|temp|logs?)$/
+
+/** A named volume for each folder the app keeps out of git and writes at runtime, such as a data folder (A5). */
+const volumes = (root: string, gitignored: string[], image: string) =>
+  [...new Set(gitignored.map((e) => e.replace(/\/\*+$/, '')))]
+    .filter(
+      (e) =>
+        !NOT_DATA.test(e) &&
+        !/[*!/]/.test(e) &&
+        existsSync(join(root, e)) &&
+        statSync(join(root, e)).isDirectory(),
+    )
+    .map((e) => ` -v ${image}-${e.replace(/[^\w.-]/g, '-')}:/app/${e}`)
+    .join('')
+
 /** A path as output shows it: relative inside the current folder, absolute outside it (ADR 0078 A4). */
 const shownPath = (cwd: string, p: string): string => {
   const r = relative(cwd, p) || '.'
@@ -265,6 +306,7 @@ export async function runTarget(
       .map((s) => serviceRoot(s.file, root))
       .filter((d): d is string => d !== null)
       .map((d) => relative(root, d))
+    const gitignored = gitIgnored(root)
     const lines = [
       'node_modules',
       '.git',
@@ -273,12 +315,14 @@ export async function runTarget(
       'dist',
       '.env*',
       '!.env.example',
+      'production.env',
       '.claude',
       '.agents',
       'CLAUDE.md',
       'AGENTS.md',
       ...ignored,
     ]
+    for (const entry of gitignored) if (!lines.includes(entry)) lines.push(entry)
     const ignoreName = dir === root ? '.dockerignore' : 'Dockerfile.dockerignore'
     const ignore = join(dir, ignoreName)
     if (existsSync(ignore)) {
@@ -296,8 +340,8 @@ export async function runTarget(
     await write('Dockerfile', DOCKERFILE, true)
     await write(ignoreName, `${lines.join('\n')}\n`, true)
     const at = (p: string) => shellPath(cwd, p)
-    const env = existsSync(join(root, '.env')) ? ` --env-file ${at(join(root, '.env'))}` : ''
     const image = imageName(root)
+    const secrets = needs.some((n) => n.startsWith('SESSION_SECRET') || n.startsWith('server env:'))
     return {
       target,
       out: dir,
@@ -308,7 +352,7 @@ export async function runTarget(
         dir === root
           ? `docker build -t ${image} ${at(root)}`
           : `docker build -f ${at(join(dir, 'Dockerfile'))} -t ${image} ${at(root)}   # the app is the build context`,
-        `docker run -p 3000:3000${env} ${image}   # or npm start on a Node host`,
+        `docker run -p 3000:3000${secrets ? ` --env-file ${at(join(root, 'production.env'))}` : ''}${volumes(root, gitignored, image)} ${image}   #${secrets ? ' production.env holds the values above, not your development .env (keep it out of git);' : ''} or npm start on a Node host`,
       ],
     }
   }

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.28.0 — What an engineer and a non-engineer met first (ADR 0082)
+
+From trial 0026, where an engineer agent and a non-engineer pair (a person who never reads code, and a builder) each
+shipped a small app on 0.27.0. No API change: `npx -p @hozu/cli@latest hozu migrate`, then the printed lines.
+
+- **Sign-in accepts names in any language.** `hozu add feature … --with auth` (and the notes examples) took only
+  ASCII letters; a Chinese name could not sign in. Middle dots (`·・‧`) are accepted too. The browser's schema check now reads a pattern with Unicode
+  semantics.
+- **Deploying with Docker keeps data out of the image.** `--target node` adds the app's `.gitignore` entries to the
+  ignore file (and `production.env`), prints `docker run --env-file production.env -v <app>-data:/app/data …` with a
+  volume for each ignored data folder, names a localhost `site.url`, and lists only the server env without a default
+  as required.
+- **HZ016** says when only a `??` or `?:` decides, and offers copying the value as it is before a contract.
+- **`hozu browse`** screenshots the whole page and has a `scroll bottom|top|"<text>"` step; `--help` says
+  `--js both` runs both modes against one server.
+- **`hozu add feature --page /`** lists the replaced page's views that no page uses any more.
+- **Guide:** recipes for a JSON file in a demo, a delete confirmation that works without JavaScript, and a setting only
+  one person may change; the typed server env in a feature; four short notes in the views topic.
+
 ## 0.27.0 — The checks a UI kit needs (ADR 0079)
 
 From the UI kit spike (23 components on two trial screens) and the licensing review. No API change:

@@ -120,6 +120,38 @@ describe('Phase 1 behavior catalog', () => {
     expect(d.fix?.snippet).toContain('placeholders')
   })
 
+  it('HZ016 offers a plain copy when only ?? or ?: decides (ADR 0082 A8)', async () => {
+    const { onlyOperators } = await import('../src/contracts/mechanical.ts')
+    const ir = cartIR()
+    const coalesce: ValueExpr = {
+      fn: '%coalesce',
+      arg: { object: { a: { ref: 'context', path: ['error'] }, b: { literal: null } } },
+    }
+    const on = (assign: { op: 'set'; path: string[]; value: ValueExpr }[], guard: unknown = null) => {
+      cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [
+        { guard, target: 'idle', assign, navigate: null } as never,
+      ]
+      return onlyOperators(cart(ir), 'idle/on/cart.Dismiss/0')
+    }
+    expect(on([{ op: 'set', path: ['error'], value: coalesce }])).toEqual(['(ctx.error ?? null)'])
+    expect(
+      on([{ op: 'set', path: ['error'], value: coalesce }], {
+        op: 'eq',
+        left: { literal: 1 },
+        right: { literal: 1 },
+      }),
+    ).toEqual([])
+    expect(
+      on([
+        {
+          op: 'set',
+          path: ['error'],
+          value: { fn: '%plus', arg: { object: { a: { literal: 1 }, b: { literal: 2 } } } },
+        },
+      ]),
+    ).toEqual([])
+  })
+
   it('HZ016 lists only the assigned fields as changes', () => {
     const ir = cartIR()
     cart(ir).machine!.states.idle!.on['cart.Dismiss'] = [

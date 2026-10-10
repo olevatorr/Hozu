@@ -42,3 +42,6 @@ project({
   - `SESSION_SECRET` (required in production with sessions);
   - `NODE_ENV`;
   - `HOZU_TRANSFORM_CACHE=0`.
+- **Typed env in a feature's `server.ts`:** declare what the feature reads and let `app.ts` pass the project's
+  env: `export function booksResolvers<Env extends { DATA_FILE: string }>(implement: Implement<Session, Env>)`;
+  `ctx.env.DATA_FILE` is then a string in every resolver of the feature.

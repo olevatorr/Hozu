@@ -86,6 +86,34 @@ export function decides(feature: FeatureIR, id: string): boolean {
   return target?.invoke ? computes(target.invoke.input) : false
 }
 
+/**
+ * The assigned values that make a transition decide only through `??` or `?:` (ADR 0082 A8): when the value could be
+ * copied as it is, the transition would not decide and the lock would review it instead of a contract.
+ */
+export function onlyOperators(feature: FeatureIR, id: string): string[] {
+  const { transition, target } = locate(feature, id)
+  if (
+    transition.guard ||
+    transition.navigate ||
+    transition.replace ||
+    transition.copy ||
+    transition.refresh?.length
+  )
+    return []
+  if (target?.invoke && computes(target.invoke.input)) return []
+  const hits: string[] = []
+  for (const a of transition.assign) {
+    if (a.op === 'inc') return []
+    if (!computes(a.value)) continue
+    const v = a.value
+    if (!('fn' in v) || (v.fn !== '%coalesce' && v.fn !== '%cond')) return []
+    const o = 'object' in v.arg ? v.arg.object : {}
+    if (Object.values(o).some(computes)) return []
+    hits.push(showValue(v))
+  }
+  return hits
+}
+
 const names: Record<string, string> = { context: 'ctx' }
 
 const infix: Record<string, string> = { '%plus': '+', '%minus': '-', '%coalesce': '??' }

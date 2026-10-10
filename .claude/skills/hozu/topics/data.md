@@ -9,8 +9,8 @@
 | everyone's (posts, a shared board) | `'server'` / `'public'`; `access` on its mutations | the app's database |
 | a public third-party API (quotes, weather) | `'either'` / `'public'` | nowhere: read it |
 
-The arrays in Hozu's examples and scaffolds are stand-ins that keep them short: one list for every visitor, gone on
-restart. Never ship one; replace it with the store above.
+The arrays in Hozu's examples and scaffolds are stand-ins: one list for every visitor, gone on restart. Never ship
+one: use the store above (a demo: the JSON-file recipe).
 
 ```ts
 export const itemsTag = tag({ param: null })                    // tag({ param: z.string() }) → itemTag(id)
