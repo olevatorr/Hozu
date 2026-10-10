@@ -6,7 +6,7 @@ import { closest, distance } from '@hozu/validator'
 import { __unstable__loadDesignSystem, compile, optimize } from '@tailwindcss/node'
 import { withFallbacks } from './fonts.ts'
 import { classStyles, resolveCss } from './properties.ts'
-import { type DesignTokens, defaultDesignSystem, tokensOf } from './tokens.ts'
+import { type DesignTokens, defaultDesignSystem, plainCss, tokensOf } from './tokens.ts'
 
 export interface CompiledStyles {
   css: string
@@ -73,7 +73,10 @@ export async function compileStyles(
   { minify = true, base = process.cwd() }: { minify?: boolean; base?: string } = {},
 ): Promise<CompiledStyles> {
   const kept = sharedViews(build.ir)
-    .map((ref) => `[data-hz-view="${ref}"] { view-transition-name: hz-${ref.replace(/[^\w-]/g, '-')}; }`)
+    .map(
+      (ref) =>
+        `:root:active-view-transition [data-hz-view="${ref}"] { view-transition-name: hz-${ref.replace(/[^\w-]/g, '-')}; }`,
+    )
     .join('\n')
   const source = [transitions, kept, stylesSource(build)].filter(Boolean).join('\n')
   const files = new Set<string>()
@@ -162,7 +165,7 @@ export async function compileStyles(
     unknown,
     palette,
     classes,
-    tokens: loaded ? tokensOf(loaded, await defaultDesignSystem(base)) : null,
+    tokens: loaded ? tokensOf(loaded, await defaultDesignSystem(base), await plainCss(source, base)) : null,
   }
 }
 

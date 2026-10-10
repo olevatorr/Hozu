@@ -304,6 +304,27 @@ const OverlappingToggles = ui.view({
   render: ({ ctx }) =>
     ui.main({ class: 'p-4', toggle: { 'text-white': ctx.on, 'text-slate-900': true } }, []),
 })
+const picked = fn({
+  input: z.object({ on: z.boolean() }),
+  output: z.boolean(),
+  impl: ({ on }) => on,
+})
+const FnToggles = ui.view({
+  machine: Panel,
+  render: ({ ctx }) =>
+    ui.main({ class: 'p-4', toggle: { 'bg-indigo-600': picked({ on: ctx.on }), 'bg-white': true } }, []),
+})
+const FnComplementaryToggles = ui.view({
+  machine: Panel,
+  render: ({ ctx }) =>
+    ui.main(
+      {
+        class: 'p-4',
+        toggle: { 'bg-indigo-600': picked({ on: ctx.on }), 'bg-white': !picked({ on: ctx.on }) },
+      },
+      [],
+    ),
+})
 const LiteralToggles = ui.view({
   machine: Panel,
   render: ({ ctx }) =>
@@ -536,6 +557,13 @@ const catalog: SourceMistake[] = [
     stage: 'css',
     mistake: () => styled({ Panel, OverlappingToggles }),
     fixed: () => styled({ Panel, LiteralToggles }),
+  },
+  {
+    name: 'toggles over a fn() result that can hold together; c / !c of a fn result cannot (ADR 0083)',
+    code: 'HZ079',
+    stage: 'css',
+    mistake: () => styled({ Panel, picked, FnToggles }),
+    fixed: () => styled({ Panel, picked, FnComplementaryToggles }),
   },
   {
     name: "a kit's generated tailwind-merge config no longer matches the design system",

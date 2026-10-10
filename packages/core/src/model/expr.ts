@@ -132,7 +132,10 @@ export function callExpr(fn: object, arg: unknown): any {
         length ??= lengthOf!(self)
         return length
       }
-      return leak(what(), `its ".${key}" was read; only .length lowers (to %length)`)
+      return leak(
+        what(),
+        `its ".${key}" was read; only .length lowers (to %length): make the fn return the value you need`,
+      )
     },
   })
   return self

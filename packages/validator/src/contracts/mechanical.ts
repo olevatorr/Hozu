@@ -40,6 +40,7 @@ export function locate(feature: FeatureIR, id: string): Located {
 const computingBuiltins = new Set([
   '%plus',
   '%minus',
+  '%times',
   '%concat',
   '%cond',
   '%coalesce',
@@ -116,7 +117,7 @@ export function onlyOperators(feature: FeatureIR, id: string): string[] {
 
 const names: Record<string, string> = { context: 'ctx' }
 
-const infix: Record<string, string> = { '%plus': '+', '%minus': '-', '%coalesce': '??' }
+const infix: Record<string, string> = { '%plus': '+', '%minus': '-', '%times': '*', '%coalesce': '??' }
 
 function showCall(fn: string, arg: ValueExpr): string {
   const o = 'object' in arg ? arg.object : null

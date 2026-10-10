@@ -67,7 +67,7 @@ Every declaration a listed module exports is registered under its name; schemas 
   contracts. Builders record them as data (an IR) that is validated, then rendered on the server. Only views bound
   to the machine ship JS.
 - **Callbacks are ordinary TypeScript** (`render`, `guard`, `assign`, `navigate`, `ui.each` / `ui.query`
-  callbacks): `===`, `!==`, `<`, `&&`, `||`, `!`, `??`, `c ? a : b`, template strings, `+`, `-`, `.length`, and in
+  callbacks): `===`, `!==`, `<`, `&&`, `||`, `!`, `??`, `c ? a : b`, template strings, `+`, `-`, `*`, `.length`, and in
   `assign`, `ctx.x = v`, `ctx.n += 1`, `ctx.list.push(v)`, `ctx.list = ctx.list.filter((i) => i.id !== e.id)`.
   Methods on data (`.map`, `.toUpperCase()`…) are not: use `ui.each` for lists and a `fn()` for computation.
 - A mutation runs when the machine **enters** a state whose `invoke` calls it; that state drops other events, and

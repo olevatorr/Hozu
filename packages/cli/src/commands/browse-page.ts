@@ -38,6 +38,15 @@ export const PAGE = String.raw`(() => {
   const note = (count, scoped) =>
     [count > 1 ? count + ' matched; used the first' : null, scoped > 1 ? scoped + ' places contain the text and the target; used the first' : null]
       .filter(Boolean).join('; ') || null
+  const layer = (el) => {
+    const modal = el.closest('dialog:modal, [aria-modal=true], [role=dialog], [role=alertdialog]')
+    if (modal) return modal
+    for (let e = el.parentElement; e && e !== document.body; e = e.parentElement) {
+      const r = e.getBoundingClientRect()
+      if (getComputedStyle(e).position === 'fixed' && r.width >= innerWidth * 0.9 && r.height >= innerHeight * 0.9) return e
+    }
+    return null
+  }
   const find = (kind, name, within) => {
     const scope = scopeOf(within)
     if (scope.error) return scope
@@ -57,6 +66,16 @@ export const PAGE = String.raw`(() => {
       if (!hits.length && bare(name)) {
         const loose = pool.filter((el) => bare(nameOf(el)) === bare(name) || bare(el.textContent) === bare(name))
         if (loose.length === 1) hits = loose
+      }
+      if (hits.length > 1) {
+        const top = hits.filter((el) => {
+          const l = layer(el)
+          if (!l) return false
+          const r = el.getBoundingClientRect()
+          const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+          return at !== null && l.contains(at)
+        })
+        if (top.length) hits = top
       }
       return hits
     }).filter((hits) => hits.length)
@@ -120,13 +139,13 @@ export const PAGE = String.raw`(() => {
       const cls = (e.getAttribute('class') ?? '').trim().split(/\s+/)[0]
       return '<' + e.tagName.toLowerCase() + (name ? ' ' + name + '="' + e.getAttribute(name) + '"' : cls ? ' class="' + cls + '…"' : '') + '>'
     }
-    const dialog = top?.closest('dialog, [role=dialog], [role=alertdialog]')
+    const dialog = top ? top.closest('dialog, [role=dialog], [role=alertdialog]') ?? layer(top) : null
     const titled = dialog
       ? dialog.getAttribute('aria-label') ??
         (dialog.getAttribute('aria-labelledby') ? document.getElementById(dialog.getAttribute('aria-labelledby'))?.textContent : null) ??
         dialog.querySelector('h1, h2, h3')?.textContent
       : null
-    const where = titled ? ' in the dialog "' + titled.replace(/\s+/g, ' ').trim().slice(0, 60) + '"' : ''
+    const where = titled ? ' in the ' + (dialog.matches('dialog, [role=dialog], [role=alertdialog]') ? 'dialog' : 'overlay') + ' "' + titled.replace(/\s+/g, ' ').trim().slice(0, 60) + '"' : ''
     const covered = hit ? null : !top ? 'nothing' : tag(top) + where + (top.contains(el) ? ', which contains it (a ::before or ::after above it, or pointer-events: none on it)' : '')
     return { x, y, covered, target: tag(el) }
   }

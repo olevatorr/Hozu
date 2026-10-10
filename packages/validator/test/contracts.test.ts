@@ -1,7 +1,16 @@
-import type { Diagnostic, DiagnosticCode, ProjectIR, ValueExpr } from '@hozu/core/ir'
+import { contract, event, feature, machine, on, project } from '@hozu/core'
+import {
+  buildProject,
+  type Diagnostic,
+  type DiagnosticCode,
+  type ProjectIR,
+  type ValueExpr,
+} from '@hozu/core/ir'
 import { compileMachine } from '@hozu/machine'
+import { zodAdapter } from '@hozu/schema-zod'
 import { type BehaviorRecord, behaviorOf, recordOf, runContract, summaryOf, verify } from '@hozu/validator'
 import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
 import { cartBuild, cartIR } from './support/cart.ts'
 
 const run = (ir: ProjectIR, lock?: unknown) => {
@@ -280,6 +289,140 @@ describe('Phase 1 behavior catalog', () => {
     const ir = cartIR()
     cart(ir).machine!.initial = 'idel'
     expect(run(ir).diagnostics.map((d) => d.code)).toEqual(['HZ007'])
+  })
+})
+
+describe('a shared on that starts deciding (ADR 0083 D4)', () => {
+  const Status = z.enum(['todo', 'done'])
+  const AskRemove = event({ payload: z.object({ id: z.string() }) })
+  const Cancel = event({ payload: z.object({}) })
+  const Dismiss = event({ payload: z.object({}) })
+  const context = z.object({ target: z.string(), status: Status })
+  const initialContext = { target: '', status: 'todo' as const }
+  const plain = machine({
+    context,
+    initialContext,
+    initial: 'idle',
+    on: ({ ctx }) => [
+      on(AskRemove, {
+        target: 'confirming',
+        assign: (e) => {
+          ctx.target = e.id
+        },
+      }),
+    ],
+    states: () => ({
+      idle: {},
+      confirming: { on: [on(Cancel, { target: 'idle' }), on(Dismiss, { target: 'removing' })] },
+      removing: { on: [on(Dismiss, { target: 'saved' })] },
+      saved: { on: [on(Dismiss, { target: 'idle' })] },
+    }),
+  })
+  const guarded = machine({
+    context,
+    initialContext,
+    initial: 'idle',
+    on: ({ ctx }) => [
+      on(AskRemove, {
+        target: 'removing',
+        guard: () => ctx.status === 'done',
+        assign: (e) => {
+          ctx.target = e.id
+        },
+      }),
+      on(AskRemove, {
+        target: 'confirming',
+        assign: (e) => {
+          ctx.target = e.id
+        },
+      }),
+    ],
+    states: () => ({
+      idle: {},
+      confirming: { on: [on(Cancel, { target: 'idle' }), on(Dismiss, { target: 'removing' })] },
+      removing: { on: [on(Dismiss, { target: 'saved' })] },
+      saved: { on: [on(Dismiss, { target: 'idle' })] },
+    }),
+  })
+  const doneSkips = contract(guarded, {
+    given: { state: 'idle', context: { status: 'done' } },
+    when: [{ send: AskRemove, payload: { id: 't1' } }],
+    expect: { state: 'removing', changes: { target: 't1' } },
+  })
+  const build = (declarations: object) =>
+    buildProject(
+      project({
+        schema: zodAdapter,
+        routes: {},
+        pages: [],
+        features: [
+          feature({
+            id: 'tasks',
+            intent: { summary: 'ADR 0083 D4' },
+            declarations: [{ AskRemove, Cancel, Dismiss, ...declarations }],
+          }),
+        ],
+      }),
+      { sources: true },
+    )
+  const check = (declarations: object, lock?: unknown) => {
+    const b = build(declarations)
+    expect(b.diagnostics).toEqual([])
+    return verify(b.ir, { sources: b.sources, bindings: b.bindings, lock })
+  }
+  const baseline = check({ plain }).lock!
+
+  it('one contract covers every copy: no HZ018', () => {
+    const found = check({ guarded, doneSkips }, baseline).diagnostics
+    expect(found.filter((d) => d.severity === 'error').map((d) => d.code)).toEqual(['HZ057'])
+  })
+
+  it('without a contract, HZ018 fires once at the source with the copies, and its skeleton satisfies the guard', () => {
+    const found = check({ guarded }, baseline).diagnostics
+    const hz018 = found.filter((d) => d.code === 'HZ018')
+    expect(hz018).toHaveLength(1)
+    expect(hz018[0]!.location.pointer).toBe('/features/tasks/machine/on/0')
+    expect(hz018[0]!.message).toBe(
+      'Behavior of shared on/0 (tasks.AskRemove) changed (guard, enters) and no covering contract specifies it',
+    )
+    expect(hz018[0]!.cause).toContain('confirming, idle, removing, saved')
+    expect(hz018[0]!.fix?.snippet).toContain("given: { state: 'idle', context: { status: 'done' } }")
+  })
+  it('a shared on that stays in its state is one group too (review of 0.29)', () => {
+    const Mark = event({ payload: z.object({}) })
+    const stays = (decides: boolean) =>
+      machine({
+        context,
+        initialContext,
+        initial: 'idle',
+        on: ({ ctx }) => [
+          decides
+            ? on(Mark, {
+                guard: () => ctx.status === 'todo',
+                assign: () => {
+                  ctx.status = 'done'
+                },
+              })
+            : on(Mark, {
+                assign: () => {
+                  ctx.status = 'done'
+                },
+              }),
+        ],
+        states: () => ({
+          idle: { on: [on(Cancel, { target: 'confirming' })] },
+          confirming: {
+            on: [
+              on(Cancel, { target: 'idle' }),
+              on(AskRemove, { target: 'idle' }),
+              on(Dismiss, { target: 'idle' }),
+            ],
+          },
+        }),
+      })
+    const before = check({ Mark, stays: stays(false) }).lock!
+    const hz018 = check({ Mark, stays: stays(true) }, before).diagnostics.filter((d) => d.code === 'HZ018')
+    expect(hz018).toHaveLength(1)
   })
 })
 

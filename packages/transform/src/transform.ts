@@ -36,6 +36,8 @@ const COMPARE: Record<string, string> = {
   '>=': 'gte',
 }
 
+const ARITHMETIC: Record<string, string> = { '+': 'plus', '-': 'minus', '*': 'times' }
+
 let quiet = false
 function strip(source: string): string {
   if (!quiet) {
@@ -426,6 +428,8 @@ export function transform(source: string, _file = ''): TransformResult {
           op = `${H}.set(${gen(e.left)}, ${H}.plus(${gen(e.left)}, ${gen(e.right)}))`
         else if (e.operator === '-=')
           op = `${H}.set(${gen(e.left)}, ${H}.minus(${gen(e.left)}, ${gen(e.right)}))`
+        else if (e.operator === '*=')
+          op = `${H}.set(${gen(e.left)}, ${H}.times(${gen(e.left)}, ${gen(e.right)}))`
       } else if (
         e?.type === 'CallExpression' &&
         e.callee.type === 'MemberExpression' &&
@@ -530,7 +534,7 @@ export function transform(source: string, _file = ''): TransformResult {
       visit(n.left, s, false, guardFn)
       visit(n.right, s, false, guardFn)
       if (!isRef(n.left, s) && !isRef(n.right, s)) return
-      const name = COMPARE[n.operator] ?? (n.operator === '+' ? 'plus' : n.operator === '-' ? 'minus' : null)
+      const name = COMPARE[n.operator] ?? ARITHMETIC[n.operator] ?? null
       if (name) replace(n, `${H}.${name}(${gen(n.left)}, ${gen(n.right)})`)
       return
     }

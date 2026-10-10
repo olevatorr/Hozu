@@ -38,7 +38,9 @@ describe('styles', () => {
       { sources: false },
     )
     const { css } = await compileStyles(build)
-    expect(css).toContain('[data-hz-view=s\\.Header]{view-transition-name:hz-s-Header}')
+    expect(css).toContain(
+      ':root:active-view-transition [data-hz-view=s\\.Header]{view-transition-name:hz-s-Header}',
+    )
   })
 
   it('HZ026 — a colour utility lists the project colours, and a near miss is corrected (ADR 0079 A6)', async () => {

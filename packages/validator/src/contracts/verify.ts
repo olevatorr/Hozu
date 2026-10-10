@@ -107,18 +107,22 @@ function previousFeature(feature: FeatureIR, id: string, record: BehaviorRecord)
   return f
 }
 
-function specified(ctx: Ctx, bindings: Bindings, feature: FeatureIR, change: LockChange): boolean {
-  const before = change.before!
-  const covering = Object.keys(change.after!.contracts)
+const coveringOf = (group: LockChange[]) => [
+  ...new Set(group.flatMap((c) => Object.keys(c.after!.contracts))),
+]
+
+function specified(ctx: Ctx, bindings: Bindings, feature: FeatureIR, group: LockChange[]): boolean {
+  const covering = coveringOf(group)
   if (!covering.length) return false
-  if (change.fields.includes('fns')) {
-    const known = new Set(Object.values(before.contracts))
-    if (covering.some((c) => !known.has(change.after!.contracts[c]!))) return true
+  const hashes = (c: LockChange, side: 'before' | 'after') => Object.values(c[side]!.contracts)
+  if (group.some((c) => c.fields.includes('fns'))) {
+    const known = new Set(group.flatMap((c) => hashes(c, 'before')))
+    if (group.some((c) => hashes(c, 'after').some((h) => !known.has(h)))) return true
   }
   let machine: CompiledMachine
   try {
     machine = compileMachine(
-      previousFeature(feature, change.id, before.fields),
+      group.reduce((f, c) => previousFeature(f, c.id, c.before!.fields), feature),
       bindings.fns,
       routeTable(ctx.ir),
     )
@@ -140,16 +144,26 @@ const fieldText: Record<keyof BehaviorRecord, (r: BehaviorRecord) => string> = {
   replace: (r) => (r.replace ? showValue(r.replace) : 'none'),
 }
 
-function unspecified(ctx: Ctx, feature: FeatureIR, change: LockChange) {
+function unspecified(ctx: Ctx, feature: FeatureIR, group: LockChange[], source: string) {
+  const states = feature.machine!.states
+  const change = group.find((c) => c.id.split('/')[0] === feature.machine!.initial) ?? group[0]!
   const before = change.before!
   const after = change.after!
-  const covering = Object.keys(after.contracts)
+  const covering = coveringOf(group)
+  const copies = group.map((c) => c.id.split('/')[0]!).filter((name) => states[name])
+  const shared = group.length > 1 || source !== transitionPointer(feature.id, change.id)
+  const label = shared
+    ? `shared ${source.split('/').slice(4).join('/')} (${change.id.split('/')[2]})`
+    : change.id
   ctx.report(
     'HZ018',
     feature.id,
-    transitionPointer(feature.id, change.id),
-    `Behavior of ${change.id} changed (${change.fields.join(', ')}) and no covering contract specifies it`,
+    shared ? source : transitionPointer(feature.id, change.id),
+    `Behavior of ${label} changed (${change.fields.join(', ')}) and no covering contract specifies it`,
     [
+      ...(shared
+        ? [`Copied into ${copies.join(', ')}: one contract that fires any copy covers them all.`]
+        : []),
       ...change.fields.map(
         (k) => `${k}: was ${fieldText[k](before.fields)}; now ${fieldText[k](after.fields)}`,
       ),
@@ -272,14 +286,27 @@ function reviewLock(
   const removed = Object.keys(previous?.features ?? {}).filter(
     (fid) => !next.features[fid] && !skipped.has(fid),
   )
-  const byFeature = new Map<string, LockChange[]>()
-  for (const change of lockChanges(previous, next, removed)) {
-    if (skipped.has(change.feature)) continue
-    const feature = ctx.ir.features[change.feature]
-    const deciding = change.kind === 'changed' && change.after!.decides
-    if (feature && deciding && !specified(ctx, bindings, feature, change)) unspecified(ctx, feature, change)
-    else byFeature.set(change.feature, [...(byFeature.get(change.feature) ?? []), change])
+  const changes = lockChanges(previous, next, removed).filter((c) => !skipped.has(c.feature))
+  const reported = new Set<LockChange>()
+  const groups = new Map<string, LockChange[]>()
+  for (const change of changes) {
+    if (!ctx.ir.features[change.feature] || change.kind !== 'changed' || !change.after!.decides) continue
+    const pointer = transitionPointer(change.feature, change.id)
+    const shape = (fields: BehaviorRecord) => (fields.stay ? { ...fields, enters: null } : fields)
+    const same = hashJson([shape(change.before!.fields), shape(change.after!.fields)] as unknown as Json)
+    const key = `${bindings.copies[pointer] ?? pointer}\n${same}`
+    groups.set(key, [...(groups.get(key) ?? []), change])
   }
+  for (const [key, group] of groups) {
+    const feature = ctx.ir.features[group[0]!.feature]!
+    if (specified(ctx, bindings, feature, group)) continue
+    unspecified(ctx, feature, group, key.split('\n')[0]!)
+    for (const c of group) reported.add(c)
+  }
+  const byFeature = new Map<string, LockChange[]>()
+  for (const change of changes)
+    if (!reported.has(change))
+      byFeature.set(change.feature, [...(byFeature.get(change.feature) ?? []), change])
   if (accept) return
   for (const [fid, changes] of byFeature) outOfDate(ctx, fid, changes, why)
   const pages = pagesChanges(previous, next)
@@ -341,14 +368,24 @@ export function verifyContracts(ctx: Ctx, bindings: Bindings, lock: unknown, acc
       return bindings.copies[pointer] ?? pointer
     }
     const coveredSources = new Set([...cov].filter(([, c]) => c.size > 0).map(([id]) => source(id)))
+    const reported = new Set<string>()
     for (const [id, contracts] of cov)
       if (contracts.size === 0 && decides(feature, id) && !coveredSources.has(source(id))) {
+        const pointer = transitionPointer(feature.id, id)
+        const shared = bindings.copies[pointer]
+        if (shared && reported.has(shared)) continue
+        if (shared) reported.add(shared)
+        const states = shared
+          ? [...cov.keys()].filter((other) => source(other) === shared).map((other) => other.split('/')[0]!)
+          : []
         const operators = onlyOperators(feature, id)
         ctx.report(
           'HZ016',
           feature.id,
-          transitionPointer(feature.id, id),
-          `Transition ${id} is not covered by any contract`,
+          shared ?? pointer,
+          shared
+            ? `Shared ${shared.split('/machine/')[1]} is not covered by any contract (copied into ${states.join(', ')}; one contract that fires ${id} covers every copy)`
+            : `Transition ${id} is not covered by any contract`,
           `It decides (a guard, a navigation, or a fn, comparison or computing operator in its values), so a contract must specify it (ADR 0037, ADR 0043 G). Transitions that only copy values are reviewed through the lock instead.${operators.length ? ` Here only ${operators.join(', ')} decides: if the value can be copied as it is, drop the operator and the lock reviews the transition.` : ''}`,
           {
             summary: operators.length

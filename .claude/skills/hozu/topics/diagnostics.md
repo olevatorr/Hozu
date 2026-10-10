@@ -37,7 +37,7 @@ around the rule. `npx hozu docs HZ083` prints one code: its cause, its fix and t
 | HZ025 (warning) | route params mismatch (keys, or a schema that does not fit `:x?`/`:x+`/`:x*`) / page with params but no `entries` (a user-scoped head is private: no sitemap, no warning) | align them / add `entries` |
 | HZ026 | a class produces no CSS | fix the Tailwind class |
 | HZ027 | a DOM field used outside an event, or wrong for this event | read `ui.dom.*` only in `ui.send` payloads |
-| HZ028 | `img` without width/height | add both |
+| HZ028 | `img` without width/height | add both, or classes fixing them (`aspect-video w-full`) |
 | HZ029 | a client component's module is missing, or a handler for an event it does not emit | create the module (`hozu add component … --client`); handle declared `emits` only |
 | HZ030 | `ui.html` of untrusted data | render text instead |
 | HZ031 | a literal not allowed by its schema | use an allowed value (the patch suggests one) |

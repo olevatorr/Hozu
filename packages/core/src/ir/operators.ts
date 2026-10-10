@@ -6,6 +6,7 @@ export const operators = [
   '%length',
   '%plus',
   '%minus',
+  '%times',
   '%includes',
   '%merge',
 ] as const

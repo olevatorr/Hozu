@@ -181,6 +181,9 @@ const describeWith = (build: BuildResult, providers: Provider[], root: string) =
     return inViews + inHeads.length
   }
   const queryOf = (v: ValueExpr): string | null => {
+    if ('fn' in v) return queryOf(v.arg)
+    if ('object' in v)
+      return Object.values(v.object).reduce<string | null>((found, x) => found ?? queryOf(x), null)
     if (!('ref' in v) || v.ref !== 'binding') return null
     const p = providers[v.depth ?? 0]
     return !p ? null : p.kind === 'query' ? p.query : queryOf(p.source)
@@ -385,10 +388,11 @@ export function locateNode(build: BuildResult, target: string, dev: DevOptions):
         to: t.stay ? '(stays)' : t.target,
         guarded: t.guard !== null,
         navigates: t.navigate !== null,
-        location: relative(
-          dev.root,
-          build.sources[`/features/${feature}/machine/states/${from}/on/${event}/${i}`],
-        ),
+        location: (() => {
+          const at = `/features/${feature}/machine/states/${from}/on/${event}/${i}`
+          const copied = build.bindings.copies[at]
+          return relative(dev.root, build.sources[at] ?? (copied ? build.sources[copied] : undefined))
+        })(),
       })),
     )
   const events =

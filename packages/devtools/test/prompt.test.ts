@@ -169,6 +169,78 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
     )
   })
 
+  it('a style change on data text keeps the data and changes the classes (ADR 0083 D1)', () => {
+    const node: DevNode = {
+      ...base,
+      id: 'account.AccountBar/0/ready/1',
+      kind: 'text',
+      tag: null,
+      component: null,
+      text: 'account.me.name',
+      source: {
+        kind: 'data',
+        detail: 'account.me.name',
+        location: at('features/account/model.ts', 13),
+        uses: null,
+      },
+      children: [],
+    }
+    const style = [{ prop: 'fontWeight' as const, from: '400', to: '700' }]
+    const md = requestMarkdown({ items: [{ ...item(node, 'Bold'), style }], context })
+    expect(md).toContain(
+      '- Mind: the text comes from data `account.me.name`; this is a style change: change the classes in this view, the data stays.',
+    )
+    expect(md).not.toContain('not the view')
+    const both = requestMarkdown({
+      items: [{ ...item(node, 'Bold'), style, text: { from: 'Ada', to: 'Ada L.' } }],
+      context,
+    })
+    expect(both).toContain('change the data or its formatting, not the view.')
+  })
+
+  it('copies of one shared on are one line naming the source and its states (ADR 0083 D2)', () => {
+    const shared = (from: string) => ({
+      from,
+      to: 'confirming',
+      guarded: false,
+      navigates: false,
+      location: at('features/tasks/model.ts', 159),
+    })
+    const node: DevNode = {
+      ...base,
+      id: 'tasks.List/3',
+      tag: 'button',
+      component: null,
+      children: [],
+      events: [
+        {
+          dom: 'click',
+          event: 'tasks.AskRemove',
+          transitions: [shared('idle'), shared('confirming'), shared('saved')],
+        },
+      ],
+    }
+    expect(requestMarkdown({ items: [item(node, 'Ask first')], context })).toContain(
+      '- Mind: `click` sends `tasks.AskRemove`: shared `on` at `features/tasks/model.ts:159:3` (in idle, confirming, saved) → confirming; one contract covers it; a change of behaviour needs a contract when it decides (HZ016), otherwise `hozu check --update-lock`.',
+    )
+  })
+
+  it('a request from the Workbench names the device and the browse command (ADR 0083 D3)', () => {
+    const md = requestMarkdown({
+      items: [item(base, 'Bigger')],
+      context: { ...context, viewport: { width: 1366, height: 768 }, device: 'Laptop' },
+    })
+    expect(md).toContain(
+      'Page `/login` · Workbench Laptop · 1366 × 768 (verify: `hozu browse --viewport 1366x768`)',
+    )
+    expect(
+      requestMarkdown({
+        items: [item(base, 'Bigger')],
+        context: { ...context, viewport: { width: 500, height: 700 }, device: 'Custom' },
+      }),
+    ).toContain('Page `/login` · Workbench · 500 × 700 (verify: `hozu browse --viewport 500x700`)')
+  })
+
   it('a list item says whether every item changes or the item needs data', () => {
     const node: DevNode = {
       ...base,

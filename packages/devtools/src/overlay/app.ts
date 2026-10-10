@@ -1086,6 +1086,7 @@ async function request(): Promise<HozuRequest> {
       path: win.location.pathname + win.location.search,
       viewport: { width: win.innerWidth, height: win.innerHeight },
       preview: held() ? previewLabel(await tree(win.location.pathname), held()!) : null,
+      ...(state.view === 'workbench' ? { device: state.device.name } : {}),
     },
   }
 }
@@ -1908,8 +1909,8 @@ function renderSettings() {
 const devices = [
   { name: 'Phone', width: 390, height: 844 },
   { name: 'Tablet', width: 820, height: 1180 },
-  { name: 'Laptop', width: 1280, height: 800 },
-  { name: 'Desktop', width: 1440, height: 900 },
+  { name: 'Laptop', width: 1366, height: 768 },
+  { name: 'Desktop', width: 1920, height: 1080 },
 ]
 
 const deviceNames: Record<string, MessageKey> = {

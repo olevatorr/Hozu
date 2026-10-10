@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.29.0 — What a real site rebuild and the DevTools trial met (ADR 0083)
+
+From rebuilding the Mori public site with Hozu and from trial 0023. No API change:
+`npx -p @hozu/cli@latest hozu migrate`, then the printed lines. If `hozu check` reports HZ078 afterwards, run
+`hozu add kit <id> --sync`.
+
+- **A fixed menu inside a header shared by pages is drawn above the page again.** Shared views get their
+  `view-transition-name` only while a page transition runs, so they no longer form a stacking context.
+- **Project classes survive the kit's class merging:** a plain class such as `.text-mini` in your stylesheet keeps
+  its place next to a colour instead of being dropped as `text-<colour>`.
+- **`*` works in callbacks** (`price * quantity`, `ctx.n *= 2`).
+- **HZ079** accepts a `fn()` result and its negation as exclusive toggles. **HZ028** accepts an image whose own
+  classes fix its size (`size-16`, `aspect-video w-full`). **HZ063** says when a field is hidden inside a client
+  component.
+- **Types:** `ui.set(ctx.open, false)` type-checks inside `ctx.open && …`; a `ui.each` item may return `null`.
+- **`hozu browse`:** `press PageDown` (and PageUp, Home, End, Insert, Delete, F1–F12); a name matched both under a
+  full-screen overlay and inside it clicks the one in the overlay; an image blocked by the page's CSP names the
+  `app({ csp: { img } })` fix.
+- **DevTools requests:** a style change no longer says "change the data"; a shared `on` is listed once with the
+  states it is copied into; Workbench sizes are Laptop 1366 × 768 and Desktop 1920 × 1080, and a request made there
+  names its device. **HZ016 / HZ018** ask once for one contract for a shared `on`, not once per state, and the contract they print starts from values that satisfy the guard.
+- **Guide:** layout helpers write `head` inline; a notice on the next page is an enum search field.
+
 ## 0.28.0 — What an engineer and a non-engineer met first (ADR 0082)
 
 From trial 0026, where an engineer agent and a non-engineer pair (a person who never reads code, and a builder) each

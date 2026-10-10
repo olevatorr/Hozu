@@ -151,7 +151,9 @@ describe.skipIf(!findBrowser())('Workbench in a real browser (ADR 0047 P3)', () 
     })
     await shadowClick('.actions button', 'Copy for AI')
     await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.status.ok')`)
-    expect(await evaluate('navigator.clipboard.readText()')).toContain('Page `/` · 390 × 844')
+    expect(await evaluate('navigator.clipboard.readText()')).toContain(
+      'Page `/` · Workbench Phone · 390 × 844',
+    )
   })
 
   it('Figma keys work in the frame while focus stays on the page around it (0.17 QA)', async () => {
@@ -177,9 +179,9 @@ describe.skipIf(!findBrowser())('Workbench in a real browser (ADR 0047 P3)', () 
     await tool(
       `(() => { const s = $('.bench-bar select'); s.value = 'Laptop'; s.dispatchEvent(new Event('change')); })()`,
     )
-    expect(await tool(`$('iframe').style.width`)).toBe('1280px')
+    expect(await tool(`$('iframe').style.width`)).toBe('1366px')
     await shadowClick('.bench-bar .act', '⟲')
-    expect(await tool(`[$('iframe').style.width, $('iframe').style.height]`)).toEqual(['800px', '1280px'])
+    expect(await tool(`[$('iframe').style.width, $('iframe').style.height]`)).toEqual(['768px', '1366px'])
     await tool(
       `[...document.querySelector('hozu-devtools').shadowRoot.querySelectorAll('.bench-left .state')].find((s) => s.textContent.startsWith('Confirming')).querySelector('button').click()`,
     )

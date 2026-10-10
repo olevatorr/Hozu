@@ -168,7 +168,7 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `ctx.x = v`, `+=`, `.push`, the `.filter` removal) lowered by `@hozu/transform` (acorn + Node's type stripping,
   newline-preserving; Node `--import @hozu/transform/register`, `hozuTransform()` for Vite / esbuild, the CLI
   registers it). Views / machines from untransformed code are HZ044 (the server refuses to start). `Ref<T>` is `T`.
-  Operator builtins `%truthy %cond %coalesce %concat %length %plus %minus`. The skill is a short `SKILL.md` plus
+  Operator builtins `%truthy %cond %coalesce %concat %length %plus %minus` (`%times` since 0.29). The skill is a short `SKILL.md` plus
   `topics/*.md` printed by `hozu docs <topic>`; diagnostics end with `see: hozu docs <topic>`.
 - 0.6 (ADR 0040): `hozu browse <path> --do '<step>'` drives an installed Chrome / Chromium / Edge over CDP (pipe, no
   deps, no port; requests go to the in-process handler) and reports errors, client components (`data-hozu-component` +
@@ -405,6 +405,12 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   production.env -v <dir>:/app/<dir>`, flags a localhost `site.url`, required env = no default; HZ016 `onlyOperators`;
   browse full-page screenshots + `scroll`; `add feature --page` notes unused replaced views; recipes (JSON file demo,
   no-JS delete confirm, one-person setting). ADR 0080: the 1.0 gate (agent roles, Mori rebuilt, DevTools trial).
+- 0.29 (ADR 0083, from the Mori rebuild and trial 0023): shared views named only during a transition
+  (`:root:active-view-transition`, a fixed drawer is no longer trapped); kit configs list Tailwind-like plain classes
+  (`lookalikes`); `*` / `*=` → `%times`; HZ079 `fn()` / `!fn()` exclusive; `ui.set` widens booleans; `ui.each` items
+  may return `null`; HZ028 accepts classes fixing the size (CSS stage); HZ063 names the client component; browse
+  `press` PageDown…F12, overlay targets first, CSP hint; DevTools style Mind line, shared `on` once, Workbench
+  device sizes; HZ016 / HZ018 report a shared `on` once, skeletons satisfy the guard (`contracts/solve.ts`).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

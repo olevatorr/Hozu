@@ -50,8 +50,7 @@ describe('a shared transition needs one contract (ADR 0041 D)', () => {
 
   it('still asks for a contract when no copy is covered', () => {
     expect(hz016({ Search, Start, finder }).map((d) => d.message)).toEqual([
-      'Transition idle/on/f.Search/0 is not covered by any contract',
-      'Transition touring/on/f.Search/0 is not covered by any contract',
+      'Shared on/0 is not covered by any contract (copied into idle, touring; one contract that fires idle/on/f.Search/0 covers every copy)',
     ])
   })
 

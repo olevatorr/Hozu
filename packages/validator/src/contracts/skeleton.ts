@@ -5,8 +5,9 @@ import {
   type ProjectIR,
   UNEXPECTED_ERROR_SCHEMA,
 } from '@hozu/core/ir'
-import { effectSchemas, eventSchema } from '../env.ts'
+import { effectSchemas, eventSchema, schemaIn } from '../env.ts'
 import { splitRef } from '../resolve.ts'
+import { type Patch, patched, picking } from './solve.ts'
 
 const obj = (v: Json | undefined): JsonSchema | null =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as JsonSchema) : null
@@ -69,24 +70,39 @@ export function skeleton(ir: ProjectIR, feature: FeatureIR, id: string): string 
   const m = feature.machine!
   const s = m.states[state]!
   const local = (ref: string) => splitRef(ref)[1]
-  let step: string
+  const context = schemaIn(feature, m.context)
+  let step: (patches: Patch[]) => string
   let t = s.after[Number(key)]?.transition
+  let found: Patch[] | null = t ? picking([t], 0, { context }) : null
   if (kind === 'on') {
-    t = s.on[key]![Number(rest[0])]
-    step = `{ send: ${local(key)}, payload: ${ts(example(eventSchema(ir, key)))} }`
-  } else if (kind === 'after') step = `{ elapse: ${s.after[Number(key)]!.ms} }`
+    const list = s.on[key]!
+    t = list[Number(rest[0])]
+    const payload = eventSchema(ir, key)
+    found = picking(list, Number(rest[0]), { context, event: payload })
+    step = (p) => `{ send: ${local(key)}, payload: ${ts(patched(example(payload), p, 'event'))} }`
+  } else if (kind === 'after') step = () => `{ elapse: ${s.after[Number(key)]!.ms} }`
   else if (key === 'done') {
-    t = s.invoke!.done[Number(rest[0])]
-    step = `{ done: ${local(s.invoke!.effect)}, result: ${ts(example(effectSchemas(ir, s.invoke!.effect)?.output ?? null))} }`
+    const list = s.invoke!.done
+    t = list[Number(rest[0])]
+    const result = effectSchemas(ir, s.invoke!.effect)?.output ?? null
+    found = picking(list, Number(rest[0]), { context, result })
+    step = (p) => `{ done: ${local(s.invoke!.effect)}, result: ${ts(patched(example(result), p, 'result'))} }`
   } else {
     const error = rest[0]!
-    t = s.invoke!.failed[error]![Number(rest[1])]
+    const list = s.invoke!.failed[error]!
+    t = list[Number(rest[1])]
     const schema =
       error === 'Unexpected'
         ? UNEXPECTED_ERROR_SCHEMA
         : (effectSchemas(ir, s.invoke!.effect)?.error(error) ?? null)
-    step = `{ failed: ${local(s.invoke!.effect)}, error: '${error}', data: ${ts(example(schema))} }`
+    found = picking(list, Number(rest[1]), { context, error: schema })
+    step = (p) =>
+      `{ failed: ${local(s.invoke!.effect)}, error: '${error}', data: ${ts(patched(example(schema), p, 'error'))} }`
   }
+  const patches = found ?? []
+  const given = patches.some((p) => p.ref === 'context')
+    ? [`context: ${ts(patched({}, patches, 'context'))}`]
+    : []
   const into = (to: string) =>
     Object.entries(m.states).find(
       ([name, other]) =>
@@ -126,12 +142,13 @@ export function skeleton(ir: ProjectIR, feature: FeatureIR, id: string): string 
     )
   const assigned = (t?.assign ?? []).map((a) => a.path)
   const expect = [`state: '${target}'`]
-  if (assigned.length) expect.push(`changes: ${ts(changes(m.initialContext, assigned))}`)
+  if (assigned.length)
+    expect.push(`changes: ${ts(changes(patched(m.initialContext, patches, 'context'), assigned))}`)
   if (calls.length) expect.push(`effects: [${calls.join(', ')}]`)
   return [
     'contract(machine, {',
-    back ? `  given: { state: '${state}', previous: '${back}' },` : `  given: { state: '${state}' },`,
-    `  when: [${step}],`,
+    `  given: { ${[`state: '${state}'`, ...(back ? [`previous: '${back}'`] : []), ...given].join(', ')} },`,
+    `  when: [${step(patches)}],`,
     `  expect: { ${expect.join(', ')} },`,
     '})',
     assigned.length

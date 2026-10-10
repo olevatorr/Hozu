@@ -1,6 +1,6 @@
 {
   "name": "@hozu/data",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "description": "Hozu data runtime: resolvers bound by declaration (in TypeScript or a Go service through remote()), cache, tags, dedup and invalidation",
   "keywords": [
     "hozu",

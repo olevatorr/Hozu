@@ -83,10 +83,13 @@ Run a fresh scaffold into a scratch app with `--with detail`, and copy the parts
   choice in `localStorage`; `app.css` adds `@custom-variant dark (&:where(.dark, .dark *));`.
 
 ## A shell shared by many pages (a back office)
-Pages are config, so a helper is the layout:
+Pages are config, so a helper is the layout (write `head` inside the `ui.page` call: a `head` object declared on its
+own loses the query's type, so `render`'s argument is `unknown`):
 ```ts
-const staffHead = { query: me, render: (m) => ({ title: `${m.name} · Admin` }), failed: { Forbidden: signIn } }
-const staff = (route, View) => ui.page(route, { views: [Sidebar, View], head: staffHead })
+const staff = (route, View) => ui.page(route, {
+  views: [Sidebar, View],
+  head: { query: me, render: (m) => ({ title: `${m.name} · Admin` }), failed: { Forbidden: signIn } },
+})
 export default project({ /* … */ pages: [staff(orders, OrderList), staff(orderDetail, OrderPage), …] })
 ```
 The sidebar marks its sections with `current(route)` from its render, one line per section:
@@ -114,6 +117,8 @@ the member on the view that has both `machine` and `route` (HZ048):
 ## A notice after saving
 A `notice` context field set in `done` and cleared by `after: [{ ms: 4000, target: 'idle' }]` on a `saved` state;
 the view shows `ctx.notice !== null && ui.p({ role: 'status' }, [ctx.notice])`. There is no global toast store.
+On the next page (every link is a document load): `navigate` to a link with a `notice` search field, an enum such as
+`z.enum(['none', 'booked']).default('none')`, and let that page map it to its words; the address never carries text.
 
 ## A JSON file for a demo
 For a small group and one server process, a file is enough: read it in the resolvers, write it whole after each

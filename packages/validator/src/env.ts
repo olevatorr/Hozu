@@ -65,7 +65,7 @@ export function valueSchema(ir: ProjectIR, env: Env, value: ValueExpr): JsonSche
   if ('link' in value) return { type: 'string' }
   if ('fn' in value) {
     if (value.fn.startsWith('#')) return { type: 'string' }
-    if (value.fn === '%length' || value.fn === '%minus') return { type: 'number' }
+    if (value.fn === '%length' || value.fn === '%minus' || value.fn === '%times') return { type: 'number' }
     if (value.fn === '%concat') return { type: 'string' }
     if (value.fn === '%includes') return { type: 'boolean' }
     if (value.fn.startsWith('%')) return null
