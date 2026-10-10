@@ -352,6 +352,50 @@ describe('record-time normalisation (one meaning, one IR)', () => {
     expect(hashJson(a.ir)).toBe(hashJson(make(false).ir))
   })
 
+  it('`ctx.n *= v` and `ctx.n = ctx.n * v` are one IR, %times (ADR 0083)', () => {
+    const Scale = event({ payload: z.object({ n: z.number() }) })
+    const make = (short: boolean) =>
+      build({
+        Scale,
+        counter: machine({
+          context: z.object({ n: z.number() }),
+          initialContext: { n: 1 },
+          initial: 'idle',
+          states: ({ ctx }) => ({
+            idle: {
+              on: [
+                short
+                  ? on(Scale, {
+                      target: 'idle',
+                      assign: (e) => {
+                        ctx.n *= e.n
+                      },
+                    })
+                  : on(Scale, {
+                      target: 'idle',
+                      assign: (e) => {
+                        ctx.n = ctx.n * e.n
+                      },
+                    }),
+              ],
+            },
+          }),
+        }),
+      })
+    const a = make(true)
+    expect(a.ir.features.f!.machine!.states.idle!.on['f.Scale']![0]!.assign).toEqual([
+      {
+        op: 'set',
+        path: ['n'],
+        value: {
+          fn: '%times',
+          arg: { object: { a: { ref: 'context', path: ['n'] }, b: { ref: 'event', path: ['n'] } } },
+        },
+      },
+    ])
+    expect(hashJson(a.ir)).toBe(hashJson(make(false).ir))
+  })
+
   it('a guard %cond becomes and / or, and chains flatten', () => {
     const cond = counter(part((e: { n: number; on: boolean }) => (e.on ? e.n > 1 : e.n < 0)))
     const gt = { op: 'gt', left: { ref: 'event', path: ['n'] }, right: { literal: 1 } }

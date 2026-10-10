@@ -139,11 +139,14 @@ const guardOf = (v: ValueExpr): GuardExpr =>
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 
 /** `c` / `!c`, `x === v` / `x !== v`, and `x === a` / `x === b` with different literals (ADR 0045 F). */
+const called = (v: ValueExpr): GuardExpr[] =>
+  'fn' in v ? [guardOf(v), { op: 'fn', fn: v.fn, arg: v.arg } as GuardExpr] : [guardOf(v)]
+
 export function exclusive(x: ValueExpr, y: ValueExpr): boolean {
   const a = guardOf(x)
   const b = guardOf(y)
-  if (a.op === 'not' && same(a.arg, b)) return true
-  if (b.op === 'not' && same(b.arg, a)) return true
+  if (a.op === 'not' && called(y).some((g) => same(a.arg, g))) return true
+  if (b.op === 'not' && called(x).some((g) => same(b.arg, g))) return true
   if ((a.op !== 'eq' && a.op !== 'neq') || (b.op !== 'eq' && b.op !== 'neq')) return false
   if (a.op !== b.op)
     return (

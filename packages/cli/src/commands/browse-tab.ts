@@ -383,7 +383,7 @@ export class Tab {
         this.error(
           {
             kind: 'console',
-            text: e.text,
+            text: cspHint(e.text),
             at: e.url ? `${pathOf(e.url)}${e.lineNumber === undefined ? '' : `:${e.lineNumber + 1}`}` : null,
             type: e.source,
           },
@@ -713,7 +713,7 @@ export class Tab {
     const key = KEYS[pressed] ?? {
       code: pressed === '/' ? 'Slash' : `Key${pressed.toUpperCase()}`,
       keyCode: pressed === '/' ? 191 : pressed.toUpperCase().charCodeAt(0),
-      text: pressed,
+      ...(pressed.length === 1 ? { text: pressed } : {}),
     }
     const base = {
       key:
@@ -731,6 +731,25 @@ export class Tab {
   }
 }
 
+const CSP_DIRECTIVE: Record<string, string> = {
+  'img-src': 'img',
+  'font-src': 'font',
+  'media-src': 'media',
+  'frame-src': 'frame',
+  'style-src': 'style',
+  'script-src': 'script',
+}
+
+export function cspHint(text: string): string {
+  const m = /'(https?:\/\/[^']+)' violates the following Content Security Policy directive: "([a-z-]+)/.exec(
+    text,
+  )
+  const key = m && CSP_DIRECTIVE[m[2]!]
+  if (!m || !key) return text
+  const origin = new URL(m[1]!).origin
+  return `${text} — the page's own CSP blocks it in production too: app({ csp: { ${key}: ['${origin}'] } })`
+}
+
 const KEYS: Record<string, { code: string; keyCode: number; text?: string }> = {
   Enter: { code: 'Enter', keyCode: 13, text: '\r' },
   Escape: { code: 'Escape', keyCode: 27 },
@@ -741,4 +760,13 @@ const KEYS: Record<string, { code: string; keyCode: number; text?: string }> = {
   ArrowDown: { code: 'ArrowDown', keyCode: 40 },
   ArrowLeft: { code: 'ArrowLeft', keyCode: 37 },
   ArrowRight: { code: 'ArrowRight', keyCode: 39 },
+  PageUp: { code: 'PageUp', keyCode: 33 },
+  PageDown: { code: 'PageDown', keyCode: 34 },
+  End: { code: 'End', keyCode: 35 },
+  Home: { code: 'Home', keyCode: 36 },
+  Insert: { code: 'Insert', keyCode: 45 },
+  Delete: { code: 'Delete', keyCode: 46 },
+  ...Object.fromEntries(
+    Array.from({ length: 12 }, (_, i) => [`F${i + 1}`, { code: `F${i + 1}`, keyCode: 112 + i }]),
+  ),
 }

@@ -27,6 +27,9 @@ export const operatorFns: Record<string, Impl> & Partial<Record<Operator, Impl>>
   '%minus': function minus(input: { a: number; b: number }): Json {
     return input.a - input.b
   },
+  '%times': function times(input: { a: number; b: number }): Json {
+    return input.a * input.b
+  },
   '%merge': function merge(input: Record<string, Json>): Json {
     return Object.assign({}, ...Object.values(input).map((x) => (x && typeof x === 'object' ? x : {})))
   },

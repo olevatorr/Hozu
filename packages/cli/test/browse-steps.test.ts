@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { type Cdp, findBrowser, launch } from '../src/cdp.ts'
 import { act, describeBrowse, differences, parseStep, stepsOf } from '../src/commands/browse.ts'
-import { Tab, type World } from '../src/commands/browse-tab.ts'
+import { cspHint, Tab, type World } from '../src/commands/browse-tab.ts'
 import type { BrowseError, BrowseMode, BrowseOutput } from '../src/contract.ts'
 
 const PAGE = `<!doctype html><title>Steps</title>
@@ -26,6 +26,15 @@ const PAGE = `<!doctype html><title>Steps</title>
 <button type="button" commandfor="sheet" command="show-modal">Open sheet</button>
 <dialog id="sheet"><p>Sheet body</p><button type="button" commandfor="sheet" command="close">Close sheet</button></dialog>`
 
+const OVERLAY = `<!doctype html><title>Overlay</title>
+<ul><li>Milk <button type="button">Remove</button></li><li>Bread <button type="button">Remove</button></li></ul>
+<div style="position:fixed;inset:0;background:#0006"><div style="margin:20vh auto;width:300px;background:white">
+<h2>Remove Milk?</h2><button type="button" onclick="document.title = 'removed'">Remove</button></div></div>`
+
+const MENU = `<!doctype html><title>Menu</title>
+<a href="#home" onclick="document.title = 'home'">Home</a>
+<div role="dialog" style="position:fixed;inset:0;visibility:hidden"><a href="#menu" onclick="document.title = 'menu'">Home</a></div>`
+
 const decode = (body: Uint8Array | null) => new TextDecoder().decode(body ?? new Uint8Array())
 
 const seen: Record<string, string>[] = []
@@ -45,7 +54,11 @@ const world = {
       body: new TextEncoder().encode(
         r.method === 'POST'
           ? `<title>Posted</title><p>${new URL(r.url).pathname} ${decode(r.body)}</p>`
-          : PAGE,
+          : new URL(r.url).pathname === '/overlay'
+            ? OVERLAY
+            : new URL(r.url).pathname === '/menu'
+              ? MENU
+              : PAGE,
       ),
     }
   ),
@@ -53,6 +66,16 @@ const world = {
 } as unknown as World
 
 const browser = findBrowser()
+
+describe('cspHint (ADR 0083)', () => {
+  it('names the app csp key and origin for an image the page CSP blocks, and leaves other text alone', () => {
+    const text = `Loading the image 'https://cdn.example.com/a/b.jpg?x=1' violates the following Content Security Policy directive: "img-src 'self' data: blob:". The action has been blocked.`
+    expect(cspHint(text)).toBe(
+      `${text} — the page's own CSP blocks it in production too: app({ csp: { img: ['https://cdn.example.com'] } })`,
+    )
+    expect(cspHint('Something else')).toBe('Something else')
+  })
+})
 
 describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () => {
   let cdp: Cdp
@@ -170,6 +193,17 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
       expect(r.flashed).toEqual(['main > form > input[name=card]', 'main > form > p.hint'])
     }, 30_000)
   })
+
+  it('a name matched under a full-screen overlay and inside it clicks the one in the overlay; PageDown presses (ADR 0083)', async () => {
+    const t = await tab('on')
+    await t.open('/overlay')
+    expect(await run(t, 'click Remove')).toMatchObject({ ok: true })
+    expect((await t.look()).title).toBe('removed')
+    await t.open('/menu')
+    expect(await run(t, 'click Home')).toMatchObject({ ok: true })
+    expect((await t.look()).title).toBe('home')
+    expect(await run(t, 'press PageDown')).toMatchObject({ ok: true })
+  }, 30_000)
 
   it('submit "<form>" and press Enter submit natively, with the default button as the submitter', async () => {
     const t = await tab('off')

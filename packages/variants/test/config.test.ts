@@ -28,6 +28,15 @@ describe('@hozu/variants/config (ADR 0045 D)', () => {
     expect(createTV({})({ base: 'text-hero text-white' })()).toBe('text-white')
   })
 
+  it('gives a plain stylesheet class that looks like a utility its own group, so text-mini stays next to a colour (ADR 0083)', async () => {
+    const css = `${source}\n.text-mini { font-size: 0.75rem; }\n.card-title, .prose-lead:hover { color: red; }\n.text-sm { font-weight: 600; }`
+    const tokens = await designTokens(css, process.cwd())
+    expect(tokens.utilities).toEqual(['card', 'text-mini'])
+    const twMergeConfig = twMergeConfigOf(tokens)
+    expect(createTV({ twMergeConfig })({ base: 'text-mini text-brand' })()).toBe('text-mini text-brand')
+    expect(createTV({})({ base: 'text-mini text-brand' })()).toBe('text-brand')
+  })
+
   it('writes the block between markers, reports it stale, and --sync rewrites only the block', async () => {
     const empty = twMergeConfigOf({ theme: [], utilities: [], functional: [] })
     const hero = twMergeConfigOf({ theme: ['--text-hero'], utilities: [], functional: [] })

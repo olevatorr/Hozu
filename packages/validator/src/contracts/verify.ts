@@ -292,7 +292,8 @@ function reviewLock(
   for (const change of changes) {
     if (!ctx.ir.features[change.feature] || change.kind !== 'changed' || !change.after!.decides) continue
     const pointer = transitionPointer(change.feature, change.id)
-    const same = hashJson([change.before!.fields, change.after!.fields] as unknown as Json)
+    const shape = (fields: BehaviorRecord) => (fields.stay ? { ...fields, enters: null } : fields)
+    const same = hashJson([shape(change.before!.fields), shape(change.after!.fields)] as unknown as Json)
     const key = `${bindings.copies[pointer] ?? pointer}\n${same}`
     groups.set(key, [...(groups.get(key) ?? []), change])
   }
@@ -367,14 +368,24 @@ export function verifyContracts(ctx: Ctx, bindings: Bindings, lock: unknown, acc
       return bindings.copies[pointer] ?? pointer
     }
     const coveredSources = new Set([...cov].filter(([, c]) => c.size > 0).map(([id]) => source(id)))
+    const reported = new Set<string>()
     for (const [id, contracts] of cov)
       if (contracts.size === 0 && decides(feature, id) && !coveredSources.has(source(id))) {
+        const pointer = transitionPointer(feature.id, id)
+        const shared = bindings.copies[pointer]
+        if (shared && reported.has(shared)) continue
+        if (shared) reported.add(shared)
+        const states = shared
+          ? [...cov.keys()].filter((other) => source(other) === shared).map((other) => other.split('/')[0]!)
+          : []
         const operators = onlyOperators(feature, id)
         ctx.report(
           'HZ016',
           feature.id,
-          transitionPointer(feature.id, id),
-          `Transition ${id} is not covered by any contract`,
+          shared ?? pointer,
+          shared
+            ? `Shared ${shared.split('/machine/')[1]} is not covered by any contract (copied into ${states.join(', ')}; one contract that fires ${id} covers every copy)`
+            : `Transition ${id} is not covered by any contract`,
           `It decides (a guard, a navigation, or a fn, comparison or computing operator in its values), so a contract must specify it (ADR 0037, ADR 0043 G). Transitions that only copy values are reviewed through the lock instead.${operators.length ? ` Here only ${operators.join(', ')} decides: if the value can be copied as it is, drop the operator and the lock reviews the transition.` : ''}`,
           {
             summary: operators.length

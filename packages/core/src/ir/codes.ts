@@ -213,7 +213,7 @@ export const codes: Record<DiagnosticCode, CodeInfo> = {
     severity: 'error',
     topic: 'content',
     summary: '`img` without width/height',
-    fix: 'add both',
+    fix: 'add both, or classes fixing them (`aspect-video w-full`)',
   },
   HZ029: {
     name: 'component-boundary-mismatch',

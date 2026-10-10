@@ -157,12 +157,18 @@ export function formFields(ctx: Ctx) {
             form.opaque ? 'HZ063' : 'HZ055',
             f.id,
             at(read.pointer, 'path', 1),
-            `${source}: no control named "${read.name}" belongs to this form.${didYouMean(guess)}`,
+            form.opaque
+              ? `${source}: no control named "${read.name}" is visible in this form, which holds ${form.opaque}.${didYouMean(guess)}`
+              : `${source}: no control named "${read.name}" belongs to this form.${didYouMean(guess)}`,
             form.opaque
               ? `The form holds ${form.opaque}, whose fields cannot be seen statically. Known fields: ${names.join(', ') || 'none'}.`
               : `A form posts the named controls inside it, the controls whose form attribute holds its formRef, and the pressed submit button. Fields: ${names.join(', ') || 'none'}.`,
             {
-              summary: guess ? `Read ${guess}` : `Add a control with name: '${read.name}' to the form`,
+              summary: guess
+                ? `Read ${guess}`
+                : form.opaque
+                  ? `Render the control named '${read.name}' outside the client component (a pure component or ui.input inlines it)`
+                  : `Add a control with name: '${read.name}' to the form`,
               snippet: guess ? null : `ui.input({ name: '${read.name}' })`,
               patch: guess
                 ? [{ op: 'replace', path: resolveAt(at(read.pointer, 'path', 1)), value: guess }]

@@ -516,3 +516,22 @@ export const orders = machine({
 export const orderFetch = implementFetch<typeof addOrder>(async ({ amount }) => ({ id: amount.toFixed(0) }))
 // @ts-expect-error the browser implementation receives the parsed input, so amount is a number
 export const orderFetchWrong = implementFetch<typeof addOrder>(async ({ amount }) => ({ id: amount.trim() }))
+
+export const settingsMachine = machine({
+  context: z.object({ open: z.boolean(), mode: z.enum(['a', 'b']), items: z.array(Item) }),
+  initialContext: { open: false, mode: 'a', items: [] },
+  initial: 'idle',
+  states: () => ({ idle: { on: [] } }),
+})
+export const settings = ui.view({
+  machine: settingsMachine,
+  render: ({ ctx }) =>
+    ui.div({}, [
+      ctx.open && ui.button({ type: 'button', on: { click: ui.set(ctx.open, false) } }, ['Close']),
+      // @ts-expect-error a boolean field takes only a boolean
+      ui.button({ type: 'button', on: { click: ui.set(ctx.open, 'x') } }, ['Wrong']),
+      // @ts-expect-error an enum field takes only its members
+      ui.button({ type: 'button', on: { click: ui.set(ctx.mode, 'c') } }, ['Wrong']),
+      ui.ul({}, [ui.each(ctx.items, 'sku', (item) => (item.qty > 0 ? ui.li({}, [item.sku]) : null))]),
+    ]),
+})

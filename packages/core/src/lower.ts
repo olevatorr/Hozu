@@ -94,6 +94,7 @@ export const lower = Object.freeze({
   length: (v: any): any => (plain(v) ? v.length : builtinCall('%length', { v })),
   plus: (a: any, b: any): any => (plain(a, b) ? a + b : builtinCall('%plus', { a, b })),
   minus: (a: any, b: any): any => (plain(a, b) ? a - b : builtinCall('%minus', { a, b })),
+  times: (a: any, b: any): any => (plain(a, b) ? a * b : builtinCall('%times', { a, b })),
   merge: (...p: unknown[]): any =>
     plain(...p)
       ? Object.assign({}, ...p)

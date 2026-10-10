@@ -66,7 +66,16 @@ export function solve(g: GuardExpr, want: boolean, schemas: Schemas): Patch[] | 
       return null
     }
     const parts = g.args.map((a) => solve(a, want, schemas))
-    return parts.every(Boolean) ? (parts.flat() as Patch[]) : null
+    if (!parts.every(Boolean)) return null
+    const all = parts.flat() as Patch[]
+    const seen = new Map<string, string>()
+    for (const p of all) {
+      const key = `${p.ref}:${p.path.join('.')}`
+      const value = JSON.stringify(p.value)
+      if (seen.has(key) && seen.get(key) !== value) return null
+      seen.set(key, value)
+    }
+    return all
   }
   if (g.op === 'fn') {
     const r = g.fn === '%truthy' ? refOf(g.arg) : null

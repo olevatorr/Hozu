@@ -266,6 +266,18 @@ export const steps: Step[] = [
     rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.28',
+    to: '0.29',
+    changes: [
+      'no source change',
+      'shared views get their view-transition-name only during a page transition, so a fixed menu inside a header is no longer drawn under the page (ADR 0083)',
+      "a kit's tv.ts also lists plain stylesheet classes that look like utilities (.text-mini): if hozu check reports HZ078, run hozu add kit <id> --sync",
+      'callbacks lower * (and *=) to %times',
+    ],
+    rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 /** 0.27 stores a page's noindex as a value, so a literal true becomes { literal: true } (ADR 0079 A3a). */

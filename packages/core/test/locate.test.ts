@@ -44,6 +44,7 @@ const View = ui.view({
         {
           ready: (items) =>
             ui.ul({}, [ui.each(visible({ items, all: ctx.all }), 'id', (t) => ui.li({}, [t.title]))]),
+          failed: { Unexpected: () => ui.p({}, ['Unavailable']) },
         },
       ),
     ]),

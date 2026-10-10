@@ -388,6 +388,42 @@ describe('a shared on that starts deciding (ADR 0083 D4)', () => {
     expect(hz018[0]!.cause).toContain('confirming, idle, removing, saved')
     expect(hz018[0]!.fix?.snippet).toContain("given: { state: 'idle', context: { status: 'done' } }")
   })
+  it('a shared on that stays in its state is one group too (review of 0.29)', () => {
+    const Mark = event({ payload: z.object({}) })
+    const stays = (decides: boolean) =>
+      machine({
+        context,
+        initialContext,
+        initial: 'idle',
+        on: ({ ctx }) => [
+          decides
+            ? on(Mark, {
+                guard: () => ctx.status === 'todo',
+                assign: () => {
+                  ctx.status = 'done'
+                },
+              })
+            : on(Mark, {
+                assign: () => {
+                  ctx.status = 'done'
+                },
+              }),
+        ],
+        states: () => ({
+          idle: { on: [on(Cancel, { target: 'confirming' })] },
+          confirming: {
+            on: [
+              on(Cancel, { target: 'idle' }),
+              on(AskRemove, { target: 'idle' }),
+              on(Dismiss, { target: 'idle' }),
+            ],
+          },
+        }),
+      })
+    const before = check({ Mark, stays: stays(false) }).lock!
+    const hz018 = check({ Mark, stays: stays(true) }, before).diagnostics.filter((d) => d.code === 'HZ018')
+    expect(hz018).toHaveLength(1)
+  })
 })
 
 describe('contract runner', () => {

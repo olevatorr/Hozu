@@ -235,12 +235,12 @@ export const ui = Object.freeze({
   send: <P>(event: EventDecl<P>, payload: NoInfer<Val<P>>, ...removed: never[]): Send =>
     Object.freeze({ [SEND]: removed.length ? { event, payload, keys: removed[0] } : { event, payload } }),
   /** Copies a value into a context field, the short form of an event and a shared `on` that stays (ADR 0067 H). */
-  set: <T>(field: T, value: NoInfer<Val<T>>): Send =>
+  set: <T>(field: T, value: NoInfer<Val<[T] extends [boolean] ? boolean : T>>): Send =>
     Object.freeze({ [SET]: { field, value } }) as unknown as Send,
   each: <T>(
     source: Expr<readonly T[]> | readonly T[],
     key: [T] extends [object] ? keyof T & string : null,
-    item: (item: Ref<T>) => Branch,
+    item: (item: Ref<T>) => Branch | null,
     motion?: string,
   ): NodeDecl => node({ kind: 'each', source, key, item, motion: motion ?? null }),
   query: <I, O, E>(
