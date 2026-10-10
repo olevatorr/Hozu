@@ -1,4 +1,4 @@
-import type { DevLocation, DevNode, DevTextSource } from '@hozu/core/ir'
+import type { DevLocation, DevNode, DevTextSource, DevTransition } from '@hozu/core/ir'
 import { currentUtility, type StyleProp, type Theme, utilityFor } from './theme.ts'
 
 export type Scope = 'this' | 'component' | 'items'
@@ -22,6 +22,7 @@ export interface RequestContext {
   path: string
   viewport: { width: number; height: number }
   preview: string | null
+  device?: string
 }
 
 export interface HozuRequest {
@@ -137,6 +138,64 @@ function textMinds(node: DevNode): string[] {
   })
 }
 
+const textOrigins: Partial<Record<DevTextSource['kind'], [string, string]>> = {
+  message: ['message', 'message'],
+  data: ['data', 'data'],
+  context: ['machine context', 'context'],
+  route: ['the URL', 'URL'],
+  computed: ['a computed value', 'value'],
+}
+
+function styleMinds(node: DevNode): string[] {
+  return sourcesOf(node).flatMap((s) => {
+    const origin = textOrigins[s.kind]
+    return origin
+      ? [
+          `the text comes from ${origin[0]} \`${s.detail}\`; this is a style change: change the classes in this view, the ${origin[1]} stays.`,
+        ]
+      : []
+  })
+}
+
+const changesText = (item: RequestItem): item is RequestItem & Required<Pick<RequestItem, 'text'>> =>
+  !!item.text && item.text.to !== item.text.from
+
+const sameEntry = (a: DevTransition, b: DevTransition) =>
+  a.to === b.to &&
+  !!a.location &&
+  !!b.location &&
+  a.location.file === b.location.file &&
+  a.location.line === b.location.line &&
+  a.location.column === b.location.column
+
+function moves(transitions: DevTransition[]): { text: string; shared: boolean }[] {
+  const groups: DevTransition[][] = []
+  for (const t of transitions) {
+    const group = groups.find((g) => sameEntry(g[0]!, t))
+    if (group) group.push(t)
+    else groups.push([t])
+  }
+  return groups.map((g) => {
+    const t = g[0]!
+    return g.length > 1
+      ? {
+          text: `shared \`on\` at ${loc(t.location)} (in ${g.map((x) => x.from).join(', ')}) → ${t.to}`,
+          shared: true,
+        }
+      : { text: `${t.from} → ${t.to} at ${loc(t.location)}`, shared: false }
+  })
+}
+
+function eventMind(e: DevNode['events'][number]): string {
+  const list = moves(e.transitions)
+  const shared = list.filter((m) => m.shared).length
+  const covers =
+    shared === 0 ? '' : shared === 1 ? '; one contract covers it' : '; one contract covers each shared `on`'
+  const all = list.map((m) => m.text).join(', ')
+  const what = list.length === 1 && shared === 1 ? `: ${all}` : all ? ` (${all})` : ''
+  return `\`${e.dom}\` sends \`${e.event}\`${what}${covers}; a change of behaviour needs a contract when it decides (HZ016), otherwise \`hozu check --update-lock\`.`
+}
+
 function minds(item: RequestItem): string[] {
   const { node, scope } = item
   const out: string[] = []
@@ -165,13 +224,8 @@ function minds(item: RequestItem): string[] {
     out.push(
       `one item of a list (${loc(list.location)}): changing only this one needs a field on the item that tells it apart.`,
     )
-  out.push(...textMinds(node))
-  for (const e of node.events) {
-    const moves = e.transitions.map((t) => `${t.from} → ${t.to} at ${loc(t.location)}`).join(', ')
-    out.push(
-      `\`${e.dom}\` sends \`${e.event}\`${moves ? ` (${moves})` : ''}; a change of behaviour needs a contract when it decides (HZ016), otherwise \`hozu check --update-lock\`.`,
-    )
-  }
+  out.push(...(item.style?.length && !changesText(item) ? styleMinds(node) : textMinds(node)))
+  for (const e of node.events) out.push(eventMind(e))
   return out
 }
 
@@ -193,6 +247,13 @@ function where(node: DevNode): string {
   return `${loc(node.location)}${node.owner ? ` (view \`${node.owner.feature}.${node.owner.view}\`)` : ''}`
 }
 
+function size(context: RequestContext): string {
+  const { width, height } = context.viewport
+  if (context.device === undefined) return `${width} × ${height}`
+  const name = context.device && context.device !== 'Custom' ? ` ${context.device}` : ''
+  return `Workbench${name} · ${width} × ${height} (verify: \`hozu browse --viewport ${width}x${height}\`)`
+}
+
 export function requestMarkdown(request: HozuRequest, options: PromptOptions = {}): string {
   const { context } = request
   const scopeLabel = (item: RequestItem) => {
@@ -205,7 +266,7 @@ export function requestMarkdown(request: HozuRequest, options: PromptOptions = {
   const lines = [
     `# Hozu request: ${titleOf(request.items)}`,
     '',
-    `Page \`${context.path}\` · ${context.viewport.width} × ${context.viewport.height}${context.preview ? ` · preview ${context.preview}` : ''}`,
+    `Page \`${context.path}\` · ${size(context)}${context.preview ? ` · preview ${context.preview}` : ''}`,
     '',
   ]
   request.items.forEach((item, i) => {
@@ -218,9 +279,7 @@ export function requestMarkdown(request: HozuRequest, options: PromptOptions = {
       ...(options.excerpt ? excerpt(node) : []),
       `- Scope: ${scopeLabel(item)}`,
       ...(item.style ?? []).map((c) => styleLine(c, node.classes, options.theme)),
-      ...(item.text && item.text.to !== item.text.from
-        ? [`- Text: “${item.text.from}” → “${item.text.to}”`]
-        : []),
+      ...(changesText(item) ? [`- Text: “${item.text.from}” → “${item.text.to}”`] : []),
       ...node.conditions
         .filter((c) => c.kind !== 'each')
         .map(
