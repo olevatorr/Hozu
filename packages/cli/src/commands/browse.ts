@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
@@ -46,9 +47,9 @@ export interface BrowseOptions {
   built?: string | undefined
 }
 
-const TARGETED = new Set(['fill', 'select', 'check', 'uncheck', 'click', 'submit'])
+const TARGETED = new Set(['fill', 'select', 'upload', 'check', 'uncheck', 'click', 'submit'])
 const VERBS =
-  'fill <label>=<value>, select <label>=<option>, check <label>, uncheck <label>, click <name>, submit "<form>", press <key>, wait <ms>, scroll bottom|top|"<text>", goto <path>, post <path> <a=1&b=2>, remember <name> from url|<selector> [@attr], hold <feature>.<effect>, release (targets take in "<text>"; $name reads a remembered value)'
+  'fill <label>=<value>, select <label>=<option>, upload <label>=<file>[,<file>], check <label>, uncheck <label>, click <name>, submit "<form>", press <key>, wait <ms>, scroll bottom|top|"<text>", goto <path>, post <path> <a=1&b=2>, remember <name> from url|<selector> [@attr], hold <feature>.<effect>, release (targets take in "<text>"; $name reads a remembered value)'
 
 interface Parsed {
   verb: string
@@ -61,7 +62,7 @@ interface Parsed {
 const unquote = (s: string) => s.replace(/^"(.*)"$/, '$1')
 
 const STEP =
-  /^\s*(?:fill|select|check|uncheck|click|submit|press|wait|scroll|goto|post|remember|hold|release)(?:\s|;|$)/
+  /^\s*(?:fill|select|upload|check|uncheck|click|submit|press|wait|scroll|goto|post|remember|hold|release)(?:\s|;|$)/
 
 /** `--do 'fill Title=Milk; press Enter'` is two steps: split where a verb and a space follow a semicolon outside quotes, so values may hold one. */
 export const stepsOf = (text: string): string[] => {
@@ -97,7 +98,7 @@ export function parseStep(text: string): Parsed {
     rest = scoped[1]!.trim()
     within = scoped[2]!
   }
-  if ((verb === 'fill' || verb === 'select') && within === null) {
+  if ((verb === 'fill' || verb === 'select' || verb === 'upload') && within === null) {
     const before = /^("[^"]*"|[^="]*?)\s+in\s+"([^"]+)"\s*=(.*)$/.exec(rest)
     if (before)
       return {
@@ -107,7 +108,7 @@ export function parseStep(text: string): Parsed {
         within: before[2]!,
       }
   }
-  if (verb === 'fill' || verb === 'select') {
+  if (verb === 'fill' || verb === 'select' || verb === 'upload') {
     const eq = rest.indexOf('=', rest.startsWith('"') ? Math.max(rest.indexOf('"', 1), 0) : 0)
     if (eq <= 0) throw new Error(`"${text}" needs <label>=<value>`)
     return {
@@ -142,6 +143,22 @@ export async function act(tab: Tab, p: Parsed): Promise<StepResult> {
   })
   if (p.verb === 'fill' || p.verb === 'select')
     return done(await tab.page(`${p.verb}(${q(p.target)}, ${q(p.value)}, ${q(p.within)})`))
+  if (p.verb === 'upload') {
+    if (off)
+      return {
+        ok: true,
+        note: null,
+        jsOnly: 'a file reaches the server only through JavaScript (ui.dom.files)',
+      }
+    const at = await tab.page(`upload(${q(p.target)}, ${q(p.within)})`)
+    if (at.error) return done(at)
+    const files = p.value.split(',').map((f) => resolve(f.trim()))
+    const missing = files.find((f) => !existsSync(f))
+    if (missing) return done({ error: `No file at ${missing}` })
+    if (files.length > 1 && !at.multiple) return done({ error: `"${p.target}" takes one file` })
+    await tab.setFiles(files)
+    return done(at)
+  }
   if (p.verb === 'submit') return done(await tab.page(`submit(${q(p.target)}, ${q(p.within)})`))
   if (p.verb === 'check' || p.verb === 'uncheck') {
     const at = await aim(tab, `checkable(${q(p.target)}, ${q(p.within)})`)

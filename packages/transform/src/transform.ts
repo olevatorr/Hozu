@@ -493,6 +493,11 @@ export function transform(source: string, _file = ''): TransformResult {
             ? `${H}.branch(${gen(n.test)}${sep(n.test, n.consequent)}${gen(n.consequent)}${sep(n.consequent, n.alternate)}${gen(n.alternate)})`
             : `${H}.cond(${gen(n.test)}${sep(n.test, n.consequent)}${gen(n.consequent)}${sep(n.consequent, n.alternate)}${gen(n.alternate)})`,
         )
+      else if (isRef(n.consequent, s) || isRef(n.alternate, s))
+        replace(
+          n,
+          `${H}.cond(${gen(n.test)}${sep(n.test, n.consequent)}${gen(n.consequent)}${sep(n.consequent, n.alternate)}${gen(n.alternate)})`,
+        )
       return
     }
     if (n.type === 'LogicalExpression') {

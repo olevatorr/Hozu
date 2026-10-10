@@ -579,3 +579,35 @@ describe('hrefs', () => {
     expect(d?.fix?.snippet).toBe('ui.link(noteRoute, { id: … })')
   })
 })
+
+describe('a conditional whose branch is a reference is lowered, also as a test (ADR 0084 A1)', () => {
+  const links = [
+    { label: 'Users', admin: true },
+    { label: 'Orders', admin: false },
+  ]
+  const staff = machine({
+    context: z.object({ isAdmin: z.boolean() }),
+    initialContext: { isAdmin: false },
+    initial: 'idle',
+    states: () => ({ idle: {} }),
+  })
+  const nav = part((isAdmin: boolean) =>
+    ui.ul({}, [
+      ...links.map((l) => ((l.admin ? isAdmin : true) ? ui.li({}, [l.label]) : null)),
+      ...links.map((l) => {
+        const shown = l.admin ? isAdmin : true
+        return shown ? ui.li({}, [l.label]) : null
+      }),
+    ]),
+  )
+  const Nav = ui.view({ machine: staff, render: ({ ctx }) => ui.main({}, [nav(ctx.isAdmin)]) })
+
+  it('renders the admin link only under a test on the reference, never as a plain truthy object', () => {
+    const b = build({ staff, Nav })
+    expect(codes(b)).toEqual([])
+    const root = b.ir.features.f!.views.Nav!.root
+    if (root.kind !== 'el' || root.children[0]!.kind !== 'el') throw new Error('fixture')
+    const kinds = root.children[0]!.children.map((c) => c.kind)
+    expect(kinds).toEqual(['if', 'el', 'if', 'el'])
+  })
+})

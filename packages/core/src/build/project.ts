@@ -252,7 +252,18 @@ function projectSchema(
   if (check) scope.bindings.checks[key] = check
   const parse = key.startsWith('#route:') ? toParse(schema) : null
   if (parse) scope.bindings.parses = { ...scope.bindings.parses, [key]: parse }
-  return adapter.toJsonSchema(schema)
+  try {
+    return adapter.toJsonSchema(schema)
+  } catch (error) {
+    scope.report(
+      'HZ014',
+      null,
+      pointer,
+      `This schema cannot be converted to JSON Schema: ${error instanceof Error ? error.message : String(error)}`,
+      'A field of an object schema is probably undefined, such as a value read from a declaration: every field must be a schema.',
+    )
+    return null
+  }
 }
 
 export interface BuildOptions {

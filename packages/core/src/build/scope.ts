@@ -414,7 +414,23 @@ export class FeatureScope {
       )
       return this.intern(null, {})
     }
-    const json = adapter.toJsonSchema(schema)
+    let json: JsonSchema
+    try {
+      json = adapter.toJsonSchema(schema)
+    } catch (error) {
+      this.report(
+        'HZ014',
+        pointer,
+        `This schema cannot be converted to JSON Schema: ${error instanceof Error ? error.message : String(error)}`,
+        'A field of an object schema is probably undefined, such as a value read from a declaration (an event has no .payload): every field must be a schema.',
+        {
+          summary: 'Declare the shared schema as its own const and use it in both places',
+          snippet: null,
+          patch: null,
+        },
+      )
+      return this.intern(null, {})
+    }
     const hash = `s_${hashJson(json).slice(0, 16)}`
     schemaCache.set(schema, { json, hash })
     return this.intern(hash, json)

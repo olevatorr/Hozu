@@ -240,7 +240,7 @@ The capability comparison with Next.js, Nuxt, SvelteKit, Astro and React Router 
 
 ## Requirements and status
 - **Node 22.18 or newer.** Config and app code are TypeScript run with Node's type stripping.
-- **Version 0.29.0.** The API may change before 1.0. 1.0 follows agent trials in three roles (engineer, non-engineer,
+- **Version 0.30.0.** The API may change before 1.0. 1.0 follows agent trials in three roles (engineer, non-engineer,
   designer), a real project built and shipped with Hozu, and the trial that checks DevTools requests
   ([ADR 0080](docs/adr/0080-the-gate-to-1-0.md)). Every design decision is recorded in [`docs/adr`](docs/adr).
 

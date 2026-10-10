@@ -238,7 +238,12 @@ export function schemaJson(project: ProjectScope, schema: unknown): JsonSchema |
   if (schema['~standard'].vendor !== project.adapter.vendor) return null
   let hit = project.schemaCache.get(schema)
   if (!hit) {
-    const json = project.adapter.toJsonSchema(schema)
+    let json: JsonSchema
+    try {
+      json = project.adapter.toJsonSchema(schema)
+    } catch {
+      return null
+    }
     hit = { json, hash: `s_${hashJson(json).slice(0, 16)}` }
     project.schemaCache.set(schema, hit)
   }

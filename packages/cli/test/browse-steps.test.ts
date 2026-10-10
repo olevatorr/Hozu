@@ -1,10 +1,11 @@
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { type Cdp, findBrowser, launch } from '../src/cdp.ts'
 import { act, describeBrowse, differences, parseStep, stepsOf } from '../src/commands/browse.ts'
-import { cspHint, Tab, type World } from '../src/commands/browse-tab.ts'
+import { cspHint, sleep, Tab, type World } from '../src/commands/browse-tab.ts'
 import type { BrowseError, BrowseMode, BrowseOutput } from '../src/contract.ts'
 
 const PAGE = `<!doctype html><title>Steps</title>
@@ -35,6 +36,13 @@ const MENU = `<!doctype html><title>Menu</title>
 <a href="#home" onclick="document.title = 'home'">Home</a>
 <div role="dialog" style="position:fixed;inset:0;visibility:hidden"><a href="#menu" onclick="document.title = 'menu'">Home</a></div>`
 
+const UPLOAD = `<!doctype html><title>Upload</title>
+<label>Photo <input type="file" name="photo" onchange="document.title = this.files[0].name + ' ' + this.files[0].size"></label>`
+
+let imagePort = 0
+const LOCAL_IMAGE = () => `<!doctype html><title>Image</title>
+<img src="http://127.0.0.1:${imagePort}/a.svg" onload="document.title = 'loaded'" onerror="document.title = 'failed'">`
+
 const decode = (body: Uint8Array | null) => new TextDecoder().decode(body ?? new Uint8Array())
 
 const seen: Record<string, string>[] = []
@@ -58,7 +66,11 @@ const world = {
             ? OVERLAY
             : new URL(r.url).pathname === '/menu'
               ? MENU
-              : PAGE,
+              : new URL(r.url).pathname === '/upload'
+                ? UPLOAD
+                : new URL(r.url).pathname === '/image'
+                  ? LOCAL_IMAGE()
+                  : PAGE,
       ),
     }
   ),
@@ -128,10 +140,12 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
     await t.open('/')
     expect(await run(t, 'click Delete in "Butter"')).toEqual({
       ok: false,
-      note: 'No list item, table row or form contains "Butter"',
+      note: 'No list item, table row, form, details or article contains "Butter"',
       jsOnly: null,
     })
-    expect((await run(t, 'click Delete')).note).toBe('2 matched; used the first')
+    expect((await run(t, 'click Delete')).note).toBe(
+      '2 matched; used the first (in "Milk Delete", in "Bread Delete"; add one with in "<text>")',
+    )
     await t.open('/')
     expect((await run(t, 'fill Tags=x')).note).toMatch(
       /^No fill target named "Tags"\. Did you mean "Tag"\? On the page: /,
@@ -203,6 +217,38 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
     expect(await run(t, 'click Home')).toMatchObject({ ok: true })
     expect((await t.look()).title).toBe('home')
     expect(await run(t, 'press PageDown')).toMatchObject({ ok: true })
+  }, 30_000)
+
+  it('loads an image from another local port, as a page on localhost would (ADR 0084)', async () => {
+    const server: Server = createServer((_, res) => {
+      res.writeHead(200, { 'content-type': 'image/svg+xml' })
+      res.end('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>')
+    })
+    await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
+    imagePort = (server.address() as { port: number }).port
+    try {
+      const t = await tab('on')
+      await t.open('/image')
+      await sleep(300)
+      expect((await t.look()).title).toBe('loaded')
+    } finally {
+      server.close()
+    }
+  }, 30_000)
+
+  it('upload sets a file input by its label; without JS it says a file needs JavaScript (ADR 0084)', async () => {
+    const file = join(profile, 'photo.txt')
+    await writeFile(file, 'hello')
+    const t = await tab('on')
+    await t.open('/upload')
+    expect(await run(t, `upload Photo=${file}`)).toMatchObject({ ok: true })
+    expect((await t.look()).title).toBe('photo.txt 5')
+    expect(await run(t, 'upload Photo=/nope/missing.png')).toMatchObject({
+      ok: false,
+      note: 'No file at /nope/missing.png',
+    })
+    const off = await tab('off')
+    expect((await run(off, `upload Photo=${file}`)).jsOnly).toMatch(/JavaScript/)
   }, 30_000)
 
   it('submit "<form>" and press Enter submit natively, with the default button as the submitter', async () => {

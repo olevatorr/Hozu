@@ -278,6 +278,17 @@ export const steps: Step[] = [
     rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.29',
+    to: '0.30',
+    changes: [
+      'no source change',
+      'a ?: whose branch is a reference is lowered even when its test is a plain value, so (c ? ref : true) ? a : b tests the reference (ADR 0084); review a view that relied on the old, always-true result; such a ?: passed to a plain helper, a global, typeof or if is now HZ059',
+      'hozu browse: upload <label>=<file>; images from another local port load',
+    ],
+    rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 /** 0.27 stores a page's noindex as a value, so a literal true becomes { literal: true } (ADR 0079 A3a). */

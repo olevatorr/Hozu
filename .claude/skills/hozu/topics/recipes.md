@@ -140,3 +140,28 @@ Give that person a role in the session and gate the mutation on it: `access: { a
 === 'organiser' }`, with the role set where they sign in (a separate sign-in, or a check of a secret on the server).
 A name typed at sign-in is not identity: anyone can type it, so it may decide what a page shows but never who may
 write.
+
+## Uploading files
+A file reaches the server only through JavaScript: a native post sends file names, not bytes.
+```ts
+export const FileRef = z.object({ name: z.string(), size: z.number(), type: z.string(), token: z.string() })
+export const Picked = event({ payload: z.object({ files: z.array(FileRef) }) })
+ui.input({ type: 'file', name: 'files', multiple: true, on: { change: ui.send(Picked, { files: ui.dom.files }) } })
+// the machine keeps ctx.files and invokes upload({ files: ctx.files }); the resolver reads the bytes:
+implement(upload, async ({ files }, { file }) => {
+  for (const ref of files) {
+    const f = await file(ref.token) // { name, type, size, bytes } or null
+  }
+})
+```
+Check it with `hozu browse /media --do 'upload Files=./photo.jpg'` (paths from the current folder; several: `a.jpg,b.jpg`).
+
+## A checkbox bound to context
+`checked: ctx.all` is set when the value changes. A box the person can also toggle must send that change
+(`on: { change: ui.set(...) }`); otherwise setting the same value again (a second "Select all") leaves the box as
+the person left it.
+
+## Showing an `Invalid` error
+`failed: { Invalid: (e) => … }`: `e.message` lists the problems as `field: problem`, for one alert; `e.fields` holds
+every input field with its problem, or `null` when it is fine, to show each next to its input.
+
