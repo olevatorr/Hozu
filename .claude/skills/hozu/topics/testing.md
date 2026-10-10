@@ -37,7 +37,10 @@
   it instead). Equal means tag, class, text, `name`, `id`, `href`, `src`, `type` and parent path; a node that moved is
   no flash. Inside a list whose rows changed keys, a flash may be a new row whose child equals the removed row's at
   that place (browse does not see keys): check the keys before changing the view. Layout that moves without input says
-  `layout shift X`. Both are problems to fix; a calm step prints neither. An address changed with `replace` stays `in place`.
+  `layout shift X`. Both are problems to fix; a calm step prints neither.
+- **`--js both` shares one server:** the off run starts after the on run's writes, so a delete or a counter differs
+  between the modes for that reason alone. Compare reads with `--js both`, writes in one mode at a time.
+- **Screenshots** capture the whole page; `scroll bottom|top|"<text>"` moves the page before a later step. An address changed with `replace` stays `in place`.
 - **`hozu get`** prints the status, redirect, `set-cookie` attributes (`HttpOnly`, `SameSite`), title, alerts and
   visible text.
   - `--forms` lists each form: fields with their defaults, checkbox / radio groups with every value (checked ones

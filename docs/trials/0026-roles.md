@@ -63,7 +63,7 @@ small app (a book club's reading list) from an empty folder to a deployed contai
 | 14 | A setting one person edits (the organiser) | N | **Modify:** a recipe for "one person may change this" with a signed-in role from the session (`access: { allow }`), and why a name alone is not identity |
 | 15 | `hozu get` inside the container | N | **Decline:** the image is production (`--omit=dev`); check from outside with curl or `hozu get --build` |
 | 16 | More than one machine per feature | E | **Declined again** (ADR 0069 C) |
-| 17 | `/?show=all` answers 200 instead of redirecting to `/` | E | **Investigate** before deciding: canonical URLs leave defaults out of links; whether a request carrying a default should redirect is a separate rule |
+| 17 | `/?show=all` answers 200 instead of redirecting to `/` | E | **Declined after investigation** (ADR 0082): the page's canonical link and cache key already drop search defaults |
 
 ## Limits
 - One run per role, one model, one app; the person is an agent instructed to act as a person.

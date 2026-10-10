@@ -109,13 +109,15 @@ Options:
   --select <selector>  get/browse: print matching elements with their attributes: button, #id, [role=alert], a[href], nav a[aria-current], main > form input
   --forms              get: list the page's forms: fields with defaults, checkbox groups, form= controls, submit buttons
   --do <step>          browse: 'fill <label>=<value>', 'select <label>=<option>', 'check <label>', 'uncheck <label>',
-                       'click <name>', 'submit "<form>"', 'press <key>', 'wait <ms>', 'goto <path>',
+                       'click <name>', 'submit "<form>"', 'press <key>', 'wait <ms>', 'scroll bottom|top|"<text>"',
+                       'goto <path>',
                        'post <path> a=1&b=2', 'remember <name> from url|<selector> [@attr]' (later steps read $name),
                        'hold <feature>.<effect>' (its answer waits) then 'release'
                        (repeatable, in order); a target may end with in "<text>" (the list item, table row or form)
-  --js <on|off|both>   browse: run the steps with JS (default), without JS, or both side by side
+  --js <on|off|both>   browse: run the steps with JS (default), without JS, or both side by side (both share
+                       one server: the off run sees the on run's writes)
   --as <name>          browse: the steps after it are this actor's, in its own browser; repeat to switch actors
-  --screenshot <file>  browse: save a PNG of the viewport after the steps
+  --screenshot <file>  browse: save a PNG of the whole page after the steps
   --reduced-motion     browse: emulate prefers-reduced-motion: reduce
   --devtools-messages <file> dev: DevTools in your language (a file from hozu devtools messages);
                        HOZU_DEVTOOLS_MESSAGES=<file> in your shell does it for every project

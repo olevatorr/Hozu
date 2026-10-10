@@ -402,6 +402,11 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   `cli/commands/kits.ts`); HZ026 colour utilities list the project colours (`CompiledStyles.palette`); `hozu add kit`
   syncs every kit's `tv.ts`; `THIRD_PARTY_NOTICES.md` (root and `@hozu/core`). Browse cannot see keys: a flash in a
   re-keyed list may be a different row (ADR 0079 B, corrects ADR 0078).
+- 0.28 (ADR 0082, from trial 0026): scaffold sign-in names `\p{L}` (u flag); runtime-client compiles JSON Schema
+  patterns with `u` (fallback); `--target node` merges `.gitignore` into the ignore file, `docker run --env-file
+  production.env -v <dir>:/app/<dir>`, flags a localhost `site.url`, required env = no default; HZ016 `onlyOperators`;
+  browse full-page screenshots + `scroll`; `add feature --page` notes unused replaced views; recipes (JSON file demo,
+  no-JS delete confirm, one-person setting). ADR 0080: the 1.0 gate (agent roles, Mori rebuilt, DevTools trial).
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

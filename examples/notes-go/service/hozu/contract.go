@@ -23,7 +23,7 @@ func Fingerprint(effect string) string {
 	case "account.me":
 		return "b3d512da23c29498"
 	case "account.signIn":
-		return "f012a86406638b33"
+		return "948c96e255dad25a"
 	case "account.signOut":
 		return "83ecf475d2d715e6"
 	case "notes.addNote":

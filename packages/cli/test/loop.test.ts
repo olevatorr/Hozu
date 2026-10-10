@@ -74,7 +74,9 @@ describe('the agent loop (ADR 0027)', () => {
     const added = await json('add', ['add', 'feature', 'tasks', '--page', '/'], app)
     expect(added.out.created).toHaveLength(5)
     expect(added.out.created).toContain('hozu.lock.json')
-    expect(added.out.manual).toEqual([])
+    expect(added.out.manual, 'the replaced home page leaves its view on no page (ADR 0082 A13)').toEqual([
+      expect.stringContaining('previous views (Home) are on no page now'),
+    ])
     const check = await json('check', ['check'], app)
     expect(check.code).toBe(0)
     expect(check.out.types).toEqual({ ok: true, skipped: false, errors: [] })
@@ -202,7 +204,10 @@ describe('the agent loop (ADR 0027)', () => {
       ]
       const label = `${chosen.join(',')}${empty ? ' (empty config)' : ''}`
       const added = await json('add', args, app)
-      expect(added.out.manual, label).toEqual([])
+      expect(
+        added.out.manual.filter((m: string) => !m.includes('are on no page now')),
+        label,
+      ).toEqual([])
       const config = readFileSync(join(app, 'hozu.config.ts'), 'utf8')
       expect(config, label).toMatch(/^ {2}features: \[[\w, ]+\],$/m)
       expect(config, label).toMatch(/^ {2}routes: \{ [\w, ]+ \},$/m)
@@ -317,7 +322,7 @@ describe('the agent loop (ADR 0027)', () => {
       expect.arrayContaining(['features/account/model.ts', 'features/account/views.ts']),
     )
     expect(added.out.edited).toEqual(expect.arrayContaining(['app.ts', 'routes.ts', 'hozu.config.ts']))
-    expect(added.out.manual).toEqual([])
+    expect(added.out.manual.filter((m: string) => !m.includes('are on no page now'))).toEqual([])
     const check = await json('check', ['check'], app)
     expect(check.out.types.errors).toEqual([])
     expect(check.out.validate.summary).toEqual({ errors: 0, warnings: 0, accepted: 0 })

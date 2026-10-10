@@ -5,6 +5,7 @@ import { type Coverage, isV2, type LockChange, lockChanges, lockOf, pagesChanges
 import {
   decides,
   locate,
+  onlyOperators,
   showAssign,
   showEnters,
   showFns,
@@ -341,19 +342,23 @@ export function verifyContracts(ctx: Ctx, bindings: Bindings, lock: unknown, acc
     }
     const coveredSources = new Set([...cov].filter(([, c]) => c.size > 0).map(([id]) => source(id)))
     for (const [id, contracts] of cov)
-      if (contracts.size === 0 && decides(feature, id) && !coveredSources.has(source(id)))
+      if (contracts.size === 0 && decides(feature, id) && !coveredSources.has(source(id))) {
+        const operators = onlyOperators(feature, id)
         ctx.report(
           'HZ016',
           feature.id,
           transitionPointer(feature.id, id),
           `Transition ${id} is not covered by any contract`,
-          'It decides (a guard, a navigation, or a fn, comparison or computing operator in its values), so a contract must specify it (ADR 0037, ADR 0043 G). Transitions that only copy values are reviewed through the lock instead.',
+          `It decides (a guard, a navigation, or a fn, comparison or computing operator in its values), so a contract must specify it (ADR 0037, ADR 0043 G). Transitions that only copy values are reviewed through the lock instead.${operators.length ? ` Here only ${operators.join(', ')} decides: if the value can be copied as it is, drop the operator and the lock reviews the transition.` : ''}`,
           {
-            summary: `Add a contract that fires ${id}`,
+            summary: operators.length
+              ? `Copy the value without ${operators.length === 1 ? 'the operator' : 'the operators'}, or add a contract that fires ${id}`
+              : `Add a contract that fires ${id}`,
             snippet: skeleton(ctx.ir, feature, id),
             patch: null,
           },
         )
+      }
     coverage.set(feature.id, cov)
   }
   const next = lockOf(ctx.ir, coverage)

@@ -347,7 +347,25 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     const phone = await browse(['/', '--js', 'on', '--viewport', '390x844', '--screenshot', shot])
     expect(phone.code).toBe(0)
     const png = readFileSync(shot)
-    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([390, 844])
+    expect(png.readUInt32BE(16)).toBe(390)
+    expect(png.readUInt32BE(20), 'the whole page, at least the viewport').toBeGreaterThanOrEqual(844)
+    const tall = `${root}.tmp/browse-full-${Date.now()}.png`
+    copies.push(tall)
+    const full = await browse([
+      '/',
+      '--js',
+      'on',
+      '--viewport',
+      '390x844',
+      '--do',
+      'scroll bottom',
+      '--screenshot',
+      tall,
+    ])
+    expect(full.code, 'scroll is a step, and the screenshot is the whole page (ADR 0082 A9)').toBe(0)
+    const page = readFileSync(tall)
+    expect(page.readUInt32BE(16)).toBe(390)
+    expect(page.readUInt32BE(20)).toBeGreaterThan(844)
     const step = await browse(['/', '--js', 'on', '--do', 'screenshot phone.png'])
     expect(step.code).not.toBe(0)
     expect(JSON.stringify(step.out)).toContain('add --screenshot <file>')

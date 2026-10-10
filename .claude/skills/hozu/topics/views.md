@@ -92,3 +92,8 @@ export const Board = ui.view({
 - `ui.format.plural(n, { one: '# item', other: '# items' })` picks the case for the page's language (`=0` works).
 - `null` and `false` render nothing, also inside a constant list:
   `ui.ul({}, [...kinds.map((k) => (k === 'draft' ? null : ui.li({}, [k])))])`.
+- A `part` returns one node; wrap several in an element (HZ014 otherwise).
+- `current(route)` works in any render, bound or not: `'aria-current': current(home)`.
+- `ui.format.date` takes a date-time or a `YYYY-MM-DD` string, formatted for the page's language.
+- `ui.each(list, key, …)` keys rows by a field that is unique per row; rows without one get an id where they are made
+  (a comment's `id`, not its time).

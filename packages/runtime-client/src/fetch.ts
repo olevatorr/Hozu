@@ -2,6 +2,15 @@ import type { Json, ValueExpr } from '@hozu/core/ir'
 import type { PagePayload } from './hydrate.ts'
 import type { Result, Store } from './mount.ts'
 
+/** A JSON Schema pattern with Unicode semantics (`\p{L}`), falling back for a pattern written without them. */
+const pattern = (source: string): RegExp => {
+  try {
+    return new RegExp(source, 'u')
+  } catch {
+    return new RegExp(source)
+  }
+}
+
 const FETCH_FAIL = Symbol.for('hozu.fetchFail')
 
 type S = Record<string, any>
@@ -51,7 +60,7 @@ export function checked(
   if (typeof value === 'string') {
     if (s.minLength !== undefined && value.length < s.minLength) issues.push(`${where}: too short`)
     if (s.maxLength !== undefined && value.length > s.maxLength) issues.push(`${where}: too long`)
-    if (s.pattern && !new RegExp(s.pattern).test(value)) issues.push(`${where}: does not match ${s.pattern}`)
+    if (s.pattern && !pattern(s.pattern).test(value)) issues.push(`${where}: does not match ${s.pattern}`)
   }
   if (typeof value === 'number') {
     if (s.minimum !== undefined && value < s.minimum) issues.push(`${where}: below ${s.minimum}`)

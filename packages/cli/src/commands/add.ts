@@ -236,9 +236,24 @@ export async function runAddFeature(
         const text = w.auth
           ? `ui.page(${pageRoute}, {\n      views: [AccountBar, ${n.View}],\n      head: {\n        query: me,\n        input: () => ({}),\n        render: () => ({ title: '${n.title}', noindex: true }),\n        failed: { Forbidden: login },\n      },\n    })`
           : `ui.page(${pageRoute}, { views: [${n.View}], head: { render: () => ({ title: '${n.title}' }) } })`
+        const before = next
         next = newRoute
           ? next.replace(/pages:\s*\[/, (m) => `${m}\n    ${text},`)
           : replacePage(next, pageRoute, text)
+        if (next && !newRoute) {
+          const replaced = new RegExp(`ui\\.page\\(\\s*${pageRoute}\\s*,[^]*?views:\\s*\\[([^\\]]*)\\]`).exec(
+            before,
+          )
+          const after = next
+          const unused = (replaced?.[1] ?? '')
+            .split(',')
+            .map((v) => v.trim())
+            .filter((v) => v && !new RegExp(`\\b${v}\\b`).test(after.replace(/^import .*$/gm, '')))
+          if (unused.length)
+            out.manual.push(
+              `the page's previous views (${unused.join(', ')}) are on no page now: remove their feature (and its import and features entry) if nothing else uses them`,
+            )
+        }
       }
       return next?.replace(/\),\s*ui\.page\(/g, '),\n    ui.page(') ?? null
     },

@@ -114,3 +114,24 @@ the member on the view that has both `machine` and `route` (HZ048):
 ## A notice after saving
 A `notice` context field set in `done` and cleared by `after: [{ ms: 4000, target: 'idle' }]` on a `saved` state;
 the view shows `ctx.notice !== null && ui.p({ role: 'status' }, [ctx.notice])`. There is no global toast store.
+
+## A JSON file for a demo
+For a small group and one server process, a file is enough: read it in the resolvers, write it whole after each
+mutation (write a temporary file, then rename). Put it in a folder listed in `.gitignore` (`data/`), name its path in
+`env.server` with a default (`DATA_FILE: z.string().default('data/club.json')`), and give the container a volume for
+that folder (`hozu build --target node` prints one). Limits: one process only (two instances overwrite each other),
+no queries beyond what you write, back the file up. Move to a database when any of these matter.
+
+## Confirm before deleting, without JavaScript
+A native `details` holds the question and a form, so it works on any phone:
+`ui.details({}, [ui.summary({}, ['刪除這本書']), ui.p({}, ['確定要刪除嗎？']), ui.form({ on: { submit:
+ui.send(Remove, { id: ui.dom.form('id') }) } }, [ui.input({ type: 'hidden', name: 'id', value: item.id }),
+ui.button({ type: 'submit' }, ['確定刪除'])]), ui.a({ href: ui.link(home, null) }, ['不要刪'])])`. The id travels
+in the form (a payload read from the row would need JavaScript, HZ036). A confirm kept in the machine (`ui.set(ctx.confirm, id)`) needs JavaScript; `hozu browse
+--js off` reports it as `js-only`.
+
+## One person may change this (an organiser, an owner)
+Give that person a role in the session and gate the mutation on it: `access: { allow: (session) => session.role
+=== 'organiser' }`, with the role set where they sign in (a separate sign-in, or a check of a secret on the server).
+A name typed at sign-in is not identity: anyone can type it, so it may decide what a page shows but never who may
+write.

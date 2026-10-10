@@ -48,7 +48,7 @@ export interface BrowseOptions {
 
 const TARGETED = new Set(['fill', 'select', 'check', 'uncheck', 'click', 'submit'])
 const VERBS =
-  'fill <label>=<value>, select <label>=<option>, check <label>, uncheck <label>, click <name>, submit "<form>", press <key>, wait <ms>, goto <path>, post <path> <a=1&b=2>, remember <name> from url|<selector> [@attr], hold <feature>.<effect>, release (targets take in "<text>"; $name reads a remembered value)'
+  'fill <label>=<value>, select <label>=<option>, check <label>, uncheck <label>, click <name>, submit "<form>", press <key>, wait <ms>, scroll bottom|top|"<text>", goto <path>, post <path> <a=1&b=2>, remember <name> from url|<selector> [@attr], hold <feature>.<effect>, release (targets take in "<text>"; $name reads a remembered value)'
 
 interface Parsed {
   verb: string
@@ -61,7 +61,7 @@ interface Parsed {
 const unquote = (s: string) => s.replace(/^"(.*)"$/, '$1')
 
 const STEP =
-  /^\s*(?:fill|select|check|uncheck|click|submit|press|wait|goto|post|remember|hold|release)(?:\s|;|$)/
+  /^\s*(?:fill|select|check|uncheck|click|submit|press|wait|scroll|goto|post|remember|hold|release)(?:\s|;|$)/
 
 /** `--do 'fill Title=Milk; press Enter'` is two steps: split where a verb and a space follow a semicolon outside quotes, so values may hold one. */
 export const stepsOf = (text: string): string[] => {
@@ -180,6 +180,16 @@ export async function act(tab: Tab, p: Parsed): Promise<StepResult> {
     const hidden = await tab.page(`keyed(${q(p.target)})`).catch(() => null)
     await tab.key(p.target)
     return { ...done({ note: hidden }), focus: before ?? '' }
+  }
+  if (p.verb === 'scroll') {
+    const where = p.target.replace(/^"(.*)"$/, '$1')
+    if (!where) throw new Error('scroll takes bottom, top or "<text>" (the first element showing it)')
+    const found = await tab.evaluate(
+      where === 'bottom' || where === 'top'
+        ? `(window.scrollTo(0, ${where === 'top' ? 0 : 'document.documentElement.scrollHeight'}), true)`
+        : `(() => { const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); for (let n = w.nextNode(); n; n = w.nextNode()) { const el = n.parentElement; if (el && !el.closest('script, style, template, noscript') && el.getClientRects().length && n.textContent.includes(${q(where)})) { el.scrollIntoView({ block: 'center' }); return true } } return false })()`,
+    )
+    return done(found ? {} : { error: `No text "${where}" on the page to scroll to` })
   }
   if (p.verb === 'wait') {
     const ms = Number(p.target)
@@ -568,7 +578,15 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
       : { hydrated: false, components: [], ...(await first.page(`report(${q(options.select)}, [])`)) }
     let screenshot: string | null = null
     if (options.screenshot) {
-      const shot = await first.send('Page.captureScreenshot', { format: 'png' })
+      const view = (await first.evaluate(
+        '({ width: document.documentElement.clientWidth, height: window.innerHeight, page: document.documentElement.scrollHeight })',
+      )) as { width: number; height: number; page: number }
+      const height = Math.min(Math.max(view.page, view.height), 8000)
+      const shot = await first.send('Page.captureScreenshot', {
+        format: 'png',
+        captureBeyondViewport: true,
+        clip: { x: 0, y: 0, width: view.width, height, scale: 1 },
+      })
       const file = resolve(options.screenshot)
       await writeFile(file, Buffer.from(shot.data, 'base64'))
       const near = relative(process.cwd(), file)
