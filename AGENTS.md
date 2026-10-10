@@ -417,6 +417,8 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   test (a nested conditional as a test was always true); an unconvertible schema is HZ014, not a crash; browse
   disables Local Network Access checks, `upload <label>=<file>`, match places in notes, `in` covers details/article;
   recipes: uploads, a checkbox bound to context, `Invalid` display.
+  0.30.1 (ADR 0085, Mori Docker rehearsal): `add component --client` moves `@hozu/bundle` out of devDependencies;
+  `--target node` names packages in both dependency lists and stylesheet packages only in devDependencies.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

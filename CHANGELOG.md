@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.30.1 — What the Mori Docker rehearsal met (ADR 0085)
+
+- **`hozu add component --client` moves `@hozu/bundle` to `dependencies`.** Before, it was left in `devDependencies`
+  too, and `npm ci --omit=dev` then installed neither, so the container stopped at start. Apps made before this:
+  remove `@hozu/bundle` from `devDependencies` (`hozu build --target node` now says so).
+- **`hozu build --target node`** names a package listed in both `dependencies` and `devDependencies`, and a
+  stylesheet package (`@plugin "@tailwindcss/typography"`) that only `devDependencies` list, which `hozu serve`
+  needs at start.
+
 ## 0.30.0 — What the Mori back office met (ADR 0084)
 
 From rebuilding the Mori back office with Hozu (43 routes, two roles). No API change:
