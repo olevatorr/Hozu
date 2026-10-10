@@ -62,3 +62,16 @@
 
 ## Budget
 - 20 sessions plus the reference and its validation; about the cost of trial 0021's eight held-out steps.
+
+## Run on 0.28 (2026-10-10, ADR 0080 D)
+The trial runs as registered above, on Hozu 0.28.0, with these changes, each fixed before any run:
+| Registered | As run | Why |
+|---|---|---|
+| 0.10.0 tarballs packed from the freezing commit | `@hozu/*@0.28.0` from npm, exact versions in `package.json` and a committed lockfile | The published packages are what people install; their provenance replaces the tarball hashes |
+| One `claude -p` session per run | One isolated subagent per run (`claude-opus-5-5`, no shared context), started by the lead with only the arm's prompt | The lead's harness; each run still starts from the same copy and sees nothing else |
+| Weighted tokens | The subagent's reported token total | The harness reports one total per run; the cost target reads it the same way for both arms |
+| Requests saved by the trial author through DevTools | Saved through the real DevTools overlay under `hozu dev` on the frozen copy (port 4840), driven over the Chrome DevTools Protocol by a script that follows each change's scripted path, then committed with the copy | The same overlay code and request format; a script makes the path repeatable and is committed with the requests |
+| The designer role of ADR 0081 | Arm B is the designer role: its only input is what DevTools produced | ADR 0080 A3 shares this trial |
+
+Every other part (the ten changes, isolated sentence author, acceptance checks validated on a reference first,
+targets, reading the result) is unchanged. The record goes to `docs/trials/0023-devtools.md`.
