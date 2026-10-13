@@ -80,7 +80,7 @@ export const Home = ui.view({
     ui.main({ id: 'main' }, [
       ui.div({ class: 'relative overflow-hidden bg-paper' }, [
         ui.div({ class: 'mx-auto grid max-w-6xl gap-10 px-5 py-16 md:grid-cols-2 md:items-center' }, [
-          ui.div({}, [
+          ui.div({ class: 'min-w-0' }, [
             ui.use(Display, {}, [
               rise(t.word1, false),
               rise(t.word2, false),
@@ -113,7 +113,7 @@ export const Home = ui.view({
                         'flex items-center justify-between bg-ink px-3 py-2 text-sm font-bold text-paper',
                     },
                     [
-                      ui.span({ class: 'min-w-0 truncate' }, [t.askLine]),
+                      ui.span({ class: 'min-w-0' }, [t.askLine]),
                       is(['broken'])
                         ? ui.button(
                             {
@@ -148,7 +148,8 @@ export const Home = ui.view({
                   ui.div({ class: 'px-3 pt-2 pb-3' }, [
                     ui.span(
                       {
-                        class: 'inline-block border-4 border-ink px-4 py-1.5 text-sm font-black uppercase transition-colors duration-300',
+                        class:
+                          'inline-block border-4 border-ink px-4 py-1.5 text-sm font-black uppercase transition-colors duration-300',
                         toggle: { 'bg-green text-ink': ctx.tried, 'bg-ink text-paper': !ctx.tried },
                       },
                       [t.checkout],
