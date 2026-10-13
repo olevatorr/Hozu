@@ -60,3 +60,14 @@ DevTools still writes no source. Every change goes through the request and the a
   partial mode of proposal §3.4: without the reset until the app's own classes are clean.
 - **Two more releases before 1.0.** Each adds API (CLI flags, request item kinds) that 1.0 then freezes. That is the
   reason to land them before 1.0 rather than after.
+
+## 7. As built (before the candidate)
+- `hozu add kit ui --from official` copies the whole kit; an app whose classes still use Tailwind's palette, radii or
+  shadows gets the theme without its resets (`partial` in the lock) and a todo line until they move to the kit's roles.
+  `create-hozu --ui` writes the strict theme, a home page that uses the kit, and the package's pre-generated `tv.ts`.
+- `--sync` replaces a file only when the package changed it and the app did not; a file both changed is listed.
+- DevTools previews installed components live. A package component the app does not have is listed with its install
+  command and can be placed, but is not previewed: rendering the package beside the app is left for after 1.0.
+- `@hozu/ui-kit` is published from the public `hozu-ui` repository on a version tag, after the owner approves the npm
+  environment; its site is ui.hozu.org (GitHub Pages, built with Hozu).
+

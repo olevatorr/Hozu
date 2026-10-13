@@ -67,7 +67,7 @@ export const Notice = ui.component({
   render: ({ props, on, classes }) =>
     ui.div({ role: 'status', 'aria-live': 'polite', 'data-tone': props.tone }, [
       ui.p({ class: classes.message }, [props.message]),
-      ui.button({ type: 'button', class: classes.close, 'aria-label': props.closeLabel, keys: ['Escape'], on: { click: on.dismiss } }, [
+      ui.button({ type: 'button', class: classes.close, 'aria-label': props.closeLabel, on: { click: on.dismiss } }, [
         ui.svg({ class: classes.closeIcon, viewBox: '0 0 24 24', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' }, [ui.path({ d: x })]),
       ]),
     ]),
