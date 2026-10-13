@@ -16,7 +16,7 @@ import {
   scopesFor,
 } from '../prompt.ts'
 import { held, hold, node, one, page, remove, save, saved, theme, tree } from './api.ts'
-import { assetsBoard, type Catalogued } from './assets.ts'
+import { assetsBoard, type Catalogued, dragLabel } from './assets.ts'
 import { h, read, write } from './dom.ts'
 import { beside, dragger } from './drop.ts'
 import { drawer } from './effects.ts'
@@ -490,14 +490,56 @@ async function checkFinished() {
   drawPicks()
 }
 
+const pendingPicks = new Map<string, Pick>()
+
 function drawPending() {
-  const items = drafted().flatMap((p, i) =>
-    p.add && p.id && !(p.request && finished.has(p.request))
-      ? [{ id: p.id, index: p.index, add: p.add, number: i + 1 }]
-      : [],
+  const picks = drafted().flatMap((p, i) =>
+    p.add && p.id && !(p.request && finished.has(p.request)) ? [{ pick: p, number: i + 1 }] : [],
   )
+  const items = picks.map(({ pick, number }) => ({
+    id: pick.id,
+    index: pick.index,
+    add: pick.add!,
+    number,
+  }))
   const keys = pendingKeys(items)
+  pendingPicks.clear()
+  picks.forEach(({ pick }, i) => pendingPicks.set(keys[i] ?? '', pick))
   pending.sync(items.map((item, i) => ({ ...item, key: keys[i] ?? '' })))
+}
+
+/** Drags a pending component to another place: its request item follows, the note stays. */
+function movePending(down: PointerEvent, key: string, el: HTMLElement) {
+  const pick = pendingPicks.get(key)
+  const add = pick?.add
+  if (!pick || !add) return
+  drag.start(down, el, add, dragLabel(add.component.split('.').pop() ?? add.component, add.variant), {
+    begin: () => pending.moving(key),
+    end: (to) => {
+      pending.moving(null)
+      if (!to) return
+      pick.id = to.el.getAttribute('data-hz') ?? pick.id
+      pick.index = indexOf(to.el)
+      pick.visible = visibleOf(to.el)
+      pick.add = { ...add, position: to.position }
+      persist()
+      drawPicks()
+      void renderPanel()
+    },
+  })
+}
+
+/** A click where nothing is marked: the selection goes, like clicking the canvas in Figma; drafts stay. */
+function deselect() {
+  const kept = state.picks.filter(hasContent)
+  if (kept.length === state.picks.length && state.panel !== 'inspector') return
+  state.picks = kept
+  state.active = Math.max(0, kept.length - 1)
+  if (state.panel === 'inspector') state.panel = null
+  persist()
+  drawPicks()
+  renderDock()
+  void renderPanel()
 }
 
 function drawPicks() {
@@ -609,15 +651,23 @@ function listen(target: Window): AbortController {
     target.addEventListener(
       type,
       (event) => {
+        if (type === 'pointerdown') drag.dismiss(event)
+        if (type === 'pointerdown' && !ours(event)) {
+          const press = event as PointerEvent
+          const hit = press.button === 0 ? pending.at(press.clientX, press.clientY) : null
+          if (hit) {
+            event.stopImmediatePropagation()
+            return movePending(press, hit.item.key, hit.el)
+          }
+        }
         if (state.mode !== 'select' || ours(event) || drag.holding()) return
         event.preventDefault()
         event.stopImmediatePropagation()
         if (type === 'dblclick') void selectText(event as MouseEvent)
         if (type !== 'click') return
         const mouse = event as MouseEvent
-        const clicked = markedFrom(event)
-        const el = clicked
-        if (!el) return
+        const el = markedFrom(event)
+        if (!el) return deselect()
         select(
           { id: el.getAttribute('data-hz') ?? '', index: indexOf(el), visible: visibleOf(el) },
           mouse.shiftKey,
@@ -2108,6 +2158,49 @@ const left = h('div', { class: 'bench-left' })
 const stage = h('div', { class: 'stage' })
 const sizer = h('div', { class: 'sizer' })
 const bar = h('div', { class: 'bench-bar' })
+const menu = h('div', { class: 'bar-menu', role: 'menu', popover: 'auto', onclick: () => menu.hidePopover() })
+const more = h(
+  'button',
+  {
+    class: 'act more',
+    type: 'button',
+    'aria-haspopup': 'menu',
+    'aria-label': t('bench.more'),
+    title: t('bench.more'),
+    onclick: () => {
+      const r = more.getBoundingClientRect()
+      menu.style.top = `${r.bottom + 6}px`
+      menu.style.right = `${Math.max(8, innerWidth - r.right)}px`
+      menu.togglePopover()
+    },
+  },
+  ['⋯', h('span', { class: 'count' })],
+)
+let barExtras: HTMLElement[] = []
+new ResizeObserver(() => fitBar()).observe(bar)
+
+/** Keeps the bar on one row: the least needed buttons go into More, then the logo and the size, as space runs out. */
+function fitBar() {
+  if (!bar.isConnected) return
+  for (const el of barExtras) more.before(el)
+  more.hidden = true
+  bar.classList.remove('tight')
+  const over = () => bar.scrollWidth > bar.clientWidth + 1
+  const changes = barExtras.find((el) => el.dataset.extra === '4')
+  const count = more.querySelector('.count')
+  if (count) count.textContent = ''
+  if (!over()) return
+  more.hidden = false
+  if (count) count.textContent = changes?.querySelector('.count')?.textContent ?? ''
+  const ranked = [...barExtras].sort((a, b) => Number(a.dataset.extra) - Number(b.dataset.extra))
+  for (const el of ranked) {
+    menu.append(el)
+    if (!over()) break
+  }
+  for (const el of barExtras) if (el.parentElement === menu) menu.append(el)
+  if (count && changes?.parentElement !== menu) count.textContent = ''
+  if (over()) bar.classList.add('tight')
+}
 
 addEventListener(
   'keydown',
@@ -2143,6 +2236,7 @@ function layout() {
   frameEl.style.transform = `scale(${scale})`
   const size = bar.querySelector('[data-size]')
   if (size) size.textContent = `${width} × ${height}${scale < 1 ? ` · ${Math.round(scale * 100)}%` : ''}`
+  fitBar()
 }
 
 function setDevice(device: State['device']) {
@@ -2188,6 +2282,7 @@ function renderBar() {
         : h('option', { value: 'Custom', selected: true }, [t('bench.custom')]),
     ],
   )
+  menu.replaceChildren()
   bar.replaceChildren(
     ...present([
       h('div', { class: 'grip' }, [h('img', { src: logo, alt: 'Hozu', width: '18', height: '18' })]),
@@ -2230,6 +2325,7 @@ function renderBar() {
         {
           class: 'act',
           type: 'button',
+          'data-extra': '4',
           onclick: () =>
             open(state.panel === 'changes' ? null : 'changes', null, drafted().length ? 'draft' : 'saved'),
         },
@@ -2243,6 +2339,7 @@ function renderBar() {
         {
           class: 'act gear',
           type: 'button',
+          'data-extra': '3',
           'aria-label': t('dock.settings'),
           onclick: () => open(state.panel === 'settings' ? null : 'settings'),
         },
@@ -2253,6 +2350,7 @@ function renderBar() {
         {
           class: 'act',
           type: 'button',
+          'data-extra': '1',
           title: t('bench.api.title'),
           'aria-pressed': api.isOpen() ? 'true' : 'false',
           onclick: () => api.toggle(),
@@ -2264,14 +2362,19 @@ function renderBar() {
         {
           class: 'act',
           type: 'button',
+          'data-extra': '2',
           title: t('dock.assets.title'),
           onclick: () => void assets.open(),
         },
         [t('dock.assets')],
       ),
+      more,
+      menu,
       h('button', { class: 'act exit', type: 'button', onclick: () => closeBench() }, [t('bench.exit')]),
     ]),
   )
+  barExtras = [...bar.querySelectorAll<HTMLElement>('[data-extra]')]
+  fitBar()
 }
 
 async function renderLeft() {

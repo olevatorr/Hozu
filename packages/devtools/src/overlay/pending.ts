@@ -20,6 +20,7 @@ const shell = `<style>
 :host { display: block; width: fit-content; max-width: 100%; position: relative; pointer-events: none;
   outline: 2px dashed #fb3a0e; outline-offset: 4px; border-radius: 2px; }
 ::slotted(*) { pointer-events: none; }
+:host([data-hozu-drop-preview]) { opacity: 0.55; }
 .tag { position: absolute; top: -8px; right: -8px; transform: translateY(-100%); white-space: nowrap;
   background: #fb3a0e; color: #fff; font: 600 11px/1.2 system-ui, -apple-system, sans-serif; padding: 3px 7px;
   border-radius: 999px; }
@@ -71,6 +72,54 @@ function label(el: HTMLElement, number: number) {
   if (tag) tag.textContent = t('drop.pending', { n: number })
 }
 
+const within = (el: Element | null | undefined, x: number, y: number) => {
+  const r = el?.getBoundingClientRect()
+  return !!r && r.width > 0 && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
+}
+
+/** The component a drag carries, shown where it would land until the drag or its note ends. */
+export function dropPreview() {
+  let el: HTMLElement | null = null
+  let html: string | null = null
+  let turn = 0
+  return {
+    show(add: Addition, at: Element) {
+      const mine = ++turn
+      void htmlOf(add).then((found) => {
+        if (mine !== turn || found === null || !at.isConnected) return
+        if (!el || html !== found || el.ownerDocument !== at.ownerDocument) {
+          el?.remove()
+          el = build(at.ownerDocument, found)
+          html = found
+          el.setAttribute('data-hozu-drop-preview', '')
+          const tag = el.shadowRoot?.querySelector('.tag')
+          if (tag) tag.textContent = t('drop.here')
+        }
+        if (placed(at, add.position, [el])) return
+        if (add.position === 'before') at.before(el)
+        else if (add.position === 'after') at.after(el)
+        else at.append(el)
+      })
+    },
+    clear() {
+      turn++
+      el?.remove()
+      el = null
+    },
+    /** Runs `look` against the page without the preview, so the place under the pointer stays where it was. */
+    without<T>(look: () => T): T {
+      const shown = el
+      if (!shown) return look()
+      shown.style.display = 'none'
+      try {
+        return look()
+      } finally {
+        shown.style.display = ''
+      }
+    },
+  }
+}
+
 /** Whether `els` already sit at `position` of `anchor`, in order. */
 function placed(anchor: Element, position: Addition['position'], els: HTMLElement[]): boolean {
   const first = els[0]
@@ -91,6 +140,7 @@ export function pendingPreviews(host: { doc: () => Document }) {
   let wanted: PendingItem[] = []
   let observed: Document | null = null
   let queued = false
+  let moving: string | null = null
   const observer = new MutationObserver(() => {
     if (shown.size) schedule()
   })
@@ -165,11 +215,22 @@ export function pendingPreviews(host: { doc: () => Document }) {
           if (html === null || observed !== doc || !now || shown.has(item.key)) return
           const el = build(doc, html)
           label(el, now.number)
+          if (moving === item.key) el.style.display = 'none'
           shown.set(item.key, { el, item: now })
           place()
         })
       }
       schedule()
+    },
+    /** The pending component under the point, in the page's coordinates: the only part a drag can move. */
+    at(x: number, y: number): { item: PendingItem; el: HTMLElement } | null {
+      for (const entry of shown.values()) if (within(entry.el, x, y)) return entry
+      return null
+    },
+    /** Hides the pending component being moved (null shows it again). */
+    moving(key: string | null) {
+      moving = key
+      for (const [k, { el }] of shown) el.style.display = k === key ? 'none' : ''
     },
   }
 }

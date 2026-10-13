@@ -327,6 +327,84 @@ describe.skipIf(!findBrowser())('Workbench in a real browser (ADR 0047 P3)', () 
     }
   })
 
+  it('the toolbar stays one row inside its column; what does not fit goes into More', async () => {
+    const viewport = (width: number) =>
+      cdp.send(
+        'Emulation.setDeviceMetricsOverride',
+        { width, height: 900, deviceScaleFactor: 1, mobile: false },
+        session,
+      )
+    const fits = () =>
+      tool(`(() => {
+        const bar = $('.bench-bar').getBoundingClientRect()
+        const panel = $('.panel').getBoundingClientRect()
+        const items = [...$('.bench-bar').children].filter((c) => c.getClientRects().length && !c.matches('.bar-menu'))
+        const rows = new Set(items.map((c) => { const r = c.getBoundingClientRect(); return Math.round(r.top + r.height / 2) > bar.top + 22 ? 2 : 1 }))
+        const out = items.filter((c) => { const r = c.getBoundingClientRect(); return r.left < bar.left || r.right > bar.right || r.top < bar.top || r.bottom > bar.bottom })
+        return { rows: rows.size, clipped: out.map((c) => c.textContent), underPanel: bar.right > panel.left + 1, exit: items.at(-1).textContent }
+      })()`)
+    try {
+      for (const width of [1280, 1440, 1920])
+        for (const device of ['Phone', 'Tablet', 'Laptop']) {
+          await viewport(width)
+          await tool(
+            `(() => { const s = $('.bench-bar select'); s.value = ${JSON.stringify(device)}; s.dispatchEvent(new Event('change')) })()`,
+          )
+          await new Promise((r) => setTimeout(r, 100))
+          expect({ width, device, ...(await fits()) }).toEqual({
+            width,
+            device,
+            rows: 1,
+            clipped: [],
+            underPanel: false,
+            exit: 'Exit frame',
+          })
+        }
+      await viewport(1920)
+      expect(await tool(`$('.bench-bar .more').hidden`)).toBe(true)
+      await viewport(1280)
+      await until(
+        `!document.querySelector('hozu-devtools').shadowRoot.querySelector('.bench-bar .more').hidden`,
+      )
+      const inMenu = () =>
+        tool(`[...$('.bar-menu').children].map((c) => c.getAttribute('aria-label') ?? c.textContent)`)
+      expect(await inMenu()).toContain('API')
+      const at = await tool(
+        `(() => { const r = $('.bench-bar .more').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 } })()`,
+      )
+      for (const type of ['mousePressed', 'mouseReleased'])
+        await cdp.send(
+          'Input.dispatchMouseEvent',
+          { type, x: at.x, y: at.y, button: 'left', clickCount: 1 },
+          session,
+        )
+      await until(
+        `document.querySelector('hozu-devtools').shadowRoot.querySelector('.bar-menu').matches(':popover-open')`,
+      )
+      const r = await tool(
+        `(() => { const m = $('.bar-menu').getBoundingClientRect(); return m.right <= innerWidth && m.top > 0 })()`,
+      )
+      expect(r).toBe(true)
+      await tool(`[...$('.bar-menu').children].find((c) => c.textContent === 'API').click()`)
+      await until(
+        `!document.querySelector('hozu-devtools').shadowRoot.querySelector('.bar-menu').matches(':popover-open')`,
+      )
+      await until(`!document.querySelector('hozu-devtools').shadowRoot.querySelector('.api').hidden`)
+      await tool(`[...$('.bar-menu').children].find((c) => c.textContent === 'API').click()`)
+      await until(`document.querySelector('hozu-devtools').shadowRoot.querySelector('.api').hidden`)
+    } finally {
+      await tool(
+        `(() => { const s = $('.bench-bar select'); s.value = 'Phone'; s.dispatchEvent(new Event('change')) })()`,
+      )
+      await cdp.send(
+        'Emulation.setDeviceMetricsOverride',
+        { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false },
+        session,
+      )
+    }
+    expect(errors).toEqual([])
+  })
+
   it('Exit returns to the overlay on the same page', async () => {
     await shadowClick('.bench-bar .act', 'Exit frame')
     await until(`!document.querySelector('hozu-devtools').shadowRoot.querySelector('iframe')`)

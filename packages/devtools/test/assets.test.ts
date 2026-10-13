@@ -44,20 +44,25 @@ describe('Assets: parts, icons and the end of a drag', () => {
   })
 
   it('keeps swallowing the page’s clicks when the click that ends the drag goes to the drag handle', () => {
+    const tools = document.createElement('aside')
     const handle = document.createElement('figure')
+    const other = document.createElement('button')
     const link = document.createElement('a')
+    tools.append(handle, other)
     let page = 0
+    let tile = 0
     let ui = 0
-    handle.addEventListener('click', () => ui++)
+    handle.addEventListener('click', () => tile++)
+    other.addEventListener('click', () => ui++)
     link.addEventListener('click', () => page++)
-    document.body.append(handle, link)
-    const guard = gestureGuard(() => [window], { ui: (e) => e.composedPath().includes(handle) })
-    guard.hold()
+    document.body.append(tools, link)
+    const guard = gestureGuard(() => [window], { ui: (e) => e.composedPath().includes(tools) })
+    guard.hold(handle)
     guard.settle()
     handle.click()
-    expect(ui).toBe(0)
+    expect(tile).toBe(0)
     expect(guard.holding()).toBe(true)
-    handle.click()
+    other.click()
     expect(ui).toBe(1)
     const late = new MouseEvent('click', { bubbles: true, cancelable: true })
     link.dispatchEvent(late)

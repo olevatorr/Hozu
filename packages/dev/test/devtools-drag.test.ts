@@ -305,7 +305,10 @@ describe.skipIf(!findBrowser())('Assets docked beside the page, components dragg
     await press('.dock .mode', 'Browse')
     await until(`!!document.querySelector('main ul li a')`)
     await evaluate(`document.querySelector('main').style.marginLeft = '0'`)
-    const status = () => evaluate(`document.querySelector('main ul li').textContent`)
+    const status = () =>
+      evaluate(
+        `(() => { const li = document.querySelector('main ul li').cloneNode(true); li.querySelector('[data-hozu-drop-preview]')?.remove(); return li.textContent })()`,
+      )
     const before = await status()
     await dropOn('[data-component="ui.Badge"] .tile', 'main ul li a')
     expect(await evaluate('location.pathname')).toBe('/')
@@ -326,6 +329,136 @@ describe.skipIf(!findBrowser())('Assets docked beside the page, components dragg
         session,
       )
     await until(`document.querySelector('main ul li').textContent !== ${JSON.stringify(before)}`)
+    expect(errors).toEqual([])
+  }, 40_000)
+
+  const clickAt = async (at: { x: number; y: number }) => {
+    await mouse('mouseMoved', at.x, at.y, false)
+    for (const type of ['mousePressed', 'mouseReleased']) await mouse(type, at.x, at.y, true)
+  }
+  /** A point of the page with no marked part under it (and no DevTools). */
+  const emptySpot = async () =>
+    (await evaluate(`(() => {
+      for (let y = innerHeight - 10; y > 10; y -= 10)
+        for (let x = 10; x < innerWidth / 2; x += 10) {
+          const el = document.elementFromPoint(x, y)
+          if (el && !el.closest('[data-hz], hozu-devtools, hozu-devtools-outline')) return { x, y }
+        }
+      return null
+    })()`)) as { x: number; y: number }
+  const preview = `document.querySelector('[data-hozu-drop-preview]')`
+  const pressEscape = async () => {
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape' }, session)
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape' }, session)
+  }
+
+  it('a click where nothing is marked clears the selection; a click outside the drop note cancels it', async () => {
+    await fresh()
+    await press('.dock .mode', 'Select')
+    const empty = await emptySpot()
+    expect(empty).not.toBeNull()
+    await clickAt(await centre('h1'))
+    await until(`!${shadow}.querySelector('.panel').hidden`)
+    await until(`!!${outline}.querySelector('.box.selected:not([hidden])')`)
+    await clickAt(empty)
+    await until(`!${outline}.querySelector('.box.selected:not([hidden])')`)
+    expect(await evaluate(`${shadow}.querySelector('.panel').hidden`)).toBe(true)
+
+    await dropOn('[data-component="ui.Badge"] .tile', 'h1')
+    await until(`!!${preview}`)
+    await clickAt(empty)
+    await until(`${shadow}.querySelector('.drop-note').hidden`)
+    expect(await evaluate(`!!${preview}`)).toBe(false)
+    expect(await evaluate(`document.querySelectorAll('[data-hozu-pending]').length`)).toBe(0)
+    expect(await evaluate(`${shadow}.querySelectorAll('.panel .item').length`)).toBe(0)
+    expect(errors).toEqual([])
+  }, 40_000)
+
+  it('while dragging, the component shows where it would land; Escape takes it away', async () => {
+    await fresh()
+    const h1 = (await evaluate(
+      `(() => { const r = document.querySelector('h1').getBoundingClientRect(); return { x: r.x + 40, top: r.top + 3, bottom: r.bottom - 3 } })()`,
+    )) as { x: number; top: number; bottom: number }
+    await dragTo('[data-component="ui.Badge"] .tile', { x: h1.x, y: h1.bottom })
+    await until(
+      `(${outline}.querySelector('[data-drop-label]')?.textContent ?? '').startsWith('Place after')`,
+    )
+    await until(`document.querySelector('h1').nextElementSibling === ${preview}`)
+    expect(
+      await evaluate(`(() => {
+        const p = ${preview}
+        return { tag: p.shadowRoot.querySelector('.tag').textContent, pending: p.hasAttribute('data-hozu-pending'), text: p.textContent }
+      })()`),
+    ).toEqual({ tag: 'Drop here', pending: false, text: 'Badge' })
+    await mouse('mouseMoved', h1.x, h1.top, true)
+    await until(
+      `(${outline}.querySelector('[data-drop-label]')?.textContent ?? '').startsWith('Place before')`,
+    )
+    await until(`document.querySelector('h1').previousElementSibling === ${preview}`)
+    expect(await evaluate(`document.querySelectorAll('[data-hozu-drop-preview]').length`)).toBe(1)
+    await pressEscape()
+    await until(`!${preview}`)
+    await mouse('mouseReleased', h1.x, h1.top, true)
+    expect(await evaluate(`${shadow}.querySelector('.drop-note').hidden`)).toBe(true)
+
+    await dragTo('[data-component="ui.Badge"] .tile', { x: h1.x, y: h1.bottom })
+    await until(`document.querySelector('h1').nextElementSibling === ${preview}`)
+    await mouse('mouseReleased', h1.x, h1.bottom, true)
+    await until(`!${shadow}.querySelector('.drop-note').hidden`)
+    expect(await evaluate(`document.querySelector('h1').nextElementSibling === ${preview}`)).toBe(true)
+    await evaluate(`${shadow}.querySelector('[data-drop-cancel]').click()`)
+    expect(await evaluate(`!!${preview}`)).toBe(false)
+    expect(errors).toEqual([])
+  }, 40_000)
+
+  it('a pending component drags to a new place: its request item follows, without a new note', async () => {
+    await fresh()
+    const h1 = (await evaluate(
+      `(() => { const r = document.querySelector('h1').getBoundingClientRect(); return { x: r.x + 40, top: r.top + 3, bottom: r.bottom - 3 } })()`,
+    )) as { x: number; top: number; bottom: number }
+    await dragTo('[data-component="ui.Badge"] .tile', { x: h1.x, y: h1.bottom })
+    await until(`document.querySelector('h1').nextElementSibling === ${preview}`)
+    await mouse('mouseReleased', h1.x, h1.bottom, true)
+    await until(`!${shadow}.querySelector('.drop-note').hidden`)
+    await evaluate(
+      `(() => { const n = ${shadow}.querySelector('.drop-note textarea'); n.value = 'Shows the count' })()`,
+    )
+    await addNote()
+    await until(`!!document.querySelector('h1').nextElementSibling?.matches('[data-hozu-pending]')`)
+    expect(await evaluate(`!!${preview}`)).toBe(false)
+
+    const from = await centre('[data-hozu-pending]')
+    await mouse('mouseMoved', from.x, from.y, false)
+    await mouse('mousePressed', from.x, from.y, true)
+    for (let i = 1; i <= 8; i++)
+      await mouse(
+        'mouseMoved',
+        from.x + ((h1.x - from.x) * i) / 8,
+        from.y + ((h1.top - from.y) * i) / 8,
+        true,
+      )
+    await until(
+      `(${outline}.querySelector('[data-drop-label]')?.textContent ?? '').startsWith('Place before')`,
+    )
+    expect(await evaluate(`document.querySelector('[data-hozu-pending]').style.display`)).toBe('none')
+    await until(`document.querySelector('h1').previousElementSibling === ${preview}`)
+    await mouse('mouseReleased', h1.x, h1.top, true)
+    await until(`!!document.querySelector('h1').previousElementSibling?.matches('[data-hozu-pending]')`)
+    expect(await evaluate(`${shadow}.querySelector('.drop-note').hidden`)).toBe(true)
+    expect(await evaluate(`!!${preview}`)).toBe(false)
+    expect(await evaluate(`document.querySelectorAll('[data-hozu-pending]').length`)).toBe(1)
+    expect(await evaluate(`document.querySelector('[data-hozu-pending]').style.display`)).toBe('')
+    await until(`${shadow}.querySelector(".panel .item")?.textContent.includes("before <h1")`)
+    const text = await copied()
+    expect(text).toContain('## 1. Add <ui.Badge> before <h1 "Team tasks">\n- Want: Shows the count\n')
+
+    const h = await centre('h1')
+    await mouse('mouseMoved', h.x, h.y, false)
+    await mouse('mousePressed', h.x, h.y, true)
+    await mouse('mouseMoved', h.x, h.y + 60, true)
+    await mouse('mouseReleased', h.x, h.y + 60, true)
+    expect(await evaluate(`${outline}.querySelector('.drop').hidden`)).toBe(true)
+    expect(await evaluate(`${shadow}.querySelector('.drag-ghost').hidden`)).toBe(true)
     expect(errors).toEqual([])
   }, 40_000)
 
