@@ -1,11 +1,21 @@
 import type { DevComponent, IsolatedUse } from '@hozu/core/ir'
 import { t } from '../messages.ts'
+import type { Addition } from '../prompt.ts'
 import type { Theme } from '../theme.ts'
 import { h } from './dom.ts'
 
 export interface Catalogued extends DevComponent {
   previews: { name: string; use: IsolatedUse }[]
 }
+
+export interface Official {
+  kit: string | null
+  version: string | null
+  partial: boolean
+  available: { name: string; file: string; installed: boolean }[]
+}
+
+type Available = Official['available'][number]
 
 export interface Screens {
   pages: { route: string; path: string; previews: { name: string }[] }[]
@@ -19,6 +29,10 @@ export interface AssetsHost {
   show(component: Catalogued): void
   /** Adds "change the main component" to the request, with the note. */
   change(component: Catalogued, note: string): void
+  /** The part selected on the page, named for the person, or null. */
+  selection(): Promise<string | null>
+  /** Adds "place this component at the selected part" to the request (ADR 0089 P5). */
+  place(add: Addition, note: string): void
   /** Opens a page preview: the page with its queries answered by `previews.ts`. */
   screen(route: string, path: string, name: string): void
 }
@@ -50,6 +64,9 @@ export function tilesOf(c: Catalogued): Tile[] {
   return tiles
 }
 
+export const installCommand = (kit: string, name: string) =>
+  `npx hozu add component ${kit} ${name} --from official`
+
 const schemaRows = (props: Catalogued['props']) =>
   Object.entries((props.properties ?? {}) as Record<string, { type?: unknown; enum?: unknown[] }>).map(
     ([k, s]) => [k, Array.isArray(s.enum) ? s.enum.map(String).join(' | ') : String(s.type ?? 'any')],
@@ -61,6 +78,9 @@ export function assetsBoard(host: AssetsHost) {
     board.addEventListener(type, (event) => event.stopPropagation())
   let tab: 'components' | 'styles' = 'components'
   let catalog: Catalogued[] = []
+  let official: Official = { kit: null, version: null, partial: false, available: [] }
+  let pending: Available | null = null
+  let selected: string | null = null
   let screens: Screens = { pages: [] }
   let query = ''
   let detail: Catalogued | null = null
@@ -134,9 +154,11 @@ export function assetsBoard(host: AssetsHost) {
     cards.set(c.id, made)
     return made
   }
+  const isOfficial = (c: Catalogued) => c.owner.kind === 'kit' && c.owner.id === official.kit
   const cardOf = (c: Catalogued) =>
-    h('section', { class: 'asset', 'data-component': c.id }, [
+    h('section', { class: isOfficial(c) ? 'asset official' : 'asset', 'data-component': c.id }, [
       h('div', { class: 'asset-head' }, [
+        isOfficial(c) ? h('span', { class: 'chip' }, [t('assets.official.mark')]) : null,
         h(
           'button',
           {
@@ -144,6 +166,7 @@ export function assetsBoard(host: AssetsHost) {
             type: 'button',
             onclick: () => {
               detail = c
+              pending = null
               void render()
             },
           },
@@ -167,30 +190,119 @@ export function assetsBoard(host: AssetsHost) {
       ),
     ])
 
+  const placeSection = (target: {
+    id: string
+    variants: Record<string, string[]>
+    defaults: Record<string, string>
+    install: string | null
+    file: string | null
+  }) => {
+    if (!selected)
+      return [
+        h('div', { class: 'label' }, [t('assets.place')]),
+        h('p', { class: 'hint-text', 'data-place-first': true }, [t('assets.place.first')]),
+      ]
+    const chosen: Record<string, string> = {}
+    const note = h('textarea', {
+      rows: '2',
+      placeholder: t('assets.place.placeholder'),
+      'aria-label': t('assets.place.aria'),
+    }) as HTMLTextAreaElement
+    const variant = () =>
+      Object.fromEntries(Object.entries(chosen).filter(([dim, value]) => value !== target.defaults[dim]))
+    return [
+      h('div', { class: 'label' }, [t('assets.place')]),
+      h('p', {}, [t('assets.place.at', { part: selected })]),
+      ...Object.entries(target.variants).map(([dim, values]) =>
+        h('label', { class: 'place-variant' }, [
+          `${dim} `,
+          h(
+            'select',
+            {
+              'data-dim': dim,
+              onchange: (e) => {
+                chosen[dim] = (e.target as HTMLSelectElement).value
+              },
+            },
+            values.map((v) => h('option', { value: v, selected: v === target.defaults[dim] }, [v])),
+          ),
+        ]),
+      ),
+      note,
+      h(
+        'div',
+        { class: 'place-actions' },
+        (['before', 'after', 'inside'] as const).map((position) =>
+          h(
+            'button',
+            {
+              class: 'act',
+              type: 'button',
+              'data-place': position,
+              onclick: () =>
+                host.place(
+                  {
+                    component: target.id,
+                    variant: variant(),
+                    position,
+                    install: target.install,
+                    file: target.file,
+                  },
+                  note.value.trim(),
+                ),
+            },
+            [t(`assets.place.${position}`)],
+          ),
+        ),
+      ),
+    ]
+  }
+
+  const back = () =>
+    h(
+      'button',
+      {
+        class: 'link',
+        type: 'button',
+        onclick: () => {
+          detail = null
+          pending = null
+          void render()
+        },
+      },
+      [t('assets.back')],
+    )
+
+  const pendingView = (a: Available) => {
+    const kit = official.kit ?? 'ui'
+    const install = installCommand(kit, a.name)
+    return h('aside', { class: 'asset-detail' }, [
+      back(),
+      h('h2', {}, [a.name]),
+      h('p', { class: 'hint-text' }, [t('assets.official.notInstalled', { file: `${kit}/${a.file}` })]),
+      h('code', { class: 'command' }, [install]),
+      ...placeSection({
+        id: `${kit}.${a.name}`,
+        variants: {},
+        defaults: {},
+        install,
+        file: `${kit}/${a.file}`,
+      }),
+    ])
+  }
+
   const detailView = (c: Catalogued) => {
     const note = h('textarea', {
       rows: '3',
-      placeholder: c.uses.length ? t('assets.change.placeholder', { name: c.name }) : t('assets.unused'),
+      placeholder: t('assets.change.placeholder', { name: c.name }),
       'aria-label': t('assets.change.aria', { name: c.name }),
-      disabled: c.uses.length === 0,
       oninput: (e) => {
         const add = (e.target as HTMLElement).parentElement?.querySelector<HTMLButtonElement>('[data-add]')
         if (add) add.disabled = !(e.target as HTMLTextAreaElement).value.trim()
       },
     }) as HTMLTextAreaElement
     return h('aside', { class: 'asset-detail' }, [
-      h(
-        'button',
-        {
-          class: 'link',
-          type: 'button',
-          onclick: () => {
-            detail = null
-            void render()
-          },
-        },
-        [t('assets.back')],
-      ),
+      back(),
       h('h2', {}, [c.name]),
       h('p', { class: 'hint-text' }, [
         t(c.owner.kind === 'kit' ? 'assets.owner.kit' : 'assets.owner.feature', { id: c.owner.id }),
@@ -210,6 +322,13 @@ export function assetsBoard(host: AssetsHost) {
       c.uses.length
         ? h('button', { class: 'act', type: 'button', onclick: () => host.show(c) }, [t('assets.show')])
         : null,
+      ...placeSection({
+        id: c.id,
+        variants: c.variants,
+        defaults: c.defaults,
+        install: null,
+        file: c.location?.file ?? null,
+      }),
       h('div', { class: 'label' }, [t('assets.change')]),
       note,
       h(
@@ -303,18 +422,68 @@ export function assetsBoard(host: AssetsHost) {
         ])
       : null
 
+  const officialHead = () =>
+    official.kit
+      ? null
+      : h('p', { class: 'hint-text official-none' }, [
+          t('assets.official.none'),
+          ' ',
+          h('code', {}, ['npm install -D @hozu/ui-kit']),
+          ' · ',
+          h('code', {}, ['npx hozu add kit ui --from official']),
+        ])
+
+  const moreView = (q: string) => {
+    const kit = official.kit
+    if (!kit) return null
+    const more = official.available.filter((a) => !a.installed && (!q || a.name.toLowerCase().includes(q)))
+    if (!more.length) return null
+    return h('div', { class: 'official-more' }, [
+      h('div', { class: 'label' }, [t('assets.official.more', { count: more.length })]),
+      ...more.map((a) =>
+        h('div', { class: 'screen', 'data-available': a.name }, [
+          h(
+            'button',
+            {
+              class: 'asset-name',
+              type: 'button',
+              onclick: () => {
+                pending = a
+                detail = null
+                void render()
+              },
+            },
+            [h('b', {}, [a.name])],
+          ),
+          h('code', {}, [`${kit}/${a.file}`]),
+          h('code', { class: 'command' }, [installCommand(kit, a.name)]),
+        ]),
+      ),
+    ])
+  }
+
   const listBody = () => {
     const q = query.trim().toLowerCase()
     const shown = catalog.filter((c) => !q || c.id.toLowerCase().includes(q))
-    const owners = [...new Set(shown.map((c) => c.owner.id))]
+    const kit = official.kit
+    const owners = [...new Set([...(kit ? [kit] : []), ...shown.map((c) => c.owner.id)])]
+    const ownerLabel = (o: string) => {
+      const count = shown.filter((c) => c.owner.id === o).length
+      return o === kit
+        ? `${t('assets.official.title')} · ${o} · ${count}${official.version ? ` · ${official.version}` : ''}`
+        : `${o} · ${count}`
+    }
+    const more = moreView(q)
     return h('div', { class: 'assets-body' }, [
+      officialHead(),
       ...owners.map((o) =>
-        h('div', { class: 'owner' }, [
-          h('div', { class: 'label' }, [`${o} · ${shown.filter((c) => c.owner.id === o).length}`]),
+        h('div', { class: o === kit ? 'owner official' : 'owner' }, [
+          h('div', { class: 'label' }, [ownerLabel(o)]),
           ...shown.filter((c) => c.owner.id === o).map(card),
+          o === kit ? more : null,
         ]),
       ),
-      shown.length ? null : h('p', { class: 'hint-text' }, [t('assets.noMatch')]),
+      shown.length || more ? null : h('p', { class: 'hint-text' }, [t('assets.noMatch')]),
       q ? null : screensView(),
     ])
   }
@@ -361,11 +530,16 @@ export function assetsBoard(host: AssetsHost) {
           [t('assets.styles')],
         ),
       ]),
-      tab === 'components' && !detail ? search : null,
+      tab === 'components' && !detail && !pending ? search : null,
       h('button', { class: 'act', type: 'button', onclick: () => close() }, [t('common.close')]),
     ])
     if (tab === 'styles') {
       board.replaceChildren(head, h('div', { class: 'assets-body' }, [await styles()]))
+      return
+    }
+    if (detail || pending) selected = await host.selection()
+    if (pending) {
+      board.replaceChildren(head, h('div', { class: 'assets-body detail' }, [h('div'), pendingView(pending)]))
       return
     }
     if (detail) {
@@ -385,6 +559,7 @@ export function assetsBoard(host: AssetsHost) {
     board.hidden = false
     board.replaceChildren(h('p', { class: 'hint-text' }, [t('assets.loading')]))
     catalog = (await json<Catalogued[]>('/_hozu/dev/components')) ?? []
+    official = (await json<Official>('/_hozu/dev/official')) ?? official
     cards.clear()
     screens = (await json<Screens>('/_hozu/dev/previews')) ?? { pages: [] }
     await render()
@@ -392,6 +567,7 @@ export function assetsBoard(host: AssetsHost) {
   const close = () => {
     board.hidden = true
     detail = null
+    pending = null
   }
   return {
     board,

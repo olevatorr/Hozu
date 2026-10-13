@@ -5,6 +5,7 @@ import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { devPreviews, loadPreviews, renderUse } from '../previews.ts'
 import { DISPOSE_MS, disposeApps, importer, requireApp } from './app.ts'
+import { officialState } from './official.ts'
 
 interface Listening {
   listen(port: number, ...rest: [string, () => void] | [() => void]): unknown
@@ -51,6 +52,7 @@ export async function runServe(
               for (const p of problems) log(`${p.code} ${p.message} (previews are off)`)
               return devPreviews(loaded, build, set)
             })(),
+            official: () => officialState(root, Object.keys(build.ir.kits)),
             render: async (id: string, use: IsolatedUse) => {
               const { ok, html, problems } = await renderUse(loaded, id, use)
               return { ok, html, problems }

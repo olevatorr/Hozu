@@ -10,6 +10,7 @@ export {
   type DevEffect,
   type DevLocation,
   type DevNode,
+  type DevOfficial,
   type DevOptions,
   type DevPage,
   type DevPageTree,

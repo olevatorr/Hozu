@@ -16,7 +16,10 @@ export {
   replyMarkdown,
 } from './notes.ts'
 export {
+  type Addition,
+  type ComponentRef,
   type HozuRequest,
+  itemLabel,
   joinRequests,
   labelOf,
   openRequestsLine,

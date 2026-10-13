@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
+import type { DevOfficial } from '@hozu/core/ir'
 
 export const OFFICIAL = '@hozu/ui-kit'
 
@@ -168,3 +169,20 @@ export function syncFiles(
 
 export const allFiles = (catalog: Catalog) =>
   [...closure(catalog, Object.keys(catalog.files)), catalog.styles].sort()
+
+/** The kit installed from `@hozu/ui-kit` and the package's components, for DevTools (ADR 0089 P4). */
+export function officialState(root: string, kits: string[]): DevOfficial {
+  const kit = kits.find((id) => readLock(root, id)?.source === OFFICIAL) ?? null
+  const lock = kit ? readLock(root, kit) : null
+  const official = officialPackage(join(root, 'hozu.config.ts'))
+  return {
+    kit,
+    version: lock?.version ?? official?.version ?? null,
+    partial: !!lock?.partial,
+    available: official
+      ? Object.entries(official.catalog.files).flatMap(([file, f]) =>
+          f.components.map((name) => ({ name, file })),
+        )
+      : [],
+  }
+}

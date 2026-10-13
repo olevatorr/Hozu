@@ -12,6 +12,15 @@ export interface DevOptions {
   render?: (id: string, use: IsolatedUse) => Promise<{ ok: boolean; html: string; problems: string[] }>
   /** The app's `project({ previews })`, resolved to ids and query results (ADR 0058 H). */
   previews?: DevPreviews
+  /** The app's kit installed from `@hozu/ui-kit` and the package's components (ADR 0089 P4), read on each call. */
+  official?: () => DevOfficial
+}
+
+export interface DevOfficial {
+  kit: string | null
+  version: string | null
+  partial: boolean
+  available: { name: string; file: string }[]
 }
 
 export interface DevPreviews {

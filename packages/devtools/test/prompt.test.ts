@@ -425,4 +425,71 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
     expect(md).toContain('- Text: “Sign in” → “登入帳號”')
     expect(md).toContain('its text is message `account.signIn`')
   })
+
+  it('an Add item names the component, its variant and the place; one not installed says how to install it (ADR 0089 P6)', () => {
+    const anchor: DevNode = { ...base, component: null, excerpt: null }
+    const add = {
+      component: 'ui.Button',
+      variant: { intent: 'primary' },
+      position: 'after' as const,
+      install: 'npx hozu add component ui Button --from official',
+      file: 'ui/button.ts',
+    }
+    const md = requestMarkdown({
+      items: [{ ...item(anchor, 'A button that saves the draft'), visible: 'Save', add }],
+      context,
+    })
+    expect(md).toBe(
+      [
+        '# Hozu request: A button that saves the draft',
+        '',
+        'Page `/login` · 1280 × 800',
+        '',
+        `## 1. Add <ui.Button> { intent: 'primary' } after <button "Save">`,
+        '- Want: A button that saves the draft',
+        '- Where: `features/account/views.ts:38:12` (view `account.Login`)',
+        '- Install first: `npx hozu add component ui Button --from official`',
+        "- Mind: import it from `ui/button.ts`; place `ui.use(Button, { variant: { intent: 'primary' } }, [...])` after it, as a sibling; `hozu docs ui` lists its props and slots.",
+        '- Locate: `hozu why /features/account/views/Login/root/children/2/children/1`',
+        '',
+        'Run `hozu check` after the edits.',
+        '',
+      ].join('\n'),
+    )
+    const installed = requestMarkdown({
+      items: [{ ...item(anchor, ''), add: { ...add, variant: {}, position: 'inside', install: null } }],
+      context,
+    })
+    expect(installed).toContain('# Hozu request: Add <ui.Button> inside <button>')
+    expect(installed).not.toContain('Install first')
+    expect(installed).toContain('place `ui.use(Button, {}, [...])` inside it, as its last child')
+  })
+
+  it('a main component without a use points at its own file (ADR 0089 P6)', () => {
+    const main = {
+      node: null,
+      note: 'Rounder, the brand red',
+      scope: 'component' as const,
+      visible: '',
+      component: { id: 'ui.Button', file: 'ui/button.ts', line: 19 },
+    }
+    expect(requestMarkdown({ items: [main], context })).toBe(
+      [
+        '# Hozu request: Rounder, the brand red',
+        '',
+        'Page `/login` · 1280 × 800',
+        '',
+        '## 1. <ui.Button> · Main component',
+        '- Want: Rounder, the brand red',
+        '- Where: `ui/button.ts:19`',
+        "- Scope: every use (the component's own file)",
+        '- Mind: change its `tv()` styles or render in that file; uses keep their own class overrides.',
+        '- Locate: `hozu why ui.Button`',
+        '',
+        'Run `hozu check` after the edits.',
+        '',
+      ].join('\n'),
+    )
+    expect(titleOf([{ ...main, note: '' }])).toBe('Change <ui.Button> · Main component')
+  })
 })

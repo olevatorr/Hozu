@@ -2,7 +2,11 @@ import type { DevLocation, DevNode } from '@hozu/core/ir'
 import { type MessageKey, t } from '../messages.ts'
 import { describeFor, friendlyName, questionFor } from '../plain.ts'
 import {
+  type Addition,
+  anchorOf,
+  type ComponentRef,
   type HozuRequest,
+  itemLabel,
   joinRequests,
   labelOf,
   openRequestsLine,
@@ -31,6 +35,8 @@ interface Pick {
   visible: string
   style?: StyleChange[]
   text?: TextChange
+  add?: Addition
+  component?: ComponentRef
 }
 
 type Audience = 'builder' | 'developer'
@@ -159,11 +165,43 @@ const assets = assetsBoard({
   show: (c) => showInstances(c),
   change: (c, note) => {
     const first = c.uses[0]
-    if (!first) return
-    state.picks.push({ id: first.node, index: 0, note, scope: 'component', visible: '' })
+    state.picks.push(
+      first
+        ? { id: first.node, index: 0, note, scope: 'component', visible: '' }
+        : {
+            id: '',
+            index: 0,
+            note,
+            scope: 'component',
+            visible: '',
+            component: { id: c.id, file: c.location?.file ?? '', line: c.location?.line ?? 1 },
+          },
+    )
     state.active = state.picks.length - 1
     persist()
     assets.close()
+    renderDock()
+    open('changes', null, 'draft')
+  },
+  selection: async () => {
+    const p = state.picks[state.active]
+    const n = p?.id ? await node(p.id) : null
+    if (!p || !n) return null
+    return state.audience === 'builder'
+      ? `${friendlyName(n)}${p.visible ? ` “${p.visible.slice(0, 40)}”` : ''}`
+      : anchorOf(n, p.visible)
+  },
+  place: (add, note) => {
+    const at = state.picks[state.active]
+    if (!at?.id) return
+    const pick: Pick = { id: at.id, index: at.index, visible: at.visible, note, scope: 'this', add }
+    if (hasContent(at)) {
+      state.picks.push(pick)
+      state.active = state.picks.length - 1
+    } else state.picks[state.active] = pick
+    persist()
+    assets.close()
+    drawPicks()
     renderDock()
     open('changes', null, 'draft')
   },
@@ -420,11 +458,25 @@ function frame() {
   requestAnimationFrame(frame)
 }
 
-const hasContent = (p: Pick) => p.note.trim() !== '' || (p.style?.length ?? 0) > 0 || !!p.text
+const hasContent = (p: Pick) =>
+  p.note.trim() !== '' || (p.style?.length ?? 0) > 0 || !!p.text || !!p.add || !!p.component
+const pickName = (p: Pick, n: DevNode | null) =>
+  p.add || !n
+    ? itemLabel({
+        node: n,
+        note: '',
+        scope: 'this',
+        visible: p.visible,
+        ...(p.add ? { add: p.add } : {}),
+        ...(p.component ? { component: p.component } : {}),
+      })
+    : state.audience === 'builder'
+      ? friendlyName(n)
+      : labelOf(n)
 const drafted = () => state.picks.filter(hasContent)
 
 function select(pick: Omit<Pick, 'note' | 'scope'>, add: boolean) {
-  const same = (p: Pick) => p.id === pick.id && p.index === pick.index
+  const same = (p: Pick) => p.id === pick.id && p.index === pick.index && !p.add
   if (!add) state.picks = state.picks.filter((p) => hasContent(p) || same(p))
   const existing = state.picks.findIndex(same)
   if (existing >= 0) state.active = existing
@@ -1065,19 +1117,21 @@ function copyLater(text: Promise<string>): Promise<void> {
 async function request(): Promise<HozuRequest> {
   const active = state.picks[state.active]
   const chosen = drafted().length ? drafted() : active ? [active] : []
-  const nodes = await Promise.all(chosen.map((p) => node(p.id)))
+  const nodes = await Promise.all(chosen.map((p) => (p.id ? node(p.id) : null)))
   return {
     items: chosen.flatMap((p, i) => {
-      const n = nodes[i]
-      return n
+      const n = nodes[i] ?? null
+      return n || p.component
         ? [
             {
               node: n,
               note: p.note,
-              scope: p.scope ?? scopesFor(n)[0]!.scope,
+              scope: p.scope ?? (n ? scopesFor(n)[0]!.scope : 'component'),
               visible: p.visible,
               style: p.style ?? [],
               ...(p.text ? { text: p.text } : {}),
+              ...(p.add ? { add: p.add } : {}),
+              ...(p.component ? { component: p.component } : {}),
             },
           ]
         : []
@@ -1319,6 +1373,32 @@ function textFor(n: DevNode, active: Pick) {
   })
 }
 
+function mainComponentPanel(active: Pick, c: ComponentRef) {
+  const note = h('textarea', {
+    'aria-label': t('change.aria'),
+    placeholder: t('change.placeholder'),
+    oninput: (event) => {
+      active.note = (event.target as HTMLTextAreaElement).value
+      persist()
+    },
+  }) as HTMLTextAreaElement
+  note.value = active.note
+  return [
+    h('div', { class: 'head' }, [
+      h('div', { class: 'kicker' }, [t('change.main')]),
+      h('h2', { class: 'title' }, [h('code', {}, [c.id])]),
+      closeButton(() => open(null)),
+    ]),
+    h('div', { class: 'sec' }, [
+      h('div', { class: 'plain' }, [t('change.main.text', { component: c.id, file: `${c.file}:${c.line}` })]),
+      h('div', { class: 'label' }, [t('change.label')]),
+      note,
+      h('button', { class: 'link', type: 'button', onclick: removeActive }, [t('changes.remove')]),
+      exportBlock(),
+    ]),
+  ]
+}
+
 function requestSection(n: DevNode, active: Pick) {
   const others = state.picks.filter((p) => p !== active && hasContent(p)).length
   const note = h('textarea', {
@@ -1334,7 +1414,11 @@ function requestSection(n: DevNode, active: Pick) {
   note.value = active.note
   return h('div', { class: 'sec' }, [
     h('div', { class: 'label' }, [t('change.label')]),
-    scopeField(n, active),
+    active.add
+      ? h('div', { class: 'plain', 'data-adds': true }, [
+          t('change.adds', { component: active.add.component, position: active.add.position }),
+        ])
+      : scopeField(n, active),
     note,
     others
       ? h('div', { class: 'plain more' }, [
@@ -1507,6 +1591,11 @@ async function renderPanel() {
       )
     return
   }
+  if (!active.id && active.component) {
+    panel.hidden = false
+    panel.replaceChildren(...present(mainComponentPanel(active, active.component)))
+    return
+  }
   const n = await node(active.id)
   if (!n) {
     panel.hidden = false
@@ -1515,7 +1604,7 @@ async function renderPanel() {
     )
     return
   }
-  const nodes = await Promise.all(state.picks.map((p) => node(p.id)))
+  const nodes = await Promise.all(state.picks.map((p) => (p.id ? node(p.id) : null)))
   panel.hidden = false
   panel.replaceChildren(
     ...present([
@@ -1539,9 +1628,7 @@ async function renderPanel() {
                       void renderPanel()
                     },
                   },
-                  [
-                    `${i + 1} ${nodes[i] ? (state.audience === 'builder' ? friendlyName(nodes[i]!) : labelOf(nodes[i]!)) : p.id}`,
-                  ],
+                  [`${i + 1} ${nodes[i] || p.component ? pickName(p, nodes[i] ?? null) : p.id}`],
                 ),
               ),
             )
@@ -1676,7 +1763,7 @@ async function renderChanges() {
     return
   }
   const items = drafted()
-  const nodes = await Promise.all(items.map((p) => node(p.id)))
+  const nodes = await Promise.all(items.map((p) => (p.id ? node(p.id) : null)))
   panel.replaceChildren(
     ...present([
       head,
@@ -1689,7 +1776,7 @@ async function renderChanges() {
               return h('div', { class: 'item' }, [
                 h('span', { class: 'n' }, [String(i + 1)]),
                 h('div', { class: 'what' }, [
-                  h('b', {}, [n ? (state.audience === 'builder' ? friendlyName(n) : labelOf(n)) : p.id]),
+                  h('b', {}, [n || p.component ? pickName(p, n ?? null) : p.id]),
                   h('span', {}, [
                     [
                       p.note.trim(),

@@ -54,6 +54,15 @@ describe('saved requests (ADR 0047 D2)', () => {
     expect(saveRequest(root, md).file).toBe('.hozu/requests/0001-h1-button-ui-button.md')
   })
 
+  it('a main component item lists its file and line (ADR 0089 P6)', () => {
+    const root = mkdtempSync(join(tmpdir(), 'hozu-requests-'))
+    saveRequest(
+      root,
+      '# Hozu request: Rounder\n\n## 1. <ui.Button> · Main component\n- Want: Rounder\n- Where: `ui/button.ts:19`\n',
+    )
+    expect(listRequests(root)[0]?.locations).toEqual(['ui/button.ts:19'])
+  })
+
   it('an empty project has no requests', () => {
     expect(listRequests(mkdtempSync(join(tmpdir(), 'hozu-requests-')))).toEqual([])
   })

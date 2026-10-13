@@ -968,7 +968,8 @@ function handlerFor({
         path === '/_hozu/dev/session' ||
         path === '/_hozu/dev/components' ||
         path === '/_hozu/dev/component' ||
-        path === '/_hozu/dev/previews')
+        path === '/_hozu/dev/previews' ||
+        path === '/_hozu/dev/official')
     ) {
       if (!/^(127\.0\.0\.1|localhost|\[::1\])$/.test(url.hostname))
         return new Response('Hozu DevTools answers only this machine', { status: 403 })
@@ -982,6 +983,14 @@ function handlerFor({
         return devJson(traced(after === 'latest' ? Number.POSITIVE_INFINITY : Number(after ?? 0)))
       }
       if (path === '/_hozu/dev/endpoints') return devJson(projectEndpoints(ir))
+      if (path === '/_hozu/dev/official') {
+        const found = dev.official?.() ?? { kit: null, version: null, partial: false, available: [] }
+        const kit = found.kit ? ir.kits[found.kit] : undefined
+        return devJson({
+          ...found,
+          available: found.available.map((a) => ({ ...a, installed: !!kit?.components[a.name] })),
+        })
+      }
       if (path === '/_hozu/dev/components')
         return devJson(
           componentCatalog(build, dev).map((c) => ({ ...c, previews: dev.previews?.components[c.id] ?? [] })),

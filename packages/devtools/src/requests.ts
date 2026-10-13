@@ -82,7 +82,7 @@ const summary = (name: string, text: string): SavedRequest => {
     status: head.status === 'done' ? 'done' : 'open',
     created: head.created ?? '',
     result: head.result ? (JSON.parse(head.result) as string) : null,
-    locations: [...body.matchAll(/^- Where: `([^`]+):(\d+):\d+`/gm)].map((m) => `${m[1]}:${m[2]}`),
+    locations: [...body.matchAll(/^- Where: `([^`:]+):(\d+)(?::\d+)?`/gm)].map((m) => `${m[1]}:${m[2]}`),
   }
 }
 
