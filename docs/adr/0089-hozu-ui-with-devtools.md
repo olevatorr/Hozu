@@ -92,3 +92,12 @@ DevTools still writes no source. Every change goes through the request and the a
   - the catalog's `pickers` give `Icon` a searchable grid of the app's icon exports (`/_hozu/dev/icons`); a Lucide
     name the app lacks is added to `ui/icons/lucide.ts` first by the agent;
   - hovering or focusing a Layers row frames its part on the page (scrolled into view only when off screen).
+
+- From the owner's third look:
+  - a click where nothing is marked clears the selection;
+  - only a component the person placed (pending) can be dragged again; a click on it without moving edits its item,
+    and its request item follows the move without a new note;
+  - while dragging, the component itself is shown where it would land;
+  - previews: the inner parts' classes of every variant are compiled under `hozu dev` (`partClasses`: Card's padding,
+    PageHeader's display size were missing), a part sized by container queries gets a width (Metric), an icon tile
+    shows the picker's first icon until one is chosen, and a dialog tile shows the dialog open.

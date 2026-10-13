@@ -12,9 +12,11 @@ an app already uses changes.
   not change and list the ones you did. `hozu add component ui <Name> --from official` adds one, and
   `npx hozu docs ui` says which component fits what. An app that still uses Tailwind's own palette keeps it until
   its classes move to the kit's roles.
-- **DevTools shows, places and customises them:** the Assets board lists Hozu UI first, places a component before,
-  after or inside the selected part with a variant and a note, and changes a component for every use. The request's
-  new *Add* and *Main component* items tell the agent what to install, where to put it and which file to edit.
+- **DevTools shows, places and customises them:** Assets docks beside the page and lists Hozu UI first, with every
+  variant and composed examples (`p.example`, Icon's picker). Drag one onto the page: it shows where it will land,
+  stays there marked *Pending* until the agent builds it, and can be clicked to edit or dragged again. A component
+  can also be changed for every use. The request's *Add* and *Main component* items tell the agent what to install,
+  where to put it and which file to edit. Hovering a Layers row frames its part.
 - **A link turned into text** (`` `${ui.link(home)}#section` ``) stops the build (HZ059); it rendered
   `[object Object]` before.
 
