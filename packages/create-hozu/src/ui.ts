@@ -17,6 +17,8 @@ interface Catalog {
 /** The unpacked `@hozu/ui-kit`: a folder or tarball named by HOZU_UI_KIT, else the latest from npm. */
 export function fetchUiKit(source = process.env.HOZU_UI_KIT): string {
   if (source && existsSync(join(source, 'catalog.json'))) return source
+  if (source && !(source.endsWith('.tgz') && existsSync(source)))
+    throw new Error(`HOZU_UI_KIT names ${source}, which is neither an unpacked ${UI_KIT} nor its .tgz`)
   const scratch = mkdtempSync(join(tmpdir(), 'create-hozu-ui-'))
   const tarball =
     source && source.endsWith('.tgz')
@@ -25,6 +27,7 @@ export function fetchUiKit(source = process.env.HOZU_UI_KIT): string {
           scratch,
           execFileSync('npm', ['pack', `${UI_KIT}@latest`, '--pack-destination', scratch, '--silent'], {
             encoding: 'utf8',
+            shell: process.platform === 'win32',
           })
             .trim()
             .split('\n')

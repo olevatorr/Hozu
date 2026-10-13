@@ -1,3 +1,4 @@
+import { existsSync, readdirSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { createInterface } from 'node:readline/promises'
@@ -68,6 +69,8 @@ export async function main(argv: string[]): Promise<number> {
           )
         : false
     const target = resolve(dir)
+    if (withUi && existsSync(target) && readdirSync(target).length)
+      throw new Error(`${target} is not empty. Choose a new directory name.`)
     const version = (
       JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }
     ).version

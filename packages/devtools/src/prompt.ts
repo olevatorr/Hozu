@@ -325,7 +325,7 @@ function addLines(item: RequestItem & { add: Addition; node: DevNode }): string[
     want(item.note.trim()),
     `- Where: ${where(node)}`,
     ...(add.install ? [`- Install first: \`${add.install}\``] : []),
-    `- Mind: import it from \`${add.file ?? `the kit of ${add.component}`}\`; place \`ui.use(${name}, ${useOptions(add)}${add.children === false ? '' : ', [...]'})\` ${at}; \`hozu docs ui\` lists its props and slots.${node.conditions.length ? ' The selected part sits in a branch (a query, `when` or `?:`): a branch returns one node, so wrap it in a `ui.div` to add a sibling.' : ''}`,
+    `- Mind: import it from \`${add.file ?? `the kit of ${add.component}`}\`; place \`ui.use(${name}, ${useOptions(add)}${add.children === false ? '' : ', [...]'})\` ${at}; \`hozu docs ui\` lists its props and slots.${node.conditions.length && add.position !== 'inside' ? ' If the selected part is the whole branch of a query, `when` or `?:`, the sibling goes into that branch too: return a list, or wrap both in a `ui.div`.' : ''}`,
     ...(node.pointer ? [`- Locate: \`hozu why ${node.pointer}\``] : []),
   ]
 }

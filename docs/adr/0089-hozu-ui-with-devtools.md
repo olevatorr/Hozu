@@ -35,10 +35,10 @@ DevTools still writes no source. Every change goes through the request and the a
 | # | Piece | Where |
 |---|---|---|
 | P1 | `@hozu/ui-kit`: the official source (23 components, themes Grain and Joinery, the Lucide subset and Hozu icons, the `hozu docs ui` topic) and `catalog.json` (each component's file, the files it uses, its variants). It is read at install time and by `hozu dev`, and nothing imports it at run time. It is published from the `hozu-ui` repository with its own versions; it requires a `@hozu/core` 1.x | `hozu-ui` repository |
-| P0 | `create-hozu` asks "Add Hozu UI, the official components? (y/N)" in a terminal; `--ui` / `--no-ui` answer it for agents and scripts. Yes → the kit is copied in (from `npm pack @hozu/ui-kit`) with its lock, `@hozu/variants` and `@hozu/ui-kit` are added, and the app's guide says it is there | `packages/create-hozu` |
-| P2 | `hozu add kit ui --from official [--theme grain\|joinery]` and `hozu add component ui <Name> --from official`. They copy the files, with the components each one uses, and write `ui/kit.lock.json` (file hashes). They sync `tv.ts` and add `@hozu/variants` | `cli/commands/kits.ts`, `add-component.ts` |
+| P0 | `create-hozu` asks "Add Hozu UI, the official components? (y/N)" in a terminal; `--ui` / `--no-ui` answer it for agents and scripts. Yes → the kit is copied in (from `npm pack @hozu/ui-kit`) with its lock, `@hozu/variants` and `@hozu/ui-kit` are added; SKILL.md's table and `hozu docs` (which lists `ui` when the kit is installed) point the agent at it | `packages/create-hozu` |
+| P2 | `hozu add kit ui --from official` (no `--theme` flag: the theme is `data-theme` on any ancestor) and `hozu add component ui <Name> --from official`. They copy the files, with the components each one uses, and write `ui/kit.lock.json` (file hashes). They sync `tv.ts` and add `@hozu/variants` | `cli/commands/kits.ts`, `add-component.ts` |
 | P3 | `hozu add kit ui --sync`: a file still equal to its lock hash is updated; an edited file is left alone and listed under `todo` | `kits.ts` |
-| P4 | `hozu dev` serves the official catalog: it builds the package source as a kit beside the app, and renders each component × variant with `componentCatalog` / `dev.render` (the Assets board's path), in the app's theme | `@hozu/dev`, `runtime-server` dev endpoints |
+| P4 | (superseded by §7: installed components are previewed, the others listed) `hozu dev` serves the official catalog: it builds the package source as a kit beside the app, and renders each component × variant with `componentCatalog` / `dev.render` (the Assets board's path), in the app's theme | `@hozu/dev`, `runtime-server` dev endpoints |
 | P5 | DevTools **Hozu UI** tab: a grid of components and variants with search; for each, *Place* and *Change for every use*. An installed component shows *Where used* | `packages/devtools` |
 | P6 | Request items:<br>`Add: ui.Button { tone: 'primary' } after <button "Save"> at features/notes/views.ts:42 — not installed: npx hozu add component ui Button --from official`<br>`Main component: ui.Button (ui/button.ts) — every use`<br>Each carries the person's note. `hozu docs requests` explains them | `devtools/src/prompt.ts` |
 | P7 | Guide: `hozu docs ui` (intent table: "a destructive confirmation → `ConfirmDialog`"); SKILL.md's "What to touch" gains *Add* / *Main component* request items | skill topics |
@@ -70,4 +70,14 @@ DevTools still writes no source. Every change goes through the request and the a
   command and can be placed, but is not previewed: rendering the package beside the app is left for after 1.0.
 - `@hozu/ui-kit` is published from the public `hozu-ui` repository on a version tag, after the owner approves the npm
   environment; its site is ui.hozu.org (GitHub Pages, built with Hozu).
+- From the review before the candidate:
+  - `--sync` copies files a newer component starts to use, and names files the package dropped;
+  - `withModule` edits a formatted `kit.ts` (multi-line imports, a trailing comma);
+  - the partial-theme check also covers bare `rounded` / `shadow`, `font-serif` and `ring-offset-*`;
+  - a kept file is listed;
+  - `create-hozu --ui` runs `npm` through the shell on Windows and checks the folder before downloading.
+- From building ui.hozu.org:
+  - under `hozu dev` the stylesheet includes every component's classes, so DevTools previews unused ones styled;
+  - `ui.link(…)` turned into text (`${ui.link(home)}#x`) stops the build with HZ059 instead of rendering
+    `[object Object]`. A link to a section of another page is left for after 1.0.
 

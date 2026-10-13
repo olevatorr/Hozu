@@ -8,7 +8,15 @@ import {
 } from '../ir/dom-data.ts'
 import type { DomEvent, DomFields } from '../ir/events.ts'
 import { brand, type Decl } from '../model/decl.ts'
-import { createRef, type Expr, type Guard, type Ref, refProxy, type Val } from '../model/expr.ts'
+import {
+  createRef,
+  type Expr,
+  type Guard,
+  type Ref,
+  ReferenceEscape,
+  refProxy,
+  type Val,
+} from '../model/expr.ts'
 import type { Infer, Schema } from '../schema/standard.ts'
 import { type Asset, asset } from './asset.ts'
 import { type ComponentDecl, type ComponentTypes, type ComponentUse, component, kit } from './component.ts'
@@ -42,6 +50,12 @@ interface Link {
   <P, S>(route: RouteDecl<P, S>, params: NoInfer<Val<P>>, ...search: SearchArg<S>): Href
   <I>(endpoint: EndpointDecl<I, any, any, 'GET'>, input: NoInfer<Val<I>>): Href
   (endpoint: EndpointDecl<any, any, any, 'POST'>): Href
+}
+
+const linkAsText = (): never => {
+  throw new ReferenceEscape(
+    'ui.link(…) was turned into text (a template string, + or String()): a link is a value the page resolves, so give it to href as it is. A link to a section of another page is not supported yet',
+  )
 }
 
 export const linkOf = (value: unknown): { route: unknown; params: unknown; search: unknown } | null =>
@@ -258,7 +272,11 @@ export const ui = Object.freeze({
   document: (options: { on: { [E in DomEvent]?: Send } }): NodeDecl =>
     node({ kind: 'global', target: 'document', on: options.on }),
   link: ((route: unknown, params: unknown = null, ...search: unknown[]): Href =>
-    Object.freeze({ [LINK]: { route, params, search: search[0] ?? null } }) as unknown as Href) as Link,
+    Object.freeze({
+      [LINK]: { route, params, search: search[0] ?? null },
+      [Symbol.toPrimitive]: linkAsText,
+      toString: linkAsText,
+    }) as unknown as Href) as Link,
   use,
   component,
   kit,

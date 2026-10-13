@@ -31,7 +31,7 @@ const RESETS = /^[ \t]*--(?:color|radius|shadow|font)-\*: initial;\n/gm
 const COLOURS =
   'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|white|black'
 const TAILWIND_THEMED = new RegExp(
-  `^(?:[\\w-]+:)*(?:(?:bg|text|border|ring|fill|stroke|outline|divide|from|via|to|shadow|accent|caret|decoration|placeholder)(?:-[xytrbl])?-(?:${COLOURS})(?:-\\d{2,3})?(?:/\\d+)?|rounded(?:-[a-z]{1,2})?-(?:xs|sm|md|lg|xl|2xl|3xl|4xl)|rounded-(?:xs|sm|md|lg|xl|2xl|3xl|4xl)|shadow-(?:2xs|xs|sm|md|lg|xl|2xl))!?$`,
+  `^(?:[\\w-]+:)*(?:(?:bg|text|border|ring|fill|stroke|outline|divide|from|via|to|shadow|accent|caret|decoration|placeholder)(?:-[xytrbl])?-(?:${COLOURS})(?:-\\d{2,3})?(?:/\\d+)?|ring-offset-(?:${COLOURS})(?:-\\d{2,3})?|rounded(?:-[a-z]{1,2})?(?:-(?:xs|sm|md|lg|xl|2xl|3xl|4xl))?|shadow(?:-(?:2xs|xs|sm|md|lg|xl|2xl))?|font-serif)!?$`,
 )
 
 /** The app's classes that need Tailwind's own palette, radii or shadows, which the kit's strict theme removes. */
@@ -100,9 +100,9 @@ export function withModule(source: string, file: string): string | null {
   if (new RegExp(`from '\\./${file.replace('.', '\\.')}'`).test(source)) return source
   const list = /components:\s*\[([^\]]*)\]/.exec(source)
   if (!list) return null
-  const imports = [...source.matchAll(/^import .*$/gm)]
-  const at = imports.length ? imports.at(-1)!.index! + imports.at(-1)![0].length + 1 : 0
-  const entries = list[1]!.trim()
+  const ends = [...source.matchAll(/^import [^;]*?from '[^']+'\n?/gms)]
+  const at = ends.length ? ends.at(-1)!.index! + ends.at(-1)![0].length : 0
+  const entries = list[1]!.trim().replace(/,$/, '')
   const listed = source.replace(list[0], `components: [${entries ? `${entries}, ` : ''}${name}]`)
   return `${listed.slice(0, at)}import * as ${name} from './${file}'\n${listed.slice(at)}`
 }
@@ -141,13 +141,18 @@ export function syncFiles(
   root: string,
   id: string,
   lock: KitLock,
-): { updated: string[]; edited: string[] } {
+): { updated: string[]; edited: string[]; added: string[]; removed: string[] } {
   const updated: string[] = []
   const edited: string[] = []
+  const removed: string[] = []
   for (const file of Object.keys(lock.files)) {
     const source = join(official.dir, 'kit', file)
     const target = join(root, id, file)
-    if (!existsSync(source) || !existsSync(target)) continue
+    if (!existsSync(source)) {
+      removed.push(file)
+      continue
+    }
+    if (!existsSync(target)) continue
     const next = themed(official, lock, file, readFileSync(source, 'utf8'))
     const local = readFileSync(target, 'utf8')
     if (local === next) {
@@ -163,8 +168,13 @@ export function syncFiles(
     lock.files[file] = hash(next)
     updated.push(file)
   }
+  const installed = Object.keys(lock.files).filter((f) => official.catalog.files[f])
+  const missing = closure(official.catalog, installed).filter(
+    (f) => !lock.files[f] && !existsSync(join(root, id, f)),
+  )
+  const { written: added } = copyFiles(official, root, id, missing, lock)
   lock.version = official.version
-  return { updated, edited }
+  return { updated, edited, added, removed }
 }
 
 export const allFiles = (catalog: Catalog) =>

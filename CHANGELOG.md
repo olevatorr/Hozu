@@ -15,6 +15,8 @@ an app already uses changes.
 - **DevTools shows, places and customises them:** the Assets board lists Hozu UI first, places a component before,
   after or inside the selected part with a variant and a note, and changes a component for every use. The request's
   new *Add* and *Main component* items tell the agent what to install, where to put it and which file to edit.
+- **A link turned into text** (`` `${ui.link(home)}#section` ``) stops the build (HZ059); it rendered
+  `[object Object]` before.
 
 - **What 1.0 promises:** the authoring API, the IR and lock formats, CLI commands with their `--json` shapes, and the
   meaning of every diagnostic code follow semantic versioning: a breaking change waits for 2.0, a new rule arrives as

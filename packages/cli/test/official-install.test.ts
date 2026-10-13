@@ -124,3 +124,38 @@ describe('Hozu UI from the official kit (ADR 0089)', () => {
     expect((await run(['check', '--no-types'], app)).stdout).toContain('0 errors, 0 warnings')
   })
 })
+
+describe('kit.ts edits and package changes (review of ADR 0089)', () => {
+  it('adds a module to a formatted kit.ts with a trailing comma and multi-line imports', async () => {
+    const { withModule } = await import('../src/commands/official.ts')
+    const source = `import { ui } from '@hozu/core'\nimport {\n  thing,\n} from './x.ts'\n\nexport const kit = ui.kit({\n  id: 'ui',\n  components: [\n    button,\n    badge,\n  ],\n})\n`
+    const next = withModule(source, 'table.ts')!
+    expect(next).toContain("} from './x.ts'\nimport * as table from './table.ts'\n")
+    expect(next).toMatch(/components: \[button,\s+badge, table\]/)
+    expect(next).not.toContain(',,')
+  })
+
+  it('--sync copies a file a newer component uses and names a file the package dropped', async () => {
+    const app = await appWith({ kit: true })
+    await run(['add', 'kit', 'ui', '--from', 'official'], app)
+    const local = join(app, 'node_modules/@hozu/ui-kit')
+    unlinkSync(local)
+    mkdirSync(join(local, 'kit/icons'), { recursive: true })
+    const lock = JSON.parse(readFileSync(join(app, 'ui/kit.lock.json'), 'utf8'))
+    for (const f of [...Object.keys(lock.files), 'kit.ts'])
+      if (f !== 'metric.ts') writeFileSync(join(local, 'kit', f), readFileSync(join(fixture, 'kit', f)))
+    writeFileSync(join(local, 'kit/spark.ts'), "export const spark = 'M0 0'\n")
+    const catalog = JSON.parse(readFileSync(join(fixture, 'catalog.json'), 'utf8'))
+    delete catalog.files['metric.ts']
+    catalog.files['spark.ts'] = { components: [], uses: [] }
+    catalog.files['card.ts'].uses = ['spark.ts']
+    writeFileSync(join(local, 'catalog.json'), JSON.stringify(catalog))
+    writeFileSync(join(local, 'package.json'), JSON.stringify({ name: '@hozu/ui-kit', version: '0.2.0' }))
+    appendFileSync(join(local, 'kit/card.ts'), "\nexport { spark } from './spark.ts'\n")
+    const synced = await run(['add', 'kit', 'ui', '--sync'], app)
+    expect(synced.stdout).toContain('created   ui/spark.ts')
+    expect(synced.stdout).toContain('edited    ui/card.ts')
+    expect(synced.stdout).toMatch(/todo {6}@hozu\/ui-kit@0\.2\.0 no longer has metric\.ts/)
+    expect(existsSync(join(app, 'ui/metric.ts'))).toBe(true)
+  })
+})

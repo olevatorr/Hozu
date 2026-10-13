@@ -108,9 +108,17 @@ export async function createApp(dir: string, options: CreateOptions): Promise<st
       Object.entries(pkg.devDependencies).sort(([a], [b]) => a.localeCompare(b)),
     )
     const config = join(dir, 'hozu.config.ts')
+    const template = await readFile(config, 'utf8')
+    if (
+      !template.includes("import { home } from './routes.ts'\n") ||
+      !template.includes('  features: [site],')
+    )
+      throw new Error(
+        'the app template changed: hozu.config.ts no longer has the lines Hozu UI registers its kit beside',
+      )
     await writeFile(
       config,
-      (await readFile(config, 'utf8'))
+      template
         .replace(
           "import { home } from './routes.ts'\n",
           "import { home } from './routes.ts'\nimport { kit as uiKit } from './ui/kit.ts'\n",

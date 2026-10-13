@@ -71,7 +71,16 @@ export const stylesSource = (build: BuildResult) => {
 
 export async function compileStyles(
   build: BuildResult,
-  { minify = true, base = process.cwd() }: { minify?: boolean; base?: string } = {},
+  {
+    minify = true,
+    base = process.cwd(),
+    components = false,
+  }: {
+    minify?: boolean
+    base?: string
+    /** Every component's own classes too, used or not, so DevTools can preview them (`hozu dev` only). */
+    components?: boolean
+  } = {},
 ): Promise<CompiledStyles> {
   const kept = sharedViews(build.ir)
     .map(
@@ -87,7 +96,7 @@ export async function compileStyles(
     customCssResolver: resolveCss,
     shouldRewriteUrls: true,
   })
-  const candidates = classCandidates(build.ir)
+  const candidates = components ? styledClasses(build.ir) : classCandidates(build.ir)
   const assets: Record<string, string> = {}
   const raw = hoistImports(compiler.build([...candidates])).replace(
     /url\((['"]?)([^'")]+)\1\)/g,

@@ -48,7 +48,7 @@ export async function runDocs(
       ? [...topics, { name: 'ui', title: `Hozu UI: the official components (${OFFICIAL}@${kit.version})` }]
       : topics
     const text = `${listed.map((t) => `${t.name.padEnd(12)} ${t.title}`).join('\n')}\n`
-    return { topic: null, text, topics }
+    return { topic: null, text, topics: listed }
   }
   const name = topic.toLowerCase()
   const code = topic.toUpperCase() as DiagnosticCode

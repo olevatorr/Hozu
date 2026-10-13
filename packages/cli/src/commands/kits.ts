@@ -251,9 +251,16 @@ export async function addKit(
   if (sync) {
     const lock = readLock(root, id)
     if (lock && official) {
-      const { updated, edited } = syncFiles(official, root, id, lock)
+      const { updated, edited, added, removed } = syncFiles(official, root, id, lock)
       writeLock(root, id, lock)
       out.edited.push(...updated.map((f) => relative(cwd, join(root, id, f))))
+      out.created.push(...added.map((f) => relative(cwd, join(root, id, f))))
+      out.manual.push(
+        ...removed.map(
+          (f) =>
+            `${OFFICIAL}@${official.version} no longer has ${f}; ${relative(cwd, join(root, id, f))} stays yours (remove it when nothing uses it)`,
+        ),
+      )
       out.manual.push(
         ...edited.map(
           (f) =>
@@ -298,11 +305,17 @@ export async function addKit(
       out.manual.push(
         `${themedClasses.length} of the app's classes use Tailwind's own palette, radii or shadows (${themedClasses.slice(0, 4).join(', ')}${themedClasses.length > 4 ? ', …' : ''}), so ${relative(cwd, join(root, id, official.catalog.styles))} keeps them for now; move them to the kit's roles (hozu docs ui), then remove "partial" from ${relative(cwd, lockPath(root, id))} and run hozu add kit ${id} --sync`,
       )
-    const { written } = copyFiles(official, root, id, allFiles(official.catalog), lock)
+    const { written, kept } = copyFiles(official, root, id, allFiles(official.catalog), lock)
     writeLock(root, id, lock)
     out.created.push(
       ...written.map((f) => relative(cwd, join(root, id, f))),
       relative(cwd, lockPath(root, id)),
+    )
+    out.manual.push(
+      ...kept.map(
+        (f) =>
+          `${relative(cwd, join(root, id, f))} already exists with other content and was kept (not in the lock, so --sync leaves it alone); the kit's version: ${relative(cwd, join(official.dir, 'kit', f))}`,
+      ),
     )
   }
   await syncOthers()

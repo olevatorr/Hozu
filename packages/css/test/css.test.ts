@@ -1,9 +1,12 @@
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { feature, project, route, ui } from '@hozu/core'
 import { buildProject } from '@hozu/core/ir'
 import { compileStyles, selectorClasses } from '@hozu/css'
+import { zodAdapter } from '@hozu/schema-zod'
 import { validate } from '@hozu/validator'
+import { tv } from '@hozu/variants'
 import { describe, expect, it } from 'vitest'
 import blog from '../../../examples/blog/hozu.config.ts'
 import cart from '../../../examples/cart/hozu.config.ts'
@@ -168,5 +171,26 @@ describe('page transitions', () => {
     expect(
       [...selectorClasses('.prose :where([class~="lead"]):not(:where(.not-prose *)){color:red}')].sort(),
     ).toEqual(['lead', 'not-prose', 'prose'])
+  })
+
+  it('under hozu dev, compiles the classes of components no page uses yet, so DevTools can preview them (ADR 0089)', async () => {
+    const home = route({ path: '/', params: null, search: null })
+    const Unused = ui.component({
+      tag: 'span',
+      styles: tv({ base: 'tracking-widest underline-offset-8' }),
+      render: () => ui.span({}, []),
+    })
+    const Home = ui.view({ render: () => ui.main({ class: 'p-4' }, []) })
+    const build = buildProject(
+      project({
+        schema: zodAdapter,
+        routes: { home },
+        pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: 'x' }) } })],
+        features: [feature({ id: 'f', intent: { summary: 'x' }, declarations: [{ Unused, Home }] })],
+      }),
+      { sources: false },
+    )
+    expect((await compileStyles(build)).css).not.toContain('.tracking-widest')
+    expect((await compileStyles(build, { components: true })).css).toContain('.tracking-widest')
   })
 })

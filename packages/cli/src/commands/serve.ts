@@ -26,7 +26,7 @@ export async function runServe(
     '@hozu/adapter-node',
   )
   const { compileStyles } = await importFrom<{
-    compileStyles(build: BuildResult, o: { base: string }): Promise<unknown>
+    compileStyles(build: BuildResult, o: { base: string; components?: boolean }): Promise<unknown>
   }>('@hozu/css')
   const images = await importFrom<{ optimizeImages(build: BuildResult): Promise<unknown> }>(
     '@hozu/image',
@@ -60,7 +60,7 @@ export async function runServe(
           },
         }
       : {}),
-    styles: await compileStyles(build, { base: root }),
+    styles: await compileStyles(build, { base: root, components: process.env.HOZU_DEV === '1' }),
     ...(components ? { components } : {}),
     ...(images ? { images: await images.optimizeImages(build) } : {}),
     ...(existsSync(publicDir) ? { publicDir } : {}),

@@ -9,7 +9,7 @@ const styles = tv({
     title: 'text-sm font-semibold',
     description: 'mt-0.5 text-xs text-ink-muted',
     body: '',
-    footer: 'border-t border-line px-5 py-3',
+    footer: 'border-t border-line px-5 py-3 empty:hidden',
   },
   variants: { pad: { normal: { body: 'p-5' }, none: {} } },
   defaultVariants: { pad: 'normal' },
@@ -32,6 +32,6 @@ export const Card = ui.component({
           slots.actions,
         ]),
       ui.div({ class: classes.body }, children),
-      slots.footer,
+      ui.div({ class: classes.footer }, [slots.footer]),
     ]),
 })
