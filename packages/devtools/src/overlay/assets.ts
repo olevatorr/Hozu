@@ -1,12 +1,16 @@
-import type { DevComponent, IsolatedUse } from '@hozu/core/ir'
+import type { DevComponent, DevIcons, IsolatedUse } from '@hozu/core/ir'
 import { t } from '../messages.ts'
 import type { Addition } from '../prompt.ts'
 import type { Theme } from '../theme.ts'
 import { h, read, write } from './dom.ts'
 import type { Carried } from './drop.ts'
 
+export type Example = NonNullable<Addition['example']>
+export type ChosenIcon = NonNullable<Addition['icon']>
+
 export interface Catalogued extends DevComponent {
   previews: { name: string; use: IsolatedUse }[]
+  examples?: Example[]
 }
 
 export interface Official {
@@ -14,6 +18,7 @@ export interface Official {
   version: string | null
   partial: boolean
   available: { name: string; file: string; installed: boolean }[]
+  parts?: Record<string, string[]>
 }
 
 type Available = Official['available'][number]
@@ -42,6 +47,34 @@ export interface AssetsHost {
 
 const dockKey = 'hozu-devtools:assets-docked'
 
+/** `arrow-up` and `arrowUp` for what the person typed: Lucide's file name and the app's export name. */
+export function lucideNames(typed: string): { lucide: string; name: string } | null {
+  const lucide = typed
+    .trim()
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+  if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(lucide)) return null
+  return { lucide, name: lucide.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase()) }
+}
+
+/** The components used only inside another, by the parent's id (the kit catalog's `parts`). */
+export function partsOf(catalog: Catalogued[], official: Official): Map<string, Catalogued[]> {
+  const out = new Map<string, Catalogued[]>()
+  const kit = official.kit
+  if (!kit) return out
+  const byId = new Map(catalog.map((c) => [c.id, c]))
+  for (const [parent, names] of Object.entries(official.parts ?? {})) {
+    if (!byId.has(`${kit}.${parent}`)) continue
+    const found = names.flatMap((n) => byId.get(`${kit}.${n}`) ?? [])
+    if (found.length) out.set(`${kit}.${parent}`, found)
+  }
+  return out
+}
+
+const svgOf = (d: string) =>
+  `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d.replace(/[<>"&]/g, '')}"/></svg>`
+
 const dragLabel = (name: string, variant: Record<string, string>) =>
   [name, ...Object.entries(variant).map(([dim, value]) => `${dim}: ${value}`)].join(' · ')
 
@@ -49,6 +82,7 @@ interface Tile {
   label: string
   use: Partial<IsolatedUse>
   preview: boolean
+  example?: Example
 }
 
 const json = async <T>(url: string): Promise<T | null> => {
@@ -65,6 +99,7 @@ export function tilesOf(c: Catalogued): Tile[] {
   const children = (variant: Record<string, string>) =>
     c.children ? { children: placeholderFor(c.name, { ...c.defaults, ...variant }) } : {}
   const tiles: Tile[] = [
+    ...(c.examples ?? []).map((example) => ({ label: example.name, use: {}, preview: false, example })),
     { label: t('assets.default'), use: { variant: {}, ...children({}) }, preview: false },
   ]
   for (const [dim, values] of Object.entries(c.variants))
@@ -95,7 +130,7 @@ const schemaRows = (props: Catalogued['props']) =>
 
 export function assetsBoard(host: AssetsHost) {
   const board = h('div', { class: 'assets', hidden: true, role: 'dialog', 'aria-label': t('assets.title') })
-  let docked = read<boolean>(dockKey, false) === true
+  let docked = read<boolean>(dockKey, true) !== false
   const setDocked = (value: boolean) => {
     docked = value
     board.classList.toggle('docked', docked)
@@ -108,7 +143,10 @@ export function assetsBoard(host: AssetsHost) {
     board.addEventListener(type, (event) => event.stopPropagation())
   let tab: 'components' | 'styles' = 'components'
   let catalog: Catalogued[] = []
-  let official: Official = { kit: null, version: null, partial: false, available: [] }
+  let official: Official = { kit: null, version: null, partial: false, available: [], parts: {} }
+  let icons: DevIcons = {}
+  let parts = new Map<string, Catalogued[]>()
+  const chosenIcons = new Map<string, ChosenIcon>()
   let pending: Available | null = null
   let selected: string | null = null
   let screens: Screens = { pages: [] }
@@ -125,8 +163,11 @@ export function assetsBoard(host: AssetsHost) {
   const fill = async (frame: HTMLIFrameElement) => {
     const id = frame.dataset.id ?? ''
     const use = frame.dataset.use ?? '{}'
+    const example = frame.dataset.example
     const out = await json<{ ok: boolean; html: string; problems: string[] }>(
-      `/_hozu/dev/component?id=${encodeURIComponent(id)}&use=${encodeURIComponent(use)}`,
+      `/_hozu/dev/component?id=${encodeURIComponent(id)}&${
+        example === undefined ? `use=${encodeURIComponent(use)}` : `example=${encodeURIComponent(example)}`
+      }`,
     )
     if (!out?.ok) {
       frame.replaceWith(
@@ -154,13 +195,19 @@ export function assetsBoard(host: AssetsHost) {
     frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8">${links}<style>html,body{margin:0;background:transparent;overflow:hidden}body{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:16px;min-height:72px;box-sizing:border-box}</style></head><body>${out.html}</body></html>`
   }
 
+  const withIcon = (id: string, use: Partial<IsolatedUse>): Partial<IsolatedUse> => {
+    const icon = chosenIcons.get(id)
+    return icon?.d ? { ...use, props: { ...use.props, [icon.prop]: icon.d } } : use
+  }
+
   const frameFor = (c: Catalogued, tile: Tile) => {
     const frame = h('iframe', {
       class: 'tile-frame',
       sandbox: 'allow-same-origin',
       title: `${c.id} · ${tile.label}`,
       'data-id': c.id,
-      'data-use': JSON.stringify(tile.use),
+      'data-use': JSON.stringify(withIcon(c.id, tile.use)),
+      'data-example': tile.example?.name,
     }) as HTMLIFrameElement
     watched.observe(frame)
     return frame
@@ -185,14 +232,147 @@ export function assetsBoard(host: AssetsHost) {
     return made
   }
   const isOfficial = (c: Catalogued) => c.owner.kind === 'kit' && c.owner.id === official.kit
-  const carriedOf = (c: Catalogued, variant: Record<string, string>): Carried => ({
-    component: c.id,
-    variant,
-    install: null,
-    file: c.location?.file ?? null,
-    props: requiredProps(c.props),
-    children: Boolean(c.children),
-  })
+  const carriedOf = (c: Catalogued, variant: Record<string, string>, example?: Example): Carried => {
+    const icon = example ? undefined : chosenIcons.get(c.id)
+    return {
+      component: c.id,
+      variant,
+      install: null,
+      file: c.location?.file ?? null,
+      props: requiredProps(c.props),
+      children: Boolean(c.children),
+      ...(example ? { example } : {}),
+      ...(icon ? { icon } : {}),
+    }
+  }
+
+  const choose = (c: Catalogued, icon: ChosenIcon) => {
+    chosenIcons.set(c.id, icon)
+    const el = cards.get(c.id)
+    if (!el) return
+    for (const cell of el.querySelectorAll<HTMLElement>('[data-icon]'))
+      cell.setAttribute('aria-pressed', String(cell.dataset.icon === icon.name))
+    const shown = el.querySelector('[data-icon-chosen]')
+    if (shown)
+      shown.textContent = icon.lucide
+        ? t('assets.icons.missing', { name: icon.lucide, file: icon.file })
+        : t('assets.icons.chosen', { name: icon.name })
+    for (const frame of el.querySelectorAll<HTMLIFrameElement>('.tile:not(.example) .tile-frame')) {
+      const use = JSON.parse(frame.dataset.use ?? '{}') as Partial<IsolatedUse>
+      frame.dataset.use = JSON.stringify(withIcon(c.id, use))
+      void fill(frame)
+    }
+  }
+
+  const pickerOf = (c: Catalogued) => {
+    const picker = icons[c.id]
+    if (!picker) return null
+    const home = picker.files.find((f) => f.includes('lucide')) ?? picker.files[0] ?? ''
+    const cells = picker.icons.map((icon) => {
+      const cell = h(
+        'button',
+        {
+          class: 'icon-cell',
+          type: 'button',
+          title: `${icon.name} · ${icon.file}`,
+          'data-icon': icon.name,
+          'aria-pressed': String(chosenIcons.get(c.id)?.name === icon.name),
+          onclick: () => choose(c, { prop: picker.prop, name: icon.name, file: icon.file, d: icon.d }),
+          onpointerdown: (e) => {
+            const pick: ChosenIcon = { prop: picker.prop, name: icon.name, file: icon.file, d: icon.d }
+            host.drag(
+              e as PointerEvent,
+              e.currentTarget as HTMLElement,
+              { ...carriedOf(c, {}), icon: pick },
+              `${c.name} · ${icon.name}`,
+            )
+          },
+        },
+        [h('span', { class: 'icon-name' }, [icon.name])],
+      )
+      cell.insertAdjacentHTML('afterbegin', svgOf(icon.d))
+      return cell
+    })
+    const find = h('input', {
+      type: 'search',
+      class: 'outcome',
+      placeholder: t('assets.icons.find.placeholder'),
+      'aria-label': t('assets.icons.find'),
+      oninput: (e) => {
+        const q = (e.target as HTMLInputElement).value.trim().toLowerCase()
+        for (const cell of cells) cell.hidden = !!q && !(cell.dataset.icon ?? '').toLowerCase().includes(q)
+      },
+    })
+    const other = h('input', {
+      type: 'text',
+      class: 'outcome',
+      placeholder: t('assets.icons.other.placeholder'),
+      'aria-label': t('assets.icons.other'),
+      'data-icon-other': true,
+    }) as HTMLInputElement
+    const useOther = () => {
+      const names = lucideNames(other.value)
+      if (!names) return
+      const found = picker.icons.find((i) => i.name === names.name)
+      choose(
+        c,
+        found
+          ? { prop: picker.prop, name: found.name, file: found.file, d: found.d }
+          : { prop: picker.prop, name: names.name, file: home, lucide: names.lucide },
+      )
+    }
+    other.addEventListener('keydown', (e) => {
+      if ((e as KeyboardEvent).key === 'Enter') useOther()
+    })
+    const now = chosenIcons.get(c.id)
+    return h('div', { class: 'icon-picker', 'data-picker': c.id }, [
+      h('div', { class: 'label' }, [t('assets.icons', { count: picker.icons.length })]),
+      find,
+      h('div', { class: 'icon-grid' }, cells),
+      h('p', { class: 'hint-text', 'data-icon-chosen': true }, [
+        now
+          ? now.lucide
+            ? t('assets.icons.missing', { name: now.lucide, file: now.file })
+            : t('assets.icons.chosen', { name: now.name })
+          : t('assets.icons.none'),
+      ]),
+      h('div', { class: 'icon-other' }, [
+        other,
+        h('button', { class: 'act', type: 'button', 'data-icon-use': true, onclick: useOther }, [
+          t('assets.icons.use'),
+        ]),
+        h('a', { href: 'https://lucide.dev/icons', target: '_blank', rel: 'noopener', class: 'link' }, [
+          t('assets.icons.browse'),
+        ]),
+      ]),
+    ])
+  }
+
+  const partsLine = (c: Catalogued) => {
+    const list = parts.get(c.id)
+    if (!list) return null
+    return h('p', { class: 'asset-parts', 'data-parts': c.id }, [
+      `${t('assets.parts')} `,
+      ...list.map((part) =>
+        h(
+          'button',
+          {
+            class: 'chip-button',
+            type: 'button',
+            'data-part': part.id,
+            onclick: () => {
+              detail = part
+              pending = null
+              void render()
+            },
+          },
+          [part.name],
+        ),
+      ),
+      ` ${t('assets.parts.inside', { name: c.name })}`,
+    ])
+  }
+
   const cardOf = (c: Catalogued) =>
     h('section', { class: isOfficial(c) ? 'asset official' : 'asset', 'data-component': c.id }, [
       h('div', { class: 'asset-head' }, [
@@ -223,24 +403,36 @@ export function assetsBoard(host: AssetsHost) {
           h(
             'figure',
             {
-              class: tile.preview ? 'tile preview' : 'tile',
+              class: tile.example ? 'tile example' : tile.preview ? 'tile preview' : 'tile',
               title: t('assets.drag.title'),
               'data-drag': c.id,
               'data-tile': tile.label,
+              'data-example': tile.example?.name,
               onpointerdown: (e) => {
                 const variant = tile.use.variant ?? {}
                 host.drag(
                   e as PointerEvent,
                   e.currentTarget as HTMLElement,
-                  carriedOf(c, variant),
-                  dragLabel(c.name, variant),
+                  carriedOf(c, variant, tile.example),
+                  tile.example ? `${c.name} · ${tile.example.name}` : dragLabel(c.name, variant),
                 )
               },
             },
-            [frameFor(c, tile), h('figcaption', {}, [tile.preview ? `★ ${tile.label}` : tile.label])],
+            [
+              frameFor(c, tile),
+              h('figcaption', {}, [
+                tile.example
+                  ? t('assets.example', { name: tile.label })
+                  : tile.preview
+                    ? `★ ${tile.label}`
+                    : tile.label,
+              ]),
+            ],
           ),
         ),
       ),
+      partsLine(c),
+      pickerOf(c),
     ])
 
   const placeSection = (target: {
@@ -256,14 +448,18 @@ export function assetsBoard(host: AssetsHost) {
     const chosen: Record<string, string> = {}
     const variant = () =>
       Object.fromEntries(Object.entries(chosen).filter(([dim, value]) => value !== target.defaults[dim]))
-    const carried = (): Carried => ({
-      component: target.id,
-      variant: variant(),
-      install: target.install,
-      file: target.file,
-      ...(target.props ? { props: target.props } : {}),
-      ...(target.children !== undefined ? { children: target.children } : {}),
-    })
+    const carried = (): Carried => {
+      const icon = chosenIcons.get(target.id)
+      return {
+        component: target.id,
+        variant: variant(),
+        install: target.install,
+        file: target.file,
+        ...(target.props ? { props: target.props } : {}),
+        ...(target.children !== undefined ? { children: target.children } : {}),
+        ...(icon ? { icon } : {}),
+      }
+    }
     const selects = Object.entries(target.variants).map(([dim, values]) =>
       h('label', { class: 'place-variant' }, [
         `${dim} `,
@@ -564,7 +760,12 @@ export function assetsBoard(host: AssetsHost) {
 
   const listBody = () => {
     const q = query.trim().toLowerCase()
-    const shown = catalog.filter((c) => !q || c.id.toLowerCase().includes(q))
+    const inside = new Set([...parts.values()].flat().map((c) => c.id))
+    const matches = (c: Catalogued) =>
+      !q ||
+      c.id.toLowerCase().includes(q) ||
+      (parts.get(c.id) ?? []).some((p) => p.id.toLowerCase().includes(q))
+    const shown = catalog.filter((c) => !inside.has(c.id) && matches(c))
     const kit = official.kit
     const owners = [...new Set([...(kit ? [kit] : []), ...shown.map((c) => c.owner.id)])]
     const ownerLabel = (o: string) => {
@@ -671,6 +872,8 @@ export function assetsBoard(host: AssetsHost) {
     board.replaceChildren(h('p', { class: 'hint-text' }, [t('assets.loading')]))
     catalog = (await json<Catalogued[]>('/_hozu/dev/components')) ?? []
     official = (await json<Official>('/_hozu/dev/official')) ?? official
+    icons = (await json<DevIcons>('/_hozu/dev/icons')) ?? {}
+    parts = partsOf(catalog, official)
     cards.clear()
     screens = (await json<Screens>('/_hozu/dev/previews')) ?? { pages: [] }
     await render()

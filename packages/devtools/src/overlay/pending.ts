@@ -34,8 +34,12 @@ function htmlOf(add: Addition): Promise<string | null> {
   const use = {
     variant: add.variant,
     ...(add.children ? { children: placeholderFor(name, add.variant) } : {}),
+    ...(add.icon?.d ? { props: { [add.icon.prop]: add.icon.d } } : {}),
   }
-  const url = `/_hozu/dev/component?id=${encodeURIComponent(add.component)}&use=${encodeURIComponent(JSON.stringify(use))}`
+  const query = add.example
+    ? `example=${encodeURIComponent(add.example.name)}`
+    : `use=${encodeURIComponent(JSON.stringify(use))}`
+  const url = `/_hozu/dev/component?id=${encodeURIComponent(add.component)}&${query}`
   let found = rendered.get(url)
   if (!found) {
     found = fetch(url, { cache: 'no-store' })
@@ -174,7 +178,7 @@ export function pendingPreviews(host: { doc: () => Document }) {
 export function pendingKeys(items: { id: string; index: number; add: Addition }[]): string[] {
   const seen = new Map<string, number>()
   return items.map(({ id, index, add }) => {
-    const base = `${id}|${index}|${add.position}|${add.component}|${JSON.stringify(add.variant)}`
+    const base = `${id}|${index}|${add.position}|${add.component}|${JSON.stringify(add.variant)}|${add.example?.name ?? ''}|${add.icon?.name ?? ''}`
     const n = (seen.get(base) ?? 0) + 1
     seen.set(base, n)
     return `${base}|${n}`

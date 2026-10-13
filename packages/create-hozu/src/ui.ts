@@ -11,6 +11,7 @@ interface Catalog {
   kit: string
   styles: string
   tv: string
+  previews?: string
   files: Record<string, { components: string[]; uses: string[] }>
 }
 
@@ -46,10 +47,14 @@ const hash = (text: string) => createHash('sha256').update(text).digest('hex')
 export async function installUi(
   app: string,
   kitDir: string,
-): Promise<{ version: string; written: string[] }> {
+): Promise<{ version: string; written: string[]; previews: string | null }> {
   const catalog = JSON.parse(await readFile(join(kitDir, 'catalog.json'), 'utf8')) as Catalog
   const { version } = JSON.parse(await readFile(join(kitDir, 'package.json'), 'utf8')) as { version: string }
-  const files = [...Object.keys(catalog.files), catalog.styles].sort()
+  const files = [
+    ...Object.keys(catalog.files),
+    catalog.styles,
+    ...(catalog.previews ? [catalog.previews] : []),
+  ].sort()
   const lock: Record<string, string> = {}
   const written: string[] = []
   const put = async (rel: string, text: string) => {
@@ -69,5 +74,5 @@ export async function installUi(
   )
   await put('tv.ts', await readFile(join(kitDir, 'kit', catalog.tv), 'utf8'))
   await put('kit.lock.json', `${JSON.stringify({ source: UI_KIT, version, files: lock }, null, 2)}\n`)
-  return { version, written }
+  return { version, written, previews: catalog.previews ?? null }
 }

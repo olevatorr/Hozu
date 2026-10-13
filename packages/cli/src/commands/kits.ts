@@ -20,6 +20,7 @@ import {
   readLock,
   syncFiles,
   tailwindThemed,
+  withPreviews,
   writeLock,
 } from './official.ts'
 
@@ -325,7 +326,7 @@ export async function addKit(
     if (next === null) out.manual.push(`${relative(cwd, path)}: ${manual}`)
     else if (next !== source) {
       await writeFile(path, next)
-      out.edited.push(relative(cwd, path))
+      if (!out.edited.includes(relative(cwd, path))) out.edited.push(relative(cwd, path))
     }
   }
   const name = `${id}Kit`
@@ -341,6 +342,15 @@ export async function addKit(
     },
     `import { kit as ${name} } from './${id}/kit.ts' and add kits: [${name}] to project()`,
   )
+  const examples = official?.catalog.previews
+  if (examples && existsSync(join(root, id, examples))) {
+    const url = `new URL('./${id}/${examples}', import.meta.url)`
+    await edit(
+      loaded.path,
+      (s) => withPreviews(s, url),
+      `add ${url} to project({ previews }) (a list when the app has its own), so DevTools shows the kit's examples`,
+    )
+  }
   await edit(
     join(root, 'package.json'),
     (s) => {

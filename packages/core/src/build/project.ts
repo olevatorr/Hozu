@@ -507,14 +507,20 @@ function build(project: unknown, tracking: boolean, manifest: Manifest | null): 
       'project({ app }) must be a file URL',
       "Name the app module with new URL('./app.ts', import.meta.url).",
     )
-  if (config.previews != null && !filePath(config.previews))
-    scope.report(
-      'HZ014',
-      null,
-      '/previews',
-      'project({ previews }) must be a file URL',
-      "Name the previews module with new URL('./previews.ts', import.meta.url).",
-    )
+  for (const [i, url] of (config.previews == null
+    ? []
+    : Array.isArray(config.previews)
+      ? config.previews
+      : [config.previews]
+  ).entries())
+    if (!filePath(url))
+      scope.report(
+        'HZ014',
+        null,
+        Array.isArray(config.previews) ? `/previews/${i}` : '/previews',
+        'project({ previews }) must be a file URL or a list of them',
+        "Name the previews module with new URL('./previews.ts', import.meta.url).",
+      )
   for (const [i, kit] of (Array.isArray(config.kits) ? config.kits : []).entries()) {
     const def = infoOf(kit)?.kind === 'kit' ? (infoOf(kit)!.def as KitDef) : null
     if (!def?.styles || !kitDecls.some(([id]) => id === def.id)) continue
@@ -788,9 +794,12 @@ export function envFilesOf(project: unknown): string[] {
   return info?.kind === 'project' ? ((info.def as ProjectConfig).env?.files ?? []) : []
 }
 
-export function previewsModuleOf(project: unknown): string | null {
+export function previewsModulesOf(project: unknown): string[] {
   const info = infoOf(project)
-  return info?.kind === 'project' ? filePath((info.def as ProjectConfig).previews) : null
+  if (info?.kind !== 'project') return []
+  const value = (info.def as ProjectConfig).previews
+  const list = value == null ? [] : Array.isArray(value) ? value : [value]
+  return list.map((url) => filePath(url)).filter((path): path is string => path !== null)
 }
 
 export function appModuleOf(project: unknown): string | null {

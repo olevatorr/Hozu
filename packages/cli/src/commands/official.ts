@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
-import type { DevOfficial } from '@hozu/core/ir'
+import type { DevIcons, DevOfficial } from '@hozu/core/ir'
 
 export const OFFICIAL = '@hozu/ui-kit'
 
@@ -11,6 +11,12 @@ export interface Catalog {
   styles: string
   themes: string[]
   files: Record<string, { components: string[]; uses: string[] }>
+  /** The kit's `p.example` previews, copied with the kit and named in `project({ previews })`. */
+  previews?: string
+  /** Components used only inside another, by the parent's name. */
+  parts?: Record<string, string[]>
+  /** Components whose prop takes one of the kit's icons: `{ Icon: { prop: 'd', from: ['icons/lucide.ts'] } }`. */
+  pickers?: Record<string, { prop: string; from: string[] }>
 }
 
 export interface Official {
@@ -107,6 +113,21 @@ export function withModule(source: string, file: string): string | null {
   return `${listed.slice(0, at)}import * as ${name} from './${file}'\n${listed.slice(at)}`
 }
 
+/** `hozu.config.ts` with `url` (`new URL('./ui/previews.ts', import.meta.url)`) in `project({ previews })`, or null. */
+export function withPreviews(source: string, url: string): string | null {
+  if (source.includes(url)) return source
+  const list = /previews:\s*\[([^\]]*)\]/.exec(source)
+  if (list) {
+    const entries = list[1]!.trim().replace(/,$/, '')
+    return source.replace(list[0], `previews: [${entries ? `${entries}, ` : ''}${url}]`)
+  }
+  const one = /previews:\s*(new URL\([^)]*\))/.exec(source)
+  if (one) return source.replace(one[0], `previews: [${one[1]}, ${url}]`)
+  if (/\bpreviews\s*[:,}]/.test(source)) return null
+  const next = source.replace(/^(\s*)features:/m, `$1previews: [${url}],\n$1features:`)
+  return next === source ? null : next
+}
+
 /** Copies `files` of the official kit into `<root>/<id>/`; a file that exists with other content is kept. */
 export function copyFiles(
   official: Official,
@@ -178,7 +199,11 @@ export function syncFiles(
 }
 
 export const allFiles = (catalog: Catalog) =>
-  [...closure(catalog, Object.keys(catalog.files)), catalog.styles].sort()
+  [
+    ...closure(catalog, Object.keys(catalog.files)),
+    catalog.styles,
+    ...(catalog.previews ? [catalog.previews] : []),
+  ].sort()
 
 /** The kit installed from `@hozu/ui-kit` and the package's components, for DevTools (ADR 0089 P4). */
 export function officialState(root: string, kits: string[]): DevOfficial {
@@ -194,5 +219,33 @@ export function officialState(root: string, kits: string[]): DevOfficial {
           f.components.map((name) => ({ name, file })),
         )
       : [],
+    ...(official?.catalog.parts ? { parts: official.catalog.parts } : {}),
   }
+}
+
+const ICON = /^export const (\w+) = '([^'\n]*)'/gm
+
+/** The icon exports (`export const name = '<path data>'`) of the files the kit's pickers choose from. */
+export function officialIcons(root: string, kits: string[]): DevIcons {
+  const kit = kits.find((id) => readLock(root, id)?.source === OFFICIAL)
+  const pickers = kit ? officialPackage(join(root, 'hozu.config.ts'))?.catalog.pickers : undefined
+  if (!kit || !pickers) return {}
+  return Object.fromEntries(
+    Object.entries(pickers).map(([name, picker]) => [
+      `${kit}.${name}`,
+      {
+        prop: picker.prop,
+        files: picker.from.map((from) => `${kit}/${from}`),
+        icons: picker.from.flatMap((from) => {
+          const file = join(root, kit, from)
+          if (!existsSync(file)) return []
+          return [...readFileSync(file, 'utf8').matchAll(ICON)].map((m) => ({
+            name: m[1]!,
+            file: `${kit}/${from}`,
+            d: m[2]!,
+          }))
+        }),
+      },
+    ]),
+  )
 }

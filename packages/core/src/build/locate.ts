@@ -14,17 +14,31 @@ export interface DevOptions {
   previews?: DevPreviews
   /** The app's kit installed from `@hozu/ui-kit` and the package's components (ADR 0089 P4), read on each call. */
   official?: () => DevOfficial
+  /** Renders a named `p.example` of a component, for the Assets panel. */
+  example?: (id: string, name: string) => Promise<{ ok: boolean; html: string; problems: string[] }>
+  /** The icons the app's picker components choose from (the kit catalog's `pickers`), read on each call. */
+  icons?: () => DevIcons
 }
+
+/** By component id: the prop an icon goes into, the files it chooses from and their exports (name → path data). */
+export type DevIcons = Record<
+  string,
+  { prop: string; files: string[]; icons: { name: string; file: string; d: string }[] }
+>
 
 export interface DevOfficial {
   kit: string | null
   version: string | null
   partial: boolean
   available: { name: string; file: string }[]
+  /** A component that is used only inside another, by the parent's name: `{ Table: ['Tr', 'Th', 'Td'] }`. */
+  parts?: Record<string, string[]>
 }
 
 export interface DevPreviews {
   components: Record<string, { name: string; use: IsolatedUse }[]>
+  /** `p.example` by component id, with where it is written (relative to the app). */
+  examples?: Record<string, { name: string; file: string | null; line: number }[]>
   pages: Record<string, { name: string; data: Record<string, Json> }[]>
 }
 

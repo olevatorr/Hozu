@@ -97,7 +97,7 @@ export async function createApp(dir: string, options: CreateOptions): Promise<st
     options.version,
   )
   if (options.ui) {
-    const { version, written: kit } = await installUi(dir, options.ui)
+    const { version, written: kit, previews } = await installUi(dir, options.ui)
     written.push(...kit)
     pkg.dependencies['@hozu/variants'] = `^${options.version}`
     pkg.devDependencies[UI_KIT] = `^${version}`
@@ -123,7 +123,10 @@ export async function createApp(dir: string, options: CreateOptions): Promise<st
           "import { home } from './routes.ts'\n",
           "import { home } from './routes.ts'\nimport { kit as uiKit } from './ui/kit.ts'\n",
         )
-        .replace('  features: [site],', '  kits: [uiKit],\n  features: [site],'),
+        .replace(
+          '  features: [site],',
+          `  kits: [uiKit],\n${previews ? `  previews: [new URL('./ui/${previews}', import.meta.url)],\n` : ''}  features: [site],`,
+        ),
     )
     const views = join(dir, 'features/site/views.ts')
     await writeFile(views, UI_HOME)

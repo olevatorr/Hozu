@@ -83,6 +83,50 @@ export interface DropHost {
   /** Selects the part the component was dropped at. */
   drop(el: Element): void
   place(add: Addition, note: string): void
+  /** Windows besides this one whose page the pointer can be over (the Workbench frame's). */
+  windows?(): Window[]
+}
+
+const swallowed = ['mousedown', 'mouseup', 'click', 'auxclick', 'dblclick', 'contextmenu'] as const
+
+/**
+ * Swallows the page's mouse and click events from the moment a drag starts until the click that ends it, so a drop
+ * on a button or a link never presses it.
+ */
+export function gestureGuard(windows: () => Window[]) {
+  let held: Window[] = []
+  let timer: ReturnType<typeof setTimeout> | null = null
+  const swallow = (event: Event) => {
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    if (event.type === 'click') release()
+    else if (event.type === 'mouseup') {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(release, 400)
+    }
+  }
+  const release = () => {
+    if (timer) clearTimeout(timer)
+    timer = null
+    for (const w of held) for (const type of swallowed) w.removeEventListener(type, swallow, true)
+    held = []
+  }
+  return {
+    hold: () => {
+      if (held.length) return
+      held = [...new Set(windows())]
+      for (const w of held) for (const type of swallowed) w.addEventListener(type, swallow, true)
+    },
+    release,
+    /** A gesture whose end has not reached the page yet. */
+    holding: () => held.length > 0,
+    /** The pointer is up: the click that follows, if any, comes soon. */
+    settle: () => {
+      if (!held.length) return
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(release, 400)
+    },
+  }
 }
 
 const px = (n: number) => `${n}px`
@@ -97,6 +141,7 @@ export function dragger(host: DropHost) {
   const mark = indicator.firstElementChild as HTMLElement
   const tag = indicator.lastElementChild as HTMLElement
   let stop: (() => void) | null = null
+  const guard = gestureGuard(() => [window, ...(host.windows?.() ?? [])])
   let over: { el: Element; position: Position } | null = null
 
   const hide = () => {
@@ -189,6 +234,7 @@ export function dragger(host: DropHost) {
         try {
           handle.setPointerCapture(e.pointerId)
         } catch {}
+        guard.hold()
         host.started()
         ghost.textContent = label
         ghost.hidden = false
@@ -201,6 +247,7 @@ export function dragger(host: DropHost) {
       if (e.pointerId !== down.pointerId) return
       const at = over
       end()
+      if (moved) guard.settle()
       if (!moved || !at || e.type === 'pointercancel') return
       host.drop(at.el)
       const title = t(`drop.${at.position}`, { part: await host.name(at.el) })
@@ -224,6 +271,8 @@ export function dragger(host: DropHost) {
     indicator,
     note,
     start,
+    /** A drag, or the end of one, still owns the page's mouse events. */
+    holding: guard.holding,
     /** Escape: cancels a drag or closes the note; true when it did. */
     escape: () => {
       if (stop) {

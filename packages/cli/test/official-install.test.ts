@@ -12,7 +12,9 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createApp } from 'create-hozu'
 import { afterAll, describe, expect, it, vi } from 'vitest'
+import { load } from '../src/load.ts'
 import { main } from '../src/main.ts'
+import { checkPreviews, devPreviews, loadPreviews, renderExample } from '../src/previews.ts'
 
 vi.setConfig({ testTimeout: 60_000 })
 
@@ -122,6 +124,57 @@ describe('Hozu UI from the official kit (ADR 0089)', () => {
     expect(pkg.devDependencies['@hozu/ui-kit']).toMatch(/^\^\d/)
     expect(readFileSync(join(app, 'features/site/views.ts'), 'utf8')).toContain('ui.use(PageHeader')
     expect((await run(['check', '--no-types'], app)).stdout).toContain('0 errors, 0 warnings')
+  })
+})
+
+describe("the kit's examples (p.example in ui/previews.ts)", () => {
+  it('create-hozu with ui names the examples in project({ previews }), and each example renders as written', async () => {
+    const app = await appWith({ kit: true, ui: true })
+    expect(readFileSync(join(app, 'hozu.config.ts'), 'utf8')).toContain(
+      "  previews: [new URL('./ui/previews.ts', import.meta.url)],\n",
+    )
+    const loaded = await load(undefined, app)
+    const build = loaded.build(true)
+    const { set, problems } = await loadPreviews(loaded)
+    expect(problems).toEqual([])
+    expect(checkPreviews(loaded, build, set)).toEqual([])
+    const examples = devPreviews(loaded, build, set).examples ?? {}
+    expect(examples['ui.Table']).toEqual([
+      { name: 'Orders', file: 'ui/previews.ts', line: expect.any(Number) },
+    ])
+    expect(Object.keys(examples)).toEqual(
+      expect.arrayContaining(['ui.DropdownMenu', 'ui.NavBar', 'ui.Dialog', 'ui.Field', 'ui.Icon']),
+    )
+    const table = await renderExample(loaded, set, 'ui.Table', 'Orders')
+    expect(table.problems).toEqual([])
+    expect(table.html).toMatch(/^<div[^>]*><table/)
+    expect(table.html.match(/<tr/g)).toHaveLength(4)
+    expect(table.html).toContain('Refunded')
+    for (const [id, list] of Object.entries(examples))
+      for (const e of list)
+        expect((await renderExample(loaded, set, id, e.name)).ok, `${id} ${e.name}`).toBe(true)
+    expect((await renderExample(loaded, set, 'ui.Table', 'Nope')).problems).toEqual([
+      'No example "Nope" of ui.Table',
+    ])
+  })
+
+  it("hozu add kit ui --from official adds the examples to project({ previews }), as a list beside the app's own", async () => {
+    const app = await appWith({ kit: true })
+    const added = await run(['add', 'kit', 'ui', '--from', 'official'], app)
+    expect(added.stdout).toContain('created   ui/previews.ts')
+    expect(readFileSync(join(app, 'hozu.config.ts'), 'utf8')).toContain(
+      "previews: [new URL('./ui/previews.ts', import.meta.url)],\n  features:",
+    )
+    const { withPreviews } = await import('../src/commands/official.ts')
+    const url = "new URL('./ui/previews.ts', import.meta.url)"
+    const own = "previews: new URL('./previews.ts', import.meta.url),"
+    expect(withPreviews(`project({\n  ${own}\n})`, url)).toBe(
+      `project({\n  previews: [new URL('./previews.ts', import.meta.url), ${url}],\n})`,
+    )
+    expect(withPreviews('project({ previews: [a], features: [] })', url)).toBe(
+      `project({ previews: [a, ${url}], features: [] })`,
+    )
+    expect(withPreviews('project({ previews, features: [] })', url)).toBeNull()
   })
 })
 

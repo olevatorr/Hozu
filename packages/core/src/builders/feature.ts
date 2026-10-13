@@ -86,8 +86,8 @@ export interface ProjectConfig {
   }
   styles?: URL
   app?: URL
-  /** Screens for people (`previews.ts`), loaded only by `hozu dev` and `hozu check` (ADR 0058 H). */
-  previews?: URL
+  /** Screens for people (`previews.ts`, or a list such as the kit's and the app's), loaded only by `hozu dev` and `hozu check` (ADR 0058 H). */
+  previews?: URL | readonly URL[]
   notFound?: RouteDecl
   error?: RouteDecl
   pages: PageDecl[]

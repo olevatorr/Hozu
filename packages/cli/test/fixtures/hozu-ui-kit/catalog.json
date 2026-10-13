@@ -6,6 +6,29 @@
     "grain",
     "joinery"
   ],
+  "previews": "previews.ts",
+  "parts": {
+    "Table": [
+      "Tr",
+      "Th",
+      "Td"
+    ],
+    "DropdownMenu": [
+      "MenuItem"
+    ],
+    "NavBar": [
+      "NavLink"
+    ]
+  },
+  "pickers": {
+    "Icon": {
+      "prop": "d",
+      "from": [
+        "icons/lucide.ts",
+        "icons/hozu.ts"
+      ]
+    }
+  },
   "files": {
     "badge.ts": {
       "components": [

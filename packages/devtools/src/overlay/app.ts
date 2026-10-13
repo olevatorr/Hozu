@@ -257,6 +257,7 @@ const drag = dragger({
     select({ id: el.getAttribute('data-hz') ?? '', index: indexOf(el), visible: visibleOf(el) }, false)
   },
   place: (add, note) => placeAt(add, note),
+  windows: () => (doc.defaultView && doc.defaultView !== window ? [doc.defaultView] : []),
 })
 
 async function screensSection(): Promise<HTMLElement | null> {
@@ -605,7 +606,7 @@ function listen(target: Window): AbortController {
     target.addEventListener(
       type,
       (event) => {
-        if (state.mode !== 'select' || ours(event)) return
+        if (state.mode !== 'select' || ours(event) || drag.holding()) return
         event.preventDefault()
         event.stopImmediatePropagation()
         if (type === 'dblclick') void selectText(event as MouseEvent)
@@ -625,7 +626,7 @@ function listen(target: Window): AbortController {
     'pointermove',
     (event) => {
       measuring = event.altKey
-      if (state.mode !== 'select') return
+      if (state.mode !== 'select' || (forced && ours(event))) return
       const el = ours(event) ? null : markedFrom(event)
       if (el !== hovered) void showHover(el)
     },
@@ -754,8 +755,18 @@ const reload = () => win.location.reload()
 function layersHost(close: () => void) {
   return {
     plain: state.audience === 'builder',
-    shown: (id: string) => doc.querySelector(`[data-hz="${CSS.escape(id)}"]`),
-    hover: (el: Element | null) => void showHover(el, true),
+    shown: (id: string) => {
+      const el = doc.querySelector(`[data-hz="${CSS.escape(id)}"]`)
+      return el?.getClientRects().length ? el : null
+    },
+    hover: (el: Element | null) => {
+      if (el) {
+        const r = el.getBoundingClientRect()
+        if (r.bottom < 0 || r.top > win.innerHeight || r.right < 0 || r.left > win.innerWidth)
+          el.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+      }
+      void showHover(el, true)
+    },
     pick: (id: string, el: Element) => {
       void showHover(null)
       select({ id, index: indexOf(el), visible: visibleOf(el) }, false)

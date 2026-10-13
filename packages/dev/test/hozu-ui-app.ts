@@ -16,6 +16,69 @@ import { fileURLToPath } from 'node:url'
 const studio = fileURLToPath(new URL('../../../examples/studio/', import.meta.url))
 const repo = fileURLToPath(new URL('../../../', import.meta.url))
 
+const TABLE = `import { ui } from '@hozu/core'
+import { tv } from './tv.ts'
+
+export const Table = ui.component({
+  tag: 'div',
+  styles: tv({ slots: { base: 'overflow-x-auto', table: 'w-full text-left text-sm' } }),
+  slots: ['head'],
+  children: true,
+  render: ({ slots, children, classes }) =>
+    ui.div({}, [ui.table({ class: classes.table }, [ui.thead({}, [slots.head]), ui.tbody({}, children)])]),
+})
+
+export const Th = ui.component({
+  tag: 'th',
+  styles: tv({ base: 'px-3 py-2 text-xs font-medium' }),
+  children: true,
+  render: ({ children }) => ui.th({ scope: 'col' }, children),
+})
+
+export const Td = ui.component({
+  tag: 'td',
+  styles: tv({ base: 'px-3 py-2' }),
+  children: true,
+  render: ({ children }) => ui.td({}, children),
+})
+
+export const Tr = ui.component({
+  tag: 'tr',
+  styles: tv({ base: 'border-t' }),
+  children: true,
+  render: ({ children }) => ui.tr({}, children),
+})
+`
+
+const ICON = `import { ui } from '@hozu/core'
+import { z } from 'zod'
+import { tv } from './tv.ts'
+
+export const Icon = ui.component({
+  tag: 'svg',
+  styles: tv({ base: 'size-4 shrink-0 fill-none stroke-current' }),
+  props: z.object({ d: z.string() }),
+  render: ({ props }) =>
+    ui.svg({ viewBox: '0 0 24 24', 'stroke-width': '2', 'aria-hidden': 'true' }, [ui.path({ d: props.d })]),
+})
+`
+
+const PREVIEWS = `import { ui } from '@hozu/core'
+import { previews } from '@hozu/core/preview'
+import { Badge } from './badge.ts'
+import { Table, Td, Th, Tr } from './table.ts'
+
+export default previews((p) => [
+  p.example(Table, 'Orders', () =>
+    ui.use(Table, { slots: { head: ui.use(Tr, {}, [ui.use(Th, {}, ['Order']), ui.use(Th, {}, ['Status'])]) } }, [
+      ui.use(Tr, {}, [ui.use(Td, {}, ['#1042']), ui.use(Td, {}, [ui.use(Badge, { props: { tone: 'done' } }, ['Paid'])])]),
+      ui.use(Tr, {}, [ui.use(Td, {}, ['#1041']), ui.use(Td, {}, ['Pending'])]),
+      ui.use(Tr, {}, [ui.use(Td, {}, ['#1040']), ui.use(Td, {}, ['Refunded'])]),
+    ]),
+  ),
+])
+`
+
 /** The studio app with its `ui` kit installed from a small `@hozu/ui-kit` (ADR 0089 P4–P6). */
 export function appWithHozuUi(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'hozu-devtools-ui-')))
@@ -42,12 +105,33 @@ export function appWithHozuUi(): string {
       kit: 'kit.ts',
       styles: 'theme.css',
       themes: [],
+      previews: 'previews.ts',
+      parts: { Table: ['Tr', 'Th', 'Td'] },
+      pickers: { Icon: { prop: 'd', from: ['icons/lucide.ts'] } },
       files: {
         'badge.ts': { components: ['Badge'], uses: [] },
         'button.ts': { components: ['Button'], uses: [] },
         'dialog.ts': { components: ['Dialog'], uses: [] },
+        'table.ts': { components: ['Table', 'Th', 'Td', 'Tr'], uses: [] },
+        'icon.ts': { components: ['Icon'], uses: [] },
+        'icons/lucide.ts': { components: [], uses: [] },
       },
     }),
+  )
+  writeFileSync(join(root, 'ui/table.ts'), TABLE)
+  writeFileSync(join(root, 'ui/icon.ts'), ICON)
+  mkdirSync(join(root, 'ui/icons'))
+  writeFileSync(
+    join(root, 'ui/icons/lucide.ts'),
+    readFileSync(join(repo, 'packages/cli/test/fixtures/hozu-ui-kit/kit/icons/lucide.ts'), 'utf8'),
+  )
+  writeFileSync(join(root, 'ui/previews.ts'), PREVIEWS)
+  writeFileSync(
+    join(root, 'hozu.config.ts'),
+    readFileSync(join(root, 'hozu.config.ts'), 'utf8').replace(
+      '  features: [tasks],',
+      "  previews: [new URL('./ui/previews.ts', import.meta.url)],\n  features: [tasks],",
+    ),
   )
   writeFileSync(
     join(root, 'ui/tag.ts'),
@@ -58,9 +142,9 @@ export function appWithHozuUi(): string {
     readFileSync(join(root, 'ui/kit.ts'), 'utf8')
       .replace(
         "import * as input from './input.ts'",
-        "import * as input from './input.ts'\nimport * as tag from './tag.ts'",
+        "import * as input from './input.ts'\nimport * as tag from './tag.ts'\nimport * as table from './table.ts'\nimport * as icon from './icon.ts'",
       )
-      .replace('input, field]', 'input, field, tag]'),
+      .replace('input, field]', 'input, field, tag, table, icon]'),
   )
   writeFileSync(
     join(root, 'ui/button.ts'),

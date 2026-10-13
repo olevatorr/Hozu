@@ -465,6 +465,64 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
     expect(installed).toContain('place `ui.use(Button, {}, [...])` inside it, as its last child')
   })
 
+  it('an Add item dragged from an example says to build it like that example', () => {
+    const anchor: DevNode = { ...base, component: null, excerpt: null }
+    const md = requestMarkdown({
+      items: [
+        {
+          ...item(anchor, 'The orders of this customer'),
+          add: {
+            component: 'ui.Table',
+            variant: {},
+            position: 'after',
+            install: null,
+            file: 'ui/table.ts',
+            children: true,
+            example: { name: 'Orders', file: 'ui/previews.ts', line: 21 },
+          },
+        },
+      ],
+      context,
+    })
+    expect(md).toContain(
+      "- Mind: build it like the ‘Orders’ example in `ui/previews.ts:21`: copy that `ui.use(Table, …)` with the parts, slots and children it uses (import Table from `ui/table.ts` and the others from their files in the kit), place it after it, as a sibling, and replace the sample text with the page's own; `hozu docs ui` lists its props and slots.",
+    )
+  })
+
+  it('an Add item with a chosen icon names its import; a Lucide icon the app lacks is added first', () => {
+    const anchor: DevNode = { ...base, component: null, excerpt: null }
+    const add = {
+      component: 'ui.Icon',
+      variant: {},
+      position: 'before' as const,
+      install: null,
+      file: 'ui/icon.ts',
+      props: ['d'],
+      children: false,
+      icon: { prop: 'd', name: 'arrowUp', file: 'ui/icons/lucide.ts', d: 'M5 12l7-7 7 7M12 19V5' },
+    }
+    const md = requestMarkdown({ items: [{ ...item(anchor, ''), add }], context })
+    expect(md).toContain(
+      "- Mind: import it from `ui/icon.ts` and `{ arrowUp }` from `ui/icons/lucide.ts` (from the app's root: `import { arrowUp } from './ui/icons/lucide.ts'`; the path is relative to the view's file); place `ui.use(Icon, { props: { d: arrowUp } })` before it, as a sibling;",
+    )
+    const missing = requestMarkdown({
+      items: [
+        {
+          ...item(anchor, ''),
+          add: {
+            ...add,
+            icon: { prop: 'd', name: 'alarmClock', file: 'ui/icons/lucide.ts', lucide: 'alarm-clock' },
+          },
+        },
+      ],
+      context,
+    })
+    expect(missing).toContain(
+      "- Mind: first add Lucide's `alarm-clock` icon to `ui/icons/lucide.ts` as `export const alarmClock = '<path data>'` (ISC; the `d` of every shape in `icons/alarm-clock.svg` of the `lucide-static` package, joined, or from https://lucide.dev/icons/alarm-clock); then import it from `ui/icon.ts` and `{ alarmClock }` from `ui/icons/lucide.ts`",
+    )
+    expect(missing).toContain('place `ui.use(Icon, { props: { d: alarmClock } })` before it')
+  })
+
   it('a main component without a use points at its own file (ADR 0089 P6)', () => {
     const main = {
       node: null,

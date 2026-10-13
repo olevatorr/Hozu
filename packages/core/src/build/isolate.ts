@@ -41,11 +41,7 @@ export function componentIdOf(source: unknown, decl: unknown): string | null {
   return null
 }
 
-/** A one-page project whose only view is `ui.use` of the component `id`, for `hozu render`; null if no such component. */
-export function componentProject(source: unknown, id: string, use: IsolatedUse): unknown {
-  const info = infoOf(source)
-  if (info?.kind !== 'project') return null
-  const config = info.def as ProjectConfig
+function scopeOf(config: ProjectConfig, id: string) {
   const [owner, name = ''] = id.split('.')
   const kit = (config.kits ?? []).find((k) => (infoOf(k)?.def as KitDef | undefined)?.id === owner)
   const own = config.features
@@ -56,7 +52,39 @@ export function componentProject(source: unknown, id: string, use: IsolatedUse):
     : own
       ? componentsIn(own.declarations)
       : {}
-  const decl = scope[name]
+  return { own, scope, decl: scope[name] }
+}
+
+function onePage(
+  config: ProjectConfig,
+  own: FeatureConfig | undefined,
+  scope: Record<string, object>,
+  title: string,
+  body: () => unknown,
+): unknown {
+  const view = lower.done(ui.view({ render: lower.lowered(body as () => never) }))
+  const page = route({ path: '/', params: null, search: null })
+  return project({
+    schema: config.schema,
+    routes: { render: page },
+    pages: [ui.page(page, { views: [view], head: { render: () => ({ title }) } })],
+    ...(config.kits ? { kits: config.kits } : {}),
+    features: [
+      feature({
+        id: own ? String(own.id) : 'hozuRender',
+        intent: { summary: title },
+        declarations: [{ ...(own ? scope : {}), HozuRender: view }],
+      }),
+    ],
+  } as never)
+}
+
+/** A one-page project whose only view is `ui.use` of the component `id`, for `hozu render`; null if no such component. */
+export function componentProject(source: unknown, id: string, use: IsolatedUse): unknown {
+  const info = infoOf(source)
+  if (info?.kind !== 'project') return null
+  const config = info.def as ProjectConfig
+  const { own, scope, decl } = scopeOf(config, id)
   if (!decl) return null
   const def = infoOf(decl)!.def as ComponentDef
   const options = {
@@ -65,22 +93,17 @@ export function componentProject(source: unknown, id: string, use: IsolatedUse):
     ...(Object.keys(use.slots).length ? { slots: use.slots } : {}),
   }
   const useOf = ui.use as (...args: unknown[]) => never
-  const render = lower.lowered(() =>
+  return onePage(config, own, scope, `hozu render ${id}`, () =>
     def.children ? useOf(decl, options, use.children ? [use.children] : []) : useOf(decl, options),
   )
-  const view = lower.done(ui.view({ render }))
-  const page = route({ path: '/', params: null, search: null })
-  return project({
-    schema: config.schema,
-    routes: { render: page },
-    pages: [ui.page(page, { views: [view], head: { render: () => ({ title: id }) } })],
-    ...(config.kits ? { kits: config.kits } : {}),
-    features: [
-      feature({
-        id: own ? String(own.id) : 'hozuRender',
-        intent: { summary: `hozu render ${id}` },
-        declarations: [{ ...(own ? scope : {}), HozuRender: view }],
-      }),
-    ],
-  } as never)
+}
+
+/** A one-page project whose only view is an example of the component `id`, rendered as written (`p.example`). */
+export function exampleProject(source: unknown, id: string, render: () => unknown): unknown {
+  const info = infoOf(source)
+  if (info?.kind !== 'project') return null
+  const config = info.def as ProjectConfig
+  const { own, scope, decl } = scopeOf(config, id)
+  if (!decl) return null
+  return onePage(config, own, scope, `example of ${id}`, () => render())
 }

@@ -969,7 +969,8 @@ function handlerFor({
         path === '/_hozu/dev/components' ||
         path === '/_hozu/dev/component' ||
         path === '/_hozu/dev/previews' ||
-        path === '/_hozu/dev/official')
+        path === '/_hozu/dev/official' ||
+        path === '/_hozu/dev/icons')
     ) {
       if (!/^(127\.0\.0\.1|localhost|\[::1\])$/.test(url.hostname))
         return new Response('Hozu DevTools answers only this machine', { status: 403 })
@@ -991,22 +992,36 @@ function handlerFor({
           available: found.available.map((a) => ({ ...a, installed: !!kit?.components[a.name] })),
         })
       }
+      if (path === '/_hozu/dev/icons') return devJson(dev.icons?.() ?? {})
       if (path === '/_hozu/dev/components')
         return devJson(
-          componentCatalog(build, dev).map((c) => ({ ...c, previews: dev.previews?.components[c.id] ?? [] })),
+          componentCatalog(build, dev).map((c) => ({
+            ...c,
+            previews: dev.previews?.components[c.id] ?? [],
+            examples: dev.previews?.examples?.[c.id] ?? [],
+          })),
         )
       if (path === '/_hozu/dev/component') {
         const id = url.searchParams.get('id') ?? ''
         const entry = componentCatalog(build, dev).find((c) => c.id === id)
         if (!entry) return devJson({ error: `No component ${id}` }, { status: 404 })
         if (!dev.render) return devJson({ error: 'Rendering needs hozu dev' }, { status: 501 })
+        const example = url.searchParams.get('example')
+        if (example !== null) {
+          if (!dev.example) return devJson({ error: 'Rendering needs hozu dev' }, { status: 501 })
+          return devJson(await dev.example(id, example))
+        }
         let use: Record<string, unknown> = {}
         try {
           const parsed = JSON.parse(url.searchParams.get('use') ?? '{}') as unknown
           if (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
             use = parsed as Record<string, unknown>
         } catch {}
-        const props = (use.props ?? entry.example) as Record<string, unknown>
+        const props = (
+          use.props && typeof use.props === 'object'
+            ? { ...(entry.example as object), ...use.props }
+            : entry.example
+        ) as Record<string, unknown>
         return devJson(
           await dev.render(id, {
             variant: (use.variant ?? {}) as Record<string, string>,

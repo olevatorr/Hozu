@@ -22,6 +22,13 @@ export interface Addition {
   props?: string[]
   /** Whether it takes children. */
   children?: boolean
+  /** The `p.example` it was dragged from: the agent builds it with that structure. */
+  example?: { name: string; file: string | null; line: number }
+  /**
+   * The icon chosen for `prop`, exported as `name` from `file`; `lucide` names a Lucide icon the app does not have
+   * yet, to be added to `file` first. `d` is its path data, for the preview on the page.
+   */
+  icon?: { prop: string; name: string; file: string; lucide?: string; d?: string }
 }
 
 export interface ComponentRef {
@@ -309,23 +316,42 @@ const want = (note: string) =>
   `- Want: ${note ? note.replace(/\n+/g, ' / ') : '(not described: ask the user what should change)'}`
 
 function useOptions(add: Addition): string {
+  const props = [
+    ...(add.props ?? []).filter((p) => p !== add.icon?.prop).map((p) => `${p}: …`),
+    ...(add.icon ? [`${add.icon.prop}: ${add.icon.name}`] : []),
+  ]
   const parts = [
     ...(Object.keys(add.variant).length ? [`variant:${variantText(add.variant)}`] : []),
-    ...(add.props?.length ? [`props: { ${add.props.map((p) => `${p}: …`).join(', ')} }`] : []),
+    ...(props.length ? [`props: { ${props.join(', ')} }`] : []),
   ]
   return parts.length ? `{ ${parts.join(', ')} }` : '{}'
 }
 
+function addMind(add: Addition, at: string): string {
+  const name = add.component.split('.').pop() ?? add.component
+  const from = add.file ?? `the kit of ${add.component}`
+  if (add.example) {
+    const where = add.example.file ? `\`${add.example.file}:${add.example.line}\`` : 'the previews'
+    return `build it like the ‘${add.example.name}’ example in ${where}: copy that \`ui.use(${name}, …)\` with the parts, slots and children it uses (import ${name} from \`${from}\` and the others from their files in the kit), place it ${at}, and replace the sample text with the page's own`
+  }
+  const icon = add.icon
+  const fetch = icon?.lucide
+    ? `first add Lucide's \`${icon.lucide}\` icon to \`${icon.file}\` as \`export const ${icon.name} = '<path data>'\` (ISC; the \`d\` of every shape in \`icons/${icon.lucide}.svg\` of the \`lucide-static\` package, joined, or from https://lucide.dev/icons/${icon.lucide}); then `
+    : ''
+  const imports = icon
+    ? `import it from \`${from}\` and \`{ ${icon.name} }\` from \`${icon.file}\` (from the app's root: \`import { ${icon.name} } from './${icon.file}'\`; the path is relative to the view's file)`
+    : `import it from \`${from}\``
+  return `${fetch}${imports}; place \`ui.use(${name}, ${useOptions(add)}${add.children === false ? '' : ', [...]'})\` ${at}`
+}
+
 function addLines(item: RequestItem & { add: Addition; node: DevNode }): string[] {
   const { add, node } = item
-  const name = add.component.split('.').pop() ?? add.component
-  const variant = variantText(add.variant)
   const at = add.position === 'inside' ? 'inside it, as its last child' : `${add.position} it, as a sibling`
   return [
     want(item.note.trim()),
     `- Where: ${where(node)}`,
     ...(add.install ? [`- Install first: \`${add.install}\``] : []),
-    `- Mind: import it from \`${add.file ?? `the kit of ${add.component}`}\`; place \`ui.use(${name}, ${useOptions(add)}${add.children === false ? '' : ', [...]'})\` ${at}; \`hozu docs ui\` lists its props and slots.${node.conditions.length && add.position !== 'inside' ? ' If the selected part is the whole branch of a query, `when` or `?:`, the sibling goes into that branch too: return a list, or wrap both in a `ui.div`.' : ''}`,
+    `- Mind: ${addMind(add, at)}; \`hozu docs ui\` lists its props and slots.${node.conditions.length && add.position !== 'inside' ? ' If the selected part is the whole branch of a query, `when` or `?:`, the sibling goes into that branch too: return a list, or wrap both in a `ui.div`.' : ''}`,
     ...(node.pointer ? [`- Locate: \`hozu why ${node.pointer}\``] : []),
   ]
 }

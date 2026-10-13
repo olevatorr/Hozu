@@ -8,6 +8,8 @@ The kit lives in the app (`ui/`): its files are yours to edit. `ui/kit.lock.json
   `../../ui/<file>.ts`.
 - **Theme:** Grain by default; `data-theme="joinery"` on `<html>` (or any ancestor) switches. Colours are roles
   (`bg-surface`, `text-ink`, `text-ink-muted`, `border-line`, `bg-accent`, `text-danger-text`…), not palette names.
+- **Examples:** `ui/previews.ts` (in `project({ previews })`) composes the parts that go together (a `Table` with
+  `Tr` / `Th` / `Td`, a `DropdownMenu` with `MenuItem`s); DevTools Assets shows them. Build a new one like its example.
 - **Change every use** in the component's own file (its `tv()` styles, props, render). **Change one use** with
   `class` at that use; a property the component owns needs `!` (HZ072).
 

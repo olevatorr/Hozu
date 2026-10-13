@@ -128,7 +128,9 @@ describe.skipIf(!findBrowser())('Hozu UI in DevTools: Assets, Place, Main compon
       `(() => { const n = ${shadow}.querySelector('textarea[aria-label="A note for the placed component"]'); n.value = 'A button that adds a task' })()`,
     )
     await press('[data-place]', 'Place after')
-    await until(`${shadow}.querySelector('.assets').hidden && !!${shadow}.querySelector('.panel .item')`)
+    await until(`!!${shadow}.querySelector('.panel .item')`)
+    expect(await evaluate(`${shadow}.querySelector('.assets').hidden`)).toBe(false)
+    await press('.assets-head .act', 'Close')
     const text = await copied()
     expect(text).toContain(
       `## 1. Add <ui.Button> { tone: 'danger' } after <h1 "Team tasks">\n- Want: A button that adds a task\n- Where: \`features/tasks/views.ts:`,
@@ -142,9 +144,8 @@ describe.skipIf(!findBrowser())('Hozu UI in DevTools: Assets, Place, Main compon
     await press('[data-available="Dialog"] .asset-name', 'Dialog')
     await until(`!!${shadow}.querySelector('[data-place="inside"]')`)
     await press('[data-place]', 'Place inside')
-    await until(
-      `${shadow}.querySelector('.assets').hidden && ${shadow}.querySelectorAll('.panel .item').length === 2`,
-    )
+    await until(`${shadow}.querySelectorAll('.panel .item').length === 2`)
+    await press('.assets-head .act', 'Close')
     const both = await copied()
     expect(both).toContain('## 2. Add <ui.Dialog> inside <h1 "Team tasks">')
     expect(both).toContain('- Install first: `npx hozu add component ui Dialog --from official`')

@@ -3,9 +3,9 @@ import { dirname, join } from 'node:path'
 import type { BuildResult, IsolatedUse } from '@hozu/core/ir'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
-import { devPreviews, loadPreviews, renderUse } from '../previews.ts'
+import { devPreviews, loadPreviews, renderExample, renderUse } from '../previews.ts'
 import { DISPOSE_MS, disposeApps, importer, requireApp } from './app.ts'
-import { officialState } from './official.ts'
+import { officialIcons, officialState } from './official.ts'
 
 interface Listening {
   listen(port: number, ...rest: [string, () => void] | [() => void]): unknown
@@ -41,18 +41,21 @@ export async function runServe(
       ],
     })
   const publicDir = join(root, 'public')
+  const previews = process.env.HOZU_DEV === '1' ? await loadPreviews(loaded) : { set: null, problems: [] }
+  for (const p of previews.problems) log(`${p.code} ${p.message} (previews are off)`)
   const server = createServer(module.app, {
     env: process.env,
     ...(process.env.HOZU_DEV === '1'
       ? {
           dev: {
             root,
-            previews: await (async () => {
-              const { set, problems } = await loadPreviews(loaded)
-              for (const p of problems) log(`${p.code} ${p.message} (previews are off)`)
-              return devPreviews(loaded, build, set)
-            })(),
+            previews: devPreviews(loaded, build, previews.set),
             official: () => officialState(root, Object.keys(build.ir.kits)),
+            icons: () => officialIcons(root, Object.keys(build.ir.kits)),
+            example: async (id: string, name: string) => {
+              const { ok, html, problems } = await renderExample(loaded, previews.set, id, name)
+              return { ok, html, problems }
+            },
             render: async (id: string, use: IsolatedUse) => {
               const { ok, html, problems } = await renderUse(loaded, id, use)
               return { ok, html, problems }

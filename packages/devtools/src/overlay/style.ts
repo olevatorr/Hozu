@@ -312,6 +312,18 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .tile { margin: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-2); background: #ece9e2; display: flex; flex-direction: column; }
 .tile.preview { border-color: var(--red); }
 .tile.wide { grid-column: 1 / -1; }
+.tile.example { grid-column: 1 / -1; border-color: var(--text); }
+.tile.example .tile-frame { height: 160px; }
+.asset-parts { margin: 10px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--mute); font-size: 12px; }
+.icon-picker { margin-top: 12px; display: grid; gap: 8px; }
+.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; max-height: 240px; overflow: auto; overscroll-behavior: contain; }
+.icon-cell { display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--bg); color: var(--text); cursor: grab; }
+.icon-cell[hidden] { display: none; }
+.icon-cell:hover { background: rgba(var(--tint), 0.06); }
+.icon-cell[aria-pressed="true"] { border-color: var(--red); box-shadow: 0 0 0 1px var(--red); }
+.icon-name { font: 10.5px/1.2 var(--mono); color: var(--mute); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icon-other { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.icon-other input { flex: 1 1 160px; }
 .tile-frame { display: block; width: 100%; height: 96px; border: 0; background: transparent; }
 .tile figcaption { margin-top: auto; }
 .tile figcaption { padding: 5px 8px; font: 11.5px/1.3 var(--mono); color: #2b2724; background: #f6f3ec; border-top: 1px solid rgba(17, 16, 16, 0.08); }

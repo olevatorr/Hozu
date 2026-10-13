@@ -37,7 +37,8 @@
   - `## n. Add <ui.Button> { intent: 'primary' } after <button "Save">`: the person placed a component before, after
     or inside the selected part. `Install first` (only when the app lacks it) is `npx hozu add component ui Button
     --from official`; `Mind` names the file to import from and the `ui.use(…)` to write; `hozu docs ui` lists its
-    props and slots.
+    props and slots. Dragged from an example, `Mind` names it (`ui/previews.ts:21`): copy that structure. With an
+    icon, it names the export to import (a Lucide icon the app lacks is added to `ui/icons/lucide.ts` first).
   - `## n. <ui.Button> · Main component`: the person chose a component, not a part of the page. Change its `tv()`
     styles or render in its own file (`Where`); uses keep their own class overrides.
 - **Notes (`hozu show`):** `npx hozu show` lists them (a `STALE` one names a part that moved: re-add it),

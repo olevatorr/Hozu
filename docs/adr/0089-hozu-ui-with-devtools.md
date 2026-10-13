@@ -81,3 +81,14 @@ DevTools still writes no source. Every change goes through the request and the a
   - `ui.link(…)` turned into text (`${ui.link(home)}#x`) stops the build with HZ059 instead of rendering
     `[object Object]`. A link to a section of another page is left for after 1.0.
 
+- From the owner's second look at drag-and-drop:
+  - Assets opens docked beside the page; Full screen stays a button, and a choice the person made is remembered;
+  - a drag owns the page's mouse events until the click that ends it, so a drop never presses the button or link
+    under it;
+  - `p.example(component, name, () => node)` is a named, composed example rendered as written; `project({ previews })`
+    takes a list, so the kit's `ui/previews.ts` (copied and registered by the install) sits beside the app's own. A
+    parent card shows its examples first and its parts (catalog `parts`: Table → Tr, Th, Td) as chips; dragging an
+    example asks the agent to build it like that example;
+  - the catalog's `pickers` give `Icon` a searchable grid of the app's icon exports (`/_hozu/dev/icons`); a Lucide
+    name the app lacks is added to `ui/icons/lucide.ts` first by the agent;
+  - hovering or focusing a Layers row frames its part on the page (scrolled into view only when off screen).
