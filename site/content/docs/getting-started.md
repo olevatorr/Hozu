@@ -42,7 +42,7 @@ Use `--agent agents` for Codex, Cursor or Copilot, or `--agent both` for a team 
 npm create hozu@next my-app -- --agent claude --ui
 ```
 
-An app you already have: `npx -p @hozu/cli@next hozu migrate`, then `npm install -D @hozu/ui-kit` and `npx hozu add kit ui --from official`. `npx hozu docs ui` says which component fits what.
+An app you already have: `npx -p @hozu/cli@next hozu migrate`, then `npm install @hozu/variants@next`, `npm install -D @hozu/ui-kit` and `npx hozu add kit ui --from official`. `npx hozu docs ui` says which component fits what.
 
 ## Add a feature
 

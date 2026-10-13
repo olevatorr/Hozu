@@ -20,6 +20,7 @@ npx hozu add component ui Button
 [Hozu UI](https://ui.hozu.org) is the official kit: 22 components in two themes, copied into `ui/` so they are yours to edit. It needs Hozu 1.0 (`@next` until 1.0.0 is out):
 
 ```sh
+npm install @hozu/variants@next
 npm install -D @hozu/ui-kit
 npx hozu add kit ui --from official            # the whole kit
 npx hozu add component ui Button --from official   # or one, with the files it uses
