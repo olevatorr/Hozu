@@ -2,7 +2,7 @@
 title: 快速開始
 description: 建立你的第一個 Hozu 應用程式，並驗證一個可運作的 feature。
 order: 1
-source: 586cdc2470aa
+source: 335d77c223ac
 ---
 
 ## 不熟悉終端機？把這段貼給你的 agent
@@ -34,6 +34,16 @@ npm install
 ```
 
 Codex、Cursor 或 Copilot 請使用 `--agent agents`；團隊同時使用多種 agent 時請使用 `--agent both`。這些旗標會安裝對應的專案指示與 Hozu 撰寫 skill。
+
+### 加上 Hozu UI
+
+[Hozu UI](https://ui.hozu.org) 是官方元件，隨 Hozu 1.0 推出。1.0.0 正式版推出前，請從候選版開始；`create-hozu` 會問你要不要加入元件庫（`--ui` 代表要，`--no-ui` 代表不要）：
+
+```sh
+npm create hozu@next my-app -- --agent claude --ui
+```
+
+已經有的應用程式：先執行 `npx -p @hozu/cli@next hozu migrate`，再執行 `npm install -D @hozu/ui-kit` 與 `npx hozu add kit ui --from official`。`npx hozu docs ui` 會說明哪個元件適合哪種用途。
 
 ## 新增一個 feature
 

@@ -92,7 +92,7 @@ export const homeText = ui.messages('en', {
     uiKicker: 'Hozu UI',
     uiHeading: 'Official components your AI can change.',
     uiLead:
-      'Buttons, forms, tables and dialogs, in two themes. Say yes when create-hozu asks, and they are in your app: plain files you and your agent can edit.',
+      'Buttons, forms, tables and dialogs, in two themes. Start with npm create hozu@next (the 1.0 candidate) and say yes when it asks: they are in your app as plain files you and your agent can edit.',
     uiOwn: 'Yours to edit',
     uiOwnBody: 'The kit is copied into ui/. Updates replace only the files you did not change.',
     uiChecked: 'Checked by Hozu',
@@ -188,7 +188,7 @@ export const homeText = ui.messages('en', {
     designKeys:
       'DevTools uses the keys, the measuring and the words a designer already has: Shift+Enter goes up a level, Alt measures, the Design panel reads like Figma’s, with your tokens first.',
     designAssets:
-      'Assets shows every component and variant on one page, with the screens you name in previews.ts. Try a change on the page, then hand it to your agent. It writes the code; you never open a file.',
+      'Assets shows every component and variant beside your page, with the screens you name in previews.ts. Drag one in or try a change on the page, then hand it to your agent. It writes the code; you never open a file.',
     designButton: 'See it in motion →',
     figmaSelect: 'Select around it, inside it, beside it.',
     figmaAlt: 'Hold it and point: the distance in px.',
@@ -235,7 +235,7 @@ export const homeText = ui.messages('en', {
       'The Design panel in Figma’s order: changing Fill to red, Corner radius to full and Font size to base previews on the button and becomes the class to use',
     dtAssetsHeading: 'Every component on one page.',
     dtAssetsLead:
-      'No showcase page to write, no Storybook. Assets draws every component of your app, each variant and the states you named, from the app itself. See where each is used, frame its instances, and ask your agent to change the main component. Styles lists your tokens.',
+      'No showcase page to write, no Storybook. Assets sits beside your page and draws every component of your app, each variant and the states you named, from the app itself. Drag one onto the page to place it, see where each is used, frame its instances, and ask your agent to change the main component. Styles lists your tokens.',
     dtAssetsDemo:
       'Assets shows every component with its variants and named previews; opening Button lists where it is used, and a note to change the main component is added to the request',
     dtPreviewsBody:
@@ -446,7 +446,7 @@ export const homeText = ui.messages('en', {
     uiKicker: 'Hozu UI',
     uiHeading: '你的 AI 改得動的官方元件。',
     uiLead:
-      '按鈕、表單、表格、對話框，兩套主題。create-hozu 問你要不要時回答 yes，它們就在你的專案裡：一般的檔案，你和你的 agent 都能改。',
+      '按鈕、表單、表格、對話框，兩套主題。用 npm create hozu@next（1.0 候選版）建立專案，問你要不要時回答 yes，它們就在你的專案裡：一般的檔案，你和你的 agent 都能改。',
     uiOwn: '是你的程式碼',
     uiOwnBody: '元件複製進 ui/。更新時只替換你沒改過的檔案。',
     uiChecked: 'Hozu 會檢查',
@@ -534,7 +534,7 @@ export const homeText = ui.messages('en', {
     designKeys:
       'DevTools 沿用設計師已經熟悉的快捷鍵、測量方式與用語：Shift+Enter 往上一層，Alt 測量，Design 面板讀起來就像 Figma 的，而且你的 token 排在最前面。',
     designAssets:
-      'Assets 在同一頁呈現每個元件與 variant，以及你在 previews.ts 中命名的畫面。在頁面上試著修改，然後交給你的 agent。程式碼由它寫，你完全不用打開檔案。',
+      'Assets 在頁面旁呈現每個元件與 variant，以及你在 previews.ts 中命名的畫面。把元件拖進頁面或在頁面上試著修改，然後交給你的 agent。程式碼由它寫，你完全不用打開檔案。',
     designButton: '看看實際操作 →',
     figmaSelect: '選取外層、內層與相鄰的元素。',
     figmaAlt: '按住並指向：顯示 px 距離。',
@@ -580,7 +580,7 @@ export const homeText = ui.messages('en', {
       '依 Figma 順序排列的 Design 面板：把 Fill 改成 red、Corner radius 改成 full、Font size 改成 base，會在按鈕上預覽，並成為要使用的 class',
     dtAssetsHeading: '所有元件，一頁看完。',
     dtAssetsLead:
-      '不用另外寫展示頁，也不需要 Storybook。Assets（素材）直接從應用程式本身畫出每個元件、每個 variant，以及你命名的狀態。看看每個元件用在哪裡、框出它的每個 instance，並請你的 agent 修改主元件（main component）。Styles 會列出你的 token。',
+      '不用另外寫展示頁，也不需要 Storybook。Assets（素材）就在頁面旁，直接從應用程式本身畫出每個元件、每個 variant，以及你命名的狀態。把元件拖到頁面上就能放置，也能看看每個元件用在哪裡、框出它的每個 instance，並請你的 agent 修改主元件（main component）。Styles 會列出你的 token。',
     dtAssetsDemo:
       'Assets 顯示每個元件及其 variant 與具名預覽；打開 Button 會列出它用在哪裡，並在請求中加入一則修改主元件的說明',
     dtPreviewsBody:

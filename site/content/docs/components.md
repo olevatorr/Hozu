@@ -15,6 +15,18 @@ npx hozu add component ui Button
 
 `hozu add kit ui` writes `ui/kit.ts`, `ui/tv.ts` (the `tv()` function with the tailwind-merge config for your design system) and adds the kit to `project({ kits })`. `hozu add component notes Composer` makes a component private to one feature instead, listed in that feature's `declarations`. A stale `tv.ts` is HZ078; `hozu add kit ui --sync` regenerates its config.
 
+### Or start from Hozu UI
+
+[Hozu UI](https://ui.hozu.org) is the official kit: 22 components in two themes, copied into `ui/` so they are yours to edit. It needs Hozu 1.0 (`@next` until 1.0.0 is out):
+
+```sh
+npm install -D @hozu/ui-kit
+npx hozu add kit ui --from official            # the whole kit
+npx hozu add component ui Button --from official   # or one, with the files it uses
+```
+
+`ui/kit.lock.json` records what was copied; `npx hozu add kit ui --sync` replaces only the files you did not change and lists the ones you did. `npx hozu docs ui` says which component fits which need. An app whose classes still use Tailwind's own palette keeps it until they move to the kit's colour roles. New apps get the kit from `npm create hozu@next my-app -- --ui`.
+
 ## Declare a component
 
 ```ts
@@ -122,4 +134,4 @@ export default implement<typeof Map>(({ el, props, emit }) => {
 
 ## Previews are for people
 
-`previews.ts`, named by `project({ previews })`, holds component states and page screens with chosen data for [Hozu DevTools](/docs/devtools) Assets. It never ships: only `hozu dev` and `hozu check` load it, and HZ092 reports a preview that no longer fits the app. Agents change it only when asked.
+`previews.ts`, named by `project({ previews })` (one file or a list), holds component states, composed examples (`p.example`) and page screens with chosen data for [Hozu DevTools](/docs/devtools) Assets. It never ships: only `hozu dev` and `hozu check` load it, and HZ092 reports a preview that no longer fits the app. Agents change it only when asked.

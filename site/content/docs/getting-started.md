@@ -34,6 +34,16 @@ npm install
 
 Use `--agent agents` for Codex, Cursor or Copilot, or `--agent both` for a team using several agents. These flags install the corresponding project instructions and the Hozu authoring skill.
 
+### With Hozu UI
+
+[Hozu UI](https://ui.hozu.org), the official components, comes with Hozu 1.0. Until 1.0.0 is out, start from the candidate; `create-hozu` asks whether to add the kit (`--ui` says yes, `--no-ui` no):
+
+```sh
+npm create hozu@next my-app -- --agent claude --ui
+```
+
+An app you already have: `npx -p @hozu/cli@next hozu migrate`, then `npm install -D @hozu/ui-kit` and `npx hozu add kit ui --from official`. `npx hozu docs ui` says which component fits what.
+
 ## Add a feature
 
 A scaffold gives you a list query, an add form, a state machine and stand-in resolvers. Give the feature a name and an explicit route:

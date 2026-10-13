@@ -13,8 +13,8 @@ order: 17
 | Browse / Select | Use the app as usual, or click a part to select it (`Alt+Shift+S` switches) |
 | Changes | The parts you described for this request, and the saved requests |
 | Page | The page's title, description and other head fields |
-| Layers | Every part of the page, the states that are not on screen, and the page's previews |
-| Assets | Every component of the app on one board, and the design tokens |
+| Layers | Every part of the page (point at a row to frame it), the states that are not on screen, and the page's previews |
+| Assets | Every component of the app beside the page, ready to drag onto it, and the design tokens |
 | API | The data the page reads and the changes it can make, run with your own input |
 | Frame | The page at an exact size: phone, tablet, laptop, or drag the corner |
 | Agent | Notes your agent left on this page with `hozu show`; it appears when there are some |
@@ -22,7 +22,7 @@ order: 17
 
 ## Describe a change
 
-1. Choose **Select** and click what should change. The keys are Figma's: `Shift+Enter` selects the surrounding part, `Enter` the first part inside, `Tab` / `Shift+Tab` the next or previous part beside it, and a double-click selects a text. The selection shows its size, `W × H`.
+1. Choose **Select** and click what should change. The keys are Figma's: `Shift+Enter` selects the surrounding part, `Enter` the first part inside, `Tab` / `Shift+Tab` the next or previous part beside it, and a double-click selects a text. The selection shows its size, `W × H`. A click where nothing is marked clears it.
 2. The inspector says what it is in plain words: a shared button used in six places, a text that comes from your data, a message shared by two places.
 3. Write what should change. Try a style or other words (longer, Chinese, English) on the page first: it is a preview only. The **Design** panel is Figma's, in its order: Frame (W, H, corner radius), Auto layout (gap, padding), Layer (opacity), Fill, Stroke, Effects (drop shadow) and Text. In Builder, a value shows its design token first (`2xl · 24px`, `red · #fb3a0e`); in Developer, the class (`text-2xl · 24px`).
 4. Click the next part and describe it too. Every described part stays in the same request.
@@ -36,15 +36,26 @@ Each part of the request names its `file:line`, the scope you chose (this instan
 
 Hold **Alt** and point, as in Figma: with a part selected, red lines show the distance in px to the part under the pointer (the gap between two parts, or the four insets when one holds the other); with nothing selected, the part under the pointer is measured against the part around it.
 
-## Every component on one board
+## Every component beside the page
 
-**Assets** opens a full-screen board with every component of the app: each variant on its own, rendered live with your stylesheet, and the named states from `previews.ts`. You do not write a showcase page. Click a component for its variants, properties, slots and `file:line`; **Where used** lists the pages, and **Show the instances** frames every use on this page (or opens a page that has one). **Change the main component** adds a request for every use to the current request. **Styles** shows the design tokens: colours, text sizes, corner radius and shadows.
+**Assets** docks a board beside the page with every component of the app: each variant on its own, rendered live with your stylesheet, the named states and examples from `previews.ts`, and the design tokens under **Styles** (colours, text sizes, corner radius and shadows). **Full screen** gives it the whole window; DevTools remembers your choice. With [Hozu UI](https://ui.hozu.org), the kit comes first, including the components you can still add, and a parent shows its examples and its parts (a Table with Tr, Th and Td). An Icon has a picker over your app's icons, and another Lucide icon by name.
+
+Click a component for its variants, properties, slots and `file:line`; **Where used** lists the pages, and **Show the instances** frames every use on this page (or opens a page that has one). **Change the main component** adds a request for every use to the current request.
+
+## Place a component
+
+1. Drag a variant, an example or an icon from Assets onto the page. While you drag, the component is shown where it would land, with a label such as *Place after Heading "Tasks"*: the top or bottom quarter of a part places it before or after, the middle inside. `Escape` cancels.
+2. Let go and write what it is for, such as *a button that takes people to the form*. A drop never presses the link or button under it.
+3. The component stays on the page marked *Pending* until your agent has built it. Click it to edit its note, or drag it to another place: the request follows.
+
+The request's *Add* item names the component and variant, the file and line to put it in, and, for a Hozu UI component the app does not have yet, the command that installs it first.
 
 ## Screens with data you choose
 
-`previews.ts` holds screens for people: a component in a named state, or a page whose queries answer with the data you give. Name it in `hozu.config.ts` with `previews: new URL('./previews.ts', import.meta.url)`:
+`previews.ts` holds screens for people: a component in a named state, an example built from several components (`p.example`, which Assets also lets you drag onto a page), or a page whose queries answer with the data you give. Name it in `hozu.config.ts` with `previews: new URL('./previews.ts', import.meta.url)`, or a list of such files (Hozu UI adds `ui/previews.ts`):
 
 ```ts
+import { ui } from '@hozu/core'
 import { previews } from '@hozu/core/preview'
 import { me } from './features/account/model.ts'
 import { listNotes } from './features/notes/model.ts'
@@ -53,6 +64,9 @@ import { Button } from './ui/button.ts'
 
 export default previews((p) => [
   p.component(Button, 'Long label', { variant: { tone: 'primary' }, children: 'Save every note you wrote today' }),
+  p.example(Button, 'Save and cancel', () =>
+    ui.div({ class: 'flex gap-2' }, [ui.use(Button, {}, ['Cancel']), ui.use(Button, { variant: { tone: 'primary' } }, ['Save'])]),
+  ),
   p.page(home, 'No notes', [p.data(me, { name: 'ada' }), p.data(listNotes, [])]),
   p.page(home, 'Notes failed', [p.data(me, { name: 'ada' }), p.fail(listNotes, 'Unexpected')]),
 ])

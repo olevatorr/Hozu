@@ -42,9 +42,10 @@ npx hozu get / --json
 | `hozu docs forms` | Print the short form of one topic of the installed guide; `--more` adds its options and edge cases. `hozu docs` lists the topics. |
 | `hozu docs HZ083` | Print one diagnostic: its cause, its fix and the topic to read. |
 | `hozu docs components` | Print the components topic, then every component of the app with its tag and variants. |
+| `hozu docs ui` | Print the Hozu UI guide: which component fits which need, and how to update the kit. |
 | `hozu render ui.Button --variant tone=ghost --json` | Render one component alone: its HTML, root class, owned CSS properties and diagnostics. `--props '<json>'` and `--slot name=text` fill it. |
-| `hozu add kit ui --json` | Add a component kit: `ui/kit.ts`, `ui/tv.ts` and `project({ kits })`; `--sync` regenerates the tailwind-merge config. |
-| `hozu add component ui Button --json` | Add a component to a kit or a feature; `--client` adds the client module, the bundle in `app.ts` and the `@hozu/bundle` dependency. |
+| `hozu add kit ui --json` | Add a component kit: `ui/kit.ts`, `ui/tv.ts` and `project({ kits })`; `--sync` regenerates the tailwind-merge config. `--from official` copies [Hozu UI](https://ui.hozu.org) from `@hozu/ui-kit` (with `ui/kit.lock.json`); then `--sync` updates the files you did not change and lists the ones you did. |
+| `hozu add component ui Button --json` | Add a component to a kit or a feature; `--client` adds the client module, the bundle in `app.ts` and the `@hozu/bundle` dependency; `--from official` copies one Hozu UI component and the files it uses. |
 | `hozu skill --agent both --json` | Refresh the installed authoring skill and agent instructions. |
 | `npx -p @hozu/cli@latest hozu migrate --dry-run` | Upgrade the app from 0.10.0 on: rewrite the source and raise `@hozu/*`; after installing, `hozu migrate` again checks the IR did not change, refreshes the skill and runs `hozu check`. A patch release only raises `@hozu/*`: install, then `hozu check`. It never writes the lock. |
 

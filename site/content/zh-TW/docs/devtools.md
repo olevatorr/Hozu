@@ -2,7 +2,7 @@
 title: Hozu DevTools
 description: 指著畫面；交給你的 agent 一份請求，裡面指出檔案、行號，以及用 Hozu 的方式該怎麼改。
 order: 17
-source: 883a06bbded5
+source: 958fa0993c76
 ---
 
 ## 啟動它
@@ -14,8 +14,8 @@ source: 883a06bbded5
 | Browse / Select | 像平常一樣使用應用程式（瀏覽），或點擊某個部分來選取它（`Alt+Shift+S` 切換） |
 | Changes | 你為這份請求描述過的部分（變更），以及已儲存的請求 |
 | Page | 頁面的標題、描述與其他 head 欄位 |
-| Layers | 頁面的每個部分（圖層）、目前不在畫面上的狀態，以及頁面的預覽 |
-| Assets | 應用程式的每個元件集中在一塊看板上（素材），以及 design token |
+| Layers | 頁面的每個部分（圖層，指向某一列就會框出它）、目前不在畫面上的狀態，以及頁面的預覽 |
+| Assets | 應用程式的每個元件（素材）列在頁面旁，可以直接拖到頁面上，以及 design token |
 | API | 頁面讀取的資料與它能做的變更，用你自己的輸入執行 |
 | Frame | 以精確尺寸呈現的頁面（框架）：手機、平板、筆電，或拖曳角落調整 |
 | Agent | 你的 agent 用 `hozu show` 在這個頁面上留下的說明；有說明時才會出現 |
@@ -23,7 +23,7 @@ source: 883a06bbded5
 
 ## 描述一項修改
 
-1. 選擇 **Select**（選取），點擊需要修改的地方。快捷鍵和 Figma 一樣：`Shift+Enter` 選取外層的部分，`Enter` 選取內層的第一個部分，`Tab` / `Shift+Tab` 選取相鄰的下一個或上一個部分，按兩下則選取一段文字。選取範圍會顯示尺寸 `W × H`。
+1. 選擇 **Select**（選取），點擊需要修改的地方。快捷鍵和 Figma 一樣：`Shift+Enter` 選取外層的部分，`Enter` 選取內層的第一個部分，`Tab` / `Shift+Tab` 選取相鄰的下一個或上一個部分，按兩下則選取一段文字。選取範圍會顯示尺寸 `W × H`。點擊沒有標示的地方就會取消選取。
 2. 檢視器會用白話說明它是什麼：一個在六個地方使用的共用按鈕、一段來自你資料的文字、一則兩處共用的訊息。
 3. 寫下該怎麼改。先在頁面上試試某個樣式或其他文字（更長的、中文、英文）：這只是預覽。**Design** 面板就是 Figma 的那一套，順序也相同：Frame（W、H、圓角）、Auto layout（間距、內距）、Layer（不透明度）、Fill、Stroke、Effects（陰影）與 Text。在 Builder 模式下，數值會先顯示它的 design token（`2xl · 24px`、`red · #fb3a0e`）；在 Developer 模式下則顯示 class（`text-2xl · 24px`）。
 4. 點擊下一個部分，同樣描述它。每個描述過的部分都會留在同一份請求裡。
@@ -37,15 +37,26 @@ client 元件（具有 `client` 模組的元件，例如地圖或畫布）會在
 
 和 Figma 一樣，按住 **Alt** 並指向：選取某個部分時，紅線會顯示它到指標下方部分的 px 距離（兩個部分之間的間距，或其中一個包住另一個時的四邊內距）；沒有選取任何東西時，指標下方的部分會和包住它的部分相互測量。
 
-## 所有元件集中在一塊看板上
+## 所有元件就在頁面旁
 
-**Assets**（素材）會打開一塊全螢幕看板，列出應用程式的每個元件：每個 variant 各自獨立呈現，以你的樣式表即時渲染，另外還有來自 `previews.ts` 的具名狀態。你不用另外寫展示頁。點擊某個元件可以看到它的 variant、屬性、slot 與 `file:line`；**Where used**（使用位置）會列出使用它的頁面，**Show the instances**（顯示 instance）會框出它在這個頁面上的每一處使用（或打開一個有使用它的頁面）。**Change the main component**（修改主元件）會在目前的請求中加入一項針對每一處使用的修改。**Styles**（樣式）會顯示 design token：顏色、文字大小、圓角與陰影。
+**Assets**（素材）會在頁面旁停靠一塊看板，列出應用程式的每個元件：每個 variant 各自獨立呈現，以你的樣式表即時渲染，另外還有 `previews.ts` 裡的具名狀態與範例；**Styles**（樣式）會顯示 design token：顏色、文字大小、圓角與陰影。**Full screen**（全螢幕）會讓看板佔滿整個視窗，DevTools 會記住你的選擇。使用 [Hozu UI](https://ui.hozu.org) 時，元件庫排在最前面，也包括還沒加入的元件；上層元件會先列出範例，再列出它的組成部分（例如 Table 與 Tr、Th、Td）。Icon 有一個選單，可以從你應用程式裡的圖示挑選，也能輸入名稱加入其他 Lucide 圖示。
+
+點擊某個元件可以看到它的 variant、屬性、slot 與 `file:line`；**Where used**（使用位置）會列出使用它的頁面，**Show the instances**（顯示 instance）會框出它在這個頁面上的每一處使用（或打開一個有使用它的頁面）。**Change the main component**（修改主元件）會在目前的請求中加入一項針對每一處使用的修改。
+
+## 放上一個元件
+
+1. 從 Assets 把一個 variant、範例或圖示拖到頁面上。拖曳時，元件會直接顯示在它將落下的位置，並標示例如 *Place after Heading "Tasks"*：落在某個部分的上下四分之一會放在它之前或之後，落在中間則放進它裡面。按 `Escape` 取消。
+2. 放開後寫下它的用途，例如「一個帶人去表單的按鈕」。放下時絕不會按到底下的連結或按鈕。
+3. 元件會留在頁面上並標示 *Pending*（待處理），直到你的 agent 做好為止。點它可以修改說明，拖到別處則會一併更新請求。
+
+請求裡的 *Add* 項目會寫出元件與 variant、要放進哪個檔案的哪一行；如果是應用程式還沒有的 Hozu UI 元件，也會先寫出安裝它的指令。
 
 ## 用你選的資料呈現畫面
 
-`previews.ts` 存放給人看的畫面：處於某個具名狀態的元件，或是 query 以你提供的資料回答的頁面。在 `hozu.config.ts` 中以 `previews: new URL('./previews.ts', import.meta.url)` 指定它：
+`previews.ts` 存放給人看的畫面：處於某個具名狀態的元件、由幾個元件組成的範例（`p.example`，也能從 Assets 拖到頁面上），或是 query 以你提供的資料回答的頁面。在 `hozu.config.ts` 中以 `previews: new URL('./previews.ts', import.meta.url)` 指定它，也可以列出多個這樣的檔案（Hozu UI 會加入 `ui/previews.ts`）：
 
 ```ts
+import { ui } from '@hozu/core'
 import { previews } from '@hozu/core/preview'
 import { me } from './features/account/model.ts'
 import { listNotes } from './features/notes/model.ts'
@@ -54,6 +65,9 @@ import { Button } from './ui/button.ts'
 
 export default previews((p) => [
   p.component(Button, 'Long label', { variant: { tone: 'primary' }, children: 'Save every note you wrote today' }),
+  p.example(Button, 'Save and cancel', () =>
+    ui.div({ class: 'flex gap-2' }, [ui.use(Button, {}, ['Cancel']), ui.use(Button, { variant: { tone: 'primary' } }, ['Save'])]),
+  ),
   p.page(home, 'No notes', [p.data(me, { name: 'ada' }), p.data(listNotes, [])]),
   p.page(home, 'Notes failed', [p.data(me, { name: 'ada' }), p.fail(listNotes, 'Unexpected')]),
 ])
