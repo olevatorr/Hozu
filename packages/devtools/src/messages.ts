@@ -287,6 +287,7 @@ export const en = {
   'drop.note.placeholder': 'What should it do? (optional)',
   'drop.add': 'Add',
   'drop.cancel': 'Cancel',
+  'drop.pending': 'Pending #{n}',
   'change.adds': 'Adds {component} {position} this part.',
   'change.main': 'Main component',
   'change.main.text': 'Every use of {component} changes: {file}',

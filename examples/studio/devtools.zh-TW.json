@@ -284,6 +284,7 @@
     "drop.note.placeholder": "它要做什麼？（可不填）",
     "drop.add": "加入",
     "drop.cancel": "取消",
+    "drop.pending": "待加入 #{n}",
     "change.adds": "在這個部分{position}加入 {component}。",
     "change.main": "主元件",
     "change.main.text": "{component} 的每個用法都會改變：{file}",

@@ -12,6 +12,7 @@ source.addEventListener('reload', (event) => {
   location.reload()
 })
 source.addEventListener('notes', () => dispatchEvent(new Event('hozu:notes')))
+source.addEventListener('requests', () => dispatchEvent(new Event('hozu:requests')))
 source.addEventListener('css', async () => {
   const html = await (await fetch(location.href, { headers: { accept: 'text/html' } })).text()
   const next = new DOMParser().parseFromString(html, 'text/html')

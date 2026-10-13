@@ -37,6 +37,36 @@ export function dropPosition(rect: { top: number; height: number }, y: number, i
   return at < 0.25 ? 'before' : at > 0.75 ? 'after' : 'inside'
 }
 
+interface Box {
+  left: number
+  right: number
+  top: number
+  bottom: number
+}
+
+/**
+ * The part the pointer is next to when it is over its container's own space: inside the part's width and at most
+ * `reach` px above or below it, so a thin or empty part (an empty list) can still be a target.
+ */
+export function beside<T>(
+  parts: readonly { part: T; box: Box }[],
+  x: number,
+  y: number,
+  reach = 12,
+): T | null {
+  let best: T | null = null
+  let gap = reach
+  for (const { part, box } of parts) {
+    if (box.right <= box.left || x < box.left || x > box.right) continue
+    const d = y < box.top ? box.top - y : y > box.bottom ? y - box.bottom : 0
+    if (d < gap || (best === null && d === gap)) {
+      best = part
+      gap = d
+    }
+  }
+  return best
+}
+
 export interface Target {
   el: Element
   /** The pointer in the page's own coordinates (the Workbench frame's, when it shows the page). */
@@ -72,6 +102,7 @@ export function dragger(host: DropHost) {
   const hide = () => {
     ghost.hidden = true
     indicator.hidden = true
+    tag.textContent = ''
     over = null
   }
 
@@ -99,6 +130,7 @@ export function dragger(host: DropHost) {
     })
     indicator.hidden = false
     if (same) return
+    tag.textContent = ''
     const part = await host.name(hit.el)
     if (over?.el === hit.el && over.position === position) tag.textContent = t(`drop.${position}`, { part })
   }

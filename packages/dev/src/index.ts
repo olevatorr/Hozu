@@ -60,6 +60,7 @@ export interface DevServer {
   close(): Promise<void>
 }
 
+const requestFile = /^\.hozu[/\\]requests[/\\]/
 const ignored = /(^|[/\\])(node_modules|dist|dist-static|\.git|\.hozu)([/\\]|$)/
 const envFile = /(^|[/\\])\.env(\.[\w.-]+)?$/
 const real = (file: string) => {
@@ -203,6 +204,7 @@ export async function dev({
     return !running() || loaded.size === 0
   }
   const watcher: FSWatcher = watch(cwd, { recursive: true }, (_, file) => {
+    if (devtools && (requestsRoot ?? cwd) === cwd && file && requestFile.test(file)) send('requests')
     if (!file || ignored.test(file) || !reloads(file) || untouched(file)) return
     pending.add(file)
     if (timer) clearTimeout(timer)

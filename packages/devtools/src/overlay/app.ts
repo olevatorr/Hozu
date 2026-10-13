@@ -18,13 +18,14 @@ import {
 import { held, hold, node, one, page, remove, save, saved, theme, tree } from './api.ts'
 import { assetsBoard, type Catalogued } from './assets.ts'
 import { h, read, write } from './dom.ts'
-import { dragger } from './drop.ts'
+import { beside, dragger } from './drop.ts'
 import { drawer } from './effects.ts'
 import { previewLabel, renderLayers } from './layers.ts'
 import { logo } from './logo.ts'
 import { lookSection, preview } from './look.ts'
 import { distances, sizeOf } from './measure.ts'
 import { agentNotes } from './notes.ts'
+import { pendingKeys, pendingPreviews } from './pending.ts'
 import { css, outlineCss } from './style.ts'
 import { firstText, previewText, restoreText, type TextChange, textSection } from './text.ts'
 
@@ -38,6 +39,8 @@ interface Pick {
   text?: TextChange
   add?: Addition
   component?: ComponentRef
+  /** The saved request this pick went into, so its preview goes once the request is done. */
+  request?: string
 }
 
 type Audience = 'builder' | 'developer'
@@ -215,6 +218,7 @@ function placeAt(add: Addition, note: string) {
   open('changes', null, 'draft')
 }
 
+let dropParts: { parent: Element; parts: Element[] } | null = null
 const drag = dragger({
   target: (x, y) => {
     const ui = shadow.elementFromPoint(x, y)
@@ -229,7 +233,14 @@ const drag = dragger({
       if (ui !== frameEl) return null
     }
     const el = doc.elementFromPoint(px, py)?.closest('[data-hz]')
-    return el && el !== host && el !== outline ? { el, x: px, y: py } : null
+    if (!el || el === host || el === outline) return null
+    if (dropParts?.parent !== el) dropParts = { parent: el, parts: partsIn(el) }
+    const near = beside(
+      dropParts.parts.map((part) => ({ part, box: part.getBoundingClientRect() })),
+      px,
+      py,
+    )
+    return { el: near ?? el, x: px, y: py }
   },
   name: async (el) => {
     const n = await node(el.getAttribute('data-hz') ?? '')
@@ -237,6 +248,7 @@ const drag = dragger({
     return n ? partName(n, visible) : el.tagName.toLowerCase()
   },
   started: () => {
+    dropParts = null
     if (assets.isOpen() && !assets.docked()) assets.dock()
     void showHover(null)
   },
@@ -458,7 +470,34 @@ function drawMeasure() {
   measure.hidden = false
 }
 
+const pending = pendingPreviews({ doc: () => doc })
+let finished = new Set<string>()
+
+/** Requests that were done (`hozu requests done` removes the file): their components are in the code now. */
+async function checkFinished() {
+  const numbers = new Set(state.picks.flatMap((p) => (p.request ? [p.request] : [])))
+  if (!numbers.size) return
+  const list = await fetch('/_hozu/dev/requests', { cache: 'no-store' })
+    .then((r) => (r.ok ? (r.json() as Promise<{ number: string; status: string }[]>) : null))
+    .catch(() => null)
+  if (!list) return
+  const open = new Set(list.filter((r) => r.status === 'open').map((r) => r.number))
+  finished = new Set([...numbers].filter((n) => !open.has(n)))
+  drawPicks()
+}
+
+function drawPending() {
+  const items = drafted().flatMap((p, i) =>
+    p.add && p.id && !(p.request && finished.has(p.request))
+      ? [{ id: p.id, index: p.index, add: p.add, number: i + 1 }]
+      : [],
+  )
+  const keys = pendingKeys(items)
+  pending.sync(items.map((item, i) => ({ ...item, key: keys[i] ?? '' })))
+}
+
 function drawPicks() {
+  drawPending()
   for (const p of state.picks) {
     preview(elementOf(p), p.style ?? [])
     previewText(elementOf(p), p.text)
@@ -1344,6 +1383,10 @@ function exportBlock() {
               return
             }
             const { done, error } = await job
+            if (done) {
+              for (const p of drafted()) p.request = done.number
+              persist()
+            }
             if (done)
               status(result, 'ok', [
                 t(count === 1 ? 'export.copiedSaved.one' : 'export.copiedSaved.other', {
@@ -2311,6 +2354,8 @@ addEventListener(
 
 renderDock()
 drawPicks()
+void checkFinished()
+addEventListener('hozu:requests', () => void checkFinished())
 void renderPanel()
 api.restore()
 requestAnimationFrame(frame)

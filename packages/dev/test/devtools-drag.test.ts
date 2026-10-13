@@ -69,6 +69,18 @@ describe.skipIf(!findBrowser())('Assets docked beside the page, components dragg
         true,
       )
   }
+  const pendingAfterH1 = () =>
+    evaluate(`(() => {
+      const p = document.querySelector('h1').nextElementSibling
+      const button = p.querySelector('button')
+      return {
+        number: p.dataset.hozuPending,
+        tag: p.shadowRoot.querySelector('.tag').textContent,
+        text: button.textContent,
+        red: button.classList.contains('bg-brand'),
+        marked: p.querySelectorAll('[data-hz]').length,
+      }
+    })()`)
   const label = () => evaluate(`${outline}.querySelector('[data-drop-label]')?.textContent ?? ''`)
   const copied = async () => {
     await press('.actions button', 'Copy for AI')
@@ -142,15 +154,60 @@ describe.skipIf(!findBrowser())('Assets docked beside the page, components dragg
     await evaluate(`${shadow}.querySelector('[data-drop-add]').click()`)
     await until(`!!${shadow}.querySelector('.panel .item')`)
     expect(await evaluate(`${shadow}.querySelector('.assets').hidden`)).toBe(false)
+    await until(`!!document.querySelector('h1').nextElementSibling?.matches('[data-hozu-pending]')`)
+    expect(await pendingAfterH1()).toEqual({
+      number: '1',
+      tag: 'Pending #1',
+      text: 'Button',
+      red: true,
+      marked: 0,
+    })
+    const list = (await evaluate(`(() => {
+      const ul = document.querySelector('main ul')
+      ul.replaceChildren()
+      ul.style.border = '1px solid'
+      const r = ul.getBoundingClientRect()
+      return { x: r.x + 12, y: r.y - 4, height: r.height }
+    })()`)) as { x: number; y: number; height: number }
+    expect(list.height).toBe(2)
+    await dragTo('[data-component="ui.Badge"] .tile', list)
+    await until(
+      `(${outline}.querySelector('[data-drop-label]')?.textContent ?? '').startsWith('Place before')`,
+    )
+    expect(await label()).toBe('Place before List')
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape' }, session)
+    await mouse('mouseReleased', list.x, list.y, true)
     const text = await copied()
     expect(text).toContain(
       `## 1. Add <ui.Button> { tone: 'danger' } after <h1 "Team tasks">\n- Want: A button that adds a task\n`,
     )
 
     await open('/')
+    await until(`!!document.querySelector('h1').nextElementSibling?.matches('[data-hozu-pending]')`)
+    expect(await pendingAfterH1()).toEqual({
+      number: '1',
+      tag: 'Pending #1',
+      text: 'Button',
+      red: true,
+      marked: 0,
+    })
+    expect(await evaluate(`document.querySelectorAll('[data-hozu-pending]').length`)).toBe(1)
     await press('.dock button', 'Assets')
     await until(`${shadow}.querySelector('.assets:not([hidden])')?.classList.contains('docked')`)
   }, 40_000)
+
+  it('shows an icon-sized variant with a glyph that fits its button', async () => {
+    const frame = `${shadow}.querySelector('[data-component="ui.Button"] [data-tile="size: icon"] iframe')`
+    await until(`!!${frame}`)
+    await evaluate(`${frame}.scrollIntoView({ block: 'center' })`)
+    await until(`!!${frame}?.contentDocument?.querySelector('button')`)
+    expect(
+      await evaluate(`(() => {
+        const b = ${frame}.contentDocument.querySelector('button')
+        return { text: b.textContent, fits: b.scrollWidth <= b.clientWidth }
+      })()`),
+    ).toEqual({ text: '★', fits: true })
+  })
 
   it('drops inside a container from the middle, and Escape cancels a drag', async () => {
     await until(`!!${shadow}.querySelector('.assets:not([hidden]) [data-component="ui.Badge"]')`)
@@ -188,6 +245,23 @@ describe.skipIf(!findBrowser())('Assets docked beside the page, components dragg
     const text = await copied()
     expect(text).toMatch(/## 2\. Add <ui\.Badge> inside <header[ >"]/)
     expect(text).toContain('(not described: ask the user what should change)')
+    await until(`!!document.querySelector('header > [data-hozu-pending="2"]:last-child')`)
+
+    await evaluate(`[...${shadow}.querySelectorAll('.panel .item')][0].querySelectorAll('button')[1].click()`)
+    await until(`${shadow}.querySelectorAll('.panel .item').length === 1`)
+    expect(
+      await evaluate(
+        `document.querySelector('h1').nextElementSibling?.matches('[data-hozu-pending]') ?? false`,
+      ),
+    ).toBe(false)
+    await until(`document.querySelector('header > [data-hozu-pending]')?.dataset.hozuPending === '1'`)
+
+    const number = /hozu requests done (\d+)/.exec(text)?.[1]
+    expect(number).toBeTruthy()
+    await evaluate(
+      `fetch('/_hozu/dev/requests/${number}/done', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ result: 'Added' }) }).then((r) => r.status)`,
+    )
+    await until(`!document.querySelector('[data-hozu-pending]')`)
     expect(errors).toEqual([])
   }, 40_000)
 })

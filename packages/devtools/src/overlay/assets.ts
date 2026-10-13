@@ -57,18 +57,26 @@ const json = async <T>(url: string): Promise<T | null> => {
 }
 
 /** The default, each variant value on its own, then the named previews (ADR 0058 G). */
+/** The text a component that takes children shows in a preview: a glyph for an icon-sized variant, else its name. */
+export const placeholderFor = (name: string, variant: Record<string, string>) =>
+  Object.values(variant).includes('icon') ? '★' : name
+
 export function tilesOf(c: Catalogued): Tile[] {
-  const children = c.children ? { children: c.name } : {}
-  const tiles: Tile[] = [{ label: t('assets.default'), use: { variant: {}, ...children }, preview: false }]
+  const children = (variant: Record<string, string>) =>
+    c.children ? { children: placeholderFor(c.name, { ...c.defaults, ...variant }) } : {}
+  const tiles: Tile[] = [
+    { label: t('assets.default'), use: { variant: {}, ...children({}) }, preview: false },
+  ]
   for (const [dim, values] of Object.entries(c.variants))
     for (const value of values)
       if (value !== c.defaults[dim])
         tiles.push({
           label: `${dim}: ${value}`,
-          use: { variant: { [dim]: value }, ...children },
+          use: { variant: { [dim]: value }, ...children({ [dim]: value }) },
           preview: false,
         })
-  for (const p of c.previews) tiles.push({ label: p.name, use: { ...children, ...p.use }, preview: true })
+  for (const p of c.previews)
+    tiles.push({ label: p.name, use: { ...children(p.use.variant), ...p.use }, preview: true })
   return tiles
 }
 
@@ -143,7 +151,7 @@ export function assetsBoard(host: AssetsHost) {
       }
       fit()
     })
-    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8">${links}<style>html,body{margin:0;background:transparent}body{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:16px;min-height:72px;box-sizing:border-box}</style></head><body>${out.html}</body></html>`
+    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8">${links}<style>html,body{margin:0;background:transparent;overflow:hidden}body{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:16px;min-height:72px;box-sizing:border-box}</style></head><body>${out.html}</body></html>`
   }
 
   const frameFor = (c: Catalogued, tile: Tile) => {

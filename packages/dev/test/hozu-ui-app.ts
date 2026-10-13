@@ -63,6 +63,13 @@ export function appWithHozuUi(): string {
       .replace('input, field]', 'input, field, tag]'),
   )
   writeFileSync(
+    join(root, 'ui/button.ts'),
+    readFileSync(join(root, 'ui/button.ts'), 'utf8').replace(
+      "md: 'px-4 py-2 text-sm' }",
+      "md: 'px-4 py-2 text-sm', icon: 'size-8 text-sm' }",
+    ),
+  )
+  writeFileSync(
     join(root, 'ui/kit.lock.json'),
     JSON.stringify({ source: '@hozu/ui-kit', version: '0.1.0', files: {} }),
   )

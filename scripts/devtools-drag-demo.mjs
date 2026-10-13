@@ -288,7 +288,9 @@ try {
   await sleep(600)
   await click(await buttonIn('.drop-note button', 'Add'))
   await until('the request item', `${shadow}.querySelectorAll('.panel .item').length === 1`)
-  await sleep(900)
+  await until('the pending preview', `document.querySelectorAll('[data-hozu-pending]').length === 1`)
+  console.error('  The page shows it, marked Pending #1')
+  await sleep(2000)
 
   const badge = await pickTile('Badge')
   if (!badge) throw new Error('No Badge component in Assets')
@@ -316,7 +318,9 @@ try {
   await sleep(600)
   await click(await buttonIn('.drop-note button', 'Add'))
   await until('two request items', `${shadow}.querySelectorAll('.panel .item').length === 2`)
-  await sleep(900)
+  await until('the second preview', `document.querySelectorAll('[data-hozu-pending]').length === 2`)
+  console.error('  The page shows it, marked Pending #2')
+  await sleep(2000)
 
   console.error('Copy for AI')
   await click(await buttonIn('.actions button', 'Copy for AI'))
@@ -331,6 +335,12 @@ try {
     text = latest ? readFileSync(latest, 'utf8') : ''
   }
   console.log(text)
+  console.error('Reload: the previews stay until the request is done')
+  await page.send('Page.reload')
+  await sleep(500)
+  await until('DevTools', `!!${shadow}?.querySelector('.dock button')`, 30_000)
+  await until('the previews', `document.querySelectorAll('[data-hozu-pending]').length === 2`)
+  await cursor()
   await sleep(2500)
   await stop(0)
 } catch (error) {
