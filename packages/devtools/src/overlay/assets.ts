@@ -2,7 +2,8 @@ import type { DevComponent, IsolatedUse } from '@hozu/core/ir'
 import { t } from '../messages.ts'
 import type { Addition } from '../prompt.ts'
 import type { Theme } from '../theme.ts'
-import { h } from './dom.ts'
+import { h, read, write } from './dom.ts'
+import type { Carried } from './drop.ts'
 
 export interface Catalogued extends DevComponent {
   previews: { name: string; use: IsolatedUse }[]
@@ -35,7 +36,14 @@ export interface AssetsHost {
   place(add: Addition, note: string): void
   /** Opens a page preview: the page with its queries answered by `previews.ts`. */
   screen(route: string, path: string, name: string): void
+  /** Follows a press on `handle` as a drag of the component onto the page. */
+  drag(down: PointerEvent, handle: HTMLElement, carried: Carried, label: string): void
 }
+
+const dockKey = 'hozu-devtools:assets-docked'
+
+const dragLabel = (name: string, variant: Record<string, string>) =>
+  [name, ...Object.entries(variant).map(([dim, value]) => `${dim}: ${value}`)].join(' · ')
 
 interface Tile {
   label: string
@@ -79,6 +87,15 @@ const schemaRows = (props: Catalogued['props']) =>
 
 export function assetsBoard(host: AssetsHost) {
   const board = h('div', { class: 'assets', hidden: true, role: 'dialog', 'aria-label': t('assets.title') })
+  let docked = read<boolean>(dockKey, false) === true
+  const setDocked = (value: boolean) => {
+    docked = value
+    board.classList.toggle('docked', docked)
+    write(dockKey, docked)
+    const toggle = board.querySelector('[data-dock]')
+    if (toggle) toggle.textContent = t(docked ? 'assets.undock' : 'assets.dock')
+  }
+  board.classList.toggle('docked', docked)
   for (const type of ['pointerdown', 'pointermove', 'mousedown', 'click', 'dragstart'])
     board.addEventListener(type, (event) => event.stopPropagation())
   let tab: 'components' | 'styles' = 'components'
@@ -160,6 +177,14 @@ export function assetsBoard(host: AssetsHost) {
     return made
   }
   const isOfficial = (c: Catalogued) => c.owner.kind === 'kit' && c.owner.id === official.kit
+  const carriedOf = (c: Catalogued, variant: Record<string, string>): Carried => ({
+    component: c.id,
+    variant,
+    install: null,
+    file: c.location?.file ?? null,
+    props: requiredProps(c.props),
+    children: Boolean(c.children),
+  })
   const cardOf = (c: Catalogued) =>
     h('section', { class: isOfficial(c) ? 'asset official' : 'asset', 'data-component': c.id }, [
       h('div', { class: 'asset-head' }, [
@@ -187,16 +212,32 @@ export function assetsBoard(host: AssetsHost) {
         'div',
         { class: 'tiles' },
         tilesOf(c).map((tile) =>
-          h('figure', { class: tile.preview ? 'tile preview' : 'tile' }, [
-            frameFor(c, tile),
-            h('figcaption', {}, [tile.preview ? `★ ${tile.label}` : tile.label]),
-          ]),
+          h(
+            'figure',
+            {
+              class: tile.preview ? 'tile preview' : 'tile',
+              title: t('assets.drag.title'),
+              'data-drag': c.id,
+              'data-tile': tile.label,
+              onpointerdown: (e) => {
+                const variant = tile.use.variant ?? {}
+                host.drag(
+                  e as PointerEvent,
+                  e.currentTarget as HTMLElement,
+                  carriedOf(c, variant),
+                  dragLabel(c.name, variant),
+                )
+              },
+            },
+            [frameFor(c, tile), h('figcaption', {}, [tile.preview ? `★ ${tile.label}` : tile.label])],
+          ),
         ),
       ),
     ])
 
   const placeSection = (target: {
     id: string
+    name: string
     variants: Record<string, string[]>
     defaults: Record<string, string>
     install: string | null
@@ -204,37 +245,65 @@ export function assetsBoard(host: AssetsHost) {
     props?: string[]
     children?: boolean
   }) => {
+    const chosen: Record<string, string> = {}
+    const variant = () =>
+      Object.fromEntries(Object.entries(chosen).filter(([dim, value]) => value !== target.defaults[dim]))
+    const carried = (): Carried => ({
+      component: target.id,
+      variant: variant(),
+      install: target.install,
+      file: target.file,
+      ...(target.props ? { props: target.props } : {}),
+      ...(target.children !== undefined ? { children: target.children } : {}),
+    })
+    const selects = Object.entries(target.variants).map(([dim, values]) =>
+      h('label', { class: 'place-variant' }, [
+        `${dim} `,
+        h(
+          'select',
+          {
+            'data-dim': dim,
+            onchange: (e) => {
+              chosen[dim] = (e.target as HTMLSelectElement).value
+            },
+          },
+          values.map((v) => h('option', { value: v, selected: v === target.defaults[dim] }, [v])),
+        ),
+      ]),
+    )
+    const handle = h(
+      'div',
+      {
+        class: 'drag-handle',
+        title: t('assets.drag.title'),
+        'data-drag': target.id,
+        onpointerdown: (e) =>
+          host.drag(
+            e as PointerEvent,
+            e.currentTarget as HTMLElement,
+            carried(),
+            dragLabel(target.name, variant()),
+          ),
+      },
+      [`⠿ ${t('assets.drag')}`],
+    )
     if (!selected)
       return [
         h('div', { class: 'label' }, [t('assets.place')]),
         h('p', { class: 'hint-text', 'data-place-first': true }, [t('assets.place.first')]),
+        h('p', { class: 'hint-text' }, [t('assets.place.drag')]),
+        ...selects,
+        handle,
       ]
-    const chosen: Record<string, string> = {}
     const note = h('textarea', {
       rows: '2',
       placeholder: t('assets.place.placeholder'),
       'aria-label': t('assets.place.aria'),
     }) as HTMLTextAreaElement
-    const variant = () =>
-      Object.fromEntries(Object.entries(chosen).filter(([dim, value]) => value !== target.defaults[dim]))
     return [
       h('div', { class: 'label' }, [t('assets.place')]),
       h('p', {}, [t('assets.place.at', { part: selected })]),
-      ...Object.entries(target.variants).map(([dim, values]) =>
-        h('label', { class: 'place-variant' }, [
-          `${dim} `,
-          h(
-            'select',
-            {
-              'data-dim': dim,
-              onchange: (e) => {
-                chosen[dim] = (e.target as HTMLSelectElement).value
-              },
-            },
-            values.map((v) => h('option', { value: v, selected: v === target.defaults[dim] }, [v])),
-          ),
-        ]),
-      ),
+      ...selects,
       note,
       h(
         'div',
@@ -246,24 +315,13 @@ export function assetsBoard(host: AssetsHost) {
               class: 'act',
               type: 'button',
               'data-place': position,
-              onclick: () =>
-                host.place(
-                  {
-                    component: target.id,
-                    variant: variant(),
-                    position,
-                    install: target.install,
-                    file: target.file,
-                    ...(target.props ? { props: target.props } : {}),
-                    ...(target.children !== undefined ? { children: target.children } : {}),
-                  },
-                  note.value.trim(),
-                ),
+              onclick: () => host.place({ ...carried(), position }, note.value.trim()),
             },
             [t(`assets.place.${position}`)],
           ),
         ),
       ),
+      handle,
     ]
   }
 
@@ -292,6 +350,7 @@ export function assetsBoard(host: AssetsHost) {
       h('code', { class: 'command' }, [install]),
       ...placeSection({
         id: `${kit}.${a.name}`,
+        name: a.name,
         variants: {},
         defaults: {},
         install,
@@ -333,6 +392,7 @@ export function assetsBoard(host: AssetsHost) {
         : null,
       ...placeSection({
         id: c.id,
+        name: c.name,
         variants: c.variants,
         defaults: c.defaults,
         install: null,
@@ -452,23 +512,44 @@ export function assetsBoard(host: AssetsHost) {
     return h('div', { class: 'official-more' }, [
       h('div', { class: 'label' }, [t('assets.official.more', { count: more.length })]),
       ...more.map((a) =>
-        h('div', { class: 'screen', 'data-available': a.name }, [
-          h(
-            'button',
-            {
-              class: 'asset-name',
-              type: 'button',
-              onclick: () => {
-                pending = a
-                detail = null
-                void render()
+        h(
+          'div',
+          {
+            class: 'screen',
+            'data-available': a.name,
+            'data-drag': `${kit}.${a.name}`,
+            title: t('assets.drag.title'),
+            onpointerdown: (e) =>
+              host.drag(
+                e as PointerEvent,
+                e.currentTarget as HTMLElement,
+                {
+                  component: `${kit}.${a.name}`,
+                  variant: {},
+                  install: installCommand(kit, a.name),
+                  file: `${kit}/${a.file}`,
+                },
+                a.name,
+              ),
+          },
+          [
+            h(
+              'button',
+              {
+                class: 'asset-name',
+                type: 'button',
+                onclick: () => {
+                  pending = a
+                  detail = null
+                  void render()
+                },
               },
-            },
-            [h('b', {}, [a.name])],
-          ),
-          h('code', {}, [`${kit}/${a.file}`]),
-          h('code', { class: 'command' }, [installCommand(kit, a.name)]),
-        ]),
+              [h('b', {}, [a.name])],
+            ),
+            h('code', {}, [`${kit}/${a.file}`]),
+            h('code', { class: 'command' }, [installCommand(kit, a.name)]),
+          ],
+        ),
       ),
     ])
   }
@@ -542,6 +623,17 @@ export function assetsBoard(host: AssetsHost) {
         ),
       ]),
       tab === 'components' && !detail && !pending ? search : null,
+      h(
+        'button',
+        {
+          class: 'act',
+          type: 'button',
+          'data-dock': true,
+          title: t('assets.dock.title'),
+          onclick: () => setDocked(!docked),
+        },
+        [t(docked ? 'assets.undock' : 'assets.dock')],
+      ),
       h('button', { class: 'act', type: 'button', onclick: () => close() }, [t('common.close')]),
     ])
     if (tab === 'styles') {
@@ -585,6 +677,8 @@ export function assetsBoard(host: AssetsHost) {
     open,
     close,
     isOpen: () => !board.hidden,
+    docked: () => docked,
+    dock: () => setDocked(true),
     catalog: () => json<Catalogued[]>('/_hozu/dev/components'),
   }
 }

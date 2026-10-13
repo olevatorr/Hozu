@@ -18,6 +18,7 @@ import {
 import { held, hold, node, one, page, remove, save, saved, theme, tree } from './api.ts'
 import { assetsBoard, type Catalogued } from './assets.ts'
 import { h, read, write } from './dom.ts'
+import { dragger } from './drop.ts'
 import { drawer } from './effects.ts'
 import { previewLabel, renderLayers } from './layers.ts'
 import { logo } from './logo.ts'
@@ -182,29 +183,68 @@ const assets = assetsBoard({
     const p = state.picks[state.active]
     const n = p?.id ? await node(p.id) : null
     if (!p || !n) return null
-    return state.audience === 'builder'
-      ? `${friendlyName(n)}${p.visible ? ` “${p.visible.slice(0, 40)}”` : ''}`
-      : anchorOf(n, p.visible)
+    return partName(n, p.visible)
   },
-  place: (add, note) => {
-    const at = state.picks[state.active]
-    if (!at?.id) return
-    const pick: Pick = { id: at.id, index: at.index, visible: at.visible, note, scope: 'this', add }
-    if (hasContent(at)) {
-      state.picks.push(pick)
-      state.active = state.picks.length - 1
-    } else state.picks[state.active] = pick
-    persist()
-    assets.close()
-    drawPicks()
-    renderDock()
-    open('changes', null, 'draft')
-  },
+  place: (add, note) => placeAt(add, note),
+  drag: (down, handle, carried, label) => drag.start(down, handle, carried, label),
   screen: (route, path, name) => {
     setScreen(`${route}:${name}`)
     if (win.location.pathname === path) win.location.reload()
     else win.location.href = path
   },
+})
+
+function partName(n: DevNode, visible: string) {
+  return state.audience === 'builder'
+    ? `${friendlyName(n)}${visible ? ` “${visible.slice(0, 40)}”` : ''}`
+    : anchorOf(n, visible)
+}
+
+function placeAt(add: Addition, note: string) {
+  const at = state.picks[state.active]
+  if (!at?.id) return
+  const pick: Pick = { id: at.id, index: at.index, visible: at.visible, note, scope: 'this', add }
+  if (hasContent(at)) {
+    state.picks.push(pick)
+    state.active = state.picks.length - 1
+  } else state.picks[state.active] = pick
+  persist()
+  if (!assets.docked()) assets.close()
+  drawPicks()
+  renderDock()
+  open('changes', null, 'draft')
+}
+
+const drag = dragger({
+  target: (x, y) => {
+    const ui = shadow.elementFromPoint(x, y)
+    if (ui && ui !== frameEl && root.contains(ui)) return null
+    let px = x
+    let py = y
+    if (frameEl) {
+      const r = frameEl.getBoundingClientRect()
+      const scale = r.width / (frameEl.offsetWidth || r.width || 1)
+      px = (x - r.left) / scale
+      py = (y - r.top) / scale
+      if (ui !== frameEl) return null
+    }
+    const el = doc.elementFromPoint(px, py)?.closest('[data-hz]')
+    return el && el !== host && el !== outline ? { el, x: px, y: py } : null
+  },
+  name: async (el) => {
+    const n = await node(el.getAttribute('data-hz') ?? '')
+    const visible = visibleOf(el)
+    return n ? partName(n, visible) : el.tagName.toLowerCase()
+  },
+  started: () => {
+    if (assets.isOpen() && !assets.docked()) assets.dock()
+    void showHover(null)
+  },
+  drop: (el) => {
+    if (state.mode !== 'select') setMode('select')
+    select({ id: el.getAttribute('data-hz') ?? '', index: indexOf(el), visible: visibleOf(el) }, false)
+  },
+  place: (add, note) => placeAt(add, note),
 })
 
 async function screensSection(): Promise<HTMLElement | null> {
@@ -239,7 +279,7 @@ async function screensSection(): Promise<HTMLElement | null> {
   ])
 }
 
-root.append(bench, panel, dock, api.el, assets.board)
+root.append(bench, panel, dock, api.el, assets.board, drag.ghost, drag.note)
 try {
   const pending = sessionStorage.getItem(showKey)
   if (pending) {
@@ -290,6 +330,7 @@ function mountOutline(target: Document) {
     agent.layer,
     hover,
     measure,
+    drag.indicator,
   )
   target.documentElement.append(el)
   outline = el
@@ -630,6 +671,10 @@ const typingIn = (event: KeyboardEvent) =>
 
 function onKey(event: KeyboardEvent) {
   const typing = typingIn(event)
+  if (event.key === 'Escape' && drag.escape()) {
+    event.preventDefault()
+    return
+  }
   if (event.key === 'Escape' && assets.isOpen()) return assets.close()
   if (event.altKey && event.shiftKey && event.code === 'KeyS') {
     event.preventDefault()

@@ -269,7 +269,7 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 }
 .assets-head > b { font-size: 15px; }
 .assets-head input { flex: 1; max-width: 360px; }
-.assets-head > .act:last-child { margin-left: auto; }
+.assets-head > [data-dock] { margin-left: auto; }
 .assets button.mode, .assets button.act, .assets button.primary {
   border: 1px solid var(--line-2); background: none; color: var(--mute); border-radius: 999px; padding: 5px 12px;
   font: 500 12.5px/1.2 var(--sans); cursor: pointer;
@@ -523,6 +523,48 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .note-text { font-size: 15px; font-weight: 600; }
 .actions button:disabled { opacity: 0.4; cursor: default; }
 .note-item { display: block; width: 100%; text-align: left; padding: 4px 0; }
+.assets.docked {
+  left: auto; width: min(360px, 100vw); background: var(--bg-2); border-left: 1px solid var(--line-2);
+  box-shadow: -16px 0 48px rgba(0, 0, 0, 0.28);
+}
+.assets.docked .assets-head { flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+.assets.docked .assets-head > b { display: none; }
+.assets.docked .assets-head button.mode, .assets.docked .assets-head button.act { padding: 4px 10px; }
+.assets.docked .assets-head input { order: 3; flex-basis: 100%; max-width: none; }
+.assets.docked .assets-body { padding: 12px 12px 40px; }
+.assets.docked .assets-body.detail { grid-template-columns: 1fr; grid-template-rows: auto auto; overflow: auto; padding: 0; }
+.assets.docked .assets-body.detail .assets-main { overflow: visible; padding: 12px; }
+.assets.docked .asset-detail { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
+.assets.docked .tiles { grid-template-columns: 1fr; }
+.assets.docked .tile.wide { grid-column: auto; }
+.assets.docked .screen { flex-wrap: wrap; }
+.root:not(.benching):has(.assets.docked:not([hidden])) .panel { right: 376px; }
+.root.benching:has(.panel:not([hidden])) .assets.docked { right: 400px; }
+.tile[data-drag], .screen[data-drag], .drag-handle { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.tile-frame { pointer-events: none; }
+.drag-handle {
+  justify-self: start; margin-top: 6px; padding: 6px 10px; border: 1px dashed var(--line-2); border-radius: 8px;
+  color: var(--mute); font: 500 12.5px/1.2 var(--sans);
+}
+.drag-handle:hover { color: var(--text); border-color: var(--red); }
+.drag-ghost {
+  position: fixed; z-index: 6; pointer-events: none; white-space: nowrap; padding: 6px 10px; border-radius: 999px;
+  background: var(--bg); color: var(--text); border: 1.5px solid var(--red); font: 600 12px/1.2 var(--sans);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+.drop-note {
+  position: fixed; z-index: 6; pointer-events: auto; display: grid; gap: 8px; width: min(320px, calc(100vw - 16px));
+  padding: 12px; background: var(--bg); color: var(--text); border: 1px solid var(--line-2); border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+.drop-note textarea { width: 100%; }
+.drop-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.drop-note button.act, .drop-note button.primary {
+  border: 1px solid var(--line-2); background: none; color: var(--mute); border-radius: 999px; padding: 5px 12px;
+  font: 500 12.5px/1.2 var(--sans); cursor: pointer;
+}
+.drop-note button.primary { background: var(--red); border-color: var(--red); color: #fff; }
+.drag-ghost[hidden], .drop-note[hidden] { display: none; }
 .note-item[aria-current='true'] { color: var(--accent); }
 `
 
@@ -577,4 +619,13 @@ export const outlineCss = `
   padding: 3px 5px; border-radius: 4px;
 }
 .m-target { position: fixed; pointer-events: none; box-sizing: border-box; border: 1px dashed #f24e1e; }
+.drop[hidden], .drop-tag:empty { display: none; }
+.drop-mark { position: fixed; pointer-events: none; box-sizing: border-box; }
+.drop-mark.line { height: 4px; border-radius: 2px; background: #fb3a0e; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85); }
+.drop-mark.inside { border: 2px dashed #fb3a0e; border-radius: 4px; background: rgba(251, 58, 14, 0.08); }
+.drop-tag {
+  position: fixed; pointer-events: none; white-space: nowrap; max-width: 420px; overflow: hidden; text-overflow: ellipsis;
+  background: #fb3a0e; color: #fff; font: 600 12px/1.2 system-ui, -apple-system, sans-serif; padding: 5px 8px;
+  border-radius: 6px;
+}
 `
