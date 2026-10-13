@@ -300,6 +300,16 @@ export const steps: Step[] = [
     rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.31',
+    to: '1.0',
+    changes: [
+      'no source change: 1.0 is 0.31 with what 1.0 promises (ADR 0088)',
+      'from 1.0 on, a breaking change waits for 2.0; hozu migrate keeps any 1.x current',
+    ],
+    rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 /** 0.27 stores a page's noindex as a value, so a literal true becomes { literal: true } (ADR 0079 A3a). */

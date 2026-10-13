@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0-rc.1 — The release candidate (ADR 0088)
+
+The 0.31.0 code as the first 1.0 candidate, published under npm's `next` tag (`npx create-hozu@next`;
+`npx -p @hozu/cli@next hozu migrate` upgrades an app). Nothing changes in the API.
+
+- **What 1.0 promises:** the authoring API, the IR and lock formats, CLI commands with their `--json` shapes, and the
+  meaning of every diagnostic code follow semantic versioning: a breaking change waits for 2.0, a new rule arrives as
+  a warning first, and `hozu migrate` keeps any 1.x app current. DevTools, the human text of the CLI and diagnostic
+  wording may still improve in a minor (ADR 0088).
+- **How it got here:** agent trials as an engineer, a non-engineer and a designer; the owner's booking site and back
+  office rebuilt with Hozu, matched to the original and deployed in containers; the DevTools request trial and a
+  regression round (trials 0023, 0026, 0027, 0028).
+
 ## 0.31.0 — What a new app and a second look at DevTools met (ADR 0087)
 
 From trial 0028: an agent built a new app on 0.30.1, and trial 0023's failed change ran again. No API change:

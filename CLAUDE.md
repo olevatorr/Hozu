@@ -420,6 +420,10 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
 - 0.31 (ADR 0087, trial 0028): browse `brief` (`shown briefly:`, elements added and removed within a step), file
   bodies sent as bytes (`FILE_BODIES` init script), `in` covers nav/section/dialog; HZ079 skips caller-vs-component
   pairs (`use.added`); `selectorClasses` reads `[class~="x"]`; styles cache keyed by the CLI version.
+- 1.0 (ADR 0088): 1.0.0-rc.1 = 0.31.0 under npm `next` (`scripts/publish.ts` passes `--tag next` for a pre-release),
+  candidate checks, then 1.0.0 under `latest`. From 1.0, semver covers the authoring API, IR / lock formats, CLI
+  commands and `--json`, and diagnostic code meanings; new rules arrive as warnings first; migrate keeps any 1.x
+  current.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of

@@ -53,7 +53,15 @@ if (!scaffold) throw new Error('create-hozu is not in .tmp/release')
 const publish = (p: (typeof packages)[number]) => {
   if (published(p.name, version)) return console.log(`already on npm: ${p.name}@${version}`)
   console.log(`${dryRun ? 'would publish' : 'publishing'} ${p.name}@${version}`)
-  if (!dryRun) run('npm', ['publish', p.file, '--access', 'public', '--provenance'])
+  if (!dryRun)
+    run('npm', [
+      'publish',
+      p.file,
+      '--access',
+      'public',
+      '--provenance',
+      ...(version.includes('-') ? ['--tag', 'next'] : []),
+    ])
 }
 
 for (const p of libraries) publish(p)
