@@ -452,6 +452,19 @@ describe.skipIf(!findBrowser())('Assets docked beside the page, components dragg
     const text = await copied()
     expect(text).toContain('## 1. Add <ui.Badge> before <h1 "Team tasks">\n- Want: Shows the count\n')
 
+    const at = await centre('[data-hozu-pending]')
+    await mouse('mouseMoved', at.x, at.y, false)
+    await mouse('mousePressed', at.x, at.y, true)
+    await mouse('mouseReleased', at.x, at.y, true)
+    await until(
+      `[...${shadow}.querySelectorAll('.panel textarea')].some((n) => n.value === 'Shows the count')`,
+    )
+    expect(await evaluate(`${outline}.querySelector('.drop').hidden`)).toBe(true)
+    expect(await evaluate(`${shadow}.querySelector('.drop-note').hidden`)).toBe(true)
+    expect(
+      await evaluate(`!!document.querySelector('h1').previousElementSibling?.matches('[data-hozu-pending]')`),
+    ).toBe(true)
+
     const h = await centre('h1')
     await mouse('mouseMoved', h.x, h.y, false)
     await mouse('mousePressed', h.x, h.y, true)
@@ -495,7 +508,7 @@ describe.skipIf(!findBrowser())('Assets docked beside the page, components dragg
     const text = await copied()
     expect(text).toMatch(/## \d+\. Add <ui\.Table> (before|after|inside) <h1 "Team tasks">/)
     expect(text).toContain(
-      'build it like the ‘Orders’ example in `ui/previews.ts:7`: copy that `ui.use(Table, …)`',
+      'build it like the ‘Orders’ example in `ui/previews.ts:8`: copy that `ui.use(Table, …)`',
     )
     await until(`!!document.querySelector('[data-hozu-pending] table')`)
     expect(await evaluate(`document.querySelectorAll('[data-hozu-pending] tbody tr').length`)).toBe(3)
@@ -556,6 +569,22 @@ describe.skipIf(!findBrowser())('Assets docked beside the page, components dragg
     expect(both).toContain('`ui.use(Icon, { props: { d: alarmClock } })`')
     expect(errors).toEqual([])
   }, 40_000)
+
+  it('a container-query example (Metric) fills its tile instead of collapsing', async () => {
+    await fresh()
+    const frame = `${shadow}.querySelector('[data-component="ui.Metric"] [data-tile] iframe')`
+    await until(`!!${frame}`)
+    await evaluate(`${frame}.scrollIntoView({ block: 'center' })`)
+    await until(`!!${frame}?.contentDocument?.querySelector('section p')`)
+    const sizes = (await evaluate(`(() => {
+      const doc = ${frame}.contentDocument
+      const cards = [...doc.querySelectorAll('*')].filter((el) => getComputedStyle(el).containerType !== 'normal')
+      return { count: cards.length, narrowest: Math.min(...cards.map((c) => c.getBoundingClientRect().width)), fits: cards.every((c) => c.scrollWidth <= c.clientWidth + 1) }
+    })()`)) as { count: number; narrowest: number; fits: boolean }
+    expect(sizes.count).toBeGreaterThan(0)
+    expect(sizes.narrowest).toBeGreaterThan(120)
+    expect(sizes.fits).toBe(true)
+  })
 
   it('Layers: hovering a row frames its part on the page, leaving removes it, the selection stays', async () => {
     await open('/')

@@ -160,6 +160,8 @@ const px = (n: number) => `${n}px`
 export interface Move {
   begin(): void
   end(to: { el: Element; position: Position } | null): void
+  /** Released without moving: a click, which edits the item instead of moving it. */
+  click(): void
 }
 
 /** The pointer in this window's coordinates, from an event in `view` (the Workbench frame's, when it is that). */
@@ -326,7 +328,12 @@ export function dragger(host: DropHost) {
       const at = e.type === 'pointercancel' || cancelled ? null : over
       const asking = moved && !!at && !moving
       end(asking)
-      if (!moved) return
+      if (!moved) {
+        if (!moving || cancelled || e.type === 'pointercancel') return
+        guard.hold(handle)
+        guard.settle()
+        return moving.click()
+      }
       guard.settle()
       if (cancelled) return
       if (moving) return moving.end(at)

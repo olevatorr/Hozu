@@ -515,6 +515,14 @@ function movePending(down: PointerEvent, key: string, el: HTMLElement) {
   if (!pick || !add) return
   drag.start(down, el, add, dragLabel(add.component.split('.').pop() ?? add.component, add.variant), {
     begin: () => pending.moving(key),
+    click: () => {
+      const index = state.picks.indexOf(pick)
+      if (index < 0) return
+      state.active = index
+      persist()
+      drawPicks()
+      open('inspector')
+    },
     end: (to) => {
       pending.moving(null)
       if (!to) return

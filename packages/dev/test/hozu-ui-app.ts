@@ -63,9 +63,26 @@ export const Icon = ui.component({
 })
 `
 
+const METRIC = `import { ui } from '@hozu/core'
+import { z } from 'zod'
+import { tv } from './tv.ts'
+
+export const Metric = ui.component({
+  tag: 'section',
+  styles: tv({ slots: { base: '@container rounded border p-4', label: 'text-sm', value: 'mt-1 text-2xl font-semibold' } }),
+  props: z.object({ label: z.string(), value: z.string() }),
+  render: ({ props, classes }) =>
+    ui.section({ 'aria-label': props.label }, [
+      ui.p({ class: classes.label }, [props.label]),
+      ui.p({ class: classes.value }, [props.value]),
+    ]),
+})
+`
+
 const PREVIEWS = `import { ui } from '@hozu/core'
 import { previews } from '@hozu/core/preview'
 import { Badge } from './badge.ts'
+import { Metric } from './metric.ts'
 import { Table, Td, Th, Tr } from './table.ts'
 
 export default previews((p) => [
@@ -74,6 +91,12 @@ export default previews((p) => [
       ui.use(Tr, {}, [ui.use(Td, {}, ['#1042']), ui.use(Td, {}, [ui.use(Badge, { props: { tone: 'done' } }, ['Paid'])])]),
       ui.use(Tr, {}, [ui.use(Td, {}, ['#1041']), ui.use(Td, {}, ['Pending'])]),
       ui.use(Tr, {}, [ui.use(Td, {}, ['#1040']), ui.use(Td, {}, ['Refunded'])]),
+    ]),
+  ),
+  p.example(Metric, 'Revenue and orders', () =>
+    ui.div({ class: 'flex flex-wrap items-center gap-3' }, [
+      ui.use(Metric, { props: { label: 'Revenue', value: '$12,480' } }),
+      ui.use(Metric, { props: { label: 'Orders', value: '312' } }),
     ]),
   ),
 ])
@@ -114,12 +137,14 @@ export function appWithHozuUi(): string {
         'dialog.ts': { components: ['Dialog'], uses: [] },
         'table.ts': { components: ['Table', 'Th', 'Td', 'Tr'], uses: [] },
         'icon.ts': { components: ['Icon'], uses: [] },
+        'metric.ts': { components: ['Metric'], uses: [] },
         'icons/lucide.ts': { components: [], uses: [] },
       },
     }),
   )
   writeFileSync(join(root, 'ui/table.ts'), TABLE)
   writeFileSync(join(root, 'ui/icon.ts'), ICON)
+  writeFileSync(join(root, 'ui/metric.ts'), METRIC)
   mkdirSync(join(root, 'ui/icons'))
   writeFileSync(
     join(root, 'ui/icons/lucide.ts'),
@@ -142,9 +167,9 @@ export function appWithHozuUi(): string {
     readFileSync(join(root, 'ui/kit.ts'), 'utf8')
       .replace(
         "import * as input from './input.ts'",
-        "import * as input from './input.ts'\nimport * as tag from './tag.ts'\nimport * as table from './table.ts'\nimport * as icon from './icon.ts'",
+        "import * as input from './input.ts'\nimport * as tag from './tag.ts'\nimport * as table from './table.ts'\nimport * as icon from './icon.ts'\nimport * as metric from './metric.ts'",
       )
-      .replace('input, field]', 'input, field, tag, table, icon]'),
+      .replace('input, field]', 'input, field, tag, table, icon, metric]'),
   )
   writeFileSync(
     join(root, 'ui/button.ts'),

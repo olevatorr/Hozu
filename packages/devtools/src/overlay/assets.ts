@@ -123,6 +123,23 @@ const requiredProps = (props: Catalogued['props']) => {
   return ((props.required ?? []) as string[]).filter((k) => fields[k]?.default === undefined)
 }
 
+/** A part sized by container queries has no width of its own, so in a centred preview it shrinks to its padding: it and the top-level part holding it get room. */
+export function roomForContainers(doc: Document) {
+  const view = doc.defaultView
+  if (!view) return
+  for (const top of [...doc.body.children] as HTMLElement[]) {
+    const containers = [top, ...top.querySelectorAll<HTMLElement>('*')].filter(
+      (el) => view.getComputedStyle(el).containerType !== 'normal',
+    )
+    if (!containers.length) continue
+    top.style.width = '100%'
+    for (const el of containers) {
+      el.style.flex = '1 1 200px'
+      el.style.minWidth = '0'
+    }
+  }
+}
+
 const schemaRows = (props: Catalogued['props']) =>
   Object.entries((props.properties ?? {}) as Record<string, { type?: unknown; enum?: unknown[] }>).map(
     ([k, s]) => [k, Array.isArray(s.enum) ? s.enum.map(String).join(' | ') : String(s.type ?? 'any')],
@@ -185,6 +202,7 @@ export function assetsBoard(host: AssetsHost) {
     }
     frame.addEventListener('load', () => {
       const doc = frame.contentDocument
+      if (doc) roomForContainers(doc)
       const tile = frame.closest('.tile')
       if (doc && tile && doc.documentElement.scrollWidth > frame.clientWidth + 2) {
         tile.classList.add('wide')
