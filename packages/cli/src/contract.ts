@@ -417,6 +417,11 @@ export interface BrowseChange {
    */
   flashes?: { count: number; elements: string[] }
   /**
+   * Elements with text that the step added and removed again before it settled, with how long each stayed
+   * (`"Removing “Ship”…" for 180 ms`): a busy state or a dialog that flashes past (ADR 0087).
+   */
+  brief?: string[]
+  /**
    * How a navigation arrived (ADR 0072 D3): from a speculation prerender or loaded, and the milliseconds from the
    * activation (prerendered) or the navigation start to the first contentful paint.
    */

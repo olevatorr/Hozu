@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.31.0 — What a new app and a second look at DevTools met (ADR 0087)
+
+From trial 0028: an agent built a new app on 0.30.1, and trial 0023's failed change ran again. No API change:
+`npx -p @hozu/cli@latest hozu migrate`, then the printed lines.
+
+- **`hozu browse` shows what flashed past.** A step that showed and removed something before the page settled
+  prints `shown briefly: "Remove “Ship…”? …" for 15 ms` (`brief` in `--json`), such as a dialog shown in a busy state
+  the change now passes through.
+- **Uploads in `hozu browse` carry their bytes** (they arrived empty).
+- **HZ072 and HZ079 agree:** a caller's class against the component's own is HZ072 alone (add `!`), no longer also
+  HZ079 (remove it). **HZ026** accepts classes a plugin matches as `[class~="lead"]` (typography).
+- **Upgrades recompile the styles cache**, and `hozu add kit` names only the packages it lacks.
+- **`in "<text>"`** also scopes to `nav`, `section` and dialogs; `--help` lists `upload`.
+- **Guide:** a 403 page still renders its views (gate them with the same query); clear a password from context; a
+  typed `part()` for `access: { allow }`.
+
 ## 0.30.1 — What the Mori Docker rehearsal met (ADR 0085)
 
 - **`hozu add component --client` moves `@hozu/bundle` to `dependencies`.** Before, it was left in `devDependencies`

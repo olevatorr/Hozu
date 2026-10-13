@@ -198,6 +198,8 @@ export function classConflicts(ctx: Ctx) {
         const a = items[i]!
         const b = items[j]!
         if ((a.key !== null && a.key === b.key) || a.cls === b.cls) continue
+        const added = 'use' in node && node.use ? node.use.added : []
+        if (a.key === null && b.key === null && added.includes(a.cls) !== added.includes(b.cls)) continue
         const sa = styles.get(a.cls)
         const sb = styles.get(b.cls)
         const props = sa && sb ? sameProperties(sa, sb) : null

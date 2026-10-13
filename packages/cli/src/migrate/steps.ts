@@ -289,6 +289,17 @@ export const steps: Step[] = [
     rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
     normalize: (ir) => ir,
   },
+  {
+    from: '0.30',
+    to: '0.31',
+    changes: [
+      'no source change',
+      'hozu browse names what a step showed and removed (shown briefly), and uploads carry their bytes',
+      'HZ079 leaves a caller class against the component to HZ072; HZ026 accepts plugin classes matched as [class~="x"]',
+    ],
+    rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
+    normalize: (ir) => ir,
+  },
 ]
 
 /** 0.27 stores a page's noindex as a value, so a literal true becomes { literal: true } (ADR 0079 A3a). */

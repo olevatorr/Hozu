@@ -28,6 +28,22 @@ const READY = `(() => {
     ${STILL}
 })()`
 
+/** The protocol leaves File and Blob bytes out of a request, so a body holding them is sent as bytes (an upload). */
+const FILE_BODIES = String.raw`(() => {
+  const send = window.fetch
+  if (!send || send.hozuFiles) return
+  const holds = (b) => b instanceof Blob || (b instanceof FormData && [...b.values()].some((v) => v instanceof Blob))
+  window.fetch = async function (input, init) {
+    if (!init || !holds(init.body)) return send.call(this, input, init)
+    const request = new Request(input, init)
+    const headers = new Headers(init.headers)
+    const type = request.headers.get('content-type')
+    if (type) headers.set('content-type', type)
+    return send.call(this, input, { ...init, headers, body: new Uint8Array(await request.arrayBuffer()) })
+  }
+  window.fetch.hozuFiles = true
+})()`
+
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 interface Head {
@@ -259,6 +275,7 @@ export class Tab {
 
   private async enable(session: string) {
     await this.send('Fetch.enable', { patterns: [{ urlPattern: `${ORIGIN}/*` }] }, session)
+    await this.send('Page.addScriptToEvaluateOnNewDocument', { source: FILE_BODIES }, session).catch(() => {})
     await this.send('Network.enable', {}, session)
     await this.send('Runtime.enable', {}, session)
     await this.send('Log.enable', {}, session)
@@ -540,6 +557,34 @@ export class Tab {
       g.__hozuShifts = []
       g.__hozuInputAt = -Infinity
       g.__hozuSeen = []
+      g.__hozuBrief = []
+      g.__hozuBriefObserver?.disconnect()
+      const born = new WeakMap()
+      const words = (el) => {
+        const parts = []
+        const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+        for (let t = walk.nextNode(); t; t = walk.nextNode()) if (t.data.trim()) parts.push(t.data.trim())
+        return parts.join(' ').replace(/\\s+/g, ' ')
+      }
+      let frame = 0
+      const tick = () => { frame++; g.__hozuBriefFrame = requestAnimationFrame(tick) }
+      if (g.__hozuBriefFrame) cancelAnimationFrame(g.__hozuBriefFrame)
+      tick()
+      g.__hozuBriefTake = (records) => {
+        const now = performance.now()
+        for (const r of records) {
+          for (const n of r.addedNodes) if (n.nodeType === 1) born.set(n, [now, frame])
+          for (const n of r.removedNodes) {
+            if (n.nodeType !== 1 || !born.has(n) || n.isConnected) continue
+            const [at, shown] = born.get(n)
+            if (frame === shown) continue
+            const text = words(n)
+            if (text) g.__hozuBrief.push({ text, ms: Math.round(now - at), node: n, parent: r.target })
+          }
+        }
+      }
+      g.__hozuBriefObserver = new MutationObserver((records) => g.__hozuBriefTake(records))
+      g.__hozuBriefObserver.observe(document.body, { childList: true, subtree: true })
       const chain = Symbol.for('hozu.browse.chain')
       for (const el of document.querySelectorAll('body *')) {
         const p = el.parentElement
@@ -564,7 +609,13 @@ export class Tab {
   }
 
   /** What a step did to the page in place: new elements, elements rebuilt unchanged (flashes, ADR 0069 A3) and layout shift (ADR 0067 C2). */
-  smoothness(): Promise<{ replaced: number; flashes: number; flashed: string[]; shift: number }> {
+  smoothness(): Promise<{
+    replaced: number
+    flashes: number
+    flashed: string[]
+    shift: number
+    brief: string[]
+  }> {
     return this.evaluate(`(() => {
       const s = Symbol.for('hozu.browse.seen')
       const chain = Symbol.for('hozu.browse.chain')
@@ -610,7 +661,18 @@ export class Tab {
       for (const e of g.__hozuShiftObserver?.takeRecords() ?? []) g.__hozuShifts.push(e)
       let shift = 0
       for (const e of g.__hozuShifts ?? []) if (!e.hadRecentInput && e.startTime > g.__hozuInputAt + 500) shift += e.value
-      return { replaced, flashes, flashed: outer, shift: Math.round(shift * 1000) / 1000 }
+      const pending = g.__hozuBriefObserver?.takeRecords()
+      if (pending?.length) g.__hozuBriefTake(pending)
+      const removed = new Set((g.__hozuBrief ?? []).map((b) => b.node))
+      const brief = (g.__hozuBrief ?? [])
+        .filter((b) => {
+          if (b.node.isConnected) return false
+          for (let p = b.parent; p; p = p.parentNode) if (removed.has(p)) return false
+          return true
+        })
+        .map((b) => JSON.stringify(b.text.length > 60 ? b.text.slice(0, 59) + '…' : b.text) + ' for ' + b.ms + ' ms')
+      g.__hozuBrief = []
+      return { replaced, flashes, flashed: outer, shift: Math.round(shift * 1000) / 1000, brief: [...new Set(brief)] }
     })()`)
   }
 

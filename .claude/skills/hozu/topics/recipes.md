@@ -124,7 +124,7 @@ On the next page (every link is a document load): `navigate` to a link with a `n
 For a small group and one server process, a file is enough: read it in the resolvers, write it whole after each
 mutation (write a temporary file, then rename). Put it in a folder listed in `.gitignore` (`data/`), name its path in
 `env.server` with a default (`DATA_FILE: z.string().default('data/club.json')`), and give the container a volume for
-that folder (`hozu build --target node` prints one). Limits: one process only (two instances overwrite each other),
+that folder (`hozu build --target node` prints one once the folder exists). Limits: one process only (two instances overwrite each other),
 no queries beyond what you write, back the file up. Move to a database when any of these matter.
 
 ## Confirm before deleting, without JavaScript

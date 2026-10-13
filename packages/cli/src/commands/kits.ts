@@ -186,10 +186,18 @@ export async function addKit(loaded: Loaded, cwd: string, id: string | undefined
   const root = dirname(loaded.path)
   const build = loaded.build(false)
   const gen = await generated(build, root, loaded.path)
-  if (!gen)
-    throw new HozuCliError('usage', 'hozu add kit needs @hozu/css and @hozu/variants in this app', [
-      'npm install @hozu/css @hozu/variants',
+  if (!gen) {
+    const missing = (
+      await Promise.all(
+        ['@hozu/css', '@hozu/variants'].map(async (name) =>
+          (await load(loaded.path, name === '@hozu/variants' ? '@hozu/variants/config' : name)) ? null : name,
+        ),
+      )
+    ).filter((name): name is string => name !== null)
+    throw new HozuCliError('usage', `hozu add kit needs ${missing.join(' and ')} in this app`, [
+      `npm install ${missing.join(' ')}`,
     ])
+  }
   const out: AddOutput = { created: [], edited: [], manual: [], declarations: { kit: [id] }, texts: [] }
   const tv = join(root, id, 'tv.ts')
   const syncOthers = async () => {

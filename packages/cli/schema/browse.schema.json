@@ -207,6 +207,13 @@
           "additionalProperties": false,
           "description": "Elements the step removed and built again unchanged: same tag, class, text, `name`, `id`, `href`, `src`, `type` and parent path (ADR 0067 C2, ADR 0069 A3). `count` counts every such element, `elements` names the outermost ones as CSS-like paths (`main > form > input[name=card]`)."
         },
+        "brief": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Elements with text that the step added and removed again before it settled, with how long each stayed (`\"Removing “Ship”…\" for 180 ms`): a busy state or a dialog that flashes past (ADR 0087)."
+        },
         "arrived": {
           "type": "object",
           "properties": {

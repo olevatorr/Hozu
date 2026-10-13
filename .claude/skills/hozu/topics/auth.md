@@ -14,12 +14,15 @@
   - `access: { allow: ({ session, input }) => session.role === 'admin' }`.
   - `access: 'anyone'`: sign-in, a newsletter. On user data it is HZ090.
 - **Refused** is the framework error `Forbidden`, before the resolver runs: optional in `failed` (otherwise
-  `Unexpected`). A page answers 403, or maps it: `head: { query: me, …, failed: { Forbidden: login } }`.
-- Check it as two visitors: `hozu call <effect> --session '{"user":"bob"}'`, or in one chain: `hozu browse /
-  --as ada --session '{"user":"ada"}' --do 'remember note from li a @href' --as bob --session '{"user":"bob"}'
-  --do 'goto $note'` (bob gets 403). `post <path> a=1` forges a native post as the current actor.
+  `Unexpected`). A page answers 403 (its views still render: gate them with a `ui.query` of the same query), or maps
+  it: `failed: { Forbidden: login }`.
+- Check it as two visitors: `hozu call <effect> --session '{"user":"bob"}'`, or `hozu browse / --as ada --session
+  '{"user":"ada"}' --do 'remember note from li a @href' --as bob --session '{"user":"bob"}' --do 'goto $note'`
+  (bob gets 403).
 
 <!-- more -->
+
+- `post <path> a=1` in `hozu browse` forges a native post as the current actor.
 
 ## Details
 - The scaffold writes `features/account` (sign-in page, sign-out, `me`), per-user resolvers, and a redirect to
@@ -50,7 +53,11 @@
   (`hozu docs fetch`) and never reaches your server.
 - `SESSION_SECRET` is at least 32 characters: `openssl rand -hex 32`. Keep it in a git-ignored `.env` and list
   it in `.env.example` (`npx hozu env --example`).
-- **A refused page** renders the page's views with status 403 (the `<title>` falls back to the site name). For a
-  page of its own, map `Forbidden` (or a declared error) to a route: `failed: { Forbidden: login }`.
+- **A refused page** renders the page's views with status 403 (the `<title>` falls back to the site name), so the
+  views show the refusal themselves (`failed: { Forbidden: () => ui.p({}, ['Admins only']) }` in their `ui.query`;
+  a declared error such as `NotAdmin` has its own key).
+  For a page of its own, map `Forbidden` (or a declared error) to a route: `failed: { Forbidden: login }`.
+- **A password** reaches the sign-in mutation through context: clear it on every way out of the signing-in state
+  (`done`, `failed`), so it is not kept in the page's state.
 - **Order on a mutation:** the input schema first (`Invalid` with field errors), then access (`Forbidden`), then the
   resolver.

@@ -24,7 +24,7 @@ export const PAGE = String.raw`(() => {
     check: 'input[type=checkbox], input[type=radio]',
     click: 'button, a[href], [role=button], [role=link], [role=tab], [role=option], [role=menuitem], [role=checkbox], [role=switch], input[type=submit], input[type=button], input[type=image], summary, [title], label',
   }
-  const SCOPES = 'li, tr, form, [role=listitem], [role=row], details, article'
+  const SCOPES = 'li, tr, form, [role=listitem], [role=row], details, article, nav, section, dialog, [role=dialog]'
   const scopeOf = (within) => {
     if (within === null) return { roots: [null] }
     const want = norm(within)
@@ -32,7 +32,7 @@ export const PAGE = String.raw`(() => {
     const exact = all.filter((el) => el.innerText.split('\n').some((l) => norm(l) === want))
     const pool = exact.length ? exact : all
     const roots = pool.filter((el) => !pool.some((o) => o !== el && el.contains(o)))
-    if (!roots.length) return { error: 'No list item, table row, form, details or article contains "' + within + '"' }
+    if (!roots.length) return { error: 'No list item, table row, form, details, article, nav, section or dialog contains "' + within + '"' }
     return { roots }
   }
   const inside = (root, el) => root === null || root.contains(el) || (root.tagName === 'FORM' && el.form === root)

@@ -73,7 +73,7 @@ export const Board = ui.view({
   (with `is([...])` for a machine state); `v-for` + `:key` → `ui.each(list, 'id', …)`; `setInterval` → `freshness: { poll: s }`
   for data that changes on its own (`hozu docs data`), `after` with `refresh` for a refresh the visitor pauses
   (`hozu docs machine`); `watch` → a transition's `assign`; DOM libraries (charts, maps) → a client component
-  (`hozu docs components`; `examples/showcase` has a Chart.js one).
+  (`hozu docs components` shows one).
 - **Also:** `ui.html(post.html)` (trusted HTML from query data only, HZ030), `ui.asset(new URL('./x.png',
   import.meta.url))`, `ui.window({ on })` / `ui.document({ on })`, `ui.embed(OtherView)`.
 

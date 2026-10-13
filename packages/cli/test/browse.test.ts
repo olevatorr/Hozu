@@ -163,7 +163,8 @@ describe.skipIf(!findBrowser())('hozu browse (ADR 0040 D, ADR 0043 J)', () => {
     const { code, stdout } = await human(chain, example('notes'))
     expect(code).toBe(0)
     expect(stdout.length).toBeLessThanOrEqual(1536)
-    expect(stdout.trimEnd().split('\n')).toHaveLength(10)
+    expect(stdout.trimEnd().split('\n')).toHaveLength(11)
+    expect(stdout).toMatch(/\n {6}shown briefly \(on\): "Adding Milk …" for \d+ ms\n/)
     expect(stdout).toContain(
       '  2 press Enter: + Notes: 3 · + Milk · + Pin · + Delete · − Notes: 2 — on: focus stays on <input name="text"> "New note"\n',
     )

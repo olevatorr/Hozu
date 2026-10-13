@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { type BuildResult, sha256, styledClasses } from '@hozu/core/ir'
 import type { ClassStyle } from '@hozu/validator'
+import { cliVersion } from './versions.ts'
 
 interface CssModule {
   compileStyles(
@@ -43,6 +44,7 @@ export interface ProjectStyles {
 const keyOf = (build: BuildResult, files: string[]) =>
   sha256(
     JSON.stringify([
+      cliVersion(),
       [...styledClasses(build.ir, build.bindings.components)].sort(),
       build.bindings.styles,
       files.map((f) => (existsSync(f) ? readFileSync(f, 'utf8') : null)),
