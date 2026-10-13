@@ -14,16 +14,56 @@ const templates = fileURLToPath(new URL('../templates', import.meta.url))
 
 const UI_HOME = `import { ui } from '@hozu/core'
 import { LinkButton } from '../../ui/button.ts'
+import { Card } from '../../ui/card.ts'
 import { PageHeader } from '../../ui/page-header.ts'
+
+const steps: [string, string, string][] = [
+  ['Ask your agent', 'Describe what to build in your own words. It follows the Hozu guide in this folder.', ''],
+  [
+    'Point at the page',
+    'The dock at the bottom is Hozu DevTools: choose Select, click a part, and say what should change.',
+    '',
+  ],
+  ['Check the work', 'Types, rules and every decision, before anything runs.', 'npx hozu check'],
+  ['Add a page', 'A list, a form and its data, ready to change.', 'npx hozu add feature tasks --page /tasks'],
+]
 
 export const Home = ui.view({
   render: () =>
-    ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [
-      ui.use(PageHeader, { props: { title: 'Hello, Hozu', description: 'Edit features/site/views.ts to get started.' } }),
-      ui.use(LinkButton, { variant: { intent: 'primary' }, props: { href: 'https://hozu.org' } }, ['Read the guide']),
+    ui.main({ class: 'mx-auto max-w-2xl px-5 py-16' }, [
+      ui.img({
+        src: ui.asset(new URL('../../assets/icon.png', import.meta.url)),
+        width: 64,
+        height: 64,
+        alt: 'Hozu',
+        class: 'mb-6',
+      }),
+      ui.use(PageHeader, {
+        props: {
+          title: 'Your Hozu app is running.',
+          description: 'This page is features/site/views.ts, built from Hozu UI in ui/. Change it, delete it, or ask your agent to.',
+        },
+      }),
+      ui.div(
+        { class: 'mt-8 grid gap-4 sm:grid-cols-2' },
+        steps.map(([title, body, command]) =>
+          ui.use(Card, { props: { title } }, [
+            ui.p({ class: 'text-sm text-ink-muted' }, [body]),
+            command === ''
+              ? null
+              : ui.code({ class: 'mt-3 block overflow-x-auto rounded-control bg-surface-sunken px-3 py-2 font-mono text-xs whitespace-nowrap text-ink' }, [command]),
+          ]),
+        ),
+      ),
+      ui.div({ class: 'mt-8 flex flex-wrap gap-3' }, [
+        ui.use(LinkButton, { variant: { intent: 'primary' }, props: { href: 'https://hozu.org/docs/getting-started' } }, ['Getting started']),
+        ui.use(LinkButton, { props: { href: 'https://ui.hozu.org' } }, ['Hozu UI components']),
+      ]),
     ]),
 })
 `
+
+const text = /(\.(ts|tsx|js|mjs|json|css|md|html|txt|svg)|gitignore)$/
 
 const exists = (path: string) =>
   stat(path).then(
@@ -89,7 +129,12 @@ export async function createApp(dir: string, options: CreateOptions): Promise<st
     const rel = relative(app, source)
     const target = join(dir, rel === 'gitignore' ? '.gitignore' : rel)
     await mkdir(dirname(target), { recursive: true })
-    await writeFile(target, (await readFile(source, 'utf8')).replaceAll('__NAME__', options.name))
+    await writeFile(
+      target,
+      text.test(source)
+        ? (await readFile(source, 'utf8')).replaceAll('__NAME__', options.name)
+        : await readFile(source),
+    )
     written.push(relative(dir, target))
   }
   const pkg: { dependencies: Record<string, string>; devDependencies: Record<string, string> } = packageJson(

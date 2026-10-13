@@ -34,6 +34,8 @@ npm install
 
 Use `--agent agents` for Codex, Cursor or Copilot, or `--agent both` for a team using several agents. These flags install the corresponding project instructions and the Hozu authoring skill.
 
+`npm run dev` prints the Hozu mark and the address, usually `http://localhost:3000`. The app starts with a welcome page listing the next steps; it is `features/site/views.ts`, yours to change or delete.
+
 ### With Hozu UI
 
 [Hozu UI](https://ui.hozu.org), the official components, comes with Hozu 1.0. Until 1.0.0 is out, start from the candidate; `create-hozu` asks whether to add the kit (`--ui` says yes, `--no-ui` no):

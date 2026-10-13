@@ -14,7 +14,8 @@ export const homeText = ui.messages('en', {
     lead: 'Describe the app you want. Your AI builds it, and Hozu checks every change so nothing breaks behind your back.',
     startBuilding: 'Start building →',
     seeProof: 'See the proof',
-    pressHint: '↓ Press AI CHANGE: you only asked for a green button. Watch what else the AI changed, and what Hozu says.',
+    pressHint:
+      '↓ Press AI CHANGE: you only asked for a green button. Watch what else the AI changed, and what Hozu says.',
     askLine: 'You: “Make Checkout green”',
     applyFix: 'APPLY FIX',
     aiChange: 'AI CHANGE',
@@ -128,7 +129,8 @@ export const homeText = ui.messages('en', {
       'Or the row’s owner, or a condition such as an admin role. One line next to the query.',
     accessRefuseBody: 'Anyone else gets a refusal, and the page answers 403 or sends them to sign in.',
     accessTry: 'Try it as someone else',
-    accessTryBody: 'One hozu browse command signs in as two visitors and opens the first one’s page as the second.',
+    accessTryBody:
+      'One hozu browse command signs in as two visitors and opens the first one’s page as the second.',
     accessButton: 'Who may run it →',
     dataKicker: 'Data',
     dataHeading: 'Your API, called from where it belongs.',

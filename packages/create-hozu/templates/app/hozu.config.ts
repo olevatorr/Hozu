@@ -9,7 +9,12 @@ export default project({
   styles: new URL('./app.css', import.meta.url),
   app: new URL('./app.ts', import.meta.url),
   env: { files: ['.env', '.env.local'] },
-  site: { url: 'http://localhost:3000', name: '__NAME__', lang: 'en' },
+  site: {
+    url: 'http://localhost:3000',
+    name: '__NAME__',
+    lang: 'en',
+    icon: ui.asset(new URL('./assets/icon.png', import.meta.url)),
+  },
   routes: { home },
   pages: [ui.page(home, { views: [Home], head: { render: () => ({ title: '__NAME__' }) } })],
   features: [site],
