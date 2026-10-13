@@ -177,8 +177,12 @@ describe('page transitions', () => {
     const home = route({ path: '/', params: null, search: null })
     const Unused = ui.component({
       tag: 'span',
-      styles: tv({ base: 'tracking-widest underline-offset-8' }),
-      render: () => ui.span({}, []),
+      styles: tv({
+        slots: { base: 'tracking-widest underline-offset-8', inner: 'skew-x-6' },
+        variants: { size: { sm: {}, lg: { inner: 'skew-y-3' } } },
+        defaultVariants: { size: 'sm' },
+      }),
+      render: ({ classes }) => ui.span({}, [ui.span({ class: classes.inner }, [])]),
     })
     const Home = ui.view({ render: () => ui.main({ class: 'p-4' }, []) })
     const build = buildProject(
@@ -191,6 +195,9 @@ describe('page transitions', () => {
       { sources: false },
     )
     expect((await compileStyles(build)).css).not.toContain('.tracking-widest')
-    expect((await compileStyles(build, { components: true })).css).toContain('.tracking-widest')
+    const dev = (await compileStyles(build, { components: true })).css
+    expect(dev).toContain('.tracking-widest')
+    expect(dev).toContain('.skew-x-6')
+    expect(dev).toContain('.skew-y-3')
   })
 })

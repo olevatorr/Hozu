@@ -96,7 +96,9 @@ export async function compileStyles(
     customCssResolver: resolveCss,
     shouldRewriteUrls: true,
   })
-  const candidates = components ? styledClasses(build.ir) : classCandidates(build.ir)
+  const candidates = components
+    ? styledClasses(build.ir, build.bindings.components)
+    : classCandidates(build.ir)
   const assets: Record<string, string> = {}
   const raw = hoistImports(compiler.build([...candidates])).replace(
     /url\((['"]?)([^'")]+)\1\)/g,

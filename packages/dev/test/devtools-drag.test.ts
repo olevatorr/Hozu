@@ -586,6 +586,18 @@ describe.skipIf(!findBrowser())('Assets docked beside the page, components dragg
     expect(sizes.fits).toBe(true)
   })
 
+  it('an icon tile without a chosen icon shows the first icon of its picker, not sample text as a path', async () => {
+    await fresh()
+    const frame = `${shadow}.querySelector('[data-component="ui.Icon"] [data-tile="Default"] iframe')`
+    await until(`!!${frame}`)
+    await evaluate(`${frame}.scrollIntoView({ block: 'center' })`)
+    await until(`!!${frame}?.contentDocument?.querySelector('svg path')`)
+    const d = (await evaluate(
+      `${frame}.contentDocument.querySelector('svg path').getAttribute('d')`,
+    )) as string
+    expect(d).toMatch(/^M/)
+  })
+
   it('Layers: hovering a row frames its part on the page, leaving removes it, the selection stays', async () => {
     await open('/')
     await evaluate('localStorage.clear()')

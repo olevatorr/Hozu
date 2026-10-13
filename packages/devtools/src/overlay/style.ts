@@ -322,7 +322,9 @@ kbd { font: 500 11px/1 var(--mono); color: var(--text); background: rgba(var(--t
 .asset-detail textarea { width: 100%; box-sizing: border-box; }
 .owner + .owner { margin-top: 18px; }
 .asset { margin-top: 10px; padding: 12px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); }
-.asset-head { display: flex; align-items: baseline; gap: 10px; }
+.asset-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.asset-head .chip { white-space: nowrap; }
+.asset-uses { white-space: nowrap; }
 .asset-name { border: 0; background: none; padding: 0; color: var(--text); font: inherit; cursor: pointer; text-align: left; }
 .asset-name b { font-size: 14px; }
 .asset-name:hover b { text-decoration: underline; }

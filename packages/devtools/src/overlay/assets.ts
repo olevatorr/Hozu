@@ -202,7 +202,13 @@ export function assetsBoard(host: AssetsHost) {
     }
     frame.addEventListener('load', () => {
       const doc = frame.contentDocument
-      if (doc) roomForContainers(doc)
+      if (doc) {
+        roomForContainers(doc)
+        for (const dialog of doc.querySelectorAll<HTMLDialogElement>('body > dialog')) {
+          dialog.setAttribute('open', '')
+          dialog.style.position = 'static'
+        }
+      }
       const tile = frame.closest('.tile')
       if (doc && tile && doc.documentElement.scrollWidth > frame.clientWidth + 2) {
         tile.classList.add('wide')
@@ -214,7 +220,9 @@ export function assetsBoard(host: AssetsHost) {
   }
 
   const withIcon = (id: string, use: Partial<IsolatedUse>): Partial<IsolatedUse> => {
-    const icon = chosenIcons.get(id)
+    const picker = icons[id]
+    const sample = picker?.icons.find((i) => i.d)
+    const icon = chosenIcons.get(id) ?? (sample && picker ? { prop: picker.prop, d: sample.d } : undefined)
     return icon?.d ? { ...use, props: { ...use.props, [icon.prop]: icon.d } } : use
   }
 
