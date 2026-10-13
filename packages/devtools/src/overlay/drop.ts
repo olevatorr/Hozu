@@ -80,9 +80,8 @@ export interface DropHost {
   name(el: Element): Promise<string>
   /** The drag starts: Assets docks so the page shows. */
   started(): void
-  /** Selects the part the component was dropped at. */
-  drop(el: Element): void
-  place(add: Addition, note: string): void
+  /** Adds the component at the part it was dropped on, without selecting that part. */
+  place(add: Addition, note: string, at: Element): void
   /** Windows besides this one whose page the pointer can be over (the Workbench frame's). */
   windows?(): Window[]
 }
@@ -180,7 +179,7 @@ export function dragger(host: DropHost) {
     if (over?.el === hit.el && over.position === position) tag.textContent = t(`drop.${position}`, { part })
   }
 
-  const ask = (add: Addition, title: string, x: number, y: number) => {
+  const ask = (add: Addition, title: string, x: number, y: number, at: Element) => {
     const text = h('textarea', {
       rows: '3',
       placeholder: t('drop.note.placeholder'),
@@ -206,7 +205,7 @@ export function dragger(host: DropHost) {
             onclick: () => {
               const value = text.value.trim()
               close()
-              host.place(add, value)
+              host.place(add, value, at)
             },
           },
           [t('drop.add')],
@@ -249,9 +248,8 @@ export function dragger(host: DropHost) {
       end()
       if (moved) guard.settle()
       if (!moved || !at || e.type === 'pointercancel') return
-      host.drop(at.el)
       const title = t(`drop.${at.position}`, { part: await host.name(at.el) })
-      ask({ ...carried, position: at.position }, title, e.clientX, e.clientY)
+      ask({ ...carried, position: at.position }, title, e.clientX, e.clientY, at.el)
     }
     const end = () => {
       removeEventListener('pointermove', move, true)

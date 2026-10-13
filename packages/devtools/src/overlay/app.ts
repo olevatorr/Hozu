@@ -203,11 +203,17 @@ function partName(n: DevNode, visible: string) {
     : anchorOf(n, visible)
 }
 
-function placeAt(add: Addition, note: string) {
-  const at = state.picks[state.active]
+function placeAt(add: Addition, note: string, el: Element | null = null) {
+  const dropped = el
+    ? { id: el.getAttribute('data-hz') ?? '', index: indexOf(el), visible: visibleOf(el) }
+    : null
+  const at = dropped ?? state.picks[state.active]
   if (!at?.id) return
   const pick: Pick = { id: at.id, index: at.index, visible: at.visible, note, scope: 'this', add }
-  if (hasContent(at)) {
+  if (dropped) {
+    state.picks.push(pick)
+    state.active = state.picks.length - 1
+  } else if (hasContent(state.picks[state.active]!)) {
     state.picks.push(pick)
     state.active = state.picks.length - 1
   } else state.picks[state.active] = pick
@@ -252,11 +258,7 @@ const drag = dragger({
     if (assets.isOpen() && !assets.docked()) assets.dock()
     void showHover(null)
   },
-  drop: (el) => {
-    if (state.mode !== 'select') setMode('select')
-    select({ id: el.getAttribute('data-hz') ?? '', index: indexOf(el), visible: visibleOf(el) }, false)
-  },
-  place: (add, note) => placeAt(add, note),
+  place: (add, note, el) => placeAt(add, note, el),
   windows: () => (doc.defaultView && doc.defaultView !== window ? [doc.defaultView] : []),
 })
 
