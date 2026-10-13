@@ -260,6 +260,7 @@ const drag = dragger({
   },
   place: (add, note, el) => placeAt(add, note, el),
   windows: () => (doc.defaultView && doc.defaultView !== window ? [doc.defaultView] : []),
+  ui: (event) => ours(event),
 })
 
 async function screensSection(): Promise<HTMLElement | null> {

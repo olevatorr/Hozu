@@ -84,44 +84,69 @@ export interface DropHost {
   place(add: Addition, note: string, at: Element): void
   /** Windows besides this one whose page the pointer can be over (the Workbench frame's). */
   windows?(): Window[]
+  /** The event is for DevTools' own UI, not the page. */
+  ui?(event: Event): boolean
 }
 
 const swallowed = ['mousedown', 'mouseup', 'click', 'auxclick', 'dblclick', 'contextmenu'] as const
 
+export interface GuardOptions {
+  /** DevTools' own UI: once the click that ends the drag has gone there, its events pass. */
+  ui?(event: Event): boolean
+  /** Events that always pass (the drop note's). */
+  free?(event: Event): boolean
+}
+
 /**
- * Swallows the page's mouse and click events from the moment a drag starts until the click that ends it, so a drop
- * on a button or a link never presses it.
+ * Swallows the page's mouse and click events from the moment a drag starts until the click that ends it reaches the
+ * page, the next press, or a short while after the pointer is up. The browser sends that click to the drag handle
+ * (pointer capture) or to the element under the pointer, so a drop on a button or a link never presses it.
  */
-export function gestureGuard(windows: () => Window[]) {
+export function gestureGuard(windows: () => Window[], options: GuardOptions = {}) {
   let held: Window[] = []
   let timer: ReturnType<typeof setTimeout> | null = null
+  let ended = false
+  let trailed = false
   const swallow = (event: Event) => {
+    if (options.free?.(event)) return
+    const ui = options.ui?.(event) ?? false
+    if (ui && trailed) return
     event.preventDefault()
     event.stopImmediatePropagation()
-    if (event.type === 'click') release()
-    else if (event.type === 'mouseup') {
-      if (timer) clearTimeout(timer)
-      timer = setTimeout(release, 400)
-    }
+    if (event.type !== 'click') return
+    if (ui) trailed = true
+    else release()
+  }
+  const press = () => {
+    if (ended) release()
   }
   const release = () => {
     if (timer) clearTimeout(timer)
     timer = null
-    for (const w of held) for (const type of swallowed) w.removeEventListener(type, swallow, true)
+    ended = false
+    trailed = false
+    for (const w of held) {
+      w.removeEventListener('pointerdown', press, true)
+      for (const type of swallowed) w.removeEventListener(type, swallow, true)
+    }
     held = []
   }
   return {
     hold: () => {
       if (held.length) return
       held = [...new Set(windows())]
-      for (const w of held) for (const type of swallowed) w.addEventListener(type, swallow, true)
+      for (const w of held) {
+        w.addEventListener('pointerdown', press, true)
+        for (const type of swallowed) w.addEventListener(type, swallow, true)
+      }
     },
     release,
     /** A gesture whose end has not reached the page yet. */
     holding: () => held.length > 0,
-    /** The pointer is up: the click that follows, if any, comes soon. */
+    /** The pointer is up: the click that follows, wherever it lands, comes soon. */
     settle: () => {
       if (!held.length) return
+      ended = true
       if (timer) clearTimeout(timer)
       timer = setTimeout(release, 400)
     },
@@ -140,7 +165,10 @@ export function dragger(host: DropHost) {
   const mark = indicator.firstElementChild as HTMLElement
   const tag = indicator.lastElementChild as HTMLElement
   let stop: (() => void) | null = null
-  const guard = gestureGuard(() => [window, ...(host.windows?.() ?? [])])
+  const guard = gestureGuard(() => [window, ...(host.windows?.() ?? [])], {
+    ui: (event) => host.ui?.(event) ?? false,
+    free: (event) => event.composedPath().includes(note),
+  })
   let over: { el: Element; position: Position } | null = null
 
   const hide = () => {
