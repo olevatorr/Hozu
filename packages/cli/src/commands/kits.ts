@@ -8,6 +8,7 @@ import { type BuildResult, codes, type Diagnostic, styledClasses } from '@hozu/c
 import type { AddOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
+import { installedCore } from '../versions.ts'
 import { addImport, append } from './add.ts'
 import {
   allFiles,
@@ -231,8 +232,20 @@ export async function addKit(
         ),
       )
     ).filter((name): name is string => name !== null)
+    const core = installedCore(loaded.path)
+    const declared = (
+      JSON.parse(await readFile(join(root, 'package.json'), 'utf8').catch(() => '{}')) as {
+        dependencies?: Record<string, string>
+      }
+    ).dependencies?.['@hozu/core']
+    const at = (name: string) =>
+      declared?.startsWith('file:')
+        ? declared.replace(/hozu-core-/, `${name.slice(1).replace('/', '-')}-`)
+        : core
+          ? `${name}@${core}`
+          : name
     throw new HozuCliError('usage', `hozu add kit needs ${missing.join(' and ')} in this app`, [
-      `npm install ${missing.join(' ')}`,
+      `npm install ${missing.map(at).join(' ')}`,
     ])
   }
   const out: AddOutput = { created: [], edited: [], manual: [], declarations: { kit: [id] }, texts: [] }

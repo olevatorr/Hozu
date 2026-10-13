@@ -2,7 +2,7 @@
 title: 快速開始
 description: 建立你的第一個 Hozu 應用程式，並驗證一個可運作的 feature。
 order: 1
-source: 66a1f779fa3d
+source: 3e2eeb724825
 ---
 
 ## 不熟悉終端機？把這段貼給你的 agent
@@ -34,6 +34,8 @@ npm install
 ```
 
 Codex、Cursor 或 Copilot 請使用 `--agent agents`；團隊同時使用多種 agent 時請使用 `--agent both`。這些旗標會安裝對應的專案指示與 Hozu 撰寫 skill。
+
+`npm run dev` 會印出 Hozu 標誌與網址，通常是 `http://localhost:3000`。新的應用程式會先顯示一個歡迎頁，列出接下來的步驟；它就是 `features/site/views.ts`，可以自由修改或刪除。
 
 ### 加上 Hozu UI
 

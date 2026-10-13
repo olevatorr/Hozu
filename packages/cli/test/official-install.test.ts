@@ -65,7 +65,7 @@ describe('Hozu UI from the official kit (ADR 0089)', () => {
     const added = await run(['add', 'kit', 'ui', '--from', 'official'], app)
     expect(added.code).toBe(0)
     expect(added.stdout).toContain('created   ui/button.ts')
-    expect(added.stdout).toMatch(/todo {6}1 of the app's classes use Tailwind's own palette/)
+    expect(added.stdout).toMatch(/todo {6}\d+ of the app's classes use Tailwind's own palette/)
     const lock = JSON.parse(readFileSync(join(app, 'ui/kit.lock.json'), 'utf8'))
     expect(lock).toMatchObject({ source: '@hozu/ui-kit', partial: true })
     expect(Object.keys(lock.files)).toContain('theme.css')

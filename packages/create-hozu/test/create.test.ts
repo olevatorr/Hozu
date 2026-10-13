@@ -170,6 +170,27 @@ describe('create-hozu', () => {
     expect(guide).toContain('pnpm exec hozu requests --full')
   })
 
+  it('starts with a welcome page and a favicon, the icon copied byte for byte (ADR 0090 A2)', async () => {
+    const dir = join(await fresh(), 'demo')
+    await createApp(dir, { ...base, agent: 'claude' })
+    const icon = await readFile(join(dir, 'assets/icon.png'))
+    expect(
+      icon.equals(
+        await readFile(fileURLToPath(new URL('../templates/app/assets/icon.png', import.meta.url))),
+      ),
+    ).toBe(true)
+    expect(await readFile(join(dir, 'hozu.config.ts'), 'utf8')).toContain(
+      "icon: ui.asset(new URL('./assets/icon.png', import.meta.url))",
+    )
+    const views = await readFile(join(dir, 'features/site/views.ts'), 'utf8')
+    for (const text of [
+      'Your Hozu app is running.',
+      'npx hozu check',
+      'npx hozu add feature tasks --page /tasks',
+    ])
+      expect(views).toContain(text)
+  })
+
   it('creates an app for agents that read AGENTS.md, with npm commands', async () => {
     const dir = join(await fresh(), 'demo')
     await createApp(dir, { ...base, agent: 'agents', runner: 'npx' })

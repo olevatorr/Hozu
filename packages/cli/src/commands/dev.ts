@@ -1,6 +1,8 @@
 import { dirname } from 'node:path'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
+import { banner, bold, colorDepth, dim, red } from '../mark.ts'
+import { cliVersion } from '../versions.ts'
 import { importer } from './app.ts'
 import { messagesLine } from './devtools.ts'
 
@@ -44,8 +46,17 @@ export async function runDev(
   })
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const)
     process.once(signal, () => void close().finally(() => process.exit(0)))
-  log(
-    `Hozu dev on ${url}${devtools ? ' · DevTools: choose Select in the dock (Alt+Shift+S)' : ''} · stop: kill ${process.pid}`,
-  )
+  const depth = colorDepth(process.stdout, process.env)
+  for (const text of banner(
+    [
+      `${bold(red('Hozu', depth), depth)} ${cliVersion()} ${dim('· dev', depth)}`,
+      '',
+      `➜ Local:    ${url}`,
+      ...(devtools ? [dim('  DevTools: choose Select in the dock (Alt+Shift+S)', depth)] : []),
+      dim(`  stop: Ctrl+C or kill ${process.pid}`, depth),
+    ],
+    depth,
+  ))
+    log(text)
   if (line) log(line)
 }

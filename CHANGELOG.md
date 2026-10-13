@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0-rc.2 — A welcome page, the mark in the terminal (ADR 0090)
+
+The second candidate, under npm's `next` tag. An rc.1 app upgrades with `npx -p @hozu/cli@next hozu migrate`; nothing
+it uses changes.
+
+- **A new app starts with a welcome page** (`features/site/views.ts`): what is running, the four steps (ask your agent,
+  point with DevTools, `npx hozu check`, add a page) and the links. It is ordinary source to change or delete; with
+  `--ui` it is built from the kit. The app also gets a favicon (`assets/icon.png` as `site.icon`).
+- **`npm run dev` shows the Hozu mark** beside the version, the address and the DevTools key, in colour on a terminal
+  (not under `NO_COLOR`, `CI` or a pipe).
+- **`hozu add kit ui --from official` names the version to install** (`npm install @hozu/variants@1.0.0-rc.2`); during
+  rc.1 it named the package alone, which installed 0.31.
+- **Security:** `@hozu/image` uses `sharp` 0.35.5 (CVE-2026-96889 in its librsvg).
+
 ## 1.0.0-rc.1 — The release candidate (ADR 0088)
 
 The first 1.0 candidate, published under npm's `next` tag (`npx create-hozu@next`;
