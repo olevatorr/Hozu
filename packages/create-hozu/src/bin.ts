@@ -2,13 +2,15 @@ import { readFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { parseArgs } from 'node:util'
-import { AGENTS, type Agent, createApp, runnerOf } from './index.ts'
+import { AGENTS, type Agent, createApp, fetchUiKit, runnerOf } from './index.ts'
 
-const usage = `Usage: create-hozu [directory] [--agent claude|agents|both]
+const usage = `Usage: create-hozu [directory] [--agent claude|agents|both] [--ui | --no-ui]
 
   --agent claude   CLAUDE.md + .claude/skills/hozu (Claude Code)
   --agent agents   AGENTS.md + .agents/skills/hozu (Codex, Cursor, Copilot and other agents)
   --agent both     both
+  --ui             add Hozu UI, the official components, to ui/ (asked when not given)
+  --no-ui          no Hozu UI
 `
 
 const supported = () => {
@@ -24,7 +26,12 @@ export async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
-    options: { agent: { type: 'string' }, help: { type: 'boolean', short: 'h' } },
+    options: {
+      agent: { type: 'string' },
+      ui: { type: 'boolean' },
+      'no-ui': { type: 'boolean' },
+      help: { type: 'boolean', short: 'h' },
+    },
   })
   if (values.help) {
     process.stdout.write(usage)
@@ -49,16 +56,33 @@ export async function main(argv: string[]): Promise<number> {
       ).trim()
       agent = AGENTS[Number(answer || '1') - 1] ?? 'claude'
     }
+    let withUi = values.ui === true ? true : values['no-ui'] === true ? false : null
+    if (withUi === null)
+      withUi = ask
+        ? /^y/i.test(
+            (
+              await ask.question(
+                'Add Hozu UI, the official components (buttons, forms, tables, dialogs)? (y/N): ',
+              )
+            ).trim(),
+          )
+        : false
     const target = resolve(dir)
     const version = (
       JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }
     ).version
     const runner = runnerOf(process.env.npm_config_user_agent)
-    await createApp(target, { name: basename(target), agent, version, runner })
+    await createApp(target, {
+      name: basename(target),
+      agent,
+      version,
+      runner,
+      ...(withUi ? { ui: fetchUiKit() } : {}),
+    })
     const install =
       runner === 'npx' ? 'npm install' : runner === 'bunx' ? 'bun install' : `${runner.split(' ')[0]} install`
     process.stdout.write(
-      `\nCreated ${basename(target)} for ${agent === 'both' ? 'Claude Code and other agents' : agent === 'claude' ? 'Claude Code' : 'other agents'}.\n\n  cd ${dir}\n  ${install}\n  ${runner === 'pnpm exec' ? 'pnpm' : runner === 'npx' ? 'npm' : runner.split(' ')[0]} start\n\n`,
+      `\nCreated ${basename(target)} for ${agent === 'both' ? 'Claude Code and other agents' : agent === 'claude' ? 'Claude Code' : 'other agents'}${withUi ? ', with Hozu UI in ui/' : ''}.\n\n  cd ${dir}\n  ${install}\n  ${runner === 'pnpm exec' ? 'pnpm' : runner === 'npx' ? 'npm' : runner.split(' ')[0]} start\n\n`,
     )
     return 0
   } catch (error) {

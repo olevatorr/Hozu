@@ -10,13 +10,13 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 
 ## The change loop
 1. `npx hozu map`: the session, the verify line, each file's role and declaration's `file:line`; open only the
-   lines you change. A new app: `npx hozu add feature <name> --page / --with …`, then
-   `npx hozu docs feature`.
+   lines you change. New app: `npx hozu add feature <name> --page / --with …`, then
+   `hozu docs feature`.
 2. Edit everything the change needs (table below).
-3. `npx hozu check` once. For an intended behaviour change, `npx hozu check --update-lock`, then list the accepted
+3. `npx hozu check` once. For an intended change, `npx hozu check --update-lock`, then list the accepted
    `now:` lines in your summary.
 4. Verify with the line `hozu map` prints: `npx hozu browse <path> --session '…' --do '…'` (no server).
-5. Show the person the change: `npx hozu show <file:line> --note "<in their words>"`.
+5. Show the person: `npx hozu show <file:line> --note "<in their words>"`.
 
 ## What to touch
 | Change | Touch |
@@ -27,7 +27,7 @@ Hozu is not in your training data: this file and `npx hozu docs <topic>` are the
 | A control every state handles | `machine({ on: [...] })` |
 | Refresh | data that changes alone: `freshness: { poll: s }`; on a button or pause: `refresh: () => [tag()]` |
 | New page | `routes.ts` → a view with `route` → `ui.page(...)` in `hozu.config.ts` |
-| UI (a button, a field) | `ui.use` of a kit component (`npx hozu docs components`) |
+| UI (a button, a field) | `ui.use` of a kit component (`hozu docs components`; Hozu UI, `ui/`: `hozu docs ui`) |
 
 ## Rules no diagnostic checks
 - **Ask where data lives when it could be shared or follow a user across devices.** The visitor's own (drafts,

@@ -3,14 +3,15 @@ import { HozuCliError } from '../errors.ts'
 import { load } from '../load.ts'
 import { addKit } from './kits.ts'
 
-const { config, cwd, id, sync } = workerData as {
+const { config, cwd, id, sync, from } = workerData as {
   config: string | undefined
   cwd: string
   id: string | undefined
   sync: boolean
+  from: string | undefined
 }
 try {
-  parentPort!.postMessage({ out: await addKit(await load(config, cwd), cwd, id, sync) })
+  parentPort!.postMessage({ out: await addKit(await load(config, cwd), cwd, id, sync, from) })
 } catch (error) {
   parentPort!.postMessage({
     error:

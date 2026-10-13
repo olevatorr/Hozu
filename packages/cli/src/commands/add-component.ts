@@ -4,6 +4,17 @@ import { dirname, join, relative, resolve } from 'node:path'
 import type { AddOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import { addImport } from './add.ts'
+import {
+  closure,
+  copyFiles,
+  fileOf,
+  lockPath,
+  OFFICIAL,
+  officialPackage,
+  readLock,
+  withModule,
+  writeLock,
+} from './official.ts'
 
 const declaration = (name: string, client: string | null) =>
   client
@@ -44,6 +55,7 @@ export async function runAddComponent(
   owner: string | undefined,
   name: string | undefined,
   client: boolean,
+  from: string | undefined = undefined,
 ): Promise<AddOutput> {
   if (!owner || !name || !/^[A-Z][A-Za-z0-9]*$/.test(name))
     throw new HozuCliError('usage', 'Give the kit or feature and a PascalCase component name', [
@@ -51,6 +63,7 @@ export async function runAddComponent(
       'hozu add component stations StationMap --client',
     ])
   const root = dirname(resolve(cwd, config ?? 'hozu.config.ts'))
+  if (from !== undefined) return addOfficial(cwd, root, owner, name, from)
   const feature = join(root, 'features', owner)
   const kit = join(root, owner)
   const inFeature = existsSync(feature)
@@ -171,8 +184,70 @@ export function describeAddComponent(out: AddOutput, name: string, client: boole
     ...out.created.map((f) => `created   ${f}`),
     ...out.edited.map((f) => `edited    ${f}`),
     ...out.manual.map((m) => `todo      ${m}`),
-    client
-      ? `next      place it in a view: ui.use(${name}, { props: {}, class: 'h-64 w-full' }); declare its props and emits, write the DOM code in the client module (a library's CSS goes in app.css), then hozu check`
-      : `next      place it in a view: ui.use(${name}, {}, [...]); declare its props, styles and render, then hozu check`,
+    out.declarations.official
+      ? `next      place it in a view: ui.use(${name}, { variant: {...}, props: {...} }, [...]) imported from ${out.created.find((f) => f.endsWith('.ts')) ?? 'the kit'}; its uses and variants: npx hozu docs ui, then hozu check`
+      : client
+        ? `next      place it in a view: ui.use(${name}, { props: {}, class: 'h-64 w-full' }); declare its props and emits, write the DOM code in the client module (a library's CSS goes in app.css), then hozu check`
+        : `next      place it in a view: ui.use(${name}, {}, [...]); declare its props, styles and render, then hozu check`,
   ].join('\n')}\n`
+}
+
+async function addOfficial(
+  cwd: string,
+  root: string,
+  id: string,
+  name: string,
+  from: string,
+): Promise<AddOutput> {
+  if (from !== 'official')
+    throw new HozuCliError('usage', `--from takes official, not ${from}`, [
+      `hozu add component ${id} ${name} --from official`,
+    ])
+  const official = officialPackage(join(root, 'hozu.config.ts'))
+  if (!official)
+    throw new HozuCliError('usage', `${OFFICIAL} is not installed in this app`, [
+      `npm install -D ${OFFICIAL}`,
+    ])
+  const lock = readLock(root, id)
+  if (!lock)
+    throw new HozuCliError('usage', `${id}/ is not a kit installed from ${OFFICIAL}`, [
+      `hozu add kit ${id} --from official`,
+    ])
+  const file = fileOf(official.catalog, name)
+  if (!file)
+    throw new HozuCliError(
+      'usage',
+      `${OFFICIAL}@${official.version} has no component ${name}`,
+      Object.values(official.catalog.files)
+        .flatMap((f) => f.components)
+        .slice(0, 12)
+        .map((c) => `hozu add component ${id} ${c} --from official`),
+    )
+  const out: AddOutput = {
+    created: [],
+    edited: [],
+    manual: [],
+    declarations: { component: [name] },
+    texts: [],
+  }
+  const { written, kept } = copyFiles(official, root, id, closure(official.catalog, [file]), lock)
+  writeLock(root, id, lock)
+  out.created.push(...written.map((f) => relative(cwd, join(root, id, f))))
+  out.manual.push(
+    ...kept.map(
+      (f) =>
+        `${relative(cwd, join(root, id, f))} exists with other content and was kept; the kit's version: ${relative(cwd, join(official.dir, 'kit', f))}`,
+    ),
+  )
+  const kitFile = join(root, id, 'kit.ts')
+  const source = existsSync(kitFile) ? await readFile(kitFile, 'utf8') : null
+  const next = source === null ? null : withModule(source, file)
+  if (next === null)
+    out.manual.push(`${relative(cwd, kitFile)}: import * as ... from './${file}' and add it to components`)
+  else if (next !== source) {
+    await writeFile(kitFile, next)
+    out.edited.push(relative(cwd, kitFile))
+  }
+  out.edited.push(relative(cwd, lockPath(root, id)))
+  return out
 }

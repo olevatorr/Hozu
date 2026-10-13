@@ -4,11 +4,24 @@ import { createRequire } from 'node:module'
 import { dirname, extname, join, relative } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { Worker } from 'node:worker_threads'
-import { type BuildResult, codes, type Diagnostic } from '@hozu/core/ir'
+import { type BuildResult, codes, type Diagnostic, styledClasses } from '@hozu/core/ir'
 import type { AddOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import type { Loaded } from '../load.ts'
 import { addImport, append } from './add.ts'
+import {
+  allFiles,
+  copyFiles,
+  type KitLock,
+  kitSource,
+  lockPath,
+  OFFICIAL,
+  officialPackage,
+  readLock,
+  syncFiles,
+  tailwindThemed,
+  writeLock,
+} from './official.ts'
 
 interface Tokens {
   theme: string[]
@@ -38,15 +51,22 @@ const load = async <T>(from: string, id: string): Promise<T | null> => {
 }
 
 /** The tailwind-merge config of the project's current design system, or null without @hozu/css and @hozu/variants. */
-async function generated(build: BuildResult, root: string, from: string, tokens: Tokens | null = null) {
+async function generated(
+  build: BuildResult,
+  root: string,
+  from: string,
+  tokens: Tokens | null = null,
+  extra: string[] = [],
+) {
   const [css, config] = await Promise.all([
     load<Css>(from, '@hozu/css'),
     load<Config>(from, '@hozu/variants/config'),
   ])
   if (!css || !config) return null
+  const source = [css.stylesSource(build), ...extra.map((f) => `@import ${JSON.stringify(f)};`)].join('\n')
   return {
     config,
-    value: config.twMergeConfigOf(tokens ?? (await css.designTokens(css.stylesSource(build), root))),
+    value: config.twMergeConfigOf(tokens ?? (await css.designTokens(source, root))),
   }
 }
 
@@ -180,12 +200,28 @@ const KIT = (id: string) => `import { ui } from '@hozu/core'
 export const kit = ui.kit({ id: '${id}', components: [] })
 `
 
-export async function addKit(loaded: Loaded, cwd: string, id: string | undefined, sync: boolean) {
+export async function addKit(
+  loaded: Loaded,
+  cwd: string,
+  id: string | undefined,
+  sync: boolean,
+  from: string | undefined = undefined,
+) {
   if (!id || !/^[a-z][A-Za-z0-9]*$/.test(id))
     throw new HozuCliError('usage', 'Give the kit a lower-case identifier', ['hozu add kit ui'])
+  if (from !== undefined && from !== 'official')
+    throw new HozuCliError('usage', `--from takes official, not ${from}`, [
+      `hozu add kit ${id} --from official`,
+    ])
   const root = dirname(loaded.path)
   const build = loaded.build(false)
-  const gen = await generated(build, root, loaded.path)
+  const official = from === 'official' || (sync && readLock(root, id)) ? officialPackage(loaded.path) : null
+  if (from === 'official' && !official)
+    throw new HozuCliError('usage', `${OFFICIAL} is not installed in this app`, [
+      `npm install -D ${OFFICIAL}`,
+    ])
+  const theme = official && !sync ? [join(official.dir, 'kit', official.catalog.styles)] : []
+  const gen = await generated(build, root, loaded.path, null, theme)
   if (!gen) {
     const missing = (
       await Promise.all(
@@ -213,6 +249,21 @@ export async function addKit(loaded: Loaded, cwd: string, id: string | undefined
     }
   }
   if (sync) {
+    const lock = readLock(root, id)
+    if (lock && official) {
+      const { updated, edited } = syncFiles(official, root, id, lock)
+      writeLock(root, id, lock)
+      out.edited.push(...updated.map((f) => relative(cwd, join(root, id, f))))
+      out.manual.push(
+        ...edited.map(
+          (f) =>
+            `${relative(cwd, join(root, id, f))} was changed in this app, so ${OFFICIAL}@${official.version} did not replace it: compare it with ${relative(cwd, join(official.dir, 'kit', f))}`,
+        ),
+      )
+    } else if (lock)
+      out.manual.push(
+        `${OFFICIAL} is not installed, so the kit's own files were not updated: npm install -D ${OFFICIAL}`,
+      )
     const source = existsSync(tv) ? await readFile(tv, 'utf8') : null
     const next = source === null ? null : gen.config.syncConfig(source, id, gen.value)
     if (next === null)
@@ -232,8 +283,28 @@ export async function addKit(loaded: Loaded, cwd: string, id: string | undefined
       throw new HozuCliError('usage', `${relative(cwd, f)} already exists`, [`hozu add kit ${id} --sync`])
   await mkdir(join(root, id), { recursive: true })
   await writeFile(tv, gen.config.tvModule(id, gen.value))
-  await writeFile(kitFile, KIT(id))
+  await writeFile(kitFile, official ? kitSource(official, id) : KIT(id))
   out.created.push(relative(cwd, tv), relative(cwd, kitFile))
+  if (official) {
+    const themedClasses = tailwindThemed(styledClasses(build.ir, build.bindings.components))
+    out.declarations.official = [official.version]
+    const lock: KitLock = {
+      source: OFFICIAL,
+      version: official.version,
+      ...(themedClasses.length ? { partial: true } : {}),
+      files: {},
+    }
+    if (themedClasses.length)
+      out.manual.push(
+        `${themedClasses.length} of the app's classes use Tailwind's own palette, radii or shadows (${themedClasses.slice(0, 4).join(', ')}${themedClasses.length > 4 ? ', …' : ''}), so ${relative(cwd, join(root, id, official.catalog.styles))} keeps them for now; move them to the kit's roles (hozu docs ui), then remove "partial" from ${relative(cwd, lockPath(root, id))} and run hozu add kit ${id} --sync`,
+      )
+    const { written } = copyFiles(official, root, id, allFiles(official.catalog), lock)
+    writeLock(root, id, lock)
+    out.created.push(
+      ...written.map((f) => relative(cwd, join(root, id, f))),
+      relative(cwd, lockPath(root, id)),
+    )
+  }
   await syncOthers()
   const edit = async (path: string, change: (s: string) => string | null, manual: string) => {
     const source = existsSync(path) ? await readFile(path, 'utf8') : null
@@ -279,11 +350,17 @@ export async function addKit(loaded: Loaded, cwd: string, id: string | undefined
 type Added = { out: AddOutput } | { error: ReturnType<HozuCliError['toJSON']>['error'] }
 
 /** Runs in a worker so the app modules it imports never enter this process's module cache. */
-export const runAddKit = (config: string | undefined, cwd: string, id: string | undefined, sync: boolean) =>
+export const runAddKit = (
+  config: string | undefined,
+  cwd: string,
+  id: string | undefined,
+  sync: boolean,
+  from: string | undefined = undefined,
+) =>
   new Promise<AddOutput>((resolve, reject) => {
     const self = fileURLToPath(import.meta.url)
     const worker = new Worker(join(dirname(self), `add-kit${extname(self)}`), {
-      workerData: { config, cwd, id, sync },
+      workerData: { config, cwd, id, sync, from },
     })
     worker.once('message', (r: Added) =>
       'out' in r
@@ -303,6 +380,8 @@ export function describeAddKit(out: AddOutput, id: string, sync: boolean): strin
       ? out.edited.length
         ? `next      hozu check`
         : `current   ${id}/tv.ts already matches the design system`
-      : `next      add a component module to ${id}/kit.ts (components: [button]), use it with ui.use(Button, {}), then hozu check`,
+      : out.declarations.official
+        ? `next      use them in views, e.g. ui.use(Button, { variant: { intent: 'primary' } }, ['Save']) from ./${id}/button.ts; which component for what: npx hozu docs ui; then hozu check`
+        : `next      add a component module to ${id}/kit.ts (components: [button]), use it with ui.use(Button, {}), then hozu check`,
   ].join('\n')}\n`
 }

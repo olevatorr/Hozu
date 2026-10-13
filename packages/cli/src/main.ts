@@ -276,6 +276,7 @@ export async function main(
         page: { type: 'string' },
         with: { type: 'string' },
         sync: { type: 'boolean', default: false },
+        from: { type: 'string' },
         client: { type: 'boolean', default: false },
         variant: { type: 'string', multiple: true },
         props: { type: 'string' },
@@ -394,13 +395,20 @@ export async function main(
         )
       if (target === 'component') {
         const client = values.client === true
-        const result = await runAddComponent(cwd, values.config, positionals[2], positionals[3], client)
+        const result = await runAddComponent(
+          cwd,
+          values.config,
+          positionals[2],
+          positionals[3],
+          client,
+          values.from,
+        )
         out(asJson ? json(result) : describeAddComponent(result, positionals[3]!, client))
         return 0
       }
       if (target === 'kit') {
         const sync = values.sync === true
-        const result = await runAddKit(values.config, cwd, positionals[2], sync)
+        const result = await runAddKit(values.config, cwd, positionals[2], sync, values.from)
         out(asJson ? json(result) : describeAddKit(result, positionals[2]!, sync))
         return 0
       }
