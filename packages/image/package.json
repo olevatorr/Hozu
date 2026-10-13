@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@hozu/core": "workspace:*",
-    "sharp": "0.35.4"
+    "sharp": "0.35.5"
   },
   "sideEffects": false
 }
