@@ -54,11 +54,12 @@ const otherParts = (value: unknown): string[] =>
 /** The classes of a component's inner parts under every variant, not only the defaults its render was recorded with. */
 export function partClasses(def: ComponentDef): string[] {
   const tv = tvOf(def)
-  return [
+  const classes = [
     ...otherParts(tv?.slots),
     ...Object.values(tv?.variants ?? {}).flatMap((values) => Object.values(values ?? {}).flatMap(otherParts)),
     ...(tv?.compoundVariants ?? []).flatMap((c) => otherParts(c.class ?? c.className)),
   ]
+  return [...new Set(classes)].sort()
 }
 
 export const tvOf = (def: ComponentDef): TvConfig | null => (def.styles ?? null) as TvConfig | null
@@ -215,9 +216,7 @@ function declaredRender(scope: FeatureScope, p: At, def: ComponentDef, id: strin
     const info = infoOf(root)
     const node = info?.kind === 'node' ? (info.def as NodeDef) : null
     if (node?.kind === 'el')
-      scope.project.bindings.components[id] = {
-        inner: [...new Set([...innerClasses(node), ...partClasses(def)])].sort(),
-      }
+      scope.project.bindings.components[id] = { inner: innerClasses(node), parts: partClasses(def) }
     return node
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

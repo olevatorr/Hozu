@@ -558,7 +558,8 @@ describe('ADR 0045 phase 3: bindings.components', () => {
     expect(b.diagnostics).toEqual([])
     expect(b.bindings.components['f.Panel']).toEqual({
       inner: ['font-bold', 'text-lg', 'underline', 'w-full'],
+      parts: ['font-bold', 'text-lg'],
     })
-    expect(b.bindings.components['ui.Button']).toEqual({ inner: [] })
+    expect(b.bindings.components['ui.Button']).toEqual({ inner: [], parts: [] })
   })
 })

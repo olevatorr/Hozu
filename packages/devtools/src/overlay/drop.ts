@@ -133,7 +133,8 @@ export function gestureGuard(windows: () => Window[], options: GuardOptions = {}
   return {
     /** The drag from `from` starts. */
     hold: (from: Element | null = null) => {
-      if (held.length) return
+      if (held.length && !ended) return
+      if (held.length) release()
       handle = from
       held = [...new Set(windows())]
       for (const w of held) {
@@ -297,7 +298,7 @@ export function dragger(host: DropHost) {
    */
   const start = (down: PointerEvent, handle: HTMLElement, carried: Carried, label: string, moving?: Move) => {
     if (down.button !== 0 || stop) return
-    if (!(down.target as Element).closest('button, select, textarea, input')) down.preventDefault()
+    if (moving || !(down.target as Element).closest('button, select, textarea, input')) down.preventDefault()
     closeNote?.()
     const view = handle.ownerDocument.defaultView ?? window
     const from = pointIn(view, down)

@@ -47,6 +47,10 @@ function htmlOf(add: Addition): Promise<string | null> {
       .then((r) => (r.ok ? (r.json() as Promise<{ ok: boolean; html: string }>) : null))
       .then((out) => (out?.ok ? out.html : null))
       .catch(() => null)
+      .then((html) => {
+        if (html === null) rendered.delete(url)
+        return html
+      })
     rendered.set(url, found)
   }
   return found

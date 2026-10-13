@@ -97,7 +97,10 @@ export async function compileStyles(
     shouldRewriteUrls: true,
   })
   const candidates = components
-    ? styledClasses(build.ir, build.bindings.components)
+    ? new Set([
+        ...styledClasses(build.ir, build.bindings.components),
+        ...Object.values(build.bindings.components).flatMap((c) => c.parts ?? []),
+      ])
     : classCandidates(build.ir)
   const assets: Record<string, string> = {}
   const raw = hoistImports(compiler.build([...candidates])).replace(
