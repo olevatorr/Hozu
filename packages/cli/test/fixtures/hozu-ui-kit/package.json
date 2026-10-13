@@ -1,0 +1,13 @@
+{
+  "name": "@hozu/ui-kit",
+  "version": "0.1.0",
+  "description": "The official Hozu UI components, copied into an app by `hozu add kit ui --from official`",
+  "license": "MIT",
+  "type": "module",
+  "repository": { "type": "git", "url": "git+https://github.com/olevatorr/hozu-ui.git" },
+  "homepage": "https://hozu.org",
+  "files": ["kit", "catalog.json", "docs/ui.md", "THIRD_PARTY_NOTICES.md", "LICENSE"],
+  "exports": { "./catalog.json": "./catalog.json", "./kit/*": "./kit/*", "./docs/ui.md": "./docs/ui.md" },
+  "peerDependencies": { "@hozu/core": ">=1.0.0-rc.1 <2" },
+  "scripts": { "catalog": "node scripts/catalog.mjs" }
+}

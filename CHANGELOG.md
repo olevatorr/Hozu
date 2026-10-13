@@ -2,8 +2,19 @@
 
 ## 1.0.0-rc.1 — The release candidate (ADR 0088)
 
-The 0.31.0 code as the first 1.0 candidate, published under npm's `next` tag (`npx create-hozu@next`;
-`npx -p @hozu/cli@next hozu migrate` upgrades an app). Nothing changes in the API.
+The first 1.0 candidate, published under npm's `next` tag (`npx create-hozu@next`;
+`npx -p @hozu/cli@next hozu migrate` upgrades an app). It adds Hozu UI, the official components (ADR 0089); nothing
+an app already uses changes.
+
+- **Hozu UI, the official components, in your app.** `create-hozu` asks whether to add them (`--ui` / `--no-ui`).
+  `npx hozu add kit ui --from official` adds them to an existing app (with `@hozu/ui-kit` installed). The source is
+  copied into `ui/` and is yours to edit; `ui/kit.lock.json` lets `hozu add kit ui --sync` update the files you did
+  not change and list the ones you did. `hozu add component ui <Name> --from official` adds one, and
+  `npx hozu docs ui` says which component fits what. An app that still uses Tailwind's own palette keeps it until
+  its classes move to the kit's roles.
+- **DevTools shows, places and customises them:** the Assets board lists Hozu UI first, places a component before,
+  after or inside the selected part with a variant and a note, and changes a component for every use. The request's
+  new *Add* and *Main component* items tell the agent what to install, where to put it and which file to edit.
 
 - **What 1.0 promises:** the authoring API, the IR and lock formats, CLI commands with their `--json` shapes, and the
   meaning of every diagnostic code follow semantic versioning: a breaking change waits for 2.0, a new rule arrives as

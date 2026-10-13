@@ -22,7 +22,8 @@
     "bench/parity",
     "bench/meta",
     "bench/trial",
-    "packages/cli/test/fixtures/migrate-*"
+    "packages/cli/test/fixtures/migrate-*",
+    "packages/cli/test/fixtures/hozu-ui-kit"
   ],
   "references": [
     {

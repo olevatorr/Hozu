@@ -1,0 +1,108 @@
+{
+  "kit": "kit.ts",
+  "styles": "theme.css",
+  "tv": "tv.default.ts",
+  "themes": [
+    "grain",
+    "joinery"
+  ],
+  "files": {
+    "badge.ts": {
+      "components": [
+        "Badge"
+      ],
+      "uses": []
+    },
+    "button.ts": {
+      "components": [
+        "Button",
+        "LinkButton"
+      ],
+      "uses": []
+    },
+    "card.ts": {
+      "components": [
+        "Card"
+      ],
+      "uses": []
+    },
+    "dialog.ts": {
+      "components": [
+        "Dialog"
+      ],
+      "uses": []
+    },
+    "field.ts": {
+      "components": [
+        "Field"
+      ],
+      "uses": []
+    },
+    "icon.ts": {
+      "components": [
+        "Icon"
+      ],
+      "uses": []
+    },
+    "icons/hozu.ts": {
+      "components": [],
+      "uses": []
+    },
+    "icons/lucide.ts": {
+      "components": [],
+      "uses": []
+    },
+    "input.ts": {
+      "components": [
+        "Input"
+      ],
+      "uses": []
+    },
+    "menu.ts": {
+      "components": [
+        "DropdownMenu",
+        "MenuItem"
+      ],
+      "uses": []
+    },
+    "metric.ts": {
+      "components": [
+        "Metric"
+      ],
+      "uses": []
+    },
+    "nav.ts": {
+      "components": [
+        "NavLink",
+        "NavBar",
+        "Pagination"
+      ],
+      "uses": []
+    },
+    "page-header.ts": {
+      "components": [
+        "PageHeader"
+      ],
+      "uses": []
+    },
+    "states.ts": {
+      "components": [
+        "EmptyState",
+        "Problem",
+        "Notice"
+      ],
+      "uses": [
+        "icons/lucide.ts"
+      ]
+    },
+    "table.ts": {
+      "components": [
+        "Table",
+        "Th",
+        "Td",
+        "Tr"
+      ],
+      "uses": []
+    }
+  }
+}

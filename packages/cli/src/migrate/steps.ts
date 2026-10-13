@@ -305,6 +305,7 @@ export const steps: Step[] = [
     to: '1.0',
     changes: [
       'no source change: 1.0 is 0.31 with what 1.0 promises (ADR 0088)',
+      'Hozu UI: npm install -D @hozu/ui-kit, then npx hozu add kit ui --from official adds the official components (ADR 0089)',
       'from 1.0 on, a breaking change waits for 2.0; hozu migrate keeps any 1.x current',
     ],
     rewrite: (_file, source) => ({ code: source, notes: [], count: 0 }),
