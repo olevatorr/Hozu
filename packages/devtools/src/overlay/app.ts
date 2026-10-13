@@ -164,19 +164,14 @@ const assets = assetsBoard({
     [...doc.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].map((l) => l.href).filter(Boolean),
   show: (c) => showInstances(c),
   change: (c, note) => {
-    const first = c.uses[0]
-    state.picks.push(
-      first
-        ? { id: first.node, index: 0, note, scope: 'component', visible: '' }
-        : {
-            id: '',
-            index: 0,
-            note,
-            scope: 'component',
-            visible: '',
-            component: { id: c.id, file: c.location?.file ?? '', line: c.location?.line ?? 1 },
-          },
-    )
+    state.picks.push({
+      id: '',
+      index: 0,
+      note,
+      scope: 'component',
+      visible: '',
+      component: { id: c.id, file: c.location?.file ?? '', line: c.location?.line ?? 1 },
+    })
     state.active = state.picks.length - 1
     persist()
     assets.close()

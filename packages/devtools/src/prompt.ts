@@ -18,6 +18,10 @@ export interface Addition {
   install: string | null
   /** The file it is imported from, relative to the app. */
   file: string | null
+  /** Props it requires (no default), so the agent passes them. */
+  props?: string[]
+  /** Whether it takes children. */
+  children?: boolean
 }
 
 export interface ComponentRef {
@@ -123,9 +127,16 @@ const variantText = (variant: Record<string, string>) => {
   return entries.length ? ` { ${entries.map(([k, v]) => `${k}: '${v}'`).join(', ')} }` : ''
 }
 
+const clip = (text: string, max: number) => {
+  if (text.length <= max) return text
+  const cut = text.slice(0, max)
+  const space = cut.lastIndexOf(' ')
+  return `${space > max / 2 ? cut.slice(0, space) : cut}…`
+}
+
 export function anchorOf(node: DevNode, visible: string): string {
   if (!node.tag) return labelOf(node)
-  const text = visible.trim().slice(0, 40)
+  const text = clip(visible.trim(), 40)
   return `<${node.tag}${text ? ` "${text}"` : ''}>`
 }
 
@@ -297,6 +308,14 @@ function size(context: RequestContext): string {
 const want = (note: string) =>
   `- Want: ${note ? note.replace(/\n+/g, ' / ') : '(not described: ask the user what should change)'}`
 
+function useOptions(add: Addition): string {
+  const parts = [
+    ...(Object.keys(add.variant).length ? [`variant:${variantText(add.variant)}`] : []),
+    ...(add.props?.length ? [`props: { ${add.props.map((p) => `${p}: …`).join(', ')} }`] : []),
+  ]
+  return parts.length ? `{ ${parts.join(', ')} }` : '{}'
+}
+
 function addLines(item: RequestItem & { add: Addition; node: DevNode }): string[] {
   const { add, node } = item
   const name = add.component.split('.').pop() ?? add.component
@@ -306,7 +325,7 @@ function addLines(item: RequestItem & { add: Addition; node: DevNode }): string[
     want(item.note.trim()),
     `- Where: ${where(node)}`,
     ...(add.install ? [`- Install first: \`${add.install}\``] : []),
-    `- Mind: import it from \`${add.file ?? `the kit of ${add.component}`}\`; place \`ui.use(${name}, {${variant ? ` variant:${variant} ` : ''}}, [...])\` ${at}; \`hozu docs ui\` lists its props and slots.`,
+    `- Mind: import it from \`${add.file ?? `the kit of ${add.component}`}\`; place \`ui.use(${name}, ${useOptions(add)}${add.children === false ? '' : ', [...]'})\` ${at}; \`hozu docs ui\` lists its props and slots.${node.conditions.length ? ' The selected part sits in a branch (a query, `when` or `?:`): a branch returns one node, so wrap it in a `ui.div` to add a sibling.' : ''}`,
     ...(node.pointer ? [`- Locate: \`hozu why ${node.pointer}\``] : []),
   ]
 }

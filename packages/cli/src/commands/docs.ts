@@ -43,7 +43,11 @@ export async function runDocs(
       })),
   )
   if (!topic) {
-    const text = `${topics.map((t) => `${t.name.padEnd(12)} ${t.title}`).join('\n')}\n`
+    const kit = officialPackage(resolve(cwd, config ?? 'hozu.config.ts'))
+    const listed = kit
+      ? [...topics, { name: 'ui', title: `Hozu UI: the official components (${OFFICIAL}@${kit.version})` }]
+      : topics
+    const text = `${listed.map((t) => `${t.name.padEnd(12)} ${t.title}`).join('\n')}\n`
     return { topic: null, text, topics }
   }
   const name = topic.toLowerCase()

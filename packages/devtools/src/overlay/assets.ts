@@ -67,6 +67,11 @@ export function tilesOf(c: Catalogued): Tile[] {
 export const installCommand = (kit: string, name: string) =>
   `npx hozu add component ${kit} ${name} --from official`
 
+const requiredProps = (props: Catalogued['props']) => {
+  const fields = (props.properties ?? {}) as Record<string, { default?: unknown }>
+  return ((props.required ?? []) as string[]).filter((k) => fields[k]?.default === undefined)
+}
+
 const schemaRows = (props: Catalogued['props']) =>
   Object.entries((props.properties ?? {}) as Record<string, { type?: unknown; enum?: unknown[] }>).map(
     ([k, s]) => [k, Array.isArray(s.enum) ? s.enum.map(String).join(' | ') : String(s.type ?? 'any')],
@@ -196,6 +201,8 @@ export function assetsBoard(host: AssetsHost) {
     defaults: Record<string, string>
     install: string | null
     file: string | null
+    props?: string[]
+    children?: boolean
   }) => {
     if (!selected)
       return [
@@ -247,6 +254,8 @@ export function assetsBoard(host: AssetsHost) {
                     position,
                     install: target.install,
                     file: target.file,
+                    ...(target.props ? { props: target.props } : {}),
+                    ...(target.children !== undefined ? { children: target.children } : {}),
                   },
                   note.value.trim(),
                 ),
@@ -328,6 +337,8 @@ export function assetsBoard(host: AssetsHost) {
         defaults: c.defaults,
         install: null,
         file: c.location?.file ?? null,
+        props: requiredProps(c.props),
+        children: Boolean(c.children),
       }),
       h('div', { class: 'label' }, [t('assets.change')]),
       note,
