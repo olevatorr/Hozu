@@ -19,6 +19,7 @@ const links = part((current: (route: RouteDecl<any, any>) => boolean, locale: st
       [ui.link(changelog, null), t.navChangelog, current(changelog)],
     ] as const
   ).map(([href, label, here]) => ui.a({ href, 'aria-current': here, class: marked }, [label])),
+  ui.a({ href: 'https://ui.hozu.org' }, ['UI']),
   ui.a({ href: 'https://github.com/olevatorr/Hozu' }, ['GitHub']),
   ui.a({ href: 'https://www.npmjs.com/package/create-hozu' }, ['npm']),
   ui.a(

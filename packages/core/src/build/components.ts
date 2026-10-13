@@ -44,6 +44,24 @@ const rootPart = (value: unknown): unknown =>
     ? (value as Record<string, unknown>).base
     : value
 
+const otherParts = (value: unknown): string[] =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? Object.entries(value as Record<string, unknown>).flatMap(([part, x]) =>
+        part === 'base' ? [] : tokens(x),
+      )
+    : []
+
+/** The classes of a component's inner parts under every variant, not only the defaults its render was recorded with. */
+export function partClasses(def: ComponentDef): string[] {
+  const tv = tvOf(def)
+  const classes = [
+    ...otherParts(tv?.slots),
+    ...Object.values(tv?.variants ?? {}).flatMap((values) => Object.values(values ?? {}).flatMap(otherParts)),
+    ...(tv?.compoundVariants ?? []).flatMap((c) => otherParts(c.class ?? c.className)),
+  ]
+  return [...new Set(classes)].sort()
+}
+
 export const tvOf = (def: ComponentDef): TvConfig | null => (def.styles ?? null) as TvConfig | null
 
 export const variantsOf = (tv: TvConfig | null): Record<string, string[]> =>
@@ -197,7 +215,8 @@ function declaredRender(scope: FeatureScope, p: At, def: ComponentDef, id: strin
     }
     const info = infoOf(root)
     const node = info?.kind === 'node' ? (info.def as NodeDef) : null
-    if (node?.kind === 'el') scope.project.bindings.components[id] = { inner: innerClasses(node) }
+    if (node?.kind === 'el')
+      scope.project.bindings.components[id] = { inner: innerClasses(node), parts: partClasses(def) }
     return node
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

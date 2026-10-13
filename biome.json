@@ -18,7 +18,8 @@
       "!bench/trial/longrun/results-0021",
       "!bench/trial/longrun/results-0024-b3",
       "!bench/trial/longrun/reference",
-      "!packages/cli/test/fixtures/migrate-*"
+      "!packages/cli/test/fixtures/migrate-*",
+      "!packages/cli/test/fixtures/hozu-ui-kit"
     ]
   },
   "formatter": {

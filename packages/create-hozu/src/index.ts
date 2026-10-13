@@ -2,13 +2,28 @@ import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { type Agent, type AgentOptions, writeAgentFiles } from './agent.ts'
+import { installUi, UI_KIT } from './ui.ts'
 
 export type { Agent, AgentFiles, AgentOptions } from './agent.ts'
 export { AGENTS, defaultSkill, runnerOf, writeAgentFiles } from './agent.ts'
 export type { BlockResult, Runner, Target } from './guide.ts'
 export { BEGIN, currentGuide, END, guideBlock, migrateGuide, RUNNERS, TARGETS } from './guide.ts'
+export { fetchUiKit, installUi, UI_KIT } from './ui.ts'
 
 const templates = fileURLToPath(new URL('../templates', import.meta.url))
+
+const UI_HOME = `import { ui } from '@hozu/core'
+import { LinkButton } from '../../ui/button.ts'
+import { PageHeader } from '../../ui/page-header.ts'
+
+export const Home = ui.view({
+  render: () =>
+    ui.main({ class: 'mx-auto max-w-xl space-y-6 px-4 py-12' }, [
+      ui.use(PageHeader, { props: { title: 'Hello, Hozu', description: 'Edit features/site/views.ts to get started.' } }),
+      ui.use(LinkButton, { variant: { intent: 'primary' }, props: { href: 'https://hozu.org' } }, ['Read the guide']),
+    ]),
+})
+`
 
 const exists = (path: string) =>
   stat(path).then(
@@ -29,6 +44,8 @@ async function files(dir: string): Promise<string[]> {
 export interface CreateOptions extends AgentOptions {
   agent: Agent
   version: string
+  /** The unpacked `@hozu/ui-kit` to copy into `ui/` (ADR 0089); omitted, the app has no kit. */
+  ui?: string
 }
 
 export const packageJson = (name: string, version: string) => ({
@@ -75,10 +92,46 @@ export async function createApp(dir: string, options: CreateOptions): Promise<st
     await writeFile(target, (await readFile(source, 'utf8')).replaceAll('__NAME__', options.name))
     written.push(relative(dir, target))
   }
-  await writeFile(
-    join(dir, 'package.json'),
-    `${JSON.stringify(packageJson(options.name, options.version), null, 2)}\n`,
+  const pkg: { dependencies: Record<string, string>; devDependencies: Record<string, string> } = packageJson(
+    options.name,
+    options.version,
   )
+  if (options.ui) {
+    const { version, written: kit, previews } = await installUi(dir, options.ui)
+    written.push(...kit)
+    pkg.dependencies['@hozu/variants'] = `^${options.version}`
+    pkg.devDependencies[UI_KIT] = `^${version}`
+    pkg.dependencies = Object.fromEntries(
+      Object.entries(pkg.dependencies).sort(([a], [b]) => a.localeCompare(b)),
+    )
+    pkg.devDependencies = Object.fromEntries(
+      Object.entries(pkg.devDependencies).sort(([a], [b]) => a.localeCompare(b)),
+    )
+    const config = join(dir, 'hozu.config.ts')
+    const template = await readFile(config, 'utf8')
+    if (
+      !template.includes("import { home } from './routes.ts'\n") ||
+      !template.includes('  features: [site],')
+    )
+      throw new Error(
+        'the app template changed: hozu.config.ts no longer has the lines Hozu UI registers its kit beside',
+      )
+    await writeFile(
+      config,
+      template
+        .replace(
+          "import { home } from './routes.ts'\n",
+          "import { home } from './routes.ts'\nimport { kit as uiKit } from './ui/kit.ts'\n",
+        )
+        .replace(
+          '  features: [site],',
+          `  kits: [uiKit],\n${previews ? `  previews: [new URL('./ui/${previews}', import.meta.url)],\n` : ''}  features: [site],`,
+        ),
+    )
+    const views = join(dir, 'features/site/views.ts')
+    await writeFile(views, UI_HOME)
+  }
+  await writeFile(join(dir, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`)
   written.push('package.json')
   written.push(...(await writeAgentFiles(dir, options.agent, options)).written)
   return written

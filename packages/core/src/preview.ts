@@ -1,6 +1,7 @@
 import type { ComponentDecl, ComponentTypes } from './builders/component.ts'
 import type { QueryDecl } from './builders/effects.ts'
 import type { RouteDecl } from './builders/route.ts'
+import type { NodeDecl } from './builders/ui.ts'
 import type { SourceLoc } from './ir/diagnostic.ts'
 import { captureSource } from './source/capture.ts'
 
@@ -16,6 +17,14 @@ export interface ComponentPreview {
   component: ComponentDecl
   name: string
   use: { variant?: object; props?: object; slots?: Record<string, string>; children?: string }
+  at: SourceLoc | null
+}
+
+export interface ExamplePreview {
+  kind: 'example'
+  component: ComponentDecl
+  name: string
+  render: () => NodeDecl
   at: SourceLoc | null
 }
 
@@ -36,7 +45,7 @@ export interface PagePreview {
   at: SourceLoc | null
 }
 
-export type Preview = ComponentPreview | PagePreview
+export type Preview = ComponentPreview | ExamplePreview | PagePreview
 
 export interface PreviewSet {
   readonly hozuPreviews: true
@@ -56,6 +65,17 @@ const builders = {
     component,
     name,
     use: use as ComponentPreview['use'],
+    at: captureSource(),
+  }),
+  /**
+   * A named, composed example of a component, rendered as written: `p.example(Table, 'Orders', () =>
+   * ui.use(Table, { slots: { head: … } }, [ui.use(Tr, {}, [...])]))`. DevTools shows it on the component's card.
+   */
+  example: (component: ComponentDecl, name: string, render: () => NodeDecl): ExamplePreview => ({
+    kind: 'example',
+    component,
+    name,
+    render,
     at: captureSource(),
   }),
   /** A named screen of a page whose queries answer with the data given, under `hozu dev` only. */

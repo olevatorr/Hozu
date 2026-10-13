@@ -89,6 +89,19 @@ export const homeText = ui.messages('en', {
     workChecks: '3 · It checks itself',
     workChecksBody: 'It runs hozu check and fixes what it finds before it tells you it is done.',
     startUnavailable: 'The start commands are unavailable.',
+    uiKicker: 'Hozu UI',
+    uiHeading: 'Official components your AI can change.',
+    uiLead:
+      'Buttons, forms, tables and dialogs, in two themes. Say yes when create-hozu asks, and they are in your app: plain files you and your agent can edit.',
+    uiOwn: 'Yours to edit',
+    uiOwnBody: 'The kit is copied into ui/. Updates replace only the files you did not change.',
+    uiChecked: 'Checked by Hozu',
+    uiCheckedBody:
+      'Colours come from named roles, and an override of a component is said out loud, so a change stays consistent.',
+    uiPlace: 'Placed with DevTools',
+    uiPlaceBody: 'Drag a component onto your page, write what it is for, and hand the request to your agent.',
+    uiButton: 'See Hozu UI',
+    uiComponents: 'Every component',
     agentKicker: 'Checked by the agent',
     agentHeading: 'Your agent checks its own work. In a real browser.',
     agentLead:
@@ -430,6 +443,18 @@ export const homeText = ui.messages('en', {
     workChecks: '3 · 它自己檢查',
     workChecksBody: '它會執行 hozu check、修好發現的問題，再告訴你完成了。',
     startUnavailable: '無法載入起始指令。',
+    uiKicker: 'Hozu UI',
+    uiHeading: '你的 AI 改得動的官方元件。',
+    uiLead:
+      '按鈕、表單、表格、對話框，兩套主題。create-hozu 問你要不要時回答 yes，它們就在你的專案裡：一般的檔案，你和你的 agent 都能改。',
+    uiOwn: '是你的程式碼',
+    uiOwnBody: '元件複製進 ui/。更新時只替換你沒改過的檔案。',
+    uiChecked: 'Hozu 會檢查',
+    uiCheckedBody: '顏色來自有名字的角色，覆寫元件樣式必須明確標出，改動才會一致。',
+    uiPlace: '用 DevTools 放上去',
+    uiPlaceBody: '把元件拖到頁面上，寫下它要做什麼，再把請求交給你的 agent。',
+    uiButton: '看看 Hozu UI',
+    uiComponents: '所有元件',
     agentKicker: '由 agent 檢查',
     agentHeading: '你的 agent 會檢查自己的成果，在真正的瀏覽器裡。',
     agentLead:

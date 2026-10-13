@@ -77,11 +77,12 @@ export default implement<typeof Map>(({ el, props, emit, signal }) => {
   class, owned properties, diagnostics.
 
 ## Previews (for people, never shipped)
-- `project({ previews: new URL('./previews.ts', import.meta.url) })`; only `hozu dev` and `hozu check` load it. DevTools **Assets** shows every component × variant (props from the schema) plus these.
+- `project({ previews: new URL('./previews.ts', import.meta.url) })` (or a list, e.g. with Hozu UI's `ui/previews.ts`); only `hozu dev` and `hozu check` load it. DevTools **Assets** shows every component × variant (props from the schema) plus these.
 - ```ts
   import { previews } from '@hozu/core/preview'
   export default previews((p) => [
     p.component(Button, 'Long label', { variant: { tone: 'primary' }, children: 'Save every note' }),
+    p.example(Table, 'Orders', () => ui.use(Table, { slots: { head: … } }, [ui.use(Tr, {}, [...])])),
     p.page(home, 'No notes', [p.data(me, { name: 'ada' }), p.data(listNotes, [])]),
     p.page(home, 'Failed', [p.fail(listNotes, 'Unexpected')]),
   ])

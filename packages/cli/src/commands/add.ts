@@ -1,8 +1,9 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import type { AddOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
+import { OFFICIAL, readLock } from './official.ts'
 import {
   accountFeature,
   accountModel,
@@ -55,6 +56,28 @@ export const append = (source: string, pattern: RegExp, item: string): string | 
   const inner = m[1]!.trim().replace(/,$/, '')
   const pad = source[start - 1] === '{' ? ' ' : ''
   return source.slice(0, start) + pad + (inner ? `${inner}, ${item}` : item) + pad + source.slice(end)
+}
+
+const KIT_ROLES: [RegExp, string][] = [
+  [/\bbg-indigo-600\b/g, 'bg-accent'],
+  [/\btext-white\b/g, 'text-on-accent'],
+  [/\btext-slate-(?:500|600)\b/g, 'text-ink-muted'],
+  [/\btext-rose-600\b/g, 'text-danger-text'],
+  [/(["' ])rounded(?=["' ])/g, '$1rounded-control'],
+]
+
+/** The scaffold's classes in the official kit's role colours, for an app whose kit theme resets Tailwind's palette (ADR 0089). */
+export const inKitRoles = (text: string) => KIT_ROLES.reduce((t, [from, to]) => t.replace(from, to), text)
+
+/** Whether a kit installed from @hozu/ui-kit with its strict theme is in the app. */
+function strictKit(root: string): boolean {
+  if (!existsSync(root)) return false
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const lock = readLock(root, entry.name)
+    if (lock?.source === OFFICIAL && !lock.partial) return true
+  }
+  return false
 }
 
 export async function runAddFeature(
@@ -124,9 +147,10 @@ export async function runAddFeature(
         ] as [string, string][])
       : []),
   ]
+  const roles = strictKit(root)
   for (const [path, text] of files) {
     await mkdir(dirname(path), { recursive: true })
-    await writeFile(path, text)
+    await writeFile(path, roles && path.endsWith('views.ts') ? inKitRoles(text) : text)
     out.created.push(relative(cwd, path))
   }
   const edit = async (file: string, change: (s: string) => string | null, manual: string) => {

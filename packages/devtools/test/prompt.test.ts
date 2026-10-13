@@ -425,4 +425,129 @@ describe('the request an agent reads (ADR 0047 G2)', () => {
     expect(md).toContain('- Text: “Sign in” → “登入帳號”')
     expect(md).toContain('its text is message `account.signIn`')
   })
+
+  it('an Add item names the component, its variant and the place; one not installed says how to install it (ADR 0089 P6)', () => {
+    const anchor: DevNode = { ...base, component: null, excerpt: null }
+    const add = {
+      component: 'ui.Button',
+      variant: { intent: 'primary' },
+      position: 'after' as const,
+      install: 'npx hozu add component ui Button --from official',
+      file: 'ui/button.ts',
+    }
+    const md = requestMarkdown({
+      items: [{ ...item(anchor, 'A button that saves the draft'), visible: 'Save', add }],
+      context,
+    })
+    expect(md).toBe(
+      [
+        '# Hozu request: A button that saves the draft',
+        '',
+        'Page `/login` · 1280 × 800',
+        '',
+        `## 1. Add <ui.Button> { intent: 'primary' } after <button "Save">`,
+        '- Want: A button that saves the draft',
+        '- Where: `features/account/views.ts:38:12` (view `account.Login`)',
+        '- Install first: `npx hozu add component ui Button --from official`',
+        "- Mind: import it from `ui/button.ts`; place `ui.use(Button, { variant: { intent: 'primary' } }, [...])` after it, as a sibling; `hozu docs ui` lists its props and slots.",
+        '- Locate: `hozu why /features/account/views/Login/root/children/2/children/1`',
+        '',
+        'Run `hozu check` after the edits.',
+        '',
+      ].join('\n'),
+    )
+    const installed = requestMarkdown({
+      items: [{ ...item(anchor, ''), add: { ...add, variant: {}, position: 'inside', install: null } }],
+      context,
+    })
+    expect(installed).toContain('# Hozu request: Add <ui.Button> inside <button>')
+    expect(installed).not.toContain('Install first')
+    expect(installed).toContain('place `ui.use(Button, {}, [...])` inside it, as its last child')
+  })
+
+  it('an Add item dragged from an example says to build it like that example', () => {
+    const anchor: DevNode = { ...base, component: null, excerpt: null }
+    const md = requestMarkdown({
+      items: [
+        {
+          ...item(anchor, 'The orders of this customer'),
+          add: {
+            component: 'ui.Table',
+            variant: {},
+            position: 'after',
+            install: null,
+            file: 'ui/table.ts',
+            children: true,
+            example: { name: 'Orders', file: 'ui/previews.ts', line: 21 },
+          },
+        },
+      ],
+      context,
+    })
+    expect(md).toContain(
+      "- Mind: build it like the ‘Orders’ example in `ui/previews.ts:21`: copy that `ui.use(Table, …)` with the parts, slots and children it uses (import Table from `ui/table.ts` and the others from their files in the kit), place it after it, as a sibling, and replace the sample text with the page's own; `hozu docs ui` lists its props and slots.",
+    )
+  })
+
+  it('an Add item with a chosen icon names its import; a Lucide icon the app lacks is added first', () => {
+    const anchor: DevNode = { ...base, component: null, excerpt: null }
+    const add = {
+      component: 'ui.Icon',
+      variant: {},
+      position: 'before' as const,
+      install: null,
+      file: 'ui/icon.ts',
+      props: ['d'],
+      children: false,
+      icon: { prop: 'd', name: 'arrowUp', file: 'ui/icons/lucide.ts', d: 'M5 12l7-7 7 7M12 19V5' },
+    }
+    const md = requestMarkdown({ items: [{ ...item(anchor, ''), add }], context })
+    expect(md).toContain(
+      "- Mind: import it from `ui/icon.ts` and `{ arrowUp }` from `ui/icons/lucide.ts` (from the app's root: `import { arrowUp } from './ui/icons/lucide.ts'`; the path is relative to the view's file); place `ui.use(Icon, { props: { d: arrowUp } })` before it, as a sibling;",
+    )
+    const missing = requestMarkdown({
+      items: [
+        {
+          ...item(anchor, ''),
+          add: {
+            ...add,
+            icon: { prop: 'd', name: 'alarmClock', file: 'ui/icons/lucide.ts', lucide: 'alarm-clock' },
+          },
+        },
+      ],
+      context,
+    })
+    expect(missing).toContain(
+      "- Mind: first add Lucide's `alarm-clock` icon to `ui/icons/lucide.ts` as `export const alarmClock = '<path data>'` (ISC; the `d` of every shape in `icons/alarm-clock.svg` of the `lucide-static` package, joined, or from https://lucide.dev/icons/alarm-clock); then import it from `ui/icon.ts` and `{ alarmClock }` from `ui/icons/lucide.ts`",
+    )
+    expect(missing).toContain('place `ui.use(Icon, { props: { d: alarmClock } })` before it')
+  })
+
+  it('a main component without a use points at its own file (ADR 0089 P6)', () => {
+    const main = {
+      node: null,
+      note: 'Rounder, the brand red',
+      scope: 'component' as const,
+      visible: '',
+      component: { id: 'ui.Button', file: 'ui/button.ts', line: 19 },
+    }
+    expect(requestMarkdown({ items: [main], context })).toBe(
+      [
+        '# Hozu request: Rounder, the brand red',
+        '',
+        'Page `/login` · 1280 × 800',
+        '',
+        '## 1. <ui.Button> · Main component',
+        '- Want: Rounder, the brand red',
+        '- Where: `ui/button.ts:19`',
+        "- Scope: every use (the component's own file)",
+        '- Mind: change its `tv()` styles or render in that file; uses keep their own class overrides.',
+        '- Locate: `hozu why ui.Button`',
+        '',
+        'Run `hozu check` after the edits.',
+        '',
+      ].join('\n'),
+    )
+    expect(titleOf([{ ...main, note: '' }])).toBe('Change <ui.Button> · Main component')
+  })
 })

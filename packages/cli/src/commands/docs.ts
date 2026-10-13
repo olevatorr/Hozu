@@ -8,6 +8,7 @@ import type { DocsComponentsOutput, DocsOutput } from '../contract.ts'
 import { HozuCliError } from '../errors.ts'
 import { load } from '../load.ts'
 import { componentEntries, describeCatalog, docsComponent } from './components.ts'
+import { OFFICIAL, officialPackage } from './official.ts'
 
 const MORE = '\n<!-- more -->\n'
 
@@ -42,8 +43,12 @@ export async function runDocs(
       })),
   )
   if (!topic) {
-    const text = `${topics.map((t) => `${t.name.padEnd(12)} ${t.title}`).join('\n')}\n`
-    return { topic: null, text, topics }
+    const kit = officialPackage(resolve(cwd, config ?? 'hozu.config.ts'))
+    const listed = kit
+      ? [...topics, { name: 'ui', title: `Hozu UI: the official components (${OFFICIAL}@${kit.version})` }]
+      : topics
+    const text = `${listed.map((t) => `${t.name.padEnd(12)} ${t.title}`).join('\n')}\n`
+    return { topic: null, text, topics: listed }
   }
   const name = topic.toLowerCase()
   const code = topic.toUpperCase() as DiagnosticCode
@@ -53,6 +58,23 @@ export async function runDocs(
       throw new HozuCliError('usage', `No diagnostic ${code}`, ['hozu docs diagnostics lists every code'])
     const text = `${code} ${c.name} (${c.severity})\n\n${c.summary}\n\nfix: ${c.fix}\nread: hozu docs ${c.topic}\n`
     return { topic: code, text, topics }
+  }
+  if (name === 'ui') {
+    const official = officialPackage(resolve(cwd, config ?? 'hozu.config.ts'))
+    if (!official)
+      throw new HozuCliError('usage', `The ui topic comes with ${OFFICIAL}, which this app does not have`, [
+        `npm install -D ${OFFICIAL}`,
+        'npx hozu add kit ui --from official',
+      ])
+    const text = await readFile(join(official.dir, 'docs/ui.md'), 'utf8')
+    return {
+      topic: 'ui',
+      text: `${text.trimEnd()}
+
+(${OFFICIAL}@${official.version})
+`,
+      topics,
+    }
   }
   if (!topics.some((t) => t.name === name)) {
     const guess = closest(

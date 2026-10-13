@@ -91,8 +91,11 @@ export function renderLayers(panel: HTMLElement, tree: DevPageTree | null, host:
           type: 'button',
           disabled: !el,
           title: el ? '' : t('layers.off.title'),
+          'data-layer': n.id,
           onpointerenter: () => host.hover(el),
           onpointerleave: () => host.hover(null),
+          onfocus: () => host.hover(el),
+          onblur: () => host.hover(null),
           onclick: () => {
             if (el) host.pick(n.id, el)
           },

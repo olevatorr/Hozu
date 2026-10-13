@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.0.0-rc.1 — The release candidate (ADR 0088)
+
+The first 1.0 candidate, published under npm's `next` tag (`npx create-hozu@next`;
+`npx -p @hozu/cli@next hozu migrate` upgrades an app). It adds Hozu UI, the official components (ADR 0089); nothing
+an app already uses changes.
+
+- **Hozu UI, the official components, in your app.** `create-hozu` asks whether to add them (`--ui` / `--no-ui`).
+  `npx hozu add kit ui --from official` adds them to an existing app (with `@hozu/ui-kit` installed). The source is
+  copied into `ui/` and is yours to edit; `ui/kit.lock.json` lets `hozu add kit ui --sync` update the files you did
+  not change and list the ones you did. `hozu add component ui <Name> --from official` adds one, and
+  `npx hozu docs ui` says which component fits what. An app that still uses Tailwind's own palette keeps it until
+  its classes move to the kit's roles.
+- **DevTools shows, places and customises them:** Assets docks beside the page and lists Hozu UI first, with every
+  variant and composed examples (`p.example`, Icon's picker). Drag one onto the page: it shows where it will land,
+  stays there marked *Pending* until the agent builds it, and can be clicked to edit or dragged again. A component
+  can also be changed for every use. The request's *Add* and *Main component* items tell the agent what to install,
+  where to put it and which file to edit. Hovering a Layers row frames its part.
+- **A link turned into text** (`` `${ui.link(home)}#section` ``) stops the build (HZ059); it rendered
+  `[object Object]` before.
+
+- **What 1.0 promises:** the authoring API, the IR and lock formats, CLI commands with their `--json` shapes, and the
+  meaning of every diagnostic code follow semantic versioning: a breaking change waits for 2.0, a new rule arrives as
+  a warning first, and `hozu migrate` keeps any 1.x app current. DevTools, the human text of the CLI and diagnostic
+  wording may still improve in a minor (ADR 0088).
+- **How it got here:** agent trials as an engineer, a non-engineer and a designer; the owner's booking site and back
+  office rebuilt with Hozu, matched to the original and deployed in containers; the DevTools request trial and a
+  regression round (trials 0023, 0026, 0027, 0028).
+
 ## 0.31.0 — What a new app and a second look at DevTools met (ADR 0087)
 
 From trial 0028: an agent built a new app on 0.30.1, and trial 0023's failed change ran again. No API change:

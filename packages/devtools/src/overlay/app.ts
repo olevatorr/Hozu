@@ -2,7 +2,11 @@ import type { DevLocation, DevNode } from '@hozu/core/ir'
 import { type MessageKey, t } from '../messages.ts'
 import { describeFor, friendlyName, questionFor } from '../plain.ts'
 import {
+  type Addition,
+  anchorOf,
+  type ComponentRef,
   type HozuRequest,
+  itemLabel,
   joinRequests,
   labelOf,
   openRequestsLine,
@@ -12,14 +16,16 @@ import {
   scopesFor,
 } from '../prompt.ts'
 import { held, hold, node, one, page, remove, save, saved, theme, tree } from './api.ts'
-import { assetsBoard, type Catalogued } from './assets.ts'
+import { assetsBoard, type Catalogued, dragLabel } from './assets.ts'
 import { h, read, write } from './dom.ts'
+import { beside, dragger } from './drop.ts'
 import { drawer } from './effects.ts'
 import { previewLabel, renderLayers } from './layers.ts'
 import { logo } from './logo.ts'
 import { lookSection, preview } from './look.ts'
 import { distances, sizeOf } from './measure.ts'
 import { agentNotes } from './notes.ts'
+import { pendingKeys, pendingPreviews } from './pending.ts'
 import { css, outlineCss } from './style.ts'
 import { firstText, previewText, restoreText, type TextChange, textSection } from './text.ts'
 
@@ -31,6 +37,10 @@ interface Pick {
   visible: string
   style?: StyleChange[]
   text?: TextChange
+  add?: Addition
+  component?: ComponentRef
+  /** The saved request this pick went into, so its preview goes once the request is done. */
+  request?: string
 }
 
 type Audience = 'builder' | 'developer'
@@ -158,20 +168,99 @@ const assets = assetsBoard({
     [...doc.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].map((l) => l.href).filter(Boolean),
   show: (c) => showInstances(c),
   change: (c, note) => {
-    const first = c.uses[0]
-    if (!first) return
-    state.picks.push({ id: first.node, index: 0, note, scope: 'component', visible: '' })
+    state.picks.push({
+      id: '',
+      index: 0,
+      note,
+      scope: 'component',
+      visible: '',
+      component: { id: c.id, file: c.location?.file ?? '', line: c.location?.line ?? 1 },
+    })
     state.active = state.picks.length - 1
     persist()
     assets.close()
     renderDock()
     open('changes', null, 'draft')
   },
+  selection: async () => {
+    const p = state.picks[state.active]
+    const n = p?.id ? await node(p.id) : null
+    if (!p || !n) return null
+    return partName(n, p.visible)
+  },
+  place: (add, note) => placeAt(add, note),
+  drag: (down, handle, carried, label) => drag.start(down, handle, carried, label),
   screen: (route, path, name) => {
     setScreen(`${route}:${name}`)
     if (win.location.pathname === path) win.location.reload()
     else win.location.href = path
   },
+})
+
+function partName(n: DevNode, visible: string) {
+  return state.audience === 'builder'
+    ? `${friendlyName(n)}${visible ? ` “${visible.slice(0, 40)}”` : ''}`
+    : anchorOf(n, visible)
+}
+
+function placeAt(add: Addition, note: string, el: Element | null = null) {
+  const dropped = el
+    ? { id: el.getAttribute('data-hz') ?? '', index: indexOf(el), visible: visibleOf(el) }
+    : null
+  const at = dropped ?? state.picks[state.active]
+  if (!at?.id) return
+  const pick: Pick = { id: at.id, index: at.index, visible: at.visible, note, scope: 'this', add }
+  if (dropped) {
+    state.picks.push(pick)
+    state.active = state.picks.length - 1
+  } else if (hasContent(state.picks[state.active]!)) {
+    state.picks.push(pick)
+    state.active = state.picks.length - 1
+  } else state.picks[state.active] = pick
+  persist()
+  if (!assets.docked()) assets.close()
+  drawPicks()
+  renderDock()
+  open('changes', null, 'draft')
+}
+
+let dropParts: { parent: Element; parts: Element[] } | null = null
+const drag = dragger({
+  target: (x, y) => {
+    const ui = shadow.elementFromPoint(x, y)
+    if (ui && ui !== frameEl && root.contains(ui)) return null
+    let px = x
+    let py = y
+    if (frameEl) {
+      const r = frameEl.getBoundingClientRect()
+      const scale = r.width / (frameEl.offsetWidth || r.width || 1)
+      px = (x - r.left) / scale
+      py = (y - r.top) / scale
+      if (ui !== frameEl) return null
+    }
+    const el = doc.elementFromPoint(px, py)?.closest('[data-hz]')
+    if (!el || el === host || el === outline) return null
+    if (dropParts?.parent !== el) dropParts = { parent: el, parts: partsIn(el) }
+    const near = beside(
+      dropParts.parts.map((part) => ({ part, box: part.getBoundingClientRect() })),
+      px,
+      py,
+    )
+    return { el: near ?? el, x: px, y: py }
+  },
+  name: async (el) => {
+    const n = await node(el.getAttribute('data-hz') ?? '')
+    const visible = visibleOf(el)
+    return n ? partName(n, visible) : el.tagName.toLowerCase()
+  },
+  started: () => {
+    dropParts = null
+    if (assets.isOpen() && !assets.docked()) assets.dock()
+    void showHover(null)
+  },
+  place: (add, note, el) => placeAt(add, note, el),
+  windows: () => (doc.defaultView && doc.defaultView !== window ? [doc.defaultView] : []),
+  ui: (event) => ours(event),
 })
 
 async function screensSection(): Promise<HTMLElement | null> {
@@ -206,7 +295,7 @@ async function screensSection(): Promise<HTMLElement | null> {
   ])
 }
 
-root.append(bench, panel, dock, api.el, assets.board)
+root.append(bench, panel, dock, api.el, assets.board, drag.ghost, drag.note)
 try {
   const pending = sessionStorage.getItem(showKey)
   if (pending) {
@@ -257,6 +346,7 @@ function mountOutline(target: Document) {
     agent.layer,
     hover,
     measure,
+    drag.indicator,
   )
   target.documentElement.append(el)
   outline = el
@@ -384,7 +474,84 @@ function drawMeasure() {
   measure.hidden = false
 }
 
+const pending = pendingPreviews({ doc: () => doc })
+let finished = new Set<string>()
+
+/** Requests that were done (`hozu requests done` removes the file): their components are in the code now. */
+async function checkFinished() {
+  const numbers = new Set(state.picks.flatMap((p) => (p.request ? [p.request] : [])))
+  if (!numbers.size) return
+  const list = await fetch('/_hozu/dev/requests', { cache: 'no-store' })
+    .then((r) => (r.ok ? (r.json() as Promise<{ number: string; status: string }[]>) : null))
+    .catch(() => null)
+  if (!list) return
+  const open = new Set(list.filter((r) => r.status === 'open').map((r) => r.number))
+  finished = new Set([...numbers].filter((n) => !open.has(n)))
+  drawPicks()
+}
+
+const pendingPicks = new Map<string, Pick>()
+
+function drawPending() {
+  const picks = drafted().flatMap((p, i) =>
+    p.add && p.id && !(p.request && finished.has(p.request)) ? [{ pick: p, number: i + 1 }] : [],
+  )
+  const items = picks.map(({ pick, number }) => ({
+    id: pick.id,
+    index: pick.index,
+    add: pick.add!,
+    number,
+  }))
+  const keys = pendingKeys(items)
+  pendingPicks.clear()
+  picks.forEach(({ pick }, i) => pendingPicks.set(keys[i] ?? '', pick))
+  pending.sync(items.map((item, i) => ({ ...item, key: keys[i] ?? '' })))
+}
+
+/** Drags a pending component to another place: its request item follows, the note stays. */
+function movePending(down: PointerEvent, key: string, el: HTMLElement) {
+  const pick = pendingPicks.get(key)
+  const add = pick?.add
+  if (!pick || !add) return
+  drag.start(down, el, add, dragLabel(add.component.split('.').pop() ?? add.component, add.variant), {
+    begin: () => pending.moving(key),
+    click: () => {
+      const index = state.picks.indexOf(pick)
+      if (index < 0) return
+      state.active = index
+      persist()
+      drawPicks()
+      open('inspector')
+    },
+    end: (to) => {
+      pending.moving(null)
+      if (!to) return
+      pick.id = to.el.getAttribute('data-hz') ?? pick.id
+      pick.index = indexOf(to.el)
+      pick.visible = visibleOf(to.el)
+      pick.add = { ...add, position: to.position }
+      persist()
+      drawPicks()
+      void renderPanel()
+    },
+  })
+}
+
+/** A click where nothing is marked: the selection goes, like clicking the canvas in Figma; drafts stay. */
+function deselect() {
+  const kept = state.picks.filter(hasContent)
+  if (kept.length === state.picks.length && state.panel !== 'inspector') return
+  state.picks = kept
+  state.active = Math.max(0, kept.length - 1)
+  if (state.panel === 'inspector') state.panel = null
+  persist()
+  drawPicks()
+  renderDock()
+  void renderPanel()
+}
+
 function drawPicks() {
+  drawPending()
   for (const p of state.picks) {
     preview(elementOf(p), p.style ?? [])
     previewText(elementOf(p), p.text)
@@ -420,11 +587,25 @@ function frame() {
   requestAnimationFrame(frame)
 }
 
-const hasContent = (p: Pick) => p.note.trim() !== '' || (p.style?.length ?? 0) > 0 || !!p.text
+const hasContent = (p: Pick) =>
+  p.note.trim() !== '' || (p.style?.length ?? 0) > 0 || !!p.text || !!p.add || !!p.component
+const pickName = (p: Pick, n: DevNode | null) =>
+  p.add || !n
+    ? itemLabel({
+        node: n,
+        note: '',
+        scope: 'this',
+        visible: p.visible,
+        ...(p.add ? { add: p.add } : {}),
+        ...(p.component ? { component: p.component } : {}),
+      })
+    : state.audience === 'builder'
+      ? friendlyName(n)
+      : labelOf(n)
 const drafted = () => state.picks.filter(hasContent)
 
 function select(pick: Omit<Pick, 'note' | 'scope'>, add: boolean) {
-  const same = (p: Pick) => p.id === pick.id && p.index === pick.index
+  const same = (p: Pick) => p.id === pick.id && p.index === pick.index && !p.add
   if (!add) state.picks = state.picks.filter((p) => hasContent(p) || same(p))
   const existing = state.picks.findIndex(same)
   if (existing >= 0) state.active = existing
@@ -478,15 +659,23 @@ function listen(target: Window): AbortController {
     target.addEventListener(
       type,
       (event) => {
-        if (state.mode !== 'select' || ours(event)) return
+        if (type === 'pointerdown') drag.dismiss(event)
+        if (type === 'pointerdown' && !ours(event)) {
+          const press = event as PointerEvent
+          const hit = press.button === 0 ? pending.at(press.clientX, press.clientY) : null
+          if (hit) {
+            event.stopImmediatePropagation()
+            return movePending(press, hit.item.key, hit.el)
+          }
+        }
+        if (state.mode !== 'select' || ours(event) || drag.holding()) return
         event.preventDefault()
         event.stopImmediatePropagation()
         if (type === 'dblclick') void selectText(event as MouseEvent)
         if (type !== 'click') return
         const mouse = event as MouseEvent
-        const clicked = markedFrom(event)
-        const el = clicked
-        if (!el) return
+        const el = markedFrom(event)
+        if (!el) return deselect()
         select(
           { id: el.getAttribute('data-hz') ?? '', index: indexOf(el), visible: visibleOf(el) },
           mouse.shiftKey,
@@ -498,7 +687,7 @@ function listen(target: Window): AbortController {
     'pointermove',
     (event) => {
       measuring = event.altKey
-      if (state.mode !== 'select') return
+      if (state.mode !== 'select' || (forced && ours(event))) return
       const el = ours(event) ? null : markedFrom(event)
       if (el !== hovered) void showHover(el)
     },
@@ -583,6 +772,10 @@ const typingIn = (event: KeyboardEvent) =>
 
 function onKey(event: KeyboardEvent) {
   const typing = typingIn(event)
+  if (event.key === 'Escape' && drag.escape()) {
+    event.preventDefault()
+    return
+  }
   if (event.key === 'Escape' && assets.isOpen()) return assets.close()
   if (event.altKey && event.shiftKey && event.code === 'KeyS') {
     event.preventDefault()
@@ -623,8 +816,18 @@ const reload = () => win.location.reload()
 function layersHost(close: () => void) {
   return {
     plain: state.audience === 'builder',
-    shown: (id: string) => doc.querySelector(`[data-hz="${CSS.escape(id)}"]`),
-    hover: (el: Element | null) => void showHover(el, true),
+    shown: (id: string) => {
+      const el = doc.querySelector(`[data-hz="${CSS.escape(id)}"]`)
+      return el?.getClientRects().length ? el : null
+    },
+    hover: (el: Element | null) => {
+      if (el) {
+        const r = el.getBoundingClientRect()
+        if (r.bottom < 0 || r.top > win.innerHeight || r.right < 0 || r.left > win.innerWidth)
+          el.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+      }
+      void showHover(el, true)
+    },
     pick: (id: string, el: Element) => {
       void showHover(null)
       select({ id, index: indexOf(el), visible: visibleOf(el) }, false)
@@ -1065,19 +1268,21 @@ function copyLater(text: Promise<string>): Promise<void> {
 async function request(): Promise<HozuRequest> {
   const active = state.picks[state.active]
   const chosen = drafted().length ? drafted() : active ? [active] : []
-  const nodes = await Promise.all(chosen.map((p) => node(p.id)))
+  const nodes = await Promise.all(chosen.map((p) => (p.id ? node(p.id) : null)))
   return {
     items: chosen.flatMap((p, i) => {
-      const n = nodes[i]
-      return n
+      const n = nodes[i] ?? null
+      return n || p.component
         ? [
             {
               node: n,
               note: p.note,
-              scope: p.scope ?? scopesFor(n)[0]!.scope,
+              scope: p.scope ?? (n ? scopesFor(n)[0]!.scope : 'component'),
               visible: p.visible,
               style: p.style ?? [],
               ...(p.text ? { text: p.text } : {}),
+              ...(p.add ? { add: p.add } : {}),
+              ...(p.component ? { component: p.component } : {}),
             },
           ]
         : []
@@ -1250,6 +1455,10 @@ function exportBlock() {
               return
             }
             const { done, error } = await job
+            if (done) {
+              for (const p of drafted()) p.request = done.number
+              persist()
+            }
             if (done)
               status(result, 'ok', [
                 t(count === 1 ? 'export.copiedSaved.one' : 'export.copiedSaved.other', {
@@ -1319,6 +1528,32 @@ function textFor(n: DevNode, active: Pick) {
   })
 }
 
+function mainComponentPanel(active: Pick, c: ComponentRef) {
+  const note = h('textarea', {
+    'aria-label': t('change.aria'),
+    placeholder: t('change.placeholder'),
+    oninput: (event) => {
+      active.note = (event.target as HTMLTextAreaElement).value
+      persist()
+    },
+  }) as HTMLTextAreaElement
+  note.value = active.note
+  return [
+    h('div', { class: 'head' }, [
+      h('div', { class: 'kicker' }, [t('change.main')]),
+      h('h2', { class: 'title' }, [h('code', {}, [c.id])]),
+      closeButton(() => open(null)),
+    ]),
+    h('div', { class: 'sec' }, [
+      h('div', { class: 'plain' }, [t('change.main.text', { component: c.id, file: `${c.file}:${c.line}` })]),
+      h('div', { class: 'label' }, [t('change.label')]),
+      note,
+      h('button', { class: 'link', type: 'button', onclick: removeActive }, [t('changes.remove')]),
+      exportBlock(),
+    ]),
+  ]
+}
+
 function requestSection(n: DevNode, active: Pick) {
   const others = state.picks.filter((p) => p !== active && hasContent(p)).length
   const note = h('textarea', {
@@ -1334,7 +1569,11 @@ function requestSection(n: DevNode, active: Pick) {
   note.value = active.note
   return h('div', { class: 'sec' }, [
     h('div', { class: 'label' }, [t('change.label')]),
-    scopeField(n, active),
+    active.add
+      ? h('div', { class: 'plain', 'data-adds': true }, [
+          t('change.adds', { component: active.add.component, position: active.add.position }),
+        ])
+      : scopeField(n, active),
     note,
     others
       ? h('div', { class: 'plain more' }, [
@@ -1507,6 +1746,11 @@ async function renderPanel() {
       )
     return
   }
+  if (!active.id && active.component) {
+    panel.hidden = false
+    panel.replaceChildren(...present(mainComponentPanel(active, active.component)))
+    return
+  }
   const n = await node(active.id)
   if (!n) {
     panel.hidden = false
@@ -1515,7 +1759,7 @@ async function renderPanel() {
     )
     return
   }
-  const nodes = await Promise.all(state.picks.map((p) => node(p.id)))
+  const nodes = await Promise.all(state.picks.map((p) => (p.id ? node(p.id) : null)))
   panel.hidden = false
   panel.replaceChildren(
     ...present([
@@ -1539,9 +1783,7 @@ async function renderPanel() {
                       void renderPanel()
                     },
                   },
-                  [
-                    `${i + 1} ${nodes[i] ? (state.audience === 'builder' ? friendlyName(nodes[i]!) : labelOf(nodes[i]!)) : p.id}`,
-                  ],
+                  [`${i + 1} ${nodes[i] || p.component ? pickName(p, nodes[i] ?? null) : p.id}`],
                 ),
               ),
             )
@@ -1676,7 +1918,7 @@ async function renderChanges() {
     return
   }
   const items = drafted()
-  const nodes = await Promise.all(items.map((p) => node(p.id)))
+  const nodes = await Promise.all(items.map((p) => (p.id ? node(p.id) : null)))
   panel.replaceChildren(
     ...present([
       head,
@@ -1689,7 +1931,7 @@ async function renderChanges() {
               return h('div', { class: 'item' }, [
                 h('span', { class: 'n' }, [String(i + 1)]),
                 h('div', { class: 'what' }, [
-                  h('b', {}, [n ? (state.audience === 'builder' ? friendlyName(n) : labelOf(n)) : p.id]),
+                  h('b', {}, [n || p.component ? pickName(p, n ?? null) : p.id]),
                   h('span', {}, [
                     [
                       p.note.trim(),
@@ -1924,6 +2166,49 @@ const left = h('div', { class: 'bench-left' })
 const stage = h('div', { class: 'stage' })
 const sizer = h('div', { class: 'sizer' })
 const bar = h('div', { class: 'bench-bar' })
+const menu = h('div', { class: 'bar-menu', role: 'menu', popover: 'auto', onclick: () => menu.hidePopover() })
+const more = h(
+  'button',
+  {
+    class: 'act more',
+    type: 'button',
+    'aria-haspopup': 'menu',
+    'aria-label': t('bench.more'),
+    title: t('bench.more'),
+    onclick: () => {
+      const r = more.getBoundingClientRect()
+      menu.style.top = `${r.bottom + 6}px`
+      menu.style.right = `${Math.max(8, innerWidth - r.right)}px`
+      menu.togglePopover()
+    },
+  },
+  ['⋯', h('span', { class: 'count' })],
+)
+let barExtras: HTMLElement[] = []
+new ResizeObserver(() => fitBar()).observe(bar)
+
+/** Keeps the bar on one row: the least needed buttons go into More, then the logo and the size, as space runs out. */
+function fitBar() {
+  if (!bar.isConnected) return
+  for (const el of barExtras) more.before(el)
+  more.hidden = true
+  bar.classList.remove('tight')
+  const over = () => bar.scrollWidth > bar.clientWidth + 1
+  const changes = barExtras.find((el) => el.dataset.extra === '4')
+  const count = more.querySelector('.count')
+  if (count) count.textContent = ''
+  if (!over()) return
+  more.hidden = false
+  if (count) count.textContent = changes?.querySelector('.count')?.textContent ?? ''
+  const ranked = [...barExtras].sort((a, b) => Number(a.dataset.extra) - Number(b.dataset.extra))
+  for (const el of ranked) {
+    menu.append(el)
+    if (!over()) break
+  }
+  for (const el of barExtras) if (el.parentElement === menu) menu.append(el)
+  if (count && changes?.parentElement !== menu) count.textContent = ''
+  if (over()) bar.classList.add('tight')
+}
 
 addEventListener(
   'keydown',
@@ -1959,6 +2244,7 @@ function layout() {
   frameEl.style.transform = `scale(${scale})`
   const size = bar.querySelector('[data-size]')
   if (size) size.textContent = `${width} × ${height}${scale < 1 ? ` · ${Math.round(scale * 100)}%` : ''}`
+  fitBar()
 }
 
 function setDevice(device: State['device']) {
@@ -2004,6 +2290,7 @@ function renderBar() {
         : h('option', { value: 'Custom', selected: true }, [t('bench.custom')]),
     ],
   )
+  menu.replaceChildren()
   bar.replaceChildren(
     ...present([
       h('div', { class: 'grip' }, [h('img', { src: logo, alt: 'Hozu', width: '18', height: '18' })]),
@@ -2046,6 +2333,7 @@ function renderBar() {
         {
           class: 'act',
           type: 'button',
+          'data-extra': '4',
           onclick: () =>
             open(state.panel === 'changes' ? null : 'changes', null, drafted().length ? 'draft' : 'saved'),
         },
@@ -2059,6 +2347,7 @@ function renderBar() {
         {
           class: 'act gear',
           type: 'button',
+          'data-extra': '3',
           'aria-label': t('dock.settings'),
           onclick: () => open(state.panel === 'settings' ? null : 'settings'),
         },
@@ -2069,6 +2358,7 @@ function renderBar() {
         {
           class: 'act',
           type: 'button',
+          'data-extra': '1',
           title: t('bench.api.title'),
           'aria-pressed': api.isOpen() ? 'true' : 'false',
           onclick: () => api.toggle(),
@@ -2080,14 +2370,19 @@ function renderBar() {
         {
           class: 'act',
           type: 'button',
+          'data-extra': '2',
           title: t('dock.assets.title'),
           onclick: () => void assets.open(),
         },
         [t('dock.assets')],
       ),
+      more,
+      menu,
       h('button', { class: 'act exit', type: 'button', onclick: () => closeBench() }, [t('bench.exit')]),
     ]),
   )
+  barExtras = [...bar.querySelectorAll<HTMLElement>('[data-extra]')]
+  fitBar()
 }
 
 async function renderLeft() {
@@ -2184,6 +2479,8 @@ addEventListener(
 
 renderDock()
 drawPicks()
+void checkFinished()
+addEventListener('hozu:requests', () => void checkFinished())
 void renderPanel()
 api.restore()
 requestAnimationFrame(frame)

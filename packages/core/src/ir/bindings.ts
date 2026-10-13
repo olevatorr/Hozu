@@ -18,8 +18,11 @@ export interface Bindings {
   env: { server: Parse | null; public: Parse | null }
   /** Transition pointer of each `machine({ on })` copy → pointer of the entry it was copied from. */
   copies: Record<string, string>
-  /** Class tokens of each component render's non-root elements, from the declaration-time render. */
-  components: Record<string, { inner: string[] }>
+  /**
+   * Class tokens of each component render's non-root elements, from the declaration-time render (`inner`), and
+   * every variant's inner-part classes (`parts`), which only `hozu dev` compiles so DevTools can preview them.
+   */
+  components: Record<string, { inner: string[]; parts?: string[] }>
 }
 
 export interface StyleFiles {

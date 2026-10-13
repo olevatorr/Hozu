@@ -669,3 +669,11 @@ describe('hozu check stops on a CLI and packages of different versions (ADR 0076
     ])
   })
 })
+
+describe('a step for every minor (ADR 0088)', () => {
+  it('the last step reaches the CLI’s own minor, so hozu migrate never stops short of it', async () => {
+    const { steps, minorOf } = await import('../src/migrate/steps.ts')
+    const { cliVersion } = await import('../src/versions.ts')
+    expect(steps.at(-1)!.to).toBe(minorOf(cliVersion()))
+  })
+})

@@ -303,6 +303,40 @@ describe('Assets and page previews under hozu dev only (ADR 0058 G, H)', () => {
     const away = await handler.fetch(new Request('http://evil.example/_hozu/dev/components'))
     expect(away.status).toBe(403)
   })
+
+  it('names the kit installed from Hozu UI and which package components the app has (ADR 0089 P4)', async () => {
+    const app = (await import(join(root, 'app.ts'))).default
+    const official = () => ({
+      kit: 'ui',
+      version: '0.1.0',
+      partial: true,
+      available: [
+        { name: 'Button', file: 'button.ts' },
+        { name: 'Badge', file: 'badge.ts' },
+      ],
+    })
+    const handler = createHandler(app, { dev: { root, official }, env, readFile })
+    const out = await (await handler.fetch(new Request('http://127.0.0.1/_hozu/dev/official'))).json()
+    expect(out).toEqual({
+      kit: 'ui',
+      version: '0.1.0',
+      partial: true,
+      available: [
+        { name: 'Button', file: 'button.ts', installed: true },
+        { name: 'Badge', file: 'badge.ts', installed: false },
+      ],
+    })
+    const none = createHandler(app, { dev: { root }, env, readFile })
+    expect(await (await none.fetch(new Request('http://127.0.0.1/_hozu/dev/official'))).json()).toEqual({
+      kit: null,
+      version: null,
+      partial: false,
+      available: [],
+    })
+    expect((await handler.fetch(new Request('http://evil.example/_hozu/dev/official'))).status).toBe(403)
+    const production = createHandler(app, { env, readFile })
+    expect((await production.fetch(new Request('http://127.0.0.1/_hozu/dev/official'))).status).toBe(404)
+  })
 })
 
 describe('the client entry carries its content hash (0.17.1)', () => {

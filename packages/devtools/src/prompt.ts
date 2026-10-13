@@ -9,13 +9,44 @@ export interface StyleChange {
   to: string
 }
 
+/** A component to place at the selected part (ADR 0089 P5). */
+export interface Addition {
+  component: string
+  variant: Record<string, string>
+  position: 'before' | 'after' | 'inside'
+  /** The command that installs it first, when the app does not have it yet. */
+  install: string | null
+  /** The file it is imported from, relative to the app. */
+  file: string | null
+  /** Props it requires (no default), so the agent passes them. */
+  props?: string[]
+  /** Whether it takes children. */
+  children?: boolean
+  /** The `p.example` it was dragged from: the agent builds it with that structure. */
+  example?: { name: string; file: string | null; line: number }
+  /**
+   * The icon chosen for `prop`, exported as `name` from `file`; `lucide` names a Lucide icon the app does not have
+   * yet, to be added to `file` first. `d` is its path data, for the preview on the page.
+   */
+  icon?: { prop: string; name: string; file: string; lucide?: string; d?: string }
+}
+
+export interface ComponentRef {
+  id: string
+  file: string
+  line: number
+}
+
 export interface RequestItem {
-  node: DevNode
+  /** The selected part; null for a main component chosen in Assets without a use (`component`). */
+  node: DevNode | null
   note: string
   scope: Scope
   visible: string
   style?: StyleChange[]
   text?: { from: string; to: string }
+  add?: Addition
+  component?: ComponentRef
 }
 
 export interface RequestContext {
@@ -98,13 +129,40 @@ export function scopesFor(node: DevNode): { scope: Scope; label: string }[] {
   return [{ scope: 'this', label: c ? 'This instance only' : 'Only this one' }, ...every]
 }
 
+const variantText = (variant: Record<string, string>) => {
+  const entries = Object.entries(variant)
+  return entries.length ? ` { ${entries.map(([k, v]) => `${k}: '${v}'`).join(', ')} }` : ''
+}
+
+const clip = (text: string, max: number) => {
+  if (text.length <= max) return text
+  const cut = text.slice(0, max)
+  const space = cut.lastIndexOf(' ')
+  return `${space > max / 2 ? cut.slice(0, space) : cut}…`
+}
+
+export function anchorOf(node: DevNode, visible: string): string {
+  if (!node.tag) return labelOf(node)
+  const text = clip(visible.trim(), 40)
+  return `<${node.tag}${text ? ` "${text}"` : ''}>`
+}
+
+export function itemLabel(item: RequestItem): string {
+  if (item.add)
+    return `Add <${item.add.component}>${variantText(item.add.variant)} ${item.add.position} ${item.node ? anchorOf(item.node, item.visible) : 'the page'}`
+  if (item.node) return labelOf(item.node)
+  return item.component ? `<${item.component.id}> · Main component` : 'the page'
+}
+
 export function titleOf(items: RequestItem[]): string {
   const note = items
     .find((i) => i.note.trim())
     ?.note.trim()
     .split('\n')[0]
   const head = !note
-    ? `Change ${items[0] ? labelOf(items[0].node) : 'the page'}`
+    ? items[0]?.add
+      ? itemLabel(items[0])
+      : `Change ${items[0] ? itemLabel(items[0]) : 'the page'}`
     : note.length <= 60
       ? note
       : `${note.slice(0, 60).replace(/\s+\S*$/, '')}…`
@@ -196,7 +254,7 @@ function eventMind(e: DevNode['events'][number]): string {
   return `\`${e.dom}\` sends \`${e.event}\`${what}${covers}; a change of behaviour needs a contract when it decides (HZ016), otherwise \`hozu check --update-lock\`.`
 }
 
-function minds(item: RequestItem): string[] {
+function minds(item: RequestItem & { node: DevNode }): string[] {
   const { node, scope } = item
   const out: string[] = []
   const c = node.component
@@ -254,9 +312,64 @@ function size(context: RequestContext): string {
   return `Workbench${name} · ${width} × ${height} (verify: \`hozu browse --viewport ${width}x${height}\`)`
 }
 
+const want = (note: string) =>
+  `- Want: ${note ? note.replace(/\n+/g, ' / ') : '(not described: ask the user what should change)'}`
+
+function useOptions(add: Addition): string {
+  const props = [
+    ...(add.props ?? []).filter((p) => p !== add.icon?.prop).map((p) => `${p}: …`),
+    ...(add.icon ? [`${add.icon.prop}: ${add.icon.name}`] : []),
+  ]
+  const parts = [
+    ...(Object.keys(add.variant).length ? [`variant:${variantText(add.variant)}`] : []),
+    ...(props.length ? [`props: { ${props.join(', ')} }`] : []),
+  ]
+  return parts.length ? `{ ${parts.join(', ')} }` : '{}'
+}
+
+function addMind(add: Addition, at: string): string {
+  const name = add.component.split('.').pop() ?? add.component
+  const from = add.file ?? `the kit of ${add.component}`
+  if (add.example) {
+    const where = add.example.file ? `\`${add.example.file}:${add.example.line}\`` : 'the previews'
+    return `build it like the ‘${add.example.name}’ example in ${where}: copy that \`ui.use(${name}, …)\` with the parts, slots and children it uses (import ${name} from \`${from}\` and the others from their files in the kit), place it ${at}, and replace the sample text with the page's own`
+  }
+  const icon = add.icon
+  const fetch = icon?.lucide
+    ? `first add Lucide's \`${icon.lucide}\` icon to \`${icon.file}\` as \`export const ${icon.name} = '<path data>'\` (ISC; the \`d\` of every shape in \`icons/${icon.lucide}.svg\` of the \`lucide-static\` package, joined, or from https://lucide.dev/icons/${icon.lucide}); then `
+    : ''
+  const imports = icon
+    ? `import it from \`${from}\` and \`{ ${icon.name} }\` from \`${icon.file}\` (from the app's root: \`import { ${icon.name} } from './${icon.file}'\`; the path is relative to the view's file)`
+    : `import it from \`${from}\``
+  return `${fetch}${imports}; place \`ui.use(${name}, ${useOptions(add)}${add.children === false ? '' : ', [...]'})\` ${at}`
+}
+
+function addLines(item: RequestItem & { add: Addition; node: DevNode }): string[] {
+  const { add, node } = item
+  const at = add.position === 'inside' ? 'inside it, as its last child' : `${add.position} it, as a sibling`
+  return [
+    want(item.note.trim()),
+    `- Where: ${where(node)}`,
+    ...(add.install ? [`- Install first: \`${add.install}\``] : []),
+    `- Mind: ${addMind(add, at)}; \`hozu docs ui\` lists its props and slots.${node.conditions.length && add.position !== 'inside' ? ' If the selected part is the whole branch of a query, `when` or `?:`, the sibling goes into that branch too: return a list, or wrap both in a `ui.div`.' : ''}`,
+    ...(node.pointer ? [`- Locate: \`hozu why ${node.pointer}\``] : []),
+  ]
+}
+
+function componentLines(item: RequestItem & { component: ComponentRef }): string[] {
+  const c = item.component
+  return [
+    want(item.note.trim()),
+    `- Where: \`${c.file}:${c.line}\``,
+    "- Scope: every use (the component's own file)",
+    '- Mind: change its `tv()` styles or render in that file; uses keep their own class overrides.',
+    `- Locate: \`hozu why ${c.id}\``,
+  ]
+}
+
 export function requestMarkdown(request: HozuRequest, options: PromptOptions = {}): string {
   const { context } = request
-  const scopeLabel = (item: RequestItem) => {
+  const scopeLabel = (item: RequestItem & { node: DevNode }) => {
     const c = item.node.component
     if (item.scope === 'component' && c)
       return `every ${c.ref.split('.').pop()} like this (${places(c.uses)})`
@@ -271,13 +384,18 @@ export function requestMarkdown(request: HozuRequest, options: PromptOptions = {
   ]
   request.items.forEach((item, i) => {
     const { node } = item
-    const note = item.note.trim()
+    lines.push(`## ${i + 1}. ${itemLabel(item)}`)
+    if (!node || item.add) {
+      if (item.add && node) lines.push(...addLines({ ...item, add: item.add, node }))
+      else if (item.component) lines.push(...componentLines({ ...item, component: item.component }))
+      lines.push('')
+      return
+    }
     lines.push(
-      `## ${i + 1}. ${labelOf(node)}`,
-      `- Want: ${note ? note.replace(/\n+/g, ' / ') : '(not described: ask the user what should change)'}`,
+      want(item.note.trim()),
       `- Where: ${where(node)}`,
       ...(options.excerpt ? excerpt(node) : []),
-      `- Scope: ${scopeLabel(item)}`,
+      `- Scope: ${scopeLabel({ ...item, node })}`,
       ...(item.style ?? []).map((c) => styleLine(c, node.classes, options.theme)),
       ...(changesText(item) ? [`- Text: “${item.text.from}” → “${item.text.to}”`] : []),
       ...node.conditions
@@ -285,7 +403,7 @@ export function requestMarkdown(request: HozuRequest, options: PromptOptions = {
         .map(
           (c) => `- Shown when: ${c.kind === 'query' ? `query ${c.detail}` : c.detail} (${loc(c.location)})`,
         ),
-      ...minds(item).map((m) => `- Mind: ${m}`),
+      ...minds({ ...item, node }).map((m) => `- Mind: ${m}`),
       ...(node.pointer ? [`- Locate: \`hozu why ${node.pointer}\``] : []),
       '',
     )

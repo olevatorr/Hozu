@@ -1,5 +1,5 @@
 export type { IsolatedUse } from './build/isolate.ts'
-export { componentIdOf, componentProject } from './build/isolate.ts'
+export { componentIdOf, componentProject, exampleProject } from './build/isolate.ts'
 export {
   AmbiguousLine,
   componentCatalog,
@@ -8,8 +8,10 @@ export {
   type DevComponentUse,
   type DevCondition,
   type DevEffect,
+  type DevIcons,
   type DevLocation,
   type DevNode,
+  type DevOfficial,
   type DevOptions,
   type DevPage,
   type DevPageTree,
@@ -30,7 +32,7 @@ export {
   buildProject,
   envFilesOf,
   INVALID_ERROR_SCHEMA,
-  previewsModuleOf,
+  previewsModulesOf,
   sharedViews,
   UNEXPECTED_ERROR_SCHEMA,
 } from './build/project.ts'
