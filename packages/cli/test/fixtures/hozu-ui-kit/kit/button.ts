@@ -11,7 +11,7 @@ export const buttonStyles = tv({
       quiet: 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
       destructive: 'bg-danger text-on-danger shadow-control hover:bg-danger/90',
     },
-    size: { sm: 'h-8 px-3 text-xs', md: 'h-9 px-4 text-sm', icon: 'size-8 text-sm' },
+    size: { sm: 'h-8 px-3 text-xs', md: 'h-9 px-4 text-sm', icon: 'size-8 overflow-hidden text-sm' },
   },
   defaultVariants: { intent: 'secondary', size: 'md' },
 })

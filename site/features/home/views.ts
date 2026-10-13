@@ -317,6 +317,23 @@ export const Home = ui.view({
             },
           ),
         ]),
+        ui.use(Section, { props: { kicker: t.uiKicker } }, [
+          ui.use(Heading, {}, [t.uiHeading]),
+          ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [t.uiLead]),
+          ui.use(Steps, { class: 'mt-8' }, [
+            ui.use(Step, { props: { title: t.uiOwn, body: t.uiOwnBody } }),
+            ui.use(Step, { props: { title: t.uiChecked, body: t.uiCheckedBody } }),
+            ui.use(Step, { props: { title: t.uiPlace, body: t.uiPlaceBody } }),
+          ]),
+          ui.div({ class: 'mt-8 flex flex-wrap gap-3' }, [
+            ui.use(Button, { props: { href: 'https://ui.hozu.org' } }, [t.uiButton]),
+            ui.use(
+              Button,
+              { variant: { intent: 'outline' }, props: { href: 'https://ui.hozu.org/components/' } },
+              [t.uiComponents],
+            ),
+          ]),
+        ]),
         ui.use(Section, { props: { kicker: t.agentKicker } }, [
           ui.use(Heading, {}, [t.agentHeading]),
           ui.p({ class: 'mt-4 max-w-2xl text-lg' }, [t.agentLead]),
