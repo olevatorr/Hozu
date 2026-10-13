@@ -163,4 +163,10 @@ describe('page transitions', () => {
       expect(css).toContain('--brand')
     }
   })
+
+  it('a class a plugin matches as [class~="lead"] counts as producing CSS (ADR 0087)', () => {
+    expect(
+      [...selectorClasses('.prose :where([class~="lead"]):not(:where(.not-prose *)){color:red}')].sort(),
+    ).toEqual(['lead', 'not-prose', 'prose'])
+  })
 })

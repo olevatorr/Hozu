@@ -250,6 +250,15 @@ const Btn = ui.component({
   children: true,
   render: ({ children }) => ui.button({ type: 'button' }, children),
 })
+const Toned = ui.component({
+  tag: 'button',
+  styles: tv({
+    base: 'rounded px-2',
+    variants: { tone: { ghost: 'text-slate-700', solid: 'bg-indigo-600 text-white' } },
+  }),
+  children: true,
+  render: ({ children }) => ui.button({ type: 'button' }, children),
+})
 const Locked = ui.component({
   tag: 'span',
   styles: tv({ base: 'rounded px-2' }),
@@ -529,6 +538,21 @@ const catalog: SourceMistake[] = [
     stage: 'css',
     mistake: () => styled({ Btn, Uses: using(() => ui.use(Btn, { class: 'p-8' }, ['Save'])) }),
     fixed: () => styled({ Btn, Uses: using(() => ui.use(Btn, { class: 'p-8!' }, ['Save'])) }),
+  },
+  {
+    name: 'a caller colour the component owns is HZ072 alone, not also HZ079 (ADR 0087)',
+    code: 'HZ072',
+    stage: 'css',
+    mistake: () =>
+      styled({
+        Toned,
+        Uses: using(() => ui.use(Toned, { variant: { tone: 'ghost' }, class: 'text-rose-700' }, ['x'])),
+      }),
+    fixed: () =>
+      styled({
+        Toned,
+        Uses: using(() => ui.use(Toned, { variant: { tone: 'ghost' }, class: 'text-rose-700!' }, ['x'])),
+      }),
   },
   {
     name: 'a ! on a property the component does not own',

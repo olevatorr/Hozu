@@ -29,6 +29,10 @@
 
 <!-- more -->
 
+- **`shown briefly:`** in a step's line lists text the step added and removed before the page settled, with how long
+  it stayed: a dialog or a busy state flashing past. Usually the view shows it in a state the change now passes
+  through (`removing` entered straight from `idle`): show it only where it belongs.
+
 - `press Mod+s` (with `Mod`, `Ctrl`, `Meta`, `Alt`, `Shift`) presses the control whose `keys` match, as a person would, and says where focus is (`focused <input name="q"> "Search"`, `focus stays on …`, `focus left …`) and when no control, or only hidden ones, have the key; with `--js off` it reports that a shortcut needs JavaScript.
 - **Server errors:** what the app's `onError` receives (a resolver that threw, an invalid input) is listed under the
   step or the `get` request that caused it, `server error: <message> (<feature.effect>)`; `--json` `serverErrors`.
@@ -57,7 +61,7 @@
     `click <name>` on a submit button posts with its name and value; `submit "<form>"` takes a form's `aria-label` or
     its submit button text. Labels and names are what a user reads (aria-label, `<label>`, placeholder, button text,
     `title`), or a field's `name`.
-  - `in "<text>"` picks the smallest list item, table row, form, `details` or `article` containing that text
+  - `in "<text>"` picks the smallest list item, table row, form, `details`, `article`, `nav`, `section` or dialog containing that text
     (`click Delete in "Buy milk"`).
   - A step with no native effect prints `js-only (<reason>)` in the off column, e.g. a `type=button` button.
 - **Actors:** the steps after an `--as <name>` are that actor's, and a later `--as <name>` switches back. `--session`

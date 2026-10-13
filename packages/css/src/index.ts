@@ -38,6 +38,7 @@ export function selectorClasses(css: string): Set<string> {
   const out = new Set<string>()
   for (const m of css.matchAll(/\.(-?(?:\\[^\n]|[A-Za-z_\u0080-￿])(?:\\[^\n]|[\w\u0080-￿-])*)/g))
     out.add(unescapeCss(m[1]!))
+  for (const m of css.matchAll(/\[class~=(["']?)([\w-]+)\1\]/g)) out.add(m[2]!)
   return out
 }
 

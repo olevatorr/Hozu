@@ -37,11 +37,16 @@ const MENU = `<!doctype html><title>Menu</title>
 <div role="dialog" style="position:fixed;inset:0;visibility:hidden"><a href="#menu" onclick="document.title = 'menu'">Home</a></div>`
 
 const UPLOAD = `<!doctype html><title>Upload</title>
-<label>Photo <input type="file" name="photo" onchange="document.title = this.files[0].name + ' ' + this.files[0].size"></label>`
+<label>Photo <input type="file" name="photo" onchange="document.title = this.files[0].name + ' ' + this.files[0].size"></label>
+<label>Sent <input type="file" name="sent" onchange="const f = new FormData(); f.append('file', this.files[0]); fetch('/size', { method: 'POST', body: f }).then((r) => r.text()).then((t) => { document.title = 'server got ' + t })"></label>`
 
 let imagePort = 0
 const LOCAL_IMAGE = () => `<!doctype html><title>Image</title>
 <img src="http://127.0.0.1:${imagePort}/a.svg" onload="document.title = 'loaded'" onerror="document.title = 'failed'">`
+
+const BRIEF = `<!doctype html><title>Brief</title>
+<button type="button" onclick="const d = document.createElement('div'); d.textContent = 'Removing Milk...'; document.body.append(d); setTimeout(() => { d.remove(); document.title = 'gone' }, 40)">Remove</button>
+<button type="button" onclick="const d = document.createElement('div'); d.textContent = 'Measured'; document.body.append(d); d.getBoundingClientRect(); d.remove(); document.title = 'measured'">Measure</button>`
 
 const decode = (body: Uint8Array | null) => new TextDecoder().decode(body ?? new Uint8Array())
 
@@ -60,17 +65,21 @@ const world = {
       stream: false,
       headers: [['content-type', 'text/html']] as [string, string][],
       body: new TextEncoder().encode(
-        r.method === 'POST'
-          ? `<title>Posted</title><p>${new URL(r.url).pathname} ${decode(r.body)}</p>`
-          : new URL(r.url).pathname === '/overlay'
-            ? OVERLAY
-            : new URL(r.url).pathname === '/menu'
-              ? MENU
-              : new URL(r.url).pathname === '/upload'
-                ? UPLOAD
-                : new URL(r.url).pathname === '/image'
-                  ? LOCAL_IMAGE()
-                  : PAGE,
+        r.method === 'POST' && new URL(r.url).pathname === '/size'
+          ? String(decode(r.body).includes('hello') ? (r.body?.length ?? 0) : 0)
+          : r.method === 'POST'
+            ? `<title>Posted</title><p>${new URL(r.url).pathname} ${decode(r.body)}</p>`
+            : new URL(r.url).pathname === '/overlay'
+              ? OVERLAY
+              : new URL(r.url).pathname === '/menu'
+                ? MENU
+                : new URL(r.url).pathname === '/upload'
+                  ? UPLOAD
+                  : new URL(r.url).pathname === '/image'
+                    ? LOCAL_IMAGE()
+                    : new URL(r.url).pathname === '/brief'
+                      ? BRIEF
+                      : PAGE,
       ),
     }
   ),
@@ -140,7 +149,7 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
     await t.open('/')
     expect(await run(t, 'click Delete in "Butter"')).toEqual({
       ok: false,
-      note: 'No list item, table row, form, details or article contains "Butter"',
+      note: 'No list item, table row, form, details, article, nav, section or dialog contains "Butter"',
       jsOnly: null,
     })
     expect((await run(t, 'click Delete')).note).toBe(
@@ -236,6 +245,19 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
     }
   }, 30_000)
 
+  it('names text that a step showed and removed before it settled (ADR 0087)', async () => {
+    const t = await tab('on')
+    await t.open('/brief')
+    await t.tagElements()
+    await run(t, 'click Remove')
+    await sleep(100)
+    const { brief } = await t.smoothness()
+    expect(brief).toEqual([expect.stringMatching(/^"Removing Milk\.\.\." for \d+ ms$/)])
+    await t.tagElements()
+    await run(t, 'click Measure')
+    expect((await t.smoothness()).brief).toEqual([])
+  }, 30_000)
+
   it('upload sets a file input by its label; without JS it says a file needs JavaScript (ADR 0084)', async () => {
     const file = join(profile, 'photo.txt')
     await writeFile(file, 'hello')
@@ -243,6 +265,9 @@ describe.skipIf(!browser)('browse steps with and without JS (ADR 0043 J)', () =>
     await t.open('/upload')
     expect(await run(t, `upload Photo=${file}`)).toMatchObject({ ok: true })
     expect((await t.look()).title).toBe('photo.txt 5')
+    await run(t, `upload Sent=${file}`)
+    await sleep(300)
+    expect((await t.look()).title).toMatch(/^server got [1-9]\d*$/)
     expect(await run(t, 'upload Photo=/nope/missing.png')).toMatchObject({
       ok: false,
       note: 'No file at /nope/missing.png',

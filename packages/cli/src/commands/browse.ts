@@ -508,9 +508,11 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
           const reloads = tab.documentLoads - loadsBefore
           const focus = reloads || r.focus === undefined ? null : await focusNote(tab, r.focus || null)
           const calm = reloads
-            ? { replaced: 0, flashes: 0, flashed: [], shift: 0 }
-            : await tab.smoothness().catch(() => ({ replaced: 0, flashes: 0, flashed: [], shift: 0 }))
-          const { replaced, flashes, flashed, shift } = calm
+            ? { replaced: 0, flashes: 0, flashed: [], shift: 0, brief: [] }
+            : await tab
+                .smoothness()
+                .catch(() => ({ replaced: 0, flashes: 0, flashed: [], shift: 0, brief: [] }))
+          const { replaced, flashes, flashed, shift, brief } = calm
           const arrived = reloads && before.url !== after.url ? await tab.arrival().catch(() => null) : null
           const serverErrors = worlds[m]!.serverErrors.slice(serverSince)
           for (let i = serverSince; i < serverSince + serverErrors.length; i++) inStep[m]!.add(i)
@@ -536,6 +538,7 @@ export async function runBrowse(loaded: Loaded, options: BrowseOptions): Promise
             ...(replaced ? { replaced } : {}),
             ...(arrived ? { arrived } : {}),
             ...(flashes ? { flashes: { count: flashes, elements: flashed } } : {}),
+            ...(brief.length ? { brief } : {}),
             ...(shift >= 0.001 ? { shift } : {}),
             ...(serverErrors.length ? { serverErrors } : {}),
             url: after.url,
@@ -732,6 +735,11 @@ export function describeBrowse(out: BrowseOutput, full = false): string {
         lines.push(`      ${c.mode}: ${own || '(no change)'}${c.ok && c.note ? ` — ${c.note}` : ''}`)
       })
     }
+    for (const c of changes)
+      if (c.brief)
+        lines.push(
+          `      shown briefly${modes.length > 1 ? ` (${c.mode})` : ''}: ${c.brief.slice(0, FLASHES_SHOWN).join('; ')}${c.brief.length > FLASHES_SHOWN ? `; ${c.brief.length - FLASHES_SHOWN} more` : ''}`,
+        )
     for (const c of changes)
       for (const text of new Set((c.serverErrors ?? []).map(describeServerError))) {
         lines.push(`      server error${modes.length > 1 ? ` (${c.mode})` : ''}: ${text}`)

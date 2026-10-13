@@ -144,7 +144,7 @@ func main() {
 - Route params and form fields are strings: a numeric id is `z.coerce.number()` in the query or mutation input
   (a query input that fails its schema is a program error, reported to `onError` with the field).
 - Data the whole staff shares but only staff may read is `scope: 'user'` with `access` (it is never cached across
-  requests). Share one rule: `const staffOnly = part(({ session }) => session.role === 'staff')`, then
+  requests). Share one rule: `const staffOnly = part(({ session }: { session: { role: string } }) => session.role === 'staff')`, then
   `access: { allow: staffOnly }` on each effect.
 - A resolver may answer `fail('Forbidden', { message })` (a check `access` cannot make); with any access but
   `'anyone'` its `session` is never null.

@@ -6,6 +6,7 @@ import {
   machine,
   mutation,
   on,
+  part,
   project,
   query,
   route,
@@ -534,4 +535,14 @@ export const settings = ui.view({
       ui.button({ type: 'button', on: { click: ui.set(ctx.mode, 'c') } }, ['Wrong']),
       ui.ul({}, [ui.each(ctx.items, 'sku', (item) => (item.qty > 0 ? ui.li({}, [item.sku]) : null))]),
     ]),
+})
+
+const staffOnly = part(({ session }: { session: { role: 'staff' | 'admin' } }) => session.role === 'staff')
+export const staffNotes = query({
+  input: z.object({}),
+  output: z.array(z.string()),
+  scope: 'user',
+  freshness: 'request',
+  runs: 'server',
+  access: { allow: staffOnly },
 })

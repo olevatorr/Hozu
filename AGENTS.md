@@ -419,6 +419,9 @@ The IR is the source of truth. TS source is a typed authoring surface over it.
   recipes: uploads, a checkbox bound to context, `Invalid` display.
   0.30.1 (ADR 0085, Mori Docker rehearsal): `add component --client` moves `@hozu/bundle` out of devDependencies;
   `--target node` names packages in both dependency lists and stylesheet packages only in devDependencies.
+- 0.31 (ADR 0087, trial 0028): browse `brief` (`shown briefly:`, elements added and removed within a step), file
+  bodies sent as bytes (`FILE_BODIES` init script), `in` covers nav/section/dialog; HZ079 skips caller-vs-component
+  pairs (`use.added`); `selectorClasses` reads `[class~="x"]`; styles cache keyed by the CLI version.
 - Pages: `project({ site, pages: [ui.page(route,
   { views, head, assert?, entries? })] })`. `head` is a closed set of fields (title, description, type, image,
   published, noindex) from which `<title>`, meta, canonical, Open Graph and JSON-LD are derived; a declared error of
