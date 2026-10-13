@@ -123,7 +123,7 @@ export const catches: { code: DiagnosticCode; name: string; story: string; messa
     {
       code: 'HZ091',
       name: 'rows-outside-owner',
-      story: 'Ada’s list showed Bob’s notes.',
+      story: 'Your list showed someone else’s notes.',
       message: 'A query with owner access returned rows the visitor does not own.',
       fix: 'read only the visitor’s rows in the resolver',
     },

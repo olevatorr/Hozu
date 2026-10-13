@@ -113,11 +113,7 @@ export const Home = ui.view({
                         'flex items-center justify-between bg-ink px-3 py-2 text-sm font-bold text-paper',
                     },
                     [
-                      ui.span({}, [
-                        'notes · ',
-                        ui.span({ class: 'hidden sm:inline' }, [t.signedInAs]),
-                        'ada',
-                      ]),
+                      ui.span({ class: 'min-w-0 truncate' }, [t.askLine]),
                       is(['broken'])
                         ? ui.button(
                             {
@@ -138,13 +134,26 @@ export const Home = ui.view({
                           ),
                     ],
                   ),
-                  ui.p({ class: 'px-3 py-2' }, [t.buyMilk]),
-                  ui.if(
-                    ctx.broken === true,
-                    [ui.p({ class: 'overflow-hidden bg-red/10 px-3 py-2' }, [t.bobSecret])],
-                    [],
-                    'intrude',
+                  ui.div({ class: 'flex items-center justify-between gap-3 px-3 pt-3' }, [
+                    ui.span({}, [t.cartItem]),
+                    ui.span({ class: 'font-bold' }, ['$640']),
+                  ]),
+                  ui.p(
+                    {
+                      class: 'mx-1 mt-2 px-2 py-1 text-sm transition-colors duration-300',
+                      toggle: { 'bg-red/15 font-bold text-ember': ctx.broken },
+                    },
+                    [ctx.broken ? t.shipBroken : t.shipOk],
                   ),
+                  ui.div({ class: 'px-3 pt-2 pb-3' }, [
+                    ui.span(
+                      {
+                        class: 'inline-block border-4 border-ink px-4 py-1.5 text-sm font-black uppercase transition-colors duration-300',
+                        toggle: { 'bg-green text-ink': ctx.tried, 'bg-ink text-paper': !ctx.tried },
+                      },
+                      [t.checkout],
+                    ),
+                  ]),
                   ui.p(
                     {
                       class:

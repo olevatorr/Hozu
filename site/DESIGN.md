@@ -68,10 +68,11 @@ Every section is a `Section` with a depth meter.
    - One line on the cost: "It costs more tokens than other frameworks. That is the price of a second pair of eyes on
      every change."
    - Two buttons: Start building, See the proof.
-   - **The demo** shows a small notes app signed in as ada, with an **AI CHANGE** button:
-     - Pressing it makes the list show one of bob's notes. The check output turns red: HZ049, user data would be
-       cached and shown to another user.
-     - **APPLY FIX** restores the list and a green `✔ types ok · 0 errors · lock current`.
+   - **The demo** shows a small cart and the request “Make Checkout green”, with an **AI CHANGE** button:
+     - Pressing it turns Checkout green, and also lowers free shipping from $1,000 to $100, a rule nobody asked
+       about. The check output turns red: HZ018, a behaviour changed without review. (An AI changing more than it was
+       asked is a fear every AI user shares; leaking data through a cache was too abstract.)
+     - **APPLY FIX** keeps the green button, restores the rule and a green `✔ types ok · 0 errors · lock current`.
    - **A 3D tenon joint** turns slowly. It splits apart when the change is wrong and snaps together when it is fixed.
    - The evidence ticker runs underneath.
 2. **The bill: "Yes, it costs more. Here is the receipt."**
